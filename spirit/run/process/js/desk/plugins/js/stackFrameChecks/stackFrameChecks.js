@@ -621,9 +621,12 @@ module.exports = function (desk) {
       const text = String(a.text || '').trim();
       const rows = Array.isArray(d[field]) ? d[field] : [];
       const bucket = createProbabilityBucket(rows.length || 1);
+      // THE ROW AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served"): the words
+      // matched against the row the answer carries.
       rows.forEach(function (v, i) {
-        const p = text ? probabilityStringObjectMatch(text, { value: v }) : 1 / (1 + i);
-        bucket.seatFor(p, { key: String(v), label: JSON.stringify({ value: String(v), pos: i }) });
+        const served = { value: String(v), pos: i };
+        const p = text ? probabilityStringObjectMatch(text, served) : 1 / (1 + i);
+        bucket.seatFor(p, { key: String(v), label: JSON.stringify(served) });
       });
       const r = bucket.serialize(null, DOORS_ROOM);
       return { items: r.items, more: !!r.more };
@@ -706,7 +709,8 @@ module.exports = function (desk) {
             const row = doorOut(d, lasts[i]);
             const pair = { key: row.id, label: JSON.stringify(row) };
             if (Buffer.byteLength(JSON.stringify({ items: [pair], more: true }), 'utf8') > DOORS_ROOM) { more = true; return; }
-            const p = text ? probabilityStringObjectMatch(text, { id: row.id, gate: row.gate, endpoint: row.endpoint, item: row.item, suites: row.suites.join(' ') }) : 0;
+            // The whole door, as it is served (goal/G41.28): every field the answer carries, not five picked from it.
+            const p = text ? probabilityStringObjectMatch(text, row) : 0;
             bucket.seatFor(p, pair);
           });
           const r = bucket.serialize(null, DOORS_ROOM);

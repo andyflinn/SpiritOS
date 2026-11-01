@@ -356,10 +356,12 @@ appServer.serve({
         i += 1;
         if (who === 'me' && Number(r.sent) !== 1) continue;
         if (who === 'them' && Number(r.sent) !== 0) continue;
-        const p = words ? Number(probabilityStringObjectMatch(words, { text: String(r.text || '') })) || 0 : 1;
+        // THE LINE AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served through a single-row \"get\""): every field of it, not its text alone.
+        const pair = linePair(r);
+        const p = words ? Number(probabilityStringObjectMatch(words, JSON.parse(pair.label))) || 0 : 1;
         if (!(p > 0)) continue;
         // Newest first on a tie: the lines come newest first, the earlier a hair higher.
-        bucket.seatFor(Math.min(1, p * (1 - 1e-6) + 1e-6 / (1 + i)), linePair(r));
+        bucket.seatFor(Math.min(1, p * (1 - 1e-6) + 1e-6 / (1 + i)), pair);
       }
       const out = bucket.serialize(null, READ_ROOM);
       return { items: out.items, more: !!out.more };

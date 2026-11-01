@@ -53,7 +53,7 @@ function createNodeSearches(opts) {
 
   function jobLabel(j) { return String(j.type || j.id) + ' (' + String(j.status || '') + ')'; }
 
-  // goal/G29.22: every job, ranked by the words over its type, status and kind (probabilityStringObjectMatch), the
+  // goal/G29.22: every job, ranked by the words over the whole job (probabilityStringObjectMatch, goal/G41.28), the
   // listing's order among equals, cut by bytes; no words (or '*', the kernel's empty ask) is every job in that order.
   function jobsSearch(body) {
     var q = String((body && body.q) || '').trim();
@@ -62,7 +62,9 @@ function createNodeSearches(opts) {
     var all = jobs.listJobs();
     for (var i = 0; i < all.length; i += 1) {
       var j = all[i];
-      var p = q ? probabilityStringObjectMatch(q, { type: String(j.type || j.id), status: String(j.status || ''), kind: String(j.kind || '') }) : 0;
+      // THE JOB AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served"): the whole job,
+      // as the job list serves it, not its type, status and kind alone.
+      var p = q ? probabilityStringObjectMatch(q, j) : 0;
       bucket.seatFor(p, { key: j.id, label: jobLabel(j) });
     }
     var r = bucket.serialize(null, FS_SEARCH_ROOM);

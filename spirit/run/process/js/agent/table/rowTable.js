@@ -160,7 +160,10 @@ function rowTable(db, def, publish) {
         return { id: a.id };
       }
       if (a.op === 'get') return shown(the(a));
-      // search: every row ranked against the words over what it shows; with no words, all of them by label.
+      // search: every row ranked against the words over THE WHOLE ROW AS ITS GET SERVES IT (goal/G41.28; Andy, box v15: "a
+      // probability search of a dataBase table must ALWAYS search the whole bloody ROW, as it is served through a
+      // single-row \"get\""): shown(r), what op get answers, its lists and numbers too; a secret no get serves never is.
+      // With no words, all of them by label.
       const words = String(a.text || '').trim();
       const bucket = createProbabilityBucket(Infinity);
       let n = 0;
@@ -168,9 +171,7 @@ function rowTable(db, def, publish) {
       q.all.all().forEach(function (r) {
         if (narrow.some(function (f) { return String(r[f] == null ? '' : r[f]) !== String(stored(f, a[f])); })) return;
         const row = shown(r);
-        const flat = {};
-        Object.keys(row).forEach(function (k) { if (typeof row[k] === 'string' && k !== 'id' && k !== 'sealPublicKey') flat[k] = row[k]; });
-        const score = words ? Number(probabilityStringObjectMatch(words, flat)) || 0 : 1;
+        const score = words ? Number(probabilityStringObjectMatch(words, row)) || 0 : 1;
         n += 1;
         // A FOUND ROW CARRIES ITS ID AND WHAT ITS LIST SHOWS, NOTHING MORE (Andy, on G41.18: "only the ID and the fields
         // shown in a table, that's all it needs"): the keys and the rest stay for get, so one answer holds four times

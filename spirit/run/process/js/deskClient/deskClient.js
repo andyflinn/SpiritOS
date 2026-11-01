@@ -1044,9 +1044,11 @@ const server = appServer.serve({
       const text = String(a.text || '').trim();
       const bucket = createProbabilityBucket(Infinity);
       for (const r of findAsks.iterate('', '', '')) {
-        const label = JSON.stringify({ at: r.at, verb: r.verb, ms: r.ms, outcome: r.outcome, bytes: r.bytes, port: r.port, count: r.count });
-        const probability = text ? probabilityStringObjectMatch(text, { verb: String(r.verb), outcome: String(r.outcome) }) : 0;
-        bucket.seatFor(probability, { key: String(r.id), label: label });
+        // THE ROW AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served"): every field
+        // the answer carries, not its verb and outcome alone.
+        const served = { at: r.at, verb: r.verb, ms: r.ms, outcome: r.outcome, bytes: r.bytes, port: r.port, count: r.count };
+        const probability = text ? probabilityStringObjectMatch(text, served) : 0;
+        bucket.seatFor(probability, { key: String(r.id), label: JSON.stringify(served) });
       }
       const r = bucket.serialize(null, ANSWER_ROOM);
       return { items: r.items, more: !!r.more };

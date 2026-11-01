@@ -205,9 +205,12 @@ const probabilityStringObjectMatch = require('../../../spirit/probabilityStringO
 const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
 const MAX_SCANNED_ITEMS = 1000;
 function lineProbability(text, line) { return text ? probabilityStringMatch(text, String(line.text)) : 0; }
-function itemProbability(text, it, lines) {
+// THE WHOLE ROW, AS ITS GET SERVES IT (goal/G41.28; Andy, box v15: "a probability search of a dataBase table must ALWAYS
+// search the whole bloody ROW, as it is served through a single-row \"get\", using a probabilityStringObjectMatch."):
+// row is the item's facts, what item.get answers, so its goal, its status and its numbers are searched too.
+function itemProbability(text, row, lines) {
   if (!text) return 0;
-  const fields = probabilityStringObjectMatch(text, { id: String(it.id), title: String(it.title || ''), box: String(it.box || '') });
+  const fields = probabilityStringObjectMatch(text, row);
   const chat = lines.length ? lines.reduce(function (n, l) { return n + lineProbability(text, l); }, 0) / lines.length : 0;
   return 0.5 * fields + 0.5 * chat;
 }
@@ -234,8 +237,9 @@ function ranked(walk, room) {
 //   rather than written per table; the suites table's is item.suites.search".
 //
 // tableSearch(spec) makes the verb: spec.request (the arguments beside text, each '' or its kind), spec.rows(a, st,
-// caller) -> [{ key, fields, label, probability? }] in the walk's order (newest first where there is an order), and
-// spec.room (ANSWER_ROOM unless said). Each row ranks by text against its fields (probabilityStringObjectMatch) unless
+// caller) -> [{ key, label, row?, probability? }] in the walk's order (newest first where there is an order), and
+// spec.room (ANSWER_ROOM unless said). Each row ranks by text against the whole row (probabilityStringObjectMatch):
+// row, the row as its table's get serves it, when the answer's label carries less than that, else the label; unless
 // it brings its own probability; every row goes through ranked(), so the answer fills one room and says more. With no
 // text every probability is 0 and the walk's order stands. A table's verb is this and nothing else.
 function tableSearch(spec) {
@@ -245,8 +249,13 @@ function tableSearch(spec) {
     handler: function (a, caller) {
       const text = String((a && a.text) || '').trim();
       const rows = spec.rows(a || {}, walkState(), caller, text);
+      // THE WHOLE ROW, AS IT IS SERVED (goal/G41.28; Andy, box v15: "a probability search of a dataBase table must ALWAYS
+      // search the whole bloody ROW, as it is served through a single-row \"get\""): the words are matched against the
+      // row the answer carries, its label, never against fields picked from it.
       return ranked(rows.map(function (r) {
-        const p = typeof r.probability === 'number' ? r.probability : text ? probabilityStringObjectMatch(text, r.fields || {}) : 0;
+        let row = r.row !== undefined ? r.row : r.label;
+        if (typeof row === 'string') { try { row = JSON.parse(row); } catch (e) { row = { text: row }; } }
+        const p = typeof r.probability === 'number' ? r.probability : text ? probabilityStringObjectMatch(text, row && typeof row === 'object' && !Array.isArray(row) ? row : { value: String(row) }) : 0;
         return { probability: p, pair: { key: String(r.key), label: typeof r.label === 'string' ? r.label : JSON.stringify(r.label) } };
       }), spec.room || ANSWER_ROOM);
     },
@@ -2223,9 +2232,10 @@ function searchItems(a) {
       if (!it || !(listed(s, it) || closedToo)) return;
       // THE SEARCH READS THE LINES TOO (goal/G4.24 point 2). Andy: "same principle as the agent search, it searches the
       // lines server-side, but only brings back handle/key and title, i'll have to go to details to fetch the rest."
-      // id, title, box and every chat line, case ignored; the answer is the row as before, never the box or the chat.
-      // RANKED, NOT FILTERED (goal/G18.5): every listed item goes in with its probability; the bucket orders them.
-      out.push({ probability: itemProbability(rawText, it, it.chat), json: JSON.stringify(facts(s, it)) });
+      // The item's row as item.get serves it, and every chat line, case ignored; the answer is that row, never the box or
+      // the chat. RANKED, NOT FILTERED (goal/G18.5): every listed item goes in with its probability; the bucket orders them.
+      const row = facts(s, it);
+      out.push({ probability: itemProbability(rawText, row, it.chat), json: JSON.stringify(row) });
     });
   });
   return out;
@@ -3079,24 +3089,24 @@ appServer.serve(withPlugins({
   // the agents. Each answers {items: [{key, label}], more}, ranked by text, newest first among equals.
   'item.suites.search': tableSearch({
     request: { id: '' },
-    rows: function (a, st) { const it = itemFor(st, a); return (it.suites || []).map(function (p, i) { return { key: String(p), fields: { path: String(p) }, label: { path: String(p), pos: i } }; }); },
+    rows: function (a, st) { const it = itemFor(st, a); return (it.suites || []).map(function (p, i) { return { key: String(p), label: { path: String(p), pos: i } }; }); },
   }),
   'item.checks.search': tableSearch({
     request: { id: '' },
     rows: function (a, st) {
       const it = itemFor(st, a);
-      return (it.checks || []).slice().reverse().map(function (c) { return { key: String(c.number), fields: { number: String(c.number), kind: String(c.kind || ''), words: String(c.words || ''), state: String(c.state || '') }, label: c }; });
+      return (it.checks || []).slice().reverse().map(function (c) { return { key: String(c.number), label: c }; });
     },
   }),
   'item.files.search': tableSearch({
     request: { id: '' },
-    rows: function (a, st) { const it = itemFor(st, a); return filesOf(it).map(function (e) { return { key: e.by + '|' + e.path, fields: { path: e.path, by: e.by }, label: e }; }); },
+    rows: function (a, st) { const it = itemFor(st, a); return filesOf(it).map(function (e) { return { key: e.by + '|' + e.path, label: e }; }); },
   }),
   'item.claims.search': tableSearch({
     request: { id: '' },
     rows: function (a, st) {
       const it = itemFor(st, a);
-      return Object.keys(it.claims || {}).map(function (label) { const at = String((it.claimAt && it.claimAt[label]) || ''); return { key: label, fields: { by: label }, label: { by: label, at: at } }; })
+      return Object.keys(it.claims || {}).map(function (label) { const at = String((it.claimAt && it.claimAt[label]) || ''); return { key: label, label: { by: label, at: at } }; })
         .sort(function (x, y) { return x.label.at < y.label.at ? 1 : x.label.at > y.label.at ? -1 : 0; });
     },
   }),
@@ -3105,7 +3115,7 @@ appServer.serve(withPlugins({
     rows: function (a, st) {
       const it = itemFor(st, a);
       const k = numbersOf(it.id);
-      return boxVersionsOf.all(k[0], k[1]).map(function (r) { return { key: String(r.version), fields: { text: String(r.text) }, label: { version: r.version, by: String(r.creator), at: String(r.at), text: String(r.text) } }; });
+      return boxVersionsOf.all(k[0], k[1]).map(function (r) { return { key: String(r.version), label: { version: r.version, by: String(r.creator), at: String(r.at), text: String(r.text) } }; });
     },
   }),
   'agents.search': tableSearch({
@@ -3113,7 +3123,7 @@ appServer.serve(withPlugins({
       return Object.keys(st.agentKey).map(function (label) {
         const key = st.agentKey[label];
         const name = nameOfKey(st, key) || '';
-        return { key: label, at: String(st.agentsAt[label] || ''), fields: { label: label, name: name }, label: { label: label, key: key, name: name, at: String(st.agentsAt[label] || ''), word: String(st.agentWord[label] || '') } };
+        return { key: label, at: String(st.agentsAt[label] || ''), label: { label: label, key: key, name: name, at: String(st.agentsAt[label] || ''), word: String(st.agentWord[label] || '') } };
       }).sort(function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : 0; });
     },
   }),
@@ -3692,7 +3702,7 @@ appServer.serve(withPlugins({
       return newestRules.all().filter(function (r) {
         if (types.length && types.indexOf(r.type) === -1) return false;
         return !(statuses.length && statuses.indexOf(r.status) === -1);
-      }).map(function (r) { return { key: r.key, fields: { label: String(r.label), text: String(r.text || '') }, label: { label: r.label, type: r.type, status: r.status } }; });
+      }).map(function (r) { return { key: r.key, row: ruleRow(String(r.key)) || r, label: { label: r.label, type: r.type, status: r.status } }; });
     },
   }),
   'agent.state': {

@@ -33,7 +33,8 @@ function rank(rows, q, slots) {
     // A tie keeps the order the rows came in: the earlier one a hair higher.
     var tie = 1e-9 / (1 + i);
     if (anyone) { bucket.seatFor(0.5 + tie, row); return; }
-    var p = Number(probabilityStringObjectMatch(words, { name: labelOf(row) })) || 0;
+    // THE ROW AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served"): the whole row the answer carries, not its label alone.
+    var p = Number(probabilityStringObjectMatch(words, row)) || 0;
     if (p > 0) bucket.seatFor(Math.min(1, p * (1 - 1e-9) + tie), row);
   });
   var out = bucket.serialize();

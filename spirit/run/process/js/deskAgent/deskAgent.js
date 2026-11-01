@@ -1082,7 +1082,8 @@ function modelsSearch(text, marks) {
       const x = all[i];
       if (!x || x.loaded || !x.id) continue;
       if (!wanted.every(function (k) { return MARKS[k](x); })) continue;
-      bucket.seatFor(query ? probabilityStringObjectMatch(query, { id: String(x.id), quant: String(x.quant || '') }) : 0, x);
+      // THE MODEL AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served through a single-row \"get\""): every field of it, not its id and quant alone.
+      bucket.seatFor(query ? probabilityStringObjectMatch(query, x) : 0, x);
     }
     const got = room > 0 ? bucket.serialize(null, room) : { items: [], more: all.length > 0 };
     answer.models = got.items;

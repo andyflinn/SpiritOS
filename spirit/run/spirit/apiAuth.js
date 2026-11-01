@@ -188,10 +188,13 @@ function createApiAuth(opts) {
       let i = 0;
       for (const r of store().all()) {
         i += 1;
-        const score = words ? probabilityStringObjectMatch(words, { name: r.label, path: r.path.split('.').join(' ') }) : 0;
+        // THE ROW AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served"): its name,
+        // its key and its path, the path's dots splitting its words as any separator does.
+        const served = { name: r.label, key: r.key, path: r.path };
+        const score = words ? probabilityStringObjectMatch(words, served) : 0;
         if (words && !(score > 0)) continue;
         bucket.seatFor(words ? score * (1 - 1e-9) + 1e-9 / (1 + i) : 1 / (1 + i),
-          { key: r.key + '\n' + r.path, label: JSON.stringify({ name: r.label, key: r.key, path: r.path }) });
+          { key: r.key + '\n' + r.path, label: JSON.stringify(served) });
       }
       const res = bucket.serialize(null, SEARCH_ROOM);
       return { ok: true, items: res.items, more: !!res.more };

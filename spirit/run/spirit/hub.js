@@ -307,7 +307,8 @@ function searchPeople(people, q, filters) {
     if (wanted.some(function (k) { return p[k] !== true; })) continue;
     if (seen >= MAX_SEARCHED_PEOPLE) { cut = true; break; }
     seen += 1;
-    var score = words ? probabilityStringObjectMatch(words, { name: JSON.parse(contactLabel(p)).name, publicLabel: String(p.publicLabel || ''), myLabel: String(p.myLabel || ''), url: String(p.url || '') }) : 0;
+    // THE PERSON AS contact.get SERVES THEM (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served through a single-row \"get\""): the whole row, not four names picked from it.
+    var score = words ? probabilityStringObjectMatch(words, p) : 0;
     if (words && !(score > 0)) continue;
     bucket.seatFor(score, { key: p.publicKey, label: contactLabel(p) });
   }
