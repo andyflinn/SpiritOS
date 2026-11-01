@@ -12,8 +12,8 @@
 //     api     the app's shell api
 //   Made without its ID table or its grants table, it is refused: it never falls back to one caller's setting.
 //
-// One panel: the one-row grant form, "grant" [ID selector] [bundle selector] [Grant] (goal/G41.13); below it the filter
-// line, [ID filter] [family selector] [deprecated]; then the grant list (./grantSelector/listElement.js), the one box that
+// One panel: the one-row grant form, "grant" [ID selector] [bundle selector] [Grant] (goal/G41.13); then the grant list
+// (its search's 🪣 row the ID filter and the family selector, its 🗜 row deprecated) (./grantSelector/listElement.js), the one box that
 // fills (rule/16). Deprecated is a REPORT read from the node's api tree (a server is away or the verb is gone, and the
 // grant waits for the owner, intact: suspend/repair, G1.4), following the stream, its filter off by default.
 // A BUNDLE IS NOT GRANTED BY REFERENCE (G41.13, box v7): the node's bundles are the one dictionary both kinds of grant are
@@ -50,7 +50,6 @@
     var filterFamily = null;
     var said = '';            // what the panel says a press did
     var saidError = false;
-    var showDeprecated = false;   // the deprecated filter's button, off by default
     var gone = false;
     function esc(text) { return api.escapeHtml(String(text == null ? '' : text)); }
     function refusal(body) { return (body && (body.error || body.code)) || 'refused'; }
@@ -67,12 +66,14 @@
     function serves(p) { return !tree || window.spirit.apiTreeIndex.serves(tree, p); }
     function redraw() { if (list) list.list.redraw(); }
 
-    // THE LIST'S FILTERS NARROW IT (goal/G41.13): the ID chosen, read from the grants table's own key field, the family
-    // chosen and its verb; one left unchosen means all. No button: the selectors are the filters.
-    var filters = [
-      { name: 'id', when: function () { return false; },
+    // THE LIST'S SELECTORS NARROW IT (goal/G41.13): the ID chosen, read from the grants table's own key field, the family
+    // chosen and its verb; one left unchosen means all. They stand in the search's own 🪣 row (Andy, on G41.26: "any
+    // searchSelector in our system must go into the probabilitySearch's selectorRow, so that the user-can see, which
+    // elements belong to the search.").
+    function selectors() {
+      return [{ name: 'id', element: filterId,
         test: function (row) { var id = filterId ? filterId.value : ''; return !id || (row && row[g.key] === id) ? 1 : 0; } },
-      { name: 'family', when: function () { return false; },
+      { name: 'family', element: filterFamily,
         test: function (row) {
           var family = filterFamily ? filterFamily.family : '';
           var verb = filterFamily ? filterFamily.verb : '';
@@ -82,14 +83,15 @@
           var app = dot === -1 ? p : p.slice(0, dot);
           if (app !== family) return 0;
           return !verb || p === app + '.' + verb ? 1 : 0;
-        } },
+        } }];
+    }
+    var filters = [
       // A DEPRECATED FILTER, OFF BY DEFAULT (Andy: "your allowed to keep the deprecated, BUT you must provide a filter for
       // deprecated that is OFF by default, BUT KNOW THAT THE DEPRECATED IS COMPLETELY INACCURATE....."): off, a grant no
-      // server here serves today is left out; on, it is listed, marked. Its button stands on the filter line with the
-      // others (Andy: "put the fucking deprecated filter on the same fucking line as all other filters"), so the list
-      // draws none of its own.
-      { name: 'deprecated', word: 'deprecated', toggle: true, when: function () { return false; },
-        test: function (row, on) { return on === true || showDeprecated || serves(String((row && row.path) || '')) ? 1 : 0; } },
+      // server here serves today is left out; on, it is listed, marked. Its button stands on the search's own 🗜 row (Andy:
+      // "put the fucking deprecated filter on the same fucking line as all other filters").
+      { name: 'deprecated', word: 'deprecated', toggle: true,
+        test: function (row, on) { return on === true || serves(String((row && row.path) || '')) ? 1 : 0; } },
     ];
 
     // DEPRECATED FOLLOWS THE STREAM (Andy: "so show deprecated, but CHANGE AS SOON AS STREMED DATA SAYS OTHERWISE."): a
@@ -209,22 +211,9 @@
             '<button type="button" data-grants="grant">Grant</button>' +
           '</div>' +
           '<div data-grants="said" class="' + (saidError ? 'job-refusal' : 'job-manifest-note') + '">' + esc(said) + '</div>' +
-          '<div data-grants="filters" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em">' +
-            '<span data-grants="filter-id"></span><span data-grants="filter-family"></span>' +
-            // Drawn as the search element draws a toggle: bold and outlined when on.
-            '<button type="button" data-grants="deprecated" aria-pressed="' + (showDeprecated ? 'true' : 'false') + '" style="' +
-              (showDeprecated ? 'font-weight:bold;outline:1px solid currentColor' : 'opacity:0.6') + '">deprecated</button>' +
-          '</div>' +
         '</div>';
       host.querySelector('[data-grants="id"]').appendChild(idSel);
       host.querySelector('[data-grants="bundle"]').appendChild(bundleSel);
-      host.querySelector('[data-grants="filter-id"]').appendChild(filterId);
-      host.querySelector('[data-grants="filter-family"]').appendChild(filterFamily);
-      host.querySelector('[data-grants="deprecated"]').addEventListener('click', function () {
-        showDeprecated = !showDeprecated;
-        paint();
-        redraw();
-      });
       // GRANT WAITS AS A BUSY BUTTON (goal/G41.23; Andy, goal/G41.18: "for all buttons that wait for potentially long
       // requests"): greyed and turning until every grant of the bundle is answered.
       var grantButton = host.querySelector('[data-grants="grant"]');
@@ -245,13 +234,12 @@
       bundleSel = P.bundleSelector.create(slot(), { placeholder: 'choose a bundle…' });
       filterId = P.contactSelector.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
       filterFamily = P.apiFamilySelector.create(slot(), { all: 'every family' });
-      [filterId, filterFamily].forEach(function (f) { f.addEventListener('change', redraw); });
       paint();
       // The servers followed first, so the jobs the page already holds are taken as the tree about to be read.
       followServers();
       return loadTree().then(function () {
         if (gone) return;
-        list = P.grantList.create(listHost, { grants: g, filters: filters, serves: serves, api: api });
+        list = P.grantList.create(listHost, { grants: g, filters: filters, selectors: selectors(), serves: serves, api: api });
       });
     });
 

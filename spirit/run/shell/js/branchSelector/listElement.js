@@ -3,7 +3,8 @@
 // featuring a pane mode and a dropdown mode for displaying and selecting branch rows", "the branchSelector element will
 // use the standard apiFamilySelector and apiVerbSelector elements as pickers for family and verb search filters", and
 // "apiFamiliySelector.js will use apiVerbSelector as part of itself". So one family selector, its verb half with it,
-// stands above the list as its filter; the verb half's hiding until a family is chosen is the family selector's own.
+// is the list's filter, in its search's own 🪣 row (Andy, on G41.26: "any searchSelector in our system must go into the
+// probabilitySearch's selectorRow, so that the user-can see, which elements belong to the search."); the verb half's hiding until a family is chosen is the family selector's own.
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
 //     opts.bundle    the bundle whose branches it lists (auth.branch's bundle filter); none: every bundle's
@@ -29,11 +30,8 @@
     var o = opts || {};
     var E = window.spirit.elements;
     var list = null;
-    // THE FILTER: the family selector, above the list.
-    var filters = document.createElement('div');
-    filters.className = 'branch-list-filters';
-    var family = E.apiFamilySelector.create(filters, { all: 'every family' });
-    host.appendChild(filters);
+    // THE FILTER: the family selector, made here and mounted by the search in its 🪣 row.
+    var family = E.apiFamilySelector.create(document.createElement('span'), { all: 'every family' });
     var box = document.createElement('div');
     box.className = 'fill';
     host.appendChild(box);
@@ -66,11 +64,13 @@
       // Matched on its family and verb alone.
       matched: function (row) { return { family: String((row && row.family) || ''), verb: String((row && row.verb) || '') }; },
       // THE VIEW HOLDS EVERY BRANCH THE PAGE KNOWS: this list shows its own bundle's, narrowed by the family selector, as
-      // its search asks the node. No button: they always hold.
+      // its search asks the node. The bundle's has no button: it always holds.
       filters: [
         { name: 'bundle', when: function () { return false; },
           test: function (row) { return !o.bundle || (row && Number(row.bundle) === Number(o.bundle)) ? 1 : 0; } },
-        { name: 'family', when: function () { return false; },
+      ],
+      selectors: [
+        { name: 'family', element: family,
           test: function (row) {
             if (!family.family) return 1;
             if (!row || row.family !== family.family) return 0;

@@ -31,6 +31,8 @@
 //                              button that picks nothing, its words the field's while nothing is chosen) and name(row)
 //                              are the dropdown's
 //   filters, matched, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch
+//   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
+//                              element's change redraws the list, and its test narrows it as a filter's does
 // }) -> { value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
 //
 // probabilitySearch.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
@@ -40,7 +42,7 @@
   // and object matchers and the probability bucket, through spirit.require. Asked as this file runs, so whoever requires
   // the list is answered once they are in.
   if (window.spirit && typeof window.spirit.require === 'function') {
-    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js'].forEach(function (p) { window.spirit.require(p); });
+    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/icon.js'].forEach(function (p) { window.spirit.require(p); });
   }
   function P() { return window.spirit.probability || {}; }
   function esc(s) {
@@ -124,6 +126,14 @@
     var pre = 'probsearch-' + (++made) + '-';
     var columns = Array.isArray(o.columns) ? o.columns : [];
     var filters = Array.isArray(o.filters) ? o.filters : [];
+    // EVERY SEARCH SELECTOR IN THE SEARCH'S OWN ROW (Andy, on G41.26: "so the client probabilitySearch needs to provide a
+    // selectorRow, on top of the filter row. the selectorRow must start with a 🪣icon, and be hidden, if no selectors are
+    // present.", and "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
+    // user-can see, which elements belong to the search."): each narrows the list as a filter with no buttons does.
+    var selectors = (Array.isArray(o.selectors) ? o.selectors : []).filter(function (s) { return s && s.element; });
+    filters = filters.concat(selectors.map(function (s) {
+      return { name: s.name, when: function () { return false; }, test: function (row) { return typeof s.test === 'function' ? s.test(row) : 1; } };
+    }));
     var values = Object.create(null);
     // A TOGGLE (goal/G30.19) is one button, { name, word, icon, toggle: true }, its value false until pressed.
     filters.forEach(function (f) { values[f.name] = f.toggle ? false : f.multi ? {} : (Array.isArray(f.choices) && f.choices.length ? f.choices[0].value : ''); });
@@ -156,8 +166,21 @@
     // it must start wit a '🗜' icon, and the search input row must start with a '🔎' icon"); BOTH IN ONE TRANSPARENT BUBBLE
     // ("the filer row and search-input row must be set in a transparent bubble, with a border that has the same color as
     // the type-face", then "NO! the filtel row and the search-input row int eh SAME bubble"): its border currentColor.
-    // No filter shown, no filter row and no 🗜: the bubble holds the search row alone.
+    // No filter shown, no filter row and no 🗜: the bubble holds the search row alone. The 🪣 row of selectors stands on
+    // top of it, drawn only when there are selectors.
+    // EACH ROW'S ICON IS THE ICON ELEMENT (Andy: "why do the icons in the probabilitySearch row have different width's? do
+    // they not use the icon element? I'd like it, if the controls in the search bubble look better aligned.", then "do it
+    // for all probabilitySearch object in the new face-shell."): a square of 1em, the row's controls 1em after it, so
+    // every row's first control starts at the same place. The row is text, so the icon is written as the markup it made.
     var BUBBLE = 'background:transparent;border:1px solid currentColor;border-radius:1em;padding:0.3em 0.6em;';
+    var ROW = 'display:flex;flex-wrap:wrap;align-items:center;gap:1em;';
+    function iconHtml(glyph) {
+      var I = window.spirit.elements && window.spirit.elements.icon;
+      if (!I || typeof I.create !== 'function' || typeof document === 'undefined') return '<span>' + esc(glyph) + '</span>';
+      var hold = document.createElement('span');
+      I.create(hold, { glyph: glyph });
+      return hold.innerHTML;
+    }
     function filterHtml() {
       var row = filters.filter(function (f) { return typeof f.when !== 'function' || !!f.when(cachedRows()); }).map(function (f) {
         return '<span data-filter="' + esc(f.name) + '">' + choicesOf(f).map(function (c) {
@@ -166,16 +189,18 @@
             (on ? 'font-weight:bold;outline:1px solid currentColor' : 'opacity:0.6') + '">' + esc((c.icon ? c.icon + ' ' : '') + (c.word || '')) + '</button>';
         }).join('') + '</span>';
       }).join('');
-      return row ? '<div style="margin-bottom:0.5em"><span style="margin-right:1em">🗜</span>' + row + '</div>' : '';
+      return row ? '<div style="margin-bottom:0.5em;' + ROW + '">' + iconHtml('🗜') + row + '</div>' : '';
     }
     var paneHtml =
       // ITS OWN COLUMN (goal/G40.8): the box it is given is its mounter's, sized by it; inside, the filters and the search
       // row are fixed rows and the list takes the rest. A dropdown's pane is the same, popped up.
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0;flex:1 1 auto">' +
       '<div style="margin-top:1em;' + BUBBLE + '">' +
+      (selectors.length ? '<div id="' + pre + 'selectors" style="margin-bottom:0.5em;' + ROW + '">' + iconHtml('🪣') +
+        selectors.map(function (s, i) { return '<span id="' + pre + 'selector' + i + '"></span>'; }).join('') + '</div>' : '') +
       '<div id="' + pre + 'filters">' + filterHtml() + '</div>' +
-      '<div style="display:flex;gap:1em;align-items:center">' +
-        '<span>🔎</span>' +
+      '<div style="' + ROW + 'flex-wrap:nowrap">' +
+        iconHtml('🔎') +
         '<span style="position:relative;display:inline-block;flex:1">' +
           '<input id="' + pre + 'text" type="text" autocomplete="off" style="width:100%;padding-right:2em;box-sizing:border-box">' +
           '<button id="' + pre + 'clear" type="button" title="Clear" style="position:absolute;right:0.3em;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer">✕</button>' +
@@ -197,6 +222,13 @@
         '</span>'
       : paneHtml;
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
+    // The selectors mounted in their row; a pick in any of them redraws the list.
+    function onSelector() { draw(); }
+    selectors.forEach(function (s, i) {
+      var slot = el('selector' + i);
+      if (slot) slot.appendChild(s.element);
+      if (typeof s.element.addEventListener === 'function') s.element.addEventListener('change', onSelector);
+    });
 
     // THE MATCHED PARTS MARKED, by the one marking rule the text view shares (window.spirit.matchRanges, below).
     function mark(text) {
@@ -438,8 +470,11 @@
         onKeys(e);
       });
     }
+    // A press or a key inside the 🪣 row is its selector's own, never this list's.
+    function inSelectors(t) { var row = selectors.length ? el('selectors') : null; return !!(row && t && typeof row.contains === 'function' && row.contains(t)); }
     container.addEventListener('keydown', function (e) {
       var stop = function () { if (typeof e.preventDefault === 'function') e.preventDefault(); };
+      if (inSelectors(e && e.target)) return;
       if (onKeys(e)) return;
       if (e.key === 'Escape') { setOpen(false); return; }
       if (e.key === 'Enter' && !e.repeat) {
@@ -451,7 +486,7 @@
     });
     container.addEventListener('click', function (e) {
       var t = e && e.target;
-      if (!t) return;
+      if (!t || inSelectors(t)) return;
       if (t.id === pre + 'field') { setOpen(!open); return; }
       if (t.id === pre + 'none') { currentKey = null; choose(null, ''); return; }
       if (t.id === pre + 'clear') { var box = el('text'); if (box) box.value = ''; typed(); return; }
@@ -494,6 +529,7 @@
     self.sort = setSort;
     self.destroy = function () {
       live = false;
+      selectors.forEach(function (s) { if (typeof s.element.removeEventListener === 'function') s.element.removeEventListener('change', onSelector); });
       if (typeof off === 'function') off();
       if (typeof unwatch === 'function') unwatch();
       if (dropdown && typeof document !== 'undefined' && typeof document.removeEventListener === 'function') document.removeEventListener('click', outside);

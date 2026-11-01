@@ -7,6 +7,7 @@
 //     opts.grants    the grants table, required: { branch, key, label, search(text) -> { items, more }, revoke, stream },
 //                    handed on to each row as it is
 //     opts.filters   the page's filters, handed to probabilitySearch as they are
+//     opts.selectors the page's selectors, handed to probabilitySearch as they are, drawn in its 🪣 row
 //     opts.serves(path)  handed to each row: a path no server serves today reads deprecated
 //     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
@@ -54,6 +55,7 @@
       // Matched on whose grant it is, the table's label field, and the words of its path, never the id.
       matched: function (row) { return { name: String((row && row[g.label]) || ''), path: String((row && row.path) || '').split('.').join(' ') }; },
       filters: o.filters,
+      selectors: o.selectors,
       empty: o.empty || 'No grant matches.',
     });
     list.refresh();
