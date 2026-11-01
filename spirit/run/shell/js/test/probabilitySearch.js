@@ -32,7 +32,10 @@ const tick = function () { return new Promise(function (r) { setImmediate(r); })
 // ── the stubs ──────────────────────────────────────────────────────────────────────────────────────────────────────
 function node(id) {
   return { id: id, value: '', hidden: false, focused: 0, innerHTML: '', inside: true,
-    focus: function () { this.focused += 1; }, closest: function () { return null; }, getAttribute: function () { return null; } };
+    focus: function () { this.focused += 1; }, closest: function () { return null; }, getAttribute: function () { return null; },
+    // What is appended into it: a selector the search mounts (goal/G41.26, the 🪣 row).
+    kids: [], appendChild: function (k) { this.kids.push(k); k.parentNode = this; return k; },
+    insertBefore: function (k) { this.kids.push(k); k.parentNode = this; return k; } };
 }
 function container() {
   const nodes = {}; const heard = {}; let html = '';
@@ -398,6 +401,54 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   });
   ok(seen(c4b.get('filters').innerHTML) === '' && !/🗜/.test(seen(c4b.innerHTML)), 'with no filters there is no filter row in the bubble', 'filters: ' + short(c4b.get('filters').innerHTML));
   L4.destroy();
+
+  test.subHeading('create: the 🪣 row of selectors, on top of the bubble (goal/G41.26)');
+  // Andy, on G41.26: "so the client probabilitySearch needs to provide a selectorRow, on top of the filter row. the
+  // selectorRow must start with a\n🪣icon, and be hidden, if no selectors are present.", "any searchSelector in our
+  // system must go into the probabilitySearch's selectorRow, so that the user-can see, which elements belong to the
+  // search.", and "do it for all probabilitySearch object in the new face-shell. go." The shape (cw, on G41.26, under
+  // that go): selectors [{ name, element, test(row) }], each element a selector its mounter made, mounted in the 🪣 row;
+  // its change redraws the list and its test narrows it; a pick narrows the rows already fetched.
+  const selEl = function () { const heard = {}; return { tagName: 'SPAN', value: '', heard: heard,
+    addEventListener: function (t, fn) { (heard[t] = heard[t] || []).push(fn); }, removeEventListener: function () {},
+    fire: function (t) { (heard[t] || []).forEach(function (fn) { fn({ type: t, target: this }); }, this); } }; };
+  const s1 = selEl(); const s2 = selEl();
+  const c11 = container();
+  const A11 = api();
+  PS.create(c11, { api: A11, server: 's', verb: 'v', columns: [{ field: 'name' }],
+    rows: function () { return [{ key: 'a', name: 'a', who: 'ann', kind: 'x' }, { key: 'b', name: 'b', who: 'bob', kind: 'y' }]; },
+    selectors: [{ name: 'who', element: s1, test: function (row) { return !s1.value || row.who === s1.value ? 1 : 0; } },
+      { name: 'kind', element: s2, test: function (row) { return !s2.value || row.kind === s2.value ? 1 : 0; } }],
+    filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function () { return 1; } }] });
+  await tick();
+  const p11 = c11.pre();
+  const hostOf = function (e) { return e && e.parentNode && typeof e.parentNode.id === 'string' ? e.parentNode.id : ''; };
+  const h11 = c11.innerHTML;
+  const at = function (id) { return id ? h11.indexOf('id="' + id + '"') : -1; };
+  ok(!!hostOf(s1) && hostOf(s1) === hostOf(s2) && at(hostOf(s1)) !== -1, 'each selector it is handed is mounted, both in one row of the search', 'mounted in: ' + short([hostOf(s1), hostOf(s2)]));
+  ok(hostOf(s1) && (c11.nodes[hostOf(s1)].kids || []).indexOf(s1) < (c11.nodes[hostOf(s1)].kids || []).indexOf(s2), 'in the order they are handed', 'order: ' + short(((c11.nodes[hostOf(s1)] || {}).kids || []).map(function (k) { return k === s1 ? 's1' : k === s2 ? 's2' : '?'; })));
+  const b11 = bubbleOf(c11);
+  ok(!!b11 && b11.part.indexOf('id="' + hostOf(s1) + '"') !== -1, 'the 🪣 row stands in the bubble', 'bubble: ' + short(b11 && b11.open));
+  ok(at(hostOf(s1)) !== -1 && at(hostOf(s1)) < at(p11 + 'filters') && at(p11 + 'filters') < at(p11 + 'text'), 'on top of the bubble: the 🪣 row, then the 🗜 row, then the 🔎 row', 'at ' + short([at(hostOf(s1)), at(p11 + 'filters'), at(p11 + 'text')]));
+  const u11 = upToInput(c11);
+  ok(u11 === '🪣🗜Mine🔎', 'its row starts with 🪣, before its selectors', 'seen up to the input: ' + JSON.stringify(u11));
+  ok(c11.shown().join() === 'a,b', 'no selector picked: every row', 'shown: ' + c11.shown());
+  const asked11 = A11.calls.length;
+  s1.value = 'bob'; s1.fire('change');
+  ok(c11.shown().join() === 'b', 'a selector\'s change redraws the list, its test narrowing it', 'shown: ' + c11.shown());
+  ok(A11.calls.length === asked11, 'and narrows the rows already fetched, asking nothing', 'calls: ' + (A11.calls.length - asked11));
+  s2.value = 'x'; s2.fire('change');
+  ok(c11.shown().join() === '', 'every selector\'s test counts', 'shown: ' + c11.shown());
+  s1.value = ''; s1.fire('change');
+  ok(c11.shown().join() === 'a', 'and a selector cleared lets its rows back', 'shown: ' + c11.shown());
+  ok(!/🪣/.test(seen(c4.innerHTML)) && !/🪣/.test(seen(c4b.innerHTML)), 'with no selectors there is no 🪣 row', 'seen: ' + short(seen(c4.innerHTML)));
+  const c12 = container();
+  const s3 = selEl();
+  PS.create(c12, { face: 'dropdown', placeholder: 'pick', columns: [{ field: 'name' }], rows: function () { return [{ key: 'a', name: 'a' }]; },
+    selectors: [{ name: 'who', element: s3, test: function () { return 1; } }] });
+  await tick();
+  const u12 = upToInput(c12);
+  ok(!!hostOf(s3) && u12 !== null && /^[^🪣🔎]*🪣🔎$/u.test(u12), 'a dropdown\'s pane alike: 🪣 and its selector, no filter row, then 🔎', 'seen up to the input: ' + JSON.stringify(u12) + ', mounted in ' + short(hostOf(s3)));
 
   test.subHeading('create: details in a pane, and fold');
   const c5 = container();

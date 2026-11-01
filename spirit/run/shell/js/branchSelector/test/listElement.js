@@ -101,8 +101,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // \"(ALL)\"", and since: "apiFamiliySelector.js will use apiVerbSelector as part of itself". The verb half's hiding
   // is the family selector's own (its test).
   const fam = families[0];
-  ok(!!fam && within(host, fam) && families.length === 1 && fam.container !== host && !within(fam.container, l.host),
-    'it draws one family selector in its host, apiFamilySelector.create(a filter row of its own, above the list)', 'families ' + families.length + ', own row ' + !!(fam && fam.container !== host));
+  // goal/G41.26, Andy: "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
+  // user-can see, which elements belong to the search." The shape (cw, under his go): the branch list's family selector
+  // moves into the 🪣 row, handed to the search; no filter row of its own above the list.
+  const sel = Array.isArray(l.o.selectors) ? l.o.selectors : [];
+  ok(!!fam && families.length === 1 && sel.length === 1 && sel[0].element === fam && !!sel[0].name && typeof sel[0].test === 'function',
+    'it makes one family selector and hands it to the search, for its 🪣 row', 'families ' + families.length + ', selectors ' + short(sel.map(function (x) { return { name: x.name, fam: x.element === fam }; })));
+  ok(!host.kids.some(function (k) { return k !== l.host && !within(k, l.host) && (k === fam.container || within(k, fam)); }), 'no filter row of its own above the list', 'host holds: ' + short(host.kids.map(function (k) { return k.className || k.tag; })));
+  ok(!!fam && sel[0] && (fam.family = 'desk', fam.verb = '', sel[0].test({ family: 'files', verb: '' }) === 0 && sel[0].test({ family: 'desk', verb: 'chat.add' }) === 1) && (fam.family = '', sel[0].test({ family: 'files' }) === 1),
+    'its test narrows by the family and verb chosen, every row when none is', 'test: ' + short(sel[0] && 'given'));
   if (!fam) return;
   asked.length = 0;
   await o.api.verb('auth.branch', o.args('', {}));

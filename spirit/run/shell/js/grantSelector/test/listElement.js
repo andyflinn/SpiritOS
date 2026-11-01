@@ -60,7 +60,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const host = {};
   const filters = [{ name: 'id', test: function () { return 1; } }];
   const serves = function () { return true; };
-  const made = E.grantList.create(host, { grants: AGENT, filters: filters, serves: serves });
+  // goal/G41.26: the page's selectors, for the search's 🪣 row (Andy: "any searchSelector in our system must go into the
+  // probabilitySearch's selectorRow").
+  const selectors = [{ name: 'id', element: { addEventListener: function () {} }, test: function () { return 1; } }];
+  const made = E.grantList.create(host, { grants: AGENT, filters: filters, selectors: selectors, serves: serves });
   await settle();
   const l = lists[0];
   ok(!!l && l.host === host && l.refreshes === 1, 'it draws one probabilitySearch into its host, and fills it as soon as it is drawn', 'lists: ' + lists.length + ', refreshes ' + (l && l.refreshes));
@@ -76,6 +79,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const m = typeof o.matched === 'function' ? o.matched({ job_id: 'J1', path: 'fs.search', job: 'Night' }) : null;
   ok(m && m.name === 'Night' && /fs search/.test(m.path || '') && !('job_id' in m) && !('key' in m), 'a row is matched on its table\'s label field and the words of its path, never the id', 'matched: ' + short(m));
   ok(o.filters === filters, 'the filters the page hands it are its own', 'filters: ' + short(o.filters));
+  ok(o.selectors === selectors, 'and the selectors it hands it go to the search as they are, for its 🪣 row (goal/G41.26)', 'selectors: ' + short(o.selectors && o.selectors.length));
 
   test.subHeading('an empty list hears its first grant (goal/G41.16)');
   // Found by cw live: a list with no rows drawn never heard its first grant, its table's stream heard only once a row of

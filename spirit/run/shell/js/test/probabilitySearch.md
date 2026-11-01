@@ -96,6 +96,15 @@ draws and ranks.
   - The search row starts with 🔎, right before its input, with filters or without.
   - With no filters there is no 🗜.
   - A dropdown's pane alike.
+- **The 🪣 row of selectors** (goal/G41.26). Andy: *"so the client probabilitySearch needs to provide a selectorRow, on
+  top of the filter row. the selectorRow must start with a\n🪣icon, and be hidden, if no selectors are present."*,
+  *"any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the user-can see, which elements belong to the search."*, and *"do it for all probabilitySearch object in the new face-shell. go."*
+  `selectors: [{ name, element, test(row) }]`, each element a selector its mounter made (cw's shape, under that go).
+  - Each element is mounted in one row of the bubble, in the order handed, on top: 🪣 row, then 🗜, then 🔎.
+  - The row starts with 🪣. With no selectors there is no 🪣 row.
+  - A selector's `change` redraws the list, its test narrowing the rows already fetched, asking nothing; every
+    selector's test counts, and one cleared lets its rows back.
+  - A dropdown's pane alike.
 - **One bubble** (goal/G41.26). Andy: *"the filer row and search-input row must be set in a transparent bubble, with a
   border that has the same color as the type-face"*, *"NO! the filtel row and the search-input row int eh SAME
   bubble"*, drawn as `| 🗜 [filter1] [filter2] ...` over `| 🔎[search-input][search-button]`, and *"if there's no
@@ -145,3 +154,5 @@ draws and ranks.
 - A filter row without its 🗜, or a 🗜 with no filters; a search row with anything before its 🔎, or no 🔎; a redraw
   of the filters that drops the 🗜.
 - A bubble of another border colour, or not transparent; the two rows in two bubbles; the list inside the bubble.
+- A selector not mounted, or out of order, or below the filters; a 🪣 row with no selectors; a change that does not
+  redraw, or asks the server.

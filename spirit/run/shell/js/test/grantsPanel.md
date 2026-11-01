@@ -34,14 +34,16 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
   container of its own, then set in the line it stands in.
 - **The grant form, one row**: "grant", the ID selector, the bundle selector, the Grant button. Both ID selectors (the
   form's and the filter) search the ID table it was handed: its location, key and label.
-- **The filter line, below it**: the ID filter, the family selector and the deprecated button, in one row
-  (`data-grants="filters"`).
+- **Its selectors in the search's 🪣 row** (goal/G41.26; Andy: *"any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the user-can see, which elements belong to the search."*): it draws no filter line of its own and no
+  deprecated button; it hands the grant list `selectors`, the ID filter then the family selector, each with a name and
+  a test.
 - **The list**: one grant list, handed the grants table it was given, in a `fill` box; nothing above it fills.
-- **The filters narrow it**: nothing chosen, every grant passes; the ID filter by the grants table's own key field; the
-  family filter to that family's paths, and with a verb to that verb. A change redraws the list.
+- **The selectors narrow it**: nothing chosen, every grant passes; the ID filter by the grants table's own key field;
+  the family selector to that family's paths, and with a verb to that verb. Their change redraws the list, the search's
+  own work.
 - **Deprecated**: the tree is read through `spirit.tree()`, and the list told what it serves; a server job changed, the
-  tree is read again, so a grant reads deprecated only while no server serves it. Its filter is a toggle the list draws
-  no button for, off at first (a grant no server serves is left out); its button pressed, they are listed.
+  tree is read again, so a grant reads deprecated only while no server serves it. Its filter is a plain toggle of the search,
+  its button drawn in the 🗜 row, off at first (a grant no server serves is left out); on, they are listed.
 - **Grant**: with no bundle or no ID chosen, nothing is asked. Otherwise it reads the chosen bundle's branches
   (`auth.branch { op: 'search', bundle }`) and grants each through the grants table it was handed, `grant(id, path)`:
   `family.verb`, or the family alone for (ALL). Nothing is granted or read past that table. A path the ID holds already
@@ -63,8 +65,8 @@ its own folder (`./busyButton.md`); here a stand-in keeps what it is handed.
 - A grants table, ID table, verb or branch named in the panel itself; a panel made without its configuration that
   throws, keeps silent, or draws more than its note.
 - An ID selector that searches anything but the ID table it was handed.
-- The form out of order, the filters off their line, a fill box above the list.
+- The form out of order, a filter line of its own, its selectors not handed to the search, a fill box above the list.
 - A filter that narrows by a key field the grants table did not name, or does not redraw the list.
-- A deprecated mark that does not follow a server starting or ending, or its filter on at first.
+- A deprecated mark that does not follow a server starting or ending, or its filter on at first, or hidden from the search.
 - A grant made past the grants table it was handed, or of anything but the bundle's branches.
 - A Grant button that is no busyButton, or one whose request answers before the grants do.

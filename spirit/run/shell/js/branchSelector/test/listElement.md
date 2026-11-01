@@ -16,8 +16,10 @@ their data set"*).
 - It loads what it uses itself (rule/26): `shell/js/probabilitySearch.js`, `shell/js/branchSelector/rowElement.js` and
   `shell/js/apiFamilySelector.js`.
 - It registers `spirit.elements.branchList.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
-- It draws one family selector, `apiFamilySelector.create(its filter row, …)` (the shell's element shape, goal/G41.19),
-  above one probabilitySearch in `host`, and fills it as soon as it is drawn.
+- It makes one family selector, `apiFamilySelector.create(…)` (the shell's element shape, goal/G41.19), and hands it
+  to its one probabilitySearch in `host` as a selector, for the search's 🪣 row, with a name and a test narrowing by
+  the family and verb chosen; no filter row of its own (goal/G41.26; Andy: *"any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the user-can see, which elements belong to the search."*). It fills the search as soon as
+  it is drawn.
 - Its search asks `auth.branch { op: 'search', text, bundle, family, verb }` through the spirit object, the text
   trimmed, `bundle` from `opts.bundle`, and answers as a reply, `{ items, more }`.
 - `opts.columns` names the row's fields it shows, in order (the branch editor: `family`, `verb`, `delete`).

@@ -7,7 +7,7 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./listElement.js
 
 - It loads what it uses itself (rule/26): `shell/js/probabilitySearch.js` and `shell/js/grantSelector/rowElement.js`; no
   data script.
-- It names no table and no branch of its own. `grantList.create(host, { grants, filters, serves, api })`: `grants` the
+- It names no table and no branch of its own. `grantList.create(host, { grants, filters, selectors, serves, api })`: `grants` the
   caller's grants table, as the row element takes it, with `search(text)` beside it, answering `{ items, more }`. Made
   with no grants table, it is refused and draws nothing.
 - It draws one probabilitySearch pane into `host`, and fills it as soon as it is drawn.
@@ -18,7 +18,8 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./listElement.js
 - Its columns are `name` (whose grant), `path` and `revoke`, Revoke the rightmost. Each row is a `grantElement`, handed
   the same table and `serves`.
 - A row is matched on its table's label field and the words of its path, never its id.
-- `filters` are its own: the page hands them.
+- `filters` are its own: the page hands them. So are `selectors`, handed to the search as they are, for its 🪣 row
+  (goal/G41.26).
 - `refresh()` and `destroy()` reach the search element; `.list` is it.
 
 ## What its test must try to break

@@ -172,13 +172,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(formId && holder(formId) < holder(w.bundles[0]) && holder(w.bundles[0]) < grantAt && /\bgrant\b/i.test(text) && /<button[^>]*>\s*Grant\s*<\/button>/.test(box.innerHTML),
     'the row reads "grant" [ID] [bundle], then the Grant button', 'holders: id ' + (formId ? holder(formId) : 'none') + ', bundle ' + holder(w.bundles[0]) + ', Grant ' + grantAt);
 
-  test.subHeading('the filter line, below it: [ID] [family] [deprecated]');
+  test.subHeading('its selectors go into the search\'s 🪣 row: no filter line of its own (goal/G41.26)');
+  // Andy, on G41.26: "any searchSelector in our system must go into the probabilitySearch's selectorRow, so that the
+  // user-can see, which elements belong to the search.", and "do it for all probabilitySearch object in the new
+  // face-shell. go." The shape (cw, under that go): the grant panel hands its ID and family selectors to the 🪣 row, its
+  // own filter line goes, and its deprecated becomes a plain 🗜 toggle.
   const html = box.innerHTML;
-  const rowStart = html.indexOf('data-grants="filters"');
-  const row = rowStart === -1 ? '' : html.slice(rowStart, html.indexOf('</div>', rowStart));
-  ok(filterId && holder(filterId) > grantAt && holder(w.families[0]) > grantAt && /data-grants="filter-id"/.test(row) && /data-grants="filter-family"/.test(row) && /<button[^>]*data-grants="deprecated"/.test(row),
-    'one filter line under the form: the ID filter, the family selector and the deprecated button', 'filter row: ' + short(row));
-
+  ok(filterId && w.families[0] && !/data-grants="filters"/.test(html) && !/data-grants="deprecated"/.test(html),
+    'it draws no filter line of its own, and no deprecated button', 'panel: ' + short(html.slice(html.indexOf('data-grants="said"'))));
   test.subHeading('the list: the grant list, of the same grants table, the one box that fills (rule/16)');
   const gl = w.grantLists[0];
   ok(w.grantLists.length === 1 && gl && gl.opts.grants === cfg.grants && /\bfill\b/.test(String(gl.host.className || '')), 'one grant list, handed the grants table it was given, in a fill box', 'grant lists ' + w.grantLists.length + ', same table ' + (gl && gl.opts.grants === cfg.grants) + ', host ' + short(gl && gl.host.className));
@@ -186,13 +187,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const fills = box.nodes.filter(function (n) { return /\bfill\b/.test(n.className || ''); }).length + box.kids.filter(function (k) { return k !== gl.host && /\bfill\b/.test(k.className || ''); }).length;
   ok(fills === 0, 'nothing above the list fills: the heading, the form and the filters take their own height', fills + ' other fill box(es): ' + short(box.innerHTML.slice(0, 120)));
 
-  test.subHeading('the filters narrow it, by the grants table\'s own key field');
-  const pass = function (r) { return (gl.opts.filters || []).every(function (f) { return !f || f.name === 'deprecated' || typeof f.test !== 'function' || f.test(r) > 0; }); };
+  const sels = Array.isArray(gl.opts.selectors) ? gl.opts.selectors : [];
+  ok(sels.length === 2 && sels[0].element === filterId && sels[1].element === w.families[0] && sels.every(function (x) { return typeof x.test === 'function' && !!x.name; }),
+    'it hands the grant list its selectors: the ID filter, then the family selector, each named with its test', 'selectors: ' + short(sels.map(function (x) { return { name: x.name, id: x.element === filterId, family: x.element === w.families[0] }; })));
+
+  test.subHeading('the selectors narrow it, by the grants table\'s own key field');
+  const pass = function (r) { return sels.every(function (f) { return typeof f.test !== 'function' || f.test(r) > 0; }); };
   const NIGHT = { job_id: 'J1', path: 'fs.search', job: 'Night' };
   const DAY = { job_id: 'J2', path: 'gone.verb', job: 'Day' };
   ok(pass(NIGHT) && pass(DAY), 'nothing chosen: every grant passes', 'passed: ' + [pass(NIGHT), pass(DAY)].join(' '));
   filterId.value = 'J1'; filterId.fire('change', { target: filterId });
-  ok(pass(NIGHT) && !pass(DAY) && gl.redrawn > 0, 'the ID filter narrows to that ID\'s grants, read from the table\'s key field, and the list redraws', 'Night ' + pass(NIGHT) + ', Day ' + pass(DAY) + ', redrawn ' + gl.redrawn);
+  ok(pass(NIGHT) && !pass(DAY), 'the ID filter narrows to that ID\'s grants, read from the table\'s key field', 'Night ' + pass(NIGHT) + ', Day ' + pass(DAY));
   filterId.value = ''; filterId.fire('change', { target: filterId });
   const fam = w.families[0];
   fam.family = 'gone'; fam.value = 'gone'; fam.fire('change', { target: fam });
@@ -214,14 +219,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   D.take({ id: 'job_78', kind: 'server', type: 'gone', status: 'exited', module: 'process/js/gone', data: {} });
   await settle();
   const dep = (gl.opts.filters || []).filter(function (f) { return f && f.name === 'deprecated'; })[0];
-  ok(!!dep && dep.toggle === true && typeof dep.when === 'function' && dep.when([]) === false && dep.test(DAY, undefined) === 0 && dep.test(NIGHT, undefined) === 1,
-    'the deprecated filter is a toggle the list draws no button for, off at first: a grant no server serves is left out', 'deprecated: ' + short(dep && { off: dep.test(DAY, undefined), served: dep.test(NIGHT, undefined) }));
-  const btn = box.querySelector('[data-grants="deprecated"]');
-  if (btn) btn.fire('click', { target: btn });
-  await settle();
-  ok(dep && dep.test(DAY, undefined) === 1, 'its button pressed, the deprecated grants are listed', 'Day ' + (dep && dep.test(DAY, undefined)));
-  const btn2 = box.querySelector('[data-grants="deprecated"]');
-  if (btn2) btn2.fire('click', { target: btn2 });
+  ok(!!dep && dep.toggle === true && (typeof dep.when !== 'function' || dep.when([]) !== false) && dep.test(DAY, undefined) === 0 && dep.test(NIGHT, undefined) === 1,
+    'deprecated is a plain toggle of the search, its button drawn in the 🗜 row, off at first: a grant no server serves is left out', 'deprecated: ' + short(dep && { toggle: dep.toggle, hidden: typeof dep.when === 'function' && dep.when([]) === false, off: dep.test(DAY, undefined), served: dep.test(NIGHT, undefined) }));
+  ok(dep && dep.test(DAY, true) === 1, 'its toggle on, the deprecated grants are listed', 'Day ' + (dep && dep.test(DAY, true)));
 
   test.subHeading('Grant: the bundle\'s branches, through the grants table it was handed');
   const grantBtn = box.nodes.filter(function (n) { return /<button/.test(n.tag) && /grant/i.test(n.getAttribute('id') || n.getAttribute('data-action') || n.getAttribute('data-grants') || ''); })[0];
