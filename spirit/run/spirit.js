@@ -731,7 +731,7 @@
     // translator, which its type loads; a process follows a stream only through appServer's streamListener.
     // Through the one loader, as every component is; in a process its require runs at once, so spirit.data is there now.
     module.exports = self;
-    requireOne('spirit/spiritData.js').then(null, function () { /* a run tree without the cache runs uncached */ });
+    requireOne('spirit/spiritData.js');
     return;
   }
 
@@ -748,12 +748,12 @@
     started = tree().then(function (names) {
       return Promise.all(Object.keys(names || {}).map(function (fam) { return bindOwn(fam).then(null, function () { /* a family without an interface is not on the object */ }); }));
     }).then(function () {
-      // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each type through its own row
-      // element, which takes its type's stream itself (goal/G41.16: no data script). A page without it still runs,
-      // uncached. Asked once the page is parsed, so a page that loads it by tag keeps the one cache it made.
+      // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each family through its own
+      // clientCacheManager (goal/G41.28). Asked once the page is parsed, so a page that loads it by tag keeps the one
+      // cache it made.
       // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by
       // whoever draws with the file tree, the face's boot for its home among them.
-      return parsed().then(function () { return requireOne('spirit/spiritData.js'); }).then(null, function () { /* no cache served here */ });
+      return parsed().then(function () { return requireOne('spirit/spiritData.js'); });
     }).then(function () {
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.node.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.node as a

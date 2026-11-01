@@ -1,8 +1,8 @@
 // spirit/run/process/js/desk/family/clientCacheManager.js
 // WHAT THE DESK KNOWS OF ITS ROWS AT THE RECEIVING END, IN THE DESK'S OWN FOLDER (goal/G41.24; Andy: "where
 // clientCacheManager.js must work in both browser and an appServer that subscribes? and deskClient can get it form its own
-// disc?"). Two halves, one file: the cache rules, which were api.js's, and the translator, which was deskData.js in the
-// shell's shared folder. A page loads it from the node that served it (spirit.require); a subscribing appServer
+// disc?"). Two halves: the cache rules, which were api.js's and are now cacheRules.js beside this file (a node's alone),
+// and the translator. A page loads it from the node that served it (spirit.require); a subscribing appServer
 // requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.data.
 // It is read by peers through the family's FS verbs like anything in this folder: rules, never secrets.
 //

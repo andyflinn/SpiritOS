@@ -564,7 +564,7 @@ function deskWatchIcons(root) {
 }
 function deskLoadData() {
   if (typeof window === 'undefined' || (window.spirit && window.spirit.deskData)) return;
-  deskNeed(DESK_DATA).then(null, function () { /* the page runs uncached */ });
+  deskNeed(DESK_DATA);
 }
 // Everything kept of whole items is forgotten after a gap: what was published while the stream was down was never heard.
 function deskForgetKept() {
@@ -894,7 +894,7 @@ function deskMountList() {
   if (!el || deskList) return;
   deskLoadSearch(function () {
     // The List is drawn once the cache manager is there, its branch the List's (goal/G41.28).
-    deskNeed(DESK_DATA).then(null, function () { /* the page runs uncached */ }).then(function () {
+    deskNeed(DESK_DATA).then(function () {
     var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskList || !K) return;
@@ -1245,7 +1245,7 @@ function deskRulesSearch() {
     });
     deskRulesList.refresh();
   };
-  deskLoadSearch(function () { deskNeed(DESK_DATA).then(null, function () { /* the page runs uncached */ }).then(make); });
+  deskLoadSearch(function () { deskNeed(DESK_DATA).then(make); });
 }
 // One rule row's element: its four cells, the status drawn as its icon.
 var deskRuleIndex = null;
