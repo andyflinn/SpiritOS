@@ -1068,7 +1068,13 @@ spirit.shell.activateApp({
     // The desk server's changes, which the shell would otherwise hand only to Desk.
     if (typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
     // deskVerify's own run objects, for the run of this item (goal/G33.6).
-    if (typeof api.onPublished === 'function') api.onPublished(ddHearVerifier, 'deskVerify');
+    // The verifier's run, through spirit.data (goal/G41.28): its own cache manager keeps what it publishes.
+    ddNeed('/process/js/deskVerify/family/clientCacheManager.js').then(function () {
+      var V = window.spirit && window.spirit.verifyData;
+      if (!V) return;
+      V.watch(ddHearVerifier);
+      if (V.state()) ddHearVerifier(V.state());
+    }, function () { /* the run is not drawn */ });
     ddLoadRunStatus();
   },
 

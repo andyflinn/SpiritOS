@@ -37,10 +37,18 @@ spirit.shell.activateApp({
     // Every block a leading 1em (the desk's UI rules).
     fhBody.innerHTML = '<div class="stat-tile wide" style="margin-top:1em"><div class="label">' + fhEsc(suite) + ': ' + fhEsc(heading) + '</div>' +
       '<div id="fh-note" class="job-manifest-note">Reading its flips.</div><div id="fh-rows" style="margin-top:1em"></div></div>';
-    return fhAsk('search', { over: 'tests', suite: suite, heading: heading, history: 'yes', slim: 'yes' }).then(function (r) {
+    // THE FLIPS KEPT IN SPIRIT.DATA (goal/G41.28; Andy, the box: "If its rows are NOT cached in the proper place, with the
+    // shells one and only spirit.data object, then that must be fixed, too."): the answer is seated by the verifier's own
+    // cache manager (process/js/deskVerify/family/clientCacheManager.js), and the lines are drawn from what it keeps.
+    var V = null;
+    return Promise.resolve(spirit.require('process/js/deskVerify/family/clientCacheManager.js')).then(function () {
+      V = spirit.verifyData;
+      if (!V) throw new Error('the verifier\'s cache manager did not load');
+      return fhAsk('search', { over: 'tests', suite: suite, heading: heading, history: 'yes', slim: 'yes' });
+    }).then(function (r) {
       if (fhKey !== key) return;
-      var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean)
-        .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+      V.seatFlips(r);
+      var rows = V.flips(suite, heading).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
       var el = document.getElementById('fh-rows');
       var note = document.getElementById('fh-note');
       if (note) note.textContent = rows.length ? rows.length + ' flip(s)' + (r && r.more ? ', the newest ' + rows.length + ' of ' + (Number(r.total) || rows.length) : '') + ', newest first.' : 'No flips recorded yet.';

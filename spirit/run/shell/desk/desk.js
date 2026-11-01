@@ -527,6 +527,8 @@ var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
 // deskClient keeps it in node; loaded once by the app, as the shared element is. Since goal/G41.24 it is the desk
 // family's clientCacheManager.js, from the node that served this page.
 var DESK_DATA = '/process/js/desk/family/clientCacheManager.js';
+// The verifier's cache manager, its own family's (goal/G41.28).
+var DESK_VERIFY_DATA = '/process/js/deskVerify/family/clientCacheManager.js';
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21: "always look for existing code", and Andy, on the add-rule
 // dropdown that sometimes never appeared: "FIX IT"): spirit.require, never a script tag of its own. It loads a part once
 // for the page and answers when it has run.
@@ -1876,7 +1878,14 @@ spirit.shell.activateApp({
     deskLoad();
     // goal/G8.11: whether a verifier runs here decides whether the tab exists at all, so it is asked at mount.
     // goal/G8.12: and from then on it listens - deskVerify publishes every change of its run, so the tab never pulls.
-    if (typeof deskApi.onPublished === 'function') deskApi.onPublished(deskVerifyEvent, 'deskVerify');
+    // THROUGH spirit.data (goal/G41.28; Andy: "These rules apply to ALL clients. including deskVerify"): the verifier's
+    // own cache manager keeps what it publishes, and the tab follows that (spirit.verifyData.watch).
+    deskNeed(DESK_VERIFY_DATA).then(function () {
+      var V = window.spirit && window.spirit.verifyData;
+      if (!V) return;
+      V.watch(deskVerifyEvent);
+      if (V.state()) deskVerifyEvent(V.state());
+    }, function () { /* the tab asks the verifier as before */ });
     deskAskVerifier();
   },
 });

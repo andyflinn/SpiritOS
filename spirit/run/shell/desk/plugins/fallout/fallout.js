@@ -136,8 +136,12 @@
   function mountList() {
     var P = win.spirit.elements && win.spirit.elements.probabilitySearch;
     var el = document.getElementById('fallout-list');
-    if (!P || typeof P.create !== 'function' || !el || !ctx) return;
+    var V = win.spirit.verifyData;
+    if (!P || typeof P.create !== 'function' || !el || !ctx || !V) return;
     list = P.create(el, {
+      // A VIEW OF THE TESTS THE VERIFIER'S CACHE MANAGER KEEPS (goal/G41.28; Andy: "These rules apply to ALL clients.
+      // including deskVerify"): every answer seated in its tests branch, the list drawing what that holds.
+      data: V.testsBranch,
       api: { verb: ctx.verb, onPublished: ctx.onPublished },
       server: 'deskVerify',
       verb: 'search',
@@ -150,13 +154,17 @@
     });
     list.refresh();
     summary();
-    // The summary follows deskVerify too: each of its publishes counts again, through the same slot.
-    if (typeof ctx.onPublished === 'function') ctx.onPublished(function () { summary(); }, 'deskVerify');
+    // The summary follows deskVerify too, through its cache manager (spirit.verifyData.watch): each publish it keeps counts
+    // again, through the same slot.
+    V.watch(function () { summary(); });
   }
-  // THE PROBABILITY SEARCH, LOADED ON DEMAND through the one loader (goal/G41.11; rule/21): spirit.require, once per page.
+  // THE PROBABILITY SEARCH, LOADED ON DEMAND through the one loader (goal/G41.11; rule/21): spirit.require, once per page;
+  // and the verifier's cache manager, its own family's (goal/G41.28).
   function withList(done) {
-    if (win.spirit.elements && win.spirit.elements.probabilitySearch) { done(); return; }
-    Promise.resolve(win.spirit.require(String(LIST_SCRIPT).replace(/^\/+/, ''))).then(function () { done(); }, function () { /* no list */ });
+    if (win.spirit.elements && win.spirit.elements.probabilitySearch && win.spirit.verifyData) { done(); return; }
+    Promise.all([String(LIST_SCRIPT), 'process/js/deskVerify/family/clientCacheManager.js'].map(function (p) {
+      return Promise.resolve(win.spirit.require(String(p).replace(/^\/+/, '')));
+    })).then(function () { done(); }, function () { /* no list */ });
   }
 
   held.fallout = {
