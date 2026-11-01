@@ -31,12 +31,16 @@ module.exports = {
       return one.contact.search({ q: '*', relay: 'yes', keep: 'yes' });
     }
     return {
+      // Each relay got is kept by the family's own cache manager (goal/G41.28), spirit.relayData.
       status: function (name) {
+        var one = typeof spirit !== 'undefined' ? spirit : (typeof window !== 'undefined' ? window.spirit : null);
         return listed().then(function (s) {
           if (!s || !s.ok) return { status: 200, text: JSON.stringify(s || {}), body: s };
-          return Promise.all((s.items || []).map(function (i) {
+          return Promise.all([one.cacheManager('relay')].concat((s.items || []).map(function (i) {
             return call('get', { key: i.key }).then(function (g) { return g; }, function () { return null; });
-          })).then(function (gets) {
+          }))).then(function (got) {
+            var gets = got.slice(1);
+            gets.forEach(function (g) { one.relayData.keep(g); });
             var rows = [];
             var relayStatus = {};
             gets.forEach(function (g) {

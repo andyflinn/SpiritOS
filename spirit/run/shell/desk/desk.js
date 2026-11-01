@@ -1330,17 +1330,27 @@ function deskLoad() {
 //
 //   Andy: "how can i trust the copy mechanist when i cant see it working".
 // The backup server's status.get: its last check and last copy, marked red
-// when something was closed after the last check.
-var deskBackup = null;
+// when something was closed after the last check. Kept by the backup family's
+// cache manager (goal/G41.28), spirit.backupData; the line follows its watch.
+var DESK_BACKUP_DATA = '/process/js/backup/family/clientCacheManager.js';
+var deskBackupWatched = null;
+function deskBackupPaint() {
+  // Its own line alone once the page is drawn (goal/G27.9: one change, one element repainted).
+  var el = typeof document !== 'undefined' && document.getElementById ? document.getElementById('desk-backup') : null;
+  if (el && deskLoaded) el.innerHTML = deskBackupHtml(); else deskDraw();
+}
 function deskAskBackup() {
-  return Promise.resolve(deskApi.verb('backup.status.get', {})).then(function (r) {
-    deskBackup = r && r.status === 200 && r.body && r.body.ok !== false ? r.body : null;
-    // Its own line alone once the page is drawn (goal/G27.9: one change, one element repainted).
-    var el = typeof document !== 'undefined' && document.getElementById ? document.getElementById('desk-backup') : null;
-    if (el && deskLoaded) el.innerHTML = deskBackupHtml(); else deskDraw();
-  }, function () { deskBackup = null; });
+  return deskNeed(DESK_BACKUP_DATA).then(function () {
+    var B = window.spirit.backupData;
+    if (!deskBackupWatched) deskBackupWatched = B.watch(deskBackupPaint);
+    return Promise.resolve(deskApi.verb('backup.status.get', {})).then(function (r) {
+      B.keep(r && r.status === 200 ? r.body : null);
+    }, function () { B.keep(null); });
+  });
 }
 function deskBackupHtml() {
+  var B = typeof window !== 'undefined' && window.spirit && window.spirit.backupData;
+  var deskBackup = B ? B.status() : null;
   if (!deskBackup) return '';
   var stale = false;
   return '<div class="' + (stale ? 'job-start-error' : 'job-manifest-note') + '">Backup: last check ' +
@@ -1885,7 +1895,7 @@ spirit.shell.activateApp({
       if (!V) return;
       V.watch(deskVerifyEvent);
       if (V.state()) deskVerifyEvent(V.state());
-    }, function () { /* the tab asks the verifier as before */ });
+    });
     deskAskVerifier();
   },
 });
