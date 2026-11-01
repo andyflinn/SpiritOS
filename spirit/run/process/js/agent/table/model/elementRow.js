@@ -1,6 +1,6 @@
 // spirit/run/process/js/agent/table/model/elementRow.js
 // ONE MODEL ROW IN THE PAGE (goal/G41.4): its fields to maintain and edit, Save and Delete, drawn from the server's
-// answer and its stream only (rule/19). Built on the tables' shared element (../tableElement.js).
+// answer and its stream only (rule/19). Built on the tables' row element (../rowElement.js).
 //   spirit.elements.modelRow.create(container, api, id, added, detail) -> { destroy }   added: just made by Add; detail: the
 //   page's detail pane, whose look(table) gives the title row its icon and name
 (function () {
@@ -8,7 +8,7 @@
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own clientCacheManager
   // (process/js/agent/family/clientCacheManager.js) translates them into the table's branch; it is loaded here, with
   // this element.
-  if (typeof window.spirit.cacheManager === 'function') Promise.resolve(window.spirit.cacheManager('agent')).then(null, function () { /* no cache */ });
+  window.spirit.cacheManager('agent');
   // goal/G41.21: every field shown only. The label is the model name as the provider gives it (Andy: "the label hold the
   // model name as provided by the provider, and is output only in the models UI"); the capabilities ("model details,
   // capabilites, is output only").
@@ -17,7 +17,7 @@
     create: function (container, api, id, added, detail) {
       var made = null;
       var gone = false;
-      Promise.resolve(spirit.require('process/js/agent/table/tableElement.js')).then(function () {
+      Promise.resolve(spirit.require('process/js/agent/table/rowElement.js')).then(function () {
         if (gone) return;
         made = window.spirit.elements.agentRow.create(container, {
           api: api, table: 'model', id: id, added: added === true, look: detail && detail.look ? detail.look('model') : null, fields: FIELDS,
