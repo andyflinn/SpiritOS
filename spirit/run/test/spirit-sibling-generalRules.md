@@ -141,7 +141,7 @@ box is its own check, named by the element's path and the box's id chain."*
 - **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
   since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
   that sent a write (a call it made that is not the stream, not an interface, and carries no read op or read verb)
-  holds, while mounted, a `spirit.events.subscribe` or `spirit.data.watch` of its own making.
+  holds, while mounted, a `spirit.events.subscribe` or `spirit.data.watch` of its own making (a family view's watch, `spirit.data.at(node, family).watch`, counts as one, under its whole path).
 - **While a write is out, it draws nothing of its own** (rule/19; the box: *"after a press, until the stream answers, an
   element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
   is red"*): from a press that sent a write until the node has answered it, the only changes in its box are a busy mark

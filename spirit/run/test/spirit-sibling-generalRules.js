@@ -67,7 +67,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 // (spirit/spiritData.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
-//   subs:  every spirit.events.subscribe and spirit.data.watch, live until let go, and whether a module made it;
+//   subs:  every spirit.events.subscribe and spirit.data.watch (a family view's, spirit.data.at(node, family).watch, among them), live until let go, and whether a module made it;
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
@@ -201,7 +201,30 @@ const WATCH = String.raw`(function () {
     searches(els);
     [['events', 'subscribe'], ['data', 'watch']].forEach(function (k) {
       var cur = o[k[0]];
-      function wrap(v) { if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; } }
+      function wrap(v) {
+        if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; }
+        // A family's view (goal/G41.28), spirit.data.at(node, family): a manager watches through it, so its watch is kept
+        // as one on spirit.data, under the whole path it watches.
+        if (k[0] === 'data' && v && typeof v.at === 'function' && !v.at.__kept) {
+          var at = v.at;
+          v.at = function () {
+            var view = at.apply(this, arguments);
+            var node = arguments[0];
+            if (view && typeof view.watch === 'function') {
+              // The path as the view watches it: the node's id, or '~' for the home node, then the family, then p.
+              var own = view.watch;
+              var vw = kept('data.watch', function (whole, fn) { return own(whole.rel, fn); });
+              view.watch = function (p, fn) {
+                var whole = new String((node ? v.nodeId(node) : '~') + '/' + view.family + '/' + String(p || ''));
+                whole.rel = p;
+                return vw(whole, fn);
+              };
+            }
+            return view;
+          };
+          v.at.__kept = true;
+        }
+      }
       Object.defineProperty(o, k[0], { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; wrap(v); } });
       wrap(cur);
     });
