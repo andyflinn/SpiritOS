@@ -7,10 +7,9 @@
 //
 // A THIN WRAPPER AROUND THE SHELL'S STANDARD LIST, probabilitySearch (shell/js/probabilitySearch.js), which IT LOADS
 // ITSELF (rule/26, Andy: "every shell element loads its own elements dynamically through the fucking apirit.require
-// functionality", and "there will be NOTHING pre-loaded after the relays-supplied boot scripts"). It stood on the old
-// shell's list search (shell/shared/js/listSearch.js) until goal/G41.13, which the face never loads (goal/G40.8: "list
-// search is deprecated, and forbidden in face"); its search, cache, ranking and one request on the wire are
-// probabilitySearch's now, each row a row element (shell/js/rowElement.js, loaded the same way); this file says only what
+// functionality", and "there will be NOTHING pre-loaded after the relays-supplied boot scripts"). Its search, cache,
+// ranking and one request on the wire are probabilitySearch's, each row a row element (shell/js/rowElement.js, loaded
+// the same way); this file says only what
 // a peer row is.
 //
 // THE COLUMNS (the item's box): fixed, always, ★ (the contact is my puppet: an owned contact, its signed card naming

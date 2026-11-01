@@ -35,7 +35,6 @@ var chMore = false;       // the server cut the chat: older lines exist
 var chLoadingOlder = false;
 var chStyle = 'plain';
 var chOpenSeq = 0;        // the newest openChat wins
-var chRows = {};          // chats.search's row per key: {at, sent, seq, unanswered}
 var chSeen = {};          // per peer, the newest line time already shown here (kept in shell/chatter)
 var CH_PREFS = 'prefs.json';
 var CH_STYLES = ['plain', 'bubbles'];
@@ -47,6 +46,14 @@ function chEl(id) { return chParts[id] || null; }
 var chIconPart = window.spirit && typeof window.spirit.require === 'function'
   ? Promise.resolve(window.spirit.require('shell/js/icon.js')).then(null, function () { /* the arrows stay text */ })
   : Promise.resolve();
+
+// THE LINES ARE THE chatClerver FAMILY'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
+// buddies clientCacheManager.js must do so in this item. no exceptions."): every line a read, a search or a send brings is
+// kept by the family's cache manager (spirit.chatData.keep), and every line the server publishes too; the window places
+// a line of the open chat from there (its watch), and an arrival (its published) is read, made current and scrolled to.
+// chLines holds the window's own elements, each with the line it paints.
+function chData() { return (window.spirit && window.spirit.chatData) || null; }
+function chKeep(peer, lines) { var C = chData(); if (C && peer) C.keep(peer, lines); }
 
 function chAsk(verb, args) {
   return Promise.resolve(chApi.verb('chatClerver.' + verb, args || {})).then(function (r) {
@@ -83,7 +90,7 @@ function chPeersSearch(text, ask) {
   var book = {};
   return spirit.outcome(spirit.contact.search(args)).then(function (a) { book = (a && a.body) || {}; }, function () { book = {}; })
     // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
-    .then(function () { return chAsk('chats.search', {}).then(function (b) { return b || {}; }, function () { return {}; }); })
+    .then(function () { return chAsk('chats.search', {}).then(function (b) { var C = chData(); if (C) C.keepChats(b); return b || {}; }, function () { return {}; }); })
     .then(function (chats) {
       var out = [];
       var listed = {};
@@ -97,9 +104,6 @@ function chPeersSearch(text, ask) {
       });
       (chats.items || []).forEach(function (it) {
         if (!it || !it.key) return;
-        var row = {};
-        try { row = JSON.parse(it.label || '{}'); } catch (e) { row = {}; }
-        chRows[it.key] = row;
         if (!listed[it.key] && !typed && it.key !== chSelf) { listed[it.key] = true; out.push({ key: it.key }); }
         if (chPane) chPane.mark(it.key, chWaiting(it.key) ? 'unanswered' : 'none');
       });
@@ -112,7 +116,7 @@ function chPeersSearch(text, ask) {
 // while it is above zero and a line newer than the newest one shown here exists. Kept in this app's folder on the
 // node, never sent: there is still no read mark (Andy: "we won't support \"read\"").
 function chWaiting(key) {
-  var row = chRows[key];
+  var row = chData() ? chData().chat(key) : null;
   if (!row || !(Number(row.unanswered) > 0)) return false;
   return !chSeen[key] || String(row.at || '') > chSeen[key];
 }
@@ -272,19 +276,21 @@ function chOpen(key) {
   var slot = chEl('ch-title-name');
   if (slot) {
     slot.innerHTML = '';
-    chApi.ui.elements.contactLabel.create(slot, { key: key, editable: true });
+    window.spirit.elements.contactLabel.create(slot, { key: key, editable: true });
   }
   // The count is said once, as the chat opens ("Andy: 35 new messages"), and the chat is then read.
-  var row = chRows[key];
+  var row = chData() ? chData().chat(key) : null;
   chShowCount(chWaiting(key) ? Number(row.unanswered) : 0);
   if (row) chMarkSeen(key, row.at);
   var box = chEl('ch-input');
   if (box) box.disabled = false;
   chSay('');
+  // What is kept of this chat already is drawn at once; the read brings the rest.
+  if (chData()) chData().lines(key).forEach(chUpsert);
   return chAsk('chat.read', { peer: key, before: '', after: '' }).then(function (body) {
     if (mine !== chOpenSeq) return;
     chMore = !!body.more;
-    chItemsToLines(body.items).forEach(chUpsert);
+    chKeep(key, chItemsToLines(body.items));
     if (chOrder.length) chSetCurrent(chOrder[chOrder.length - 1]);
     var list2 = chEl('ch-lines');
     if (list2) list2.scrollTop = list2.scrollHeight;
@@ -301,7 +307,7 @@ function chOlder() {
     chLoadingOlder = false;
     if (peer !== chPeer) return;
     chMore = !!body.more;
-    chItemsToLines(body.items).forEach(chUpsert);
+    chKeep(peer, chItemsToLines(body.items));
     // Kept where the reader was: the older lines grow above what was shown.
     if (list && list.scrollHeight > height) list.scrollTop = list.scrollHeight - height;
   }, function (e) { chLoadingOlder = false; chSay('older lines could not be read: ' + e.message); });
@@ -322,10 +328,10 @@ function chSend() {
   chAsk('line.write', { to: to, text: text, re: re }).then(function (body) {
     if (to !== chPeer) return;
     var seq = Number(body.seq);
-    // The publish may have drawn it already, with a newer mark; it is never overwritten by this answer.
-    if (seq && !chLines[chKey(1, seq)]) {
-      chUpsert({ sent: 1, seq: seq, at: new Date().toISOString(), text: text, re: re,
-        refused: body.outcome === 'sent' ? '' : body.outcome === 'refused' ? 'refused' : 'unsent' });
+    // The publish may have kept it already, with a newer mark; it is never overwritten by this answer.
+    if (seq && !(chData() && chData().line(to, 1, seq))) {
+      chKeep(to, [{ sent: 1, seq: seq, at: new Date().toISOString(), text: text, re: re,
+        refused: body.outcome === 'sent' ? '' : body.outcome === 'refused' ? 'refused' : 'unsent' }]);
       var list = chEl('ch-lines');
       if (list) list.scrollTop = list.scrollHeight;
     }
@@ -336,15 +342,15 @@ function chSend() {
   });
 }
 
-// Every kept line, written or received, by its publish. Another chat's line refreshes the peer list only.
-function chOnPublished(obj) {
-  if (!obj || typeof obj !== 'object' || !obj.line) return;
-  var l = obj.line;
+// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.chatData.published): every kept line, written or
+// received. The window has placed it already (its watch); another chat's line refreshes the peer list only, and a new
+// line of the open chat is read, made current and scrolled to.
+function chArrived(peer, l, fresh) {
+  if (!l) return;
   if (chPane) chPane.refresh();
   if (l.peer !== chPeer) return;
   // A line of theirs arriving in the open chat is read as it is drawn.
   if (Number(l.sent) === 0) chMarkSeen(l.peer, l.at);
-  var fresh = chUpsert(l);
   if (fresh) {
     chSetCurrent(chKey(l.sent, l.seq));
     var list = chEl('ch-lines');
@@ -385,8 +391,17 @@ function chApplyStyle() {
 
 // ── THE APP ──────────────────────────────────────────────────────────
 
+// WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the contact selector (its peer pane) and the contact label, before it
+// mounts, so no shell has to have put them on the page.
+var chElements = Promise.all(['shell/js/contactSelector.js', 'shell/js/contactLabel.js'].map(function (p) { return spirit.require(p); }));
+
 spirit.shell.activateApp({
   mount: function (container, api) {
+    return chElements.then(function () { chMount(container, api); }, function () { container.textContent = 'Chatter could not be loaded.'; });
+  },
+});
+
+function chMount(container, api) {
     chApi = api;
     var prefs = chLoadPrefs();
     chStyle = CH_STYLES.indexOf(prefs.style) !== -1 ? prefs.style : 'plain';
@@ -532,7 +547,7 @@ spirit.shell.activateApp({
 
     var left = chEl('ch-left');
     // goal/G29.9: one pane over the book and the chats; the new-chat dropdown that stood here is gone.
-    chPane = api.ui.elements.contactSelector.create(left, {
+    chPane = window.spirit.elements.contactSelector.create(left, {
       face: 'pane', search: chPeersSearch,
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
       statuses: [{ status: 'none' }, { status: 'unanswered', glyph: '⌛' }],
@@ -544,64 +559,75 @@ spirit.shell.activateApp({
     // chat.search for the open chat's lines; nothing is asked until words are typed. A row is keyed by its chat as
     // well, so a line of another chat held from an earlier search never stands for this one; a press puts the line
     // in view when the window holds it.
-    chSearch = window.spirit.elements.shellCreateListSearch(chEl('ch-search'), {
-      api: {
-        verb: function (name, body) {
-          var a = body || {};
-          var peer = chPeer;
-          if (!peer || !String(a.text || '').trim()) return Promise.resolve({ status: 200, body: { items: [], more: false } });
-          return chAsk('chat.search', { peer: peer, text: String(a.text || ''), who: String(a.who || '') }).then(function (b) {
-            // EVERY LINE FOUND JOINS THE HISTORY (Andy, 2026-10-18: "all found lines are added to the chat, if they're
-            // missing, that won't hurt"), each by its time, while this chat is still the one open.
-            var found = chItemsToLines((b && b.items) || []);
-            if (peer === chPeer) found.forEach(function (l) { chUpsert(l); });
-            var items = ((b && b.items) || []).map(function (it) {
-              var l = {};
-              try { l = JSON.parse(it.label); } catch (e) { l = {}; }
-              l.peer = peer;
-              return { key: peer + ':' + it.key, label: JSON.stringify(l) };
+    // A VIEW OF THE CHATS' LINES IN spirit.data (goal/G41.28): the probability search over the lines the chatClerver
+    // family's cache keeps (spirit.chatData.branch), each line the shared row element; the open chat's alone, by the
+    // who filter. Asked of chatClerver's chat.search once words are typed; every line found is seated in the branch and
+    // so joins the history (Andy, 2026-10-18: "all found lines are added to the chat, if they're missing, that won't
+    // hurt"), each by its time.
+    var chSearchRows = null;
+    function chSearchRow(row) {
+      var R = window.spirit.elements.rowElement;
+      var l = row || {};
+      chSearchRows = chSearchRows || R.index(function () {});
+      return R.create({
+        kind: 'chatLine', key: String(l.key || ''), index: chSearchRows, row: l,
+        fields: [
+          { name: 'at', paint: function (v) { return chEscapeHtml(v.at ? new Date(v.at).toLocaleString() : ''); } },
+          { name: 'who', paint: function (v) { return Number(v.sent) === 1 ? 'me' : 'them'; } },
+          { name: 'text', paint: function (v) { return chEscapeHtml(String(v.text || '')); } },
+        ],
+        actions: [],
+      });
+    }
+    Promise.all([spirit.require('shell/js/probabilitySearch.js'), spirit.require('shell/js/rowElement.js'), spirit.cacheManager('chatClerver')]).then(function () {
+      var C = chData();
+      if (!C) return;
+      chSearch = window.spirit.elements.probabilitySearch.create(chEl('ch-search'), {
+        data: C.branch,
+        api: {
+          verb: function (name, body) {
+            var a = body || {};
+            var peer = chPeer;
+            if (!peer || !String(a.text || '').trim()) return Promise.resolve({ status: 200, body: { items: [], more: false } });
+            return chAsk('chat.search', { peer: peer, text: String(a.text || ''), who: String(a.who || '') }).then(function (b) {
+              var items = chItemsToLines((b && b.items) || []).map(function (l) {
+                l.peer = peer;
+                return { key: C.keyOf(peer, l.sent, l.seq), label: JSON.stringify(l) };
+              });
+              return { status: 200, body: { items: items, more: !!(b && b.more) } };
             });
-            return { status: 200, body: { items: items, more: !!(b && b.more) } };
-          });
+          },
         },
-        onPublished: function () { return function () {}; },
-      },
-      server: 'chatClerver',
-      verb: 'chat.search',
-      args: function (text, filters) { return { text: text, who: filters.who === 'both' ? '' : filters.who }; },
-      filters: [{ name: 'who', choices: [{ value: 'both', word: 'both' }, { value: 'me', word: 'me' }, { value: 'them', word: 'the other' }],
-        test: function (l, v) {
-          if (l.peer !== chPeer) return 0;
-          return v === 'me' ? (l.sent === 1 ? 1 : 0) : v === 'them' ? (l.sent === 0 ? 1 : 0) : 1;
-        } }],
-      paint: function (l, mark) {
-        return '<td>' + chEscapeHtml(l.at ? new Date(l.at).toLocaleString() : '') + '</td>' +
-          '<td>' + (l.sent === 1 ? 'me' : 'them') + '</td>' +
-          '<td>' + mark(String(l.text || '')) + '</td>';
-      },
-      // A DROPDOWN, AND A PICK IS A LINE IN THE HISTORY (Andy, 2026-10-18: "can that chat history thing be a dropdown,
-      // when a line is selected it inserts it's hole content into the shown chat history, if it's missing, and the
-      // selected line becomes the currently selected line in the chat history?"): the line is put in its place by time
-      // when the window does not hold it (chUpsert), and becomes the current line, the one a reply quotes (chSend).
-      mode: 'dropdown',
-      placeholder: 'search this chat…',
-      // AND ITS CONTEXT (Andy: "make sure the lines befor and after the selected one are added to the chat, so that
-      // context is visible..."): the line right before it and the line right after, one ask each, one after the other.
-      pick: function (l) {
-        if (!l) return;
-        var peer = chPeer;
-        chUpsert(l);
-        chSetCurrent(chKey(l.sent, l.seq));
-        var one = function (body) {
-          var near = chItemsToLines((body && body.items) || [])[0];
-          if (near && peer === chPeer) chUpsert(near);
-        };
-        chAsk('chat.read', { peer: peer, before: String(l.at || ''), after: '' }).then(one)
-          .then(function () { return chAsk('chat.read', { peer: peer, before: '', after: String(l.at || '') }); }).then(one)
-          .catch(function () { /* the picked line stands; its neighbours come with the next read */ });
-      },
-      empty: 'Type words to search this chat.',
-    });
+        server: 'chatClerver',
+        verb: 'chat.search',
+        args: function (text, filters) { return { text: text, who: filters.who === 'both' ? '' : filters.who }; },
+        columns: [{ field: 'at', label: 'When', sort: 'date' }, { field: 'who', label: '' }, { field: 'text', label: 'Line' }],
+        filters: [{ name: 'who', choices: [{ value: 'both', word: 'both' }, { value: 'me', word: 'me' }, { value: 'them', word: 'the other' }],
+          test: function (l, v) {
+            if (!l || l.peer !== chPeer) return 0;
+            return v === 'me' ? (Number(l.sent) === 1 ? 1 : 0) : v === 'them' ? (Number(l.sent) === 0 ? 1 : 0) : 1;
+          } }],
+        element: chSearchRow,
+        // A DROPDOWN, AND A PICK IS A LINE IN THE HISTORY (Andy, 2026-10-18: "can that chat history thing be a dropdown,
+        // when a line is selected it inserts it's hole content into the shown chat history, if it's missing, and the
+        // selected line becomes the currently selected line in the chat history?"): the line is in its place by time,
+        // kept already, and becomes the current line, the one a reply quotes (chSend).
+        face: 'dropdown',
+        placeholder: 'search this chat…',
+        // AND ITS CONTEXT (Andy: "make sure the lines befor and after the selected one are added to the chat, so that
+        // context is visible..."): the line right before it and the line right after, one ask each, one after the other.
+        pick: function (l) {
+          if (!l) return;
+          var peer = chPeer;
+          chSetCurrent(chKey(l.sent, l.seq));
+          var one = function (body) { chKeep(peer, chItemsToLines((body && body.items) || []).slice(0, 1)); };
+          chAsk('chat.read', { peer: peer, before: String(l.at || ''), after: '' }).then(one)
+            .then(function () { return chAsk('chat.read', { peer: peer, before: '', after: String(l.at || '') }); }).then(one)
+            .catch(function () { /* the picked line stands; its neighbours come with the next read */ });
+        },
+        empty: 'Type words to search this chat.',
+      });
+    }, function () { /* the chat is not searched */ });
 
     var lines = chEl('ch-lines');
     lines.addEventListener('click', function (event) {
@@ -649,11 +675,16 @@ spirit.shell.activateApp({
       C.watch(function (key, row) { if (key) dot(key, row); });
     }, function () { /* the dots stay white */ });
 
-    api.onPublished(chOnPublished, 'chatClerver');
+    // The lines as the chatClerver family's cache keeps them: placed in the open chat as they change, an arrival read.
+    Promise.resolve(spirit.cacheManager('chatClerver')).then(function () {
+      var C = chData();
+      if (!C) return;
+      C.watch(function (peer, line) { if (peer && peer === chPeer) chUpsert(line); });
+      C.published(chArrived);
+    }, function () { /* no lines are kept: the chat says so as it is read */ });
     if (api.onReconnect) api.onReconnect(function () { if (chPane) chPane.refresh(); if (chPeer) chOpen(chPeer); });
     // This node's key, for a reply to one of its own lines.
     Promise.resolve(api.verb('node.card', {})).then(function (r) {
       chSelf = String((r && r.body && (r.body.publicKey || (r.body.card && r.body.card.publicKey))) || '');
     }, function () { /* a reply to its own line then names no writer */ });
-  },
-});
+}

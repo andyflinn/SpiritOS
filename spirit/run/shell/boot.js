@@ -362,8 +362,7 @@
   // WHAT THE FACE LOADS FROM HOME (goal/G40.7; Andy: "execute a hard-Coded download/fetch of all those scripts rather
   // than stealing them from index.html ... but do not download kernel.js"): in order, the home page's sheets and
   // scripts but the old shell, spirit.js (this page's first script tag), kernel.js and CodeMirror (loaded when an app
-  // needs it). A part added to the face is added here. Not on it, by rule (goal/G40.8): listSearch.js ("list search is
-  // deprecated, and forbidden in face"), the contact selector built on it, and the deprecated header element.
+  // needs it). A part added to the face is added here. Not on it, by rule (goal/G40.8): the deprecated header element.
   // ONLY WHAT BOOT RUNS ITSELF (goal/G41.3; Andy: boot preloads only the home and Join components, every app bootstraps
   // its own): spirit's libraries, the sheet, the navigation every app is a page on, and Join's steps, which boot works
   // out. Every other element is loaded by the app that draws with it, through spirit.require; the cache by spirit.js.

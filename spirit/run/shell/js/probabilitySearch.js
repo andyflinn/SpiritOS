@@ -1,8 +1,7 @@
 // spirit/run/shell/js/probabilitySearch.js
-// THE STANDARD SHELL LIST-TOOL (goal/G30.17), a finished intrinsic shell element. Files and Contacts use it; apps not
-// yet ported into the new shell keep using shell/shared/js/listSearch.js until none does, and then that one is deleted.
+// THE SHELL'S ONE LIST-TOOL (goal/G30.17), a finished intrinsic shell element: every list in the shell is one.
 //
-// TAKEN FROM listSearch: rows kept by key, every row any search brought, in one unbounded probability bucket, a later
+// What it does: rows kept by key, every row any search brought, in one unbounded probability bucket, a later
 // answer replacing a row with the same key; ranking as you type (probabilityStringObjectMatch times every filter's test),
 // best on top; the matched letters marked and the match bar; one call on the wire at a time, no typing pause; filters
 // declared by the app and drawn here.
@@ -212,7 +211,7 @@
       // itself"): a dropdown's up to 20em, a pane's list filling what its pane leaves it.
       '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em;overflow:auto;' + (dropdown ? 'max-height:20em' : 'flex:1;min-height:0') + '"></div>' +
       '</div>';
-    // THE DROPDOWN IS JUST A POP-UP PANE (taken from listSearch, goal/G29.9): inline like any input, a field; the very
+    // THE DROPDOWN IS JUST A POP-UP PANE (goal/G29.9): inline like any input, a field; the very
     // same pane pops up under it, solid, as wide as its rows up to the page.
     container.innerHTML = dropdown
       ? '<span style="position:relative;display:inline-block">' +
@@ -547,7 +546,7 @@
     return self;
   }
 
-  // THE ONE MARKING RULE, moved here from listSearch.js (goal/G40.8) (goal/G29.12; Andy, 2026-10-18, to "both markers live in one shared function": "yes"): every
+  // THE ONE MARKING RULE (goal/G29.12; Andy, 2026-10-18, to "both markers live in one shared function": "yes"): every
   // place each word stands, partial words included, case ignored, as [from, to) index pairs in order. The list marks its
   // rows with it, and the codeMirror element (shell/js/codeMirror.js) marks a file's text with it, so the two never drift apart.
   function matchRanges(text, words) {
