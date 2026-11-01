@@ -21,8 +21,8 @@ Desk's call and stream, `ctx.callDialog(app, params)` the shell's dialog. `ctx.c
   ctx's own call and stream.
   - `args(text, filters)`: `{over: 'tests', current: 'yes', slim: 'yes'}`, the outcome filter along, a suite's file
     name (`<name>.js`, no folder) as `suite`, other text as `test`.
-  - Columns: Suite, Test, Result, Since (a date); empty says `No test matches.`; the words matched are the suite and
-    the title.
+  - Columns: Suite, Test, Result, Since (a date); empty says `No test matches.`; the whole row is matched, no
+    `matched()` handed to its search (goal/G41.28).
   - One filter, outcome: red ❌ first, green ✅, then both.
   - A row's details open `shell/falloutHistory {suite, heading}`.
 - **The summary** (Andy: "TOTAL OF ALL FAILURES. period"): two deskVerify searches, red then green, through the list's

@@ -88,8 +88,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(JSON.stringify((o.columns || []).map(function (c) { return c.field; })) === '["family","verb","delete"]', 'opts.columns names the row\'s fields it shows, in order', 'columns: ' + short(o.columns));
   const el = o.element({ id: 3, bundle: 7, family: 'desk', verb: '' }, '3');
   ok(el && el.kind === 'branch' && el.row.id === 3 && el.row.family === 'desk', 'each row is a branchElement of that branch', 'element: ' + short(el));
-  const m = typeof o.matched === 'function' ? o.matched({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }) : null;
-  ok(m && m.family === 'desk' && m.verb === 'chat.add' && !('id' in m) && !('bundle' in m), 'a row is matched on its family and verb, never its hidden numbers', 'matched: ' + short(m));
+  // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
+  // cached in spirit.data."): the list hands its search no matched() of its own.
+  ok(typeof o.matched !== 'function', 'it hands its search no matched(): the whole row is matched (goal/G41.28)', 'it still hands matched(): ' + short(o.matched));
   // goal/G41.14: a picked branch is shown by what it reaches, never its number (Andy: "the bundleSelector shows a
   // fucking number is selected instead of the fucking label").
   const nm = typeof o.name === 'function' ? [o.name({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }, '3'), o.name({ id: 4, bundle: 7, family: 'files', verb: '' }, '4')] : null;

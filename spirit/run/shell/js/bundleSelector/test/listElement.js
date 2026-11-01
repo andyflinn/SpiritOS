@@ -84,8 +84,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   answer = { items: [], more: false };
   await o.api.verb(o.server + '.' + o.verb, o.args('', {}));
   ok(asked.length > 0 && asked[asked.length - 1].op === 'search' && !('owner' in asked[asked.length - 1]), 'made for no app server, its search names no owner: every bundle', 'asked: ' + short(asked[asked.length - 1]));
-  const m = typeof o.matched === 'function' ? o.matched({ id: 7, label: 'Reader' }) : null;
-  ok(m && m.label === 'Reader' && !('id' in m), 'a row is matched on its label, never its hidden id', 'matched: ' + short(m));
+  // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
+  // cached in spirit.data."): the list hands its search no matched() of its own.
+  ok(typeof o.matched !== 'function', 'it hands its search no matched(): the whole row is matched (goal/G41.28)', 'it still hands matched(): ' + short(o.matched));
   // Andy, goal/G41.14: "the bundleSelector shows a fucking number is selected instead of the fucking label or the
   // bundle." A dropdown shows the row picked by the list's name(row) (probabilitySearch); without it, the key.
   ok(typeof o.name === 'function' && o.name({ id: 7, label: 'Reader' }, '7') === 'Reader', 'a picked bundle is shown by its label, never its number', 'name: ' + short(typeof o.name === 'function' ? o.name({ id: 7, label: 'Reader' }, '7') : o.name));

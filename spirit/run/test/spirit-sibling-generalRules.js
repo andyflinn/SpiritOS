@@ -134,7 +134,7 @@ const WATCH = String.raw`(function () {
   if (navigator.sendBeacon) { var sb = navigator.sendBeacon.bind(navigator); navigator.sendBeacon = function (url) { W.net.push(Object.assign({ kind: 'sendBeacon', url: String(url) }, caller())); return sb.apply(null, arguments); }; }
   function kept(kind, fn) {
     return function () {
-      var s = { kind: kind, mine: moduleMade(), live: true }; W.subs.push(s);
+      var s = { kind: kind, mine: moduleMade(), live: true, path: kind === 'data.watch' ? String(arguments[0] || '') : '' }; W.subs.push(s);
       var off = fn.apply(this, arguments);
       return function () { s.live = false; return typeof off === 'function' ? off.apply(this, arguments) : undefined; };
     };
@@ -144,7 +144,44 @@ const WATCH = String.raw`(function () {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
     var cur = els.probabilitySearch;
-    function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); return c.apply(this, arguments); }; v.create.__kept = true; } }
+    function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
+  // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.data path the module watches, and whether its
+  // box changed for it within a second. A watch path is a type ('contacts') or a type and a key ('contacts/K').
+  W.probe = function () {
+    var D = window.spirit && window.spirit.data;
+    var box = window.spiritMount && window.spiritMount.box;
+    var paths = []; W.subs.forEach(function (x) { if (x.mine && x.live && x.kind === 'data.watch' && x.path && paths.indexOf(x.path) === -1) paths.push(x.path); });
+    if (!D || !box || typeof D.set !== 'function') return Promise.resolve([]);
+    return paths.slice(0, 6).reduce(function (chain, p, i) {
+      return chain.then(function (out) {
+        var whole = p.indexOf('/') !== -1;
+        var at = whole ? p : p + '/zz-probe-' + i;
+        var before = whole && typeof D.get === 'function' ? D.get(at) : undefined;
+        var mark = 'zzprobe' + i;
+        var changed = 0;
+        var mo = new MutationObserver(function (l) { changed += l.length; });
+        mo.observe(box, { subtree: true, childList: true, attributes: true, characterData: true });
+        try { D.set(at, { key: whole ? undefined : 'zz-probe-' + i, label: mark, name: mark, title: mark, text: mark, id: whole ? undefined : 'zz-probe-' + i }); } catch (e) { /* the branch refused it */ }
+        return new Promise(function (r) { setTimeout(r, 1000); }).then(function () {
+          mo.disconnect();
+          try { if (whole && before !== undefined) D.set(at, before); else D.del(at); } catch (e) { /* left */ }
+          out.push({ path: p, redrew: changed > 0 });
+          return out;
+        });
+      });
+    }, Promise.resolve([]));
+  };
+  // What each search draws that its spirit.data branch does not hold: the keys of its rows on screen, against the branch.
+  W.drawnOutside = function () {
+    var D = window.spirit && window.spirit.data;
+    return W.searches.map(function (x, i) {
+      var host = (window.spiritSearchHosts || [])[i];
+      if (!host || !host.isConnected || !x.data || !D || typeof D.rows !== 'function') return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
+      var held = {}; (D.rows(x.data) || []).forEach(function (r) { held[String(r.key)] = true; });
+      var keys = Array.prototype.map.call(host.querySelectorAll('[data-key]'), function (el) { return String(el.getAttribute('data-key')); });
+      return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
+    });
+  };
     Object.defineProperty(els, 'probabilitySearch', { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; wrap(v); } });
     wrap(cur);
   }
@@ -168,6 +205,10 @@ const WATCH = String.raw`(function () {
 //# sourceURL=spiritWatch.js`;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+// NOTHING JUDGED IS NO PASS (goal/G41.28; Andy: "You fucking fudge tests to get away with total fucking sloppyness!"):
+// a rule that found nothing to judge on this page says so, and counts as neither green nor red. It is judged where it
+// can be: in the code, or on a page that gives it something.
+function unjudged(what) { test.comment('not judged on this page: ' + what); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // The scratch node and headless Chrome, shared with any test that opens a page (test/headLessChrome.js).
 const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(RUN, 'test', 'headLessChrome.js'));
@@ -262,6 +303,20 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     test.subHeading(NAMED + ': ' + 'its searches match the whole row');
     const src = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
     ok(!/\bmatched\s*:/.test(src), 'it hands no search a matched() of its own', 'it hands a search matched(), a few fields in place of the whole row');
+  }
+  // WHAT IT CHANGES, IT LISTENS FOR, IN ITS CODE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when
+  // it changes shit it listens to fucking update via the spirit object"): judged without a page, since a bare mount
+  // seldom has a row to change. A module whose code sends a write (an op that changes a row, or a verb that sets) watches
+  // spirit.data: a .watch( of its own, or a search made on a spirit.data branch (its data: option).
+  {
+    const own = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+    // A write in code: an op that changes a row ({ op: 'set' }), a verb named as a string that changes one
+    // ('node.setName', 'chat.add', 'box.write'), or a spirit family's setting verb called (spirit.relay.join(...)).
+    const WRITE = /\bop\s*:\s*['"](add|set|delete|remove|grant|revoke|ask|claim|press)['"]|['"][a-z]\w*(?:\.[a-z]\w*)*\.(?:set[A-Z]\w*|set|add|delete|remove|grant|revoke|join|face|write|press|claim)['"]|\bspirit\.\w+\.(?:set[A-Z]\w*|join|face|grant|revoke)\s*\(|\.relay\.(?:join|face)\s*\(|\.(?:saveFile|grant|revoke)\s*\(\s*\w/;
+    const writes = WRITE.exec(own);
+    test.subHeading(NAMED + ': ' + 'what its code changes, it watches in spirit.data');
+    if (!writes) unjudged('its code sends no write');
+    else ok(/\.watch\s*\(/.test(own) || /\bdata\s*:\s*['"][\w.\/-]+['"]/.test(own), 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and watches spirit.data', 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and its code watches nothing in spirit.data');
   }
   const chrome = findChrome();
   if (!chrome) { test.fail('no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'); return; }
@@ -398,7 +453,8 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     }
     const free = fields.filter(function (f) { return f.kept > MOST_BYTES; });
     test.comment(fields.length + ' fields typed past ' + MOST_BYTES + ' bytes');
-    ok(!free.length, 'every field it draws stops at its limit (' + fields.length + ' typed past ' + MOST_BYTES + ' bytes)', free.length + ' kept more than any rule allows: ' + short(free.map(function (f) { return f.at + ' kept ' + f.kept; })));
+    if (!fields.length) unjudged('it draws no text field');
+    else ok(!free.length, 'every field it draws stops at its limit (' + fields.length + ' typed past ' + MOST_BYTES + ' bytes)', free.length + ' kept more than any rule allows: ' + short(free.map(function (f) { return f.at + ' kept ' + f.kept; })));
 
     // EVERY BUTTON PRESSED, AND WHAT A PRESS DOES WATCHED (goal/G41.27): each button it draws is pressed in turn, and what
     // leaves the page, what it listens to and what it draws are judged by the rules that follow.
@@ -425,15 +481,29 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27; Andy: "elements that change things, also subscribe to the changes
     // they cause, since andy request an element generates would imply that it must listen for confirmation of the
     // results"): one that sent a write holds, while mounted, a listener on the page's stream of its own making.
-    test.subHeading(NAMED + ': ' + 'what it changes, it listens for');
-    const mineLive = W.subs.filter(function (x) { return x.mine && x.live; }).length;
-    ok(!W.writes.length || mineLive > 0, W.writes.length ? 'it sent ' + W.writes.length + ' writes and holds ' + mineLive + ' listeners on the stream' : 'it sent no write when pressed', 'it sent ' + short(W.writes) + ' and listens to nothing on the stream');
+    // THROUGH SPIRIT.DATA, NOT THE RAW STREAM (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
+    // changes shit it listens to fucking update via the spirit object"): what it listens with is a spirit.data.watch of
+    // its own making, its searches' included. A subscription of its own to the raw stream, taken into a store of its own,
+    // is how the Desk List kept rows spirit.data never held: it does not count.
+    test.subHeading(NAMED + ': ' + 'what it changes, it listens for through spirit.data');
+    const watching = W.subs.filter(function (x) { return x.mine && x.live && x.kind === 'data.watch'; }).length;
+    const raw = W.subs.filter(function (x) { return x.mine && x.live && x.kind !== 'data.watch'; }).length;
+    // AND ITS WATCHING REDRAWS IT (goal/G41.28; Andy: "YOUR TEST WILL MAKE SURE THAT THE CACHING AND LISTENING IS DONE TO
+    // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.data path it watches must change
+    // its box. A watch that redraws nothing is not listening.
+    const probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
+    test.subHeading(NAMED + ': ' + 'what it watches in spirit.data redraws it');
+    if (!probed.length) unjudged('it watches no spirit.data path');
+    else ok(probed.some(function (x) { return x.redrew; }), 'a change written into what it watches redraws it: ' + probed.filter(function (x) { return x.redrew; }).map(function (x) { return x.path; }).join(', '), 'it watches ' + probed.map(function (x) { return x.path; }).join(', ') + ' and redraws for none of them');
+    if (!W.writes.length) unjudged('its presses sent no write (its code is judged for it, above)');
+    else ok(watching > 0, 'it sent ' + W.writes.length + ' writes and watches ' + watching + ' spirit.data paths for them', 'it sent ' + short(W.writes) + ' and watches no spirit.data path' + (raw ? '; it listens to the raw stream ' + raw + ' times instead' : ''));
 
     // IT DRAWS ONLY WHAT THE STREAM SAYS (rule/19; goal/G41.27, the box: "after a press, until the stream answers, an
     // element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
     // is red"): judged while a write it sent is out, until the node answers it.
     test.subHeading(NAMED + ': ' + 'while a write is out, it draws nothing of its own');
-    ok(!W.moved.length, W.writes.length ? 'while its writes were out it changed only busy marks, disabled buttons and fine print' : 'no write sent, nothing to judge', W.moved.length + ' changes while a write was out: ' + short(W.moved.slice(0, 6)));
+    if (!W.writes.length) unjudged('its presses sent no write');
+    else ok(!W.moved.length, 'while its writes were out it changed only busy marks, disabled buttons and fine print', W.moved.length + ' changes while a write was out: ' + short(W.moved.slice(0, 6)));
 
     // EVERY SEARCH FROM SPIRIT.DATA (goal/G41.28; Andy, box v15: "general test for screen objects will make sure that all
     // damn data is cached in spirit data.", and "every probabilitySearch on a page is made with a spirit.data branch (its
@@ -441,7 +511,15 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     test.subHeading(NAMED + ': ' + 'every search it makes ranks spirit.data');
     const made = W.searches || [];
     const off = made.filter(function (x) { return !x.data || x.rows; });
-    ok(!off.length, made.length ? 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own' : 'it makes no search', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })));
+    if (!made.length) unjudged('it makes no search');
+    else ok(!off.length, 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })));
+    // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a
+    // row of its branch in spirit.data. A list that keeps its rows anywhere else draws what the branch does not hold.
+    const outside = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch && window.spiritWatch.drawnOutside ? window.spiritWatch.drawnOutside() : [])'));
+    const drew = outside.reduce(function (n, x) { return n + x.drawn; }, 0);
+    const strays = outside.filter(function (x) { return x.outside.length; });
+    if (!drew) unjudged('its searches draw no row');
+    else ok(!strays.length, 'every row its searches draw (' + drew + ') is a row their spirit.data branch holds', strays.length + ' searches draw rows their branch does not hold: ' + short(strays.map(function (x) { return (x.verb || 'a search') + ' on ' + x.data + ': ' + x.outside.join(', '); })));
 
     test.subHeading(NAMED + ': ' + 'destroy leaves its box empty');
     const destroyed = await page.evaluate('(function () { var m = window.spiritMount; if (typeof m.destroy !== "function") return "none"; m.destroy(); return m.box.childElementCount === 0 ? "empty" : "left"; }())');
@@ -452,7 +530,8 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
       await sleep(200);
       const after = JSON.parse(await page.evaluate('JSON.stringify((window.spiritWatch || { subs: [] }).subs)'));
       const held = after.filter(function (x) { return x.mine && x.live; });
-      ok(!held.length, 'destroyed, it lets every subscription it made go (' + after.filter(function (x) { return x.mine; }).length + ' made)', held.length + ' still held after destroy: ' + short(held.map(function (x) { return x.kind; })));
+      if (!after.filter(function (x) { return x.mine; }).length) unjudged('it made no subscription');
+      else ok(!held.length, 'destroyed, it lets every subscription it made go (' + after.filter(function (x) { return x.mine; }).length + ' made)', held.length + ' still held after destroy: ' + short(held.map(function (x) { return x.kind; })));
     }
   } finally {
     if (page && page.sock) try { page.sock.close(); } catch (e) { /* gone */ }

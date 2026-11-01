@@ -257,8 +257,9 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
     'a suite\'s file name asks for that suite; the outcome filter goes along', short(o.args('deskChat.js', { outcome: 'red' })));
   ok(o.args('relay answers', null).test === 'relay answers' && !('suite' in o.args('relay answers', null)) && !('suite' in o.args('a/b.js')), 'other text asks for a test by its words; a path is no suite name',
     short(o.args('a/b.js')));
-  ok(JSON.stringify(o.matched({ suite: 's.js', title: 't', outcome: 'red' })) === '{"suite":"s.js","title":"t"}' && JSON.stringify(o.matched(null)) === '{"suite":"","title":""}',
-    'the words matched are the suite and the title', short(o.matched(null)));
+  // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row"):
+  // the plugin hands its search no matched() of its own.
+  ok(typeof o.matched !== 'function', 'it hands its search no matched(): the whole row is matched (goal/G41.28)', 'it still hands matched()');
   // The outcome filter by its name: since goal/G41.22 a second filter, product tests only, stands beside it (below).
   const f = o.filters.filter(function (x) { return x && x.name === 'outcome'; })[0] || {};
   ok(o.filters[0] === f && Array.isArray(f.choices) && f.choices.map(function (c) { return c.value; }).join(',') === 'red,green,' && f.choices[0].icon === '❌' && f.choices[1].icon === '✅',

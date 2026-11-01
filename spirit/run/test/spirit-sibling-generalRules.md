@@ -153,6 +153,37 @@ box is its own check, named by the element's path and the box's id chain."*
 - **Every search it makes ranks spirit.data** (box v15: *"every probabilitySearch on a page is made with a spirit.data
   branch (its data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes
   red."*): every probabilitySearch the page makes, watched as it is made, has a `data` branch and no `rows()` of its own.
+  And every row a search draws (its `[data-key]` rows on screen, after its tools and buttons are pressed) is a row its
+  branch holds in `spirit.data` (`spirit.data.rows(branch)`): a list that keeps its rows anywhere else draws what the
+  branch does not hold.
+- **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
+  make sure when it changes shit it listens to fucking update via the spirit object"*), judged twice:
+  - on the page: a module that sent a write holds a `spirit.data.watch` of its own making, its searches' included. A
+    subscription to the raw stream does not count: taken into a store of its own, it is how the Desk List kept rows
+    `spirit.data` never held;
+  - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
+    row, a setting verb named as a string such as `'node.setName'`, a relay `join` or `face`, a `grant`, a `saveFile`)
+    holds a `.watch(` or makes a search on a `spirit.data` branch. The code rule is a net for what the page cannot reach,
+    not the whole judgement.
+- **Nothing judged is no pass** (Andy: *"You fucking fudge tests to get away with total fucking sloppyness!"*): a rule
+  that finds nothing to judge on a page (no field, no write, no search, no row drawn, no subscription) says *not judged
+  on this page* and counts as neither green nor red.
+- **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
+  make sure when it changes shit it listens to fucking update via the spirit object"*, and *"YOUR TEST WILL MAKE SURE THAT
+  THE CACHING AND LISTENING IS DONE TO FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"*), judged three ways:
+  - on the page: a module that sent a write holds a `spirit.data.watch` of its own making, its searches' included. A
+    subscription to the raw stream does not count: taken into a store of its own, it is how the Desk List kept rows
+    `spirit.data` never held;
+  - its watching redraws it: a marked row written into each `spirit.data` path it watches (a type gets a row of its
+    own, a key path is set and put back) must change its box within a second. A watch that redraws nothing is not
+    listening;
+  - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
+    row, a setting verb named as a string such as `'node.setName'`, a relay `join` or `face`, a `grant`, a `saveFile`)
+    holds a `.watch(` or makes a search on a `spirit.data` branch. The code rule is a net for what the page cannot
+    reach, not the whole judgement.
+- **Nothing judged is no pass** (Andy: *"You fucking fudge tests to get away with total fucking sloppyness!"*): a rule
+  that finds nothing to judge on a page (no field, no write, no search, no row drawn, no subscription, no watch) says
+  *not judged on this page* and counts as neither green nor red.
 - **Destroy**: an element's destroy leaves its container empty, and **lets go every subscription it made** (rule/8). An
   app is closed by the face and has none of its own.
 
@@ -172,7 +203,12 @@ cuts the extra off, so nothing spills: `shell/js/codeMirror` and `shell/textEdit
 - A glyph among the words of a label or a description counted as an icon.
 - A field nothing holds; a field held only by a rule not loaded on the page.
 - A fetch, XMLHttpRequest, WebSocket, EventSource or sendBeacon of its own.
-- A write sent by a module that listens to nothing.
+- A write sent by a module that listens to nothing, or only to the raw stream; a write in code with no watch beside it.
+- A rule that found nothing to judge counted as green.
 - A draw made after a press and before its write is answered; a press that sends no write judged all the same.
 - A subscription still held after destroy.
-- A list that hands its search a matched(); a search made with no data branch, or fed by its own rows().
+- A write sent by a module that watches nothing in spirit.data, or only the raw stream; a write in code with no watch
+  beside it; a watch that redraws nothing.
+- A rule that found nothing to judge counted as green.
+- A list that hands its search a matched(); a search made with no data branch, or fed by its own rows(); a row drawn
+  that its branch does not hold.

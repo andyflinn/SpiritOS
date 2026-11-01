@@ -76,8 +76,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(JSON.stringify(cols) === '["name","path","revoke"]', 'its columns are whose, the path and Revoke, Revoke the rightmost', 'columns: ' + short(cols));
   const el = o.element({ job_id: 'J1', path: 'fs.search', job: 'Night' }, 'J1\nfs.search');
   ok(el && el.kind === 'grant' && el.opts.grants === AGENT && el.opts.serves === serves, 'each row is a grantElement, handed the same table and what the tree serves', 'element: ' + short(el && { kind: el.kind, same: el.opts.grants === AGENT }));
-  const m = typeof o.matched === 'function' ? o.matched({ job_id: 'J1', path: 'fs.search', job: 'Night' }) : null;
-  ok(m && m.name === 'Night' && /fs search/.test(m.path || '') && !('job_id' in m) && !('key' in m), 'a row is matched on its table\'s label field and the words of its path, never the id', 'matched: ' + short(m));
+  // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
+  // cached in spirit.data."): the list hands its search no matched() of its own.
+  ok(typeof o.matched !== 'function', 'it hands its search no matched(): the whole row is matched (goal/G41.28)', 'it still hands matched(): ' + short(o.matched));
   ok(o.filters === filters, 'the filters the page hands it are its own', 'filters: ' + short(o.filters));
   ok(o.selectors === selectors, 'and the selectors it hands it go to the search as they are, for its 🪣 row (goal/G41.26)', 'selectors: ' + short(o.selectors && o.selectors.length));
 

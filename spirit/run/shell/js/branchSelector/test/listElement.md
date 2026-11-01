@@ -24,7 +24,7 @@ their data set"*).
   trimmed, `bundle` from `opts.bundle`, and answers as a reply, `{ items, more }`.
 - `opts.columns` names the row's fields it shows, in order (the branch editor: `family`, `verb`, `delete`).
   `opts.face`, `opts.placeholder`, `opts.all` and `opts.pick(row, key)` are handed on.
-- Each row is a `branchElement` of that branch. A row is matched on its family and verb, never its hidden numbers.
+- Each row is a `branchElement` of that branch. Its search is handed no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.data."*).
 - The filter, the family selector's `family` and `verb`:
   - nothing chosen: the search narrows by neither;
   - a family chosen searches again, narrowed by the family;

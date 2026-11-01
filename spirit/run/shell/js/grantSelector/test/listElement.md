@@ -17,7 +17,7 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./listElement.js
 - Its search is the table's `search(text)`, the text trimmed, answered as a reply.
 - Its columns are `name` (whose grant), `path` and `revoke`, Revoke the rightmost. Each row is a `grantElement`, handed
   the same table and `serves`.
-- A row is matched on its table's label field and the words of its path, never its id.
+- It hands its search no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.data."*).
 - `filters` are its own: the page hands them. So are `selectors`, handed to the search as they are, for its 🪣 row
   (goal/G41.26).
 - `refresh()` and `destroy()` reach the search element; `.list` is it.
@@ -26,6 +26,6 @@ hands it (goal/G41.16). The grants panel draws it. Its test is `./listElement.js
 
 - A table or branch named in the list itself, or a list made with no table.
 - A search asked anywhere but the table's.
-- A row handed another table, or matched on its id.
+- A row handed another table, or a `matched()` handed to its search.
 - Revoke anywhere but the rightmost column.
 - An empty list that never hears its first grant.

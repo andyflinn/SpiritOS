@@ -99,9 +99,10 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   const el = o.element({ keep: true, name: 'anna' }, 'K1');
   if (el.kind === 'contact' && el.key === 'K1' && el.row.name === 'anna') test.check('each row is a contactElement, keyed by the row\'s key');
   else test.fail('the element: ' + JSON.stringify({ kind: el.kind, key: el.key }));
-  const m = o.matched({ name: 'anna', publicLabel: 'A', keep: true });
-  if (JSON.stringify(m) === '{"name":"anna","publicLabel":"A"}' && JSON.stringify(o.matched(null)) === '{"name":"","publicLabel":""}') test.check('a row is matched on its name and public label, as text');
-  else test.fail('matched: ' + JSON.stringify(m));
+  // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row"):
+  // the list hands its search no matched() of its own.
+  if (typeof o.matched !== 'function') test.check('it hands its search no matched(): the whole row is matched (goal/G41.28)');
+  else test.fail('it still hands matched()');
 
   test.subHeading('pressing a row');
   o.details({ keep: true }, 'K1', el);

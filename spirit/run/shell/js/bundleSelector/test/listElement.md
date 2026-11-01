@@ -17,7 +17,7 @@ their data set"*).
 - `opts.face`, `opts.placeholder`, `opts.all` and `opts.pick(row, key)` are handed on, as probabilitySearch's.
 - Its search asks `auth.bundle { op: 'search', text }` through the spirit object, the text trimmed, and answers as a
   reply, `{ items, more }`. An empty answer is an empty list.
-- A row is matched on its label, never its hidden id.
+- It hands its search no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.data."*).
 - Each row is a `bundleElement` of that bundle, `{ id, label }`.
 - By default its columns are the label, then the owner (goal/G41.25, Andy: *"the bundleSelector's list will gain a
   new column \"owner\", displayed right after the bundles label"*). `opts.columns` names the row's fields it shows, in order (the bundle editor:
@@ -42,6 +42,6 @@ their data set"*).
 
 - A part counted on that the list did not load itself.
 - A search asked anywhere but `auth.bundle`'s, or with its op or text wrong.
-- A row matched on its id.
+- A `matched()` handed to its search.
 - Columns or editing handed to a dropdown that did not ask for them.
 - A list made for an app server that offers another owner's bundle the page holds, or one made for none that hides any.
