@@ -183,15 +183,15 @@ const takers = clients.filter(function (f) { return /\bevents\.subscribe\(|\bev\
 ok(!takers.length, 'no client takes the node\'s stream itself: spiritData.js takes it for all', 'clients taking the stream themselves, their rows outside spirit.data: ' + short(takers));
 // "any notion that there is an alternative approach must disappear from all documentation and all comments in the
 // entire repo." The ways replaced, by name: the data set's old places, the desk's old translator file, the two-level
-// branches the desk kept before the tree was by node. The desk's record (currentGoal.json) and Andy's vault are no
-// documentation of the repo's code; this file names them to find them.
+// branches the desk kept before the tree was by node, and a page or client that runs "uncached", without them. The desk's record (currentGoal.json) and Andy's vault are no
+// documentation of the repo's code; this file and its spec name them to find them.
 const REPO = path.join(RUN, '..', '..');
-const OLD = [/shell\/js\/spiritData\.js/, /shell\/shared\/js\/spiritData\.js/, /deskData\.js/, /['"]deskItems?\//, /['"]deskState\//, /\bD\.data\.(files|contacts|desk)\b/];
+const OLD = [/\buncached\b/i, /shell\/js\/spiritData\.js/, /shell\/shared\/js\/spiritData\.js/, /deskData\.js/, /['"]deskItems?\//, /['"]deskState\//, /\bD\.data\.(files|contacts|desk)\b/];
 const every = require('child_process').execFileSync('git', ['ls-files'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) {
-  return f && /\.(js|md|html|json)$/.test(f) && !/currentGoal\.json$|^spirit\/run\/brains\//.test(f) && f !== 'spirit/run/test/caches.js';
+  return f && /\.(js|md|html|json)$/.test(f) && !/currentGoal\.json$|^spirit\/run\/brains\//.test(f) && f !== 'spirit/run/test/caches.js' && f !== 'spirit/run/test/caches.md';
 });
 const naming = every.filter(function (f) { let t = ''; try { t = fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return false; } return OLD.some(function (re) { return re.test(t); }); });
-ok(!naming.length, 'no file in the repo names a replaced way: the old data set places, deskData.js, the two-level desk branches',
+ok(!naming.length, 'no file in the repo names a replaced way: running uncached, the old data set places, deskData.js, the two-level desk branches',
   naming.length + ' files still name one: ' + short(naming));
 
 // ── 6. FOUND AND DOWNLOADED BY INTROSPECTION ────────────────────────────────────────────────────────────────────────

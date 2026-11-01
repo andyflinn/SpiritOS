@@ -44,11 +44,11 @@ is the appServer serializes the cache to disk."*
 
 7. **No other way** (Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js
    must do so in this item. no exceptions."*, and *"any notion that there is an alternative approach must disappear
-   from all documentation and all comments in the entire repo."*):
+   from all documentation and all comments and all code and tests in the entire repo."*):
    - no client file (under `shell/` or `process/js/`, but `shell/boot.js`, the face's own transport) takes the node's
      stream itself (`events.subscribe`): only `spiritData.js` takes it, for every client;
    - no file of the repo (`.js`, `.md`, `.html`, `.json`; the desk's `currentGoal.json` and Andy's vault aside) names a
-     replaced way: `shell/js/spiritData.js`, `shell/shared/js/spiritData.js`, `deskData.js`, the desk's two-level
+     replaced way: a page or client that runs `uncached`, `shell/js/spiritData.js`, `shell/shared/js/spiritData.js`, `deskData.js`, the desk's two-level
      branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;
      any other notion is read for by hand.
 

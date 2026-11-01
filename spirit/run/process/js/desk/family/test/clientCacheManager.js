@@ -17,12 +17,12 @@ const SPIRIT_DATA = path.join(RUN, 'spirit', 'spiritData.js');
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
-function world(withData) {
+function world() {
   const win = { JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Map: Map, Math: Math, unescape: unescape, encodeURIComponent: encodeURIComponent };
   win.window = win;
   win.spirit = {};
   vm.createContext(win);
-  if (withData) vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
+  vm.runInContext(fs.readFileSync(SPIRIT_DATA, 'utf8'), win, { filename: SPIRIT_DATA });
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   const D = win.spirit.data;
   let n = 0;
@@ -59,10 +59,8 @@ ok(!('cache' in DESK_API), 'and the desk family\'s api.js holds its verbs alone,
 // Its translator is tested below, run as the page and the subscribing appServer run it; without the file there is none.
 if (!fs.existsSync(FILE)) { test.fail('the translator\'s checks wait on the file'); test.reportSuccessFailureCount(); process.exit(0); }
 
-test.subHeading('it registers on spirit.data, and only when there is one');
-const w0 = world(false);
-ok(!w0.win.spirit.deskData, 'without spirit.data it does nothing: no spirit.deskData', 'deskData: ' + short(w0.win.spirit.deskData));
-const w = world(true);
+test.subHeading('it registers on spirit.data');
+const w = world();
 ok(!!w.X && typeof w.X.published === 'function' && typeof w.X.took === 'function', 'with spirit.data it answers spirit.deskData { published, took }', short(w.X && Object.keys(w.X)));
 
 test.subHeading('a goal pushed whole: its rows kept, it is current');
@@ -104,12 +102,12 @@ ok(w.change() === 5, 'a change that is not a number is not taken', 'change ' + w
 test.subHeading('a bundle is appServer\'s: the translator takes one row at a time (goal/G41.12)');
 // The three bundle checks are gone (goal/G41.24, Andy: "the three bundle checks go"; "i think the translator has no
 // business knowing anything about \"bundling\""): appServer opens a bundle and hands its rows in one by one.
-const wb = world(true);
+const wb = world();
 wb.job({ verb: 'goal.whole', item: it('goal/G9.3', 'goal/G9') });
 ok(wb.item('goal/G9.3'), 'a single row is taken as it comes', short(wb.ids()));
 
 test.subHeading('took: a part read for an item of the current goal is kept');
-const wt = world(true);
+const wt = world();
 wt.job(whole(it('goal/G9.1', 'goal/G9')));
 wt.job(whole(it('goal/G0', '')));
 wt.job({ verb: 'item.row', item: it('goal/G5.1', 'goal/G5') });
@@ -131,13 +129,13 @@ ok(wt.part('goal/G9.1').chat.length === 1 && wt.part('goal/G9.1').files.length =
 let threw = null;
 try { wt.X.took('item.box', {}, { box: 'x' }); wt.X.took('item.box', { id: 'goal/G9.1' }, null); wt.X.took('item.box', { id: 'goal/G9.1' }, { box: 5 }); wt.X.took('item.what', { id: 'goal/G9.1' }, { a: 1 }); } catch (e) { threw = e; }
 ok(!threw && wt.part('goal/G9.1').box === 'B', 'no id, no answer, a box not a string, another verb: nothing kept, nothing thrown', short(wt.part('goal/G9.1').box));
-const wn = world(true);
+const wn = world();
 wn.job({ verb: 'item.row', item: it('goal/G9.1', 'goal/G9') });
 wn.X.took('item.box', { id: 'goal/G9.1' }, { box: 'B' });
 ok(!wn.part('goal/G9.1'), 'before any goal was pushed nothing is kept', short(wn.part('goal/G9.1')));
 
 test.subHeading('side rows keep current a part once read, and only then');
-const ws = world(true);
+const ws = world();
 ws.job(whole(it('goal/G9.1', 'goal/G9')));
 ws.job(whole(it('goal/G9.2', 'goal/G9')));
 ws.job({ table: 'box', id: 'goal/G9.1', row: { text: 'never read' } });
@@ -176,7 +174,7 @@ checks = ws.part('goal/G9.1').checks;
 ok(checks.length === 0, 'a cleared one goes, and a removed one by its number (at)', short(checks));
 
 test.subHeading('side rows: files, one agent\'s path each, core first, and the late mark (goal/G41.11)');
-const wf = world(true);
+const wf = world();
 wf.job(whole(it('goal/G9.1', 'goal/G9')));
 wf.X.took('item.files', { id: 'goal/G9.1' }, { files: [], filesMore: false });
 wf.job({ table: 'files', id: 'goal/G9.1', row: { path: 'x.js', by: 'cw', core: false, grant: '', late: true } });
@@ -198,7 +196,7 @@ files = wf.part('goal/G9.1').files;
 ok(files.length === 3 && !files.some(function (f) { return f.by === 'cw' && f.path === 'x.js'; }), 'a removed file goes by holder|path, the other agent\'s stays', short(files));
 
 test.subHeading('only the desk\'s jobs are read');
-const wm = world(true);
+const wm = world();
 wm.job(whole(it('goal/G9.1', 'goal/G9')), 'process/js/files');
 wm.D.take({ id: 'z', module: 'process/js/desk', data: {}, app: 'not an object' }, SENDER);
 ok(!wm.item('goal/G9.1') && !wm.current(), 'a job of another module, or an app that is no object, keeps nothing', short(wm.ids()));
