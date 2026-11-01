@@ -12,7 +12,10 @@
 // clients."); with no server it hides, lists nothing and clears the choice.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
-  var parts = Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/probabilitySearch.js') : null);
+  // The app-server selector too: the keeper of the apiVerbs branch it draws from (goal/G41.28).
+  var parts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/appServerSelector.js'].map(function (p) {
+    return window.spirit.require ? window.spirit.require(p) : null;
+  }));
 
   function createApiVerbSelector(options) {
     options = options || {};
@@ -24,21 +27,28 @@
     var server = '';
     var list = { redraw: function () {} };
 
+    // THE NODE'S OWN VERBS ARE spirit.data's (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors draw from
+    // it"): a view of the apiVerbs branch the app-server selector keeps, the chosen family's alone; another party's tree
+    // (options.own false: introSpector's peer or relay) is listed from that tree, as before.
+    var own = options.own !== false;
     function rows() {
       var verbs = server && tree ? window.spirit.apiTreeIndex.verbs(tree, server) : [];
       return verbs.map(function (v) { return { key: v, name: v }; });
     }
     // A PROBABILITYSEARCH DROPDOWN (the old shell's list search is forbidden on the face, goal/G40.8).
     parts.then(function () {
+      var S = window.spirit.elements.appServerSelector;
       list = window.spirit.elements.probabilitySearch.create(root, {
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
-        rows: rows,
+        data: own && S ? S.verbs : undefined,
+        rows: own && S ? undefined : rows,
+        filters: own && S ? [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server ? 1 : 0; } }] : [],
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         pick: function (row, key) {
-          root.value = row ? String(key || row.key || '') : '';
+          root.value = row ? String((row.name != null ? row.name : key) || '') : '';
           root.dispatchEvent(new Event('change', { bubbles: true }));
         },
         empty: 'No verb matches.',
@@ -51,6 +61,8 @@
       root.hidden = !server;
       list.redraw();
     };
+    // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go).
+    root.destroy = function () { parts.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); }); };
     return root;
   }
 

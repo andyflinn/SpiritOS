@@ -57,7 +57,7 @@
     var made = parts.then(function () {
       var E = window.spirit.elements;
       families = E.appServerSelector.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
-      verbs = E.apiVerbSelector.create(root, {});
+      verbs = E.apiVerbSelector.create(root, { own: typeof options.tree !== 'function' });
       families.addEventListener('change', function (event) {
         quiet(event);
         if (families.value === root.family) return;
@@ -85,6 +85,8 @@
         return families.load(fn);
       });
     };
+    // Both halves destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go).
+    root.destroy = function () { made.then(function () { if (families) families.destroy(); if (verbs) verbs.destroy(); }); };
     return root;
   }
 

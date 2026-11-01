@@ -34,14 +34,26 @@
     branches.className += ' fill';
 
     function say(text) { said.textContent = String(text || ''); }
+    // WHAT IT ADDS, IT FOLLOWS IN spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
+    // changes shit it listens to fucking update via the spirit object"): the branches branch the branch rows keep. The
+    // branch asked for, once there, is said added.
+    var waiting = null;
+    var D = window.spirit.data;
+    var off = D ? D.watch('branches', function (p, v) {
+      if (!waiting || !v) return;
+      if (Number(v.bundle) === waiting.bundle && String(v.family) === waiting.family && String(v.verb || '') === waiting.verb) { waiting = null; say('added'); }
+    }) : null;
     add.addEventListener('click', function () {
       if (!family.family) { say('choose a family first'); return; }
       say('');
       var ask = { op: 'add', bundle: Number(o.bundle), family: family.family, verb: family.verb || '' };
+      waiting = { bundle: ask.bundle, family: ask.family, verb: ask.verb };
       spirit.ready.then(function (s) { return s.auth.branch(ask); }).then(function () {
         branches.refresh();
-      }, function (e) { say((e && (e.message || e.refusal)) || 'not added'); });
+      }, function (e) { waiting = null; say((e && (e.message || e.refusal)) || 'not added'); });
     });
+    // Everything it made, and its watch, let go with it (rule/8).
+    return { destroy: function () { if (typeof off === 'function') off(); family.destroy(); branches.destroy(); } };
   }
 
   function open(options) {
@@ -60,8 +72,9 @@
   // container, once its parts are in.
   function create(container, options) {
     var gone = false;
-    parts.then(function () { if (!gone) mount(container, options || {}); });
-    return { destroy: function () { gone = true; container.innerHTML = ''; } };
+    var mounted = null;
+    parts.then(function () { if (!gone) mounted = mount(container, options || {}); });
+    return { destroy: function () { gone = true; if (mounted) mounted.destroy(); mounted = null; container.innerHTML = ''; } };
   }
   window.spirit.elements.branchEditor = { create: create, open: open };
 }());

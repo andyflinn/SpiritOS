@@ -83,7 +83,8 @@
       list: list,
       refresh: function () { list.refresh(); },
       // Destroy leaves its host empty (goal/G41.19, box v23: "destroy empties it"), its filters with it.
-      destroy: function () { if (list) list.destroy(); host.innerHTML = ''; },
+      // Its family selector, in the 🪣 row, destroyed with it (goal/G41.28, rule/8).
+      destroy: function () { if (list) list.destroy(); if (typeof family.destroy === 'function') family.destroy(); host.innerHTML = ''; },
     };
   }
 

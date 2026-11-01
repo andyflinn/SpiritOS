@@ -26,6 +26,7 @@
     root.value = '';
     root.row = null;
     var made = null;
+    var gone = false;
 
     function pick(row) {
       root.value = row && row.id !== undefined ? Number(row.id) : '';
@@ -34,6 +35,7 @@
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/branchSelector/listElement.js') : null).then(function () {
+      if (gone) return;
       made = window.spirit.elements.branchList.create(root, {
         bundle: options.bundle,
         face: isPane ? 'pane' : 'dropdown',
@@ -47,6 +49,8 @@
     });
 
     root.refresh = function () { if (made) made.refresh(); };
+    // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go).
+    root.destroy = function () { gone = true; if (made) made.destroy(); made = null; };
     return root;
   }
 

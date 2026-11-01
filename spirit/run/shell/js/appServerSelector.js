@@ -14,6 +14,42 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
   var parts = Promise.resolve(window.spirit.require ? window.spirit.require('shell/js/probabilitySearch.js') : null);
 
+  // THE NODE'S API TREE IN spirit.data, THIS FILE'S TO KEEP (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the
+  // node's api tree in an apiTree branch of spirit.data, read again when a server job changes, and the family, verb and
+  // app-server selectors draw from it?" "yes."): apiTree, family -> { name }, and apiVerbs, 'family.verb' -> { family,
+  // name }, as apiTreeIndex reads the tree (a server that did not answer left out, DEBUG never offered). Read again, the
+  // tree replaces both whole. A server job changing on the stream reads it again: one translator for every selector.
+  // Another party's tree (options.tree: introSpector's peer or relay) is that party's, and stays out of it.
+  var TREE = 'apiTree';
+  var VERBS = 'apiVerbs';
+  function keepTree(tree) {
+    var D = window.spirit.data;
+    var I = window.spirit.apiTreeIndex;
+    if (!D || !I) return;
+    var names = tree ? I.servers(tree) : [];
+    var verbs = {};
+    names.forEach(function (name) { I.verbs(tree, name).forEach(function (v) { verbs[name + '.' + v] = { family: name, name: v }; }); });
+    Object.keys(D.branch(TREE)).forEach(function (k) { if (names.indexOf(k) === -1) D.del(TREE + '/' + k); });
+    Object.keys(D.branch(VERBS)).forEach(function (k) { if (!verbs[k]) D.del(VERBS + '/' + k); });
+    names.forEach(function (name) { D.set(TREE + '/' + name, { name: name }); });
+    Object.keys(verbs).forEach(function (k) { D.set(VERBS + '/' + k, verbs[k]); });
+  }
+  var reading = null;
+  function readOwnTree() {
+    reading = reading || spirit.ready.then(function (s) { return s.tree(); }).then(function (tree) {
+      reading = null;
+      var t = tree && typeof tree === 'object' ? tree : null;
+      keepTree(t);
+      return t;
+    }, function () { reading = null; return null; });
+    return reading;
+  }
+  function follow(D) {
+    if (D && typeof D.translate === 'function') D.translate({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
+  }
+  if (window.spirit && window.spirit.data) follow(window.spirit.data);
+  else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('shell/shared/js/spiritData.js')).then(function () { follow(window.spirit.data); }, function () {});
+
   // ── THE APPSERVER SELECTOR (apiAuth/G1.8) ──────────────────────────
   //
   //   Andy: "the appServer selector (a subComponent of the api-path
@@ -46,6 +82,9 @@
     root.value = '';
     root.tree = null;
 
+    // The node's own tree is the apiTree branch; another party's is its own rows.
+    var own = typeof options.tree !== 'function';
+    root.own = own;
     function rows() {
       var names = root.tree ? window.spirit.apiTreeIndex.servers(root.tree) : [];
       return names.map(function (name) { return { key: name, name: name }; });
@@ -56,7 +95,8 @@
         face: 'dropdown',
         placeholder: options.placeholder || 'choose a server…',
         all: options.all,
-        rows: rows,
+        data: own ? TREE : undefined,
+        rows: own ? undefined : rows,
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         pick: function (row, key) {
@@ -74,8 +114,8 @@
       root.value = '';
       root.tree = null;
       list.redraw();
-      // The node's own api answer, through the spirit object (goal/G32.2).
-      var got = typeof fn === 'function' ? fn() : spirit.ready.then(function (s) { return s.tree(); });
+      // The node's own api answer, through the spirit object (goal/G32.2), kept in the apiTree branch; a party's, its own.
+      var got = typeof fn === 'function' ? fn() : readOwnTree();
       return Promise.all([got, made]).then(function (both) {
         var tree = both[0];
         root.tree = tree && typeof tree === 'object' ? tree : null;
@@ -84,11 +124,14 @@
       }, function () { /* the list stays empty; the node says why elsewhere */ });
     };
     root.load(options.tree);
+    // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go).
+    root.destroy = function () { made.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); }); };
     return root;
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
-  window.spirit.elements.appServerSelector = { create: function (container, options) { var root = createAppServerSelector(options); container.appendChild(root); return root; } };
+  // tree and verbs: the two branches it keeps, for the verb selector that is a view of one (goal/G41.28).
+  window.spirit.elements.appServerSelector = { create: function (container, options) { var root = createAppServerSelector(options); container.appendChild(root); return root; }, tree: TREE, verbs: VERBS };
 })();
