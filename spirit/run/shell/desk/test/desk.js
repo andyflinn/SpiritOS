@@ -181,19 +181,34 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
+  const REAL = ['shell/shared/js/spiritData.js', 'process/js/desk/family/clientCacheManager.js'];
+  const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,
-    require: function (p) { required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
+    // The page's cache is the desk family's clientCacheManager.js, over the one spirit.data (goal/G41.28): both run as
+    // they are, so the List is a search of what the cache holds; anything else is answered and not run.
+    require: function (p) {
+      const rel = String(p).replace(/^\/+/, '');
+      required.push(rel);
+      if (REAL.indexOf(rel) !== -1 && !ran[rel]) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
+      return Promise.resolve({});
+    },
     elements: { armingButton: armingStub(document, made),
       probabilitySearch: { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
+  // The page's one data set, which spirit.js brings with the client before any app runs.
+  win.spirit.require('shell/shared/js/spiritData.js');
   vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), win, { filename: 'rowElement.js' });
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
   w.mount = async function () {
     win.def.mount(document.body.appendChild(document.createElement('div')), api);
     await settle();
+    // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, the one its last
+    // goal.whole named; the page reads it from there, never from a search answer.
+    const K = win.spirit.deskData;
+    if (K && typeof K.published === 'function') { [goal].concat(items).forEach(function (r) { K.published({ verb: 'goal.whole', item: r, change: 1 }); }); await settle(); }
     // The List's rows, drawn by the page's own element into the List's box, where its click listener hears them.
     if (listOpts) {
       const host = document.getElementById('desk-list');

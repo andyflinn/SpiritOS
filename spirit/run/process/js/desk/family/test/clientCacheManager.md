@@ -22,15 +22,15 @@ It registers a translator on `spirit.data` (its `onJob` reads jobs of module `pr
 object) and answers `spirit.deskData = { published(o), took(verb, args, answer) }`. Without `spirit.data` it does
 nothing. It writes only through `set`, `merge` and `del`:
 
-- `deskItems/<id>` an item's facts; `deskItem/<id>` the parts read so far; `desk/current` the goal last pushed whole;
-  `desk/change` the newest change number heard.
+- `desk/<id>` an item's facts; `deskItem/<id>` the parts read so far; `deskState/current` the goal last pushed whole;
+  `deskState/change` the newest change number heard.
 
 ## Requirements
 
-- **A row** (`item`, an object or a JSON string, with an id) is kept as `deskItems/<id>`; facts without an id, broken
+- **A row** (`item`, an object or a JSON string, with an id) is kept as `desk/<id>`; facts without an id, broken
   JSON and non-objects are dropped.
 - **A goal pushed whole** (`verb: 'goal.whole'`) of a goal other than the group chat (`goal/G0`) becomes
-  `desk/current`, and nothing kept of other goals goes, rows or parts (goal/G41.12, box v15: *"The cache keeps
+  `deskState/current`, and nothing kept of other goals goes, rows or parts (goal/G41.12, box v15: *"The cache keeps
   everything the server sends, every goal, no filtering on the client side"*). The group chat never becomes current.
 - **A removed row** deletes the item's facts and its parts.
 - **The change number** is raised, never lowered; a change that is not a number is not taken.

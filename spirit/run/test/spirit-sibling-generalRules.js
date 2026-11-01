@@ -307,7 +307,8 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
   // WHAT IT CHANGES, IT LISTENS FOR, IN ITS CODE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when
   // it changes shit it listens to fucking update via the spirit object"): judged without a page, since a bare mount
   // seldom has a row to change. A module whose code sends a write (an op that changes a row, or a verb that sets) watches
-  // spirit.data: a .watch( of its own, or a search made on a spirit.data branch (its data: option).
+  // spirit.data: a .watch( of its own, or a search made on a spirit.data branch (its data: option), the branch named as
+  // text or by the one that keeps it (data: K.branch, the cache manager's own name for it).
   {
     const own = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
     // A write in code: an op that changes a row ({ op: 'set' }), a verb named as a string that changes one
@@ -316,7 +317,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     const writes = WRITE.exec(own);
     test.subHeading(NAMED + ': ' + 'what its code changes, it watches in spirit.data');
     if (!writes) unjudged('its code sends no write');
-    else ok(/\.watch\s*\(/.test(own) || /\bdata\s*:\s*['"][\w.\/-]+['"]/.test(own), 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and watches spirit.data', 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and its code watches nothing in spirit.data');
+    else ok(/\.watch\s*\(/.test(own) || /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/.test(own), 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and watches spirit.data', 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and its code watches nothing in spirit.data');
   }
   const chrome = findChrome();
   if (!chrome) { test.fail('no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'); return; }

@@ -50,7 +50,7 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   goal; a push of one goal never drops another's", and Q1: "nothing drops from the cache, unless the api.js from the
   server says so"): deskClient names nothing for a push to replace (no `renews`) and sweeps nothing itself. After the
   current goal is pushed whole again, an item the push leaves out stays kept, and so do another goal's items; the push
-  makes its goal current; `desk/change` and a kept file list are never swept. Landing a push is appServer's.
+  makes its goal current; `deskState/change` and a kept file list are never swept. Landing a push is appServer's.
 - A delivery of several rows is appServer's bundle (goal/G41.12); deskClient sees each row alone.
 - **The desk's line addressed to the cap agents** (its row's `to`, as his addressed lines) wakes the agent whose key
   it names as its own (DESK), with no take, and entitles it to answer there and take the box.
