@@ -169,7 +169,14 @@ const WATCH = String.raw`(function () {
         var changed = 0;
         var mo = new MutationObserver(function (l) { changed += l.length; });
         mo.observe(box, { subtree: true, childList: true, attributes: true, characterData: true });
-        try { D.set(at, { key: whole ? undefined : 'zz-probe-' + i, label: mark, name: mark, title: mark, text: mark, id: whole ? undefined : 'zz-probe-' + i }); } catch (e) { /* the branch refused it */ }
+        // A row that is there keeps its shape, each of its text fields marked, so a reader that checks its fields still
+        // takes it; a new row is the marked fields alone.
+        var probe = { key: whole ? undefined : 'zz-probe-' + i, label: mark, name: mark, title: mark, text: mark, id: whole ? undefined : 'zz-probe-' + i };
+        if (whole && before && typeof before === 'object') {
+          probe = Object.assign({}, before);
+          Object.keys(probe).forEach(function (k) { if (typeof probe[k] === 'string') probe[k] = mark; });
+        }
+        try { D.set(at, probe); } catch (e) { /* the branch refused it */ }
         return new Promise(function (r) { setTimeout(r, 1000); }).then(function () {
           mo.disconnect();
           try { if (whole && before !== undefined) D.set(at, before); else D.del(at); } catch (e) { /* left */ }
