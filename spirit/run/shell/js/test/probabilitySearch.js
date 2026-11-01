@@ -12,6 +12,7 @@ const test = require(path.join(path.resolve(__dirname, '../../..'), 'test', 'tes
 
 const RUN = path.join(__dirname, '..', '..', '..');
 const FILE = path.join(__dirname, '..', 'probabilitySearch.js');
+const SHELL_CSS = fs.existsSync(path.join(RUN, 'shell.css')) ? fs.readFileSync(path.join(RUN, 'shell.css'), 'utf8') : '';
 const docHeard = [];
 let docRemoved = 0;
 global.document = {
@@ -393,7 +394,10 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   };
   [['with filters', c4], ['with none', c4b], ['in a dropdown\'s pane', c4c]].forEach(function (x) {
     const b = bubbleOf(x[1]); const pre = x[1].pre();
-    const st = b ? (/style="([^"]*)"/.exec(b.open) || [])[1] || '' : '';
+    // Its look: its own style, or since goal/G41.27 the shared bubble class shell.css draws ("The bubble is one shared
+    // style, the same probabilitySearch's search bubble uses.").
+    const cls = b ? ((/class="([^"]*)"/.exec(b.open) || [])[1] || '').split(/\s+/).filter(Boolean) : [];
+    const st = b ? ((/style="([^"]*)"/.exec(b.open) || [])[1] || '') + ';' + cls.map(function (k) { const h = new RegExp('\\.' + k.replace(/-/g, '\\-') + '\\s*\\{([^}]*)\\}').exec(SHELL_CSS); return h ? h[1] : ''; }).join(';') : '';
     ok(!!b && /border(-color)?\s*:[^;]*currentColor/.test(st) && /background(-color)?\s*:\s*transparent/.test(st) && /border-radius\s*:/.test(st),
       x[0] + ': the filters and the search row stand in one bubble, transparent, its border the type-face\'s colour', 'the innermost box holding both: ' + short(b && b.open));
     ok(!!b && b.part.indexOf('id="' + pre + 'list"') === -1, x[0] + ': the list stands outside the bubble', 'the bubble holds the list');
