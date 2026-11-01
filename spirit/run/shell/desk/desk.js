@@ -930,7 +930,6 @@ function deskMountList() {
         { name: 'goalsOnly', toggle: true, word: 'Goals Only', test: function (row, on) { return !on || row.goal === '' ? 1 : 0; } },
         { name: 'includeClosed', toggle: true, word: 'Include Closed', test: function (row, on) { return on || row.status !== 'closed' ? 1 : 0; } },
       ],
-      matched: function (row) { return { title: String((row && row.title) || ''), id: String((row && row.id) || '') }; },
       element: function (row, key) { return deskListElement(row, key); },
       details: function (row, key) { deskOpenRow(String(key)); },
       empty: 'Nothing to show.',
@@ -1241,7 +1240,6 @@ function deskRulesSearch() {
         { name: 'type', multi: true, choices: choices(DESK_RULE_TYPES), test: function (row, off) { return (off || {})[row.type] ? 0 : 1; } },
         { name: 'status', multi: true, choices: choices(DESK_RULE_STATUSES), test: function (row, off) { return (off || {})[row.status] ? 0 : 1; } },
       ],
-      matched: function (row) { return { label: String((row && row.label) || '') }; },
       details: function (row, key) { deskOpenRule(key); },
       empty: 'No rule matches.',
     });

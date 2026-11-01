@@ -103,7 +103,6 @@
         { field: 'add', label: '' },
       ],
       element: function (row, key) { var el = window.spirit.elements.contactElement.create(Object.assign({ key: key }, row)); els[key] = el; return el; },
-      matched: function (row) { return { name: String((row && row.name) || ''), publicLabel: String((row && row.publicLabel) || '') }; },
       filters: FILTERS,
       details: function (row, key, el) {
         if (undecided(row)) { askCard(row, key); return; }

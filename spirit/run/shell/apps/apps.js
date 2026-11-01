@@ -171,7 +171,6 @@ function appsDraw(listHost, api) {
         { field: 'installer', label: '' },
       ],
       element: function (row, key) { return appsRowElement(E, row, key); },
-      matched: function (row) { return { path: String(row.path || '') }; },
       filters: [
         { name: 'type', choices: [{ value: 'all', word: 'all' }, { value: 'shell', word: 'shell' }, { value: 'process', word: 'process' }],
           test: function (row, v) {

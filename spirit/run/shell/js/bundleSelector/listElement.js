@@ -60,8 +60,6 @@
       // A pick shows the bundle's label, never its number (Andy: "the bundleSelector shows a fucking number is selected
       // instead of the fucking label"); the number is hidden (box: "a hidden numeric key").
       name: function (row) { return String((row && row.label) || ''); },
-      // Matched on its label alone.
-      matched: function (row) { return { label: String((row && row.label) || '') }; },
       empty: o.empty || 'No bundle matches.',
     });
     list.refresh();

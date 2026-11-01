@@ -52,8 +52,6 @@
         { field: 'revoke', label: '' },
       ],
       element: function (row) { return window.spirit.elements.grantElement.create(row, { grants: g, api: o.api, serves: o.serves }); },
-      // Matched on whose grant it is, the table's label field, and the words of its path, never the id.
-      matched: function (row) { return { name: String((row && row[g.label]) || ''), path: String((row && row.path) || '').split('.').join(' ') }; },
       filters: o.filters,
       selectors: o.selectors,
       empty: o.empty || 'No grant matches.',

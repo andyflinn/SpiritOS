@@ -201,7 +201,6 @@
           { field: 'name', label: 'Name', sort: 'text' },
           { field: 'status', label: '' },
         ],
-        matched: function (row) { return { name: row.name || '' }; },
         element: element,
         name: function (row) { return String((row && (row.name || row.key)) || ''); },
         // ONE ROW, MUTUALLY EXCLUSIVE (goal/G30.7; Andy, 2026-10-20: "Gimme 3 Buttons: [all] [⭐ my puppets] [relays] where

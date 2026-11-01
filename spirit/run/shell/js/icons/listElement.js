@@ -50,8 +50,6 @@
         { field: 'keywords', label: 'Keywords' },
       ],
       element: function (row, key) { return E.iconElement.create(Object.assign({ glyph: key }, row)); },
-      // The icon itself is searched too (Andy: "it doesn't search the icon itself"): pasted glyphs find their rows.
-      matched: function (row) { return { glyph: String(row.glyph || ''), keywords: (row.keywords || []).join(' ') }; },
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       details: typeof o.details === 'function' ? function (row, key) { o.details(row, key); } : undefined,
       empty: o.empty || 'No icon matches.',

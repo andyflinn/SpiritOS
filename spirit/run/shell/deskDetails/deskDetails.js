@@ -800,7 +800,6 @@ function ddMountRulePick() {
         test: function (row, off) { return (off || {})[row.type] ? 0 : 1; } }],
       columns: [{ field: 'label', label: 'Rule', sort: 'text' }, { field: 'type', label: 'Type', sort: 'text' }],
       face: 'dropdown', placeholder: 'attach a rule…',
-      matched: function (row) { return { label: String((row && row.label) || '') }; },
       pick: function (row, key) { if (key) ddWrite('item.rules.add', { id: ddId, rule: String(key) }); },
       empty: 'No rule matches.',
     });
@@ -840,7 +839,6 @@ function ddMountChatFind() {
       args: function (text) { return { id: ddId, text: text, by: '', since: '', before: '', scope: ddFacts && ddFacts.goal === '' ? 'items' : '' }; },
       columns: [{ field: 'at', label: 'When', sort: 'date' }, { field: 'by', label: 'Who', sort: 'text' }, { field: 'text', label: 'Line', sort: 'text' }],
       face: 'dropdown', placeholder: 'search the chat…',
-      matched: function (row) { return { text: String((row && row.text) || ''), by: String((row && row.by) || '') }; },
       pick: function (row) { if (row && row.item && row.item !== ddId) ddApi.closeDialog({ open: row.item }); },
       empty: 'No lines found.',
     });

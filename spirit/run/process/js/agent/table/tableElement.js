@@ -4,7 +4,7 @@
 // table for browsers, with search-list using the probablility-group of elements in shell/js/)" and "elementRow.js (a
 // panel element, to maintain and edit one row of the table)".
 //
-//   spirit.elements.agentTable.create(container, { api, table, matched, detail, row, add }) -> { refresh, destroy }
+//   spirit.elements.agentTable.create(container, { api, table, detail, row, add }) -> { refresh, destroy }
 //     a title row, an Add button and a probabilitySearch pane over the table's branch of spirit.data, shown at once,
 //     each row by its icon and its label alone (LIST_COLUMNS); Add gives the new row its table's icon;
 //     picking a row, or adding one, opens row(box, key, added, row) in the detail pane; add(open), when given, is what
@@ -156,7 +156,6 @@
       var title = container.querySelector('.agent-title');
       if (title && title.firstElementChild && !title.querySelector('.shell-icon')) title.firstElementChild.outerHTML = iconHtml(look.icon || '', 1.2);
       list = search(container.querySelector('#' + pre + 'list'), o, {
-        matched: o.matched,
         pick: function (row, key) { open(key, false, row); },
         empty: 'No ' + o.table + ' yet.',
       });

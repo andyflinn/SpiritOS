@@ -83,7 +83,6 @@
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
       ],
       element: function (row, key) { return E.fileElement.create(Object.assign({ path: key }, row)); },
-      matched: function (row) { return { name: String(row.name || ''), path: String(row.path || '') }; },
       score: function (row, values) { return values.in === 'contents' ? (scores[row.path] || 0) : null; },
       filters: [
         { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },

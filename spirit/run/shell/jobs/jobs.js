@@ -151,7 +151,6 @@ spirit.shell.activateApp({
         { name: 'kind', choices: [{ value: 'all', word: 'all' }, { value: 'node', word: 'node' }, { value: 'server', word: 'servers' }, { value: 'transient', word: 'transient' }, { value: 'failed', word: 'failed' }],
           test: function (job, v) { return v === 'all' || (v === 'failed' ? job.status === 'failed' : jobsKind(job) === v); } },
       ],
-      matched: function (job) { return { name: jobsName(job), type: String(job.type || ''), module: String(job.module || ''), id: String(job.id) }; },
       paint: jobsPaint,
       head: ['', 'Status', 'Name', 'Kind', 'Progress', 'Updated'],
       // A row opens its job's screen (goal/G2.11): the events, the data and the actions are there.

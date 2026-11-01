@@ -575,7 +575,6 @@ spirit.shell.activateApp({
           if (l.peer !== chPeer) return 0;
           return v === 'me' ? (l.sent === 1 ? 1 : 0) : v === 'them' ? (l.sent === 0 ? 1 : 0) : 1;
         } }],
-      matched: function (l) { return { text: String(l.text || '') }; },
       paint: function (l, mark) {
         return '<td>' + chEscapeHtml(l.at ? new Date(l.at).toLocaleString() : '') + '</td>' +
           '<td>' + (l.sent === 1 ? 'me' : 'them') + '</td>' +

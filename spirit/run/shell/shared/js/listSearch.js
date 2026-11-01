@@ -13,8 +13,7 @@
 //   filters: [{ name, choices: [{ value, icon, word }], test(row, value) }],
 //                                 declared, drawn here; test answers a probability, 0 to 1, that only lowers a row
 //   paint(row, mark),             one row's cells, html; mark(text) marks the words in a text
-//   matched(row, filters),        what of a row the words are matched against, by the filters' values; the row itself
-//                                 when not given (goal/G29.8: the file list's words in: names | paths)
+//                                 the words are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   score(row, filters),          a row's match score from elsewhere, 0 to 1, in place of the words' match; null to
 //                                 match as usual (goal/G29.11: the file list's contents, scored by the node)
 //   rows(),                       the page's own rows, ranked here; with no words they stand in the order rows() gives
@@ -149,8 +148,9 @@
       var m;
       if (given !== null && given !== undefined) m = Number(given) || 0;
       else {
-        var against = typeof o.matched === 'function' ? o.matched(w.row, values) : w.row;
-        m = typeof P.probabilityStringObjectMatch === 'function' ? Number(P.probabilityStringObjectMatch(text, against)) || 0 : 0;
+        // THE WHOLE ROW, ALWAYS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the
+        // whole row").
+        m = typeof P.probabilityStringObjectMatch === 'function' ? Number(P.probabilityStringObjectMatch(text, w.row)) || 0 : 0;
       }
       return Math.max(0, Math.min(1, m)) * f;
     }

@@ -30,13 +30,14 @@
 //                              or the placeholder, opening to the same list; a pick closes it. placeholder, all (a None
 //                              button that picks nothing, its words the field's while nothing is chosen) and name(row)
 //                              are the dropdown's
-//   filters, matched, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch
+//   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch; the words
+//                              are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
 //                              element's change redraws the list, and its test narrows it as a filter's does
 // }) -> { value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
 //
 // probabilitySearch.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
-// gone, el }], state { words, values, filters, sort: { field, direction }, columns, matched, score }.
+// gone, el }], state { words, values, filters, sort: { field, direction }, columns, score }.
 (function () {
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
   // and object matchers and the probability bucket, through spirit.require. Asked as this file runs, so whoever requires
@@ -67,14 +68,11 @@
     }
     return f;
   }
-  // What the words are matched against: the app's choice, or the columns' values.
-  function against(entry, state) {
-    if (typeof state.matched === 'function') return state.matched(entry.el ? entry.el.row : entry.row, state.values || {});
-    var cols = state.columns || [];
-    if (!cols.length) return entry.el ? entry.el.row : entry.row;
-    var o = {};
-    cols.forEach(function (c) { o[c.field] = valueOf(entry, c.from || c.field); });
-    return o;
+  // WHAT THE WORDS ARE MATCHED AGAINST: THE WHOLE ROW, ALWAYS (goal/G41.28; Andy, box v15: "All client side searches will
+  // be fixed, too, and search the whole row, as cached in spirit.data."): the row as the list holds it, its element's when
+  // it has one. What the list shows, or a matched() it hands, narrows nothing.
+  function against(entry) {
+    return entry.el ? entry.el.row : entry.row;
   }
   function comparePaths(x, y) {
     var a = x.toLowerCase().split('/');
@@ -290,7 +288,7 @@
       if (filters.length && fs0) fs0.innerHTML = filterHtml();
       var entries = Object.keys(byKey).map(function (k) { var e = byKey[k]; elementOf(e); return e; });
       var searching = !!words();
-      var rows = order(entries, { words: words(), values: values, filters: filters, sort: sortBy, columns: columns, matched: o.matched, score: o.score });
+      var rows = order(entries, { words: words(), values: values, filters: filters, sort: sortBy, columns: columns, score: o.score });
       shown = rows;
       var top = 0;
       if (searching) rows.forEach(function (w) { if (w.rank > top) top = w.rank; });

@@ -143,7 +143,6 @@
       verb: 'search',
       args: args,
       columns: COLUMNS,
-      matched: function (row) { return { suite: String((row && row.suite) || ''), title: String((row && row.title) || '') }; },
       filters: FILTERS,
       details: details,
       element: testRow,

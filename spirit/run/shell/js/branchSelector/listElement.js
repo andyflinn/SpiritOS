@@ -61,8 +61,6 @@
       element: function (row) { return E.branchElement.create(row, { api: o.api }); },
       // A pick shows the branch as family.verb, the family alone for (ALL), never its numbers.
       name: function (row) { return row ? (row.verb ? row.family + '.' + row.verb : row.family + ' (ALL)') : ''; },
-      // Matched on its family and verb alone.
-      matched: function (row) { return { family: String((row && row.family) || ''), verb: String((row && row.verb) || '') }; },
       // THE VIEW HOLDS EVERY BRANCH THE PAGE KNOWS: this list shows its own bundle's, narrowed by the family selector, as
       // its search asks the node. The bundle's has no button: it always holds.
       filters: [
