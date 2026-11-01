@@ -10,10 +10,11 @@
 //   spirit.elements.bundleEditor.create(box, { api }) -> { destroy() }
 //     box  the space it fills; api the app's shell api, handed to the rows for their are-you-sure
 (function () {
-  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require; and the auth family's cache manager, whose
+  // bundles it adds to (goal/G41.28).
   var parts = Promise.all(['shell/js/fieldInput.js', 'shell/js/bundleSelector.js', 'shell/js/rowForm.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
-  }));
+  }).concat([window.spirit.cacheManager('auth')]));
   // The label's rule, the one definition both sides use (js/fieldRules.js).
   function labelOf(text) {
     var R = window.spirit.fieldRules || {};
@@ -29,6 +30,8 @@
     // (family) at mount-time", and "when a bundle is added the \"owner\" field will ALWAYS be set to \"node\", unless the
     // bundleEditor was mounted for an appServer, then the owner field sill be set to <AppServerName>").
     var owner = typeof o.family === 'string' && o.family ? o.family : 'node';
+    var stop = null;
+    var bundles = null;
     parts.then(function () {
       if (gone) return;
       var E = window.spirit.elements;
@@ -47,22 +50,33 @@
       said.className = 'job-manifest-note';
       box.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are shown only.
-      var bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'owner', 'edit', 'delete'], api: o.api });
+      bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'owner', 'edit', 'delete'], api: o.api });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }
+      // WHAT IT ADDS, IT LISTENS FOR (goal/G41.27, G41.28): the bundle arrives in the auth family's cache
+      // (spirit.authData.bundles), which the pane is a view of, so it shows there by itself; once it is there, Add's
+      // label is cleared and the add is said.
+      var waitingFor = '';
+      stop = window.spirit.authData.bundles.watch(function (key, v) {
+        if (!waitingFor || !v || String(v.label || '') !== waitingFor) return;
+        waitingFor = '';
+        input.value = '';
+        say('added');
+      });
       add.addEventListener('click', function () {
         var got = labelOf(input.value);
         if (got.why) { say(got.why); return; }
         say('');
-        spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value, owner: owner }); }).then(function () {
-          input.value = '';
-          bundles.refresh();
-        }, function (e) { say((e && (e.message || e.refusal)) || 'not added'); });
+        waitingFor = got.value;
+        spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value, owner: owner }); }).then(null, function (e) {
+          waitingFor = '';
+          say((e && (e.message || e.refusal)) || 'not added');
+        });
       });
     });
     return {
-      destroy: function () { gone = true; box.innerHTML = ''; },
+      destroy: function () { gone = true; if (stop) stop(); stop = null; if (bundles) bundles.destroy(); bundles = null; box.innerHTML = ''; },
     };
   }
 

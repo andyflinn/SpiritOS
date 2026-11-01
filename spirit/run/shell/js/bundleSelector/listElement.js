@@ -17,6 +17,8 @@
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   if (window.spirit.require) ['shell/js/probabilitySearch.js', 'shell/js/bundleSelector/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
+  // And the auth family's cache manager, whose bundles branch the list is a view of (goal/G41.28).
+  window.spirit.cacheManager('auth');
   var COLUMNS = {
     label: { field: 'label', label: 'Bundle', sort: 'text' },
     owner: { field: 'owner', label: 'Owner', sort: 'text' },
@@ -44,7 +46,7 @@
     list = window.spirit.elements.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
       // A view of the node's bundles, the branch the auth family's manager keeps (spirit.authData.bundles.branch).
-      data: window.spirit.authData ? window.spirit.authData.bundles.branch : undefined,
+      data: window.spirit.authData.bundles.branch,
       server: 'auth',
       verb: 'bundle',
       face: o.face,
