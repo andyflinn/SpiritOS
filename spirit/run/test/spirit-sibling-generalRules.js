@@ -294,7 +294,14 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // diagnosed quickly").
     const PROBE = '(function () { var box = window.spiritMount.box; var out = [];' +
       ' function chain(el) { var parts = []; for (var n = el; n && n !== box; n = n.parentNode) { if (n.id || n === el) parts.unshift(n.tagName.toLowerCase() + (n.id ? "#" + n.id : "")); } return parts.join(" > "); }' +
-      ' function grows(el, prop, kid) { var before = el.getBoundingClientRect()[prop]; el.appendChild(kid); var after = el.getBoundingClientRect(); var bx = box.getBoundingClientRect();' +
+      // WHAT IS SEEN, NOT THE BOX (goal/G41.27; Andy: "change the test for codeMirror."): a box is judged by what the
+      // boxes above it that clip (overflow other than visible) leave of it on screen. CodeMirror's scroller is 50px
+      // larger than its frame on purpose, to hide the browser's own scrollbars, and its frame cuts it off: nothing spills.
+      ' function seen(el) { var r = el.getBoundingClientRect(); var v = { top: r.top, left: r.left, bottom: r.bottom, right: r.right };' +
+      '  for (var n = el.parentElement; n; n = n.parentElement) { var cs = getComputedStyle(n); if (cs.overflowX === "visible" && cs.overflowY === "visible") { if (n === box) break; continue; } var c = n.getBoundingClientRect();' +
+      '   if (cs.overflowX !== "visible") { v.left = Math.max(v.left, c.left); v.right = Math.min(v.right, c.right); } if (cs.overflowY !== "visible") { v.top = Math.max(v.top, c.top); v.bottom = Math.min(v.bottom, c.bottom); } if (n === box) break; }' +
+      '  v.height = Math.max(0, v.bottom - v.top); v.width = Math.max(0, v.right - v.left); return v; }' +
+      ' function grows(el, prop, kid) { var before = seen(el)[prop]; el.appendChild(kid); var after = seen(el); var bx = box.getBoundingClientRect();' +
       '  var r = { kept: Math.abs(after[prop] - before) <= 1, inside: after.bottom <= bx.bottom + 1 && after.right <= bx.right + 1, spilt: box.scrollHeight > box.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1 }; el.removeChild(kid); return r; }' +
       ' Array.prototype.forEach.call(box.querySelectorAll("*"), function (el) { var cs = getComputedStyle(el); if (!/auto|scroll/.test(cs.overflowY + cs.overflowX) || !el.getClientRects().length) return;' +
       '  var tall = document.createElement("div"); tall.style.cssText = "height:5000px;width:1px;flex:none";' +

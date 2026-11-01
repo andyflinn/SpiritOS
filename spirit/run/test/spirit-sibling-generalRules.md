@@ -150,16 +150,17 @@ box is its own check, named by the element's path and the box's id chain."*
 - **Destroy**: an element's destroy leaves its container empty, and **lets go every subscription it made** (rule/8). An
   app is closed by the face and has none of its own.
 
-**Deferred reds, CodeMirror's** (Andy, goal/G41.19: *"comment in the test/md file for the other three, (SHORT!) why we
-defer the red's on them: because it's codeMirror."*): `shell/js/codeMirror`, `shell/js/textViewer` and
-`shell/textEditor/textEditor` stay red on the bounded-box check. CodeMirror's scroller sits 50px past its clipped parent
-on purpose, to hide the native scrollbars (its own css: *"Things will break if this is overridden"*).
+**What is seen, not the box** (goal/G41.27; Andy: *"change the test for codeMirror."*): a box is judged by what the
+boxes above it that clip (overflow other than `visible`) leave of it on screen. CodeMirror's scroller sits 50px past its
+frame on purpose, to hide the native scrollbars (its own css: *"Things will break if this is overridden"*), and its frame
+cuts the extra off, so nothing spills: `shell/js/codeMirror` and `shell/textEditor/textEditor` are no longer deferred.
 
 ## What its test must try to break
 
 - A file that mounts only because the page preloaded something.
 - A file that asks for a file that is not there, throws, or logs an error, its options missing included.
-- A box only as tall or as wide as its content, anywhere between a scrolling box and the app.
+- A box only as tall or as wide as its content, anywhere between a scrolling box and the app; a box clipped on purpose
+  by a frame above it counted as spilling.
 - A destroy that leaves what it drew.
 - A pictograph painted as text of its own, outside the icon element, as drawn or after a press.
 - A glyph among the words of a label or a description counted as an icon.
