@@ -9,12 +9,14 @@
 // THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (shell/shared/js/spiritData.js),
 // in the page and in node alike. Andy: a desk client keeps what it learned of the current goal "like face-apps do", in
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
-// already on hand". Two branches, and two values:
-//   deskItems   id -> the item's facts, as items.search labels them and the List draws them (the trunk)
+// already on hand". THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM (goal/G41.28; Andy: "the FUCKING desk cache
+// is NOT to be found in spirit.data.data.desk", and "doesn't the fucking ... clientCacheManager.js take care of that"):
+// every reader, the page, deskDetails and deskClient, asks spirit.deskData (below), never a branch by its name.
+//   desk        id -> the item's facts, as items.search labels them and the List draws them (the trunk)
 //   deskItem    id -> the parts of an item read so far, each on its own: { box, version }, { chat, chatMore },
 //               { checks }, { files, filesMore } (a branch). goal/G33.4 (box v46): a part comes when it is needed, by
 //               its own read (took), and the side rows the desk pushes keep it current from then on.
-//   desk/current  the goal the stream last pushed whole;  desk/change  the newest change number heard
+//   deskState/current  the goal the stream last pushed whole;  deskState/change  the newest change number heard
 // The rows come as jobs of module process/js/desk: in the page as the desk's publishes, in a server that follows the
 // desk's stream (deskClient) through appServer's streamListener (js/appServer.js), which hands each row in exactly so.
 // One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim); the
@@ -31,6 +33,11 @@
   // only one goal, then you shed the longest untouched item, LOCK, stock and barrel, / when there is only one goal with
   // one item you shed the oldest chat line." A goal's own row is no item, so it stays with its goal. Rows of no goal (the
   // rules, a plugin's) are never shed.
+  // THE NAMES, here alone.
+  var ITEMS = 'desk';
+  var PARTS = 'deskItem';
+  var STATE = 'deskState';
+  var RULES = 'deskRules';
   var cache = (function () {
   function place(row) {
     if (row && row.key && typeof row.key.goal === 'number' && !row.table) return { goal: row.key.goal, item: Number(row.key.item) || 0 };
@@ -115,10 +122,10 @@
   function bytes(x) { return Buffer.byteLength(JSON.stringify(x), 'utf8'); }
   function answer(verb, args, D, room) {
     var id = String((args && args.id) || '');
-    var row = id ? D.get('deskItems/' + id) : null;
-    var whole = id ? D.get('deskItem/' + id) : null;
+    var row = id ? D.get(ITEMS + '/' + id) : null;
+    var whole = id ? D.get(PARTS + '/' + id) : null;
     // The facts come with the push (goal/G33.4, box v46); a part once it was read, or the stream brought it.
-    if (verb === 'item.get' && row && typeof row.version === 'number') return { item: JSON.stringify(row), version: row.version, change: Number(D.get('desk/change')) || 0 };
+    if (verb === 'item.get' && row && typeof row.version === 'number') return { item: JSON.stringify(row), version: row.version, change: Number(D.get(STATE + '/change')) || 0 };
     if (!row || !whole) return null;
     if (verb === 'item.box' && typeof whole.box === 'string') return { box: whole.box, version: Number(whole.version) || 0 };
     if (verb === 'item.checks' && Array.isArray(whole.checks)) return { checks: whole.checks };
@@ -165,7 +172,7 @@
       if (typeof x === 'string') { try { x = JSON.parse(x); } catch (e) { x = null; } }
       return x && typeof x === 'object' && x.id ? x : null;
     }
-    function keep(id, fields) { if (id) D.merge('deskItem/' + id, fields); }
+    function keep(id, fields) { if (id) D.merge(PARTS + '/' + id, fields); }
     function sameLine(a, b) { return a && b && a.at === b.at && a.by === b.by && a.text === b.text; }
     function goalOf(f) { return f.goal === '' ? f.id : f.goal; }
     var GROUP = 'goal/G0';
@@ -176,8 +183,8 @@
     // sends, every goal, no filtering on the client side"): another goal's rows stay; the cache's limit is the sender's
     // family's cache rules to keep (above, run by appServer).
     function rowOf(o, f) {
-      if (o.verb === 'goal.whole' && goalOf(f) !== GROUP) D.set('desk/current', goalOf(f));
-      D.set('deskItems/' + f.id, f);
+      if (o.verb === 'goal.whole' && goalOf(f) !== GROUP) D.set(STATE + '/current', goalOf(f));
+      D.set(ITEMS + '/' + f.id, f);
     }
 
     // ONE SIDE ROW: it keeps current the part of the item it belongs to, once that part was read; a part never read stays
@@ -187,7 +194,7 @@
     // file alone is no list, so those wait for a read.
     function side(o) {
       var id = String(o.id || '');
-      var whole = id ? D.get('deskItem/' + id) : null;
+      var whole = id ? D.get(PARTS + '/' + id) : null;
       if (!whole && id && o.row && !o.removed && o.table === 'box') { keep(id, { box: String(o.row.text || ''), version: Number(o.row.version) || 0 }); return; }
       if (!whole && id && o.row && !o.removed && o.table === 'chat') { keep(id, { chat: [o.row], chatMore: true }); return; }
       if (!whole) return;
@@ -258,11 +265,11 @@
         var p = pushing[g];
         delete pushing[g];
         if (!p || p.change !== o.change) return;
-        var all = D.get('deskItems') || {};
-        Object.keys(all).forEach(function (id) { if (ofGoal(id, g) && !p.ids[id]) D.del('deskItems/' + id); });
-        var parts = D.get('deskItem') || {};
-        Object.keys(parts).forEach(function (id) { if (ofGoal(id, g)) D.del('deskItem/' + id); });
-        D.set('desk/replaced' + g, o.change);
+        var all = D.get(ITEMS) || {};
+        Object.keys(all).forEach(function (id) { if (ofGoal(id, g) && !p.ids[id]) D.del(ITEMS + '/' + id); });
+        var parts = D.get(PARTS) || {};
+        Object.keys(parts).forEach(function (id) { if (ofGoal(id, g)) D.del(PARTS + '/' + id); });
+        D.set(STATE + '/replaced' + g, o.change);
         return;
       }
       if (!pushing[g] || pushing[g].change !== o.change) pushing[g] = { change: o.change, ids: {} };
@@ -274,21 +281,21 @@
       rowOf(o, it);
     }
     function stale(o) {
-      var at = Number(D.get('desk/replaced' + goalNumber(o)));
+      var at = Number(D.get(STATE + '/replaced' + goalNumber(o)));
       return at > 0 && typeof o.change === 'number' && o.change < at;
     }
     function published(o) {
       if (!o || typeof o !== 'object') return;
       // The newest change heard, as item.get answers it. No position: the stream keeps its own (appServer, goal/G41.12).
-      if (typeof o.change === 'number' && o.change > (Number(D.get('desk/change')) || 0)) D.set('desk/change', o.change);
+      if (typeof o.change === 'number' && o.change > (Number(D.get(STATE + '/change')) || 0)) D.set(STATE + '/change', o.change);
       // A RULE (goal/G41.2): every active rule comes with the push, then each rule write, kept by its key.
-      if (o.rule && o.row && typeof o.row === 'object') { D.set('deskRules/' + String(o.rule), o.row); return; }
+      if (o.rule && o.row && typeof o.row === 'object') { D.set(RULES + '/' + String(o.rule), o.row); return; }
       if (o.replace === true) { replaced(o); return; }
       if (stale(o)) return;
       if (o.table) { side(o); return; }
       var it = facts(o.item);
       if (!it) return;
-      if (o.removed) { D.del('deskItems/' + it.id); D.del('deskItem/' + it.id); return; }
+      if (o.removed) { D.del(ITEMS + '/' + it.id); D.del(PARTS + '/' + it.id); return; }
       rowOf(o, it);
     }
 
@@ -300,8 +307,8 @@
     function took(verb, args, answer) {
       var id = String((args && args.id) || '');
       if (!id || !answer || typeof answer !== 'object') return;
-      var row = D.get('deskItems/' + id);
-      var current = D.get('desk/current');
+      var row = D.get(ITEMS + '/' + id);
+      var current = D.get(STATE + '/current');
       if (!row || !current) return;
       var g = goalOf(row);
       if (g !== current && g !== GROUP) return;
@@ -316,7 +323,26 @@
         if (job && job.module === 'process/js/desk' && job.app && typeof job.app === 'object') published(job.app);
       },
     });
-    var deskData = { published: published, took: took };
+    // THE READS, ANSWERED HERE (goal/G41.28): what the cache holds of the desk, by what it is, never by branch name.
+    //   branch     the trunk's name, for a list that is a view of it (probabilitySearch's data); rulesBranch the rules'
+    //   item(id)   an item's facts;  items()  every item kept, id -> facts
+    //   part(id)   the parts of an item read so far;  keepPart(id, fields)  more of them;  forget(id)  one item's
+    //   parts dropped;  forgetAll()  every item's parts dropped
+    //   current()  the goal last pushed whole;  change()  the newest change number heard;  rule(key)  a rule kept
+    var deskData = {
+      published: published, took: took,
+      branch: ITEMS,
+      rulesBranch: RULES,
+      item: function (id) { return id ? D.get(ITEMS + '/' + id) || null : null; },
+      items: function () { return D.branch(ITEMS); },
+      part: function (id) { return id ? D.get(PARTS + '/' + id) || null : null; },
+      keepPart: function (id, fields) { keep(String(id || ''), fields); },
+      forget: function (id) { if (id) D.del(PARTS + '/' + id); },
+      forgetAll: function () { Object.keys(D.branch(PARTS)).forEach(function (id) { D.del(PARTS + '/' + id); }); },
+      current: function () { return String(D.get(STATE + '/current') || ''); },
+      rule: function (key) { return key ? D.get(RULES + '/' + key) || null : null; },
+      change: function () { return Number(D.get(STATE + '/change')) || 0; },
+    };
     try { Object.defineProperty(D, ATTACHED, { value: deskData }); } catch (e) { D[ATTACHED] = deskData; }
     (root.spirit = root.spirit || {}).deskData = deskData;
   }

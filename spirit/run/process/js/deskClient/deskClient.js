@@ -214,6 +214,13 @@ const DESK_CCM = path.join(__dirname, '..', '..', '..', path.dirname(spirit.fami
 function fromKept(name, args) {
   return require(DESK_CCM).cache.answer(name, args, dataSet, ANSWER_ROOM);
 }
+// WHAT THE CACHE HOLDS OF THE DESK, ASKED OF ITS MANAGER (goal/G41.28; Andy: "doesn't the fucking ...
+// clientCacheManager.js take care of that"): spirit.deskData answers by what a thing is; no branch is named here.
+function kept() { return (globalThis.spirit && globalThis.spirit.deskData) || null; }
+function keptItem(id) { const k = kept(); return k ? k.item(String(id || '')) : null; }
+function keptPart(id) { const k = kept(); return k ? k.part(String(id || '')) : null; }
+function keptItems() { const k = kept(); return k ? k.items() : {}; }
+function keptCurrent() { const k = kept(); return k ? k.current() : ''; }
 // A KEPT READ (goal/G41.11; Andy: "the agents verifier has ALL the information needed for commits right on the agents
 // node.... so we put in specific cache-searches into the deskClients api", and "if the agent wants to know stuff, give
 // them FIRST the cache"): the desk verb with kept, answered from the cache only and never asked of the desk, so a
@@ -224,15 +231,15 @@ function fromKept(name, args) {
 function keptRead(name, args) {
   const notKept = function (why) { return { ok: false, code: 'not-kept', why: why }; };
   if (KEPT_READS.indexOf(name) === -1) return notKept(name + ' is no kept read (' + KEPT_READS.join(', ') + ')');
-  const current = String(dataSet.get('desk/current') || '');
+  const current = String(keptCurrent() || '');
   const id = String((args && args.id) || '');
   if (name === 'item.get' && !id) return { item: '', current: current, self: SELF };
   const got = fromKept(name, args);
   if (!got) return notKept(name + ' of ' + (id || 'no item') + ' is not in the cache' + (current ? ' (only the current goal ' + current + ' is kept)' : ' (no goal pushed yet)'));
   if (name !== 'item.get') return got;
-  const row = dataSet.get('deskItems/' + id) || {};
-  const goalRow = dataSet.get('deskItems/' + String(row.goal || id)) || {};
-  const currentRow = current ? (dataSet.get('deskItems/' + current) || {}) : {};
+  const row = keptItem(id) || {};
+  const goalRow = keptItem(String(row.goal || id)) || {};
+  const currentRow = current ? (keptItem(current) || {}) : {};
   return Object.assign({}, got, { current: current, self: SELF, goalDesign: goalRow.design === true || currentRow.design === true });
 }
 // WHOLE FROM THE FIRST PUSH (goal/G41.11; the box: "the current goal's items' file lists and checks are kept whole from
@@ -242,12 +249,12 @@ function keptRead(name, args) {
 const wholeAsked = new Set();
 function keepWhole(facts) {
   const id = String((facts && facts.id) || '');
-  const current = String(dataSet.get('desk/current') || '');
+  const current = String(keptCurrent() || '');
   const goal = facts && facts.goal === '' ? id : String((facts && facts.goal) || '');
   if (!id || !current || goal !== current) return;
   let to = '';
   try { to = deskKey(); } catch (e) { return; }
-  const whole = dataSet.get('deskItem/' + id) || {};
+  const whole = keptPart(id) || {};
   ['item.files', 'item.checks'].forEach(function (verb) {
     const part = verb === 'item.files' ? 'files' : 'checks';
     const key = verb + ' ' + id;
@@ -290,7 +297,7 @@ function shedNews() {
   }
 }
 function inView(goal) {
-  const cur = /^goal\/G(\d+)$/.exec(String(dataSet.get('desk/current') || ''));
+  const cur = /^goal\/G(\d+)$/.exec(String(keptCurrent() || ''));
   return goal === 0 || (!!cur && goal === Number(cur[1]));
 }
 function lineKeyOf(id, l) { return String(id) + '#' + String(l.at) + '#' + String(l.key || l.by); }
@@ -349,7 +356,7 @@ function holdsItem(f) { return !!f && (heldByMe(f) || (!!f.phaseWith && f.phaseW
 function wakeOnHeld(row, change) {
   const f = row.item && typeof row.item === 'object' ? row.item : null;
   const id = String((f && f.id) || row.id || '');
-  const now = f ? holdsItem(f) : holdsItem(dataSet.get('deskItems/' + id));
+  const now = f ? holdsItem(f) : holdsItem(keptItem(id));
   const mine = now || heldIds[id] === true;
   if (f) heldIds[id] = now;
   if (!change || !mine) return;
@@ -395,7 +402,7 @@ const WAKING_PRESSES = ['go', 'go-all', 'end-design', 'reopen'];
 function pressWake(row) {
   if (String(row.verb || '') !== 'press' || row.by !== 'andy' || !row.item || !row.item.id) return null;
   const what = String(row.what || '');
-  const cur = /^goal\/G(\d+)$/.exec(String(dataSet.get('desk/current') || ''));
+  const cur = /^goal\/G(\d+)$/.exec(String(keptCurrent() || ''));
   const current = what === 'make-current' || (!!cur && row.key && row.key.goal === Number(cur[1]));
   if (!current || (what !== 'make-current' && WAKING_PRESSES.indexOf(what) === -1)) return null;
   const key = 'press#' + String(row.change) + '#' + String(row.item.id) + '#' + what;
@@ -438,11 +445,11 @@ function meantForAgent(row) {
   if (!row.row || row.removed) return null;
   // ONE GOAL IN VIEW (goal/G33.8): the desk publishes every goal's rows to its subscribers now, so what is meant for the
   // agent is of the current goal or the group chat, or his line addressed to it, or on the item it holds.
-  const cur = /^goal\/G(\d+)$/.exec(String(dataSet.get('desk/current') || ''));
+  const cur = /^goal\/G(\d+)$/.exec(String(keptCurrent() || ''));
   // WHAT HAPPENS IN A SPECIAL GOAL (goal/G33.11): a plugin's goal, such as Stacks, is in view too; the desk marks its
   // rows special.
   const inView = row.goal === 0 || (!!cur && row.goal === Number(cur[1])) || (Array.isArray(row.to) && row.to.indexOf(SELF_KEY) !== -1) ||
-    row.special === true || heldByMe(dataSet.get('deskItems/' + String(row.id || '')));
+    row.special === true || heldByMe(keptItem(String(row.id || '')));
   if (!inView) return null;
   // HIS LINE A PUSH GOAL HANDS AGAIN (goal/G41.22; Andy: "in that same wake hands the agent every line of Andy's
   // addressed to it that nobody took yet: nothing replayed, nothing lost"): the desk sends only lines nobody took, so its
@@ -451,7 +458,7 @@ function meantForAgent(row) {
   if ((row.table === 'chat' || row.table === 'box') && !handedAgain && isOld(row.row.at)) return null;
   // HIS BOX WRITE ON THE ITEM IT HOLDS reaches it, as it did (goal/G27.12: "His box.write still reaches the agents").
   if (row.table === 'box') {
-    const f = dataSet.get('deskItems/' + String(row.id || ''));
+    const f = keptItem(String(row.id || ''));
     return row.row.by === 'andy' && heldByMe(f) ? { text: 'DESK andy box.write ' + JSON.stringify({ id: String(row.id), version: row.row.version }) } : null;
   }
   // HIS CLEAR OF A RED Q THIS AGENT PLACED reaches it (goal/G21.2: "the agent that placed it is notified"), AND HIS GRANT
@@ -476,7 +483,7 @@ function meantForAgent(row) {
   if (mine) return null;
   if (l.key && l.by !== 'andy' && l.by !== 'desk') rememberOther(String(l.key), String(l.by));
   const body = JSON.stringify({ id: id, text: String(l.text) });
-  const facts = dataSet.get('deskItems/' + id) || null;
+  const facts = keptItem(id) || null;
   const held = heldByMe(facts);
   const nobodyHolds = !facts || !facts.with;
   const group = id === 'goal/G0';
@@ -769,7 +776,7 @@ function rulesOfWake(to, lines) {
   const out = [];
   const texts = [];
   ids.forEach(function (id) {
-    const row = dataSet.get('deskItems/' + id);
+    const row = keptItem(id);
     const rules = row && Array.isArray(row.phaseRules) ? row.phaseRules : [];
     if (!rules.length) return;
     out.push('RULES ' + id + ': ' + rules.map(function (r) { return r.key + '@' + r.version; }).join(' '));
@@ -782,7 +789,7 @@ function rulesOfWake(to, lines) {
   // From the rules the stream brought (goal/G41.2): nothing is asked of the desk. A rule not kept yet is named by its key
   // alone, and its text comes on a later wake once its row has arrived.
   const said = texts.map(function (t) {
-    const g = dataSet.get('deskRules/' + t.key);
+    const g = kept() ? kept().rule(t.key) : null;
     if (!g || !g.text) return '';
     rulesHanded.add(t.tag);
     return 'RULE ' + t.tag + ' ' + g.type + ': ' + g.label + ': ' + String(g.text).replace(/\s+$/, '');
@@ -960,7 +967,7 @@ const server = appServer.serve({
           const jobs = ((got && got.items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean);
           if (!jobs.length) return '';
           const j = jobs[0];
-          const fx = dataSet.get('deskItems/' + String(j.id)) || {};
+          const fx = keptItem(String(j.id)) || {};
           // THE RULES OF THE PHASE IT IS IN (goal/G40.12): its goal's and its own, each once (facts.phaseRules).
           const keys = (Array.isArray(fx.phaseRules) ? fx.phaseRules : []).map(function (r) { return r.key + '@' + r.version; });
           return 'JOB ' + j.id + ' ' + j.phase + (keys.length ? ' rules: ' + keys.join(' ') : '');
@@ -1121,9 +1128,9 @@ setInterval(function resubscribeQuiet() {
 // activity, so a hold whose files move is never stale. A file git ignores (logs, node state, this server's own db) is
 // no change to the work. A path under spirit/test/ is tone test, any other code.
 function heldPhase() {
-  const items = dataSet.branch('deskItems') || {};
+  const items = keptItems() || {};
   for (const id of Object.keys(items)) {
-    const f = dataSet.get('deskItems/' + id);
+    const f = keptItem(id);
     if (!f || f.done || f.status === 'closed' || !heldByMe(f)) continue;
     if ((f.phase === 'red' && f.red === SELF) || (f.phase === 'build' && f.builder === SELF)) return String(f.id);
   }

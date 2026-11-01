@@ -45,9 +45,37 @@
 
 var deskApi = null;
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the
-// content to be drawn." "no pulling". Its rows are items.search's labels, in the
-// server's order, kept only to be painted; each published change replaces its row.
-var deskItems = [];
+// content to be drawn." "no pulling". ITS ROWS ARE spirit.data's (goal/G41.28; Andy: "the FUCKING desk cache is NOT to
+// be found in spirit.data.data.desk... something keeps throwing out that shit", and "doesn't the fucking ...
+// clientCacheManager.js take care of that"): the desk's rows the cache manager keeps, every goal pushed and every
+// search answer seated there, read through spirit.deskData. The page keeps no rows of its own, so a search that answers
+// few rows drops none; what the toggles leave out is decided here, in the order goal, then its members.
+function deskKept() { return (typeof window !== 'undefined' && window.spirit && window.spirit.deskData) || null; }
+function deskIdOrder(a, b) {
+  var x = String(a.id).match(/\d+/g) || [];
+  var y = String(b.id).match(/\d+/g) || [];
+  for (var i = 0; i < Math.max(x.length, y.length); i++) {
+    if (x[i] === undefined) return -1;
+    if (y[i] === undefined) return 1;
+    if (Number(x[i]) !== Number(y[i])) return Number(x[i]) - Number(y[i]);
+  }
+  return 0;
+}
+// A row the toggles let onto the List: Goals Only, goal rows alone; Current Goal Only, the current goal and its items;
+// Include Closed off, no closed row. The group chat's goal is on no List (goal/G3.10).
+function deskRowShown(row) {
+  if (!row || !row.id || row.id === DESK_GROUP) return false;
+  if (deskFilter.goalsOnly && row.goal !== '') return false;
+  if (!deskFilter.includeClosed && row.status === 'closed') return false;
+  var K = deskKept();
+  if (deskFilter.currentGoalOnly && !deskFilter.goalsOnly && deskGoalOf(row) !== (K ? K.current() : '')) return false;
+  return true;
+}
+function deskHeld() {
+  var K = deskKept();
+  var all = K ? K.items() : {};
+  return Object.keys(all).map(function (id) { return all[id]; }).filter(deskRowShown).sort(deskIdOrder);
+}
 // The search bar and its two toggles. Andy: "When Desk opens: [Current Goal Only]
 // on, [Goals Only] off". "The server does the searching AND the filtering."
 var deskFilter = { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false };
@@ -359,7 +387,7 @@ function deskDrawTabs() {
 // decides nothing: which buttons a row has, its status, whether it waits on
 // Andy, all come in the label.
 function deskGoalRow() {
-  return deskItems.filter(function (r) { return r && r.goal === ''; })[0] || null;
+  return deskHeld().filter(function (r) { return r && r.goal === ''; })[0] || null;
 }
 // The agents the server holds as working (goal/G2.3): the goal row's working, live agents only.
 function deskWorkingAgents() {
@@ -394,10 +422,11 @@ function deskSearchItems() {
   };
   return deskAsk('items.search', { text: text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
     .then(function (r) {
-      var got = deskLabels(r);
-      if (!text.trim()) deskItems = got;
-      else got.forEach(function (row) { var at = deskRowAt(row.id); if (at === -1) deskItems.push(row); else deskItems[at] = row; });
-      deskNotePlugins(deskItems); deskDraw(); done();
+      // The answer seated in the desk's branch of spirit.data, beside what is there: nothing held is dropped.
+      var D = window.spirit && window.spirit.data;
+      var K = deskKept();
+      if (D && K && typeof D.seat === 'function') D.seat(K.branch, (r && r.items) || []);
+      deskNotePlugins(deskLabels(r)); deskDraw(); done();
     }, function (e) { done(); deskWriteError('read its list')(e); });
 }
 // A published row: {change, verb, item: <facts>, listed, key} (goal/G33.4: one publish per row). A new session
@@ -467,36 +496,15 @@ function deskOnPublished(obj) {
   if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
   // The group chat's goal is on no List (goal/G3.10): its row publish draws nothing here.
   if (!it || !it.id || it.id === DESK_GROUP) return;
-  var rows = [Object.assign({}, it, { listed: obj.listed !== false })];
-  var unknown = false;
-  var moved = false;
   // goal/G22.3: a plugin goal's row seen first on the stream gives it its tab under Apps.
-  deskNotePlugins(rows);
-  // THE LIST TAKES ADDITIONS FROM THE STREAM (goal/G24.6). Andy: "no pulling". A row the List does not hold is drawn
-  // from the publish itself, which carries the same facts items.search gives as a label, and placed where items.search
-  // would place it: an item is appended to its goal's members (process/js/desk/desk.js item.add), and with no search
-  // text every item ranks alike, so the List reads the goal, then its members in session order; the new row goes after
-  // the last row of its goal, several in the order the publish gives them.
-  // WHILE TEXT IS IN THE SEARCH BOX the List still asks again: the publish carries no rank, so the client cannot know a
-  // new row's place among ranked ones. That is Andy's open red Q1 on goal/G24.6, left as it was until he answers.
-  var searching = String(deskFilter.text || '').trim() !== '';
-  rows.forEach(function (row) {
-    if (!row || !row.id) return;
-    var at = deskRowAt(row.id);
-    // A CLOSED ROW FOLLOWS INCLUDE CLOSED (goal/G24.6): listed false leaves the List only while Include Closed is off;
-    // with it on the row stays, redrawn closed, as items.search would still list it.
-    if (row.listed === false && !deskFilter.includeClosed) { if (at !== -1) { deskItems.splice(at, 1); moved = true; } return; }
-    if (at !== -1) { deskItems[at] = row; return; }
-    if (searching) { unknown = true; return; }
-    if (!deskRowShown(row, rows)) return;
-    deskItems.splice(deskRowPlace(row), 0, row);
-    moved = true;
-  });
-  if (unknown) { deskSearchItems(); return; }
+  deskNotePlugins([it]);
+  // THE LIST TAKES ADDITIONS FROM THE STREAM (goal/G24.6). Andy: "no pulling". The row is the cache manager's to keep
+  // (its translator writes it into the desk's branch as the publish arrives); the List, a view of that branch, draws it
+  // where the toggles and the goal's order put it (deskHeld). Nothing is placed here by hand.
   // ONE ROW CHANGED, ONE ROW REPAINTED (goal/G27.9, B; on the probability search since goal/G40.12): the List takes the
   // rows the store now holds, and a row that stays is repainted by its own element, the cells that changed alone. What
   // sits outside the List and reads the rows (the tabs' count, Go-All, the session bubble) is redrawn too.
-  if (moved || !deskList) { deskDraw(); return; }
+  if (!deskList) { deskDraw(); return; }
   deskList.redraw();
   deskDrawTabs();
   deskDrawGoAll();
@@ -558,9 +566,9 @@ function deskLoadData() {
 }
 // Everything kept of whole items is forgotten after a gap: what was published while the stream was down was never heard.
 function deskForgetKept() {
-  var D = typeof window !== 'undefined' && window.spirit && window.spirit.data;
-  if (!D || typeof D.branch !== 'function') return;
-  Object.keys(D.branch('deskItem')).forEach(function (id) { D.del('deskItem/' + id); });
+  // Asked of the cache's manager (goal/G41.28): it names its branches, this page does not.
+  var K = typeof window !== 'undefined' && window.spirit && window.spirit.deskData;
+  if (K && typeof K.forgetAll === 'function') K.forgetAll();
 }
 // THE RUN IN THE STATUS COLUMN (goal/G33.6): the shared rendering the dialog uses too, loaded once by the app, as the
 // shared element is; a page without it draws the status word alone.
@@ -598,31 +606,7 @@ function deskMountElements() {
     },
   });
 }
-function deskRowAt(id) {
-  var at = -1;
-  deskItems.forEach(function (r, i) { if (r.id === id) at = i; });
-  return at;
-}
 function deskGoalOf(row) { return row.goal === '' ? String(row.id) : String(row.goal); }
-// Whether the toggles let a new row in, as far as the page knows (goal/G24.6). Goals Only: goal rows alone. Current
-// Goal Only: the row's goal must be the current one, and the page knows that only from the goal's row, held or in this
-// publish: the server offers make-current on an open goal that is not current (goal/G2.19), so a goal row without it
-// is taken as current. A goal whose row the page has never seen is taken as not current, and its rows wait for the
-// next search.
-function deskRowShown(row, published) {
-  if (deskFilter.goalsOnly && row.goal !== '') return false;
-  if (!deskFilter.currentGoalOnly) return true;
-  var gid = deskGoalOf(row);
-  var g = deskItems.concat(published || []).filter(function (r) { return r && r.id === gid && r.goal === ''; })[0];
-  return !!g && (g.buttons || []).indexOf('make-current') === -1;
-}
-// After the last row of its goal; a goal's first row goes at the end.
-function deskRowPlace(row) {
-  var gid = deskGoalOf(row);
-  var last = -1;
-  deskItems.forEach(function (r, i) { if (deskGoalOf(r) === gid) last = i; });
-  return last === -1 ? deskItems.length : last + 1;
-}
 // A PRESS IS NOT A LINE. Andy: "a press shouldn't post a line, it is not
 // textual information." It goes to the desk server; the row changes when the
 // server publishes. THE PAGE NUDGES NOBODY (goal/G3.8): the desk server nudges
@@ -865,8 +849,8 @@ function deskAddGoal() {
 // ── THE LIST, ON THE PROBABILITY SEARCH (goal/G40.12) ─────────────────
 //
 // The element in its pane face (shell/js/probabilitySearch.js): the search box, the filters in the row above it, its
-// one call on the wire, its cache by key. Its rows are the rows the page holds (deskItems, rows()), which every
-// publish keeps current; items.search's answers to the words feed the same cache. Each row is a row element
+// one call on the wire. IT IS A VIEW OF THE DESK'S BRANCH OF spirit.data (goal/G41.28), the cache manager's (its data
+// option, deskKept().branch), which every publish keeps current; items.search's answers to the words are seated in it. Each row is a row element
 // (shell/js/rowElement.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
 // repaints the cells that changed. A press in a row is the page's (data-press), a press on the row opens it.
 //
@@ -907,9 +891,13 @@ function deskMountList() {
   var el = document.getElementById('desk-list');
   if (!el || deskList) return;
   deskLoadSearch(function () {
+    // The List is drawn once the cache manager is there, its branch the List's (goal/G41.28).
+    deskNeed(DESK_DATA).then(null, function () { /* the page runs uncached */ }).then(function () {
     var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
-    if (!P || typeof P.create !== 'function' || deskList) return;
+    var K = deskKept();
+    if (!P || typeof P.create !== 'function' || deskList || !K) return;
     deskList = P.create(el, {
+      data: K.branch,
       api: deskApi, server: 'desk', verb: 'items.search',
       args: function (text, values) {
         var want = deskListFilter(values);
@@ -919,14 +907,20 @@ function deskMountList() {
         if (moved) { deskDrawToggles(); deskFilter.text = ''; deskSearchItems(); }
         return { text: text, currentGoalOnly: want.currentGoalOnly, goalsOnly: want.goalsOnly, includeClosed: want.includeClosed };
       },
-      rows: function () { return deskItems.map(function (r) { return Object.assign({ key: r.id }, r); }); },
       columns: [
         { field: 'mark', label: '' }, { field: 'type', label: '' }, { field: 'todo', label: 'to-do' },
         { field: 'with', label: 'with' }, { field: 'yours', label: 'yours' }, { field: 'blocks', label: 'blocks' },
         { field: 'waits', label: 'waits on' }, { field: 'status', label: 'status', width: '16em' },
       ],
       filters: [
-        { name: 'current', multi: true, choices: [{ value: 'on', word: 'Current Goal Only' }], test: function () { return 1; } },
+        // The branch holds every goal the desk sent (goal/G41.12), so Current Goal Only is decided here: the current goal
+        // and its items, unless Goals Only is on (a multi filter, on until pressed off).
+        { name: 'current', multi: true, choices: [{ value: 'on', word: 'Current Goal Only' }], test: function (row, v) {
+          var only = !(v && v.on) && !deskFilter.goalsOnly;
+          return !only || deskGoalOf(row) === K.current() ? 1 : 0;
+        } },
+        // The group chat's goal is on no List (goal/G3.10); no button.
+        { name: 'group', when: function () { return false; }, test: function (row) { return row && row.id !== DESK_GROUP ? 1 : 0; } },
         { name: 'goalsOnly', toggle: true, word: 'Goals Only', test: function (row, on) { return !on || row.goal === '' ? 1 : 0; } },
         { name: 'includeClosed', toggle: true, word: 'Include Closed', test: function (row, on) { return on || row.status !== 'closed' ? 1 : 0; } },
       ],
@@ -935,6 +929,7 @@ function deskMountList() {
       empty: 'Nothing to show.',
     });
     deskList.redraw();
+    });
   });
 }
 
@@ -1220,12 +1215,15 @@ function deskRulesSearch() {
   if (!el) return;
   var make = function () {
     var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
-    if (!P || typeof P.create !== 'function' || deskRulesList) return;
+    var K = deskKept();
+    if (!P || typeof P.create !== 'function' || deskRulesList || !K) return;
     // THE TOGGLES OF THE RULES LIST, as they always were (goal/G6.5): a button per type and per status, each on until he
     // presses it off (probabilitySearch's multi filter, which keeps the ones pressed off); all on asks every rule.
     var choices = function (values) { return values.map(function (v) { return { value: v, word: v }; }); };
     var kept = function (all, off) { var on = all.filter(function (v) { return !(off || {})[v]; }); return on.length === all.length ? [] : on; };
     deskRulesList = P.create(el, {
+      // A VIEW OF THE RULES THE CACHE MANAGER KEEPS (goal/G41.28): every rule the push brought and every answer, seated.
+      data: K.rulesBranch,
       api: deskApi, server: 'desk', verb: 'rules.search',
       args: function (text, values) {
         var v = values || {};
@@ -1245,7 +1243,7 @@ function deskRulesSearch() {
     });
     deskRulesList.refresh();
   };
-  deskLoadSearch(make);
+  deskLoadSearch(function () { deskNeed(DESK_DATA).then(null, function () { /* the page runs uncached */ }).then(make); });
 }
 // One rule row's element: its four cells, the status drawn as its icon.
 var deskRuleIndex = null;

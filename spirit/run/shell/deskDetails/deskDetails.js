@@ -941,8 +941,9 @@ function ddRename() {
 // one cache for deskClient and this page: spirit.data (shell/shared/js/spiritData.js) with the desk's translator
 // (the desk family's clientCacheManager.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
-function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && s.data && typeof s.data.get === 'function' && s.deskData ? s.data : null; }
-function ddForget(id) { var K = ddKept(); if (K && id) K.del('deskItem/' + id); }
+// Asked of the cache's manager (goal/G41.28): spirit.deskData answers an item's parts; no branch is named here.
+function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && s.deskData && typeof s.deskData.part === 'function' ? s.deskData : null; }
+function ddForget(id) { var K = ddKept(); if (K && id) K.forget(id); }
 function ddLoad() {
   var id = ddId;
   return ddAsk('item.get', { id: id }).then(function (got) {
@@ -952,7 +953,7 @@ function ddLoad() {
     ddLastChange = Number(got.change) || ddLastChange;
     ddPaint();
     var K = ddKept();
-    var whole = K ? K.get('deskItem/' + id) : null;
+    var whole = K ? K.part(id) : null;
     if (whole && typeof whole.box === 'string' && Array.isArray(whole.checks) && Array.isArray(whole.chat) && Array.isArray(whole.files)) {
       ddBox = whole.box; ddVersion = Number(whole.version) || ddVersion; ddBoxLoaded = true;
       ddChecks = whole.checks; ddChat = whole.chat; ddChatMore = !!whole.chatMore; ddFiles = whole.files; ddFilesMore = !!whole.filesMore;
@@ -966,7 +967,7 @@ function ddLoad() {
       ddLoadFiles(id),
       ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
     ]).then(function () {
-      if (K && ddId === id) K.set('deskItem/' + id, { box: ddBox, version: ddVersion, checks: ddChecks, chat: ddChat, chatMore: ddChatMore, files: ddFiles, filesMore: ddFilesMore });
+      if (K && ddId === id) K.keepPart(id, { box: ddBox, version: ddVersion, checks: ddChecks, chat: ddChat, chatMore: ddChatMore, files: ddFiles, filesMore: ddFilesMore });
     });
   }).then(null, function (e) {
     ddNote = (e && e.refused ? 'Refused: ' : 'The desk server did not answer: ') + e.message;
