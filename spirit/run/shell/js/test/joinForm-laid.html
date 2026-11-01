@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.27 (Andy, on G41.27: "joinForm? it has several modes: suggestions?", then "wsl, agreed." to: Join (no seat)
+// [➕] [relay ▾] [email] [Join]; Change (seated) [✏️] [relay ▾] [email] [Change]; fixed (relay details) the same, the
+// dropdown fixed to its one relay; the icon following the mode as the words do; the words Relay and Your email gone; the
+// title above the bubble, the sent line below): the join form mounted in boxes, the rowForms it makes recorded, and what
+// the browser makes of them, measured. Opened by ./joinForm.js at /DEBUG/shell/js/test/joinForm-laid.html.
+window.laid = function () {
+  var made = [];
+  return spirit.require('shell/js/rowForm.js').catch(function () { return null; }).then(function () {
+    var R = (spirit.elements || {}).rowForm;
+    if (R && typeof R.create === 'function') {
+      var real = R.create;
+      R.create = function (c, o) { var f = real.call(R, c, o); made.push({ opts: o || {}, f: f }); return f; };
+    }
+    return spirit.require('shell/js/joinForm.js');
+  }).catch(function () { return null; }).then(function () {
+    var J = (spirit.elements || {}).joinForm;
+    var out = { made: !!J && typeof J.mount === 'function' };
+    if (!out.made) return JSON.stringify(out);
+    var RELAYS = [{ url: 'wss://a.example', label: 'Alpha' }, { url: 'wss://b.example', label: 'Beta', claimed: true }];
+    function box() { var b = document.createElement('div'); b.style.cssText = 'width:600px;margin:10px'; document.body.appendChild(b); return b; }
+    function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+    // What a box shows now: its one bubble (a rowForm root still on the page in it), its icon, span and button.
+    function seen(b) {
+      var live = made.filter(function (m) { return b.contains(m.f.root); });
+      var m = live[live.length - 1];
+      var s = { forms: live.length };
+      if (!m) return s;
+      var f = m.f;
+      var first = f.root.children[0];
+      s.icon = first && /\bshell-icon\b/.test(first.className) ? first.textContent : '';
+      s.button = f.button.textContent.trim();
+      s.span = Array.prototype.slice.call(f.span.querySelectorAll('select,input,button,textarea')).map(function (k) {
+        return { tag: k.tagName, type: k.type || '', disabled: !!k.disabled, options: k.tagName === 'SELECT' ? Array.prototype.map.call(k.options, function (o) { return o.value; }) : null, value: k.value };
+      });
+      s.spanWords = f.span.textContent.replace(/\s+/g, ' ').trim();
+      s.bubbleWords = f.root.textContent.replace(/\s+/g, ' ').trim();
+      var title = b.querySelector('.sp-join-title') || Array.prototype.slice.call(b.querySelectorAll('*')).filter(function (el) { return /^(Join a relay|Change email address)$/.test(el.textContent.trim()) && !el.children.length; })[0];
+      s.title = title ? title.textContent.trim() : '';
+      s.titleAbove = !!title && !f.root.contains(title) && (title.compareDocumentPosition(f.root) & 4) !== 0;
+      s.adds = Array.prototype.slice.call(b.querySelectorAll('button')).filter(function (x) { return x !== f.button && /^(Join|Change)$/.test(x.textContent.trim()); }).length;
+      return s;
+    }
+    var b1 = box();
+    J.mount(b1, { relays: RELAYS });
+    var b2 = box();
+    return wait(200).then(function () {
+      out.join = seen(b1);
+      // Another relay picked, one with a seat: the mode changes.
+      var sel = b1.querySelector('select');
+      if (sel) { sel.value = 'wss://b.example'; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+      return wait(200);
+    }).then(function () {
+      out.change = seen(b1);
+      // A press, the email empty: the line below the bubble says why.
+      var live = made.filter(function (m) { return b1.contains(m.f.root); }).pop();
+      if (live) live.f.button.click();
+      return wait(300);
+    }).then(function () {
+      var live = made.filter(function (m) { return b1.contains(m.f.root); }).pop();
+      var line = Array.prototype.slice.call(b1.querySelectorAll('*')).filter(function (el) { return !el.children.length && /email/i.test(el.textContent) && (!live || !live.f.root.contains(el)) && el !== b1.querySelector('.sp-join-title'); })[0] || null;
+      out.said = line ? line.textContent : '';
+      out.saidBelow = !!line && !!live && (live.f.root.compareDocumentPosition(line) & 4) !== 0;
+      J.mount(b2, { relays: RELAYS, fixed: 'wss://b.example' });
+      return wait(200);
+    }).then(function () {
+      out.fixed = seen(b2);
+      return JSON.stringify(out);
+    });
+  });
+};
+</script>
+</body>
+</html>
