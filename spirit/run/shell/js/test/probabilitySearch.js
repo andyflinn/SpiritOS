@@ -425,11 +425,12 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   const hostOf = function (e) { return e && e.parentNode && typeof e.parentNode.id === 'string' ? e.parentNode.id : ''; };
   const h11 = c11.innerHTML;
   const at = function (id) { return id ? h11.indexOf('id="' + id + '"') : -1; };
-  ok(!!hostOf(s1) && hostOf(s1) === hostOf(s2) && at(hostOf(s1)) !== -1, 'each selector it is handed is mounted, both in one row of the search', 'mounted in: ' + short([hostOf(s1), hostOf(s2)]));
-  ok(hostOf(s1) && (c11.nodes[hostOf(s1)].kids || []).indexOf(s1) < (c11.nodes[hostOf(s1)].kids || []).indexOf(s2), 'in the order they are handed', 'order: ' + short(((c11.nodes[hostOf(s1)] || {}).kids || []).map(function (k) { return k === s1 ? 's1' : k === s2 ? 's2' : '?'; })));
+  // Each mounted in a box of the search's own markup (a slot each, or one row: the search's choice).
+  ok(!!hostOf(s1) && !!hostOf(s2) && at(hostOf(s1)) !== -1 && at(hostOf(s2)) !== -1, 'each selector it is handed is mounted in the search', 'mounted in: ' + short([hostOf(s1), hostOf(s2)]));
+  ok(at(hostOf(s1)) !== -1 && (hostOf(s1) === hostOf(s2) ? (c11.nodes[hostOf(s1)].kids || []).indexOf(s1) < (c11.nodes[hostOf(s1)].kids || []).indexOf(s2) : at(hostOf(s1)) < at(hostOf(s2))), 'in the order they are handed', 'at ' + short([at(hostOf(s1)), at(hostOf(s2))]));
   const b11 = bubbleOf(c11);
-  ok(!!b11 && b11.part.indexOf('id="' + hostOf(s1) + '"') !== -1, 'the 🪣 row stands in the bubble', 'bubble: ' + short(b11 && b11.open));
-  ok(at(hostOf(s1)) !== -1 && at(hostOf(s1)) < at(p11 + 'filters') && at(p11 + 'filters') < at(p11 + 'text'), 'on top of the bubble: the 🪣 row, then the 🗜 row, then the 🔎 row', 'at ' + short([at(hostOf(s1)), at(p11 + 'filters'), at(p11 + 'text')]));
+  ok(!!b11 && b11.part.indexOf('id="' + hostOf(s1) + '"') !== -1 && b11.part.indexOf('id="' + hostOf(s2) + '"') !== -1, 'the 🪣 row stands in the bubble', 'bubble: ' + short(b11 && b11.open));
+  ok(at(hostOf(s1)) !== -1 && at(hostOf(s2)) < at(p11 + 'filters') && at(hostOf(s1)) < at(p11 + 'filters') && at(p11 + 'filters') < at(p11 + 'text'), 'on top of the bubble: the 🪣 row, then the 🗜 row, then the 🔎 row', 'at ' + short([at(hostOf(s1)), at(p11 + 'filters'), at(p11 + 'text')]));
   const u11 = upToInput(c11);
   ok(u11 === '🪣🗜Mine🔎', 'its row starts with 🪣, before its selectors', 'seen up to the input: ' + JSON.stringify(u11));
   ok(c11.shown().join() === 'a,b', 'no selector picked: every row', 'shown: ' + c11.shown());
