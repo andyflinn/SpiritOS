@@ -86,8 +86,8 @@
         return families.load(fn);
       });
     };
-    // Both halves destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go).
-    root.destroy = function () { made.then(function () { if (families) families.destroy(); if (verbs) verbs.destroy(); }); };
+    // Both halves destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go), and it takes itself out of its container, which it leaves empty (goal/G41.19, box v23).
+    root.destroy = function () { if (root.parentNode) root.parentNode.removeChild(root); made.then(function () { if (families) families.destroy(); if (verbs) verbs.destroy(); }); };
     return root;
   }
 

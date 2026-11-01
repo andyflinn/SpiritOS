@@ -68,8 +68,8 @@
       root.hidden = !server;
       list.redraw();
     };
-    // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go).
-    root.destroy = function () { parts.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); }); };
+    // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go), and it takes itself out of its container, which it leaves empty (goal/G41.19, box v23).
+    root.destroy = function () { if (root.parentNode) root.parentNode.removeChild(root); parts.then(function () { if (list && typeof list.destroy === 'function') list.destroy(); }); };
     return root;
   }
 

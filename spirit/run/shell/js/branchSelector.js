@@ -49,8 +49,8 @@
     });
 
     root.refresh = function () { if (made) made.refresh(); };
-    // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go).
-    root.destroy = function () { gone = true; if (made) made.destroy(); made = null; };
+    // Its list destroyed with it (goal/G41.28, rule/8: what an element subscribes, its destroy lets go), and it takes itself out of its container, which it leaves empty (goal/G41.19, box v23).
+    root.destroy = function () { gone = true; if (made) made.destroy(); made = null; if (root.parentNode) root.parentNode.removeChild(root); };
     return root;
   }
 
