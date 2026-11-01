@@ -11,9 +11,12 @@
 // Andy, Q7: "Shall the app-server selector keep the node's api tree in an apiTree branch of spirit.data, read again when
 // a server job changes, and the family, verb and app-server selectors draw from it?" "yes." The selector reads the tree
 // (spirit.tree) and hands it here; read again, the tree replaces both branches whole. This file asks nothing.
+//   nodeCard   'self' -> { name, description }, what the node says of itself, as node.card answered it and each save
+//              (node.setName, node.setDescription) stored it; Info keeps both here and draws its fields from it
 (function (root) {
   var TREE = 'apiTree';
   var VERBS = 'apiVerbs';
+  var CARD = 'nodeCard';
   var ATTACHED = typeof Symbol === 'function' ? Symbol.for('spirit.node.clientCacheManager') : '__nodeClientCacheManager';
   function attach(root) {
     var D = ((root || {}).spirit || {}).data;
@@ -24,7 +27,19 @@
     //   keepTree(tree, index)   the node's api answer kept, index being apiTreeIndex (servers(tree), verbs(tree, name))
     //   families()  family -> row;  verbs()  'family.verb' -> row
     //   treeBranch, verbsBranch  whole paths, for a list that is a view of one (probabilitySearch's data)
+    //   keepCard(fields)   node.card's answer, or one field a save stored ({ description }), merged into the card
+    //   card()             the card kept, or null;  watchCard(fn)  fn(card) on every change; answers its release
     var nodeData = {
+      keepCard: function (fields) {
+        if (!fields || typeof fields !== 'object' || fields.ok === false) return;
+        var was = HOME.get(CARD + '/self') || {};
+        var card = { name: was.name, description: was.description };
+        if (fields.name !== undefined) card.name = fields.name;
+        if (fields.description !== undefined) card.description = fields.description;
+        HOME.set(CARD + '/self', card);
+      },
+      card: function () { return HOME.get(CARD + '/self') || null; },
+      watchCard: function (fn) { return HOME.watch(CARD + '/self', function (whole, v) { if (typeof fn === 'function') fn(v || null); }); },
       keepTree: function (tree, index) {
         var I = index || (root.spirit && root.spirit.apiTreeIndex);
         if (!I) return;
