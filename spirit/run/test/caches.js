@@ -27,6 +27,10 @@ const vm = require('vm');
 const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..');
+const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+// A family's manager, beside its interface: the app's beside spirit.familyPath(name), the node's own beside its api.js.
+const appFamilies = {};
+function managerOf(name) { return appFamilies[name] ? path.posix.join(path.posix.dirname(familyPath(name)), 'clientCacheManager.js') : 'spirit/' + name + '/clientCacheManager.js'; }
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function code(file) { return fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); }
@@ -36,10 +40,14 @@ const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd
 test.startTest('caches: every family has a clientCacheManager, one code in the browser and in node');
 
 // ── 1. EVERY FAMILY ─────────────────────────────────────────────────────────────────────────────────────────────────
-// The api tree's families are their interfaces: process/js/<name>/family/api.js (spirit.familyPath) and the node's own,
-// spirit/<name>/api.js (spirit.js, interfaceName). A test folder's api.js is a test, not a family.
+// The api tree's families are their interfaces: an app's at spirit.familyPath(name), and the node's own,
+// spirit/<name>/api.js (spirit.js, interfaceName). A test folder's api.js is a test, not a family. Every family path is
+// spirit.familyPath's (the appServer test's rule: no file writes one by hand).
 test.subHeading('1. every family in the api tree has a clientCacheManager beside its api.js');
-const families = tracked.filter(function (f) { return /^process\/js\/[^/]+\/family\/api\.js$/.test(f) || /^spirit\/[^/]+\/api\.js$/.test(f); });
+// An app's family is a process folder whose familyPath is tracked.
+tracked.forEach(function (f) { const m = /^process\/js\/([^/]+)\//.exec(f); if (m && tracked.indexOf(familyPath(m[1])) !== -1) appFamilies[m[1]] = true; });
+const families = Object.keys(appFamilies).sort().map(function (n) { return familyPath(n); })
+  .concat(tracked.filter(function (f) { return /^spirit\/[^/]+\/api\.js$/.test(f); }));
 test.comment(families.length + ' families: ' + families.map(function (f) { return f.split('/').slice(-3, -1).join('/'); }).join(', '));
 ok(families.length > 0, 'the api tree has ' + families.length + ' families', 'no family found in the tree');
 families.forEach(function (api) {
@@ -75,7 +83,7 @@ Object.keys(owned).forEach(function (b) {
 // ── 3. THE SAME ROWS, THE SAME CACHE ────────────────────────────────────────────────────────────────────────────────
 test.subHeading('3. the same rows make the same spirit.data in node and in a page');
 const DATA = path.join(RUN, 'shell', 'shared', 'js', 'spiritData.js');
-const DESK = path.join(RUN, 'process', 'js', 'desk', 'family', 'clientCacheManager.js');
+const DESK = path.join(RUN, managerOf('desk'));
 const ROWS = [
   { verb: 'goal.whole', change: 3, item: { id: 'goal/G9', goal: '', title: 'A goal', status: 'open' } },
   { verb: 'goal.whole', change: 3, item: { id: 'goal/G9.1', goal: 'goal/G9', title: 'An item', status: 'open', tags: ['a'] } },
@@ -160,7 +168,7 @@ managers.forEach(function (m) {
     test.comment('the node\'s api tree names ' + names.length + ' families: ' + names.join(', '));
     ok(names.length > 0, 'the node\'s api tree names its families', 'the node answered no tree: ' + short(tree));
     for (const name of names) {
-      const at = tracked.indexOf('process/js/' + name + '/family/api.js') !== -1 ? 'process/js/' + name + '/family/clientCacheManager.js' : 'spirit/' + name + '/clientCacheManager.js';
+      const at = managerOf(name);
       const got = await fetch(node.base + '/' + at).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
       ok(got.status === 200 && /\battach\b/.test(got.text), name + ': the shell downloads its manager, /' + at, name + ': /' + at + ' answered ' + got.status);
     }

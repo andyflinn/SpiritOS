@@ -26,7 +26,8 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const tick = function (ms) { return new Promise(function (r) { setTimeout(r, ms || 20); }); };
 
 // The publisher's key, base64 as a node key is; the cache file names it in hex (box v15: cache-<sender key in hex>.json).
-const PUBLISHER = Buffer.from('KEY-DESK').toString('base64');
+// It holds a + and a /, as real keys do (goal/G41.28), so only base64url names its cache file and its branch.
+const PUBLISHER = Buffer.from('KEY-DESK\xfb\xef\xbf\xfe', 'latin1').toString('base64');
 const PUBLISHER_HEX = Buffer.from(PUBLISHER, 'base64').toString('hex');
 const SELF = 'KEY-CLIENT';
 // The eight server families (box v15, Family folders).
@@ -105,9 +106,19 @@ let bootstraps = 0;
 const GOAL = { id: 'goal/G9', goal: '', title: 'the goal', version: 1 };
 const item = function (n, extra) { return Object.assign({ id: 'goal/G9.' + n, goal: 'goal/G9', title: 'item ' + n, version: 1 }, extra || {}); };
 const row = function (f) { return { verb: 'goal.whole', goal: 9, item: f }; };
-// The client's cache file for the publisher (box v15): relay-state/process/<client server>/cache-<sender key in hex>.json,
-// under the run root, where spirit.js sits.
-const cacheFile = function (name) { return path.join(RUN, 'relay-state', 'process', name, 'cache-' + PUBLISHER_HEX + '.json'); };
+// The client's cache file for the publisher (goal/G41.28, box v19; Andy: "this way an appServer in client-mode can derive
+// the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"): in relay-state/<client server>/,
+// named by the sender's key in base64url (Andy, Q9 of Desk: "Shall the server key in spirit.data and in the cache file
+// name be base64url (- for +, _ for /), since a plain base64 / splits both?" "yes"): no + and no /, and it reads back
+// to the sender's key.
+const SENDER = Buffer.from(PUBLISHER, 'base64');
+const namesSender = function (n) { return /^[A-Za-z0-9_-]+=*$/.test(n) && Buffer.from(n, 'base64url').equals(SENDER); };
+const cacheFile = function (name) {
+  const dir = path.join(RUN, 'relay-state', name);
+  let found = '';
+  try { found = fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f) && namesSender(f.slice(0, -5)); })[0] || ''; } catch (e) { found = ''; }
+  return found ? path.join(dir, found) : path.join(dir, SENDER.toString('base64url') + '.json');
+};
 
 function start(streamOpts, publisherOpts) {
   const A = require(FILE);
@@ -117,7 +128,12 @@ function start(streamOpts, publisherOpts) {
   });
   return { A: A, s: s, D: A.data };
 }
-const hasIn = function (D, n) { return !!(D && D.get('deskItems/goal/G9.' + n)); };
+// What the client's cache holds, asked of the desk's clientCacheManager, which alone names its branches (goal/G41.28; Andy:
+// "the client manager should keep that cache"): spirit.deskData, attached by appServer to the process's spirit.
+const kept = function () { return (globalThis.spirit && globalThis.spirit.deskData) || null; };
+const itemOf = function (id) { const K = kept(); return K ? K.item(id) : null; };
+const partOf = function (id) { const K = kept(); return K ? K.part(id) : null; };
+const hasIn = function (D, n) { return !!itemOf('goal/G9.' + n); };
 
 // ── a child: one process of a restart, or of a cache switch ────────────────────────────────────────────────────────
 async function child(mode) {
@@ -131,6 +147,12 @@ async function child(mode) {
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(400);
     out.one = hasIn(D, 1); out.two = hasIn(D, 2);
+    // THE CACHE BY SERVER NODE (box v19: "The RAM-CACHE-is organized BY SERVER-NODE-ID at it's lowest level. IE:
+    // spirit.data.<server-public-key-in-base64>.<api-family>...."): what the data set holds at its top, and under it.
+    const top = Object.keys((D && D.data) || {});
+    out.top = top;
+    out.byNode = top.filter(namesSender);
+    out.family = out.byNode.length === 1 && D.data[out.byNode[0]] && typeof D.data[out.byNode[0]] === 'object' ? Object.keys(D.data[out.byNode[0]]) : [];
   } else if (mode === 'restart') {
     // The same client again, a new process: the publisher in it a new run. Its cache read back before any subscribe.
     const { s, D } = start({ cache: true });
@@ -139,7 +161,7 @@ async function child(mode) {
     bootstrap = [row(GOAL), row(item(1, { title: 'item 1, renamed', version: 2 }))];
     out.subscribed = await s.subscribe(PUBLISHER, FAM);
     await tick(400);
-    out.title = D.get('deskItems/goal/G9.1') && D.get('deskItems/goal/G9.1').title;
+    out.title = itemOf('goal/G9.1') && itemOf('goal/G9.1').title;
     out.two = hasIn(D, 2);
   } else if (mode === 'off' || mode === 'nofamily') {
     // off: no cache switch; nofamily: the switch on, but the sender's family has no folder on this node.
@@ -160,7 +182,7 @@ async function child(mode) {
     for (let i = 1; i <= 3; i++) A.publish({ verb: 'goal.whole', goal: 10, item: { id: 'goal/G10.' + i, goal: 'goal/G10', title: 'item ' + i, version: 1 } });
     await tick(800);
     out.g9 = []; out.g10 = [];
-    for (let i = 1; i <= 3; i++) { if (D.get('deskItems/goal/G9.' + i)) out.g9.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
+    for (let i = 1; i <= 3; i++) { if (itemOf('goal/G9.' + i)) out.g9.push(i); if (itemOf('goal/G10.' + i)) out.g10.push(i); }
   } else if (mode === 'items' || mode === 'chat') {
     // One goal (Andy, Q2: "when there is only one goal, then you shed the longest untouched item, LOCK, stock and
     // barrel, when there is only one goal with one item you shed the oldest chat line").
@@ -180,9 +202,9 @@ async function child(mode) {
       for (let i = 1; i <= 30; i++) { await tick(10); A.publish(line('goal/G9.1', i)); }
     }
     await tick(1500);
-    out.goal = !!D.get('deskItems/goal/G9');
-    out.items = []; for (let i = 1; i <= 10; i++) if (D.get('deskItems/goal/G9.' + i)) out.items.push(i);
-    const whole = D.get('deskItem/goal/G9.1');
+    out.goal = !!itemOf('goal/G9');
+    out.items = []; for (let i = 1; i <= 10; i++) if (itemOf('goal/G9.' + i)) out.items.push(i);
+    const whole = partOf('goal/G9.1');
     out.chat = whole && Array.isArray(whole.chat) ? whole.chat.map(function (l) { return Number(String(l.at).slice(17, 19)); }) : [];
   } else if (mode === 'limit') {
     // Two goals, ten rows each: goal/G9 first and untouched since, goal/G10 after. Together past the limit, either alone
@@ -198,7 +220,7 @@ async function child(mode) {
     for (let i = 1; i <= 10; i++) A.publish({ verb: 'goal.whole', goal: 10, item: { id: 'goal/G10.' + i, goal: 'goal/G10', title: long(i), version: 1 } });
     await tick(1500);
     out.g9 = []; out.g10 = [];
-    for (let i = 1; i <= 10; i++) { if (D.get('deskItems/goal/G9.' + i)) out.g9.push(i); if (D.get('deskItems/goal/G10.' + i)) out.g10.push(i); }
+    for (let i = 1; i <= 10; i++) { if (itemOf('goal/G9.' + i)) out.g9.push(i); if (itemOf('goal/G10.' + i)) out.g10.push(i); }
   }
   process.stdout.write('RESULT ' + JSON.stringify(out) + '\n');
   process.exit(0);
@@ -208,7 +230,7 @@ function runChild(mode, name, fam) {
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('RESULT ') === 0; })[0];
   try { return JSON.parse(line.slice(7)); } catch (e) { return { failed: short(r.stderr || r.stdout || r.error) }; }
 }
-function clearCache(name) { try { fs.rmSync(path.join(RUN, 'relay-state', 'process', name), { recursive: true, force: true }); } catch (e) { /* none */ } }
+function clearCache(name) { [path.join(RUN, 'relay-state', 'process', name), path.join(RUN, 'relay-state', name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
 
 // ── the tree: one family path, eight folders (box v15, Family folders) ─────────────────────────────────────────────
 function jsonFiles(dir, out) {
@@ -344,7 +366,7 @@ if (CHILD) {
     await tick(300);
     ok(first === true && asked.some(function (a) { return a.verb === 'subscribe' && a.key === PUBLISHER; }) && asked.some(function (a) { return a.verb === 'auth.grant'; }),
       'a subscribe follows the publisher\'s key and asks its family to subscribe it', 'answered ' + short(first) + ', asked ' + short(asked));
-    ok(has(1) && has(2), 'the bootstrap lands in the cache: both items', short({ one: D.get('deskItems/goal/G9.1'), two: D.get('deskItems/goal/G9.2') }));
+    ok(has(1) && has(2), 'the bootstrap lands in the cache: both items', short({ one: itemOf('goal/G9.1'), two: itemOf('goal/G9.2') }));
     ok(posts.length > 0 && posts.every(Array.isArray), 'every delivery is a bundle: one JSON array of rows in one peerPost', 'deliveries: ' + short(posts));
 
     test.subHeading('rows that back up go as bundles (box v15)');
@@ -396,7 +418,7 @@ if (CHILD) {
     await s.subscribe(PUBLISHER, NAME);
     await tick(600);
     ok(bootstraps === before + 1, 'nine rows missed past a log of five: the sender pushes in full', 'bootstraps ' + before + ' -> ' + bootstraps);
-    const one1 = D.get('deskItems/goal/G9.1');
+    const one1 = itemOf('goal/G9.1');
     ok(one1 && one1.title === 'item 1, pushed', 'the push takes precedence: a row it carries replaces the one kept', 'item 1: ' + short(one1));
     ok(has(2) && has(30), 'and drops nothing it does not carry: items the push leaves out stay kept', 'item 2 ' + has(2) + ', item 30 ' + has(30));
     ok(!has(45), 'a row never delivered is not invented by the push', 'item 45 ' + has(45));
@@ -445,7 +467,9 @@ if (CHILD) {
     let text = '';
     try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
     ok(one.subscribed === true && one.one && one.two, 'a client with the cache switch on takes the push', short(one));
-    ok(text.indexOf('item 2') !== -1, 'it saves the cache as relay-state/process/<client>/cache-<sender key in hex>.json', path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file'));
+    ok(text.indexOf('item 2') !== -1, 'it saves the cache as relay-state/<client>/<sender key>.json (goal/G41.28, box v19)', path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file'));
+    ok(one.byNode && one.byNode.length === 1 && one.top.length === 1, 'its spirit.data holds the cache under the sender\'s key, and nothing beside it at the top (box v19)', 'at the top of spirit.data: ' + short(one.top));
+    ok(Array.isArray(one.family) && one.family.indexOf('desk') !== -1, 'and under the sender\'s key, the family: <key>.desk', 'under the key: ' + short(one.family));
     const two = runChild('restart', 'cacheProbe');
     ok(two.readOne && two.readTwo, 'started again, it reads its cache back before it subscribes', short(two));
     ok(two.subscribed === true && two.title === 'item 1, renamed' && two.two, 'a sender of a new run pushes in full: its rows take precedence, and a kept row it does not carry stays (goal/G41.15)', short(two));

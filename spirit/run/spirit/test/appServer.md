@@ -46,9 +46,16 @@ stream"); Desk and deskClient move onto it.
 
 - **Only a client caches, by one switch**: `serve(verbs, { stream: { cache: true } })`, or `{ cache: { limit } }`
   with a limit in bytes (4 MB per sender when not given). Without it no cache file is kept.
-- **Per sender, under the run root** (where spirit.js sits):
-  `relay-state/process/<client server>/cache-<sender key in hex>.json` (the key's base64 decoded, in hex), saved
-  as it changes and read back into the data set at start, before any subscribe.
+- **Per sender, under the run root** (where spirit.js sits; goal/G41.28, box v19: *"this way an appServer in
+  client-mode can derive the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"*):
+  `relay-state/<client server>/<sender key>.json`, saved as it changes and read back into the data set at start,
+  before any subscribe. The key is written in base64url (Andy, on G41.28: *"Shall the server key in spirit.data and in the
+  cache file name be base64url (- for +, _ for /), since a plain base64 / splits both?"* *"yes"*): no `+`, no `/`,
+  and it reads back to the sender's key.
+- **Its cache in spirit.data by sender node** (box v19: *"The RAM-CACHE-is organized BY SERVER-NODE-ID at it's lowest
+  level. IE: spirit.data.<server-public-key-in-base64>.<api-family>...."*): the data set holds at its top the sender's
+  key in base64url and nothing beside it, and under it the family (`<key>.desk`). The test reads what the cache holds through the
+  family's clientCacheManager (`spirit.deskData`), never by a branch's name.
 - **It keeps every goal the sender sends**, no filtering on the client side, within its limit.
 - **A sender whose family has no folder on this node** (`familyPath` of it resolved from the run root) is not cached.
 - **The cache keeps to its limit, and the sender's family api.js on the client's node does the shedding**, declaring
