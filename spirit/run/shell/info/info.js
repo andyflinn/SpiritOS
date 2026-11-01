@@ -44,9 +44,9 @@
 var infoApi = null;
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.6; Andy: every app bootstraps its own components, "lazy-load, is
-// a tree...."): its two field elements and the two forms, through spirit.require.
+// a tree...."): its two field elements, the two forms and the rowForm of its key rotation, through spirit.require.
 var infoParts = Promise.all(['shell/js/changeMyLabel.js', 'shell/js/changeMyDescription.js', 'shell/js/joinForm.js',
-  'shell/js/faceForm.js'].map(function (p) { return spirit.require(p); }));
+  'shell/js/faceForm.js', 'shell/js/rowForm.js'].map(function (p) { return spirit.require(p); }));
 
 // ── EVERY RELAY THIS NODE HOLDS A SEAT ON ────────────────────────────
 //
@@ -112,13 +112,15 @@ spirit.shell.activateApp({
       //   Andy: "the place would be the info app", "and from the info-app it should invoke the rotate key dialog."
       //
       // A button that OPENS the dialog. The explanation and the two-press confirmation live there, never here, so
-      // nothing on this screen can rotate a key by itself.
-      '<div class="start-job-form card">' +
-        '<button type="button" data-info="rotate">Rotate this node\x27s cipher key</button>' +
-      '</div>';
+      // nothing on this screen can rotate a key by itself. A ROWFORM (goal/G41.27; Andy: "Info App\n\n[🆘] [Rotate this
+      // node's cipher key]"): 🆘, its span empty, the button at the right edge.
+      '<div data-info="rotate"></div>';
 
-    container.querySelector('[data-info="rotate"]').addEventListener('click', function () {
-      infoApi.callDialog('shell/rotateKey', {});
+    infoParts.then(function () {
+      var rotate = window.spirit.elements.rowForm.create(container.querySelector('[data-info="rotate"]'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
+      rotate.button.addEventListener('click', function () {
+        infoApi.callDialog('shell/rotateKey', {});
+      });
     });
 
     // THE ONE TABLE ON THE STREAM (goal/G40.11): the shadow job hands each row as it changed; the relays are read again
