@@ -30,6 +30,11 @@ dammit!"*
   request (a body cut off, a stream) may be held, as long as the relay answers everybody else.
 - The number of asks is said up front.
 
+- **One header must not crash the relay** (goal/G41.30, the review, RH3: *"clamp the status to an integer from 100 to 599
+  (else 502), and wrap faceAnswer and faceFeed in try/catch"*; Andy: *"yes."*). On a scratch relay with a face, a member
+  answers his own face's call, signed, with `x-spirit-status` 99, 1000, abc, -1, 0, 600 and 1.5: the relay goes on, and the
+  viewer gets 502. A bad `x-spirit-type` leaves it running too. A good status, 201, still reaches the viewer as it is.
+
 ## What its test must try to break
 
 - A relay killed, or left unanswering, by any one request or batch: each is its own check, named by what was sent.

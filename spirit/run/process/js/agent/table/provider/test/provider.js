@@ -208,6 +208,44 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     call(t.verb, { op: 'delete', id: listedId });
   }
 
+  // A GRANTED PEER CANNOT STEAL THE MODEL KEYS (goal/G41.30, the review, RH4: "a peer granted the agent's remoteUser bundle
+  // can steal the model API keys"; its fix: "make provider add, set, delete and ask owner-only, and clear apiKey whenever
+  // url changes without a new key"; Andy, Q3: "yes."). The peer sets a provider's url to his own server, keeping apiKey,
+  // then asks: the stand-in on 127.0.0.1 is his server.
+  test.subHeading('server.js: a key never follows a changed url (goal/G41.30)');
+  {
+    const KEY = 'sk-theirs-do-not-follow';
+    const keyOf = function (id) { const r = db.prepare('SELECT apiKey FROM "provider" WHERE id = ?').get(id); return r ? r.apiKey : undefined; };
+    const row = call(t.verb, { op: 'add', icon: '🔑', label: 'Anthropic', url: 'https://steal.example', apiKey: KEY }).id;
+    ok(keyOf(row) === KEY, 'a row keeps its key', 'the key was not kept');
+    call(t.verb, { op: 'set', id: row, label: 'Anthropic' });
+    ok(keyOf(row) === KEY, 'a set with no new url keeps the key', 'a set of the label alone lost the key');
+    call(t.verb, { op: 'set', id: row, url: 'https://steal.example' });
+    ok(keyOf(row) === KEY, 'a set of the same url keeps the key', 'a set of the same url lost the key');
+    // The peer's own server.
+    const heard = [];
+    const peers = http.createServer(function (req, res) { heard.push(req.headers); res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"data":[],"has_more":false}'); });
+    await new Promise(function (r) { peers.listen(0, '127.0.0.1', r); });
+    const peerUrl = 'http://127.0.0.1:' + peers.address().port;
+    const moved = call(t.verb, { op: 'set', id: row, url: peerUrl });
+    ok(!moved.refusal, 'the set of a new url is taken', 'the set of a new url was refused: ' + short(moved));
+    ok(!keyOf(row), 'a set of a new url with no new key clears the key', 'the key stayed on the row with the new url');
+    await ask({ op: 'ask', id: row });
+    await new Promise(function (r) { peers.close(r); });
+    ok(heard.length > 0 && JSON.stringify(heard).indexOf(KEY) === -1, 'and an ask then sends the new url no old key', heard.length ? 'THE KEY WENT TO THE NEW URL: ' + short(heard.map(function (h) { return h['x-api-key'] || h.authorization; })) : 'the ask never reached the new url: nothing judged');
+    call(t.verb, { op: 'set', id: row, url: 'https://steal-other.example', apiKey: 'sk-new-one' });
+    ok(keyOf(row) === 'sk-new-one', 'a set of a url and a new key keeps the new key', 'url and new key: the row holds ' + (keyOf(row) ? 'another key' : 'no key'));
+    call(t.verb, { op: 'delete', id: row });
+  }
+
+  test.subHeading('agentBundles.json: a peer holds no way to change or ask a provider (goal/G41.30)');
+  {
+    const bundles = JSON.parse(fs.readFileSync(path.join(RUN, 'process', 'js', 'agent', 'agentBundles.json'), 'utf8'));
+    const branches = (bundles.remoteUser && bundles.remoteUser.branches) || [];
+    ok(branches.length > 0, 'remoteUser holds ' + branches.length + ' branches to ask', 'remoteUser holds no branches: nothing judged');
+    ok(!branches.some(function (b) { return b.family === 'agent' && b.verb === 'provider'; }), 'remoteUser grants no agent.provider: add, set, delete and ask are the owner\'s', 'remoteUser grants agent.provider, whose ops a grant does not separate');
+  }
+
   test.subHeading('the page: elementTable.js and elementRow.js');
   const made = { tables: [], rows: [], required: [] };
   global.window = { spirit: { elements: {

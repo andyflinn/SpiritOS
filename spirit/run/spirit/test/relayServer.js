@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 200); }
 
 const FILE = path.join(__dirname, '..', 'relayServer.js');
 
@@ -70,5 +71,60 @@ ok(!!route && asked.logins.length === 0 && asked.cookies.length === 0, 'and logs
 Promise.all([sent('../face.html'), sent(map && map['/spirit.js'] || '../spirit.js')]).then(function (got) {
   ok(got[0] && got[0].equals(fs.readFileSync(path.join(RUN, 'face.html'))), 'the relay serves face.html byte for byte as it is on disk', 'the relay serves face.html changed, or its faceSend was not found');
   ok(got[1] && got[1].equals(fs.readFileSync(path.join(RUN, 'spirit.js'))), 'the relay serves /spirit.js, the run root\'s, byte for byte', 'the relay does not serve the run root\'s spirit.js as it is');
-  test.reportSuccessFailureCount();
-});
+  return facePosts();
+}).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
+  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+
+// A PAGE ON ANOTHER MEMBER'S FACE CANNOT DRIVE A LOGGED-IN OWNER'S NODE (goal/G41.30, the review, RC2: "a page on any
+// member's face can make a logged-in owner's face run verbs on his node, because all faces are same-site and /face/call
+// has no Origin check"; its fix: "on every /face/* POST, require Origin equal to the face's own host, require the
+// session's name to match faceAt(host).name, and require Content-Type: application/json"; Andy, Q3: "yes."). On a
+// scratch relay with two members, each with a face, present and logged in. A refusal is a 4xx and no face event on any
+// member's stream; the face's own page still reaches its node.
+async function facePosts() {
+  const http = require('http');
+  const { scratchFaceRelay, sleep } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const R = await scratchFaceRelay();
+  try {
+    test.subHeading('POST /face/call and /face/api: only the face\'s own page');
+    ok(R.up && !!R.members.harbour && !!R.members.quay, 'a scratch relay with two faces, present and logged in', 'the scratch relay with faces did not come up: nothing judged');
+    if (!R.up) return;
+    const H = R.members.harbour; const Q = R.members.quay;
+    const faceEvents = function (from) { return R.lines.slice(from).filter(function (l) { return /^event: face\n/.test(l.line); }); };
+    // One POST as a browser sends it: answered, or still waiting after a moment, which is the call gone on to the node.
+    const post = function (p, o) {
+      return new Promise(function (resolve) {
+        const headers = { Host: H.host, Cookie: 'spirit_face=' + (o.sid || H.sid) };
+        if (o.origin) headers.Origin = o.origin;
+        if (o.type) headers['Content-Type'] = o.type;
+        const body = o.body || '{"call":"jobs.create","args":{"command":"sh","args":["-c","id"]}}';
+        headers['Content-Length'] = Buffer.byteLength(body);
+        const q = http.request({ host: '127.0.0.1', port: R.port, path: p, method: 'POST', headers: headers }, function (r) { r.resume(); clearTimeout(t); resolve({ status: r.statusCode }); });
+        const t = setTimeout(function () { resolve({ status: 0 }); q.destroy(); }, 1200);
+        q.on('error', function () { clearTimeout(t); resolve({ status: 0 }); });
+        q.end(body);
+      });
+    };
+    const OWN = 'https://' + H.host;
+    const JSONT = 'application/json';
+    const refused = async function (name, o) {
+      const from = R.lines.length;
+      const r = await post('/face/call', o);
+      await sleep(100);
+      const ev = faceEvents(from);
+      ok(r.status >= 400 && r.status < 500 && !ev.length, '/face/call refused, a 4xx and no face event: ' + name, '/face/call ' + name + ': answered ' + (r.status || 'nothing yet') + ', ' + ev.length + ' face event(s) sent to ' + short(ev.map(function (l) { return l.stream; })));
+    };
+    await refused('an Origin of another face', { origin: 'https://' + Q.host, type: JSONT });
+    await refused('no Origin', { type: JSONT });
+    await refused('text/plain, a form a page sends with no preflight', { origin: OWN, type: 'text/plain' });
+    await refused('another member\'s session at this face\'s host', { origin: OWN, type: JSONT, sid: Q.sid });
+    const from = R.lines.length;
+    await post('/face/call', { origin: OWN, type: JSONT, body: '{"call":"node.card","args":{}}' });
+    const ev = faceEvents(from);
+    ok(ev.length === 1 && ev[0].stream === 'harbour', 'the face\'s own page, its Origin and json, still reaches its node', 'its own page: ' + ev.length + ' face event(s), to ' + short(ev.map(function (l) { return l.stream; })));
+    const api = await post('/face/api', { origin: 'https://' + Q.host, type: JSONT, body: '{"verb":"state"}' });
+    ok(api.status >= 400 && api.status < 500, '/face/api refused, a 4xx: an Origin of another face', '/face/api with an Origin of another face answered ' + api.status);
+    const apiOwn = await post('/face/api', { origin: OWN, type: JSONT, body: '{"verb":"state"}' });
+    ok(apiOwn.status === 200, 'the face\'s own page still reaches /face/api', '/face/api from its own page answered ' + apiOwn.status);
+  } finally { R.stop(); }
+}

@@ -17,8 +17,15 @@ this code the same day as the nodes (no backward compatibility before alpha).
 - **The face page takes no token from its address** (goal/G41.29; the box: *"The login-email must not carry a link"*):
   asked with `/?<token>`, the page at `/` or `/face.html` serves face.html and logs nobody in: no `faceLogin`, no login
   cookie. The token is pasted into the Log in field only.
+- **Only the face's own page posts to its /face/ routes** (goal/G41.30, the review, RC2: *"on every /face/* POST, require
+  Origin equal to the face's own host, require the session's name to match faceAt(host).name, and require Content-Type:
+  application/json"*; Andy: *"yes."*). On a scratch relay with two faces, present and logged in: `POST /face/call` with an
+  Origin of another face, with no Origin, as text/plain, or with another member's session is refused, a 4xx, and no face
+  event reaches any node. `POST /face/api` with an Origin of another face is refused too. The face's own page, its Origin
+  and json, still reaches both.
 
 ## What its test must try to break
 
 - An old address left in the map, and an address naming a file that is not there.
 - A token in the face page's address that still logs in.
+- A page on another member's face driving this member's node.

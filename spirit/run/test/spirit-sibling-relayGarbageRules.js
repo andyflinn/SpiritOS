@@ -13,7 +13,7 @@ const fs = require('fs');
 const net = require('net');
 const path = require('path');
 const test = require(path.join(__dirname, 'testReport.js'));
-const { sleep, scratchRelay } = require(path.join(__dirname, 'headLessChrome.js'));
+const { sleep, scratchRelay, scratchFaceRelay } = require(path.join(__dirname, 'headLessChrome.js'));
 const limits = require(path.join(__dirname, '..', 'spirit', 'limits.js'));
 
 const ASK_MS = 10000;
@@ -60,6 +60,58 @@ function broke(r) {
   if (r.status >= 500 && !(r.status === 503 && /retryAfterMs/.test(r.text))) return 'it answered ' + r.status + ': ' + short(r.text);
   if (/handler-failed|the handler failed/.test(r.text)) return 'the handler failed: ' + short(r.text);
   return '';
+}
+
+// ONE HEADER MUST NOT CRASH THE RELAY (goal/G41.30, the review, RH3: "any member with a face can crash a relay with one
+// header"; its fix: "clamp the status to an integer from 100 to 599 (else 502), and wrap faceAnswer and faceFeed in
+// try/catch"; Andy, Q3: "yes."). A member answers his own face's call, signed, with a bad x-spirit-status: the viewer
+// gets 502 and the relay goes on. A dead relay is replaced, so each bad status is judged alone.
+async function badAnswers() {
+  const http = require('http');
+  let R = null;
+  const fresh = async function () { if (R) R.stop(); R = await scratchFaceRelay({ members: ['harbour'] }); return R.up; };
+  test.subHeading('/api/relay/face/answer: a bad status or type from a member never crashes the relay');
+  try {
+    ok(await fresh(), 'a scratch relay with a face, present and logged in', 'the scratch relay with a face did not come up: nothing judged');
+    if (!R.up) return;
+    // The viewer's call, waiting; the member's signed answer with these headers; what the viewer got.
+    const answered = async function (headers) {
+      const m = R.members.harbour;
+      const from = R.lines.length;
+      const viewer = new Promise(function (resolve) {
+        const b = '{"call":"node.card","args":{}}';
+        const q = http.request({ host: '127.0.0.1', port: R.port, path: '/face/call', method: 'POST', headers: { Host: m.host, Origin: 'https://' + m.host, Cookie: 'spirit_face=' + m.sid, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(b) } }, function (r) { r.resume(); resolve(r.statusCode); });
+        q.setTimeout(3000, function () { resolve(0); q.destroy(); });
+        q.on('error', function () { resolve(0); });
+        q.end(b);
+      });
+      await sleep(200);
+      const line = R.lines.slice(from).filter(function (l) { return /^event: face\n/.test(l.line); })[0];
+      const id = line ? (/"id":"([^"]+)"/.exec(line.line) || [])[1] : '';
+      if (!id) return { viewer: 0, noCall: true };
+      const sig = R.auth.sign(m.privateKey, R.auth.faceMessage(m.publicKey, R.relayKey, id));
+      let head = 'POST /api/relay/face/answer?id=' + encodeURIComponent(id) + ' HTTP/1.1\r\nHost: ' + new URL(R.base).host + '\r\nConnection: close\r\nX-Spirit-From: ' + m.publicKey + '\r\nX-Spirit-Sig: ' + sig + '\r\n';
+      Object.keys(headers).forEach(function (k) { head += k + ': ' + headers[k] + '\r\n'; });
+      head += 'Content-Length: 1\r\n\r\n';
+      await raw(R.base, head, 'x', { ms: 3000 });
+      return { viewer: await viewer };
+    };
+    for (const status of ['99', '1000', 'abc', '-1', '0', '600', '1.5']) {
+      if (R.child.exitCode !== null && !(await fresh())) { test.fail('a fresh scratch relay did not come up'); return; }
+      const got = await answered({ 'X-Spirit-Status': status, 'X-Spirit-Type': 'text/plain' });
+      await sleep(100);
+      const dead = R.child.exitCode !== null;
+      ok(!dead, 'x-spirit-status ' + status + ': the relay is still running', 'x-spirit-status ' + status + ': IT KILLED THE RELAY (exit ' + R.child.exitCode + ')');
+      ok(got.viewer === 502, 'x-spirit-status ' + status + ': the viewer gets 502', 'x-spirit-status ' + status + ': the viewer got ' + (got.viewer || 'nothing') + (got.noCall ? ' (no call reached the member)' : ''));
+    }
+    if (R.child.exitCode !== null && !(await fresh())) { test.fail('a fresh scratch relay did not come up'); return; }
+    const type = await answered({ 'X-Spirit-Status': '200', 'X-Spirit-Type': 'text/\x7fbad' });
+    await sleep(100);
+    ok(R.child.exitCode === null, 'a bad x-spirit-type: the relay is still running', 'a bad x-spirit-type: IT KILLED THE RELAY (exit ' + R.child.exitCode + '), the viewer got ' + type.viewer);
+    if (R.child.exitCode !== null && !(await fresh())) { test.fail('a fresh scratch relay did not come up'); return; }
+    const good = await answered({ 'X-Spirit-Status': '201', 'X-Spirit-Type': 'text/plain' });
+    ok(good.viewer === 201, 'a good status still reaches the viewer as it is: 201', 'x-spirit-status 201: the viewer got ' + (good.viewer || 'nothing'));
+  } finally { if (R) R.stop(); }
 }
 
 test.startTest('spirit-sibling-relayGarbageRules.js: the attacker\'s garbage at the relay\'s door (goal/G41.30)');
@@ -195,5 +247,6 @@ test.startTest('spirit-sibling-relayGarbageRules.js: the attacker\'s garbage at 
     try { if (relay.child) relay.child.kill(); } catch (e) { /* gone */ }
     if (relay.root) try { fs.rmSync(relay.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   }
+  await badAnswers();
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

@@ -106,6 +106,11 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
 
 The provider's ask adds each model with its label the model name exactly as the provider gives it, never its display name; a model still listed keeps its row. Andy: *"provider details: when the panel opens, pickers must reflect the value or the row field (model)"*: in the real browser, the provider's current model set, the closed Model field names it as the panel opens.
 
+- **A key never follows a changed url; a peer holds no way to change or ask a provider** (goal/G41.30, the review, RH4: *"make
+  provider add, set, delete and ask owner-only, and clear apiKey whenever url changes without a new key"*; Andy: *"yes."*). A
+  set of a new url with no new key clears the key, and an ask then sends that url no old key. A set of another field, or of the
+  same url, keeps it; a set of a url and a new key keeps the new key. `agentBundles.json`'s remoteUser grants no agent.provider.
+
 ## What its test must try to break
 
 - The API key in any answer or published row, ask's included.

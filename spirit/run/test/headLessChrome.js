@@ -86,6 +86,50 @@ async function scratchRelay(o) {
   return { root: root, run: run, base: base, port: port, child: child, up: up, owner: owner, auth: auth };
 }
 
+// A SCRATCH RELAY WITH FACES (goal/G41.30): scratchRelay's copy, its real relayServer.js and relay.js in a child of their
+// own, so a crash is seen and harms nothing. Members named in o.members are seated by the relay's own join, each with a
+// face, its node present (a stream whose lines come back as { stream: name, line }), logged in by its emailed token.
+// Answers { base, port, child, root, auth, relayKey, members: { <name>: { publicKey, privateKey, sid, host } },
+// lines: [{ stream, line }], stop() }, or up false.
+async function scratchFaceRelay(o) {
+  const opts = o || {};
+  const domain = opts.faceDomain || 'relay.example';
+  const names = opts.members || ['harbour', 'quay'];
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-face-'));
+  const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
+    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
+  files.forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const run = path.join(root, 'spirit', 'run');
+  const auth = require(path.join(run, 'spirit', 'relayAuth.js'));
+  auth.nameIdentity(run, 'relay');
+  auth.writeOwner(run, auth.generateIdentity('owner').publicKey);
+  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(run, 'relay-state', 'face.json'), JSON.stringify({ domain: domain }));
+  const port = await freePort();
+  // The child: relay.js's own createRelay, its mailer a stand-in that keeps the mail; then the real relayServer.js.
+  const code = 'const path = require("path"); const R = require(path.resolve("spirit/relay.js")); const made = R.createRelay; const mails = []; let box = null;' +
+    ' R.createRelay = function (root, deps) { box = made(root, Object.assign({}, deps, { sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } })); return box; };' +
+    ' process.argv[1] = path.resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");' +
+    ' const auth = require(path.resolve("spirit/relayAuth.js")); const store = require(path.resolve("spirit/relayStore.js")).open(box.rootDir ? box.rootDir() : process.cwd());' +
+    ' const out = { relayKey: box.relayPublicKey(), members: {} };' +
+    ' ' + JSON.stringify(names) + '.forEach(function (name) { const id = auth.generateIdentity(name); const mail = name + "@example.org";' +
+    '  box.join(id.publicKey, mail, "http://127.0.0.1:1/face.html", ""); const code = /[?&]join=([A-Za-z0-9_-]+)/.exec(mails[mails.length - 1].text)[1]; box.joinConfirm(id.publicKey, code, "");' +
+    '  store.members.setFace(id.publicKey, name, mail);' +
+    '  const sink = { write: function (x) { process.send({ stream: name, line: String(x) }); return true; }, end: function () {}, on: function () {}, once: function () {}, writeHead: function () {}, setHeader: function () {}, flushHeaders: function () {}, socket: {} };' +
+    '  box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sink);' +
+    '  box.faceLogin(name, mail); const token = mails[mails.length - 1].text.split(/\\r?\\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];' +
+    '  out.members[name] = { publicKey: id.publicKey, privateKey: id.privateKey, sid: box.faceLogin(name, token).session, host: name + "." + ' + JSON.stringify(domain) + ' }; });' +
+    ' process.send({ ready: out });';
+  const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
+  const base = 'http://127.0.0.1:' + port;
+  const lines = [];
+  let ready = null;
+  child.on('message', function (m) { if (m && m.ready) ready = m.ready; else if (m && m.stream) lines.push(m); });
+  const up = await until(function () { return ready ? fetch(base + '/').then(function (r) { return r.status > 0; }) : false; }, 30000);
+  return { up: up && !!ready, root: root, run: run, base: base, port: port, child: child, auth: auth, relayKey: ready && ready.relayKey, members: ready ? ready.members : {}, lines: lines,
+    stop: function () { try { child.kill(); } catch (e) { /* gone */ } try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } } };
+}
+
 // Headless Chrome on a scratch profile, and one page of it over the debugging protocol.
 async function chromePage(chrome) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-chrome-'));
@@ -121,4 +165,4 @@ async function chromePage(chrome) {
   return { kid: kid, profile: profile, send: send, evaluate: evaluate, heard: heard, sock: sock };
 }
 
-module.exports = { sleep: sleep, until: until, freePort: freePort, findChrome: findChrome, scratchNode: scratchNode, scratchRelay: scratchRelay, chromePage: chromePage, WAIT: WAIT };
+module.exports = { sleep: sleep, until: until, freePort: freePort, findChrome: findChrome, scratchNode: scratchNode, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
