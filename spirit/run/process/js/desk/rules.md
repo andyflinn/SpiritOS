@@ -40,6 +40,12 @@ Shell and application elements, should bring their subscriptions with them, so t
 
 ## code
 
+### rule/31 (version 74): code is build against requirements.
+
+Code is built against the requirements in an items box, not against the existing tests.
+completion is measured against the requirements, NOT against the tests.
+Passing tests is only and addition to satisfying the requirements in the box.
+
 ### rule/13 (version 31): A node boot ends with a key and a default name
 
 No node-boot is done until the node has a key and a default name. The node makes its one permanent identity first thing at boot, the machine name as its default name, before anything else may ask for it; nothing later makes another.
