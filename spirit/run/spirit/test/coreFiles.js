@@ -25,6 +25,8 @@ each(['spirit/run/shell/login/login.js', 'spirit/run/shell/login/login.json', 's
 each(['spirit/run/shell/apps/apps.json', 'spirit/run/process/js/fileServer/fileServer.json', 'spirit/run/shell/desk/desk.json'], false, 'a manifest is never core');
 each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/shell/js/contactSelector.js', 'spirit/run/shell/json/x.json', 'spirit/run/test/testReport.js'], true, 'the core folders');
 each(['spirit/run/index.html', 'spirit/run/spirit.js', 'spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css'], true, 'the frame');
+// goal/G41.30, Andy: "make the nav wrapper \"core\"": it moved out of shell/js/ in G41.19, and no rule named it there.
+each(['spirit/run/shell/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.md'], true, 'the navigation wrapper, and its tests');
 each(['spirit/run/shell/apps/apps.js', 'spirit/run/shell/grants/grants.js', 'spirit/run/process/js/fileServer/fileServer.js'], true, 'an intrinsic app\'s code');
 each(['spirit/run/shell/apps/notes.txt', 'spirit/run/shell/desk/desk.js', 'spirit/run/shell/chatter/chatter.js'], false, 'an intrinsic app\'s data, or an app not intrinsic');
 ok(core.intrinsic('shell/apps') && core.intrinsic('spirit/run/shell/apps/apps.js') && !core.intrinsic('shell/desk'),
