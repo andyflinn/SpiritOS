@@ -1306,7 +1306,7 @@
           contactLabel: shellElements.contactLabel,
           appServerSelector: shellElements.appServerSelector,
           apiFamilySelector: shellElements.apiFamilySelector,
-          // One bar drawn from (done, total, text); the app hooks it to its job (goal/G29.14, shell/shared/js/progressBar.js).
+          // One bar drawn from (done, total, text); the app hooks it to its job (goal/G29.14, shell/js/progressBar.js).
           progressBar: shellElements.progressBar,
           // The header area an app fills, sticky under the titlebar (goal/G6.1, shell/js/appHeader/appHeader.js).
           appHeader: shellElements.appHeader,

@@ -1,4 +1,4 @@
-// spirit/run/shell/shared/js/progressBar.js
+// spirit/run/shell/js/progressBar.js
 // THE PROGRESS BAR (goal/G29.14): one shared shell element, drawn from (done, total, text).
 //
 //   The item's box: "progressBar: one shared shell element drawn from (done, total, text); total 0 shows

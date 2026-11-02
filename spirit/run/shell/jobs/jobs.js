@@ -13,7 +13,7 @@
 // name (module, else type), kind, progress, updated.
 //
 // ITS PROGRESS (goal/G29.14 on the job cycle of goal/G29.15): each process publishes {job: {state, name, done, total,
-// text}} as its job's app object; the bar is the shared progressBar (shell/shared/js/progressBar.js), drawn from the job
+// text}} as its job's app object; the bar is the shared progressBar (shell/js/progressBar.js), drawn from the job
 // as kept. A server between jobs shows idle, no bar; a transient process IS its job, so its progress alone draws the bar.
 
 var jobsEscapeHtml = spirit.escapeHtml;
@@ -36,7 +36,7 @@ var jobsRowIndex = null;
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list, the shared row and icon elements, the progress bar, and the
 // jobs family's cache manager.
-var jobsParts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/icon.js', 'shell/shared/js/progressBar.js']
+var jobsParts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/icon.js', 'shell/js/progressBar.js']
   .map(function (p) { return spirit.require(p); }).concat([spirit.cacheManager('jobs')]));
 
 function jobsName(job) { return String(job.module || job.type || job.kind || job.id); }
