@@ -34,6 +34,9 @@ gets a container and appends itself"*).
 - `armed()` says whether it is armed; `disarm()` puts it back from the app's side (a screen opened on a new subject).
 - Without an `api.armUntilElsewhere` it still arms and runs; only the click elsewhere cannot reach it.
 
+- **A button says what it does before it is pressed** (goal/G41.30; Andy: *"the button for that has nothing written on it"*):
+  `attach` with a `label`, on a button drawn empty, shows that label at once.
+
 ## What its test must try to break
 
 - A made button not appended to its container.

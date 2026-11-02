@@ -125,5 +125,15 @@ test.startTest('armingButton.js: the are-you-sure button');
   ok(isArmed(bare) && ran3.length === 0, 'without armUntilElsewhere it still arms, running nothing', 'armed ' + isArmed(bare) + ', ran ' + ran3.length);
   bare.press(); await settle();
   ok(!isArmed(bare) && ran3.length === 1, 'and the second press runs it', 'armed ' + isArmed(bare) + ', ran ' + ran3.length);
+
+  // A BUTTON SAYS WHAT IT DOES BEFORE IT IS PRESSED (goal/G41.30; Andy: "the button for that has nothing written on it"):
+  // attach with a label, on a button drawn empty, shows that label at once, not only after its first disarm.
+  test.subHeading('attach: the label it is given shows from the start');
+  const blank = element('button');
+  E.attach(blank, { label: 'Give it the star', armedLabel: 'Give it the star: press again', run: function () {}, api: {} });
+  ok(blank.textContent === 'Give it the star', 'a button drawn empty says its label as soon as it is attached', 'it says "' + blank.textContent + '"');
+  const kept = element('button'); kept.textContent = 'Delete';
+  E.attach(kept, { run: function () {}, api: {} });
+  ok(kept.textContent === 'Delete', 'with no label given, it keeps its own words', 'it says "' + kept.textContent + '"');
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
