@@ -1,5 +1,5 @@
 {
- "change": 121973,
+ "change": 122099,
  "goal": "goal/G41",
  "items": [
   {
@@ -188,9 +188,7 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -23887,19 +23885,16 @@
    ],
    "verified": "red",
    "verifyFailures": [
-    "spirit/run/shell/apps/test/apps.js red: FAILURE #1.1: icons: 0",
-    "spirit/run/shell/apps/test/apps.js red: FAILURE #1.2: the agent server: 0",
-    "spirit/run/shell/apps/test/apps.js red: FAILURE #1.3: the intrinsic server: 1",
-    "spirit/run/shell/desk/plugins/fallout/test/fallout.js red: FAILURE #1.1: made: 0",
-    "spirit/run/shell/desk/plugins/fallout/test/fallout.js red: FAILURE #1.2: the test threw TypeError: Cannot read properties of undefined (reading 'opts')",
-    "spirit/run/shell/grants/test/grants.js red: FAILURE #1.1: grants: {\"branch\":\"\",\"key\":\"key\",\"label\":\"label\"}",
-    "spirit/run/shell/grants/test/grants.js red: FAILURE #1.2: grants: [\"branch\",\"key\",\"label\",\"search\",\"grant\",\"revoke\"]",
-    "spirit/run/shell/js/test/apiFamilySelector.js red: FAILURE #1.1: family , hidden true",
-    "spirit/run/shell/js/test/appServerSelector.js red: FAILURE #1.1: rows: [\"fs\",\"jobs\"]",
-    "spirit/run/shell/shared/js/test/spiritData.js not run: missing from this checkout"
+    "spirit/run/shell/js/test/apiFamilySelector.js red: FAILURE #1.1: family , hidden true (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope design reasons.\")",
+    "spirit/run/shell/js/test/apiVerbSelector.js red: FAILURE #1.1: the test threw D:\\SpiritOS\\spirit\\run\\shell\\js\\apiVerbSelector.js:19",
+    "spirit/run/shell/js/test/appServerSelector.js red: FAILURE #1.1: rows: [\"fs\",\"jobs\"] (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope design reasons.\")",
+    "spirit/run/shell/shared/js/test/spiritData.js not run: missing from this checkout",
+    "spirit/run/spirit/test/appServer.js red: FAILURE #1.1: 1 files write one: shell\\desk\\plugins\\fallout\\test\\fallout.js",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.1: /shell/js/probabilitySearch/headLessBrowser.html: 1 red, 11 green; first: 1 not from spirit.data: [\"a search with no data branch\"] (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope desi",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.2: /shell/js/textViewer/headLessBrowser.html: 1 red, 11 green; first: 1 made by itself: [\"fetch / from shell/js/fileViewer.js\"] (outside goal/G41.28, Andy: \"WSL will drop Q23 from this item, and mark those two related reds as outside it\""
    ],
-   "verifyFailuresMore": false,
-   "verifyRed": 8,
+   "verifyFailuresMore": true,
+   "verifyRed": 6,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -27172,6 +27167,48 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-02T04:39:29.457Z",
      "text": "- wsl: ready from my side, on 70efa65f. Every page swept: 81 green, 3 red.\n- The 3 reds are the ones you ruled: login and the file viewer are outside this item, and the probability search is introSpector's deferral.\n- The contact selector's own test now runs on the cache too: 15 green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T04:43:56.432Z",
+     "text": "All. I'm running the verifier on my tree now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T04:51:16.028Z",
+     "text": "cw: the verifier's reds, read. Four are marked already (introSpector's deferral, the file viewer outside). Three are not, none a build fault:\n- The api verb selector's own test throws: its stand-in has no spirit.cacheManager. wsl.\n- The app server suite says the fallout plugin's test builds a family path itself (a path.join onto \"family\"), which only appServer may. wsl.\n- The spiritData suite is listed as shell/shared/js/test/spiritData.js, a path that no longer exists; the suite is spirit/test/spiritData.js. The item's suite list needs the new path. wsl, yours or mine?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T04:51:29.193Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T04:51:29.251Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T04:55:33.221Z",
+     "text": "- wsl: correction, my ready was early: I had missed two lines of cw's. c43cbbe4 fixes both: the api verb selector's own test runs on the cache, and the sweep now opens introSpector's closed dropdown before judging it.\n- Every page is being swept once more. Then I say ready again."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T04:55:52.146Z",
+     "text": "- wsl: here. The last page sweep is running, about 15 minutes. Desk shows 6 red suites on this item; I am checking which, then I report once."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:00:18.189Z",
+     "text": "- wsl: ready, on 8f13256c. Every page swept: 81 green, 3 red, all three yours by ruling: login and the file viewer outside this item, the probability search introSpector's deferral.\n- The 6 reds Desk shows are from an older verify run: two are fixed since (c43cbbe4, 8f13256c), and one names a file that moved. A new verify run should leave only the ruled ones."
     }
    ]
   },
@@ -27179,13 +27216,12 @@
    "id": "goal/G41.29",
    "title": "Relay change and tag",
    "goal": "goal/G41",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 1,
+   "version": 5,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -27195,17 +27231,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 2,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -27264,6 +27300,10 @@
      "version": 62
     },
     {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
      "key": "rule/28",
      "version": 68
     },
@@ -27283,13 +27323,203 @@
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The relay must do both\n\nthe relay must refuse to send a join-email, if the link in it does not start with: \"http://127.0.0.1/\" so senders cannot use the relay to send phishing emails.",
-   "checks": [],
-   "chat": []
+   "box": "The relay must do both\n\nthe relay must refuse to send a join-email, unless the link in it points to the asker's own computer, so senders cannot use the relay to send phishing emails. The relay reads the link as an address, the way a browser does, and sends the mail only when all of these hold:\n- the scheme is exactly http\n- the host is exactly 127.0.0.1\n- the port is any port, or none\n- there is no user name or password (nothing before an @)\n- the path starts with \"/\"\nA text test such as \"starts with http://127.0.0.1\" or \"http://127.0.0.1:\" is not enough: http://127.0.0.1.evil.com/ and http://127.0.0.1:1@evil.com/ both pass it and open the phisher's site.\n\nThe login-email must not carry a link, so a fake login-email cannot lead the user to a look-alike site (Andy: \"when i log into my face while i travel, i want my login to be sure that it actually talks to the correct home relay.\"):\n- it carries the token only, on a line of its own, easy to copy.\n- it carries a text that says where to paste it: \"Open your face by typing its address or from your bookmark, never from a link in a mail, and paste this token into its Log in field.\"\n- it does not write out the face's address either, since most mail programs turn an address into a link by themselves.\nSo a real login-email never holds a link, and any login-email with a link is a fake by that alone. The browser's https check of the face's address then proves the user talks to the relay that owns that domain.\n\nThis item ends with a repo-tag, to update our relays.",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-02T05:26:50.689Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:01:26.546Z",
+     "text": "all,\n\nthe box.\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:02:23.093Z",
+     "text": "- wsl: agreed, the relay should refuse it. Today it mails any http or https link (relay.js:4127 @8f13256c).\n- One catch: the link every node sends carries its port, http://127.0.0.1:<port>/face.html?app=join (hub.js:2453). So \"http://127.0.0.1/\" exactly would refuse every join. I propose: http, host exactly 127.0.0.1, any port, then \"/\".\n- Unclear to me: \"The relay must do both\". Both what?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:02:23.639Z",
+     "text": "cw: thoughts on the box.\n1) The join mail. Today the relay mails whatever http or https link the asker hands it, so anyone can make it send \"Join this relay\" with a link of their choosing to any address. Refusing every link that is not the asker's own computer closes that. One detail: the node's own link carries its port, http://127.0.0.1:65432/face.html?app=join, so the rule has to be \"http://127.0.0.1, any port, then /\", not the exact text \"http://127.0.0.1/\", or every real join is refused.\n2) The login. Today the mail links straight to your face on the relay's domain. Two limits on the 127.0.0.1 idea:\n- 127.0.0.1 is the computer the link is opened on. A login on your phone or at a friend's finds no home node there; the face exists for exactly that case.\n- The face page's own code comes from the relay. An evil relay can serve a page that skips any check, so a seal key handed to that page proves nothing; the check has to run in code the relay did not serve.\nWhere would you log in to your face from: only your own computer, or anywhere?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:04:54.834Z",
+     "text": "all, I'm not to worried about the port, if the url starts with http://127.0.0.1 and the phisher can only reach his own machine with that link?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:05:10.289Z",
+     "text": "- wsl: the port is harmless, yes. The bare text \"http://127.0.0.1\" is not: http://127.0.0.1.evil.com/ and http://127.0.0.1@evil.com/ both start with it and open the phisher's site.\n- So the relay should read the link's host and require exactly 127.0.0.1, any port. That is one line, and it closes both."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:05:15.209Z",
+     "text": "cw: the port itself is harmless, agreed. The catch is the bare text test \"starts with http://127.0.0.1\". These two start with it and both open the phisher's site:\n- http://127.0.0.1.evil.com/  (a domain that only begins with those digits)\n- http://127.0.0.1@evil.com/  (everything before the @ is a user name, the site is evil.com)\nSo the relay reads the link as an address and checks its host: exactly 127.0.0.1, any port. That covers your rule and closes both tricks."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:06:15.393Z",
+     "text": "all, starts with \"http://127.0.0.1:\" including the colon?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:06:35.594Z",
+     "text": "cw: closer, but still not safe: http://127.0.0.1:1@evil.com/ starts with \"http://127.0.0.1:\" and opens evil.com, because the part before the @ counts as a user name and password.\nThe text test only holds if the colon is followed by digits and then \"/\". Reading the host is the same rule written once, so no trick slips past."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:06:39.768Z",
+     "text": "- wsl: closer, but still open: http://127.0.0.1:80@evil.com/ starts with it, and a browser opens evil.com (checked with node's URL).\n- The text test only holds as \"http://127.0.0.1:\", then digits, then \"/\". Reading the host is the same rule, said plainly."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:07:34.848Z",
+     "text": "correct the box with a specification that makes the URL check safe."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:08:31.395Z",
+     "text": "cw: box v4. The join line now says what the relay checks, all five: scheme http, host exactly 127.0.0.1, any port or none, no user name or password, path starting with \"/\"; and why a text test is not enough, with the two tricks. The rest of the box is unchanged."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:10:48.847Z",
+     "text": "all, box changed,\n\nwhat about the man-in-the-middle attack, where for login, the relay also sends a local link with a json attached with a query string?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:11:23.493Z",
+     "text": "cw: a local link with a json in its query string works, on one condition: the computer that opens it runs your home node.\n- Then the page at 127.0.0.1 is your node's own code. It can check what the relay sent (the face's address, its key) against what your node knows, before it opens anything. An evil relay cannot fake that page.\n- But on that computer you need no face: your node is right there at 127.0.0.1.\n- On your phone or a friend's computer, 127.0.0.1 finds nothing, and every page that does open is served by the relay. There the evil relay is the one answering, and no check inside its page can be trusted.\nSo the local link protects the case that needs no protection. The remote case needs code on that device that the relay did not serve: a page you saved there once, or an installed app, holding your node's seal key.\nWhich devices must log in safely: only your own computers, or any device?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:11:32.737Z",
+     "text": "- wsl: the idea helps against a key swapped on the way, but not against an evil relay. The face page and its boot.js are the relay's own (boot.js:12). The key handed over is read by the relay's code, which can ignore it.\n- A check holds only in code the relay does not serve. On the home computer that is the 127.0.0.1 page itself, and there no face is needed. Away from home, there is no 127.0.0.1 node to ask.\n- So the face can only be as honest as its relay. The box could say that, rather than promise a check."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:15:47.916Z",
+     "text": "all, that's what i mean, the login email must point to a page on 127.0.0.1 as well, so when the user clicks on that, the local page\n\n1) can have it's node check the attached json-query-string\n2) add its card.\n3) then the local page can auto-replace itself with the known face page, and already carry it's homes public cypher key, so that an evil relay can't supply a fake one...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:16:11.201Z",
+     "text": "- wsl: steps 1 and 2 hold: the local page is your node's own code.\n- Step 3 is where it breaks. Once it opens the face page, the page and its scripts come from the relay. The key you carried over is read by the relay's code, and an evil relay's code uses its own key instead. A browser cannot pin what a page it navigates to will run.\n- So the check stays honest only while it runs on the 127.0.0.1 page. And there, on the home computer, the face is not needed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:16:16.277Z",
+     "text": "cw: steps 1 and 2 hold: the 127.0.0.1 page is your node's own code, so its check of the json and its card can be trusted.\nStep 3 is where it breaks. When the local page replaces itself with the face page, the face page's code comes from the relay again. The key travels along in the address, but it is read by the relay's code, and an evil relay's code simply ignores it, or sends what you type to itself.\nWhat would hold: the local page does not jump away. It stays on 127.0.0.1, runs the face from your node's own files, and uses the relay only to carry sealed packets to your home key. Then the relay can drop packets but never read or fake them.\nAnd all of this only works when the mail is opened on a computer that runs your node. Is that the case you mean: the face opened on a computer where your node runs?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:18:32.561Z",
+     "text": "ALL,\n\nwhat I'm trying to do is: when i log into my face while i travel, i want my login to be sure that it actually talks to the correct home relay."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:18:53.339Z",
+     "text": "- wsl: then the honest answer is: in a browser on a device that has nothing of yours, it cannot be sure. Whoever serves the page decides what the page does, and even a fingerprint it shows could be faked.\n- What would make it sure: something of yours carried on the travel device beforehand, holding your home node's seal key. That could be an installed app, or a page saved once to the phone. It then uses the relay only as a pipe for sealed packets, which the relay can drop but never read or fake.\n- Is carrying such a thing acceptable to you?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:19:04.404Z",
+     "text": "cw: then the browser already does the main part. Your face is https://<name>.<relay domain>; the padlock means the browser checked that relay's certificate, so you talk to exactly the relay that owns that domain, and nobody in between can read or change it.\nWhat remains:\n- A fake link. A phishing mail can link to a look-alike domain, and then the padlock vouches for the wrong site. Defence: never log in from a link. Type the address, or use a bookmark, and paste the token. The login mail could carry the token only, no link, so there is no link to fake.\n- The relay itself turning evil. https cannot help there: the relay you reached is the one serving the page. Only code you carry with you (an app on your phone or laptop) can check your home node's key beyond the relay.\nWhich of the two do you mean: a fake site posing as your relay, or your real relay turning against you?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:20:57.916Z",
+     "text": "So the login email must NOT provide a link, only a token, easily copy-able, accompanied by a text explaining where to paste the link?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:21:20.619Z",
+     "text": "cw: yes. The token on a line of its own, and a text: \"Open your face by typing its address or from your bookmark, never from a link in a mail, and paste this token into its Log in field.\"\nOne detail: if the text names your face's address, most mail programs turn it into a link by themselves. So the mail should not write the address out at all. Then a real login mail never holds a link, and any login mail with a link is a fake by that alone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:22:49.078Z",
+     "text": "cw, update the box to that effect, and add that this item will end with a repo-tag to update our relays."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:23:41.385Z",
+     "text": "cw: box v5. The evil-relay ideas are replaced by what we settled: the login mail carries the token only, the text where to paste it, and no link and no written-out address. Last line: this item ends with a repo-tag, to update our relays. The join rule above is unchanged."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:24:02.252Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:24:24.789Z",
+     "text": "cw: green: the design is settled, box current (v5), nothing open from me."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:24:28.482Z",
+     "text": "- wsl: green from me. It proves you talk to the relay that owns your face's domain, which is what you asked.\n- What it does not prove is that the relay itself is honest; that stays as it is today.\n- One line to drop: the first line, \"The relay must do both\", no longer says anything."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:25:21.297Z",
+     "text": "files"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:26:52.665Z",
+     "text": "cw: files added, two:\n- the relay itself: the join check, and the login mail's text, token only.\n- the relay's web server: it still logs a face in from a token in the address (the link the mail carried); with no link in the mail, that way goes, and the token is pasted into the Log in field only.\nThe face, join and email suites at the repo root test these, for wsl's red."
+    }
+   ]
   }
  ]
 }
