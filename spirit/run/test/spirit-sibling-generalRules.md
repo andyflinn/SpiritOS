@@ -163,7 +163,8 @@ box is its own check, named by the element's path and the box's id chain."*
   branch does not hold.
   **One exception, deferred and still red** (the box: *"the only exception is introspector, deferred for network-scope
   design reasons."*): the probability search keeps rows of its own for introSpector's selectors over another node, so
-  its own page, mounted bare, still makes one. Its red names the deferral; it is not met, so it is not green.
+  its own page, mounted bare, still makes one, and introSpector's own page makes two. Each red names the deferral; it is
+  not met, so it is not green.
 - **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
   make sure when it changes shit it listens to fucking update via the spirit object"*), judged twice:
   - on the page: a module that sent a write holds a `spirit.data.watch` of its own making, its searches' included. A
@@ -186,7 +187,8 @@ box is its own check, named by the element's path and the box's id chain."*
     second. A path is by server node first (goal/G41.28), `<node>/<family>/<branch>[/<row>]`, a watch of the home node
     holding `~` for the page's node: a branch gets a row of its own, a row path is set and put back. A watch that redraws nothing is not
     listening. A box that shows nothing at all (a selector hidden until its family is chosen) has nothing to redraw,
-    and is not judged. **A redraw proved in its own test** (Andy, Q24: *"Shall deskDetails' own test be the proof that it
+    and is not judged. **A closed dropdown draws its list when it opens**: while nothing it watches has redrawn, each
+    closed dropdown on the page is opened in turn, what it watches written again, and shut. **A redraw proved in its own test** (Andy, Q24: *"Shall deskDetails' own test be the proof that it
     redraws from the verifier, since the page sweep opens no item?"* *"yes."*): `shell/deskDetails/deskDetails.js` draws
     the verifier's run only for an item open, which a bare mount never has; its own test is run, and the check is green
     only when its check *"a verifier publish taken into spirit.data redraws the run"* passed;

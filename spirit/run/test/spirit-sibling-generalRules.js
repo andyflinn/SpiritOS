@@ -547,7 +547,20 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // AND ITS WATCHING REDRAWS IT (goal/G41.28; Andy: "YOUR TEST WILL MAKE SURE THAT THE CACHING AND LISTENING IS DONE TO
     // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.data path it watches must change
     // its box. A watch that redraws nothing is not listening.
-    const probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
+    let probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
+    // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (shell/js/probabilitySearch.js, setOpen: "opened, ... draw()"): while
+    // nothing it watches has redrawn, each closed dropdown on the page is opened in turn, what it watches written again,
+    // and shut. A path that redrew in any of them redrew.
+    const DROPDOWNS = 'Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("button[id$=field]"), function (b) { var p = document.getElementById(b.id.replace(/field$/, "popup")); return p && p.hidden && b.getClientRects().length; })';
+    const closed = probed.some(function (x) { return x.redrew; }) ? 0 : await page.evaluate(DROPDOWNS + '.length');
+    for (let i = 0; i < closed; i++) {
+      await page.evaluate('(function () { var b = ' + DROPDOWNS + '[' + i + ']; if (b) b.click(); }())');
+      await sleep(300);
+      const again = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch.probe()).then(function (x) { return JSON.stringify(x); })'));
+      probed = probed.map(function (x) { const y = again.filter(function (z) { return z.path === x.path; })[0]; return y && y.redrew ? Object.assign({}, x, { redrew: true, hidden: false }) : x; });
+      await page.evaluate('document.body.click()');
+      await sleep(200);
+    }
     test.subHeading(NAMED + ': ' + 'what it watches in spirit.data redraws it');
     const seenProbe = probed.filter(function (x) { return !x.hidden; });
     if (!probed.length) unjudged('it watches no spirit.data path');
@@ -580,7 +593,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // ONE EXCEPTION, DEFERRED, AND STILL RED (Andy, the box: "the only exception is introspector, deferred for network-scope
     // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
     // its own page, mounted bare, still makes one. The red names the deferral; it is not met, so it is not green.
-    const DEFERRED = rel === 'shell/js/probabilitySearch.js' ? ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
+    const DEFERRED = rel === 'shell/js/probabilitySearch.js' || rel === 'shell/introSpector/introSpector.js' ? ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
     if (!made.length) unjudged('it makes no search');
     else ok(!off.length, 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })) + DEFERRED);
     // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a
