@@ -67,6 +67,10 @@ const NEVER_ON_THE_FACE = ['contact.own'];
 function offTheFace(verb) {
   if (STAYS_ON_THE_FACE.indexOf(verb) !== -1) return false;
   const parts = verb.split('.');
+  // EVERY FAMILY'S FS.path STAYS (Andy, of the face with no star: "none of the face-apps showed up"): spirit.cacheManager asks
+  // it to find a family's cache manager, and without the fs and jobs caches the face's desktop lists no apps. It answers the
+  // name of a file in the family's own folder, and reads and writes nothing.
+  if (parts.length === 3 && parts[1] === 'FS' && parts[2] === 'path') return false;
   return OFF_THE_FACE_VERBS.indexOf(verb) !== -1 || OFF_THE_FACE_FAMILIES.indexOf(parts[0]) !== -1 || parts[1] === 'FS';
 }
 function faceRefuses(request, here) {
