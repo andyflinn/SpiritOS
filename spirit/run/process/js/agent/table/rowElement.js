@@ -32,7 +32,13 @@
   // chosen with the shell's icon selector (shell/js/iconSelector.js).
   var ICON_FIELD = { field: 'icon', label: 'Icon', kind: 'icon' };
 
-  function createRow(container, o) {
+  function createRow(container, options) {
+    var o = options || {};
+    // UNCONFIGURED, IT SAYS SO and throws nothing (goal/G41.19, box v23: "no throw even unconfigured").
+    if (!o.table) {
+      container.innerHTML = '<div class="job-manifest-note">not configured: a table of the agent server is required</div>';
+      return { destroy: function () { container.innerHTML = ''; } };
+    }
     var pre = 'ar' + (++made) + '-';
     var gone = false;
     var row = null;
