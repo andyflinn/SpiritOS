@@ -415,6 +415,12 @@ function writeFsResult(res, result) {
     res.end('Not found');
     return;
   }
+  // A path the file system will not take (goal/G41.30): the caller's, so a 400.
+  if (result.reason === 'bad-path') {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad request: the file system refused this path');
+    return;
+  }
   res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Internal error');
 }

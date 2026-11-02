@@ -3355,7 +3355,7 @@ appServer.serve(withPlugins({
     handler: function (a, caller) {
       const w = writerOf(caller);
       // G (a grant) and Q (a question) are the waiting list (goal/G4.20 points 10-11), beside C and T.
-      if (['C', 'T', 'G', 'Q'].indexOf(a.kind) === -1) throw new Error('a check is C, T, G or Q');
+      if (['C', 'T', 'G', 'Q'].indexOf(a.kind) === -1) throw refusedWhy('bad-request', 'a check is C, T, G or Q');
       // A RED Q IS PLACED ON PURPOSE (goal/G21.2). Andy, in the item's box: "A red Q is a concise question placed with
       // deliberation, to block an item until it is resolved." One sentence within Q_MAX_BYTES (qWhy), and "One open
       // red Q per agent per item: a second is refused until the first is answered or cleared." Decided by Andy.
@@ -3373,7 +3373,7 @@ appServer.serve(withPlugins({
     request: { id: '', check: '', state: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      if (['open', 'passed', 'failed', 'granted', 'answered'].indexOf(a.state) === -1) throw new Error('a check is open, passed, failed, granted or answered');
+      if (['open', 'passed', 'failed', 'granted', 'answered'].indexOf(a.state) === -1) throw refusedWhy('bad-request', 'a check is open, passed, failed, granted or answered');
       // A GRANT IS HIS ALONE (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green and are
       // logged, and questions are red-text that disappears when you feel i answered usefully." So granted is his,
       // answered the agent's; each fits only its own kind.

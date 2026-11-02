@@ -239,6 +239,9 @@ appServer.serve({
       return onNode('contact', function (s) { return s.contact.get({ key: to }); }).then(function (r) {
         // A key the book never saw is nobody's block; a book that does not answer cannot vouch for one.
         if (r.status === 404) return null;
+        // A to the node refuses outright (no key at all) is the caller's error, not a node that did not answer
+        // (goal/G41.30; the red: line.write answered 504 to a bad to).
+        if (r.status >= 400 && r.status < 500) throw refused('bad-request', 'a line needs to: the key of the chat it is written to');
         const person = r.status === 200 && r.body && r.body.person;
         if (!person) throw refused('no-answer');
         if (person.blocked === true) throw refused('peer-blocked');

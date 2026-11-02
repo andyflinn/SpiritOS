@@ -806,8 +806,8 @@ appServer.serve({
       const suite = String(a.suite || '');
       const title = String(a.title || '');
       const outcome = String(a.outcome || '');
-      if (!suite || !title) throw new Error('a record needs its suite and its title');
-      if (outcome !== 'red' && outcome !== 'green') throw new Error('an outcome is red or green');
+      if (!suite || !title) throw refusedWhy('a record needs its suite and its title');
+      if (outcome !== 'red' && outcome !== 'green') throw refusedWhy('an outcome is red or green');
       return keep(suite, title, outcome, a.failure);
     },
   },

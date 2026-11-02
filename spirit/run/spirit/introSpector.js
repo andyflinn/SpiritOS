@@ -87,6 +87,9 @@ function fsVerbs(dir, prefix) {
   function inside(p) {
     const rel = String(p == null ? '' : p);
     if (!rel || path.isAbsolute(rel)) throw refusal('bad-request', { why: 'a path inside the family folder' });
+    // A NUL IS NO PART OF A FILE NAME (goal/G41.30; the red: a NUL in the path made FS.saveFile throw, a handler failed):
+    // refused here, the one gate of every FS verb.
+    if (rel.indexOf('\0') !== -1) throw refusal('bad-request', { why: 'a path holds no NUL' });
     const full = path.resolve(root, rel);
     if (full.indexOf(root + path.sep) !== 0) throw refusal('bad-request', { why: 'nothing above the family folder' });
     return full;
@@ -97,9 +100,14 @@ function fsVerbs(dir, prefix) {
     return { rel: rel.split(path.sep).join('/') };
   }
   function read(full) { try { return fs.readFileSync(full, 'utf8'); } catch (e) { return null; } }
+  // A NAME THE FILE SYSTEM WILL NOT TAKE IS REFUSED, NEVER A HANDLER FAILED (goal/G41.30; the red: control characters or
+  // <, > in a path made every FS save answer 500): Windows refuses what Linux takes, so the file system decides and its
+  // refusal is said.
   function write(full, text) {
-    fs.mkdirSync(path.dirname(full), { recursive: true });
-    fs.writeFileSync(full, String(text == null ? '' : text), 'utf8');
+    try {
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, String(text == null ? '' : text), 'utf8');
+    } catch (e) { throw refusal('bad-request', { why: 'the file system refused this path: ' + String((e && e.code) || 'error') }); }
     return { saved: true };
   }
   const v = {};

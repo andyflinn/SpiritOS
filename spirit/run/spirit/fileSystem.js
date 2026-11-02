@@ -199,6 +199,9 @@ function saveFileInternal(filePath, content) {
     fs.writeFileSync(resolved, content, 'utf8');
     return { ok: true };
   } catch (err) {
+    // A NAME THE FILE SYSTEM WILL NOT TAKE IS THE CALLER'S (goal/G41.30; the red: <, > or control characters in a path
+    // made fs.save answer 500): Windows refuses what Linux takes. Said as a bad path; any other failure is the node's.
+    if (err && ['EINVAL', 'ENOENT', 'ENAMETOOLONG', 'EISDIR', 'ENOTDIR', 'EEXIST'].indexOf(err.code) !== -1) return { ok: false, reason: 'bad-path' };
     error(err);
     return { ok: false, reason: 'error' };
   }
