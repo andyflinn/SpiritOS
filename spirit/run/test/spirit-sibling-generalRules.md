@@ -141,6 +141,8 @@ box is its own check, named by the element's path and the box's id chain."*
   the page makes, watched from before its first script, is made by spirit's own code (`spirit.js`, its families,
   `spirit/client/`, the page's data set `spirit/spiritData.js`), told by the file the call was made in. The one
   exception is `shell/boot.js`, the face's own transport (Andy: *"boot.js MUST be an exception to the rules."*).
+  **Two reds outside goal/G41.28, still red** (Andy: *"WSL will drop Q23 from this item, and mark those two related reds
+  as outside it"*): login fetching its steps file and the file viewer fetching a file at home. Each red says so.
 - **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
   since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
   that sent a write (a call it made that is not the stream, not an interface, and carries no read op or read verb)
