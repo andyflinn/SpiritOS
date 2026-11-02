@@ -60,7 +60,8 @@ else test.fail(OWED + 'the rows were copied or changed');
 test.subHeading('2. the relay and the node rank with it; the old peer search is gone');
 const relay = code('spirit/relay.js');
 const hub = code('spirit/hub.js');
-if (/require\('\.\/peerRank'\)/.test(relay) && /peerRank\.rank\(/.test(relay)) test.check('relay.js ranks its connected members with peerRank');
+// Since goal/G41.30 the relay ranks in slices, through peerRank.ranker, so a long search never stalls it.
+if (/require\('\.\/peerRank'\)/.test(relay) && /peerRank\.(rank|ranker)\(/.test(relay)) test.check('relay.js ranks its connected members with peerRank');
 else test.fail(OWED + 'relay.js does not rank with peerRank');
 // SINCE goal/G40.11 the node merges nothing: the network's finds land in the one table, held, and contact.search ranks
 // the table's listed rows with the probability modules (searchPeople). fromMemory, its peerRank caller, went.
