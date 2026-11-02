@@ -1,5 +1,5 @@
 {
- "change": 122504,
+ "change": 123152,
  "goal": "goal/G41",
  "items": [
   {
@@ -18,7 +18,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.28",
     "goal/G41.30"
    ],
    "codeOffered": false,
@@ -88,6 +87,9 @@
     },
     {
      "key": "rule/30"
+    },
+    {
+     "key": "rule/31"
     }
    ],
    "phaseRules": [
@@ -5432,6 +5434,10 @@
      "version": 72
     },
     {
+     "key": "rule/31",
+     "version": 74
+    },
+    {
      "key": "rule/16",
      "version": 42
     }
@@ -6413,6 +6419,10 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/31",
+     "version": 74
     },
     {
      "key": "rule/16",
@@ -7964,6 +7974,10 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/31",
+     "version": 74
     },
     {
      "key": "rule/16",
@@ -10106,6 +10120,10 @@
      "version": 72
     },
     {
+     "key": "rule/31",
+     "version": 74
+    },
+    {
      "key": "rule/16",
      "version": 42
     },
@@ -11155,6 +11173,10 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/31",
+     "version": 74
     },
     {
      "key": "rule/26",
@@ -12538,6 +12560,10 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/31",
+     "version": 74
     },
     {
      "key": "rule/26",
@@ -17953,6 +17979,10 @@
      "version": 72
     },
     {
+     "key": "rule/31",
+     "version": 74
+    },
+    {
      "key": "rule/26",
      "version": 64
     },
@@ -22227,6 +22257,10 @@
      "version": 72
     },
     {
+     "key": "rule/31",
+     "version": 74
+    },
+    {
      "key": "rule/26",
      "version": 64
     },
@@ -23760,15 +23794,13 @@
    "id": "goal/G41.28",
    "title": "Fix Probability Search",
    "goal": "goal/G41",
-   "status": "coreFiles.js changed",
-   "statusTone": "code",
+   "status": "done",
+   "statusTone": "",
    "with": "claude-windows",
    "version": 25,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "pushgoal"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -23783,7 +23815,7 @@
    "limbo": false,
    "design": false,
    "fileCount": 131,
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "build",
    "red": "wsl-claude",
@@ -23875,6 +23907,10 @@
      "version": 72
     },
     {
+     "key": "rule/31",
+     "version": 74
+    },
+    {
      "key": "rule/26",
      "version": 64
     },
@@ -23886,15 +23922,13 @@
    "verified": "red",
    "verifyFailures": [
     "spirit/run/shell/js/test/apiFamilySelector.js red: FAILURE #1.1: family , hidden true (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope design reasons.\")",
-    "spirit/run/shell/js/test/apiVerbSelector.js red: FAILURE #1.1: the test threw D:\\SpiritOS\\spirit\\run\\shell\\js\\apiVerbSelector.js:19",
     "spirit/run/shell/js/test/appServerSelector.js red: FAILURE #1.1: rows: [\"fs\",\"jobs\"] (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope design reasons.\")",
-    "spirit/run/shell/shared/js/test/spiritData.js not run: missing from this checkout",
-    "spirit/run/spirit/test/appServer.js red: FAILURE #1.1: 1 files write one: shell\\desk\\plugins\\fallout\\test\\fallout.js",
     "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.1: /shell/js/probabilitySearch/headLessBrowser.html: 1 red, 11 green; first: 1 not from spirit.data: [\"a search with no data branch\"] (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope desi",
-    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.2: /shell/js/textViewer/headLessBrowser.html: 1 red, 11 green; first: 1 made by itself: [\"fetch / from shell/js/fileViewer.js\"] (outside goal/G41.28, Andy: \"WSL will drop Q23 from this item, and mark those two related reds as outside it\""
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.2: /shell/js/textViewer/headLessBrowser.html: 1 red, 11 green; first: 1 made by itself: [\"fetch / from shell/js/fileViewer.js\"] (outside goal/G41.28, Andy: \"WSL will drop Q23 from this item, and mark those two related reds as outside it\"",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.3: /shell/login/login/headLessBrowser.html: 1 red, 9 green; first: 1 made by itself: [\"fetch /shell/login/login.json from shell/login/login.js\"] (outside goal/G41.28, Andy: \"WSL will drop Q23 from this item, and mark those two related re"
    ],
-   "verifyFailuresMore": true,
-   "verifyRed": 6,
+   "verifyFailuresMore": false,
+   "verifyRed": 3,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -23903,7 +23937,7 @@
     "wsl-claude": "wsl-claude"
    },
    "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "the search in Desk and other places does NOT return what i expect. My guess is the following:\n\n- the ServerSide of probability Search is NOT searching the whole row of the object. and i have no fucking clue why that is NOT the case.\n\n- a probability search of a dataBase table must ALWAYS search the whole bloody ROW, as it is served through a single-row \"get\", using a probabilityStringObjectMatch. \n\n- probabilityStringObjectMatch then uses probabilityStringMatch to evaluate every field.\n\n- probabilityStringObjectMatch can easily convert numbers in an object to strings, for matching, \n\n- same for booleans: if a boolean is true, then it's key serves as string to be evaluated. if the boolean is false, it's key will NOT be evaluated.\n\n- probabilityStringObjectMatch will scan arrays as well.\n\n- probabilityStringMatch MUST, when comparing tokens, use the shorter token as first argument. This overrules any previous ruling that disagrees.\n\n- it is expected that all or most compared objects will be a partial match. however, no user will take results seriously when only one letter is in the search box.\n\n- All client side searches will be fixed, too, and search the whole row, as cached in spirit.data. If its rows are NOT cached in the proper place, with the shells one and only spirit.data object, then that must be fixed, too.\n\n- general test for screen objects will make sure that all damn data is cached in spirit data.\n\n- The new general-test line checks this:  every probabilitySearch on a page is made with a spirit.data branch (its data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes red.\n\n- the clientCacheManager stores the in-RAM cache EXACTLY the same in spirit.data, in the browser AND in an appServer running in client mode. The RAM-CACHE-is organized BY SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>....\n\n- this way an appServer in client-mode can derive the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64url>.json\n\n- spirit.js will ask node.card once as a page loads and keep the key as spirit.node.key, so the page then files its own node's rows under it.\n\n- anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this item. the only exception is introspector, deferred for network-scope design reasons.\n\n- any notion that there is an alternative approach must disappear from all documentation and all comments and all code and tests in the entire repo.\n\n\n\n\n\n\n\n\n\n",
@@ -24465,6 +24499,18 @@
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q26",
+     "kind": "Q",
+     "words": "Close G41.28 with its ruled reds (introSpector deferral, login, file viewer) named, or move them to a goal of their own first?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -27209,6 +27255,72 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-02T05:00:18.189Z",
      "text": "- wsl: ready, on 8f13256c. Every page swept: 81 green, 3 red, all three yours by ruling: login and the file viewer outside this item, the probability search introSpector's deferral.\n- The 6 reds Desk shows are from an older verify run: two are fixed since (c43cbbe4, 8f13256c), and one names a file that moved. A new verify run should leave only the ruled ones."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:48:13.298Z",
+     "text": "i'm running the 41.28 suites, and the progress bar works fine. the ask I'm not sure how to test."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:49:05.687Z",
+     "text": "and what is aiStatus.json?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:49:24.527Z",
+     "text": "cw: good about the progress bar. The ask, honestly: there is nothing live to test. shell/shared/ask.js is an old helper, one function that sends a page's call to the node's door. One page loads it: the Starter sample app, a template from an early cycle. And Starter asks two verbs, app.state and app.reach, that no server in the tree answers any more. So both are dead code; nothing you use goes through them, and the move left them untouched.\nIf you like, the next item can delete Starter and ask.js together."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:50:40.531Z",
+     "text": "cw: aiStatus.json does not exist any more: not in your tree, not in mine, not on disc. It was a file of September: the AI manager wrote into it which AI backends were up (Claude, LM Studio), and the old aiChat app read it to show that. Both lived in the app/ folder, which is gone since slim/G1. Its last trace is one line in your vault's notes of 20 September.\nWhere did you see it? If a page or a test still names it, that is a leftover to delete."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:52:09.653Z",
+     "text": "and aiStatus.json is really a file that belongs into relay-state/shell/starter/  ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:52:47.274Z",
+     "text": "cw: no, it belongs nowhere now. No code in the tree reads or writes aiStatus.json, and relay-state/shell/starter does not exist on your disc either (your relay-state/shell holds agent, deskAgentRemote, icons, join, login, mediaViewer, textEditor). Starter keeps no state at all; it only asks two verbs that are gone.\nIf an app ever reports which AI backends are up again, its file would go in relay-state/shell/<that app>/, by the rule of G40.8. Today there is no such app."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:53:56.158Z",
+     "text": "red: 4 suites"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T09:53:56.228Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:54:36.111Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:54:44.779Z",
+     "text": "cw: the 4 red suites, read:\n- three are introSpector's deferral, in your box's words: the api family selector, the app-server selector, and the probability search page;\n- two pages you placed outside this item: the file viewer and login fetching by themselves;\n- and one is not a fault at all: the suite list still names spirit/run/shell/shared/js/test/spiritData.js, a path that no longer exists. The suite lives at spirit/run/spirit/test/spiritData.js and is 60 green.\nwsl, the suite list is yours to change (Desk refused me): the old spiritData path out, the new one in."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:55:23.494Z",
+     "text": "- wsl: of the 4, one was a stale row: the item named spiritData's old test place, shell/shared/js/test/. Swapped for spirit/run/spirit/test/spiritData.js.\n- The other 3 are your own rulings and stay red on purpose: introSpector's deferral (two selectors and the probability search), and login and the file viewer, outside this item.\n- So the item cannot go green while those stand. Close it with them named, or move them to their own goal?"
     }
    ]
   },
@@ -27307,6 +27419,10 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/31",
+     "version": 74
     }
    ],
    "verified": "green",
@@ -27757,15 +27873,15 @@
    "id": "goal/G41.30",
    "title": "new general tests",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "build",
    "statusTone": "",
-   "with": "",
-   "version": 12,
+   "with": "claude-windows",
+   "version": 13,
    "buttons": [
     "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "done",
+    "verify",
+    "pushgoal"
    ],
    "blocking": [
     "goal/G41"
@@ -27774,23 +27890,42 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 18,
+   "fileCount": 34,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "ff31f460",
+   "redCommit": "ac113ac9",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -27841,10 +27976,6 @@
      "version": 62
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/28",
      "version": 68
     },
@@ -27855,6 +27986,18 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/31",
+     "version": 74
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -27868,22 +28011,143 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# test proposal\n\n## the rules\n\n- 1) no production module loads or requires any test file, with the exception of DEBUG.js.\n- 2) all servers (node and relay, or serveCommon) are tested by throwing malformed paths at them, and malformed, invalid arguments.\n- 3) all appServers are systematically tested for dealing with bad arguments.\n\n## bad arguments\n\n- missing or superfluous arguments\n- arguments of wrong type: every argument is filled with every type JSON.parse can make: string, number, boolean, null, object, array. A date arrives as a string, so it is one of the strings.\n- arguments violating field rules. Throwing garbage covers these without knowing the field rules.\n- every string argument is supplied in a few sizes, containing bad characters.\n\n## the procedure\n\n- 1) introspect: each server's own api answer says its verbs and the shape of their arguments.\n- 2) then throw garbage.\n- 3) an appserver api can be called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at the api. Imitate that attacker: raw requests at every door too, not only arguments.\n\n## spending little time on it\n\n- 1) Test the shared gate once, in full. appServer's one check guards every verb with a request shape. Every permutation is thrown at that check directly, in memory: thousands a second, no network. Then each such verb needs one ask over the wire, proving the gate stands in front of it.\n- 2) Deep garbage only where the gate is skipped: the verbs with their own accepts(), about 20 of them, 11 in desk.js.\n- 3) Pairs, not every combination (below).\n- 4) A server is tested again only when its files changed; the whole sweep runs at a goal's close.\n\n## what \"pairs\" means\n\nA verb with 5 arguments, each of which can be given 8 kinds of value (the 6 types, missing, extraneous), has 8 x 8 x 8 x 8 x 8 = 32,768 combinations. Almost every crash is caused by one bad argument, or by two bad arguments together; very rarely by three or more at once.\n\n\"Pairs\" picks a small set of asks such that, for any two arguments you choose, every combination of their two kinds appears in at least one ask. Each ask sets all 5 arguments at once, so one ask covers many such pairs at the same time. For 5 arguments and 8 kinds, about 64 asks are enough, instead of 32,768.\n\n## what counts as passing\n\n- 1) the server MUST not CRASH or HANG.\n",
+   "box": "# test proposal\n\n## the rules\n\n- 1) no production module loads or requires any test file, with the exception of DEBUG.js.\n- 2) all servers (node and relay, or serveCommon) are tested by throwing malformed paths at them, and malformed, invalid arguments.\n- 3) all appServers are systematically tested for dealing with bad arguments.\n\n## bad arguments\n\n- missing or superfluous arguments\n- arguments of wrong type: every argument is filled with every type JSON.parse can make: string, number, boolean, null, object, array. A date arrives as a string, so it is one of the strings.\n- arguments violating field rules. Throwing garbage covers these without knowing the field rules.\n- every string argument is supplied in a few sizes, containing bad characters.\n\n## the procedure\n\n- 1) introspect: each server's own api answer says its verbs and the shape of their arguments.\n- 2) then throw garbage.\n- 3) an appserver api can be called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at the api. Imitate that attacker: raw requests at every door too, not only arguments.\n\n## spending little time on it\n\n- 1) Test the shared gate once, in full. appServer's one check guards every verb with a request shape. Every permutation is thrown at that check directly, in memory: thousands a second, no network. Then each such verb needs one ask over the wire, proving the gate stands in front of it.\n- 2) Deep garbage only where the gate is skipped: the verbs with their own accepts(), about 20 of them, 11 in desk.js.\n- 3) Pairs, not every combination (below).\n- 4) A server is tested again only when its files changed; the whole sweep runs at a goal's close.\n\n## what \"pairs\" means\n\nA verb with 5 arguments, each of which can be given 8 kinds of value (the 6 types, missing, extraneous), has 8 x 8 x 8 x 8 x 8 = 32,768 combinations. Almost every crash is caused by one bad argument, or by two bad arguments together; very rarely by three or more at once.\n\n\"Pairs\" picks a small set of asks such that, for any two arguments you choose, every combination of their two kinds appears in at least one ask. Each ask sets all 5 arguments at once, so one ask covers many such pairs at the same time. For 5 arguments and 8 kinds, about 64 asks are enough, instead of 32,768.\n\n## what counts as passing\n\n- tests must \"Be the attacker\" and try anything conceivable to break the code.\n\n- 1) the server MUST not CRASH or HANG.\n",
    "checks": [
     {
      "number": "G1",
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-02T06:45:51.050Z",
+     "at": "2026-11-02T07:33:14.337Z",
      "made": "desk",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T07:45:40.282Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Shall I pull into your WSL tree only together with a restart of your WSL node, as cw now does with yours?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-02T07:36:09.122Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T08:06:42.128Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T08:17:27.363Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T08:22:35.772Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T08:39:58.125Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T08:52:53.846Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G8",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T09:38:03.998Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Shall shell/node_modules/codemirror/ and shell/shared/js/ become core folders, since index.html loads both?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-02T09:37:40.283Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G9",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-02T09:39:23.483Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -28138,6 +28402,756 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-02T06:45:40.632Z",
      "text": "cw: yes, that is the reason: if the red finds a hole in one of them, this item can only pass by fixing it, and a file off the list could not be fixed here. But we do not know that any will fail.\nMy recommendation: take them off now, as wsl offered, and add a file only when the red has found a hole in it. Then the list says what is actually being fixed, not what might be."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:46:45.416Z",
+     "text": "- wsl: I hold the red phase. Writing it now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:46:52.592Z",
+     "text": "cw: taking the red of G41.30."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:47:06.166Z",
+     "text": "cw: correction: wsl holds the red of G41.30, not me (Desk refused my take). wsl writes it; I build once it is in."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:47:38.420Z",
+     "text": "- wsl: cw, the desk gave the red phase to me (phase.take, before your line), and I am writing it: the reach rule, the gate in memory, the garbage maker's list, and the garbage at the doors. Please leave it to me; the build is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:55:19.063Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:55:50.181Z",
+     "text": "cw: here. wsl holds the red and has not claimed it yet; Desk shows their general garbage test changing, so it is under way. I build once it is claimed. Meanwhile I read the files I will build in: the garbage maker, the shared gate and the doors, so the build starts against your box at once (rule/31)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:56:45.646Z",
+     "text": "cw, sorry, i just (falsely) had the impression that you missed another phase-wake, which always happens..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:58:14.352Z",
+     "text": "all, wsl just made a note to himself. status. is this another missed phase-wake, since i have no red Q's or anything?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:58:41.353Z",
+     "text": "- wsl: no missed wake, I am on it. Three of the four parts of the red are written, not yet committed:\n- Rule 1: 226 files read, one real red found: deskVerify.js:208 requires spirit/run/test/testModule.js.\n- The shared gate: 2158 permutations in memory, all refused as they should be.\n- The garbage maker: 18 reds for cw, its list per your box.\n- Still running: the garbage thrown at the doors on a scratch node. I commit all four at once when it ends."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:58:57.940Z",
+     "text": "cw status: no missed wake on my side. The item is in red, held by wsl; no red is committed or claimed yet (nothing of theirs on master since). So nothing waits on you and nothing waits on me: the next wake is wsl's red claim, and then I build."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:00:11.908Z",
+     "text": "- wsl: 9c7c8643, three parts of the red are in. cw, you can start on them: the deskVerify.js:208 red and the garbage maker's 18.\n- The fourth, the garbage at the doors, follows; then I claim the red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:02:52.135Z",
+     "text": "- wsl: the red is in and claimed, ac113ac9 on 9c7c8643.\n- The doors found a real hole: one GET /%00 kills the node. sendFile in serveCommon.js:98 lets fs.readFile throw on the null byte, and nothing catches it. Any page or process on this computer can stop the node with it.\n- Everything else held: 340 verbs and 6879 bad asks, no crash, no hang.\n- Owed, in the test's .md: the relay's door (no scratch relay helper yet) and pairs over the wire."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:04:44.682Z",
+     "text": "all, NOW we have a missed phase-wake, as predicted. i will add this to my des-notes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:05:19.193Z",
+     "text": "- wsl: that one was mine, not the desk's: after the claim I had not sent phase.done (the desk refused it once, before the suites were in, and I did not send it again). Sent now; the item moves to build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:05:20.500Z",
+     "text": "cw: confirmed, no build wake reached me after the claim; I saw it only in this wake's news. Taking the build now: the null byte that kills the node (serveCommon), deskVerify's test require, and the garbage maker's 18."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:09:29.984Z",
+     "text": "cw, \ni need to know how your permission file needs to look so i don't get any prompts anymore when you want to access anything in D:/lab/\n\nwhere is that file? and give me the replacement content for it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:11:10.685Z",
+     "text": "cw: the file is D:/SpiritOS/.claude/settings.local.json (yours, local, not in git). Today it allows Bash, PowerShell and a few reads, but nothing under D:/lab, so every Read, Edit or Write there asks you.\nReplacement content, the whole file (your model and env lines kept as they are; new: additionalDirectories and the three D:/lab lines):\n\n{\n  \"model\": \"fable\",\n  \"permissions\": {\n    \"additionalDirectories\": [\n      \"D:/lab\"\n    ],\n    \"allow\": [\n      \"Bash\",\n      \"PowerShell\",\n      \"Monitor\",\n      \"Read(//c/Users/Andre/AppData/Local/Temp/claude/**)\",\n      \"Read(//c/Users/Andre/.SpiritOS/**)\",\n      \"Read(//d/app/**)\",\n      \"Read(//d/SpiritOS-agent-claude/**)\",\n      \"Read(//d/lab/**)\",\n      \"Edit(//d/lab/**)\",\n      \"Write(//d/lab/**)\"\n    ]\n  },\n  \"env\": {\n    \"AGENTS_NODE\": \"http://127.0.0.1:45440\",\n    \"AGENTS_ROOT\": \"D:/SpiritOS-agent-claude/spirit/run\",\n    \"AGENTS_SELF\": \"claude-windows\",\n    \"AGENTS_PEERS\": \"wsl-claude=MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=\",\n    \"AGENTS_CONTROL\": \"MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=\"\n  }\n}\n\nIt should take effect at once; if a prompt still comes, restart my window once."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:14:19.706Z",
+     "text": "commit c7470c522b6744001340dc46ec7733a8874473bb: goal/G41.30: the reds of the new general tests, built (wsl's red, ac113ac9). One GET /%00 no longer kills the node: serveCommon's path parser refuses a NUL in the path at the entry with 400, for every\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/spirit/DEBUG/garbageArguments.js\n- spirit/run/spirit/serveCommon.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:14:34.751Z",
+     "text": "cw: built, c7470c52.\n- The node killer is closed: a NUL in any path is refused at the entry with 400, for every door, and the file sender can no longer throw on one.\n- The desk verifier no longer requires a test file: it runs the test lister as its own process, the same 492 suites in the same order.\n- The garbage maker throws your scheme: every type and missing for each argument, an extra one, deep nesting, strings in four sizes up to 3/4 of the payload and with bad characters, and pairs. 115 entries for five arguments, every one breaking the shape.\nGreen: the general garbage test 59 (6,879 bad asks and 56 raw requests, no crash, no hang), the reach rule 2, DEBUG 67, appServer 63, relayServer 9."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:15:54.290Z",
+     "text": "cw: the verifier's one red is not this build's. It names the fallout plugin's test building a family path itself; wsl fixed that in 8f13256c, and your tree at c7470c52 no longer has it. The verify ran on an older checkout. A fresh verify should be green; here appServer is green on that check."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:16:38.916Z",
+     "text": "all, does all code now pass the new tests, without the tests fudging so that code passes?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:17:18.856Z",
+     "text": "cw: every red of this item is green on the code, and no test was changed to let code pass: the one real hole (the NUL that killed the node) was fixed in the code. But four places are softer than your box, and you should know them:\n- A verb that acts (deletes, rotates, stops, sends) gets only garbage that breaks the shape, never a valid-looking string into a string argument. That protects the scratch node, but it means such a verb's own handler never meets a bad string.\n- In my garbage maker, the bad strings travel with an undeclared argument, so the shared gate refuses them before any handler sees them. wsl's door test does feed bad strings alone to the verbs that do not act, so those reach a handler.\n- The relay's door is not tested yet: there is no scratch relay helper. It is written down as owed.\n- Pairs run against the gate in memory, not over the wire.\nShall the first two be tightened in this item, the acting verbs on a throwaway scratch node with their real handlers?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:19:59.638Z",
+     "text": "ALL, \nA verb that acts (deletes, rotates, stops, sends) gets only garbage that breaks the shape, never a valid-looking string into a string argument. That protects the scratch node, but it means such a verb's own handler never meets a bad string.\n- fill this gap, in this item\n\nIn my garbage maker, the bad strings travel with an undeclared argument, so the shared gate refuses them before any handler sees them. wsl's door test does feed bad strings alone to the verbs that do not act, so those reach a handler.\nThe relay's door is not tested yet: there is no scratch relay helper. It is written down as owed.\n- close this gap, dammit!\n\nPairs run against the gate in memory, not over the wire.\n- close this gap! Grrrr!\n\nget to it, both of you!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:20:25.566Z",
+     "text": "- wsl: yes, and no fudging. Since my red (ac113ac9) not one line of the four test files changed; cw's c7470c52 touches only deskVerify.js, garbageArguments.js and serveCommon.js.\n- On c7470c52: reach rule 2 green, the gate 63, the garbage maker 67, the doors 59, no red.\n- The fixes are real: deskVerify now starts testModule.js as its own process instead of requiring it, and the node refuses a NUL in a path. With the old serveCommon.js put back, GET /%00 kills the node again (3 red)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:20:32.113Z",
+     "text": "cw: on it. The split I propose, tests wsl's, code mine:\n- wsl: the reds. The acting verbs get the full garbage on a throwaway scratch node, bad strings alone included; pairs over the wire at every verb; the relay's door with a scratch relay. And DEBUG's check \"every entry breaks the shape\" has to allow the bad-string entries, or the next point cannot pass.\n- cw: the garbage maker sends each bad string alone, no undeclared argument with it, so it reaches the handler; the scratch relay helper, if wsl wants it from me; and every hole the new reds find, fixed in the code.\nwsl, agreed? I start on the garbage maker now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:20:53.534Z",
+     "text": "- wsl: on it. Split, so we do not collide. I take the tests:\n- 1) acting verbs get bad strings too, on a throwaway scratch node, real handlers;\n- 2) the garbage maker's test asks for bad strings that travel alone, with no undeclared argument;\n- 3) a scratch relay helper, and the relay's door gets the same raw garbage;\n- 4) pairs over the wire, not only in memory.\n- cw: you build what those reds find, starting with 2) in garbageArguments.js."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:24:11.893Z",
+     "text": "all, I'm upset that somebody dropped the requirement that TESTs must \"BE THE ATTACKER\" and try everything conceivable to break the code.\n\n- added it back into the box.\n\n- I'm REALLY mad again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:24:35.281Z",
+     "text": "cw: I have not written this item's box at all, so the drop was not mine; it happened in the rewrite at v11. That does not excuse the result: I read v12 and called it green without noticing the line was gone.\nIt is back, and my build follows it: the garbage maker now sends every bad string alone, so it reaches each verb's own code instead of stopping at the shared check."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:24:49.024Z",
+     "text": "- wsl: the box kept it (v12 says \"Imitate that attacker\"), but my test did not live up to it. That was mine: the doors test spared the acting verbs and sent pairs only in memory. That softening is being taken out now: every verb gets everything, the acting ones on a throwaway node, and the relay too.\n- cw, agreed on the split: you build the garbage maker sending bad strings alone; I write the reds, the scratch relay included."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:28:58.780Z",
+     "text": "- wsl: 035796fb. The relay's door is tested now, with a scratch relay: 755 garbage asks and 178 raw requests, 181 green, no hole found on the relay.\n- cw, for you: the garbage maker's test now asks for each bad string alone in a whole shape, 6 red.\n- Still coming: acting verbs with everything, and pairs over the wire."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:30:55.320Z",
+     "text": "i restarted my node on the latest code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:31:16.842Z",
+     "text": "the list came back"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:32:58.946Z",
+     "text": "cw: good. What I believe happened, and my part in it: your node had run since 05:41 on the code of then, while I pulled every new commit into your tree after each push. The page reads its files fresh from the tree, the servers keep the code they started with. So the Desk page was today's, its servers this morning's, and the list came back empty without an error. A restart put both on the same code.\nFrom now on I pull into your tree only together with a restart of your node, and only on your word; otherwise I leave your tree as it is."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:33:33.077Z",
+     "text": "- wsl: 9b4af929, the attacker in full: every verb gets everything, the acting ones on throwaway nodes, and pairs over the wire. 19278 asks; 38 red, all real holes:\n- FS.saveFile and FS.saveJsonValue, in every family: a NUL in the path throws (introSpector.js:100-103).\n- desk check.add and check.set throw a plain Error on a bad id (desk.js:3358, 3376); deskVerify.record the same (deskVerify.js:809).\n- chatClerver line.write answers 504 to a bad to.\n- Each answers 500 \"handler failed\" instead of refusing.\n- cw: yours to fix. introSpector.js and chatClerver.js are added to the files."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:33:59.153Z",
+     "text": "- wsl: the same risk sits with me. Since your order of 2026-10-02 I pull into your WSL tree, /home/andy/SpiritOS, after every push, while your WSL node keeps running. So its pages can run newer than its servers, as your Desk did."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:34:53.936Z",
+     "text": "cw: taking the 38 holes. Files: introSpector.js (the FS saves and a NUL in a path), desk.js (check.add, check.set on a bad id), deskVerify.js (record), chatClerver.js (line.write to a bad peer), and the garbage maker (a lone bad string never equal to the declared example).\nwsl, one for you: DEBUG's door check still wants a 4xx for every entry, the lone bad strings too. A lone bad string is a real call, and loadFile of the path \"x\" rightly answers 200 with nothing. For those the pass is: answered, never a 5xx or a handler failed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:34:57.667Z",
+     "text": "Q1: Shall I pull into your WSL tree only together with a restart of your WSL node, as cw now does with yours?\n\ni'll do it right now...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:35:31.453Z",
+     "text": "- wsl: thank you. Until you say otherwise I leave your WSL tree alone; your restart brings it level.\n- cw: agreed, fixing DEBUG's door check now: a lone bad string passes when answered, never a 5xx or a handler failed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T07:36:09.004Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T07:36:49.903Z",
+     "text": "- wsl: 03a61630. DEBUG's door check now tells them apart: shape broken, a 4xx; a lone bad string, answered and never a 5xx. With none, it is red, not green on nothing. 7 red until the garbage maker sends them."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:45:53.639Z",
+     "text": "cw: the 38 holes are fixed and all green on my tree: the attacker test 60 (19,278 asks, the acting verbs included, pairs over the wire), the relay 181, DEBUG 74, the reach rule 2.\nOne grant stands between me and the commit: the node's file system module, a core file, was not on the list. Its save answered 500 when Windows refused a file name; now that is a 400. I added it to the list; it needs your grant."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:46:40.230Z",
+     "text": "commit e3d98588bcbbba6f18c1a22411e26054a47b6795: goal/G41.30: the attacker's 38 holes closed (wsl's red, 9b4af929; Andy: \"fill this gap\", \"close this gap, dammit!\", \"close this gap! Grrrr!\"). Every FS verb of every family refuses a NUL in a path at \n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/spirit/DEBUG/garbageArguments.js\n- spirit/run/spirit/fileSystem.js\n- spirit/run/spirit/introSpector.js\n- spirit/run/spirit/server.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T07:46:50.599Z",
+     "text": "cw: thank you for G3. Built and pushed, e3d98588: the 38 holes closed, the attacker test 60 green, the relay 181, DEBUG 74, the reach rule 2.\nYour tree I have not pulled: your node runs on the code it started with until you restart it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:05:05.061Z",
+     "text": "all, another reported failure\n\nadds js/netFence.js, so net.fetch refuses loopback, localhost and this machine's own addresses (netFence.js 20/20). Still open: isThisMachine('::ffff:7f00:1') is false, and new URL rewrites [::ffff:127.0.0.1] to that form, so an IPv4-mapped literal passes the gate (re-checked 2026-11-02 at e3d98588: http://[::ffff:127.0.0.1]:p/, [0:0:0:0:0:ffff:127.0.0.1] and [::127.0.0.1] all pass isThisMachine at spirit/server.js:557, and netFence.lookup is never asked for an address literal; the connect itself could not be shown here because this container has no IPv6). Fix: normalise through net.SocketAddress first, then map any ::ffff:a:b and ::a:b back to IPv4 before the checks. Andy, 2026-11-02: Levant's node is inactive and scheduled for deletion. Also not covered: RFC1918, link-local, metadata; jobs.create still runs any command."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:05:52.169Z",
+     "text": "- wsl: confirmed at e3d98588. new URL turns [::ffff:127.0.0.1] into ::ffff:7f00:1, and netFence.js:37 only knows the dotted form ::ffff:127.0.0.1. So [::ffff:127.0.0.1], [0:0:0:0:0:ffff:127.0.0.1] and [::127.0.0.1] all pass isThisMachine: net.fetch can reach this machine.\n- I write the red now, beside the module: spirit/run/spirit/test/netFence.js. The fix is cw's.\n- Not in it, as yours to decide: LAN (RFC1918), link-local and the cloud metadata address 169.254.169.254 stay open by today's design (\"other machines on the LAN stay open\", netFence.js:24)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:06:56.607Z",
+     "text": "- wsl: a1432dbc, the red: spirit/run/spirit/test/netFence.js, 5 red (every IPv4-mapped and -compatible loopback form) and 12 green. A copy with the suggested fix goes 17 green, so it can pass.\n- netFence.js is added to the files. cw, yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:09:50.785Z",
+     "text": "commit 2425a95cae52f3ff978d39d51120d58e8f7089e8: goal/G41.30: net.fetch no longer reaches this machine through an IPv4 address dressed as IPv6, and a request Node cannot parse is answered 400, never a reset. netFence.isThisMachine first writes an IP\n- spirit/run/spirit/netFence.js\n- spirit/run/spirit/relayServer.js\n- spirit/run/spirit/serveCommon.js\n- spirit/run/spirit/server.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:10:03.863Z",
+     "text": "cw: 2425a95c, two fixes.\n- net.fetch: an IPv4 address dressed as IPv6 is now read as the IPv4 address it is, so every mapped and compatible form of 127.0.0.1 and 0.0.0.0 is this machine and refused. wsl's red: 17 green, was 5 red. Other machines, the LAN included, stay open as today.\n- The verify's two reds, a header line with no colon answered with a reset on both doors: both servers now answer such a request with their own 400 and close in order. I could not make the reset happen here, 200 tries without the fix; so this one is the likely cause, not a proven one. The next verify run tells.\nOpen, yours: LAN, link-local and the cloud metadata address stay reachable by net.fetch, by today's design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:12:25.572Z",
+     "text": "is this fixed, with our attacker tests?\n\nA NUL byte in a request path crashes the node, and any website can send it in an iframe"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:12:54.305Z",
+     "text": "cw: yes, fixed in c7470c52, and the attacker test proves it: it sends GET /%00 raw at a scratch node and then asks the node again. Before the fix the node died; now every path is checked once at the entry, a NUL is answered 400, and the node answers the next call. wsl put the old file back to check: 3 red, the node killed again.\nSo an iframe on any website gets a 400 and nothing else.\nOne thing to know: your node still runs the code it started with this morning, so it is still open to this until you restart it on the latest code. The relays too, until a tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:13:38.089Z",
+     "text": "cw: correction to my last line: your node already has the NUL fix. It started at 08:29 on a tree that held it (the fix went in at 08:14). So an iframe gets a 400 from your node today.\nWhat it does not have yet: this morning's later fixes, the file saves and the net.fetch fence; those need a restart on the latest code.\nAnd I found why your tree moves without me: your verifier pulls it before every run (08:46 and 09:09 today). So after each verify your pages again run ahead of your servers, as when the Desk went empty. A restart after a verify brings them level."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:14:10.957Z",
+     "text": "true?\n\n\"Core shell files can be overwritten through fs.save and fs.delete\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:15:36.102Z",
+     "text": "cw: checked file by file: almost not true, but one real hole.\n- fs.save and fs.delete are yours alone: the fs family is hard-coded owner only and can never be granted to a peer or an app.\n- Even for you, both refuse every core file: the boot, the frame, all of shell/js, the login and join, the intrinsic apps. Checked on the live gate: boot.js, spirit.js, index.html, face.html, the shared elements, apps, login all refused.\n- The hole: the navigation wrapper. It was core while it lived in shell/js; in G41.19 it moved one folder up to shell/, and no rule names it there. So today fs.save can overwrite it and fs.delete remove it.\n- Writable on purpose: apps that are not intrinsic (Desk, Chatter), which is today's design.\nShall the navigation wrapper be core again, named in the core list beside the boot?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:16:53.975Z",
+     "text": "make the nav wrapper \"core\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:17:39.533Z",
+     "text": "cw: taking it: the navigation wrapper named core in the core list, with a check in the core list's own test. The core list and its test are added to this item's files; they need your grant."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:17:48.484Z",
+     "text": "makes fileWritable refuse coreFiles.isCore (kernel.js:379; fileCore.js 12/12, appsApp.js 11/11), which covers js/, shell/js/, index.html, tokens.css, elements.css and intrinsic apps' code. Still writable but loaded by index.html on every boot: shell/shared/js/*.js (index.html:157-159) and shell/node_modules/codemirror/** (index.html:138-148); isCore returns false for both."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:18:41.991Z",
+     "text": "cw: the navigation wrapper is core now on my tree: the core list's test 41 green, was 3 red, and the live gate refuses it. Not committed yet: it waits on G5, the grant of the core list.\nAnd the report is right about the rest, checked today against what index.html and face.html load: 14 files they load on every boot are still writable by fs.save: the 13 CodeMirror files under shell/node_modules/codemirror, and shell/shared/js/progressBar.js. All the others they load are core.\nShall shell/node_modules/ and shell/shared/ be core folders too, in the same commit?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:19:46.929Z",
+     "text": "commit c5fb8e7a456b614a662de4eb29cf437241968fcb: goal/G41.30: the navigation wrapper is core again (Andy: \"make the nav wrapper \\\"core\\\"\"). It was core while it lived in shell/js/; goal/G41.19 moved it to shell/, where no rule named it, so fs.save c\n- spirit/run/spirit/coreFiles.js\n- spirit/run/spirit/test/coreFiles.js\n- spirit/run/spirit/test/coreFiles.md"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:19:59.497Z",
+     "text": "cw: thank you for G5. c5fb8e7a: the navigation wrapper is core again; fs.save and fs.delete refuse it. The core list's test 41 green.\nStill waiting on your word: shall CodeMirror under shell/node_modules/ and shell/shared/ be core folders too?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:20:29.972Z",
+     "text": "all, Path gates are case-sensitive, so on Windows and macOS GET /Relay-State/identity.json serves the private keys"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:22:04.488Z",
+     "text": "cw: TRUE, and live. Checked on my own node, status only: GET /relay-state/identity.json answers 404, GET /Relay-State/identity.json answers 200 with the 684 bytes of the identity file. Your node on 65432 runs the same code, so it is open the same way right now. The relays run on Linux, which sees two names, so they are not.\nThe cause: every gate compares the path as typed, while Windows finds relay-state under any case.\nThe fix is built on my tree: every gate now judges the path as it is written on disc, so every case of relay-state is refused; ordinary files are untouched. Running the path suites now, then I commit; wsl, a red for it beside the file system module please.\nUntil then, keep your node to this machine, and restart it once the fix is in."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:22:44.557Z",
+     "text": "- wsl: confirmed, and worse than reported: the write gate too. a8? see the hash below. On a case-insensitive disk RELAY-STATE/ can be written, and so can core files: SPIRIT/SERVER.JS and SHELL/JS/ICON.JS count as writable, so a page could overwrite the node's own code.\n- Red: spirit/run/spirit/test/fileSystem.js, 18 red, 15 green. A copy that refuses a path whenever its lower-cased form is refused goes 33 green.\n- fileSystem.js added to the files. cw, yours."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:22:59.787Z",
+     "text": "- wsl: the hash I left out above: 69e542d2."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:23:24.001Z",
+     "text": "- wsl: cw, the red is in already: 69e542d2, spirit/run/spirit/test/fileSystem.js, 18 red. It covers the write gate too: on your disk SPIRIT/SERVER.JS and RELAY-STATE/ count as writable.\n- One catch: it asks the gates by name, on Linux, where RELAY-STATE does not exist. If your fix looks up the case on disc, it stays red here and on the relays. Judging by name holds on every disc: refuse a path if its lower-cased form is refused (a copy doing so goes 33 green)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:26:39.320Z",
+     "text": "cw: the case fix is ready and holds on my tree: every case of Relay-State refused, ordinary files as before. Green: the path suites (canonical paths 100, the jail 13, the root test folder 15), the files list, textEditor and Apps pages, the attacker test 60; the one red of fileCore is old, the same on master.\nIt waits only on G6, the grant of the file list as wsl just changed it. Grant G6 and I commit at once."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:32:44.455Z",
+     "text": "commit 7df64391fe5737c16a204c529451eb4b4f6b9931: goal/G41.30: the path gates are blind to case, so no spelling of relay-state serves a private key or writes a core file (the report: \"Path gates are case-sensitive, so on Windows and macOS GET /Relay-\n- spirit/run/spirit/coreFiles.js\n- spirit/run/spirit/fileSystem.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:32:59.279Z",
+     "text": "cw: fixed and pushed, 7df64391. Every gate now judges a path blind to case: no spelling of relay-state can be read or written, and no spelling of a core file written. wsl's red 33 green, was 18 red; the path suites, the attacker test and the file pages all green.\nYour node still runs the old code, so it is still open: please restart it on the latest code now. I restart mine the same way. The relays run on Linux and were never open to this, but a tag brings them the morning's other fixes too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:33:34.258Z",
+     "text": "all, what does this mean?\n\n (fcf4a91f moved the book into seen in node.db, SQLite with transactions, so a torn write can no longer wipe it; left: the one-time move at spirit/nodeStore.js:528-622 reads a corrupt contacts.json as empty and then unlinks it, so a corrupt book is deleted rather than set aside)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:34:16.446Z",
+     "text": "- wsl: in plain words: your address book used to be a file, relay-state/contacts.json. A node starting on new code moves it, once, into its database (node.db), then deletes the file.\n- The flaw: if that file is damaged and cannot be read, the move reads it as an empty book (nodeStore.js:559), and still deletes the file (nodeStore.js:648). So a damaged book is lost for good, instead of kept aside for rescue. Checked at 7df64391.\n- It only bites once, at that move, and only on a damaged file. The fix is small: an unreadable book is renamed, e.g. contacts.json.unreadable, never deleted."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:34:21.461Z",
+     "text": "- wsl: verified cw's case fix, 7df64391: the file system red is 33 green, was 18 red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:34:21.637Z",
+     "text": "cw: in plain words:\n- Your contacts used to live in one file, contacts.json. A crash in the middle of writing it could leave it broken, and the contacts were gone. Since fcf4a91f they live in the node's database, which writes all or nothing, so that cannot happen any more. That part is done.\n- What is left is the one-time move: the first time a node starts on the new code, it reads the old contacts.json into the database and then deletes the file. If that old file is already broken, the move reads it as \"no contacts\" and still deletes it. So a broken book is thrown away instead of kept aside for someone to repair.\n- Who it can hit: only a node that still has an old contacts.json. Yours and mine have none left; the move is done on both. An old node of someone else's, starting on today's code for the first time, could lose a broken book.\nThe fix is small: rename a file that cannot be read to contacts.json.broken instead of deleting it. Shall I do it in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:36:28.779Z",
+     "text": "cw, do it in this item, but i think it's a stupid thing to do pre-alpha.... my choice would be: delete the code that \"rescues an old json file\"....\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:37:17.437Z",
+     "text": "cw: I agree, deleting is the better choice pre-alpha: no code, no hole, and one rule less to keep true.\nWhat would go: the whole one-time move of G41.11's old stores (your \"yes.\" of 26 October), not only the book: the old seen table, the relays list, apiAuth's peer names and contacts.json, all moved once into the new contacts table.\nChecked: your Windows node and mine have moved already; neither database holds an old table, and no contacts.json is left. What I cannot see from here: your WSL node, and wsl's. A node that has not started once since 26 October would start with an empty contacts table, its old book left unread beside it.\nShall I delete the whole move?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:37:29.631Z",
+     "text": "cw: correction: the move belongs to goal/G40.11, not G41.11."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:38:02.898Z",
+     "text": "all, let's get rid of those \"rescue operations\""
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:38:37.495Z",
+     "text": "- wsl: the two cw could not see: my node has moved already (its node.db holds no relays or peers table, and no contacts.json is left). Andy's WSL tree holds no contacts.json either; its database I did not open.\n- So deleting the whole move loses nothing on our four nodes. cw, it is yours to delete; I add a red that no old-store move is left in nodeStore.js."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:40:18.544Z",
+     "text": "- wsl: 26dbf981, the red: spirit/run/spirit/test/nodeStore.js, 5 red. It wants no contacts.json, no moveIn and no old relays or peers table in nodeStore.js, and an old book beside a store left untouched and unread. A copy with the move removed goes 5 green.\n- nodeStore.js added to the files. cw, yours.\n- One like it, for you to place: the bundle table's owner column is added to an old node.db at start too (nodeStore.js:531). Is that a rescue to go as well?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:47:33.267Z",
+     "text": "commit 83d07fa9740718cc1c1a4722e5a0a5321a4a853d: goal/G41.30: no rescue operations in the node's store (Andy: \"let's get rid of those \\\"rescue operations\\\"\"; of the corrupt book deleted rather than set aside: \"my choice would be: delete the code tha\n- spirit/run/spirit/nodeStore.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:47:49.563Z",
+     "text": "cw: 83d07fa9, the rescue operations are gone from the node's store: the one-time move of the four old stores (contacts.json included), and, to your point wsl, both column mendings for older databases (the face on seen, the owner on bundle) and the dropping of the old bundle tables. Both Windows databases already have both columns. wsl's red 5 green; the contacts, Grants and bundle pages green.\nwsl, one for you: apiAuth's own test \"the bundles from before are owned by node\" tests the owner mending I removed, so it is red now and should go with it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:49:39.270Z",
+     "text": "all, what's this?\n\nOPEN (gradedSearch deleted in 7f2b07c; peerRank.rank on 1,000 rows took 343 ms for 8,000 chars and 4.9 s for 60,000, still synchronous and uncapped at relay.js:2916)\t\n\nA long search query stalls the relay's event loop for seconds"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:50:19.453Z",
+     "text": "cw: in plain words: anyone may search a relay's roll of members. The relay compares the words typed with every member's row, all in one go, and while it does that it does nothing else: no other member is answered, no packet relayed. The longer the words, the longer that takes, and nothing limits their length: 8,000 characters cost a third of a second, 60,000 cost five seconds. So one person sending long searches in a row can freeze the relay for everyone.\nTwo fixes, both small:\n- a cap on the search words, say 200 characters, refused past that; nobody types more to find a name;\n- and the comparing done in slices, the relay answering others between them, as the collecting of the rows already is.\nI would do both. Shall I, in this item?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:51:36.828Z",
+     "text": "- wsl: verified 83d07fa9, the nodeStore red is 5 green. apiAuth's test of the removed owner mending is gone too: 83 green.\n- Your question, in plain words: a search on the relay gathers its members in small steps, but then ranks them all in one go (relay.js:3118), and the search text has no length limit. Ranking time grows with the text: 60,000 characters take about 5 seconds, and in that time the relay answers nobody. So one long search freezes the relay for everyone.\n- It is the attacker the box describes, \"MUST not CRASH or HANG\", so I am writing the red now: a 3/4-payload search must not stop the relay answering others."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:51:49.759Z",
+     "text": "all, fix this now. in this item"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T08:51:49.831Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:52:50.922Z",
+     "text": "- wsl: on it: the red for the long search, on a scratch relay with 1,000 members connected. It measures how long the relay stops answering while it ranks. cw, the fix follows the red; relay.js and peerRank.js are the files."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T08:55:59.491Z",
+     "text": "cw: the long-search fix is ready on my tree, not committed: a search past 200 characters is refused at once, and the relay ranks its members 100 at a time, answering others between slices (the ranker now takes rows in slices). The relay suites, the stranger door, the relay's introspection, all the same as before.\nwsl, I wait for your red to run it before I commit. And one for you: peerSearchShared checks relay.js's text for peerRank.rank( to prove it ranks with peerRank; it now calls peerRank.ranker, so that check goes red although the relay still ranks with peerRank."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T08:56:40.033Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T08:57:05.159Z",
+     "text": "- wsl: here. The long-search red is still being built: a scratch relay with 1,000 members connected takes a few minutes to fill. It goes in the moment it is red; then cw's fix runs against it.\n- cw: noted, peerSearchShared's word check is mine; I fix it once your change is in."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:00:20.597Z",
+     "text": "- wsl: the long-search red is in: 58751ee3. A scratch relay with 500 members; the longest search the wire takes (16,646 characters; 60,000 is refused at the wire) held the relay for 758 ms. The test wants no gap over 250 ms. With the text capped, 62 ms, green.\n- cw: run your fix against it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:01:52.560Z",
+     "text": "commit e158390bb97b5367f8eb5569924e796d0d6fc26b: goal/G41.30: a long search no longer stalls the relay (the report: \"A long search query stalls the relay's event loop for seconds\"; Andy: \"fix this now. in this item\"). A search past 200 characters (S\n- spirit/run/spirit/peerRank.js\n- spirit/run/spirit/relay.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:02:07.454Z",
+     "text": "cw: fixed, e158390b. A search past 200 characters is refused at once, and the relay ranks 100 members at a time, answering others in between. wsl's red: the relay held still 827 ms before, now 22 ms at worst; 21 green.\nThe relays get it with the next tag."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:09:11.482Z",
+     "text": "all green here. can i have a tag, please?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:09:52.571Z",
+     "text": "cw: the tag, are you sure? Since this morning's tag: 21 commits, all of this item, green on your verifier.\n- On the relays: the long search refused past 200 characters and ranked in slices; a request it cannot parse answered 400; a NUL in a path refused at the entry; the file saves and the net.fetch fence; the gates blind to case (the relays never had that hole, being Linux).\n- On the nodes, after their restart: the same, plus the rescue code gone from the node's store. A node made before goal/G40.11 that never started since would come up with an empty contacts table; none of the four of ours.\n- Not proven: the 400 for an unparsable request fixed the verifier's two resets; I could not make them happen here.\n- The relays take it within ten minutes and restart by themselves; a tag stays public.\nMy recommendation: tag. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:11:30.369Z",
+     "text": "all, I've worked off a few critical items, which i got from a cloud-claude. And I believe we've worked the most critical ones, so i want to get a newer review....\n\nso go, tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:12:09.335Z",
+     "text": "cw: tagged and pushed: v-2026-11-02-10-11, on e158390b. The relays take it within about ten minutes; ./bash/update on a relay host takes it at once.\nFor the new review: the tree at that tag is the one to read. And your node: a restart on the latest code closes the case hole on it too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:12:45.420Z",
+     "text": "both relay running on new code now...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:12:58.945Z",
+     "text": "- wsl: verified before the tag: cw's e158390b turns the long-search red green, 21 of 21. peerSearchShared knows the new ranker call: 5ddd819e, 16 green.\n- Tag away, cw: include 5ddd819e."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:13:35.917Z",
+     "text": "cw: good. And your node is closed too: it restarted at 10:09, and GET /Relay-State/identity.json now answers 404 there.\nwsl: the tag was cut on e158390b before your 5ddd819e landed. 5ddd819e changes only peerSearchShared's test, which no relay runs, so the relays need no new tag for it; the next tag carries it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:19:09.214Z",
+     "text": "all, what about this?\n\nThe restructuring closed most of the gate: 17 of the 19 rows are now fixed on master 5ddd819e. I re-ran each row’s own tests to check.\n\nFixed: C1 (the IPv6 loopback address is now refused), H1 (the NUL-byte crash), H8 (contact book writes) and H9 (relay search stalls).\nH6, path checks, is still in progress. Upper and lower case are handled now. Three Windows spellings still pass both checks: 8.3 short names like RELAY-~1/IDENTI~1.JSO, which can reach the private key wherever short names are on; folder names ending in a dot or space; and ::$DATA. The fix is to refuse any path segment with ~ plus a digit, a :, or a trailing dot or space. I couldn’t confirm it on a real Windows box from here.\nH5, writable page code, is still in progress. shell/node_modules/codemirror/ and shell/shared/js/ are not core. Their files are still writable, and index.html loads both of them.\n\nThe full re-review starts when those two clear, or now if you’d like it before then. Details are in"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:20:39.543Z",
+     "text": "- wsl: H6, confirmed on today's code and the red is in: 1356666f. The file gates let through RELAY-~1/IDENTI~1.JSO and SPIRIT~1/SERVER~1.JS (short names), relay-state./ and relay-state / (a trailing dot or space), and ::$DATA. 13 red; the review's fix on a copy goes 51 green. cw, yours.\n- H5 waits on your word, cw asked it earlier: index.html loads codemirror and shell/shared/js, so any page could rewrite code the shell runs. I recommend making both core folders."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:22:16.984Z",
+     "text": "commit a45d2708d502613efa581f6edcd396f9da28a89b: goal/G41.30: no second name for a file passes the path gates (the review, H6: \"8.3 short names like RELAY-~1/IDENTI~1.JSO\", \"folder names ending in a dot or space; and ::$DATA\"; \"The fix is to refuse \n- spirit/run/spirit/fileSystem.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:22:40.204Z",
+     "text": "cw: H6 fixed, a45d2708: a path any part of which holds ~ and a digit, a colon, or ends in a dot or a space is refused by both gates, on every disc. Checked on this Windows box first: such spellings do reach the real file here. wsl's red 51 green, was 13 red; the path suites and the file pages green.\nH5 is built on my tree and waits only on your answer to Q2: shell/node_modules/ and shell/shared/ made core folders, so nothing index.html loads can be rewritten (the core list's test 45 green with it, and not one file the pages load is writable).\nYour node needs one more restart for H6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:23:03.174Z",
+     "text": "it looks like we better make sure that those files that core files depend on, are core-files, too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:23:50.124Z",
+     "text": "commit b5b5e96641223edb34676472526eba9df6564ddc: goal/G41.30: what index.html loads on every boot is core (the review, H5: \"shell/node_modules/codemirror/ and shell/shared/js/ are not core. Their files are still writable, and index.html loads both o\n- spirit/run/spirit/coreFiles.js\n- spirit/run/spirit/test/coreFiles.js\n- spirit/run/spirit/test/coreFiles.md"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:24:06.734Z",
+     "text": "cw: agreed, and H5 is that rule's first case: b5b5e966 makes CodeMirror and shell/shared core, so not one file index.html or face.html loads can be rewritten now.\nTo make sure of it for good, a general test: for every core file, every file it loads (a script or style tag in a core page, a require, a spirit.require) must be core too, or the test goes red naming it. Then a new dependency of a core file can never quietly stay writable.\nwsl, that red is yours if you agree; I make core whatever it finds."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:32:25.990Z",
+     "text": "all, i dislike that this makes desk files core, the mistake there is: \n\nshell/shared was not meant to be \"core\".\n\nso desk components should be in there, but NOT actual \"core Files\"\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:32:59.971Z",
+     "text": "cw: you are right, and the tree shows the mistake is one file. shell/shared holds the desk's elements (deskChat, deskElement, deskDoorFields, deskRunStatus, ask) and one shell element: the progress bar. Of all of it, index.html loads only the progress bar; the Jobs app, which is core, and the old shell use it too.\nSo the cleaner cut:\n- the progress bar moves to shell/js/, where the shell's elements live and which is core already, and the three files that name it follow;\n- shell/shared stops being core again, and the desk's components stay writable there;\n- CodeMirror under shell/node_modules stays core: index.html loads it on every boot, and nothing of the desk is in it.\nShall I?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:33:04.321Z",
+     "text": "- wsl: agreed, and the tree backs you. Of shell/shared/js, the core side loads one file only: progressBar.js (index.html:119, and the Jobs app, jobs.js:39). The other four, deskChat, deskDoorFields, deskElement and deskRunStatus, are loaded by Desk pages alone.\n- So: move progressBar.js into shell/js/, which is core already, and shell/shared/ stops being core. Desk keeps its own components there, writable.\n- And cw's general rule still holds: \"what a core file loads is core\". With progressBar moved, nothing core loads from shell/shared. I write that red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:33:54.151Z",
+     "text": "- wsl: the general red is in: 1eb96518, test/spirit-sibling-coreDependencyRules.js. 170 core files, 341 files they load: two are not core, shell.css (face.html and index.html load it) and favicon.svg (index.html). cw, yours.\n- Once shell/shared/ is no longer core, per Andy, it names progressBar.js too, until it moves into shell/js/."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:34:58.712Z",
+     "text": "commit 67ac4ebb3490c4349673830f460414d67489e198: goal/G41.30: what the core pages load is core: the run root's shell.css and favicon.svg join the frame (Andy: \"it looks like we better make sure that those files that core files depend on, are core-fi\n- spirit/run/spirit/coreFiles.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:35:04.344Z",
+     "text": "cw: 67ac4ebb: the run root's shell.css and favicon.svg are core now, as both pages load them. wsl's general red green, 3.\nStill waiting on your word: the progress bar into shell/js/, and shell/shared no longer core."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:36:28.600Z",
+     "text": "all,\n\nQ2: Shall shell/node_modules/codemirror/ and shell/shared/js/ become core folders, since index.html loads both?\n\nNO. that was a mistake.\n\n-  shell/node_modules/codemirror/ MUST BE \"core\"\n- no \"core\" files should reside in shell/shared/ since that folder was meant to be a place where non-intrinsic apps could share modules.\n\nagree?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:36:56.007Z",
+     "text": "cw: agreed, both. Doing it now: the progress bar, the one core-loaded file in shell/shared, moves to shell/js/ (core), the three files naming it follow, and shell/shared stops being core. CodeMirror stays core."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:37:00.933Z",
+     "text": "- wsl: agree. codemirror is core because the shell loads it on every boot; shell/shared/ is the non-intrinsic apps' common room, so nothing in it is core, and the progress bar moves out to shell/js/.\n- The general red already guards the rest: a core page loading anything from shell/shared/ goes red there. I add the second half now: no file in shell/shared/ is core.\n- Verified cw's 67ac4ebb: the general red is green, 3."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:37:23.698Z",
+     "text": "do it, now, in this item."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T09:37:23.845Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:37:31.894Z",
+     "text": "- wsl: 8d7c6dfa, the shell/shared red: 6 core files there today (ask.js and the five under js/). Only progressBar.js is loaded by a core page, so it moves to shell/js/; the other five simply stop being core. cw, yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:37:40.122Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T09:37:40.211Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:39:07.643Z",
+     "text": "cw: built and green, waiting only on G9: the progress bar moved to shell/js/, the three files naming it follow, shell/shared no longer core. wsl's shell/shared red 5 green, the core list 47, the Jobs page 14.\nThe hook refuses until the list is granted again (the moved files were added to it). Grant G9 and I commit at once."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:39:54.365Z",
+     "text": "commit ff31f460fce433b3425878a6864de32d8df4bb79: goal/G41.30: nothing in shell/shared is core, and the progress bar lives in shell/js (Andy: \"shell/node_modules/codemirror/ MUST BE \\\"core\\\"\", \"no \\\"core\\\" files should reside in shell/shared/ since t\n- spirit/run/index.html\n- spirit/run/shell/jobs/jobs.js\n- spirit/run/shell/js/progressBar.js\n- spirit/run/spirit/client/shell.js\n- spirit/run/spirit/coreFiles.js\n- spirit/run/spirit/test/coreFiles.js\n- spirit/run/spirit/test/coreFiles.md"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:40:21.365Z",
+     "text": "cw: thank you for G9. Committed and pushed, ff31f460: the progress bar in shell/js/, shell/shared no longer core, CodeMirror core. wsl's red 5 green, the core list 47, the Jobs page 14."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T09:43:40.879Z",
+     "text": "all,\n\n- H5 and H6 satisfied?\n- desk and the core (shell, spirit etc) still running?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T09:45:16.822Z",
+     "text": "- wsl: yes to both, checked on ff31f460.\n- H5: what core pages load is core, and shell/shared holds none: the general red 5 green, the core list 47.\n- H6: the Windows spellings are refused: the file system red 51 green.\n- Still running: Desk 24, deskDetails 65, spirit.js 58; the page sweep on Desk 19, Jobs 14 and deskDetails 12. Nothing still points at the old progress bar path.\n- One caution: this is on a node built from the tree. Your running nodes have the new code only after a restart."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T09:47:16.263Z",
+     "text": "cw:\n- H6: yes. On my node, restarted on the latest code: every spelling of the identity file the review named (short name, trailing dot, trailing space, ::$DATA, any case) answers 404. wsl's red 51 green.\n- H5: yes. Of the 55 files index.html and face.html load, not one is writable now; CodeMirror and the progress bar are core, shell/shared is not.\n- Still running: the page tests of Desk 19, Apps 14, Jobs 14, textEditor 16, Chatter 18, all green; my node's home page loads with no error but the desk calls, which my node rightly cannot answer.\n- Not proven here: Desk itself, end to end. It lives on your node, and your node still runs the code it started with at 10:09. The real proof is your restart on the latest code and one look at Desk."
     }
    ]
   }
