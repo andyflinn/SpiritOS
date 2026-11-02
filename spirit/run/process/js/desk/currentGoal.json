@@ -1,5 +1,5 @@
 {
- "change": 123786,
+ "change": 123787,
  "goal": "goal/G41",
  "items": [
   {
@@ -176,7 +176,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -27863,12 +27863,11 @@
    "id": "goal/G41.30",
    "title": "new general tests",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 13,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
