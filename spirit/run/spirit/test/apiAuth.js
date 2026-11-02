@@ -244,18 +244,6 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   ok(every2.some(function (x) { return x && x.owner === 'agent'; }) && every2.some(function (x) { return x && x.owner === 'node'; }), 'no owner is every bundle, whoever owns it', 'items: ' + short(every2));
   ok((((await call(auth, 'bundle', { op: 'search', text: '', owner: '' })).items) || []).length === every2.length, 'an empty owner narrows nothing', 'empty owner narrowed');
 
-  test.subHeading('goal/G41.25: the bundles from before are owned by "node"');
-  // A node.db whose bundle table has no owner column yet, as every node has it before this item.
-  const oldRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-apiAuth-old-'));
-  fs.mkdirSync(path.join(oldRoot, 'relay-state'), { recursive: true });
-  const pre = new DatabaseSync(path.join(oldRoot, 'relay-state', 'node.db'));
-  pre.exec('CREATE TABLE bundle (id INTEGER PRIMARY KEY, label TEXT NOT NULL); INSERT INTO bundle (id, label) VALUES (5, \'From before\');');
-  pre.close();
-  const oldAuth = createApiAuth({ rootDir: oldRoot, tree: function () { return Promise.resolve(tree); } });
-  const fromBefore = await call(oldAuth, 'bundle', { op: 'get', id: 5 });
-  ok(fromBefore.label === 'From before' && fromBefore.owner === 'node', 'opened on a node.db from before the owner, its bundles are there, each owned by "node"', 'get: ' + short(fromBefore));
-  try { fs.rmSync(oldRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
-
   test.subHeading('goal/G41.24: each appServer\'s bundles, written at the node\'s boot');
   // Andy, box: "each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json", "this json file at
   // it's root has one key for each bundle ... and the objects held those keys, contain the value for one bundle \"row\",

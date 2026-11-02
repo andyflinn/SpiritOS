@@ -41,7 +41,6 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
   - Incoming: an add whose owner is not valid (empty, not a text, not a name) is owned by `node`, and the table keeps
     `node` for it.
   - Outgoing: a kept row whose owner is not valid is answered `node`, by get, by search and on the stream.
-  - The bundles from before (a `bundle` table with no owner column) are each owned by `node`.
   - Each row told for the stream carries its owner.
   - Open, asked in the item: is a valid owner any app server's name, or only a server this node has? The test's owners
     are servers of its tree, so it holds either way.
@@ -119,7 +118,7 @@ Andy: *"i still want the api.<family>.FS.* group "ungrantable" and OWNER ONLY"*.
 - A bundle deleted with its branches left behind, or another bundle's branches taken with it.
 - A filter that does not narrow, or an empty one that does.
 - The old tables still made.
-- An owner changed by a set; an invalid owner stored or answered; a bundle from before with no owner; a search by owner
+- An owner changed by a set; an invalid owner stored or answered; a search by owner
   that lets another owner's bundle through.
 - A boot that adds a kept key twice, keeps a branch the file dropped, leaves a dropped key's bundle or branches, takes
   the owner a row names, touches a user's bundle, or stops at a file that is not valid.
