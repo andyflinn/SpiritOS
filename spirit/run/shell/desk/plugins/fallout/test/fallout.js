@@ -151,7 +151,7 @@ function verifierCache(win) {
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
   win.spirit.node = { key: 'KEY+FALLOUT/NODE==' };
   win.spirit.data.home(win.spirit.node.key);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', 'deskVerify', 'family', 'clientCacheManager.js'), 'utf8'), win, { filename: 'deskVerify/family/clientCacheManager.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'process/js/deskVerify/family/clientCacheManager.js'), 'utf8'), win, { filename: 'deskVerify/family/clientCacheManager.js' });
 }
 function world(withList, totals) {
   const document = makeDom();
