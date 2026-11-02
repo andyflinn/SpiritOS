@@ -4113,6 +4113,20 @@ function createRelay(rootDir, deps) {
     var local = normalizeName(String(email || '').split('@')[0]).slice(0, 32);
     return local && !labelProblem(local) ? local : 'member';
   }
+  // A JOIN-EMAIL LINKS TO THE ASKER'S OWN COMPUTER ONLY (goal/G41.29, the box: "the relay must refuse to send a join-email,
+  // unless the link in it points to the asker's own computer, so senders cannot use the relay to send phishing emails"):
+  // read as an address, the way a browser does; the scheme exactly http, the host exactly 127.0.0.1, any port or none, no
+  // user name or password, the path starting with "/". A text test is not enough (http://127.0.0.1.evil.com/,
+  // http://127.0.0.1:1@evil.com/). Answers what is wrong, or ''.
+  function joinLinkProblem(link) {
+    var bad = 'a join needs a link to the asker\'s own computer: http://127.0.0.1, any port, then a path';
+    if (!link || /\s/.test(link) || Buffer.byteLength(link, 'utf8') > 2048) return bad;
+    var u = null;
+    try { u = new URL(link); } catch (e) { return bad; }
+    if (u.protocol !== 'http:' || u.hostname !== '127.0.0.1' || u.username !== '' || u.password !== '') return bad;
+    if (!/^http:\/\/127\.0\.0\.1(:\d+)?\//.test(link)) return bad;
+    return '';
+  }
   function join(publicKey, email, url, card) {
     joinSweep();
     var key = String(publicKey || '');
@@ -4125,7 +4139,7 @@ function createRelay(rootDir, deps) {
     // The one email rule (fieldRules.emailProblem, goal/G40.10), the forms' as well.
     var badMail = fieldRules.emailProblem(mail);
     if (badMail) return { ok: false, status: 400, error: badMail };
-    if (!/^https?:\/\/[^\s]+$/.test(link) || Buffer.byteLength(link, 'utf8') > 2048) return { ok: false, status: 400, error: 'a join needs the link to mail, an http or https address' };
+    if (joinLinkProblem(link)) return { ok: false, status: 400, error: joinLinkProblem(link) };
     // A SEATED KEY JOINING AGAIN CHANGES ITS EMAIL (goal/G30.1, box v28): the same mail, link and code, 10 minutes
     // and caps; it takes no seat, so a full relay does not refuse it.
     if (!findByKey(key) && seats.fullForMembers()) return seatsFull();
@@ -4221,15 +4235,18 @@ function createRelay(rootDir, deps) {
       keepLogin(sid, fresh);
       return { ok: true, status: 200, loggedIn: true, session: sid, name: n };
     }
-    // The member's own email: a mail with the token and the link, within the join's caps (one a minute, five an hour).
+    // The member's own email: a mail with the token, within the join's caps (one a minute, five an hour).
+    // NO LINK IN IT (goal/G41.29, the box: "The login-email must not carry a link, so a fake login-email cannot lead the
+    // user to a look-alike site"): the token alone on a line of its own, where to paste it, and not the face's address
+    // written out, "since most mail programs turn an address into a link by themselves". So a real login-email never
+    // holds a link.
     if (sendMail && t.toLowerCase() === String(m.email).toLowerCase() && !joinCapped('face:' + n)) {
       var code = require('crypto').randomBytes(24).toString('base64url');
       faceTokens.set(n, { hash: joinHash(code), until: clock() + FACE_TOKEN_MS });
-      var link = 'https://' + n + '.' + faceDomain + '/?' + code;
       Promise.resolve(sendMail({
         to: m.email,
         subject: 'Log in to your face',
-        text: 'To log in, paste this token into the Log in field:\n\n' + code + '\n\nor open this link:\n\n' + link + '\n\nIt counts once, within 10 minutes.',
+        text: 'Open your face by typing its address or from your bookmark, never from a link in a mail, and paste this token into its Log in field.\n\n' + code + '\n\nIt counts once, within 10 minutes.',
       })).catch(function () { /* the token lapses on its own */ });
     }
     return neutral;

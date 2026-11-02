@@ -465,12 +465,8 @@ function faceDoor(req, res, url, pathname) {
     return true;
   }
   if (req.method === 'GET' && (pathname === '/' || pathname === '/face.html')) {
-    // The mailed link, /?<token>: the token logs in once, and the page opens logged in.
-    const token = (url.search || '').replace(/^\?/, '');
-    if (token && /^[A-Za-z0-9_-]+$/.test(token)) {
-      const said = relay.faceLogin(at.name, token);
-      if (said.loggedIn) faceSetCookie(res, said.session);
-    }
+    // THE PAGE ONLY (goal/G41.29, the box: "The login-email must not carry a link"): no token in the address logs anyone
+    // in; the token is pasted into the Log in field (POST /face/api login).
     faceSend(res, 200, '../face.html');
     return true;
   }
