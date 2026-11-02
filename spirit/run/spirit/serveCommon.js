@@ -95,16 +95,19 @@ function sendFile(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const type = MIME_TYPES[ext] || 'application/octet-stream';
 
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Not found');
-      return;
-    }
-
-    res.writeHead(200, { 'Content-Type': type });
-    res.end(data);
-  });
+  const notFound = () => {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+  };
+  // A path the file system cannot even take (a NUL in it) throws at once, before any callback: not found, never a
+  // crash of the node (goal/G41.30).
+  try {
+    fs.readFile(filePath, (err, data) => {
+      if (err) { notFound(); return; }
+      res.writeHead(200, { 'Content-Type': type });
+      res.end(data);
+    });
+  } catch (e) { notFound(); }
 }
 
 // ── READ ONCE, ANSWERABLE TWICE ──────────────────────────────────────
@@ -363,7 +366,11 @@ function refuseTooBig(req, res) {
 function parseRequestPath(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    return { url: url, pathname: decodeURIComponent(url.pathname) };
+    const pathname = decodeURIComponent(url.pathname);
+    // A NUL IN THE PATH IS REFUSED HERE, AT THE ENTRY (goal/G41.30; the red: "one GET /%00 kills the node"): no file
+    // name holds one, and the file system throws on it instead of answering.
+    if (pathname.indexOf('\0') !== -1) throw new Error('a NUL in the path');
+    return { url: url, pathname: pathname };
   } catch (err) {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Bad request: malformed request path');

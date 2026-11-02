@@ -204,9 +204,17 @@ function leavesTests(rel) {
 // THE FULL PRODUCT TEST TREE (goal/G40.13, box v22, point 9): the suite 'spirit/run' in a run is every test the product
 // tree holds, as testModule.js names them (spirit/run/test/testModule.js, testsFor with no file); a general test is
 // run once per module it judges, that module its argument ("<test> <module>").
+// RUN AS ITS OWN PROCESS, NEVER REQUIRED (goal/G41.30, the box: "no production module loads or requires any test file,
+// with the exception of DEBUG.js."): testModule.js prints one entry a line, "<test>" or "<test> <file>"; spawned and
+// awaited, as every call a run makes (no spawnSync, goal/G21.3).
 function productSuites() {
-  const tm = require(path.join(REPO, 'spirit', 'run', 'test', 'testModule.js'));
-  return tm.testsFor('').map(function (t) { return 'spirit/run/' + t.test + (t.file ? ' spirit/run/' + t.file : ''); });
+  return sh(process.execPath, [path.join(REPO, 'spirit', 'run', 'test', 'testModule.js')]).then(function (r) {
+    if (r.status !== 0) throw refusedWhy('the product tree\'s tests could not be listed: ' + String(r.stderr || '').trim().slice(0, 200));
+    return String(r.stdout || '').split(/\r?\n/).filter(Boolean).map(function (line) {
+      const at = line.indexOf(' ');
+      return at === -1 ? 'spirit/run/' + line : 'spirit/run/' + line.slice(0, at) + ' spirit/run/' + line.slice(at + 1);
+    });
+  });
 }
 // ── THE CONSOLE OF THE CURRENT RUN (goal/G22.3) ──────────────────────────
 //
@@ -718,10 +726,14 @@ appServer.serve({
       const commit = String(a.commit || '');
       if (commit && !/^[0-9a-f]{7,40}$/.test(commit)) throw refusedWhy('a commit is 7 to 40 hex characters (lower case), not ' + JSON.stringify(commit.slice(0, 50)));
       if (!a.suites.length) throw refusedWhy('a run needs at least one suite');
-      const asked = [];
-      a.suites.map(String).forEach(function (p) { if (p === 'spirit/run') productSuites().forEach(function (q) { asked.push(q); }); else asked.push(p); });
-      if (!asked.length) throw refusedWhy('the product tree holds no test yet');
-      return startRun(asked, commit);
+      const wanted = a.suites.map(String);
+      const tree = wanted.indexOf('spirit/run') === -1 ? Promise.resolve([]) : productSuites();
+      return tree.then(function (product) {
+        const asked = [];
+        wanted.forEach(function (p) { if (p === 'spirit/run') product.forEach(function (q) { asked.push(q); }); else asked.push(p); });
+        if (!asked.length) throw refusedWhy('the product tree holds no test yet');
+        return startRun(asked, commit);
+      });
     },
   },
   // THE VERIFIER TAB'S VERBS (goal/G8.11), deskVerify's own:
