@@ -12,6 +12,11 @@
 //   - a relay: api by peerPost to its key, which the relay answers for every member, cut to the caller's verbs.
 // No families back: the dropdowns hide and the input pane says so. The party is the contacts list as a dropdown.
 
+// WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically through the
+// fucking apirit.require functionality"): the family selector, the contacts list as its party, and the reply's codeMirror.
+var isParts = Promise.all(['shell/js/apiFamilySelector.js', 'shell/js/contacts/listElement.js', 'shell/js/codeMirror.js'].map(function (p) {
+  return spirit.require(p);
+}));
 var isApi = null;
 var isParty = { kind: 'self', key: '', name: 'self' };   // who is asked; self until a pick
 var isFields = [];
@@ -133,10 +138,15 @@ spirit.shell.activateApp({
         '<div id="is-form" style="margin-top:1em"></div>' +
         '<div id="is-reply" style="margin-top:1em"></div>' +
       '</div>';
+    return isParts.then(function () { isMount(api); });
+  },
+});
+
+function isMount(api) {
     var line = document.getElementById('is-line');
     var party = document.createElement('span');
     line.appendChild(party);
-    var branch = api.ui.elements.apiFamilySelector.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
+    var branch = window.spirit.elements.apiFamilySelector.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
     // THE PARTY: the contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js), the book and this
     // node's relays; None is self.
     window.spirit.elements.contactList.create(party, {
@@ -153,10 +163,9 @@ spirit.shell.activateApp({
         branch.load(function () { return isTreeOf(isParty); });
       },
     });
-    // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7: it replaced the text view), loaded by this app itself.
-    Promise.resolve(spirit.require('shell/js/codeMirror.js')).then(function () {
-      return window.spirit.elements.codeMirror.create(document.getElementById('is-reply'), { mode: 'read', text: '', path: 'reply.json' });
-    }).then(function (view) { isReply = view; }, function () { /* the reply stays unshown */ });
+    // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7: it replaced the text view), loaded with its parts.
+    Promise.resolve(window.spirit.elements.codeMirror.create(document.getElementById('is-reply'), { mode: 'read', text: '', path: 'reply.json' }))
+      .then(function (view) { isReply = view; }, function () { /* the reply stays unshown */ });
 
     // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.
     branch.addEventListener('tree', function () {
@@ -170,5 +179,4 @@ spirit.shell.activateApp({
       isPaintForm(branch);
     });
     branch.addEventListener('change', function () { isPaintForm(branch); });
-  },
-});
+}

@@ -27,8 +27,7 @@
   // the family's own clientCacheManager's (spirit/contact/clientCacheManager.js), which this element loads itself
   // (rule/26), as part of its tree; a row reads spirit.contactData.
   function contactData() { return (window.spirit && window.spirit.contactData) || null; }
-  var contactReady = Promise.resolve(typeof window.spirit.cacheManager === 'function' ? window.spirit.cacheManager('contact') : null)
-    .then(function () { return contactData(); }, function () { return null; /* no contacts kept on this page */ });
+  var contactReady = Promise.resolve(window.spirit.cacheManager('contact')).then(function () { return contactData(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {

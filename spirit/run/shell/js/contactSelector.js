@@ -20,8 +20,7 @@
 // when the list holds any, each sent to contact.search as a yes-filter (mine since goal/G40.11).
 //
 // Rows come from the node's contact.search {q, mine, blocked, held, ...}, its label json {name, mine, blocked, held, ...}; or
-// from options.search(text, ask) -> {items: [{key, label}], more}, or options.contacts [{key, label}], a caller's own rows
-// (a label that is not json is a name). A row's name is the row's: a rename is published by the node (contact.rename,
+// from options.search(text, ask) -> {items: [{key, label}], more} (a label that is not json is a name). A row's name is the row's: a rename is published by the node (contact.rename,
 // shell.js) and the list asks again.
 //
 // THE ROOT: .value the chosen key, .row the chosen row, one bubbling `change` on a pick; refresh() asks again;
@@ -46,7 +45,7 @@
   var parts = function () {
     return Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/icon.js'].map(function (p) {
       return window.spirit.require ? window.spirit.require(p) : null;
-    }).concat([typeof window.spirit.cacheManager === 'function' ? Promise.resolve(window.spirit.cacheManager('contact')).then(null, function () {}) : null]));
+    }).concat([window.spirit.cacheManager('contact')]));
   };
 
   function parseRow(item) {
@@ -151,12 +150,6 @@
     function rows(args) {
       var text = String((args && (args.q != null ? args.q : args.text)) || '');
       if (typeof options.search === 'function') return Promise.resolve(options.search(text, args || { q: text }));
-      if (Array.isArray(options.contacts)) {
-        var t = text.toLowerCase();
-        return Promise.resolve({ items: options.contacts.filter(function (r) {
-          return r && r.key && (!t || String(r.label || '').toLowerCase().indexOf(t) !== -1 || String(r.key).toLowerCase().indexOf(t) !== -1);
-        }), more: false });
-      }
       if (table) {
         var asked = table.verb === 'search' ? { text: text } : { op: 'search', text: text };
         return Promise.resolve(window.spirit.ready).then(function (s) { return s[table.family][table.verb](asked); }).then(function (b) { return b || {}; });
@@ -190,8 +183,9 @@
         // A VIEW OF spirit.data (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the
         // whole row, as cached in spirit.data"): the node's contacts are the contacts branch the contact family's manager
         // keeps (spirit.contactData.branch), so a pick finds what any list of contacts was answered; an ID table of another
-        // family is the branch its caller names (options.data); a caller's own rows are the caller's.
-        data: options.data || (!table && typeof options.search !== 'function' && !Array.isArray(options.contacts) && window.spirit.contactData ? window.spirit.contactData.branch : undefined),
+        // family is the branch its caller names (options.data); a caller's own search (Chatter's peer pane, kept as it is by
+        // Andy's Q20) is the caller's.
+        data: options.data || (!table && typeof options.search !== 'function' ? window.spirit.contactData.branch : undefined),
         api: api,
         server: 'node',
         verb: 'contact.search',

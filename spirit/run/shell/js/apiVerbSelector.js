@@ -16,7 +16,7 @@
   // the verbs it draws from (goal/G41.28).
   var parts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/appServerSelector.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
-  }).concat([typeof window.spirit.cacheManager === 'function' ? Promise.resolve(window.spirit.cacheManager('node')).then(null, function () {}) : null]));
+  }).concat([window.spirit.cacheManager('node')]));
 
   function createApiVerbSelector(options) {
     options = options || {};
@@ -29,8 +29,9 @@
     var list = { redraw: function () {} };
 
     // THE NODE'S OWN VERBS ARE spirit.data's (goal/G41.28; Andy, Q7: "the family, verb and app-server selectors draw from
-    // it"): a view of the verbs the node family's cache manager keeps, the chosen family's alone; another party's tree
-    // (options.own false: introSpector's peer or relay) is listed from that tree, as before.
+    // it"): a view of the verbs the node family's cache manager keeps, the chosen family's alone. Another party's tree
+    // (options.own false: introSpector's peer or relay) is listed from that tree: introSpector is the one exception, deferred
+    // (Andy, the box: "the only exception is introspector, deferred for network-scope design reasons.").
     var own = options.own !== false;
     // FOR A GRANT OR A BRANCH, ONLY WHAT MAY BE GRANTED (goal/G41.28; Andy: "so the introSpector gets the FS group, BUT the
     // auth.branch won't see those verbs"): options.grantable leaves every family's FS group out; the owner's own lists
@@ -43,15 +44,13 @@
     }
     // A PROBABILITYSEARCH DROPDOWN (the old shell's list search is forbidden on the face, goal/G40.8).
     parts.then(function () {
-      var N = window.spirit.nodeData;
-      var S = N ? { verbs: N.verbsBranch } : null;
       list = window.spirit.elements.probabilitySearch.create(root, {
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
-        data: own && S ? S.verbs : undefined,
-        rows: own && S ? undefined : rows,
-        filters: own && S ? [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server && offered(row.name) ? 1 : 0; } }] : [],
+        data: own ? window.spirit.nodeData.verbsBranch : undefined,
+        rows: own ? undefined : rows,
+        filters: own ? [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server && offered(row.name) ? 1 : 0; } }] : [],
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         pick: function (row, key) {

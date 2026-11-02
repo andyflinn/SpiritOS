@@ -14,7 +14,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
   // The node family's cache manager comes with it, as part of its tree: the keeper of the api tree (goal/G41.28).
   var parts = Promise.all([window.spirit.require ? window.spirit.require('shell/js/probabilitySearch.js') : null,
-    typeof window.spirit.cacheManager === 'function' ? Promise.resolve(window.spirit.cacheManager('node')).then(null, function () {}) : null]);
+    window.spirit.cacheManager('node')]);
 
   // THE NODE'S API TREE IN spirit.data (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
   // apiTree branch of spirit.data, read again when a server job changes, and the family, verb and app-server selectors
@@ -23,12 +23,11 @@
   // server job changing on the stream reads it again: one translator for every selector.
   // Another party's tree (options.tree: introSpector's peer or relay) is that party's, and stays out of it.
   function keepTree(tree) {
-    var N = window.spirit.nodeData;
-    if (N) N.keepTree(tree, window.spirit.apiTreeIndex);
+    window.spirit.nodeData.keepTree(tree, window.spirit.apiTreeIndex);
   }
   var reading = null;
   function readOwnTree() {
-    reading = reading || spirit.ready.then(function (s) { return s.tree(); }).then(function (tree) {
+    reading = reading || parts.then(function () { return spirit.ready; }).then(function (s) { return s.tree(); }).then(function (tree) {
       reading = null;
       var t = tree && typeof tree === 'object' ? tree : null;
       keepTree(t);
@@ -87,7 +86,7 @@
         face: 'dropdown',
         placeholder: options.placeholder || 'choose a server…',
         all: options.all,
-        data: own && window.spirit.nodeData ? window.spirit.nodeData.treeBranch : undefined,
+        data: own ? window.spirit.nodeData.treeBranch : undefined,
         rows: own ? undefined : rows,
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },

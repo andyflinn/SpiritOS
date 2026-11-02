@@ -22,8 +22,7 @@
   // it fills; a row reads spirit.fsData.
   function fsData() { return (window.spirit && window.spirit.fsData) || null; }
   // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
-  var fsReady = Promise.resolve(typeof window.spirit.cacheManager === 'function' ? window.spirit.cacheManager('fs') : null)
-    .then(function () { return fsData(); }, function () { return null; /* no file tree on this page */ });
+  var fsReady = Promise.resolve(window.spirit.cacheManager('fs')).then(function () { return fsData(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
