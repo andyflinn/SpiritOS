@@ -24,7 +24,8 @@ NEEDs the family selector to have any meaning at all."*). Its test is `./apiFami
   - All Verbs: `verb` `''`, `value` the family again;
   - another family clears the verb and lists its own verbs.
 - Every change fires one `change`.
-- `root.load(fn)` lists another party's tree, clears the choice and hides the verb half.
+- `root.load(fn)` lists another party's tree, clears the choice and hides the verb half. Deferred with introSpector and
+  still red (the box: *"the only exception is introspector, deferred for network-scope design reasons."*): its red says so.
 
 ## What its test must try to break
 

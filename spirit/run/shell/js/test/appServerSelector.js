@@ -105,7 +105,7 @@ test.startTest('appServerSelector.js: the app-server selector');
   sl.opts.pick(null, '');
   ok(servers.value === '', 'None clears it', 'value ' + servers.value);
   await servers.load(function () { return Promise.resolve(OTHER); }); await settle();
-  ok(short(names(sl)) === short(['relay']), 'load(fn) lists another party\'s families', 'rows: ' + short(names(sl)));
+  ok(short(names(sl)) === short(['relay']), 'load(fn) lists another party\'s families', 'rows: ' + short(names(sl)) + ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")');
 
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

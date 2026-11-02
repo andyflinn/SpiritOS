@@ -132,6 +132,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   fl.opts.pick({ key: 'jobs', name: 'jobs' }, 'jobs');
   ok(fam.family === 'jobs' && fam.verb === '' && short(names(vl)) === short(['list']), 'another family clears the verb and lists its own verbs', 'family ' + fam.family + ', verb ' + short(fam.verb) + ', verbs ' + short(names(vl)));
   await fam.load(function () { return Promise.resolve(OTHER); }); await settle();
-  ok(fam.family === '' && fam.value === '' && verbBox.hidden === true && short(names(fl)) === short(['relay']), 'load lists another party\'s tree, clears the choice and hides the verb half', 'family ' + fam.family + ', hidden ' + verbBox.hidden);
+  ok(fam.family === '' && fam.value === '' && verbBox.hidden === true && short(names(fl)) === short(['relay']), 'load lists another party\'s tree, clears the choice and hides the verb half', 'family ' + fam.family + ', hidden ' + verbBox.hidden + ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")');
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

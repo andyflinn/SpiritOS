@@ -146,6 +146,13 @@ function listStub(totals) {
   };
   return L;
 }
+// The real data set with its node known, and the verifier's own cache manager over it (goal/G41.28).
+function verifierCache(win) {
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  win.spirit.node = { key: 'KEY+FALLOUT/NODE==' };
+  win.spirit.data.home(win.spirit.node.key);
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', 'deskVerify', 'family', 'clientCacheManager.js'), 'utf8'), win, { filename: 'deskVerify/family/clientCacheManager.js' });
+}
 function world(withList, totals) {
   const document = makeDom();
   const win = { document: document, setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Math: Math };
@@ -156,6 +163,9 @@ function world(withList, totals) {
   win.required = [];
   win.spirit.require = function (p) { return new Promise(function (resolve) { win.required.push({ path: String(p), resolve: resolve }); }); };
   vm.createContext(win);
+  // The page's one data set, its node known (goal/G41.28, Q10), and the verifier's cache manager, as the page holds them
+  // once spirit.require has answered for it.
+  verifierCache(win);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   const ctx = { dialogs: [], streams: [], chats: [],
     verb: function () { return Promise.resolve({}); },
@@ -180,10 +190,11 @@ function realWorld(rows) {
   const ran = {};
   win.spirit = { elements: {}, require: function (p) {
     const rel = String(p || '').replace(/^\/+/, '');
-    if (/^shell\/.+\.js$/.test(rel) && !ran[rel] && fs.existsSync(path.join(RUN, rel))) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
+    if (/^(shell|process\/js)\/.+\.js$/.test(rel) && !ran[rel] && fs.existsSync(path.join(RUN, rel))) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
     return Promise.resolve(true);
   } };
   vm.createContext(win);
+  verifierCache(win);
   ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/probabilitySearch.js', null].forEach(function (rel) {
     const f = rel ? path.join(RUN, rel) : FILE;
     vm.runInContext(fs.readFileSync(f, 'utf8'), win, { filename: f });
@@ -275,10 +286,13 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(w.list.asks.length === 2 && w.list.asks.every(function (a) { return a.verb === 'search' && a.args.over === 'tests' && a.args.current === 'yes'; }) &&
     w.list.asks[0].args.outcome === 'red' && w.list.asks[1].args.outcome === 'green', 'two deskVerify searches, red then green', short(w.list.asks));
   ok(w.list.mostInAir === 1, 'never more than one search in the air (Andy: "MAX one search in flight")', 'most in the air: ' + w.list.mostInAir);
-  const sub = w.ctx.streams.filter(function (s) { return s.server === 'deskVerify'; });
-  ok(sub.length === 1, 'it follows deskVerify\'s stream', 'streams: ' + short(w.ctx.streams.map(function (s) { return s.server; })));
-  sub[0].fn({ any: 1 }); await settle();
-  ok(w.list.asks.length === 4 && w.list.mostInAir === 1, 'each deskVerify publish counts again, one search at a time', 'asks ' + w.list.asks.length + ', most in air ' + w.list.mostInAir);
+  // THROUGH THE VERIFIER'S CACHE (goal/G41.28; Andy: "These rules apply to ALL clients. including deskVerify"): the list
+  // is a view of the tests its cache manager keeps, and a publish kept there counts again; no stream of its own.
+  const V = w.win.spirit.verifyData;
+  ok(!!w.list.made[0] && w.list.made[0].opts.data === V.testsBranch, 'its list is a view of the tests the verifier\'s cache keeps (spirit.verifyData.testsBranch)', 'data: ' + short(w.list.made[0] && w.list.made[0].opts.data));
+  ok(w.ctx.streams.filter(function (s) { return s.server === 'deskVerify'; }).length === 0, 'it follows no deskVerify stream of its own', 'streams: ' + short(w.ctx.streams.map(function (s) { return s.server; })));
+  w.win.spirit.data.take({ id: 'job_v', module: 'process/js/deskVerify', app: { doing: 'idle', line: 'idle' } }); await settle();
+  ok(w.list.asks.length === 4 && w.list.mostInAir === 1, 'each deskVerify publish kept in spirit.verifyData counts again, one search at a time', 'asks ' + w.list.asks.length + ', most in air ' + w.list.mostInAir);
   const w0 = world(true, { red: 0, green: 0 });
   w0.win.spirit.deskPlugins.fallout.open(w0.container, w0.ctx); await settle();
   ok(w0.$('fallout-summary').textContent === '❌ 0 red of 0 tests now.', 'no tests at all: no percentage', w0.$('fallout-summary').textContent);
@@ -309,8 +323,10 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(asked.length === 1 && scripts.length === 0, 'it asks spirit.require for shell/js/probabilitySearch.js, and puts no script tag on the page',
     'required ' + short(wl.win.required.map(function (r) { return r.path; })) + ', scripts ' + scripts.length);
   ok(wl.list.made.length === 0, 'and no list is made before it loads', 'made: ' + wl.list.made.length);
+  const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/family/clientCacheManager.js'; });
+  ok(askedV.length === 1, 'it asks spirit.require for the verifier\'s cache manager, its own family\'s (goal/G41.28)', 'required ' + short(wl.win.required.map(function (r) { return r.path; })));
   wl.win.spirit.elements.probabilitySearch = { create: wl.list.create };
-  if (asked[0]) asked[0].resolve({}); await settle();
+  if (asked[0]) asked[0].resolve({}); if (askedV[0]) askedV[0].resolve({}); await settle();
   ok(wl.list.made.length === 1 && wl.list.made[0].host === wl.$('fallout-list') && wl.$('fallout-summary').textContent === '❌ 3 red of 10 tests now (30%).',
     'once it loads, the list is made and the summary counted', 'made ' + wl.list.made.length + ', summary ' + wl.$('fallout-summary').textContent);
 

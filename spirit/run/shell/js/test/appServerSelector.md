@@ -14,7 +14,9 @@ lists. Grants and introSpector build their lines with it, through the api-branch
 - `all` is what its None reads; None clears the value.
 - A pick sets `root.value` and fires a bubbling `change`.
 - **Any party's tree** (goal/G30.5): `options.tree` or `root.load(fn)` lists the families of the tree `fn` answers and
-  clears the choice; without one, this node's own (`spirit.ready` then `tree()`).
+  clears the choice; without one, this node's own (`spirit.ready` then `tree()`). `root.load(fn)` on a selector made for this node
+  is deferred with introSpector and still red (the box: *"the only exception is introspector, deferred for network-scope
+  design reasons."*): its red says so.
 
 ## What its test must try to break
 
