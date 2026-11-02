@@ -86,7 +86,8 @@ const OWN_STATE_DIR = (function () {
   return m ? 'relay-state/process/' + m[1] : null;
 })();
 function isOwnState(canonical) {
-  return !!OWN_STATE_DIR && (canonical === OWN_STATE_DIR || canonical.startsWith(OWN_STATE_DIR + '/'));
+  const own = OWN_STATE_DIR && OWN_STATE_DIR.toLowerCase();
+  return !!own && (canonical === own || canonical.startsWith(own + '/'));
 }
 // A SHELL APP'S OWN STATE FOLDER (goal/G40.8; Andy: "all shell-app state data should go into
 // spirit/run/relay-state/shell/<appname>/ analogous to the process user-data"): a file inside relay-state/shell/<app>/,
@@ -126,8 +127,8 @@ const SIDECAR_SUFFIX = '.sidecar.json';
 // the relay got its own startup module: same kind of file as server.js.
 // fileSystem.js, this file, joined it when it was lifted out of kernel.js (goal/G40.6).
 // DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/test/DEBUG.md).
-const UNSERVABLE_FILES = ['spirit/kernel.js', 'spirit/fileSystem.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'];
-const UNSERVABLE_FOLDERS = ['spirit/DEBUG/'];
+const UNSERVABLE_FILES = ['spirit/kernel.js', 'spirit/fileSystem.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
+const UNSERVABLE_FOLDERS = ['spirit/DEBUG/'].map(function (p) { return p.toLowerCase(); });
 
 // Path-only, caller-independent by design: nothing server-side can verify
 // which app is really asking, only whether the path itself is allowed.
@@ -157,8 +158,18 @@ function canonicalPath(filePath) {
   return path.relative(ROOT_DIR, resolved).replace(/\\/g, '/');
 }
 
-function fileWritable(filePath) {
+// THE GATES ARE BLIND TO CASE (goal/G41.30; the report: "Path gates are case-sensitive, so on Windows and macOS GET
+// /Relay-State/identity.json serves the private keys"). On those discs relay-state answers to any case, while the
+// gates compared the text as typed. So each gate judges the canonical path lower-cased, against lists lower-cased too
+// (coreFiles.isCore folds as well): one verdict for every spelling, on every disc. On Linux a path in other case is
+// another file, and refusing it as its lower-cased twin is refused costs nothing.
+function gatePath(filePath) {
   const canonical = canonicalPath(filePath);
+  return canonical === null ? null : canonical.toLowerCase();
+}
+
+function fileWritable(filePath) {
+  const canonical = gatePath(filePath);
   if (canonical === null) return false;
   if (isOwnState(canonical)) return true;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFace touches a sidecar's own path
@@ -173,7 +184,7 @@ function fileWritable(filePath) {
 // consumer the same way — the only sanctioned way to see one is through
 // getAnnotations, never loadFile/scanFolder/the static route.
 function fileServable(filePath) {
-  const canonical = canonicalPath(filePath);
+  const canonical = gatePath(filePath);
   // A path that escapes ROOT_DIR is refused by the read gate itself,
   // not only by fsPath further down inside loadFile — one verdict, made
   // in one place, for every consumer (loadFile, statFile, scanFolder,

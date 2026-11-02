@@ -29,10 +29,12 @@ const INTRINSIC = [
   'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/rotateKey', 'shell/stats',
 ];
 // An app folder (shell/<name> or process/js/<name>), or a path inside one, is intrinsic.
+// Blind to case, as every gate (goal/G41.30): Shell/Apps is shell/apps on a disc that does not tell them apart.
 function intrinsic(folder) {
-  const m = /^(shell\/[^/]+|process\/js\/[^/]+)(\/|$)/.exec(String(folder || '').replace(/\\/g, '/').replace(/^spirit\/run\//, ''));
-  return !!m && INTRINSIC.indexOf(m[1]) !== -1;
+  const m = /^(shell\/[^/]+|process\/js\/[^/]+)(\/|$)/.exec(String(folder || '').replace(/\\/g, '/').replace(/^spirit\/run\//, '').toLowerCase());
+  return !!m && INTRINSIC_LOWER.indexOf(m[1]) !== -1;
 }
+const INTRINSIC_LOWER = INTRINSIC.map(function (f) { return f.toLowerCase(); });
 function isIntrinsic(root, dir, name) { return intrinsic(dir + '/' + name); }
 // The shell's frame: every app is loaded and drawn by these (goal/G6.7).
 // spirit.js at the run root is the one spirit object (goal/G40.1): core.
@@ -43,10 +45,15 @@ const FRAME = ['spirit/run/index.html', 'spirit/run/spirit.js', 'spirit/run/shel
 // THE FACE'S BOOT IS CORE (goal/G41.3): face/ moved into shell/, and what was core there is core here, the page itself
 // at the run root as before.
 const BOOT = ['spirit/run/face.html', 'spirit/run/shell/boot.js', 'spirit/run/shell/seal.js', 'spirit/run/shell/face.css', 'spirit/run/shell/favicon.svg'];
+const FRAME_LOWER = FRAME.map(function (p) { return p.toLowerCase(); });
+const BOOT_LOWER = BOOT.map(function (p) { return p.toLowerCase(); });
 
+// BLIND TO CASE (goal/G41.30; the report: "Path gates are case-sensitive, so on Windows and macOS GET
+// /Relay-State/identity.json serves the private keys"): the path and every list it is held against, lower-cased, so
+// SPIRIT/SERVER.JS is as core as spirit/server.js.
 function isCore(repoPath, repoRoot) {
-  const p = String(repoPath || '').replace(/\\/g, '/').replace(/^\.\//, '');
-  if (BOOT.indexOf(p) !== -1) return true;
+  const p = String(repoPath || '').replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase();
+  if (BOOT_LOWER.indexOf(p) !== -1) return true;
   // A CORE FILE'S COMPANION TESTS ARE CORE (goal/G41.29; Andy: "the red for a core file is a core file, too", and "change
   // spirit/coreFiles as well, by making a coreFiles-companion files in the test-folder core files as well."): a file in a
   // test/ folder beside a core file, named after it (test/<name>.js, test/<name>.md), is core with it.
@@ -65,7 +72,7 @@ function isCore(repoPath, repoRoot) {
   // THE ROOT TEST FOLDER IS CORE (goal/G40.6; Andy: "also: additional \"core\" designation: spirit/run/test/"): the
   // product's permanent tests need his grant like the code they judge.
   if (p.indexOf('spirit/run/test/') === 0) return true;
-  if (FRAME.indexOf(p) !== -1) return true;
+  if (FRAME_LOWER.indexOf(p) !== -1) return true;
   // AN INTRINSIC APP'S CORE IS ITS CODE ONLY (goal/G30.21; Andy: "core for an intrinsic app is its code only (.js, .css,
   // .html), so its data files stay writable"), a server's the same.
   const app = /^spirit\/run\/(shell|process\/js)\/([^/]+)\//.exec(p);
