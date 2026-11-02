@@ -232,13 +232,33 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
       const named = function (v) { return list.some(function (e) { return e && typeof e === 'object' && e.call === 'fileServer.' + v; }); };
       const unasked = verbs.filter(function (v) { return !named(v); });
       ok(verbs.length && !unasked.length, 'every verb of its api has garbage of its own', 'verbs with no garbage: ' + short(unasked));
-      const wrong = [];
+      // A LONE BAD STRING IS A REAL CALL (goal/G41.30; Andy: "fill this gap, in this item"; cw: "loadFile of the path
+      // \"x\" rightly answers 200 with nothing"): an entry that keeps its verb's shape whole is handed to the handler,
+      // which may answer it; its pass is the box's, "the server MUST not CRASH or HANG": answered, never a 5xx or a
+      // handler failed. An entry that breaks the shape is refused at the gate, a 4xx with a code.
+      const sameShape = function (proto, v) {
+        if (proto && typeof proto === 'object' && !Array.isArray(proto)) {
+          if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+          const a = Object.keys(proto).sort(), b = Object.keys(v).sort();
+          return a.join('\n') === b.join('\n') && a.every(function (k) { return sameShape(proto[k], v[k]); });
+        }
+        if (Array.isArray(proto)) return Array.isArray(v);
+        if (proto === null) return v === null;
+        return typeof v === typeof proto;
+      };
+      const kept = function (entry) { const verb = String(entry.call || '').replace(/^fileServer\./, ''); const d = tree.fileServer && tree.fileServer[verb]; return !!d && sameShape(d.request, entry.args); };
+      const wrong = []; const lone = [];
+      let keptCount = 0;
       for (const entry of list) {
         const r = await ask('127.0.0.1', N, '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(entry) });
         const b = json(r);
-        if (!(r.status >= 400 && r.status < 500 && b && typeof b.code === 'string' && b.code && b.code !== 'handler-failed')) wrong.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
+        if (kept(entry)) {
+          keptCount += 1;
+          if (!r.status || r.status >= 500 || /handler-failed/.test(r.text)) lone.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
+        } else if (!(r.status >= 400 && r.status < 500 && b && typeof b.code === 'string' && b.code && b.code !== 'handler-failed')) wrong.push({ entry: entry, status: r.status, answer: r.text.slice(0, 80) });
       }
-      ok(!wrong.length, 'each of the ' + list.length + ' is refused with a code: a 4xx, never accepted, a 5xx or a handler failed', wrong.length + ' were not: ' + short(wrong));
+      ok(!wrong.length, 'each of the ' + (list.length - keptCount) + ' that break the shape is refused with a code: a 4xx, never accepted, a 5xx or a handler failed', wrong.length + ' were not: ' + short(wrong));
+      ok(keptCount > 0 && !lone.length, 'each of the ' + keptCount + ' lone bad strings, the shape kept, is answered by its handler: never a 5xx or a handler failed', keptCount ? lone.length + ' broke it: ' + short(lone) : 'no entry keeps the shape: no lone bad string reached a handler, so nothing was judged');
       const still = await call(N, 'api');
       ok(still.status === 200, 'and the node still answers its api afterwards', 'afterwards its api answered ' + still.status);
     }
