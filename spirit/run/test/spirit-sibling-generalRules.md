@@ -186,7 +186,10 @@ box is its own check, named by the element's path and the box's id chain."*
     second. A path is by server node first (goal/G41.28), `<node>/<family>/<branch>[/<row>]`, a watch of the home node
     holding `~` for the page's node: a branch gets a row of its own, a row path is set and put back. A watch that redraws nothing is not
     listening. A box that shows nothing at all (a selector hidden until its family is chosen) has nothing to redraw,
-    and is not judged;
+    and is not judged. **A redraw proved in its own test** (Andy, Q24: *"Shall deskDetails' own test be the proof that it
+    redraws from the verifier, since the page sweep opens no item?"* *"yes."*): `shell/deskDetails/deskDetails.js` draws
+    the verifier's run only for an item open, which a bare mount never has; its own test is run, and the check is green
+    only when its check *"a verifier publish taken into spirit.data redraws the run"* passed;
   - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
     row, a setting verb named as a string such as `'node.setName'`, a relay `join` or `face`, a `grant`, a `saveFile`)
     holds a `.watch(` or makes a search on a `spirit.data` branch. The code rule is a net for what the page cannot

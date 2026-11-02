@@ -63,6 +63,11 @@ const WAIT = 20000;
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
 // as they are used, not refused.
 const SERVERS = { servers: ['agent'] };
+// A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
+// bare mount never has; its own test's check, by its words, stands for it here.
+const OWN_PROOF = {
+  'shell/deskDetails/deskDetails.js': { test: 'shell/deskDetails/test/deskDetails.js', check: 'a verifier publish taken into spirit.data redraws the run' },
+};
 // THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
 const FIELD_RULES = require(path.join(RUN, 'spirit', 'fieldRules.js'));
 const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function (k) { return /MAX_BYTES$/.test(k) && typeof FIELD_RULES[k] === 'number'; }).map(function (k) { return FIELD_RULES[k]; }));
@@ -547,6 +552,14 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     const seenProbe = probed.filter(function (x) { return !x.hidden; });
     if (!probed.length) unjudged('it watches no spirit.data path');
     else if (!seenProbe.length) unjudged('it shows nothing on this page, so there is nothing to redraw');
+    else if (OWN_PROOF[rel] && !seenProbe.some(function (x) { return x.redrew; })) {
+      // PROVED IN ITS OWN TEST (Andy, Q24: "Shall deskDetails' own test be the proof that it redraws from the verifier,
+      // since the page sweep opens no item?" "yes."): what it watches draws only for an item open, and this page opens
+      // none. Its own test is run here, and the check is green only if its own redraw check passed.
+      const p = OWN_PROOF[rel];
+      const said = require('child_process').spawnSync(process.execPath, [path.join(RUN, p.test)], { cwd: RUN, encoding: 'utf8', timeout: 120000 }).stdout || '';
+      ok(said.split('\n').some(function (l) { return /SUCCESS/.test(l) && l.indexOf(p.check) !== -1; }), 'what it watches redraws it, proved in its own test (' + p.test + '): ' + p.check, 'its own test (' + p.test + ') did not pass: ' + p.check);
+    }
     else ok(seenProbe.some(function (x) { return x.redrew; }), 'a change written into what it watches redraws it: ' + seenProbe.filter(function (x) { return x.redrew; }).map(function (x) { return x.path; }).join(', '), 'it watches ' + seenProbe.map(function (x) { return x.path; }).join(', ') + ' and redraws for none of them');
     if (!W.writes.length) unjudged('its presses sent no write (its code is judged for it, above)');
     else ok(watching > 0, 'it sent ' + W.writes.length + ' writes and watches ' + watching + ' spirit.data paths for them', 'it sent ' + short(W.writes) + ' and watches no spirit.data path' + (raw ? '; it listens to the raw stream ' + raw + ' times instead' : ''));
