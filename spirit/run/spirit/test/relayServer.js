@@ -50,6 +50,22 @@ function sent(file) {
     if (!faceSend) resolve(null); else faceSend(res, 200, file);
   });
 }
+// THE FACE PAGE TAKES NO TOKEN FROM ITS ADDRESS (goal/G41.29; the box: "The login-email must not carry a link", "So a
+// real login-email never holds a link"): the page at / or /face.html, asked with /?<token>, logs nobody in and sets no
+// login; the token is pasted into the Log in field only. Its route is lifted out of the source and run on stand-ins.
+test.subHeading('the face page logs nobody in from a token in its address');
+const routeSrc = (/\n(  if \(req\.method === 'GET' && \(pathname === '\/' \|\| pathname === '\/face\.html'\)\) \{[\s\S]*?\n  \})\n/.exec(src) || [])[1];
+const asked = { logins: [], cookies: [], sent: [] };
+let route = null;
+try { route = routeSrc ? new Function('req', 'pathname', 'url', 'relay', 'faceSetCookie', 'faceSend', 'at', 'res', routeSrc + '\nreturn false;') : null; } catch (e) { route = null; }
+let served = false;
+if (route) {
+  const TOKEN = 'AbCdEfGhIjKlMnOpQrStUvWx';
+  served = route({ method: 'GET' }, '/', new URL('https://harbour.relay.example/?' + TOKEN), { faceLogin: function (n, t) { asked.logins.push([n, t]); return { loggedIn: true, session: 'S' }; } },
+    function (res, sid) { asked.cookies.push(sid); }, function (res, st, file) { asked.sent.push(file); }, { name: 'harbour' }, {});
+}
+ok(!!route && served === true && asked.sent[0] === '../face.html', 'asked with /?<token>, it serves face.html', route ? 'served ' + served + ', sent ' + JSON.stringify(asked.sent) : 'the face page\'s route was not found in the source');
+ok(!!route && asked.logins.length === 0 && asked.cookies.length === 0, 'and logs nobody in: no faceLogin asked, no login cookie set', 'faceLogin asked ' + JSON.stringify(asked.logins) + ', cookies ' + JSON.stringify(asked.cookies));
 Promise.all([sent('../face.html'), sent(map && map['/spirit.js'] || '../spirit.js')]).then(function (got) {
   ok(got[0] && got[0].equals(fs.readFileSync(path.join(RUN, 'face.html'))), 'the relay serves face.html byte for byte as it is on disk', 'the relay serves face.html changed, or its faceSend was not found');
   ok(got[1] && got[1].equals(fs.readFileSync(path.join(RUN, 'spirit.js'))), 'the relay serves /spirit.js, the run root\'s, byte for byte', 'the relay does not serve the run root\'s spirit.js as it is');

@@ -14,7 +14,11 @@ this code the same day as the nodes (no backward compatibility before alpha).
   `/face/stream` and `/face/api` are routes, not files, and stay.)
 - Every file the map names is there.
 - face.html and spirit.js go out byte for byte as they are on disk (goal/G41.19): nothing pasted in.
+- **The face page takes no token from its address** (goal/G41.29; the box: *"The login-email must not carry a link"*):
+  asked with `/?<token>`, the page at `/` or `/face.html` serves face.html and logs nobody in: no `faceLogin`, no login
+  cookie. The token is pasted into the Log in field only.
 
 ## What its test must try to break
 
 - An old address left in the map, and an address naming a file that is not there.
+- A token in the face page's address that still logs in.

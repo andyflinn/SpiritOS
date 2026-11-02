@@ -1,0 +1,112 @@
+'use strict';
+
+// spirit/run/spirit/test/relay.js
+// The tests of spirit/relay.js, and of no other module (spec: ./relay.md). This file holds goal/G41.29: the join mail
+// is sent only for a link to the asker's own computer, and the login mail carries a token and no link. A relay is made
+// on a scratch folder of its own, its mailer a stand-in that keeps what it was handed; nothing is sent.
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const RUN = path.resolve(__dirname, '..', '..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+
+function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+
+// A relay on a scratch folder: its identity planted as the relay keeps it (relayAuth beside it), its face domain
+// relay.example, its mail kept.
+function scratchRelay() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-'));
+  const js = path.join(home, 'spirit');
+  fs.mkdirSync(js, { recursive: true });
+  ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN, 'spirit', f), path.join(js, f)); });
+  const planted = require(path.join(js, 'relayAuth.js'));
+  planted.nameIdentity(home, 'relay');
+  // Its owner, written at install as a relay's is: a relay with none seats nobody.
+  planted.writeOwner(home, planted.generateIdentity('owner').publicKey);
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
+  const mails = [];
+  let now = Date.now();
+  const relay = require(path.join(RUN, 'spirit', 'relay.js')).createRelay(home, {
+    now: function () { return now; },
+    sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); },
+  });
+  return { home: home, relay: relay, mails: mails, auth: planted, later: function (ms) { now += ms; } };
+}
+
+test.startTest('relay.js: the join mail and the login mail (goal/G41.29)');
+
+const R = scratchRelay();
+const auth = require(path.join(RUN, 'spirit', 'relayAuth.js'));
+let n = 0;
+// Each ask by a key and a mail of its own, so no cap of a minute or an hour is what refuses it.
+function ask(link) {
+  n += 1;
+  const who = auth.generateIdentity('asker' + n);
+  const before = R.mails.length;
+  let said = null;
+  try { said = R.relay.join(who.publicKey, 'asker' + n + '@example.org', link, ''); } catch (e) { said = { ok: false, error: String(e && e.message || e) }; }
+  return { said: said || {}, mail: R.mails.length > before ? R.mails[R.mails.length - 1] : null };
+}
+
+test.subHeading('the join mail goes only to a link on the asker\'s own computer');
+// The box: "the relay must refuse to send a join-email, unless the link in it points to the asker's own computer, so
+// senders cannot use the relay to send phishing emails. The relay reads the link as an address, the way a browser
+// does, and sends the mail only when all of these hold: the scheme is exactly http, the host is exactly 127.0.0.1, the
+// port is any port, or none, there is no user name or password (nothing before an @), the path starts with \"/\"".
+const NODE = 'http://127.0.0.1:65432/face.html?app=join';
+const a = ask(NODE);
+ok(a.said.ok === true && !!a.mail && a.mail.text.indexOf(NODE) !== -1, 'the link a node sends, ' + NODE + ', is mailed', 'said ' + short(a.said) + ', mail ' + short(a.mail));
+const b = ask('http://127.0.0.1/face.html?app=join');
+ok(b.said.ok === true && !!b.mail, 'with no port, it is mailed', 'said ' + short(b.said) + ', mail ' + short(b.mail));
+[
+  ['https://127.0.0.1:65432/face.html', 'the scheme is not exactly http'],
+  ['http://localhost:65432/face.html', 'the host is not exactly 127.0.0.1'],
+  ['http://evil.com/face.html', 'the host is another site'],
+  ['http://127.0.0.1.evil.com/face.html', 'a host that only begins with 127.0.0.1 (the box: "http://127.0.0.1.evil.com/")'],
+  ['http://127.0.0.1:1@evil.com/face.html', 'a user name and password before an @, the site evil.com (the box: "http://127.0.0.1:1@evil.com/")'],
+  ['http://user@127.0.0.1:65432/face.html', 'a user name before an @, even on 127.0.0.1'],
+  ['http://127.0.0.2:65432/face.html', 'another loopback address, not exactly 127.0.0.1'],
+  ['http://evil.com/?http://127.0.0.1:65432/', '127.0.0.1 only in the query, the site evil.com'],
+].forEach(function (c) {
+  const r = ask(c[0]);
+  ok(r.said.ok === false && !r.mail, 'refused, and no mail sent: ' + c[0] + ' (' + c[1] + ')', c[0] + ': said ' + short(r.said) + ', mail ' + (r.mail ? 'sent' : 'none'));
+});
+
+test.subHeading('the login mail carries the token, where to paste it, and no link');
+// The box: "The login-email must not carry a link, so a fake login-email cannot lead the user to a look-alike site",
+// "it carries the token only, on a line of its own, easy to copy.", "it carries a text that says where to paste it:
+// \"Open your face by typing its address or from your bookmark, never from a link in a mail, and paste this token into
+// its Log in field.\"", and "it does not write out the face's address either".
+const SAY = 'Open your face by typing its address or from your bookmark, never from a link in a mail, and paste this token into its Log in field.';
+const bert = auth.generateIdentity('bert');
+let login = null;
+try {
+  R.later(2 * 60 * 1000);
+  const j = R.relay.join(bert.publicKey, 'bert@example.org', NODE, '');
+  const code = ((/[?&]join=([A-Za-z0-9_-]+)/.exec((R.mails[R.mails.length - 1] || {}).text || '')) || [])[1] || '';
+  R.relay.joinConfirm(bert.publicKey, code, '');
+  require(path.join(RUN, 'spirit', 'relayStore.js')).open(R.home).members.setFace(bert.publicKey, 'harbour', 'bert@example.org');
+  R.later(2 * 60 * 1000);
+  const before = R.mails.length;
+  R.relay.faceLogin('harbour', 'bert@example.org');
+  login = R.mails.length > before ? R.mails[R.mails.length - 1] : null;
+  void j;
+} catch (e) { login = null; test.comment('the face member could not be made: ' + (e && e.message || e)); }
+const text = String((login && login.text) || '');
+const lines = text.split(/\r?\n/).map(function (l) { return l.trim(); });
+const token = lines.filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0] || '';
+ok(!!login, 'asked with the member\'s own email, the relay mails a login', 'no login mail was sent');
+ok(!!token, 'the token stands on a line of its own', 'no line holds the token alone: ' + short(text));
+ok(text.indexOf(SAY) !== -1, 'it says where to paste it: "' + SAY + '"', 'the mail says: ' + short(text));
+ok(!!login && !/https?:\/\/|www\./i.test(text), 'it holds no link', 'the mail holds a link: ' + short(text));
+ok(!!login && !/harbour\.relay\.example|relay\.example/i.test(text), 'it does not write out the face\'s address', 'the mail names the address: ' + short(text));
+let pasted = null;
+try { pasted = token ? R.relay.faceLogin('harbour', token) : null; } catch (e) { pasted = null; }
+ok(!!pasted && pasted.loggedIn === true, 'the token, pasted into the Log in field, logs in', 'faceLogin with the token: ' + short(pasted));
+
+try { fs.rmSync(R.home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+test.reportSuccessFailureCount();
+process.exit(0);
