@@ -69,6 +69,9 @@ function isCore(repoPath, repoRoot) {
   // shell/json/ too (goal/G40.8; Andy: "the folder spirit/run/shell/json/ is a core folder as well. this way i can update
   // that system file manually once in a while, when i actually want it to go into github").
   if (p.indexOf('spirit/run/spirit/') === 0 || p.indexOf('spirit/run/shell/js/') === 0 || p.indexOf('spirit/run/shell/json/') === 0) return true;
+  // WHAT index.html LOADS ON EVERY BOOT IS CORE TOO (goal/G41.30; the review, H5: "shell/node_modules/codemirror/ and
+  // shell/shared/js/ are not core. Their files are still writable, and index.html loads both of them").
+  if (p.indexOf('spirit/run/shell/node_modules/') === 0 || p.indexOf('spirit/run/shell/shared/') === 0) return true;
   // THE ROOT TEST FOLDER IS CORE (goal/G40.6; Andy: "also: additional \"core\" designation: spirit/run/test/"): the
   // product's permanent tests need his grant like the code they judge.
   if (p.indexOf('spirit/run/test/') === 0) return true;
