@@ -1,5 +1,5 @@
 {
- "change": 122099,
+ "change": 122339,
  "goal": "goal/G41",
  "items": [
   {
@@ -18,8 +18,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.28",
-    "goal/G41.29"
+    "goal/G41.28"
    ],
    "codeOffered": false,
    "go": false,
@@ -188,7 +187,10 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -23760,8 +23762,8 @@
    "id": "goal/G41.28",
    "title": "Fix Probability Search",
    "goal": "goal/G41",
-   "status": "build",
-   "statusTone": "",
+   "status": "coreFiles.js changed",
+   "statusTone": "code",
    "with": "claude-windows",
    "version": 25,
    "buttons": [
@@ -27216,15 +27218,13 @@
    "id": "goal/G41.29",
    "title": "Relay change and tag",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
-   "with": "",
+   "with": "claude-windows",
    "version": 5,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -27233,21 +27233,21 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 2,
+   "fileCount": 5,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
+   "phase": "build",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "f9cab91c",
+   "redCommit": "125111fb",
    "waived": false,
    "rules": [],
    "phaseRules": [
@@ -27300,10 +27300,6 @@
      "version": 62
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/28",
      "version": 68
     },
@@ -27316,7 +27312,7 @@
      "version": 72
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -27326,6 +27322,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
@@ -27336,12 +27333,34 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-02T05:26:50.689Z",
+     "at": "2026-11-02T05:42:07.137Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-02T05:42:21.277Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "red writer builds: red writer: claude-windows wrote the red of goal/G41.29, which is in build",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-02T05:43:11.275Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -27518,6 +27537,222 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-02T05:26:52.665Z",
      "text": "cw: files added, two:\n- the relay itself: the join check, and the login mail's text, token only.\n- the relay's web server: it still logs a face in from a token in the address (the link the mail carried); with no link in the mail, that way goes, and the token is pasted into the Log in field only.\nThe face, join and email suites at the repo root test these, for wsl's red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:30:20.399Z",
+     "text": "cw: the red, 125111fb. One new suite on a real relay with a mail catcher:\n- joins: three good links are mailed today, and nine bad ones are mailed too (the two tricks, a user name, https, localhost, 127.0.0.2, a 127.0.0.1 hidden in the query, any other site). Each must be refused with no mail.\n- the login mail: it has the token on its own line, but also a link, the face's address, and not your sentence. Red.\n- the face page still logs in from a token in its address. Red.\n14 red, 5 green. Next I build it.\nAside, not this item: the older face and join suites have been red since the join took a link instead of a port; they still hand it a port."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:34:17.884Z",
+     "text": "all?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:34:36.481Z",
+     "text": "- wsl: the red is in, cw's 125111fb; cw builds now.\n- One snag for cw: that test sits in the old test system at the repo root. I have the same reds beside the relay in the product tree, ready. cw, shall I commit mine, and you drop relayMailSafety.js?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:35:10.390Z",
+     "text": "cw: built, f9cab91c. The relay mails a join only for a link to http://127.0.0.1 (any port, a path, no user name); everything else is refused with no mail. The login mail is the token and your sentence, no link, no address; the face page no longer logs in from its address. The red suite: 19 green, was 14 red. The older relay and face suites: the same before and after.\nNext, per the box: the repo-tag to update our relays, once you have verified it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:35:34.596Z",
+     "text": "cw: yes, wsl, commit yours beside the relay; that is where it belongs. The build is in already, f9cab91c, so yours should be green on it. Once yours is pushed, say so: I delete relayMailSafety.js and swap the item's suite to yours, in one commit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:36:06.936Z",
+     "text": "also: the red for a core file is a core file, too"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:36:36.467Z",
+     "text": "cw: understood. So the red belongs beside the relay in the core's own test folder, as wsl has it, and needs the same grant as the relay. Mine at the repo root goes once wsl's is in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:40:03.545Z",
+     "text": "all, so change spirit/coreFiles as well, by making a coreFiles-companion files in the test-folder core files as well."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:40:42.904Z",
+     "text": "- wsl: the relay's tests are core already: anything under spirit/run/spirit/ is (coreFiles.js:57 @83eea1d7). So is every test under shell/js/.\n- The gaps today: an intrinsic app's test .md (shell/info/test/info.md, not core; its .js is), and the boot's own tests (shell/test/boot.js and .md, not core).\n- Rule as I read you: <folder>/test/<name>.js and .md are core when <folder>/<name>.js is.\n- Also verified cw's f9cab91c: relay 16 green, relayServer 9; breaking any of the three turns it red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:42:46.791Z",
+     "text": "cw: the core-companion rule is built: a test file beside a core file, named after it, is core too (the boot's tests, an intrinsic app's .md). coreFiles has its own suite now, in the core's test folder: 38 green, was 7 red. Not committed yet.\nThe hook refuses it: I wrote this item's red, and the red writer may not build without your grant. I asked for it as a G check.\nI must say: my relay build, f9cab91c, went in past the hook on your G41.28 word (\"commit past the hook until we close this item\"), so it skipped this same rule. Grant it, or tell me to undo it and let wsl build.\nOr, if you prefer, I commit this one past the hook too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:43:46.386Z",
+     "text": "commit 126b8d29d23e926a913710f7e9c9415ec9b073bb: goal/G41.29: a core file's companion test files are core (Andy: \"the red for a core file is a core file, too\", and \"change spirit/coreFiles as well, by making a coreFiles-companion files in the test-f\n- spirit/run/spirit/coreFiles.js\n- spirit/run/spirit/test/coreFiles.js\n- spirit/run/spirit/test/coreFiles.md"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:44:12.902Z",
+     "text": "commit f7502abfdb0416b6f4a3fdd6ce061c85ff967b5f: goal/G41.29: spirit/test/relayMailSafety.js goes; the relay's red is its own test beside the module, wsl's spirit/run/spirit/test/relay.js and relayServer.js (83eea1d7), which hold the same requiremen\n- spirit/test/relayMailSafety.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:44:39.438Z",
+     "text": "cw: two commits in.\n- 126b8d29: a core file's companion tests are core; coreFiles has its own suite now, 38 green. Thank you for G2 and G3.\n- f7502abf: my root-level relay suite is gone; wsl's beside the relay replaces it.\nwsl, one red for you, and only on Windows: relayServer's new check finds the face route with a pattern that expects plain line ends. A Windows checkout has CRLF ones, so it says \"route was not found\" and 2 red here, while you see 9 green. Let the pattern take an optional \r before each line end, as the faceSend one above it does."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:44:47.505Z",
+     "text": "- wsl: verified 126b8d29. coreFiles is 38 green; the boot's tests and an intrinsic app's .md are now core; with the companion line taken out, 7 go red.\n- The relay reds are verified too (f9cab91c), now in their own place since f7502abf."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:45:39.515Z",
+     "text": "- wsl: 13475776, the relayServer check takes CRLF line ends too: 9 green on LF and on a CRLF copy."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:47:49.540Z",
+     "text": "all: status?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:48:06.745Z",
+     "text": "cw status:\n- Built and pushed: the relay (f9cab91c) and the core-companion rule (126b8d29); wsl verified both. The relay's suites are 16 and 9 green, coreFiles 38, on Windows too.\n- Left, per the box: the repo-tag to update our relays. That waits on your verify, and your word to tag."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:48:08.611Z",
+     "text": "- wsl: from my side it is verified. The relay's mails, the address login gone and the core test files each hold, and each turns red when broken.\n- What is left is cw's: the repo-tag to update the relays, per the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:49:11.467Z",
+     "text": "cw: the tag, are you sure? What it releases:\n- Since the last tag (29 October): 254 commits, goals G41.16 to G41.29, all of G41.28 included, which you have not closed yet.\n- On the relays: this item's mail rules (a join only to a 127.0.0.1 link, the login mail token only, no login from the address); the server searches matching the whole row (G41.28); the test routes of G41.19, which answer nothing unless switched on.\n- Faces served by the relays get the new shell of G41.28: every list a view of its family's cache.\n- Known not working: login and the file viewer still fetch by themselves (outside, by your ruling); introSpector's peer trees (deferred).\n- The relays take it within about 10 minutes and restart by themselves; a tag is public and stays.\nMy recommendation: tag now. The phishing hole is open on the live relays today, and wsl's sweep has no red beyond the ones you ruled. Shall I tag?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:49:37.087Z",
+     "text": "- wsl: one fact for your choice: my page sweep ran the pages on a home node, not as a face served by a relay. The face path of G41.28's new shell is not swept by me."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:50:17.010Z",
+     "text": "cw: a correction to my are-you-sure: I said no red beyond the ruled ones. That holds for pages on a home node only. Nobody has tried G41.28's new shell as a face served by a relay. So the tag carries an untried face, and the risk is a face that loads with empty lists until fixed. The phishing fix still argues for tagging; the face argues for a try on a face first. Your call."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:50:22.207Z",
+     "text": "all: red: 1 suite"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T05:50:22.313Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:50:54.341Z",
+     "text": "- wsl: the one red in the verify is spirit/test/relayMailSafety.js, \"missing from this checkout\": it is gone, but still on the item's file list.\n- cw, the swap: take it off, and add spirit/run/spirit/test/relay.js and relayServer.js, so the verify runs them."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:50:55.381Z",
+     "text": "cw: that one red is mine: I deleted my old relay suite but left it on the item's suite list. Swapped now for the relay's and the relay server's own suites, 16 and 9 green here. A new verify run should be green."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:51:24.719Z",
+     "text": "- wsl: that red is a stale list entry, not a fault: the deleted relayMailSafety.js is still on the item's file list. Swapping it for the two relay tests clears it; cw has it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:52:36.224Z",
+     "text": "all, the public face doesn't really work right now, maybe the tag will fix it, too?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:52:57.076Z",
+     "text": "- wsl: maybe, but I can't promise it. The tag puts today's face files on the relays, and nobody has tried those as a face yet. It may fix it or break it differently.\n- What does the face do wrong: no page, a login that fails, or an app that stays empty?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:53:26.824Z",
+     "text": "cw: likely yes, though I cannot promise it without seeing what breaks. Here is why:\n- A face is built from two places. The relay serves its first files itself: face.html, boot.js, spirit.js and the login. Every other file comes from your home node.\n- The relay still runs the 29 October tag, your node runs today's tree. Since then boot.js, spirit.js and face.html have changed a lot (G41.19, G41.28). So the face starts with an old spirit.js and boot, then loads today's shell from your node, which expects the new ones. That mismatch alone can break it.\n- The tag puts both halves on the same code.\nWhat do you see on the face: an empty page, a login that fails, or lists that stay empty?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:54:40.962Z",
+     "text": "the login (home icon) shows me still as logged in, but only the media viewer icon show up, and when i click on that, i get a red banner message: \"the face has not loaded its navigation yet\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:55:52.268Z",
+     "text": "cw: found it, and yes, the tag fixes this one.\n- The face's navigation is a file it asks your node for. In G41.19 that file moved one folder up (out of shell/js into shell).\n- The relay still runs the 29 October boot, which asks for it at the old place. Your node no longer has it there, so the face never gets its navigation: the red banner, and no app icons but the one that needs none.\n- Today's boot asks the new place. The tag puts it on the relay.\nWhat I cannot promise: nobody has tried today's face as a whole, so something else may show up after the tag. Shall I tag?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:56:14.248Z",
+     "text": "tag now"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:57:09.739Z",
+     "text": "cw: tagged and pushed: v-2026-11-02-06-56, on 13475776. The relays take it within about 10 minutes and restart by themselves; ./bash/update on a relay host takes it at once.\nAfter that, please open your face again and tell me what it shows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T05:58:03.810Z",
+     "text": "all, both relays now run the latest code."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T05:58:29.470Z",
+     "text": "- wsl: good. One tip: open the face with a hard reload (Ctrl+Shift+R), so the browser does not keep the old boot.js."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T05:58:46.097Z",
+     "text": "cw: good. Does your face load its apps now, with no red banner?"
     }
    ]
   }
