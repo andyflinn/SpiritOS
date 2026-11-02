@@ -310,5 +310,49 @@ test.startTest('natterDetails.js: its are-you-sure buttons are armingButtons (go
   const drawnLeave = await press(w4, '.nd-leave');
   await press(w4, '.nd-leave');
   ok(!!drawnLeave && !w4.calls.slice(before4).some(function (c) { return c.name === 'relay.leave'; }), 'two presses on the drawn Leave leave nothing without the element', 'asked: ' + short(w4.calls.slice(before4).map(function (c) { return c.name; })));
+
+  // THE STAR ON A RELAY (goal/G41.30; Andy: "the message is different for members and owners, showing members who they
+  // have to trust, and, if the relay claims to be mine, the message should be slightly different like \"if you DID install
+  // this relay on a VSP and you DID set it's DNS records.....\""; "NO signature. just the armingButton, with a precise
+  // documentation of the risk."). What a relay's owner field says is that relay's own word, so it reads "says".
+  test.subHeading('the star on a relay: an arming button, and who you have to trust');
+  const page = function (x) { return x.box ? String(x.box.textContent || '') : ''; };
+  const starOf = function (x) { const b = x.document.querySelector('.nd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
+  const MEMBER = [{ url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'Olga', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
+  const w5 = world(MEMBER, {});
+  w5.win.spirit.elements.natterDetails.open({ url: SEAT_URL });
+  await settle();
+  const s5 = starOf(w5);
+  ok(!!s5, 'a relay\'s panel draws .nd-own, an arming button', 'armings: ' + short(w5.armings.map(function (a) { return a.label; })));
+  ok(/says it is owned by Olga/.test(page(w5)), 'a relay that does not claim this node names who must be trusted, "says it is owned by" its owner', 'the page says: ' + short(page(w5)));
+  ok(/run programs/.test(page(w5)) && /change files/.test(page(w5)) && /anyone holding/.test(page(w5)), 'and says that person and anyone holding the relay can run programs and change files on this machine', 'the page says: ' + short(page(w5)));
+  ok(!/If you DID install/.test(page(w5)), 'it does not speak of having installed it', 'the page says: ' + short(page(w5)));
+  const b5 = w5.calls.length;
+  const drawn5 = w5.document.querySelector('.nd-own');
+  if (drawn5) { drawn5.click(); await settle(); }
+  ok(!!drawn5 && !w5.calls.slice(b5).some(function (c) { return c.name === 'contact.own'; }), 'a press on the button alone sends nothing', 'calls: ' + short(w5.calls.slice(b5)));
+  if (s5) { await s5.opts.run(); await settle(); }
+  const sent5 = w5.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
+  ok(!!sent5 && sent5.body.key === 'RK2' && sent5.body.own === true, 'its second press sends contact.own {key: the relay\'s key, own: true}', 'sent: ' + short(sent5));
+  const CLAIMS = [{ url: OWNED_URL, label: 'mine', status: 200, owned: true, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'andy', roll: { relayKey: 'RK', relayLabel: 'Mine' } }];
+  const w6 = world(CLAIMS, OWNED_SAID);
+  w6.win.spirit.elements.natterDetails.open({ url: OWNED_URL });
+  await settle();
+  ok(/If you DID install this relay on a VPS and you DID set its DNS records/.test(page(w6)), 'a relay claiming this node says: "If you DID install this relay on a VPS and you DID set its DNS records"', 'the page says: ' + short(page(w6)));
+  ok(/lying/.test(page(w6)), 'and that otherwise it is lying', 'the page says: ' + short(page(w6)));
+  ok(!!starOf(w6), 'with the same button', 'armings: ' + short(w6.armings.map(function (a) { return a.label; })));
+  const STARRED = [Object.assign({}, CLAIMS[0], { mine: true })];
+  const w7 = world(STARRED, OWNED_SAID);
+  w7.win.spirit.elements.natterDetails.open({ url: OWNED_URL });
+  await settle();
+  const s7 = starOf(w7);
+  if (s7) { await s7.opts.run(); await settle(); }
+  const sent7 = w7.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
+  ok(!!sent7 && sent7.body.key === 'RK' && sent7.body.own === false, 'on a starred relay the same button takes the star away', 'sent: ' + short(sent7));
+  const w8 = world(MEMBER, {});
+  w8.win.spirit.transport = { ask: function () {} };
+  w8.win.spirit.elements.natterDetails.open({ url: SEAT_URL });
+  await settle();
+  ok(!!w8.box && !w8.document.querySelector('.nd-own') && !starOf(w8), 'on a face (window.spirit.transport) no button is drawn', 'on a face: .nd-own ' + !!w8.document.querySelector('.nd-own'));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

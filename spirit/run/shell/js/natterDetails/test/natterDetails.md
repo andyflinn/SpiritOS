@@ -24,6 +24,14 @@ This spec covers what goal/G41.9 asks of it: its four are-you-sure buttons are t
 - **A press on the drawn button asks nothing by itself**: what the second press does is the arming button's run, never
   the page's own click handler.
 
+- **The star on a relay, with who you have to trust** (goal/G41.30; Andy: *"the message is different for members and owners,
+  showing members who they have to trust, and, if the relay claims to be mine, the message should be slightly different"*;
+  *"NO signature. just the armingButton, with a precise documentation of the risk."*): `.nd-own`, an armingButton. A relay not
+  claiming this node (`owned` false): *"says it is owned by"* its `ownerLabel`, and that this person and anyone holding the
+  relay can run programs and change files on this machine. A relay claiming it: *"If you DID install this relay on a VPS and
+  you DID set its DNS records"*, and that otherwise it is lying. Its second press sends `contact.own {key: the relay's key,
+  own: true}`, on a starred row (`mine`) `own: false`; a press alone sends nothing. On a face no button is drawn.
+
 ## What its test must try to break
 
 - `data-armed`, `armUntilElsewhere` or an `armed` class left in the file.

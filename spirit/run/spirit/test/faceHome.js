@@ -203,5 +203,17 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   const noFace = world(function () { return false; }, function () { return true; });
   const a3 = await send(noFace, MINE, { call: 'jobs.create', args: { command: 'x' } });
   ok(!a3.reached.length && refused(a3), 'an owned relay where this node set no face gets nothing', 'owned, no face: ' + said(a3));
+
+  // THE STAR IS SET AT HOME (Andy: "so this button will put the star on relays and puppets. AND take it away."; every
+  // contact's panel has it "at home"). From a face, even on a relay this node owns, it would let whoever is in on one
+  // face hand the machine to another relay.
+  test.subHeading('contact.own never comes through a face');
+  const OWN_CALL = { call: 'contact.own', args: { key: 'K', own: true } };
+  for (const c of [['a relay this node owns', world(onlyMine, onlyMine)], ['a relay it does not own', world(onlyMine, function () { return false; })]]) {
+    for (const form of [['unsealed', OWN_CALL], ['sealed', sealed(OWN_CALL)]]) {
+      const a = await send(c[1], MINE, form[1]);
+      ok(!a.reached.length && refused(a), 'on ' + c[0] + ', ' + form[0] + ': refused with a code, and it never reaches the door', 'contact.own on ' + c[0] + ', ' + form[0] + ': ' + said(a));
+    }
+  }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

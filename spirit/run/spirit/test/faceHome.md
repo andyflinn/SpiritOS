@@ -38,6 +38,9 @@ nothing of which relay holds this node's face. `spirit/server.js` gives it from 
   own word. With it and a face there, every verb otherwise off the face reaches the door, and a save in parts goes on.
   Without it, or with no face there, the limits above stand.
 
+- **`contact.own` never comes through a face** (Andy: *"so this button will put the star on relays and puppets. AND take it
+  away."*, at home): refused with a code on any relay, one this node owns too, sealed or not.
+
 ## What its test must try to break
 
 - A shell run from a relay holding no face of this node's, by any form of request.

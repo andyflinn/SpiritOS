@@ -269,5 +269,37 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
   await settle();
   ok(!armingFor(w3, 'Block') && !!w3.document.getElementById('cd-unblock'), 'no Block, but Unblock, a plain button', 'armings: ' + short(w3.armings.map(function (a) { return a.label; })));
   ok(!!armingFor(w3, 'Forget'), 'Forget is an arming button here too', 'armings: ' + short(w3.armings.map(function (a) { return a.label; })));
+
+  // THE STAR, AT HOME, TWO PRESSES (goal/G41.30; Andy: "so this button will put the star on relays and puppets. AND take it
+  // away."; "NO signature. just the armingButton, with a precise documentation of the risk."; every contact's details
+  // panel has it, at home; the face does not show it).
+  test.subHeading('the star: an arming button, its risk said beside it');
+  const page = function (x) { return x.box ? String(x.box.textContent || '') : ''; };
+  const starOf = function (x) { const b = x.document.getElementById('cd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
+  const w5 = world({ key: 'K5', publicLabel: 'a node', mine: false }, []);
+  w5.win.spirit.elements.contactDetails.open({ key: 'K5' });
+  await settle();
+  const s5 = starOf(w5);
+  ok(!!s5, 'a node\'s panel draws #cd-own, an arming button', 'armings: ' + short(w5.armings.map(function (a) { return a.label; })));
+  ok(/without asking/.test(page(w5)) && /never dropped/.test(page(w5)), 'it says what the star gives a node: its streams taken without asking, and it is never dropped', 'the page says: ' + short(page(w5)));
+  const b5 = w5.calls.length;
+  const drawn5 = w5.document.getElementById('cd-own');
+  if (drawn5) { drawn5.click(); await settle(); }
+  ok(!!drawn5 && !w5.calls.slice(b5).some(function (c) { return c.name === 'contact.own'; }), 'a press on the button alone sends nothing: the arming button holds it', 'calls: ' + short(w5.calls.slice(b5)));
+  if (s5) { await s5.opts.run(); await settle(); }
+  const sent5 = w5.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
+  ok(!!sent5 && sent5.body.key === 'K5' && sent5.body.own === true, 'its second press sends contact.own {key, own: true}', 'sent: ' + short(sent5));
+  const w6 = world({ key: 'K6', publicLabel: 'a puppet', mine: true }, []);
+  w6.win.spirit.elements.contactDetails.open({ key: 'K6' });
+  await settle();
+  const s6 = starOf(w6);
+  if (s6) { await s6.opts.run(); await settle(); }
+  const sent6 = w6.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
+  ok(!!sent6 && sent6.body.key === 'K6' && sent6.body.own === false, 'on a starred row the same button takes the star away: contact.own {key, own: false}', 'sent: ' + short(sent6));
+  const w7 = world({ key: 'K7', publicLabel: 'a node', mine: false }, []);
+  w7.win.spirit.transport = { ask: function () {} };
+  w7.win.spirit.elements.contactDetails.open({ key: 'K7' });
+  await settle();
+  ok(!!w7.box && !w7.document.getElementById('cd-own') && !starOf(w7), 'on a face (window.spirit.transport) no button is drawn', 'on a face: #cd-own ' + !!w7.document.getElementById('cd-own'));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

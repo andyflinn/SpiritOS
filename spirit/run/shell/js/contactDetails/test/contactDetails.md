@@ -22,6 +22,12 @@ This spec covers what goal/G41.9 asks of it: its two are-you-sure buttons are th
   a click handler of the page's own.
 - **One armed at a time** is the element's (it was this page's by hand).
 
+- **The star, at home, two presses** (goal/G41.30; Andy: *"so this button will put the star on relays and puppets. AND take it
+  away."*; *"NO signature. just the armingButton, with a precise documentation of the risk."*): `#cd-own`, an armingButton,
+  beside the words of what it gives: its streams taken without asking, and it is never dropped. Its second press sends
+  `contact.own {key, own: true}`, on a starred row `own: false`; a press alone sends nothing. On a face
+  (`window.spirit.transport`) no button is drawn.
+
 ## What its test must try to break
 
 - An armed flag, `data-armed` or `armUntilElsewhere` left in the file.

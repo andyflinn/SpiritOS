@@ -49,5 +49,25 @@ test.startTest('apiDoor.js: the gate');
   const s3 = servers();
   const owner = await answer(s3, { desk: { 'FS.path': { path: 'clientCacheManager.js' } } }, { owner: true });
   ok(owner && owner.body && owner.body.ok === true && s3.reached.length === 1, 'the owner\'s desk.FS.path reaches the server', 'owner: ' + short(owner));
+
+  test.subHeading('goal/G41.30: the star is the owner\'s alone');
+  // Andy: "so this button will put the star on relays and puppets. AND take it away."; the star opens the owner's face
+  // (spirit/faceHome.js), so no grant can give it to a peer.
+  const STAR_TREE = { contact: { own: {}, get: {} } };
+  const starServers = function () { const reached = []; return { reached: reached, ask: function (ask) { reached.push(ask); return ask === 'api' ? { status: 200, body: STAR_TREE } : { status: 200, body: { ok: true } }; } }; };
+  for (const grants of [['contact'], ['contact.own']]) {
+    const sx = starServers();
+    const rx = await answer(sx, { contact: { own: { key: 'K', own: true } } }, member(grants));
+    ok(rx && rx.body && rx.body.ok === false && rx.body.code === 'owner-only' && !sx.reached.length,
+      'a member granted ' + grants.join(', ') + ' asking contact.own is refused owner-only, and no server is asked',
+      'a member granted ' + grants.join(', ') + ' asking contact.own: ' + short(rx) + ', servers asked ' + sx.reached.length);
+  }
+  const sOwn = starServers();
+  const ownr = await answer(sOwn, { contact: { own: { key: 'K', own: true } } }, { owner: true });
+  ok(ownr && ownr.body && ownr.body.ok === true && sOwn.reached.length === 1, 'the owner reaches contact.own', 'the owner asking contact.own: ' + short(ownr));
+  const sTree = starServers();
+  const starTree = await answer(sTree, 'api', member(['contact']));
+  const cVerbs = Object.keys((starTree && starTree.body && starTree.body.contact) || {});
+  ok(cVerbs.indexOf('get') !== -1 && cVerbs.indexOf('own') === -1, 'a member granted contact is served its tree without contact.own', 'its tree: ' + short(starTree && starTree.body));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
