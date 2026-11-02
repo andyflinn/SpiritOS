@@ -54,6 +54,26 @@ CLOSED_WRITE.forEach(function (c) {
   });
 });
 
+// WINDOWS SPELLINGS OF ONE FILE (goal/G41.30, the review: "Three Windows spellings still pass both checks: 8.3 short names
+// like RELAY-~1/IDENTI~1.JSO, which can reach the private key wherever short names are on; folder names ending in a
+// dot or space; and ::$DATA. The fix is to refuse any path segment with ~ plus a digit, a :, or a trailing dot or
+// space."). Windows opens the same file under each; so each is refused by both gates.
+test.subHeading('Windows spellings of a closed path are refused, for reading and for writing');
+[
+  ['RELAY-~1/IDENTI~1.JSO', 'an 8.3 short name of relay-state/identity.json'],
+  ['SPIRIT~1/SERVER~1.JS', 'an 8.3 short name of spirit/server.js'],
+  ['relay-state./identity.json', 'a folder name ending in a dot'],
+  ['relay-state /identity.json', 'a folder name ending in a space'],
+  ['spirit./server.js', 'a core folder ending in a dot'],
+  ['spirit/server.js.', 'a file name ending in a dot'],
+  ['shell/js/icon.js ', 'a file name ending in a space'],
+  ['spirit/server.js::$DATA', 'the file\'s data stream, ::$DATA'],
+  ['relay-state/identity.json:secret', 'a named stream, a : in the name'],
+].forEach(function (c) {
+  ok(ask('fileServable', c[0]) === false, 'not servable: ' + JSON.stringify(c[0]) + ' (' + c[1] + ')', JSON.stringify(c[0]) + ' (' + c[1] + ') is servable: on Windows it opens the closed file');
+  ok(ask('fileWritable', c[0]) === false, 'not writable: ' + JSON.stringify(c[0]) + ' (' + c[1] + ')', JSON.stringify(c[0]) + ' (' + c[1] + ') is writable: on Windows it writes the closed file');
+});
+
 test.subHeading('what is open stays open');
 [['index.html', 'fileServable'], ['shell/js/icon.js', 'fileServable'], ['preferences.json', 'fileWritable']].forEach(function (c) {
   ok(ask(c[1], c[0]) === true, c[1] + ' keeps ' + c[0] + ' open', c[1] + ' closed ' + c[0] + ': the fix went too wide');
