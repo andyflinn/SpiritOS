@@ -40,7 +40,10 @@ function isIntrinsic(root, dir, name) { return intrinsic(dir + '/' + name); }
 // spirit.js at the run root is the one spirit object (goal/G40.1): core.
 // The navigation wrapper, the shell's one stack, too (goal/G41.30; Andy: "make the nav wrapper \"core\""): core while it
 // lived in shell/js/, it moved to shell/ in goal/G41.19 and no rule named it there.
-const FRAME = ['spirit/run/index.html', 'spirit/run/spirit.js', 'spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css', 'spirit/run/shell/navigationWrapper.js'];
+// The run root's shell.css and favicon.svg too (goal/G41.30; Andy: "those files that core files depend on, are core-files,
+// too"): index.html and face.html load them on every boot.
+const FRAME = ['spirit/run/index.html', 'spirit/run/spirit.js', 'spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css', 'spirit/run/shell/navigationWrapper.js',
+  'spirit/run/shell.css', 'spirit/run/favicon.svg'];
 
 // THE FACE'S BOOT IS CORE (goal/G41.3): face/ moved into shell/, and what was core there is core here, the page itself
 // at the run root as before.
