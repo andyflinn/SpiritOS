@@ -25,7 +25,7 @@ const MINE = 'https://my-face-is-here.example';
 const OTHER = 'https://a-relay-with-no-face-of-mine.example';
 
 // THE OPTION THE FIX NEEDS: faceSet(url), true when this node set a face on that relay (none exists today; see the spec).
-function world(faceSet) {
+function world(faceSet, faceOwned) {
   const w = { calls: [], files: [], saved: [], annotated: [], uploads: {} };
   const o = {
     call: function (v, a) { w.calls.push(v); return Promise.resolve({ status: 200, body: { ok: true } }); },
@@ -43,6 +43,7 @@ function world(faceSet) {
     log: function () {},
   };
   if (faceSet) o.faceSet = faceSet;
+  if (faceOwned) o.faceOwned = faceOwned;
   w.home = createFaceHome(o);
   return w;
 }
@@ -172,5 +173,35 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     }
   }
   ok(!stepped.length, 'all ' + STEP.length + ' are refused with a code and never reach the door', stepped.length + ' of ' + (STEP.length * 2) + ' got through; first: ' + stepped.slice(0, 3).join(' | '));
+
+  // YOUR FACE ON A RELAY YOU OWN GETS EVERYTHING BACK (Andy: "THIS: The option I recommend: your face on a relay you own
+  // gets everything back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the
+  // limits stay until G42." "is a compromise i can live with, AND justify to members of relay's I own."). faceOwned(url)
+  // says this node owns that relay, from something the node did itself, never the relay's own word.
+  test.subHeading('on a relay this node owns, the limits are gone');
+  const BACK = ['jobs.create', 'fs.save', 'fileServer.push', 'net.fetch', 'desk.FS.saveFile', 'auth.grant', 'auth.bundle', 'node.rotateCipher'];
+  const own = world(onlyMine, onlyMine);
+  const held = [];
+  for (const v of BACK) {
+    const c = { call: v, args: { path: 'x', key: 'x' } };
+    for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
+      const a = await send(own, MINE, form[1]);
+      if (a.reached.indexOf(v) === -1) held.push(v + ' ' + form[0] + ': ' + said(a));
+    }
+  }
+  ok(!held.length, 'all ' + BACK.length + ' reach the door, unsealed and sealed', held.length + ' of ' + (BACK.length * 2) + ' still refused; first: ' + held.slice(0, 3).join(' | '));
+  const upOwn = await send(own, MINE, { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } });
+  ok(!refused(upOwn) || own.saved.length > 0, 'a save in parts goes on there too', 'a save in parts on an owned relay: ' + said(upOwn));
+
+  test.subHeading('owning takes the node\'s own word, and a face there');
+  const notOwned = world(onlyMine, function () { return false; });
+  const a1 = await send(notOwned, MINE, { call: 'jobs.create', args: { command: 'x' } });
+  ok(!a1.reached.length && refused(a1), 'a relay this node does not own keeps the limits', 'not owned: ' + said(a1));
+  const loose = world(onlyMine, function () { return 'yes'; });
+  const a2 = await send(loose, MINE, { call: 'jobs.create', args: { command: 'x' } });
+  ok(!a2.reached.length && refused(a2), 'only true is true: a truthy answer owns nothing', 'faceOwned answering "yes": ' + said(a2));
+  const noFace = world(function () { return false; }, function () { return true; });
+  const a3 = await send(noFace, MINE, { call: 'jobs.create', args: { command: 'x' } });
+  ok(!a3.reached.length && refused(a3), 'an owned relay where this node set no face gets nothing', 'owned, no face: ' + said(a3));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

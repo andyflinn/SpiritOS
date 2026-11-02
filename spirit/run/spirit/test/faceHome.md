@@ -32,6 +32,12 @@ nothing of which relay holds this node's face. `spirit/server.js` gives it from 
   stays for the icons"* *"yes."*): `<family>.FS.loadFile`, `saveFile` and `saveJsonValue` of the node's families and of each app
   server never reach the door from the face; `fs.annotations` does, since the face desktop draws its apps by it.
 
+- **Your face on a relay you own gets everything back** (Andy: *"your face on a relay you own gets everything back,
+  jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the limits stay until G42."*).
+  `faceOwned(url)`, exactly true, says this node owns that relay, from something the node did itself, never the relay's
+  own word. With it and a face there, every verb otherwise off the face reaches the door, and a save in parts goes on.
+  Without it, or with no face there, the limits above stand.
+
 ## What its test must try to break
 
 - A shell run from a relay holding no face of this node's, by any form of request.
