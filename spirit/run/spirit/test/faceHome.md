@@ -28,6 +28,10 @@ nothing of which relay holds this node's face. `spirit/server.js` gives it from 
   anything that runs code or changes grants."*). No step-up exists yet, so `auth.grant`, `auth.revoke`, `auth.bundle`,
   `auth.branch` and `node.rotateCipher` are refused from the face, sealed or not, and never reach the door.
 
+- **Every family's FS group is off the face too; one read stays** (Andy, Q4: *"every FS group off the face, fs.annotations
+  stays for the icons"* *"yes."*): `<family>.FS.loadFile`, `saveFile` and `saveJsonValue` of the node's families and of each app
+  server never reach the door from the face; `fs.annotations` does, since the face desktop draws its apps by it.
+
 ## What its test must try to break
 
 - A shell run from a relay holding no face of this node's, by any form of request.

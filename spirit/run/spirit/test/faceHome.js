@@ -7,6 +7,7 @@
 // faces can prove they are the owner?" "yes.". createFaceHome runs on stand-ins that keep what reached them: the door
 // (o.call), the file route, the save and the annotate. An answer is read from the stand-in upload, sealed or not.
 
+const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
@@ -124,13 +125,21 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   test.subHeading('even there, jobs, fs, fileServer and net.fetch are off the face');
   // Andy, Q3: "taking jobs, fs, fileServer and net.fetch off the face until faces can prove they are the owner" "yes."
   // Every verb the families declare, and each family's FS group, from their own declarations.
+  const allFamilies = function () {
+    const dirs = function (d) { return fs.readdirSync(path.join(RUN, d), { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); };
+    return dirs('spirit').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); })
+      .concat(dirs('process/js').filter(function (n) { return fs.existsSync(path.join(RUN, 'process/js', n, 'family/api.js')); }));
+  };
   const verbsOf = function (file) { return Object.keys(require(path.join(RUN, file)).verbs); };
   const FS_GROUP = ['FS.loadFile', 'FS.saveFile', 'FS.saveJsonValue'];
   const off = [].concat(
     verbsOf('spirit/jobs/api.js').concat(FS_GROUP).map(function (v) { return 'jobs.' + v; }),
-    verbsOf('spirit/fs/api.js').concat(FS_GROUP).map(function (v) { return 'fs.' + v; }),
+    // fs.annotations stays (Andy, Q4: "fs.annotations stays for the icons" "yes."): the face desktop draws its apps by it.
+    verbsOf('spirit/fs/api.js').filter(function (v) { return v !== 'annotations'; }).concat(FS_GROUP).map(function (v) { return 'fs.' + v; }),
     verbsOf('process/js/fileServer/family/api.js').concat(FS_GROUP).map(function (v) { return 'fileServer.' + v; }),
-    ['net.fetch']);
+    ['net.fetch'],
+    // EVERY FAMILY'S FS GROUP (Andy, Q4: "every FS group off the face" "yes."), the node's own families and each app server's.
+    allFamilies().reduce(function (out, fam) { return out.concat(FS_GROUP.map(function (v) { return fam + '.' + v; })); }, []));
   ok(off.length > 15, 'it asks ' + off.length + ' verbs', 'only ' + off.length + ' verbs to ask: it judges nothing');
   const through = [];
   for (const v of off) {
@@ -141,6 +150,8 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     }
   }
   ok(!through.length, 'all ' + off.length + ' are refused with a code and never reach the door, unsealed, sealed and in pieces', through.length + ' of ' + (off.length * 3) + ' got through; first: ' + through.slice(0, 3).join(' | '));
+  const icons = await send(m, MINE, { call: 'fs.annotations', args: { path: 'shell/info/info.js' } });
+  ok(icons.reached.indexOf('fs.annotations') !== -1, 'fs.annotations still reaches the door, for the face desktop\'s app icons (boot.js:427)', 'fs.annotations from the face: ' + said(icons));
   const ann = await send(m, MINE, { call: 'fs.annotate', args: { path: 'x', payload: { app: true } } });
   ok(!m.annotated.length && refused(ann), 'fs.annotate writes no sidecar by its side way', 'fs.annotate from the face: annotated ' + short(m.annotated) + ', ' + said(ann));
   const up = await send(m, MINE, { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } });
