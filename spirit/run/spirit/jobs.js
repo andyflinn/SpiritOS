@@ -475,9 +475,23 @@ module.exports = function installJobs(port) {
     e.process = p.name;
     throw e;
   }
+  // ONLY THIS NODE'S OWN PROCESSES START (goal/G41.30, the review's RH1: "refuse unless command is process.execPath and
+  // args[0] resolves to an included process/js/<name>/<name>.js"; Andy, Q3: "yes."). This node's executable on a script in a
+  // process folder of this node's own tree: <name>.js or a helper beside it, as the desk and deskClient start theirs. The
+  // word node, all a page can say (the file viewer's Start Job), is that executable, and never whatever the path finds.
+  function refuseOther(command, script, cwd) {
+    const p = processOf(script, cwd);
+    const own = (command === process.execPath || command === 'node') && !!p && path.relative(path.resolve(__dirname, '..'), p.root) === '';
+    if (own) return;
+    const e = new Error('only this node\'s own processes start');
+    e.refusal = 'not-a-process';
+    throw e;
+  }
   function startJob(command, args, options) {
     options = options || {};
+    refuseOther(command, (args || [])[0], options.cwd);
     refuseUnlisted((args || [])[0], options.cwd);
+    command = process.execPath;
     const m = manifestOf((args || [])[0], options.cwd);
     if (m && m.kind === 'server' && m.operated === 'user') {
       return startServerJob(command, args, { type: options.type, cwd: options.cwd, operated: 'user' });

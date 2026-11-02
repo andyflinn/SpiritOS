@@ -245,6 +245,30 @@ function createVerbTable() {
     return out;
   }
 
+  // ── THE FAMILIES' OWN GATE (goal/G41.30) ─────────────────────────────
+  //
+  //   Andy, of "only the spirit object checks those rules, on the caller's side. A raw call to /api/spirit, the attacker's
+  //   way, reaches the handler unchecked": "this needs fixing in this item." spirit.js: "The node stays the gate and checks
+  //   everything again."
+  //
+  // A verb a node family's spirit/<family>/api.js declares is checked here, before its handler, by the spirit object's own
+  // check against that declaration: one check, written once. A verb no api.js declares (the FS group, whose handler
+  // checks its own) goes on. Both of this door's fronts come through here: the loopback door and the in-process call.
+  var declared = Object.create(null); // family -> its api.js verbs, or null
+  function argumentsRefused(verb, args) {
+    var name = String(verb || '');
+    var dot = name.indexOf('.');
+    if (dot < 1) return null;
+    var family = name.slice(0, dot);
+    if (!(family in declared)) {
+      try { declared[family] = require(require('path').join(__dirname, family, 'api.js')).verbs || null; } catch (e) { declared[family] = null; }
+    }
+    var verbs = declared[family];
+    var v = name.slice(dot + 1);
+    if (!verbs || !Object.prototype.hasOwnProperty.call(verbs, v)) return null;
+    return require('../spirit.js').check(name, verbs[v], args);
+  }
+
   // ── ONE CALL, IN-PROCESS (goal/G30.4) ────────────────────────────────
   //
   // The handler a loopback call reaches, called without the network: the body in as a request stream, the answer
@@ -255,6 +279,8 @@ function createVerbTable() {
     return new Promise(function (resolve) {
       var handler = handlerFor(verb);
       if (!handler) { resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: verb }); return; }
+      var bad = argumentsRefused(verb, args);
+      if (bad) { resolve({ ok: false, status: 400, code: bad.code, error: bad.message, verb: verb, body: { ok: false, code: bad.code, error: bad.message } }); return; }
       // The handler reads the call's args as its body, as behind the door (goal/G41.15); the name is not among them.
       var text = JSON.stringify(args && typeof args === 'object' && !Array.isArray(args) ? args : {});
       var req = require('stream').Readable.from([text]);
@@ -342,7 +368,16 @@ function createVerbTable() {
     d.handlerFor = function (verb) {
       var name = String(verb || '');
       var own = handlerFor(name);
-      if (own) return own;
+      if (own) {
+        return function (rq, rs) {
+          return readBody(rq).then(function (body) {
+            var bad = argumentsRefused(name, body);
+            if (!bad) return own(rq, rs);
+            rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            rs.end(JSON.stringify({ ok: false, code: bad.code, error: bad.message, verb: name }));
+          });
+        };
+      }
       var dot = name.indexOf('.');
       if (name !== 'api' && (dot < 1 || dot === name.length - 1)) return null;
       // A family nobody serves is no verb at all: the door refuses it, as it refused any unclaimed verb.

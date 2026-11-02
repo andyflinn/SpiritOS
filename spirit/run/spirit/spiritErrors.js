@@ -268,6 +268,11 @@ define('process-not-included', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['process not included on this node'],
 });
+// jobs.create on another program, or on a script that is not one of this node's processes (goal/G41.30, RH1).
+define('not-a-process', {
+  status: 403, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['only this node\'s own processes start'],
+});
 define('line-too-large', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['line too large to come back in one answer'],

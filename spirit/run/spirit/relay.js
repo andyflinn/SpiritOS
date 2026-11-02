@@ -4369,8 +4369,19 @@ function createRelay(rootDir, deps) {
     faceCalls.delete(rid);
     clearTimeout(c.timer);
     var m = meta || {};
-    c.sink.writeHead(Number(m.status) || 200, { 'Content-Type': String(m.type || 'application/octet-stream'), 'Cache-Control': 'no-store' });
-    source.pipe(c.sink);
+    // ONE HEADER MUST NOT CRASH THE RELAY (goal/G41.30, the review's RH3: "clamp the status to an integer from 100 to 599
+    // (else 502), and wrap faceAnswer and faceFeed in try/catch"; Andy, Q3: "yes."). From 200: a face's answer is a final
+    // one, and an informational status would leave the viewer waiting. A status or type the viewer cannot be sent is 502.
+    var status = /^\d+$/.test(String(m.status)) ? Number(m.status) : 0;
+    var badAnswer = function () {
+      try { if (!c.sink.headersSent) c.sink.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }); c.sink.end('the home node answered badly'); } catch (e) { /* the face went */ }
+      return { ok: false, status: 400, error: 'a bad status or type on a face answer' };
+    };
+    if (status < 200 || status > 599) return badAnswer();
+    try {
+      c.sink.writeHead(status, { 'Content-Type': String(m.type || 'application/octet-stream'), 'Cache-Control': 'no-store' });
+      source.pipe(c.sink);
+    } catch (e) { return badAnswer(); }
     return { ok: true, status: 200 };
   }
   // The face's own stream, by its login. The home node hears face-open, and face-close when it ends.
@@ -4426,7 +4437,7 @@ function createRelay(rootDir, deps) {
     faceFeeds.set(k, source);
     var gone = function () { if (faceFeeds.get(k) === source) faceFeeds.delete(k); };
     if (typeof source.on === 'function') { source.on('close', gone); source.on('end', gone); }
-    source.pipe(entry.sink, { end: false });
+    try { source.pipe(entry.sink, { end: false }); } catch (e) { gone(); return { ok: false, status: 400, error: 'the feed could not be carried' }; }
     return { ok: true, status: 200 };
   }
 

@@ -449,6 +449,18 @@ function faceJson(res, body) {
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(JSON.stringify(body));
 }
+// ONLY THE FACE'S OWN PAGE POSTS TO ITS ROUTES (goal/G41.30, the review's RC2: "on every /face/* POST, require Origin equal
+// to the face's own host, require the session's name to match faceAt(host).name, and require Content-Type:
+// application/json"; Andy, Q3: "yes."). All faces are same-site, so the cookie alone goes with a post from a page on another
+// member's face. A browser always sends Origin on a POST, and text/plain is the form a page sends with no preflight.
+function hostOf(req) { return String(req.headers.host || '').toLowerCase(); }
+function facePostProblem(req, host) {
+  let origin = '';
+  try { origin = new URL(String(req.headers.origin || '')).host.toLowerCase(); } catch (e) { origin = ''; }
+  if (!origin || origin !== host) return 'this post did not come from the page of this face';
+  if (String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase() !== 'application/json') return 'a post here is application/json';
+  return '';
+}
 // True when the request was a face's and is answered here.
 function faceDoor(req, res, url, pathname) {
   if (req.method === 'GET' && pathname === '/face/allowed') {
@@ -480,6 +492,13 @@ function faceDoor(req, res, url, pathname) {
       res.writeHead(said.status || 502, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: false, error: said.error }));
     };
+    // The session is this face's, on a file as on a call: another member's login is no login here (goal/G41.30, RC2).
+    const session = relay.faceSession(sidNow);
+    if (session.ok && session.name !== at.name) { req.resume(); refuse({ status: 403, error: 'this login is not this face\'s' }); return true; }
+    if (req.method === 'POST') {
+      const problem = facePostProblem(req, hostOf(req));
+      if (problem) { req.resume(); refuse({ status: 403, error: problem }); return true; }
+    }
     if (req.method === 'GET') {
       const said = relay.faceCall(sidNow, { get: url.searchParams.get('path') || '' }, res);
       if (!said.ok) refuse(said);
@@ -500,6 +519,13 @@ function faceDoor(req, res, url, pathname) {
     return true;
   }
   if (req.method === 'POST' && pathname === '/face/api') {
+    const problem = facePostProblem(req, hostOf(req));
+    if (problem) {
+      req.resume();
+      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: problem }));
+      return true;
+    }
     readJsonBody(req).then(function (whole) {
       // A CALL IS { call, args } here too (goal/G41.15): the face's boot.js sends its login calls as it sends every call.
       const verb = String((whole && whole.call) || '');

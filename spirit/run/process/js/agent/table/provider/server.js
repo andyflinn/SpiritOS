@@ -57,6 +57,12 @@ module.exports = function (ctx) {
 
   const handler = table.verb.handler;
   table.verb.handler = function (a) {
+    // A KEY NEVER FOLLOWS A CHANGED URL (goal/G41.30, the review's RH4: "clear apiKey whenever url changes without a new
+    // key"; Andy, Q3: "yes."): the key was given for one server, and an ask sends it there. Cleared to '', the column is NOT NULL.
+    if (a && a.op === 'set' && typeof a.url === 'string' && a.apiKey === undefined) {
+      const was = ctx.db.prepare('SELECT url FROM "provider" WHERE id = ?').get(String(a.id));
+      if (was && sameUrl(was.url) !== sameUrl(a.url)) a = Object.assign({}, a, { apiKey: '' });
+    }
     if (!a || a.op !== 'ask') return handler(a);
     const bad = spirit.check('provider', { op: 'id', id: 'key' }, a);
     if (bad) throw refuse(bad.code === 'no-such-argument' ? 'no-such-argument' : 'bad-request', bad.message);

@@ -302,7 +302,7 @@ function handleCreateJob(req, res) {
     try { job = jobs.startJob(body.command, body.args || [], { type: body.type }); }
     catch (e) {
       // A process this node does not include is refused by name (slim/G1.3).
-      if (e && e.refusal === 'process-not-included') {
+      if (e && (e.refusal === 'process-not-included' || e.refusal === 'not-a-process')) {
         const known = require('./spiritErrors').byCode(e.refusal);
         res.writeHead(known.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: false, code: e.refusal, error: known.text, process: e.process }));
@@ -1360,6 +1360,8 @@ catch (e) {
       },
       identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
       relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
+      // Whether this node set a face on that relay (goal/G41.30, RC1): the name on the relay's row, the node's own fact.
+      faceSet: function (url) { return !!relayKeys.faceOf(ROOT_DIR, url); },
       jobs: jobs,
       events: events,
       log: function (line) { console.log(line); },

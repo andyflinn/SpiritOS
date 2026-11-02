@@ -17,10 +17,6 @@
       {
         "family": "agent",
         "verb": "persona"
-      },
-      {
-        "family": "agent",
-        "verb": "provider"
       }
     ]
   }

@@ -47,12 +47,28 @@ function isCall(x) {
   return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 2 &&
     typeof x.call === 'string' && x.call !== '' && !!x.args && typeof x.args === 'object' && !Array.isArray(x.args);
 }
+// OFF THE FACE UNTIL A FACE CAN PROVE IT IS THE OWNER (goal/G41.30, the review's RC1, RH1 and RH2; Andy, Q3: "taking jobs,
+// fs, fileServer and net.fetch off the face until faces can prove they are the owner?" "yes."; and "we fix the red from
+// goal/G41.30 AND all the review items here in this item."). A face login is an emailed token, and the relay carries the
+// request, so neither is proof of the owner: what runs code, reads or writes files, reaches the network as this node, or
+// changes grants or the node's keys is refused here, before the door. The step-up that gives them back is its own goal.
+// Andy, Q4: "every FS group off the face, fs.annotations stays for the icons" "yes.": the face's desktop reads its apps' icons
+// with it (boot.js), so that one read stays.
+const OFF_THE_FACE_FAMILIES = ['jobs', 'fs', 'fileServer'];
+const OFF_THE_FACE_VERBS = ['net.fetch', 'auth.grant', 'auth.revoke', 'auth.bundle', 'auth.branch', 'node.rotateCipher'];
+const STAYS_ON_THE_FACE = ['fs.annotations'];
+function offTheFace(verb) {
+  if (STAYS_ON_THE_FACE.indexOf(verb) !== -1) return false;
+  const parts = verb.split('.');
+  return OFF_THE_FACE_VERBS.indexOf(verb) !== -1 || OFF_THE_FACE_FAMILIES.indexOf(parts[0]) !== -1 || parts[1] === 'FS';
+}
 function faceRefuses(request, here) {
   const q = request || {};
   const r = q.args && typeof q.args === 'object' ? q.args : {};
   const h = here || {};
   const plain = function (u) { return String(u || '').trim().replace(/\/+$/, '').toLowerCase(); };
   const verb = String(q.call || '');
+  if (offTheFace(verb)) return verb + ' is off the face until a face can prove it is the owner';
   if (verb === 'relay.face' && plain(r.url) === plain(h.url)) return 'relay.face would change the face you are calling from';
   if (verb === 'peer.post' && h.key && String(r.to || '') === String(h.key)) {
     let packet = null;
@@ -253,12 +269,18 @@ function createFaceHome(opts) {
     else json(res, out && out.reason === 'forbidden' ? 403 : 500, { ok: false, code: (out && out.reason) || 'error', reason: (out && out.reason) || 'error', error: 'not saved: ' + ((out && out.reason) || 'error') });
   }
 
+  function faceIsHere(url) { return typeof o.faceSet === 'function' && o.faceSet(url) === true; }
+
   function request(url, data) {
     const d = data || {};
     const id = String(d.id || '');
     if (!id) return;
     let r = d.request || {};
     let res = answerInto(url, id);
+    // A RELAY WHERE THIS NODE SET NO FACE GETS NOTHING (goal/G41.30, the review's RC1: "accept face* events only from a
+    // relay where this node set a face"): any relay this node is connected to can send a face event. Refused before a
+    // piece is kept or a seal is opened. No faceSet given is no face: closed, not open.
+    if (!faceIsHere(url)) { json(res, 403, { ok: false, code: 'no-face-here', error: 'this node set no face on this relay' }); return; }
     if (r && r.piece) {
       r = piece(r.piece, res);
       if (!r) return;
@@ -282,7 +304,8 @@ function createFaceHome(opts) {
       return;
     }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
-    if (r.upload && typeof r.upload === 'object') { uploadPart(r.upload, res); return; }
+    // A save in parts writes a file, and fs is off the face (OFF_THE_FACE above); uploadPart waits for the step-up.
+    if (r.upload && typeof r.upload === 'object') { json(res, 403, { ok: false, code: 'not-from-the-face', error: 'a save is off the face until a face can prove it is the owner' }); return; }
     // A CALL IS { call, args } (goal/G41.15; the box: "ONE ENVELOPE for every call to a node's door"): the name and the
     // arguments apart, and nothing else beside them; the arguments go to the verb as they came.
     if (!isCall(r)) { json(res, 400, { ok: false, code: 'bad-request', error: 'a call is { call: "<family>.<verb>", args: { ... } }, nothing else beside them' }); return; }
@@ -373,6 +396,8 @@ function createFaceHome(opts) {
   // k is the face's key from face-open: given, every line is sealed to it; absent, the face could not seal.
   function open(url, k) {
     close(url);
+    // No stream of this node's events to a relay where it set no face (goal/G41.30, RC1).
+    if (!faceIsHere(url)) { say('face: ' + url + ' asked for a stream, and this node set no face there'); return; }
     const req = upload(url, '/api/relay/face/stream', signed(url, 'stream'));
     if (!req) return;
     const key = String(k || '');
