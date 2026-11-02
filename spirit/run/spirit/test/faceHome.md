@@ -45,6 +45,10 @@ nothing of which relay holds this node's face. `spirit/server.js` gives it from 
   isn't starred can send any signed verb to your puppets, and they run it"*): every verb of `spirit/owner/api.js` is refused
   from a face on a relay that is not starred, and reaches the door on a starred one.
 
+- **FS.path stays on the face, and no other FS verb** (goal/G41.30, what a real face showed: with no star the desktop drew no apps;
+  Andy: *"wsl? red this this?"*): it only names a file in the family's own folder, and the face's lists find their files by it.
+  Every other verb of the FS group, read from `spirit/introSpector.js`, stays off without a star.
+
 ## What its test must try to break
 
 - A shell run from a relay holding no face of this node's, by any form of request.

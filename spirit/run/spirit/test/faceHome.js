@@ -132,7 +132,12 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
       .concat(dirs('process/js').filter(function (n) { return fs.existsSync(path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath(n))); }));
   };
   const verbsOf = function (file) { return Object.keys(require(path.join(RUN, file)).verbs); };
-  const FS_GROUP = ['FS.loadFile', 'FS.saveFile', 'FS.saveJsonValue'];
+  // The whole FS group, as spirit/introSpector.js declares it, but FS.path: it only names a file in the family's own folder, reading
+  // and writing nothing, and the face's lists find their files by it (Andy, of cw's "the red please: every family's FS.path answers
+  // from a face with no star, and no other FS verb does": "wsl? red this this?").
+  const FS_ALL = (fs.readFileSync(path.join(RUN, 'spirit', 'introSpector.js'), 'utf8').match(/prefix \+ 'FS\.[A-Za-z]+'/g) || []).map(function (x) { return x.replace(/^prefix \+ '|'$/g, ''); });
+  ok(FS_ALL.length > 3 && FS_ALL.indexOf('FS.path') !== -1 && FS_ALL.indexOf('FS.deleteFile') !== -1, 'it reads the FS group from its own declaration: ' + FS_ALL.join(', '), 'the FS group read as ' + short(FS_ALL));
+  const FS_GROUP = FS_ALL.filter(function (v) { return v !== 'FS.path'; });
   const off = [].concat(
     verbsOf('spirit/jobs/api.js').concat(FS_GROUP).map(function (v) { return 'jobs.' + v; }),
     // fs.annotations stays (Andy, Q4: "fs.annotations stays for the icons" "yes."): the face desktop draws its apps by it.
@@ -196,6 +201,15 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   // PUPPETS TOO (Andy, pasting the review: "owner.command still passes. A face on a relay that isn't starred can send any
   // signed verb to your puppets, and they run it, file writes included. You listed puppets among the things only a starred
   // relay gets back."): the owner family, off the face unless the relay is starred.
+  test.subHeading('every family\'s FS.path answers from a face with no star');
+  const noStar = world(onlyMine, function () { return false; });
+  const pathShut = [];
+  for (const fam of allFamilies()) {
+    const a = await send(noStar, MINE, { call: fam + '.FS.path', args: { path: 'x' } });
+    if (a.reached.indexOf(fam + '.FS.path') === -1) pathShut.push(fam + ': ' + said(a));
+  }
+  ok(allFamilies().length > 5 && !pathShut.length, 'all ' + allFamilies().length + ' families\' FS.path reach the door, the face\'s lists find their files by it', pathShut.length + ' refused; first: ' + pathShut.slice(0, 2).join(' | '));
+
   test.subHeading('the owner family goes with the star');
   const ownerVerbs = verbsOf('spirit/owner/api.js');
   ok(ownerVerbs.indexOf('command') !== -1, 'owner.command is a verb to ask', 'the owner family declares: ' + short(ownerVerbs));
