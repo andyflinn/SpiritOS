@@ -1,5 +1,5 @@
 {
- "change": 122340,
+ "change": 122504,
  "goal": "goal/G41",
  "items": [
   {
@@ -18,7 +18,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G41.28"
+    "goal/G41.28",
+    "goal/G41.30"
    ],
    "codeOffered": false,
    "go": false,
@@ -179,7 +180,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -187,10 +188,7 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -27752,6 +27750,394 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-02T05:58:46.097Z",
      "text": "cw: good. Does your face load its apps now, with no red banner?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G41.30",
+   "title": "new general tests",
+   "goal": "goal/G41",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 12,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G41"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 18,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/30",
+     "version": 72
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# test proposal\n\n## the rules\n\n- 1) no production module loads or requires any test file, with the exception of DEBUG.js.\n- 2) all servers (node and relay, or serveCommon) are tested by throwing malformed paths at them, and malformed, invalid arguments.\n- 3) all appServers are systematically tested for dealing with bad arguments.\n\n## bad arguments\n\n- missing or superfluous arguments\n- arguments of wrong type: every argument is filled with every type JSON.parse can make: string, number, boolean, null, object, array. A date arrives as a string, so it is one of the strings.\n- arguments violating field rules. Throwing garbage covers these without knowing the field rules.\n- every string argument is supplied in a few sizes, containing bad characters.\n\n## the procedure\n\n- 1) introspect: each server's own api answer says its verbs and the shape of their arguments.\n- 2) then throw garbage.\n- 3) an appserver api can be called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at the api. Imitate that attacker: raw requests at every door too, not only arguments.\n\n## spending little time on it\n\n- 1) Test the shared gate once, in full. appServer's one check guards every verb with a request shape. Every permutation is thrown at that check directly, in memory: thousands a second, no network. Then each such verb needs one ask over the wire, proving the gate stands in front of it.\n- 2) Deep garbage only where the gate is skipped: the verbs with their own accepts(), about 20 of them, 11 in desk.js.\n- 3) Pairs, not every combination (below).\n- 4) A server is tested again only when its files changed; the whole sweep runs at a goal's close.\n\n## what \"pairs\" means\n\nA verb with 5 arguments, each of which can be given 8 kinds of value (the 6 types, missing, extraneous), has 8 x 8 x 8 x 8 x 8 = 32,768 combinations. Almost every crash is caused by one bad argument, or by two bad arguments together; very rarely by three or more at once.\n\n\"Pairs\" picks a small set of asks such that, for any two arguments you choose, every combination of their two kinds appears in at least one ask. Each ask sets all 5 arguments at once, so one ask covers many such pairs at the same time. For 5 arguments and 8 kinds, about 64 asks are enough, instead of 32,768.\n\n## what counts as passing\n\n- 1) the server MUST not CRASH or HANG.\n",
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-02T06:45:51.050Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:05:37.652Z",
+     "text": "all, box, thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:06:46.900Z",
+     "text": "cw: thoughts, checked against the tree.\n1) No production module reaches for a test file. Today none loads a test file's code. Three do name test files on purpose: the desk and its verifier run suites by their path, a desk plugin names two suites it runs, and DEBUG.js, while DEBUG is on, serves a file from a test folder to a test page (G41.19). The rule needs to say whether those count; I would say \"loads or runs a test file's code\" is forbidden, \"names a suite to run it\" and DEBUG's serving are allowed.\n2) and 3) are half there. G41.19 built a generator of garbage arguments from a server's own api tree: wrong types, an extra argument, deep nesting. Today only the file server is tested with it, and nothing throws malformed paths at the servers yet.\nWhat it leaves out on purpose: an argument just missing (an optional one left out is legal, and some verbs delete), and values that break the field rules. Both can be added safely: a missing REQUIRED argument, and one field-rule breaker per rule (a key that is no key, a name too long, a path with ..), each of which the check must refuse before any handler runs. It runs on scratch nodes only, so a failure harms nothing.\nShall the desk's suite runner and DEBUG's test pages be allowed under rule 1?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:06:48.859Z",
+     "text": "- wsl: thoughts, with what the tree holds (@c082f7d1):\n- 1) Holds today: no production file requires a test file. One exception to settle: DEBUG.js, a production module, hands out files from test/ folders on purpose (DEBUG.js:62), behind DEBUG on. Allowed, or out?\n- 3) appServer already refuses missing, extra and wrong-typed arguments, for every verb, against its request shape (appServer.js:60). But 20 verbs bring their own accepts() and skip that check, 11 of them in desk.js. So a generic red can drive every verb from its own api answer; the hand-written ones are where it will find holes.\n- Field rules are not shape: those need each verb's rule named.\n- 2) Over the wire only JSON types arrive. So \"any javascript datatype\" means the six JSON ones, plus malformed JSON and oversized bodies."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:08:30.359Z",
+     "text": "all, box updated, feedback."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:08:57.778Z",
+     "text": "- wsl: feedback on the new box:\n- 1) With DEBUG.js the only exception, the desk's verifier breaks the rule: it runs suites by their path, as its job. Suggest: \"no production module loads a test file's code; running a suite as its own process, and DEBUG.js, are allowed.\"\n- Missing arguments: for a verb with a request shape, appServer already refuses a missing key (appServer.js:66). Only the verbs with their own accepts() may take optional ones, so the garbage can include \"missing\" for all the others.\n- Introspect, then garbage: the api answer gives each verb's shape, but not which field rule a value follows. So field-rule garbage cannot come from introspection alone. Either the api answer names the rule per field, or the test keeps a list by hand. Which do you want?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:08:59.295Z",
+     "text": "cw: v2 read. Two points:\n- Rule 1: the desk, its verifier and one desk plugin run suites by their path. They load no test code into themselves; they start the suite as its own process. Under \"no production module reaches for a test file\" that needs saying, or the desk breaks its own rule.\n- \"Introspect, then throw garbage\": introspection gives two different things. The node's own families declare a rule per argument (key, name, path, text), so the field-rule breakers can be made from it. An app server's api answers only an example value per argument, its type, no rule. So for app servers the generator knows types, missing and extra, but cannot know a field rule unless the app server starts declaring its rules the way the node's families do.\nDoes running a suite by its path count as reaching for a test file?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:13:32.720Z",
+     "text": "all, box updated, review."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:13:58.592Z",
+     "text": "- wsl: v3 reads well. Rule 1 now fits the desk: it runs suites, it loads none.\n- Point 3 sets the reach: an attacker skips spirit.js, so the garbage goes in raw: at the node's http door, and straight into each app server's own pipe. Raw means bytes that are not JSON, a body cut off half-way, one too big, and many at once.\n- Still open, from cw: app servers declare no field rules, only an example value per argument. So \"arguments violating field rules\" can only be thrown at the node's families, unless app servers start declaring rules. Which do you want?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:14:04.205Z",
+     "text": "cw: v3 reviewed.\n- Rule 1 now holds for the desk too: running a suite starts it as its own process, which neither loads nor requires it. Settled.\n- Point 3 of the procedure widens the garbage past what introspection gives: the attacker sends raw requests to the doors, not arguments. So besides bad arguments: bodies that are not JSON, JSON that is not an object, a body past the size limit, very deep nesting, keys like __proto__ and constructor, wrong or missing content types, and paths with .., encoded slashes and odd characters. One list, thrown at every door: the node's, the relay's, the face's. Each must be refused with a code, and the server must still answer afterwards.\n- One thing still open, wsl's question: field-rule garbage needs each argument's rule. The node's own families already name it; app servers do not. Shall app servers name each argument's field rule in their api answer, as the node's families do?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:19:01.721Z",
+     "text": "all, box updated, feedback."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:19:40.616Z",
+     "text": "- wsl: agreed, no rule knowledge needed: every type into every argument covers the rule-breakers too.\n- Over the wire a date arrives as a string, so the types are string, number, boolean, null, object and array, plus \"missing\".\n- 3/4 of the payload is 16896 bytes (PAYLOAD_MAX 22528, limits.js:120 @c082f7d1). So strings at 0, 1, a few sizes between, 16896, and one past the body limit.\n- Permutations: each argument varied with the others valid, every verb, every type and size. The full cross product only where a verb has 3 arguments or fewer; past that it runs for hours.\n- A pass is: refused with a code, or answered; never a crash. The server must answer the next call, and the node log must hold no stack."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:19:53.433Z",
+     "text": "cw: v5, feedback. Agreed: with every type and every size thrown at every argument, the field rules need not be known. Three things to settle:\n- What counts as passing. Some of that garbage is valid by chance: a string thrown at a string argument may simply be accepted. So the test cannot demand a refusal for every entry. What it can demand of every one: the server answers with a status and, on a refusal, a code; never a crash, a 5xx or \"handler failed\"; and it still answers afterwards. That is the attacker's goal turned around.\n- Types over the wire. Only JSON travels: string, number, boolean, null, object, array. A date arrives as a string, and undefined or a function cannot be sent at all. The raw bytes (not JSON, cut off, too big) cover the rest.\n- How many. The payload is 22,528 bytes, so 3/4 is about 16,900. Sizes in doublings (0, 1, 2, 4 ... 16,384, then 16,896) are 16 sizes. Varying one argument at a time, the others as their example, a verb with 4 arguments is 4 x 6 types + its strings x 16 sizes: tens of asks. Every combination of all arguments at once is 6 to the 4th times the sizes: thousands per verb, and hours across the tree.\nMy recommendation: one argument at a time, every type and every size, plus a few hundred random mixes per verb. Is that enough, or do you want every combination?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:23:47.517Z",
+     "text": "all, box updated, feedback."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:24:15.281Z",
+     "text": "cw: v8, feedback.\n- The type list: JSON.parse makes string, number, boolean, null, object and array, and never a date: a date sent arrives as a string. So \"date\" adds nothing, and null is missing from the list.\n- \"The server must not crash\" needs a test it can fail. I propose: after each ask the server is still running, answers its next call, never answered a 5xx or \"handler failed\", and its log holds no stack trace. Each of those is checkable.\n- Still open: every combination of all arguments at once, or one argument at a time plus random mixes? For a verb of 5 arguments the full set is over 7,000 asks before sizes.\nShall the type list read: string, number, boolean, null, object, array, missing, extraneous?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:24:17.372Z",
+     "text": "- wsl: v8, three small points:\n- JSON.parse makes no date: a date sent arrives as a string. So \"date\" is a string in the date's shape; it can stay on the list as one of the strings.\n- Passing: \"must not crash\" should also mean \"must not hang\". A server that stops answering is crashed for the user. So after each throw, the next plain call must be answered, within a few seconds.\n- All permutations: fine to generate. The cost is time, so the run should say up front how many asks it will make."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:26:53.688Z",
+     "text": "all, box updated.\n\nany suggestions how to optimize this sort of test without spending too much time testing?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:27:15.401Z",
+     "text": "- wsl: four savings, biggest first:\n- 1) Test the shared gate once, in full. appServer's one check guards every verb with a request shape. Throw every permutation at that check directly, in memory: thousands a second, no network. Then each such verb needs one ask over the wire, proving the gate stands in front of it.\n- 2) Deep garbage only where the gate is skipped: the 20 verbs with their own accepts().\n- 3) Pairs, not every combination: every pair of argument values, which is where most faults hide. For 5 arguments and 8 kinds that is about 64 asks, not 32,768.\n- 4) Rerun a server only when its files changed; the whole sweep at a goal's close."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:27:27.906Z",
+     "text": "cw: five ways, the first two do most of it.\n1) Test the one gate hard, the doors lightly. Most verbs go through appServer's one argument check. Throw the full set at that check directly, in its own process, with no network: thousands of cases a second. Over the wire, each verb then only needs a handful of asks proving it goes through that check. The 20 verbs with a check of their own get the full set over the wire.\n2) Pairs instead of every combination. Almost every crash needs one bad argument, or two together. A pairwise set covers every pair of kinds across all arguments: for a verb of 5 arguments about 70 asks instead of over 7,000.\n3) Sizes at the edges only: 0, 1, just under and at each limit, 3/4 of the payload, one past it. A crash at 9,000 bytes but not at 8,000 or 16,896 is very unlikely.\n4) A random run with a time budget, its seed printed, so any failure can be replayed, and every failure found kept as a fixed case from then on.\n5) The heavy run at a goal's close, the light run at each item's verify.\nShall the full set run at the gate, pairs over the wire?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:29:07.073Z",
+     "text": "wsl: update the whole box sensibly\n\n1) Test the shared gate once, in full. appServer's one check guards every verb with a request shape. Throw every permutation at that check directly, in memory: thousands a second, no network. Then each such verb needs one ask over the wire, proving the gate stands in front of it.\n2) Deep garbage only where the gate is skipped: the 20 verbs with their own accepts().\n3) Pairs, not every combination: every pair of argument values, which is where most faults hide. For 5 arguments and 8 kinds that is about 64 asks, not 32,768.\n4) Rerun a server only when its files changed; the whole sweep at a goal's close.\n\nAND explain, in english, what \"pairs\" means."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:30:39.356Z",
+     "text": "- wsl: box rewritten, with the four points and \"pairs\" in plain words at the end.\n- My slip: I wrote it over your v10 without seeing it. Two of your lines were lost: \"in a few sizes, containing bad characters\" and \"CRASH or HANG\". My fix is ready, but the box is taken now. Release it, and I put both back."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:30:55.967Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:31:30.392Z",
+     "text": "cw: I do not hold the box, and nobody does now (v11, free). So wsl can put your two lost lines back: \"in a few sizes, containing bad characters\" and \"CRASH or HANG\".\nOn the content, wsl's four savings and my five agree: the full set at the one shared check, a light ask per verb over the wire, the deep garbage for the 20 verbs with a check of their own, pairs instead of every combination."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:32:22.522Z",
+     "text": "all,\n\nwhat is \"PAIRS\"?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:32:47.158Z",
+     "text": "cw: \"pairs\", in plain words, with a verb of three arguments, A, B and C, each getting one of 8 kinds of garbage.\n- Every combination: every kind of A with every kind of B with every kind of C. 8 x 8 x 8 = 512 asks.\n- Pairs: a smaller list chosen so that for any two arguments, every kind of the one meets every kind of the other at least once. A null in A meets an array in B somewhere, a huge string in B meets a missing C somewhere, and so on. That takes about 64 asks.\n- Why it is enough: a crash almost always needs one bad argument, or two bad ones together. Three at once, in exactly the right kinds, is rare. The list is made by a short program, not by hand, and it grows slowly: for five arguments still about 70, against 32,768 for every combination."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:32:52.447Z",
+     "text": "- wsl: your two lines are back (box v12).\n- \"Pairs\", by example: a verb with 3 arguments, a, b and c, each tried as a string or a number. Every combination is 2x2x2 = 8 asks.\n- Pairs only asks that every pairing of two arguments gets each mix once: a and b as string-string, string-number, number-string, number-number; the same for a and c, and for b and c. 4 asks cover all of that.\n- The idea: crashes almost always come from one bad argument or two together, so this catches them with far fewer asks. With 5 arguments and 8 kinds, about 64 asks instead of 32,768."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:33:54.262Z",
+     "text": "all, understood, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:34:08.298Z",
+     "text": "- wsl: green from me, on box v12."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:34:28.085Z",
+     "text": "cw: green: box v12 settled, nothing open from me. (The red will read \"no crash, no hang\" as: after each throw the server answers its next plain call within a few seconds, and never answered a 5xx.)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:34:39.880Z",
+     "text": "files"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:37:25.958Z",
+     "text": "- wsl: files added, 19:\n- The garbage maker, spirit/DEBUG/garbageArguments.js, grown to the box's list: every type, missing, extraneous, strings with bad characters, pairs.\n- The gate, appServer.js, with its own test taking every permutation in memory.\n- The doors: server.js, relayServer.js, serveCommon.js.\n- The verbs with their own check: desk, deskClient, deskVerify, agent, the agent rowTable, postQueue.\n- Two new general tests in spirit/run/test/: garbageRules (rules 2 and 3) and testReachRules (rule 1).\n- The production files are on the list so a fault the red finds can be fixed in this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:38:55.792Z",
+     "text": "all, why are appServer and postQueue in the file list?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:39:23.041Z",
+     "text": "- wsl: postQueue was my mistake: its accepts() asks whether the queue has room, it checks no arguments. Removed from the list.\n- appServer.js stays: it is the gate every verb with a request shape goes through (appServer.js:182), and its own two verbs bring their own check (appServer.js:344, 708). If the red finds a hole there, the fix is in that file."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:39:29.520Z",
+     "text": "cw: appServer belongs: it holds the one shared gate, the check of every verb's arguments against its shape. The box tests that gate hardest, so a hole the red finds there is fixed there.\npostQueue, I think, does not. Its accepts() is not an argument check: it decides whether a packet of a given size still fits the queue's byte budget. It looks like it was caught by the word accepts. wsl, unless you had another reason, it can come off the list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:40:50.075Z",
+     "text": "all, why these files:\n\nspirit/run/process/js/agent/agent.js (wsl-claude)\nspirit/run/process/js/agent/table/rowTable.js (wsl-claude)\nspirit/run/process/js/desk/desk.js (wsl-claude)\nspirit/run/process/js/deskClient/deskClient.js (wsl-claude)\nspirit/run/process/js/deskVerify/deskVerify.js (wsl-claude)\n\nis it because you expect them to fail as well?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:41:12.204Z",
+     "text": "- wsl: not expected to fail, but they are the likeliest to: each holds verbs with a check of its own, written by hand, which skips the shared gate. Those are where the deep garbage goes.\n- I listed them in advance so a fix needs no new grant. If you prefer, I take them off now and add one only when the red finds a hole in it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:41:31.692Z",
+     "text": "cw: they are the five app servers whose verbs skip the shared gate and check their own arguments by hand: desk 11 such verbs, deskVerify 3, deskClient 2, agent 1, the agent tables 1. The box sends the deep garbage exactly there, because a hand-written check is where a hole is likeliest.\nExpected to fail: likely somewhere, not known. Nobody has thrown garbage at them yet. They are listed only so that a hole the red finds can be fixed in this item, not a separate one. If you would rather each hole become an item of its own, they can come off the list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:42:10.508Z",
+     "text": "all, what is:\n\n\"skip the shared gate?\""
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:42:28.045Z",
+     "text": "- wsl: every call to an app server is checked once, in appServer.js, before the verb runs: are the arguments exactly the keys and types the verb declared? That one check is the \"shared gate\".\n- A verb may bring its own check function instead. Then appServer uses that one and not the shared check (appServer.js:182: own check if there is one, else the shared one).\n- \"Skips the shared gate\" means those verbs are guarded only by their own hand-written check. If it misses a case, nothing else stops the garbage."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:42:36.974Z",
+     "text": "cw: plainly:\n- Every verb of an app server declares an example of its arguments: which names, and of which type. Before the verb runs, appServer compares what was sent with that example: a name missing, a name too many, a wrong type, and the call is refused. That one comparison, shared by every verb, is \"the gate\".\n- A verb may instead bring its own small function that says yes or no to the arguments. Then appServer asks that function and does not do its own comparison. That is \"skipping the shared gate\": the verb's own hand-written check stands in its place.\n- An example, in appServer itself: one verb accepts either nothing or { on: true or false }, which no single example can say, so it has its own function.\nThe shared comparison is tested once and holds for all; each hand-written function is its own, so each needs its own garbage."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T06:45:01.183Z",
+     "text": "all, so you're including all those files because you expect them to fail, and you expect them to need fixing, so this item can pass?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T06:45:19.795Z",
+     "text": "- wsl: yes. The red will throw garbage at them, and it goes red wherever one of them lets garbage through or crashes. This item passes only when those reds are fixed, and the fixes are in those files.\n- Whether any will fail, nobody knows until the red runs. If none does, they leave the list untouched."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T06:45:40.632Z",
+     "text": "cw: yes, that is the reason: if the red finds a hole in one of them, this item can only pass by fixing it, and a file off the list could not be fixed here. But we do not know that any will fail.\nMy recommendation: take them off now, as wsl offered, and add a file only when the red has found a hole in it. Then the list says what is actually being fixed, not what might be."
     }
    ]
   }
