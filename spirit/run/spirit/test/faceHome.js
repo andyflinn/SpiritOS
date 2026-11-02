@@ -193,6 +193,25 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   const upOwn = await send(own, MINE, { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } });
   ok(!refused(upOwn) || own.saved.length > 0, 'a save in parts goes on there too', 'a save in parts on an owned relay: ' + said(upOwn));
 
+  // PUPPETS TOO (Andy, pasting the review: "owner.command still passes. A face on a relay that isn't starred can send any
+  // signed verb to your puppets, and they run it, file writes included. You listed puppets among the things only a starred
+  // relay gets back."): the owner family, off the face unless the relay is starred.
+  test.subHeading('the owner family goes with the star');
+  const ownerVerbs = verbsOf('spirit/owner/api.js');
+  ok(ownerVerbs.indexOf('command') !== -1, 'owner.command is a verb to ask', 'the owner family declares: ' + short(ownerVerbs));
+  const plainFace = world(onlyMine, function () { return false; });
+  const passed = [];
+  for (const v of ownerVerbs) {
+    const c = { call: 'owner.' + v, args: { key: 'x' } };
+    for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
+      const a = await send(plainFace, MINE, form[1]);
+      if (a.reached.length || !refused(a)) passed.push('owner.' + v + ' ' + form[0] + ': ' + said(a));
+    }
+  }
+  ok(!passed.length, 'on a relay that is not starred, all ' + ownerVerbs.length + ' owner verbs are refused and never reach the door', passed.length + ' of ' + (ownerVerbs.length * 2) + ' got through; first: ' + passed.slice(0, 2).join(' | '));
+  const starred = await send(own, MINE, { call: 'owner.command', args: { key: 'x' } });
+  ok(starred.reached.indexOf('owner.command') !== -1, 'on a starred relay owner.command reaches the door', 'owner.command on a starred relay: ' + said(starred));
+
   test.subHeading('owning takes the node\'s own word, and a face there');
   const notOwned = world(onlyMine, function () { return false; });
   const a1 = await send(notOwned, MINE, { call: 'jobs.create', args: { command: 'x' } });

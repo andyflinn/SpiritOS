@@ -41,6 +41,10 @@ nothing of which relay holds this node's face. `spirit/server.js` gives it from 
 - **`contact.own` never comes through a face** (Andy: *"so this button will put the star on relays and puppets. AND take it
   away."*, at home): refused with a code on any relay, one this node owns too, sealed or not.
 
+- **The owner family goes with the star** (Andy, pasting the review: *"owner.command still passes. A face on a relay that
+  isn't starred can send any signed verb to your puppets, and they run it"*): every verb of `spirit/owner/api.js` is refused
+  from a face on a relay that is not starred, and reaches the door on a starred one.
+
 ## What its test must try to break
 
 - A shell run from a relay holding no face of this node's, by any form of request.
