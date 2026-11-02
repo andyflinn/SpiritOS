@@ -75,40 +75,22 @@ function chSay(text) {
 // chats.search's rows carry the record as label: {peer, at, sent, seq, unanswered}. The pane is handed keys alone
 // (the label element names them); the record only decides the mark.
 //
-// TYPED TEXT FINDS NAMES, NOT KEYS (Andy, goal/G4.10: "the search on top or the pane seem to search keys instead of
-// labels..."). The chatClerver knows keys only (G4.3), so a name is looked up in the node's book first
-// (contact.search), and the peers with a chat are kept to those keys.
-// ONE PANE, THE BOOK AND THE CHATS (goal/G29.9). Andy, 2026-10-18: "in chatter, why does the contact pane look
+// ONE PANE, THE CONTACTS (goal/G29.9, goal/G41.28). Andy, 2026-10-18: "in chatter, why does the contact pane look
 // different from contacts? It fails to show proper columns for contacts, it should be all-pane mode there, that would
-// be enough." So the pane lists the node's book, json labels {name, owned, blocked, held} from contact.search, less
-// this node and every blocked contact (P5: never offered); a new chat starts from any of them. The chats (chats.search,
-// the record {peer, at, sent, seq, unanswered}) only decide the ⌛ mark, and a chat with a key the book does not hold
-// is listed by its key while no words are typed. The two asks go one after the other, never two on the wire.
-function chPeersSearch(text, ask) {
-  var args = ask || { q: String(text || '') };
-  var typed = String(args.q || '').trim();
-  var book = {};
-  return spirit.outcome(spirit.contact.search(args)).then(function (a) { book = (a && a.body) || {}; }, function () { book = {}; })
-    // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
-    .then(function () { return chAsk('chats.search', {}).then(function (b) { var C = chData(); if (C) C.keepChats(b); return b || {}; }, function () { return {}; }); })
-    .then(function (chats) {
-      var out = [];
-      var listed = {};
-      (book.items || []).forEach(function (it) {
-        if (!it || !it.key || it.key === chSelf) return;
-        var label = {};
-        try { label = JSON.parse(it.label || '{}'); } catch (e) { label = {}; }
-        if (label.blocked) return;
-        listed[it.key] = true;
-        out.push({ key: it.key, label: it.label });
-      });
-      (chats.items || []).forEach(function (it) {
-        if (!it || !it.key) return;
-        if (!listed[it.key] && !typed && it.key !== chSelf) { listed[it.key] = true; out.push({ key: it.key }); }
-        if (chPane) chPane.mark(it.key, chWaiting(it.key) ? 'unanswered' : 'none');
-      });
-      return { items: out, more: !!book.more || !!chats.more };
-    });
+// be enough." So the pane is the contact selector, a view of the contacts the contact family's cache keeps (Andy, Q25:
+// "WHY wouldn't chatter use the the contacts in spirit.data?"), less this node and every blocked contact (P5: never
+// offered), by one hidden filter ("Why can't chatter insert a hidden filter when it draws contacts?"); a new chat starts
+// from any of them.
+var CH_OFFERED = { name: 'offered', when: function () { return false; },
+  test: function (row) { return row && row.key !== chSelf && row.blocked !== true ? 1 : 0; } };
+// THE ⌛ MARKS: the chats (chats.search, the record {peer, at, sent, seq, unanswered}), kept in the chatClerver family's
+// cache, decide which contact has a line waiting. Exactly the verb's keys: the app server refuses any other shape
+// (appServer.js, no-such-argument).
+function chMarkChats() {
+  return chAsk('chats.search', {}).then(function (b) {
+    var C = chData(); if (C) C.keepChats(b);
+    ((b && b.items) || []).forEach(function (it) { if (it && it.key && chPane) chPane.mark(it.key, chWaiting(it.key) ? 'unanswered' : 'none'); });
+  }, function () { /* no marks */ });
 }
 
 // READING RESETS THE COUNT (Andy, goal/G4.10: "it's the fact that they're now reading that should reset the counter,
@@ -343,11 +325,11 @@ function chSend() {
 }
 
 // A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.chatData.published): every kept line, written or
-// received. The window has placed it already (its watch); another chat's line refreshes the peer list only, and a new
+// received. The window has placed it already (its watch); another chat's line marks the peer list again only, and a new
 // line of the open chat is read, made current and scrolled to.
 function chArrived(peer, l, fresh) {
   if (!l) return;
-  if (chPane) chPane.refresh();
+  chMarkChats();
   if (l.peer !== chPeer) return;
   // A line of theirs arriving in the open chat is read as it is drawn.
   if (Number(l.sent) === 0) chMarkSeen(l.peer, l.at);
@@ -424,7 +406,7 @@ function chMount(container, api) {
     var css = make('style');
     css.textContent =
       '.ch-app { display: flex; gap: 12px; height: calc(100vh - 120px); min-height: 320px; }' +
-      '.ch-left { flex: 0 0 auto; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }' +
+      '.ch-left { flex: 0 0 auto; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }' +
       '.ch-right { flex: 0 0 auto; overflow-y: auto; opacity: 0.6; font-size: 13px; }' +
       '.ch-divider { flex: 0 0 6px; cursor: col-resize; background: rgba(255, 255, 255, 0.12); border-radius: 3px; touch-action: none; }' +
       '.ch-divider:hover { background: rgba(255, 255, 255, 0.3); }' +
@@ -545,14 +527,19 @@ function chMount(container, api) {
     drag('ch-divider-left', 'peers', 1);
     drag('ch-divider-right', 'objects', -1);
 
-    var left = chEl('ch-left');
     // goal/G29.9: one pane over the book and the chats; the new-chat dropdown that stood here is gone.
+    // A LIST GETS A BOX OF A STATED SIZE (rule/16): a fill box in the peers pane, which fills the app's height, the list
+    // scrolling inside it.
+    var left = document.createElement('div');
+    left.className = 'fill';
+    chEl('ch-left').appendChild(left);
     chPane = window.spirit.elements.contactSelector.create(left, {
-      face: 'pane', search: chPeersSearch,
+      face: 'pane', filters: [CH_OFFERED],
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
       statuses: [{ status: 'none' }, { status: 'unanswered', glyph: '⌛' }],
     });
     chPane.addEventListener('change', function () { if (chPane.value) chOpen(chPane.value); });
+    chMarkChats();
 
     // THIS CHAT, SEARCHED (goal/G29.18; Andy, 2026-10-18: "the chat window itself can then have a search", and "the
     // chat-history-search should have filters me, other person or both"). The shared list, asking chatClerver's
@@ -682,7 +669,7 @@ function chMount(container, api) {
       C.watch(function (peer, line) { if (peer && peer === chPeer) chUpsert(line); });
       C.published(chArrived);
     }, function () { /* no lines are kept: the chat says so as it is read */ });
-    if (api.onReconnect) api.onReconnect(function () { if (chPane) chPane.refresh(); if (chPeer) chOpen(chPeer); });
+    if (api.onReconnect) api.onReconnect(function () { if (chPane) chPane.refresh(); chMarkChats(); if (chPeer) chOpen(chPeer); });
     // This node's key, for a reply to one of its own lines.
     Promise.resolve(api.verb('node.card', {})).then(function (r) {
       chSelf = String((r && r.body && (r.body.publicKey || (r.body.card && r.body.card.publicKey))) || '');

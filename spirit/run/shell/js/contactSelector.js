@@ -19,8 +19,8 @@
 // THE FILTER: one row, mutually exclusive (goal/G30.7): all, then mine (★), blocked, held and relays, each shown only
 // when the list holds any, each sent to contact.search as a yes-filter (mine since goal/G40.11).
 //
-// Rows come from the node's contact.search {q, mine, blocked, held, ...}, its label json {name, mine, blocked, held, ...}; or
-// from options.search(text, ask) -> {items: [{key, label}], more} (a label that is not json is a name). A row's name is the row's: a rename is published by the node (contact.rename,
+// Rows come from the node's contact.search {q, mine, blocked, held, ...}, its label json {name, mine, blocked, held, ...},
+// a view of the contacts the contact family's cache keeps; options.filters narrows them, hidden filters of the caller's. A row's name is the row's: a rename is published by the node (contact.rename,
 // shell.js) and the list asks again.
 //
 // THE ROOT: .value the chosen key, .row the chosen row, one bubbling `change` on a pick; refresh() asks again;
@@ -84,12 +84,13 @@
     var list = null;
 
     var root = document.createElement('div');
-    root.className = 'contact-selector ' + (isPane ? 'contact-selector-face-pane' : 'contact-selector-face-dropdown') +
+    // A LIST GETS A BOX OF A STATED SIZE (rule/16): the pane face fills the box it is mounted in, its list scrolling inside.
+    root.className = 'contact-selector ' + (isPane ? 'contact-selector-face-pane fill' : 'contact-selector-face-dropdown') +
       (options.className ? ' ' + options.className : '');
     root.value = '';
     root.row = null;
     var pane = document.createElement('div');
-    pane.className = 'contact-selector-pane';
+    pane.className = 'contact-selector-pane' + (isPane ? ' fill' : '');
     root.appendChild(pane);
 
     function statusGlyph(row) {
@@ -146,10 +147,9 @@
       root.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    // THE ROWS' SOURCE, as the list's api: the node's contact.search, a configured ID table, or the caller's own.
+    // THE ROWS' SOURCE, as the list's api: the node's contact.search, or a configured ID table.
     function rows(args) {
       var text = String((args && (args.q != null ? args.q : args.text)) || '');
-      if (typeof options.search === 'function') return Promise.resolve(options.search(text, args || { q: text }));
       if (table) {
         var asked = table.verb === 'search' ? { text: text } : { op: 'search', text: text };
         return Promise.resolve(window.spirit.ready).then(function (s) { return s[table.family][table.verb](asked); }).then(function (b) { return b || {}; });
@@ -183,9 +183,8 @@
         // A VIEW OF spirit.data (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the
         // whole row, as cached in spirit.data"): the node's contacts are the contacts branch the contact family's manager
         // keeps (spirit.contactData.branch), so a pick finds what any list of contacts was answered; an ID table of another
-        // family is the branch its caller names (options.data); a caller's own search (Chatter's peer pane, kept as it is by
-        // Andy's Q20) is the caller's.
-        data: options.data || (!table && typeof options.search !== 'function' ? window.spirit.contactData.branch : undefined),
+        // family is the branch its caller names (options.data).
+        data: options.data || (table ? undefined : window.spirit.contactData.branch),
         api: api,
         server: 'node',
         verb: 'contact.search',
@@ -204,7 +203,7 @@
         name: function (row) { return String((row && (row.name || row.key)) || ''); },
         // ONE ROW, MUTUALLY EXCLUSIVE (goal/G30.7; Andy, 2026-10-20: "Gimme 3 Buttons: [all] [⭐ my puppets] [relays] where
         // all 3 are mutually exclusive"): all, then each kind the list holds any of.
-        filters: table ? [] : [{
+        filters: (table ? [] : [{
           name: 'show',
           choices: function (all) {
             var out = [{ value: 'all', word: 'all' }];
@@ -216,7 +215,9 @@
           },
           test: function (row, value) { return !value || value === 'all' || (row && row[value] === true) ? 1 : 0; },
           when: function (all) { return ['mine', 'blocked', 'held', 'relay'].some(function (n) { return any(n)(all); }); },
-        }],
+        // A CALLER'S HIDDEN FILTERS (goal/G41.28; Andy: "Why can't chatter insert a hidden filter when it draws contacts?"):
+        // options.filters [{ name, when, test(row) }], after its own, as probabilitySearch takes them.
+        }]).concat(Array.isArray(options.filters) ? options.filters : []),
         pick: function (row) { pick(row); },
         details: typeof options.details === 'function' ? options.details : undefined,
         empty: options.empty || 'Nobody matches.',
