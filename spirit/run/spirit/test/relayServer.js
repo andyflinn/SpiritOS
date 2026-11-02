@@ -54,7 +54,8 @@ function sent(file) {
 // real login-email never holds a link"): the page at / or /face.html, asked with /?<token>, logs nobody in and sets no
 // login; the token is pasted into the Log in field only. Its route is lifted out of the source and run on stand-ins.
 test.subHeading('the face page logs nobody in from a token in its address');
-const routeSrc = (/\n(  if \(req\.method === 'GET' && \(pathname === '\/' \|\| pathname === '\/face\.html'\)\) \{[\s\S]*?\n  \})\n/.exec(src) || [])[1];
+// Line ends either way, as a Windows checkout has them (CRLF), as the faceSend pattern above does.
+const routeSrc = (/\r?\n(  if \(req\.method === 'GET' && \(pathname === '\/' \|\| pathname === '\/face\.html'\)\) \{[\s\S]*?\r?\n  \})\r?\n/.exec(src) || [])[1];
 const asked = { logins: [], cookies: [], sent: [] };
 let route = null;
 try { route = routeSrc ? new Function('req', 'pathname', 'url', 'relay', 'faceSetCookie', 'faceSend', 'at', 'res', routeSrc + '\nreturn false;') : null; } catch (e) { route = null; }
