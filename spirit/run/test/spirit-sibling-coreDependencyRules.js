@@ -73,4 +73,12 @@ Object.keys(byDep).sort().forEach(function (d) {
 });
 if (!loose.length) test.check('every file a core file loads is core');
 
+// SHELL/SHARED HOLDS NO CORE FILE (goal/G41.30, Andy, Q2: "no \"core\" files should reside in shell/shared/ since that
+// folder was meant to be a place where non-intrinsic apps could share modules."). So a core file never loads from it
+// (the rule above), and nothing in it is core.
+const shared = tracked.map(function (f) { return f.replace(/^spirit\/run\//, ''); }).filter(function (f) { return f.indexOf('shell/shared/') === 0 && !/(^|\/)test\//.test(f); });
+ok(shared.length > 0, 'shell/shared/ holds ' + shared.length + ' files to ask', 'shell/shared/ holds no file: nothing to judge');
+const coreShared = shared.filter(isCore);
+ok(!coreShared.length, 'no file in shell/shared/ is core', coreShared.length + ' file(s) in shell/shared/ are core: ' + coreShared.join(', '));
+
 test.reportSuccessFailureCount();
