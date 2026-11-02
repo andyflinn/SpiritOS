@@ -50,6 +50,24 @@ the module's name without extension; the generator script's name without `.js`, 
     a 4xx status and a `code`, never a 2xx, a 5xx or a "handler failed";
   - the node still answers its api afterwards.
 
+### The garbage itself (goal/G41.30)
+
+What the generator makes for one verb's request prototype, asked in memory of its `make()` over a stand-in server whose
+api is that one verb (five arguments: a string, a number, a boolean, an array and an object). From the box:
+
+- **Every entry still breaks the shape**: the gate's exact-key check (appServer.js `matches`) refuses each, so none is
+  a call a handler could act on.
+- *"EVERY ARGUMENT gets tested with EVERY javascript object type"*, the box: *"every type JSON.parse can make: string,
+  number, boolean, null, object, array"*: each argument is, in some entry, each of the six.
+- *"PLUS: \"missing\" and \"extraneous\""*: each argument is left out in some entry, and some entry carries an argument
+  the verb does not declare.
+- *"every string argument is supplied in a few sizes, containing bad characters"*: empty, one character, a mid size
+  (2 to 1000), and about 3/4 of `PAYLOAD_MAX` (within a tenth of it); and strings containing a NUL, a lone surrogate,
+  control characters, a quote and a backslash, and a path piece `../`.
+- *"Pairs, not every combination"*: for any two arguments, every pairing of their kinds (the six types and missing)
+  meets in at least one entry, for verbs of 2, 3, 4 and 5 arguments. The one pairing left out is both arguments of their
+  own type. For five arguments the garbage stays under 200 entries.
+
 ### DEBUG on: no generator, then the file itself
 
 Box v20-v23: *"DEBUG.js will, if the generator implied by the URL does NOT exist, will attempt to serve the exact file
@@ -109,4 +127,7 @@ delete things, so neither Andy's node nor an agent's is touched.
 - A page with a comment, a second script file, or a script before `/spirit.js`.
 - A `..`, a forwarded-from header, or a request from outside answered.
 - A garbage entry that crashes a handler, answers 500, or is accepted.
+- An argument never given one of the six types, never left out; no extraneous argument; a string never empty, huge or
+  carrying a NUL, a lone surrogate, a control character, a quote, a backslash or ../; a pair of kinds that never meets;
+  every combination made where pairs are enough.
 - `DEBUG.js` or a generator fetched as a file.

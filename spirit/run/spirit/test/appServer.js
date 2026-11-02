@@ -256,11 +256,111 @@ function codeFiles(dir, out) {
   return out;
 }
 
+// THE SHARED GATE, EVERY PERMUTATION, IN MEMORY (goal/G41.30, the box: "Test the shared gate once, in full. appServer's
+// one check guards every verb with a request shape. Every permutation is thrown at that check directly, in memory:
+// thousands a second, no network."). The check is appServer's matches(request, args), which route() asks for every verb
+// without a check of its own. Each request shape below is given, key by key, each of the box's kinds ("EVERY ARGUMENT gets
+// tested with EVERY javascript object type ... PLUS: \"missing\" and \"extraneous\""): JSON.parse's six types, the key
+// missing, an extraneous key beside it. Then every pair of keys in every pair of kinds ("Pairs, not every combination"),
+// and every combination where a shape has 3 keys or fewer. The value of the shape's own types passes; every other is refused.
+function gateSection() {
+  test.subHeading('the shared gate, every permutation, in memory (goal/G41.30)');
+  const A = require(FILE);
+  const SHAPES = {
+    'one string': { name: '' },
+    'a string and a number': { id: '', n: 0 },
+    'three of three types': { id: '', on: false, n: 0 },
+    'four, an array among them': { id: '', tags: [''], on: false, n: 0 },
+    'five, an object among them': { id: '', text: '', version: 0, on: false, opts: { a: '' } },
+    'one nested two deep': { id: '', where: { path: '', depth: 0 } },
+  };
+  const KINDS = ['string', 'number', 'boolean', 'null', 'object', 'array', 'missing', 'extraneous'];
+  // A JSON value of a kind, as it arrives over the wire (JSON.parse makes no date: a date is a string).
+  function valueOf(kind) {
+    return kind === 'string' ? 'garbage' : kind === 'number' ? 12345 : kind === 'boolean' ? true : kind === 'null' ? null
+      : kind === 'object' ? { x: 1 } : kind === 'array' ? ['x'] : undefined;
+  }
+  // The kind a shape's own value is.
+  function kindOf(v) { return v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v === 'object' ? 'object' : typeof v; }
+  // The shape's own value, which must pass: each key its own type ('' a string, 0 a number, [x] an array of x).
+  function own(v) { return Array.isArray(v) ? [own(v[0])] : v && typeof v === 'object' ? Object.keys(v).reduce(function (o, k) { o[k] = own(v[k]); return o; }, {}) : v; }
+  // The args with the keys in `set` given the kinds named; a kind the key already is, is not garbage.
+  function made(shape, set) {
+    const out = own(shape);
+    Object.keys(set).forEach(function (k) {
+      const kind = set[k];
+      if (kind === 'missing') delete out[k];
+      else if (kind === 'extraneous') out[k + 'Extra'] = 'garbage';
+      else out[k] = valueOf(kind);
+    });
+    return out;
+  }
+  // An object of other keys is garbage for an object key: the gate wants exactly its keys.
+  function garbage(shape, set) { return Object.keys(set).some(function (k) { return set[k] === 'missing' || set[k] === 'extraneous' || set[k] !== kindOf(shape[k]) || set[k] === 'object'; }); }
+  let asks = 0;
+  Object.keys(SHAPES).forEach(function (title) {
+    const shape = SHAPES[title];
+    const keys = Object.keys(shape);
+    const wrong = [];
+    let n = 0;
+    function ask(set) {
+      n += 1;
+      const passed = A.matches(shape, made(shape, set));
+      const should = !garbage(shape, set);
+      if (passed !== should) wrong.push((should ? 'refused ' : 'passed ') + JSON.stringify(set));
+    }
+    ask({});
+    // Each key, each kind.
+    keys.forEach(function (k) { KINDS.forEach(function (kind) { const s = {}; s[k] = kind; ask(s); }); });
+    // Every pair of keys, every pair of kinds.
+    keys.forEach(function (k1, i) { keys.slice(i + 1).forEach(function (k2) {
+      KINDS.forEach(function (a) { KINDS.forEach(function (b) { const s = {}; s[k1] = a; s[k2] = b; ask(s); }); });
+    }); });
+    // Every combination, where a shape has 3 keys or fewer.
+    if (keys.length <= 3) {
+      (function every(i, s) {
+        if (i === keys.length) { ask(Object.assign({}, s)); return; }
+        KINDS.forEach(function (kind) { s[keys[i]] = kind; every(i + 1, s); });
+        delete s[keys[i]];
+      }(0, {}));
+    }
+    // A nested shape's inner keys, each kind.
+    keys.filter(function (k) { return kindOf(shape[k]) === 'object'; }).forEach(function (k) {
+      Object.keys(shape[k]).forEach(function (inner) { KINDS.forEach(function (kind) {
+        n += 1;
+        const args = own(shape);
+        if (kind === 'missing') delete args[k][inner];
+        else if (kind === 'extraneous') args[k][inner + 'Extra'] = 'garbage';
+        else args[k][inner] = valueOf(kind);
+        const should = kind !== 'missing' && kind !== 'extraneous' && kind === kindOf(shape[k][inner]);
+        if (A.matches(shape, args) !== should) wrong.push((should ? 'refused ' : 'passed ') + k + '.' + inner + ' ' + kind);
+      }); });
+    });
+    asks += n;
+    ok(!wrong.length, 'a request of ' + title + ' (' + keys.join(', ') + '): ' + n + ' asks, its own value passes and every garbage one is refused',
+      title + ': ' + wrong.length + ' of ' + n + ' wrong, first: ' + short(wrong.slice(0, 4)));
+  });
+  test.comment('the shared gate was asked ' + asks + ' times, in memory');
+  ok(asks > 1000, 'every permutation of the box\'s kinds was thrown at it: ' + asks + ' asks', 'only ' + asks + ' asks were made');
+  // A VERB WITH A CHECK OF ITS OWN SKIPS THE GATE (appServer.js route: its own accepts() if it has one, else matches):
+  // its own check is the only one, so the gate's test does not cover it; the deep garbage goes to those verbs.
+  const seen = [];
+  const s = A.createAppServer({
+    own: { request: { id: '' }, reply: {}, accepts: function (a) { seen.push(a); return true; }, handler: function () { return {}; } },
+    shared: { request: { id: '' }, reply: {}, handler: function () { return {}; } },
+  });
+  return Promise.all([s.route({ own: { garbage: 12345 } }), s.route({ shared: { garbage: 12345 } })]).then(function (r) {
+    ok(seen.length === 1 && r[0].status === 200, 'a verb with an accepts() of its own is asked that alone: garbage it lets through reaches its handler', 'own check asked ' + seen.length + ', status ' + r[0].status);
+    ok(r[1].body && r[1].body.code === 'no-such-argument', 'a verb with no check of its own is refused that garbage by the gate', 'shared: ' + short(r[1]));
+  });
+}
+
 if (CHILD) {
   child(CHILD).catch(function (e) { process.stdout.write('RESULT ' + JSON.stringify({ failed: String(e && e.stack || e) }) + '\n'); process.exit(1); });
 } else {
   test.startTest('appServer.js: one stream protocol for every server (goal/G41.11, goal/G41.12)');
   (async function () {
+    await gateSection();
     test.subHeading('the family path: one function, in appServer (box v15)');
     const A0 = require(FILE);
     ok(typeof A0.familyPath === 'function', 'appServer exports familyPath', 'appServer has no familyPath export: ' + typeof A0.familyPath);

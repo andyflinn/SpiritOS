@@ -91,9 +91,84 @@ function judgePage(r, module, where) {
   ok(r.text.indexOf(module) !== -1, where + ': it names the module it mounts, ' + module, where + ': ' + module + ' is not named in the page');
 }
 
+// THE GARBAGE ITSELF (goal/G41.30, the box v12): what the generator makes for one verb's request prototype, asked in
+// memory of its make(), over a stand-in server whose api is that one verb. "EVERY ARGUMENT gets tested with EVERY
+// javascript object type" (the box: "every type JSON.parse can make: string, number, boolean, null, object, array"),
+// "PLUS: \"missing\" and \"extraneous\"", "every string argument is supplied in a few sizes, containing bad
+// characters", and "Pairs, not every combination". Every entry still breaks the shape: the gate's exact-key check
+// (appServer.js matches) would refuse it.
+const KINDS = ['string', 'number', 'boolean', 'null', 'object', 'array'];
+function kindOf(v) { return v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v; }
+function fitsShape(proto, v) {
+  if (proto !== null && typeof proto === 'object' && !Array.isArray(proto)) {
+    if (v === null || typeof v !== 'object' || Array.isArray(v)) return false;
+    const want = Object.keys(proto).sort();
+    if (want.join('\n') !== Object.keys(v).sort().join('\n')) return false;
+    return want.every(function (k) { return fitsShape(proto[k], v[k]); });
+  }
+  if (Array.isArray(proto)) return Array.isArray(v) && (proto.length === 0 || v.every(function (x) { return fitsShape(proto[0], x); }));
+  if (proto === null) return v === null;
+  return typeof v === typeof proto;
+}
+async function garbageRules(gen, PAYLOAD_MAX) {
+  async function entries(proto) {
+    const made = await gen.make({ ext: 'json', module: 'process/js/probe', server: { kind: 'node', api: function () { return { probe: { verb: { request: proto, reply: {} } } }; } } });
+    const list = made && typeof made.body === 'string' ? JSON.parse(made.body) : [];
+    return list.filter(function (e) { return e && e.call === 'probe.verb' && !e.also; }).map(function (e) { return e.args; });
+  }
+  const PROTOS = [
+    { a: '', b: 0 },
+    { a: '', b: 0, c: true },
+    { a: '', b: 0, c: true, d: [''] },
+    { a: '', b: 0, c: true, d: [''], e: { x: '' } },
+  ];
+  const P5 = PROTOS[3];
+  const args5 = await entries(P5);
+  const plain = args5.filter(function (a) { return a !== null && typeof a === 'object' && !Array.isArray(a); });
+  test.subHeading('the garbage itself, for one verb of five arguments ' + JSON.stringify(P5) + ' (goal/G41.30)');
+  ok(args5.length > 0 && args5.every(function (a) { return !fitsShape(P5, a); }), 'every entry breaks the shape: the gate\'s exact-key check refuses each (' + args5.length + ' entries)',
+    args5.length ? 'an entry fits the shape, a call a handler could act on: ' + short(args5.filter(function (a) { return fitsShape(P5, a); })[0]) : 'no garbage was made');
+  Object.keys(P5).forEach(function (k) {
+    const seen = {}; plain.forEach(function (a) { if (Object.prototype.hasOwnProperty.call(a, k)) seen[kindOf(a[k])] = true; });
+    const lacking = KINDS.filter(function (t) { return !seen[t]; });
+    ok(!lacking.length, 'argument ' + k + ' is filled with every type JSON.parse makes: ' + KINDS.join(', '), 'argument ' + k + ' is never a ' + lacking.join(', '));
+    ok(plain.some(function (a) { return !Object.prototype.hasOwnProperty.call(a, k); }), 'argument ' + k + ' is left out ("missing")', 'no entry leaves argument ' + k + ' out');
+  });
+  ok(plain.some(function (a) { return Object.keys(a).some(function (k) { return !Object.prototype.hasOwnProperty.call(P5, k); }); }), 'an argument the verb does not declare is added ("extraneous")', 'no entry carries an extraneous argument');
+  test.subHeading('every string argument, in a few sizes, containing bad characters (goal/G41.30)');
+  const strings = plain.filter(function (a) { return typeof a.a === 'string'; }).map(function (a) { return a.a; });
+  const lens = strings.map(function (x) { return x.length; });
+  const big = Math.floor(PAYLOAD_MAX * 3 / 4);
+  [['empty', function (n) { return n === 0; }], ['one character', function (n) { return n === 1; }], ['a mid size, 2 to 1000', function (n) { return n >= 2 && n <= 1000; }],
+    ['about 3/4 of the payload (' + big + ' of PAYLOAD_MAX ' + PAYLOAD_MAX + ', within a tenth)', function (n) { return Math.abs(n - big) <= PAYLOAD_MAX / 10; }]].forEach(function (c) {
+    ok(lens.some(c[1]), 'the string argument a is supplied ' + c[0], 'its string sizes: ' + short(lens.slice().sort(function (x, y) { return x - y; })));
+  });
+  [['a NUL', /\u0000/], ['a lone surrogate', /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/], ['control characters', /[\u0001-\u001F]/],
+    ['a quote and a backslash', /"[\s\S]*\\|\\[\s\S]*"/], ['a path piece, ../', /\.\.\//]].forEach(function (c) {
+    ok(strings.some(function (x) { return c[1].test(x); }), 'the string argument a is supplied containing ' + c[0], 'no string of argument a contains ' + c[0]);
+  });
+  test.subHeading('pairs, not every combination (goal/G41.30)');
+  // For any two arguments, every pairing of their kinds (the six types and missing) appears in at least one entry; the one
+  // pairing left out is both arguments of their own type, which with nothing else wrong would be a call a handler acts on.
+  const PK = KINDS.concat(['missing']);
+  for (const proto of PROTOS) {
+    const list = (await entries(proto)).filter(function (a) { return a !== null && typeof a === 'object' && !Array.isArray(a); });
+    const keys = Object.keys(proto);
+    const of = function (a, k) { return Object.prototype.hasOwnProperty.call(a, k) ? kindOf(a[k]) : 'missing'; };
+    const gaps = [];
+    for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) for (const x of PK) for (const y of PK) {
+      if (x === kindOf(proto[keys[i]]) && y === kindOf(proto[keys[j]])) continue;
+      if (!list.some(function (a) { return of(a, keys[i]) === x && of(a, keys[j]) === y; })) gaps.push(keys[i] + '=' + x + ' with ' + keys[j] + '=' + y);
+    }
+    ok(!gaps.length, keys.length + ' arguments: every pair of their kinds meets in at least one entry', keys.length + ' arguments: ' + gaps.length + ' pairs never met, first ' + short(gaps.slice(0, 4)));
+  }
+  ok(args5.length > 0 && args5.length < 200, 'and the garbage stays small: ' + args5.length + ' entries for five arguments, under 200, not every combination', 'five arguments make ' + args5.length + ' entries');
+}
+
 test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alike');
 
 (async function () {
+  await garbageRules(require(path.join(RUN, 'spirit', 'DEBUG', 'garbageArguments.js')), require(path.join(RUN, 'spirit', 'limits.js')).PAYLOAD_MAX);
   test.subHeading('/spirit/DEBUG.js, /spirit/DEBUG/, /shell/mount.html: its files');
   ok(fs.existsSync(path.join(RUN, 'spirit', 'DEBUG.js')), 'spirit/run/spirit/DEBUG.js is there', 'spirit/run/spirit/DEBUG.js is not there');
   ['headLessBrowser', 'garbageArguments'].forEach(function (g) {

@@ -101,8 +101,21 @@ stream"); Desk and deskClient move onto it.
 - **The client's query of its cache through the family api.js, and `includeServer`**, and **the client bundling its
   requests**: the box names no verb for them; the build names them, and the verify asserts them.
 
+- **The shared gate, every permutation, in memory** (goal/G41.30; the box: *"Test the shared gate once, in full.
+  appServer's one check guards every verb with a request shape. Every permutation is thrown at that check directly, in
+  memory: thousands a second, no network."*). `matches(request, args)`, the check `route()` asks for every verb without
+  a check of its own, is given request shapes of one to five keys (string, number, boolean, array, object) and one nested
+  two deep. Each key gets each of the box's kinds (*"EVERY javascript object type ... PLUS: "missing" and
+  "extraneous""*): JSON.parse's six types, the key missing, an extraneous key beside it; then every pair of keys in every
+  pair of kinds (*"Pairs, not every combination"*), and every combination where a shape has 3 keys or fewer; a nested
+  shape's inner keys each kind too. The shape's own value passes; every other is refused. The asks are counted and said,
+  and must be more than 1000.
+- **A verb with a check of its own skips the gate**: `route()` asks its `accepts()` alone, so garbage it lets through
+  reaches its handler; a verb with none is refused that garbage `no-such-argument`.
+
 ## What its test must try to break
 
+- The gate letting an extra key through, or a value of another type.
 - A family path written anywhere but `familyPath`, or a `<name>.family` folder left.
 - A delivery that is not an array, or one peerPost per backed-up row.
 - A subscribe again answered with a bootstrap, a cache swept by it, missed rows not handed, a row for another key
