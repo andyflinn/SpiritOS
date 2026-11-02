@@ -95,7 +95,7 @@ function cdStarWords() {
 function cdStarBlock() {
   if (window.spirit && window.spirit.transport) return '';
   return '<div class="stat-tile wide"><div class="label">Star</div><div>' + cdStarWords() + '</div>' +
-    '<div class="start-job-form card"><button type="button" class="cancel-btn" id="cd-own"></button></div></div>';
+    '<div class="start-job-form card"><button type="button" class="cancel-btn" id="cd-own">' + (cdPerson.mine ? 'Take the star away' : 'Give it the star') + '</button></div></div>';
 }
 function cdStar() {
   return cdPost('contact.own', { key: cdKey, own: !cdPerson.mine }).then(function () { return cdLoad(); });

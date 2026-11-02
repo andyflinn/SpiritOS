@@ -23,6 +23,8 @@
     var label = o.label != null ? String(o.label) : String(button.textContent || '');
     var armedLabel = o.armedLabel != null ? String(o.armedLabel) : label + '? Press again';
     var on = false;
+    // IT SAYS WHAT IT DOES BEFORE IT IS PRESSED (goal/G41.30; Andy: "the button for that has nothing written on it").
+    button.textContent = label;
 
     // Harmless twice, as the shell's hook requires.
     function disarm() {
