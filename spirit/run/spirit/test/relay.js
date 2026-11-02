@@ -108,5 +108,70 @@ try { pasted = token ? R.relay.faceLogin('harbour', token) : null; } catch (e) {
 ok(!!pasted && pasted.loggedIn === true, 'the token, pasted into the Log in field, logs in', 'faceLogin with the token: ' + short(pasted));
 
 try { fs.rmSync(R.home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
-test.reportSuccessFailureCount();
-process.exit(0);
+
+// A LONG SEARCH MUST NOT STOP THE RELAY (goal/G41.30; the box: "the server MUST not CRASH or HANG", "an attacker trying
+// to crash our servers will throw ANYTHING at the api. Imitate that attacker!"; Andy, on the report "A long search query
+// stalls the relay's event loop for seconds": "fix this now. in this item"). A relay with MEMBERS connected members;
+// one of them sends the longest search the wire carries, sealed to the relay as every ask is. While it is answered the
+// relay's event loop is watched: a tick every 5 ms must never wait longer than GAP_MS, so every other request on the
+// relay keeps being served, and the search must still be answered.
+const MEMBERS = 500;
+const GAP_MS = 250;
+async function longSearch() {
+  test.subHeading('a search as long as the wire carries does not stop the relay answering others');
+  const limits = require(path.join(RUN, 'spirit', 'limits.js'));
+  const seal = require(path.join(RUN, 'spirit', 'seal.js'));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-search-'));
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  auth.saveIdentity(home, auth.generateIdentity('relay'));
+  const owner = auth.generateIdentity('owner');
+  auth.writeOwner(home, owner.publicKey);
+  const box = require(path.join(RUN, 'spirit', 'relay.js')).createRelay(home);
+  box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);
+  // Each member seated by an invite of the owner's and connected by its stream, as a node connects.
+  const heard = [];
+  let asker = null; let seated = 0;
+  for (let i = 0; i < MEMBERS; i++) {
+    const name = 'm' + i;
+    const id = auth.generateIdentity(name);
+    const minted = box.mint('owner', name, 7, '');
+    if (!minted || !minted.invite) continue;
+    const c = box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)), id.publicKey, null, minted.invite.token, name);
+    if (!c || c.ok === false) continue;
+    const sink = { write: function (chunk) { if (id === asker) heard.push(String(chunk)); return true; }, close: function () {} };
+    if (!asker) asker = id;
+    const s = box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sink);
+    if (s && s.ok === false) continue;
+    seated += 1;
+  }
+  ok(seated === MEMBERS, MEMBERS + ' members seated and connected', 'only ' + seated + ' of ' + MEMBERS + ' members were seated and connected: the search would rank fewer rows than asked');
+  const relayKey = box.relayPublicKey();
+  // The longest sealed search the wire takes: from 3/4 of the payload down, until the relay takes the post.
+  const sealedAsk = function (len) {
+    const q = ('abcdefghij ').repeat(Math.ceil(len / 11)).slice(0, len);
+    const sealed = seal.seal(box.relaySealKey(), asker.publicKey, relayKey, JSON.stringify({ v: 1, body: { search: { q: q } } }));
+    return JSON.stringify(sealed);
+  };
+  let len = Math.floor(limits.PAYLOAD_MAX * 3 / 4); let text = sealedAsk(len);
+  while (len > 1000 && Buffer.byteLength(text, 'utf8') > limits.PAYLOAD_MAX) { len -= 250; text = sealedAsk(len); }
+  test.comment('the search: ' + len + ' characters, ' + Buffer.byteLength(text, 'utf8') + ' bytes sealed, over ' + seated + ' connected members (a longer one, as the report\'s 60,000, is refused 413 by the wire)');
+  ok(len >= 12000, 'the search thrown is ' + len + ' characters, near 3/4 of the payload', 'only ' + len + ' characters fit: the search judges too little');
+  let last = Date.now(); let gap = 0;
+  const tick = setInterval(function () { const n = Date.now(); gap = Math.max(gap, n - last); last = n; }, 5);
+  const before = heard.length;
+  const t0 = Date.now();
+  const posted = box.routePost(asker.publicKey, relayKey, text, auth.sign(asker.privateKey, auth.postMessage(asker.publicKey, relayKey, text)));
+  const inPost = Date.now() - t0;
+  let answered = false;
+  for (let i = 0; i < 200 && !answered; i++) { await new Promise(function (r) { setTimeout(r, 25); }); answered = heard.length > before; }
+  clearInterval(tick);
+  const worst = Math.max(gap, inPost);
+  ok(!!posted && posted.ok !== false, 'the relay takes the search', 'the relay refused the search: ' + short(posted));
+  ok(worst <= GAP_MS, 'while it searches, the relay keeps answering: its event loop never waited more than ' + GAP_MS + ' ms (worst ' + worst + ' ms)',
+    'IT HANGS: one search of ' + len + ' characters over ' + seated + ' members held the relay\'s event loop for ' + worst + ' ms (more than ' + GAP_MS + '), every other request on the relay waiting');
+  ok(answered, 'and the search is answered', 'the search was never answered within 5 s');
+  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+}
+
+longSearch().then(function () { test.reportSuccessFailureCount(); process.exit(0); },
+  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

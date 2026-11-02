@@ -24,8 +24,15 @@ stand-in; nothing is sent.
     link by themselves.
   The token, pasted into the Log in field (`faceLogin(name, token)`), logs in.
 
+- **A long search does not stop the relay** (goal/G41.30; the box: *"the server MUST not CRASH or HANG"*, *"Imitate
+  that attacker!"*; Andy, of *"A long search query stalls the relay's event loop for seconds"*: *"fix this now. in this
+  item"*). With 500 members seated and connected, one of them sends the longest search the wire carries, sealed to the
+  relay (about 16,600 characters; a longer one, as the report's 60,000, is refused 413 by the wire). While it is
+  answered, a tick every 5 ms must never wait more than 250 ms, and the search is still answered.
+
 ## What its test must try to break
 
+- One search holding the relay's event loop, every other request waiting behind it.
 - A join link mailed whose host only begins with 127.0.0.1, or carries a user name before an @, or is https, localhost
   or another site.
 - The node's own link, with its port, refused.
