@@ -133,6 +133,12 @@ test.startTest('spirit-sibling-faceStarRules.js: the star on a real node, a real
     ok(!(await starOf(R.relayKey)), 'the relay has no star', 'the relay has a star nobody pressed');
     const c0 = await face({ call: 'node.card', args: {} });
     ok(c0.status === 200 && c0.body && c0.body.publicKey === me, 'node.card from the face answers, from this node', 'node.card from the face: ' + c0.status + ' ' + short(c0.text));
+    // WHAT THE FACE'S LISTS START WITH (Andy, of a face with no star: "none of the face-apps showed up"): each finds its family's
+    // cache manager by FS.path, here on the node's real door.
+    for (const fam of ['fs', 'jobs', 'contact']) {
+      const p = await face({ call: fam + '.FS.path', args: { path: 'clientCacheManager.js' } });
+      ok(p.status === 200 && p.body && typeof p.body.path === 'string' && p.body.path.indexOf(fam) !== -1, fam + '.FS.path from a face with no star names its cache manager', fam + '.FS.path from the face: ' + p.status + ' ' + short(p.text));
+    }
     for (const q of [JOB, SAVE, OWNER]) {
       const a = await face(q);
       ok(refusedOff(a), q.call + ' from the face is refused, not-from-the-face', q.call + ' from the face on a relay with no star: ' + a.status + ' ' + short(a.text));
