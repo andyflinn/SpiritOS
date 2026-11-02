@@ -57,6 +57,16 @@ test.startTest('contactSelector.js: the configurable ID selector');
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve(families), contact: families.contact, agent: families.agent, elements: {} } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p]) STANDS[p](global.window.spirit.elements); return Promise.resolve(true); };
+  // The page's one data set, its node known (goal/G41.28, Q10), and a family's cache: the family's own manager, run here.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  global.window.spirit.node = { key: 'KEY+CONTACT/SELECTOR==' };
+  global.window.spirit.data.home(global.window.spirit.node.key);
+  const managers = [];
+  global.window.spirit.cacheManager = function (name) {
+    managers.push(String(name));
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    return Promise.resolve(true);
+  };
   vm.runInThisContext(SRC, { filename: FILE });
   const E = global.window.spirit.elements;
   const made = E.contactSelector;
@@ -77,7 +87,15 @@ test.startTest('contactSelector.js: the configurable ID selector');
     'it answers its root at once, nothing chosen, with refresh, present and mark, as Chatter and the shell use it', 'root: ' + short(plain && Object.keys(plain)));
   if (!lists.length) return;
 
-  test.subHeading('by default, the contacts');
+  test.subHeading('by default, the contacts the contact family\'s cache keeps (goal/G41.28)');
+  const CD = global.window.spirit.contactData;
+  ok(managers.indexOf('contact') !== -1 && !!CD && lists[0].o.data === CD.branch, 'it loads the contact manager, and its list is a view of spirit.contactData\'s branch', 'managers ' + short(managers) + ', data ' + short(lists[0].o.data));
+  ok(!/options\.search\b/.test(SRC), 'it takes no search of its caller\'s own', 'contactSelector.js still reads options.search');
+  const hid = { name: 'not me', when: function () { return true; }, test: function () { return true; } };
+  make({ filters: [hid] }); await settle();
+  const fl = lists[lists.length - 1].o.filters || [];
+  ok(fl.length >= 2 && fl[fl.length - 1] === hid, 'a caller\'s hidden filters (options.filters) are passed on after its own (Andy: "Why can\'t chatter insert a hidden filter when it draws contacts?")', 'filters: ' + short(fl.map(function (x) { return x && x.name; })));
+  lists.splice(lists.length - 1, 1);
   const first = await rowsOf(lists[0], 'ca');
   ok(asked.length === 1 && asked[0].family === 'contact' && asked[0].verb === 'search' && JSON.stringify(asked[0].args).indexOf('ca') !== -1,
     'with no table named it searches the contacts, contact.search, with the words typed', 'asked: ' + short(asked));
