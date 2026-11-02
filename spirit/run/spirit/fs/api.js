@@ -19,7 +19,14 @@ module.exports = {
   names: function (call, tools) {
     function orNull(p) { return p.then(function (b) { return b; }, function (e) { if (e && e.status) return null; throw e; }); }
     return {
-      loadFile: function (path) { return orNull(call('load', { path: path })).then(function (b) { return b && typeof b.text === 'string' ? b.text : null; }); },
+      // A REFUSAL IS NOT "NOTHING THERE" (goal/G41.30; Andy, of a face with no star: "not found (or empty) — you can still Save to
+      // create it"): only a file that is not there answers null; any other refusal rejects, in the node's own words.
+      loadFile: function (path) {
+        return call('load', { path: path }).then(function (b) { return b && typeof b.text === 'string' ? b.text : null; }, function (e) {
+          if (e && e.status === 404) return null;
+          throw e;
+        });
+      },
       statFile: function (path) { return orNull(call('stat', { path: path })); },
       getAnnotations: function (path) { return call('annotations', { path: path }); },
       saveFile: function (path, content) { return call('save', { path: path, content: content }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },

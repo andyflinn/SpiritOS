@@ -43,7 +43,11 @@ var textEditorPath = '';
 var textEditorView = null;
 function textEditorLoadPath(path, words, line) {
   // The file's text, when spirit.fs has it (goal/G40.8: the kernel's read waited in place).
-  return spirit.fs.loadFile(path).then(function (content) { return textEditorShow(path, words, line, content); });
+  return spirit.fs.loadFile(path).then(function (content) { return textEditorShow(path, words, line, content); }, function (e) {
+    // WHAT THE NODE SAYS, AND ONLY THAT (rule/19; goal/G41.30): a refused load is no empty file, and Save would not create it.
+    var status = document.getElementById('editor-status');
+    if (status) status.textContent = 'not loaded: ' + ((e && e.message) || e);
+  });
 }
 function textEditorShow(path, words, line, content) {
   textEditorPath = path;
