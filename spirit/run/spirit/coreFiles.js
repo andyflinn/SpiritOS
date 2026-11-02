@@ -45,6 +45,11 @@ const BOOT = ['spirit/run/face.html', 'spirit/run/shell/boot.js', 'spirit/run/sh
 function isCore(repoPath, repoRoot) {
   const p = String(repoPath || '').replace(/\\/g, '/').replace(/^\.\//, '');
   if (BOOT.indexOf(p) !== -1) return true;
+  // A CORE FILE'S COMPANION TESTS ARE CORE (goal/G41.29; Andy: "the red for a core file is a core file, too", and "change
+  // spirit/coreFiles as well, by making a coreFiles-companion files in the test-folder core files as well."): a file in a
+  // test/ folder beside a core file, named after it (test/<name>.js, test/<name>.md), is core with it.
+  const companion = /^(.*)\/test\/([^/]+)\.(js|md)$/.exec(p);
+  if (companion && ['.js', '.css', '.html'].some(function (ext) { return isCore(companion[1] + '/' + companion[2] + ext, repoRoot); })) return true;
   // LOGIN AND JOIN ARE CORE WHOLE (goal/G41.3). Andy: the two are "mandatory components of shell/boot.js in loopback or
   // face mode respectively", boot "makes hard-coded assumptions" about them, and no page may change them. Their .json
   // files are no manifests but code, their UI text (Q9: "if they're code, just keep them, they are obviously NOT
