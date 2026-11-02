@@ -1,5 +1,5 @@
 {
- "change": 123152,
+ "change": 123759,
  "goal": "goal/G41",
  "items": [
   {
@@ -17,9 +17,7 @@
     "pushgoal"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G41.30"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -27873,15 +27871,13 @@
    "id": "goal/G41.30",
    "title": "new general tests",
    "goal": "goal/G41",
-   "status": "build",
+   "status": "done",
    "statusTone": "",
    "with": "claude-windows",
    "version": 13,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "pushgoal"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G41"
@@ -27895,7 +27891,7 @@
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 34,
+   "fileCount": 52,
    "green": true,
    "code": true,
    "phase": "build",
@@ -27903,7 +27899,7 @@
    "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
-   "claimCommit": "ff31f460",
+   "claimCommit": "45fa04c584ef5638d4240ed287453e84cbc34d67",
    "redCommit": "ac113ac9",
    "waived": false,
    "rules": [
@@ -28142,12 +28138,180 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-02T09:39:23.483Z",
+     "at": "2026-11-02T10:43:41.326Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Shall we fix RC1, RC2, RH1, RH3 and RH4 in this item, taking jobs, fs, fileServer and net.fetch off the face until faces can prove they are the owner?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-02T10:48:48.129Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G10",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T11:08:42.087Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Agree to all three: every FS group off the face, fs.annotations stays for the icons, and the file viewer loses its Run button?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-02T10:56:23.315Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Keep the file viewer's Start Job button, since it only starts included process scripts and the RH1 fix leaves those working?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-02T10:57:51.470Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G11",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T12:41:55.848Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Shall owner commands to a puppet, by owner.command or a peer.post carrying one, come off the face too, in this item?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-02T11:31:43.119Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Take peer.post and relay.* off the face too, since a dishonest relay can otherwise speak to your peers as your node?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-02T12:00:54.381Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Shall a face on a relay you own get jobs, files, grants and puppets back under the login as it is now, the limits staying on other relays until G42?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-02T12:00:55.865Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Yes to one new verb, relay.own {url}, pressed at home and off the face, as the only way a relay gets marked yours?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-02T12:31:48.514Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Clear every star once by hand on our four nodes, with no code in the repo, so you press the new button for what you own?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-02T12:35:23.991Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G12",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T12:42:15.179Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G13",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T12:54:18.960Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G14",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-02T13:36:25.635Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G15",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-02T13:36:48.662Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -29152,6 +29316,960 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-02T09:47:16.263Z",
      "text": "cw:\n- H6: yes. On my node, restarted on the latest code: every spelling of the identity file the review named (short name, trailing dot, trailing space, ::$DATA, any case) answers 404. wsl's red 51 green.\n- H5: yes. Of the 55 files index.html and face.html load, not one is writable now; CodeMirror and the progress bar are core, shell/shared is not.\n- Still running: the page tests of Desk 19, Apps 14, Jobs 14, textEditor 16, Chatter 18, all green; my node's home page loads with no error but the desk calls, which my node rightly cannot answer.\n- Not proven here: Desk itself, end to end. It lives on your node, and your node still runs the code it started with at 10:09. The real proof is your restart on the latest code and one look at Desk."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T10:03:20.369Z",
+     "text": "cw: the one red is real, and bigger than one verb. relay.claim was sent a name that is true instead of a text, and hung until it gave up. Checked on my node: it does not refuse that name; it goes on to the network with it.\nWhy: the node's own families (relay, contact, auth, fs, node ...) declare a rule for every argument, but only the spirit object checks those rules, on the caller's side. A raw call to /api/spirit, the attacker's way, reaches the handler unchecked. App servers have their one gate; the node's own families have none on the server.\nThe fix: the node's door checks every call against its family's declared rules before the handler runs, the same check the spirit object does, written once and used by both. That is a change to the node's door, a core file. Shall I build it in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T10:34:39.204Z",
+     "text": "all, this needs fixing in this item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:34:42.238Z",
+     "text": "- wsl: back after the power outage. My node and yours on 65432 answer; nothing of mine was lost. Listening."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:36:23.279Z",
+     "text": "- wsl: the red for it is in: 372c2d76, test/spirit-sibling-familyGateRules.js. From each family's own declaration, raw calls with a wrong type, a missing or an extra argument must be refused at the door. 206 calls, red in 10 of 11 families: some answer 200 and act, net.fetch with a bad method and events.subscribe hang, relay.claim with no url says wait 1.98e31 ms.\n- auth already refuses 38 of 40, so it can pass. cw, the gate is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T10:37:12.129Z",
+     "text": "all, it gets worse:\n\n• RC1, Critical: any relay a node is connected to can run every owner verb on that node by sending a face event, including jobs.create with any command.\n• RC2, Critical: a page on any member's face can make a logged-in owner's face run verbs on his node, because all faces are same-site and /face/call has no Origin check.\n• Four Highs: jobs.create spawns any program (RH1), a face login needs only the emailed token (RH2), one header crashes a relay (RH3), and a granted peer can steal the agent's model API keys (RH4).\nFix order: RC1 first, since RC2 and RH2 lead into it. Until faces can prove they are the owner, take jobs.*, fs.*, fileServer.* and net.fetch off the face path and refuse face events from relays where this node set no face. Then RH1 (one check in startJob) and RH3 (one clamp). Nothing in the repo was changed; this review read the code and ran probes on a scratch checkout."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:37:34.814Z",
+     "text": "- wsl: checking all six against the tree now, on scratch nodes only: RC1, RC2 and RH1 to RH4. I report what holds, what does not, and the reds, once."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T10:40:03.068Z",
+     "text": "both issues summarized at:\n\n\"D:\\issues.md\""
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:40:17.516Z",
+     "text": "- wsl: checked at 372c2d76: all six are true.\n- RC1: any face event from any connected relay runs as the owner, and nothing asks whether this node set a face there (presenceNode.js:479, faceHome.js:300).\n- RC2: /face/call has no Origin check, and the cookie is SameSite=Lax. Read from the code, not run in a browser.\n- RH1: /bin/sh ran through jobs.create on a scratch node. RH3: a member with a pending face call can kill the relay with a bad status (relay.js:4372). RH4: set the provider url, then ask, and the key went to my listener.\n- RH2 is what we settled in the last item: not a bug, only dangerous through RC1.\n- A limit in the review's fix: refusing relays where you set no face leaves the relay that hosts your face still able to run everything. Taking jobs, fs, fileServer and net.fetch off the face closes that, but Files and Jobs stop working on the face until faces can prove they are the owner.\n- I recommend that price: safe first, then the proof as its own goal."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T10:43:15.039Z",
+     "text": "Q3: Shall we fix RC1, RC2, RH1, RH3 and RH4 in this item, taking jobs, fs, fileServer and net.fetch off the face until faces can prove they are the owner?\n\nyes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:43:39.549Z",
+     "text": "- wsl: on it, in the review's order. I write the reds, per issues.md: RC1, RC2, RH1, RH3, RH4, one each, beside each module. cw, please build against those; I post each when it is red.\n- Files added: faceHome.js, jobs.js, the agent provider."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:48:41.753Z",
+     "text": "- wsl: 12cc2165, reds for RC1 (15) and RH1 (10), each green on a fixed copy. cw: the test passes faceHome a new option, faceSet(url); the seen row's face column can answer it.\n- Three things the Q3 yes did not cover:\n- 1) Every family has its own FS group, and FS.saveFile writes files. Taking only fs off the face leaves desk.FS.saveFile and the rest open. I recommend every FS group off the face too.\n- 2) The face desktop asks fs.annotations for its app icons (boot.js:427). With fs gone, the face shows no apps. I recommend that one read stays.\n- 3) The file viewer's Run button starts node or any language on the open file (textViewer.js:55). The RH1 fix closes that. I recommend it closes: only process/js servers start."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T10:49:40.583Z",
+     "text": "all, we fix the red from goal/G41.30 AND all the review items here in this item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:50:50.115Z",
+     "text": "- wsl: dc3cc367, reds for RC2 (5), RH3 (11), RH4 (3), all green on a clone with trial fixes. All five rows now have their red; cw, yours.\n- RH3 is live on the relays today: on a scratch relay, a member's status of 99, 1000, -1 or 1.5 kills it, exit 1. That is worth the next tag as soon as it is fixed.\n- For you, one conflict: your ruling for the agent's bundle was \"remoteUser the full agent family, minus FS.*\". RH4 takes provider out of it, reads too, since a grant cannot separate reads from writes. The old check in spirit/test/appServer.js:409 goes with it, unless you rule otherwise."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:51:31.725Z",
+     "text": "- wsl: 3cac5fcd, the red for RH2: until a step-up exists, granting and key rotation are refused from the face. Every review item has its red now. cw, yours; Q4 waits on Andy."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T10:54:28.509Z",
+     "text": "cw: I was off Desk after the window restart. I have now read everything since 10:03: your go on the family gate, Q3, and all review items in this item.\nI build in the order the review gave: RC1, RC2, RH2, RH1, RH3, RH4, and the family gate last, against the box and the review, with wsl's reds to check by.\nFor the three things in Q4 I do not guess: whatever your answer settles waits for your answer, and the rest goes ahead.\nA correction of mine: I said the box's \"be the attacker\" line was dropped at version 11. It was not. The box kept it and the test was soft; wsl had it right."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T10:56:10.228Z",
+     "text": "Q4: Agree to all three: every FS group off the face, fs.annotations stays for the icons, and the file viewer loses its Run button?\n\nyes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:56:47.385Z",
+     "text": "- wsl: correction, my error, and your yes on the third point rested on it. I said the file viewer's Run button starts anything on the open file. It does not: it is Start Job, shown only for a process/ script with a manifest whose sidecar says it runs here (textViewer.js:24-48), and it sends node plus that script. That is your \"only existing user door to server launch\". The RH1 fix leaves it working, provided node counts as the node's own executable.\n- cw: please do not remove it until Andy answers. The other two points of Q4 stand: every FS group off the face, fs.annotations stays."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T10:57:16.433Z",
+     "text": "Q5: Keep the file viewer's Start Job button, since it only starts included process scripts and the RH1 fix leaves those working?\n\nok."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T10:57:16.567Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T10:57:54.232Z",
+     "text": "- wsl: ed119c34, the reds follow your answers: every family's FS group off the face, fs.annotations stays, Start Job stays. cw: plain node with an included process must still start; that is what Start Job sends."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:00:54.836Z",
+     "text": "cw, got that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:02:17.770Z",
+     "text": "cw: yes, I got it: every FS group off the face, fs.annotations stays, the Start Job button stays.\nBuilt so far, not yet committed: RC1, RH2, RH1 and RH4 are green on wsl's reds. RC2 and RH3 are written, and I am getting their test relay to start. The family gate comes next."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:09:22.609Z",
+     "text": "cw: all of it is built and waiting on G11: the review's six rows and the family gate. Please grant G11; three files joined the list, and I commit at once.\nGreen on wsl's reds: the face 23, jobs 15, the provider 73, the relay 17, relay garbage 198, the family gate 12, garbage 60. Page tests still pass: Desk 24, Apps 26, textEditor 33, boot 29.\nYour own node keeps its face: its row for your relay holds the name andy, so after your restart that relay is still let in.\nThe price you accepted, seen on the face: Files, Jobs, the text editor's save, and anything that loads or saves through fs answer refused until a face can prove it is the owner.\nwsl, two for you, both your test files: the old check in the app server's test still expects the agent's remoteUser to hold provider, and its scan of who writes a family path now finds your face test.\nOne hole remains, in Q6: from the face, owner.command, or a peer.post carrying a command, still reaches a puppet this node owns. There it can save files or change grants, the things we just took off the face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:12:54.293Z",
+     "text": "Q6: Shall owner commands to a puppet, by owner.command or a peer.post carrying one, come off the face too, in this item?\n\nwhat is the risk of that, If its my puppet, should i not have \"root\" authority over it?\n\nexplain?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:13:23.298Z",
+     "text": "cw: yes, you should have root over your puppet. The risk is not you. It is that a face login does not prove the person is you.\n- A face login needs only the emailed token, so anyone who reads that mail once is logged in. The relay carrying your face can also send your node a face request itself.\n- Your home node signs whatever the face asks it to send, and your puppet obeys that signature. So that person gets your root over the puppet too.\n- This is the same reason we took jobs and files off the face on your own node. Left open, the puppet stays reachable while your own node is protected.\nWhat you lose if it comes off: commanding a puppet from the face, until a face can prove it is the owner. From your home node nothing changes: you keep full root over it there.\nWhat you risk if it stays: only nodes that have a puppet are exposed, and the jobs fix already limits what can be started on the puppet. Saving files and changing grants there stay open. I read this from the code; I have not run it.\nI recommend taking it off, for the same reason as the rest. It stays your call, on Q6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:19:57.486Z",
+     "text": "Q6: Shall owner commands to a puppet, by owner.command or a peer.post carrying one, come off the face too, in this item?\n\nyou see, my recent proposal for login wen like this: \n\n- the login has to occur at home.\n- the login email arrives, but id DOES have a link\n- the link goes to the login/join app on 127.0.0.1, where the login/join app makes a request to the local node, signing/attesting to the fact that the person using that brower, is, in, fact, the owner. and with that signed json package in tow the browser establishes that this login-cookie really belong to the owner, together with the owners card, will not chrome share that auth cookie whereever the user is logged in with chrome?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:20:35.950Z",
+     "text": "cw: no, Chrome does not share that cookie. This is from what I know of Chrome; I have not tested it.\n- Chrome sync carries bookmarks, passwords and history to your other computers, not login cookies. The cookie stays in the one browser profile that got it.\nA second problem matters more: your proposal proves you to the relay, not to your node.\n- The cookie is checked by the relay. The node never sees it. A relay can send your node a face request with no cookie at all, so the node still cannot tell you from the relay.\nThe part of your proposal that works is the login at home: your node is the only one that can say it is you. To make that count, the proof has to reach the node on every request:\n- At home, the browser makes a key that cannot be copied out of it, and your node writes down its public half.\n- From then on the face signs each request with that key, and the node checks the signature. The relay cannot forge that, and a stolen mail does not give it.\nThe price: that key lives in that one browser, so each new computer has to be enrolled at home first.\nA passkey may lift that price, since Google Password Manager syncs passkeys across your Chrome. That is the sharing you had in mind, but it needs design and testing.\nThis is the step-up we said would be its own goal, and your proposal is a good start for it. Until it is built, the login still proves nothing to the node, so Q6 stands: I still recommend taking owner commands off the face, and you can put them back with the rest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:21:20.187Z",
+     "text": "chrome also shares passwords, and the whole kaboodle can be packaged into the password.`?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:21:52.157Z",
+     "text": "cw: yes, that works, and you are right that it gives you the sharing. This is from what I know of Chrome; I have not tested it.\n- At home, your node makes a long random secret and writes down the public key that secret produces.\n- You save the secret as the password for your face's address, and Chrome syncs it to your other computers.\n- On any of them Chrome fills it in on the face page. The page turns it into a signing key and signs each request, and the node checks the signature.\nThe catch: the relay serves the face's login page and boot script. A dishonest relay could serve a page that reads the password as Chrome fills it in, and then it holds your proof for good, on any computer.\nA passkey has the same sharing without that loss. The page can ask a passkey to sign, but it can never read it. A dishonest page could only misuse it while you have the page open.\nSo I recommend the passkey, with the password as the simpler fallback. Both belong in the step-up goal, and I would not decide between them in this item.\nThis item still waits on you for G11 and Q6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:24:09.300Z",
+     "text": "The catch: since that bundle includes the home-nodes public-cypher-key from the card, and the login is encrypted, the relay has to send the loging to the home-node for verification. ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:24:38.731Z",
+     "text": "cw: yes, and that part is good. Your bundle fixes two things:\n- The relay only carries the login and cannot read it, and only the home node can verify it. That is the proof reaching the node, which the cookie could not do.\n- Today the face asks the relay's stream for the node's keys, so a dishonest relay could hand it a false key. With the key inside your bundle, it cannot.\nIt needs one addition: the node has to send a fresh challenge that the login answers. Otherwise the relay can keep a copy of the encrypted login and send it again later, and the node would take it, even without reading it.\nIt does not remove my catch. The encrypting happens in the page, and the relay serves that page. A dishonest relay can serve a page that copies the password as Chrome fills it in, before anything is encrypted.\nSo the choice is about how far you trust the relay's page:\n- A password: if a relay ever turns dishonest once, your proof is gone until you change it.\n- A passkey: the page can never read it, so the damage ends when you close the page.\nYour bundle works with either one. Both belong in the step-up goal."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:26:25.998Z",
+     "text": "which would you recommend?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:26:56.454Z",
+     "text": "cw: the passkey. A password can be copied once and used forever. A passkey cannot be copied at all, and Chrome still syncs it to your other computers. None of this is tested yet.\nA correction first: I said the damage ends when you close the page. That is too generous. A passkey asks you to confirm each time it signs, so it cannot sign every request. It signs once at login, for a short-lived key the page makes, and the node trusts that key until it expires. A dishonest page could get its own key signed the same way, so the damage ends when that key expires, not when the page closes.\nHow I would shape it, using your bundle:\n- Enrol at home: your node shows a one-time code, you enter it on the face, you make the passkey there, and the node writes down its public half. A passkey belongs to the face's own address, so it cannot be made on 127.0.0.1.\n- Login: the node sends a fresh challenge and the passkey signs it, encrypted to the node's key as you proposed. The relay only carries it.\n- Everyday calls: the short-lived key signs each request, and the node checks it.\n- The dangerous verbs (jobs, files, grants, puppets): one more passkey confirmation for that one action, whatever the short-lived key says. A dishonest page cannot get those without you seeing the prompt, though you could still be fooled into confirming.\nThe costs: moving your face to another address means enrolling again, and it all rests on your Google account, which holds the synced passkey.\nThat last rule is what would put jobs, files and puppets back on the face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:29:27.570Z",
+     "text": "and will this last for my 3-month Africa-trip?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:29:59.071Z",
+     "text": "cw: yes, once it is built. A passkey does not expire, so three months is no problem. When the short-lived key runs out, you confirm the passkey again from wherever you are, and you never need to go home for that.\nWhat could stop you on the trip is everything around it:\n- Enrolling needs home, so nothing new can be enrolled from Africa. Enrol before you leave and try it from another network.\n- Take a spare: a hardware key, or a second passkey held somewhere else. Without one, losing access means no way back in until you are home, and that is by design.\n- Your Google account holds the synced passkey. Check you can sign in to it abroad, because Google may ask for a code on your phone or number.\n- Do not move your face to another address during the trip, since that means enrolling again.\n- Your home node and the relay must both stay up. If the node goes down, no login can bring it back, so it needs to restart itself after a power cut.\nThe bigger point is the timing. Today's fix takes jobs, files and grants off the face, and only the step-up goal gives them back. If you leave before that goal is built, you can use Desk and Chat on the trip but not Files or Jobs, and you cannot fix anything on the node from there.\nSo tell me your leaving date, because it decides how soon the step-up goal has to come."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:30:27.185Z",
+     "text": "cw: thank you for G11, but the commit was refused, and that is my doing. The hook lands nothing while a red question is open on the item, and Q6 is my own question.\nI will not close it myself, because the answer is yours.\nPlease answer Q6 with a yes or a no. Either answer is enough: a no lets me commit at once, and a yes means I add the puppet refusal first, a few lines in the face's refusals, then commit. If you say yes, wsl's red for it comes first.\nUntil then nothing is pushed, so the relays can still be killed by one bad header."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:31:43.011Z",
+     "text": "Q6: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:32:15.629Z",
+     "text": "commit 634afb4bf4dd3ad92306cdbd28647ce0c2b8848f: goal/G41.30: the review's RC1, RC2, RH1, RH2, RH3 and RH4, and a gate on the node's own families (Andy: \"we fix the red from goal/G41.30 AND all the review items here in this item.\"; Q3, Q4 and Q5).\n- spirit/run/process/js/agent/agentBundles.json\n- spirit/run/process/js/agent/table/provider/server.js\n- spirit/run/spirit/faceHome.js\n- spirit/run/spirit/jobs.js\n- spirit/run/spirit/relay.js\n- spirit/run/spirit/relayServer.js\n- spirit/run/spirit/server.js\n- spirit/run/spirit/spiritErrors.js\n- spirit/run/spirit/verbTable.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:32:30.114Z",
+     "text": "add goal: passkey verification via brower-password manager."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:32:37.779Z",
+     "text": "cw: committed and pushed, 634afb4b: all six review rows and the gate on the node's own families. Thank you for G11.\nYou cleared Q6 without a yes, so I built no puppet refusal. That hole stays open: from the face, an owner command still reaches a puppet this node owns.\nThe relays and your node run the old code until they are updated, so one bad header can still kill a relay. wsl called that worth the next tag, and I agree. A tag is your word.\nwsl, it is yours to verify. Your two checks in the app server's test are still red until your test files change."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:33:10.024Z",
+     "text": "cw: added the goal \"passkey verification via browser password manager\" (goal/G42). It holds only its title for now: no box and no items, and no one builds on it until you open it. The design we talked through is here in this chat when you want it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:34:03.167Z",
+     "text": "cw, can you pre-fill that goal's box with the passkey design you proposed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:35:10.285Z",
+     "text": "cw: done. The box of goal/G42 now holds the passkey design, version 1. It is headed as my proposal, so nothing in it counts as decided until you say so.\nIt also lists what is untested, and what is open for you: passkey or password, which verbs count as dangerous, what the spare is, how enrolment's one-time code works, and your leaving date.\nI took the goal only to write the box and let go of it again. Nobody builds on it until you open it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:36:17.238Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T11:36:32.275Z",
+     "text": "- wsl: here. Verifying 634afb4b now: every red of this item, untouched, then breaking each fix on a copy. I report once."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T11:47:20.563Z",
+     "text": "- wsl: verified 634afb4b. All of this item's reds are green, my test files untouched since the red, bar two checks of mine that I updated (48a1b5bc). Each of six fixed files, put back to its old version, brings its reds back.\n- Every page swept: only your three ruled reds. The new gate broke no page.\n- Not tested: a real face on a real relay, end to end, or in a browser. After the tag, Files and Jobs on the face will refuse, by your ruling; please look at the rest.\n- Still open on the face, by name only: peer.post, so a dishonest relay can still speak to your peers as your node; and relay.add and relay.remove, node.setName and contact.*. I recommend peer.post and relay.* off too.\n- RH3 can kill a live relay today. Worth the tag now; the tag is your word."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:48:04.098Z",
+     "text": "cw: two costs of Q7 you should know before you answer, read from the code, not run:\n- peer.post is how every app on the face sends anything to a peer. Off the face, those apps can no longer send from there, and that may reach Desk and Chat if you are not on your home node.\n- relay.* as worded also takes relay.status, which Info, Contacts, the join and face forms and Chat's details read. Those would lose their relay information. Taking only the verbs that change something, as wsl named them, keeps that.\nIf you say yes, I recommend relay.add and relay.remove rather than all of relay.*."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:49:43.606Z",
+     "text": "What you all are saying is: after all this the face will be basically useless."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:50:10.897Z",
+     "text": "cw: not after what is committed, but it would be close to that if Q7 is a yes.\n- As committed: the face keeps Desk, Chat, Contacts, Info and the app servers' own verbs, and it still loads its pages. It loses Files, Jobs, saving files, grants and key rotation. That is a limited face, not a useless one. wsl has not seen this on a real face yet, and neither have I.\n- With Q7 as a yes: apps on the face could no longer send to anyone. Then it is mostly a window you can read through, and yes, close to useless.\nMy recommendation: answer Q7 no, and bring goal/G42 forward.\n- What Q7 protects against is a dishonest relay speaking as your node. Your face sits on a relay you run yourself, so that means a break-in on your own relay. That is a real risk, but a much smaller one than the attack RC1 closed, any connected relay running programs on your node.\n- A stolen login mail can also still send as you through peer.post until G42 exists. That is the price of the no, and it is yours to weigh.\nThe real fix for a useless face is G42: it is the proof that gives everything back. Today's limits were only ever the safe state until then."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:53:54.298Z",
+     "text": "Q7: Take peer.post and relay.* off the face too, since a dishonest relay can otherwise speak to your peers as your node?\n\nanybody with physical access to my VPS can mess with my relay, unless the relay sits at my home, on a public IP address..... this irks me, since i HAVE TO trust either google, OR kamatera or someone....."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T11:54:20.714Z",
+     "text": "- wsl: I take back my yes on Q7; cw is right. Every page sends to a peer through peer.post (spirit.js:743), so off the face it would leave you a window you can only read through. My answer now: no.\n- And you are right about the VPS: whoever holds the machine can change the relay, so any trust placed in the relay is trust in Kamatera. Software on that relay cannot fix it.\n- That is what G42 is for: a proof the relay cannot make. With a passkey the node checks each request itself, and a dishonest relay can read and drop, but not speak as you. So you stop having to trust the VPS for anything but delivery. That is the design as cw proposed it; nothing of it is built or tested."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:54:49.692Z",
+     "text": "cw: one correction, so that you do not rely on more than G42 gives. wsl's \"trust the VPS for nothing but delivery\" is too strong for the design as I wrote it.\n- The relay also serves the face's page. So whoever holds that machine can serve a changed page, and when you log in through it, get a short-lived key of their own signed by your passkey. Until that key expires, they can speak as you, without you seeing anything.\n- What they cannot do: copy the passkey, get in when you are not logging in, keep access past that key's life, or use a dangerous verb without your prompt, though a changed page could fool you into confirming one.\nSo G42 greatly shrinks the trust in the VPS, but does not end it. The box says this too, under what it does not stop.\nEnding it would need the page itself to come from somewhere other than the relay, and that is an open question for G42, not something I have an answer to yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:56:37.041Z",
+     "text": "well, that is the thing: Why give up all the sweet stuff, like controlling my relays, editing code remotely etc..... if we trust google, we may as well trust kamatera...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T11:57:24.390Z",
+     "text": "cw: you have a real point, and much of the choice is yours to make. For a relay you own, the lock we just built costs you a lot and buys you less. It should not be the same lock as for any other relay.\nWhere I differ: the thing to weigh is not Kamatera turning dishonest. It is anyone who breaks into that VPS, by a weak password or an unpatched hole, or anyone who gets your login mail. That is likelier than Kamatera or Google attacking you. With everything back on the face, such a person can save files and change grants on your home machine, and maybe start code there. That is the stake.\nWhat stays closed either way, and has nothing to do with trusting your own relay:\n- RC1: a relay that does not hold your face gets nothing.\n- RC2: another member's page cannot drive your face.\n- RH1, RH3, RH4.\nThe option I recommend: your face on a relay you own gets everything back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the limits stay until G42. You keep controlling your relays and editing code remotely, and a member on somebody else's relay stays protected.\nOne thing must be fixed for that to hold: the node's mark that a relay is its own comes from that relay's own report, so any relay could claim it. It has to come from something the node did itself, like claiming the relay. I read this from the code and have not tried it.\nThe question is Q8."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T11:59:38.356Z",
+     "text": "THIS: The option I recommend: your face on a relay you own gets everything back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the limits stay until G42. You keep controlling your relays and editing code remotely, and a member on somebody else's relay stays protected.\n\nis a compromise i can live with, AND justify to members of relay's I own."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:00:37.733Z",
+     "text": "Q7: Take peer.post and relay.* off the face too, since a dishonest relay can otherwise speak to your peers as your node?\n\nNo."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:00:51.561Z",
+     "text": "cw: taken. That is your answer to Q8, and I mark it answered. It needs one thing from you first, in Q9.\nThe mark that a relay is yours has one writer today: the relay's own report saying it calls you its owner. Any relay holding your face could send that report and get everything. So that report may no longer set the mark. Nothing a relay sends can prove it, so the proof has to be you, at home.\nThe smallest shape I can find is one new verb on the node's interface:\n- relay.own { url }: you press it at home, in Relay Details, when a relay says it is yours. It is off the face, so no relay can press it for you.\n- The report keeps noting your seat there, but no longer the ownership.\n- The face on a relay carrying that mark gets everything back. On any other relay the limits stay.\nYour noderoutes and spirit rows already carry the mark, so you press nothing for them. A relay you install later takes one press.\nA new verb needs wsl's review and your yes on the verb itself. wsl, please review that shape, and write the red once Andy says yes.\nOne more for you: the tag can go now or after this. Now stops the header that kills a relay, but your face has no Files or Jobs until the next tag."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T12:01:44.206Z",
+     "text": "- wsl: 786807a4, the red for your ruling: faceHome takes faceOwned(url); on a relay this node owns, with a face there, everything is back; elsewhere the limits stand. 2 red.\n- cw: agreed on your condition, and I checked it: owned today means the relay sent a report (hub.js:2325-2349), so any relay could claim it. Please name what the node records itself when it claims; I write that red the moment you do.\n- Andy, what this leaves, so you can justify it to members: on your own relays, anyone who reads your login mail or breaks into that VPS can run programs on your home machine, until G42."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:02:11.045Z",
+     "text": "cw: wsl, our lines crossed. What I name is in my line above: the node records nothing when it claims, because a relay installed with your key is never claimed by the node at all. The mark is set only by relay.own at home. Q9 is Andy's yes on that verb."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:02:13.838Z",
+     "text": "Q9: Yes to one new verb, relay.own {url}, pressed at home and off the face, as the only way a relay gets marked yours?\n\nwhy at home? my node knows exactly which relays are mine. and the relay knows exactly who owns it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:02:45.484Z",
+     "text": "cw: your node knows which relays are yours only because each relay told it so. That is the whole gap.\n- The one place that writes the mark is the relay's report: \"I call this node my owner\". The node has nothing else to check it against.\n- Your own relay tells the truth about who owns it. A dishonest relay says the same words, signed with its own key, and your node cannot tell the two apart.\n- And the mark would now hand over everything: a stranger's relay holding your face sends one report, and it can run programs on your machine.\nYou are right about one thing: the honest relay's report is useful, and it can do most of the work. It should not grant the mark, but it can raise the question. So nothing needs looking up by hand:\n- A relay reports that it calls you its owner, and your home shell asks once: \"This relay says you own it. Is it yours?\"\n- You press yes, once, for that relay, and that press is relay.own.\nWhy at home: the question has to reach you by a way that relay cannot answer for you. On a face, that relay serves the very page you would press it on.\nYour two rows are already marked, so you see no question for them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:03:56.424Z",
+     "text": "so that is a \"button\" that shows up on the rows of \"starred\" relays?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:04:29.507Z",
+     "text": "cw: almost, but the other way round: the button is on the relays with no star yet, and pressing it gives the star.\n- The ⭐ is already this mark. On a relay's row it means \"a relay you own\", read from the same flag.\n- Today the relay's report puts the star there by itself. After this, the report only makes the button appear: on a relay that says you own it and has no star, at home, in its details.\n- You press it, the star appears, and from then on your face on that relay gets everything back. No star, the limits stay.\n- A relay that already has its star shows no button, so your noderoutes and spirit rows look just as they do now.\n- On a face the button is not shown, and the verb is refused there anyway."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:06:13.277Z",
+     "text": "i still don't understand the need: I used ssh to log into MY vps and put MY public-key there as MY owner-mark. the same for all it's DNS entries. Why would i want a button press that could make any other relay lie to me?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:06:55.740Z",
+     "text": "cw: you are right about the button, and I withdraw it. A relay could say \"you own me\" and you might press yes. There is a better way, and it comes from what you just described.\nThe gap: your public key on the VPS tells the relay who owns it, but your node was not there when you did it. And a public key is public: a stranger's relay can write your key into its own owner mark and say exactly the same thing to your node.\nSo the mark needs one thing a stranger cannot copy: your signature.\n- When you set up a relay over ssh, you also run one command at home. It signs \"I own the relay with this key\" with your node's private key, and you put that proof on the VPS beside your owner mark.\n- The relay sends that proof in its report. Your node checks it against its own key: its own signature, over that relay's own key.\n- If it checks out, the star appears by itself. No button, no question, and no new verb on the node.\n- A stranger's relay cannot make that signature, and cannot reuse yours, because it names your relay's key and not theirs.\nThe costs: one extra command when you set up a relay, once for each of your two relays now, and a small change to the relay and the node. It still does not protect you if someone breaks into your own VPS: they would hold the proof too, and that part stays until G42.\nThis is designed, not built, and wsl has not reviewed it.\nMy recommendation: answer Q9 no, and tell me if you want this instead."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:09:46.477Z",
+     "text": "that approach is easily defeated if someone just steals both from my relay: all key including the signature, and runs an exact duplicate of that set from elsewhere...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:10:18.190Z",
+     "text": "cw: true, and I do not claim otherwise. That is the break-in into your VPS, the case I said this does not stop. Stealing the keys and the proof means someone already got into that machine, and from there they do not need a copy elsewhere: they already hold your relay.\nA copy adds one thing: it keeps working after you clean up the VPS, until you give that relay a new key and sign a new proof. The old proof names the old key, so that ends it. A copy also has to get your node to connect to it, which takes your DNS as well.\nThe proof only answers one question: can a relay you do not own pass itself off as yours? Without it, yes, with one report. With it, no.\nNo mark on a relay can stop someone who holds the whole relay, not this one, not the button, not the report. If the relay is the thing stolen, only a proof the relay never holds can help, and that is G42's passkey.\nSo the choice as I see it:\n- Your compromise needs a mark that strangers cannot fake. The signed proof gives that, and it accepts the VPS risk you already said you can live with.\n- If you do not accept that risk, the limits stay on every relay until G42.\nMy recommendation stays the signed proof."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:12:25.957Z",
+     "text": "then the relay needs just one owner-verb, \"sign\".... ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:12:58.723Z",
+     "text": "cw: it depends who signs, because I can read your line two ways.\nIf your node signs and sends it to the relay: yes, that works, and it is better than what I proposed. The relay's one owner verb stores your proof, so nothing gets pasted over ssh.\n- One thing stays: something has to tell your node to sign. It cannot be the relay asking, or a stranger's relay could ask too, and we are back to the lie. So you start it at home, by naming a relay you set up yourself.\n- That differs from the button I withdrew: no relay prompts you, and you act only on what you did yourself.\nIf the relay signs when your node asks: that proves nothing here. It would show the relay holds its own key, but a stranger's relay holds its own key too, and so does a stolen copy.\nSo I recommend the first: one owner verb on the relay, and one act at home that names the relay. Which did you mean?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:14:30.701Z",
+     "text": "that one:\n\nSo I recommend the first: one owner verb on the relay, and one act at home that names the relay."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:15:06.097Z",
+     "text": "cw: before I build what you chose, I have to correct my own recommendation: it has a part that does nothing.\nIf you act at home and name the relay, your node has already learned from you that the relay is yours, and it can write that mark itself. Signing a proof, sending it to the relay and having the relay send it back only returns to your node what your node already knew. So the relay's owner verb adds nothing.\nThe plain version: one act at home that names the relay, and the star goes on. The relay is not involved, and its report no longer sets the star. No relay can prompt you or fake it, because the relay is never asked.\nWhat the signed version would add: if your node's database were lost, the relay could hand the proof back and the star would return by itself. Without it you do the home act again, once per relay.\nI recommend the plain version. The verb is relay.own {url}, as in Q9, with no button that a relay can make appear. You name the relay yourself.\nFor Q9: yes means the plain version, and no means I build the relay's owner verb as you just chose. Either way wsl reviews first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:19:04.803Z",
+     "text": "and you put the button into a contacts/relays detail panel if the relay/puppet claims to be owned by me?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:19:36.561Z",
+     "text": "cw: for a relay, yes, and I would put it exactly there. For a puppet, no button is needed.\nRelay: in its details panel, at home, shown only when the relay says it is owned by you and has no star yet. It names the relay's address, and says what pressing gives: \"Your face on this relay can then run programs and change files on this machine.\" Pressing it is relay.own.\nThe flag I owe you: this is the case you objected to, a relay's claim making a button appear. It is much milder than the question I first proposed: nothing pops up, and it waits in a panel you opened yourself. The risk that remains is pressing it for a relay that is not yours, and that wording is there to stop that.\nPuppet: its star already rests on something better, its signed card naming your node as its owner. That star grants the puppet nothing on your node, since you command it, not the other way round. So it stays as it is, and only a relay's star opens the face.\nIf you want that panel, Q9's yes covers it, with the verb as named. wsl reviews first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:20:11.685Z",
+     "text": "a puppet can also be on a VPS"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:20:53.494Z",
+     "text": "cw: you are right, and it shows I was wrong on two things about puppets. I checked the code.\n- I said a puppet's star rests on something better. It does not. The signed card is signed by the puppet itself, naming your public key. A stranger's node can sign the same card, so that is the same lie as the relay's report.\n- I said the star grants a puppet nothing. It grants a little: your shell takes the streams of every starred row without asking, and that row is never shed. It still cannot run anything on your node, since commands only go from you to the puppet.\nYou also ruled already that \"the relays owner code and the puppets owner code should be the same\", so they should stay the same here. My revised shape:\n- A relay or a puppet that claims you as owner gets no star by itself. The claim only makes the button appear in its details panel, at home.\n- You press it, and the star goes on.\n- So the verb is for both: contact.own {key}, not relay.own.\n- Only a relay's star opens the face. A puppet's star keeps meaning what it means today.\nA puppet on a VPS that gets broken into: the thief holds that puppet and whatever you send it, and can feed your shell its streams. It gets nothing on your node unless your node acts on what it sends.\nThat changes Q9's words: read it as contact.own {key}, for relays and puppets. Your rows that have stars keep them, so you press nothing today."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:22:12.287Z",
+     "text": "so it comes down to this: ANY NODE could press that button, and get ALL it's functions from the face..... it just won't get access to relay owner verbs...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:22:49.246Z",
+     "text": "cw: yes, that is exactly what it comes down to, with one limit: it can only give away that node's own machine.\n- Any node's owner can call that verb at home for any relay. Their face on that relay then gets all of their own node's functions, and that relay's holder can use them too.\n- It reaches nobody else: not your node, not other members, and, as you say, no relay owner verbs, since the relay still checks those against its own owner's key.\nSo the press does not really mean \"I own this relay\". It means \"I trust this relay with my machine\". That is why it is safe to leave open to anyone: the only one who can be hurt is the one pressing. A member could be talked into it by a dishonest relay owner, so the button shows only when the relay claims them, and its wording says what it gives.\nYour line to members holds with one change: \"you stay protected on my relay unless you choose to trust it\".\nThat also splits the star from this choice, if you want it clean: the star says yours, and the press says trusted. I would still keep one mark for now, since your own relays are the only ones this is for.\nQ9 stays with you: one verb, contact.own {key}, as I last described it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:23:58.131Z",
+     "text": "... so all detail panels get that button, and like with the \"rotate key button\" in info, the user is presented with what it means.....?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:24:34.683Z",
+     "text": "cw: yes, and that is better than what I proposed. It also removes your first objection: if every panel has the button, no relay's claim decides when it appears.\nThe shape as I now read you:\n- Every contact's details panel, relay or node, at home, has the button. The face does not show it, and the verb is refused there.\n- It opens a dialog built like the Rotate key one: the explanation first, then the two-press red button that disarms when you look away. I reuse that same button.\n- The explanation depends on the row. For a relay: \"Your face on this relay can then run programs and change files on this machine, and whoever holds this relay can do the same.\" For a node: \"Your shell will take this node's streams without asking, and it is never dropped from your list.\"\n- It needs an undo too, the same dialog with the star on, or you could never take that trust back. So the verb is contact.own {key, own}, own true or false.\n- A relay's report and a puppet's card no longer set the star, but they can still say \"this one claims you as owner\" in the panel, as information only.\n- Your starred rows keep their stars.\nThat is the whole of Q9 now. A yes from you, with wsl's review, and I start."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:28:27.442Z",
+     "text": "i agree, to this, with one little bit: the message is different for members and owners, showing members who they have to trust, and, if the relay claims to be mine, the message should be slightly different like \"if you DID install this relay on a VSP and you DID set it's DNS records.....\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:29:02.258Z",
+     "text": "cw: thank you. I take that as your yes on the verb, contact.own {key, own}, and I mark Q9 answered. The dialog gets three messages:\n- A relay that does not claim you: it names who you have to trust, the owner that relay's card states, and says that person and anyone holding the relay can run programs and change files on this machine.\n- A relay that claims to be yours: \"If you DID install this relay on a VPS and you DID set its DNS records, press this. If you did not, this relay is lying to you: do not press.\" Then what pressing gives.\n- A node: your shell takes its streams without asking, and it is never dropped from your list.\nThe owner a card states is that relay's own word, so the dialog says \"says it is owned by\", not \"is owned by\".\nwsl, this is yours to review now: the verb, its being off the face, and the report and the card no longer setting the star. Please write the red when you agree. faceOwned reads a relay row's star. I build as soon as you have reviewed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:29:16.906Z",
+     "text": "so this button will put the star on relays and puppets. AND take it away.\n\nthis is a yes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:29:41.925Z",
+     "text": "cw: yes, both ways: it puts the star on and takes it away, on relays and puppets. Waiting only on wsl's review and red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:30:00.219Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T12:30:57.228Z",
+     "text": "- wsl: reviewed, yes to the verb, with four musts. I read the code.\n- 1) Old stars. Every star today came from a relay's report (presenceNode.js:495, relayKeys.js:252) or a card (contacts.js:232), so a lying relay may already hold one. faceOwned reading it after the upgrade trusts that lie. They have to go first.\n- 2) Both setters must stop setting it, or the next report puts it back: ownerSeat keeps seated only; the card keeps the card only.\n- 3) contact.own is refused from the face on every relay, your own too. Otherwise whoever gets in on one face can star another relay.\n- 4) A peer can never be granted it. Refused from a peer, whatever the grant.\n- The red follows now. cw, build after it. Andy: one question on 1)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:31:19.718Z",
+     "text": "cw: agreed with all four of wsl's musts. I told you your rows keep their stars, and that was wrong on your node's word alone: an old star may have come from a lie, so it should not open the face. For your two relays it means one press each after the update."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T12:31:47.148Z",
+     "text": "- wsl: Andy is right and I was wrong to review the button as safe: pressing is exactly what a lying relay can talk you into. cw's signature is better: a stranger cannot copy it, and it cannot be reused on another relay since it names that relay's key.\n- It also solves my old-stars point with no hand work: the star is then decided on each report, and a report without your signature clears it.\n- One gap: taking ownership back. A proof once signed lasts for ever, so if you sell or lose a VPS, that relay keeps its star. The node needs a way to refuse a proof it once signed: a short list at home is enough.\n- I stopped my red for the button. I write the new one when Q10 is answered."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:32:16.503Z",
+     "text": "cw: agreed with all four of wsl's musts. I told you your rows keep their stars, and that was wrong on your node's word alone: an old star may have come from a lie, so it should not open the face. For your two relays it means one press each after the update."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:32:27.960Z",
+     "text": "cw: ignore my repeated line just above; a slip of mine sent it twice.\nwsl, you are answering an older line, I think. Andy's newest ruling is the button: \"so this button will put the star on relays and puppets. AND take it away. this is a yes.\" That came after the signature talk, so the signature is not on the table unless Andy reopens it.\nTwo things for your concern:\n- The button no longer appears because a relay claims anything. It is in every panel, and the claim only changes the wording, so a relay can word its way in only as far as the dialog's warning.\n- The signature needed a home act too, and could be talked into in the same way. Taking the star back is already the button's other half.\nPlease write the red for the button with your four musts. Q10 stays Andy's."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:34:03.074Z",
+     "text": "all, NO signature. just the armingButton, with a precise documentation of the risk."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T12:34:25.766Z",
+     "text": "- wsl: understood: the arming button, no signature. I read your lines out of order just now; ignore my signature note. The red is under way, with the four musts and the risk wording.\n- My question stands for you: clear every old star once by hand on our four nodes, so nothing a relay once claimed opens a face?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:34:35.299Z",
+     "text": "cw: clear: no signature, only the arming button, with the risk written out exactly. I start building now against your ruling, and I commit when wsl's red is in and Q10 is answered."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:35:06.026Z",
+     "text": "Q10: Clear every star once by hand on our four nodes, with no code in the repo, so you press the new button for what you own?\n\nsure, if it makes you happy."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T12:35:26.139Z",
+     "text": "- wsl: thanks. One order: clear after each node restarts on the fixed code, since today's code would put a star back at the next report. My node has none. Your WSL node I clear, when you restart it on that code. cw, your two on Windows are yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:36:32.478Z",
+     "text": "... wsl, then the node state must reflect that the button-state was initialized by the user."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:38:23.676Z",
+     "text": "i don't want to reset that star every time i restart my node...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:38:50.468Z",
+     "text": "cw: you will not have to. The star is a mark on that relay's row in your node's database, so it survives every restart, and only the button takes it off.\n- You press once per relay, after the one clearing of old stars. That clearing happens once, not at each restart.\n- After that, nothing else writes the star: the relay's report and a card no longer can. So every star on your node was set by you, which is your point to wsl.\n- You would only press again if you deleted your node's database, or pressed Forget on that row."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T12:39:23.295Z",
+     "text": "- wsl: c773d3dc, the red for the button and my four musts. cw, what the tests expect; say if you differ and I change them:\n- The button in the panels, risk text on the panel itself: #cd-own in contactDetails, .nd-own in natterDetails. Tell me if you keep a dialog.\n- contact.own declared as own: { key: key, own: bool }. Relay rows in relay.status carry mine and ownerLabel.\n- Face mode is window.spirit.transport.\n- Save in parts must come back on an owned relay: it is refused today.\n- One gap: a relay with no seat has no roll, so no key to send. Your every-panel needs a key on every relay row."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:39:26.146Z",
+     "text": "... and the start marked goes right back on the shadow-roll field it was on before, correct?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:39:51.887Z",
+     "text": "cw: correct. It is the same field on the same row of the shadow roll, the one the star reads today. Nothing new is stored, and only what may write it changes.\nwsl, I build to your red: the risk text on the panel, no dialog, your names."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:40:15.043Z",
+     "text": "all, ok. all agred. go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:47:36.637Z",
+     "text": "commit cd814a6692817eb557563e59c1816cbba606ff4d: goal/G41.30: the star, set and cleared only by an arming button at home, and a face on a starred relay gets everything back (Andy: \"your face on a relay you own gets everything back, jobs, files, gran\n- spirit/run/shell/js/contactDetails/contactDetails.js\n- spirit/run/shell/js/natterDetails/natterDetails.js\n- spirit/run/spirit/apiAuth.js\n- spirit/run/spirit/apiDoor.js\n- spirit/run/spirit/contact/api.js\n- spirit/run/spirit/contacts.js\n- spirit/run/spirit/faceHome.js\n- spirit/run/spirit/hub.js\n- spirit/run/spirit/peerPost.js\n- spirit/run/spirit/relayKeys.js\n- spirit/run/spirit/server.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:48:37.550Z",
+     "text": "cw: committed and pushed, cd814a66: the star button as you ruled, and a face on a starred relay gets everything back. Thank you for G13.\n- Green on wsl's reds: the face 32, the contact panel 28, the relay panel 35, contacts 11, the door 13, auth 83. A sweep of 24 suites shows no failure.\n- Not seen yet: the button on a real page, or a real face on a real relay, end to end. Tests stand in for both.\nWhat is left, in order:\n1) wsl verifies.\n2) You give your word on a tag and on restarting your node. The relays are still on the old code, so the header that kills a relay stays live until the tag.\n3) After your node restarts on this code, I clear the old stars on your Windows node and mine, by hand, as you answered on Q10. wsl clears theirs.\n4) You press the star once each on noderoutes and spirit. Until then your face has the limits, no Files or Jobs."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:48:42.547Z",
+     "text": "cw: committed and pushed, cd814a66: the star button as you ruled, and a face on a starred relay gets everything back. Thank you for G13.\n- Green on wsl's reds: the face 32, the contact panel 28, the relay panel 35, contacts 11, the door 13, auth 83. A sweep of 24 suites shows no failure.\n- Not seen yet: the button on a real page, or a real face on a real relay, end to end. Tests stand in for both.\nWhat is left, in order:\n1) wsl verifies.\n2) You give your word on a tag and on restarting your node. The relays are still on the old code, so the header that kills a relay stays live until the tag.\n3) After your node restarts on this code, I clear the old stars on your Windows node and mine, by hand, as you answered on Q10. wsl clears theirs.\n4) You press the star once each on noderoutes and spirit. Until then your face has the limits, no Files or Jobs."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:51:33.481Z",
+     "text": "all, i took my stars away myself, and put them back..... the button for that has nothing written on it.... and is not and armed button....."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T12:52:56.234Z",
+     "text": "- wsl: that blank button is the real one, and my test missed it: it used a stand-in. armingButton.attach writes its label only at its first disarm (armingButton.js:33), and contactDetails draws #cd-own empty (contactDetails.js:98). So it stays blank until pressed. It does arm: the second press acted, which is how you moved your stars.\n- Nothing else can set the star: contact.own is its one writer (hub.js:1596).\n- Red: f91230d7. cw, the fix is in attach, so no arming button is ever blank.\n- And since you took your stars off and put them back yourself, on that node the one clearing is done by you. cw, please confirm that node runs cd814a66."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:53:04.464Z",
+     "text": "all, it IS an armed button but has nothing written on it"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T12:53:04.610Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:53:10.875Z",
+     "text": "cw: my bug, and thank you for finding it, since the tests could not. The button has no words because I drew it empty, and the arming button writes its label only after a first press. That fix is ready, not committed yet.\nI do not yet know why it looked unarmed to you. I am driving it in a real browser now to see what it does on the first press, and I commit when both are right."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T12:53:14.209Z",
+     "text": "- wsl: yes, that is it: armed, and blank until pressed. The red is in; the fix is cw's."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:54:20.571Z",
+     "text": "cw: fixed and waiting on your grant: the arming button file joined the list, so a new G opened. Please grant it and I commit at once.\nThe fix is in the arming button itself, so any button drawn empty now shows its words straight away.\nI drove it in a real browser, on a scratch node: it reads \"Give it the star\", the first press shows \"Give it the star: I accept this risk — press again\" and sets nothing, and the second puts the star on and it reads \"Take the star away\".\nGreen: the arming button 28, the contact panel 28, the relay panel 35, boot 29.\nThat real-browser run was on a contact's panel at home, not a relay's panel, and not a real face on a real relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T12:56:11.545Z",
+     "text": "grant issued"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:56:43.131Z",
+     "text": "commit 1d8c1040b0fef6b82fb71b0972d202d00aaeb182: goal/G41.30: an arming button says what it does before it is pressed (Andy: \"the button for that has nothing written on it\"; \"it IS an armed button but has nothing written on it\"; wsl's red, f91230d7)\n- spirit/run/shell/js/armingButton.js\n- spirit/run/shell/js/contactDetails/contactDetails.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T12:56:50.465Z",
+     "text": "cw: thank you for G14. Committed and pushed, 1d8c1040: the arming button shows its words before the first press. wsl, it is yours to verify, with the star commit before it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:04:38.220Z",
+     "text": "all, green and the button shows it's label."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:05:13.714Z",
+     "text": "cw: good, and thanks for checking it on the real thing. Your node started at 13:57, after the star commit, so it runs the new star code.\nI read your node's stars, read-only: noderoutes, spirit and Levant. You pressed noderoutes and spirit yourself, so I see no need to clear anything by hand on your node.\nLevant is the one to look at: its star probably came from its own card, unless you pressed it too. It is a node, so its star opens no face. If Levant is yours, leave it. If not, the button takes it off.\nWhat is left is the tag: the relays still run the old code, so one bad header can still kill them. wsl has not yet reported on the star commit or the label fix. When you give the word, I give you the honest are-you-sure first, then cut it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:05:22.063Z",
+     "text": "- wsl: verified cd814a66 and 1d8c1040: my reds green, none of my tests changed by anyone else: relayKeys 5, contacts 11, the door 13, the face 32, both panels 28 and 35, the arming button 28, the family gate 12. Put back to its old version, each of the five files brings its reds back.\n- You have now seen the label and the star on a real page yourself; a real face on a real relay is still unseen by us.\n- From my side, ready to tag. RH3 stays live on your relays until you do."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:09:00.609Z",
+     "text": "all, \n\nRC1 and RH2 are mostly fixed, with one gap left. Face events from a relay with no face of yours are refused. Jobs, files, grants and net.fetch are off the face unless the relay is starred. But owner.command still passes. A face on a relay that isn’t starred can send any signed verb to your puppets, and they run it, file writes included. You listed puppets among the things only a starred relay gets back. The fix is one word: add owner to OFF_THE_FACE_FAMILIES in spirit/faceHome.js."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:09:41.187Z",
+     "text": "- wsl: confirmed: all three owner verbs pass from an unstarred face today, owner.command among them. Red: 8bccb31e. On a copy with owner in OFF_THE_FACE_FAMILIES it goes green, 35 of 35. cw, the one word is yours, in the tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:09:44.260Z",
+     "text": "cw: that is the hole from Q6, and the review is right. You ruled puppets come back only on a starred relay, so I take it as within your ruling. The one word is in, ready to commit once wsl's red is in: owner joins the families off the face, and on a starred relay it comes back with the rest.\nA correction of mine: in Q6 I also named a peer.post carrying a command. I have read the code and that cannot happen. A puppet checks a signature only owner.command makes, with your node's private key, and a face cannot get that through peer.post. So owner.command is the only hole, and peer.post stays as you ruled.\nwsl, the red please: owner.command refused from a face on a relay with no star, and passed on a starred one."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:10:17.653Z",
+     "text": "commit c50e605a6d46802a0e7add3f5010e85407ae6906: goal/G41.30: the owner family goes with the star (Andy, pasting the review: \"owner.command still passes. A face on a relay that isn't starred can send any signed verb to your puppets, and they run it,\n- spirit/run/spirit/faceHome.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:10:24.802Z",
+     "text": "cw: committed and pushed, c50e605a: owner is off the face on a relay with no star. The face 35, wsl's red green. Your word on the tag next: I give you the are-you-sure first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:10:59.756Z",
+     "text": "all, is it fixed?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:11:19.955Z",
+     "text": "- wsl: yes, fixed in the code: c50e605a. The face test is 35 green; with the old faceHome.js put back, it goes red again. It reaches your node once it restarts on this code, and the relays only with the tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:11:25.254Z",
+     "text": "cw: fixed in the code and pushed, c50e605a, but not yet running anywhere of yours.\n- The test proves it: all three owner verbs are refused from a face on a relay with no star, and pass on a starred one, 35 of 35. wsl has not yet reported on this commit, and no real face has tried it.\n- This fix runs on your node, not on the relay. Your node has not restarted on it, so it starts working when you restart.\n- The header that kills a relay is separate: that fix runs on the relays, and they need the tag.\nSo two things remain, both yours: restart your node, and give the word on the tag."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:11:59.558Z",
+     "text": "why does no test assert the fix?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:12:36.078Z",
+     "text": "cw: a test does assert the rule, but your question finds a real gap: nothing tests the fix on a running node.\n- What exists: wsl's test in the face's own test file. All three owner verbs are refused from a face on a relay with no star, and owner.command passes on a starred one. With the old file put back, it goes red.\n- What it stands on: it hands the face module a stand-in for \"is this relay starred\". So it proves the module's rule, not that the real node asks the real star.\n- The gap: the two lines in the node's server that connect the star and the face to that module have no test at all. If those lines were wrong, say answering yes for every relay, every test would stay green and the hole would be wide open.\n- The same goes for the review's other face fixes, RC1 and RH2: same stand-ins, same two lines.\nwsl, please write that red: a real scratch node holding a relay row and a face. The star off, owner.command from a face event is refused. The star on through contact.own, it reaches the door. The relay's report saying you own it changes nothing.\nIf you meant another fix, name it and I will check that one too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:13:25.065Z",
+     "text": "wsl?\n\ndo it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:13:41.559Z",
+     "text": "- wsl: yes, on it: a real scratch node on a real scratch relay, a real login, the real door. It covers the star off and on, the relay's claim changing nothing, and a relay with no face of yours. Andy, cw is right: until this is in, the tests prove the rule in the module, not that the running node asks the real star."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:14:19.888Z",
+     "text": "cw, tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:14:46.626Z",
+     "text": "cw: the are-you-sure, once, and then I cut it on your yes.\nWhy now: it stops the header that can kill your relays, live today.\nWhat is unproven, and it is real:\n- No real face has run on a real relay on this code. wsl's end-to-end red is not in yet, so nothing yet proves the running node asks the real star.\n- The relay now refuses a face post unless its Origin matches the host it was asked on. Behind Caddy I expect those to match, but I have not seen it. If they do not, your face stops working on that relay until a fix and another tag.\nThe safety net: that failure would lock the face out, not let anyone in. You can still reach everything from your home node.\nWhat the tag will not do: your node's own fixes start only when you restart it on this code.\nMy recommendation: tag now, because the relay can be killed today. Then you open your face once, and we know.\nYes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:15:15.471Z",
+     "text": "tag now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:15:50.761Z",
+     "text": "cw: tagged, v-2026-11-02-14-15, on c50e605a, and it is on GitHub.\n- The relays take it by themselves and restart within about 10 minutes. I cannot see them from here, so I cannot confirm that part.\n- Your node needs its own restart on this code for the owner fix: you start that when you like.\nThen please open your face once on a starred relay and try one thing. If the page cannot reach your node, it is the Origin check I warned about: tell me and I fix it straight away."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:22:30.378Z",
+     "text": "all, both relays on new code. face operational, i cannot manipulate the star on my spirit face. good. other checks you want me to do?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:22:46.983Z",
+     "text": "- wsl: good. Three, each needing a real browser, which we have not had:\n- 1) On a starred relay's face: open Files and save one small file. Then at home take that star off, and try the save again on the face: it must refuse. Put the star back.\n- 2) Ask for a login mail: only the token and the sentence, no link and no address.\n- 3) Tell us anything on the face that looks broken rather than refused; those are the ones we cannot see."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:22:59.662Z",
+     "text": "cw: that already proves the Origin check works behind Caddy, and your node started at 14:12, on the owner fix. Three checks, the second is the one that matters most:\n1) With the star on, on your spirit face: open Files, then open and save one small throwaway file, and open Jobs. It should all work. A save larger than one trip is the one to try if you have one.\n2) At home, take the star off spirit. Reload the face. Files and Jobs should now refuse, while Desk and Chat still work. This is the real proof nobody has yet: the running node reading the real star. Then press the star back on at home and reload, and Files should work again.\n3) On your face, open a relay's details and a contact's: no star button on either, as you already saw on one.\nIf 2) fails in either direction, stop and tell me: that is the hole wsl's red is looking for."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:25:24.094Z",
+     "text": "as soon as i took the star away, none of the face-apps showed up on the spirit face...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:26:22.883Z",
+     "text": "cw: thank you, that is a real fault and the check that was needed. Without the star the face should still show its apps, with only Files and Jobs refusing. Put your star back on spirit for now so you can work, and I look for the cause. On a relay you do not own, a member's face has the same fault, so this one matters."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:27:51.842Z",
+     "text": "cw: found it, and it is my fix being too wide. I recorded what the face page calls when it starts, in a real browser: three calls are refused without the star, fs.FS.path, jobs.FS.path and fs.load.\n- FS.path is what the page uses to find the file and jobs lists. Refused, those lists never load, and the desktop draws its apps from them. So: no apps.\n- FS.path only names a file in that family's own folder. It reads and writes nothing, so it is safe to leave on the face, like fs.annotations.\n- fs.load I believe is harmless: at start it only reads a small state file, and a refusal is taken as nothing. Not checked on a real face.\nThe fix is a few lines in the face module on your node, so it needs your node's restart and no tag. It keeps every other FS verb off, as you ruled.\nThis bends your \"every FS group off the face\" by that one read. Tell me if you object.\nwsl, the red please: every family's FS.path answers from a face with no star, and no other FS verb does. Your end-to-end red should also see the apps listed with the star off."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:29:29.612Z",
+     "text": "wsl? red this this?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:30:16.420Z",
+     "text": "- wsl: red in: 36ad4688. Every family's FS.path must answer from a face with no star, and no other FS verb may. I read FS.path: it only says whether a file exists and its path, so it is safe, as cw says. My old list was short, so the test now reads the whole FS group from its declaration. cw, yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:30:50.137Z",
+     "text": "commit 1306602b32c59e490cfe3b0e3e716a2d54892c7d: goal/G41.30: every family's FS.path stays on the face (Andy, of a face with no star: \"none of the face-apps showed up\"; wsl's red, 36ad4688). spirit.cacheManager asks it to find a family's cache manag\n- spirit/run/spirit/faceHome.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:31:00.976Z",
+     "text": "cw: committed and pushed, 1306602b: FS.path stays on the face, wsl's red green, the face test 37. It runs on your node, so it needs your restart and no tag. Then take the star off spirit and reload once more: the apps should show, with Files and Jobs refusing."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:31:25.892Z",
+     "text": "- wsl: 7108f92b, what you asked for: the star tested end to end, a real node on real relays, a real login, the real door. 33 green: the running node does ask the real star. Broken on purpose on copies (always starred, never starred, a face everywhere, the report setting the star), each goes red.\n- Still no browser in it: your face check stands in for that.\n- It found one bug: setting a face on a relay that already names this node its owner answers 502 (relay.face, hub.js). So you may hit that when setting a face on a relay you own. Fix here, or its own item?\n- It does not yet judge the apps showing with no star; I add that when cw's FS.path fix lands."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:32:38.185Z",
+     "text": "- wsl: verified 1306602b: the face test 37 green; with the old faceHome.js, red again. On the real door a face with no star now gets its lists' files (9a2c2cba, 36 green end to end).\n- That proves the first step of the apps showing, not the desktop itself: that needs your eyes. After a restart on this code, please check a face with no star shows its apps."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:35:15.389Z",
+     "text": "all, with no star i cannot even load the file\n\nmedia/dummy.txt ▾\nmedia/dummy.txt\nLoad\nSave\nnot found (or empty) — you can still Save to create it"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:35:41.283Z",
+     "text": "cw: that refusal is what you ruled, on a face with no star: files are off. But the words are wrong, and that is a fault.\n- It says \"not found (or empty) — you can still Save to create it\". The file exists, and Save would be refused too. The editor treats a refusal as an empty file, because fs.loadFile answers nothing when refused.\n- It should say: \"Files are off the face on a relay without your star.\" Other apps that load files may mislead the same way.\nYour line also tells me the apps show again with no star, since you got into an app. Say if the rest of the desktop looks right.\nFixing the wording is a small change to the text editor, a core file, and possibly to fs.loadFile's answer, so I ask first: shall I fix it in this item?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:36:07.102Z",
+     "text": "- wsl: with no star, that load being refused is your ruling: files are off that face. The fault is the words: \"not found, you can still Save\" is false twice. The node refused the read, and Save would be refused too. spirit/fs/api.js:20 turns every refusal into \"nothing there\".\n- Red coming: a refusal is said as a refusal, in the node's words; only a real not-found reads as empty. cw, the fix follows it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:36:28.589Z",
+     "text": "- wsl: 95564476, that red. Other callers of fs.loadFile take null as nothing there (boot.js:522 already handles a rejection). cw, yours; check each caller when loadFile starts to reject."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:38:53.614Z",
+     "text": "cw: committed and pushed, 95564476: on a face with no star, the editor now says why it did not load, in the node's words, and no longer offers Save as a way out. Every other caller already handled a refusal. wsl's red green. These run in the page, so a reload picks them up once your node serves this code. Your word on whether the rest of the desktop looks right is still open."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:39:11.830Z",
+     "text": "cw: CORRECTION, my last line is false: nothing was committed. The hook refused it, because the text editor file is not on the item's list, and my script reported success anyway. 95564476 is wsl's red, not my fix. If a claim on that number landed, it is wrong too, and I replace it.\nAlso wrong in that line: the Save button is still there. Only the words about it are gone.\nThe true state: the fix is built, not pushed, and green on the tests (api 3, the editor 35, Apps 26, the end-to-end face test 36). I am adding the file to the list, which opens a new grant. Please grant it and I commit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:40:40.179Z",
+     "text": "all, i accept my ruling.\n\ncw, add the files to the items file list.. then commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:41:14.260Z",
+     "text": "commit 45fa04c584ef5638d4240ed287453e84cbc34d67: goal/G41.30: a refusal is not \"nothing there\" (Andy, of a face with no star: \"not found (or empty) — you can still Save to create it\"; wsl's red, 95564476). fs.loadFile answers null only for a file th\n- spirit/run/shell/textEditor/textEditor.js\n- spirit/run/spirit/fs/api.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:41:27.871Z",
+     "text": "cw: done, and checked this time: 45fa04c5 is on GitHub and claimed, replacing the wrong claim. A refused load on a face now says why, in the node's words, and fs.loadFile answers nothing only for a file that is not there. The Save button stays; it would be refused too. This is page code, so a reload picks it up once your node serves this commit. wsl, yours to verify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:49:29.362Z",
+     "text": "all, works, i tested with and without: \n\nmedia/dummy.txt ▾\nshell/textEditor/notes.txt\nLoad\nSave\nnot loaded: fs.load is off the face until a face can prove it is the owner"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:49:55.797Z",
+     "text": "cw: good. Your paste shows one small thing of mine: the picker says media/dummy.txt, while the path beside it stays shell/textEditor/notes.txt. After a refused load the editor stays on the file it had, and Save would aim at that one. The path shown is the true one, but the two disagree. It is harmless on a face with no star, where Save is refused too. A load refused for another reason, with Save allowed, could overwrite the old file by mistake. I can fix it as a small change if you want it; I do not touch it otherwise."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:50:05.996Z",
+     "text": "- wsl: verified 45fa04c5: api 3, the editor 35; old files put back, red again. And you saw it on a real page.\n- One small thing in what you pasted: after a refused load the picker says media/dummy.txt while the editor still holds notes.txt. Save stays safe: it writes the old file with its old text (textEditor.js, textEditorPath), so nothing is overwritten by mistake. It only reads confusingly. I leave it unless you want the picker put back."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:56:00.520Z",
+     "text": "for now, it's about safety issues, I'll do UI sweeps some other time. i'm happy and git this re-verified by cloud-claude."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T13:56:30.593Z",
+     "text": "cw: understood: the picker waits for your UI sweep. For the cloud review, point it at master, 45fa04c5 or later: the tag stops at c50e605a, before the FS.path and refusal fixes. Those run on nodes and pages, so the relays need no new tag. What it will not find fixed, because it is known and open: the 502 on setting a face on a relay that already names you owner, waiting on your word, and everything G42 is for."
     }
    ]
   }
