@@ -27,6 +27,9 @@ with Load and written with Save. It writes the same files on a face as in the ol
   watches the open file's row in `spirit.data` under `spirit.fsData.branch`. Any change of the open file that is not
   its own save says `changed on disk` (Andy, Q21); a change of another file says nothing.
 
+- **A load the node refuses is said as a refusal** (goal/G41.30; Andy, of a face with no star: *"not found (or empty) — you can
+  still Save to create it"*): the status says the node's own words, never not found, and offers no Save.
+
 ## What its test must try to break
 
 - `api.ui.elements` or `createTextView` reached; a part it uses not loaded by itself; `index.html` named.

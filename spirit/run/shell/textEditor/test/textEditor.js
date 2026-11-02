@@ -46,7 +46,7 @@ function world(opts) {
   const o = opts || {};
   const w = { required: [], loaded: [], saved: [], pickers: [], views: [], reached: [], def: null };
   const files = {
-    loadFile: function (p) { w.loaded.push(p); return Promise.resolve(p in FILES ? FILES[p] : null); },
+    loadFile: function (p) { w.loaded.push(p); if (o.refuseLoad) { const e = new Error(o.refuseLoad); e.code = 'not-from-the-face'; e.status = 403; return Promise.reject(e); } return Promise.resolve(p in FILES ? FILES[p] : null); },
     saveFile: function (p, c) { w.saved.push({ path: p, content: c }); return Promise.resolve(o.refuse ? { ok: false, reason: o.refuse } : { ok: true }); },
   };
   const E = {
@@ -187,5 +187,14 @@ test.startTest('textEditor.js: the TextEditor app, face-able');
   ok(p.loaded[before] === 'docs/a.md', 'Load reads the current path again', 'loaded: ' + short(p.loaded.slice(before)));
   p.def.loadFile('shell/x/data.json'); await settle();
   ok(p.loaded[p.loaded.length - 1] === 'shell/x/data.json' && !!lastView(p) && lastView(p).args.path === 'shell/x/data.json', 'loadFile(path) opens that path', 'loaded: ' + short(p.loaded));
+
+  // A REFUSAL IS SAID AS A REFUSAL (goal/G41.30; Andy, of a face with no star: "not found (or empty) — you can still Save to
+  // create it"): the node refused the read, so the status says the node's words, and offers no Save.
+  test.subHeading('a load the node refuses is said as a refusal');
+  const off = world({ refuseLoad: 'fs.load is off the face until a face can prove it is the owner' });
+  let thrown = null;
+  try { await off.def.mount(node('container'), off.api, { path: 'media/dummy.txt' }); await settle(); } catch (e) { thrown = e; }
+  ok(!thrown && /off the face/.test(status()), 'its status says the node\'s own words', 'status: "' + status() + '", threw ' + (thrown && thrown.message));
+  ok(!/not found|you can still Save/.test(status()), 'and never says not found, or that Save would create it', 'status: "' + status() + '"');
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
