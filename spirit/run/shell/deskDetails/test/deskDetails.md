@@ -140,3 +140,22 @@ verb's arguments are the build's; the test asserts only the verb sent.
 - No push Goal on the current goal, or on an item of it; a button reading something else, or outside the button row.
 - A press that sends nothing, sends a press (`desk.press`) instead of the verb, or sends the verb twice.
 - A push Goal drawn where the desk offers no pushgoal.
+
+## Requirements (goal/G41.28: the verifier's run, through spirit.data)
+
+Andy: *"EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
+object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept by its family's cache manager.
+
+- **It loads the verifier's cache manager itself**, `process/js/deskVerify/family/clientCacheManager.js`, through
+  `spirit.require`, and draws the run from `spirit.verifyData`, through the shared run status
+  (`shell/shared/js/deskRunStatus.js`), on the page's real data set.
+- With an item open whose facts say `verifyRunning`, a verifier publish taken into spirit.data (a job of module
+  `process/js/deskVerify`, its app `{ doing: 'run', suite, index, of, ... }`) redraws `#dd-run`: its progress, its suite
+  and how far (`verifying <suite>, suite <index> of <of>`); the next publish redraws it again.
+- A run already kept in spirit.data when the dialog opens is drawn at once.
+- A publish of another node's verifier draws nothing here; nor does a publish that says no `doing`.
+
+## What its test must try to break (goal/G41.28)
+
+- A run the dialog reads by itself, or not at all; a watch that hears nothing; a kept run not drawn at open.
+- Another node's verifier drawn as this node's; a publish with no `doing` drawn as a run.

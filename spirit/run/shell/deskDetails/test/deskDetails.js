@@ -201,8 +201,9 @@ function panelIcon(w, key) { return w.document.querySelector('[data-panel="' + k
 // The dialog is driven: mounted on a small page of its own, opened on an item, and each two-press button clicked twice.
 // armingButton is a working stand-in that writes down every button it is handed; the node's desk is a recorder.
 const vm = require('vm');
+const VERIFY_CCM = 'process/js/deskVerify/family/clientCacheManager.js';
 
-function ddWorld(facts, checks) {
+function ddWorld(facts, checks, o) {
   const document = makeDom();
   const made = [];
   const asked = [];
@@ -231,12 +232,25 @@ function ddWorld(facts, checks) {
       const q = String(p).replace(/^\/+/, '');
       required.push(q);
       if (q === 'shell/js/workBench.js') win.spirit.elements.workBench = workBenchStub(document, benches);
+      // The verifier's cache manager and the shared run status, the real ones, where the page's data set is (below).
+      if (o && o.real && (q === VERIFY_CCM || q === 'shell/shared/js/deskRunStatus.js')) vm.runInContext(fs.readFileSync(path.join(RUN, q), 'utf8'), win, { filename: q });
       return Promise.resolve({});
     },
     elements: { armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
       probabilitySearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
+  // THE PAGE'S ONE DATA SET, ITS NODE KNOWN (goal/G41.28, Q10), as spirit.start leaves it before any app runs, and the
+  // run status the shared element draws, not a stand-in: what the verifier publishes reaches the page through spirit.data.
+  if (o && o.real) {
+    // A page, as spirit.js says it is in a browser: a page's stream is its own node's, and its home is never a sender's.
+    win.spirit.isBrowser = function () { return true; };
+    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+    win.spirit.node = { key: 'KEY+DESK/DETAILS==' };
+    win.spirit.data.home(win.spirit.node.key);
+    delete win.spirit.elements.deskRunStatus;
+    if (o.kept) { vm.runInContext(fs.readFileSync(path.join(RUN, VERIFY_CCM), 'utf8'), win, { filename: VERIFY_CCM }); win.spirit.data.take(o.kept); }
+  }
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
@@ -517,6 +531,32 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     const b = pushButton(g);
     ok(!b && !pushes(g).length, what + ': no push Goal button, nothing pushed', what + ': ' + (b ? 'a button reading "' + b.textContent.trim() + '"' : '') + ' ' + JSON.stringify(pushes(g)));
   }
+  // ── goal/G41.28: THE VERIFIER'S RUN, THROUGH SPIRIT.DATA ────────────────────────────────────────────────────────────
+  // Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
+  // object". The run of this item (goal/G33.6) is the verifier's own publish, kept by its family's cache manager; the
+  // dialog loads that manager itself and draws the run from spirit.verifyData, through the shared run status.
+  test.subHeading('goal/G41.28: the verifier\'s run reaches the dialog through spirit.data');
+  const RUNNING = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: [], verified: 'none', verifyRunning: true, blocked: [] };
+  const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'process/js/deskVerify' }, o2); };
+  const RUN1 = { doing: 'run', suite: 'spirit/run/shell/info/test/info.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
+  const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
+  let v = ddWorld(RUNNING, [], { real: true }); await v.open();
+  ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!v.win.spirit.verifyData, 'it loads the verifier\'s cache manager itself, ' + VERIFY_CCM, 'required: ' + JSON.stringify(v.required));
+  const runBefore = runShown(v);
+  v.win.spirit.data.take(runJob({ app: RUN1 })); await settle();
+  ok(/verifying info\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress'), 'a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far',
+    'the run before: "' + runBefore + '", after the publish: "' + runShown(v) + '"');
+  v.win.spirit.data.take(runJob({ app: Object.assign({}, RUN1, { index: 3 }) })); await settle();
+  ok(/suite 3 of 4/.test(runShown(v)), 'the next publish redraws it again', 'the run: "' + runShown(v) + '"');
+  v = ddWorld(RUNNING, [], { real: true, kept: runJob({ app: RUN1 }) }); await v.open();
+  ok(/verifying info\.js, suite 2 of 4/.test(runShown(v)), 'a run already kept in spirit.data when it opens is drawn at once', 'the run at open: "' + runShown(v) + '"');
+  v = ddWorld(RUNNING, [], { real: true }); await v.open();
+  v.win.spirit.data.take(runJob({ fromNode: 'KEY+ANOTHER/NODE==', app: RUN1 })); await settle();
+  ok(!/verifying/.test(runShown(v)), 'a publish of another node\'s verifier draws nothing here', 'the run: "' + runShown(v) + '"');
+  v = ddWorld(RUNNING, [], { real: true }); await v.open();
+  v.win.spirit.data.take(runJob({ app: { suite: 'x.js', index: 1, of: 2 } })); await settle();
+  ok(!/verifying/.test(runShown(v)), 'a publish saying no doing draws nothing', 'the run: "' + runShown(v) + '"');
+
   // ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────
   // The page above has no layout, so what fills and what scrolls is asked of Chrome (wsl's verify of 3929879b found the
   // chat 44 pixels short of its bottom, no left panel at open, and the box a third of its pane, all green here):
