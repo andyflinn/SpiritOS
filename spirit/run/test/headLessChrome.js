@@ -102,13 +102,14 @@ async function scratchFaceRelay(o) {
   const run = path.join(root, 'spirit', 'run');
   const auth = require(path.join(run, 'spirit', 'relayAuth.js'));
   auth.nameIdentity(run, 'relay');
-  auth.writeOwner(run, auth.generateIdentity('owner').publicKey);
+  // Its owner: o.ownerKey, a real node's key that this relay then calls its owner, or a stranger made here.
+  auth.writeOwner(run, opts.ownerKey || auth.generateIdentity('owner').publicKey);
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(run, 'relay-state', 'face.json'), JSON.stringify({ domain: domain }));
   const port = await freePort();
   // The child: relay.js's own createRelay, its mailer a stand-in that keeps the mail; then the real relayServer.js.
   const code = 'const path = require("path"); const R = require(path.resolve("spirit/relay.js")); const made = R.createRelay; const mails = []; let box = null;' +
-    ' R.createRelay = function (root, deps) { box = made(root, Object.assign({}, deps, { sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } })); return box; };' +
+    ' R.createRelay = function (root, deps) { box = made(root, Object.assign({}, deps, { sendMail: function (m) { mails.push(m); if (process.send) process.send({ mail: m }); return Promise.resolve({ ok: true }); } })); return box; };' +
     ' process.argv[1] = path.resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");' +
     ' const auth = require(path.resolve("spirit/relayAuth.js")); const store = require(path.resolve("spirit/relayStore.js")).open(box.rootDir ? box.rootDir() : process.cwd());' +
     ' const out = { relayKey: box.relayPublicKey(), members: {} };' +
@@ -119,14 +120,28 @@ async function scratchFaceRelay(o) {
     '  box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sink);' +
     '  box.faceLogin(name, mail); const token = mails[mails.length - 1].text.split(/\\r?\\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[A-Za-z0-9_-]{16,}$/.test(l); })[0];' +
     '  out.members[name] = { publicKey: id.publicKey, privateKey: id.privateKey, sid: box.faceLogin(name, token).session, host: name + "." + ' + JSON.stringify(domain) + ' }; });' +
+    // A dishonest relay: it gives a member a face the member never asked for (setFace, below).
+    ' process.on("message", function (m) { if (m && m.setFace) { store.members.setFace(m.setFace[0], m.setFace[1], m.setFace[2]); process.send({ faceSet: m.setFace[1] }); } });' +
     ' process.send({ ready: out });';
-  const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
+  let child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
   const base = 'http://127.0.0.1:' + port;
   const lines = [];
+  // Every mail the relay sent, for a real node joining it and a face logging in (test/spirit-sibling-faceStarRules.js).
+  const mailed = [];
   let ready = null;
-  child.on('message', function (m) { if (m && m.ready) ready = m.ready; else if (m && m.stream) lines.push(m); });
+  const hear = function (m) { if (m && m.ready) ready = m.ready; else if (m && m.mail) mailed.push(m.mail); else if (m && m.stream) lines.push(m); };
+  child.on('message', hear);
   const up = await until(function () { return ready ? fetch(base + '/').then(function (r) { return r.status > 0; }) : false; }, 30000);
-  return { up: up && !!ready, root: root, run: run, base: base, port: port, child: child, auth: auth, relayKey: ready && ready.relayKey, members: ready ? ready.members : {}, lines: lines,
+  return { up: up && !!ready, root: root, run: run, base: base, port: port, child: child, auth: auth, relayKey: ready && ready.relayKey, members: ready ? ready.members : {}, lines: lines, mailed: mailed, setFace: function (key, name, mail) { child.send({ setFace: [key, name, mail] }); },
+    // THE OWNER MARK PUT THERE OVER SSH: the relay stopped, owner.json written, started again on the same folder and port.
+    becomeOwned: async function (key) {
+      await new Promise(function (resolve) { child.once('exit', resolve); child.kill(); });
+      auth.writeOwner(run, key);
+      ready = null;
+      child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
+      child.on('message', hear);
+      return until(function () { return ready ? fetch(base + '/').then(function (r) { return r.status > 0; }) : false; }, 30000);
+    },
     stop: function () { try { child.kill(); } catch (e) { /* gone */ } try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } } };
 }
 
