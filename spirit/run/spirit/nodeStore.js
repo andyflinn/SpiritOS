@@ -251,16 +251,11 @@ function open(rootDir, opts) {
   // kept. TIMES ARE MILLISECONDS, unlike relay.db's ISO strings: they are compared and ordered on the shedding path.
   // `present` is three-valued: -1 nobody has said, 0 said absent, 1 said present.
   //
-  // THE OLD SHAPE IS SET ASIDE FIRST, so the table below is made new and the move (moveIn, after every table exists)
-  // copies the old rows in: a seen with no `keep` is the shadow before this item, whichever earlier shape it has.
+  // NO OLD STORE IS MOVED IN (goal/G41.30; Andy: "let's get rid of those \"rescue operations\""): the one-time move of
+  // goal/G40.11 (the old seen, the relays and peers tables, contacts.json) is gone. Pre-alpha, a node made before it
+  // starts with this table new.
   const SEEN_FLAGS = ['keep', 'mine', 'relay', 'held', 'ignored', 'blocked', 'seated'];
   const GRANT_NAME = "COALESCE(NULLIF(s.myLabel, ''), s.label, '')";
-  const oldSeen = (function () {
-    const cols = db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; });
-    if (!cols.length || cols.indexOf('keep') !== -1) return null;
-    db.exec('DROP INDEX IF EXISTS seen_when; DROP INDEX IF EXISTS seen_chosen; ALTER TABLE seen RENAME TO seen_old');
-    return cols;
-  }());
   db.exec(`
     CREATE TABLE IF NOT EXISTS seen (
       publicKey TEXT PRIMARY KEY,
@@ -277,11 +272,8 @@ function open(rootDir, opts) {
     );
   `);
   // THE FACE NAME THIS NODE HOLDS ON A RELAY, on that relay's row (Andy, 2026-10-26, goal/G40.11: "keep it, on the
-  // relay's row, as the node's own fact, like myLabel"): the node set it itself (relay.face, the relay said yes). Added
-  // to a table made before it.
-  if (db.prepare('PRAGMA table_info(seen)').all().every(function (c) { return c.name !== 'face'; })) {
-    db.exec("ALTER TABLE seen ADD COLUMN face TEXT NOT NULL DEFAULT ''");
-  }
+  // relay's row, as the node's own fact, like myLabel"): the node set it itself (relay.face, the relay said yes). In the
+  // table as it is made; no table made before it is mended (goal/G41.30, no rescue operations).
   // A PARTIAL INDEX PER FLAG, holding only the rows where it is true, and one over the rows with neither keep nor mine,
   // by lastSeen: the line shedding takes. A query uses a partial index only when it repeats its WHERE, which is why
   // the statements below spell those conditions out again.
@@ -508,11 +500,9 @@ function open(rootDir, opts) {
   // THE BUNDLES (goal/G41.14; Andy, box: "The node keeps TWO bundle tables, in node.db"). bundle: "a hidden numeric
   // key, and a label", "a dictionary". branch: "a hidden numeric key", "an indexed numeric reference, bundle", "a
   // mandatory family field" and "an optional verb field", '' meaning all of the family. Deleting a bundle deletes its
-  // branches (apiAuth.js does both in one transaction). The tables of goal/G41.13 go: "any bundle lost during these
-  // changes are LOST. OOS."
+  // branches (apiAuth.js does both in one transaction). The tables of goal/G41.13 are not read: "any bundle lost during
+  // these changes are LOST. OOS."
   db.exec(`
-    DROP TABLE IF EXISTS bundles;
-    DROP TABLE IF EXISTS bundle_paths;
     CREATE TABLE IF NOT EXISTS bundle (
       id    INTEGER PRIMARY KEY,
       label TEXT NOT NULL,
@@ -527,126 +517,8 @@ function open(rootDir, opts) {
     CREATE INDEX IF NOT EXISTS branch_bundle ON branch (bundle);
   `);
   // A BUNDLE'S OWNER (goal/G41.25; Andy, box: "the bundle table gains 1 field: \"owner\", which can contains either
-  // \"node\" (default), or the name of an appServer"): a node.db from before gains the column, its bundles owned by node.
-  if (db.prepare('PRAGMA table_info(bundle)').all().every(function (c) { return c.name !== 'owner'; })) {
-    db.exec("ALTER TABLE bundle ADD COLUMN owner TEXT NOT NULL DEFAULT 'node'");
-  }
-
-  // ── THE MOVE, ON EACH NODE'S FIRST START ON THIS CODE (goal/G40.11) ──
-  //
-  //   Andy, 2026-10-26: "yes." to "on each node's first start on the new code, its old stores go into the table, then
-  //   are deleted."
-  //
-  // Four old stores, one table. In one transaction, and contacts.json is deleted only after it commits: a crash leaves
-  // the old stores in place and the next start moves them again, and a row already here only gains what it lacked.
-  //
-  //   the old seen   its rows as they were: choice 'added' is keep, 'held' held, 'ignored' ignored; kind 'relay' is
-  //                  relay; `seen` is lastSeen, and the best date there is for firstSeen.
-  //   relays         each a relay row: listed is keep, a seat with no refusal is seated, the list's label is myLabel,
-  //                  the face name is face, and its url a direct route. The rest of that row is gone with the box
-  //                  (seat label, email, refusal: the relay holds what the node gave it).
-  //   peers          apiAuth's names, as myLabel where the row has none.
-  //   contacts.json  each a kept row, a held one held; owned is mine, the card kept; a relay it was seen on is a route
-  //                  to that relay, at hearsay. Shown only signed by its ID: contacts.cardOf verifies on every read.
-  (function moveIn() {
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(function (r) { return r.name; });
-    const has = function (name) { return tables.indexOf(name) !== -1; };
-    const bookFile = path.join(rootDir, 'relay-state', 'contacts.json');
-    const haveBook = fs.existsSync(bookFile);
-    if (!oldSeen && !has('relays') && !has('peers') && !haveBook) return;
-    let book = [];
-    if (haveBook) {
-      try { const parsed = JSON.parse(fs.readFileSync(bookFile, 'utf8')); if (Array.isArray(parsed)) book = parsed; }
-      catch (e) { book = []; }
-    }
-    // A row already here keeps what it has and gains what it lacked; a flag set by any old store stays set.
-    const put = db.prepare(`INSERT INTO seen (publicKey, label, labelRank, labelAt, present, myLabel, card, face, firstSeen,
-        lastSeen, ${SEEN_FLAGS.join(', ')})
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${SEEN_FLAGS.map(function () { return '?'; }).join(', ')})
-      ON CONFLICT(publicKey) DO UPDATE SET
-        label     = CASE WHEN seen.label = '' THEN excluded.label ELSE seen.label END,
-        labelRank = CASE WHEN seen.label = '' THEN excluded.labelRank ELSE seen.labelRank END,
-        labelAt   = CASE WHEN seen.label = '' THEN excluded.labelAt ELSE seen.labelAt END,
-        present   = CASE WHEN seen.present < 0 THEN excluded.present ELSE seen.present END,
-        myLabel   = CASE WHEN seen.myLabel = '' THEN excluded.myLabel ELSE seen.myLabel END,
-        card      = CASE WHEN seen.card = '' THEN excluded.card ELSE seen.card END,
-        face      = CASE WHEN seen.face = '' THEN excluded.face ELSE seen.face END,
-        firstSeen = CASE WHEN seen.firstSeen = 0 OR (excluded.firstSeen > 0 AND excluded.firstSeen < seen.firstSeen)
-                         THEN excluded.firstSeen ELSE seen.firstSeen END,
-        lastSeen  = MAX(seen.lastSeen, excluded.lastSeen),
-        ${SEEN_FLAGS.map(function (f) { return f + ' = MAX(seen.' + f + ', excluded.' + f + ')'; }).join(',\n        ')}`);
-    const route = db.prepare(`INSERT OR IGNORE INTO seen_routes (publicKey, via, at, url, rank, told)
-      VALUES (?, ?, ?, ?, ?, ?)`);
-    function row(key, r) {
-      const f = r.flags || {};
-      put.run(String(key), String(r.label || ''), Number(r.labelRank) || 4, Number(r.labelAt) || 0,
-        typeof r.present === 'number' ? r.present : -1, String(r.myLabel || ''), String(r.card || ''), String(r.face || ''),
-        Number(r.firstSeen) || 0, Number(r.lastSeen) || 0,
-        ...SEEN_FLAGS.map(function (k) { return f[k] ? 1 : 0; }));
-    }
-    const ms = function (iso) { const t = Date.parse(String(iso || '')); return t > 0 ? t : 0; };
-    const now = Date.now();
-    const relayKeyAt = Object.create(null);
-    const self = (function () {
-      try { return JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8')).publicKey || ''; }
-      catch (e) { return ''; }
-    }());
-
-    db.exec('BEGIN');
-    try {
-      if (oldSeen) {
-        db.prepare('SELECT * FROM seen_old').all().forEach(function (r) {
-          if (!r.publicKey || r.publicKey === self) return;
-          // THE FIRST SHAPE OF ALL (cycle R29) had one route on the row, `at` and `url`: it becomes a route at rank 4
-          // with no `via`, since nothing recorded which door proved it, told when the row was seen.
-          if (r.at) route.run(r.publicKey, '', r.at, String(r.url || ''), 4, Number(r.seen) || 0);
-          row(r.publicKey, {
-            label: r.label, labelRank: r.labelRank, labelAt: r.labelAt, present: r.present,
-            firstSeen: r.seen, lastSeen: r.seen,
-            flags: { keep: r.choice === 'added', held: r.choice === 'held', ignored: r.choice === 'ignored',
-              blocked: !!r.blocked, relay: r.kind === 'relay' },
-          });
-        });
-        db.exec('DROP TABLE seen_old');
-      }
-      if (has('relays')) {
-        db.prepare('SELECT * FROM relays').all().forEach(function (r) {
-          if (!r.key || !r.url) return;
-          relayKeyAt[String(r.url).replace(/\/+$/, '')] = r.key;
-          row(r.key, {
-            myLabel: r.label && r.label !== r.url ? r.label : '', face: r.faceName || '',
-            firstSeen: ms(r.firstSeen) || ms(r.acceptedAt), lastSeen: ms(r.acceptedAt) || ms(r.firstSeen),
-            flags: { relay: true, keep: !!r.listed, seated: !!r.seatClaimedAt && !r.refusal },
-          });
-          route.run(r.key, '', r.key, String(r.url).replace(/\/+$/, ''), 1, now);
-        });
-        db.exec('DROP TABLE relays');
-      }
-      if (has('peers')) {
-        db.prepare('SELECT * FROM peers').all().forEach(function (r) {
-          if (r.peer_id && r.peer_id !== self) row(r.peer_id, { myLabel: r.label });
-        });
-        db.exec('DROP TABLE peers');
-      }
-      book.forEach(function (b) {
-        if (!b || typeof b.publicKey !== 'string' || !b.publicKey || b.publicKey === self) return;
-        const held = b.acquiredVia === 'hold';
-        // A blocked row the book had forgotten (contacts.forget kept it as a roll row) is blocked and not kept.
-        const forgotten = b.acquiredVia === 'roll' && b.blocked === true;
-        row(b.publicKey, {
-          label: b.publicLabel, myLabel: b.myLabel, card: typeof b.card === 'string' ? b.card : '',
-          flags: { keep: !held && !forgotten, held: held, blocked: b.blocked === true, mine: b.owned === true },
-        });
-        (Array.isArray(b.relays) ? b.relays : []).forEach(function (u) {
-          const url = String(u || '').replace(/\/+$/, '');
-          const at = relayKeyAt[url];
-          if (at) route.run(b.publicKey, '', at, url, 4, now);
-        });
-      });
-      db.exec('COMMIT');
-    } catch (e) { db.exec('ROLLBACK'); throw e; }
-    if (haveBook) { try { fs.unlinkSync(bookFile); } catch (e) { /* the rows are in; a later start finds no new ones */ } }
-  }());
+  // \"node\" (default), or the name of an appServer"): in the table as it is made; no node.db from before is mended
+  // (goal/G41.30; Andy: "let's get rid of those \"rescue operations\"").
 
   const q = {
     get: db.prepare('SELECT * FROM seen WHERE publicKey = ?'),
