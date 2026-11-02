@@ -48,16 +48,21 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 // fucking well, which are elements scripts in ./shell/js/"): an app is shell/<app>/<app>.js, an element any script
 // under shell/js/. Anything else in its reach is neither, and is not mounted.
 // THE AGENT TABLES' PAGES ARE ELEMENTS TOO (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element
-// (process/js/agent/table/tableElement.js) and each table's list and editor (<table>/elementTable.js, elementRow.js).
+// (process/js/agent/table/tableElement.js), its row editor (rowElement.js, goal/G41.28) and each table's list and
+// editor (<table>/elementTable.js, elementRow.js).
 // Their servers beside them are not pages, and are not mounted.
 function kindOf(file) {
   const f = String(file || '');
   if (/^shell\/js\/.+\.js$/.test(f)) return 'element';
-  if (/^process\/js\/agent\/table\/(tableElement|[^/]+\/element(Table|Row))\.js$/.test(f)) return 'element';
+  if (/^process\/js\/agent\/table\/(tableElement|rowElement|[^/]+\/element(Table|Row))\.js$/.test(f)) return 'element';
   const m = /^shell\/([^/]+)\/([^/]+)\.js$/.exec(f);
   return m && m[1] === m[2] ? 'app' : '';
 }
 const WAIT = 20000;
+// THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
+// is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
+// as they are used, not refused.
+const SERVERS = { servers: ['agent'] };
 // THE LONGEST FIELD THE RULES ALLOW (spirit/fieldRules.js): a field that keeps more than this holds no rule at all.
 const FIELD_RULES = require(path.join(RUN, 'spirit', 'fieldRules.js'));
 const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function (k) { return /MAX_BYTES$/.test(k) && typeof FIELD_RULES[k] === 'number'; }).map(function (k) { return FIELD_RULES[k]; }));
@@ -303,7 +308,7 @@ async function every() {
   const files = reach.filter(kindOf);
   test.comment('every app and element in its reach: ' + files.length + ' of ' + reach.length + '; not mounted, being neither: ' + reach.filter(function (f) { return !kindOf(f); }).join(', '));
   if (!files.length) { test.fail('testModule.js gives it no file to judge'); return; }
-  const node = await scratchNode();
+  const node = await scratchNode(SERVERS);
   try {
     if (!node.up || !node.debug) { test.fail('the scratch node did not come up with its DEBUG on: every file would blame the wrong thing'); return; }
     for (const f of files) {
@@ -359,7 +364,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
   }
   const chrome = findChrome();
   if (!chrome) { test.fail('no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'); return; }
-  const node = await scratchNode();
+  const node = await scratchNode(SERVERS);
   let page = null;
   try {
     if (!node.up) { test.fail('the scratch node did not come up: every rule here would blame the wrong thing'); return; }
@@ -417,7 +422,10 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
       '  v.height = Math.max(0, v.bottom - v.top); v.width = Math.max(0, v.right - v.left); return v; }' +
       ' function grows(el, prop, kid) { var before = seen(el)[prop]; el.appendChild(kid); var after = seen(el); var bx = box.getBoundingClientRect();' +
       '  var r = { kept: Math.abs(after[prop] - before) <= 1, inside: after.bottom <= bx.bottom + 1 && after.right <= bx.right + 1, spilt: box.scrollHeight > box.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1 }; el.removeChild(kid); return r; }' +
+      // CODEMIRROR'S OWN SCROLLBARS ARE NOT CONTAINERS (goal/G41.28): each holds only the library's own sizer, which
+      // the library makes as long as the text; nothing is ever mounted in one. The editor's scroller is still judged.
       ' Array.prototype.forEach.call(box.querySelectorAll("*"), function (el) { var cs = getComputedStyle(el); if (!/auto|scroll/.test(cs.overflowY + cs.overflowX) || !el.getClientRects().length) return;' +
+      '  if (el.closest(".CodeMirror") && /(^|\\s)CodeMirror-[vh]scrollbar(\\s|$)/.test(el.className)) return;' +
       '  var tall = document.createElement("div"); tall.style.cssText = "height:5000px;width:1px;flex:none";' +
       '  var wide = document.createElement("div"); wide.style.cssText = "width:5000px;min-width:5000px;height:1px;flex:none";' +
       '  var t = grows(el, "height", tall), w = grows(el, "width", wide);' +

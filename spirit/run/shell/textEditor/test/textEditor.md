@@ -20,13 +20,18 @@ with Load and written with Save. It writes the same files on a face as in the ol
   A row that is not a file loads nothing.
 - **Load** reads the current path again. **`loadFile(path)`** (a second "Open with") loads that path.
 - **Save** writes the view's `value()` to the current path through `fs.saveFile(path, content)`, the same writable
-  files as the old shell's. The status says `saving…`, then only what the node answered: `saved`, or
-  `save failed: <reason>` (rule/19). An app's own script (`shell/<name>/<name>.js`) is refused before anything is asked.
+  files as the old shell's. The status says `saving…`, then only what the node says (rule/19): `saved` once the node's
+  file tree has the save, or `save failed: <reason>`. An app's own script (`shell/<name>/<name>.js`) is refused before
+  anything is asked.
+- **What it saves, it listens for** (goal/G41.28): it loads the fs family's cache (`spirit.cacheManager('fs')`) and
+  watches the open file's row in `spirit.data` under `spirit.fsData.branch`. Any change of the open file that is not
+  its own save says `changed on disk` (Andy, Q21); a change of another file says nothing.
 
 ## What its test must try to break
 
 - `api.ui.elements` or `createTextView` reached; a part it uses not loaded by itself; `index.html` named.
 - A view made read-only, or handed the wrong text, words, line or path.
-- Save writing anything but what was typed, to anything but the current path; a refusal reported as saved; an app's
-  own script asked for.
+- Save writing anything but what was typed, to anything but the current path; a refusal reported as saved; saved said
+  before the file tree has the save; an app's own script asked for.
+- A change of the open file from elsewhere not said as `changed on disk`; a change of another file said.
 - A contents hit that loses its words or line; a folder row that loads.

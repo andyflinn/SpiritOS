@@ -4,7 +4,8 @@
 // The tests of shell/js/bundleEditor.js, and of no other module (spec: ./bundleEditor.md; goal/G41.14). The browser file
 // runs in node on a BARE window (rule/26): nothing is on the page until the editor requires it. The field input is put
 // there real; the bundle selector is a stand-in that keeps what it was handed (it is tested in its own file). The node's
-// auth family is the spirit object's, each call recorded.
+// auth family is the spirit object's, each call recorded. The page's data set and the auth family's cache manager are the
+// real ones (goal/G41.28).
 
 const fs = require('fs');
 const path = require('path');
@@ -56,13 +57,32 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     } }; },
     'shell/js/fieldInput.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'fieldInput.js'), 'utf8'), { filename: 'fieldInput.js' }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
-    'shell/js/bundleSelector.js': function (E) { E.bundleSelector = { create: function (c, o) { const s = node('bundles'); s.o = o || {}; s.container = c; s.refreshed = 0; s.refresh = function () { s.refreshed += 1; }; sels.push(s); c.appendChild(s); return s; } }; },
+    'shell/js/bundleSelector.js': function (E) { E.bundleSelector = { create: function (c, o) { const s = node('bundles'); s.o = o || {}; s.container = c; s.refreshed = 0; s.destroyed = 0; s.refresh = function () { s.refreshed += 1; }; s.destroy = function () { s.destroyed += 1; }; sels.push(s); c.appendChild(s); return s; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, fieldRules: require(path.join(RUN, 'spirit', 'fieldRules.js')),
     ready: Promise.resolve({ auth: auth }), auth: auth, elements: {} } };
   global.spirit = global.window.spirit;
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  global.window.spirit.node = { key: 'KEY+BUNDLE/EDITOR==' };
+  global.window.spirit.data.home(global.window.spirit.node.key);
+  // A family's cache: the family's own manager, run on this window; the watches on its bundles table counted, and their
+  // releases.
+  const managers = [];
+  const watches = { made: 0, released: 0 };
+  global.window.spirit.cacheManager = function (name) {
+    managers.push(String(name));
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    const T = global.window.spirit.authData && global.window.spirit.authData.bundles;
+    if (T && !T.counted) {
+      const own = T.watch; T.counted = true;
+      T.watch = function (fn) { watches.made += 1; const stop = own(fn); return function () { watches.released += 1; return stop(); }; };
+    }
+    return Promise.resolve(true);
+  };
+  function arrive(id, label) { global.window.spirit.data.take({ id: 'bundles', type: 'bundles', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); }
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
@@ -70,6 +90,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['shell/js/fieldInput.js', 'shell/js/bundleSelector.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires the field input and the bundle selector through spirit.require', 'required: ' + short(required));
+  ok(managers.indexOf('auth') !== -1, 'it loads the auth family\'s cache manager, whose bundles it adds to (goal/G41.28)', 'managers: ' + short(managers));
   ok(E.bundleEditor && typeof E.bundleEditor.create === 'function', 'it registers spirit.elements.bundleEditor.create', 'elements: ' + short(Object.keys(E)));
   if (!E.bundleEditor || typeof E.bundleEditor.create !== 'function') return;
 
@@ -117,7 +138,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // goal/G41.25, box: "when a bundle is added the \"owner\" field will ALWAYS be set to \"node\", unless the bundleEditor
   // was mounted for an appServer".
   ok(asked.length === 1 && asked[0].op === 'add' && asked[0].label === 'Reader' && asked[0].owner === 'node' && Object.keys(asked[0]).length === 3, 'a valid label asks auth.bundle { op: add, label, owner: node }, the label as the rule writes it, mounted for no app server', 'asked: ' + short(asked));
-  ok(sel.refreshed > r0 && input.value === '', 'answered, the list searches again and the input is empty for the next', 'refreshed ' + (sel.refreshed - r0) + ', input ' + short(input.value));
+  // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
+  // via the spirit object"): what it adds, it listens for, in spirit.authData.bundles.
+  ok(input.value === '  Reader ' && !/\badded\b/.test(text(box)), 'answered, before the bundle is in the auth family\'s cache, the label stays and nothing is said added', 'input ' + short(input.value) + ', text: ' + short(text(box)));
+  arrive(7, 'Somebody else');
+  await settle();
+  ok(input.value === '  Reader ', 'another bundle arriving leaves the label as it is', 'input ' + short(input.value));
+  arrive(8, 'Reader');
+  await settle();
+  ok(input.value === '' && /\badded\b/.test(text(box)), 'once the bundle it asked for is in spirit.authData.bundles, the input is empty for the next and the add is said', 'input ' + short(input.value) + ', text: ' + short(text(box)));
+  ok(sel.refreshed === r0, 'it asks its pane to search nothing again: the pane is a view of that branch', 'refreshed ' + (sel.refreshed - r0));
   answer = function () { return Promise.reject(Object.assign(new Error('label refused'), { refusal: 'bad-request' })); };
   input.value = 'Writer';
   add.dispatchEvent({ type: 'click' });
@@ -140,6 +170,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('destroy');
   ok(made && typeof made.destroy === 'function', 'create answers { destroy }', 'made: ' + short(made && Object.keys(made)));
-  if (made && typeof made.destroy === 'function') { made.destroy(); ok(box.kids.length === 0, 'destroy empties its box', 'kids left: ' + box.kids.length); }
+  if (made && typeof made.destroy === 'function') {
+    const w0 = watches.released;
+    made.destroy();
+    ok(box.kids.length === 0, 'destroy empties its box', 'kids left: ' + box.kids.length);
+    ok(watches.released === w0 + 1, 'destroy lets its watch on spirit.authData.bundles go', 'released ' + (watches.released - w0) + ' of ' + watches.made + ' made');
+    ok(sel.destroyed === 1, 'destroy lets its bundle pane go', 'pane destroyed ' + sel.destroyed);
+  }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

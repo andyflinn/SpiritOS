@@ -5,7 +5,7 @@ its test folder"): one shell element, the Description field, its Save and the by
 
 ## Requirements
 
-- A shell element of its own: it adds `changeMyDescription.create(host, { api, onSaved })` to
+- A shell element of its own: it adds `changeMyDescription.create(host, { api })` to
   `window.spirit.elements`, and answers `{ set(value), destroy() }`.
 - **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
 - **Its form is a rowForm** (goal/G41.27; Andy: *"changeMyDescription:\n\n[✏️][Description-input][Save]"*): it loads
@@ -19,7 +19,10 @@ its test folder"): one shell element, the Description field, its Save and the by
 - **Save is refused while the rule says no** (`fieldRules.describeProblem`), and the field says why; nothing goes on
   the wire.
 - **Save asks the node**, `node.setDescription` with the field as typed, and then shows what the node stored (rule/19),
-  says saved, and tells `onSaved(description)`. Enter in the field saves as Save does.
+  says saved, and keeps the stored description in the node card. Enter in the field saves as Save does.
+- **What it changes, it listens for** (goal/G41.28): it loads the node family's cache (`spirit.cacheManager('node')`)
+  and draws the field from `spirit.nodeData.card.watch`; a description changed in the card from elsewhere redraws the
+  field.
 - A refusal from the node is said beside the field; the field keeps what was typed.
 
 ## What its test must try to break

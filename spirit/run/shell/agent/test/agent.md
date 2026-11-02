@@ -39,10 +39,11 @@ No agents talk to each other through it: each agent sees itself as the only agen
   - It draws one checkbox. Changing it requires the agent server's interface through spirit
     (`spirit.require('process/js/agent/agent.family/api.js')`), then calls its `debug({ on })` with the checkbox's
     state. Nothing goes out any other way: no `api.verb`.
-  - The checkbox shows only what the server's stream says (rule/19), never the click itself: after the call it shows the
-    state last streamed.
-  - It follows the server's state on the stream (`api.onJobs`): a job whose app is `{ agent: { debug } }`, read from
-    the whole set of jobs as well as from the one that changed, so the state is there from the moment the app opens.
+  - The checkbox shows only what the server's job says (rule/19), never the click itself: after the call it shows the
+    state last kept.
+  - It follows the server's state in the jobs family's cache (goal/G41.28; `spirit.cacheManager('jobs')`, then
+    `spirit.jobsData`): a job whose app is `{ agent: { debug } }`, read from the jobs kept as the app opens and again
+    each time that job changes, so a state kept before the app opened is there at once.
 - The title bar (`api.setScreenTitle`) shows the bug icon 🐞 while `showDebug` is true and the server's DEBUG state is on,
   and does not show it otherwise. It follows both as they change.
 
@@ -80,8 +81,8 @@ on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows 
 ## What its test must try to break
 
 - A title that shows the bug with only one of the two on.
-- A checkbox that does not follow the stream, or follows the click instead.
-- A state streamed before the app opened, handed as the whole set with no single job.
+- A checkbox that does not follow the server's job in spirit.jobsData, or follows the click instead.
+- A state kept in the cache before the app opened, not shown at once.
 - A call that goes out as a raw verb instead of through the agent's interface.
 - A config saved anywhere but the app's own state folder.
 - A Grants tool left, or a right strip without the bundle editor.

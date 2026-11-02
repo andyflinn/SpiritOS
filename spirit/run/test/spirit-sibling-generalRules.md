@@ -22,8 +22,8 @@ fucking well, which are elements scripts in ./shell/js/"*):
 
 - an **app** is `shell/<app>/<app>.js`;
 - an **element** is any script under `shell/js/`, and an agent table's page: the tables' shared element
-  (`process/js/agent/table/tableElement.js`) and each table's list and editor (`<table>/elementTable.js`,
-  `elementRow.js`). Their servers beside them are not pages (goal/G41.27; Andy, Q5: *"it covers them, too"*). Like
+  (`process/js/agent/table/tableElement.js`), its row editor (`rowElement.js`, goal/G41.28) and each table's list
+  and editor (`<table>/elementTable.js`, `elementRow.js`). Their servers beside them are not pages (goal/G41.27; Andy, Q5: *"it covers them, too"*). Like
   every module, each is judged once it has its own test (`TEST_SYSTEM.md`, opting in): today `tableElement.js` alone;
   the tables' lists and editors share their table's test, and Q6, which asked whether they get one each, was cleared;
 - anything else in its reach (`shell/boot.js`, `shell/seal.js`, a Desk plugin, `shell/shared/js/`) is neither, is not
@@ -54,6 +54,9 @@ Andy, on G41.18:
 
 - A scratch copy of the tracked files of `spirit/run`, on a node of its own, on a free port. Neither Andy's node nor an
   agent's is touched. A working-tree change to a tracked file is in the copy; a new file is in it once git knows it.
+- **The agent server is turned on there** (goal/G41.28), as its owner turns it on: its sidecar's face part,
+  `face.home`, is written before the node starts. The agent tables' pages draw the agent family's cache, which is there
+  only while that server runs, so they are judged as they are used, not refused.
 - Headless Chrome, found where the machine keeps it (by name on Linux, in its usual folders on Windows, or
   `SPIRIT_CHROME`). It is driven over its debugging port with node's own WebSocket: no package.
 - Its node's DEBUG is switched on (`node.debug { debug: { on: true } }`), and it opens the node's **DEBUG page** for
@@ -193,6 +196,9 @@ box is its own check, named by the element's path and the box's id chain."*
 boxes above it that clip (overflow other than `visible`) leave of it on screen. CodeMirror's scroller sits 50px past its
 frame on purpose, to hide the native scrollbars (its own css: *"Things will break if this is overridden"*), and its frame
 cuts the extra off, so nothing spills: `shell/js/codeMirror` and `shell/textEditor/textEditor` are no longer deferred.
+**CodeMirror's own scrollbars are not containers** (goal/G41.28): `CodeMirror-vscrollbar` and `CodeMirror-hscrollbar`
+hold only the library's own sizer, as long as the text, and nothing is ever mounted in one; they are not asked. The
+editor's scroller still is.
 
 ## What its test must try to break
 

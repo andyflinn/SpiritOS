@@ -81,7 +81,7 @@ function change(b, checked) {
 const isOn = function (b) { return !!(b.inputs[0] && b.inputs[0].checked === true); };
 
 function world(configText) {
-  const w = { created: [], loads: [], saves: [], verbs: [], titles: [], onJobs: [], def: null };
+  const w = { created: [], loads: [], saves: [], verbs: [], titles: [], def: null };
   w.workBench = { create: function (into, opts) {
     const made = { into: into, opts: opts || {}, center: box('center'), press: function () {}, shown: function () { return ''; }, width: function () { return 0; }, destroy: function () {} };
     w.created.push(made); return made;
@@ -92,7 +92,6 @@ function world(configText) {
   };
   w.api = {
     verb: function (name, args) { w.verbs.push({ name: name, args: args }); return Promise.resolve({ status: 200, body: { ok: true, debug: !!(args && args.on) } }); },
-    onJobs: function (fn) { w.onJobs.push(fn); return function () {}; },
     setScreenTitle: function (t) { w.titles.push(String(t)); },
     escapeHtml: function (s) { return String(s); },
     ui: { elements: {} },
@@ -101,17 +100,27 @@ function world(configText) {
   // The agent server's interface, as spirit.require hands it: its debug call recorded, answered as the server does.
   w.calls = []; w.required = [];
   w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); } };
-  w.stream = function (debug) { const job = { id: 'job-agent', app: { agent: { debug: debug } } }; const all = { 'job-agent': job }; w.onJobs.forEach(function (fn) { fn(all, job, { visible: true }); }); };
-  // What the shell hands a new reader at once: the whole set of jobs, and no single job that changed.
-  w.snapshot = function (debug) { const all = { 'job-agent': { id: 'job-agent', app: { agent: { debug: debug } } } }; w.onJobs.forEach(function (fn) { fn(all, null, { visible: true }); }); };
+  // The server's job as the node's stream hands it to the page's spirit.data, which the jobs family's cache keeps.
+  w.stream = function (debug) { w.win.spirit.data.take({ id: 'job-agent', app: { agent: { debug: debug } } }); };
   w.title = function () { return w.titles.length ? w.titles[w.titles.length - 1] : ''; };
   return w;
 }
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
-  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath,
-    require: function (p) { w.required.push(String(p)); return Promise.resolve(p === AGENT_FAMILY ? w.family : true); } } };
+  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath, isBrowser: function () { return true; },
+    require: function (p) { w.required.push(String(p)); return Promise.resolve(p === AGENT_FAMILY ? w.family : true); },
+    // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
+    cacheManager: function (name) {
+      w.managers = (w.managers || []).concat(name);
+      vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+      return Promise.resolve(true);
+    } } };
   global.spirit = global.window.spirit;
+  w.win = global.window;
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  global.window.spirit.node = { key: 'KEY+AGENT/APP==' };
+  global.window.spirit.data.home(global.window.spirit.node.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   return w.def;
@@ -242,7 +251,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(w.saves.every(function (s) { return s.path === CONFIG; }), 'it saves nothing anywhere but its own state folder', 'saves: ' + short(w.saves.map(function (s) { return s.path; })));
   change(lb, true); await settle();
 
-  test.subHeading('the right tool sets the server\'s DEBUG state, and follows the stream');
+  test.subHeading('the right tool sets the server\'s DEBUG state, and follows its job in the jobs family\'s cache');
   const rb = box('right'); SERVER_TOOL.mount(rb); await settle();
   ok(rb.inputs.length === 1 && /type="checkbox"/.test(rb.inputs[0].tag), 'it draws one checkbox', 'inputs: ' + rb.inputs.length);
   change(rb, true); await settle();
@@ -254,11 +263,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   change(rb, false); await settle();
   const asked2 = w.calls[w.calls.length - 1];
   ok(asked2 && asked2.on === false, 'unticking it calls debug {on: false}', 'debug calls: ' + short(w.calls));
-  ok(w.onJobs.length > 0, 'it listens to the stream', 'no onJobs');
+  ok((w.managers || []).indexOf('jobs') !== -1 && !!w.win.spirit.jobsData, 'it loads the jobs family\'s cache manager (spirit.jobsData)', 'managers: ' + short(w.managers));
   w.stream(true); await settle();
-  ok(isOn(rb), 'the checkbox follows the server\'s state on the stream: on', 'after the stream said on: unchecked');
+  ok(isOn(rb), 'the checkbox follows the server\'s state, its job in spirit.jobsData: on', 'after its job said on: unchecked');
   w.stream(false); await settle();
-  ok(!isOn(rb), 'and off', 'after the stream said off: checked');
+  ok(!isOn(rb), 'and off', 'after its job said off: checked');
 
   test.subHeading('the title bar shows the bug only with both on');
   const says = function () { return w.title().indexOf(BUG) !== -1; };
@@ -272,17 +281,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   w.stream(false); await settle();
   ok(!says(), 'the server off again: no bug', 'title: ' + short(w.title()));
 
-  test.subHeading('the state streamed before it opened is there at once');
+  test.subHeading('the state kept before it opened is there at once');
   const w4 = world(JSON.stringify({ showDebug: true }));
   const def4 = load(w4);
+  w4.stream(true);
   def4.mount(box('app4'), w4.api); await settle();
-  w4.snapshot(true); await settle();
   const R4 = ((w4.created[0] || {}).opts || {}).right || [];
   const L4 = ((w4.created[0] || {}).opts || {}).left || [];
   const rb4 = box('right4'); if (R4[0]) R4[0].mount(rb4);
   if (L4[0]) L4[0].mount(box('left4'));
   await settle();
-  ok(isOn(rb4), 'handed the whole set of jobs with no single one, the right checkbox shows the server on', 'right checkbox: ' + (rb4.inputs[0] ? rb4.inputs[0].checked : 'none'));
+  ok(isOn(rb4), 'its job kept in the cache before it opened, the right checkbox shows the server on', 'right checkbox: ' + (rb4.inputs[0] ? rb4.inputs[0].checked : 'none'));
   ok(w4.title().indexOf(BUG) !== -1, 'and the title shows the bug', 'title: ' + short(w4.title()));
 
   test.subHeading('it bootstraps its own components');

@@ -6,7 +6,7 @@ this node may.
 
 ## Requirements
 
-- A shell element of its own: it adds `changeMyLabel.create(host, { api, onSaved })` to `window.spirit.elements`, and
+- A shell element of its own: it adds `changeMyLabel.create(host, { api })` to `window.spirit.elements`, and
   answers `{ set(value), destroy() }`.
 - **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
 - **Its form is a rowForm** (goal/G41.27; Andy: *"Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the
@@ -18,7 +18,9 @@ this node may.
 - `set(value)` puts what the node stored in the field.
 - **Save is refused while the rule says no** (`fieldRules.problem`), and the field says why; nothing goes on the wire.
 - **Save asks the node**, `node.setName` with the field as typed, and then shows what the node stored (rule/19), says
-  saved, and tells `onSaved(name)`. Enter in the field saves as Save does.
+  saved, and keeps the stored name in the node card. Enter in the field saves as Save does.
+- **What it changes, it listens for** (goal/G41.28): it loads the node family's cache (`spirit.cacheManager('node')`)
+  and draws the field from `spirit.nodeData.card.watch`; a name changed in the card from elsewhere redraws the field.
 - A refusal from the node is said beside the field; the field keeps what was typed.
 
 ## What its test must try to break

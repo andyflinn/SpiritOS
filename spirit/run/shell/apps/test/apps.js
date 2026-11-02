@@ -83,20 +83,33 @@ function world() {
     fieldInput: { attach: function () {} },
     iconList: { create: function () { return { destroy: function () {} }; } },
   };
-  const D = { get: function (k) { return FILES[k.replace(/^files\//, '')] || null; }, branch: function (t) { return t === 'files' ? FILES : {}; }, watch: function () { return function () {}; } };
-  const win = { spirit: { elements: E, data: D, fs: fsApi, ready: Promise.resolve({ fs: fsApi }),
+  const win = { spirit: { elements: E, fs: fsApi, ready: Promise.resolve({ fs: fsApi }),
     require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
+    // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
+    cacheManager: function (name) {
+      w.managers = (w.managers || []).concat(name);
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+      return Promise.resolve(true);
+    },
     shell: { activateApp: function (d) { w.def = d; }, faceApp: function () {} }, escapeHtml: function (s) { return String(s); } },
     document: { createElement: function () { return node('made'); } }, setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object,
     console: { log: function () {}, error: function () {} } };
   win.window = win;
   vm.createContext(win);
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  win.spirit.node = { key: 'KEY+APPS/NODE==' };
+  win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
+  // The node's file tree, as its fs-watcher streams it to a connecting page: every file a create, then the tree whole.
+  Object.keys(FILES).forEach(function (p) { win.spirit.data.take({ id: 'fsw', type: 'fs-watcher', data: { command: { op: 'createFile', path: p, size: 1, modified: 1 } } }); });
+  win.spirit.data.take({ id: 'fsw', type: 'fs-watcher', data: { treeComplete: true } });
   w.win = win;
   return w;
 }
 
 test.startTest('apps.js: the Apps app');
+process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); test.reportSuccessFailureCount(); process.exit(0); });
 
 (async function () {
   const w = world();
@@ -109,6 +122,13 @@ test.startTest('apps.js: the Apps app');
   ok(!!w.made, 'it draws its list', 'no list made');
   if (!w.made) return;
   ok(/\bfill\b/.test(String((box.nodes[0] || {}).className || '')), 'into a box of a stated size (fill)', 'the list box: ' + short(box.innerHTML));
+
+  test.subHeading('its list is a view of the fs family\'s cache (goal/G41.28)');
+  // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
+  // item. no exceptions."
+  ok((w.managers || []).indexOf('fs') !== -1, 'it loads the fs family\'s cache manager itself', 'managers: ' + short(w.managers));
+  ok(!!w.win.spirit.fsData && w.made.opts.data === w.win.spirit.fsData.branch && typeof w.made.opts.data === 'string' && w.made.opts.data.length > 0,
+    'its list\'s data is spirit.fsData\'s branch, the node\'s file tree in spirit.data', 'data: ' + short(w.made.opts.data) + ', fsData.branch ' + short(w.win.spirit.fsData && w.win.spirit.fsData.branch));
 
   test.subHeading('its rows: standalone shell apps and appServers only');
   const o = w.made.opts;

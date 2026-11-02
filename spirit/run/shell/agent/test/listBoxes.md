@@ -42,6 +42,15 @@ Andy: *"i the left side models panel: the title row \"🧠Models\" must come bef
   its providerSelector:dropdown, since goal/G41.27 makes it a rowForm, `[❓] [Pick a provider ▾] [Ask]`, with no word
   from; the app runs the real rowForm and icon element for it.
 
+## Requirements (goal/G41.28)
+
+Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
+item. no exceptions."*
+
+- Every list pane the app drew is a view of its table in the agent family's cache: it is handed that table's branch,
+  `spirit.agentData.branch(table)`. The page runs the real data set, its node known, and the families' own managers
+  (`spirit.cacheManager(name)`).
+
 ## What its test must try to break
 
 - Any box between a list and the app that is only as tall as its content. Mutated:
@@ -49,3 +58,4 @@ Andy: *"i the left side models panel: the title row \"🧠Models\" must come bef
   - the table list's own box without `fill`;
   - the grants list's box without `fill`.
 - A Models pane whose Ask row stands above its title row, or that draws its title twice.
+- A list pane handed no branch, or another table's.

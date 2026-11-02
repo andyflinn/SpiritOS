@@ -33,8 +33,9 @@ function findChrome() {
   return '';
 }
 
-// A scratch copy of the tracked files of spirit/run, its node started on a free port.
-async function scratchNode() {
+// A scratch copy of the tracked files of spirit/run, its node started on a free port. o.servers names app servers turned
+// on at home before it starts, as their owner turns one on: the face part of its sidecar, face.home (goal/G41.1).
+async function scratchNode(o) {
   // One node for a whole run of every file (below): the run that started this one hands its address on.
   if (process.env.SPIRIT_MOUNT_BASE) return { base: process.env.SPIRIT_MOUNT_BASE, child: null, root: '', up: true, debug: true, shared: true };
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shell-child-'));
@@ -42,6 +43,11 @@ async function scratchNode() {
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
   files.forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
   const run = path.join(root, 'spirit', 'run');
+  ((o && o.servers) || []).forEach(function (name) {
+    const dir = path.join(run, 'relay-state', 'process', name);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, name + '.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
+  });
   const port = await freePort();
   const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
   const base = 'http://127.0.0.1:' + port;

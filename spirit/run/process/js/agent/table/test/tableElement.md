@@ -10,7 +10,9 @@ the table)"*.
 
 ## Requirements
 
-- It registers `spirit.elements.agentTable`, `spirit.elements.agentRow` and `spirit.elements.agentDetail`.
+- It registers `spirit.elements.agentTable` and the shared `spirit.elements.agentDetail`, and no other element: one file,
+  one element (goal/G41.28). The row's editor, `agentRow`, is `./rowElement.js`'s, which builds on `agentDetail`; the
+  editor's requirements below are run with `rowElement.js` loaded beside it, as each table's `elementRow.js` loads it.
 - **Every pane's look is in one place** (Andy: *"is it possible to organize the code so that my changes so far are only
   done in one place?"*). `agentDetail` holds:
   - `titleRow(look, words)`: the `agent-title` row, the icon, then the words, each in a part of its own. It is set as a
@@ -19,7 +21,8 @@ the table)"*.
     1em between the inputs label and the input itself"*).
   - `search(host, o, more)`: the one table search, for lists and pickers alike.
   - `branchOf(table)` is the home node's `<node>/agent/<table>`, as the agent family's cache manager names it
-    (`spirit.agentData.branch`, goal/G41.28).
+    (`spirit.agentData.branch`, goal/G41.28). With no agent family's cache on the page (its server not running on the
+    node) it refuses and says why: no list is drawn without its branch.
   - `whyOf(refusal)` is the server's own reason (its `extra.why`), else the refusal's words, else `refused`.
 - **A table**, `agentTable.create(container, { api, table, detail, row, add, matched, buttons, columns })`:
   - Its title row is the table's icon and title, from `detail.look(table)`.
@@ -40,6 +43,8 @@ the table)"*.
   - Given `buttons`, `[{ label, press }]`, each is drawn on the Add line by its label, Add kept, its id
     `<prefix>button<i>`; pressed, it calls its `press()` (goal/G41.18: the model table's *"provider models"*).
   - `destroy` destroys the list and empties the box.
+  - Unconfigured (no `table`), it says it is not configured and throws nothing; its `destroy` empties the box
+    (goal/G41.19).
 - **A row's editor**, `agentRow.create(container, { api, table, id, added, look, fields })`:
   - Its row is the one at `<node>/agent/<table>/<id>` in spirit.data. It asks `{ op: 'get', id }` as it opens, whatever the
     branch holds, and puts the answer there: a search answers only what a list shows, so a row in the branch may be
@@ -130,6 +135,9 @@ Andy: *"In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a
 Andy: *"persona detail: the bundle picker doesn not let me change values! (actually it does let me change it, i just doesn't seem to hear the change from the server)"*: the row's bundle changed on the stream, the bundle field says the new bundle by its label.
 
 ## What its test must try to break
+
+- agentRow registered by this file; a branch answered when the agent family's cache is not on the page; an
+  unconfigured table that throws or says nothing.
 
 - A list that waits for a click before it shows, or shows more than icon and label when its table hands no columns.
 - A table's own button not drawn, or drawn in place of Add; columns handed and not used.

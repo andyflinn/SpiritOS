@@ -10,8 +10,9 @@ in `spirit/coreFiles.js`, so every face shows it.
 - **It loads what it uses itself** (goal/G41.3), through `spirit.require`: `shell/js/changeMyLabel.js`,
   `shell/js/changeMyDescription.js`, `shell/js/joinForm.js` and `shell/js/faceForm.js`.
 - **Its two blocks are the two shell elements** (Andy, Q1): changeMyLabel for the name, changeMyDescription for the
-  description, each handed the app's api. Info reads `node.card` and sets each to what the node stored; each element
-  holds its own rule, check, limit and save.
+  description, each handed the app's api. Info reads `node.card` and keeps its answer in the node family's cache
+  (`spirit.cacheManager('node')`, then `spirit.nodeData.card.keep`; goal/G41.28); each element draws itself from that
+  card and holds its own rule, check, limit and save.
 - **"What each relay calls you" is dropped** (Andy, 2026-10-27): no table of relays and the name each calls this node,
   no push of a saved name to every relay, no rename. Its code is deleted and tested gone.
 - **The two forms stay**: the email form and the face form, each over the relays this node holds a seat on
@@ -26,6 +27,6 @@ in `spirit/coreFiles.js`, so every face shows it.
 
 - The relay table, its words, the push or the rename left in the file.
 - A field drawn by Info itself instead of by its element.
-- An element not set to what the node stored.
+- node.card's answer not kept in the node card.
 - A saved name posted to a relay.
 - The forms offered a relay this node holds no seat on.

@@ -136,8 +136,13 @@ test.startTest('tableElement.js: what the tables\' elements share');
   // The element asks for the agent family's cache manager as it runs; the page has it once the element's tree has loaded.
   await settle();
   const E = global.window.spirit.elements;
-  ok(E.agentTable && typeof E.agentTable.create === 'function' && E.agentRow && typeof E.agentRow.create === 'function',
-    'it registers spirit.elements.agentTable and agentRow, each with create', 'elements: ' + short(Object.keys(E)));
+  // One file, one element (goal/G41.28; the general test: a file registers one element): the row's editor, agentRow, is
+  // ./rowElement.js's.
+  ok(E.agentTable && typeof E.agentTable.create === 'function' && !E.agentRow,
+    'it registers spirit.elements.agentTable, with create, and no other element: agentRow is rowElement.js\'s', 'elements: ' + short(Object.keys(E)));
+  // The checks of the row's editor below run it as each table's elementRow.js does: rowElement.js loaded beside this.
+  load(path.join(__dirname, '..', 'rowElement.js'));
+  await settle();
   const AD = E.agentDetail || {};
   ok(['titleRow', 'fieldLine', 'search', 'branchOf', 'whyOf'].every(function (k) { return typeof AD[k] === 'function'; }) && typeof AD.stretch === 'string',
     'and spirit.elements.agentDetail { titleRow, fieldLine, stretch, search, branchOf, whyOf }, every pane\'s look in one place', 'agentDetail: ' + short(Object.keys(AD)));
@@ -155,6 +160,21 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const fl = AD.fieldLine('L', '<input>');
   ok(/display:flex/.test(fl) && /gap:1em/.test(fl) && /flex:1 1 0/.test(fl), 'fieldLine(label, input): the label, 1em, then the input to the right edge', 'fieldLine: ' + short(fl));
   ok(AD.branchOf('job') === BRANCH('job'), 'branchOf(table) is the home node\'s <node>/agent/<table>, as spirit.agentData names it (goal/G41.28)', 'branchOf: ' + short(AD.branchOf('job')));
+  // A page where the agent family's cache could not be loaded (its server not running on the node) is refused, saying
+  // why: never a list drawn with no branch.
+  const keptAD = global.window.spirit.agentData;
+  delete global.window.spirit.agentData;
+  let why = null; let drawn;
+  try { drawn = AD.branchOf('job'); } catch (e) { why = e; }
+  global.window.spirit.agentData = keptAD;
+  ok(!!why && /agent/.test(String(why.message)) && /cache/.test(String(why.message)), 'with no agent family\'s cache on the page, branchOf refuses and says why', 'branchOf answered ' + short(drawn) + (why ? ', said ' + short(why.message) : ''));
+
+  test.subHeading('unconfigured, the table says so and throws nothing (goal/G41.19)');
+  const bare = box('bare');
+  let threw = null; let made = null;
+  try { made = E.agentTable.create(bare, {}); } catch (e) { threw = e; }
+  ok(!threw && !!made && /not configured/.test(bare.textContent), 'agentTable.create(box, {}) throws nothing and says it is not configured', 'threw ' + short(threw && threw.message) + ', box: ' + short(bare.textContent));
+  if (made && typeof made.destroy === 'function') { made.destroy(); ok(bare.innerHTML === '', 'and its destroy leaves the box empty', 'box: ' + short(bare.innerHTML)); }
   ok(AD.whyOf(refused('job takes no argument verb')) === 'job takes no argument verb' && AD.whyOf(new Error('bad')) === 'bad' && AD.whyOf(null) === 'refused',
     'whyOf(refusal) is the server\'s own reason, else the refusal\'s words, else refused', 'whyOf: ' + short([AD.whyOf(refused('x')), AD.whyOf(new Error('bad')), AD.whyOf(null)]));
 

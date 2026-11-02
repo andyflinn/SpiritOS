@@ -55,7 +55,13 @@ function world(answer) {
         if (c && typeof c.appendChild === 'function') c.appendChild(f.root);
         w.forms.push(f); return f;
       } } },
-      require: function (p) { w.required.push(String(p)); return Promise.resolve(true); } },
+      require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
+      // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
+      cacheManager: function (name) {
+        w.managers = (w.managers || []).concat(name);
+        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+        return Promise.resolve(true);
+      } },
     document: { createElement: function (t) { return node('<' + t + '>'); }, createTextNode: function (t) { const x = node('#text'); x.textContent = String(t); return x; } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
     TextEncoder: TextEncoder, console: { log: function () {}, error: function () {} },
@@ -63,10 +69,14 @@ function world(answer) {
   win.window = win;
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'fieldRules.js'), 'utf8'), win, { filename: 'fieldRules.js' });
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  win.spirit.node = { key: 'KEY+LABEL/NODE==' };
+  win.spirit.data.home(win.spirit.node.key);
   if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   w.api = { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); },
     verb: function (name, args) { w.calls.push({ name: name, args: args }); return Promise.resolve(answer(name, args)); } };
-  w.E = win.spirit.elements;
+  w.E = win.spirit.elements; w.win = win;
   return w;
 }
 const stored = function (name, args) { return { status: 200, body: { ok: true, name: String(args.name).trim() } }; };
@@ -83,7 +93,7 @@ test.startTest('changeMyLabel.js: the node\'s name, changed');
 
   test.subHeading('the field, marked with its rule (rule/12)');
   const host = node('host');
-  const el = w.E.changeMyLabel.create(host, { api: w.api, onSaved: function (n) { w.saved.push(n); } });
+  const el = w.E.changeMyLabel.create(host, { api: w.api });
   await settle();
   const input = host.querySelector('[data-field="label"]');
   const rf = w.forms[0];
@@ -128,8 +138,13 @@ test.startTest('changeMyLabel.js: the node\'s name, changed');
   const c = w.calls[0];
   ok(c && c.name === 'node.setName' && c.args.name === '  Bob  ', 'Save asks node.setName with the field as typed', 'calls: ' + short(w.calls));
   ok(input.value === 'Bob', 'the field then shows the name the node stored', 'value: "' + input.value + '"');
-  ok(w.saved[0] === 'Bob', 'and onSaved hears it', 'saved: ' + short(w.saved));
   ok(/saved/.test(said.textContent), 'and it says saved', 'said: ' + said.textContent);
+
+  test.subHeading('what it changes, it listens for: the node card in the node family\'s cache (goal/G41.28)');
+  const N = w.win.spirit.nodeData;
+  ok((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Bob', 'it loads the node manager, and the name the node stored is kept in spirit.nodeData\'s card', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get()));
+  N.card.keep({ name: 'Eve' }); await settle();
+  ok(input.value === 'Eve', 'a name changed in the card, from elsewhere, redraws the field', 'value: "' + input.value + '"');
   input.value = 'Carl'; input.fire('keydown', { key: 'Enter', preventDefault: function () {} }); await settle();
   ok(w.calls.length === 2 && w.calls[1].args.name === 'Carl', 'Enter saves as Save does', 'calls: ' + short(w.calls.map(function (x) { return x.args; })));
 

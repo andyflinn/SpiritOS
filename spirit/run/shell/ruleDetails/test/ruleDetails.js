@@ -3,7 +3,8 @@
 // spirit/run/shell/ruleDetails/test/ruleDetails.js
 // The tests of shell/ruleDetails/ruleDetails.js, and of no other module (spec: ./ruleDetails.md; goal/G41.9). The browser file runs in node
 // on a window of its own: the app's api records every verb; armingButton is a stub that keeps every button made or
-// attached with what it was handed, so each two-press button's run is driven here as its second press would.
+// attached with what it was handed, so each two-press button's run is driven here as its second press would. The page's
+// one data set and the desk family's cache manager are the real ones (spirit/spiritData.js, process/js/desk/family/).
 
 const FILE = require('path').join(__dirname, '..', 'ruleDetails.js');
 const fs = require('fs');
@@ -64,7 +65,7 @@ function world(answer) {
     verb: function (name, args) { w.calls.push({ name: name, args: args }); return Promise.resolve({ status: 200, body: answer(name, args) }); },
     armUntilElsewhere: function () { w.handed += 1; },
     closeDialog: function (r) { w.closed.push(r); },
-    setScreenTitle: function () {}, onPublished: function () {},
+    setScreenTitle: function () {},
     ui: { elements: {} },
   };
   const win = {
@@ -75,9 +76,20 @@ function world(answer) {
   win.window = win;
   win.spirit = { elements: { armingButton: stub },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
-    shell: { activateApp: function (d) { w.def = d; } } };
+    shell: { activateApp: function (d) { w.def = d; } },
+    // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
+    cacheManager: function (name) {
+      w.managers = (w.managers || []).concat(name);
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', String(name), 'family', 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+      return Promise.resolve(true);
+    } };
   vm.createContext(win);
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  win.spirit.node = { key: 'KEY+RULE/DETAILS==' };
+  win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
+  w.win = win;
   w.api = api;
   return w;
 }
@@ -102,16 +114,18 @@ function loadsArming(w) {
 test.startTest('ruleDetails.js: one rule of the desk, its Activate and Delete on the arming button');
 
 const RULE = { ok: true, key: 'rule/7', label: 'a rule', type: 'desk', status: 'proposed', text: 'the text', draft: '' };
+let CHAT = [{ by: 'andy', at: '2026-11-02T10:00:00.000Z', text: 'first line' }];
+function answer(name) {
+  if (name === 'desk.rule.get') return RULE;
+  if (name === 'desk.item.chat') return { ok: true, chat: CHAT.slice(), chatMore: false };
+  return { ok: true };
+}
 
 (async function () {
   test.subHeading('nothing hand-rolled is left (goal/G41.9)');
   nothingHandRolled('rdArmed');
 
-  const w = world(function (name) {
-    if (name === 'desk.rule.get') return RULE;
-    if (name === 'desk.item.chat') return { ok: true, chat: [], chatMore: false };
-    return { ok: true };
-  });
+  const w = world(answer);
   ok(w.def && typeof w.def.mount === 'function' && typeof w.def.open === 'function', 'it mounts through spirit.shell.activateApp, with mount and open', 'activateApp got ' + short(w.def && Object.keys(w.def)));
   if (!w.def) return;
   await w.def.mount(node('container'), w.api);
@@ -141,5 +155,54 @@ const RULE = { ok: true, key: 'rule/7', label: 'a rule', type: 'desk', status: '
   }
   test.subHeading('Version and Auto-attach stay plain buttons');
   ok(!armingFor(w, 'rd-version', 'Version') && !armingFor(w, 'rd-auto', 'Auto-attach'), 'only Activate and Delete arm', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
+
+  // Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the
+  // spirit object" (goal/G41.28).
+  test.subHeading('the rule and its chat are the desk family\'s cache, and it draws from its watches (goal/G41.28)');
+  // A dialog of its own, opened anew: no version pending from the runs above.
+  const v = world(answer);
+  await v.def.mount(node('container'), v.api);
+  await v.def.open({ key: 'rule/7' });
+  await settle();
+  const K = v.win.spirit.deskData;
+  ok((v.managers || []).indexOf('desk') !== -1 && !!K, 'it loads the desk family\'s cache manager (spirit.deskData)', 'managers: ' + short(v.managers));
+  if (!K) return;
+  ok(!!K.rule('rule/7') && K.rule('rule/7').text === 'the text', 'rule.get\'s answer is kept in spirit.deskData', 'kept: ' + short(K.rule('rule/7')));
+  const part = K.part('rule/7');
+  ok(!!part && Array.isArray(part.chat) && part.chat.length === 1 && part.chat[0].text === 'first line', 'item.chat\'s answer is kept there too, under the rule', 'kept: ' + short(part));
+  ok(/first line/.test(byId['rd-chat'] ? byId['rd-chat'].innerHTML : ''), 'the chat drawn is the chat kept', 'chat: ' + short(byId['rd-chat'] && byId['rd-chat'].innerHTML));
+  ok(!/onPublished/.test(CODE), 'it has no listener of its own on the desk\'s publishes: the cache is what it hears', 'its code still calls onPublished');
+
+  test.subHeading('a rule row changed in the cache repaints it, and refills the textbox only after his Version');
+  const box = byId['rd-text'];
+  box.value = 'his own typing';
+  K.published({ rule: 'rule/7', row: Object.assign({}, RULE, { label: 'renamed elsewhere', text: 'changed elsewhere' }) }); await settle();
+  ok(/renamed elsewhere/.test(byId['rd-head'] ? byId['rd-head'].innerHTML : ''), 'a rule changed in the cache, from elsewhere, repaints its head', 'head: ' + short(byId['rd-head'] && byId['rd-head'].innerHTML));
+  ok(box.value === 'his own typing', 'and his typing in the textbox stays', 'textbox: ' + short(box.value));
+  const asked = v.calls.filter(function (x) { return x.name === 'desk.rule.get'; }).length;
+  byId['rd-body'].fire('click', { target: byId['rd-version'] }); await settle();
+  ok(v.calls.filter(function (x) { return x.name === 'desk.rule.version'; }).pop().args.text === 'his own typing', 'Version sends the textbox as it stands', 'asked: ' + short(v.calls.slice(-1)));
+  ok(v.calls.filter(function (x) { return x.name === 'desk.rule.get'; }).length === asked, 'and does not ask rule.get again: the version comes back through the cache', 'rule.get asked ' + asked + ', then ' + v.calls.filter(function (x) { return x.name === 'desk.rule.get'; }).length);
+  K.published({ rule: 'rule/7', row: Object.assign({}, RULE, { text: 'his own typing, versioned' }) }); await settle();
+  ok(box.value === 'his own typing, versioned', 'the version, come back as the rule\'s row in the cache, refills the textbox', 'textbox: ' + short(box.value));
+  box.value = 'a draft';
+  byId['rd-body'].fire('change', { target: box }); await settle();
+  K.published({ rule: 'rule/7', row: Object.assign({}, RULE, { text: 'his own typing, versioned', draft: 'a draft' }) }); await settle();
+  box.value = 'typing on';
+  K.published({ rule: 'rule/7', row: Object.assign({}, RULE, { text: 'his own typing, versioned', draft: 'a draft, as kept' }) }); await settle();
+  ok(box.value === 'typing on', 'a draft come back never refills the textbox', 'textbox: ' + short(box.value));
+
+  test.subHeading('a line said under the rule drops its chat kept, and it reads the chat again');
+  const chats = v.calls.filter(function (x) { return x.name === 'desk.item.chat'; }).length;
+  const say = byId['rd-say'];
+  say.value = 'second line';
+  CHAT = CHAT.concat([{ by: 'andy', at: '2026-11-02T10:01:00.000Z', text: 'second line' }]);
+  byId['rd-body'].fire('click', { target: byId['rd-say-send'] }); await settle();
+  const sent = v.calls.filter(function (x) { return x.name === 'desk.chat.add'; }).pop();
+  ok(!!sent && sent.args.id === 'rule/7' && sent.args.text === 'second line', 'Send says the line under this rule (chat.add)', 'asked: ' + short(sent));
+  ok(v.calls.filter(function (x) { return x.name === 'desk.item.chat'; }).length === chats, 'and does not read the chat itself', 'item.chat asked ' + chats + ', then ' + v.calls.filter(function (x) { return x.name === 'desk.item.chat'; }).length);
+  K.published({ verb: 'rule.chat', rule: 'rule/7' }); await settle();
+  ok(v.calls.filter(function (x) { return x.name === 'desk.item.chat'; }).length === chats + 1, 'the rule.chat publish, come into the cache, has it read the chat again', 'item.chat asked ' + chats + ', then ' + v.calls.filter(function (x) { return x.name === 'desk.item.chat'; }).length);
+  ok(/second line/.test(byId['rd-chat'] ? byId['rd-chat'].innerHTML : ''), 'and the chat drawn holds the new line', 'chat: ' + short(byId['rd-chat'] && byId['rd-chat'].innerHTML));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

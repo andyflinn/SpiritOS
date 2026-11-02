@@ -119,14 +119,15 @@ test.startTest('info.js: the Info app');
   await w.def.mount(box, w.api); await settle();
   ok(!/What each relay calls you/.test(box.innerHTML), 'its page draws no relay table', 'markup: ' + short(box.innerHTML));
 
-  test.subHeading('its two blocks are the two shell elements, filled from the node\'s card');
+  test.subHeading('its two blocks are the two shell elements; the node\'s card is kept in the node family\'s cache (goal/G41.28)');
   ok(!!w.made.label && w.made.label.opts.api === w.api, 'the name block is changeMyLabel, handed the app\'s api', 'made: ' + short(Object.keys(w.made)));
   ok(!!w.made.description && w.made.description.opts.api === w.api, 'the description block is changeMyDescription', 'made: ' + short(Object.keys(w.made)));
   ok(w.calls.some(function (c) { return c.name === 'node.card'; }), 'it reads node.card', 'calls: ' + short(w.calls.map(function (c) { return c.name; })));
-  ok(w.sets.some(function (s) { return s.kind === 'label' && s.value === 'Andy'; }) && w.sets.some(function (s) { return s.kind === 'description' && s.value === 'a node'; }),
-    'each element is set to what the node stored', 'sets: ' + short(w.sets));
-  if (w.made.label && typeof w.made.label.opts.onSaved === 'function') { w.made.label.opts.onSaved('Bob'); await settle(); }
-  ok(w.posts.length === 0, 'a saved name is no longer posted to every relay', 'posts: ' + short(w.posts));
+  const N = w.api.win.spirit.nodeData;
+  ok((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node',
+    'it loads the node manager, and node.card\'s answer is kept in spirit.nodeData\'s card, which each element draws itself from', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get()));
+  ok(w.sets.length === 0, 'it sets neither field itself', 'sets: ' + short(w.sets));
+  ok(w.posts.length === 0, 'no name is posted to any relay', 'posts: ' + short(w.posts));
 
   test.subHeading('it reads the relays from the contact family\'s cache (goal/G41.28)');
   ok((w.managers || []).indexOf('contact') !== -1, 'it loads the contact manager', 'managers: ' + short(w.managers));
@@ -134,13 +135,6 @@ test.startTest('info.js: the Info app');
   w.api.win.spirit.data.take({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'RA', relay: true, keep: true, seated: false } } });
   await settle();
   ok(w.statuses > before, 'a relay\'s row that changed in spirit.contactData reads the relays again', 'relay.status asked ' + before + ', then ' + w.statuses);
-
-  test.subHeading('its name and description are the node family\'s cache (goal/G41.28)');
-  const N = w.api.win.spirit.nodeData;
-  ok((w.managers || []).indexOf('node') !== -1 && !!N && N.card() && N.card().name === 'Bob' && N.card().description === 'a node', 'it loads the node manager: node.card\'s answer is kept in spirit.nodeData, and the saved name (Bob) with it', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card()));
-  const sets0 = w.sets.length;
-  N.keepCard({ description: 'changed elsewhere' }); await settle();
-  ok(w.sets.slice(sets0).some(function (x) { return x.kind === 'description' && x.value === 'changed elsewhere'; }), 'a card changed in the cache redraws its fields', 'sets after: ' + short(w.sets.slice(sets0)));
 
   test.subHeading('the two forms and the key rotation stay');
   const join = w.forms.filter(function (f) { return f.form === 'join'; }).pop();

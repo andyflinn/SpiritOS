@@ -13,7 +13,8 @@ opens. So the editor names no description and no api-branch selector.
   \"node\", unless the bundleEditor was mounted for an appServer, then the owner field sill be set to <AppServerName>"*.
   `create(container, { family })`: every add names that family as its owner; without it, `node`.
 
-- It loads what it uses itself (rule/26): `shell/js/fieldInput.js` and `shell/js/bundleSelector.js`.
+- It loads what it uses itself (rule/26): `shell/js/fieldInput.js` and `shell/js/bundleSelector.js`, and the auth
+  family's cache manager (`spirit.cacheManager('auth')`, goal/G41.28), whose bundles it adds to.
 - It registers `spirit.elements.bundleEditor.create(container, opts)`, which answers `{ destroy }`. Drawn, it asks the
   node nothing.
 - At the top, one row, a rowForm (goal/G41.27; Andy: *"bundleEditor:\n[➕] [label] [Add]"*): it loads
@@ -24,18 +25,22 @@ opens. So the editor names no description and no api-branch selector.
   - an empty label, or one the label's rule refuses, asks nothing;
   - a valid one asks `auth.bundle { op: 'add', label, owner }`, the label as `fieldRules.normalize` writes it, the
     owner `node`, or the app server it was mounted for (below);
-  - answered, the list searches again and the input is emptied for the next;
+  - **what it adds, it listens for** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to make sure when it
+    changes shit it listens to fucking update via the spirit object"*): it watches `spirit.authData.bundles`; once the
+    bundle it asked for is there, the input is emptied for the next and the add is said. Another bundle arriving
+    leaves the label as it is. It asks its pane to search nothing again: the pane is a view of that branch;
   - refused, the node's words are said in the panel and the label stays in the input.
 - Below it, filling the space left (a `fill` box, shell.css): `bundleSelector.create(its box, …)` (the shell's element
   shape, goal/G41.19), a pane, columns `label`, `owner`, `edit` and `delete` (goal/G41.25: the owner *"right after the bundles label"*), its labels shown only (goal/G41.26: *"the Label should now just be an output"*; no `editable`). What a row does is the row element's
   (`shell/js/bundleSelector/rowElement.js`).
-- `destroy()` empties its box.
+- `destroy()` empties its box, lets its watch on `spirit.authData.bundles` go and lets its bundle pane go.
 
 ## What its test must try to break
 
 - An empty or too long label sent to the node.
 - A label sent untrimmed.
-- A list that does not search again after an add, or an input left full.
+- An input emptied, or the add said, before the bundle is in the auth family's cache, or left full once it is.
+- A watch or a pane kept after destroy.
 - A refusal kept silent.
 - An add with no owner, or another owner than the one it was mounted for.
 - The old editor's description or api-branch selector left in it.

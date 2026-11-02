@@ -3,7 +3,8 @@
 // spirit/run/shell/textEditor/test/textEditor.js
 // The tests of shell/textEditor/textEditor.js, and of no other module (spec: ./textEditor.md; goal/G41.7). The browser
 // file runs in node on a window of its own: the files list, the codeMirror element and the node's files are recorders;
-// the old shell's api.ui.elements is a trap that records any reach into it.
+// the old shell's api.ui.elements is a trap that records any reach into it. The page's data set and the fs family's
+// cache manager are the real ones (goal/G41.28).
 
 const fs = require('fs');
 const path = require('path');
@@ -71,10 +72,24 @@ function world(opts) {
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     shell: { activateApp: function (d) { w.def = d; } },
     escapeHtml: api.escapeHtml,
+    // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
+    cacheManager: function (name) {
+      w.managers = (w.managers || []).concat(name);
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+      return Promise.resolve(true);
+    },
   };
   vm.createContext(win);
+  // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  win.spirit.node = { key: 'KEY+TEXT/EDITOR==' };
+  win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
-  w.api = api;
+  w.api = api; w.win = win;
+  // A change of one file in the node's tree, as its fs-watcher streams it to the page once the whole tree has come
+  // (before then the branch fills quietly).
+  w.tree = function (p) {
+    if (!win.spirit.fsData.ready()) win.spirit.data.take({ id: 'job_fs', type: 'fs-watcher', data: { treeComplete: true } }); win.spirit.data.take({ id: 'job_fs', type: 'fs-watcher', data: { command: { op: 'writeFile', path: p, size: 1, modified: Date.now() } } }); };
   return w;
 }
 function lastView(w) { return w.views[w.views.length - 1] || null; }
@@ -117,13 +132,22 @@ test.startTest('textEditor.js: the TextEditor app, face-able');
   ok(byId['editor-path'] && byId['editor-path'].textContent === 'shell/textEditor/notes.txt' && status() === 'loaded', 'the path is shown, the status says loaded', 'path ' + short(byId['editor-path'] && byId['editor-path'].textContent) + ', status ' + short(status()));
   ok(w.reached.length === 0, 'nothing of api.ui.elements is reached', 'reached: ' + short(w.reached));
 
-  test.subHeading('Save writes what was typed, and says only what the node answered (rule/19)');
+  test.subHeading('Save writes what was typed; it says saved once the node\'s file tree has it (rule/19, goal/G41.28)');
+  ok((w.managers || []).indexOf('fs') !== -1, 'it loads the fs family\'s cache manager', 'managers: ' + short(w.managers));
   if (v) v.type('my notes, edited');
   byId['editor-save'] && byId['editor-save'].fire('click');
   ok(status() === 'saving…', 'the status says saving… while the node is asked', 'status: ' + short(status()));
   await settle();
   ok(w.saved.length === 1 && w.saved[0].path === 'shell/textEditor/notes.txt' && w.saved[0].content === 'my notes, edited', 'fs.saveFile(the current path, the view\'s value())', 'saved: ' + short(w.saved));
-  ok(status() === 'saved', 'then saved, once the node said ok', 'status: ' + short(status()));
+  ok(status() === 'saving…', 'the node\'s ok alone does not say saved', 'status: ' + short(status()));
+  w.tree('shell/textEditor/notes.txt'); await settle();
+  ok(status() === 'saved', 'then saved, once the open file\'s row in spirit.data (spirit.fsData.branch) has the save', 'status: ' + short(status()));
+  w.tree('docs/a.md'); await settle();
+  ok(status() === 'saved', 'a change of another file says nothing', 'status: ' + short(status()));
+
+  test.subHeading('a change of the open file that is not its own save says "changed on disk" (Andy, Q21)');
+  w.tree('shell/textEditor/notes.txt'); await settle();
+  ok(status() === 'changed on disk', 'the open file changed from elsewhere: changed on disk', 'status: ' + short(status()));
   const r = world({ refuse: 'not writable' });
   await r.def.mount(node('container'), r.api, { path: 'shell/x/data.json' }); await settle();
   byId['editor-save'].fire('click'); await settle();
