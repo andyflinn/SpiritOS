@@ -14,9 +14,9 @@ var APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
 var textEditorParts = Promise.all(['shell/js/files/listElement.js', 'shell/js/codeMirror.js'].map(function (p) { return spirit.require(p); })
   .concat([spirit.cacheManager('fs')]));
 
-// WHAT IT SAVES, IT LISTENS FOR (goal/G41.27, G41.28; Andy, Q21: "just changed. it could be a message, edited in a
-// peers RAM...."): the open file's row in the node's file tree, as the fs family's cache keeps it (spirit.fsData). Its
-// own save is "saved" once the tree has it; any other change of the open file is "changed".
+// WHAT IT SAVES, IT LISTENS FOR (goal/G41.27, G41.28; Andy, Q21: "\"changed on disk\""): the open file's row in the
+// node's file tree, as the fs family's cache keeps it (spirit.fsData). Its own save is "saved" once the tree has it;
+// any other change of the open file is "changed on disk".
 var textEditorStop = null;
 var textEditorSaving = false;
 function textEditorFollow(path) {
@@ -25,7 +25,7 @@ function textEditorFollow(path) {
   textEditorStop = window.spirit.data.watch(window.spirit.fsData.branch + '/' + path, function (whole, row) {
     var statusEl = document.getElementById('editor-status');
     if (!row || !statusEl) return;
-    statusEl.textContent = textEditorSaving ? 'saved' : 'changed';
+    statusEl.textContent = textEditorSaving ? 'saved' : 'changed on disk';
     textEditorSaving = false;
   });
 }
