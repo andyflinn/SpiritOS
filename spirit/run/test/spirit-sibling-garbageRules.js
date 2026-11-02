@@ -42,17 +42,20 @@ const STRINGS = [
   '', 'x', '\u0000', '../../../../etc/passwd', '%2e%2e%2f%00', '\ud800', '‮\u0007\r\n\t', '<script>x</script>',
   '__proto__', 'x'.repeat(1024), '😀'.repeat(1000), 'x'.repeat(Math.floor(limits.PAYLOAD_MAX * 3 / 4)),
 ];
-// VERBS THAT ACT, as a word in their name says: given garbage only where the shape itself breaks (a wrong type), never a
-// string into a string argument, an argument left out or one too many, which a lenient check could take as a real call.
+// VERBS THAT ACT, as a word in their name says (Andy, G41.30: "A verb that acts (deletes, rotates, stops, sends) gets
+// only garbage that breaks the shape ... never meets a bad string. - fill this gap"): they get the whole garbage too, bad
+// strings, missing and extraneous included, with their real handlers, on a throwaway scratch node of their own, so what
+// they delete, rotate or stop spoils nothing the rest of the run stands on.
 const ACTS = /delete|remove|rotate|stop|cancel|revoke|forget|leave|block|create|run|fetch|post|command|join|claim|add|push|pull|fill|write|save|set|publish|grant|relabel|rename|label|accept|take|release|done|signoff|draft|version|record|acquire|annotate|bundle|branch|chores|pushgoal|status|debug|DEBUG|subscribe|receive|line\.|chat\.add|check\.|box\.|phase\.|item\.|goal\.|rule\.|block|work\.|agent\.state|policy|senders/;
 const READS = /search|get|load|stat|exists|read|query|card|now|annotations|path|targets|may|files|checks|chat$|box$|suites|claims|peer$|status\.get|console|senders$/;
 
 // The garbage for one verb: each argument varied alone, the others as the verb's own example (one at a time, the box:
 // "pairs, not every combination", one argument being the first of them), plus whole bodies that are no object.
+function acting(name) { return ACTS.test(name) && !READS.test(name.split('.').pop()); }
 function garbageFor(name, request) {
   const proto = request && typeof request === 'object' && !Array.isArray(request) ? request : {};
   const keys = Object.keys(proto);
-  const acts = ACTS.test(name) && !READS.test(name.split('.').pop());
+  const acts = false;
   const out = [];
   const withOne = function (k, v, why) { const a = Object.assign({}, proto); a[k] = v; out.push({ args: a, why: k + ' ' + why }); };
   keys.forEach(function (k) {
@@ -66,7 +69,57 @@ function garbageFor(name, request) {
   if (!acts) { const a = Object.assign({}, proto); a.noSuchArgument = 'garbage'; out.push({ args: a, why: 'an extraneous argument' }); }
   // Arguments that are no object at all break every shape.
   ['garbage', 12345, null, [1, 2]].forEach(function (v) { out.push({ args: v, why: 'args as ' + kindOf(v) }); });
-  return out;
+  return out.concat(pairsFor(proto));
+}
+
+// PAIRS, OVER THE WIRE (the box: "Pairs, not every combination"; Andy, G41.30: "Pairs run against the gate in memory, not
+// over the wire. - close this gap!"). Eight kinds an argument can be given: a bad string, the five other JSON types, left
+// out, or kept with an extraneous argument beside it. For a verb of two arguments or more, a set of asks such that, for
+// any two of its arguments, every pair of their kinds is in at least one ask: made greedily, the first uncovered pair
+// seeding each ask and every other argument given the kind that covers most pairs not yet covered.
+const KIND8 = ['string', 'number', 'boolean', 'null', 'object', 'array', 'missing', 'extraneous'];
+function pairRows(n) {
+  const K = KIND8.length;
+  const open = new Set();
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) for (let a = 0; a < K; a++) for (let b = 0; b < K; b++) open.add(i + ',' + j + ',' + a + ',' + b);
+  const rows = [];
+  while (open.size) {
+    const first = open.values().next().value.split(',').map(Number);
+    const row = new Array(n).fill(-1);
+    row[first[0]] = first[2]; row[first[1]] = first[3];
+    for (let k = 0; k < n; k++) {
+      if (row[k] !== -1) continue;
+      let best = 0; let bestGain = -1;
+      for (let v = 0; v < K; v++) {
+        let gain = 0;
+        for (let m = 0; m < n; m++) {
+          if (m === k || row[m] === -1) continue;
+          const key = m < k ? m + ',' + k + ',' + row[m] + ',' + v : k + ',' + m + ',' + v + ',' + row[m];
+          if (open.has(key)) gain++;
+        }
+        if (gain > bestGain) { bestGain = gain; best = v; }
+      }
+      row[k] = best;
+    }
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) open.delete(i + ',' + j + ',' + row[i] + ',' + row[j]);
+    rows.push(row);
+  }
+  return rows;
+}
+function pairsFor(proto) {
+  const keys = Object.keys(proto);
+  if (keys.length < 2) return [];
+  return pairRows(keys.length).map(function (row, r) {
+    const a = Object.assign({}, proto);
+    keys.forEach(function (k, i) {
+      const kind = KIND8[row[i]];
+      if (kind === 'missing') delete a[k];
+      else if (kind === 'extraneous') a[k + 'Extraneous'] = 'garbage';
+      else if (kind === 'string') a[k] = STRINGS[(r + i) % STRINGS.length];
+      else a[k] = KINDS[kind];
+    });
+    return { args: a, why: 'pair #' + r + ': ' + keys.map(function (k, i) { return k + '=' + KIND8[row[i]]; }).join(' '), pair: true };
+  });
 }
 
 // RAW OVER A BARE SOCKET: the request as written, nothing normalised. Answers { status, text } or { hung } or { error }.
@@ -79,7 +132,8 @@ function raw(base, head, body, opts) {
     const s = net.connect(Number(u.port), u.hostname);
     const finish = function (r) { if (done) return; done = true; s.destroy(); resolve(r); };
     const timer = setTimeout(function () { finish(got ? answer() : { hung: true }); }, o.ms || ASK_MS);
-    function answer() { const m = /^HTTP\/1\.[01] (\d{3})/.exec(got); return { status: m ? Number(m[1]) : 0, text: got.slice(got.indexOf('\r\n\r\n') + 4, got.indexOf('\r\n\r\n') + 304) }; }
+    // The answer's body, a chunked one's first chunk without its size line, so a failure names what was answered.
+    function answer() { const m = /^HTTP\/1\.[01] (\d{3})/.exec(got); const at = got.indexOf('\r\n\r\n') + 4; let body = got.slice(at, at + 400); if (/\r\ntransfer-encoding:\s*chunked/i.test(got.slice(0, at))) body = body.replace(/^[0-9a-fA-F]+\r\n/, ''); return { status: m ? Number(m[1]) : 0, text: body.slice(0, 300) }; }
     // The socket stays open for the answer: a half-closed one may be dropped before an asynchronous verb answers. The
     // request says Connection: close, so the server ends it once it has answered.
     s.on('connect', function () { s.write(head); if (body) s.write(body); });
@@ -109,6 +163,62 @@ function broke(r) {
 
 test.startTest('spirit-sibling-garbageRules.js: the attacker\'s garbage at every door (goal/G41.30)');
 
+// A scratch node up, its app servers named in its api: answers { node, base, plain } or null.
+async function upNode() {
+  const node = await scratchNode({ servers: SERVERS });
+  if (!node.up) return { node: node, base: '', plain: null };
+  const base = node.base;
+  const host = new URL(base).host;
+  const plain = async function () { const r = await raw(base, 'POST /api/spirit HTTP/1.1\r\nHost: ' + host + '\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: 24\r\n\r\n', '{"call":"api","args":{}}', { ms: PLAIN_MS }); return r && r.status === 200; };
+  let t = null;
+  for (let i = 0; i < 60; i++) {
+    t = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
+    if (t && SERVERS.every(function (s) { return t[s]; })) break;
+    await sleep(500);
+  }
+  // A SERVER NOT UP JUDGES NOTHING: its verbs would answer "no such verb", which is no crash, and pass on nothing. So
+  // every server it turned on must be in the api answer, or the run says which is not.
+  const missing = SERVERS.filter(function (s) { return !(t && t[s]); });
+  return { node: node, base: base, plain: plain, missing: missing };
+}
+// The verbs that act, on throwaway nodes: answers every node it made, for the clean-up.
+async function actingRun(actingAsks, actingVerbs) {
+  const made = [];
+  let b = await upNode(); made.push(b.node);
+  if (!b.plain) { test.fail('the throwaway node for the verbs that act did not come up'); return made; }
+  if (b.missing.length) test.fail('the throwaway node for the verbs that act came up without ' + b.missing.join(', ') + ': their verbs would be judged on nothing');
+  HOST = new URL(b.base).host;
+  const broken = {}; const killedBy = []; let n = 0; const t0 = Date.now();
+  for (const name of actingVerbs) {
+    const mine = actingAsks.filter(function (a) { return a.name === name; });
+    for (let i = 0; i < mine.length; i += BATCH) {
+      const batch = mine.slice(i, i + BATCH);
+      const got = await Promise.all(batch.map(function (a) { return call(b.base, { call: a.name, args: a.args }); }));
+      n += batch.length;
+      got.forEach(function (r, j) { const why = broke(r); if (why) (broken[name] = broken[name] || []).push(batch[j].why + ': ' + why); });
+      let alive = await b.plain();
+      if (!alive) { await sleep(500); alive = await b.plain(); }
+      if (!alive) {
+        const dead = b.node.child && b.node.child.exitCode !== null;
+        (broken[name] = broken[name] || []).push((dead ? 'IT KILLED THE NODE (exit ' + b.node.child.exitCode + ')' : 'the node then did not answer a plain call within ' + (PLAIN_MS / 1000) + ' s') + ', in the batch from ' + short(batch[0].why) + ' to ' + short(batch[batch.length - 1].why) + ', args of the first: ' + short(batch[0].args).slice(0, 160));
+        killedBy.push(name);
+        try { if (b.node.child) b.node.child.kill(); } catch (e) { /* gone */ }
+        b = await upNode(); made.push(b.node);
+        if (!b.plain) { test.fail('a fresh throwaway node did not come up after ' + name); return made; }
+        if (b.missing.length) test.fail('a fresh throwaway node after ' + name + ' came up without ' + b.missing.join(', ') + ': their verbs would be judged on nothing');
+        HOST = new URL(b.base).host;
+        break;
+      }
+    }
+  }
+  test.comment('verbs that act: ' + n + ' asks over ' + actingVerbs.length + ' verbs in ' + Math.round((Date.now() - t0) / 1000) + ' s, on ' + made.length + ' throwaway node(s)');
+  actingVerbs.forEach(function (name) { const x = broken[name]; if (x) test.fail('/api/spirit ' + name + ' (a verb that acts): ' + x.length + ' crashed or hung, first: ' + x[0]); });
+  const fine = actingVerbs.filter(function (name) { return !broken[name]; }).length;
+  ok(fine > 0, fine + ' of the ' + actingVerbs.length + ' verbs that act took the whole garbage, bad strings, missing, extraneous and pairs, without crashing or hanging', 'no verb that acts was judged');
+  return made;
+}
+let actedOn = null;
+
 (async function () {
   const node = await scratchNode({ servers: SERVERS });
   try {
@@ -129,14 +239,15 @@ test.startTest('spirit-sibling-garbageRules.js: the attacker\'s garbage at every
     tree = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (r) { return r.json(); }).catch(function () { return null; });
     if (!tree || typeof tree !== 'object') { test.fail('the node\'s api answer could not be read: nothing to introspect'); return; }
     const missingServers = SERVERS.filter(function (s) { return !tree[s]; });
-    test.comment('families: ' + Object.keys(tree).join(', ') + (missingServers.length ? '; not up: ' + missingServers.join(', ') : ''));
+    test.comment('families: ' + Object.keys(tree).join(', '));
+    if (missingServers.length) test.fail('the scratch node came up without ' + missingServers.join(', ') + ': their verbs would be judged on nothing');
 
     // 1) EVERY VERB, BAD ARGUMENTS (the box, rule 3 and "bad arguments").
     const asks = [];
     Object.keys(tree).forEach(function (fam) {
       Object.keys(tree[fam] || {}).forEach(function (verb) {
         const name = fam + '.' + verb;
-        garbageFor(name, tree[fam][verb] && tree[fam][verb].request).forEach(function (g) { asks.push({ name: name, args: g.args, why: g.why }); });
+        garbageFor(name, tree[fam][verb] && tree[fam][verb].request).forEach(function (g) { asks.push({ name: name, args: g.args, why: g.why, pair: !!g.pair, acts: acting(name) }); });
       });
     });
     // 2) RAW BODIES AT THE NODE'S DOOR (the box, rule 2: "malformed, invalid arguments").
@@ -172,15 +283,18 @@ test.startTest('spirit-sibling-garbageRules.js: the attacker\'s garbage at every
       RAWS.push({ why: 'GET ' + short(p).slice(0, 60), head: 'GET ' + p + ' HTTP/1.1\r\nHost: ' + HOST + '\r\nConnection: close\r\n\r\n', body: '' });
       RAWS.push({ why: 'POST ' + short(p).slice(0, 60), head: postHead(p, 2), body: '{}' });
     });
-    test.comment('it will make ' + asks.length + ' asks of bad arguments over ' + Object.keys(tree).length + ' families, and ' + RAWS.length + ' raw requests, each batch of ' + BATCH + ' followed by a plain call');
+    const actingAsks = asks.filter(function (a) { return a.acts; });
+    const readingAsks = asks.filter(function (a) { return !a.acts; });
+    const actingVerbs = actingAsks.map(function (a) { return a.name; }).filter(function (n, k, l) { return l.indexOf(n) === k; });
+    test.comment('it will make ' + asks.length + ' asks of bad arguments over ' + Object.keys(tree).length + ' families (' + asks.filter(function (a) { return a.pair; }).length + ' of them pairs): ' + readingAsks.length + ' here, ' + actingAsks.length + ' to the ' + actingVerbs.length + ' verbs that act, on a throwaway node of their own; and ' + RAWS.length + ' raw requests, each batch of ' + BATCH + ' followed by a plain call');
 
     // THROWN, BATCH BY BATCH: each ask judged; after each batch the node answers a plain call within PLAIN_MS.
     const broken = {};   // name -> [why]
     const hungAfter = [];
     let refused = 0; let answered = 0; const statuses = {}; const sample = {}; const mislabelled = {}; const tookIt = {};
     const t0 = Date.now();
-    for (let i = 0; i < asks.length; i += BATCH) {
-      const batch = asks.slice(i, i + BATCH);
+    for (let i = 0; i < readingAsks.length; i += BATCH) {
+      const batch = readingAsks.slice(i, i + BATCH);
       const got = await Promise.all(batch.map(function (a) { return call(base, { call: a.name, args: a.args }); }));
       got.forEach(function (r, j) {
         const a = batch[j];
@@ -201,12 +315,13 @@ test.startTest('spirit-sibling-garbageRules.js: the attacker\'s garbage at every
     Object.keys(tree).forEach(function (fam) {
       Object.keys(tree[fam] || {}).forEach(function (verb) {
         const name = fam + '.' + verb;
+        if (acting(name)) return;
         const b = broken[name];
         if (b) test.fail('/api/spirit ' + name + ': ' + b.length + ' crashed or hung, first: ' + b[0]);
       });
     });
-    const okVerbs = Object.keys(tree).reduce(function (n, f) { return n + Object.keys(tree[f] || {}).filter(function (v) { return !broken[f + '.' + v]; }).length; }, 0);
-    test.check(okVerbs + ' verbs took all their garbage without crashing or hanging');
+    const okVerbs = Object.keys(tree).reduce(function (n, f) { return n + Object.keys(tree[f] || {}).filter(function (v) { return !acting(f + '.' + v) && !broken[f + '.' + v]; }).length; }, 0);
+    test.check(okVerbs + ' verbs that do not act took all their garbage, pairs included, without crashing or hanging');
     if (hungAfter.length) test.fail('/api/spirit: after ' + hungAfter.length + ' batches the node did not answer a plain call within ' + (PLAIN_MS / 1000) + ' s, first after: ' + short(hungAfter[0]));
     else test.check('/api/spirit: after every batch the node answered a plain call within ' + (PLAIN_MS / 1000) + ' s');
 
@@ -230,11 +345,18 @@ test.startTest('spirit-sibling-garbageRules.js: the attacker\'s garbage at every
     if (notThrown.length) test.fail('the node\'s door: ' + notThrown.length + ' requests not thrown, the node died at ' + killer + ': ' + short(notThrown));
     test.subHeading('the node is still running at the end');
     ok(node.child && node.child.exitCode === null && await plain(), 'the scratch node is still running and answers', 'the scratch node ' + (node.child && node.child.exitCode !== null ? 'exited with ' + node.child.exitCode : 'does not answer'));
+    // THE VERBS THAT ACT, ON A THROWAWAY NODE OF THEIR OWN: node A is let go first. Verb by verb, each verb's garbage in
+    // batches, a plain call after each; a node that dies is judged and replaced by a fresh one, so the next verb is judged
+    // on a living node.
+    try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
+    test.subHeading('/api/spirit: every verb that acts takes the whole garbage, on a throwaway node, without crashing or hanging');
+    actedOn = await actingRun(actingAsks, actingVerbs);
     // RELAY: owed, see the spec.
     test.comment('the relay\'s door is not thrown at yet: owed, see spirit-sibling-garbageRules.md');
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     if (node.root) try { fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    (actedOn || []).forEach(function (b) { try { if (b.child) b.child.kill(); } catch (e) { /* gone */ } if (b.root) try { fs.rmSync(b.root, { recursive: true, force: true }); } catch (e) { /* scratch */ } });
   }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
