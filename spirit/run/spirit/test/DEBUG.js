@@ -95,8 +95,10 @@ function judgePage(r, module, where) {
 // memory of its make(), over a stand-in server whose api is that one verb. "EVERY ARGUMENT gets tested with EVERY
 // javascript object type" (the box: "every type JSON.parse can make: string, number, boolean, null, object, array"),
 // "PLUS: \"missing\" and \"extraneous\"", "every string argument is supplied in a few sizes, containing bad
-// characters", and "Pairs, not every combination". Every entry still breaks the shape: the gate's exact-key check
-// (appServer.js matches) would refuse it.
+// characters", and "Pairs, not every combination". Every entry breaks the shape (the gate's exact-key check,
+// appServer.js matches, refuses it), or is a bad string alone: the shape kept, a string argument carrying a bad string,
+// so the gate passes it to the handler (Andy, of the bad strings that travelled with an undeclared argument and never
+// met a handler: "fill this gap, in this item").
 const KINDS = ['string', 'number', 'boolean', 'null', 'object', 'array'];
 function kindOf(v) { return v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v; }
 function fitsShape(proto, v) {
@@ -126,8 +128,11 @@ async function garbageRules(gen, PAYLOAD_MAX) {
   const args5 = await entries(P5);
   const plain = args5.filter(function (a) { return a !== null && typeof a === 'object' && !Array.isArray(a); });
   test.subHeading('the garbage itself, for one verb of five arguments ' + JSON.stringify(P5) + ' (goal/G41.30)');
-  ok(args5.length > 0 && args5.every(function (a) { return !fitsShape(P5, a); }), 'every entry breaks the shape: the gate\'s exact-key check refuses each (' + args5.length + ' entries)',
-    args5.length ? 'an entry fits the shape, a call a handler could act on: ' + short(args5.filter(function (a) { return fitsShape(P5, a); })[0]) : 'no garbage was made');
+  const STRING_KEYS = Object.keys(P5).filter(function (k) { return typeof P5[k] === 'string'; });
+  const badString = function (x) { return typeof x === 'string' && (/[\u0000-\u001F]|[\uD800-\uDFFF]|\.\.\/|"[\s\S]*\\|\\[\s\S]*"/.test(x) || x.length > 1000); };
+  const badAlone = function (a) { return fitsShape(P5, a) && STRING_KEYS.some(function (k) { return badString(a[k]); }); };
+  ok(args5.length > 0 && args5.every(function (a) { return !fitsShape(P5, a) || badAlone(a); }), 'every entry breaks the shape, or is a bad string alone in the shape kept (' + args5.length + ' entries)',
+    args5.length ? 'an entry fits the shape and carries no bad string, a call a handler could act on: ' + short(args5.filter(function (a) { return fitsShape(P5, a) && !badAlone(a); })[0]) : 'no garbage was made');
   Object.keys(P5).forEach(function (k) {
     const seen = {}; plain.forEach(function (a) { if (Object.prototype.hasOwnProperty.call(a, k)) seen[kindOf(a[k])] = true; });
     const lacking = KINDS.filter(function (t) { return !seen[t]; });
@@ -147,6 +152,15 @@ async function garbageRules(gen, PAYLOAD_MAX) {
     ['a quote and a backslash', /"[\s\S]*\\|\\[\s\S]*"/], ['a path piece, ../', /\.\.\//]].forEach(function (c) {
     ok(strings.some(function (x) { return c[1].test(x); }), 'the string argument a is supplied containing ' + c[0], 'no string of argument a contains ' + c[0]);
   });
+  test.subHeading('a bad string alone, so it reaches the handler (goal/G41.30; Andy: "fill this gap, in this item")');
+  // The shape kept: every other argument of its declared type, no undeclared argument added. Then the gate passes it on,
+  // and the handler itself meets the bad string.
+  const alone = args5.filter(badAlone).map(function (a) { return a.a; });
+  [['a NUL', /\u0000/], ['a lone surrogate', /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/], ['control characters', /[\u0001-\u001F]/],
+    ['a quote and a backslash', /"[\s\S]*\\|\\[\s\S]*"/], ['a path piece, ../', /\.\.\//]].forEach(function (c) {
+    ok(alone.some(function (x) { return typeof x === 'string' && c[1].test(x); }), 'argument a carries ' + c[0] + ' alone, the shape kept, no undeclared argument', 'no entry keeps the shape with argument a carrying ' + c[0] + ': the gate refuses every one before a handler sees it');
+  });
+  ok(alone.some(function (x) { return typeof x === 'string' && Math.abs(x.length - big) <= PAYLOAD_MAX / 10; }), 'argument a carries a string of about 3/4 of the payload alone, the shape kept', 'no entry keeps the shape with argument a about 3/4 of the payload long');
   test.subHeading('pairs, not every combination (goal/G41.30)');
   // For any two arguments, every pairing of their kinds (the six types and missing) appears in at least one entry; the one
   // pairing left out is both arguments of their own type, which with nothing else wrong would be a call a handler acts on.

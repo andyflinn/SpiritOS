@@ -55,8 +55,13 @@ the module's name without extension; the generator script's name without `.js`, 
 What the generator makes for one verb's request prototype, asked in memory of its `make()` over a stand-in server whose
 api is that one verb (five arguments: a string, a number, a boolean, an array and an object). From the box:
 
-- **Every entry still breaks the shape**: the gate's exact-key check (appServer.js `matches`) refuses each, so none is
-  a call a handler could act on.
+- **Every entry breaks the shape, or is a bad string alone**: the gate's exact-key check (appServer.js `matches`)
+  refuses it, or it keeps the shape and a string argument carries a bad string, so the gate passes it to the handler.
+  No entry is a call a handler could act on with nothing wrong in it.
+- **A bad string alone reaches the handler** (Andy, of the bad strings that travelled with an undeclared argument and
+  never met a handler: *"fill this gap, in this item"*): for the string argument, an entry keeps the shape (every
+  other argument of its declared type, no undeclared argument) and carries, alone, a NUL, a lone surrogate, control
+  characters, a quote and a backslash, a path piece `../`, and a string of about 3/4 of the payload.
 - *"EVERY ARGUMENT gets tested with EVERY javascript object type"*, the box: *"every type JSON.parse can make: string,
   number, boolean, null, object, array"*: each argument is, in some entry, each of the six.
 - *"PLUS: \"missing\" and \"extraneous\""*: each argument is left out in some entry, and some entry carries an argument

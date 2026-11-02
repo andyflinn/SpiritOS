@@ -60,6 +60,32 @@ async function scratchNode(o) {
   return { root: root, base: base, child: child, up: up, debug: debug };
 }
 
+// A SCRATCH RELAY (goal/G41.30; Andy: "The relay's door is not tested yet: there is no scratch relay helper. - close
+// this gap, dammit!"): a scratch copy of the tracked files of spirit/run, a relay identity planted and an owner written
+// as a relay is installed (o.owner, an identity of relayAuth's; one is made when none is given), its face domain
+// (o.faceDomain, relay-state/face.json), and relayServer.js started on a free port with its spirit object's DEBUG on
+// when o.debug, until it answers. Never a live relay.
+async function scratchRelay(o) {
+  const opts = o || {};
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-child-'));
+  const files = execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
+    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); });
+  files.forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  const run = path.join(root, 'spirit', 'run');
+  const auth = require(path.join(run, 'spirit', 'relayAuth.js'));
+  auth.nameIdentity(run, 'relay');
+  const owner = opts.owner || auth.generateIdentity('owner');
+  auth.writeOwner(run, owner.publicKey);
+  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
+  if (opts.faceDomain) fs.writeFileSync(path.join(run, 'relay-state', 'face.json'), JSON.stringify({ domain: opts.faceDomain }));
+  const port = await freePort();
+  const code = 'require("./spirit.js").debug(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
+  const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
+  const base = 'http://127.0.0.1:' + port;
+  const up = await until(function () { return fetch(base + '/').then(function (r) { return r.status > 0; }); }, 30000);
+  return { root: root, run: run, base: base, port: port, child: child, up: up, owner: owner, auth: auth };
+}
+
 // Headless Chrome on a scratch profile, and one page of it over the debugging protocol.
 async function chromePage(chrome) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-chrome-'));
@@ -95,4 +121,4 @@ async function chromePage(chrome) {
   return { kid: kid, profile: profile, send: send, evaluate: evaluate, heard: heard, sock: sock };
 }
 
-module.exports = { sleep: sleep, until: until, freePort: freePort, findChrome: findChrome, scratchNode: scratchNode, chromePage: chromePage, WAIT: WAIT };
+module.exports = { sleep: sleep, until: until, freePort: freePort, findChrome: findChrome, scratchNode: scratchNode, scratchRelay: scratchRelay, chromePage: chromePage, WAIT: WAIT };
