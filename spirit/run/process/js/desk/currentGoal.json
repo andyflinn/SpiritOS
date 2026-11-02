@@ -1,5 +1,5 @@
 {
- "change": 122339,
+ "change": 122340,
  "goal": "goal/G41",
  "items": [
   {
@@ -179,7 +179,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -27218,12 +27218,11 @@
    "id": "goal/G41.29",
    "title": "Relay change and tag",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 5,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
