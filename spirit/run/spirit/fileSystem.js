@@ -163,9 +163,16 @@ function canonicalPath(filePath) {
 // gates compared the text as typed. So each gate judges the canonical path lower-cased, against lists lower-cased too
 // (coreFiles.isCore folds as well): one verdict for every spelling, on every disc. On Linux a path in other case is
 // another file, and refusing it as its lower-cased twin is refused costs nothing.
+// NO SECOND NAME FOR A FILE EITHER (goal/G41.30; the review, H6: "8.3 short names like RELAY-~1/IDENTI~1.JSO", "folder
+// names ending in a dot or space; and ::$DATA"; "refuse any path segment with ~ plus a digit, a :, or a trailing dot or
+// space"): Windows reaches the same file by those spellings, so a segment holding one is no path of the tree, on every
+// disc. No file of the tree is named so.
+const ALIAS_SEGMENT = /~\d|:|[. ]$/;
 function gatePath(filePath) {
   const canonical = canonicalPath(filePath);
-  return canonical === null ? null : canonical.toLowerCase();
+  if (canonical === null) return null;
+  if (canonical.split('/').some(function (s) { return ALIAS_SEGMENT.test(s); })) return null;
+  return canonical.toLowerCase();
 }
 
 function fileWritable(filePath) {
