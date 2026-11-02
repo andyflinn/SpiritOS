@@ -30,12 +30,28 @@ function ownAddresses() {
   return out;
 }
 
+// AN IPv4 ADDRESS DRESSED AS IPv6 IS THAT IPv4 ADDRESS (goal/G41.30; the red: "new URL rewrites [::ffff:127.0.0.1] to
+// ::ffff:7f00:1, so an IPv4-mapped literal passes the gate"). An IPv6 literal is first written one way, through
+// net.SocketAddress, whatever form it came in (in full, in hex, with dotted digits); then an IPv4-mapped one,
+// ::ffff:a:b, and an IPv4-compatible one, ::a:b, are read back as the IPv4 address they carry. ::1 and :: stay IPv6.
+function asIPv4(a) {
+  if (netlib.isIP(a) !== 6) return a;
+  let s = a;
+  try { s = new netlib.SocketAddress({ address: a.replace(/%.*$/, ''), family: 'ipv6' }).address.toLowerCase(); } catch (e) { return a; }
+  const dotted = /^::(?:ffff:)?(\d+\.\d+\.\d+\.\d+)$/.exec(s);
+  if (dotted) return dotted[1];
+  const hex = /^::(ffff:)?([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(s);
+  if (!hex) return a;
+  const hi = parseInt(hex[2], 16);
+  const lo = parseInt(hex[3], 16);
+  return [hi >> 8, hi & 255, lo >> 8, lo & 255].join('.');
+}
+
 function isThisMachine(address) {
   let a = String(address == null ? '' : address).trim().toLowerCase();
   if (a.charAt(0) === '[' && a.charAt(a.length - 1) === ']') a = a.slice(1, -1);
   if (a === 'localhost' || /\.localhost$/.test(a)) return true;
-  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(a);
-  if (mapped) a = mapped[1];
+  a = asIPv4(a);
   const kind = netlib.isIP(a);
   if (kind && ownAddresses().indexOf(a.replace(/%.*$/, '')) !== -1) return true;
   if (kind === 4) return /^127\./.test(a) || a === '0.0.0.0';

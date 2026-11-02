@@ -2097,6 +2097,8 @@ function markRecord(kind) {
 // THE JOIN AT START (goal/G30.2): node spirit/server.js --email <address>. An unseated node asks its kept relay to join;
 // what came of it is printed first, then the listening line (the box: "and then the line it listens on").
 const startEmail = common.emailFromArgs(process.argv.slice(2));
+// A request Node cannot parse is answered 400, never a reset (goal/G41.30, serveCommon.answerClientErrors).
+common.answerClientErrors(server);
 server.listen(port, BIND_HOST, () => {
   hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) })
     .catch(function (e) { return { lines: ['The join at start broke: ' + ((e && e.message) || e) + '. Join from Natter instead.'] }; })

@@ -362,6 +362,21 @@ function refuseTooBig(req, res) {
 // systemd's Restart=on-failure just made it a three-second outage per
 // request rather than a permanent one. Answer 400 and stay up.
 //
+// A REQUEST NODE CANNOT EVEN PARSE (goal/G41.30; the red: "a header line with no colon: the connection failed:
+// ECONNRESET"): Node's own answer writes a 400 and destroys the socket at once, so a client still sending its body gets a
+// reset and the 400 is lost. Answered here instead: the 400 said, whatever the client still sends read and dropped, and
+// the socket closed in order, so the client reads the answer. Both doors call it on their server.
+function answerClientErrors(server) {
+  server.on('clientError', function (err, socket) {
+    if (!socket || socket.destroyed) return;
+    if (err && err.code === 'ECONNRESET') { socket.destroy(); return; }
+    socket.on('error', function () { /* the client went: nothing to answer */ });
+    socket.resume();
+    socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 30\r\n\r\nBad request: malformed request');
+    setTimeout(function () { if (!socket.destroyed) socket.destroy(); }, 2000).unref();
+  });
+}
+
 // Returns { url, pathname }, or null when it has answered 400.
 function parseRequestPath(req, res) {
   try {
@@ -480,6 +495,7 @@ module.exports = {
   nodeRefusal: nodeRefusal,
   refuseTooBig: refuseTooBig,
   parseRequestPath: parseRequestPath,
+  answerClientErrors: answerClientErrors,
   sendVersion: sendVersion,
   refuseListenError: refuseListenError,
   // debugFirst(req, res, server): true when DEBUG.js answered, and the caller must stop. server.api() answers the

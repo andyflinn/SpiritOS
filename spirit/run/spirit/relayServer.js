@@ -938,6 +938,8 @@ function restartNow() {
 // arriving after 5 minutes, and faceStream's live upload stays open as long as the face does. The limit on headers
 // (headersTimeout) stays, and every body but the face uploads is still bounded by refuseTooBig.
 server.requestTimeout = 0;
+// A request Node cannot parse is answered 400, never a reset (goal/G41.30, serveCommon.answerClientErrors).
+common.answerClientErrors(server);
 
 server.listen(port, BIND_HOST, () => {
   console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
