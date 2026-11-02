@@ -57,6 +57,11 @@ function isCall(x) {
 const OFF_THE_FACE_FAMILIES = ['jobs', 'fs', 'fileServer'];
 const OFF_THE_FACE_VERBS = ['net.fetch', 'auth.grant', 'auth.revoke', 'auth.bundle', 'auth.branch', 'node.rotateCipher'];
 const STAYS_ON_THE_FACE = ['fs.annotations'];
+// ON A RELAY THIS NODE'S OWNER STARRED, THE LIMITS ARE GONE (goal/G41.30; Andy: "your face on a relay you own gets everything
+// back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the limits stay until
+// G42." "is a compromise i can live with"). So whoever holds that relay, or the login mail, can run programs on this
+// machine until G42. The star itself never comes from a face, or one face could star another relay.
+const NEVER_ON_THE_FACE = ['contact.own'];
 function offTheFace(verb) {
   if (STAYS_ON_THE_FACE.indexOf(verb) !== -1) return false;
   const parts = verb.split('.');
@@ -68,7 +73,8 @@ function faceRefuses(request, here) {
   const h = here || {};
   const plain = function (u) { return String(u || '').trim().replace(/\/+$/, '').toLowerCase(); };
   const verb = String(q.call || '');
-  if (offTheFace(verb)) return verb + ' is off the face until a face can prove it is the owner';
+  if (NEVER_ON_THE_FACE.indexOf(verb) !== -1) return verb + ' is never asked from a face';
+  if (!h.owned && offTheFace(verb)) return verb + ' is off the face until a face can prove it is the owner';
   if (verb === 'relay.face' && plain(r.url) === plain(h.url)) return 'relay.face would change the face you are calling from';
   if (verb === 'peer.post' && h.key && String(r.to || '') === String(h.key)) {
     let packet = null;
@@ -270,6 +276,7 @@ function createFaceHome(opts) {
   }
 
   function faceIsHere(url) { return typeof o.faceSet === 'function' && o.faceSet(url) === true; }
+  function faceIsOwned(url) { return typeof o.faceOwned === 'function' && o.faceOwned(url) === true; }
 
   function request(url, data) {
     const d = data || {};
@@ -304,12 +311,13 @@ function createFaceHome(opts) {
       return;
     }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
-    // A save in parts writes a file, and fs is off the face (OFF_THE_FACE above); uploadPart waits for the step-up.
+    // A save in parts writes a file, and fs is off the face on any relay but a starred one (OFF_THE_FACE above).
+    if (r.upload && typeof r.upload === 'object' && faceIsOwned(url)) { uploadPart(r.upload, res); return; }
     if (r.upload && typeof r.upload === 'object') { json(res, 403, { ok: false, code: 'not-from-the-face', error: 'a save is off the face until a face can prove it is the owner' }); return; }
     // A CALL IS { call, args } (goal/G41.15; the box: "ONE ENVELOPE for every call to a node's door"): the name and the
     // arguments apart, and nothing else beside them; the arguments go to the verb as they came.
     if (!isCall(r)) { json(res, 400, { ok: false, code: 'bad-request', error: 'a call is { call: "<family>.<verb>", args: { ... } }, nothing else beside them' }); return; }
-    const no = faceRefuses(r, { url: url, key: o.relayKey(url) || '' });
+    const no = faceRefuses(r, { url: url, key: o.relayKey(url) || '', owned: faceIsOwned(url) });
     if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     const verb = r.call;
     const args = r.args;

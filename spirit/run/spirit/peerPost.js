@@ -1914,6 +1914,9 @@ function createPeerPost(opts) {
   // "This input field must show the current public label of this relay"). In memory only, beside the services.
   var labelByUrl = Object.create(null);
   function labelOf(relayUrl) { return String(labelByUrl[String(relayUrl || '').replace(/\/+$/, '')] || ''); }
+  // And who its last card says owns it (goal/G41.30): that relay's own word, for the warning beside the star.
+  var ownerLabelByUrl = Object.create(null);
+  function ownerLabelOf(relayUrl) { return String(ownerLabelByUrl[String(relayUrl || '').replace(/\/+$/, '')] || ''); }
   function relayKey(relayUrl) {
     var ask = JSON.stringify({ v: 1, body: { card: true } });
     return publicPost(relayUrl, '', ask).then(function (got) {
@@ -1927,6 +1930,7 @@ function createPeerPost(opts) {
       var services = { sendMail: !!(said.services && said.services.sendMail === true), face: !!(said.services && said.services.face === true) };
       servicesByUrl[String(relayUrl || '').replace(/\/+$/, '')] = services;
       labelByUrl[String(relayUrl || '').replace(/\/+$/, '')] = String(said.relayLabel || '');
+      ownerLabelByUrl[String(relayUrl || '').replace(/\/+$/, '')] = String(said.ownerLabel || '');
       return {
         relayPublicKey: String(said.relayPublicKey),
         relaySealKey: String(said.relaySealKey || ''),
@@ -2155,6 +2159,7 @@ function createPeerPost(opts) {
     // What a relay's last card offered (goal/G30.2), read without a call.
     servicesOf: servicesOf,
     labelOf: labelOf,
+    ownerLabelOf: ownerLabelOf,
     claim: claim,
     join: join,
     // What arrived while nobody was home, and what is still outstanding.

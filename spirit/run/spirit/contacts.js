@@ -224,13 +224,9 @@ function setCard(rootDir, publicKey, cardText) {
   if (held && !(fields.at > held.at)) {
     return { ok: false, why: 'not newer', held: held.at, offered: fields.at };
   }
-  // OWNED, BY THE RULE A RELAY IS OWNED BY (goal/G19.8): mine, from the newest verified card. Andy, 2026-10-12:
-  // "puppet is just a flag in the contact list", "so the relays owner code and the puppets owner code should be the
-  // same." Only a newer card naming another owner, or none, sets it false.
-  seen(rootDir).set(publicKey, {
-    card: String(cardText),
-    mine: ownerBadge.ownedBy(fields.owner, auth.loadIdentity(rootDir).publicKey),
-  });
+  // THE CARD AND NOTHING MORE, NOT THE STAR (goal/G41.30; Andy: "this button will put the star on relays and puppets. AND
+  // take it away."): a card is signed by its own node, so any node can name this one its owner. Only contact.own sets it.
+  seen(rootDir).set(publicKey, { card: String(cardText) });
   return { ok: true, first: !held, at: fields.at };
 }
 

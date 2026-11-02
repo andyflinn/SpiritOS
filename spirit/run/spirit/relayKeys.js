@@ -241,15 +241,16 @@ function seat(rootDir, url) { return setSeated(rootDir, url, true) || !!(byUrl(r
 function unseat(rootDir, url) { return setSeated(rootDir, url, false); }
 
 // THE OWNER'S SEAT, NOTED ON HIS NODE (goal/G40.10; Andy: "the relay on every boot has to fucking make sure the owner
-// has a seat"). A relay's report to its owner says what it calls him (`owner`): that relay holds this node, and it is
-// his — mine, "owned, puppets and owned relays" (goal/G40.11), since only an owner receives a relay's reports. True
+// has a seat"). A relay's report to its owner says what it calls him (`owner`): that relay holds this node. The seat
+// and nothing more. NOT THE STAR (goal/G41.30; Andy: "this button will put the star on relays and puppets. AND take it
+// away."): any relay can send this report, and a relay's star opens this node's face, so only contact.own sets it. True
 // when written, false when there was nothing to write or it already said so, so a report every few seconds writes
 // nothing.
 function ownerSeat(rootDir, url, label) {
   if (!String(label == null ? '' : label)) return false;
   const row = byUrl(rootDir, url);
-  if (!row || (row.seated && row.mine)) return false;
-  seen(rootDir).set(row.key, { seated: true, mine: true });
+  if (!row || row.seated) return false;
+  seen(rootDir).set(row.key, { seated: true });
   return true;
 }
 

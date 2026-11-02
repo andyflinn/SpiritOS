@@ -1586,6 +1586,19 @@ function createHub(rootDir) {
     });
   }
 
+  // THE STAR, ON OR OFF (goal/G41.30; Andy: "this button will put the star on relays and puppets. AND take it away.").
+  // The one writer of mine: a relay's report and a node's card only say what they claim. A relay's star opens this node's
+  // face (faceHome), so it is refused from every face and from every peer (faceHome.js, apiDoor.js, apiAuth.js).
+  function handleOwn(req, res, readJsonBody) {
+    return readJsonBody(req).then(function (body) {
+      var key = String(body.key);
+      if (!shadow(rootDir).get(key)) { res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-such-contact', error: 'no row for that key' })); return; }
+      shadow(rootDir).set(key, { mine: body.own === true });
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ key: key, own: body.own === true }));
+    });
+  }
+
   function handleContact(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       var publicKey = String((body && body.publicKey) || '').trim();
@@ -2352,6 +2365,12 @@ function createHub(rootDir) {
       // asked here (goal/G22.4: the relay list asks no relay).
       row.services = router && typeof router.servicesOf === 'function' ? router.servicesOf(url) : { sendMail: false, face: false };
       row.claimed = row.owned || !!seated[url];
+      // THE STAR AND WHAT IT RESTS ON (goal/G41.30), on every row, seated or not, for the button beside it: the key to press
+      // it for, whether it is on, and who the relay's last card says owns it, that relay's own word.
+      var starRow = relayKeys.byUrl(rootDir, url);
+      row.key = starRow ? starRow.key : '';
+      row.mine = !!(starRow && starRow.mine);
+      row.ownerLabel = router && typeof router.ownerLabelOf === 'function' ? router.ownerLabelOf(url) : '';
       if (row.claimed) {
         var seatLabel = relayKeys.seatLabel(rootDir, url);
         row.roll = {
@@ -2677,6 +2696,7 @@ function createHub(rootDir) {
     contactSearch: contactSearch,
     contactGet: contactGet,
     handleContact: handleContact,
+    handleOwn: handleOwn,
     handlePeer: handlePeer,
     // handleInvite, handleRemovePeer, handleRename and handleRevoke were
     // exported here. Every one of them is a peerPost the browser makes

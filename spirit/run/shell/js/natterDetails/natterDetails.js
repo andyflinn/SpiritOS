@@ -71,6 +71,7 @@ function ndRelayKey() {
   if (!ndBadge) return '';
   return (ndBadge.roll && ndBadge.roll.relayKey)
     || (ndBadge.report && ndBadge.report.key)
+    || ndBadge.key
     || '';
 }
 
@@ -392,6 +393,29 @@ function ndRemoveBody() {
   return '<div class="start-job-form"><button type="button" class="cancel-btn nd-remove">Remove this relay</button></div>' +
     '<div class="job-manifest-note nd-remove-out">Remove takes it off this node\'s list and gives up the seat record here.</div>';
 }
+// THE STAR, AND WHAT IT MEANS (goal/G41.30; Andy: "NO signature. just the armingButton, with a precise documentation of the
+// risk."; "the message is different for members and owners, showing members who they have to trust, and, if the relay
+// claims to be mine, the message should be slightly different"). At home only: on a face the node refuses contact.own
+// anyway. What a relay says here is its own word: nothing it says sets the star.
+function ndStarHtml() {
+  if (!ndBadge || !ndRelayKey() || (window.spirit && window.spirit.transport)) return '';
+  var gives = '<b>What the star gives:</b> your face on this relay can run programs, read and change files, and change grants on ' +
+    'this machine. That person and anyone holding this relay can do all of that as you, and so can anyone who reads your login mail.';
+  var words = gives + ' <b>Taking the star away</b> ends that.';
+  if (!ndBadge.mine) {
+    if (ndBadge.owned) words = '<b>This relay says you own it.</b> Its word proves nothing. If you DID install this relay on a VPS and you ' +
+      'DID set its DNS records, press this. If you did not, this relay is lying to you: do not press. ' + gives;
+    else words = '<b>You do not own this relay:</b> ' + (ndBadge.ownerLabel ? 'this relay says it is owned by ' + ndEscapeHtml(ndBadge.ownerLabel) : 'this relay does not say who owns it') +
+      '. You would have to trust whoever runs it, and whoever can break into its machine, with this machine. ' + gives;
+  }
+  // Never folded: the risk is read before the press, and it stays on screen with the button.
+  return '<div class="stat-tile wide"><div class="label">⭐ Star this relay</div><div>' + words + '</div>' +
+    '<div class="start-job-form"><button type="button" class="cancel-btn nd-own">' + (ndBadge.mine ? 'Take the star away' : 'Give it the star') + '</button></div></div>';
+}
+function ndStar() {
+  return ndApi.verb('contact.own', { key: ndRelayKey(), own: !ndBadge.mine }).then(function () { return ndLoad(); });
+}
+
 function ndRemoveHtml() {
   return ndPanel('remove', '⚠️', 'Remove this relay from your list', ndRemoveBody());
 }
@@ -1332,6 +1356,7 @@ function ndArming(body) {
   each('.nd-alloc-restart', function (b) { attach(b, 'Restart? Every stream drops', ndAllocRestart); });
   // Two presses about the SAME name: the armed text names the invite.
   each('.nd-inv-revoke', function (b) { attach(b, 'Revoke ' + (b.getAttribute('data-invite-label') || '') + '?', ndRevoke); });
+  each('.nd-own', function (b) { attach(b, ndBadge && ndBadge.mine ? 'Take the star away: press again' : 'Give it the star, I accept this risk: press again', ndStar); });
   each('.nd-remove', function (b) { attach(b, 'Press again to remove', ndRemove); });
   each('.nd-leave', function (b) { attach(b, 'Press again to leave', ndLeave); });
 }
@@ -1366,6 +1391,7 @@ function ndRender() {
       ndAllocationHtml() +
       ndInvitePanel()
     ) +
+    ndStarHtml() +
     ndLeaveHtml() +
     ndRemoveHtml();
     // The device panel was removed by goal/G16.2 with the device enrolment.

@@ -213,6 +213,8 @@ function createApiAuth(opts) {
       // A FAMILY'S FS VERBS ARE THE OWNER'S, on every family (goal/G41.28; Andy: "we also need to make the FS. verb group
       // \"owner-only\""): never granted.
       if (a.path.split('.')[1] === 'FS') return Promise.resolve(refuse('owner-only'));
+      // THE STAR IS THE OWNER'S (goal/G41.30): a relay's star opens this node's face. Never granted.
+      if (a.path === 'contact.own') return Promise.resolve(refuse('owner-only'));
       const s = store();
       if (s.has(a.key, a.path)) return Promise.resolve(refuse('already-granted'));
       // Andy: "only if the path is known from a previous configuration, where owner has not pruned yet", so that

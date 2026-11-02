@@ -66,6 +66,41 @@ function cdStatus(text) {
 // are the half most likely to move — a message arriving while this screen
 // is open changes unanswered inbound. The key is the only part of a row
 // that cannot change.
+// THE STAR, AND WHAT IT MEANS (goal/G41.30; Andy: "NO signature. just the armingButton, with a precise documentation of the
+// risk."; "the message is different for members and owners, showing members who they have to trust, and, if the relay
+// claims to be mine, the message should be slightly different"). In every panel, at home only: on a face the node refuses
+// contact.own anyway. What a relay says here is its own word: nothing it says sets the star.
+var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relay.status
+function cdRelayClaim() {
+  cdClaim = null;
+  return spirit.relay.status('').then(function (r) {
+    ((r.body && r.body.rows) || []).forEach(function (row) {
+      if (row && (row.key === cdKey || (row.roll && row.roll.relayKey === cdKey))) cdClaim = { owned: !!row.owned, ownerLabel: String(row.ownerLabel || '') };
+    });
+  }, function () { cdClaim = null; });
+}
+function cdStarWords() {
+  var gives = '<b>What the star gives:</b> your face on this relay can run programs, read and change files, and change grants ' +
+    'on this machine. That person and anyone holding this relay can do all of that as you, and so can anyone who reads your login mail.';
+  var node = '<b>What the star gives:</b> this node\'s posts and streams reach you without asking, and it is never dropped from your list. ' +
+    'It gives this node no way to run anything on this machine.';
+  if (cdPerson.mine) return (cdPerson.relay ? gives : node) + ' <b>Taking the star away</b> ends that.';
+  if (!cdPerson.relay) return node + ' Star only a node you set up yourself: its own card saying you own it proves nothing.';
+  if (cdClaim && cdClaim.owned) return '<b>This relay says you own it.</b> Its word proves nothing. If you DID install this relay on a VPS and ' +
+    'you DID set its DNS records, press this. If you did not, this relay is lying to you: do not press. ' + gives;
+  var who = cdClaim && cdClaim.ownerLabel ? 'this relay says it is owned by ' + cdEscapeHtml(cdClaim.ownerLabel) : 'this relay does not say who owns it';
+  return '<b>You do not own this relay:</b> ' + who + '. You would have to trust whoever runs it, and whoever can break into its ' +
+    'machine, with this machine. ' + gives;
+}
+function cdStarBlock() {
+  if (window.spirit && window.spirit.transport) return '';
+  return '<div class="stat-tile wide"><div class="label">Star</div><div>' + cdStarWords() + '</div>' +
+    '<div class="start-job-form card"><button type="button" class="cancel-btn" id="cd-own"></button></div></div>';
+}
+function cdStar() {
+  return cdPost('contact.own', { key: cdKey, own: !cdPerson.mine }).then(function () { return cdLoad(); });
+}
+
 function cdLoad() {
   // ONE PERSON, BY KEY (puppets/G2): contact.get, where this used to read
   // the whole book to keep one row of it.
@@ -73,8 +108,9 @@ function cdLoad() {
     .then(function (r) { return JSON.parse(r.text); })
     .then(function (data) {
       cdPerson = (data && data.ok && data.person) || null;
-      cdRender();
+      return cdPerson && cdPerson.relay ? cdRelayClaim() : null;
     })
+    .then(function () { cdRender(); })
     .catch(function (e) { cdStatus('could not read the book: ' + e.message); });
 }
 
@@ -242,11 +278,13 @@ function cdRender() {
         buttons +
       '</div>' +
     '</div>' +
+    cdStarBlock() +
     '<div class="job-manifest-note" id="cd-status">' +
       cdEscapeHtml(cdMessage) + '</div>';
 
   cdArming('cd-block', 'Block', 'Block — press again', cdBlock);
   cdArming('cd-forget', 'Forget', 'Forget, and remove any seat on relays you own — press again', cdForget);
+  cdArming('cd-own', cdPerson.mine ? 'Take the star away' : 'Give it the star', cdPerson.mine ? 'Take the star away — press again' : 'Give it the star: I accept this risk — press again', cdStar);
 }
 
 // Everything this screen decides is a hub verb. Nothing is written to

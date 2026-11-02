@@ -1362,6 +1362,8 @@ catch (e) {
       relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
       // Whether this node set a face on that relay (goal/G41.30, RC1): the name on the relay's row, the node's own fact.
       faceSet: function (url) { return !!relayKeys.faceOf(ROOT_DIR, url); },
+      // The star on that relay's row (goal/G41.30): contact.own alone sets it, pressed at home.
+      faceOwned: function (url) { const row = relayKeys.byUrl(ROOT_DIR, url); return !!(row && row.mine); },
       jobs: jobs,
       events: events,
       log: function (line) { console.log(line); },
@@ -1983,6 +1985,7 @@ catch (e) {
     'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },
     'accept': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); } },
     'label': { request: { publicKey: '', myLabel: '' }, reply: { publicKey: '', myLabel: '', caption: '' }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); } },
+    'own': { request: { key: '', own: false }, reply: { key: '', own: false }, handler: function (rq, rs) { hub.handleOwn(rq, rs, readJsonBody); } },
     'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget'); } },
     // Read and write, told apart by name rather than by an HTTP method
     // that no longer varies. See handleSendersRead.

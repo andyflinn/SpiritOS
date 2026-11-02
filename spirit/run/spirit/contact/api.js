@@ -13,6 +13,9 @@ module.exports = {
     accept: { publicKey: 'key' },
     label: { publicKey: 'key', myLabel: 'name' },
     forget: { publicKey: 'key' },
+    // goal/G41.30: the star, on or off, on a relay or a node; only this sets it. Andy: "this button will put the star on
+    // relays and puppets. AND take it away." "this is a yes." Never from a face, never from a peer.
+    own: { key: 'key', own: 'bool' },
     senders: {},
     setSenders: { policy: 'id' },
   },
