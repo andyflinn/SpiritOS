@@ -560,8 +560,12 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     test.subHeading(NAMED + ': ' + 'every search it makes ranks spirit.data');
     const made = W.searches || [];
     const off = made.filter(function (x) { return !x.data || x.rows; });
+    // ONE EXCEPTION, DEFERRED, AND STILL RED (Andy, the box: "the only exception is introspector, deferred for network-scope
+    // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
+    // its own page, mounted bare, still makes one. The red names the deferral; it is not met, so it is not green.
+    const DEFERRED = rel === 'shell/js/probabilitySearch.js' ? ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
     if (!made.length) unjudged('it makes no search');
-    else ok(!off.length, 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })));
+    else ok(!off.length, 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })) + DEFERRED);
     // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a
     // row of its branch in spirit.data. A list that keeps its rows anywhere else draws what the branch does not hold.
     const outside = JSON.parse(await page.evaluate('JSON.stringify(window.spiritWatch && window.spiritWatch.drawnOutside ? window.spiritWatch.drawnOutside() : [])'));

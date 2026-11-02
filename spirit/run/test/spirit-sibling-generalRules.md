@@ -159,6 +159,9 @@ box is its own check, named by the element's path and the box's id chain."*
   And every row a search draws (its `[data-key]` rows on screen, after its tools and buttons are pressed) is a row its
   branch holds in `spirit.data` (`spirit.data.rows(branch)`): a list that keeps its rows anywhere else draws what the
   branch does not hold.
+  **One exception, deferred and still red** (the box: *"the only exception is introspector, deferred for network-scope
+  design reasons."*): the probability search keeps rows of its own for introSpector's selectors over another node, so
+  its own page, mounted bare, still makes one. Its red names the deferral; it is not met, so it is not green.
 - **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
   make sure when it changes shit it listens to fucking update via the spirit object"*), judged twice:
   - on the page: a module that sent a write holds a `spirit.data.watch` of its own making, its searches' included. A
