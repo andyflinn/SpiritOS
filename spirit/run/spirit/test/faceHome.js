@@ -128,7 +128,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   const allFamilies = function () {
     const dirs = function (d) { return fs.readdirSync(path.join(RUN, d), { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); };
     return dirs('spirit').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); })
-      .concat(dirs('process/js').filter(function (n) { return fs.existsSync(path.join(RUN, 'process/js', n, 'family/api.js')); }));
+      .concat(dirs('process/js').filter(function (n) { return fs.existsSync(path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath(n))); }));
   };
   const verbsOf = function (file) { return Object.keys(require(path.join(RUN, file)).verbs); };
   const FS_GROUP = ['FS.loadFile', 'FS.saveFile', 'FS.saveJsonValue'];
@@ -136,7 +136,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     verbsOf('spirit/jobs/api.js').concat(FS_GROUP).map(function (v) { return 'jobs.' + v; }),
     // fs.annotations stays (Andy, Q4: "fs.annotations stays for the icons" "yes."): the face desktop draws its apps by it.
     verbsOf('spirit/fs/api.js').filter(function (v) { return v !== 'annotations'; }).concat(FS_GROUP).map(function (v) { return 'fs.' + v; }),
-    verbsOf('process/js/fileServer/family/api.js').concat(FS_GROUP).map(function (v) { return 'fileServer.' + v; }),
+    verbsOf(require(path.join(RUN, 'spirit.js')).familyPath('fileServer')).concat(FS_GROUP).map(function (v) { return 'fileServer.' + v; }),
     ['net.fetch'],
     // EVERY FAMILY'S FS GROUP (Andy, Q4: "every FS group off the face" "yes."), the node's own families and each app server's.
     allFamilies().reduce(function (out, fam) { return out.concat(FS_GROUP.map(function (v) { return fam + '.' + v; })); }, []));

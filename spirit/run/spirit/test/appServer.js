@@ -447,8 +447,11 @@ if (CHILD) {
       'process/js/deskClient/deskClientBundles.json: deskServer, the one deskClient verb desk uses, its stream\'s streamListener', 'deskClientBundles.json: ' + short(cB));
     const aB = bundlesOf('agent');
     const AGENT = familyVerbs('agent');
-    ok(!!aB && JSON.stringify(Object.keys(aB)) === '["remoteUser"]' && rowOk(aB.remoteUser) && AGENT.length > 0 && JSON.stringify(reach(aB.remoteUser, 'agent')) === JSON.stringify(AGENT),
-      'process/js/agent/agentBundles.json: remoteUser, the full agent family minus FS.*', 'agentBundles.json: ' + short(aB) + ', reaches ' + short(reach(aB && aB.remoteUser, 'agent')));
+    // MINUS provider SINCE goal/G41.30 (the review, RH4: "make provider add, set, delete and ask owner-only"; Andy: "we fix
+    // the red from goal/G41.30 AND all the review items here in this item."): a grant cannot separate reads from writes.
+    const AGENT_REMOTE = AGENT.filter(function (v) { return v !== 'provider'; });
+    ok(!!aB && JSON.stringify(Object.keys(aB)) === '["remoteUser"]' && rowOk(aB.remoteUser) && AGENT.indexOf('provider') !== -1 && AGENT_REMOTE.length > 0 && JSON.stringify(reach(aB.remoteUser, 'agent')) === JSON.stringify(AGENT_REMOTE),
+      'process/js/agent/agentBundles.json: remoteUser, the agent family minus FS.* and minus provider', 'agentBundles.json: ' + short(aB) + ', reaches ' + short(reach(aB && aB.remoteUser, 'agent')));
 
     test.subHeading('what goes (box v15)');
     const deskJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.js'), 'utf8');

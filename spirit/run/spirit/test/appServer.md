@@ -94,7 +94,8 @@ stream"); Desk and deskClient move onto it.
   - deskVerify: `deskAgent` and `remoteUser`, *"both get only \"search\""*.
   - deskClient: `deskServer`, *"only the verbs desk currently uses"*: `streamListener`, the one deskClient verb desk
     reaches, through its stream.
-  - agent: `remoteUser`, *"the full agent family, minus FS.*"*: every verb of `process/js/agent/family/api.js`.
+  - agent: `remoteUser`, *"the full agent family, minus FS.*"*: every verb of `process/js/agent/family/api.js`, and since
+    goal/G41.30 (the review, RH4) minus `provider`: a peer must not reach the model keys.
 
 ## Not asserted yet, and why
 
