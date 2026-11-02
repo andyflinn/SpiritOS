@@ -83,7 +83,13 @@ var MAX_ROUTED_TEXT = limits.PAYLOAD_MAX;
 // behind it, long enough that the turns are not all overhead. A guess to
 // be measured on the relay itself, like the timeout floor
 // (NODE-AND-RELAY §10).
-var SEARCH_PAGE = 1000;
+// SINCE goal/G41.30 a page is also ranked as it is gathered, and ranking costs more than gathering (the report: 1,000
+// rows took 343 ms against 8,000 characters), so a page is 100 rows; with the words capped at SEARCH_WORDS_MAX, a page
+// stays a few milliseconds.
+var RANK_PAGE = 100;
+// THE SEARCH WORDS ARE CAPPED (goal/G41.30; the report: "A long search query stalls the relay's event loop for
+// seconds"): nobody types more than this to find a name; past it a search is refused at once, before any ranking.
+var SEARCH_WORDS_MAX = 200;
 
 // How many rows a search answers with. Fixed, not measured — see the
 // note at the cap itself.
@@ -2760,7 +2766,9 @@ function createRelay(rootDir, deps) {
         // a search over a large roll never stalls every other request on
         // this relay. The answer is composed when the walk ends —
         // `searching` hands the rest of this function to it.
-        searching = { q: q };
+        // Past SEARCH_WORDS_MAX the search is refused at once, before any ranking (goal/G41.30).
+        if (q.length > SEARCH_WORDS_MAX) out = { ok: false, status: 400, error: 'a search is ' + SEARCH_WORDS_MAX + ' characters at most' };
+        else searching = { q: q };
       }
     }
 
@@ -3091,19 +3099,23 @@ function createRelay(rootDir, deps) {
   //   Andy: "the nature of all wire comms is asynchronous. And blocking
   //   hurts the resources of relays."
   //
-  // Still paged, SEARCH_PAGE keys a turn with the event loop between, over
+  // Still paged, RANK_PAGE keys a turn with the event loop between, over
   // a snapshot of the keys: a member arriving mid-walk is simply not seen,
   // one leaving mid-walk is skipped when its row is gone.
   //
   // RANKED ON THE PROBABILITY MODULES (goal/G29.17): the walk gathers the
   // connected members' rows, and peerRank, the node's ranker too, keeps the
   // best peerRank.SLOTS of them. `done(result)` gets {matches, more}.
+  // RANKED A SLICE AT A TIME TOO (goal/G41.30; the report: "A long search query stalls the relay's event loop for
+  // seconds"; Andy: "fix this now. in this item"): the rows of each slice are ranked as they are gathered, with the
+  // event loop between slices, so ranking a large roll stalls nobody either.
   function walkRoll(q, done) {
-    var rows = [];
     var keys = Object.keys(activeRows);
+    var ranking = peerRank.ranker(q, peerRank.SLOTS);
     var at = 0;
     (function step() {
-      var end = Math.min(at + SEARCH_PAGE, keys.length);
+      var rows = [];
+      var end = Math.min(at + RANK_PAGE, keys.length);
       for (; at < end; at += 1) {
         var p = activeRows[keys[at]];
         if (!p || !p.publicKey) continue;
@@ -3114,8 +3126,9 @@ function createRelay(rootDir, deps) {
           via: null,
         });
       }
+      ranking.add(rows);
       if (at >= keys.length) {
-        var ranked = peerRank.rank(rows, q, peerRank.SLOTS);
+        var ranked = ranking.result();
         done({ matches: ranked.rows, more: ranked.more });
         return;
       }

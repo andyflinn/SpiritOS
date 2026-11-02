@@ -23,22 +23,39 @@ var SLOTS = 32;
 
 function labelOf(row) { return String((row && row.publicLabel) || ''); }
 
-function rank(rows, q, slots) {
+// A RANKER FED IN SLICES (goal/G41.30; the report: "A long search query stalls the relay's event loop for seconds"):
+// ranker(q, slots) -> { add(rows), result() }, so a caller with many rows ranks them a page at a time and answers others
+// between pages. rank() is one ranker fed once.
+function ranker(q, slots) {
   var words = String(q == null ? '' : q).trim();
   var anyone = !words || words === '*';
   var room = typeof slots === 'number' && slots > 0 ? slots : SLOTS;
   var bucket = createProbabilityBucket(room);
-  (rows || []).forEach(function (row, i) {
-    if (!row) return;
-    // A tie keeps the order the rows came in: the earlier one a hair higher.
-    var tie = 1e-9 / (1 + i);
-    if (anyone) { bucket.seatFor(0.5 + tie, row); return; }
-    // THE ROW AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served"): the whole row the answer carries, not its label alone.
-    var p = Number(probabilityStringObjectMatch(words, row)) || 0;
-    if (p > 0) bucket.seatFor(Math.min(1, p * (1 - 1e-9) + tie), row);
-  });
-  var out = bucket.serialize();
-  return { rows: out.items, more: !!out.more };
+  var i = 0;
+  return {
+    add: function (rows) {
+      (rows || []).forEach(function (row) {
+        var at = i++;
+        if (!row) return;
+        // A tie keeps the order the rows came in: the earlier one a hair higher.
+        var tie = 1e-9 / (1 + at);
+        if (anyone) { bucket.seatFor(0.5 + tie, row); return; }
+        // THE ROW AS IT IS SERVED (goal/G41.28; Andy, box v15: "search the whole bloody ROW, as it is served"): the whole row the answer carries, not its label alone.
+        var p = Number(probabilityStringObjectMatch(words, row)) || 0;
+        if (p > 0) bucket.seatFor(Math.min(1, p * (1 - 1e-9) + tie), row);
+      });
+    },
+    result: function () {
+      var out = bucket.serialize();
+      return { rows: out.items, more: !!out.more };
+    },
+  };
 }
 
-module.exports = { rank: rank, SLOTS: SLOTS };
+function rank(rows, q, slots) {
+  var r = ranker(q, slots);
+  r.add(rows);
+  return r.result();
+}
+
+module.exports = { rank: rank, ranker: ranker, SLOTS: SLOTS };
