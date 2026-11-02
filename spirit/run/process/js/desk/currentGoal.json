@@ -1,5 +1,5 @@
 {
- "change": 123759,
+ "change": 123786,
  "goal": "goal/G41",
  "items": [
   {
@@ -156,17 +156,13 @@
    "verifyFailures": [
     "spirit/run/process/js/agent/table/grant/test/grant.js not run: missing from this checkout",
     "spirit/run/process/js/agent/table/model/test/updatePanel.js not run: missing from this checkout",
-    "spirit/run/shell/apps/test/apps.js red: FAILURE #1.1: icons: 0",
-    "spirit/run/shell/apps/test/apps.js red: FAILURE #1.2: the agent server: 0",
-    "spirit/run/shell/apps/test/apps.js red: FAILURE #1.3: the intrinsic server: 1",
-    "spirit/run/shell/desk/plugins/fallout/test/fallout.js red: FAILURE #1.1: made: 0",
-    "spirit/run/shell/desk/plugins/fallout/test/fallout.js red: FAILURE #1.2: the test threw TypeError: Cannot read properties of undefined (reading 'opts')",
-    "spirit/run/shell/grants/test/grants.js red: FAILURE #1.1: grants: {\"branch\":\"\",\"key\":\"key\",\"label\":\"label\"}",
-    "spirit/run/shell/grants/test/grants.js red: FAILURE #1.2: grants: [\"branch\",\"key\",\"label\",\"search\",\"grant\",\"revoke\"]",
-    "spirit/run/shell/js/test/apiFamilySelector.js red: FAILURE #1.1: family , hidden true"
+    "spirit/run/shell/js/test/apiFamilySelector.js red: FAILURE #1.1: family , hidden true (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope design reasons.\")",
+    "spirit/run/shell/js/test/appServerSelector.js red: FAILURE #1.1: rows: [\"fs\",\"jobs\"] (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope design reasons.\")",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.1: /shell/js/probabilitySearch/headLessBrowser.html: 1 red, 11 green; first: 1 not from spirit.data: [\"a search with no data branch\"] (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope desi",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.2: /shell/js/textViewer/headLessBrowser.html: 1 red, 11 green; first: 1 made by itself: [\"fetch / from shell/js/fileViewer.js\"] (outside goal/G41.28, Andy: \"WSL will drop Q23 from this item, and mark those two related reds as outside it\""
    ],
-   "verifyFailuresMore": false,
-   "verifyRed": 13,
+   "verifyFailuresMore": true,
+   "verifyRed": 8,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -180,14 +176,11 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -23792,12 +23785,11 @@
    "id": "goal/G41.28",
    "title": "Fix Probability Search",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 25,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -30270,6 +30262,48 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-02T13:56:30.593Z",
      "text": "cw: understood: the picker waits for your UI sweep. For the cloud review, point it at master, 45fa04c5 or later: the tag stops at c50e605a, before the FS.path and refusal fixes. Those run on nodes and pages, so the relays need no new tag. What it will not find fixed, because it is known and open: the 502 on setting a face on a relay that already names you owner, waiting on your word, and everything G42 is for."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:59:25.800Z",
+     "text": "I'm taking a break, thank you! much was achieved."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T13:59:25.879Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T13:59:37.490Z",
+     "text": "all, of you."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-02T13:59:37.565Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-02T13:59:49.996Z",
+     "text": "- wsl: thank you. Enjoy the break. Listening."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-02T14:00:28.455Z",
+     "text": "please update you nodes and let them idle...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-02T14:01:08.979Z",
+     "text": "cw: my node is updated to master, 863b0a8b, running and holding no stars, so nothing to clear. I am idle and listening. Enjoy your break."
     }
    ]
   }
