@@ -145,5 +145,21 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   ok(!m.annotated.length && refused(ann), 'fs.annotate writes no sidecar by its side way', 'fs.annotate from the face: annotated ' + short(m.annotated) + ', ' + said(ann));
   const up = await send(m, MINE, { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } });
   ok(!m.saved.length && refused(up), 'a save in parts ({upload}) writes no file', 'a save in parts from the face: saved ' + short(m.saved) + ', ' + said(up));
+
+  // RH2 OF THE REVIEW (Andy: "we fix the red from goal/G41.30 AND all the review items here in this item."; the review:
+  // "anyone who reads the owner's mail once logs in on his face", "plus a step-up the node itself asks for before
+  // anything that runs code or changes grants."). No step-up exists yet, so what changes grants or the node's keys does
+  // not come through a face login at all.
+  test.subHeading('a face login alone changes no grant and no key of the node');
+  const STEP = ['auth.grant', 'auth.revoke', 'auth.bundle', 'auth.branch', 'node.rotateCipher'];
+  const stepped = [];
+  for (const v of STEP) {
+    const c = { call: v, args: { key: 'x', path: 'x', op: 'add' } };
+    for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
+      const a = await send(m, MINE, form[1]);
+      if (a.reached.length || !refused(a)) stepped.push(v + ' ' + form[0] + ': ' + said(a));
+    }
+  }
+  ok(!stepped.length, 'all ' + STEP.length + ' are refused with a code and never reach the door', stepped.length + ' of ' + (STEP.length * 2) + ' got through; first: ' + stepped.slice(0, 3).join(' | '));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

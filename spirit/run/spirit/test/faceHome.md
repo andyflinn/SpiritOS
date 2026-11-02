@@ -23,6 +23,11 @@ nothing of which relay holds this node's face. `spirit/server.js` gives it from 
   pieces: refused with a code, never at the door. `fs.annotate` writes no sidecar by its side way (`annotateFace`), and a
   save in parts (`{upload}`) writes no file.
 
+- **A face login alone changes no grant and no key of the node** (RH2 of the review; Andy: *"we fix the red from
+  goal/G41.30 AND all the review items here in this item."*; the review: *"a step-up the node itself asks for before
+  anything that runs code or changes grants."*). No step-up exists yet, so `auth.grant`, `auth.revoke`, `auth.bundle`,
+  `auth.branch` and `node.rotateCipher` are refused from the face, sealed or not, and never reach the door.
+
 ## What its test must try to break
 
 - A shell run from a relay holding no face of this node's, by any form of request.
