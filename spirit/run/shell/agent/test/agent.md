@@ -75,8 +75,9 @@ on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows 
 - Mounted, it loads the agent tables' element itself and draws its title row, 💬 Select Persona, then, in a box of its
   own, only a personaSelector:pane: the persona table's search in pane mode (`agentDetail.search`, rule/29), with the
   app's api, and no Add.
-- A persona picked there loads `shell/agent/chatPane.js` and opens the chat pane (`./chatPane.md`) in the workBench's
-  centre, for that persona; another persona picked opens its own in place of the first.
+- A persona picked there loads `shell/agent/chatPane.js` and opens the chat pane (`./chatPane.md`) in a closable tab of the
+  workBench's centre, for that persona; another persona picked opens its own tab beside it (goal/G41.31:
+  `test/spirit-sibling-agentCentreTabsRules.md`).
 
 ## What its test must try to break
 

@@ -82,6 +82,17 @@ const isOn = function (b) { return !!(b.inputs[0] && b.inputs[0].checked === tru
 
 function world(configText) {
   const w = { created: [], loads: [], saves: [], verbs: [], titles: [], def: null };
+  // The tabContainer in the centre (goal/G41.31), a stand-in: its contract and test are ../../js/test/tabContainer.md. Each tab added
+  // mounts at once in a box of its own; its real behaviour is judged in test/spirit-sibling-agentCentreTabsRules.js.
+  w.tabs = [];
+  w.tabContainer = { create: function (into) {
+    w.tabsInto = into;
+    return { add: function (t) {
+      if (w.tabs.some(function (x) { return x.name === t.name; })) return;
+      const b = box('tab');
+      w.tabs.push({ name: t.name, label: t.label, box: b, made: t.mount(b) });
+    }, close: function () {}, rename: function () {} };
+  } };
   w.workBench = { create: function (into, opts) {
     const made = { into: into, opts: opts || {}, center: box('center'), press: function () {}, shown: function () { return ''; }, width: function () { return 0; }, destroy: function () {} };
     w.created.push(made); return made;
@@ -107,7 +118,7 @@ function world(configText) {
 }
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
-  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath, isBrowser: function () { return true; },
+  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench, tabContainer: w.tabContainer }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath, isBrowser: function () { return true; },
     require: function (p) { w.required.push(String(p)); return Promise.resolve(p === AGENT_FAMILY ? w.family : true); },
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
@@ -199,7 +210,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const sels = [];
     const chats = [];
     const prevDetail = global.window.spirit.elements.agentDetail;
-    global.window.spirit.elements.agentDetail = Object.assign({}, prevDetail || {}, {
+    global.window.spirit.elements.agentDetail = Object.assign({}, prevDetail || {}, { branchOf: function (table) { return 'agent/' + table; },
       titleRow: function (look, names) { return '<div class="agent-title"><span>' + (look && look.icon || '') + '</span> ' + (names || []).join(' ') + '</div>'; },
       search: function (host, o, more) { const s2 = { host: host, o: o, more: more || {}, refresh: function () {}, destroy: function () {} }; sels.push(s2); return s2; },
     });
@@ -217,10 +228,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       const cBefore = w.required.length;
       sel.more.pick({ id: 'KA', label: 'Ada <the reviewer>' }, 'KA'); await settle();
       ok(w.required.slice(cBefore).indexOf('shell/agent/chatPane.js') !== -1, 'a persona picked loads shell/agent/chatPane.js', 'required: ' + short(w.required.slice(cBefore)));
-      ok(chats.length === 1 && chats[0].into === wb.center && chats[0].opts.persona && chats[0].opts.persona.id === 'KA' && chats[0].opts.persona.label === 'Ada <the reviewer>',
-        'and opens the chat pane in the workBench\'s centre, for that persona', 'chat panes: ' + short(chats.map(function (c) { return { centre: c.into === wb.center, persona: c.opts.persona }; })));
+      const tab = w.tabs.filter(function (t) { return t.name === 'chat/KA'; })[0];
+      ok(w.tabsInto === wb.center, 'the centre holds the tabContainer', 'tabs in: ' + short(w.tabsInto && w.tabsInto.tag));
+      ok(chats.length === 1 && !!tab && chats[0].into === tab.box && chats[0].opts.persona && chats[0].opts.persona.id === 'KA' && chats[0].opts.persona.label === 'Ada <the reviewer>',
+        'and opens the chat pane in a tab of the workBench\'s centre, for that persona', 'chat panes: ' + short(chats.map(function (c) { return { persona: c.opts.persona }; })));
       sel.more.pick({ id: 'KB', label: 'Bea' }, 'KB'); await settle();
-      ok(chats.length === 2 && chats[0].destroyed === true && chats[1].opts.persona.id === 'KB', 'another persona picked opens its own chat in place of the first', 'chat panes: ' + short(chats.map(function (c) { return { id: c.opts.persona && c.opts.persona.id, destroyed: !!c.destroyed }; })));
+      ok(chats.length === 2 && chats[0].destroyed !== true && chats[1].opts.persona.id === 'KB', 'another persona picked opens its own chat in a tab beside the first (goal/G41.31)', 'chat panes: ' + short(chats.map(function (c) { return { id: c.opts.persona && c.opts.persona.id, destroyed: !!c.destroyed }; })));
     }
     global.window.spirit.elements.agentDetail = prevDetail;
     delete global.window.spirit.elements.chatPane;
@@ -299,7 +312,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const required = [];
   const def3 = load(w3);
   global.window.spirit.elements = {};
-  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.elements.workBench = w3.workBench; return Promise.resolve(true); };
+  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.elements.workBench = w3.workBench; global.window.spirit.elements.tabContainer = w3.tabContainer; return Promise.resolve(true); };
   w3.api.ui.elements = global.window.spirit.elements;
   def3.mount(box('app3'), w3.api); await settle();
   ok(required.indexOf('shell/js/workBench.js') !== -1 && w3.created.length === 1, 'with no workBench on the page it loads shell/js/workBench.js through spirit.require, then builds one',

@@ -285,6 +285,9 @@
         note = 'Added.';
         path = branchOf(o.table) + '/' + o.id;
         attach();
+        // ITS TAB BECOMES THIS ROW'S (goal/G41.31; Andy: "an unsaved add-tab will say: "new  <row-type>*""): said up the page, for
+        // whoever holds the editor, since the tab is not this element's.
+        if (typeof container.dispatchEvent === 'function' && typeof CustomEvent === 'function') container.dispatchEvent(new CustomEvent('agent-row-added', { bubbles: true, detail: { table: o.table, id: o.id, row: a } }));
       });
     }
     // THE ROW AS spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so.

@@ -58,13 +58,13 @@ spirit.shell.activateApp({
     return grParts.then(function () {
       var E = window.spirit.elements;
       // The bundles pane opens each bundle's branchEditor as a closable tab in this row (goal/G41.32; Andy: "in the Grants
-      // app, this will be the grant app's tabContainer.").
+      // app, this will be the grant app's tabContainer."), each named owner-bundle (Andy: "Grants: <owner>-<bundle>.").
       var tabs = E.tabContainer.create(container, {
         tabs: [
           { name: 'grants', label: 'Grants', mount: function (box) {
             E.grantsPanel.create(box, { ids: { table: 'loopback://api/contact/search' }, grants: GR_GRANTS, api: api });
           } },
-          { name: 'bundles', label: 'Bundles', mount: function (box) { E.bundleEditor.create(box, { api: api, tabs: tabs }); } },
+          { name: 'bundles', label: 'Bundles', mount: function (box) { E.bundleEditor.create(box, { api: api, tabs: tabs, tabLabel: function (row) { return String(row.owner || 'node') + '-' + String(row.label || ''); } }); } },
         ],
       });
     }, function () { container.textContent = 'Grants could not be loaded.'; });

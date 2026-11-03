@@ -5,12 +5,9 @@
 // and a movable border between each side pane and the centre. Its contract and its test: ./test/workBench.md and
 // ./test/workBench.js.
 //
-//   window.spirit.elements.workBench.create(container, { left, right, changed }) -> { center, press, shown, width, destroy }
+//   window.spirit.elements.workBench.create(container, { left, right }) -> { center, press, shown, width, destroy }
 //     left, right    [{ name, icon, title, mount(box) }]: a tool's mount is called once, the first time it shows, with a
 //                    box of its own inside its side's pane; the box is kept, so a tool shown again keeps what it drew
-//     changed(side, name)  optional: called each time the tool shown on a side changes, name '' when the side collapses
-//                    (Andy, on G41.4: "if the current \"icon\" is changed the content of a left-strip icon should
-//                    disappear from the middle workBench Pane": the app empties what the old tool put in the centre)
 //     center         the centre pane's box, the one the app draws into
 //     press(side, name)   what a click on that strip's icon does: shows the tool, or collapses the side when it shows
 //     shown(side)    the name of the tool shown on that side, '' while that side is collapsed
@@ -104,7 +101,7 @@
     // more dead than the others, a bit brighter with a darker border").
     var CURRENT = 'var(--spirit-current, rgba(255,255,255,0.4))';
     var CURRENT_BORDER = '2px solid var(--spirit-current-border, rgba(0,0,0,0.75))';
-    // The side's shown tool is now name ('' collapsed): its icon marked, the app told when it changed.
+    // The side's shown tool is now name ('' collapsed): its icon marked.
     function now(side, name) {
       var was = shownTool[side];
       shownTool[side] = name;
@@ -116,7 +113,6 @@
         b.style.background = on ? CURRENT : '';
         b.style.border = on ? CURRENT_BORDER : '';
       });
-      if (was !== name && typeof o.changed === 'function') { try { o.changed(side, name); } catch (e) { /* the app's fault */ } }
     }
     function show(side, name) {
       var t = toolOf(side, name);

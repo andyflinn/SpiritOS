@@ -18,6 +18,8 @@
 //                        clicks on a (selects) a bundle row, a new closable tab opens in the tabContainer configured in the
 //                        bundleSelector:pane"; "if a bundle already has an branchEditor-tab in the configured tabContainer,
 //                        that tab will become the active tab"). None configured, a press opens nothing
+//     options.tabLabel   tabLabel(row), from whoever mounts it, names that tab (goal/G41.31): words, or { label, italic };
+//                        the bundle's label when it is not given
 //     options.family     an app server's name: only the bundles it owns are listed (goal/G41.25)
 //     options.placeholder, options.all, options.api, options.empty   handed to the list
 (function () {
@@ -41,8 +43,9 @@
       var tabs = options.tabs;
       var name = 'bundle-' + Number(row.id);
       window.spirit.require('shell/js/branchEditor.js').then(function () {
-        // Named owner-bundle (Andy: "the tabs should name owner-bundle"): a label is unique per owner alone.
-        tabs.add({ name: name, label: String(row.owner || 'node') + '-' + String(row.label || ''), closable: true, mount: function (box) {
+        var said = typeof options.tabLabel === 'function' ? options.tabLabel(row) : String(row.label || '');
+        var header = said && typeof said === 'object' ? said : { label: String(said || '') };
+        tabs.add({ name: name, label: String(header.label || ''), italic: header.italic === true, closable: true, mount: function (box) {
           return window.spirit.elements.branchEditor.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), api: options.api, gone: function () { tabs.close(name); } });
         } });
       });

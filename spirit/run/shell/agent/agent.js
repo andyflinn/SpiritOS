@@ -51,24 +51,54 @@
       var benchBox = container.querySelector('#agent-bench');
       // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
       // apps."), painted by the workBench's strip through shell/js/icon.js, loaded here with it.
-      var loaded = Promise.all([E.workBench ? null : spirit.require('shell/js/workBench.js'), spirit.require('shell/js/icon.js')]);
+      var loaded = Promise.all([E.workBench ? null : spirit.require('shell/js/workBench.js'), spirit.require('shell/js/icon.js'), spirit.require('shell/js/tabContainer.js')]);
       loaded.then(function () { E = (window.spirit && window.spirit.elements) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
-      // THE DETAIL PANE IS THE WORKBENCH'S CENTRE (Andy, on G41.4: "make the detail-panel take over the middle pane of the
-      // workBench UI please"): a row opened from any table's list fills it, and what was there goes.
+      // THE WORKBENCH'S CENTRE IS CLOSABLE TABS (goal/G41.31; Andy: "i need a tabContainer permanently situated in the center pane of
+      // the workBench.", "each panel, that the agent app placed into the center panel now becomes a closable tab in the
+      // tabContainer, activated if it already exists, created if it doesn't have a tab yet."). They stay when the left tool
+      // changes (Q1: "yes, that is the point."), which replaced the G41.4 line that the centre empties.
       var bench = null;
-      var inCentre = null;
+      var tabs = null;
+      var unsaved = 0;
+      // A tab's header (Andy: "<provider-icon> <provider Label>", "<chat-icon> <persona-label>", "new  <row-type>*").
+      function header(spec, row) {
+        var r = row || {};
+        var icon = spec.chat ? '💬' : String(r.icon || (detail.look(spec.table).icon || ''));
+        return (icon ? icon + ' ' : '') + String(r.label || '');
+      }
+      // WHO PAINTS, LISTENS (goal/G41.31; Andy: "any tab that hears (by listening) of it's own rows deletion will close itself."): the
+      // tab follows its row where the stream writes it, its header as the label changes, closed when the row goes.
+      function follow(spec, name) {
+        var A = window.spirit.elements.agentDetail;
+        if (!A || !window.spirit.data) return function () {};
+        return window.spirit.data.watch(A.branchOf(spec.table) + '/' + spec.id, function (p, value) {
+          if (value === undefined) { tabs.close(name); return; }
+          if (value && value.label) tabs.rename(name, { label: header(spec, value) });
+        });
+      }
       var detail = {
-        open: function (make) {
-          if (!bench) return;
-          if (inCentre && typeof inCentre.destroy === 'function') inCentre.destroy();
-          bench.center.innerHTML = '';
-          inCentre = make(bench.center);
-        },
-        // The centre emptied, what was in it destroyed.
-        clear: function () {
-          if (inCentre && typeof inCentre.destroy === 'function') inCentre.destroy();
-          inCentre = null;
-          if (bench) bench.center.innerHTML = '';
+        // make(box) in the tab of spec { table, id, row, chat }; with no id, an add's tab, until its row is saved.
+        open: function (make, spec) {
+          if (!tabs) return;
+          var s = spec || {};
+          var adding = !s.id;
+          var name = adding ? s.table + '/new' + (++unsaved) : (s.chat ? 'chat/' : s.table + '/') + s.id;
+          var kept = !adding && window.spirit.elements.agentDetail && window.spirit.data ? window.spirit.data.get(window.spirit.elements.agentDetail.branchOf(s.table) + '/' + s.id) : null;
+          var off = adding ? null : follow(s, name);
+          tabs.add({ name: name, label: adding ? 'new ' + s.table + '*' : header(s, Object.assign({}, s.row || {}, kept || {})), closable: true, mount: function (box) {
+            var made = make(box);
+            // Saved, an add's tab is that row's: its header, and a press on that row in the list finds it.
+            if (adding) box.addEventListener('agent-row-added', function (e) {
+              var d = (e && e.detail) || {};
+              var was = name;
+              var row = Object.assign({ id: d.id }, d.row || {});
+              s = { table: s.table, id: d.id, row: row };
+              name = s.table + '/' + d.id;
+              tabs.rename(was, { name: name, label: header(s, row) });
+              off = follow(s, name);
+            });
+            return { destroy: function () { if (off) off(); if (made && typeof made.destroy === 'function') made.destroy(); } };
+          } });
         },
         // A table's icon, its name (a detail pane's title row) and its title (a list pane's).
         look: function (table) {
@@ -78,9 +108,6 @@
       };
       function build() {
       bench = E.workBench.create(benchBox, {
-        // ANOTHER LEFT TOOL, AN EMPTY CENTRE (Andy, on G41.4: "if the current \"icon\" is changed the content of a
-        // left-strip icon should disappear from the middle workBench Pane").
-        changed: function (side) { if (side === 'left') detail.clear(); },
         left: [{ name: 'app', icon: '⚙️', title: 'This app', mount: function (box) {
           box.innerHTML = '<label><input type="checkbox"> Show the server\'s DEBUG state in the title bar</label>';
           Promise.resolve(spirit.fs.loadFile(CONFIG)).then(function (text) {
@@ -114,6 +141,7 @@
             box.innerHTML = '<div class="fill">' + D.titleRow({ icon: '💬' }, ['Select Persona']) + '<div id="agent-personas" class="fill" style="margin-top:1em"></div></div>';
             D.search(box.querySelector('#agent-personas'), { api: api, table: 'persona' }, { face: 'pane', pick: function (row, key) {
               var picked = { id: String((row && row.id) || key || ''), label: String((row && row.label) || '') };
+              // Its own tab beside its persona's, following that persona's row.
               detail.open(function (centre) {
                 var pane = null;
                 var closed = false;
@@ -121,7 +149,7 @@
                   if (!closed) pane = window.spirit.elements.chatPane.create(centre, { persona: picked });
                 });
                 return { destroy: function () { closed = true; if (pane) pane.destroy(); } };
-              });
+              }, { table: 'persona', id: picked.id, row: picked, chat: true });
             } });
           }, function () { box.textContent = 'The persona table could not be loaded.'; });
         } }]),
@@ -135,13 +163,19 @@
             Promise.resolve(spirit.require(AGENT)).then(function (agent) { return agent.debug({ on: on }); }).then(drawServer, drawServer);
           });
         } }, { name: 'bundles', icon: '📦', title: 'Bundles', mount: function (box) {
-          // goal/G41.21: the shell's bundle editor, loaded when its tool is first shown (rule/26), with the app's api.
+          // goal/G41.21: the shell's bundle editor, loaded when its tool is first shown (rule/26), with the app's api. Its rows
+          // open in this centre's tabs (goal/G41.31; Andy: "agent: <bundle-name>."; "if the bundle is not node-owned:
+          // (<bundle-name>) in italic print.").
           box.className = 'fill';
           Promise.resolve(spirit.require('shell/js/bundleEditor.js')).then(function () {
-            window.spirit.elements.bundleEditor.create(box, { api: api });
+            window.spirit.elements.bundleEditor.create(box, { api: api, tabs: tabs, tabLabel: function (row) {
+              var label = String(row.label || '');
+              return String(row.owner || 'node') === 'node' ? label : { label: '(' + label + ')', italic: true };
+            } });
           }, function () { box.textContent = 'The bundle editor could not be loaded.'; });
         } }],
       });
+      tabs = E.tabContainer.create(bench.center, { tabs: [] });
       }
 
       // THE SERVER'S STATE, from its job as spirit.data keeps it (goal/G41.28): its job's app, { agent: { debug } }, in

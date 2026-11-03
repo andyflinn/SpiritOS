@@ -4,11 +4,13 @@
 // ./test/tabContainer.js.
 //
 //   window.spirit.elements.tabContainer.create(container, { tabs, selected }) -> { select, selected, add, close, destroy }
-//     tabs       [{ name, label, mount(box), closable }]: a tab's mount is called once, the first time it is selected, with
+//     tabs       [{ name, label, mount(box), closable, italic }]: a tab's mount is called once, the first time it is selected, with
 //                a box of its own inside the content area; the box is kept, and only the selected tab's box shows
 //     selected   the tab shown first; the first tab when it names none
 //     add(tab)   a tab added and made active; one of that name is made active, with no second tab and no second mount
 //     close(name) that tab taken away, its box with it, and what its mount answered destroyed
+//     rename(name, { name, label, italic }) a tab's name or header changed, what it holds kept (goal/G41.31: "<row-type>*" saved
+//                becomes that row's tab, a label changed anywhere follows)
 // CLOSABLE TABS (goal/G41.32; Andy: "the tabContainer will allow to add "closable" tabs, which have a little close button on
 // the right side of the tab, like browser tabs."): the close button carries data-tab-close="<name>", its look in shell.css.
 //
@@ -34,12 +36,13 @@
     function rowHtml() {
       return tabs.map(function (t) {
         // class tab-button: its look in shell.css, a tab's square bottom and the selected one's colour (goal/G41.13).
+        var look = (t.name === current ? 'font-weight:bold;' : '') + (t.italic ? 'font-style:italic;' : '');
         return '<button type="button" class="tab-button" data-tab="' + esc(t.name) + '" aria-selected="' + (t.name === current ? 'true' : 'false') + '"' +
-          (t.name === current ? ' style="font-weight:bold"' : '') + '>' + esc(t.label) +
+          (look ? ' style="' + look + '"' : '') + '>' + esc(t.label) +
           (t.closable ? '<span class="tab-close" role="button" aria-label="close" data-tab-close="' + esc(t.name) + '">✕</span>' : '') + '</button>';
       }).join(' ');
     }
-    container.innerHTML = '<div class="fill"><div id="' + pre + 'tabs" style="display:flex;gap:6px">' + rowHtml() + '</div>' +
+    container.innerHTML = '<div class="fill"><div id="' + pre + 'tabs" style="display:flex;flex-wrap:wrap;gap:6px">' + rowHtml() + '</div>' +
       '<div id="' + pre + 'content" class="tab-content fill"></div></div>';
     function part(name) { return container.querySelector('#' + pre + name); }
 
@@ -85,6 +88,20 @@
       }
       markRow();
     }
+    function rename(name, to) {
+      if (gone || !to) return;
+      var t = tabs.filter(function (x) { return x.name === name; })[0];
+      if (!t) return;
+      if (typeof to.label === 'string') t.label = to.label;
+      if (to.italic !== undefined) t.italic = to.italic;
+      if (typeof to.name === 'string' && to.name !== name) {
+        t.name = to.name;
+        if (boxes[name]) { boxes[to.name] = boxes[name]; delete boxes[name]; }
+        if (name in mounted) { mounted[to.name] = mounted[name]; delete mounted[name]; }
+        if (current === name) current = to.name;
+      }
+      markRow();
+    }
     function onClick(e) {
       var x = e && e.target && e.target.closest ? e.target.closest('[data-tab-close]') : null;
       if (x) { close(x.getAttribute('data-tab-close')); return; }
@@ -99,6 +116,7 @@
       selected: function () { return current; },
       add: add,
       close: close,
+      rename: rename,
       destroy: function () {
         gone = true;
         container.removeEventListener('click', onClick);
