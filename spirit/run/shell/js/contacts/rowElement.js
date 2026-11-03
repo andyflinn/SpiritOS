@@ -75,7 +75,9 @@
       off = C.watch(function (key, v) {
         if (!key || !v) return;
         var changes = {};
-        ['present', 'name', 'keep', 'mine', 'blocked', 'held'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
+        // relay and url too (goal/G41.32; Andy: "where the fuck did the contents of the relayPanel disappear to"): the presence
+        // stream can put a row on the page before the search says what it is, so a relay is known as its row says so.
+        ['present', 'name', 'keep', 'mine', 'blocked', 'held', 'relay', 'url'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
         idx.forKey(key).forEach(function (el) { el.apply(changes); });
       });
     }
@@ -92,8 +94,9 @@
   function create(row) {
     var r = row || {};
     var key = String(r.key || r.publicKey || '');
-    var relay = r.relay === true;
     var was = known(key) || {};
+    // What it is, from the row as the page holds it, whichever came first: the search's answer or the stream.
+    var relay = r.relay === true || was.relay === true;
     // Kept, owned or blocked: the owner has decided about them, and a block has to stay undoable. A held row waits for
     // the yes, which is Add.
     function bookOf(v) { return v.keep === true || v.mine === true || v.blocked === true; }
@@ -120,11 +123,11 @@
         return spirit.ready.then(function (s) { return s.peer.acquire(ask); });
       } },
     ];
-    function offered(v) { return relay ? relayActions : bookOf(v) ? bookActions : heldActions; }
+    function offered(v) { return v.relay === true ? relayActions : bookOf(v) ? bookActions : heldActions; }
     // WHAT A ROW OFFERS FOLLOWS ITS FLAGS (goal/G40.13): a row added stays on the page and is now a row of the book, so
     // its actions are refilled as the stream moves its flags, never kept as they were when it was made. The one array is
     // the element's own, so its act reads it as it stands.
-    var actions = offered(r).slice();
+    var actions = offered(Object.assign({}, r, { relay: relay })).slice();
     var made = null;
     made = E.rowElement.create({
       kind: 'contact',

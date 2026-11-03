@@ -430,12 +430,11 @@ function ndStarHtml() {
     else words = '<b>You do not own this relay:</b> ' + (ndBadge.ownerLabel ? 'this relay says it is owned by ' + ndEscapeHtml(ndBadge.ownerLabel) : 'this relay does not say who owns it') +
       '. You would have to trust whoever runs it, and whoever can break into its machine, with this machine. ' + gives;
   }
-  // A FOLDED BLOCK (goal/G41.32; Andy: "the "⭐ Star this relay" section should be a folded block"), closed as it arrives; the
-  // risk stays in it, on screen with the button. Its fold is held here, since the panel repaints.
-  return '<details class="stat-tile wide nd-star"' + (ndStarOpen ? ' open' : '') + '><summary class="label">⭐ Star this relay</summary><div>' + words + '</div>' +
-    '<div class="start-job-form"><button type="button" class="cancel-btn nd-own">' + (ndBadge.mine ? 'Take the star away' : 'Give it the star') + '</button></div></details>';
+  // A FOLDING PANEL LIKE THE OTHERS (goal/G41.32; Andy: "the folding panel "⭐ Star this relay" must use the same heading and
+  // style al all the other folding panels in relayPanel."), closed as it arrives; the risk stays in it, with the button.
+  return ndPanel('star', '⭐', 'Star this relay', '<div>' + words + '</div>' +
+    '<div class="start-job-form"><button type="button" class="cancel-btn nd-own">' + (ndBadge.mine ? 'Take the star away' : 'Give it the star') + '</button></div>');
 }
-var ndStarOpen = false;
 // What it changes comes back on its row.
 function ndStar() {
   return ndApi.verb('contact.own', { key: ndRelayKey(), own: !ndBadge.mine });
@@ -1732,11 +1731,6 @@ var ndPage = ({
       ndRender();
     } })));
 
-    // The star's fold, held across a repaint: toggle does not bubble, so it is heard on the way down.
-    ndBody().addEventListener('toggle', function (event) {
-      if (event.target && event.target.classList && event.target.classList.contains('nd-star')) ndStarOpen = event.target.open;
-    }, true);
-
     // Delegated, because the panels are repainted and a handler bound to
     // a button would go with them.
     ndBody().addEventListener('click', function (event) {
@@ -1886,7 +1880,11 @@ function ndHearRow(key, row) {
     if (!kept) ndRows.push(row);
   }
   if (key !== ndKey) return;
-  if (!row) { ndBadge = null; ndUnlisted = true; ndRender(); return; }
+  // A change with no value is not a row gone until the cache says so.
+  if (!row) {
+    if (window.spirit.contactData.contact(key)) return;
+    ndBadge = null; ndUnlisted = true; ndRender(); return;
+  }
   var next = Object.assign({}, ndBadge || {}, row);
   next.face = { name: typeof row.face === 'string' ? row.face : ((ndBadge && ndBadge.face && ndBadge.face.name) || ''), email: '' };
   if (ndBadge && ndShown(ndBadge) === ndShown(next)) return;

@@ -324,6 +324,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   const w5 = world(MEMBER, {});
   w5.win.spirit.elements.relayPanel.open({ key: 'RK2' });
   await settle();
+  await press(w5, '[data-fold="star"]');
   const s5 = starOf(w5);
   ok(!!s5, 'a relay\'s panel draws .nd-own, an arming button', 'armings: ' + short(w5.armings.map(function (a) { return a.label; })));
   ok(/says it is owned by Olga/.test(page(w5)), 'a relay that does not claim this node names who must be trusted, "says it is owned by" its owner', 'the page says: ' + short(page(w5)));
@@ -340,6 +341,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   const w6 = world(CLAIMS, OWNED_SAID);
   w6.win.spirit.elements.relayPanel.open({ key: 'RK' });
   await settle();
+  await press(w6, '[data-fold="star"]');
   ok(/If you DID install this relay on a VPS and you DID set its DNS records/.test(page(w6)), 'a relay claiming this node says: "If you DID install this relay on a VPS and you DID set its DNS records"', 'the page says: ' + short(page(w6)));
   ok(/lying/.test(page(w6)), 'and that otherwise it is lying', 'the page says: ' + short(page(w6)));
   ok(!!starOf(w6), 'with the same button', 'armings: ' + short(w6.armings.map(function (a) { return a.label; })));
@@ -347,6 +349,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   const w7 = world(STARRED, OWNED_SAID);
   w7.win.spirit.elements.relayPanel.open({ key: 'RK' });
   await settle();
+  await press(w7, '[data-fold="star"]');
   const s7 = starOf(w7);
   if (s7) { await s7.opts.run(); await settle(); }
   const sent7 = w7.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
