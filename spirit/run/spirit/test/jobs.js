@@ -12,7 +12,7 @@ const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { scratchNode, sleep } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const { scratchNode, sleep, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 200); }
@@ -76,6 +76,81 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     const help = await call({ command: process.execPath, args: [helper] });
     await sleep(WAIT_MS);
     ok(help.status === 201 && fs.existsSync(mark('helper')), 'a helper in an included process\'s folder starts, as desk.js:2589 and deskClient.js:535 start theirs', 'a helper of an included process: answered ' + help.status + ' ' + short(help.text) + ', ran ' + fs.existsSync(mark('helper')));
+
+    // GOAL/G41.33. THE BOX: "Console output goes to null by default, at the source, for every process. Only DEBUG turns it
+    // on. A crash is no exception: the exit code is enough to tell us to fix it, and we debug it by hand." Andy: "an
+    // appServer's should only write to stderr/stdout in DEBUG mode", "I WANT JUST THE structured json events." A job's log
+    // keeps what the node and the process's own published lines say. Andy, Q8, of the node and the relay themselves: "NOT the
+    // servers.", so only what they start is judged. scratchNode leaves DEBUG on, so each part sets it.
+    const door = async function (verb, args) {
+      const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+      const text = await r.text();
+      let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
+      return { status: r.status, body: body, text: text };
+    };
+    const setDebug = async function (on) { const a = await door('node.debug', { debug: { on: on } }); return !!(a.body && a.body.debug === on); };
+    const noisy = function (name, tail) {
+      const f = path.join(run, 'process/js', name, name + '.js');
+      fs.mkdirSync(path.dirname(f), { recursive: true });
+      fs.writeFileSync(f, tail);
+      fs.writeFileSync(path.join(run, 'process/js', name, name + '.json'), JSON.stringify({ label: 'zz' }));
+      const st = path.join(run, 'relay-state', 'process', name);
+      fs.mkdirSync(st, { recursive: true });
+      fs.writeFileSync(path.join(st, name + '.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
+    };
+    const finished = async function (id) {
+      let job = null;
+      await until(function () { return door('jobs.get', { key: id }).then(function (a) { job = a.body && (a.body.job || a.body); return !!(job && job.status && job.status !== 'running' && job.status !== 'pending'); }); }, 15000);
+      return job;
+    };
+    const logText = function (job) { return JSON.stringify((job && job.log) || []); };
+    const start = async function (name) {
+      const a = await door('jobs.create', { command: process.execPath, args: ['process/js/' + name + '/' + name + '.js'] });
+      return a.status === 201 && a.body && a.body.id ? a.body.id : '';
+    };
+    // A process job that completes deletes itself (jobs.js:119), so each here ends with an exit code of its own and stays to be read.
+    const PUBLISH = 'const u = process.env.SPIRIT_CALLBACK_URL, id = process.env.SPIRIT_JOB_ID;'
+      + 'fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "events.publish", args: { id: id, logMessage: "zzPublishedLine" } }) })';
+    noisy('zzNoisy', 'console.log("zzOutLine"); console.error("zzErrLine"); process.stdout.write("zzRawOut\\n"); process.stderr.write("zzRawErr\\n");'
+      + PUBLISH + '.then(function () { process.exit(5); }, function () { process.exit(3); });');
+    noisy('zzCrash', 'console.log("zzBeforeCrash"); throw new Error("zzCrashLine");');
+    noisy('zzFlood', 'const line = "zzFlood".repeat(1000) + "\\n"; let n = 0; (function more() { while (n < 3000) { n++; if (!process.stdout.write(line)) { process.stdout.once("drain", more); return; } } process.exit(7); }());');
+
+    test.subHeading('goal/G41.33: DEBUG off, a process\'s console goes nowhere, and what is structured stays');
+    ok(await setDebug(false), 'DEBUG is off', 'node.debug would not go off: nothing judged');
+    const id1 = await start('zzNoisy');
+    ok(!!id1, 'a process that writes to its console starts', 'the process did not start: nothing judged');
+    if (id1) {
+      const j = await finished(id1);
+      const said1 = logText(j);
+      ['zzOutLine', 'zzErrLine', 'zzRawOut', 'zzRawErr'].forEach(function (w) { ok(!!j && said1.indexOf(w) === -1, 'not in the job\'s log: ' + w, w + ' is in the job\'s log with DEBUG off: ' + short(said1)); });
+      ok(said1.indexOf('job created') !== -1, 'the node\'s own line stays', 'the node\'s own lines went too: ' + short(said1));
+      ok(said1.indexOf('zzPublishedLine') !== -1, 'a line the process published stays', 'a published line is gone: ' + short(said1));
+    }
+    const id2 = await start('zzCrash');
+    ok(!!id2, 'a process that crashes starts', 'the crash did not start: nothing judged');
+    if (id2) {
+      const j = await finished(id2);
+      const said2 = logText(j);
+      ok(!!j && said2.indexOf('zzCrashLine') === -1 && said2.indexOf('zzBeforeCrash') === -1, 'a crash is no exception: its console is not in the log', 'a crash\'s console is in the job\'s log with DEBUG off: ' + short(said2));
+      ok(!!j && j.data && typeof j.data.exitCode === 'number' && j.data.exitCode !== 0, 'and the job says the exit code', 'a crash left no exit code on the job: ' + short(j && j.data));
+    }
+    // The attacker's way to hang it: a process that floods its console with nobody reading.
+    const id3 = await start('zzFlood');
+    ok(!!id3, 'a process that floods its console starts', 'the flood did not start: nothing judged');
+    if (id3) {
+      const j = await finished(id3);
+      ok(!!j && j.data && j.data.exitCode === 7, 'it does not hang: 3 MB written and it ends, by its own exit code', 'the flood did not end with its own exit code: ' + short(j && { status: j.status, data: j.data }));
+    }
+
+    test.subHeading('goal/G41.33: only DEBUG turns it on');
+    ok(await setDebug(true), 'DEBUG is on', 'node.debug would not go on: nothing judged');
+    const id4 = await start('zzNoisy');
+    ok(!!id4, 'the same process starts', 'the process did not start: nothing judged');
+    if (id4) {
+      const said4 = logText(await finished(id4));
+      ['zzOutLine', 'zzErrLine'].forEach(function (w) { ok(said4.indexOf(w) !== -1, 'with DEBUG on, in the log: ' + w, 'with DEBUG on, ' + w + ' is not in the job\'s log: ' + short(said4)); });
+    }
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }

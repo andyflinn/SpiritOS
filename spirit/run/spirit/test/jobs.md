@@ -21,3 +21,15 @@ own, so whether it ran is read from the disk.
 
 - A shell, or code on the node's own executable, run through jobs.create.
 - A fix so narrow that the desk's and deskClient's own helpers no longer start.
+
+## goal/G41.33: a process's console goes to null
+
+The box: *"Console output goes to null by default, at the source, for every process, except node and relay. Only DEBUG turns
+it on. A crash is no exception: the exit code is enough to tell us to fix it, and we debug it by hand."*
+
+- **DEBUG off: nothing a process writes to stdout or stderr is in its job's log**, by console or written raw, a crash's
+  included.
+- **What is structured stays**: the node's own lines, and a line the process published.
+- **A crash still says its exit code on the job.**
+- **A process that floods its console does not hang**: it ends by its own exit code.
+- **DEBUG on: the lines are in the log.**

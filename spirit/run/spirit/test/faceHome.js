@@ -248,5 +248,186 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
       ok(!a.reached.length && refused(a), 'on ' + c[0] + ', ' + form[0] + ': refused with a code, and it never reaches the door', 'contact.own on ' + c[0] + ', ' + form[0] + ': ' + said(a));
     }
   }
+
+  // GOAL/G41.33. THE BOX: "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay he's
+  // a member of or owns", and "this includes" bundles, branches and grants; a job deleted; running jobs; join steps; relay
+  // events. "for a face(relay) without star, the restrictions today stay in place." "for a face(relay) with star, NO
+  // RESTRICTIONS AT ALL, except changing stars." Relay events "overrules goal/G30.13". Here o.events is a stand-in, and a
+  // relay event comes as server.js:1617 sends it: an owner's event to ownerEvent and to the node's dispatcher, the
+  // monitor's to the dispatcher alone.
+  const PRIORITIES_TODAY = { fs: 2, presence: 3, app: 4, stats: 5 };
+  const STARRED = 'https://a-relay-i-starred.example';
+  const PLAIN = 'https://a-relay-with-no-star.example';
+  function streams(star) {
+    const s = { subs: [], jobs: [], ups: {}, busy: false, drains: [] };
+    const o = {
+      call: function () { return Promise.resolve({ status: 200, body: { ok: true } }); },
+      serveFile: function () {}, saveFrom: function () { return { ok: true }; }, annotateFace: function () { return { ok: true }; },
+      identity: function () { return ME; },
+      relayKey: function () { return 'RELAYKEY'; },
+      upload: function (url, p) {
+        const u = { url: url, path: p, chunks: [], on: function () {}, destroy: function () {}, once: function (e, fn) { if (e === 'drain') s.drains.push(fn); }, write: function (c) { u.chunks.push(String(c)); return !s.busy; }, end: function () {}, headers: {} };
+        if (p === '/api/relay/face/stream') s.ups[url] = u;
+        return u;
+      },
+      jobs: { listJobs: function () { return s.jobs; }, onEvent: function () {} },
+      events: { subscribe: function (fn) { s.subs.push(fn); return function () {}; } },
+      log: function () {},
+      faceSet: function () { return true; },
+      faceOwned: star,
+    };
+    s.home = createFaceHome(o);
+    s.emit = function (kind, data) { s.subs.forEach(function (fn) { fn(kind, data); }); };
+    s.ownerEvent = function (ev) { s.home.ownerEvent(ev); s.emit('relay-event', ev); };
+    s.lines = function (url) {
+      const u = s.ups[url];
+      return !u ? [] : u.chunks.join('').split('\n').filter(Boolean).map(function (l) { try { return JSON.parse(l); } catch (e) { return { unread: l }; } });
+    };
+    s.got = function (url, event, data) {
+      const want = JSON.stringify(data);
+      return s.lines(url).filter(function (l) { return l.event === event && JSON.stringify(l.data) === want; }).length;
+    };
+    return s;
+  }
+  const starAt = function (url) { return url === STARRED; };
+  const jobEvents = [
+    ['a bundle', 'job-updated', { id: 'job_b', kind: 'permanent', type: 'bundles', status: 'running', log: [], data: { table: 'bundle', row: { id: 1, label: 'zz' }, gone: false } }],
+    ['a branch', 'job-updated', { id: 'job_b', kind: 'permanent', type: 'bundles', status: 'running', log: [], data: { table: 'branch', row: { id: 2, bundle: 1 }, gone: false } }],
+    ['a grant', 'job-updated', { id: 'job_b', kind: 'permanent', type: 'bundles', status: 'running', log: [], data: { table: 'grant', row: { id: 3 }, gone: true } }],
+    ['a job deleted', 'job-deleted', 'job_77'],
+    ['a running job of a process', 'job-updated', { id: 'job_p', kind: 'process', type: 'zzProgram', status: 'running', module: 'process/js/zz', log: [{ timestamp: 1, message: 'job created' }], data: { command: 'node', progress: 0 } }],
+    ['a running job of no module', 'job-updated', { id: 'job_q', kind: 'process', type: 'zzOther', status: 'running', log: [], data: {} }],
+    ['a job of a type nobody has listed', 'job-updated', { id: 'job_z', kind: 'zzKind', type: 'zzNeverSeen', status: 'running', log: [], data: {} }],
+    ['a server\'s job as a whole', 'job-updated', { id: 'job_s', kind: 'server', type: 'zzServer', status: 'running', module: 'process/js/zz', log: [{ timestamp: 1, message: 'job created' }], data: { pid: 1 } }],
+    ['the join steps', 'job-updated', { id: 'job_j', kind: 'permanent', type: 'join-steps', status: 'running', log: [], data: { steps: ['zz'] } }],
+    ['a relay event of the monitor, a post', 'relay-event', { kind: 'post', relay: STARRED, from: 'zz' }],
+    ['a relay event of the monitor, a reply', 'relay-event', { kind: 'reply', relay: STARRED, from: 'zz' }],
+    ['a relay event of the monitor, a refusal', 'relay-event', { kind: 'refused', relay: STARRED, from: 'zz' }],
+    ['a relay\'s status', 'relay-event', { kind: 'relay-status', relay: STARRED, report: { members: 1 } }],
+  ];
+
+  test.subHeading('goal/G41.33: a starred face hears what the loopback hears, each once, and a face with no star does not');
+  const sx = streams(starAt);
+  sx.home.open(STARRED, '');
+  sx.home.open(PLAIN, '');
+  await settle();
+  ok(!!sx.ups[STARRED] && !!sx.ups[PLAIN], 'both faces have their stream open', 'a stream did not open: nothing judged');
+  ok(sx.subs.length > 0, 'the home side subscribes to the node\'s events', 'no subscriber: nothing judged');
+  jobEvents.forEach(function (c) {
+    sx.emit(c[1], c[2]);
+    const on = sx.got(STARRED, c[1], c[2]);
+    ok(on === 1, 'starred: ' + c[0] + ' arrives whole, once', 'starred: ' + c[0] + ' arrived ' + on + ' times, as ' + c[1] + ' ' + short(c[2]));
+  });
+  jobEvents.forEach(function (c) {
+    // A server with no app object still reaches a face with no star, its status alone: that is today's, and stays.
+    if (c[0] === 'a server\'s job as a whole') {
+      const seen = sx.lines(PLAIN).filter(function (l) { return l.data && l.data.id === 'job_s'; });
+      ok(seen.length === 1 && seen[0].data.log === undefined && seen[0].data.data === undefined, 'no star: a server still comes as its status alone, no log', 'no star: the server came as ' + short(seen));
+      return;
+    }
+    ok(sx.got(PLAIN, c[1], c[2]) === 0, 'no star: ' + c[0] + ' stays home', 'no star: ' + c[0] + ' reached a face with no star');
+  });
+
+  test.subHeading('goal/G41.33: what a face with no star gets today, it still gets');
+  const today = [['the file tree', 'job-updated', { id: 'job_f', kind: 'permanent', type: 'fs-watcher', status: 'running', data: { command: { op: 'zz' } } }],
+    ['a row of the one table', 'job-updated', { id: 'job_h', kind: 'permanent', type: 'shadow', status: 'running', data: { row: 1 } }],
+    ['a contact renamed', 'contact.rename', { key: 'K', name: 'zz' }]];
+  today.forEach(function (c) {
+    sx.emit(c[1], c[2]);
+    ok(sx.got(PLAIN, c[1], c[2]) === 1, 'no star: ' + c[0] + ' arrives', 'no star: ' + c[0] + ' arrived ' + sx.got(PLAIN, c[1], c[2]) + ' times');
+    ok(sx.got(STARRED, c[1], c[2]) === 1, 'starred: ' + c[0] + ' arrives, once', 'starred: ' + c[0] + ' arrived ' + sx.got(STARRED, c[1], c[2]) + ' times');
+  });
+  // An owner's event reaches a page by the dispatcher, and a face by ownerEvent as well: one event, one line.
+  const minted = { kind: 'invite-minted', relay: STARRED, invite: 'zz' };
+  sx.ownerEvent(minted);
+  ok(sx.got(STARRED, 'relay-event', minted) === 1, 'starred: an owner\'s relay event arrives once, not once per way in', 'starred: an owner\'s relay event arrived ' + sx.got(STARRED, 'relay-event', minted) + ' times');
+  ok(sx.got(PLAIN, 'relay-event', minted) === 1, 'no star: an owner\'s relay event still arrives, once', 'no star: an owner\'s relay event arrived ' + sx.got(PLAIN, 'relay-event', minted) + ' times');
+
+  test.subHeading('goal/G41.33: only true is a star, the star counts at each event, and it sends no catch-up');
+  const loose2 = streams(function () { return 'yes'; });
+  loose2.home.open(STARRED, '');
+  await settle();
+  loose2.emit('job-deleted', 'job_1');
+  ok(loose2.got(STARRED, 'job-deleted', 'job_1') === 0, 'a truthy answer is no star: nothing arrives', 'faceOwned answering "yes" opened the stream');
+  let pressed = false;
+  const sw = streams(function () { return pressed; });
+  sw.home.open(STARRED, '');
+  await settle();
+  sw.emit('job-deleted', 'job_before');
+  ok(sw.got(STARRED, 'job-deleted', 'job_before') === 0, 'before the star: nothing', 'before the star, a job deleted arrived');
+  pressed = true;
+  await settle();
+  const atPress = sw.lines(STARRED).length;
+  sw.emit('job-deleted', 'job_on');
+  ok(sw.got(STARRED, 'job-deleted', 'job_on') === 1, 'the star pressed with the face open: the next event arrives, no reopening', 'the star was pressed and the next event did not arrive');
+  ok(sw.got(STARRED, 'job-deleted', 'job_before') === 0 && sw.lines(STARRED).length === atPress + 1, 'and no catch-up: what went before it never comes', 'pressing the star sent a catch-up: ' + short(sw.lines(STARRED)));
+  pressed = false;
+  sw.emit('job-deleted', 'job_off');
+  ok(sw.got(STARRED, 'job-deleted', 'job_off') === 0, 'the star taken off: the next event stays home, at once', 'the star came off and a job deleted still reached the face');
+
+  test.subHeading('goal/G41.33: a starred face that opens gets what a loopback page gets on connect');
+  // events.js handleSubscribe: "snapshot", { jobs: o.jobs.listJobs() }. The envelope is the builder's; the jobs are the box's.
+  const sn = streams(starAt);
+  sn.jobs = [jobEvents[0][2], jobEvents[4][2], jobEvents[5][2], jobEvents[6][2], jobEvents[8][2]];
+  sn.home.open(STARRED, '');
+  sn.home.open(PLAIN, '');
+  await settle();
+  const onWire = function (url, id) { return JSON.stringify(sn.lines(url)).indexOf('"id":"' + id + '"') !== -1; };
+  sn.jobs.forEach(function (j) {
+    ok(onWire(STARRED, j.id), 'starred, on opening: job ' + j.type + ' is there', 'starred, on opening: job ' + j.type + ' is not on the stream, a loopback page has it');
+    ok(!onWire(PLAIN, j.id), 'no star, on opening: job ' + j.type + ' is not', 'no star, on opening: job ' + j.type + ' reached the face');
+  });
+
+  test.subHeading('goal/G41.33: the queue does not change, and it loses none of the new ones');
+  const q = streams(starAt);
+  q.home.open(STARRED, '');
+  await settle();
+  q.busy = true;
+  q.emit('job-deleted', 'job_first');
+  q.emit('job-deleted', 'job_while_busy');
+  q.emit('job-updated', jobEvents[0][2]);
+  q.emit('relay-event', jobEvents[9][2]);
+  const whileBusy = q.lines(STARRED).length;
+  q.busy = false;
+  q.drains.splice(0).forEach(function (fn) { fn(); });
+  ok(whileBusy === 1, 'one write at a time: the rest wait for the sink', 'the sink was busy and ' + whileBusy + ' writes went');
+  ok(q.got(STARRED, 'job-deleted', 'job_while_busy') === 1 && q.got(STARRED, 'job-updated', jobEvents[0][2]) === 1 && q.got(STARRED, 'relay-event', jobEvents[9][2]) === 1, 'after the drain every waiting event has gone out', 'after the drain the waiting events were lost: ' + short(q.lines(STARRED)));
+  const P = require(path.join(RUN, 'spirit', 'faceHome.js')).FACE_PRIORITY;
+  ok(JSON.stringify(P) === JSON.stringify(PRIORITIES_TODAY), 'the queue\'s levels are as they were', 'the queue\'s levels changed: ' + short(P));
+
+  test.subHeading('goal/G41.33: a starred face has no restrictions at all, except changing stars');
+  const free = world(onlyMine, onlyMine);
+  const shut = [];
+  for (const fam of allFamilies()) {
+    const inSpirit = fs.existsSync(path.join(RUN, 'spirit', fam, 'api.js'));
+    for (const v of verbsOf(inSpirit ? 'spirit/' + fam + '/api.js' : require(path.join(RUN, 'spirit.js')).familyPath(fam))) {
+      if (fam + '.' + v === 'contact.own') continue;
+      // fs.annotate from a face writes the face's own part of a sidecar, in faceHome, and never goes to the door (goal/G30.21).
+      if (fam + '.' + v === 'fs.annotate') continue;
+      const c = { call: fam + '.' + v, args: {} };
+      for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
+        const a = await send(free, MINE, form[1]);
+        if (a.reached.indexOf(c.call) === -1) shut.push(c.call + ' ' + form[0] + ': ' + said(a));
+      }
+    }
+  }
+  ok(!shut.length, 'every verb of all ' + allFamilies().length + ' families reaches the door, unsealed and sealed', shut.length + ' still refused; first: ' + shut.slice(0, 3).join(' | '));
+  const THROUGH = { call: 'relay.face', args: { url: MINE, name: 'zz' } };
+  const FACE_POST = { call: 'peer.post', args: { to: 'RELAYKEY', text: JSON.stringify({ body: { face: 'zz' } }) } };
+  for (const c of [['relay.face on the relay it is called through', THROUGH], ['a peer.post to that relay carrying a face name', FACE_POST]]) {
+    for (const form of [['unsealed', c[1]], ['sealed', sealed(c[1])]]) {
+      const on = await send(free, MINE, form[1]);
+      ok(on.reached.indexOf(c[1].call) !== -1, 'starred, ' + form[0] + ': ' + c[0] + ' reaches the door', 'starred, ' + form[0] + ': ' + c[0] + ': ' + said(on));
+      const off = await send(world(onlyMine, function () { return false; }), MINE, form[1]);
+      ok(!off.reached.length && refused(off), 'no star, ' + form[0] + ': it stays refused', 'no star, ' + form[0] + ': ' + c[0] + ': ' + said(off));
+    }
+  }
+  for (const own of [true, false]) {
+    const c = { call: 'contact.own', args: { key: 'K', own: own } };
+    for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
+      const a = await send(free, MINE, form[1]);
+      ok(!a.reached.length && refused(a), 'changing stars stays home: own ' + own + ', ' + form[0] + ', refused', 'contact.own ' + own + ' from a starred face, ' + form[0] + ': ' + said(a));
+    }
+  }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

@@ -176,6 +176,102 @@ test.startTest('spirit-sibling-faceStarRules.js: the star on a real node, a real
     await sleep(WAIT_MS);
     ok(!fs.existsSync(mark) && !fs.existsSync(savedAt), 'nothing ran, nothing was written', 'after the star came off: ran ' + fs.existsSync(mark) + ', saved ' + fs.existsSync(savedAt));
 
+    // ── GOAL/G41.33, ON THE REAL STREAM ──
+    // "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay"; "for a face(relay)
+    // without star, the restrictions today stay in place"; "NO RESTRICTIONS AT ALL, except changing stars"; "Pressing the
+    // star sends no catch-up". What a page reads from /face/stream, with its cookie, unsealed as a page that cannot seal.
+    test.subHeading('goal/G41.33: the real stream, a job, a bundle and the join steps, with and without the star');
+    const S = await scratchFaceRelay({ members: [] });
+    relays.push(S);
+    const why4 = !S.up ? 'the relay did not come up' : (await join(N, S) || await setFace(N, S, 'stream'));
+    ok(!why4, 'a relay for the stream: joined, a face set', 'nothing judged: ' + why4);
+    const LS = why4 ? {} : await logIn(S, 'stream');
+    if (!why4) ok(!!LS.sid, 'the face logs in', 'the login failed, nothing judged: ' + LS.why);
+    if (LS.sid) {
+      const got = [];
+      let heldStream = '';
+      const q = http.request({ host: '127.0.0.1', port: S.port, path: '/face/stream', method: 'GET', headers: { Host: 'stream.relay.example', Cookie: 'spirit_face=' + LS.sid } }, function (r) {
+        r.setEncoding('utf8');
+        r.on('data', function (d) { heldStream += d; const parts = heldStream.split('\n'); heldStream = parts.pop(); parts.filter(Boolean).forEach(function (l) { got.push(l); }); });
+      });
+      q.on('error', function () { /* the stream ends with the relay */ });
+      q.end();
+      const hears = function (word) { return got.some(function (l) { return l.indexOf(word) !== -1; }); };
+      const heardEvent = function (kind, id) { return got.some(function (l) { const v = parsed(l); return !!v && v.event === kind && (kind === 'job-deleted' ? v.data === id : !!v.data && v.data.id === id); }); };
+      await until(function () { return got.length > 0; }, 10000);
+      ok(got.length > 0, 'the stream is open and says things', 'the stream said nothing in 10 s: nothing judged');
+
+      // One failed job, to delete: a process that ends with an exit code of its own stays until it is deleted.
+      const script2 = path.join(run, 'process/js/zzStream/zzStream.js');
+      fs.mkdirSync(path.dirname(script2), { recursive: true });
+      fs.writeFileSync(script2, 'setTimeout(function () { process.exit(4); }, 300);\n');
+      fs.writeFileSync(path.join(run, 'process/js/zzStream/zzStream.json'), JSON.stringify({ label: 'zz' }));
+      const st2 = path.join(run, 'relay-state/process/zzStream');
+      fs.mkdirSync(st2, { recursive: true });
+      fs.writeFileSync(path.join(st2, 'zzStream.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
+      const runOne = async function () {
+        const c = await home(N.base, 'jobs.create', { command: process.execPath, args: ['process/js/zzStream/zzStream.js'] });
+        const id = c.body && c.body.id;
+        if (!id) return { why: 'jobs.create at home: ' + c.status + ' ' + short(c.text) };
+        await until(function () { return home(N.base, 'jobs.get', { key: id }).then(function (a) { const j = a.body && a.body.job; return !!j && j.status === 'failed'; }); }, 8000);
+        const d = await home(N.base, 'jobs.delete', { id: id });
+        return d.status < 300 ? { id: id } : { why: 'jobs.delete at home: ' + d.status + ' ' + short(d.text) };
+      };
+      const bundle = function (label) { return home(N.base, 'auth.bundle', { op: 'add', label: label, text: 'zz' }); };
+
+      const j0 = await runOne();
+      ok(!!j0.id, 'no star: a job runs and is deleted at home', 'nothing judged: ' + j0.why);
+      const b0 = await bundle('zzBefore');
+      ok(b0.status < 300, 'no star: a bundle is added at home', 'auth.bundle at home: ' + b0.status + ' ' + short(b0.text));
+      await sleep(WAIT_MS);
+      ok(!!j0.id && !hears(j0.id), 'no star: the job never reaches the face', 'no star: job ' + j0.id + ' reached the face');
+      ok(!hears('zzBefore'), 'no star: the bundle never reaches the face', 'no star: the bundle reached the face');
+
+      const sOn = await home(N.base, 'contact.own', { key: S.relayKey, own: true });
+      ok(sOn.status === 200, 'the star on, at home, the stream still open', 'contact.own at home: ' + sOn.status + ' ' + short(sOn.text));
+      await sleep(WAIT_MS);
+      ok(!!j0.id && !hears(j0.id) && !hears('zzBefore'), 'no catch-up: what went before the star does not come', 'pressing the star sent what went before it');
+
+      const j1b = await runOne();
+      ok(!!j1b.id, 'starred: a job runs and is deleted at home', 'nothing judged: ' + j1b.why);
+      await until(function () { return heardEvent('job-deleted', j1b.id); }, 5000);
+      ok(!!j1b.id && heardEvent('job-updated', j1b.id), 'starred: the running job reaches the face', 'starred: job ' + j1b.id + ' never reached the face');
+      ok(!!j1b.id && heardEvent('job-deleted', j1b.id), 'starred: the job deleted reaches the face', 'starred: job-deleted ' + j1b.id + ' never reached the face');
+      const b1 = await bundle('zzAfter');
+      await until(function () { return hears('zzAfter'); }, 5000);
+      ok(b1.status < 300 && hears('zzAfter'), 'starred: the bundle reaches the face', 'starred: the bundle never reached the face: ' + b1.status + ' ' + short(b1.text));
+
+      // The join steps are published only when their facts change (joinStepsJob.js): this node's first contact, here a key
+      // it blocks, makes "contact" true.
+      const someone = require(path.join(__dirname, '..', 'spirit', 'relayAuth.js')).generateIdentity('zz').publicKey;
+      const blocked = await home(N.base, 'contact.block', { publicKey: someone });
+      ok(blocked.status < 300, 'starred: a first contact appears at home', 'nothing judged: contact.block answered ' + blocked.status + ' ' + short(blocked.text));
+      await until(function () { return hears('join-steps'); }, 5000);
+      ok(hears('join-steps'), 'starred: the join steps reach the face', 'starred: the join-steps job never reached the face');
+
+      test.subHeading('goal/G41.33: a starred face has no restrictions, except changing stars');
+      const sface = function (req) { return page(S, 'stream', '/face/call', req, LS.sid); };
+      const anotherStar = await sface({ call: 'contact.own', args: { key: R.relayKey, own: true } });
+      ok(refusedOff(anotherStar) && !(await starOf(R.relayKey)), 'starring another relay from it is refused, and no star lands', 'contact.own of another relay from a starred face: ' + anotherStar.status + ' ' + short(anotherStar.text) + ', star ' + (await starOf(R.relayKey)));
+      const ownOff = await sface({ call: 'contact.own', args: { key: S.relayKey, own: false } });
+      ok(refusedOff(ownOff) && (await starOf(S.relayKey)), 'taking its own star off from it is refused, and the star stays', 'contact.own false from a starred face: ' + ownOff.status + ' ' + short(ownOff.text) + ', star ' + (await starOf(S.relayKey)));
+
+      // The star off with the stream open: the limits are back at the next event.
+      const sOff = await home(N.base, 'contact.own', { key: S.relayKey, own: false });
+      ok(sOff.status === 200, 'the star off, at home', 'contact.own false at home: ' + sOff.status + ' ' + short(sOff.text));
+      const j2b = await runOne();
+      await sleep(WAIT_MS);
+      ok(!!j2b.id && !hears(j2b.id), 'the star off: the next job stays home', 'the star came off and job ' + j2b.id + ' still reached the face');
+
+      // Last, since it takes the page's address away: the face you call through, renamed through it, on a star.
+      await home(N.base, 'contact.own', { key: S.relayKey, own: true });
+      const renamed = await sface({ call: 'relay.face', args: { url: S.base, name: 'renamed' } });
+      ok(!refusedOff(renamed), 'starred: relay.face on the relay it is called through is not refused by the face\'s rule', 'relay.face through a starred face: ' + renamed.status + ' ' + short(renamed.text));
+      const moved = await until(function () { return page(S, 'renamed', '/face/api', { call: 'state', args: {} }).then(function (a) { return a.status === 200; }); }, 8000);
+      ok(!!moved, 'and the face has its new name on the relay', 'after relay.face through a starred face, renamed.relay.example does not answer');
+      try { q.destroy(); } catch (e) { /* gone */ }
+    }
+
     // ── A RELAY THAT SAYS THIS NODE OWNS IT ──
     test.subHeading('a relay\'s claim changes nothing: it says this node owns it, and no star is pressed');
     // The face is set first, as a member, then the owner mark goes in: relay.face on a relay that already owns this node

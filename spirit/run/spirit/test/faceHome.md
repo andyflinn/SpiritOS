@@ -54,3 +54,24 @@ nothing of which relay holds this node's face. `spirit/server.js` gives it from 
 - A shell run from a relay holding no face of this node's, by any form of request.
 - A verb taken off the face reached sealed or in pieces.
 - A fix so wide that the face stops working on its own relay.
+
+## goal/G41.33: a starred face gets what the loopback gets
+
+The box: *"anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay he's a member of or
+owns"*, including bundles, branches and grants, a job deleted, running jobs, join steps, relay events. *"for a face(relay)
+without star, the restrictions today stay in place."* *"for a face(relay) with star, NO RESTRICTIONS AT ALL, except changing
+stars."* Here `o.events` is a stand-in, and a relay event comes as `server.js` sends it.
+
+- **A starred face hears each of those whole and once**, a job of a type nobody has listed too, and a server's job with its
+  log. Packets are not judged: the box reduced this item to its five kinds, *"for now"*.
+- **A face with no star does not**, and what it gets today it still gets: the file tree, the one table's rows, a contact
+  renamed, a server's status alone, an owner's relay event.
+- **An owner's relay event is one line**, though it reaches a page by the dispatcher and a face by `ownerEvent` as well.
+- **Only `true` is a star, and it counts at each event**: pressed with the face open, the next event arrives; taken off, the
+  next stays home. *"Pressing the star sends no catch-up."*
+- **A starred face that opens gets the jobs a loopback page gets on connect** (line 1 of the box; `events.js`, the
+  snapshot). The envelope is the builder's: only that each job is on the stream is judged.
+- **The queue does not change**: its levels are as they were, one write at a time, and nothing new is lost while it waits.
+- **No restrictions on a star**: every verb of every family reaches the door, sealed and not, `relay.face` on the relay it
+  is called through and a `peer.post` carrying a face name to it among them, both still refused with no star. `fs.annotate`
+  is left out, it writes the face's part in `faceHome` and never goes to the door. `contact.own` stays refused, on and off.

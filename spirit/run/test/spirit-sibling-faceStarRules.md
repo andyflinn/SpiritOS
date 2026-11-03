@@ -27,3 +27,11 @@ The face on the owned relay is set before the owner mark goes in (the relay rest
 
 - `faceOwned` answering true for every relay, or never; `faceSet` answering true for every relay.
 - A relay's report putting the star back.
+
+## goal/G41.33, on the real stream
+
+What a page reads from `/face/stream`, with its cookie. No star: a job run and deleted at home and a bundle added never reach
+the face. The star pressed with the stream open: none of that comes after it. Starred: the running job, the job deleted, the
+bundle and the join steps arrive. From the starred face, `contact.own` of another relay and of its own star are refused and
+change nothing. The star off: the next job stays home. Starred again: `relay.face` through the face is not refused, and the
+face answers at its new name. Relay events are judged in `spirit/test/faceHome.js`, on stand-ins.
