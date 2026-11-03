@@ -96,6 +96,13 @@ test.startTest('spirit-sibling-agentCentreTabsRules.js: the agent app\'s centre 
     const again = await tabOf(ICON.provider + ' zzProvider');
     ok(again.length === 1 && again[0].on, 'the provider\'s tab is active again, and alone', 'tabs ' + short(await tabs()));
 
+    // Who listens, listens once: a press on a row that has its tab adds no second listener, and closing a tab lets go of its own.
+    test.subHeading('a tab has one listener on its row, and lets go of it when it closes');
+    await c.evaluate('(function () { var D = window.spirit.data; var made = D.watch; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; D.watch = function (p, fn) { var mine = String(p).slice(-window.__rowPath.length) === window.__rowPath; var off = made.call(D, p, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; return true; }())');
+    for (let i = 0; i < 3; i++) { await pressRow('zzProvider'); await sleep(250); }
+    const stacked = await c.evaluate('window.__live');
+    ok(stacked === 0, 'three more presses on an open row add no listener', stacked + ' more listeners on that row after three presses');
+
     test.subHeading('the tabs stay when the left tool changes');
     const before = (await tabs()).length;
     await tool('job');
@@ -136,6 +143,21 @@ test.startTest('spirit-sibling-agentCentreTabsRules.js: the agent app\'s centre 
     await until(function () { return tabOf(ICON.model + ' zzModelTwo').then(function (t) { return !t.length; }); }, 4000);
     ok(closed === true && (await tabOf(ICON.model + ' zzModelTwo')).length === 0, 'its tab is gone', 'tabs ' + short(await tabs()));
     ok((await home('agent.model', { op: 'get', id: M.body.id })).status === 200, 'the model is still there', 'closing its tab deleted the model');
+
+    test.subHeading('a closed tab listens no more');
+    await c.evaluate('window.__rowPath = ' + JSON.stringify('/' + Pe.body.id) + '; window.__live = 0; 1');
+    await tool('persona');
+    const hadPersona = (await tabOf(ICON.persona + ' zzPersona')).length === 1;
+    await c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf(' + JSON.stringify(ICON.persona + ' zzPersona') + ') !== -1; })[0]; var k = b && b.querySelector("[data-tab-close]"); if (k) k.click(); }())');
+    await until(function () { return tabOf(ICON.persona + ' zzPersona').then(function (t) { return !t.length; }); }, 4000);
+    await until(function () { return pressRow('zzPersona'); }, 6000);
+    await waitTab(ICON.persona + ' zzPersona');
+    const opened = await c.evaluate('window.__live');
+    await c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf(' + JSON.stringify(ICON.persona + ' zzPersona') + ') !== -1; })[0]; var k = b && b.querySelector("[data-tab-close]"); if (k) k.click(); }())');
+    await until(function () { return tabOf(ICON.persona + ' zzPersona').then(function (t) { return !t.length; }); }, 4000);
+    const afterClose = await c.evaluate('window.__live');
+    ok(hadPersona && opened === 1, 'opened again, one listener', 'it had a tab ' + hadPersona + ', then ' + opened + ' listeners');
+    ok(afterClose === 0, 'closed, none', afterClose + ' listeners after its tab closed');
 
     test.subHeading('a row deleted elsewhere closes its tab');
     const hadJob = (await tabOf(ICON.job + ' zzJob')).length === 1;
