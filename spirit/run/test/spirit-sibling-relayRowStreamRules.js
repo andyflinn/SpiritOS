@@ -234,6 +234,84 @@ test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a re
     await until(tileShown, 5000);
     const offeredBack = await options();
     ok((await tileShown()) && offeredBack.indexOf(Other.base) !== -1 && offeredBack.indexOf(R.base) === -1, 'one star off: the form is back, offering that relay', 'form ' + (await tileShown()) + ', it offers ' + short(offeredBack));
+
+    // A RELAY THIS NODE IS NOT A MEMBER OF CANNOT BE STARRED (goal/G41.32; Andy: "a relay I'm not a member of can not be starred
+    // (relays i own automatically give me membership)"). At the node's own door, so no screen can get round it.
+    test.subHeading('only a relay this node is a member of or owns can be starred');
+    const starred = async function (k) { const a = await home(N.base, 'contact.search', { q: '', mine: 'yes' }); return !!(a.body && (a.body.items || []).some(function (i) { return i.key === k; })); };
+    const Far = await scratchFaceRelay({ members: [] });
+    others.push(Far);
+    ok(Far.up, 'a third relay comes up', 'the third relay did not come up: nothing judged');
+    await home(N.base, 'relay.add', { url: Far.base, label: 'zzFar' });
+    await until(function () { return rowsOf(Far.relayKey).length > 0; }, 8000);
+    const farNo = await home(N.base, 'contact.own', { key: Far.relayKey, own: true });
+    ok(farNo.status >= 400 && farNo.status < 500 && !!(farNo.body && farNo.body.code), 'listed, no seat: contact.own is refused at home, with a code', 'contact.own of a relay with no seat: ' + farNo.status + ' ' + short(farNo.text));
+    ok(!(await starred(Far.relayKey)), 'and no star lands', 'a relay with no seat has a star');
+    const farOwnOff = await home(N.base, 'contact.own', { key: Far.relayKey, own: false });
+    ok(!(await starred(Far.relayKey)), 'taking away a star it does not have changes nothing: ' + farOwnOff.status, 'after own false it has a star');
+    const person = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('zzPuppet').publicKey;
+    await home(N.base, 'contact.block', { publicKey: person });
+    const personAns = await home(N.base, 'contact.own', { key: person, own: true });
+    test.comment('a node that is no relay, contact.own answers ' + personAns.status + ': this rule is about relays alone');
+
+    test.subHeading('its panel offers no star there');
+    const farPanel = await chrome.evaluate('Promise.resolve(window.spirit.require("shell/js/relayPanel.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.elements.relayPanel.create(h, { key: ' + JSON.stringify(Far.relayKey) + ' }); return "ok"; })');
+    await until(function () { return chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0'); }, 8000);
+    const farStar = await chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzFar .nd-fold")).filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; }).length');
+    ok(farPanel === 'ok' && await chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0'), 'the panel draws for it', 'no panel for a relay with no seat');
+    ok(farStar === 0, 'with no star fold', 'a relay with no seat offers a star');
+
+    test.subHeading('a member can star it; leaving takes the star away');
+    // Leaving: read from his ruling, and Q21 asks him outright (ubi: "a relay you have left keeps its star"); if he says no, these two checks go.
+    await home(N.base, 'relay.join', { url: Far.base, email: MAIL });
+    await until(function () { return Far.mailed.length > 0; }, 5000);
+    const farCode = Far.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(Far.mailed[0].text)) || [])[1];
+    await home(N.base, 'relay.join', { url: Far.base, email: MAIL, code: farCode });
+    await until(function () { const r = last(Far.relayKey); return !!r && r.claimed === true; }, 10000);
+    const farYes = await home(N.base, 'contact.own', { key: Far.relayKey, own: true });
+    ok(farYes.status === 200 && await starred(Far.relayKey), 'joined: the star goes on', 'contact.own of a member\'s relay: ' + farYes.status + ' ' + short(farYes.text));
+    // The first ask may still be waiting for the relay's card, as relay.face's does.
+    let left = null;
+    for (let i = 0; i < 8; i++) { left = await home(N.base, 'relay.leave', { key: Far.base }); if (left.status < 300 || left.status === 404) break; await sleep(2000); }
+    await until(function () { const r = last(Far.relayKey); return !!r && r.claimed === false; }, 8000);
+    ok(((last(Far.relayKey) || {}).claimed) === false, 'it leaves the relay: its row holds no seat', 'relay.leave: ' + left.status + ' ' + short(left.text) + ', row ' + short(last(Far.relayKey)));
+    await until(function () { return starred(Far.relayKey).then(function (x) { return !x; }); }, 5000);
+    ok(!(await starred(Far.relayKey)), 'and the star is gone with the seat', 'it left the relay and the star stayed');
+    const notAgain = await home(N.base, 'contact.own', { key: Far.relayKey, own: true });
+    ok(notAgain.status >= 400 && notAgain.status < 500, 'and cannot be put back', 'contact.own after leaving: ' + notAgain.status + ' ' + short(notAgain.text));
+
+    test.subHeading('a relay this node owns counts as membership');
+    const Own = await scratchFaceRelay({ members: [], ownerKey: me });
+    others.push(Own);
+    ok(Own.up, 'a relay naming this node its owner comes up', 'it did not come up: nothing judged');
+    await home(N.base, 'relay.add', { url: Own.base, label: 'zzOwned' });
+    await home(N.base, 'relay.join', { url: Own.base, email: MAIL });
+    await until(function () { return Own.mailed.length > 0; }, 5000);
+    const ownCode = Own.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(Own.mailed[0].text)) || [])[1];
+    if (ownCode) await home(N.base, 'relay.join', { url: Own.base, email: MAIL, code: ownCode });
+    await until(function () { const r = last(Own.relayKey); return !!r && r.owned === true; }, 20000);
+    const ownedRow2 = last(Own.relayKey) || {};
+    ok(ownedRow2.owned === true, 'its report has come: owned', 'no report: nothing judged: ' + short(ownedRow2));
+    const ownYes = await home(N.base, 'contact.own', { key: Own.relayKey, own: true });
+    ok(ownYes.status === 200 && await starred(Own.relayKey), 'owned: the star goes on', 'contact.own of an owned relay: ' + ownYes.status + ' ' + short(ownYes.text));
+
+    // Andy: "the contact list should do something to mark a relay, like print its label in bold-italic."
+    test.subHeading('the contact list marks a relay: its label in bold italic');
+    await home(N.base, 'contact.label', { publicKey: person, myLabel: 'zzPersonRow' });
+    await home(N.base, 'contact.unblock', { publicKey: person });
+    await home(N.base, 'contact.accept', { publicKey: person });
+    await chrome.send('Page.navigate', { url: N.base + '/face.html' });
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
+    await sleep(3000);
+    await chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Contacts"; })[0]; if (e) e.click(); }())');
+    const styleOf = function (words) { return chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === ' + JSON.stringify(words) + '; })[0]; if (!e) return null; var c = getComputedStyle(e); return { weight: Number(c.fontWeight), style: c.fontStyle }; }())'); };
+    await until(function () { return styleOf('scratch'); }, 8000);
+    const relayLook = await styleOf('scratch');
+    ok(!!relayLook && relayLook.weight >= 700 && relayLook.style === 'italic', 'a relay\'s label is bold and italic', 'a relay\'s label: ' + short(relayLook));
+    await until(function () { return styleOf('zzPersonRow'); }, 5000);
+    const personLook = await styleOf('zzPersonRow');
+    ok(!!personLook, 'a person is listed too', 'no person\'s row: the difference is not judged');
+    ok(!!personLook && !(personLook.weight >= 700 && personLook.style === 'italic'), 'and a person\'s label is not', 'a person\'s label: ' + short(personLook));
   } finally {
     try { if (S) S.stop(); } catch (e) { /* gone */ }
     try { if (chrome && chrome.sock) chrome.sock.close(); if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
