@@ -10,7 +10,7 @@ stream, a real Chrome.
   published as each changes: a seat taken, the stream dropped and back, a report arriving, a card changing.
 - **A report goes on the relay event, whole, and never on a row**: rows reach every face, starred or not, and a report lists invites.
 - **relayPanel** is `shell/js/relayPanel.js`, `relayPanel.create(host, { key })`, and `shell/js/natterDetails` is gone.
-- **The star is a closed folded block** under *"⭐ Star this relay"*, holding its button.
+- **The star is a folding panel like the others** (Andy: *"must use the same heading and style al all the other folding panels in relayPanel"*): the same heading, tile and fold mark, shut as it arrives, holding its button when opened.
 - **It listens, shown or hidden**: a change is painted with no further `relay.status` or `relay.get`. **It follows only its row.**
 - **Gone from the page, it stops**: after `destroy` a change neither throws nor paints.
 

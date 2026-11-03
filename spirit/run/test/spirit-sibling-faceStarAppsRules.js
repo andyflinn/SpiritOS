@@ -99,6 +99,24 @@ test.startTest('spirit-sibling-faceStarAppsRules.js: a star shows every app on t
     ok(plain.indexOf('Contacts') !== -1, 'the face\'s desktop is drawn', 'the face drew no desktop, nothing judged: ' + short(plain));
     ok(plain.indexOf('Text Editor') === -1 && plain.indexOf('Media Viewer') === -1, 'Text Editor and Media Viewer are not on it', 'with no star the face shows them: ' + short(plain));
 
+    // WHO PAINTS, LISTENS (goal/G41.32; Andy: "every row's data, wherever it's visible OR invisible must update instantly, and
+    // when visible, paint immediately."; "does a star change at home stream to the face????"): the page stays open, no reload.
+    test.subHeading('the star pressed at home, the face open: its desktop follows, with no reload');
+    const namesNow = async function () { return String(await chrome.evaluate('document.body.innerText')).split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return /[A-Za-z]/.test(l); }); };
+    await chrome.evaluate('window.__sameLoad = true; 1');
+    const live = await home(N.base, 'contact.own', { key: R.relayKey, own: true });
+    ok(live.status === 200, 'the star on, at home', 'contact.own: ' + live.status + ' ' + short(live.text));
+    await until(function () { return namesNow().then(function (n) { return n.indexOf('Text Editor') !== -1 && n.indexOf('Media Viewer') !== -1; }); }, 8000);
+    const onLive = await namesNow();
+    ok(onLive.indexOf('Text Editor') !== -1 && onLive.indexOf('Media Viewer') !== -1, 'Text Editor and Media Viewer come at once', 'the open face shows: ' + short(onLive));
+    const liveOff = await home(N.base, 'contact.own', { key: R.relayKey, own: false });
+    ok(liveOff.status === 200, 'the star off, at home', 'contact.own false: ' + liveOff.status + ' ' + short(liveOff.text));
+    await until(function () { return namesNow().then(function (n) { return n.indexOf('Text Editor') === -1 && n.indexOf('Media Viewer') === -1; }); }, 8000);
+    const offLive = await namesNow();
+    const cameLive = onLive.indexOf('Text Editor') !== -1 && onLive.indexOf('Media Viewer') !== -1;
+    ok(cameLive && offLive.indexOf('Contacts') !== -1 && offLive.indexOf('Text Editor') === -1 && offLive.indexOf('Media Viewer') === -1, 'and go at once', cameLive ? 'the open face shows: ' + short(offLive) : 'they never came: nothing judged');
+    ok((await chrome.evaluate('window.__sameLoad === true')) === true, 'all on the one load of the page', 'the page reloaded itself');
+
     test.subHeading('the star: every app the home desktop shows');
     const on = await home(N.base, 'contact.own', { key: R.relayKey, own: true });
     ok(on.status === 200, 'the star on, at home', 'contact.own: ' + on.status + ' ' + short(on.text));

@@ -121,10 +121,18 @@ test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a re
     await until(function () { return text().then(function (t) { return t.indexOf(LABEL) !== -1; }); }, 8000);
     ok((await text()).indexOf(LABEL) !== -1, 'it paints the relay\'s label', 'the panel says: ' + short(await text()));
 
-    test.subHeading('the star is a folded block');
-    const star = await chrome.evaluate('(function () { var d = Array.prototype.slice.call(document.querySelectorAll("#zzPanel details")).filter(function (x) { var s = x.querySelector("summary"); return s && s.textContent.indexOf("Star this relay") !== -1; })[0]; return d ? { open: d.open, button: !!d.querySelector(".nd-own, button") } : null; }())');
-    ok(!!star && star.open === false, 'a closed block under "⭐ Star this relay"', 'the star block: ' + short(star));
-    ok(!!star && star.button, 'holding its button', 'the star block: ' + short(star));
+    // Andy: "the folding panel "⭐ Star this relay" must use the same heading and style al all the other folding panels in relayPanel."
+    test.subHeading('the star is a folding panel like the others');
+    const FOLDS = 'Array.prototype.slice.call(document.querySelectorAll("#zzPanel .nd-fold"))';
+    const star = await chrome.evaluate('(function () { var all = ' + FOLDS + '; var s = all.filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; })[0]; var o = all.filter(function (h) { return h !== s; })[0]; if (!s || !o) return { star: !!s, other: !!o }; return { star: true, other: true, sameHeading: s.className === o.className && s.tagName === o.tagName, sameTile: s.parentElement.className.split(" ").slice(0, 2).join(" ") === o.parentElement.className.split(" ").slice(0, 2).join(" "), mark: !!s.querySelector(".nd-fold-mark"), details: !!document.querySelector("#zzPanel details"), buttonWhileShut: !!document.querySelector("#zzPanel .nd-own") }; }())');
+    ok(!!star && star.star && star.other, 'its heading stands among the others', 'the folds: ' + short(star));
+    ok(!!star && star.sameHeading && star.sameTile && star.mark, 'with the same heading, tile and fold mark', 'the star: ' + short(star));
+    ok(!!star && star.details === false, 'and no fold of its own', 'the star: ' + short(star));
+    ok(!!star && star.buttonWhileShut === false, 'it arrives shut: its button is not shown', 'the star: ' + short(star));
+    await chrome.evaluate('(function () { var s = ' + FOLDS + '.filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; })[0]; if (s) s.click(); }())');
+    await sleep(500);
+    const opened = await chrome.evaluate('(function () { var b = document.querySelector("#zzPanel .nd-own"); return !!b && b.closest(".stat-tile").textContent.indexOf("Star this relay") !== -1; }())');
+    ok(opened === true, 'pressed, it opens and holds its button', 'the star opened: ' + short(opened));
 
     test.subHeading('it listens, shown or hidden, and asks no one again');
     const asks = function () { return chrome.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /"call":"relay\.(status|get)"/.test(String((m.params.request || {}).postData || '')); }).length; };
