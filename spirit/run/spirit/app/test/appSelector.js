@@ -61,6 +61,9 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     fs.writeFileSync(disk, JSON.stringify(was));
     const follows = await until(function () { return text().then(function (t) { return t.indexOf('Changed On Disk') !== -1; }); }, 8000);
     ok(follows, 'a change on the disk paints on the page, no reload', 'the row kept its old label after the disk changed');
+    // THE DETAIL OPEN IS PAINTED TOO (Andy, G41.32: "wherever it's visible"): it is the row element's own watch that does it, which no list redraw covers.
+    const both = await until(function () { return text().then(function (t) { return t.split('Changed On Disk').length > 2; }); }, 8000);
+    ok(both, 'the open detail paints the change as well', 'the open detail kept its old label: ' + short(await text()));
 
     const empty = await chrome.evaluate('(function () { window.sel.destroy(); return document.getElementById("under-test").children.length === 0; }())');
     ok(empty === true, 'destroy empties its container', 'destroy left its container with ' + short(await text()));
