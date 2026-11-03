@@ -1,5 +1,5 @@
 {
- "change": 124782,
+ "change": 124905,
  "goal": "goal/G41",
  "items": [
   {
@@ -30434,13 +30434,12 @@
    "id": "goal/G41.32",
    "title": "Fix many UI bugs.",
    "goal": "goal/G41",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 17,
+   "version": 27,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -30450,17 +30449,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 19,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -30468,7 +30467,26 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -30519,6 +30537,10 @@
      "version": 62
     },
     {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
      "key": "rule/28",
      "version": 68
     },
@@ -30529,6 +30551,14 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -30539,12 +30569,13 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "# natterDetails -> relayPanel\n\n- the \"⭐ Star this relay\" section should be a folded block in natterDetails.\n\n- natterDetails will become an shell element: relayPanel.js\n\n# tabContainer\n\n- the tabContainer will allow to add \"closable\" tabs, which have a little close button on the right side of the tab, like browser tabs.\n\n# bundles and branches\n\n- Bundle labels should be unique per owner. They are NOT. Branch labels seem to be unique within their bundle.\n\n- When i add/delete a bundle on loopback, it does NOT show up on the face. When i add a bundle on the face, same: it shows up as the 5th Levant bundle on loopback, and not at all on the face....\n\n- same is true for branches, they do not stream to the face.\n\n- i need the branchEditor to have a rowForm at the bottom: [❌] \"Delete <bundle-name> bundle and branches \" [Delete (armingButton)], the page then empties and says , in the center: \"<bundle-name> bundle and branches deleted\"\n\n- the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button. when some clicks on a (selects) a bundle row, a new closable tab opens in the 'Grant' for the branchEditor.\n\n",
+   "box": "# natterDetails -> relayPanel\n\n- the \"⭐ Star this relay\" section should be a folded block in natterDetails.\n\n- natterDetails will become an shell element: relayPanel.js, it is configured with it's own contact row, and follows only that.\n\n- every row's data, wherever it's visible OR invisible must update instantly, and when visible, paint immediately.\n\n# tabContainer\n\n- the tabContainer will allow to add \"closable\" tabs, which have a little close button on the right side of the tab, like browser tabs.\n\n# bundles and branches\n\n- Bundle labels should be unique per owner. They are NOT. Branch labels seem to be unique within their bundle.\n\n- i need the branchEditor to have a rowForm at the bottom: [❌] \"Delete <bundle-name> bundle and branches \" [Delete (armingButton)]. \n\n- a bundle that hears its deletion, closes its branchEditor tab.\n\n- the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button. when some clicks on a (selects) a bundle row, a new closable tab opens in the tabContainer configured in the bundleSelector:pane\n\n- if a bundle already has an branchEditor-tab in the configured tabContainer, that tab will become the active tab in the tabContainer.\n\n- in the Grants app, this will be the grant app's tabContainer.\n\n- in the agent app, this will be the tabContainer in the center tab of the workBench, oos for this item. and Edit/Delete in the bundleSelector:pane go anyway.\n\n- A user can only create, change and delete node-owned bundles and branches, and sees the others read-only\n\n- no \"old-data-rescue-missions\"\n",
    "checks": [
     {
      "number": "Q1",
@@ -30647,10 +30678,70 @@
      "kind": "Q",
      "words": "Should relayPanel follow its own configured contact row in this item, rather than the rename alone?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T03:58:30.470Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "May I add those four answers to the box and remove your two lines about the face, which goal/G41.33 met?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T04:04:33.905Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Should this item build only the Grants tab, leaving the agent app wiring to goal/G41.31, which adds that tabContainer?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T04:18:00.684Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Does the tab where Delete was pressed show the deleted message, with only other open tabs closing, or does it close too?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T04:21:38.811Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "May relayPanel keep its one read of a relay's owned, roll, claimed, services and report, or must those go on the row first?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-03T04:34:29.200Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-03T04:41:36.654Z",
+     "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -30817,6 +30908,198 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-02T17:47:42.311Z",
      "text": "cw: yes, on this panel it was cheating, and nothing about listening to a row is complicated. The panel got a watch on the contact cache, and uses it only to trigger the old read of every relay. It is hooked to spirit.data without reading from it. I should have said that plainly. I have only checked this panel, so I cannot speak for the others.\n\nThe plumbing is half there:\n- There today: the node streams each change to a row, and spirit.contactData hands it to whoever watches. The panel's seat, keep and star can come from there now.\n- Missing: what the relay says about itself: owned, roll, claimed, services and the report. None of that is on the row. The node keeps the latest report in memory and publishes it to no stream, and the rest comes from asking the relay on the spot.\n\nSo for a panel that truly only listens, the node must first put those fields on the stream. That is a core change, not a panel change.\n\nQ9 is still yours to answer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:56:48.446Z",
+     "text": "status?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:57:16.230Z",
+     "text": "wsl: still in design, no Go, nothing built. G41.33 no longer blocks it. Open: Q9, cw's, yours to answer, on what relayPanel listens to.\n\nThe box's lines on bundles and branches not reaching the face are met by G41.33, on a starred face once your node restarts; with no star they still stay home. I would drop them from the box. The rest is unbuilt: relayPanel, closable tabs, unique bundle labels, the Delete row, and the selector losing its buttons."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:58:10.852Z",
+     "text": "Q9: Should relayPanel follow its own configured contact row in this item, rather than the rename alone?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T03:58:33.992Z",
+     "text": "cw: Q9 noted and closed: in this item, relayPanel follows its own contact row, not the rename alone. It is not in the box yet; I write it there on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:00:37.224Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:01:21.754Z",
+     "text": "cw: not green. Box v18 has no open question on it, but four of your answers are not in it, so a builder would miss them:\n- The branchEditor tab opens in the Grants app's tab row (Q2).\n- A user can only create, change and delete node-owned bundles and branches, and sees the others read-only (Q3, Q4).\n- In the agent app it does not open as a pushed page; that waits for the workbench's tabContainer, goal/G41.31 (Q5).\n- A bundle deleted elsewhere closes its open tab (Q6).\n\nAnd your two lines about bundles and branches not reaching the face are met by goal/G41.33, on a starred face once your node restarts.\n\nRed Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:04:17.536Z",
+     "text": "Q10: May I add those four answers to the box and remove your two lines about the face, which goal/G41.33 met?\n\nno."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:04:37.016Z",
+     "text": "cw: Q10 noted and closed: no. The box stays as you wrote it, and I do not touch it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:14:20.497Z",
+     "text": "cw, green now? or at least better?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:14:56.896Z",
+     "text": "cw: better, not green. Box v20 is clear to build except for two things:\n\n- The order. Your agent line needs the tabContainer in the workBench's center tab. That tab does not exist yet: it is goal/G41.31, which waits on this item. So this item can only wire it up once G41.31 is built, or G41.31 wires it.\n- Your Q6 answer is not in the box: a bundle deleted on another screen closes its open tab.\n\nRed Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:17:31.158Z",
+     "text": "cw, better?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:18:03.935Z",
+     "text": "cw: better. Box v21 settles both: Q11 is closed. Not green yet, two things left:\n\n- Your two delete lines collide. The tab where you press Delete hears that deletion too, so it would close before anyone reads \"<bundle-name> bundle and branches deleted\". Red Q below.\n- Unique labels: your node already holds duplicates, such as the Levant bundles. I will ask what happens to those next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:21:12.482Z",
+     "text": "cw, all Levant's already deleted. better?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:21:48.640Z",
+     "text": "cw: green: settled, open none, box current (v22). Your edit settles Q12, closed: Delete closes the tab, no message. I read your node's bundles too: no duplicate labels in the 7 it answered.\n\nOne thing at build, not a question for now: having the node refuse a duplicate label, and a user's change to a bundle that is not node-owned, changes what auth.bundle and auth.branch do. So it gets the other agent's review and your yes on the verbs."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:23:41.323Z",
+     "text": "wsl, feedback, ?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T04:24:48.550Z",
+     "text": "wsl: not quite green from me. Read from the code, nothing run. One thing stops it, and that is the Q below.\n\nrelayPanel \"follows only\" its row, but a relay's owned, roll, claimed, services and report are not on the row (natterDetails.js:241 asks for them). I recommend the panel keeps that one read and hears changes from the row, because putting them on the row is a node change this box does not ask for.\n\nThree smaller things:\n- Agent app: its selector loses Edit and Delete, and its tabContainer is out of scope. So until G41.31 you cannot edit a bundle there. I would keep today's buttons there until then.\n- cw found no duplicates in the 7 bundles answered, but you saw a 5th Levant. If they are still there, the rule stops new ones and leaves those. Does Levant vs levant count as the same?\n- tabContainer (tabContainer.js:6) has fixed tabs, so adding and closing are new. Clicking a bundle already open should go to its tab, not open a second one. That is my reading of your \"new\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:30:32.344Z",
+     "text": "all, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T04:30:50.978Z",
+     "text": "wsl: better. Your box settles the tab, the agent app and the old duplicates. Left: Q13, on what relayPanel reads, which still stops me. Levant vs levant is unruled; unless you say otherwise, my red treats only the exact same label as a duplicate."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T04:31:00.322Z",
+     "text": "ubi: better. Box v25 settles the agent app and the old Levants. One thing still stops green: Q13, yours, on whether relayPanel may keep its read. I agree with wsl: keep it, because \"follows only\" that row is not possible without a node change this box does not ask for. If you do want that change, it needs its own line in the box.\n\nOne small one left: does Levant vs levant count as the same label? Nothing in the box says, so a builder will guess."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:31:05.371Z",
+     "text": "cw: better. Box v25 settles the agent buttons, the open tab and the old data. One thing is left, wsl's Q13, and my green missed it.\n\nI agree the panel should keep its one read, but it is not enough. A new report from a relay changes no row, so a panel following only its row would show that report stale until reopened. To stay current it also has to hear the relay's status event, and the node sends only an empty nudge for it today.\n\nSo your Q13 answer decides: one read and stale reports, one read plus that nudge, or those fields on the row, which is a node change.\n\nSmall one once that is answered: is Levant the same label as levant?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:34:05.346Z",
+     "text": "Q13: May relayPanel keep its one read of a relay's owned, roll, claimed, services and report, or must those go on the row first?\n\nevery row's data, wherever it's visible must update instantly: who paints, listens.\n\nFUCK!\n\nGET IT THROUGH YOUR HEADS!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T04:35:00.399Z",
+     "text": "wsl: understood, and my recommendation was wrong. Your line is in the box; no one-time read stays.\n\nThe report is the easy part: the node holds it and sends only an empty nudge (presenceNode.js:197), so the stream can carry the report itself. Owned, roll, claimed and services come from asking the relay on the spot. I am tracing now what tells the node when those change, and will say what it costs."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:35:15.958Z",
+     "text": "BEING INVISIBLE doesn't change a elements fucking duty to listen to fucking changes!!!!!!!!!!!!!!!!!!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:35:57.829Z",
+     "text": "cw: understood, and I had it wrong too: no read kept, and no staleness. An element keeps listening and updating its row while hidden, folded or in a tab behind, and stops only when it is gone from the page.\n\nThat goes further than the box's line, which says \"wherever it's visible\". You own that line, so I leave it.\n\nnatterDetails's relay list already stops only when it leaves the page, and that stays in relayPanel. Read from the code, nothing run. What the node must send for this, wsl is costing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:37:47.741Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T04:38:06.983Z",
+     "text": "wsl: correction: I said those fields come from asking the relay. They do not (hub.js:2350-2395): the node already holds all of them. So it needs no relay change, no tag and no new verb. Read from the code, nothing run.\n\nThe node just has to publish when one changes. There are three moments:\n- a report arrives: owned and the report\n- a relay's card arrives: services and labels\n- a stream opens or drops, or a seat changes: status, claimed, roll\n\nOne catch: rows stream to every face, star or not, and a report lists invites. So the report should go on the relay event, which only a starred face hears, and the rest on the row. With no star, a face gets no report, as today.\n\nThat is my recommendation; cw builds it after your Go. Levant vs levant is the only question left, and my red treats only the exact same label as a duplicate unless you say otherwise. Green from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:39:41.770Z",
+     "text": "all:\n\n- there are no fucking levant's in the database anymore. this item does NOT worry about existing data. \n\ngreen?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T04:39:56.497Z",
+     "text": "wsl: green. Nothing touches existing data, and nothing is open from me. Reds on your Go."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T04:39:59.210Z",
+     "text": "ubi: green. Understood on the old data. My Levant question was only about upper and lower case, and wsl exact-match is a fine default: Levant and levant count as different. No open checks from me. Nothing is built yet."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:40:12.713Z",
+     "text": "cw: green: settled, open none, box current (v27). I checked wsl's correction and it holds: the node already holds those fields. Only the exact same label counts as a duplicate, unless you say otherwise. Nothing is built; it waits for your end of design and Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T04:40:41.079Z",
+     "text": "files!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T04:41:43.099Z",
+     "text": "cw: 19 files on the item.\n- relayPanel: natterDetails goes, relayPanel comes, and the contacts row that opens it.\n- Tabs: tabContainer, the shell's css, Grants, and the agent app.\n- Bundles: branchEditor, bundleEditor, bundleSelector and its list and row.\n- The node: the bundle rules and their store, and publishing a relay's fields as they change (presence, peer post, hub, relay keys, server).\n\nThe node files are core, so they need your grant. wsl's test files add on top and cancel a grant, so grant after they are listed."
     }
    ]
   },
