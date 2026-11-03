@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-familyGateRules.js
+// spirit/run/spirit/test/familyGate.js
 // THE NODE'S OWN FAMILIES HAVE A GATE AT THE DOOR (goal/G41.30; Andy, of "only the spirit object checks those rules, on
 // the caller's side. A raw call to /api/spirit, the attacker's way, reaches the handler unchecked": "this needs fixing in
 // this item."; spirit.js says it already: "The node stays the gate and checks everything again."). Each family's
@@ -11,9 +11,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const test = require(path.join(__dirname, 'testReport.js'));
-const { scratchNode, sleep } = require(path.join(__dirname, 'headLessChrome.js'));
-const RUN = path.join(__dirname, '..');
+const RUN = path.resolve(__dirname, '..','..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const { scratchNode, sleep } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 const ASK_MS = 8000;
 const BATCH = 10;
@@ -76,7 +76,7 @@ async function ask(base, a) {
   } catch (e) { return { status: 0, text: c.signal.aborted ? 'no answer in ' + (ASK_MS / 1000) + ' s' : String(e && e.message) }; } finally { clearTimeout(timer); }
 }
 
-test.startTest('spirit-sibling-familyGateRules.js: the node\'s own families have a gate at the door (goal/G41.30)');
+test.startTest('familyGate.js: the node\'s own families have a gate at the door (goal/G41.30)');
 
 (async function () {
   const fams = families();

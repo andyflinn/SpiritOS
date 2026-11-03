@@ -1,4 +1,4 @@
-# test/spirit-sibling-relayRowStreamRules.js
+# shell/js/test/relayRowStream.js
 
 goal/G41.32. Andy, Q13: *"every row's data, wherever it's visible must update instantly: who paints, listens."*, and *"BEING
 INVISIBLE doesn't change a elements fucking duty to listen to fucking changes"*. A real scratch node and relay, the node's own

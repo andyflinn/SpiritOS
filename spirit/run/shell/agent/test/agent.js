@@ -83,7 +83,7 @@ const isOn = function (b) { return !!(b.inputs[0] && b.inputs[0].checked === tru
 function world(configText) {
   const w = { created: [], loads: [], saves: [], verbs: [], titles: [], def: null };
   // The tabContainer in the centre (goal/G41.31), a stand-in: its contract and test are ../../js/test/tabContainer.md. Each tab added
-  // mounts at once in a box of its own; its real behaviour is judged in test/spirit-sibling-agentCentreTabsRules.js.
+  // mounts at once in a box of its own; its real behaviour is judged in shell/agent/test/agentCentreTabs.js.
   w.tabs = [];
   w.tabContainer = { create: function (into) {
     w.tabsInto = into;

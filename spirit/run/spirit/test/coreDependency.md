@@ -1,4 +1,4 @@
-# test/spirit-sibling-coreDependencyRules.js
+# spirit/test/coreDependency.js
 
 A general rule over every core file of the run (goal/G41.30; Andy: *"it looks like we better make sure that those files
 that core files depend on, are core-files, too."*).

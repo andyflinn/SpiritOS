@@ -25,7 +25,9 @@ A `-child-` or `-sibling-` file is a general test only when `./<name>.js` stands
 takes the file it judges as its argument and reports under its own test id for that file, so one rule over many
 modules reads as one result per module.
 
-Tests not tied to one module will live in `spirit/run/test/suites/`.
+A test that does not judge the one file it is handed is never a general test: a `-sibling-` beside `spirit.js` runs once per
+module, 111 times (goal/G43.2; Andy: *"it looks to me like a lazy-funcking-ass placement of tests"*). A test that covers
+several modules end to end is a plain test in the `test/` folder of the module it is most about, and runs once.
 
 ## Opting in
 

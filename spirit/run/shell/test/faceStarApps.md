@@ -1,4 +1,4 @@
-# test/spirit-sibling-faceStarAppsRules.js
+# shell/test/faceStarApps.js
 
 goal/G41.33, Q9. Andy, of *"Should a star show every app on the face, Text Editor and Media Viewer too, or does each app's
 face mark stay yours to set?"*: *"yes. for now."* A real Chrome reads the desktop, at home and on a real face.

@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-relayRowStreamRules.js
+// spirit/run/shell/js/test/relayRowStream.js
 // WHO PAINTS, LISTENS (goal/G41.32; Andy, Q13: "every row's data, wherever it's visible must update instantly: who paints,
 // listens.", and "BEING INVISIBLE doesn't change a elements fucking duty to listen to fucking changes"; the box:
 // "natterDetails will become an shell element: relayPanel.js, it is configured with it's own contact row, and follows only
@@ -11,11 +11,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const test = require(path.join(__dirname, 'testReport.js'));
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = require(path.join(__dirname, 'headLessChrome.js'));
+const RUN = path.resolve(__dirname, '..','..','..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 const MAIL = 'bert@example.org';
-const RUN = path.join(__dirname, '..');
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 320); }
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
@@ -46,7 +46,7 @@ function stream(base) {
   return { kept: kept, stop: function () { c.abort(); return done; } };
 }
 
-test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a relay\'s row and relayPanel (goal/G41.32)');
+test.startTest('relayRowStream.js: who paints, listens: a relay\'s row and relayPanel (goal/G41.32)');
 
 (async function () {
   const N = await scratchNode();

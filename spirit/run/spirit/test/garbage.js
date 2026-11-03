@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-garbageRules.js
-// THE ATTACKER'S GARBAGE, AT EVERY DOOR (goal/G41.30; spec: ./spirit-sibling-garbageRules.md). Andy, the box: "all
+// spirit/run/spirit/test/garbage.js
+// THE ATTACKER'S GARBAGE, AT EVERY DOOR (goal/G41.30; spec: ./garbage.md). Andy, the box: "all
 // servers (node and relay, or serveCommon) are tested by throwing malformed paths at them, and malformed, invalid
 // arguments.", "all appServers are systematically tested for dealing with bad arguments.", "an appserver api can be
 // called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at the api. Imitate
@@ -14,10 +14,10 @@
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
-const RUN = path.join(__dirname, '..');
-const test = require(path.join(__dirname, 'testReport.js'));
+const RUN = path.resolve(__dirname, '..','..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
-const { sleep, scratchNode } = require(path.join(__dirname, 'headLessChrome.js'));
+const { sleep, scratchNode } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 // The app servers turned on at home on the scratch node, as their owner turns them on (face.home).
 const SERVERS = ['agent', 'desk', 'deskVerify', 'backup', 'chatClerver'];
@@ -161,7 +161,7 @@ function broke(r) {
   return '';
 }
 
-test.startTest('spirit-sibling-garbageRules.js: the attacker\'s garbage at every door (goal/G41.30)');
+test.startTest('garbage.js: the attacker\'s garbage at every door (goal/G41.30)');
 
 // A scratch node up, its app servers named in its api: answers { node, base, plain } or null.
 async function upNode() {
@@ -352,7 +352,7 @@ let actedOn = null;
     test.subHeading('/api/spirit: every verb that acts takes the whole garbage, on a throwaway node, without crashing or hanging');
     actedOn = await actingRun(actingAsks, actingVerbs);
     // RELAY: owed, see the spec.
-    test.comment('the relay\'s door is not thrown at yet: owed, see spirit-sibling-garbageRules.md');
+    test.comment('the relay\'s door is not thrown at yet: owed, see garbage.md');
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     if (node.root) try { fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }

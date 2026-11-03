@@ -1,4 +1,4 @@
-# test/spirit-sibling-faceStarRules.js
+# spirit/test/faceStar.js
 
 The star, end to end (goal/G41.30; Andy: *"why does no test assert the fix?"*, *"wsl? do it."*).
 `spirit/test/faceHome.js` stands in for "did this node set a face" and "is this relay starred"; so the two lines of

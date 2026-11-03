@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-agentCentreTabsRules.js
+// spirit/run/shell/agent/test/agentCentreTabs.js
 // THE AGENT APP'S CENTRE IS TABS (goal/G41.31; Andy, the box: "i need a tabContainer permanently situated in the center pane of
 // the workBench."; "each panel, that the agent app placed into the center panel now becomes a closable tab in the
 // tabContainer, activated if it already exists, created if it doesn't have a tab yet."; each tab's header, by kind; "any tab
@@ -10,8 +10,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const test = require(path.join(__dirname, 'testReport.js'));
-const { scratchNode, chromePage, findChrome, sleep, until } = require(path.join(__dirname, 'headLessChrome.js'));
+const RUN = path.resolve(__dirname, '..','..','..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const { scratchNode, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -19,7 +20,7 @@ function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 const ICON = { provider: '🧪', model: '🧬', persona: '🧙', job: '🧰' };
 const CHAT = '💬';
 
-test.startTest('spirit-sibling-agentCentreTabsRules.js: the agent app\'s centre is closable tabs (goal/G41.31)');
+test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (goal/G41.31)');
 
 (async function () {
   const N = await scratchNode({ servers: ['agent'] });

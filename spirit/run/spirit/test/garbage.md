@@ -1,4 +1,4 @@
-# spirit-sibling-garbageRules.js
+# garbage.js
 
 The attacker's garbage, thrown at every door of a node (goal/G41.30). Andy, the box: *"all servers (node and relay, or
 serveCommon) are tested by throwing malformed paths at them, and malformed, invalid arguments."*, *"all appServers are
@@ -58,7 +58,7 @@ What it reports without judging (not a crash, so not red by the box's words): ho
 
 ## Beside it
 
-- **The relay's door** is test/spirit-sibling-relayGarbageRules.js's, on a scratch relay (test/headLessChrome.js,
+- **The relay's door** is spirit/test/relayGarbage.js's, on a scratch relay (test/headLessChrome.js,
   scratchRelay).
 - **The shared gate in memory** (the box: *"Every permutation is thrown at that check directly, in memory"*) is
   `spirit/test/appServer.js`'s, not this file's.

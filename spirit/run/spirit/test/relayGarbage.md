@@ -1,6 +1,6 @@
-# spirit-sibling-relayGarbageRules.js
+# relayGarbage.js
 
-The attacker at the relay's door (goal/G41.30). The node's doors are `spirit-sibling-garbageRules.js`; this is the
+The attacker at the relay's door (goal/G41.30). The node's doors are `garbage.js`; this is the
 relay's. Andy, on the gap: *"The relay's door is not tested yet: there is no scratch relay helper. - close this gap,
 dammit!"*
 

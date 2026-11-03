@@ -1,4 +1,4 @@
-# test/spirit-sibling-familyGateRules.js
+# spirit/test/familyGate.js
 
 A general rule over the node's own families (goal/G41.30; Andy, of *"only the spirit object checks those rules, on the
 caller's side. A raw call to /api/spirit, the attacker's way, reaches the handler unchecked"*: *"this needs fixing in

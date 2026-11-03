@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-coreDependencyRules.js
+// spirit/run/spirit/test/coreDependency.js
 // WHAT A CORE FILE LOADS IS CORE (goal/G41.30; Andy: "it looks like we better make sure that those files that core files
 // depend on, are core-files, too."). A core file is grant-locked (spirit/coreFiles.js); a file it loads that is not
 // could be rewritten by any page, and the core file would run what was written. So every file a core file loads must be
@@ -10,8 +10,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const test = require(path.join(__dirname, 'testReport.js'));
-const RUN = path.join(__dirname, '..');
+const RUN = path.resolve(__dirname, '..','..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
 const REPO = path.join(RUN, '..', '..');
 const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
 
@@ -48,7 +48,7 @@ function loads(rel) {
   return out;
 }
 
-test.startTest('spirit-sibling-coreDependencyRules.js: what a core file loads is core (goal/G41.30)');
+test.startTest('coreDependency.js: what a core file loads is core (goal/G41.30)');
 
 const coreFiles = tracked.map(function (f) { return f.replace(/^spirit\/run\//, ''); })
   .filter(function (f) { return !/(^|\/)test\//.test(f) && !/node_modules\//.test(f) && /\.(js|html)$/.test(f) && exists(f) && isCore(f); });

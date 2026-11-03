@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-faceStarAppsRules.js
+// spirit/run/shell/test/faceStarApps.js
 // A STAR SHOWS EVERY APP (goal/G41.33, Q9; Andy, of "Should a star show every app on the face, Text Editor and Media Viewer
 // too, or does each app's face mark stay yours to set?": "yes. for now."). What the owner sees is the desktop, so a real
 // Chrome reads it: a real scratch node, a real relay, a real face and its login, at home and on the face. A face at
@@ -8,9 +8,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const RUN = path.resolve(__dirname, '..','..');
 const http = require('http');
-const test = require(path.join(__dirname, 'testReport.js'));
-const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = require(path.join(__dirname, 'headLessChrome.js'));
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const { scratchNode, scratchFaceRelay, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 const DOMAIN = 'localhost';
 const NAME = 'apps';
@@ -70,7 +71,7 @@ async function desktop(chrome, url) {
 const OWN = ['Spirit', 'Your home node'];
 const missing = function (want, have) { return want.filter(function (n) { return OWN.indexOf(n) === -1 && have.indexOf(n) === -1; }); };
 
-test.startTest('spirit-sibling-faceStarAppsRules.js: a star shows every app on the face (goal/G41.33, Q9)');
+test.startTest('faceStarApps.js: a star shows every app on the face (goal/G41.33, Q9)');
 
 (async function () {
   const N = await scratchNode();

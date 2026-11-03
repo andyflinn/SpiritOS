@@ -1,20 +1,21 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-relayGarbageRules.js
-// THE ATTACKER AT THE RELAY'S DOOR (goal/G41.30; spec: ./spirit-sibling-relayGarbageRules.md). The box: "all servers (node
+// spirit/run/spirit/test/relayGarbage.js
+// THE ATTACKER AT THE RELAY'S DOOR (goal/G41.30; spec: ./relayGarbage.md). The box: "all servers (node
 // and relay, or serveCommon) are tested by throwing malformed paths at them, and malformed, invalid arguments", "an
 // appserver api can be called outside a spirit object, and an attacker trying to crash our servers will throw ANYTHING at
 // the api. Imitate that attacker", and "the server MUST not CRASH or HANG"; Andy, on the gap: "The relay's door is not
 // tested yet: there is no scratch relay helper. - close this gap, dammit!". The node's doors are
-// spirit-sibling-garbageRules.js; this file is the relay's, on a scratch relay of its own (test/headLessChrome.js
+// garbage.js; this file is the relay's, on a scratch relay of its own (test/headLessChrome.js
 // scratchRelay), never a live one. Everything goes raw over a bare socket, as an attacker sends it.
 
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
-const test = require(path.join(__dirname, 'testReport.js'));
-const { sleep, scratchRelay, scratchFaceRelay } = require(path.join(__dirname, 'headLessChrome.js'));
-const limits = require(path.join(__dirname, '..', 'spirit', 'limits.js'));
+const RUN = path.resolve(__dirname, '..','..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const { sleep, scratchRelay, scratchFaceRelay } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 
 const ASK_MS = 10000;
 const PLAIN_MS = 3000;
@@ -114,7 +115,7 @@ async function badAnswers() {
   } finally { if (R) R.stop(); }
 }
 
-test.startTest('spirit-sibling-relayGarbageRules.js: the attacker\'s garbage at the relay\'s door (goal/G41.30)');
+test.startTest('relayGarbage.js: the attacker\'s garbage at the relay\'s door (goal/G41.30)');
 
 (async function () {
   const relay = await scratchRelay({ debug: true, faceDomain: FACE_DOMAIN });

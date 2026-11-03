@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/test/spirit-sibling-faceStarRules.js
+// spirit/run/spirit/test/faceStar.js
 // THE STAR, END TO END (goal/G41.30; Andy: "why does no test assert the fix?", "wsl? do it."; "your face on a relay you
 // own gets everything back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the
 // limits stay until G42."; "so this button will put the star on relays and puppets. AND take it away."). spirit/test/
@@ -12,9 +12,10 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const RUN = path.resolve(__dirname, '..','..');
 const http = require('http');
-const test = require(path.join(__dirname, 'testReport.js'));
-const { scratchNode, scratchFaceRelay, sleep, until } = require(path.join(__dirname, 'headLessChrome.js'));
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const { scratchNode, scratchFaceRelay, sleep, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 const WAIT_MS = 1500;
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -85,7 +86,7 @@ async function logIn(R, name) {
 }
 const refusedOff = function (a) { return a.status === 403 && a.body && a.body.code === 'not-from-the-face'; };
 
-test.startTest('spirit-sibling-faceStarRules.js: the star on a real node, a real relay and a real face (goal/G41.30)');
+test.startTest('faceStar.js: the star on a real node, a real relay and a real face (goal/G41.30)');
 
 (async function () {
   const marks = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-star-marks-'));
@@ -243,7 +244,7 @@ test.startTest('spirit-sibling-faceStarRules.js: the star on a real node, a real
 
       // The join steps are published only when their facts change (joinStepsJob.js): this node's first contact, here a key
       // it blocks, makes "contact" true.
-      const someone = require(path.join(__dirname, '..', 'spirit', 'relayAuth.js')).generateIdentity('zz').publicKey;
+      const someone = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('zz').publicKey;
       const blocked = await home(N.base, 'contact.block', { publicKey: someone });
       ok(blocked.status < 300, 'starred: a first contact appears at home', 'nothing judged: contact.block answered ' + blocked.status + ' ' + short(blocked.text));
       await until(function () { return hears('join-steps'); }, 5000);
