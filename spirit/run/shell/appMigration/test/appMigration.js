@@ -9,7 +9,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const { scratchNode, chromePage, findChrome, until, sleep } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -34,8 +34,29 @@ test.startTest('appMigration.js: the throw-away host of appSelector (goal/G43.2)
     ok(tile, 'the face\'s desktop shows it at home, with no switch and no star', 'no tile: ' + short(await chrome.evaluate('document.body.innerText')));
     const opened = await chrome.evaluate('(function () { var all = document.querySelectorAll("*"); var hit = null; for (var i = 0; i < all.length; i++) { if (!all[i].children.length && String(all[i].innerText || "").trim() === "appMigration") hit = all[i]; } if (!hit) return false; hit.click(); return true; }())');
     ok(opened === true, 'its tile can be pressed', 'no tile to press');
-    const shown = await until(function () { return chrome.evaluate('!!(window.spirit.elements && window.spirit.elements.appSelector) && document.body.innerText.indexOf(' + JSON.stringify(identity.label) + ') !== -1'); }, 10000);
-    ok(shown, 'it mounts appSelector, with server in it', 'opened, the page shows ' + short(await chrome.evaluate('document.body.innerText')));
+    // ITS OWN TILES (Andy, box: "appMigration will now do the appSelector search under the hood, by calling spirit.app.search(""),
+    // and display the icons it finds as tiles"; Q6: a pressed tile does nothing). A tile is the desktop's, .app-icon.
+    const tileOf = function (label) { return 'Array.prototype.filter.call(document.querySelectorAll(".app-icon"), function (t) { return t.offsetParent !== null && String(t.innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1; })[0]'; };
+    const shown = await until(function () { return chrome.evaluate('!!' + tileOf(identity.label)); }, 10000);
+    ok(shown, 'opened, it shows a tile for server, labelled ' + identity.label, 'opened, the page shows ' + short(await chrome.evaluate('document.body.innerText')));
+    const html = String(await chrome.evaluate('(function () { var t = ' + tileOf(identity.label) + '; return t ? t.innerHTML : ""; }())'));
+    ok(html.indexOf(identity.icon) !== -1 || /<svg|<img/.test(html), 'the tile shows server\'s icon', 'the tile has no icon: ' + short(html));
+    const others = await chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll(".app-icon"), function (t) { return t.offsetParent !== null; }).map(function (t) { return t.innerText; }).join("|")');
+    ok(String(others).indexOf('Job Monitor') === -1, 'the desktop is gone: these are its own tiles', 'the desktop\'s tiles are still on show: ' + short(others));
+    const inputs = await chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll("input"), function (t) { return t.offsetParent !== null; }).length');
+    ok(inputs === 0, 'the search is under the hood: no search box', inputs + ' input(s) on show');
+    const before = await chrome.evaluate('document.body.innerText');
+    const pressed = await chrome.evaluate('(function () { var t = ' + tileOf(identity.label) + '; if (!t) return false; t.click(); return true; }())');
+    await sleep(1000);
+    const after = await chrome.evaluate('document.body.innerText');
+    ok(pressed === true && before === after, 'a pressed tile does nothing', pressed === true ? 'a press changed the page to: ' + short(after) : 'no tile to press');
+    // WHO PAINTS, LISTENS (Andy, G41.32): "every row's data ... must update instantly".
+    const disk = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'server', 'server.json');
+    const was = JSON.parse(fs.readFileSync(disk, 'utf8'));
+    was.identity.label = 'Changed On Disk';
+    fs.writeFileSync(disk, JSON.stringify(was));
+    const follows = await until(function () { return chrome.evaluate('!!' + tileOf('Changed On Disk')); }, 8000);
+    ok(follows, 'a change on the disk paints the tile, no reload', 'the tile kept its old label after the disk changed');
   } finally {
     try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
     try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
