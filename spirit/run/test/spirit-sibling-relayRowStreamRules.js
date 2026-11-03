@@ -111,7 +111,9 @@ test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a re
     if (!where) { test.fail('no Chrome here: the panel is not judged'); return; }
     chrome = await chromePage(where);
     if (chrome.error) { test.fail('Chrome: ' + chrome.error); return; }
-    await chrome.send('Page.navigate', { url: N.base + '/' });
+    // The shell Andy uses, at home as on a relay: boot.js. The older page at / loads every element up front and would hide a
+    // panel that forgets to load its own.
+    await chrome.send('Page.navigate', { url: N.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
     await sleep(3000);
     const mounted = await chrome.evaluate('Promise.resolve(window.spirit.require("shell/js/relayPanel.js")).then(function () { var E = window.spirit.elements.relayPanel; if (!E || typeof E.create !== "function") return "no create"; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(key) + ' }); return "ok"; }, function (e) { return "refused: " + e.message; })');
@@ -133,6 +135,26 @@ test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a re
     await sleep(500);
     const opened = await chrome.evaluate('(function () { var b = document.querySelector("#zzPanel .nd-own"); return !!b && b.closest(".stat-tile").textContent.indexOf("Star this relay") !== -1; }())');
     ok(opened === true, 'pressed, it opens and holds its button', 'the star opened: ' + short(opened));
+
+    // Andy: "the folding panel "A face name" should actually show the faceForm, unless the relay is "starred"", "that's one bug,
+    // and one design change.", "bug: "A face name" doesn't show the faceForm.", "change: don't show it if the relay is starred...".
+    test.subHeading('"A face name" shows the faceForm, unless the relay is starred');
+    const faceHead = 'Array.prototype.slice.call(document.querySelectorAll("#zzPanel .nd-fold")).filter(function (h) { return h.textContent.indexOf("A face name") !== -1; })[0]';
+    const hasFaceHead = function () { return chrome.evaluate('!!(' + faceHead + ')'); };
+    await until(hasFaceHead, 5000);
+    ok(await hasFaceHead(), 'with no star, its fold stands', 'no "A face name" fold: ' + short(await text()));
+    await chrome.evaluate('(function () { var h = ' + faceHead + '; if (h) h.click(); }())');
+    await until(function () { return chrome.evaluate('!!document.querySelector("#zzPanel .nd-face-form input")'); }, 5000);
+    const drawn = await chrome.evaluate('(function () { var f = document.querySelector("#zzPanel .nd-face-form"); return f ? { input: !!f.querySelector("input"), button: !!f.querySelector("button"), text: f.textContent.slice(0, 80) } : null; }())');
+    ok(!!drawn && drawn.input && drawn.button, 'opened, it holds the faceForm: its field and its button', 'the fold holds: ' + short(drawn));
+    const sOn = await home(N.base, 'contact.own', { key: key, own: true });
+    ok(sOn.status === 200, 'the star on, at home', 'contact.own: ' + sOn.status + ' ' + short(sOn.text));
+    await until(function () { return hasFaceHead().then(function (h) { return !h; }); }, 5000);
+    ok(!(await hasFaceHead()), 'starred: the fold is gone, with no reload', 'starred, "A face name" is still there');
+    const sOff = await home(N.base, 'contact.own', { key: key, own: false });
+    ok(sOff.status === 200, 'the star off, at home', 'contact.own false: ' + sOff.status + ' ' + short(sOff.text));
+    await until(hasFaceHead, 5000);
+    ok(await hasFaceHead(), 'and it comes back', 'the star off, "A face name" did not come back');
 
     test.subHeading('it listens, shown or hidden, and asks no one again');
     const asks = function () { return chrome.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /"call":"relay\.(status|get)"/.test(String((m.params.request || {}).postData || '')); }).length; };
