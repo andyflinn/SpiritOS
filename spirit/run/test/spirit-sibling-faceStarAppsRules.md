@@ -1,0 +1,18 @@
+# test/spirit-sibling-faceStarAppsRules.js
+
+goal/G41.33, Q9. Andy, of *"Should a star show every app on the face, Text Editor and Media Viewer too, or does each app's
+face mark stay yours to set?"*: *"yes. for now."* A real Chrome reads the desktop, at home and on a real face.
+
+## Requirements
+
+- **No star: each app's face mark decides, as today**: Text Editor and Media Viewer are not on the face's desktop.
+- **The star: every app the home desktop shows is on the face's**, the home's own first tile aside, named apart on each.
+- **Join and the login app stay the boot's own**, never app icons.
+- **An app it shows opens**: pressing Text Editor's tile throws nothing in the page.
+- **The star off: back to the face marks**, on the next drawing of the desktop.
+
+## What its test must try to break
+
+- A star that shows the two apps named and misses another.
+- A face with no star that shows them too.
+- A tile that is drawn and dies when pressed.
