@@ -1,0 +1,19 @@
+# test/spirit-sibling-relayRowStreamRules.js
+
+goal/G41.32. Andy, Q13: *"every row's data, wherever it's visible must update instantly: who paints, listens."*, and *"BEING
+INVISIBLE doesn't change a elements fucking duty to listen to fucking changes"*. A real scratch node and relay, the node's own
+stream, a real Chrome.
+
+## Requirements
+
+- **A relay's row carries** `claimed`, `status`, `services`, `roll` and `owned`, under the names `relay.get` answers them,
+  published as each changes: a seat taken, the stream dropped and back, a report arriving, a card changing.
+- **A report goes on the relay event, whole, and never on a row**: rows reach every face, starred or not, and a report lists invites.
+- **relayPanel** is `shell/js/relayPanel.js`, `relayPanel.create(host, { key })`, and `shell/js/natterDetails` is gone.
+- **The star is a closed folded block** under *"⭐ Star this relay"*, holding its button.
+- **It listens, shown or hidden**: a change is painted with no further `relay.status` or `relay.get`. **It follows only its row.**
+- **Gone from the page, it stops**: after `destroy` a change neither throws nor paints.
+
+## What its test must try to break
+
+- A panel that re-reads on a nudge. A panel that stops while hidden. A report on a row, reaching a face with no star.

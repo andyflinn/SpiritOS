@@ -29,3 +29,14 @@ An element with one row of tabs at the top, showing the selected tab's content i
 - A second mount of a tab selected again.
 - Two boxes showing at once.
 - An unknown name, and a click after destroy.
+
+## Closable tabs (goal/G41.32)
+
+The box: *"the tabContainer will allow to add "closable" tabs, which have a little close button on the right side of the tab,
+like browser tabs."* The contract: `add({ name, label, mount, closable })`, `close(name)`, and a closable tab's close button
+carries `data-tab-close="<name>"`.
+
+- An added tab is selected and mounted. A closable one has its close button, right of its label; a fixed tab has none.
+- Adding a tab that is there makes it active: no second tab, no second mount.
+- A press on the close button takes that tab away, and the tab shown stays shown when another closes. The selected tab closed,
+  a neighbour is selected; its box leaves the page. Closing a tab that is not there does nothing.

@@ -124,3 +124,14 @@ Andy: *"i still want the api.<family>.FS.* group "ungrantable" and OWNER ONLY"*.
   the owner a row names, touches a user's bundle, or stops at a file that is not valid.
 - A set that renames a bundle, or is told.
 - An FS verb taken into a branch, by add or by set, or granted; a refusal by any code but `owner-only`.
+
+## goal/G41.32: unique labels, and a user changes node-owned bundles alone
+
+The box: *"Bundle labels should be unique per owner."*; *"A user can only create, change and delete node-owned bundles and
+branches, and sees the others read-only"*; *"no "old-data-rescue-missions""*. This overrules goal/G41.25's add naming an app
+server: a server's bundle comes from its `Bundles.json` at boot, written to the tables directly.
+
+- The same label again, by the same owner, is refused and no row is made. The same label under another owner is another
+  bundle. Only the exact same label is a duplicate. A label is free again once its bundle is deleted.
+- Through the verbs: an add naming an app server is refused; a server's bundle cannot be deleted, nor its branches added to,
+  changed or deleted; it is still read by get. On a node-owned bundle all of it works.

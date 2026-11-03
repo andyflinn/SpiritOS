@@ -206,8 +206,14 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   // or outgoing."
   const plain = await call(auth, 'bundle', { op: 'add', label: 'Plain' });
   ok((await call(auth, 'bundle', { op: 'get', id: plain.id })).owner === 'node', 'a bundle added with no owner is owned by "node"', 'get: ' + short(await call(auth, 'bundle', { op: 'get', id: plain.id })));
-  const mine = await call(auth, 'bundle', { op: 'add', label: 'For the agent', owner: 'agent' });
-  ok(isNum(mine.id) && (await call(auth, 'bundle', { op: 'get', id: mine.id })).owner === 'agent', 'a bundle added with an app server\'s name is owned by that server', 'add: ' + short(mine) + ', get ' + short(await call(auth, 'bundle', { op: 'get', id: mine.id })));
+  // goal/G41.32, the box: "A user can only create, change and delete node-owned bundles and branches": a server's bundle
+  // comes from its Bundles.json at boot, never through this verb, so one is made in the table here.
+  const asked = await call(auth, 'bundle', { op: 'add', label: 'For the agent', owner: 'agent' });
+  ok(!!asked.refusal && !isNum(asked.id), 'a user\'s add naming an app server as owner is refused', 'an add naming an app server answered ' + short(asked));
+  const mine = await call(auth, 'bundle', { op: 'add', label: 'For the agent, in the table' });
+  const mdb = new DatabaseSync(path.join(root, 'relay-state', 'node.db'));
+  mdb.prepare('UPDATE bundle SET owner = ? WHERE id = ?').run('agent', mine.id);
+  mdb.close();
   await call(auth, 'bundle', { op: 'set', id: mine.id, owner: 'desk' });
   await call(auth, 'bundle', { op: 'set', id: mine.id, label: 'Agent tools', owner: 'node' });
   await call(auth, 'bundle', { op: 'set', id: plain.id, owner: 'agent' });
@@ -292,7 +298,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   ok((await call(a1, 'bundle', { op: 'search', text: '' })).items.map(parsed).every(function (x) { return x.owner !== 'plain' && x.owner !== 'broken'; }) && stateOf('broken') === null,
     'an appServer with no Bundles.json, or one that is not valid, gets nothing, and the others are written all the same', 'owners: ' + short((await call(a1, 'bundle', { op: 'search', text: '' })).items.map(parsed).map(function (x) { return x.owner; })));
   // A bundle the editor added for that appServer (goal/G41.25) is the user's: no key of the file names it.
-  const byEditor = await call(a1, 'bundle', { op: 'add', label: 'Made in the editor', owner: 'probe' });
+  const byEditor = await call(a1, 'bundle', { op: 'add', label: 'Made in the editor' });
   await call(a1, 'branch', { op: 'add', bundle: byEditor.id, family: 'files', verb: 'list' });
 
   const a2 = boot(); await settleBoot();
@@ -312,13 +318,62 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   ok((await call(a3, 'bundle', { op: 'get', id: byEditor.id })).label === 'Made in the editor' && JSON.stringify(await branchesOf(a3, byEditor.id)) === JSON.stringify(['files.list']),
     'a bundle the user added for that appServer, kept under no key, is left as it was', 'editor\'s: ' + short(await call(a3, 'bundle', { op: 'get', id: byEditor.id })));
 
-  // A USER deletes the appServer's bundle: the next boot makes it again under the same key.
-  await call(a3, 'bundle', { op: 'delete', id: AID });
+  // The appServer's bundle gone from the table (a user cannot delete it since goal/G41.32): the next boot makes it again
+  // under the same key.
+  const gdb = new DatabaseSync(path.join(bootRoot, 'relay-state', 'node.db'));
+  gdb.prepare('DELETE FROM branch WHERE bundle = ?').run(AID);
+  gdb.prepare('DELETE FROM bundle WHERE id = ?').run(AID);
+  gdb.close();
   const a4 = boot(); await settleBoot();
   const again4 = (await ownedBy(a4, 'probe')).filter(function (x) { return x.label === 'Probe agent'; });
   const st4 = stateOf('probe');
   ok(again4.length === 1 && again4[0].id !== AID && !!st4 && st4.probeAgent && st4.probeAgent.id === again4[0].id && JSON.stringify(await branchesOf(a4, again4[0].id)) === JSON.stringify(['probe.ping', 'probe.pong']),
-    'a bundle of the appServer\'s that the user deleted is made again at the next boot, its new id kept under the same key', 'probe owns: ' + short(again4) + ', state ' + short(st4));
+    'a bundle of the appServer\'s gone from the table is made again at the next boot, its new id kept under the same key', 'probe owns: ' + short(again4) + ', state ' + short(st4));
+  // GOAL/G41.32. THE BOX: "Bundle labels should be unique per owner. They are NOT."; "A user can only create, change and delete
+  // node-owned bundles and branches, and sees the others read-only"; "no "old-data-rescue-missions"". Only the exact same
+  // label is a duplicate (wsl, in the item's chat, unless Andy says otherwise). The verbs are the gate.
+  test.subHeading('goal/G41.32: a bundle\'s label is unique per owner');
+  writeBundles('zzHeld', { held: { label: 'Held', branches: [{ family: 'files', verb: 'read' }] } });
+  const aU = boot(); await settleBoot();
+  const heldRow = (await ownedBy(aU, 'zzHeld')).filter(function (x) { return x.label === 'Held'; })[0];
+  ok(!!heldRow, 'a server\'s bundle stands, from its Bundles.json at boot', 'no bundle of the server: the rest judges nothing');
+  const first = await call(aU, 'bundle', { op: 'add', label: 'Twice' });
+  ok(isNum(first.id), 'a new label is added', 'add: ' + short(first));
+  const countOf = async function (label) { return ((await call(aU, 'bundle', { op: 'search', text: '' })).items || []).map(parsed).filter(function (x) { return x && x.label === label && x.owner === 'node'; }).length; };
+  const twice = await call(aU, 'bundle', { op: 'add', label: 'Twice' });
+  ok(!!twice.refusal && !isNum(twice.id), 'the same label again, by the same owner, is refused', 'a second "Twice" answered ' + short(twice));
+  ok((await countOf('Twice')) === 1, 'and no second row is made', 'rows labelled Twice: ' + (await countOf('Twice')));
+  const other = await call(aU, 'bundle', { op: 'add', label: 'Held' });
+  ok(isNum(other.id), 'the same label under another owner is another bundle: the server\'s "Held" leaves "Held" free for the node', 'add "Held": ' + short(other));
+  const twoCase = await call(aU, 'bundle', { op: 'add', label: 'twice' });
+  ok(isNum(twoCase.id), 'only the exact same label is a duplicate: "twice" beside "Twice" is added', 'add "twice": ' + short(twoCase));
+  await call(aU, 'bundle', { op: 'delete', id: first.id });
+  const reborn = await call(aU, 'bundle', { op: 'add', label: 'Twice' });
+  ok(isNum(reborn.id), 'a label is free again once its bundle is deleted', 'add after delete: ' + short(reborn));
+
+  test.subHeading('goal/G41.32: a user changes node-owned bundles and branches alone');
+  if (heldRow) {
+    const hb = ((await call(aU, 'branch', { op: 'search', text: '', bundle: heldRow.id })).items || []).map(parsed)[0];
+    ok(!!hb, 'the server\'s bundle has its branch', 'no branch: the branch checks judge nothing');
+    const del = await call(aU, 'bundle', { op: 'delete', id: heldRow.id });
+    ok(!!del.refusal && (await call(aU, 'bundle', { op: 'get', id: heldRow.id })).id === heldRow.id, 'deleting a server\'s bundle is refused, and it stays', 'delete answered ' + short(del));
+    const addB = await call(aU, 'branch', { op: 'add', bundle: heldRow.id, family: 'desk', verb: 'chat.add' });
+    ok(!!addB.refusal && !isNum(addB.id), 'adding a branch to it is refused', 'branch add answered ' + short(addB));
+    if (hb) {
+      const setB = await call(aU, 'branch', { op: 'set', id: hb.id, family: 'files', verb: 'list' });
+      ok(!!setB.refusal, 'changing its branch is refused', 'branch set answered ' + short(setB));
+      const delB = await call(aU, 'branch', { op: 'delete', id: hb.id });
+      ok(!!delB.refusal && (await call(aU, 'branch', { op: 'get', id: hb.id })).id === hb.id, 'deleting its branch is refused, and it stays', 'branch delete answered ' + short(delB));
+    }
+    ok((await call(aU, 'bundle', { op: 'get', id: heldRow.id })).owner === 'zzHeld', 'it is still read: get answers it', 'get of the server\'s bundle failed');
+  }
+  const nb = await call(aU, 'bundle', { op: 'add', label: 'Mine to change' });
+  const nbr = await call(aU, 'branch', { op: 'add', bundle: nb.id, family: 'files', verb: 'read' });
+  ok(isNum(nbr.id), 'on a node-owned bundle a branch is added', 'branch add: ' + short(nbr));
+  const nset = await call(aU, 'branch', { op: 'set', id: nbr.id, verb: 'list' });
+  ok(!nset.refusal, 'changed', 'branch set: ' + short(nset));
+  const ndel = await call(aU, 'bundle', { op: 'delete', id: nb.id });
+  ok(!ndel.refusal, 'and the bundle deleted', 'bundle delete: ' + short(ndel));
   try { fs.rmSync(bootRoot, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
 
   test.subHeading('goal/G41.28: a family\'s FS group is the owner\'s, never granted');
@@ -351,5 +406,6 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   ok((await call(again, 'bundle', { op: 'get', id: reader.id })).label === 'Reader' && (await call(again, 'branch', { op: 'search', text: '', bundle: reader.id })).items.length === 1,
     'opened again on the same root, the bundles and their branches are there', 'get: ' + short(await call(again, 'bundle', { op: 'get', id: reader.id })));
   try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
+
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

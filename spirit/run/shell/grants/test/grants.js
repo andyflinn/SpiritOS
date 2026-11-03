@@ -176,5 +176,152 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (typeof off === 'function') off();
   D.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K8', path: 'jobs.list', label: 'Yan' } } });
   ok(heard.length === 2, 'its release ends the watch', 'heard after release: ' + short(heard.slice(2)));
+
+  // GOAL/G41.32, IN A REAL BROWSER ON A SCRATCH NODE. THE BOX: "the bundleSelector:pane looses both the 'Edit' button and the
+  // 'Delete' Button. when some clicks on a (selects) a bundle row, a new closable tab opens in the tabContainer configured in
+  // the bundleSelector:pane"; "if a bundle already has an branchEditor-tab in the configured tabContainer, that tab will
+  // become the active tab"; "in the Grants app, this will be the grant app's tabContainer."; "i need the branchEditor to have
+  // a rowForm at the bottom: [❌] "Delete <bundle-name> bundle and branches " [Delete (armingButton)]."; "a bundle that hears
+  // its deletion, closes its branchEditor tab."; "A user can only create, change and delete node-owned bundles and branches,
+  // and sees the others read-only". What a person sees is judged: a press is a real click on what is drawn.
+  await (async function () {
+  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const node = await H.scratchNode();
+  let chrome = null;
+  try {
+    if (!node.up) { test.fail('the scratch node did not come up: nothing judged'); return; }
+    const where = H.findChrome();
+    if (!where) { test.fail('no Chrome here: nothing judged'); return; }
+    chrome = await H.chromePage(where);
+    if (chrome.error) { test.fail('Chrome: ' + chrome.error); return; }
+    const home = async function (verb, args) {
+      const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+      const text = await r.text(); let body = null; try { body = JSON.parse(text); } catch (e) { body = null; }
+      return { status: r.status, text: text, body: body };
+    };
+    // A real click on the innermost visible thing whose words are these, inside an optional selector.
+    const LEAF = 'function leaf(words, within) { var all = Array.prototype.slice.call((within ? document.querySelector(within) || document : document).querySelectorAll("*")); return all.filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === words && !Array.prototype.some.call(e.children, function (c) { return c.textContent.trim() === words; }); })[0] || null; }';
+    const click = function (words, within) { return chrome.evaluate('(function () { ' + LEAF + ' var e = leaf(' + JSON.stringify(words) + ', ' + JSON.stringify(within || '') + '); if (!e) return false; e.click(); return true; }())'); };
+    const shown = function (words) { return chrome.evaluate('(function () { ' + LEAF + ' return !!leaf(' + JSON.stringify(words) + ', ""); }())'); };
+    const pageText = function () { return chrome.evaluate('document.body.innerText').then(String); };
+    const tabs = function () { return chrome.evaluate('JSON.stringify(Array.prototype.slice.call(document.querySelectorAll(".tab-button")).filter(function (b) { return b.offsetParent !== null; }).map(function (b) { return { text: b.textContent.trim(), on: b.getAttribute("aria-selected") === "true" }; }))').then(function (t) { return JSON.parse(t || '[]'); }); };
+    const tabNamed = async function (label) { return (await tabs()).filter(function (t) { return t.text.indexOf(label) !== -1; }); };
+    const waitFor = function (fn, ms) { return H.until(fn, ms || 5000); };
+
+    const one = await home('auth.bundle', { op: 'add', label: 'zzOne' });
+    const two = await home('auth.bundle', { op: 'add', label: 'zzTwo' });
+    const three = await home('auth.bundle', { op: 'add', label: 'zzThree' });
+    ok(one.status === 200 && two.status === 200 && three.status === 200, 'three bundles of the node\'s stand', 'nothing judged: ' + short(one.text));
+    await home('auth.branch', { op: 'add', bundle: one.body.id, family: 'node', verb: 'card' });
+    const all = await home('auth.bundle', { op: 'search', text: '' });
+    const rows = ((all.body && all.body.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } });
+    const serverBundle = rows.filter(function (r) { return r.owner && r.owner !== 'node'; })[0];
+    ok(!!serverBundle, 'and a server\'s bundle: ' + (serverBundle && serverBundle.label), 'no bundle of a server on the scratch node: read-only judges nothing');
+
+    await chrome.send('Page.navigate', { url: node.base + '/' });
+    await waitFor(function () { return shown('Grants'); }, 20000);
+    ok(await click('Grants'), 'the Grants app\'s tile is pressed', 'no Grants tile: nothing judged');
+    await waitFor(function () { return tabNamed('Bundles').then(function (t) { return t.length > 0; }); }, 10000);
+    ok(await click('Bundles', '.tab-button') || await click('Bundles'), 'its Bundles tab is pressed', 'no Bundles tab: nothing judged');
+    await waitFor(function () { return shown('zzOne'); }, 8000);
+
+    test.subHeading('goal/G41.32: the pane has no Edit and no Delete');
+    ok(await shown('zzOne'), 'the pane lists the bundles', 'zzOne is not listed: ' + short(await pageText()));
+    ok(!(await shown('Edit')), 'no Edit button', 'an Edit button is still there');
+    ok(!(await shown('Delete')), 'no Delete button', 'a Delete button is still there');
+
+    test.subHeading('goal/G41.32: a row pressed opens its tab, in the app\'s own tab row');
+    const before = (await tabs()).length;
+    ok(before === 2, 'the app has its two tabs', 'tabs: ' + short(await tabs()));
+    ok(await click('zzOne'), 'zzOne is pressed', 'no row to press');
+    await waitFor(function () { return tabNamed('zzOne').then(function (t) { return t.length > 0; }); });
+    const tOne = await tabNamed('zzOne');
+    ok(tOne.length === 1 && tOne[0].on, 'a tab for it opens, and is active', 'tabs: ' + short(await tabs()));
+    const place = await chrome.evaluate('(function () { var c = document.querySelector("[data-tab-close]"); if (!c) return null; var b = c.closest(".tab-button") || c.parentElement; var r = c.getBoundingClientRect(), o = b.getBoundingClientRect(); return { right: r.right <= o.right + 1 && r.left > o.left + (o.width / 3), small: r.width <= o.width / 2 }; }())');
+    ok(!!place && place.right && place.small, 'its close button is small, on the tab\'s right side', 'close button: ' + short(place));
+
+    test.subHeading('goal/G41.32: the branchEditor\'s Delete row');
+    const WORDS = 'Delete zzOne bundle and branches';
+    await waitFor(function () { return pageText().then(function (t) { return t.indexOf(WORDS) !== -1; }); });
+    const paneText = await pageText();
+    ok(paneText.indexOf(WORDS) !== -1, 'it says "' + WORDS + '"', 'not said: ' + short(paneText.slice(-300)));
+    const atBottom = await chrome.evaluate('(function () { var forms = Array.prototype.slice.call(document.querySelectorAll(".shell-row-form")).filter(function (f) { return f.offsetParent !== null; }); var last = forms[forms.length - 1]; if (!last) return null; return { icon: last.textContent.indexOf("❌") !== -1, words: last.textContent.indexOf(' + JSON.stringify(WORDS) + ') !== -1, button: !!last.querySelector("button"), below: forms.length > 1 && forms[0].getBoundingClientRect().top < last.getBoundingClientRect().top }; }())');
+    ok(!!atBottom && atBottom.icon && atBottom.words && atBottom.button && atBottom.below, 'in a rowForm below the others, ❌, the words, a button', 'the row: ' + short(atBottom));
+
+    test.subHeading('goal/G41.32: a bundle already open: its tab is made active');
+    ok(await click('Bundles', '.tab-button') || await click('Bundles'), 'back to the Bundles tab', 'no way back to the Bundles tab');
+    await waitFor(function () { return shown('zzTwo'); });
+    await click('zzOne', '.bundle-selector');
+    await H.sleep(800);
+    const again = await tabNamed('zzOne');
+    ok(again.length === 1 && again[0].on, 'zzOne pressed again: no second tab, its tab is active', 'tabs: ' + short(await tabs()));
+
+    test.subHeading('goal/G41.32: the close button takes the tab away, the bundle stays');
+    const closed = await chrome.evaluate('(function () { var c = Array.prototype.slice.call(document.querySelectorAll("[data-tab-close]"))[0]; if (!c) return false; c.click(); return true; }())');
+    await waitFor(function () { return tabNamed('zzOne').then(function (t) { return t.length === 0; }); });
+    ok(closed === true && (await tabNamed('zzOne')).length === 0, 'the tab is gone', 'tabs: ' + short(await tabs()));
+    ok((await home('auth.bundle', { op: 'get', id: one.body.id })).status === 200, 'the bundle is there', 'closing a tab deleted the bundle');
+
+    test.subHeading('goal/G41.32: the Delete row deletes, by the arming button, and the tab closes');
+    await click('Bundles', '.tab-button');
+    await waitFor(function () { return shown('zzTwo'); });
+    await click('zzTwo', '.bundle-selector');
+    await waitFor(function () { return pageText().then(function (t) { return t.indexOf('Delete zzTwo bundle and branches') !== -1; }); });
+    const hadTwo = (await tabNamed('zzTwo')).length === 1;
+    const DELBTN = 'Array.prototype.slice.call(document.querySelectorAll(".shell-row-form")).filter(function (f) { return f.offsetParent !== null && f.textContent.indexOf("Delete zzTwo") !== -1; })[0]';
+    const pressedOnce = await chrome.evaluate('(function () { var f = ' + DELBTN + '; var b = f && f.querySelector("button"); if (!b) return false; b.click(); return true; }())');
+    await H.sleep(500);
+    ok(pressedOnce === true && (await home('auth.bundle', { op: 'get', id: two.body.id })).status === 200, 'one press only arms: the bundle stays', 'one press: pressed ' + pressedOnce + ', the bundle answered ' + (await home('auth.bundle', { op: 'get', id: two.body.id })).status);
+    await chrome.evaluate('(function () { var f = ' + DELBTN + '; var b = f && f.querySelector("button"); if (b) b.click(); }())');
+    await waitFor(function () { return home('auth.bundle', { op: 'get', id: two.body.id }).then(function (a) { return a.status !== 200; }); });
+    ok((await home('auth.bundle', { op: 'get', id: two.body.id })).status !== 200, 'the second press deletes it', 'the bundle is still there after two presses');
+    await waitFor(function () { return tabNamed('zzTwo').then(function (t) { return t.length === 0; }); });
+    ok(hadTwo && (await tabNamed('zzTwo')).length === 0, 'and its tab closes', hadTwo ? 'tabs: ' + short(await tabs()) : 'zzTwo never had a tab: nothing judged');
+
+    test.subHeading('goal/G41.32: a bundle deleted elsewhere closes its tab');
+    await click('Bundles', '.tab-button');
+    await waitFor(function () { return shown('zzThree'); });
+    await click('zzThree', '.bundle-selector');
+    await waitFor(function () { return tabNamed('zzThree').then(function (t) { return t.length === 1; }); });
+    const hadThree = (await tabNamed('zzThree')).length === 1;
+    ok(hadThree, 'zzThree has its tab', 'tabs: ' + short(await tabs()));
+    await home('auth.bundle', { op: 'delete', id: three.body.id });
+    await waitFor(function () { return tabNamed('zzThree').then(function (t) { return t.length === 0; }); });
+    ok(hadThree && (await tabNamed('zzThree')).length === 0, 'deleted at the door, its tab closes by itself', hadThree ? 'the tab stayed: ' + short(await tabs()) : 'zzThree never had a tab: nothing judged');
+
+    test.subHeading('goal/G41.32: a server\'s bundle is read-only');
+    if (serverBundle) {
+      await click('Bundles', '.tab-button');
+      await waitFor(function () { return shown(serverBundle.label); });
+      ok(await click(serverBundle.label, '.bundle-selector'), 'its row opens', 'no row for ' + serverBundle.label);
+      await waitFor(function () { return tabNamed(serverBundle.label).then(function (t) { return t.length === 1; }); });
+      const editable = await chrome.evaluate('JSON.stringify(Array.prototype.slice.call(document.querySelectorAll(".shell-row-form")).filter(function (f) { return f.offsetParent !== null; }).map(function (f) { return f.textContent.trim().slice(0, 60); }))');
+      ok(JSON.parse(editable || '[]').length === 0, 'no add form and no Delete row on it', 'forms on a read-only bundle: ' + editable);
+      const delBtns = await chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("button")).filter(function (b) { return b.offsetParent !== null && /delete/i.test(b.textContent); }).length');
+      ok(delBtns === 0, 'and no Delete on its branches', delBtns + ' Delete buttons on a read-only bundle');
+      ok((await pageText()).indexOf(serverBundle.label) !== -1, 'its branches are there to read, under its label', 'the page does not name it');
+      const refused = await home('auth.bundle', { op: 'delete', id: serverBundle.id });
+      ok(refused.status >= 400 && refused.status < 500 && !!(refused.body && refused.body.code), 'and the node refuses its delete at the door, with a code', 'auth.bundle delete of a server\'s bundle: ' + refused.status + ' ' + short(refused.text));
+    }
+
+    test.subHeading('goal/G41.32: with no tabContainer configured, the pane lists and a press throws nothing');
+    // "in the agent app, this will be the tabContainer in the center tab of the workBench, oos for this item. and Edit/Delete
+    // in the bundleSelector:pane go anyway."
+    const mark = chrome.heard.length;
+    await chrome.evaluate('Promise.resolve(window.spirit.require("shell/js/bundleEditor.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.height = "300px"; document.body.appendChild(h); window.spirit.elements.bundleEditor.create(h, { api: { escapeHtml: function (t) { return String(t); }, verb: function (v, a) { return window.spirit.call ? window.spirit.call(v, a) : Promise.resolve({}); } } }); return true; })');
+    await H.sleep(1500);
+    const noBtn = await chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzAgentLike button")).filter(function (b) { return /^(Edit|Delete)$/.test(b.textContent.trim()); }).length');
+    ok(noBtn === 0, 'no Edit or Delete there either', noBtn + ' Edit or Delete buttons with no tabContainer');
+    await click('zzOne', '#zzAgentLike');
+    await H.sleep(500);
+    const threw = chrome.heard.slice(mark).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return m.params.exceptionDetails.text + ' ' + short((m.params.exceptionDetails.exception || {}).description || ''); });
+    ok(!threw.length, 'a press on a row throws nothing', 'it threw: ' + threw.slice(0, 2).join(' | '));
+  } finally {
+    try { if (chrome && chrome.sock) chrome.sock.close(); if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
+    try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+    try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
+    try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  }
+  }());
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

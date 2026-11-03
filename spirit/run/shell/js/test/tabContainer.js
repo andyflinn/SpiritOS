@@ -18,6 +18,8 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 function node(id) {
   const n = { id: id || '', hidden: false, hiddenAttr: false, style: {}, innerHTML: '', children: [], className: '',
     appendChild: function (c) { n.children.push(c); c.parent = n; return c; },
+    removeChild: function (c) { n.children.splice(n.children.indexOf(c), 1); c.parent = null; c.removed = true; return c; },
+    remove: function () { if (n.parent) n.parent.removeChild(n); },
     setAttribute: function (k, v) { if (k === 'hidden') n.hidden = true; n['attr_' + k] = String(v); },
     removeAttribute: function (k) { if (k === 'hidden') { n.hidden = false; n.hiddenAttr = false; } delete n['attr_' + k]; },
     getAttribute: function (k) { return n['attr_' + k] == null ? null : n['attr_' + k]; },
@@ -51,7 +53,7 @@ function container() {
 }
 function clickOn(name) {
   const button = { getAttribute: function (k) { return k === 'data-tab' ? name : null; }, dataset: { tab: name } };
-  return { target: { closest: function (sel) { return /data-tab|button/.test(sel) ? button : null; }, getAttribute: button.getAttribute, dataset: button.dataset },
+  return { target: { closest: function (sel) { return /data-tab(?!-close)|button/.test(sel) ? button : null; }, getAttribute: button.getAttribute, dataset: button.dataset },
     preventDefault: function () {}, stopPropagation: function () {} };
 }
 const hiddenNow = function (n) { return !!n && (n.hidden === true || n.hiddenAttr === true || n.style.display === 'none'); };
@@ -198,5 +200,43 @@ const appRadius = rules.filter(function (r) { return r.sel === '#app-content but
 ok(squared && (!appRadius || weight(squared.sel) > weight(appRadius.sel) || /!important/.test(squared.body)), 'the square corners outweigh it too',
   'squared ' + JSON.stringify(squared && squared.sel) + ' against ' + JSON.stringify(appRadius && appRadius.sel));
 ok(!tabRules.some(function (r) { return /aria-selected="false"/.test(r.sel) && /background/.test(r.body); }), 'the others keep the brighter colour every button has: no rule repaints them', 'tab rules: ' + JSON.stringify(tabRules));
+
+// GOAL/G41.32. THE BOX: "the tabContainer will allow to add "closable" tabs, which have a little close button on the right
+// side of the tab, like browser tabs."; "if a bundle already has an branchEditor-tab in the configured tabContainer, that
+// tab will become the active tab". The contract the red asks: add({ name, label, mount, closable }), close(name), and a
+// closable tab's close button carrying data-tab-close="<name>".
+test.subHeading('goal/G41.32: closable tabs');
+const c6 = container();
+const made6 = [];
+const tab6 = function (n, closable) { return { name: n, label: n.toUpperCase(), closable: closable, mount: function (b) { made6.push(n); b.tag = n; } }; };
+const tc6 = T.create(c6, { tabs: [tab6('fixed')] });
+ok(typeof tc6.add === 'function' && typeof tc6.close === 'function', 'a container answers add and close', 'it answers: ' + Object.keys(tc6).join(', '));
+if (typeof tc6.add === 'function' && typeof tc6.close === 'function') {
+  const rowOf = function () { return c6.part('tabs') ? String(c6.part('tabs').innerHTML) : ''; };
+  tc6.add(tab6('one', true));
+  ok(tc6.selected() === 'one' && made6.indexOf('one') !== -1, 'an added tab is selected and mounted', 'selected ' + tc6.selected() + ', mounted ' + made6.join());
+  const row = rowOf();
+  ok(row.indexOf('data-tab-close="one"') !== -1, 'a closable tab has its close button', 'row: ' + row);
+  ok(row.indexOf('ONE') !== -1 && row.indexOf('ONE') < row.indexOf('data-tab-close="one"'), 'to the right of its label', 'row: ' + row);
+  ok(row.indexOf('data-tab-close="fixed"') === -1, 'a tab not added closable has none', 'row: ' + row);
+  const mounts = made6.length;
+  tc6.select('fixed');
+  tc6.add(tab6('one', true));
+  ok(tc6.selected() === 'one', 'adding a tab that is there makes it the active tab', 'selected ' + tc6.selected());
+  ok((rowOf().match(/data-tab-close="one"/g) || []).length === 1 && made6.length === mounts, 'with no second tab, and no second mount', 'row: ' + rowOf() + ', mounted ' + made6.join());
+  tc6.add(tab6('two', true));
+  // A press on the close button closes that tab and selects nothing else by itself.
+  const press = function (name) { c6.fire('click', { target: { closest: function (sel) { return /data-tab-close/.test(sel) ? { getAttribute: function (k) { return k === 'data-tab-close' ? name : null; } } : null; } } }); };
+  tc6.select('two');
+  press('one');
+  ok(rowOf().indexOf('data-tab-close="one"') === -1 && rowOf().indexOf('ONE') === -1, 'a press on its close button takes the tab away', 'row: ' + rowOf());
+  ok(tc6.selected() === 'two', 'and the tab shown stays shown when another one closes', 'selected ' + tc6.selected());
+  tc6.close('two');
+  ok(rowOf().indexOf('TWO') === -1 && tc6.selected() === 'fixed', 'the selected tab closed: a neighbour is selected', 'row: ' + rowOf() + ', selected ' + tc6.selected());
+  const content = c6.part('content');
+  ok(content && !content.children.some(function (b) { return b.tag === 'two' && !b.parent; }) && content.children.filter(function (b) { return !b.removed && b.parent === content && (b.tag === 'two' || b.tag === 'one'); }).length === 0, 'its box leaves the page', 'boxes left: ' + (content ? content.children.map(function (b) { return b.tag; }).join() : ''));
+  tc6.close('nosuch');
+  ok(tc6.selected() === 'fixed', 'closing a tab that is not there does nothing', 'selected ' + tc6.selected());
+}
 
 test.reportSuccessFailureCount();
