@@ -230,3 +230,5 @@ editor's scroller still is.
 - A rule that found nothing to judge counted as green.
 - A list that hands its search a matched(); a search made with no data branch, or fed by its own rows(); a row drawn
   that its branch does not hold.
+
+**The app family's selector is an element too** (goal/G43.2): `spirit/app/appSelector.js` and the three files beside it in `spirit/app/appSelector/` are judged as the shell's elements are.
