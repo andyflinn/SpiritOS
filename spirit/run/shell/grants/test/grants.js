@@ -237,6 +237,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     await waitFor(function () { return tabNamed('zzOne').then(function (t) { return t.length > 0; }); });
     const tOne = await tabNamed('zzOne');
     ok(tOne.length === 1 && tOne[0].on, 'a tab for it opens, and is active', 'tabs: ' + short(await tabs()));
+    // Andy, on what he saw: "the tabs should name owner-bundle".
+    ok(tOne.length === 1 && tOne[0].text.indexOf('node-zzOne') !== -1, 'the tab names owner-bundle: node-zzOne', 'tabs: ' + short(await tabs()));
     const place = await chrome.evaluate('(function () { var c = document.querySelector("[data-tab-close]"); if (!c) return null; var b = c.closest(".tab-button") || c.parentElement; var r = c.getBoundingClientRect(), o = b.getBoundingClientRect(); return { right: r.right <= o.right + 1 && r.left > o.left + (o.width / 3), small: r.width <= o.width / 2 }; }())');
     ok(!!place && place.right && place.small, 'its close button is small, on the tab\'s right side', 'close button: ' + short(place));
 
@@ -295,6 +297,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       await waitFor(function () { return shown(serverBundle.label); });
       ok(await click(serverBundle.label, '.bundle-selector-face-pane'), 'its row opens', 'no row for ' + serverBundle.label);
       await waitFor(function () { return tabNamed(serverBundle.label).then(function (t) { return t.length === 1; }); });
+      ok((await tabNamed(serverBundle.owner + '-' + serverBundle.label)).length === 1, 'its tab names owner-bundle: ' + serverBundle.owner + '-' + serverBundle.label, 'tabs: ' + short(await tabs()));
       const editable = await chrome.evaluate('JSON.stringify(Array.prototype.slice.call(document.querySelectorAll(".shell-row-form")).filter(function (f) { return f.offsetParent !== null; }).map(function (f) { return f.textContent.trim().slice(0, 60); }))');
       ok(JSON.parse(editable || '[]').length === 0, 'no add form and no Delete row on it', 'forms on a read-only bundle: ' + editable);
       const delBtns = await chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("button")).filter(function (b) { return b.offsetParent !== null && /delete/i.test(b.textContent); }).length');

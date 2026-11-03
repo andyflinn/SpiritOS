@@ -40,7 +40,7 @@ panel draws and does is the panel's (`shell/js/test/grantsPanel.md`).
 ## goal/G41.32, in a real browser on a scratch node
 
 The box's bundle lines, judged by real clicks in the Grants app: no Edit or Delete in the pane; a row pressed opens a closable
-tab in the app's own tab row, its close button small and on the tab's right; the same row again makes that tab active; the
+tab in the app's own tab row, named owner-bundle (Andy: *"the tabs should name owner-bundle"*), its close button small and on the tab's right; the same row again makes that tab active; the
 close button takes the tab away and the bundle stays. The branchEditor has a rowForm below the others: ❌, *"Delete
 <bundle-name> bundle and branches"*, an arming button: one press only arms, the second deletes and the tab closes. A bundle
 deleted at the door closes its tab. A server's bundle opens read-only, with no form and no Delete, and the node refuses its
