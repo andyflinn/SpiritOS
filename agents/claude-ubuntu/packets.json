@@ -1,16 +1,16 @@
 {
   "agent": "claude-ubuntu",
-  "commit": "7df82fff",
-  "measuredAt": "2026-10-24T12:42:13.107Z",
+  "commit": "055402a1",
+  "measuredAt": "2026-11-03T22:59:37.527Z",
   "asks": 20,
-  "posts": 19,
+  "posts": 23,
   "waitMs": {
-    "median": 23,
-    "max": 40
+    "median": 25,
+    "max": 825
   },
   "flight": {
-    "median": 318,
-    "max": 740
+    "median": 937,
+    "max": 2533
   },
   "retried": 0,
   "refusals": {}
