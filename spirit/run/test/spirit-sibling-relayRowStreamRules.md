@@ -12,6 +12,7 @@ stream, a real Chrome.
 - **relayPanel** is `shell/js/relayPanel.js`, `relayPanel.create(host, { key })`, and `shell/js/natterDetails` is gone.
 - **The star is a folding panel like the others** (Andy: *"must use the same heading and style al all the other folding panels in relayPanel"*): the same heading, tile and fold mark, shut as it arrives, holding its button when opened.
 - **"A face name" shows the faceForm, unless the relay is starred** (Andy: *"the folding panel "A face name" should actually show the faceForm, unless the relay is "starred""*): opened, it holds the form's field and button; the star on, the fold goes with no reload; off, it comes back. Judged on boot.js's shell at /face.html, the one he uses.
+- **The face form offers relays this node is a member of or owns, with no star** (Andy, in the chat; his line on who owns is read as today's filter), and `faceForm.offers(relays)` says whether it has any. In Info, a star pressed at home takes that relay from the dropdown with no reload and no read; every relay starred, there is no form and no empty tile; a star off brings it back.
 - **It listens, shown or hidden**: a change is painted with no further `relay.status` or `relay.get`. **It follows only its row.**
 - **Gone from the page, it stops**: after `destroy` a change neither throws nor paints.
 

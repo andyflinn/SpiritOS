@@ -196,6 +196,44 @@ test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a re
     await sleep(1500);
     const threw = chrome.heard.slice(mark).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return m.params.exceptionDetails.text; });
     ok(!threw.length && (await text()).indexOf('zzNameThree') === -1, 'a later change neither throws nor paints', 'after destroy: ' + short(threw) + ' ' + short(await text()));
+
+    // THE FACE FORM OFFERS MEMBERS' RELAYS WITH NO STAR (goal/G41.32; Andy: "show only relays in the relay-dropdown that the node is
+    // a member of AND are not starred.", "if there are no relays that satisfy the requirement, don't display the form at all.",
+    // "faceForm provides that check as a function", "info-app: don't show the faceForm, if the faceForm says it shouldn't be
+    // displayed"; and of following the rows with no read: "agreed."). This node sits on two relays here, neither starred.
+    test.subHeading('the face form: its check, as a function');
+    await chrome.send('Page.navigate', { url: N.base + '/face.html' });
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
+    await sleep(3000);
+    const check = await chrome.evaluate('Promise.resolve(window.spirit.require("shell/js/faceForm.js")).then(function () { var F = window.spirit.elements.faceForm; if (!F || typeof F.offers !== "function") return null; var u = "http://x"; return { member: F.offers([{ url: u, claimed: true, mine: false }]), owner: F.offers([{ url: u, owned: true, mine: false }]), starred: F.offers([{ url: u, claimed: true, mine: true }]), stranger: F.offers([{ url: u, claimed: false, owned: false, mine: false }]), none: F.offers([]), one: F.offers([{ url: u, claimed: true, mine: true }, { url: "http://y", claimed: true, mine: false }]) }; })');
+    ok(!!check, 'faceForm.offers(relays) is there', 'no faceForm.offers');
+    if (check) {
+      ok(check.member === true && check.owner === true && check.one === true, 'true for a relay this node is a member of or owns, with no star', 'offers: ' + short(check));
+      ok(check.starred === false && check.stranger === false && check.none === false, 'false for a starred relay, one it holds no seat on, and for none', 'offers: ' + short(check));
+    }
+
+    test.subHeading('Info: the form offers members\' relays with no star, and follows the star with no reload');
+    await chrome.evaluate('(function () { var e = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Info"; })[0]; if (e) e.click(); }())');
+    const options = function () { return chrome.evaluate('JSON.stringify(Array.prototype.slice.call(document.querySelectorAll("[data-info=\\"face\\"] .sp-face-relay option")).map(function (o) { return o.value; }))').then(function (t) { return JSON.parse(t || '[]'); }); };
+    const tileShown = function () { return chrome.evaluate('(function () { var b = document.querySelector("[data-info=\\"face\\"]"); return !!b && b.offsetParent !== null && !!b.querySelector(".sp-face-relay"); }())'); };
+    const emptyTile = function () { return chrome.evaluate('(function () { var b = document.querySelector("[data-info=\\"face\\"]"); return !!b && b.offsetParent !== null; }())'); };
+    await until(function () { return options().then(function (o) { return o.length >= 2; }); }, 8000);
+    const both = await options();
+    ok(both.indexOf(R.base) !== -1 && both.indexOf(Other.base) !== -1, 'neither starred: it offers both', 'it offers: ' + short(both));
+    const reads = function () { return chrome.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /"call":"(relay\.(status|get)|contact\.search)"/.test(String((m.params.request || {}).postData || '')); }).length; };
+    const readsBefore = reads();
+    await home(N.base, 'contact.own', { key: key, own: true });
+    await until(function () { return options().then(function (o) { return o.indexOf(R.base) === -1; }); }, 5000);
+    const oneLeft = await options();
+    ok(oneLeft.indexOf(R.base) === -1 && oneLeft.indexOf(Other.base) !== -1, 'one starred, no reload: it is gone from the dropdown, the other stays', 'it offers: ' + short(oneLeft));
+    ok(reads() === readsBefore, 'and the form followed the row, reading nothing', (reads() - readsBefore) + ' reads for one star');
+    await home(N.base, 'contact.own', { key: Other.relayKey, own: true });
+    await until(function () { return emptyTile().then(function (t) { return !t; }); }, 5000);
+    ok(!(await tileShown()) && !(await emptyTile()), 'both starred: no form, and no empty tile left in Info', 'with both starred: form ' + (await tileShown()) + ', its tile ' + (await emptyTile()));
+    await home(N.base, 'contact.own', { key: Other.relayKey, own: false });
+    await until(tileShown, 5000);
+    const offeredBack = await options();
+    ok((await tileShown()) && offeredBack.indexOf(Other.base) !== -1 && offeredBack.indexOf(R.base) === -1, 'one star off: the form is back, offering that relay', 'form ' + (await tileShown()) + ', it offers ' + short(offeredBack));
   } finally {
     try { if (S) S.stop(); } catch (e) { /* gone */ }
     try { if (chrome && chrome.sock) chrome.sock.close(); if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
