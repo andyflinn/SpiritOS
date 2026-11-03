@@ -234,7 +234,9 @@ function setSeated(rootDir, keyOrUrl, on) {
   const row = rowFor(rootDir, keyOrUrl);
   if (!row) return false;
   if (row.seated === !!on) return false;
-  seen(rootDir).set(row.key, { seated: !!on });
+  // THE STAR GOES WITH THE SEAT (goal/G41.32; Andy, of a relay left or one that removes this node: "yes."): a relay this node is
+  // no member of can not be starred, and its star opens this node's face.
+  seen(rootDir).set(row.key, on ? { seated: true } : { seated: false, mine: false });
   return true;
 }
 function seat(rootDir, url) { return setSeated(rootDir, url, true) || !!(byUrl(rootDir, url) || {}).seated; }

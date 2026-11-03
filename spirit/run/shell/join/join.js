@@ -123,7 +123,7 @@ function joinForm(step, box) {
   if (step.until === 'face' && el.faceForm) {
     // THE FACE FORM, THE SAME EVERYWHERE (goal/G40.10, box v19): it offers the relays with a verified email itself. The
     // node republishes join-steps once a face is accepted.
-    joinRelaysThen(function () { el.faceForm.mount(box, { relays: joinRelays, reload: function () { return Promise.resolve(); }, escape: joinApi.escapeHtml }); });
+    joinRelaysThen(function () { el.faceForm.mount(box, { relays: joinRelays, reload: function () { return Promise.resolve(); }, escape: joinApi.escapeHtml, none: 'Take the star off to name a face.' }); });
     return;
   }
   if (step.until === 'opened') {

@@ -423,6 +423,8 @@ function ndRemoveBody() {
 // anyway. What a relay says here is its own word: nothing it says sets the star.
 function ndStarHtml() {
   if (!ndBadge || !ndRelayKey() || (window.spirit && window.spirit.transport)) return '';
+  // No seat, no star to give (goal/G41.32, Q20; the node refuses it too); one already on can still come off.
+  if (!ndBadge.mine && !(ndBadge.claimed || ndBadge.owned)) return '';
   var gives = '<b>What the star gives:</b> your face on this relay can run programs, read and change files, and change grants on ' +
     'this machine. That person and anyone holding this relay can do all of that as you, and so can anyone who reads your login mail.';
   var words = gives + ' <b>Taking the star away</b> ends that.';
@@ -750,9 +752,10 @@ function ndEmailHtml() {
 // THE FACE FORM ON ITS RELAY (goal/G40.10, box v19): the same face form as Join and Info, its dropdown fixed to this relay;
 // it offers a relay where this node is seated (goal/G40.11: a seat taken by email is a verified one).
 function ndFaceHtml() {
-  if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
-  // NOT ON A STARRED RELAY (goal/G41.32; Andy: "change: don't show it if the relay is starred...").
-  if (ndBadge.mine === true) return '';
+  // ONE RULE, THE FORM'S (goal/G41.32; Andy: "change: don't show it if the relay is starred..."; "faceForm provides that check as a
+  // function"). Drawn again once the form is on the page.
+  var form = window.spirit && window.spirit.elements && window.spirit.elements.faceForm;
+  if (!ndBadge || !form || !form.offers([ndBadge])) return '';
   return ndPanel('face', '🌐', 'A face name', '<div class="nd-face-form"></div>', 'natter-face');
 }
 

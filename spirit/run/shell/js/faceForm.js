@@ -6,13 +6,18 @@
 // ITS OWN RELAYS (Andy: "doesn't show up if the user has zero verified emails anywhere; only shows relay in the dropdown,
 // where the user has a confirmed email address. THAT's WHY THE FORMS HAVE SEPARATE RELAY DROPDOWNS."): since goal/G40.11
 // the node keeps no email, and a seat taken by email is a verified one, so the dropdown offers the relays this node is
-// seated on, and with none the form draws nothing.
+// seated on. AND NOT STARRED (goal/G41.32; Andy: "show only relays in the relay-dropdown that the node is a member of AND are
+// not starred.", "if there are no relays that satisfy the requirement, don't display the form at all.", "faceForm provides
+// that check as a function"): with none left its box is not shown, so a mounter's tile goes with it (Andy: "info-app: don't
+// show the faceForm, if the faceForm says it shouldn't be displayed").
 //
-//   mount(box, opts)   -> draws the form and asks: opts.relays, relay rows (url, label, face, claimed or owned), nothing
-//                         drawn with no relay to offer; opts.fixed, a url, fixes the dropdown to that relay;
-//                         opts.reload() (Promise, after a face is confirmed), opts.escape. It hears the shadow stream itself
-//                         and, when a relay's row changed, reads the relays again and redraws if the ones it offers changed
-//                         (goal/G40.11).
+//   offers(relays)     -> whether any relay row can be offered: the check, for whoever asks
+//   mount(box, opts)   -> draws the form and asks: opts.relays, relay rows (url, label, face, claimed or owned, mine), its box
+//                         hidden with no relay to offer; opts.fixed, a url, fixes the dropdown to that relay;
+//                         opts.none, words: with no relay to offer the form stays, says them where its messages go, and asks
+//                         nothing (Join: Andy, "leave the form, and print that message at the bottom right of the form");
+//                         opts.reload() (Promise, after a face is confirmed), opts.escape. It follows each relay's row in the
+//                         contact family's cache, reading nothing, and redraws if the ones it offers changed (goal/G41.32).
 // A ROWFORM (goal/G41.27; Andy: "faceForm:\n\n[❓] [Relay▾][Face-name-input][Ask-button]"): the title above the bubble,
 // then ❓, the relay dropdown and the face name in its span, Ask its button; what this node holds and the relay's answer
 // below it.
@@ -25,7 +30,7 @@
   }
 
   function offered(relays, o) {
-    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && (r.claimed || r.owned); });
+    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && (r.claimed || r.owned) && r.mine !== true; });
     return o && o.fixed ? list.filter(function (r) { return r.url === o.fixed; }) : list;
   }
 
@@ -41,20 +46,24 @@
     var escape = o.escape || esc;
     var list = offered(relays, o);
     box.innerHTML = '';
-    if (!list.length) return;
-    var picked = list.filter(function (r) { return r.url === o.picked; })[0] || list[0];
+    // Its box hidden, and the tile a mounter gave it with it, unless the mounter asked it to stay and say why.
+    box.style.display = !list.length && !o.none ? 'none' : '';
+    if (!list.length && !o.none) return;
+    var picked = list.filter(function (r) { return r.url === o.picked; })[0] || list[0] || null;
     box.innerHTML = '<div class="label">A face name on one relay</div>' +
       '<div class="sp-face-form"></div>' +
       '<div class="job-manifest-note sp-face-now">' + escape(holds(picked)) + '</div>' +
       '<div class="job-start-error sp-face-out"></div>';
     var f = window.spirit.elements.rowForm.create(box.querySelector('.sp-face-form'), { icon: '❓', button: 'Ask' });
     f.button.className = 'sp-face-go';
+    f.button.disabled = !picked;
     f.span.innerHTML =
       '<select class="sp-face-relay"' + (o.fixed ? ' disabled' : '') + '>' +
         list.map(function (r) { return '<option value="' + escape(r.url) + '"' + (r === picked ? ' selected' : '') + '>' + escape(r.label || r.url) + '</option>'; }).join('') +
       '</select>' +
       '<input type="text" class="sp-face-name" placeholder="face name: one word, letters and digits" value="' +
-        escape(o.name != null ? o.name : ((picked.face && picked.face.name) || '')) + '">';
+        escape(o.name != null ? o.name : ((picked && picked.face && picked.face.name) || '')) + '">';
+    if (!picked) box.querySelector('.sp-face-out').textContent = String(o.none);
   }
 
   function mount(box, opts) {
@@ -62,10 +71,10 @@
     var o = opts || {};
     var was = box.querySelector && box.querySelector('.sp-face-relay');
     var typed = box.querySelector && box.querySelector('.sp-face-name');
-    box._spFace = { relays: Array.isArray(o.relays) ? o.relays : [], fixed: o.fixed, escape: o.escape, reload: o.reload };
+    box._spFace = { relays: Array.isArray(o.relays) ? o.relays : [], fixed: o.fixed, escape: o.escape, reload: o.reload, none: o.none };
     function draw(picked, name) {
       var now = box._spFace;
-      form(box, now.relays, { fixed: now.fixed, picked: picked, name: name, escape: now.escape });
+      form(box, now.relays, { fixed: now.fixed, picked: picked, name: name, escape: now.escape, none: now.none });
       if (box._faceSaid) say(box._faceSaid.text, box._faceSaid.bad);
     }
     function say(text, bad) {
@@ -78,25 +87,39 @@
     draw(was ? was.value : '', typed && typed.value ? typed.value : null);
     if (box._spFaceBound) return;
     box._spFaceBound = true;
-    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row changing in
-    // spirit.contactData (a seat taken or left anywhere) reads the relays again, and the form redraws only when the
+    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row carries what this form reads
+    // (goal/G41.32), so a seat or a star changing anywhere is followed with no read, and the form redraws only when the
     // relays it offers changed, keeping what is picked and typed. It lets go once its box has left the page.
-    var heard = JSON.stringify(offered(box._spFace.relays, { fixed: box._spFace.fixed }));
+    function shown() {
+      return JSON.stringify(offered(box._spFace.relays, { fixed: box._spFace.fixed }).map(function (r) { return [r.url, r.label, (r.face && r.face.name) || '']; }));
+    }
+    var heard = shown();
     var stop = null;
     function take(key, row) {
-      if (!key || !row || row.relay !== true) return;
+      if (!key) return;
       if (!box.isConnected) { if (stop) stop(); return; }
-      if (!window.spirit || !window.spirit.relay || typeof window.spirit.relay.status !== 'function') return;
-      window.spirit.relay.status('').then(function (r) {
-        var rows = (r && r.body && Array.isArray(r.body.rows)) ? r.body.rows : [];
-        var asJson = JSON.stringify(offered(rows, { fixed: box._spFace.fixed }));
-        if (asJson === heard) return;
-        heard = asJson;
-        box._spFace.relays = rows;
-        var pick = box.querySelector('.sp-face-relay');
-        var name = box.querySelector('.sp-face-name');
-        draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
-      }, function () { /* the next change reads them again */ });
+      var now = box._spFace.relays;
+      var mineNow = function (r) { return r && (r.key === key || (row && row.url && r.url === row.url)); };
+      if (!row) {
+        // A change with no value is not a row gone until the cache says so.
+        if (window.spirit.contactData.contact(key)) return;
+        box._spFace.relays = now.filter(function (r) { return !mineNow(r); });
+      } else {
+        if (row.relay !== true) return;
+        var plain = Object.assign({}, row);
+        // A row's face is a name, a relay row's here a { name }.
+        if (typeof plain.face === 'string') plain.face = { name: plain.face };
+        if (!now.some(mineNow)) {
+          if (!row.url) return;
+          box._spFace.relays = now.concat([plain]);
+        } else box._spFace.relays = now.map(function (r) { return mineNow(r) ? Object.assign({}, r, plain) : r; });
+      }
+      var asJson = shown();
+      if (asJson === heard) return;
+      heard = asJson;
+      var pick = box.querySelector('.sp-face-relay');
+      var name = box.querySelector('.sp-face-name');
+      draw(pick ? pick.value : '', name && name.value !== name.defaultValue ? name.value : null);
     }
     var left = false;
     Promise.resolve(window.spirit.cacheManager('contact')).then(function () {
@@ -143,5 +166,5 @@
     mount(container, options);
     return { destroy: function () { if (container && typeof container._spFaceStop === 'function') container._spFaceStop(); if (container) container.innerHTML = ''; } };
   }
-  window.spirit.elements.faceForm = { create: create, mount: mount };
+  window.spirit.elements.faceForm = { create: create, mount: mount, offers: function (relays) { return offered(relays).length > 0; } };
 }());

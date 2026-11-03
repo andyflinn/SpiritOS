@@ -112,23 +112,25 @@
     if (box._spJoinBound) return;
     box._spJoinBound = true;
     function relayUrl() { var p = box.querySelector('.sp-join-relay'); return p ? p.value : ''; }
-    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row changing in
-    // spirit.contactData (a seat taken or left anywhere) reads the relays again, and the form redraws only when its own
-    // relays changed. It lets go once its box has left the page.
-    var heard = JSON.stringify(box._spJoin.relays);
+    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row carries what this form reads
+    // (goal/G41.32), so a seat taken or left anywhere is followed with no read, and the form redraws only when what it shows of
+    // its own relays changed. It lets go once its box has left the page.
+    var all = (box._spJoin.relays || []).slice();
+    function shown(list) { return JSON.stringify(list.map(function (r) { return [r.url, r.label, r.claimed, r.owned, r.services]; })); }
+    var heard = shown(box._spJoin.relays);
     var stop = null;
     function take(key, row) {
       if (!key || !row || row.relay !== true) return;
       if (!box.isConnected) { if (stop) stop(); return; }
-      if (!window.spirit || !window.spirit.relay || typeof window.spirit.relay.status !== 'function') return;
-      window.spirit.relay.status('').then(function (r) {
-        var next = picking(r && r.body && r.body.rows, box._spJoin.pick);
-        var asJson = JSON.stringify(next);
-        if (asJson === heard) return;
-        heard = asJson;
-        box._spJoin.relays = next;
-        draw(box);
-      }, function () { /* the next change reads them again */ });
+      var same = function (r) { return r && (r.key === key || (row.url && r.url === row.url)); };
+      if (all.some(same)) all = all.map(function (r) { return same(r) ? Object.assign({}, r, row, { face: r.face }) : r; });
+      else if (row.url) all = all.concat([Object.assign({}, row, { face: undefined })]);
+      var next = picking(all, box._spJoin.pick);
+      var asJson = shown(next);
+      if (asJson === heard) return;
+      heard = asJson;
+      box._spJoin.relays = next;
+      draw(box);
     }
     var left = false;
     Promise.resolve(window.spirit.cacheManager('contact')).then(function () {

@@ -1593,6 +1593,11 @@ function createHub(rootDir) {
     return readJsonBody(req).then(function (body) {
       var key = String(body.key);
       if (!shadow(rootDir).get(key)) { res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-such-contact', error: 'no row for that key' })); return; }
+      // A RELAY NEEDS A SEAT FOR ITS STAR (goal/G41.32; Andy: "a relay I'm not a member of can not be starred (relays i own
+      // automatically give me membership)", and Q20: "yes."): an owned relay holds its seat too (relayKeys.ownerSeat). Relays
+      // alone, a node or a puppet has no seat; and only putting it on, so a star can always come off.
+      var row = shadow(rootDir).get(key);
+      if (body.own === true && row.relay === true && row.seated !== true) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-seat', error: 'this node holds no seat on that relay' })); return; }
       shadow(rootDir).set(key, { mine: body.own === true });
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ key: key, own: body.own === true }));

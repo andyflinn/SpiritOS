@@ -130,11 +130,11 @@ test.startTest('info.js: the Info app');
   ok(w.posts.length === 0, 'no name is posted to any relay', 'posts: ' + short(w.posts));
 
   test.subHeading('it reads the relays from the contact family\'s cache (goal/G41.28)');
-  ok((w.managers || []).indexOf('contact') !== -1, 'it loads the contact manager', 'managers: ' + short(w.managers));
+  // goal/G41.32: a relay's row changing is its two forms' to follow, in the contact family's cache; Info reads nothing.
   const before = w.statuses;
   w.api.win.spirit.data.take({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'RA', relay: true, keep: true, seated: false } } });
   await settle();
-  ok(w.statuses > before, 'a relay\'s row that changed in spirit.contactData reads the relays again', 'relay.status asked ' + before + ', then ' + w.statuses);
+  ok(w.statuses === before, 'Info asks relay.status no more on its own', 'relay.status asked ' + before + ', then ' + w.statuses);
 
   test.subHeading('the two forms and the key rotation stay');
   const join = w.forms.filter(function (f) { return f.form === 'join'; }).pop();

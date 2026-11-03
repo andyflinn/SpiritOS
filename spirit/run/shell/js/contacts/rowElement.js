@@ -149,7 +149,8 @@
           // The cell is the mark alone, so the cell itself is its place (iconsIn).
           return v.blocked ? '❌' : v.held ? '⌛' : v.mine ? '⭐' : '';
         } },
-        { name: 'label', from: ['name'], rule: nameRules(), paint: function (v) { return esc(v.name); },
+        // A RELAY'S LABEL IS MARKED (goal/G41.32; Andy: "the contact list should do something to mark a relay, like print its label in bold-italic.").
+        { name: 'label', from: ['name', 'relay'], rule: nameRules(), paint: function (v) { return v.relay === true ? '<b><i>' + esc(v.name) + '</i></b>' : esc(v.name); },
           // In a details dialog: checked here first, then asked; the rename on the stream repaints.
           edit: function (el, text) {
             var R = nameRules();

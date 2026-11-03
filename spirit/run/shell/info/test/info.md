@@ -16,8 +16,8 @@ in `spirit/coreFiles.js`, so every face shows it.
 - **"What each relay calls you" is dropped** (Andy, 2026-10-27): no table of relays and the name each calls this node,
   no push of a saved name to every relay, no rename. Its code is deleted and tested gone.
 - **The two forms stay**: the email form and the face form, each over the relays this node holds a seat on
-  (`spirit.relay.status`, a row claimed or owned whose roll names the relay's key), read again when a relay's row
-  changes in the contact family's cache (`spirit.cacheManager('contact')`, then `spirit.contactData.watch`; goal/G41.28).
+  (`spirit.relay.status`, a row claimed or owned whose roll names the relay's key), as it is drawn. A relay's row
+  changing in the contact family's cache is the two forms' to follow, reading nothing (goal/G41.32).
 - **The key rotation is a rowForm** (goal/G41.27; Andy: *"Info App\n\n[🆘] [Rotate this node's cipher key]"*): it loads
   `shell/js/rowForm.js` itself and makes one rowForm, its icon 🆘 and its button `Rotate this node's cipher key`, its
   span empty, and no Rotate button of its own. Its button opens the Rotate key page (`shell/rotateKey`); nothing here
