@@ -1,0 +1,17 @@
+{
+  "identity": {
+    "icon": "🎈",
+    "label": "app"
+  },
+  "mount": {
+    "app.js":true
+  },
+  "shell": {
+    "true":true,
+    "mount":true,
+    "tile":true
+  },
+  "node": {
+    "mount":false
+  }
+}
