@@ -156,7 +156,8 @@ test.startTest('spirit-sibling-agentCentreTabsRules.js: the agent app\'s centre 
     await c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf(' + JSON.stringify(ICON.persona + ' zzPersona') + ') !== -1; })[0]; var k = b && b.querySelector("[data-tab-close]"); if (k) k.click(); }())');
     await until(function () { return tabOf(ICON.persona + ' zzPersona').then(function (t) { return !t.length; }); }, 4000);
     const afterClose = await c.evaluate('window.__live');
-    ok(hadPersona && opened === 1, 'opened again, one listener', 'it had a tab ' + hadPersona + ', then ' + opened + ' listeners');
+    // Two, each once: the tab follows its row, and the row's own editor (agentRow) watches the same path to repaint itself.
+    ok(hadPersona && opened === 2, 'opened again, the tab's and its editor's, one each', 'it had a tab ' + hadPersona + ', then ' + opened + ' listeners');
     ok(afterClose === 0, 'closed, none', afterClose + ' listeners after its tab closed');
 
     test.subHeading('a row deleted elsewhere closes its tab');

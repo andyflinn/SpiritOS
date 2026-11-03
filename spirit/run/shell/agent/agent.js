@@ -84,8 +84,10 @@
           var adding = !s.id;
           var name = adding ? s.table + '/new' + (++unsaved) : (s.chat ? 'chat/' : s.table + '/') + s.id;
           var kept = !adding && window.spirit.elements.agentDetail && window.spirit.data ? window.spirit.data.get(window.spirit.elements.agentDetail.branchOf(s.table) + '/' + s.id) : null;
-          var off = adding ? null : follow(s, name);
+          var off = null;
           tabs.add({ name: name, label: adding ? 'new ' + s.table + '*' : header(s, Object.assign({}, s.row || {}, kept || {})), closable: true, mount: function (box) {
+            // Once, with the tab: a press on a row already open adds nothing here.
+            if (!adding) off = follow(s, name);
             var made = make(box);
             // Saved, an add's tab is that row's: its header, and a press on that row in the list finds it.
             if (adding) box.addEventListener('agent-row-added', function (e) {
