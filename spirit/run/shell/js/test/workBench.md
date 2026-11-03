@@ -7,7 +7,9 @@ icon of the pane shown collapses it, another icon shows that tool's content. It 
 
 ## API
 
-- `create(container, { left, right })`. `left` and `right` are lists of tools, `{ name, icon, title, mount(box) }`.
+- `create(container, { left, right, changed })`. `left` and `right` are lists of tools, `{ name, icon, title, mount(box) }`.
+  `changed(side, name)` is optional, and is called each time the tool shown on a side changes, name `''` when the side
+  collapses. Desk's item panel draws its left panels from it.
   It returns `{ center, press(side, name), shown(side), width(side), destroy() }`.
   - `center` is the centre pane's box, the one the app draws into.
   - `press(side, name)` is what a click on that strip's icon does.

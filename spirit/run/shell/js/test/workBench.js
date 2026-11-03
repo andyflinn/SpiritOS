@@ -146,6 +146,17 @@ wb.press('left', 'a');
 ok(wb.shown('left') === 'a' && mounted.filter(function (m) { return m.name === 'a'; }).length === 1, 'a tool shown again is not mounted again: its box is kept',
   'mounts of a: ' + mounted.filter(function (m) { return m.name === 'a'; }).length);
 
+// THE APP IS TOLD (Desk's item panel draws its left panels from this; goal/G41.31 removed it and every left icon in Desk went dead).
+test.subHeading('changed tells the app');
+const c3 = container();
+const told = [];
+const wb3 = W.create(c3, { left: [tool('p'), tool('q')], right: [], changed: function (side, name) { told.push(side + ':' + name); } });
+told.length = 0;
+wb3.press('left', 'q');
+ok(told.join() === 'left:q', 'pressing another icon calls changed with its side and name', 'told: ' + JSON.stringify(told));
+wb3.press('left', 'q');
+ok(told.join() === 'left:q,left:', 'collapsing a side calls changed with the name empty', 'told: ' + JSON.stringify(told));
+
 test.subHeading('collapsing');
 wb.press('left', 'a');
 ok(wb.shown('left') === '' && hiddenNow(c1.part('pane-left')), 'pressing the icon of the tool shown collapses its side: the pane is hidden',
