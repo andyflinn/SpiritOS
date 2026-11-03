@@ -43,10 +43,12 @@
 // is RETURNED, and Natter records it.
 
 (function () {
-// What it draws with, it loads itself (rule/26): the join form (goal/G41.3), the armingButton its are-you-sure buttons are
-// (goal/G41.9), and the icon element its fold marks are (goal/G41.23), each panel drawn again once that is there.
-var iconReady = Promise.resolve(window.spirit && window.spirit.require ? window.spirit.require('shell/js/icon.js') : null);
-if (window.spirit && window.spirit.require) { window.spirit.require('shell/js/joinForm.js'); window.spirit.require('shell/js/armingButton.js'); }
+// What it draws with, it loads itself (rule/26): the join and face forms (goal/G41.3; Andy: "bug: "A face name" doesn't show the
+// faceForm."), the armingButton its are-you-sure buttons are (goal/G41.9), and the icon element its fold marks are
+// (goal/G41.23), each panel drawn again once they are there.
+var iconReady = Promise.all(['shell/js/icon.js', 'shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/js/armingButton.js'].map(function (p) {
+  return window.spirit && window.spirit.require ? window.spirit.require(p) : null;
+}));
 
 // One panel, everything below its own.
 function panel(ndContainer, ndOptions) {
@@ -749,6 +751,8 @@ function ndEmailHtml() {
 // it offers a relay where this node is seated (goal/G40.11: a seat taken by email is a verified one).
 function ndFaceHtml() {
   if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
+  // NOT ON A STARRED RELAY (goal/G41.32; Andy: "change: don't show it if the relay is starred...").
+  if (ndBadge.mine === true) return '';
   return ndPanel('face', '🌐', 'A face name', '<div class="nd-face-form"></div>', 'natter-face');
 }
 
