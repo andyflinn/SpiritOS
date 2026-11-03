@@ -1,0 +1,59 @@
+// spirit/run/spirit/app/appSelector/rowElement.js
+// ONE APP, AS A ROW ELEMENT (goal/G43.2), as shell/js/bundleSelector/rowElement.js is one bundle. rowElement.js does the
+// shared work; this file says what an app is. Its contract and its test: ./test/rowElement.md and ./test/rowElement.js.
+//
+//   appElement.create(row) -> a rowElement of kind app; row { key, label, icon }
+//
+// WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.appData for every app row on the page, each change to the rows
+// of that key. A row asks nothing of its own; what it shows is what the stream said.
+(function () {
+  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
+  ['shell/js/rowElement.js', 'shell/js/icon.js'].forEach(function (p) { window.spirit.require(p); });
+  var appReady = Promise.resolve(window.spirit.cacheManager('app')).then(function () { return window.spirit.appData; });
+
+  var apps = null;
+  function dispatch(idx) {
+    var off = null;
+    var gone = false;
+    function listen(A) {
+      if (gone || !A || off) return;
+      off = A.watch(function (key, v) {
+        if (!key || !v) return;
+        idx.forKey(key).forEach(function (el) { el.apply({ label: String(v.label || ''), icon: String(v.icon || '') }); });
+      });
+    }
+    listen(window.spirit.appData);
+    if (!off) appReady.then(listen);
+    return function () { gone = true; if (off) off(); off = null; };
+  }
+  function index() {
+    apps = apps || E.rowElement.index(dispatch);
+    return apps;
+  }
+
+  function esc(s) { return window.spirit.escapeHtml(s); }
+  // THE ICON IS THE ICON ELEMENT (goal/G41.23), handed on as its markup, since a cell is painted as text.
+  function iconHtml(glyph) {
+    if (!E.icon) return esc(glyph);
+    var hold = document.createElement('span');
+    E.icon.create(hold, { glyph: glyph });
+    return hold.innerHTML;
+  }
+
+  function create(row) {
+    var r = row || {};
+    return E.rowElement.create({
+      kind: 'app',
+      key: String(r.key || ''),
+      index: index(),
+      row: { key: String(r.key || ''), label: String(r.label || ''), icon: String(r.icon || '') },
+      fields: [
+        { name: 'icon', paint: function (v) { return iconHtml(v.icon); } },
+        { name: 'label', paint: function (v) { return esc(v.label); } },
+      ],
+    });
+  }
+
+  E.appElement = { create: create };
+}());

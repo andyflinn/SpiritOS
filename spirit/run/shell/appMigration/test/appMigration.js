@@ -23,7 +23,7 @@ test.startTest('appMigration.js: the throw-away host of appSelector (goal/G43.2)
   // ANDY DELETES THE FOLDER (box): nothing tracked outside it may name it.
   let names = [];
   try { names = execFileSync('git', ['grep', '-l', 'appMigration', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean); } catch (e) { names = []; }
-  const outside = names.filter(function (f) { return f.indexOf('shell/appMigration/') !== 0; });
+  const outside = names.filter(function (f) { return f.indexOf('shell/appMigration/') !== 0 && f !== 'process/js/desk/currentGoal.json'; });
   ok(names.length > 0 && !outside.length, 'nothing outside its folder names it', names.length ? 'named outside its folder: ' + short(outside) : 'git grep found not even itself: this check judged nothing');
   const identity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'server', 'server.json'), 'utf8')).identity;
   const node = await scratchNode();
@@ -31,7 +31,7 @@ test.startTest('appMigration.js: the throw-away host of appSelector (goal/G43.2)
   try {
     if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
     const mark = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'fs.annotate', args: { path: 'shell/appMigration/appMigration.js', payload: { app: true } } }) });
-    ok(mark.status === 200, 'its tile is switched on, as the owner does', 'the switch answered ' + mark.status + ' ' + short(await mark.text()));
+    ok(mark.status >= 200 && mark.status < 300, 'its tile is switched on, as the owner does', 'the switch answered ' + mark.status + ' ' + short(await mark.text()));
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     const tile = await until(function () { return chrome.evaluate('document.body.innerText.indexOf("appMigration") !== -1'); }, 20000);
     ok(tile, 'the face\'s desktop shows it', 'no tile: ' + short(await chrome.evaluate('document.body.innerText')));

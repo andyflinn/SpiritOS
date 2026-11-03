@@ -1,0 +1,4 @@
+{
+  "description": "The apps in this node's app folder, searched by text (q; empty means everything), as a bounded list of {key: the app's folder name, label}; a label is the row as JSON, its key, label and icon.",
+  "parameters": "q is optional. There are no filters."
+}

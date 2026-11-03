@@ -11,7 +11,7 @@
 ## Requirements
 
 - Andy, box: *"the appSelector will only show icon and label in the list."*
-- It finds `server`, and typed words that fit nothing take it away.
+- It finds `server`. Typed words that fit nothing rank it at nothing and it stands, last, as in every list of the shared search: "a row the words miss scores 0 and still stands, last".
 - A row pressed sets `value` and `row` and says `change`, and shows that app's detail.
 - **Who paints, listens** (Andy, G41.32): `server.json` changed on the disk changes the row on the page, with no reload and no second search asked by hand.
 - Destroy leaves its container empty.

@@ -49,8 +49,8 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
 
     // THE WORDS.
     await chrome.evaluate('(function () { var i = document.querySelector("#under-test input"); if (!i) return; i.value = "zzqqxxvvkk"; i.dispatchEvent(new Event("input", { bubbles: true })); }())');
-    const gone = await until(function () { return text().then(function (t) { return t.indexOf(identity.label) === -1; }); }, 4000);
-    ok(gone, 'typed words that fit nothing take it away', 'it stayed for words that fit nothing');
+    const ranked = await until(function () { return chrome.evaluate('(function () { var b = document.querySelector("#under-test .list-rank div div"); return !!b && b.style.width === "0%"; }())'); }, 4000);
+    ok(ranked, 'typed words that fit nothing rank it at nothing: the shared list cuts no row', 'its rank bar for words that fit nothing: ' + short(await chrome.evaluate('String((document.querySelector("#under-test .list-rank") || {}).innerHTML || "")')));
     await chrome.evaluate('(function () { var i = document.querySelector("#under-test input"); if (!i) return; i.value = ""; i.dispatchEvent(new Event("input", { bubbles: true })); }())');
     await until(function () { return text().then(function (t) { return t.indexOf(identity.label) !== -1; }); }, 4000);
 

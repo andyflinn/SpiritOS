@@ -30,7 +30,7 @@ test.startTest('appSelector/rowElement.js: one app, as a row (goal/G43.2)');
     const text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
     const html = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerHTML || "")'); };
     const R = JSON.stringify(ROW);
-    const made = await chrome.evaluate('(function () { window.row = spirit.elements.appElement.create(' + R + '); document.getElementById("under-test").appendChild(window.row); return true; }())');
+    const made = await chrome.evaluate('(function () { window.row = spirit.elements.appElement.create(' + R + '); var c = document.getElementById("under-test"); var hosts = {}; window.row.cells().forEach(function (x) { var s = document.createElement("span"); c.appendChild(s); hosts[x.name] = s; }); window.row.mount(hosts); return true; }())');
     ok(made === true, 'spirit.elements.appElement.create(row) makes a row', 'it made no row: ' + short(made));
     const t = String(await text());
     ok(t.indexOf(ROW.label) !== -1, 'the row shows the label', 'the row shows ' + short(t));
