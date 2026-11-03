@@ -30,10 +30,12 @@
     // THE READS, ANSWERED HERE:
     //   rows()      every app kept, key -> row
     //   watch(fn)   fn(key, row) on every change, row undefined once it is gone; answers its release
+    //   watchApp(key, fn)   fn(row) when that one app changes; answers its release
     //   branch      the apps' whole path, for a list that is a view of it (probabilitySearch's data)
     var appData = {
       rows: function () { return HOME.branch(APPS); },
       watch: function (fn) { return HOME.watch(APPS, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, APPS), v); }); },
+      watchApp: function (key, fn) { return HOME.watch(APPS + '/' + key, function (whole, v) { if (typeof fn === 'function') fn(v); }); },
       get branch() { return HOME.path(APPS); },
     };
     try { Object.defineProperty(D, ATTACHED, { value: appData }); } catch (e) { D[ATTACHED] = appData; }
