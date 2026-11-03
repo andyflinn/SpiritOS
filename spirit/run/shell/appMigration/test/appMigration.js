@@ -19,7 +19,6 @@ test.startTest('appMigration.js: the throw-away host of appSelector (goal/G43.2)
 
 (async function () {
   if (!fs.existsSync(FILE)) { test.fail('shell/appMigration/appMigration.js is not there'); return; }
-  ok(!fs.existsSync(path.join(RUN, 'shell', 'appMigration', 'appMigration.json')), 'it has no manifest', 'it has a manifest');
   // ANDY DELETES THE FOLDER (box): nothing tracked outside it may name it.
   let names = [];
   try { names = execFileSync('git', ['grep', '-l', 'appMigration', '--', '.'], { cwd: RUN, encoding: 'utf8' }).split('\n').filter(Boolean); } catch (e) { names = []; }

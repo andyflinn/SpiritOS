@@ -10,6 +10,9 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { scratchNode, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+// Up here, before the first result: under the verifier testReport.js loads spirit.js for its records with the global
+// put aside, and a server module required after that finds no global spirit.
+const { faceRefuses } = require(path.join(RUN, 'spirit', 'faceHome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -53,7 +56,6 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   ok(beside.join() === 'server.json', 'server.json is the only thing in spirit/app/server/', 'spirit/app/server/ holds ' + short(beside));
 
   // A FACE WITH NO STAR CAN CALL IT (Andy, box: "and yes, a face with no star can call appSearch").
-  const { faceRefuses } = require(path.join(RUN, 'spirit', 'faceHome.js'));
   const said = faceRefuses({ call: 'app.search', args: {} }, { url: 'http://r.example/', key: '', owned: false });
   ok(said === '', 'a face with no star may call app.search', 'a face with no star is refused app.search: ' + short(said));
   ok(faceRefuses({ call: 'fs.save', args: {} }, { url: 'http://r.example/', key: '', owned: false }) !== '', 'the same question refuses fs.save, so it can refuse', 'fs.save is let through as well: the check above judged nothing');
