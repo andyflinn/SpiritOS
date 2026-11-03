@@ -99,6 +99,24 @@ test.startTest('spirit-sibling-faceStarAppsRules.js: a star shows every app on t
     ok(plain.indexOf('Contacts') !== -1, 'the face\'s desktop is drawn', 'the face drew no desktop, nothing judged: ' + short(plain));
     ok(plain.indexOf('Text Editor') === -1 && plain.indexOf('Media Viewer') === -1, 'Text Editor and Media Viewer are not on it', 'with no star the face shows them: ' + short(plain));
 
+    // A RELAY'S ROW IS A RELAY'S (goal/G41.32; Andy: "where the fuck did the contents of the relayPanel disappear to", "No
+    // folding panels anymore"; cw, on his node: the presence stream puts the row in the page before Contacts' search says
+    // relay: yes, so it was made as a person and stayed one). On a face that order is the usual one; a row follows its row.
+    test.subHeading('a relay\'s row in Contacts opens the relay, whichever came first');
+    const TILE = '(function () { var a = Array.prototype.slice.call(document.querySelectorAll("*")); var e = a.filter(function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === WORDS; })[0]; if (!e) return false; e.click(); return true; }())';
+    const press = function (words) { return chrome.evaluate(TILE.replace('WORDS', JSON.stringify(words))); };
+    const pressedApp = await press('Contacts');
+    await sleep(DRAWN_MS / 2);
+    const pressedRow = await press('scratch');
+    ok(pressedApp === true && pressedRow === true, 'Contacts opens, and the relay\'s row is pressed', 'Contacts ' + pressedApp + ', row ' + pressedRow + ': ' + short(await chrome.evaluate('document.body.innerText')));
+    await until(function () { return chrome.evaluate('document.querySelectorAll(".nd-fold").length > 0'); }, 8000);
+    const opened = await chrome.evaluate('JSON.stringify({ folds: document.querySelectorAll(".nd-fold").length, person: /Public Handle/.test(document.body.innerText) })').then(JSON.parse);
+    ok(opened.folds > 0, 'its panel opens, with its folds', 'no folds: ' + short(await chrome.evaluate('document.body.innerText')));
+    ok(opened.person === false, 'and not the person\'s page', 'the person\'s page opened for a relay');
+    await chrome.send('Page.navigate', { url: FACE });
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.events)'); }, 20000);
+    await sleep(DRAWN_MS);
+
     // WHO PAINTS, LISTENS (goal/G41.32; Andy: "every row's data, wherever it's visible OR invisible must update instantly, and
     // when visible, paint immediately."; "does a star change at home stream to the face????"): the page stays open, no reload.
     test.subHeading('the star pressed at home, the face open: its desktop follows, with no reload');
