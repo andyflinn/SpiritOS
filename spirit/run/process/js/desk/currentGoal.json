@@ -1,5 +1,5 @@
 {
- "change": 124498,
+ "change": 124782,
  "goal": "goal/G41",
  "items": [
   {
@@ -178,7 +178,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -30448,9 +30448,7 @@
    "blocking": [
     "goal/G41.31"
    ],
-   "blocked": [
-    "goal/G41.33"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -30826,15 +30824,12 @@
    "id": "goal/G41.33",
    "title": "Make sure Andy's face and Loopback shell get ALL Events",
    "goal": "goal/G41",
-   "status": "running",
+   "status": "closed",
    "statusTone": "",
    "with": "",
-   "version": 15,
+   "version": 17,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "reopen"
    ],
    "blocking": [
     "goal/G41.32"
@@ -30843,22 +30838,22 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 4,
+   "fileCount": 12,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "4ce028ee2ca8739ff9f8edb5343c0625c3f48e3e",
+   "redCommit": "79234d50",
+   "waived": true,
    "rules": [
     {
      "key": "rule/29"
@@ -30929,10 +30924,6 @@
      "version": 62
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/28",
      "version": 68
     },
@@ -30953,7 +30944,7 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -30961,14 +30952,14 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows",
     "claude-ubuntu": "claude-ubuntu"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# The requirement\n\n- 1) anything andy gets on his loopback screen, he can get on his face, if he \"stars\" any relay he's a member of or owns.\n\n- 2) this includes\n\n- bundles, branches and grants\n- a job deleted\n- running jobs\n- join steps\n- relay events\n\n- 3) for a face(relay) without star, the restrictions today stay in place.\n\n- for a face(relay) with star, NO RESTRICTIONS AT ALL, except changing stars.\n\n# Also ruled\n\n- Pressing the star sends no catch-up: what a page shows, it reads when it is drawn.\n\n- Console output goes to null by default, at the source, for every process. Only DEBUG turns it on. A crash is no exception: the exit code is enough to tell us to fix it, and we debug it by hand.\n\n- Relay events go to a starred face. This overrules goal/G30.13.\n\n- The face's priority queue does not change.\n",
+   "box": "# The requirement\n\n- 1) anything andy gets on his loopback screen, he can get on his face, if he \"stars\" any relay he's a member of or owns.\n\n- 2) this includes\n\n- bundles, branches and grants\n- a job deleted\n- running jobs\n- join steps\n- relay events\n\n- 3) for a face(relay) without star, the restrictions today stay in place.\n\n- for a face(relay) with star, NO RESTRICTIONS AT ALL, except changing stars.\n\n# Also ruled\n\n- Pressing the star sends no catch-up: what a page shows, it reads when it is drawn.\n\n- Console output goes to null by default, at the source, for every process, except node and relay. Only DEBUG turns it on. A crash is no exception: the exit code is enough to tell us to fix it, and we debug it by hand.\n\n- Relay events go to a starred face. This overrules goal/G30.13.\n\n- The face's priority queue does not change.\n\n- For now, a star shows every app on the face, Text Editor and Media Viewer too, whatever its face mark (Q9).\n",
    "checks": [
     {
      "number": "Q1",
@@ -31059,10 +31050,70 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-03T03:13:48.423Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Console to null for every process: does that include the node and relay themselves (\"node is listening\"), or only the processes they start?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-03T03:01:35.554Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-03T03:36:22.688Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Should a star show every app on the face, Text Editor and Media Viewer too, or does each app's face mark stay yours to set?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-03T03:33:39.482Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
      "state": "granted",
      "by": "andy",
-     "at": "2026-11-03T02:48:21.898Z",
+     "at": "2026-11-03T03:42:34.624Z",
      "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Do I tag once wsl has verified 4ce028ee, or tag now without waiting?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T03:51:29.561Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -31637,6 +31688,186 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-11-03T02:46:25.763Z",
      "text": "cw, put the file list onto this item!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:50:28.980Z",
+     "text": "all, GO!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:52:20.046Z",
+     "text": "all, go!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T02:54:25.077Z",
+     "text": "cw: Andy, I have your go from the window, and the four files and the core grant are on the item. My node lost Desk for about 10 minutes, so I restarted it; that is why my green on v15 never came through.\n\nwsl, the reds are yours. I build when they are in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:00:26.528Z",
+     "text": "Q8: Console to null for every process: does that include the node and relay themselves (\"node is listening\"), or only the processes they start?\n\nNOT the servers."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:01:40.223Z",
+     "text": "Q8: Console to null for every process: does that include the node and relay themselves (\"node is listening\"), or only the processes they start?\n\nexcept node and relay."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-03T03:01:40.337Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-03T03:13:06.224Z",
+     "text": "waived: wsl-claude is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:13:37.994Z",
+     "text": "wsl: my mistake, and Desk now shows the wrong thing. It says the reds are in at 04c89b88 and the item is in build. They are not in: that commit is not mine and holds none of them.\n\nThe commit was refused because the test files are not on the item's list, and my script went on to claim anyway. cw, do not build from that claim.\n\nThe reds are written and run on my side, red on today's code. They need the six files on the list, granted by Andy. I am adding them now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:15:04.925Z",
+     "text": "wsl: the reds are in now, 935cfb30, on origin/master. cw, build from that commit, not 04c89b88. Six test files, red on today's code, green on a rough fix on a throwaway copy, and eight breaks of that fix each go red. Not tested: packets, since the box reduced this to its five kinds for now. Relay events are tested on stand-ins only."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:15:21.160Z",
+     "text": "commit 935cfb304cc30a389443adfb5f063f9b5c1bc1e3: goal/G41.33 red: a starred face gets what the loopback gets, and a process's console goes to null. spirit/test/faceHome.js: on a starred face bundles, branches, grants, a job deleted, running jobs, jo\n- spirit/run/spirit/test/faceHome.js\n- spirit/run/spirit/test/faceHome.md\n- spirit/run/spirit/test/jobs.js\n- spirit/run/spirit/test/jobs.md\n- spirit/run/test/spirit-sibling-faceStarRules.js\n- spirit/run/test/spirit-sibling-faceStarRules.md"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T03:22:07.267Z",
+     "text": "commit 2ae1bb8807350927d5a410d6eaf89b777b1f4e1c: goal/G41.33: a starred face gets what the loopback gets, with no restrictions but changing stars; a process's console goes to null (wsl's red, 935cfb30). faceHome.js: on a starred face every job goes \n- spirit/run/shell/boot.js\n- spirit/run/spirit/faceHome.js\n- spirit/run/spirit/jobs.js\n- spirit/run/spirit/server.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T03:23:02.973Z",
+     "text": "cw: built and pushed, 2ae1bb88. wsl's three reds pass, and the boot suite: 104, 32, 57 and 29 checks, no failures. I did not run the full harness.\n\nNot judged by any test: the face page dropping a deleted job. Its stream is tested; what the page does with it is read from the code only.\n\nThree things you will see:\n- With DEBUG off, a job's log no longer shows what its program prints. counterServer's page-served lines are gone too.\n- DEBUG counts when a program starts. Turning it on later does nothing for a server already running until it is restarted.\n- Your node needs a restart on this code to get any of it. I have not touched it.\n\nwsl, it is yours to verify."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:29:30.000Z",
+     "text": "wsl: verified 2ae1bb88, it does what the box says. The three suites pass, and eight breaks of cw's code each go red.\n\nOn a real scratch node and relay, in a real browser, a starred face hears a job, its deletion and a bundle, and calls an owner verb; contact.own is refused. An owner's relay event arrives once, and a relay status only with the star.\n\nNot run: the full harness. A monitor post or reply was only tested on stand-ins. Your node needs a restart on this code.\n\nOne question below: Text Editor and Media Viewer show at home but not on a starred face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:33:12.739Z",
+     "text": "Q9: Should a star show every app on the face, Text Editor and Media Viewer too, or does each app's face mark stay yours to set?\n\nyes. for now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:33:45.468Z",
+     "text": "wsl: I read your yes as: for now, a star shows every app on the face, whatever its face mark. It is in the box; say if you meant the other way. That is new work, so the red comes next, then cw builds."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:36:00.780Z",
+     "text": "do i need to restart my node to see this, or tag the relay?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-03T03:36:00.895Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:37:35.058Z",
+     "text": "wsl: both, but wait. Restarting your node brings the streams and the open verbs. The relay serves the face page itself (relayServer.js:432), so only a tag lets that page drop a deleted job.\n\nHold both until the every-app work is in, since it likely changes that same page and would need a second tag.\n\nThat work waits on one thing from you: grant G3 on this item. Adding my new test cancelled G2."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:42:58.110Z",
+     "text": "commit 79234d50fe2355b7e601305bb1d4edee19425a4f: goal/G41.33 red: a star shows every app on the face (Q9; Andy, of \"Should a star show every app on the face, Text Editor and Media Viewer too, or does each app's face mark stay yours to set?\": \"yes. f\n- spirit/run/test/spirit-sibling-faceStarAppsRules.js\n- spirit/run/test/spirit-sibling-faceStarAppsRules.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:43:12.444Z",
+     "text": "wsl: the every-app red is in, 79234d50, on origin/master. cw, yours to build: test/spirit-sibling-faceStarAppsRules.js, a real Chrome. Red today on Text Editor and Media Viewer; a rough fix on a throwaway copy passed it. The page has to know its relay is starred, and nothing tells it that today."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T03:46:41.335Z",
+     "text": "commit 4ce028ee2ca8739ff9f8edb5343c0625c3f48e3e: goal/G41.33: a star shows every app on the face (Q9; Andy, of \"Should a star show every app on the face, Text Editor and Media Viewer too, or does each app's face mark stay yours to set?\": \"yes. for n\n- spirit/run/shell/boot.js\n- spirit/run/spirit/faceHome.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T03:47:22.460Z",
+     "text": "cw: built and pushed, 4ce028ee. A starred face now shows every app the home desktop shows. wsl's red passes in real Chrome, 12 checks, and the three suites it could touch still pass: 104, 57 and 29. Full harness not run.\n\nOne thing you will see: the page learns about the star as it opens. Press or remove a star with the face open and the desktop changes on its next load; what it may do changes at once.\n\nTo see it all: a tag for the face page, and a restart of your node. Both wait for wsl's verify.\n\nwsl, yours to verify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:49:01.192Z",
+     "text": "cw. tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T03:50:51.602Z",
+     "text": "cw: my advice is not yet, by a few minutes: wsl is verifying 4ce028ee right now. If they find a fault in the face page, it means a second tag.\n\nWhat the tag releases, since v-2026-11-02-14-15:\n- For relays, only the face page changes: it drops a deleted job, and shows every app when its relay is starred.\n- The rest is your node's and takes effect when you restart it: the starred stream and open verbs, console to null, and a refused file read said as refused.\n\nWhat happens:\n- It is public, and relays take it and restart within about 10 minutes, so open faces drop and reconnect.\n- A new page on your old node works, with today's limits, so the order of tag and restart does not matter.\n- Once you restart, anyone holding a starred relay or your login mail has the full face, and can run programs on your machine. That is your ruling; G42 is what ends it.\n\nStill open and not fixed by this: the 502 on setting a face on a relay already naming you as owner.\n\nFull harness not run. Red Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:51:12.212Z",
+     "text": "Q10: Do I tag once wsl has verified 4ce028ee, or tag now without waiting?\n\nwait"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-03T03:51:12.296Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T03:51:32.712Z",
+     "text": "cw: Q10 noted and closed. I tag when wsl has verified 4ce028ee."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T03:53:33.330Z",
+     "text": "wsl: verified 4ce028ee. In real Chrome a starred face now shows the same apps as home, nothing missing and nothing extra, and Text Editor opens. With no star, or with the star off, Text Editor and Media Viewer stay away. All five suites pass, and three breaks of cw's code go red. A fourth break changed nothing, because no app here came without a face part, so that fallback line was never run.\n\nNot run: the full harness. On your real node, an app naming a server still shows only while that server runs, as at home.\n\nIt is ready for your tag and node restart, your call."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T03:54:27.117Z",
+     "text": "tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T03:55:13.647Z",
+     "text": "cw: tagged v-2026-11-03-04-54, on 4ce028ee. Relays take it within about 10 minutes, and open faces will drop and reconnect.\n\nYour node still needs a restart on this code for the starred stream, the open verbs and console to null."
     }
    ]
   }
