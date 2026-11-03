@@ -4,7 +4,7 @@
     "label": "Server"
   },
   "mount": {
-    "app.js":true
+    "server.js":true
   },
   "shell": {
     "true":false,
