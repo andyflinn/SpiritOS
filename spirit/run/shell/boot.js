@@ -289,6 +289,10 @@
       var table = {};
       Object.keys(presence).forEach(function (k) { table[k] = presence[k]; });
       update({ id: 'face-presence', type: 'relay-presence', data: { presence: table } });
+    } else if (ev.event === 'job-deleted' && ev.data) {
+      // A job gone (goal/G41.33, a starred face only): to the kernel's subscribers, as the loopback stream hands it.
+      delete linkJobs[ev.data];
+      subscribers.slice().forEach(function (h) { if (h.onDelete) { try { h.onDelete(ev.data); } catch (e) { /* one app's fault */ } } });
     } else if (ev.event === 'relay-event' && ev.data) {
       // What a relay the home node owns did (goal/G30.15): to the kernel's subscribers, as the loopback stream hands it.
       subscribers.slice().forEach(function (h) { if (h.onRelayEvent) { try { h.onRelayEvent(ev.data); } catch (e) { /* one app's fault */ } } });

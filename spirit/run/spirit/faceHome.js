@@ -41,7 +41,8 @@ const FACE_PIECE = 64 * 1024;
 // refusing to change the face name for the face I'm calling from"). Only a face-name change on the relay this face is
 // called through: relay.face for that relay, or a post carrying { face } to that relay's key. relay.join, and a face
 // name on any other relay, go through. request: the face's call, { call, args } (goal/G41.15); here: { url, key } of
-// the relay the request came through.
+// the relay the request came through. ON A STARRED RELAY THIS REFUSAL GOES TOO (goal/G41.33, the box: "for a face(relay) with
+// star, NO RESTRICTIONS AT ALL, except changing stars"), so a starred face can rename itself and lose the page it is on.
 // A call as the door takes it (goal/G41.15): exactly { call, args }, call a name, args a plain object.
 function isCall(x) {
   return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 2 &&
@@ -80,7 +81,8 @@ function faceRefuses(request, here) {
   const plain = function (u) { return String(u || '').trim().replace(/\/+$/, '').toLowerCase(); };
   const verb = String(q.call || '');
   if (NEVER_ON_THE_FACE.indexOf(verb) !== -1) return verb + ' is never asked from a face';
-  if (!h.owned && offTheFace(verb)) return verb + ' is off the face until a face can prove it is the owner';
+  if (h.owned) return '';
+  if (offTheFace(verb)) return verb + ' is off the face until a face can prove it is the owner';
   if (verb === 'relay.face' && plain(r.url) === plain(h.url)) return 'relay.face would change the face you are calling from';
   if (verb === 'peer.post' && h.key && String(r.to || '') === String(h.key)) {
     let packet = null;
@@ -392,8 +394,17 @@ function createFaceHome(opts) {
       presenceChanged(job.data && job.data.presence).forEach(function (p) { toFaces(FACE_PRIORITY.presence, { event: 'presence', data: p }); });
       return;
     }
+    // A STARRED FACE GETS WHAT THE LOOPBACK GETS (goal/G41.33, the box: "anything andy gets on his loopback screen, he can get
+    // on his face, if he "stars" any relay"): every job, whole, a job with no place at the app servers' priority; the queue
+    // does not change. The star counts at each event, here and in toStarred. A face with no star keeps today's stream.
     const p = priorityOf(job);
-    if (p) toFaces(p, { event: 'job-updated', data: faceView(job) });
+    Object.keys(faces).forEach(function (url) {
+      if (faceIsOwned(url)) faces[url].queue.push(p || FACE_PRIORITY.app, { event: 'job-updated', data: job });
+      else if (p) faces[url].queue.push(p, { event: 'job-updated', data: faceView(job) });
+    });
+  }
+  function toStarred(event) {
+    Object.keys(faces).forEach(function (url) { if (faceIsOwned(url)) faces[url].queue.push(FACE_PRIORITY.app, event); });
   }
   // ONE SUBSCRIBER OF THE NODE'S EVENTS (goal/G40.6): the face's home side hears the events family, as the loopback
   // shell does, and no packets (a face asks its home node, it is posted nothing). A job as it changes; a contact renamed
@@ -401,6 +412,8 @@ function createFaceHome(opts) {
   if (o.events && typeof o.events.subscribe === 'function') {
     o.events.subscribe(function (kind, data) {
       if (kind === 'job-updated') onJob(data);
+      // goal/G41.33: a job deleted, and every relay event, the monitor's too (the box: "This overrules goal/G30.13"), starred only.
+      else if (kind === 'job-deleted' || kind === 'relay-event') toStarred({ event: kind, data: data });
       else if (kind === 'contact.rename' && data && data.key) toFaces(FACE_PRIORITY.presence, { event: 'contact.rename', data: data });
     }, { packets: 'none' });
   }
@@ -438,7 +451,13 @@ function createFaceHome(opts) {
     Object.keys(now).forEach(function (key) {
       face.queue.push(FACE_PRIORITY.presence, { event: 'presence', data: { key: key, present: now[key].present === true, at: now[key].at } });
     });
-    all.forEach(function (j) { if (priorityOf(j) === FACE_PRIORITY.app) face.queue.push(FACE_PRIORITY.app, { event: 'job-updated', data: faceView(j) }); });
+    // A STARRED FACE THAT OPENS GETS THE JOBS A LOOPBACK PAGE GETS ON CONNECT (goal/G41.33, the box's line 1; events.js, the
+    // snapshot), the tree and presence as above. Pressing the star with the face open sends nothing: "no catch-up".
+    if (faceIsOwned(url)) {
+      all.forEach(function (j) { if (j.type !== 'fs-watcher' && j.type !== 'relay-presence') face.queue.push(priorityOf(j) || FACE_PRIORITY.app, { event: 'job-updated', data: j }); });
+    } else {
+      all.forEach(function (j) { if (priorityOf(j) === FACE_PRIORITY.app) face.queue.push(FACE_PRIORITY.app, { event: 'job-updated', data: faceView(j) }); });
+    }
     // NO SNAPSHOT OF THE SHADOW JOB: it holds the one row that changed last, not the table; a face opened reads its
     // relays and contacts as it draws, and hears every change after (goal/G40.11).
   }
@@ -452,9 +471,11 @@ function createFaceHome(opts) {
 
   // WHAT A RELAY THIS NODE OWNS DID ABOUT ITS MEMBERSHIP (goal/G30.15): an invite minted, a claim, a rename, as the
   // loopback shell gets it on its 'relay-event' line, so Relay Details on the face redraws at once. The relay monitor
-  // is not handed here and stays off the face. At the app servers' priority.
+  // is not handed here. At the app servers' priority. A starred face hears this same event from the node's dispatcher
+  // with every other relay event (goal/G41.33), so it goes here only to a face with no star: one event, one line.
   function ownerEvent(ev) {
-    if (ev && typeof ev === 'object') toFaces(FACE_PRIORITY.app, { event: 'relay-event', data: ev });
+    if (!ev || typeof ev !== 'object') return;
+    Object.keys(faces).forEach(function (url) { if (!faceIsOwned(url)) faces[url].queue.push(FACE_PRIORITY.app, { event: 'relay-event', data: ev }); });
   }
 
   return { request: request, open: open, close: close, ownerEvent: ownerEvent, sweepUploads: sweepUploads };
