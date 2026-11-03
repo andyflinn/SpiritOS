@@ -52,6 +52,7 @@ test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a re
   const N = await scratchNode();
   const R = await scratchFaceRelay({ members: [] });
   let S = null;
+  const others = [];
   let chrome = null;
   try {
     if (!N.up || !R.up) { test.fail('the scratch node or relay did not come up: nothing judged'); return; }
@@ -141,11 +142,21 @@ test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a re
     await chrome.evaluate('document.getElementById("zzPanel").style.display = ""; 1');
 
     test.subHeading('it follows only its row');
+    // Another relay's row, joined and not owned: a panel that listened to it would stop saying this relay is owned.
     const before = await text();
-    const other = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('zz').publicKey;
-    await home(N.base, 'contact.block', { publicKey: other });
-    await sleep(1500);
-    ok((await text()) === before, 'another contact\'s row changes nothing in it', 'it repainted for another row');
+    const Other = await scratchFaceRelay({ members: [] });
+    others.push(Other);
+    ok(Other.up, 'a second relay comes up', 'the second relay did not come up: nothing judged');
+    await home(N.base, 'relay.add', { url: Other.base, label: 'zzOtherRelay' });
+    await home(N.base, 'relay.join', { url: Other.base, email: MAIL });
+    await until(function () { return Other.mailed.length > 0; }, 5000);
+    const code2 = Other.mailed[0] && ((/[?&]join=([A-Za-z0-9_-]+)/.exec(Other.mailed[0].text)) || [])[1];
+    await home(N.base, 'relay.join', { url: Other.base, email: MAIL, code: code2 });
+    await until(function () { const r = last(Other.relayKey); return !!r && r.claimed === true && r.owned === false; }, 10000);
+    const otherRow = last(Other.relayKey) || {};
+    ok(otherRow.claimed === true && otherRow.owned === false, 'the other relay\'s row, seated and not owned, is on the stream', 'nothing judged: ' + short(otherRow));
+    await sleep(1000);
+    ok((await text()) === before, 'and nothing of it reaches this panel', 'it repainted for another relay\'s row: ' + short(await text()));
 
     test.subHeading('gone from the page, it stops');
     const mark = chrome.heard.length;
@@ -160,6 +171,7 @@ test.startTest('spirit-sibling-relayRowStreamRules.js: who paints, listens: a re
     try { if (chrome && chrome.sock) chrome.sock.close(); if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
     try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* scratch */ }
     try { R.stop(); } catch (e) { /* gone */ }
+    others.forEach(function (o) { try { o.stop(); } catch (e) { /* gone */ } });
     try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
     try { if (N.root) fs.rmSync(N.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   }
