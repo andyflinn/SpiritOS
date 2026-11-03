@@ -3,12 +3,12 @@
 // top of the page: a one-row add form: "new" [fieldInput.js/fieldRules:Label input field] [Add-Button]" (a rowForm since
 // goal/G41.27, ➕ in place of "new"), "the
 // [add-Button] refused an empty or invalid label", and "filling the rest of the available vertical space: the
-// bundleSelector in pane-mode", its columns the label (shown only since goal/G41.26), the owner, Edit (the branch editor, a page of its own) and
-// Delete (an armingButton). The grants app draws it in its Bundles tab ("the Grant app must use the bundleEditor in its
-// "Bundle" tab"). A bundle is a label; its branches are the branch editor's.
+// bundleSelector in pane-mode", its columns the label (shown only since goal/G41.26) and the owner. A row pressed opens
+// its branch editor as a closable tab (goal/G41.32). The grants app draws it in its Bundles tab ("the Grant app must use
+// the bundleEditor in its "Bundle" tab"). A bundle is a label; its branches are the branch editor's.
 //
-//   spirit.elements.bundleEditor.create(box, { api }) -> { destroy() }
-//     box  the space it fills; api the app's shell api, handed to the rows for their are-you-sure
+//   spirit.elements.bundleEditor.create(box, { api, tabs }) -> { destroy() }
+//     box  the space it fills; api the app's shell api, for the are-you-sure; tabs the tabContainer the pane opens tabs in
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require; and the auth family's cache manager, whose
   // bundles it adds to (goal/G41.28).
@@ -26,10 +26,6 @@
   function create(box, options) {
     var o = options || {};
     var gone = false;
-    // ITS ADDS' OWNER (goal/G41.25; Andy, box: "the bundle-editor can be optionally configured with an <AppServerName>
-    // (family) at mount-time", and "when a bundle is added the \"owner\" field will ALWAYS be set to \"node\", unless the
-    // bundleEditor was mounted for an appServer, then the owner field sill be set to <AppServerName>").
-    var owner = typeof o.family === 'string' && o.family ? o.family : 'node';
     var stop = null;
     var bundles = null;
     parts.then(function () {
@@ -50,7 +46,7 @@
       said.className = 'job-manifest-note';
       box.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are shown only.
-      bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'owner', 'edit', 'delete'], api: o.api });
+      bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, api: o.api });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }
@@ -69,7 +65,7 @@
         if (got.why) { say(got.why); return; }
         say('');
         waitingFor = got.value;
-        spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value, owner: owner }); }).then(null, function (e) {
+        spirit.ready.then(function (s) { return s.auth.bundle({ op: 'add', label: got.value }); }).then(null, function (e) {
           waitingFor = '';
           say((e && (e.message || e.refusal)) || 'not added');
         });

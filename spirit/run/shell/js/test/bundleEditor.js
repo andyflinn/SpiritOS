@@ -125,8 +125,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // edit button, leading to the branchEditor.js ... 3. a delete armingButton.js".
   const sel = sels[0];
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
-  ok(!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner","edit","delete"]' && !sel.o.editable,
-    'bundleSelector.create(its box, a pane, columns label, owner, edit, delete), its labels shown only (goal/G41.26: "the Label should now just be an output")', 'selector: ' + short(sel && sel.o) + ', in its box ' + !!(sel && sel.container === box));
+  ok(!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner"]' && !sel.o.editable,
+    'bundleSelector.create(its box, a pane, columns label, owner), its labels shown only (goal/G41.26: "the Label should now just be an output")', 'selector: ' + short(sel && sel.o) + ', in its box ' + !!(sel && sel.container === box));
   ok(!!sel && (/\bfill\b/.test(sel.className || '') || holds(box, 'fill')), 'in a box that fills the space left (shell.css fill)', 'classes: ' + short(all(box).map(function (k) { return k.className; })));
   if (!sel) return;
 
@@ -137,7 +137,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await settle();
   // goal/G41.25, box: "when a bundle is added the \"owner\" field will ALWAYS be set to \"node\", unless the bundleEditor
   // was mounted for an appServer".
-  ok(asked.length === 1 && asked[0].op === 'add' && asked[0].label === 'Reader' && asked[0].owner === 'node' && Object.keys(asked[0]).length === 3, 'a valid label asks auth.bundle { op: add, label, owner: node }, the label as the rule writes it, mounted for no app server', 'asked: ' + short(asked));
+  ok(asked.length === 1 && asked[0].op === 'add' && asked[0].label === 'Reader' && Object.keys(asked[0]).length === 2, 'a valid label asks auth.bundle { op: add, label }, the label as the rule writes it (goal/G41.32: a user makes node-owned bundles alone)', 'asked: ' + short(asked));
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
   // via the spirit object"): what it adds, it listens for, in spirit.authData.bundles.
   ok(input.value === '  Reader ' && !/\badded\b/.test(text(box)), 'answered, before the bundle is in the auth family\'s cache, the label stays and nothing is said added', 'input ' + short(input.value) + ', text: ' + short(text(box)));
@@ -153,20 +153,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   add.dispatchEvent({ type: 'click' });
   await settle();
   ok(/label refused|bad-request/.test(text(box)) && input.value === 'Writer', 'a refused add is said in the panel, in the node\'s words, and the label stays to be mended', 'text: ' + short(text(box)) + ', input ' + short(input.value));
-
-  test.subHeading('goal/G41.25: mounted for an app server, its adds are that server\'s');
-  // Andy, box: "the bundle-editor can be optionally configured with an <AppServerName> (family) at mount-time", and
-  // "then the owner field sill be set to <AppServerName>".
-  answer = function () { return Promise.resolve({ id: 10 }); };
-  const box2 = node('box');
-  E.bundleEditor.create(box2, { family: 'agent' });
-  await settle();
-  const input2 = all(box2).filter(function (k) { return k.tag === 'input'; })[0];
-  const add2 = all(box2).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
-  const n0 = asked.length;
-  if (input2 && add2) { input2.value = 'Agent tools'; add2.dispatchEvent({ type: 'click' }); await settle(); }
-  const a2 = asked[n0];
-  ok(!!a2 && a2.op === 'add' && a2.label === 'Agent tools' && a2.owner === 'agent' && asked.length === n0 + 1, 'create(box, { family }) adds each bundle with that app server as its owner: auth.bundle { op: add, label, owner: family }', 'asked: ' + short(asked.slice(n0)));
 
   test.subHeading('destroy');
   ok(made && typeof made.destroy === 'function', 'create answers { destroy }', 'made: ' + short(made && Object.keys(made)));

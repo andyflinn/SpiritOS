@@ -1,7 +1,8 @@
-# shell/js/natterDetails/natterDetails.js
+# shell/js/relayPanel.js
 
-One relay, as a page on the navigation (goal/G40.8): `window.spirit.elements.natterDetails.open({ url })` pushes it,
-and it reads that relay's row by `spirit.relay.status`. Its panels fold; the owner's panels (Memory and disc, Invites)
+One relay, a shell element (goal/G41.32): `spirit.elements.relayPanel.create(container, { key })`, and `open({ key })` pushes it
+as a page on the navigation (goal/G40.8). It reads that relay's row by `spirit.relay.status` as it is drawn, and listens after
+that: `test/spirit-sibling-relayRowStreamRules.md`. Its panels fold; the owner's panels (Memory and disc, Invites)
 sit in one more fold, "Managing my relay".
 
 This spec covers what goal/G41.9 asks of it: its four are-you-sure buttons are the shell element armingButton.

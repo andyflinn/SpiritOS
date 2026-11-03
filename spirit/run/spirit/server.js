@@ -161,10 +161,36 @@ try { joinStepsJob = require('./joinStepsJob').create(ROOT_DIR, jobs); } catch (
 // the one that changed. The cost, stated: one update for every row written differently, so one per presence word and
 // per arrival (nodeStore's onChange).
 let shadowJob = null;
+// A RELAY'S ROW CARRIES WHAT relay.get ANSWERS (goal/G41.32; Andy: "every row's data, wherever it's visible OR invisible must
+// update instantly, and when visible, paint immediately."): its status, owned, claimed, services and roll, all the node's
+// own. They change without a row of seen changing, so relayChanged publishes the row again at each moment one can: a stream
+// open or closed, a card read, a report, a relay's rename. Only when one did change. The report is not on a row.
+const relayFactsSaid = Object.create(null);
+function relayFactsOf(row) {
+  const known = require('./relayKeys').byKey(ROOT_DIR, row.publicKey);
+  return known && known.url ? hub.relayFacts(peerRouter, known.url) : null;
+}
+function shadowRow(row) {
+  if (!row || row.gone === true || row.relay !== true) return row;
+  const facts = relayFactsOf(row);
+  if (!facts) return row;
+  relayFactsSaid[row.publicKey] = JSON.stringify(facts);
+  return Object.assign({}, row, facts);
+}
+function relayChanged(url) {
+  if (!shadowJob) return;
+  try {
+    const known = require('./relayKeys').byUrl(ROOT_DIR, url);
+    const row = known ? require('./nodeStore').open(ROOT_DIR).seen.get(known.key) : null;
+    const facts = row ? relayFactsOf(row) : null;
+    if (!facts || relayFactsSaid[row.publicKey] === JSON.stringify(facts)) return;
+    jobs.updateJob(shadowJob.id, { data: { row: shadowRow(row) } });
+  } catch (e) { /* the next change publishes again */ }
+}
 try {
   shadowJob = jobs.createJob('permanent', 'shadow', {});
   require('./nodeStore').open(ROOT_DIR).seen.onChange(function (row) {
-    try { jobs.updateJob(shadowJob.id, { data: { row: row } }); } catch (e) { /* the next change publishes again */ }
+    try { jobs.updateJob(shadowJob.id, { data: { row: shadowRow(row) } }); } catch (e) { /* the next change publishes again */ }
   });
 } catch (e) { shadowJob = null; }
 
@@ -1181,6 +1207,7 @@ catch (e) {
 
   peerRouter = require('./peerPost').createPeerPost({
     rootDir: ROOT_DIR,
+    onRelayCard: function (url) { relayChanged(url); },
     request: require('./hub').relayRequest,
     // THE QUEUE OUTLIVES THE PROCESS (cycle R16). Only here: the relay's
     // own peerPost (relayServer.js) is built without a store, because a
@@ -1468,6 +1495,7 @@ catch (e) {
       catch (e) { /* the record is a witness, never a participant */ }
     },
     recordEdge: function (url, kind, why) {
+      relayChanged(url);
       try { require('./nodeStore').open(ROOT_DIR).record.edge(url, kind, null, why); }
       catch (e) { /* as above */ }
     },
@@ -1495,6 +1523,7 @@ catch (e) {
     // on top of the sweep, never the only way a member is noticed.
     onRelayEvent: function (ev) {
       relayEvents.note(ev);
+      if (ev && ev.kind === 'status') relayChanged(ev.relay);
       // A `kind: 'claim'` branch stood here and never fired: claims arrive
       // as `owner-event` (onOwnerEvent, below), not `relay-event`, since
       // R2 split the two. Adoption lives there now.
@@ -1589,6 +1618,8 @@ catch (e) {
     },
 
     onOwnerEvent: function (ev) {
+      // A RELAY RENAMED: its card says so, read again, and the row follows (goal/G41.32).
+      if (ev && ev.kind === 'relay-renamed' && ev.relay && peerRouter) Promise.resolve(peerRouter.relayKey(ev.relay)).catch(function () { /* the next card says it */ });
       try {
         trafficLog.note({
           dir: 'in',

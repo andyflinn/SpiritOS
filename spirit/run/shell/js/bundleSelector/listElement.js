@@ -7,9 +7,8 @@
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
 //     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's
-//     opts.columns   the row's fields it shows, in order, of label, owner, edit and delete; label and owner by default
+//     opts.columns   the row's fields it shows, in order, of label and owner; both by default
 //     opts.family    an app server's name: it lists the bundles that server owns alone (goal/G41.25)
-//     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
 // A VIEW OF data.bundles (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their
 // data set"): auth.bundle's search seats its rows there, and the node's stream keeps them current through the bundle
@@ -22,8 +21,6 @@
   var COLUMNS = {
     label: { field: 'label', label: 'Bundle', sort: 'text' },
     owner: { field: 'owner', label: 'Owner', sort: 'text' },
-    edit: { field: 'edit', label: '' },
-    delete: { field: 'delete', label: '' },
   };
 
   function create(host, opts) {
@@ -58,7 +55,7 @@
       filters: family ? [{ name: 'owner', when: function () { return false; }, test: function (r) { return r && (r.owner || 'node') === family ? 1 : 0; } }] : [],
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
       element: function (row, key) {
-        return window.spirit.elements.bundleElement.create(row, { api: o.api });
+        return window.spirit.elements.bundleElement.create(row);
       },
       // A pick shows the bundle's label, never its number (Andy: "the bundleSelector shows a fucking number is selected
       // instead of the fucking label"); the number is hidden (box: "a hidden numeric key").

@@ -1931,6 +1931,8 @@ function createPeerPost(opts) {
       servicesByUrl[String(relayUrl || '').replace(/\/+$/, '')] = services;
       labelByUrl[String(relayUrl || '').replace(/\/+$/, '')] = String(said.relayLabel || '');
       ownerLabelByUrl[String(relayUrl || '').replace(/\/+$/, '')] = String(said.ownerLabel || '');
+      // A card read: what it says goes on the relay's row (goal/G41.32).
+      if (typeof opts.onRelayCard === 'function') { try { opts.onRelayCard(String(relayUrl || '').replace(/\/+$/, '')); } catch (e) { /* a witness */ } }
       return {
         relayPublicKey: String(said.relayPublicKey),
         relaySealKey: String(said.relaySealKey || ''),

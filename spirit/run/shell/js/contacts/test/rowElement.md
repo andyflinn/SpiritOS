@@ -21,7 +21,7 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
   not offer asks nothing. **What the row is follows its flags**: a row added (its `keep` set on its contact row) loses
   its Add and offers what a kept row offers; a row that leaves the book offers Add again.
 - **It loads what it uses** (goal/G41.3): loading, it requires `shell/js/rowElement.js` through `spirit.require`; `open`
-  first requires the page it opens (`contactDetails/contactDetails.js`, `natterDetails/natterDetails.js`), then opens it.
+  first requires the page it opens (`contactDetails/contactDetails.js`, `relayPanel.js`), then opens it.
 - **Cells**: presence 🟢 present, 🔴 absent, ⚪ not known; status ❌ blocked over ⌛ held over ⭐ mine, else blank; label
   the name, HTML-escaped; add an Add button only on a row neither in the book nor a relay.
 - **Presence already known** in the contacts (`spirit.contactData`) wins over the row's own `present` at create.

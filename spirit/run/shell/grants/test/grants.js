@@ -251,7 +251,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     test.subHeading('goal/G41.32: a bundle already open: its tab is made active');
     ok(await click('Bundles', '.tab-button') || await click('Bundles'), 'back to the Bundles tab', 'no way back to the Bundles tab');
     await waitFor(function () { return shown('zzTwo'); });
-    await click('zzOne', '.bundle-selector');
+    await click('zzOne', '.bundle-selector-face-pane');
     await H.sleep(800);
     const again = await tabNamed('zzOne');
     ok(again.length === 1 && again[0].on, 'zzOne pressed again: no second tab, its tab is active', 'tabs: ' + short(await tabs()));
@@ -265,7 +265,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     test.subHeading('goal/G41.32: the Delete row deletes, by the arming button, and the tab closes');
     await click('Bundles', '.tab-button');
     await waitFor(function () { return shown('zzTwo'); });
-    await click('zzTwo', '.bundle-selector');
+    await click('zzTwo', '.bundle-selector-face-pane');
     await waitFor(function () { return pageText().then(function (t) { return t.indexOf('Delete zzTwo bundle and branches') !== -1; }); });
     const hadTwo = (await tabNamed('zzTwo')).length === 1;
     const DELBTN = 'Array.prototype.slice.call(document.querySelectorAll(".shell-row-form")).filter(function (f) { return f.offsetParent !== null && f.textContent.indexOf("Delete zzTwo") !== -1; })[0]';
@@ -281,7 +281,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     test.subHeading('goal/G41.32: a bundle deleted elsewhere closes its tab');
     await click('Bundles', '.tab-button');
     await waitFor(function () { return shown('zzThree'); });
-    await click('zzThree', '.bundle-selector');
+    await click('zzThree', '.bundle-selector-face-pane');
     await waitFor(function () { return tabNamed('zzThree').then(function (t) { return t.length === 1; }); });
     const hadThree = (await tabNamed('zzThree')).length === 1;
     ok(hadThree, 'zzThree has its tab', 'tabs: ' + short(await tabs()));
@@ -293,7 +293,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     if (serverBundle) {
       await click('Bundles', '.tab-button');
       await waitFor(function () { return shown(serverBundle.label); });
-      ok(await click(serverBundle.label, '.bundle-selector'), 'its row opens', 'no row for ' + serverBundle.label);
+      ok(await click(serverBundle.label, '.bundle-selector-face-pane'), 'its row opens', 'no row for ' + serverBundle.label);
       await waitFor(function () { return tabNamed(serverBundle.label).then(function (t) { return t.length === 1; }); });
       const editable = await chrome.evaluate('JSON.stringify(Array.prototype.slice.call(document.querySelectorAll(".shell-row-form")).filter(function (f) { return f.offsetParent !== null; }).map(function (f) { return f.textContent.trim().slice(0, 60); }))');
       ok(JSON.parse(editable || '[]').length === 0, 'no add form and no Delete row on it', 'forms on a read-only bundle: ' + editable);

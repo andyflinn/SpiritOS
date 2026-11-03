@@ -13,7 +13,11 @@
 //     root.row     the chosen bundle, { id, label }, null while none is
 //     one bubbling `change` on a pick; refresh() asks again
 //     options.face       'pane' is the list itself; the default is the dropdown
-//     options.columns    the list's fields, of label, owner, edit and delete
+//     options.columns    the list's fields, of label and owner
+//     options.tabs       in a pane, the tabContainer a row pressed opens its branchEditor in (goal/G41.32; Andy: "when some
+//                        clicks on a (selects) a bundle row, a new closable tab opens in the tabContainer configured in the
+//                        bundleSelector:pane"; "if a bundle already has an branchEditor-tab in the configured tabContainer,
+//                        that tab will become the active tab"). None configured, a press opens nothing
 //     options.family     an app server's name: only the bundles it owns are listed (goal/G41.25)
 //     options.placeholder, options.all, options.api, options.empty   handed to the list
 (function () {
@@ -31,6 +35,16 @@
       root.value = row && row.id !== undefined ? Number(row.id) : '';
       root.row = row || null;
       root.dispatchEvent(new Event('change', { bubbles: true }));
+      if (isPane && options.tabs && row) openTab(row);
+    }
+    function openTab(row) {
+      var tabs = options.tabs;
+      var name = 'bundle-' + Number(row.id);
+      window.spirit.require('shell/js/branchEditor.js').then(function () {
+        tabs.add({ name: name, label: String(row.label || ''), closable: true, mount: function (box) {
+          return window.spirit.elements.branchEditor.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), api: options.api, gone: function () { tabs.close(name); } });
+        } });
+      });
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     var gone = false;

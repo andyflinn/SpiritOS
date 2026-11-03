@@ -267,7 +267,13 @@ function createApiAuth(opts) {
       const B = bundles();
       if (op === 'add') {
         if (!text(a.label)) return refuse('bad-request');
-        const made = B.add(a.label, ownerOf(a.owner));
+        // A USER MAKES NODE-OWNED BUNDLES ALONE (goal/G41.32, the box: "A user can only create, change and delete node-owned
+        // bundles and branches, and sees the others read-only", which overrules goal/G41.25's add naming an app server: a
+        // server's bundle comes from its Bundles.json at boot, written to the tables directly). A LABEL IS UNIQUE PER OWNER
+        // (the box: "Bundle labels should be unique per owner"): only the exact same label is a duplicate.
+        if (ownerOf(a.owner) !== 'node') return refuse('not-node-owned');
+        if (B.all().some(function (r) { return ownerOf(r.owner) === 'node' && r.label === a.label; })) return refuse('label-taken');
+        const made = B.add(a.label, 'node');
         told({ table: 'bundle', row: owned(B.get(made)) });
         return { id: made };
       }
@@ -282,6 +288,7 @@ function createApiAuth(opts) {
       if (!was) return refuse('no-such-bundle');
       if (op === 'get') return was;
       if (op === 'delete') {
+        if (was.owner !== 'node') return refuse('not-node-owned');
         // The bundle and its branches go in one transaction; each is told gone.
         const its = branches().all().filter(function (r) { return r.bundle === a.id; });
         B.del(a.id);
@@ -313,7 +320,9 @@ function createApiAuth(opts) {
       }
       if (op === 'add') {
         if (!isId(a.bundle) || !text(a.family) || (a.verb !== undefined && typeof a.verb !== 'string')) return Promise.resolve(refuse('bad-request'));
-        if (!bundles().get(a.bundle)) return Promise.resolve(refuse('no-such-bundle'));
+        const into = owned(bundles().get(a.bundle));
+        if (!into) return Promise.resolve(refuse('no-such-bundle'));
+        if (into.owner !== 'node') return Promise.resolve(refuse('not-node-owned'));
         const verb = a.verb || '';
         // NO FS VERB IN A BRANCH (goal/G41.28; Andy: "so the introSpector gets the FS group, BUT the auth.branch won't see
         // those verbs"): a bundle is a grant, and every family's FS group is the owner's alone.
@@ -330,6 +339,8 @@ function createApiAuth(opts) {
       const was = R.get(a.id);
       if (!was) return Promise.resolve(refuse('no-such-branch'));
       if (op === 'get') return Promise.resolve(was);
+      const holder = owned(bundles().get(was.bundle));
+      if (holder && holder.owner !== 'node') return Promise.resolve(refuse('not-node-owned'));
       if (op === 'delete') { R.del(a.id); told({ table: 'branch', row: { id: a.id }, gone: true }); return Promise.resolve({ id: a.id }); }
       // set: the family and verb it names, the rest kept; the bundle a branch belongs to is not changed.
       if ((a.family !== undefined && !text(a.family)) || (a.verb !== undefined && typeof a.verb !== 'string')) return Promise.resolve(refuse('bad-request'));

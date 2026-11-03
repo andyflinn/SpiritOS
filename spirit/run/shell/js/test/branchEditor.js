@@ -43,7 +43,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const branchSels = [];
   const forms = [];
   let answer = function (a) { return Promise.resolve({ id: 11 }); };
-  const auth = { branch: function (a) { asked.push(a); return answer(a); } };
+  const auth = { branch: function (a) { asked.push(a); return answer(a); }, bundle: function (a) { asked.push(a); return Promise.resolve({ id: a.id }); } };
+  const armed = [];
+  const bundleWatches = [];
   const STANDS = {
     // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
     // one does, its root appended to the container it is given, its button saying the words it was handed.
@@ -51,6 +53,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       const f = { container: c, opts: o || {}, root: node('div'), span: node('span'), button: node('button') };
       f.button.textContent = String((o && o.button) || ''); f.root.appendChild(f.span); f.root.appendChild(f.button); c.appendChild(f.root); forms.push(f); return f;
     } }; },
+    'shell/js/armingButton.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
     'shell/js/apiFamilySelector.js': function (E) { E.apiFamilySelector = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; f.value = ''; families.push(f); c.appendChild(f); return f; } }; },
     'shell/js/branchSelector.js': function (E) { E.branchSelector = { create: function (c, o) { const b = node('branches'); b.o = o || {}; b.container = c; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); c.appendChild(b); return b; } }; },
@@ -60,6 +63,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ready: Promise.resolve({ auth: auth }), auth: auth,
     elements: { navigation: { push: function (page) { const p = { page: page, box: node('box'), nav: { close: function () {}, setTitle: function () {} } }; pages.push(p); return p.nav; } } } } };
   global.spirit = global.window.spirit;
+  global.window.spirit.authData = { bundles: { watch: function (fn) { bundleWatches.push(fn); return function () {}; } }, branches: { watch: function () { return function () {}; } } };
+  global.window.spirit.cacheManager = function () { return Promise.resolve(); };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.elements); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
@@ -68,20 +73,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['shell/js/apiFamilySelector.js', 'shell/js/branchSelector.js'].every(function (p) { return required.indexOf(p) !== -1; }),
     'it requires the family selector and the branch selector through spirit.require', 'required: ' + short(required));
-  ok(E.branchEditor && typeof E.branchEditor.open === 'function' && typeof E.branchEditor.create === 'function', 'it registers spirit.elements.branchEditor.open and .create', 'elements: ' + short(Object.keys(E)));
-  if (!E.branchEditor || typeof E.branchEditor.open !== 'function') return;
+  ok(E.branchEditor && typeof E.branchEditor.create === 'function' && E.branchEditor.open === undefined, 'it registers spirit.elements.branchEditor.create, and no page of its own (goal/G41.32)', 'elements: ' + short(Object.keys(E.branchEditor || {})));
+  if (!E.branchEditor || typeof E.branchEditor.create !== 'function') return;
 
-  test.subHeading('a page of its own, always on one bundle');
-  // Andy, box: "the branchEditor page is always configured with a bundle key", "first row: Title: \"Edit
-  // <bundle-label-content>\"", and of the way back: "the shell provides a back-button from there".
-  await E.branchEditor.open({ bundle: 7, label: 'Reader' });
+  test.subHeading('always on one bundle');
+  // Andy, box: "the branchEditor page is always configured with a bundle key".
+  const box = node('box');
+  let closed = 0;
+  const tabbed = E.branchEditor.create(box, { bundle: 7, label: 'Reader', gone: function () { closed += 1; } });
   await settle();
-  const p = pages[0];
-  ok(!!p && p.page.title === 'Edit Reader' && typeof p.page.mount === 'function', 'open({ bundle, label }) pushes a page on the shell\'s navigation, titled Edit <label>', 'pages: ' + short(pages.map(function (x) { return x.page.title; })));
-  if (!p) return;
-  p.page.mount(p.box, p.nav);
-  await settle();
-  const box = p.box;
   const bs = branchSels[0];
   ok(!!bs && bs.container === box && bs.o.bundle === 7 && bs.o.face === 'pane' && JSON.stringify(bs.o.columns) === '["family","verb","delete"]' && all(box).indexOf(bs) !== -1,
     'its list is branchSelector.create(the page, a pane on that bundle, columns family, verb, delete)', 'branch selector: ' + short(bs && bs.o) + ', in the page ' + !!(bs && bs.container === box));
@@ -95,7 +95,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
   ok(required.indexOf('shell/js/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(required));
   const rf = forms[0];
-  ok(forms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1, 'its add form is one rowForm in the page, its icon ➕ and its button Add', 'rowForms: ' + short(forms.map(function (f) { return f.opts; })));
+  ok(forms.filter(function (f) { return f.opts.icon === '➕'; }).length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1, 'its add form is one rowForm in the page, its icon ➕ and its button Add', 'rowForms: ' + short(forms.map(function (f) { return f.opts; })));
   const inSpan = !!rf && !!fam && rf.span.kids.length === 1 && (rf.span.kids[0] === fam || (rf.span.kids[0].kids || []).indexOf(fam) !== -1 && rf.span.kids[0].kids.length === 1);
   ok(families.length === 1 && inSpan && fam.o.all === 'choose a family…', 'its span holds the one family selector, choose a family…, its verb half with it, and nothing else', 'family ' + families.length + ', in the span ' + inSpan + ', all ' + short(fam && fam.o.all));
   ok(!!rf && !!add && add === rf.button && all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); }).length === 1, 'its Add is the rowForm\'s button, the only Add', 'Add is the form\'s ' + !!(rf && add === rf.button));
@@ -118,13 +118,38 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(asked.length === 2 && asked[1].verb === 'chat.add', 'a verb chosen is sent as it is', 'asked: ' + short(asked));
   ok(/already-in-bundle|already in this bundle/.test(text(box)), 'a refused add is said in the page, in the node\'s words', 'text: ' + short(text(box)));
 
+  test.subHeading('goal/G41.32: its Delete row at the bottom, and hearing its deletion');
+  // Andy: "i need the branchEditor to have a rowForm at the bottom: [❌] \"Delete <bundle-name> bundle and branches \" [Delete (armingButton)]."
+  const dr = forms[1];
+  ok(!!dr && dr.opts.icon === '❌' && dr.opts.button === 'Delete' && dr.span.textContent === 'Delete Reader bundle and branches' && box.kids.indexOf(dr.root) > box.kids.indexOf(bs), 'a second rowForm below the list: ❌, the words, Delete', 'form: ' + short(dr && dr.opts) + ', says ' + short(dr && dr.span.textContent));
+  const del = armed.filter(function (a) { return dr && a.button === dr.button; })[0];
+  ok(!!del && typeof del.o.run === 'function', 'its Delete is an armingButton', 'armed: ' + armed.length);
+  if (del) { await del.o.run(); await settle(); }
+  ok(asked.filter(function (a) { return a.op === 'delete' && a.id === 7; }).length === 1, 'its second press asks auth.bundle { op: delete, id }', 'asked: ' + short(asked));
+  ok(closed === 0, 'and it waits to hear it: the answer closes nothing', 'closed ' + closed);
+  bundleWatches.forEach(function (fn) { fn('8', undefined); });
+  ok(closed === 0, 'another bundle gone changes nothing', 'closed ' + closed);
+  bundleWatches.forEach(function (fn) { fn('8', { id: 8, label: 'x' }); fn('7', { id: 7, label: 'Reader' }); });
+  ok(closed === 0, 'its own row changed is not its deletion', 'closed ' + closed);
+  bundleWatches.forEach(function (fn) { fn('7', undefined); });
+  ok(closed === 1, 'its deletion heard, it says gone, for the tab to close', 'closed ' + closed);
+
+  test.subHeading('goal/G41.32: a bundle not the node\'s is shown only');
+  const ro = node('box');
+  const formsBefore = forms.length;
+  E.branchEditor.create(ro, { bundle: 8, label: 'Theirs', owner: 'agent' });
+  await settle();
+  const rs = branchSels[branchSels.length - 1];
+  ok(forms.length === formsBefore && !!rs && rs.container === ro && JSON.stringify(rs.o.columns) === '["family","verb"]', 'no form, and its branches with no Delete', 'forms ' + (forms.length - formsBefore) + ', columns ' + short(rs && rs.o.columns));
+
   test.subHeading('the shell\'s element shape: create(container, options) (goal/G41.19)');
   // Box v23: "every element gets a container and appends itself".
   const host = node('host');
   const made = E.branchEditor.create(host, { bundle: 9 });
   await settle();
-  ok(branchSels.length === 2 && branchSels[1].o.bundle === 9 && all(host).indexOf(branchSels[1]) !== -1 && all(host).indexOf(families[1]) !== -1,
-    'create(container, { bundle }) draws the editor into that container', 'branch selectors ' + branchSels.length + ', in host ' + !!(branchSels[1] && all(host).indexOf(branchSels[1]) !== -1));
+  const last = branchSels[branchSels.length - 1];
+  ok(!!last && last.o.bundle === 9 && all(host).indexOf(last) !== -1 && all(host).indexOf(families[families.length - 1]) !== -1,
+    'create(container, { bundle }) draws the editor into that container', 'branch selectors ' + branchSels.length + ', in host ' + !!(last && all(host).indexOf(last) !== -1));
   ok(!!made && typeof made.destroy === 'function', 'and answers a handle with destroy', 'made: ' + short(made && Object.keys(made)));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

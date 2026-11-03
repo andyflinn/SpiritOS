@@ -1,3 +1,14 @@
+// spirit/run/shell/js/relayPanel.js
+// ONE RELAY, A SHELL ELEMENT (goal/G41.32; Andy: "natterDetails will become an shell element: relayPanel.js, it is configured
+// with it's own contact row, and follows only that."). Its contract and its test: ./test/relayPanel.md and ./test/relayPanel.js.
+//
+//   spirit.elements.relayPanel.create(container, { key, api? }) -> { destroy() }   open({ key }) pushes it as a page
+//
+// WHO PAINTS, LISTENS (Andy: "every row's data, wherever it's visible OR invisible must update instantly, and when visible,
+// paint immediately."; "BEING INVISIBLE doesn't change a elements fucking duty to listen to fucking changes"): what it shows it
+// reads once, when it is drawn; after that its row from the contact family's cache, and its report from the relay event. Each
+// panel holds its own state, so two never collide. It stops when destroyed.
+//
 // One relay from the Natter list, as its own screen.
 //
 // The second DIALOG, and the same reasoning as the first
@@ -31,6 +42,14 @@
 // it is watching the roll for) belongs to the list. A mint made here
 // is RETURNED, and Natter records it.
 
+(function () {
+// What it draws with, it loads itself (rule/26): the join form (goal/G41.3), the armingButton its are-you-sure buttons are
+// (goal/G41.9), and the icon element its fold marks are (goal/G41.23), each panel drawn again once that is there.
+var iconReady = Promise.resolve(window.spirit && window.spirit.require ? window.spirit.require('shell/js/icon.js') : null);
+if (window.spirit && window.spirit.require) { window.spirit.require('shell/js/joinForm.js'); window.spirit.require('shell/js/armingButton.js'); }
+
+// One panel, everything below its own.
+function panel(ndContainer, ndOptions) {
 var ndEscapeHtml = spirit.escapeHtml;
 // A MARK THAT STANDS ALONE IS THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all
 // shell elements and apps."): a fold's mark is made by icon.create and handed on as its markup, since the screen is painted
@@ -89,9 +108,10 @@ function ndLabelProblem(name) {
 }
 var ndApi = null;
 
+var ndKey = '';         // the relay's row this panel is configured with
 var ndUrl = '';         // which mailbox this screen is
 var ndBadge = null;     // what that relay last said about itself
-var ndRows = [];        // every configured relay's row — see ndLoad
+var ndRows = [];        // every configured relay's row — see ndLoad, and kept by ndHearRow
 var ndLabel = '';       // this node's own name, needed to sign a status ask
 var ndMinted = '';      // a label minted while this screen was open
 var ndChanged = false;  // has anything happened the list must repaint for?
@@ -242,7 +262,8 @@ function ndLoad() {
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];
-      ndBadge = rows.filter(function (row) { return row && row.url === ndUrl; })[0] || null;
+      ndBadge = rows.filter(function (row) { return row && row.key === ndKey; })[0] || null;
+      if (ndBadge) ndUrl = ndBadge.url;
       // An answer that names other relays and not this one is the node
       // saying "not on my list" — only when the answer is a real one.
       ndUnlisted = !ndBadge && !!(data && Array.isArray(data.rows));
@@ -276,6 +297,7 @@ function ndLoad() {
         ndBadge.report = said[ndUrl] || null;
       }
       // Anything this screen needs to ASK for is asked here, once per
+      ndSetTitle();
       ndRender();
     })
     .catch(function () { ndAsked = true; ndRender(); });
@@ -408,12 +430,15 @@ function ndStarHtml() {
     else words = '<b>You do not own this relay:</b> ' + (ndBadge.ownerLabel ? 'this relay says it is owned by ' + ndEscapeHtml(ndBadge.ownerLabel) : 'this relay does not say who owns it') +
       '. You would have to trust whoever runs it, and whoever can break into its machine, with this machine. ' + gives;
   }
-  // Never folded: the risk is read before the press, and it stays on screen with the button.
-  return '<div class="stat-tile wide"><div class="label">⭐ Star this relay</div><div>' + words + '</div>' +
-    '<div class="start-job-form"><button type="button" class="cancel-btn nd-own">' + (ndBadge.mine ? 'Take the star away' : 'Give it the star') + '</button></div></div>';
+  // A FOLDED BLOCK (goal/G41.32; Andy: "the "⭐ Star this relay" section should be a folded block"), closed as it arrives; the
+  // risk stays in it, on screen with the button. Its fold is held here, since the panel repaints.
+  return '<details class="stat-tile wide nd-star"' + (ndStarOpen ? ' open' : '') + '><summary class="label">⭐ Star this relay</summary><div>' + words + '</div>' +
+    '<div class="start-job-form"><button type="button" class="cancel-btn nd-own">' + (ndBadge.mine ? 'Take the star away' : 'Give it the star') + '</button></div></details>';
 }
+var ndStarOpen = false;
+// What it changes comes back on its row.
 function ndStar() {
-  return ndApi.verb('contact.own', { key: ndRelayKey(), own: !ndBadge.mine }).then(function () { return ndLoad(); });
+  return ndApi.verb('contact.own', { key: ndRelayKey(), own: !ndBadge.mine });
 }
 
 function ndRemoveHtml() {
@@ -435,7 +460,7 @@ function ndLeave(button) {
   return ndApi.verb('relay.leave', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
     var out = document.querySelector('.nd-leave-out');
-    if (said.ok) { if (out) out.textContent = 'You left this relay.'; ndLoad(); return; }
+    if (said.ok) { if (out) out.textContent = 'You left this relay.'; return; }
     button.disabled = false;
     if (out) out.textContent = 'not left: ' + (said.error || 'no answer');
   });
@@ -1032,7 +1057,6 @@ function ndSetRelayLabel(button) {
       say('this relay is called ' + (said.label || wanted) + ' now');
       ndRelayNamed = String(said.label || wanted);
       ndChanged = true;
-      ndLoad();
       return;
     }
     say((said && said.error) || (r && r.error) || 'refused', true);
@@ -1367,7 +1391,10 @@ function ndRender() {
   // Every piece brings its own tile now, because every piece is a panel
   // with a title bar that folds it. Wrapping here as well is what put a
   // bubble inside a bubble and stopped the headings reading as headings.
+  // ITS NAME, in the panel as well as the page's title: a panel in a tab has no title of its own.
+  var name = ndRelayNamed || ndRelayName();
   body.innerHTML =
+    (name ? '<div class="panel-heading nd-name">' + ndEscapeHtml(name) + '</div>' : '') +
     ndReportHtml() +
     ndLocalHtml() +
     // Claim renders only where this node holds no row. Its other half —
@@ -1406,7 +1433,7 @@ function ndMountForms(body) {
   var here = Object.assign({ url: ndUrl, label: (ndBadge && ndBadge.label) || ndUrl }, ndBadge || {});
   Array.prototype.forEach.call(body.querySelectorAll('.nd-join-form'), function (box) { if (el.joinForm) el.joinForm.mount(box, { relays: [here], fixed: ndUrl }); });
   var face = body.querySelector('.nd-face-form');
-  if (face && el.faceForm) el.faceForm.mount(face, { relays: [here], fixed: ndUrl, reload: function () { return ndLoad(); } });
+  if (face && el.faceForm) el.faceForm.mount(face, { relays: [here], fixed: ndUrl, reload: function () { return Promise.resolve(); } });
 }
 
 // NOTHING REPAINTS THIS SCREEN ANY MORE except ndRender, and ndRender
@@ -1530,9 +1557,7 @@ function ndClaim(button) {
     // the thing that comes next is the shell you could not use yet.
     if (ndApi && ndApi.closeDialog) {
       ndApi.closeDialog();
-      return;
     }
-    ndLoad();
   });
 }
 
@@ -1599,8 +1624,7 @@ function ndRevoke(button) {
     ndChanged = true;
     // The hash rides back because this was a post. Returned with the
     // result so the list — and a log reader one day — can name the
-    // transaction this press was (decision 0011).
-    ndLoad();
+    // transaction this press was (decision 0011). The row leaves when the relay's next report says so.
   });
 }
 
@@ -1694,35 +1718,24 @@ var ndPage = ({
     // status has effectively always landed by then. It is not a formal
     // guarantee, and it is the thing to suspect if an invite ever shows
     // up exactly one beat late.
-    // THE ONE TABLE (goal/G40.11) IS THE CONTACT FAMILY'S CACHE (goal/G41.28): a relay's row in spirit.contactData whose
-    // seat, keep, ownership or block changed anywhere, or that went, reads this page again (its presence is the dot's).
-    // The two forms in it watch the same rows themselves.
-    var ndRowHeard = Object.create(null);
-    var ndRowsStop = null;
-    var ndRowsTake = function (key, row) {
-      if (!key || !(row ? row.relay === true : key in ndRowHeard)) return;
-      var body = ndBody();
-      if (!body || !body.isConnected) { if (ndRowsStop) ndRowsStop(); return; }
-      var said = row ? [row.keep, row.seated, row.mine, row.blocked].join() : 'gone';
-      if (ndRowHeard[key] === said) return;
-      ndRowHeard[key] = said;
-      if (ndUrl) ndLoad();
-    };
-    Promise.resolve(spirit.cacheManager('contact')).then(function () {
-      if (window.spirit.contactData) ndRowsStop = window.spirit.contactData.watch(ndRowsTake);
-    });
+    // ITS ROW, FROM THE ONE TABLE (goal/G40.11), THE CONTACT FAMILY'S CACHE (goal/G41.28): painted as it changes, with no
+    // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
+    // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
+    ndStops.push(Promise.resolve(spirit.cacheManager('contact')).then(function () {
+      if (ndGone || !window.spirit.contactData) return function () {};
+      return window.spirit.contactData.watch(ndHearRow);
+    }));
+    // ITS REPORT, ON THE RELAY EVENT (goal/G41.32): whole, paced by the node (presenceNode.js), so this keeps no timer.
+    ndStops.push(Promise.resolve(window.spirit.events.subscribe({ onRelayEvent: function (event) {
+      if (ndGone || !event || event.kind !== 'status' || !event.report || !ndBadge || event.relay !== ndUrl) return;
+      ndBadge.report = event.report;
+      ndRender();
+    } })));
 
-    if (api.onRelayEvent) {
-      api.onRelayEvent(function (event) {
-        var about = (event && event.relay) || '';
-        if (about && ndUrl && about !== ndUrl) return;
-        if (!ndUrl) return;
-        // A report nudge (`kind: 'status'`, cycle 1) reloads like any other
-        // event. It is already paced — at most one a second per relay — by
-        // the node (presenceNode.js), so this screen keeps no timer.
-        ndLoad();
-      });
-    }
+    // The star's fold, held across a repaint: toggle does not bubble, so it is heard on the way down.
+    ndBody().addEventListener('toggle', function (event) {
+      if (event.target && event.target.classList && event.target.classList.contains('nd-star')) ndStarOpen = event.target.open;
+    }, true);
 
     // Delegated, because the panels are repainted and a handler bound to
     // a button would go with them.
@@ -1829,6 +1842,7 @@ var ndPage = ({
   // The shell can promise that open() runs; it cannot know what is stale
   // inside.
   open: function (params) {
+    ndKey = (params && params.key) || '';
     ndUrl = (params && params.url) || '';
     ndRelayNamed = '';
     ndLabel = (params && params.label) || '';
@@ -1848,44 +1862,94 @@ var ndPage = ({
 
     ndSetTitle();
     ndRender();
-    // ndLoad is the one that calls ndRender when it lands. No `render`
-    // hook and nothing to restart on the way back onto the screen: this
-    // dialog holds no live fact.
+    // What it shows, read once as it is drawn (Andy, goal/G41.33: "what a page shows, it reads when it is drawn"). ndLoad
+    // calls ndRender when it lands; after that this panel listens.
     ndLoad();
   },
 
 });
-// The join form it draws with, it loads itself (goal/G41.3), through spirit.require.
-if (window.spirit && window.spirit.require) window.spirit.require('shell/js/joinForm.js');
-// And the armingButton its are-you-sure buttons are (goal/G41.9), the same way.
-if (window.spirit && window.spirit.require) window.spirit.require('shell/js/armingButton.js');
-// And the icon element its fold marks are (goal/G41.23): drawn again once it is there.
-if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('shell/js/icon.js')).then(function () { ndRender(); }, function () {});
+
+// ITS OWN ROW AS IT CHANGED; ANOTHER RELAY'S, KEPT. A row's face is a name, the panel's a { name, email } as relay.get answers.
+var ndGone = false;
+var ndStops = [];
+function ndShown(badge) {
+  var plain = Object.assign({}, badge);
+  delete plain.present;
+  delete plain.at;
+  return JSON.stringify(plain);
+}
+function ndHearRow(key, row) {
+  if (ndGone || !key) return;
+  if (row && row.relay === true && row.url) {
+    var kept = false;
+    ndRows = ndRows.map(function (r) { if (r && r.url === row.url) { kept = true; return Object.assign({}, r, row); } return r; });
+    if (!kept) ndRows.push(row);
+  }
+  if (key !== ndKey) return;
+  if (!row) { ndBadge = null; ndUnlisted = true; ndRender(); return; }
+  var next = Object.assign({}, ndBadge || {}, row);
+  next.face = { name: typeof row.face === 'string' ? row.face : ((ndBadge && ndBadge.face && ndBadge.face.name) || ''), email: '' };
+  if (ndBadge && ndShown(ndBadge) === ndShown(next)) return;
+  ndUnlisted = false;
+  if (row.url) ndUrl = row.url;
+  // What the relay just confirmed stands until its row says a name of its own.
+  if ((next.roll || {}).relayLabel && (next.roll || {}).relayLabel !== ((ndBadge && ndBadge.roll) || {}).relayLabel) ndRelayNamed = '';
+  ndBadge = next;
+  ndSetTitle();
+  ndRender();
+}
+
+// The api the shell hands a page; with none, the family's verb through the spirit object, answered in the api's shape.
+function ndOwnApi() {
+  return {
+    verb: function (name, args) {
+      var at = String(name).indexOf('.');
+      return spirit.ready.then(function (s) { return s[String(name).slice(0, at)][String(name).slice(at + 1)](args); }).then(function (b) {
+        return { status: 200, text: JSON.stringify(b), body: b };
+      }, function (e) {
+        return { status: (e && e.status) || 500, text: '', body: (e && e.body) || { ok: false, error: String((e && e.message) || e) } };
+      });
+    },
+    peerPost: function () { return Promise.resolve({ ok: false, error: 'this panel was given no shell api' }); },
+  };
+}
+
+ndPage.mount(ndContainer, ndOptions.api || ndOwnApi());
+ndPage.open(ndOptions);
+iconReady.then(function () { if (!ndGone) ndRender(); }, function () {});
+return {
+  // Everything it listens to, let go with it (rule/8).
+  destroy: function () {
+    ndGone = true;
+    ndStops.forEach(function (stop) { Promise.resolve(stop).then(function (fn) { if (typeof fn === 'function') fn(); }); });
+    ndStops = [];
+    ndContainer.innerHTML = '';
+  },
+};
+}
+
 // A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
-// shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { url, label?, relayLabel? }; its
-// title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).
+// shell elements", "the shell does ALL the wrapping"): open({ key }) pushes this panel as a page; its title and back are the
+// frame's, and nothing is handed back (what it changes reaches every view on the stream).
 // AND THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
-// create(container, options) draws the same screen into the container, options { api, url, label?, relayLabel? }.
-(window.spirit.elements = window.spirit.elements || {}).natterDetails = {
+// create(container, { key, api? }) draws it into the container.
+(window.spirit.elements = window.spirit.elements || {}).relayPanel = {
   create: function (container, options) {
     var o = options || {};
-    var done = { destroy: function () { container.innerHTML = ''; } };
     // UNCONFIGURED, IT SAYS SO and throws nothing (box v23: "no throw even unconfigured").
-    if (!o.api || !o.url) {
+    if (!o.key) {
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
       note.textContent = 'not configured: no relay named';
       container.appendChild(note);
-      return done;
+      return { destroy: function () { container.innerHTML = ''; } };
     }
-    ndPage.mount(container, o.api);
-    ndPage.open(o);
-    return done;
+    return panel(container, o);
   },
   open: function (params) {
     return window.spirit.elements.navigation.push({ title: 'Relay', mount: function (box, page) {
-      ndPage.mount(box, page.api);
-      ndPage.open(params || {});
+      return panel(box, Object.assign({}, params || {}, { api: page.api }));
     } });
   },
 };
+}());

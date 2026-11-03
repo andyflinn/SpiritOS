@@ -25,8 +25,7 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
   changes their data set"*): when its row in the auth family's bundles (`spirit.authData.bundles.row(<its id>)`;
   goal/G41.28, `<node>/auth/bundles/<id>` in `spirit.data`) changes, as the node's stream sets it, its label
   repaints; another bundle's row changes nothing.
-- Delete is an `armingButton`; its second press asks `auth.bundle { op: 'delete', id }`.
-- Edit requires `shell/js/branchEditor.js`, then opens it on this bundle: `branchEditor.open({ bundle: id, label })`.
+- No Edit and no Delete (goal/G41.32): a row pressed is the selector's, Delete is the branchEditor's.
 
 - The node's bundle rows are taken from the stream by the auth family's cache manager
   (`spirit/run/spirit/auth/clientCacheManager.js`, goal/G41.28), which the row element loads itself

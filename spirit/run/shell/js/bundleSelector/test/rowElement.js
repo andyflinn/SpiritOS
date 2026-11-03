@@ -99,19 +99,20 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('it loads what it uses itself (rule/26)');
   // goal/G41.26: the label is shown only, so no field input is used, and none is asked of it.
-  ok(['shell/js/rowElement.js', 'shell/js/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }),
-    'it requires the shared row element and the arming button through spirit.require', 'required: ' + short(required));
+  ok(required.indexOf('shell/js/rowElement.js') !== -1 && required.indexOf('shell/js/armingButton.js') === -1,
+    'it requires the shared row element through spirit.require, and no arming button: Delete is the branchEditor\'s (goal/G41.32)', 'required: ' + short(required));
   ok(managers.indexOf('auth') !== -1 && A && A.bundles && typeof A.bundles.row === 'function', 'it loads the auth family\'s cache manager, which puts spirit.authData on the page', 'managers: ' + short(managers));
   if (!A || !A.bundles || typeof A.bundles.row !== 'function') return;
   ok(E.bundleElement && typeof E.bundleElement.create === 'function', 'it registers spirit.elements.bundleElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.bundleElement || typeof E.bundleElement.create !== 'function') return;
 
-  test.subHeading('a bundle row: its label, Edit and Delete');
+  test.subHeading('a bundle row: its label and owner');
   const el = E.bundleElement.create({ id: 7, label: 'Read <files>' });
   ok(el.kind === 'bundle' && el.key === '7' && el.row.label === 'Read <files>', 'it is a row element of kind bundle, keyed by the bundle\'s id', 'el: ' + short({ kind: el.kind, key: el.key, row: el.row }));
   const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
-  ok(JSON.stringify(Object.keys(cells)) === '["label","owner","edit","delete"]', 'its fields are label, owner, edit and delete, in that order', 'fields: ' + short(Object.keys(cells)));
+  // goal/G41.32: "the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button."
+  ok(JSON.stringify(Object.keys(cells)) === '["label","owner"]', 'its fields are label and owner, in that order', 'fields: ' + short(Object.keys(cells)));
   const ow = E.bundleElement.create({ id: 9, label: 'Agent tools', owner: 'agent' });
   const owCells = {}; (ow.cells() || []).forEach(function (c) { owCells[c.name] = c.html; });
   ok(/\bagent\b/.test(owCells.owner || '') && !/<input/.test(owCells.owner || ''), 'the owner is shown as the bundle names it, never an input: it never changes after the add', 'owner: ' + short(owCells.owner));
@@ -119,14 +120,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const oddCells = {}; (odd.cells() || []).forEach(function (c) { oddCells[c.name] = c.html; });
   ok(/a&lt;b/.test(oddCells.owner || '') && !/a<b/.test(oddCells.owner || ''), 'and drawn escaped', 'owner: ' + short(oddCells.owner));
   ok(/Read &lt;files>/.test(cells.label || '') && !/<files>/.test(cells.label || ''), 'the label is drawn escaped', 'label: ' + short(cells.label));
-  ok(/data-action="edit"/.test(cells.edit || '') && /data-action="delete"/.test(cells.delete || ''), 'edit and delete are buttons naming their action', 'cells: ' + short(cells));
 
   test.subHeading('the label is shown only (goal/G41.26)');
   // Andy, box: "bundleSelector:pane mode the Label should now just be an output, field: A bundles label is determined
   // when it's added, and cannot be modified. This will protect family owned bundles from having their label mutilated."
   // Mounted, with the old editable option or without it, the label cell shows the label and holds no input.
   const ed = E.bundleElement.create({ id: 7, label: 'Read <files>' }, { editable: true });
-  const hosts = { label: cell(), owner: cell(), edit: cell(), delete: cell() };
+  const hosts = { label: cell(), owner: cell() };
   ed.mount(hosts);
   await settle();
   // What the cell shows as text: its markup, and the text of what it holds that is no input.
@@ -142,17 +142,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   V.set('bundles/8', { id: 8, label: 'Someone else' });
   await settle();
   ok(ed.row.label === 'Mover', 'another bundle\'s row changes nothing here', 'row: ' + short(ed.row));
-
-  test.subHeading('Delete asks are-you-sure; Edit opens the branch editor');
-  const del = armed.filter(function (a) { return a.button && a.button.attrs['data-action'] === 'delete'; })[0];
-  ok(!!del && typeof del.o.run === 'function', 'mounted, its Delete is an armingButton', 'armed: ' + short(armed.map(function (a) { return a.button && a.button.attrs; })));
-  if (del) { await del.o.run(); await settle(); }
-  const dels = asked.filter(function (a) { return a.op === 'delete'; });
-  ok(dels.length === 1 && dels[0].id === 7, 'its second press asks auth.bundle { op: delete, id }', 'asked: ' + short(asked));
-  await ed.act('edit', {});
-  await settle();
-  ok(required.indexOf('shell/js/branchEditor.js') !== -1 && opened.length === 1 && opened[0].bundle === 7 && opened[0].label === 'Mover',
-    'Edit requires the branch editor, then opens it on this bundle: { bundle: id, label }', 'opened: ' + short(opened) + ', required ' + short(required));
 
   test.subHeading('the type\'s own element takes the node\'s bundle rows from the stream (goal/G41.14)');
   // The row element is the data type's code (G30.18: "rowElements carry the listeners and painters a subject needs

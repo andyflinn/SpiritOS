@@ -194,7 +194,10 @@ function createPresence(opts) {
     const fire = function () {
       n.last = Date.now();
       n.pending = null;
-      try { onRelayEvent({ kind: 'status', relay: url }); } catch (e) { /* a witness */ }
+      // THE REPORT ITSELF, ON THE EVENT (goal/G41.32; Andy: "every row's data, wherever it's visible OR invisible must update
+      // instantly"): whoever paints it listens, and asks nothing. The latest one, whatever arrived while this waited. Never on
+      // a row: rows reach every face, and a report lists invites; a relay event reaches a starred face alone (goal/G41.33).
+      try { onRelayEvent({ kind: 'status', relay: url, report: statusByRelay[url] }); } catch (e) { /* a witness */ }
     };
     if (n.pending) return;
     const wait = NUDGE_MS - (Date.now() - n.last);

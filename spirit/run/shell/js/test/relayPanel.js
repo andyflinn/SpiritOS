@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/shell/js/natterDetails/test/natterDetails.js
-// The tests of shell/js/natterDetails/natterDetails.js, and of no other module (spec: ./natterDetails.md; goal/G41.9).
+// spirit/run/shell/js/test/relayPanel.js
+// The tests of shell/js/relayPanel.js, and of no other module (spec: ./relayPanel.md; goal/G41.9).
 // The browser file runs in node on a window of its own, on a small DOM (markup parsed into a tree, selectors, clicks
 // that bubble); the navigation, the node behind the page's api, the relay family and the armingButton element are
 // recorders.
@@ -9,9 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const FILE = path.join(__dirname, '..', 'natterDetails.js');
+const FILE = path.join(__dirname, '..', 'relayPanel.js');
 const SRC = fs.readFileSync(FILE, 'utf8');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -182,6 +182,8 @@ function world(rows, relayStatus) {
     formatBytes: function (n) { return String(n) + ' B'; },
     shell: { factRow: function () { return '<div class="facts"></div>'; } },
     ownerBadge: { removalRefusal: function () { return ''; } },
+    // The stream, for its report on the relay event (goal/G41.32).
+    events: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     relay: { status: function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); } },
     // The contact family's cache (goal/G41.28): its manager loads, and the page watches spirit.contactData's rows.
@@ -208,27 +210,27 @@ async function press(w, selector) { const el = w.document.querySelector(selector
 
 const OWNED_URL = 'https://mine.example';
 const SEAT_URL = 'https://seat.example';
-const OWNED = [{ url: OWNED_URL, label: 'mine', status: 200, owned: true, claimed: true, claimedLabel: 'andy', roll: { relayKey: 'RK', relayLabel: 'Mine' } }];
+const OWNED = [{ key: 'RK', url: OWNED_URL, label: 'mine', status: 200, owned: true, claimed: true, claimedLabel: 'andy', roll: { relayKey: 'RK', relayLabel: 'Mine' } }];
 const OWNED_SAID = {};
 OWNED_SAID[OWNED_URL] = { key: 'RK', invites: [{ label: 'saint', expiresAt: '2099-01-01T00:00:00Z', invitedBy: 'andy' }] };
-const SEATED = [{ url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
+const SEATED = [{ key: 'RK2', url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
 
-test.startTest('natterDetails.js: its are-you-sure buttons are armingButtons (goal/G41.9)');
+test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/G41.9)');
 
 (async function () {
   test.subHeading('nothing hand-rolled is left');
   const code = SRC.replace(/\/\/.*$/gm, '');
-  ok(!/data-armed/.test(code), 'no data-armed in its code', 'natterDetails.js still reads or writes data-armed');
-  ok(!/armUntilElsewhere/.test(code), 'no armUntilElsewhere of its own', 'natterDetails.js still calls armUntilElsewhere');
-  ok(!/classList\.(add|toggle)\(\s*['"]armed['"]/.test(code), 'no armed class', 'natterDetails.js still sets an armed class');
+  ok(!/data-armed/.test(code), 'no data-armed in its code', 'relayPanel.js still reads or writes data-armed');
+  ok(!/armUntilElsewhere/.test(code), 'no armUntilElsewhere of its own', 'relayPanel.js still calls armUntilElsewhere');
+  ok(!/classList\.(add|toggle)\(\s*['"]armed['"]/.test(code), 'no armed class', 'relayPanel.js still sets an armed class');
 
   const w = world(OWNED, OWNED_SAID);
   test.subHeading('it loads armingButton itself (goal/G41.3)');
   ok(w.required.indexOf('shell/js/armingButton.js') !== -1, 'it requires shell/js/armingButton.js through spirit.require', 'required: ' + short(w.required));
-  const E = w.win.spirit.elements.natterDetails;
-  ok(!!E && typeof E.open === 'function', 'it is window.spirit.elements.natterDetails, with open', 'no natterDetails.open');
+  const E = w.win.spirit.elements.relayPanel;
+  ok(!!E && typeof E.open === 'function', 'it is window.spirit.elements.relayPanel, with open', 'no relayPanel.open');
   if (!E) return;
-  E.open({ url: OWNED_URL });
+  E.open({ key: 'RK' });
   await settle();
   await press(w, '.nd-group-fold');
 
@@ -278,7 +280,7 @@ test.startTest('natterDetails.js: its are-you-sure buttons are armingButtons (go
 
   test.subHeading('a press on the drawn button asks nothing by itself');
   const w2 = world(OWNED, OWNED_SAID);
-  w2.win.spirit.elements.natterDetails.open({ url: OWNED_URL });
+  w2.win.spirit.elements.relayPanel.open({ key: 'RK' });
   await settle();
   await press(w2, '[data-fold="remove"]');
   const before2 = w2.calls.length;
@@ -288,7 +290,7 @@ test.startTest('natterDetails.js: its are-you-sure buttons are armingButtons (go
 
   test.subHeading('Leave, on a relay this node holds a seat on, is an arming button with the reset it lacked');
   const w3 = world(SEATED, {});
-  w3.win.spirit.elements.natterDetails.open({ url: SEAT_URL });
+  w3.win.spirit.elements.relayPanel.open({ key: 'RK2' });
   await settle();
   await press(w3, '[data-fold="leave"]');
   const leave = armingFor(w3, 'Leave this relay');
@@ -303,7 +305,7 @@ test.startTest('natterDetails.js: its are-you-sure buttons are armingButtons (go
     ok(asked && asked.body.key === SEAT_URL, 'its run asks relay.leave for this relay', 'asked: ' + short(w3.calls.slice(before)));
   }
   const w4 = world(SEATED, {});
-  w4.win.spirit.elements.natterDetails.open({ url: SEAT_URL });
+  w4.win.spirit.elements.relayPanel.open({ key: 'RK2' });
   await settle();
   await press(w4, '[data-fold="leave"]');
   const before4 = w4.calls.length;
@@ -318,9 +320,9 @@ test.startTest('natterDetails.js: its are-you-sure buttons are armingButtons (go
   test.subHeading('the star on a relay: an arming button, and who you have to trust');
   const page = function (x) { return x.box ? String(x.box.textContent || '') : ''; };
   const starOf = function (x) { const b = x.document.querySelector('.nd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
-  const MEMBER = [{ url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'Olga', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
+  const MEMBER = [{ key: 'RK2', url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'Olga', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
   const w5 = world(MEMBER, {});
-  w5.win.spirit.elements.natterDetails.open({ url: SEAT_URL });
+  w5.win.spirit.elements.relayPanel.open({ key: 'RK2' });
   await settle();
   const s5 = starOf(w5);
   ok(!!s5, 'a relay\'s panel draws .nd-own, an arming button', 'armings: ' + short(w5.armings.map(function (a) { return a.label; })));
@@ -334,16 +336,16 @@ test.startTest('natterDetails.js: its are-you-sure buttons are armingButtons (go
   if (s5) { await s5.opts.run(); await settle(); }
   const sent5 = w5.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
   ok(!!sent5 && sent5.body.key === 'RK2' && sent5.body.own === true, 'its second press sends contact.own {key: the relay\'s key, own: true}', 'sent: ' + short(sent5));
-  const CLAIMS = [{ url: OWNED_URL, label: 'mine', status: 200, owned: true, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'andy', roll: { relayKey: 'RK', relayLabel: 'Mine' } }];
+  const CLAIMS = [{ key: 'RK', url: OWNED_URL, label: 'mine', status: 200, owned: true, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'andy', roll: { relayKey: 'RK', relayLabel: 'Mine' } }];
   const w6 = world(CLAIMS, OWNED_SAID);
-  w6.win.spirit.elements.natterDetails.open({ url: OWNED_URL });
+  w6.win.spirit.elements.relayPanel.open({ key: 'RK' });
   await settle();
   ok(/If you DID install this relay on a VPS and you DID set its DNS records/.test(page(w6)), 'a relay claiming this node says: "If you DID install this relay on a VPS and you DID set its DNS records"', 'the page says: ' + short(page(w6)));
   ok(/lying/.test(page(w6)), 'and that otherwise it is lying', 'the page says: ' + short(page(w6)));
   ok(!!starOf(w6), 'with the same button', 'armings: ' + short(w6.armings.map(function (a) { return a.label; })));
   const STARRED = [Object.assign({}, CLAIMS[0], { mine: true })];
   const w7 = world(STARRED, OWNED_SAID);
-  w7.win.spirit.elements.natterDetails.open({ url: OWNED_URL });
+  w7.win.spirit.elements.relayPanel.open({ key: 'RK' });
   await settle();
   const s7 = starOf(w7);
   if (s7) { await s7.opts.run(); await settle(); }
@@ -351,7 +353,7 @@ test.startTest('natterDetails.js: its are-you-sure buttons are armingButtons (go
   ok(!!sent7 && sent7.body.key === 'RK' && sent7.body.own === false, 'on a starred relay the same button takes the star away', 'sent: ' + short(sent7));
   const w8 = world(MEMBER, {});
   w8.win.spirit.transport = { ask: function () {} };
-  w8.win.spirit.elements.natterDetails.open({ url: SEAT_URL });
+  w8.win.spirit.elements.relayPanel.open({ key: 'RK2' });
   await settle();
   ok(!!w8.box && !w8.document.querySelector('.nd-own') && !starOf(w8), 'on a face (window.spirit.transport) no button is drawn', 'on a face: .nd-own ' + !!w8.document.querySelector('.nd-own'));
 }()).then(function () { test.reportSuccessFailureCount(); },

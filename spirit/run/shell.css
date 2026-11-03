@@ -1229,3 +1229,4 @@ details.stat-tile > summary {
    so they outweigh #app-content button (found on the face: every tab stayed round and in the button colour). */
 #app-content .tab-button { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 #app-content .tab-button[aria-selected="true"] { background: var(--shell-well); }
+.tab-close { margin-left: 0.5em; font-size: 0.75em; font-weight: normal; cursor: pointer; }

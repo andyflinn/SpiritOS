@@ -3,10 +3,14 @@
 // below it. Other apps with tabs catch up with it later. Its contract and its test: ./test/tabContainer.md and
 // ./test/tabContainer.js.
 //
-//   window.spirit.elements.tabContainer.create(container, { tabs, selected }) -> { select, selected, destroy }
-//     tabs       [{ name, label, mount(box) }]: a tab's mount is called once, the first time it is selected, with a box
-//                of its own inside the content area; the box is kept, and only the selected tab's box shows
+//   window.spirit.elements.tabContainer.create(container, { tabs, selected }) -> { select, selected, add, close, destroy }
+//     tabs       [{ name, label, mount(box), closable }]: a tab's mount is called once, the first time it is selected, with
+//                a box of its own inside the content area; the box is kept, and only the selected tab's box shows
 //     selected   the tab shown first; the first tab when it names none
+//     add(tab)   a tab added and made active; one of that name is made active, with no second tab and no second mount
+//     close(name) that tab taken away, its box with it, and what its mount answered destroyed
+// CLOSABLE TABS (goal/G41.32; Andy: "the tabContainer will allow to add "closable" tabs, which have a little close button on
+// the right side of the tab, like browser tabs."): the close button carries data-tab-close="<name>", its look in shell.css.
 //
 // THE CONTENT IS A BUBBLE (goal/G41.13; Andy: "the container pain of the tabs content, must have our standard 0.5em
 // padding", "it must occupy all remaining vertical space, that it must be constrained to", "it should present as a bubble
@@ -21,16 +25,18 @@
   function create(container, opts) {
     var o = opts || {};
     var pre = 'tc' + (++made) + '-';
-    var tabs = Array.isArray(o.tabs) ? o.tabs : [];
+    var tabs = Array.isArray(o.tabs) ? o.tabs.slice() : [];
     var current = tabs.some(function (t) { return t.name === o.selected; }) ? o.selected : (tabs[0] ? tabs[0].name : '');
     var boxes = {};
+    var mounted = {};
     var gone = false;
 
     function rowHtml() {
       return tabs.map(function (t) {
         // class tab-button: its look in shell.css, a tab's square bottom and the selected one's colour (goal/G41.13).
         return '<button type="button" class="tab-button" data-tab="' + esc(t.name) + '" aria-selected="' + (t.name === current ? 'true' : 'false') + '"' +
-          (t.name === current ? ' style="font-weight:bold"' : '') + '>' + esc(t.label) + '</button>';
+          (t.name === current ? ' style="font-weight:bold"' : '') + '>' + esc(t.label) +
+          (t.closable ? '<span class="tab-close" role="button" aria-label="close" data-tab-close="' + esc(t.name) + '">✕</span>' : '') + '</button>';
       }).join(' ');
     }
     container.innerHTML = '<div class="fill"><div id="' + pre + 'tabs" style="display:flex;gap:6px">' + rowHtml() + '</div>' +
@@ -52,11 +58,36 @@
         boxes[name] = box;
         var content = part('content');
         if (content) content.appendChild(box);
-        try { t.mount(box); } catch (e) { /* one tab's fault */ }
+        try { mounted[name] = t.mount(box); } catch (e) { /* one tab's fault */ }
       }
       Object.keys(boxes).forEach(function (k) { boxes[k].hidden = k !== name; });
     }
+    function add(tab) {
+      if (gone || !tab) return;
+      if (!tabs.some(function (t) { return t.name === tab.name; })) tabs.push(tab);
+      select(tab.name);
+    }
+    function close(name) {
+      if (gone) return;
+      var at = -1;
+      tabs.forEach(function (t, i) { if (t.name === name) at = i; });
+      if (at === -1) return;
+      tabs.splice(at, 1);
+      var made = mounted[name];
+      delete mounted[name];
+      try { if (made && typeof made.destroy === 'function') made.destroy(); } catch (e) { /* one tab's fault */ }
+      if (boxes[name]) { boxes[name].remove(); delete boxes[name]; }
+      // The selected tab closed: its neighbour shows. Another closed: the tab shown stays shown.
+      if (current === name) {
+        var next = tabs[at] || tabs[at - 1];
+        current = next ? next.name : '';
+        if (next) { select(next.name); return; }
+      }
+      markRow();
+    }
     function onClick(e) {
+      var x = e && e.target && e.target.closest ? e.target.closest('[data-tab-close]') : null;
+      if (x) { close(x.getAttribute('data-tab-close')); return; }
       var b = e && e.target && e.target.closest ? e.target.closest('[data-tab]') : null;
       if (b) select(b.getAttribute('data-tab'));
     }
@@ -66,6 +97,8 @@
     return {
       select: select,
       selected: function () { return current; },
+      add: add,
+      close: close,
       destroy: function () {
         gone = true;
         container.removeEventListener('click', onClick);

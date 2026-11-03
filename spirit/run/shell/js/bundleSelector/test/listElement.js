@@ -114,10 +114,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('a pane of the editor: its columns, its labels shown only (goal/G41.26)');
   // Andy, box: "the bundleSelector in pane-mode, with the following columns: 1. [fieldInput ... Label] 2. an edit button
   // ... 3. a delete armingButton.js".
-  E.bundleList.create({}, { face: 'pane', columns: ['label', 'edit', 'delete'], editable: true });
+  E.bundleList.create({}, { face: 'pane', columns: ['owner', 'label'], editable: true });
   await settle();
   const p = lists[1] && lists[1].o;
-  ok(p && JSON.stringify((p.columns || []).map(function (c) { return c.field; })) === '["label","edit","delete"]', 'opts.columns names the row\'s fields it shows, in order', 'columns: ' + short(p && p.columns));
+  ok(p && JSON.stringify((p.columns || []).map(function (c) { return c.field; })) === '["owner","label"]', 'opts.columns names the row\'s fields it shows, in order', 'columns: ' + short(p && p.columns));
   const pe = p && p.element({ id: 8, label: 'Writer' }, '8');
   // Andy, box: "bundleSelector:pane mode the Label should now just be an output": editable is no option any more, so a
   // list asked for it still hands its rows none.

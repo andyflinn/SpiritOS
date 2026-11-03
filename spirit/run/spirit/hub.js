@@ -2347,7 +2347,7 @@ function createHub(rootDir) {
   // by peerPost beside its services (labelOf, goal/G30.7), never fetched
   // here. Who owns a relay this node does not own (roll.ownerKey,
   // roll.owner) is not known here and is left empty.
-  function relaySummary(router) {
+  function relayRows(router) {
     var me = auth.loadIdentity(rootDir);
     var held = Object.create(null);
     var reports = {};
@@ -2357,7 +2357,7 @@ function createHub(rootDir) {
     if (router && typeof router.relayStatus === 'function') reports = router.relayStatus() || {};
     var seated = Object.create(null);
     relayKeys.seatedUrls(rootDir).forEach(function (u) { seated[ownerBadge.normalizeUrl(u)] = true; });
-    var rows = ownerBadge.loadRelays(rootDir).map(function (relay) {
+    return ownerBadge.loadRelays(rootDir).map(function (relay) {
       var url = relay.url;
       var row = { url: url, label: relay.label, status: held[url] ? 200 : 0, owned: !!reports[url] };
       // WHAT THE RELAY OFFERS (goal/G30.2), as its last card said, on every row, seated or not: Natter's claim screen
@@ -2391,7 +2391,21 @@ function createHub(rootDir) {
       }
       return row;
     });
-    return Promise.resolve(ownerBadge.summarize(rows));
+  }
+  function relaySummary(router) {
+    return Promise.resolve(ownerBadge.summarize(relayRows(router)));
+  }
+  // WHAT A RELAY'S ROW CARRIES ON THE STREAM (goal/G41.32; Andy: "every row's data, wherever it's visible OR invisible must
+  // update instantly"): what relay.get answers, all of it held here, the node's own: the row's face stays the row's, a name,
+  // and error says nothing on a row. Never the report (presenceNode.nudgeStatus says why). null for a relay not on the list.
+  function relayFacts(router, url) {
+    var going = ownerBadge.normalizeUrl(String(url || ''));
+    var row = relayRows(router).filter(function (r) { return r.url === going; })[0];
+    if (!row) return null;
+    var facts = Object.assign({}, row);
+    delete facts.face;
+    delete facts.error;
+    return facts;
   }
   // relaySearch STOOD HERE (goal/G19.17): the relays ranked by the words. Gone with goal/G40.11 (Andy: "yes. those
   // names."): contact.search covers relays too, a relay one row of the one table, and relay: 'yes' asks for them alone.
@@ -2691,6 +2705,7 @@ function createHub(rootDir) {
     relayJoin: relayJoin,
     joinAtStart: joinAtStart,
     relayGet: relayGet,
+    relayFacts: relayFacts,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,
     contactSearch: contactSearch,
