@@ -41,7 +41,8 @@
       var tabs = options.tabs;
       var name = 'bundle-' + Number(row.id);
       window.spirit.require('shell/js/branchEditor.js').then(function () {
-        tabs.add({ name: name, label: String(row.label || ''), closable: true, mount: function (box) {
+        // Named owner-bundle (Andy: "the tabs should name owner-bundle"): a label is unique per owner alone.
+        tabs.add({ name: name, label: String(row.owner || 'node') + '-' + String(row.label || ''), closable: true, mount: function (box) {
           return window.spirit.elements.branchEditor.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), api: options.api, gone: function () { tabs.close(name); } });
         } });
       });
