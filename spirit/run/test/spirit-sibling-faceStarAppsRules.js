@@ -110,9 +110,9 @@ test.startTest('spirit-sibling-faceStarAppsRules.js: a star shows every app on t
     const pressedRow = await press('scratch');
     ok(pressedApp === true && pressedRow === true, 'Contacts opens, and the relay\'s row is pressed', 'Contacts ' + pressedApp + ', row ' + pressedRow + ': ' + short(await chrome.evaluate('document.body.innerText')));
     await until(function () { return chrome.evaluate('document.querySelectorAll(".nd-fold").length > 0'); }, 8000);
-    const opened = await chrome.evaluate('JSON.stringify({ folds: document.querySelectorAll(".nd-fold").length, person: /Public Handle/.test(document.body.innerText) })').then(JSON.parse);
-    ok(opened.folds > 0, 'its panel opens, with its folds', 'no folds: ' + short(await chrome.evaluate('document.body.innerText')));
-    ok(opened.person === false, 'and not the person\'s page', 'the person\'s page opened for a relay');
+    const relayOpened = await chrome.evaluate('JSON.stringify({ folds: document.querySelectorAll(".nd-fold").length, person: /Public Handle/.test(document.body.innerText) })').then(JSON.parse);
+    ok(relayOpened.folds > 0, 'its panel opens, with its folds', 'no folds: ' + short(await chrome.evaluate('document.body.innerText')));
+    ok(relayOpened.person === false, 'and not the person\'s page', 'the person\'s page opened for a relay');
     await chrome.send('Page.navigate', { url: FACE });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.events)'); }, 20000);
     await sleep(DRAWN_MS);
