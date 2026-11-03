@@ -659,7 +659,6 @@ async function search(a) {
 // whose manifest names no chore does nothing.
 const IDLE_CHECK_MS = Number(values.idleCheckMs) > 0 ? Number(values.idleCheckMs) : 60000;
 const CHORES = String(values.chores || '').split(/[\n;]/).map(function (c) { return c.trim(); }).filter(Boolean);
-const CHORE_MS = 30 * 60 * 1000;
 let choring = false;
 let choresFor = '';
 function runChore(cmd) {
@@ -669,12 +668,12 @@ function runChore(cmd) {
     const out = [];
     try { kid = spawn(cmd + ' ' + port, { cwd: REPO, shell: true, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' }); }
     catch (e) { resolve(cmd + ' did not start: ' + ((e && e.message) || e)); return; }
-    const timer = setTimeout(function () { killTree(kid); }, CHORE_MS);
+    // NO TIME LIMIT ON A CHORE (Andy: "WHY WOULD THE FUCKING CHORES HAVE A TIME LIMIT TO COMPLETE?????"). Each suite in one has
+    // its own (SUITE_MS); a chore that hangs is stopped by hand.
     kid.stdout.on('data', function (d) { out.push(String(d)); });
     kid.stderr.on('data', function (d) { out.push(String(d)); });
-    kid.on('error', function (e) { clearTimeout(timer); resolve(cmd + ' did not start: ' + ((e && e.message) || e)); });
+    kid.on('error', function (e) { resolve(cmd + ' did not start: ' + ((e && e.message) || e)); });
     kid.on('close', function (code) {
-      clearTimeout(timer);
       const last = out.join('').trim().split('\n').filter(Boolean).pop() || '';
       resolve(cmd + (code === 0 ? ': done' : ': exit ' + code) + (last ? ' (' + last.trim().slice(0, 200) + ')' : ''));
     });
