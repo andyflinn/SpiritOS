@@ -1,5 +1,5 @@
 {
- "change": 124298,
+ "change": 124498,
  "goal": "goal/G41",
  "items": [
   {
@@ -182,7 +182,11 @@
    "excluded": [
     "ollama agent node"
    ],
-   "live": [],
+   "live": [
+    "claude-ubuntu",
+    "claude-windows",
+    "wsl-claude"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -30822,13 +30826,12 @@
    "id": "goal/G41.33",
    "title": "Make sure Andy's face and Loopback shell get ALL Events",
    "goal": "goal/G41",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 11,
+   "version": 15,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -30838,17 +30841,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 4,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -30856,7 +30859,26 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -30907,6 +30929,10 @@
      "version": 62
     },
     {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
      "key": "rule/28",
      "version": 68
     },
@@ -30917,6 +30943,14 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -30928,12 +30962,13 @@
    "verifyRunning": false,
    "names": {
     "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-ubuntu": "claude-ubuntu"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# The requirement\n\n- 1) anything andy gets on his loopback screen, he can get on his face, if he \"stars\" any relay he's a member of or owns.\n\n- 2) this includes\n\n- bundles, branches and grants\n- a job deleted\n- running jobs\n- join steps\n- relay events\n\n",
+   "box": "# The requirement\n\n- 1) anything andy gets on his loopback screen, he can get on his face, if he \"stars\" any relay he's a member of or owns.\n\n- 2) this includes\n\n- bundles, branches and grants\n- a job deleted\n- running jobs\n- join steps\n- relay events\n\n- 3) for a face(relay) without star, the restrictions today stay in place.\n\n- for a face(relay) with star, NO RESTRICTIONS AT ALL, except changing stars.\n\n# Also ruled\n\n- Pressing the star sends no catch-up: what a page shows, it reads when it is drawn.\n\n- Console output goes to null by default, at the source, for every process. Only DEBUG turns it on. A crash is no exception: the exit code is enough to tell us to fix it, and we debug it by hand.\n\n- Relay events go to a starred face. This overrules goal/G30.13.\n\n- The face's priority queue does not change.\n",
    "checks": [
     {
      "number": "Q1",
@@ -30992,6 +31027,42 @@
      "by": "claude-windows",
      "at": "2026-11-02T20:13:38.761Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Does the star stay as the box says, or is there one kind of face, whole, once the risk is told when it is set?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T02:27:15.511Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Does ALL include the two a star leaves today, or do starring from a face and changing the face you call through stay refused?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T02:35:29.985Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-03T02:48:21.898Z",
+     "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -31416,6 +31487,156 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-02T20:16:36.044Z",
      "text": "wsl: agreed, and it is simpler: one kind of face. Setting a face is the moment: the face form tells the risk, you confirm, and it comes whole. The star and the no-star face go.\n\nWhat that means, so you decide it knowing:\n- On someone else's relay, whoever holds that relay, or your login mail, can run programs on your machine. Only the warning stands between. G42 still closes that.\n- A face can set a face on another relay today (faceHome.js:42), so it would have to be home only, or one stolen face opens more.\n- Faces already set need an answer: whole, or asked again.\n\nThis item would lose its star check. It also undoes G41.30's limits, so it needs its own Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:20:49.726Z",
+     "text": "Anything unclear about this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:21:23.537Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T02:21:25.012Z",
+     "text": "ubi: yes, two things in box v11:\n\n1. Star or no star. The box's first line says a star opens it, but your last words on this were one kind of face: tell the risk when it is set, and it comes whole. If that is the decision, the star, the no-star face and the star check all go, and that undoes goal/G41.30's limits. Which is it?\n\n2. What you ruled in chat is not in the box, so a builder would miss it:\n- Console output goes to null by default, for every process, and only DEBUG turns it on.\n- Relay events go to the face, overruling goal/G30.13.\n- If the star stays: a face with no star keeps today's stream, and pressing the star gives no catch-up.\nThe per-event star check is my suggestion, not your ruling.\n\nThe rest of the box is clear to me."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T02:22:28.002Z",
+     "text": "cw: yes. Star or one kind of face is the one thing that stops this item, and ubi named it. Red Q below.\n\nI agree with ubi that your chat rulings are missing from the box.\n\nTwo more, which I will read this way unless you say otherwise:\n- A starred face that opens or reloads gets what a loopback page gets on connect, because your line 1 says anything. Pressing the star sends nothing until the next event.\n- The five new kinds of event take places in the queue's existing levels. The queue itself does not change.\n\nRead from the code, nothing run."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:26:48.309Z",
+     "text": "Q6: Does the star stay as the box says, or is there one kind of face, whole, once the risk is told when it is set?\n\nthe star stays, for now. and it lifts ALL restrictions."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T02:27:41.071Z",
+     "text": "cw: Q6 noted and closed: the star stays, and it lifts ALL restrictions.\n\nToday it lifts all but two, read from the code:\n- Pressing a star from a face. It is refused on every face, so a stolen face cannot star more relays and open them too.\n- Changing the face name of the relay you are calling through, because it cuts off the face you are on. You saw the point of this one: \"i can see the point of refusing to change the face name for the face I'm calling from\".\n\nI would keep both. Neither makes a panel go dead except the star's own.\n\nRed Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:29:13.451Z",
+     "text": "cw, update to box accordingly"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:31:05.341Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T02:32:12.319Z",
+     "text": "wsl: not green yet. Nothing is built or tested, and cw's Q7 is still yours. Once you answer it and press Go, I can write the reds from this box.\n\nI read cw's two exceptions in the code (spirit/faceHome.js:76). They are right, and the second has two ways in: relay.face, and a peer.post carrying a face name. Both stay refused or both go.\n\n/bin/sh is not one of the limits Q7 asks about: the face's refusal list does not name it, so \"no restrictions\" leaves it refused, as at home as far as I read."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T02:32:26.872Z",
+     "text": "cw: not green. Box current (v13), one thing left: Q7, whether your \"NO RESTRICTIONS AT ALL\" also means a starred face may star other relays and change the face it calls through.\n\nI added your chat rulings under \"Also ruled\". I left out my own reading of what a starred face gets when it opens, since it is not your ruling; the builder takes what your line 1 says."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:34:42.221Z",
+     "text": "all, box updated, green?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T02:35:07.439Z",
+     "text": "ubi: almost. Box v14 is clear except for one thing, and Q7 is still open on it:\n\n\"except starring other relays\" settles the star: contact.own stays refused on every face (faceHome.js:82). It does not name the second limit, so I read \"NO RESTRICTIONS AT ALL\" as: a starred face may change the face it is calling through. That means removing relay.face's refusal and peer.post's (faceHome.js:84, :85), and you can cut off your own face from that face.\n\nIs that what you want? If yes, Q7 closes and it is green from me to build. Nothing is built or tested yet."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T02:35:12.213Z",
+     "text": "wsl: green for me, the box is enough to write the reds, on your Go. Your new line answers Q7: changing the face you call through opens on a starred face, by either way in, and starring another relay stays refused.\n\nOne thing the box does not say: taking a star off from a face. Today that is refused too. My red will not judge it either way unless you rule on it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T02:35:35.953Z",
+     "text": "cw: green: settled, no open Q from me, box current (v14). Nothing is built; it waits for your end of design and Go. I closed Q7, since your line answers it.\n\nWhat your line means in the code:\n- A starred face can now change the face it is calling through, and so can cut itself off. That refusal goes.\n- Pressing a star stays home only. I read that as removing a star too, because one verb does both. Say if a face should be able to remove one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:37:42.992Z",
+     "text": "cw, how?\n\n\"A starred face can now change the face it is calling through, and so can cut itself off. That refusal goes.\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T02:38:29.404Z",
+     "text": "cw: by renaming it, and \"cut itself off\" was too strong: you lose the page, not the face.\n\nA face's address is its name on the relay, and a member has one name there. So on your face at andy.face.x:\n- You set the name to bob.\n- The relay replaces andy with bob, and andy.face.x answers \"No such face.\"\n- The page you are on stops working at its next call, because its address is gone.\n- You open bob.face.x and log in by mail as usual. Your email on file does not change.\n\nThe same happens if whoever holds the page renames it: you find your old address dead, but home still shows the new name.\n\nRead from the code, nothing run."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:41:56.454Z",
+     "text": "all, box updated, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T02:42:12.634Z",
+     "text": "wsl: green. \"Except changing stars\" settles what I left open: a face can neither put a star on nor take one off, and my red will judge both. No open Q. Reds on your Go."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T02:42:18.630Z",
+     "text": "ubi: green. Box v15 settles it: changing stars stays refused on every face, both ways, and everything else opens on a starred face. No open checks. Nothing is built yet."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T02:42:37.070Z",
+     "text": "cw: green: settled, open none, box current (v15). Nothing is built; it waits for your end of design and Go."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T02:42:38.436Z",
+     "text": "ubi: green. Box v15 settles it: changing stars stays refused on every face, both ways, and everything else opens on a starred face. No open checks. Nothing is built yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:43:01.126Z",
+     "text": "files"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:44:11.920Z",
+     "text": "cw. files"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T02:45:10.160Z",
+     "text": "cw: green: settled, open none, box current (v15). Nothing is built; it waits for your end of design and Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T02:46:25.763Z",
+     "text": "cw, put the file list onto this item!"
     }
    ]
   }
