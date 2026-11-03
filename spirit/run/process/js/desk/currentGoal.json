@@ -1,5 +1,5 @@
 {
- "change": 125346,
+ "change": 125347,
  "goal": "goal/G41",
  "items": [
   {
@@ -178,7 +178,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -30432,12 +30432,11 @@
    "id": "goal/G41.32",
    "title": "Fix many UI bugs.",
    "goal": "goal/G41",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 32,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -31840,7 +31839,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G41.32"
+    "goal/G41.31"
    ],
    "blocked": [],
    "codeOffered": true,
