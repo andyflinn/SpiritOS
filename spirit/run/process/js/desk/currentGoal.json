@@ -1,5 +1,5 @@
 {
- "change": 125347,
+ "change": 125452,
  "goal": "goal/G41",
  "items": [
   {
@@ -30316,13 +30316,12 @@
    "id": "goal/G41.31",
    "title": "More UI Bits for \"agent\"",
    "goal": "goal/G41",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 11,
+   "version": 23,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -30332,17 +30331,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 16,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -30350,7 +30349,26 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/17",
@@ -30401,6 +30419,10 @@
      "version": 62
     },
     {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
      "key": "rule/28",
      "version": 68
     },
@@ -30411,6 +30433,14 @@
     {
      "key": "rule/30",
      "version": 72
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -30420,13 +30450,198 @@
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "- i need a tabContainer permanently situated in the center pane of the workBench.\n\n- each panel, that the agent app placed into the center panel now becomes a closable tab in the tabContainer, activated if it already exists, created if it doesn't have a tab yet.\n\n ",
-   "checks": [],
-   "chat": []
+   "box": "- i need a tabContainer permanently situated in the center pane of the workBench.\n\n- each panel, that the agent app placed into the center panel now becomes a closable tab in the tabContainer, activated if it already exists, created if it doesn't have a tab yet.\n\nnaming the tab headers.\n\n# Provider-center-tab\n- <provider-icon> <provider Label>\n\n# model-center-tab\n- <model-icon> <model-Label>\n\n# persona-center-tab\n- <persona-icon> <persona-label>\n\n# job-center-tab\n- <job-icon> <job-label>\n\n# chat-center-tab\n- <chat-icon> <persona-label>\n\n# bundle-center-tab\n- <bundle-name>\n- if the bundle is not node-owned:  (<bundle-name>) in italic print.\n\n- bundleSelector:pane and bundleEditor take a tabLabel(row) from whoever mounts them, which names the tab a row opens.\n- Grants: <owner>-<bundle>. \n- agent: <bundle-name>.\n\n- the reason for only using bundle-name is: the agent-user can only edit node-owned bundles, so useful tabs still will be uniquely named.\n\n- any tab that hears (by listening) of it's own rows deletion will close itself.\n\n- an unsaved add-tab will say: \"new  <row-type>*\"\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do the tabs stay open when the left tool changes, replacing your G41.4 line that the centre empties?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T07:15:34.530Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "In the agent app, does a bundle tab say owner-bundle as in Grants, or the bundle name alone, as your list says?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-03T07:17:54.149Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-03T07:34:34.751Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T06:58:58.370Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T06:59:55.443Z",
+     "text": "cw: good, and small: the tabContainer from goal/G41.32 fits as it is. Everything reaches the centre through one door in the agent app, detail.open, called from two places: a table's row and a persona's chat. Read from the code, nothing run.\n\nThe door creates the tab, or activates it if it is there. Each caller only adds a name and a label, such as a table and row, or a persona. Closing a tab destroys what is in it.\n\nThree things follow:\n- Your line from goal/G41.32, the bundle tab in the agent app, fits here: the bundle editor is handed this tabContainer, which is one line. I would fold it in, on your word.\n- A row's tab holds a new row until it is saved, so an Add has no name yet. Each Add would open its own tab.\n- A row deleted elsewhere should close its tab, like a bundle's. Your rule says so, so I would build it unless you say no.\n\nOne thing contradicts: today, changing the left tool empties the centre. You ruled that on G41.4: \"if the current icon is changed the content of a left-strip icon should disappear from the middle workBench Pane\". Tabs that vanish on every tool change are not much use.\n\nRed Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T07:15:14.000Z",
+     "text": "Q1: Do the tabs stay open when the left tool changes, replacing your G41.4 line that the centre empties?\n\nyes, that is the point.\n\nOPEN smart labeling of the tab-headers\n\nnow in the box"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T07:15:50.723Z",
+     "text": "cw: Q1 closed: the tabs stay open when the left tool changes. The header list is clear, with three gaps:\n\n- A bundle's tab: your list says <bundle-name>, but goal/G41.32 made it owner-bundle, from the one selector both apps use. Red Q below.\n- A row not saved yet has no label. I would show its icon and \"new\" until it is saved.\n- A label changed while its tab is open: by your rule the header follows. tabContainer needs one small new call for that, renaming a tab.\n\nThe last two I build that way unless you say otherwise."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T07:17:25.253Z",
+     "text": "Q2: In the agent app, does a bundle tab say owner-bundle as in Grants, or the bundle name alone, as your list says?\n\nmy question, shouldn't the element using the bundle elements configure that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T07:17:50.301Z",
+     "text": "cw: yes, it should. Today the bundleSelector hard-codes owner-bundle, which is my doing in goal/G41.32. It becomes one option the caller passes down through the bundleEditor: Grants says owner-bundle, the agent app says the bundle name, as your list has it. I close Q2 on that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T07:19:15.274Z",
+     "text": "cw, show me how to briefly state necessary changes to the bundle-element(s)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T07:19:38.465Z",
+     "text": "cw: like this:\n\n- bundleSelector:pane and bundleEditor take a tabLabel(row) from whoever mounts them, which names the tab a row opens.\n- Grants: <owner>-<bundle>. agent: <bundle-name>."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T07:20:40.035Z",
+     "text": "box changed, feedback?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T07:21:59.242Z",
+     "text": "wsl: the box fits, with one thing I would change and two gaps. Read from the code, nothing run.\n\nThe one I would change: agent's <bundle-name>. Labels are unique per owner only, so on every node three tabs can read \"remoteUser\" (agent, desk, deskVerify) and two \"deskAgent\", with nothing to tell them apart. That is why Grants says owner-bundle. I recommend agent says owner-bundle too, which also drops tabLabel(row): one less option. If you want the name alone, it stands as you wrote it.\n\nGaps, for the builder:\n1. Add. It opens with no row and no key (tableElement.js:164). When it saves, the tab must take on that row's key as well as its label, or pressing that row in the list opens a second tab. Your \"activated if it already exists\" needs that. cw's small rename call has to change the tab's name, not just its words.\n2. A tab's name must include what it is. A persona's tab and its chat's tab show the same label and must stay two tabs, so the name is kind plus key.\n\nOtherwise: the door is one place, detail.open (agent.js:61), so it stays small. Q1 undoes G41.4's empty centre, so workBench's comment on it and its test go too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T07:22:21.700Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T07:22:44.759Z",
+     "text": "wsl: green. The box stands as you wrote it, so agent says <bundle-name> alone, and my red follows that, though two tabs can then read the same. The two gaps need no ruling: both come from your \"activated if it already exists\", so my red will judge them. Reds on your Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T07:22:57.548Z",
+     "text": "cw: green: settled, open none, box current (v20). Built as written, wsl's point stands: in the agent app two or three bundle tabs can read the same, such as remoteUser. Say owner-bundle if you do not want that. wsl's two gaps are mine at build. Nothing is built; it waits for your end of design and Go."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T07:23:34.474Z",
+     "text": "ubi: green from me on box v20, no open checks. Read from the box, the chat and tabContainer, nothing run; nothing is built.\n\n- One thing for you to confirm: wsl's point on <bundle-name> stands. Two bundles with the same label from different owners read the same in the agent's tabs. They still stay two tabs, as long as a tab's name holds the key and not the label. If that is what you want, your box stands.\n- Three builder's lines are only in chat, not in the box, so a verifier would not judge them: an unsaved row's tab shows its icon and \"new\"; a row deleted elsewhere closes its tab; a saved Add takes on its row's key, so pressing that row does not open a second tab."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T07:29:22.230Z",
+     "text": "all, box better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T07:29:46.048Z",
+     "text": "wsl: better, and green. Your reason answers my point: node-owned labels are unique, so the tabs you can edit are named uniquely. My red takes your lines as written: a tab closes when it hears its row deleted, and an unsaved one reads \"new <row-type>*\" until saved, when it takes its row's icon, label and key. Reds on your Go."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T07:29:48.037Z",
+     "text": "ubi: better, green. Box v22 covers the bundle-name reason, deletion and the unsaved tab. Your reason holds: node-owned labels are unique, so editable tabs read differently. Read-only tabs of server bundles can still match, which you accepted.\n\nOne line it could still say: a saved add-tab takes on its row, so its header becomes the row label and pressing that row activates it instead of opening a second. wsl judges that anyway."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T07:29:53.581Z",
+     "text": "cw: better, and clear to build (v22). I read \"new <row-type>*\" with the asterisk as written, such as \"new provider*\".\n\nOne note on your reason for the bundle name alone: a server's bundle can still be opened read-only in that pane, so two read-only tabs can still read the same. Editable ones stay unique. It does no harm, so I build as written."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T07:32:08.661Z",
+     "text": "all, box better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T07:32:33.906Z",
+     "text": "wsl: green on the box as it stands. Nothing open from me; reds on your Go."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-03T07:32:35.625Z",
+     "text": "ubi: green on box v23, nothing to add from me."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-03T07:32:44.673Z",
+     "text": "cw: better: that answers my note, a read-only tab now looks different. Green from me, box current (v23), open none.\n\nAt build: tabContainer escapes its labels and has no italic, so a tab gains one small option for it, used only here."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-03T07:33:31.000Z",
+     "text": "files."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T07:34:12.305Z",
+     "text": "wsl: my 16 test files are on the item, the new one being test/spirit-sibling-agentCentreTabsRules.js, in real Chrome on /face.html. cw, please list yours next, then Andy grants once."
+    }
+   ]
   },
   {
    "id": "goal/G41.32",
@@ -31824,6 +32039,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-03T06:57:31.004Z",
      "text": "cw: yes, done, nothing more to build from me. What is left is not mine: the verifier's run, and the bold-italic line in the box, which wsl offered to add."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-03T07:03:41.681Z",
+     "text": "wsl: done from me. Verified f9b1072a on a clean copy, on scratch nodes in real Chrome: 11 suites pass. The star's seat rule, the leaving, the form and the label each failed on the code before and pass now; breaking the form on purpose goes red.\n\nNot judged: a relay removing this node. It goes through the same line as leaving (relayKeys.js), read from the code, no test ran it. Also not run: the full harness.\n\nThe bold-italic line is in the box. Nothing open from me; the verifier run is what is left."
     }
    ]
   },
