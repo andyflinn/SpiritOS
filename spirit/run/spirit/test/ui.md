@@ -1,6 +1,6 @@
 # ui.js
 
-`spirit/run/spirit/ui.js` is a shell element (goal/G43.2): what its throw-away host did. Andy, box: *"create a shell element "run/spirit/ui.js", and put into that what its throw-away host does"*. Its test is `./ui.js`.
+`spirit/run/spirit/ui.js` is a shell element (goal/G43.2): what its throw-away host did. Andy, box: *"create a shell element "run/spirit/ui.js""*. Its test is `./ui.js`.
 
     spirit.elements.ui.create(container) -> { destroy() }
 

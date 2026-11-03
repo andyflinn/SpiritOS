@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/test/ui.js
 // The tests of spirit/ui.js, and of no other module (spec: ./ui.md; goal/G43.2). Andy, box: "create a shell element
-// \"run/spirit/ui.js\", and put into that what its throw-away host does". A real Chrome on a scratch node's face page, the element
+// \"run/spirit/ui.js\"", holding what its throw-away host did. A real Chrome on a scratch node's face page, the element
 // mounted by itself; neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
