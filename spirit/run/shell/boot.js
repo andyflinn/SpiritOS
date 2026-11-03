@@ -432,12 +432,17 @@
       var r = got[0];
       var face = (r && r.status === 200 && r.body && r.body.face) || null;
       var mf = got[1] || {};
+      // A STAR SHOWS EVERY APP (goal/G41.33, Q9; Andy, of "Should a star show every app on the face, Text Editor and Media
+      // Viewer too, or does each app's face mark stay yours to set?": "yes. for now."), its face mark or not, read as the
+      // page opens; so a star pressed with the page open shows on its next load.
+      var starred = link.starred === true;
       // AN INTRINSIC APP SHOWS ON EVERY FACE (goal/G41.1, box v17: "minimal == intrinsic"), its face mark or not; what the
       // node's face part does not name, its manifest does (its icon a key into the icon table).
       // AN APP NAMING A SERVER RIDES WITH IT (box v14): no row in Apps, no face mark of its own; it shows while its server
       // runs (serverUp, as the desktop draws).
-      if (face && (face.app === true || face.intrinsic === true || (typeof mf.server === 'string' && mf.server !== ''))) {
-        var m = { name: String(face.name || mf.name || name), icon: String(face.icon || mf.icon || ''), description: String(face.description || mf.description || ''),
+      if (starred || (face && (face.app === true || face.intrinsic === true || (typeof mf.server === 'string' && mf.server !== '')))) {
+        var part = face || {};
+        var m = { name: String(part.name || mf.name || name), icon: String(part.icon || mf.icon || ''), description: String(part.description || mf.description || ''),
           server: typeof mf.server === 'string' ? mf.server : '', hidden: mf.hidden === true, type: String(mf.type || '') };
         if (apps[id]) apps[id].manifest = m;
         else apps[id] = { id: id, manifest: m, behavior: null };
@@ -745,6 +750,7 @@
           try { keys = JSON.parse(bytesText(r.bytes)); } catch (e) { keys = null; }
           if (r.status !== 200 || !keys || !keys.publicKey) throw new Error('the home node did not answer');
           link.node = { publicKey: keys.publicKey, sealKey: keys.sealKey || '' };
+          link.starred = keys.starred === true;
           // The tab says whose face this is: the ID's label after the 🤓 (goal/G30.15).
           if (keys.name) document.title = String(keys.name);
           return spirit.seal && link.node.sealKey ? spirit.seal.supported() : false;

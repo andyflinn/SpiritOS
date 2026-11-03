@@ -314,8 +314,9 @@ function createFaceHome(opts) {
     // identity; node.card does not carry the seal key and is not changed for this.
     if (r.keys === 1) {
       const self = o.identity() || {};
-      // And its name, for the face's tab title (goal/G30.15: "the browser tab shows the ID's label").
-      json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || ''), name: String(self.name || '') });
+      // And its name, for the face's tab title (goal/G30.15: "the browser tab shows the ID's label"). And whether this relay
+      // is starred, for the desktop (goal/G41.33, Q9): it only draws icons, a page told wrongly opens nothing, the door decides.
+      json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || ''), name: String(self.name || ''), starred: faceIsOwned(url) });
       return;
     }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
