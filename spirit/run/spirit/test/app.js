@@ -43,8 +43,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   ok(!!verbs && Object.keys(verbs).join() === 'search', 'search is the family\'s only verb', 'the family\'s verbs are ' + short(verbs ? Object.keys(verbs) : 'not there'));
   ok(!!verbs && !!verbs.search && Object.keys(verbs.search).join() === 'q' && verbs.search.q === 'text?', 'search takes one optional search string, q, and no filters', 'search takes ' + short(verbs && verbs.search));
 
-  // THE ONE PLUGIN (Andy, box: "server will be blank, inactive, and only have the required file: ... server.json,
-  // containing identity:icon and identity:label").
+  // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
   const SERVER = path.join(FOLDER, 'server');
   let identity = null;
   try { identity = JSON.parse(fs.readFileSync(path.join(SERVER, 'server.json'), 'utf8')).identity; } catch (e) { identity = null; }
@@ -52,8 +51,6 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   const icon = identity && typeof identity.icon === 'string' ? identity.icon : '';
   ok(!!label, 'server.json names identity.label: ' + label, 'server.json has no identity.label: ' + short(identity));
   ok(!!icon, 'server.json names identity.icon: ' + icon, 'server.json has no identity.icon: ' + short(identity));
-  const beside = fs.existsSync(SERVER) ? fs.readdirSync(SERVER) : [];
-  ok(beside.join() === 'server.json', 'server.json is the only thing in spirit/app/server/', 'spirit/app/server/ holds ' + short(beside));
 
   // A FACE WITH NO STAR CAN CALL IT (Andy, box: "and yes, a face with no star can call appSearch").
   const said = faceRefuses({ call: 'app.search', args: {} }, { url: 'http://r.example/', key: '', owned: false });
@@ -86,7 +83,9 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
 
     // ONLY A FOLDER WITH ITS OWN <name>/<name>.json IS A PLUGIN (Andy, G43.1 box: "the new \"default\" pattern in that module
     // is: /<name>/<name>.json"), and it comes from the disk, not from a list naming server.
-    ok(!!items && items.length === 1, 'server is the one plugin: appSelector and test are not taken for apps', 'an empty search found ' + short(items));
+    // Andy's own commit added spirit/app/app/app.json: the plugins are exactly those two, and appSelector and test are not taken for apps.
+    const keys = (items || []).map(function (i) { return i.key; }).sort().join();
+    ok(keys === 'app,server', 'the plugins are app and server: appSelector and test are not taken for apps', 'an empty search found ' + short(keys));
     const plugin = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'zzplugin');
     fs.mkdirSync(plugin, { recursive: true });
     fs.writeFileSync(path.join(plugin, 'zzplugin.json'), JSON.stringify({ identity: { icon: '🧩', label: 'Zz Plugin Label' } }));
