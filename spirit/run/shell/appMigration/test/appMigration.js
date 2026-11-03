@@ -2,7 +2,7 @@
 
 // spirit/run/shell/appMigration/test/appMigration.js
 // The tests of shell/appMigration/appMigration.js, and of no other module (spec: ./appMigration.md; goal/G43.2). A real
-// Chrome on a scratch node's face page, its tile switched on as a node's owner does; neither Andy's node nor an agent's is touched.
+// Chrome on a scratch node's face page, at home, where every app shows with no switch and no star (Andy); neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const path = require('path');
@@ -30,11 +30,9 @@ test.startTest('appMigration.js: the throw-away host of appSelector (goal/G43.2)
   const chrome = await chromePage(findChrome());
   try {
     if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
-    const mark = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'fs.annotate', args: { path: 'shell/appMigration/appMigration.js', payload: { app: true } } }) });
-    ok(mark.status >= 200 && mark.status < 300, 'its tile is switched on, as the owner does', 'the switch answered ' + mark.status + ' ' + short(await mark.text()));
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     const tile = await until(function () { return chrome.evaluate('document.body.innerText.indexOf("appMigration") !== -1'); }, 20000);
-    ok(tile, 'the face\'s desktop shows it', 'no tile: ' + short(await chrome.evaluate('document.body.innerText')));
+    ok(tile, 'the face\'s desktop shows it at home, with no switch and no star', 'no tile: ' + short(await chrome.evaluate('document.body.innerText')));
     const opened = await chrome.evaluate('(function () { var all = document.querySelectorAll("*"); var hit = null; for (var i = 0; i < all.length; i++) { if (!all[i].children.length && String(all[i].innerText || "").trim() === "appMigration") hit = all[i]; } if (!hit) return false; hit.click(); return true; }())');
     ok(opened === true, 'its tile can be pressed', 'no tile to press');
     const shown = await until(function () { return chrome.evaluate('!!(window.spirit.elements && window.spirit.elements.appSelector) && document.body.innerText.indexOf(' + JSON.stringify(identity.label) + ') !== -1'); }, 10000);

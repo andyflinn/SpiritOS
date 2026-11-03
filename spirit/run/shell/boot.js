@@ -435,7 +435,9 @@
       // A STAR SHOWS EVERY APP (goal/G41.33, Q9; Andy, of "Should a star show every app on the face, Text Editor and Media
       // Viewer too, or does each app's face mark stay yours to set?": "yes. for now."), its face mark or not, and as the star
       // changes (followStar).
-      var starred = link.starred === true;
+      // ON LOOPBACK THE STAR IS DISREGARDED (goal/G43.2; Andy: "on loop-back you simply disregard if there is a fucking star or
+      // not, and the new shell knows damn well if it's on loopback or on the face"): every app shows at home.
+      var starred = !!(state && state.home) || link.starred === true;
       // AN INTRINSIC APP SHOWS ON EVERY FACE (goal/G41.1, box v17: "minimal == intrinsic"), its face mark or not; what the
       // node's face part does not name, its manifest does (its icon a key into the icon table).
       // AN APP NAMING A SERVER RIDES WITH IT (box v14): no row in Apps, no face mark of its own; it shows while its server
