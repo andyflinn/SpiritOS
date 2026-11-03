@@ -659,6 +659,10 @@ async function search(a) {
 // whose manifest names no chore does nothing.
 const IDLE_CHECK_MS = Number(values.idleCheckMs) > 0 ? Number(values.idleCheckMs) : 60000;
 const CHORES = String(values.chores || '').split(/[\n;]/).map(function (c) { return c.trim(); }).filter(Boolean);
+<<<<<<< Updated upstream
+=======
+// A CHORE RUNS UNTIL IT IS DONE (goal/G43.2; Andy, on the 30 minutes this line held: "WHY WOULD THE FUCKING CHORES HAVE A TIME LIMIT TO COMPLETE?????", "FUCKING FIX IT, NOW!"). Killed at the limit, the publish chore never reached master. A hung one is stopped by hand.
+>>>>>>> Stashed changes
 let choring = false;
 let choresFor = '';
 function runChore(cmd) {
@@ -668,8 +672,11 @@ function runChore(cmd) {
     const out = [];
     try { kid = spawn(cmd + ' ' + port, { cwd: REPO, shell: true, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' }); }
     catch (e) { resolve(cmd + ' did not start: ' + ((e && e.message) || e)); return; }
+<<<<<<< Updated upstream
     // NO TIME LIMIT ON A CHORE (Andy: "WHY WOULD THE FUCKING CHORES HAVE A TIME LIMIT TO COMPLETE?????"). Each suite in one has
     // its own (SUITE_MS); a chore that hangs is stopped by hand.
+=======
+>>>>>>> Stashed changes
     kid.stdout.on('data', function (d) { out.push(String(d)); });
     kid.stderr.on('data', function (d) { out.push(String(d)); });
     kid.on('error', function (e) { resolve(cmd + ' did not start: ' + ((e && e.message) || e)); });
