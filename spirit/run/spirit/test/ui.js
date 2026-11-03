@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/test/ui.js
 // The tests of spirit/ui.js, and of no other module (spec: ./ui.md; goal/G43.2). Andy, box: "create a shell element
-// \"run/spirit/ui.js\", and put into that what appMigration does". A real Chrome on a scratch node's face page, the element
+// \"run/spirit/ui.js\", and put into that what its throw-away host does". A real Chrome on a scratch node's face page, the element
 // mounted by itself; neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
@@ -19,7 +19,9 @@ test.startTest('ui.js: the tiles and what they open (goal/G43.2)');
 
 (async function () {
   if (!fs.existsSync(FILE)) { test.fail('spirit/ui.js is not there'); return; }
-  ok(fs.readFileSync(FILE, 'utf8').indexOf('appMigration') === -1 || !/appMigration/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'its code does not name appMigration', 'its code names appMigration');
+  // The name built, so this test does not name the throw-away host: its delete breaks nothing here.
+  const HOST = ['app', 'Migration'].join('');
+  ok(fs.readFileSync(FILE, 'utf8').indexOf(HOST) === -1, 'it does not name its throw-away host', 'it names its throw-away host');
   const identity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'server', 'server.json'), 'utf8')).identity;
   const node = await scratchNode();
   const chrome = await chromePage(findChrome());
