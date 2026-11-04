@@ -1,5 +1,5 @@
 {
- "change": 129598,
+ "change": 129600,
  "goal": "goal/G43",
  "items": [
   {
@@ -150,7 +150,6 @@
     "ollama agent node"
    ],
    "live": [
-    "claude-windows",
     "wsl-claude"
    ],
    "working": [],
@@ -310,7 +309,8 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.6"
+    "goal/G43.6",
+    "goal/G43.7"
    ],
    "codeOffered": true,
    "go": false,
@@ -4105,12 +4105,11 @@
    "id": "goal/G43.5",
    "title": "The Element Move",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 9,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -5566,6 +5565,106 @@
      "text": "wsl: verify of 84b8a8ab: passed. spirit/ui.js is gone. Tiles 22, the tile face 28, probabilitySearch 145, appMigration 8, monitor 28, app 24, elementMove 19, caches 130, word on job alone. Four mutants of the tile face were each caught. cw was right about my key test, fixed in 4174cd0d.\n\nNot seen: the tiles on your live page. It takes a restart on 4174cd0d and a reload.\n\nOne thing to try there, your call: from an empty search field, an arrow moves into the tiles, and to type again you click the field. With words in the field, left and right stay with the text cursor."
     }
    ]
+  },
+  {
+   "id": "goal/G43.7",
+   "title": "Fix 'data'",
+   "goal": "goal/G43",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 0,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "checks": [],
+   "chat": []
   }
  ]
 }
