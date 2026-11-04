@@ -83,9 +83,16 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
 
     // ONLY A FOLDER WITH ITS OWN <name>/<name>.json IS A PLUGIN (Andy, G43.1 box: "the new \"default\" pattern in that module
     // is: /<name>/<name>.json"), and it comes from the disk, not from a list naming server.
-    // The plugin is exactly server (spirit/app/app, a test object, was killed), and appSelector and test are not taken for apps.
+    // The plugins are exactly monitor and server (spirit/app/app, a test object, was killed), and appSelector and test are not taken for apps.
     const keys = (items || []).map(function (i) { return i.key; }).sort().join();
-    ok(keys === 'server', 'the plugin is server: appSelector and test are not taken for apps', 'an empty search found ' + short(keys));
+    ok(keys === 'monitor,server', 'the plugins are monitor and server: appSelector and test are not taken for apps', 'an empty search found ' + short(keys));
+    // goal/G43.6; Andy, box: "spirit.app also holds the family's verb, search, so no app may take the name of a verb."
+    const verbNamed = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'search');
+    fs.mkdirSync(verbNamed, { recursive: true });
+    fs.writeFileSync(path.join(verbNamed, 'search.json'), JSON.stringify({ identity: { icon: '🧩', label: 'Verb Named Label' } }));
+    const stands = await until(function () { return ask(node.base, 'app.search', {}).then(function (r) { return holds(rows(r), 'Verb Named Label'); }); }, 2500);
+    ok(!stands, 'a folder named after the family\'s verb is no app', 'a folder named search was taken for an app');
+    fs.rmSync(verbNamed, { recursive: true, force: true });
     const plugin = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'zzplugin');
     fs.mkdirSync(plugin, { recursive: true });
     fs.writeFileSync(path.join(plugin, 'zzplugin.json'), JSON.stringify({ identity: { icon: '🧩', label: 'Zz Plugin Label' } }));

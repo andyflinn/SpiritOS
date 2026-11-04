@@ -66,6 +66,16 @@ test.startTest('ui.js: the tiles and what they open (goal/G43.2)');
     ok(!!g.head && !!g.bar && g.head.l - g.bar.l < 40, 'they sit on its left edge', 'they sit at ' + short(g.head));
     ok(!!g.close && !!g.bar && g.bar.r - g.close.r < 40 && g.close.l > (g.bar.l + g.bar.r) / 2, 'the close icon sits on its right edge', 'the close icon: ' + short(g.close));
     ok(!!g.pane && g.pane.text.indexOf(identity.label) !== -1, 'the element is mounted in the pane, painting its name', 'the pane shows ' + short(g.pane));
+    // goal/G43.6; Andy, box: "The app tiles open it from spirit.app." server stays where it is.
+    await chrome.evaluate('(function () { var c = ' + visible('.app-container-close') + '; if (c) c.click(); }())');
+    await until(function () { return chrome.evaluate('!' + visible('.app-container') + ' && !!' + tileOf('Monitor')); }, 5000);
+    await chrome.evaluate('(function () { var t = ' + tileOf('Monitor') + '; if (t) t.click(); }())');
+    const monitor = await until(function () { return chrome.evaluate('(function () { var p = ' + visible('.app-container-pane') + '; return !!p && /Uptime|waiting/i.test(String(p.innerText)); }())'); }, 10000);
+    ok(monitor, 'the Monitor tile opens the app from spirit.app', 'its pane: ' + short(await chrome.evaluate('document.getElementById("under-test").innerText')));
+    await chrome.evaluate('(function () { var c = ' + visible('.app-container-close') + '; if (c) c.click(); }())');
+    await until(function () { return chrome.evaluate('!' + visible('.app-container') + ' && !!' + tileOf(identity.label)); }, 5000);
+    await chrome.evaluate('(function () { var t = ' + tileOf(identity.label) + '; if (t) t.click(); }())');
+    await until(function () { return chrome.evaluate('!!' + visible('.app-container')); }, 5000);
     // CLOSE (Andy, box: "when the close button on the titlebar is pressed, the \"app\" closes again").
     await chrome.evaluate('(function () { var c = ' + visible('.app-container-close') + '; if (c) c.click(); }())');
     const closed = await until(function () { return chrome.evaluate('!' + visible('.app-container') + ' && !!' + tileOf(identity.label)); }, 5000);
