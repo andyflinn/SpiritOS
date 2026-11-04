@@ -14,7 +14,7 @@
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   // goal/G41.23: a file's icon is the icon element (shell/js/icon.js), loaded here too.
-  if (window.spirit.require) ['shell/js/rowElement.js', 'shell/js/icon.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.require) ['shell/js/rowElement.js', 'shell/js/icon.js', 'spirit/word.js'].forEach(function (p) { window.spirit.require(p); });
   var files = null;
 
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
@@ -49,6 +49,35 @@
     return isNaN(d.getTime()) ? String(iso) : d.toISOString().slice(0, 16).replace('T', ' ');
   }
 
+  // THE RESERVED WORDS IN COLOUR (goal/G43.4; Andy, the box: "display folders and path elements in a bright green if their
+  // names match a reserved word AND the browsers spirit object contains the corresponding javascript Object at that path.",
+  // and "in a bright red if folders and the browser spirit object disagree."; "the colors will follow word.json changes
+  // live."). Each element of a path under spirit/: its name up to the first dot against the word system, its object on
+  // the spirit object at that path. spirit itself is always green; a name that is no reserved word has no colour.
+  var WORD_COLOUR = { green: '#22e022', red: '#ff3030' };
+  function wordColours(p) {
+    var parts = String(p || '').split('/');
+    if (parts[0] !== 'spirit' || !window.spirit.word) return Promise.resolve({});
+    var out = { spirit: WORD_COLOUR.green };
+    return Promise.all(parts.slice(1).map(function (part, i) {
+      var stem = part.split('.')[0];
+      return window.spirit.word.check(parts.slice(0, i + 1).join('.'), stem).then(function (word) {
+        if (!word) return;
+        var at = window.spirit;
+        parts.slice(1, i + 1).forEach(function (up) { at = at ? at[up.split('.')[0]] : undefined; });
+        var held = at ? at[word] : undefined;
+        out[part] = held && (typeof held === 'object' || typeof held === 'function') ? WORD_COLOUR.green : WORD_COLOUR.red;
+      });
+    })).then(function () { return out; });
+  }
+  function wordSpan(text, name, colours) {
+    var c = colours && colours[name];
+    return c ? '<span style="color:' + c + '">' + esc(text) + '</span>' : esc(text);
+  }
+  function dirHtml(dir, colours) {
+    return dir.split('/').filter(Boolean).map(function (part) { return wordSpan(part, part, colours) + '/'; }).join('');
+  }
+
   function known(p) { var F = fsData(); return F ? F.file(p) : null; }
   // A write to data.files, by path, to the rows that show that path; its release answered to the index, which lets it go
   // with the kind's last row (rowElement.index).
@@ -78,7 +107,7 @@
     var r = row || {};
     var p = String(r.path || '');
     var k = known(p) || {};
-    return E.rowElement.create({
+    var el = E.rowElement.create({
       kind: 'file',
       key: p,
       index: index(),
@@ -89,12 +118,12 @@
         // slash) for a tree view to indent; the folders dimmed, the name at full strength (a list of bare names read as if
         // every file sat at the top). A tree view hides the folders, the indent saying them.
         // A CORE FILE'S NAME IN YELLOW (goal/G30.21), the node's word on the fs-watcher's command.
-        { name: 'name', from: ['path', 'kind', 'gone', 'core'], paint: function (v) {
+        { name: 'name', from: ['path', 'kind', 'gone', 'core', 'words'], paint: function (v) {
           var glyph = v.gone ? '❌' : v.kind === 'folder' ? '📁' : '📄';
           var p = String(v.path || '');
           var cut = p.lastIndexOf('/');
           return '<span class="file-depth" style="--depth:' + (p.split('/').length - 1) + '">' + iconHtml(glyph) + '</span> ' +
-            (cut >= 0 ? '<span class="path-dir">' + esc(p.slice(0, cut + 1)) + '</span>' : '') + '<span class="path-file"' + (v.core ? ' style="color:var(--spirit-core, #e6c200)" title="core: write-protected"' : '') + '>' + esc(p.slice(cut + 1)) + '</span>';
+            (cut >= 0 ? '<span class="path-dir">' + dirHtml(p.slice(0, cut + 1), v.words) + '</span>' : '') + '<span class="path-file"' + (v.core ? ' style="color:var(--spirit-core, #e6c200)" title="core: write-protected"' : '') + '>' + wordSpan(p.slice(cut + 1), p.slice(cut + 1), v.words) + '</span>';
         } },
         { name: 'size', paint: function (v) { return v.kind === 'folder' ? '' : esc(bytes(v.size)); } },
         { name: 'changed', from: ['modified'], paint: function (v) { return esc(when(v.modified)); } },
@@ -114,6 +143,20 @@
         }).then(function (a) { return { stat: a[0], annotations: a[1] }; });
       },
     });
+    // Its colours, once the word system has answered, and again whenever a word.json changes.
+    var live = true;
+    var paintWords = function () { wordColours(p).then(function (words) { if (live) el.apply({ words: words }); }); };
+    var offWords = null;
+    var listen = function () {
+      if (!live || !window.spirit.word) return;
+      offWords = window.spirit.word.changed(paintWords);
+      paintWords();
+    };
+    if (window.spirit.word) listen();
+    else if (window.spirit.require) Promise.resolve(window.spirit.require('spirit/word.js')).then(listen, function () { /* no colours */ });
+    var destroy = el.destroy;
+    el.destroy = function () { live = false; if (offWords) offWords(); return destroy.apply(el, arguments); };
+    return el;
   }
 
   E.fileElement = { create: create };
