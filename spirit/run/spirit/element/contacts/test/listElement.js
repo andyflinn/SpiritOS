@@ -42,7 +42,7 @@ load(path.join(JS, '..', '..', 'spirit', 'data.js'));
 // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
 const NODE_KEY = 'nOdE+key/one==';
 window.spirit.node = { key: NODE_KEY };
-window.spirit.data.home(NODE_KEY);
+window.spirit.data.homeNode(NODE_KEY);
 // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
 const managers = [];
 window.spirit.cacheManager = function (name) {
@@ -163,7 +163,7 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   // item. no exceptions."
   if (subscribers.length === dataSubscribed) test.check('loaded and created, the list subscribes to no stream of its own');
   else test.fail('the list subscribed to the stream ' + (subscribers.length - dataSubscribed) + ' times');
-  window.spirit.data.take({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
+  window.spirit.data.takeJob({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
   await tick();
   const kept = CD && CD.contact('K1');
   if (kept && kept.blocked === true && o.data === CD.branch) test.check('a row the node\'s shadow job hands is in the branch the list handed its search');

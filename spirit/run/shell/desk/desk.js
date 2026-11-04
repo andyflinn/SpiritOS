@@ -435,7 +435,7 @@ function deskSearchItems() {
       var D = window.spirit && window.spirit.data;
       var K = deskKept();
       if (forCurrent) ((r && r.items) || []).forEach(function (it) { try { var row = JSON.parse(it.label); if (row.goal === '' && !deskSearchedGoal) deskSearchedGoal = row.id; } catch (e) { /* not a row */ } });
-      if (D && K && typeof D.seat === 'function') D.seat(K.branch, (r && r.items) || []);
+      if (D && K && typeof D.seatRows === 'function') D.seatRows(K.branch, (r && r.items) || []);
       deskNotePlugins(deskLabels(r)); deskDraw();
       // The List may have drawn its own answer before this one named the goal.
       if (deskList) deskList.redraw();

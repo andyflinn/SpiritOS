@@ -1214,5 +1214,5 @@ function relayVerifier(run) {
 // publishes, the data set takes the node's stream, and this listens to the manager.
 require('../deskVerify/data.js');
 if (globalThis.spirit && ((globalThis.spirit.data || {}).deskVerify || {}).data) globalThis.spirit.data.deskVerify.data.watch(relayVerifier);
-if (globalThis.spirit && globalThis.spirit.data && typeof globalThis.spirit.data.follow === 'function') globalThis.spirit.data.follow();
+if (globalThis.spirit && globalThis.spirit.data && typeof globalThis.spirit.data.followStream === 'function') globalThis.spirit.data.followStream();
 gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });

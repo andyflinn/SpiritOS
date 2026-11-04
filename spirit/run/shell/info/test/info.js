@@ -93,7 +93,7 @@ function world() {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+INFO/NODE==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   w.api = api; api.win = win;
   return w;
@@ -132,7 +132,7 @@ test.startTest('info.js: the Info app');
   test.subHeading('it reads the relays from the contact family\'s cache (goal/G41.28)');
   // goal/G41.32: a relay's row changing is its two forms' to follow, in the contact family's cache; Info reads nothing.
   const before = w.statuses;
-  w.api.win.spirit.data.take({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'RA', relay: true, keep: true, seated: false } } });
+  w.api.win.spirit.data.takeJob({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'RA', relay: true, keep: true, seated: false } } });
   await settle();
   ok(w.statuses === before, 'Info asks relay.status no more on its own', 'relay.status asked ' + before + ', then ' + w.statuses);
 

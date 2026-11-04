@@ -46,7 +46,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
-  DATA.home(NODE_KEY);
+  DATA.homeNode(NODE_KEY);
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
@@ -55,7 +55,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     return Promise.resolve(true);
   };
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
-  const V = DATA.at(null, 'auth');
+  const V = DATA.viewAt(null, 'auth');
   global.document = { createElement: function () { return {}; } };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
@@ -150,7 +150,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   V.set('bundles/23', { id: 23, label: 'Desk hand', owner: 'desk' });
   const offered = function (opts) {
     if (!opts || !LIST || typeof LIST.order !== 'function') return null;
-    const rows = DATA.rows(opts.data) || [];
+    const rows = DATA.rowsOf(opts.data) || [];
     const entries = rows.map(function (r, i) { return { key: String(r.key != null ? r.key : r.id), row: r, at: i }; });
     return LIST.order(entries, { words: '', values: {}, filters: opts.filters || [], columns: opts.columns || [], matched: opts.matched, score: opts.score })
       .map(function (e) { return String(e.row && e.row.id); }).filter(function (k) { return ['21', '22', '23'].indexOf(k) !== -1; }).sort();

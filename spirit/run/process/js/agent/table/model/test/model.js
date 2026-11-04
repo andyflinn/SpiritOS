@@ -149,7 +149,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
-  global.window.spirit.data.home(HOME_KEY);
+  global.window.spirit.data.homeNode(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
@@ -252,18 +252,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     if (AD) {
       const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };
       const heard = [];
-      const off = DATA.watch(BRANCH, function (p) { heard.push(p); });
-      DATA.take(job({ table: 'model', row: { id: 'KT', label: 'First', extra: 1 } }));
-      ok(AD.row('model', 'KT') && AD.row('model', 'KT').label === 'First' && heard.indexOf(BRANCH + '/KT') !== -1, 'a model row on the stream lands at <node>/agent/model/<id>, and the branch\'s watcher hears it', 'model: ' + short(DATA.branch(BRANCH)));
-      DATA.take(job({ table: 'model', row: { id: 'KT', label: 'Renamed' } }));
+      const off = DATA.watchPath(BRANCH, function (p) { heard.push(p); });
+      DATA.takeJob(job({ table: 'model', row: { id: 'KT', label: 'First', extra: 1 } }));
+      ok(AD.row('model', 'KT') && AD.row('model', 'KT').label === 'First' && heard.indexOf(BRANCH + '/KT') !== -1, 'a model row on the stream lands at <node>/agent/model/<id>, and the branch\'s watcher hears it', 'model: ' + short(DATA.branchAt(BRANCH)));
+      DATA.takeJob(job({ table: 'model', row: { id: 'KT', label: 'Renamed' } }));
       ok(AD.row('model', 'KT') && AD.row('model', 'KT').label === 'Renamed' && AD.row('model', 'KT').extra === 1, 'a changed row is merged: what it names changes, what it does not stays', 'row: ' + short(AD.row('model', 'KT')));
-      DATA.take(job({ table: 'model', id: 'KT', removed: true }));
-      ok(!AD.row('model', 'KT') && !('KT' in DATA.branch(BRANCH)), 'a row removed, by its id, is gone', 'row: ' + short(AD.row('model', 'KT')));
-      const before = JSON.stringify(DATA.branch(BRANCH));
-      DATA.take(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
-      DATA.take(job({ table: 'model', row: { id: 'KX', label: 'from the desk' } }, 'process/js/desk'));
-      DATA.take(job({ table: 'model', row: { label: 'no id' } }));
-      ok(JSON.stringify(DATA.branch(BRANCH)) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'model: ' + short(DATA.branch(BRANCH)));
+      DATA.takeJob(job({ table: 'model', id: 'KT', removed: true }));
+      ok(!AD.row('model', 'KT') && !('KT' in DATA.branchAt(BRANCH)), 'a row removed, by its id, is gone', 'row: ' + short(AD.row('model', 'KT')));
+      const before = JSON.stringify(DATA.branchAt(BRANCH));
+      DATA.takeJob(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
+      DATA.takeJob(job({ table: 'model', row: { id: 'KX', label: 'from the desk' } }, 'process/js/desk'));
+      DATA.takeJob(job({ table: 'model', row: { label: 'no id' } }));
+      ok(JSON.stringify(DATA.branchAt(BRANCH)) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'model: ' + short(DATA.branchAt(BRANCH)));
       off();
     }
   }

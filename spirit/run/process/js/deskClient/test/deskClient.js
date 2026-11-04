@@ -69,7 +69,7 @@ const appServerStub = {
       require(path.resolve(String(opts.stream.translator)));
     }
     // Each row under its sender, as appServer's restoreCaches writes it (written(st, row): take(job, st.key); goal/G41.28).
-    if (restoreRows) { restoreRows.forEach(function (r) { curD.take({ module: 'process/js/desk', data: {}, app: r }, DESK); }); restoreRows = null; }
+    if (restoreRows) { restoreRows.forEach(function (r) { curD.takeJob({ module: 'process/js/desk', data: {}, app: r }, DESK); }); restoreRows = null; }
     served = { verbs: verbs, opts: opts || {} };
     return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
   },
@@ -116,7 +116,7 @@ let change = 0;
 function push(row) {
   change += 1;
   const r = Object.assign({ change: change }, row);
-  curD.take({ module: 'process/js/desk', data: {}, app: r }, DESK);
+  curD.takeJob({ module: 'process/js/desk', data: {}, app: r }, DESK);
   cacheRows = DESK_API.cache.keep(cacheRows, r);
   return Promise.resolve(served.opts.stream.onRow(r, DESK));
 }
@@ -127,7 +127,7 @@ function pushNoted(row) {
   change += 1;
   const r = Object.assign({ change: change }, row);
   let said = null;
-  curD.noting(function () { curD.take({ module: 'process/js/desk', data: {}, app: r }, DESK); said = served.opts.stream.onRow(r, DESK); });
+  curD.noting(function () { curD.takeJob({ module: 'process/js/desk', data: {}, app: r }, DESK); said = served.opts.stream.onRow(r, DESK); });
   return Promise.resolve(said);
 }
 let tick = Date.parse('2030-01-01T00:00:00Z');

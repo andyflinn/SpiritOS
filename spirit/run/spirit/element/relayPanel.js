@@ -1733,7 +1733,7 @@ var ndPage = ({
     }));
     // ITS REPORT, ON THE RELAY EVENT (goal/G41.32): whole, paced by the node (presenceNode.js), so this keeps no timer.
     // Through spirit.data, which takes the node's stream for every client (goal/G43.5).
-    ndStops.push(Promise.resolve(window.spirit.data.translate({ onRelay: function (event) {
+    ndStops.push(Promise.resolve(window.spirit.data.addTranslator({ onRelay: function (event) {
       if (ndGone || !event || event.kind !== 'status' || !event.report || !ndBadge || event.relay !== ndUrl) return;
       ndBadge.report = event.report;
       ndRender();

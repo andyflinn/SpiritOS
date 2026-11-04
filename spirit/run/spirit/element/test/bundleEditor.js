@@ -67,7 +67,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+BUNDLE/EDITOR==' };
-  global.window.spirit.data.home(global.window.spirit.node.key);
+  global.window.spirit.data.homeNode(global.window.spirit.node.key);
   // A family's cache: the family's own manager, run on this window; the watches on its bundles table counted, and their
   // releases.
   const managers = [];
@@ -82,7 +82,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     }
     return Promise.resolve(true);
   };
-  function arrive(id, label) { global.window.spirit.data.take({ id: 'bundles', type: 'bundles', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); }
+  function arrive(id, label) { global.window.spirit.data.takeJob({ id: 'bundles', type: 'bundles', data: { table: 'bundle', row: { id: id, label: label, owner: 'node' } } }); }
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();

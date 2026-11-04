@@ -16,7 +16,7 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 const NODE = 'KEY+SPIRIT/DATA==';
 const NID = D.nodeId(NODE);
 const FAMILY = 'probe';
-const V = D.at(NODE, FAMILY);
+const V = D.viewAt(NODE, FAMILY);
 function T() { return ((D[FAMILY] || {}).cache || {})[NID] || {}; }
 function W(p) { return NID + '/' + FAMILY + '/' + p; }
 function heard(p) { const calls = []; const off = V.watch(p, function (at, v) { calls.push([at, v]); }); return { calls: calls, off: off }; }
@@ -36,9 +36,9 @@ ok(byType.calls.length === 1 && byType.calls[0][0] === W('files/a/b.txt'), 'the 
   'type watcher: ' + JSON.stringify(byType.calls));
 ok(other.calls.length === 0, 'another type\'s watcher hears nothing', 'contacts heard: ' + JSON.stringify(other.calls));
 ok(V.get('files') === T().files, 'a bare type gets the branch', 'get(type) is not the branch');
-V.set('files', 1); V.set('files/', 2); V.set('', 3); D.set(null, 4);
+V.set('files', 1); V.set('files/', 2); V.set('', 3); D.setPath(null, 4);
 ok(byType.calls.length === 1 && !('' in T().files) && !('' in D), 'a path without a key writes nothing and tells nobody',
-  'keyless set: ' + JSON.stringify({ calls: byType.calls.length, files: Object.keys(T().files), data: D.branches() }));
+  'keyless set: ' + JSON.stringify({ calls: byType.calls.length, files: Object.keys(T().files), data: D.allBranches() }));
 ok(V.get('nosuch/key') === undefined && Object.keys(V.branch('fresh') || {}).length === 0 && V.rows('fresh').length === 0, 'a missing key reads undefined; a missing branch answers empty',
   'missing: ' + JSON.stringify(V.get('nosuch/key')));
 
@@ -107,15 +107,15 @@ ok(!threw, 'seat with no items is ignored', 'seat() threw ' + threw);
 
 test.subHeading('translate: the types\' own translators');
 const jobs = []; const renames = [];
-D.translate({ onJob: function () { throw new Error('a type\'s fault'); } });
-D.translate({ onJob: function (job, api) { jobs.push([job, api]); }, onRename: function (d, api) { renames.push([d, api]); } });
-D.translate(null); D.translate('text');
+D.addTranslator({ onJob: function () { throw new Error('a type\'s fault'); } });
+D.addTranslator({ onJob: function (job, api) { jobs.push([job, api]); }, onRename: function (d, api) { renames.push([d, api]); } });
+D.addTranslator(null); D.addTranslator('text');
 threw = null;
 try {
-  D.take({ type: 'x', data: { a: 1 } });
-  D.take({ type: 'nodata' }); D.take(null);
-  D.rename({ key: 'K1', caption: 'c' });
-  D.rename({ caption: 'nokey' }); D.rename(null);
+  D.takeJob({ type: 'x', data: { a: 1 } });
+  D.takeJob({ type: 'nodata' }); D.takeJob(null);
+  D.takeRename({ key: 'K1', caption: 'c' });
+  D.takeRename({ caption: 'nokey' }); D.takeRename(null);
 } catch (e) { threw = e; }
 ok(!threw, 'take and rename survive a throwing translator and a non-object registration', 'threw ' + threw);
 // Every job is handed over, data or none (goal/G41.28: the jobs family's manager keeps them whole); null is not a job.
@@ -144,15 +144,15 @@ ok(tree.calls.length === 2 && tree.calls[1][0] === W('tree/z'), 'ready ends the 
 tree.off(); treeKey.off(); others.off(); byType.off(); other.off();
 
 test.subHeading('search: every branch held, ranked, bounded');
-D.forget();
+D.forgetAll();
 V.set('contacts/a', { name: 'anna' });
 V.set('contacts/b', { name: 'bert' });
 V.set('files/x/anna.txt', { size: 1 });
 V.set('prefs/theme', 'dark');
 const told = heard('contacts');
-const kept = function () { return JSON.stringify(D.branches().map(function (b) { return [b, D.branch(b)]; })); };
+const kept = function () { return JSON.stringify(D.allBranches().map(function (b) { return [b, D.branchAt(b)]; })); };
 const snapshot = kept();
-const r = D.search({ text: 'anna' });
+const r = D.searchAll({ text: 'anna' });
 ok(r.items.length === 4 && r.more === false, 'every row of every branch comes back when there is room', 'items: ' + JSON.stringify(r));
 ok(r.items[0].key === W('contacts/a') && r.items[0].probability > r.items[1].probability, 'the best match ranks first',
   'order: ' + r.items.map(function (i) { return i.key + '=' + i.probability; }));
@@ -165,23 +165,23 @@ ok(r.items.every(function (i, n) { return n === 0 || r.items[n - 1].probability 
 ok(r.items[0].label === '{"name":"anna"}' && r.items.filter(function (i) { return i.key === W('prefs/theme'); })[0].label === '"dark"',
   'the label is the row as JSON, the key the row\'s whole path', 'labels: ' + JSON.stringify(r.items));
 ok(kept() === snapshot && told.calls.length === 0, 'search writes nothing and tells nobody', 'heard ' + told.calls.length);
-const blank = D.search({});
+const blank = D.searchAll({});
 ok(blank.items.length === 4 && blank.items.every(function (i) { return i.probability === 0; }), 'with no text every row comes back at 0',
   'blank: ' + JSON.stringify(blank.items.map(function (i) { return i.probability; })));
-const only = D.search({ text: 'anna', branches: [W('files')] });
+const only = D.searchAll({ text: 'anna', branches: [W('files')] });
 ok(only.items.length === 1 && only.items[0].key === W('files/x/anna.txt'), 'branches limits the search to the branches named, by their whole paths',
   'only: ' + JSON.stringify(only.items));
-ok(D.search({ text: 'anna', branches: [] }).items.length === 0, 'an empty branches list searches nothing', 'branches [] found rows');
+ok(D.searchAll({ text: 'anna', branches: [] }).items.length === 0, 'an empty branches list searches nothing', 'branches [] found rows');
 const env = Buffer.byteLength(JSON.stringify({ items: [], more: false }));
 const one = Buffer.byteLength(JSON.stringify([r.items[0]]));
-const tight = D.search({ text: 'anna', room: env + one + 5 });
+const tight = D.searchAll({ text: 'anna', room: env + one + 5 });
 ok(tight.items.length === 1 && tight.items[0].key === W('contacts/a') && tight.more === true, 'a small room keeps the best that fit and says more',
   'tight: ' + JSON.stringify(tight));
 ok(Buffer.byteLength(JSON.stringify(tight)) <= env + one + 5, 'the whole answer fits the room, in bytes', 'tight is ' + Buffer.byteLength(JSON.stringify(tight)));
-const tiny = D.search({ text: 'anna', room: 30 });
+const tiny = D.searchAll({ text: 'anna', room: 30 });
 ok(tiny.items.length === 0 && tiny.more === true, 'a row too big for the room alone is left out and said by more', 'tiny: ' + JSON.stringify(tiny));
 V.set('notes/big', { body: 'é'.repeat(9000) });
-const big = D.search({ text: 'anna' });
+const big = D.searchAll({ text: 'anna' });
 ok(big.more === true && !big.items.some(function (i) { return i.key === W('notes/big'); }) && big.items.length === 4,
   'by default a row over the answer limit is left out, in bytes, the rest kept', 'big: ' + big.items.length + ' more ' + big.more);
 told.off();
@@ -195,24 +195,24 @@ function pageCopy() {
   win.window = win;
   vm.runInNewContext(require('fs').readFileSync(path.join(__dirname, '..', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   // P is the page's view of the family, as its manager addresses it; P.whole the page's data set itself.
-  const view = win.spirit.data.at(NODE, FAMILY);
+  const view = win.spirit.data.viewAt(NODE, FAMILY);
   view.whole = win.spirit.data;
   return { P: view, stream: h };
 }
 // A translator writing each job it is handed to jobs/<id>, and recording what it got.
 function recorder() {
   const got = { jobs: [], renames: [] };
-  return { got: got, t: { onJob: function (job, d) { got.jobs.push(job); d.at(job.fromNode, FAMILY).set('jobs/' + job.id, job.data); }, onRename: function (r) { got.renames.push(r); } } };
+  return { got: got, t: { onJob: function (job, d) { got.jobs.push(job); d.viewAt(job.fromNode, FAMILY).set('jobs/' + job.id, job.data); }, onRename: function (r) { got.renames.push(r); } } };
 }
 
 test.subHeading('forget: everything kept goes, and each type is told once');
 V.set('files/x', { size: 1 }); V.set('contacts/y', { name: 'y' }); V.ready('files', true);
 const forgot = heard('files');
-ok(typeof D.forget === 'function', 'forget is part of the api', 'there is no forget');
-if (typeof D.forget === 'function') {
-  D.forget();
+ok(typeof D.forgetAll === 'function', 'forget is part of the api', 'there is no forget');
+if (typeof D.forgetAll === 'function') {
+  D.forgetAll();
   // Every branch the tree holds, node by node and family by family: forget empties each.
-  const branches = D.branches().map(function (b) { return D.branch(b); });
+  const branches = D.allBranches().map(function (b) { return D.branchAt(b); });
   ok(branches.length > 0 && branches.every(function (b) { return !Object.keys(b).length; }) && V.ready('files') === false,
     'every branch is empty and no type is ready', 'after forget: ' + JSON.stringify({ data: kept(), ready: V.ready('files') }));
   ok(forgot.calls.length === 1 && forgot.calls[0][0] === W('files') && forgot.calls[0][1] === undefined, 'a type\'s watcher is told once, (type, undefined)',
@@ -224,7 +224,7 @@ test.subHeading('on a page a snapshot is a connect: the cache forgets, and takes
 {
   const { P, stream } = pageCopy();
   const r = recorder();
-  P.whole.translate(r.t);
+  P.whole.addTranslator(r.t);
   stream.onSnapshot([{ id: 'a', data: { n: 1 } }, { id: 'b', data: { n: 1 } }]);
   P.seat('contacts', [{ key: 'K', label: JSON.stringify({ name: 'k' }) }]);
   stream.onSnapshot([{ id: 'a', data: { n: 2 } }]);
@@ -241,7 +241,7 @@ test.subHeading('on a page a type loaded late is handed its data whole');
   stream.onUpdate({ id: 'c', data: { n: 1 } });
   stream.onContactRename({ key: 'K', label: 'kay' });
   const r = recorder();
-  P.whole.translate(r.t);
+  P.whole.addTranslator(r.t);
   const ids = r.got.jobs.map(function (j) { return j.id + ':' + j.data.n; }).sort().join(',');
   ok(ids === 'a:2,c:1', 'its translator is handed every job as it now stands, each once', 'the late translator got ' + ids);
   ok(r.got.renames.length === 1 && r.got.renames[0].label === 'kay', 'and the renames heard', 'renames: ' + JSON.stringify(r.got.renames));
@@ -249,11 +249,11 @@ test.subHeading('on a page a type loaded late is handed its data whole');
 }
 
 test.subHeading('in a process the cache sheds oldest first past a byte cap; a page keeps everything');
-ok(typeof D.cap === 'function' && D.cap() > 0 && isFinite(D.cap()), 'in a process the cache has a cap, in bytes', 'the process cap is ' + (typeof D.cap === 'function' ? D.cap() : 'missing'));
-if (typeof D.cap === 'function') {
-  const was = D.cap();
-  D.forget();
-  D.cap(300);
+ok(typeof D.byteCap === 'function' && D.byteCap() > 0 && isFinite(D.byteCap()), 'in a process the cache has a cap, in bytes', 'the process cap is ' + (typeof D.byteCap === 'function' ? D.byteCap() : 'missing'));
+if (typeof D.byteCap === 'function') {
+  const was = D.byteCap();
+  D.forgetAll();
+  D.byteCap(300);
   const shed = heard('big');
   for (let i = 1; i <= 10; i++) V.set('big/' + i, { body: 'x'.repeat(40) });
   const kept = Object.keys(T().big || {});
@@ -266,9 +266,9 @@ if (typeof D.cap === 'function') {
   V.set('big/11', { body: 'x'.repeat(40) });
   ok(V.get('big/' + oldest) && V.get('big/' + oldest).body === 'y', 'a row written again is newest again', 'big/' + oldest + ' is ' + JSON.stringify(V.get('big/' + oldest)));
   shed.off();
-  D.cap(was);
+  D.byteCap(was);
   const { P } = pageCopy();
-  ok(typeof P.whole.cap === 'function' && P.whole.cap() === Infinity, 'on a page there is no cap (box v17)', 'the page cap is ' + (typeof P.whole.cap === 'function' ? P.whole.cap() : 'missing'));
+  ok(typeof P.whole.byteCap === 'function' && P.whole.byteCap() === Infinity, 'on a page there is no cap (box v17)', 'the page cap is ' + (typeof P.whole.byteCap === 'function' ? P.whole.byteCap() : 'missing'));
 }
 
 test.reportSuccessFailureCount();

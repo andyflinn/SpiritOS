@@ -205,7 +205,7 @@ function deskWorld(goal, items) {
   // spirit.node.key, so a page files its own node's rows under it?" "yes."): as spirit.start does once node.card answers,
   // the key kept on spirit.node and handed to the data set, so the cache files the page's rows under its node.
   win.spirit.node = { key: PAGE_NODE_KEY };
-  win.spirit.data.home(PAGE_NODE_KEY);
+  win.spirit.data.homeNode(PAGE_NODE_KEY);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'rowElement.js'), 'utf8'), win, { filename: 'rowElement.js' });
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };

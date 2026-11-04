@@ -34,14 +34,14 @@
   var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
     ? require('./family/cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
-  // THE TRANSLATOR, ONCE PER DATA SET: spirit.data.family runs this once, however often the file is loaded.
+  // THE TRANSLATOR, ONCE PER DATA SET: spirit.data.makeFamily runs this once, however often the file is loaded.
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
-  D.family('desk', function () {
+  D.makeFamily('desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
     // SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk
     // family's view of one node. A row from the stream is filed under its job's node (fromNode); every read is of the
     // home node (spirit.data's home(): a page's own node, a process's sender).
-    var HOME = D.at(null, 'desk');
+    var HOME = D.viewAt(null, 'desk');
     var V = HOME;
 
     function facts(x) {
@@ -206,10 +206,10 @@
       else if (verb === 'item.files' && Array.isArray(answer.files) && !(args && args.under)) keep(id, { files: answer.files, filesMore: answer.filesMore === true });
     }
 
-    D.translate({
+    D.addTranslator({
       onJob: function (job) {
         if (!(job && job.module === 'process/js/desk' && job.app && typeof job.app === 'object')) return;
-        V = D.at(job.fromNode || null, 'desk');
+        V = D.viewAt(job.fromNode || null, 'desk');
         try { published(job.app); } finally { V = HOME; }
       },
     });

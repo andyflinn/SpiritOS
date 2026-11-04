@@ -765,7 +765,7 @@
         var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
         if (!key) return;
         self.node.key = key;
-        if (self.data && typeof self.data.home === 'function') self.data.home(key);
+        if (self.data && typeof self.data.homeNode === 'function') self.data.homeNode(key);
       }, function () { /* the page files nothing until its node is known */ });
     }).then(function () { return self; });
     self.ready = started;

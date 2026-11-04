@@ -8,5 +8,5 @@
 (function () {
   // Its reads stand at spirit.data.deskClient.data as every family's do, and it has none yet.
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
-  D.family('deskClient');
+  D.makeFamily('deskClient');
 }());

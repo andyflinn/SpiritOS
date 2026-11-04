@@ -61,7 +61,7 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+VERB/SELECTOR==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   const E = win.spirit.element;
 
@@ -105,7 +105,7 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   ok((w.managers || []).indexOf('node') !== -1 && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined, 'it loads the node manager, and its list is a view of ((spirit.data || {}).node || {}).data\'s verbs, no rows of its own', 'managers ' + short(w.managers) + ', data ' + short(m.opts.data) + ', rows ' + typeof m.opts.rows);
   N.keepTree(TREE, win.spirit.apiTreeIndex);
   mine.show(TREE, 'fs');
-  const kept = win.spirit.data.get(N.verbsBranch) || {};
+  const kept = win.spirit.data.getPath(N.verbsBranch) || {};
   const fam = (m.opts.filters || []).filter(function (x) { return x.name === 'family'; })[0];
   const shown = Object.keys(kept).filter(function (k) { return fam && fam.test(kept[k]); }).map(function (k) { return kept[k].name; }).sort();
   ok(!!fam && short(shown) === short(['loadFile', 'search']) && mine.hidden === false, 'show(tree, server) narrows the kept verbs to that family\'s, DEBUG never', 'shown ' + short(shown) + ', hidden ' + mine.hidden);

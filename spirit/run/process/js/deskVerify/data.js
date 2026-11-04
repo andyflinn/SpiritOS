@@ -17,13 +17,13 @@
   var TESTS = 'verifyTests';
   var FLIPS = 'verifyFlips';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
-  D.family('deskVerify', function () {
+  D.makeFamily('deskVerify', function () {
     // The deskVerify family's view of the home node; a publish is filed under the node that sent it (goal/G41.28).
-    var HOME = D.at(null, 'deskVerify');
-    D.translate({
+    var HOME = D.viewAt(null, 'deskVerify');
+    D.addTranslator({
       onJob: function (job) {
         var o = job && job.module === 'process/js/deskVerify' ? job.app : null;
-        if (o && typeof o === 'object' && typeof o.doing === 'string') D.at(job.fromNode || null, 'deskVerify').set(STATE + '/now', o);
+        if (o && typeof o === 'object' && typeof o.doing === 'string') D.viewAt(job.fromNode || null, 'deskVerify').set(STATE + '/now', o);
       },
     });
     // THE READS, ANSWERED HERE:

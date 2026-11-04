@@ -36,7 +36,7 @@
     return reading;
   }
   function follow(D) {
-    if (D && typeof D.translate === 'function') D.translate({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
+    if (D && typeof D.addTranslator === 'function') D.addTranslator({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
   }
   if (window.spirit && window.spirit.data) follow(window.spirit.data);
   else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('spirit/data.js')).then(function () { follow(window.spirit.data); }, function () {});

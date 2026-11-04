@@ -247,9 +247,9 @@ function ddWorld(facts, checks, o) {
     win.spirit.isBrowser = function () { return true; };
     vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
     win.spirit.node = { key: 'KEY+DESK/DETAILS==' };
-    win.spirit.data.home(win.spirit.node.key);
+    win.spirit.data.homeNode(win.spirit.node.key);
     delete win.spirit.elements.deskRunStatus;
-    if (o.kept) { vm.runInContext(fs.readFileSync(path.join(RUN, VERIFY_CCM), 'utf8'), win, { filename: VERIFY_CCM }); win.spirit.data.take(o.kept); }
+    if (o.kept) { vm.runInContext(fs.readFileSync(path.join(RUN, VERIFY_CCM), 'utf8'), win, { filename: VERIFY_CCM }); win.spirit.data.takeJob(o.kept); }
   }
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
@@ -569,18 +569,18 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   let v = ddWorld(RUNNING, [], { real: true }); await v.open();
   ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data, 'it loads the verifier\'s cache manager itself, ' + VERIFY_CCM, 'required: ' + JSON.stringify(v.required));
   const runBefore = runShown(v);
-  v.win.spirit.data.take(runJob({ app: RUN1 })); await settle();
+  v.win.spirit.data.takeJob(runJob({ app: RUN1 })); await settle();
   ok(/verifying info\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress'), 'a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far',
     'the run before: "' + runBefore + '", after the publish: "' + runShown(v) + '"');
-  v.win.spirit.data.take(runJob({ app: Object.assign({}, RUN1, { index: 3 }) })); await settle();
+  v.win.spirit.data.takeJob(runJob({ app: Object.assign({}, RUN1, { index: 3 }) })); await settle();
   ok(/suite 3 of 4/.test(runShown(v)), 'the next publish redraws it again', 'the run: "' + runShown(v) + '"');
   v = ddWorld(RUNNING, [], { real: true, kept: runJob({ app: RUN1 }) }); await v.open();
   ok(/verifying info\.js, suite 2 of 4/.test(runShown(v)), 'a run already kept in spirit.data when it opens is drawn at once', 'the run at open: "' + runShown(v) + '"');
   v = ddWorld(RUNNING, [], { real: true }); await v.open();
-  v.win.spirit.data.take(runJob({ fromNode: 'KEY+ANOTHER/NODE==', app: RUN1 })); await settle();
+  v.win.spirit.data.takeJob(runJob({ fromNode: 'KEY+ANOTHER/NODE==', app: RUN1 })); await settle();
   ok(!/verifying/.test(runShown(v)), 'a publish of another node\'s verifier draws nothing here', 'the run: "' + runShown(v) + '"');
   v = ddWorld(RUNNING, [], { real: true }); await v.open();
-  v.win.spirit.data.take(runJob({ app: { suite: 'x.js', index: 1, of: 2 } })); await settle();
+  v.win.spirit.data.takeJob(runJob({ app: { suite: 'x.js', index: 1, of: 2 } })); await settle();
   ok(!/verifying/.test(runShown(v)), 'a publish saying no doing draws nothing', 'the run: "' + runShown(v) + '"');
 
   // ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────

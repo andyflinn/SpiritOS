@@ -10,13 +10,13 @@
 (function () {
   var APPS = 'apps';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
-  D.family('app', function () {
-    var HOME = D.at(null, 'app');
-    D.translate({
+  D.makeFamily('app', function () {
+    var HOME = D.viewAt(null, 'app');
+    D.addTranslator({
       onJob: function (job) {
         var all = job && job.type === 'apps' && job.data ? job.data.apps : null;
         if (!all || typeof all !== 'object') return;
-        var V = D.at(job.fromNode || null, 'app');
+        var V = D.viewAt(job.fromNode || null, 'app');
         Object.keys(V.branch(APPS)).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(all, k)) V.del(APPS + '/' + k); });
         Object.keys(all).forEach(function (k) {
           var r = all[k] || {};

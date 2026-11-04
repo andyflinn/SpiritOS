@@ -39,7 +39,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
-  D.home(NODE_KEY);
+  D.homeNode(NODE_KEY);
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
@@ -65,29 +65,29 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // translation, spirit/element/files/data.js until G41.16, is this element's (G30.18), loaded with it.
   const cmd = function (c) { return { id: 'job-fs', type: 'fs-watcher', data: { command: c } }; };
   ok(F.ready() !== true, 'before the tree is whole, data.files is not ready', 'ready: ' + short(F.ready()));
-  D.take(cmd({ op: 'createDirectory', path: 'docs' }));
-  D.take(cmd({ op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' }));
-  D.take(cmd({ op: 'createFile', path: 'docs/core.js', size: 7, core: true }));
+  D.takeJob(cmd({ op: 'createDirectory', path: 'docs' }));
+  D.takeJob(cmd({ op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' }));
+  D.takeJob(cmd({ op: 'createFile', path: 'docs/core.js', size: 7, core: true }));
   ok(F.file('docs') && F.file('docs').kind === 'folder', 'a createDirectory is a folder at files/<path>', 'files/docs: ' + short(F.file('docs')));
   const a = F.file('docs/a.md');
   ok(a && a.kind === 'file' && a.size === 5 && a.modified === '2030-01-01T00:00:00Z' && a.core === false, 'a createFile is a file with its size and its time, core false', 'files/docs/a.md: ' + short(a));
   ok(F.file('docs/core.js') && F.file('docs/core.js').core === true, 'the node\'s word that a file is core is kept', 'files/docs/core.js: ' + short(F.file('docs/core.js')));
-  D.take({ id: 'job-fs', type: 'fs-watcher', data: { treeComplete: true } });
+  D.takeJob({ id: 'job-fs', type: 'fs-watcher', data: { treeComplete: true } });
   ok(F.ready() === true, 'treeComplete: data.files is ready', 'ready: ' + short(F.ready()));
-  D.take(cmd({ op: 'changeFile', path: 'docs/a.md', size: 6 }));
+  D.takeJob(cmd({ op: 'changeFile', path: 'docs/a.md', size: 6 }));
   ok(F.file('docs/a.md').size === 6 && F.file('docs/a.md').kind === 'file', 'a change by path sets the file again, its kind kept', 'files/docs/a.md: ' + short(F.file('docs/a.md')));
-  D.take(cmd({ op: 'deleteFile', path: 'docs/a.md' }));
+  D.takeJob(cmd({ op: 'deleteFile', path: 'docs/a.md' }));
   ok(F.file('docs/a.md') === null && F.file('docs'), 'a deleteFile takes that file out', 'files: ' + short(Object.keys(F.files())));
-  D.take(cmd({ op: 'createFile', path: 'docs/sub/x.txt', size: 1 }));
-  D.take(cmd({ op: 'deleteDirectory', path: 'docs' }));
+  D.takeJob(cmd({ op: 'createFile', path: 'docs/sub/x.txt', size: 1 }));
+  D.takeJob(cmd({ op: 'deleteDirectory', path: 'docs' }));
   ok(!Object.keys(F.files()).some(function (k) { return k === 'docs' || k.indexOf('docs/') === 0; }), 'a deleteDirectory takes the folder out, and everything under it', 'files: ' + short(Object.keys(F.files())));
   const before = JSON.stringify(F.files());
-  D.take({ id: 'j2', type: 'relay-presence', data: { command: { op: 'createFile', path: 'nope.txt' } } });
-  D.take(cmd({ op: 'createFile' }));
+  D.takeJob({ id: 'j2', type: 'relay-presence', data: { command: { op: 'createFile', path: 'nope.txt' } } });
+  D.takeJob(cmd({ op: 'createFile' }));
   ok(JSON.stringify(F.files()) === before, 'another job\'s command, or a command with no path, writes nothing', 'files: ' + short(Object.keys(F.files())));
 
   test.subHeading('one file or folder as a row');
-  D.take(cmd({ op: 'createFile', path: 'web/page<1>.html', size: 2048, modified: '2030-01-02T03:04:00Z', core: false }));
+  D.takeJob(cmd({ op: 'createFile', path: 'web/page<1>.html', size: 2048, modified: '2030-01-02T03:04:00Z', core: false }));
   const el = E.fileElement.create({ path: 'web/page<1>.html' });
   ok(el.kind === 'file' && el.key === 'web/page<1>.html' && el.row.size === 2048 && el.row.name === 'page<1>.html', 'a row element of kind file, keyed by its path, its facts from data.files', 'el: ' + short({ kind: el.kind, key: el.key, row: el.row }));
   const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
@@ -104,10 +104,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('it repaints from data.files');
   const hosts = { name: { innerHTML: '' }, size: { innerHTML: '' }, changed: { innerHTML: '' } };
   el.mount(hosts);
-  D.take(cmd({ op: 'changeFile', path: 'web/page<1>.html', size: 4096, modified: '2030-01-02T03:04:00Z', core: false }));
+  D.takeJob(cmd({ op: 'changeFile', path: 'web/page<1>.html', size: 4096, modified: '2030-01-02T03:04:00Z', core: false }));
   await settle();
   ok(el.row.size === 4096 && hosts.size.innerHTML === '4096 Bytes', 'its path in data.files changed, the row repaints its size', 'row: ' + short(el.row) + ', size ' + short(hosts.size.innerHTML));
-  D.take(cmd({ op: 'deleteFile', path: 'web/page<1>.html' }));
+  D.takeJob(cmd({ op: 'deleteFile', path: 'web/page<1>.html' }));
   await settle();
   ok(el.row.gone === true && /❌/.test(hosts.name.innerHTML), 'its path gone from data.files, the row is marked gone', 'row: ' + short(el.row));
 

@@ -90,7 +90,7 @@ function world(answer, fields) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+STACK/FRAME==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
   w.api = api;
@@ -165,7 +165,7 @@ function asked(w, verb) { return w.calls.filter(function (c) { return c.name ===
   const K = ((v.win.spirit.data || {}).desk || {}).data;
   ok((v.managers || []).indexOf('desk') !== -1 && !!K, 'it loads the desk family\'s cache manager (((spirit.data || {}).desk || {}).data)', 'managers: ' + short(v.managers));
   if (!K) return;
-  const kept = v.win.spirit.data.at(null, 'desk');
+  const kept = v.win.spirit.data.viewAt(null, 'desk');
   ok(!!kept.get('deskDoors/D3') && kept.get('deskDoors/D3').gate === 'g', 'the plugin\'s door read is kept in ((spirit.data || {}).desk || {}).data\'s doors', 'kept: ' + short(kept.get('deskDoors/D3')));
   ok(!!kept.get('deskDoorRuns/D3') && kept.get('deskDoorRuns/D3').running === false, 'and its runState read in its doorRuns', 'kept: ' + short(kept.get('deskDoorRuns/D3')));
   ok(v.listeners === 0, 'it sets no listener of its own on the desk\'s publishes: the cache is what it hears', 'onPublished asked ' + v.listeners + ' time(s)');

@@ -150,7 +150,7 @@ function listStub(totals) {
 function verifierCache(win) {
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+FALLOUT/NODE==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'process/js/deskVerify/data.js'), 'utf8'), win, { filename: 'deskVerify/data.js' });
 }
 function world(withList, totals) {
@@ -291,7 +291,7 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   const V = ((w.win.spirit.data || {}).deskVerify || {}).data;
   ok(!!w.list.made[0] && w.list.made[0].opts.data === V.testsBranch, 'its list is a view of the tests the verifier\'s cache keeps (spirit.data.deskVerify.data.testsBranch)', 'data: ' + short(w.list.made[0] && w.list.made[0].opts.data));
   ok(w.ctx.streams.filter(function (s) { return s.server === 'deskVerify'; }).length === 0, 'it follows no deskVerify stream of its own', 'streams: ' + short(w.ctx.streams.map(function (s) { return s.server; })));
-  w.win.spirit.data.take({ id: 'job_v', module: 'process/js/deskVerify', app: { doing: 'idle', line: 'idle' } }); await settle();
+  w.win.spirit.data.takeJob({ id: 'job_v', module: 'process/js/deskVerify', app: { doing: 'idle', line: 'idle' } }); await settle();
   ok(w.list.asks.length === 4 && w.list.mostInAir === 1, 'each deskVerify publish kept in ((spirit.data || {}).deskVerify || {}).data counts again, one search at a time', 'asks ' + w.list.asks.length + ', most in air ' + w.list.mostInAir);
   const w0 = world(true, { red: 0, green: 0 });
   w0.win.spirit.deskPlugins.fallout.open(w0.container, w0.ctx); await settle();

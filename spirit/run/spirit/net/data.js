@@ -8,5 +8,5 @@
 (function () {
   // Its reads stand at spirit.data.net.data as every family's do, and it has none yet.
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
-  D.family('net');
+  D.makeFamily('net');
 }());

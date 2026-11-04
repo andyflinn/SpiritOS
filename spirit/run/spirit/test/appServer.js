@@ -149,7 +149,7 @@ async function child(mode) {
     out.one = hasIn(D, 1); out.two = hasIn(D, 2);
     // THE CACHE BY SERVER NODE (box v19: "The RAM-CACHE-is organized BY SERVER-NODE-ID at it's lowest level. IE:
     // spirit.data.<server-public-key-in-base64>.<api-family>...."): what the data set holds at its top, and under it.
-    const kept = (D && D.branches()) || [];
+    const kept = (D && D.allBranches()) || [];
     const top = kept.map(function (b) { return b.split('/')[0]; }).filter(function (n, i, all) { return all.indexOf(n) === i; });
     out.top = top;
     out.byNode = top.filter(namesSender);
@@ -465,7 +465,7 @@ if (CHILD) {
     if (!fs.existsSync(TRANSLATOR)) { test.fail('the desk\'s translator, process/js/desk/data.js, is not there: the stream checks wait on it'); test.reportSuccessFailureCount(); process.exit(0); }
     const { A, s, D } = start({}, { logMax: 5 });
     await tick(100);
-    ok(!!D && typeof D.get === 'function' && !!s && typeof s.subscribe === 'function', 'it serves, keeps a data set and has its client half (subscribe)', 'data ' + typeof (D && D.get) + ', subscribe ' + typeof (s && s.subscribe));
+    ok(!!D && typeof D.getPath === 'function' && !!s && typeof s.subscribe === 'function', 'it serves, keeps a data set and has its client half (subscribe)', 'data ' + typeof (D && D.getPath) + ', subscribe ' + typeof (s && s.subscribe));
     if (!D || !s || typeof s.subscribe !== 'function') return;
     const has = function (n) { return hasIn(D, n); };
 

@@ -236,11 +236,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const D = w.win.spirit.data;
   const asked0 = w.treeAsked;
   w.tree = Object.assign({}, TREE, { gone: { verb: {} } });
-  D.take({ id: 'job_78', kind: 'server', type: 'gone', status: 'running', module: 'process/js/gone', data: {} });
+  D.takeJob({ id: 'job_78', kind: 'server', type: 'gone', status: 'running', module: 'process/js/gone', data: {} });
   await settle();
   ok(w.treeAsked > asked0 && gl.opts.serves('gone.verb') === true, 'a server job changed: the tree is read again, and the grant it now serves is no longer deprecated', 'serves gone.verb ' + gl.opts.serves('gone.verb'));
   w.tree = TREE;
-  D.take({ id: 'job_78', kind: 'server', type: 'gone', status: 'exited', module: 'process/js/gone', data: {} });
+  D.takeJob({ id: 'job_78', kind: 'server', type: 'gone', status: 'exited', module: 'process/js/gone', data: {} });
   await settle();
   const dep = (gl.opts.filters || []).filter(function (f) { return f && f.name === 'deprecated'; })[0];
   ok(!!dep && dep.toggle === true && (typeof dep.when !== 'function' || dep.when([]) !== false) && dep.test(DAY, undefined) === 0 && dep.test(NIGHT, undefined) === 1,

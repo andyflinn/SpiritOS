@@ -32,7 +32,7 @@ function world() {
   // spirit.data.desk.data's, which alone names the desk's branches.
   return { win: win, D: D, X: X,
     // A row as the stream hands it: a job of module process/js/desk whose app is the desk's publish, from SENDER.
-    job: function (app, module) { D.take({ id: 'j' + (++n), module: module || 'process/js/desk', data: {}, app: app }, SENDER); },
+    job: function (app, module) { D.takeJob({ id: 'j' + (++n), module: module || 'process/js/desk', data: {}, app: app }, SENDER); },
     item: function (id) { return X ? X.item(id) : undefined; },
     part: function (id) { return X ? X.part(id) : undefined; },
     current: function () { return X ? X.current() : ''; },
@@ -198,7 +198,7 @@ ok(files.length === 3 && !files.some(function (f) { return f.by === 'cw' && f.pa
 test.subHeading('only the desk\'s jobs are read');
 const wm = world();
 wm.job(whole(it('goal/G9.1', 'goal/G9')), 'process/js/files');
-wm.D.take({ id: 'z', module: 'process/js/desk', data: {}, app: 'not an object' }, SENDER);
+wm.D.takeJob({ id: 'z', module: 'process/js/desk', data: {}, app: 'not an object' }, SENDER);
 ok(!wm.item('goal/G9.1') && !wm.current(), 'a job of another module, or an app that is no object, keeps nothing', short(wm.ids()));
 wm.X.published(whole(it('goal/G9.1', 'goal/G9')));
 ok(wm.item('goal/G9.1') && wm.current() === 'goal/G9', 'published takes a row handed to it directly', short(wm.item('goal/G9.1')));

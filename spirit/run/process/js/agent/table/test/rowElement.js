@@ -94,7 +94,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // reads it from its own disk. The agent family's (process/js/agent/data.js) keeps the tables'
   // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
-  D.home(HOME_KEY);
+  D.homeNode(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
   const rowPath = function (table, id) { return global.window.spirit.data.agent.data.branch(table) + '/' + id; };
@@ -213,7 +213,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   }
 
   test.subHeading('the editor follows its row in spirit.data');
-  D.merge(rowPath('provider', 'KR'), { label: 'From the stream' });
+  D.mergePath(rowPath('provider', 'KR'), { label: 'From the stream' });
   await settle();
   ok(the(ed, 'label').value === 'From the stream', 'a row written to its path shows at once: nothing listens by hand', 'label: ' + short(the(ed, 'label').value));
 
@@ -233,7 +233,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
     'changing the label saves the whole row by itself: provider { op: set, id, icon, label, url, on, tags }, the untyped secret left out', 'calls: ' + short(w.calls));
   ok(global.window.spirit.data.agent.data.row('provider', 'KR').label === 'From the stream', 'it draws nothing it typed into the row: the row changes only by the server\'s stream (rule/19)', 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KR')));
   // The server takes it and its stream says so, as rowTable publishes every row it changes.
-  D.merge(rowPath('provider', 'KR'), { label: 'Typed' }); await settle();
+  D.mergePath(rowPath('provider', 'KR'), { label: 'Typed' }); await settle();
   w.calls.length = 0;
   the(ed, 'on').checked = false;
   the(ed, 'on').fire('change'); await settle();
@@ -263,7 +263,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   the(ed, 'delete').click(); await settle();
   ok(w.calls.filter(function (c) { return c.args && c.args.op === 'delete'; }).length === 1 && JSON.stringify(w.calls.filter(function (c) { return c.args && c.args.op === 'delete'; })[0].args) === JSON.stringify({ op: 'delete', id: 'KR' }),
     'the second press calls provider { op: delete, id }, once', 'calls: ' + short(w.calls));
-  D.del(rowPath('provider', 'KR')); await settle();
+  D.delPath(rowPath('provider', 'KR')); await settle();
   ok(/Deleted\./.test(ed.innerHTML), 'and once the row is deleted from its branch, the editor says Deleted.', 'editor: ' + short(ed.innerHTML));
 
   test.subHeading('a row already in its branch is read whole by get (goal/G41.18)');
@@ -272,7 +272,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // for, to bring in the rest for detail panels etc...").
   w.calls.length = 0;
   w.answer = function (table, a) { return a.op === 'get' ? { id: 'KS', icon: '🧪', label: 'Seated', url: 'https://whole.example', apiKeySet: false } : { id: 'KS' }; };
-  D.set(rowPath('provider', 'KS'), { id: 'KS', icon: '🧪', label: 'Seated' });
+  D.setPath(rowPath('provider', 'KS'), { id: 'KS', icon: '🧪', label: 'Seated' });
   const ed2 = box('editor2');
   const r2 = E.agentRow.create(ed2, { api: {}, table: 'provider', id: 'KS', added: false, look: look, fields: FIELDS });
   await settle();
@@ -282,7 +282,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   ok(the(ed2, 'label').value === 'Seated' && /<b>Change<\/b>/.test(ed2.innerHTML), 'it says Change when opened from the list', 'label ' + short(the(ed2, 'label') && the(ed2, 'label').value));
   ok(w.icons[w.icons.length - 1].value === '🧪', 'the icon chooser shows the row\'s own icon', 'icon: ' + short(w.icons[w.icons.length - 1].value));
   r2.destroy();
-  D.merge(rowPath('provider', 'KS'), { label: 'After' }); await settle();
+  D.mergePath(rowPath('provider', 'KS'), { label: 'After' }); await settle();
   ok(ed2.innerHTML === '', 'destroyed, it empties its box and hears its row no more', 'editor2: ' + short(ed2.innerHTML));
   r.destroy();
 
@@ -305,7 +305,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   }());
   const offered = function (s) {
     if (!s || !LIST || typeof LIST.order !== 'function') return null;
-    const rows = s.o.data ? D.rows(s.o.data) : (typeof s.o.rows === 'function' ? s.o.rows() || [] : []);
+    const rows = s.o.data ? D.rowsOf(s.o.data) : (typeof s.o.rows === 'function' ? s.o.rows() || [] : []);
     const entries = rows.map(function (r, i) { return { key: String(r.key), row: r, at: i }; });
     return LIST.order(entries, { words: '', values: {}, filters: s.o.filters || [], columns: s.o.columns || [], matched: s.o.matched, score: s.o.score })
       .map(function (e) { return e.key; }).sort();
@@ -313,7 +313,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // The page holds two models in its branch, one of this provider's and one of another's.
   // THE ROWS AS THE MODEL TABLE ITSELF ANSWERS THEM: the real provider and model servers (../provider/server.js,
   // ../model/server.js) on a scratch agent.db, two providers with a model each, the model table's search seated in the
-  // page's branch as the list seats it (spirit.data.seat).
+  // page's branch as the list seats it (spirit.data.seatRows).
   const { DatabaseSync } = require('node:sqlite');
   const os = require('os');
   const scratchDb = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-tableElement-'));
@@ -326,7 +326,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   const PB = sctx.tables.provider.verb.handler({ op: 'add', icon: '🏛', label: 'Theirs', url: 'https://theirs.example' }).id;
   const MA = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-mine', providerId: PA }).id;
   const MB = sctx.tables.model.verb.handler({ op: 'add', label: 'claude-theirs', providerId: PB }).id;
-  D.seat(BRANCH('model'), sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);
+  D.seatRows(BRANCH('model'), sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);
   // Only what a search answers is in the branch, as when the model list was opened first: no row came whole on the stream.
   // What a row shows in the dropdown: its columns' values (from, else field), as the list draws its cells.
   const cellsOf = function (s, key) { const r = global.window.spirit.data.agent.data.row('model', key) || {}; return (s.o.columns || []).map(function (c) { const v = r[c.from || c.field]; return v == null ? '' : String(v); }).join(' ').trim(); };
@@ -369,7 +369,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   test.subHeading('an output field shows, and is never picked or sent (goal/G41.21)');
   // Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for that.............".
   {
-    D.set(rowPath('provider', 'KOUT'), { id: 'KOUT', icon: '🅰', label: 'Anthropic' });
+    D.setPath(rowPath('provider', 'KOUT'), { id: 'KOUT', icon: '🅰', label: 'Anthropic' });
     w.calls.length = 0;
     w.answer = function (table, a) { return a.op === 'get' ? { id: 'KM', icon: '🧠', label: 'A model', providerId: 'KOUT' } : { id: 'KM' }; };
     const before = w.searches.length;
@@ -463,7 +463,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   }
   // Andy: "persona detail: the bundle picker doesn not let me change values! (actually it does let me change it, i just
   // doesn't seem to hear the change from the server)": the row's bundle changed on the stream, the field says the new one.
-  D.merge(rowPath('job', 'KJ'), { bundle: '9' }); await settle(); await settle();
+  D.mergePath(rowPath('job', 'KJ'), { bundle: '9' }); await settle(); await settle();
   const bsel2 = w.bundles[w.bundles.length - 1];
   const bundleSays2 = bsel2 ? String((bsel2.row && bsel2.row.label) || bsel2.opts.placeholder || '') : '';
   ok(/Writer/.test(bundleSays2) && !/Reader/.test(bundleSays2), 'the row\'s bundle changed by the server, the field says the new one, Writer', 'the bundle field says ' + JSON.stringify(bundleSays2) + ' after the stream set bundle 9, Writer');

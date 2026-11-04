@@ -83,7 +83,7 @@ const MOST_BYTES = Math.max.apply(null, Object.keys(FIELD_RULES).filter(function
 // (spirit/data.js); shell/boot.js, the face's own transport, is the one exception the network rule names
 // (Andy: "boot.js MUST be an exception to the rules.").
 //   net:   every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon, with the file that made it;
-//   subs:  every spirit.events.subscribe and spirit.data.watch (a family view's, spirit.data.at(node, family).watch, among them), live until let go, and whether a module made it;
+//   subs:  every spirit.events.subscribe and spirit.data.watchPath (a family view's, spirit.data.viewAt(node, family).watch, among them), live until let go, and whether a module made it;
 //   writes: every call to the node a module made that changes something (not the stream or an interface, no read op,
 //           no read verb);
 //   moved: what the box changed while a write was out, other than a busy mark, a button's disabled state or fine print.
@@ -169,18 +169,18 @@ const WATCH = String.raw`(function () {
     var D = window.spirit && window.spirit.data;
     var box = window.spiritMount && window.spiritMount.box;
     var paths = []; W.subs.forEach(function (x) { if (x.mine && x.live && x.kind === 'data.watch' && x.path && paths.indexOf(x.path) === -1) paths.push(x.path); });
-    if (!D || !box || typeof D.set !== 'function') return Promise.resolve([]);
+    if (!D || !box || typeof D.setPath !== 'function') return Promise.resolve([]);
     // A box that shows nothing (a selector hidden until its family is chosen) has nothing to redraw: not judged.
     var shown = Array.prototype.some.call(box.querySelectorAll('*'), function (el) { return el.getClientRects().length > 0; });
     if (!shown) return Promise.resolve(paths.slice(0, 6).map(function (p) { return { path: p, hidden: true }; }));
     return paths.slice(0, 6).reduce(function (chain, p, i) {
       return chain.then(function (out) {
-        var real = p.charAt(0) === '~' && typeof D.home === 'function' ? D.home() + p.slice(1) : p;
+        var real = p.charAt(0) === '~' && typeof D.homeNode === 'function' ? D.homeNode() + p.slice(1) : p;
         var parts = real.split('/');
         // A row's path names its row; a branch's gets a marked row of its own; a family's whole watch, a branch of its own.
         var whole = parts.length >= 4 && parts[3] !== '';
         var at = whole ? real : parts.length >= 3 && parts[2] !== '' ? parts.slice(0, 3).join('/') + '/zz-probe-' + i : parts.slice(0, 2).join('/') + '/zz-probe/zz-probe-' + i;
-        var before = whole && typeof D.get === 'function' ? D.get(at) : undefined;
+        var before = whole && typeof D.getPath === 'function' ? D.getPath(at) : undefined;
         var mark = 'zzprobe' + i;
         var changed = 0;
         var mo = new MutationObserver(function (l) { changed += l.length; });
@@ -192,10 +192,10 @@ const WATCH = String.raw`(function () {
           probe = Object.assign({}, before);
           Object.keys(probe).forEach(function (k) { if (typeof probe[k] === 'string') probe[k] = mark; });
         }
-        try { D.set(at, probe); } catch (e) { /* the branch refused it */ }
+        try { D.setPath(at, probe); } catch (e) { /* the branch refused it */ }
         return new Promise(function (r) { setTimeout(r, 1000); }).then(function () {
           mo.disconnect();
-          try { if (whole && before !== undefined) D.set(at, before); else D.del(at); } catch (e) { /* left */ }
+          try { if (whole && before !== undefined) D.setPath(at, before); else D.delPath(at); } catch (e) { /* left */ }
           out.push({ path: p, redrew: changed > 0 });
           return out;
         });
@@ -207,8 +207,8 @@ const WATCH = String.raw`(function () {
     var D = window.spirit && window.spirit.data;
     return W.searches.map(function (x, i) {
       var host = (window.spiritSearchHosts || [])[i];
-      if (!host || !host.isConnected || !x.data || !D || typeof D.rows !== 'function') return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
-      var held = {}; (D.rows(x.data) || []).forEach(function (r) { held[String(r.key)] = true; });
+      if (!host || !host.isConnected || !x.data || !D || typeof D.rowsOf !== 'function') return { verb: x.verb, data: x.data, drawn: 0, outside: [] };
+      var held = {}; (D.rowsOf(x.data) || []).forEach(function (r) { held[String(r.key)] = true; });
       var keys = Array.prototype.map.call(host.querySelectorAll('[data-key]'), function (el) { return String(el.getAttribute('data-key')); });
       return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
     });
@@ -226,7 +226,7 @@ const WATCH = String.raw`(function () {
       var cur = o[k[0]];
       function wrap(v) {
         if (v && typeof v[k[1]] === 'function' && !v[k[1]].__kept) { var f = kept(k[0] + '.' + k[1], v[k[1]]); f.__kept = true; v[k[1]] = f; }
-        // A family's view (goal/G41.28), spirit.data.at(node, family): a manager watches through it, so its watch is kept
+        // A family's view (goal/G41.28), spirit.data.viewAt(node, family): a manager watches through it, so its watch is kept
         // as one on spirit.data, under the whole path it watches.
         if (k[0] === 'data' && v && typeof v.at === 'function' && !v.at.__kept) {
           var at = v.at;
@@ -544,7 +544,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // they cause, since andy request an element generates would imply that it must listen for confirmation of the
     // results"): one that sent a write holds, while mounted, a listener on the page's stream of its own making.
     // THROUGH SPIRIT.DATA, NOT THE RAW STREAM (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
-    // changes shit it listens to fucking update via the spirit object"): what it listens with is a spirit.data.watch of
+    // changes shit it listens to fucking update via the spirit object"): what it listens with is a spirit.data.watchPath of
     // its own making, its searches' included. A subscription of its own to the raw stream, taken into a store of its own,
     // is how the Desk List kept rows spirit.data never held: it does not count.
     test.subHeading(NAMED + ': ' + 'what it changes, it listens for through spirit.data');

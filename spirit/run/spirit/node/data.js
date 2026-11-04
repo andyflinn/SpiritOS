@@ -18,8 +18,8 @@
   var VERBS = 'apiVerbs';
   var CARD = 'nodeCard';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
-  D.family('node', function () {
-    var HOME = D.at(null, 'node');
+  D.makeFamily('node', function () {
+    var HOME = D.viewAt(null, 'node');
     // THE READS AND THE ONE WRITE:
     //   keepTree(tree, index)   the node's api answer kept, index being apiTreeIndex (servers(tree), verbs(tree, name))
     //   families()  family -> row;  verbs()  'family.verb' -> row

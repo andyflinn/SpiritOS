@@ -83,13 +83,13 @@ function world(opts) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+TEXT/EDITOR==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   w.api = api; w.win = win;
   // A change of one file in the node's tree, as its fs-watcher streams it to the page once the whole tree has come
   // (before then the branch fills quietly).
   w.tree = function (p) {
-    if (!win.spirit.data.fs.data.ready()) win.spirit.data.take({ id: 'job_fs', type: 'fs-watcher', data: { treeComplete: true } }); win.spirit.data.take({ id: 'job_fs', type: 'fs-watcher', data: { command: { op: 'writeFile', path: p, size: 1, modified: Date.now() } } }); };
+    if (!win.spirit.data.fs.data.ready()) win.spirit.data.takeJob({ id: 'job_fs', type: 'fs-watcher', data: { treeComplete: true } }); win.spirit.data.takeJob({ id: 'job_fs', type: 'fs-watcher', data: { command: { op: 'writeFile', path: p, size: 1, modified: Date.now() } } }); };
   return w;
 }
 function lastView(w) { return w.views[w.views.length - 1] || null; }

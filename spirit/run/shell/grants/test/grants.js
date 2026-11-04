@@ -93,7 +93,7 @@ function world() {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+GRANTS/APP==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.api = api;
   return w;
@@ -169,12 +169,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const heard = [];
   const off = g.watch(function (k, row) { heard.push({ k: k, row: row }); });
   const D = w.win.spirit.data;
-  D.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
-  D.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
+  D.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
+  D.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
   ok(heard.length === 2 && heard[0].k === 'K9\njobs.list' && heard[0].row && heard[0].row.label === 'Zed' && heard[1].k === 'K9\njobs.list' && !heard[1].row,
     'watch(fn): a grant kept is heard as <key>\\n<path> with its row, and once revoked with none', 'heard: ' + short(heard));
   if (typeof off === 'function') off();
-  D.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K8', path: 'jobs.list', label: 'Yan' } } });
+  D.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K8', path: 'jobs.list', label: 'Yan' } } });
   ok(heard.length === 2, 'its release ends the watch', 'heard after release: ' + short(heard.slice(2)));
 
   // GOAL/G41.32, IN A REAL BROWSER ON A SCRATCH NODE. THE BOX: "the bundleSelector:pane looses both the 'Edit' button and the

@@ -247,7 +247,7 @@
     // The page's own rows, when the app has them (rows()); each joins the cache by its key.
     var pageKeys = Object.create(null);
     function pageRows() {
-      if (o.data && window.spirit.data) return window.spirit.data.rows(o.data);
+      if (o.data && window.spirit.data) return window.spirit.data.rowsOf(o.data);
       return typeof o.rows === 'function' ? o.rows() : null;
     }
     function takePage() {
@@ -357,7 +357,7 @@
     // THE SERVER'S ANSWERS ONLY FEED THE CACHE.
     function take(answer) {
       // A VIEW: the answer goes into the tree, and the tree's write redraws this list and every other one of that type.
-      if (o.data && window.spirit.data) { window.spirit.data.seat(o.data, answer && answer.items); return; }
+      if (o.data && window.spirit.data) { window.spirit.data.seatRows(o.data, answer && answer.items); return; }
       (answer && Array.isArray(answer.items) ? answer.items : []).forEach(function (it) {
         var row = null;
         try { row = JSON.parse(it.label); } catch (e) { row = null; }
@@ -556,7 +556,7 @@
     }
     if (dropdown && typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('click', outside);
     if (o.api && typeof o.api.onPublished === 'function') off = o.api.onPublished(function () { ask(); }, o.server);
-    var unwatch = o.data && window.spirit && window.spirit.data ? window.spirit.data.watch(o.data, function () { draw(); }) : null;
+    var unwatch = o.data && window.spirit && window.spirit.data ? window.spirit.data.watchPath(o.data, function () { draw(); }) : null;
 
     self.refresh = function () { draw(); ask(); };
     self.redraw = function () { draw(); };

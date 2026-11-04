@@ -112,7 +112,7 @@ function world(configText) {
   w.calls = []; w.required = [];
   w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); } };
   // The server's job as the node's stream hands it to the page's spirit.data, which the jobs family's cache keeps.
-  w.stream = function (debug) { w.win.spirit.data.take({ id: 'job-agent', app: { agent: { debug: debug } } }); };
+  w.stream = function (debug) { w.win.spirit.data.takeJob({ id: 'job-agent', app: { agent: { debug: debug } } }); };
   w.title = function () { return w.titles.length ? w.titles[w.titles.length - 1] : ''; };
   return w;
 }
@@ -131,7 +131,7 @@ function load(w) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+AGENT/APP==' };
-  global.window.spirit.data.home(global.window.spirit.node.key);
+  global.window.spirit.data.homeNode(global.window.spirit.node.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   return w.def;

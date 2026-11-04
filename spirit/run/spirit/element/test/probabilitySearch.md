@@ -78,7 +78,7 @@ draws and ranks.
   - `ask(verb, args)` lends the wire. It resolves the answer's body.
   - It rejects a failed one with its error.
 - **The page's own rows**:
-  - `rows()` or `data` (`spirit.data.rows`) join the cache.
+  - `rows()` or `data` (`spirit.data.rowsOf`) join the cache.
   - A row the page no longer has is gone from the list.
   - With `data`, the answers are seated into it, and its watch redraws.
 - **Headers**:

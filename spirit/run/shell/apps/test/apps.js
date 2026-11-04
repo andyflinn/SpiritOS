@@ -99,11 +99,11 @@ function world() {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+APPS/NODE==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   // The node's file tree, as its fs-watcher streams it to a connecting page: every file a create, then the tree whole.
-  Object.keys(FILES).forEach(function (p) { win.spirit.data.take({ id: 'fsw', type: 'fs-watcher', data: { command: { op: 'createFile', path: p, size: 1, modified: 1 } } }); });
-  win.spirit.data.take({ id: 'fsw', type: 'fs-watcher', data: { treeComplete: true } });
+  Object.keys(FILES).forEach(function (p) { win.spirit.data.takeJob({ id: 'fsw', type: 'fs-watcher', data: { command: { op: 'createFile', path: p, size: 1, modified: 1 } } }); });
+  win.spirit.data.takeJob({ id: 'fsw', type: 'fs-watcher', data: { treeComplete: true } });
   w.win = win;
   return w;
 }

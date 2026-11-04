@@ -2106,8 +2106,8 @@ function readGrants() {
     grantsRead = false;
     const A = ((spirit.data || {}).auth || {}).data;
     const before = A.grants.rows() || {};
-    Object.keys(before).forEach(function (id) { spirit.data.del(A.grants.branch + '/' + id); });
-    spirit.data.seat(A.grants.branch, items.map(function (i) {
+    Object.keys(before).forEach(function (id) { spirit.data.delPath(A.grants.branch + '/' + id); });
+    spirit.data.seatRows(A.grants.branch, items.map(function (i) {
       let row = {};
       try { row = JSON.parse(i.label); } catch (e) { row = {}; }
       return { key: A.grantKey(row.key, row.path), label: i.label };
@@ -4194,5 +4194,5 @@ if (S.current) setImmediate(function () { pushGoalWhole(S.current); });
 // The node's grants: read each time the stream comes up, a restart of the node included, and followed from then on.
 Promise.resolve(spirit.cacheManager('auth')).then(function () {
   spirit.data.auth.data.grants.watch(grantChanged);
-  spirit.data.follow({ onConnection: function (up) { if (up) readGrants(); } });
+  spirit.data.followStream({ onConnection: function (up) { if (up) readGrants(); } });
 }).catch(function (e) { console.error('desk: the grants cannot be followed: ' + ((e && e.message) || e)); });

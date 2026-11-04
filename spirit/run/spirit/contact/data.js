@@ -15,13 +15,13 @@
 (function () {
   var CONTACTS = 'contacts';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
-  D.family('contact', function () {
-    var HOME = D.at(null, 'contact');
+  D.makeFamily('contact', function () {
+    var HOME = D.viewAt(null, 'contact');
     var told = Object.create(null);   // keys the presence table has spoken of, by node
-    D.translate({
+    D.addTranslator({
       onJob: function (job) {
         if (!job || !job.data) return;
-        var V = D.at(job.fromNode || null, 'contact');
+        var V = D.viewAt(job.fromNode || null, 'contact');
         if (job.type === 'relay-presence') {
           var n = V.node();
           var spoke = told[n] = told[n] || Object.create(null);
@@ -48,7 +48,7 @@
           else V.merge(CONTACTS + '/' + r.publicKey, r);
         }
       },
-      onRename: function (d) { D.at(d && d.fromNode || null, 'contact').merge(CONTACTS + '/' + d.key, { name: String(d.caption || '') }); },
+      onRename: function (d) { D.viewAt(d && d.fromNode || null, 'contact').merge(CONTACTS + '/' + d.key, { name: String(d.caption || '') }); },
     });
     // THE READS, ANSWERED HERE:
     //   contact(key)   a contact's row, or null;  contacts()  every contact kept, key -> row

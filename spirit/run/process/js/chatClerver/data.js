@@ -19,18 +19,18 @@
       receivedAt: String(l.receivedAt || ''), re: l.re || { writer: '', seq: 0 }, refused: String(l.refused || '') };
   }
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
-  D.family('chatClerver', function () {
-    var HOME = D.at(null, 'chatClerver');
+  D.makeFamily('chatClerver', function () {
+    var HOME = D.viewAt(null, 'chatClerver');
     function put(V, peer, l) {
       if (!peer || !l || l.seq === undefined || l.sent === undefined) return;
       V.set(LINES + '/' + keyOf(peer, l.sent, l.seq), lineOf(peer, l));
     }
     var heard = [];   // published(fn): the readers told of a line the server published, after it is kept
-    D.translate({
+    D.addTranslator({
       onJob: function (job) {
         var l = job && job.module === 'process/js/chatClerver' && job.app && job.app.line;
         if (!l || !l.peer) return;
-        var V = D.at(job.fromNode || null, 'chatClerver');
+        var V = D.viewAt(job.fromNode || null, 'chatClerver');
         var fresh = !V.get(LINES + '/' + keyOf(l.peer, l.sent, l.seq));
         put(V, l.peer, l);
         var kept = lineOf(l.peer, l);

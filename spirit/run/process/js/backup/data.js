@@ -11,8 +11,8 @@
   var STATUS = 'backupStatus';
   var NOW = 'now';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
-  D.family('backup', function () {
-    var HOME = D.at(null, 'backup');
+  D.makeFamily('backup', function () {
+    var HOME = D.viewAt(null, 'backup');
     // THE READS AND THE ONE WRITE:
     //   keep(status)   what status.get answered, kept as the server holds it; a refusal or nothing lets it go
     //   status()       the status kept, or null

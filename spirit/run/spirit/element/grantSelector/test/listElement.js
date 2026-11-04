@@ -92,7 +92,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const DATA = global.window.spirit.data;
     // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
     global.window.spirit.node = { key: 'nOdE+key/one==' };
-    DATA.home('nOdE+key/one==');
+    DATA.homeNode('nOdE+key/one==');
     vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'auth/data.js' });
     const A = ((global.window.spirit.data || {}).auth || {}).data;
     const GRANTS = { get branch() { return A.grants.branch; }, key: 'key', label: 'label', search: function () { return Promise.resolve({ items: [], more: false }); },
@@ -100,7 +100,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const n = lists.length;
     E.grantList.create({}, { grants: GRANTS });
     await settle();
-    DATA.take({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K7', path: 'jobs.list', label: 'First' } } });
+    DATA.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K7', path: 'jobs.list', label: 'First' } } });
     await settle();
     const fresh = lists[n];
     const kept = A.grants.row(A.grantKey('K7', 'jobs.list'));

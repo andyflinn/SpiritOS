@@ -436,7 +436,7 @@ function senderOf(key, family) {
 // Filed under the sender's node (goal/G41.28): the data set stamps the row's job with it.
 function written(st, row) {
   const D = dataSet();
-  return D.recording(function () { D.take({ module: following.module, data: {}, app: row }, st.key); });
+  return D.recordPaths(function () { D.takeJob({ module: following.module, data: {}, app: row }, st.key); });
 }
 // THE BYTES OF A CACHE FILE, counted, never characters: its envelope and each row's JSON, a comma between rows.
 const rowBytes = new WeakMap();
@@ -487,7 +487,7 @@ function rewrite(st, kept, gone) {
   const lost = new Set();
   gone.forEach(function (r) { r.paths.forEach(function (p) { lost.add(p); }); });
   if (!lost.size) return;
-  lost.forEach(function (p) { D.del(p); });
+  lost.forEach(function (p) { D.delPath(p); });
   kept.forEach(function (r) { if (r.paths.some(function (p) { return lost.has(p); })) r.paths = written(st, r.row); });
 }
 // THE PUSH HAS LANDED WHOLE: its rows take precedence over what was kept, and nothing kept is dropped (goal/G41.15;
@@ -860,7 +860,7 @@ function serve(verbs, opts) {
   s.cached = function (key, verb, args) {
     const st = senders.get(String(key || ''));
     if (!st || !st.api || typeof st.api.answer !== 'function') return null;
-    try { return st.api.answer(String(verb), args || {}, dataSet().at(st.key, st.family), ANSWER_ROOM) || null; } catch (e) { return null; }
+    try { return st.api.answer(String(verb), args || {}, dataSet().viewAt(st.key, st.family), ANSWER_ROOM) || null; } catch (e) { return null; }
   };
   s.query = function (key, verb, args, how) {
     const k = String(key || '');
@@ -874,7 +874,7 @@ function serve(verbs, opts) {
       return p[v](args || {});
     })).then(function (r) {
       if (r.status !== 200 || !isPlain(r.body)) return null;
-      if (st.api && typeof st.api.took === 'function') { try { st.api.took(v, args || {}, r.body, dataSet().at(st.key, st.family)); } catch (e) { /* the answer stands */ } }
+      if (st.api && typeof st.api.took === 'function') { try { st.api.took(v, args || {}, r.body, dataSet().viewAt(st.key, st.family)); } catch (e) { /* the answer stands */ } }
       return r.body;
     });
   };

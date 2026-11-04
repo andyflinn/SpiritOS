@@ -19,7 +19,7 @@
     }
     function ask() {
       spirit.ready.then(function (s) { return s.app.search({ q: '' }); }).then(function (got) {
-        if (box.parentNode) window.spirit.data.seat(window.spirit.data.app.data.branch, got.items);
+        if (box.parentNode) window.spirit.data.seatRows(window.spirit.data.app.data.branch, got.items);
       });
     }
     // WHO PAINTS, LISTENS (Andy, G41.32); a connect forgetting what is kept, a word with no row, asks again.

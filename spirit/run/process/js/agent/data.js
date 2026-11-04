@@ -14,13 +14,13 @@
 (function () {
   var TABLES = ['job', 'model', 'persona', 'provider'];
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
-  D.family('agent', function () {
-    var HOME = D.at(null, 'agent');
-    D.translate({
+  D.makeFamily('agent', function () {
+    var HOME = D.viewAt(null, 'agent');
+    D.addTranslator({
       onJob: function (job) {
         var a = job && job.module === 'process/js/agent' && job.app && job.app.agent;
         if (!a || TABLES.indexOf(a.table) === -1) return;
-        var V = D.at(job.fromNode || null, 'agent');
+        var V = D.viewAt(job.fromNode || null, 'agent');
         if (a.removed) { if (a.id) V.del(a.table + '/' + String(a.id)); return; }
         if (a.row && typeof a.row === 'object' && a.row.id) V.merge(a.table + '/' + String(a.row.id), a.row);
       },

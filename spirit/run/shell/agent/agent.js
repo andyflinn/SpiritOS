@@ -71,7 +71,7 @@
       function follow(spec, name) {
         var A = window.spirit.elements.agentDetail;
         if (!A || !window.spirit.data) return function () {};
-        return window.spirit.data.watch(A.branchOf(spec.table) + '/' + spec.id, function (p, value) {
+        return window.spirit.data.watchPath(A.branchOf(spec.table) + '/' + spec.id, function (p, value) {
           if (value === undefined) { tabs.close(name); return; }
           if (value && value.label) tabs.rename(name, { label: header(spec, value) });
         });
@@ -83,7 +83,7 @@
           var s = spec || {};
           var adding = !s.id;
           var name = adding ? s.table + '/new' + (++unsaved) : (s.chat ? 'chat/' : s.table + '/') + s.id;
-          var kept = !adding && window.spirit.elements.agentDetail && window.spirit.data ? window.spirit.data.get(window.spirit.elements.agentDetail.branchOf(s.table) + '/' + s.id) : null;
+          var kept = !adding && window.spirit.elements.agentDetail && window.spirit.data ? window.spirit.data.getPath(window.spirit.elements.agentDetail.branchOf(s.table) + '/' + s.id) : null;
           var off = null;
           tabs.add({ name: name, label: adding ? 'new ' + s.table + '*' : header(s, Object.assign({}, s.row || {}, kept || {})), closable: true, mount: function (box) {
             // Once, with the tab: a press on a row already open adds nothing here.

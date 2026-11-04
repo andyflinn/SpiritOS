@@ -72,7 +72,7 @@ function world(answer) {
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+LABEL/NODE==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   w.api = { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); },
     verb: function (name, args) { w.calls.push({ name: name, args: args }); return Promise.resolve(answer(name, args)); } };

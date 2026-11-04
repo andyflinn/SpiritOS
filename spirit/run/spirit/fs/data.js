@@ -17,13 +17,13 @@
   var FILES = 'files';
   var ICONS = 'icons';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
-  D.family('fs', function () {
+  D.makeFamily('fs', function () {
     // The fs family's view of the home node (a page's own); a stream's job is filed under the node that sent it.
-    var HOME = D.at(null, 'fs');
-    D.translate({
+    var HOME = D.viewAt(null, 'fs');
+    D.addTranslator({
       onJob: function (job) {
         if (!job || job.type !== 'fs-watcher' || !job.data) return;
-        var V = D.at(job.fromNode || null, 'fs');
+        var V = D.viewAt(job.fromNode || null, 'fs');
         if (job.data.treeComplete) { V.ready(FILES, true); return; }
         var cmd = job.data.command;
         if (!cmd || !cmd.path) return;

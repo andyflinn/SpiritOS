@@ -146,7 +146,7 @@ box is its own check, named by the element's path and the box's id chain."*
 - **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
   since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
   that sent a write (a call it made that is not the stream, not an interface, and carries no read op or read verb)
-  holds, while mounted, a `spirit.events.subscribe` or `spirit.data.watch` of its own making (a family view's watch, `spirit.data.at(node, family).watch`, counts as one, under its whole path).
+  holds, while mounted, a `spirit.events.subscribe` or `spirit.data.watchPath` of its own making (a family view's watch, `spirit.data.viewAt(node, family).watch`, counts as one, under its whole path).
 - **While a write is out, it draws nothing of its own** (rule/19; the box: *"after a press, until the stream answers, an
   element may change only its busy spinner, its button's disabled state and its fine print; any other change it makes
   is red"*): from a press that sent a write until the node has answered it, the only changes in its box are a busy mark
@@ -159,7 +159,7 @@ box is its own check, named by the element's path and the box's id chain."*
   branch (its data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes
   red."*): every probabilitySearch the page makes, watched as it is made, has a `data` branch and no `rows()` of its own.
   And every row a search draws (its `[data-key]` rows on screen, after its tools and buttons are pressed) is a row its
-  branch holds in `spirit.data` (`spirit.data.rows(branch)`): a list that keeps its rows anywhere else draws what the
+  branch holds in `spirit.data` (`spirit.data.rowsOf(branch)`): a list that keeps its rows anywhere else draws what the
   branch does not hold.
   **One exception, deferred and still red** (the box: *"the only exception is introspector, deferred for network-scope
   design reasons."*): the probability search keeps rows of its own for introSpector's selectors over another node, so
@@ -167,7 +167,7 @@ box is its own check, named by the element's path and the box's id chain."*
   not met, so it is not green.
 - **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
   make sure when it changes shit it listens to fucking update via the spirit object"*), judged twice:
-  - on the page: a module that sent a write holds a `spirit.data.watch` of its own making, its searches' included. A
+  - on the page: a module that sent a write holds a `spirit.data.watchPath` of its own making, its searches' included. A
     subscription to the raw stream does not count: taken into a store of its own, it is how the Desk List kept rows
     `spirit.data` never held;
   - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
@@ -180,7 +180,7 @@ box is its own check, named by the element's path and the box's id chain."*
 - **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
   make sure when it changes shit it listens to fucking update via the spirit object"*, and *"YOUR TEST WILL MAKE SURE THAT
   THE CACHING AND LISTENING IS DONE TO FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"*), judged three ways:
-  - on the page: a module that sent a write holds a `spirit.data.watch` of its own making, its searches' included. A
+  - on the page: a module that sent a write holds a `spirit.data.watchPath` of its own making, its searches' included. A
     subscription to the raw stream does not count: taken into a store of its own, it is how the Desk List kept rows
     `spirit.data` never held;
   - its watching redraws it: a marked row written into each `spirit.data` path it watches must change its box within a

@@ -12,8 +12,8 @@
 (function () {
   var ROWS = 'relayRows';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
-  D.family('relay', function () {
-    var HOME = D.at(null, 'relay');
+  D.makeFamily('relay', function () {
+    var HOME = D.viewAt(null, 'relay');
     // THE READS AND THE ONE WRITE:
     //   keep(answer)   one relay.get answer { ok, key, relay, report }, kept by its key; a refusal keeps nothing
     //   relay(key)     that relay's row as relay.get answered it, or null;  report(key)  the report it carried, or null

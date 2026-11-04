@@ -47,8 +47,8 @@ function grantsTable(o) {
 const NODE = grantsTable({ get branch() { return ((global.window.spirit.data || {}).auth || {}).data ? global.window.spirit.data.auth.data.grants.branch : ''; }, key: 'key', label: 'label',
   watch: function (fn) { return global.window.spirit.data.auth.data.grants.watch(fn); } });
 // A second table, its branch a whole spirit.data path of the home node, its watch that branch's.
-const AGENT = grantsTable({ get branch() { return global.window.spirit.data.at(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
-  watch: function (fn) { const v = global.window.spirit.data.at(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
+const AGENT = grantsTable({ get branch() { return global.window.spirit.data.viewAt(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
+  watch: function (fn) { const v = global.window.spirit.data.viewAt(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
 
 test.startTest('grantSelector/rowElement.js: one grant, as a row, of whichever grants table it is handed');
 process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
@@ -70,7 +70,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
-  DATA.home(NODE_KEY);
+  DATA.homeNode(NODE_KEY);
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the
   // Grants app asks the auth family's as it loads (shell/grants/grants.js).
   const managers = [];
@@ -82,7 +82,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await global.window.spirit.cacheManager('auth');
   const A = ((global.window.spirit.data || {}).auth || {}).data;
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
-  const V = DATA.at(null, 'auth');
+  const V = DATA.viewAt(null, 'auth');
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
@@ -137,7 +137,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   V.set('grants/K2\nfs.search', { key: 'K2', path: 'fs.search', label: 'Ann, renamed' });
   await settle();
   ok(live.row.label === 'Ann, renamed' && /Ann, renamed/.test(lh.name.innerHTML), 'its row in its branch changed: the row repaints whose grant it is', 'row: ' + short(live.row) + ', cell ' + short(lh.name.innerHTML));
-  DATA.set(AGENT.branch + '/K2\nfs.search', { job_id: 'K2', path: 'fs.search', job: 'Other table' });
+  DATA.setPath(AGENT.branch + '/K2\nfs.search', { job_id: 'K2', path: 'fs.search', job: 'Other table' });
   V.set('grants/K3\nfs.search', { key: 'K3', path: 'fs.search', label: 'Other' });
   await settle();
   ok(live.row.label === 'Ann, renamed', 'another grant, or the same key in another table\'s branch, changes nothing here', 'row: ' + short(live.row));

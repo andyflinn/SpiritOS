@@ -80,7 +80,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
-  DATA.home(NODE_KEY);
+  DATA.homeNode(NODE_KEY);
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the
   // bundles are the auth family's (goal/G41.28).
   const managers = [];
@@ -90,7 +90,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     return Promise.resolve(true);
   };
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
-  const V = DATA.at(null, 'auth');
+  const V = DATA.viewAt(null, 'auth');
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
@@ -148,17 +148,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // for real-time updates"); it is loaded with every list of its kind. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
   // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
   // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
+  DATA.takeJob({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });
   ok(JSON.stringify(A.bundles.row({ id: 7, label: 'Reader' }.id)) === JSON.stringify({ id: 7, label: 'Reader' }), 'a bundle row published lands in the auth family\'s bundles by its id, through the family\'s cache manager the row element loads (goal/G41.28)', 'data: ' + short(A.bundles.rows()));
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Lister' } } });
+  DATA.takeJob({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Lister' } } });
   const again = A.bundles.row({ id: 7, label: 'Reader' }.id);
   ok(again && again.label === 'Lister', 'a row published again replaces the one kept', 'data: ' + short(again));
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { id: { id: 7, label: 'Reader' }.id }, gone: true } });
+  DATA.takeJob({ type: 'bundles', data: { table: 'bundle', row: { id: { id: 7, label: 'Reader' }.id }, gone: true } });
   ok(A.bundles.row({ id: 7, label: 'Reader' }.id) === null, 'a row published gone is taken out', 'data: ' + short(A.bundles.rows()));
   const before = JSON.stringify(A.bundles.rows());
-  DATA.take({ type: 'bundles', data: { table: 'branch', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
-  DATA.take({ type: 'shadow', data: { row: { id: 98 } } });
-  DATA.take({ type: 'bundles', data: { table: 'bundle', row: { label: 'no id' } } });
+  DATA.takeJob({ type: 'bundles', data: { table: 'branch', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
+  DATA.takeJob({ type: 'shadow', data: { row: { id: 98 } } });
+  DATA.takeJob({ type: 'bundles', data: { table: 'bundle', row: { label: 'no id' } } });
   ok(JSON.stringify(A.bundles.rows()) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in the bundles', 'data: ' + short(A.bundles.rows()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

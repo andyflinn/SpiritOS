@@ -22,7 +22,7 @@ var textEditorSaving = false;
 function textEditorFollow(path) {
   if (textEditorStop) textEditorStop();
   textEditorSaving = false;
-  textEditorStop = window.spirit.data.watch(window.spirit.data.fs.data.branch + '/' + path, function (whole, row) {
+  textEditorStop = window.spirit.data.watchPath(window.spirit.data.fs.data.branch + '/' + path, function (whole, row) {
     var statusEl = document.getElementById('editor-status');
     if (!row || !statusEl) return;
     statusEl.textContent = textEditorSaving ? 'saved' : 'changed on disk';

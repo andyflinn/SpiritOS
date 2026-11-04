@@ -18,13 +18,13 @@
   var GRANTS = 'grants';
   function grantKey(key, path) { return String(key) + '\n' + String(path); }
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
-  D.family('auth', function () {
-    var HOME = D.at(null, 'auth');
-    D.translate({
+  D.makeFamily('auth', function () {
+    var HOME = D.viewAt(null, 'auth');
+    D.addTranslator({
       onJob: function (job) {
         var d = job && job.type === 'bundles' ? job.data : null;
         if (!d || !d.row) return;
-        var V = D.at(job.fromNode || null, 'auth');
+        var V = D.viewAt(job.fromNode || null, 'auth');
         var r = d.row;
         if (d.table === 'bundle' && r.id != null) {
           var b = BUNDLES + '/' + Number(r.id);

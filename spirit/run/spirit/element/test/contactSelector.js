@@ -60,7 +60,7 @@ test.startTest('contactSelector.js: the configurable ID selector');
   // The page's one data set, its node known (goal/G41.28, Q10), and a family's cache: the family's own manager, run here.
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+CONTACT/SELECTOR==' };
-  global.window.spirit.data.home(global.window.spirit.node.key);
+  global.window.spirit.data.homeNode(global.window.spirit.node.key);
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));

@@ -42,7 +42,7 @@ HTML name; a blank name; a relay that is also kept; acting a verb the row lacks;
 The contacts' translation, `spirit/element/contacts/data.js` until G41.16, then this element's, is since goal/G41.28 the contact
 family's cache manager's, which this element loads (Andy: *"get rid of thos FUCKING
 data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"*; G30.18: rowElements carry the listeners a subject
-needs). It registers one translation with `spirit.data.translate` as it loads, requires no data script, and writes only
+needs). It registers one translation with `spirit.data.addTranslator` as it loads, requires no data script, and writes only
 through `merge` and `seat`.
 
 - **relay-presence**: for each key in `data.presence` whose value is an object, the row's `present` becomes

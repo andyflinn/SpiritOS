@@ -499,7 +499,7 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   await tick(); await tick();
   ok(seatedIn.length === 1 && seatedIn[0][0] === 'people' && seatedIn[0][1][0].key === 'p2' && c7.shown().indexOf('p2') === -1,
     'an answer is seated into the branch, not into the list\'s own cache', 'seated: ' + JSON.stringify(seatedIn));
-  window.spirit.data.rows = function () { return [{ key: 'p1', name: 'pia' }, { key: 'p2', name: 'per' }]; };
+  window.spirit.data.rowsOf = function () { return [{ key: 'p1', name: 'pia' }, { key: 'p2', name: 'per' }]; };
   watched[0][1]('people/p2', {});
   ok(c7.shown().length === 2, 'a write to the branch redraws the list', 'shown: ' + c7.shown());
   L7.destroy();

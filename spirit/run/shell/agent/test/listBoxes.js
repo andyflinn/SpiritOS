@@ -184,7 +184,7 @@ function world() {
   win.spirit.require('spirit/data.js');
   // Its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   win.spirit.node = { key: 'KEY+AGENT/BOXES==' };
-  win.spirit.data.home(win.spirit.node.key);
+  win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   return { document: document, win: win, panes: panes };
 }

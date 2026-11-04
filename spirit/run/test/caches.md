@@ -29,7 +29,7 @@ is the appServer serializes the cache to disk."*
    uses the browser's storage; appServer writes each sender's cache to its own file; no other module writes a cache
    file of its own.
 
-5. **One contract**: every `data.js` stands through `spirit.data.family`, required or loaded, so its reads are at
+5. **One contract**: every `data.js` stands through `spirit.data.makeFamily`, required or loaded, so its reads are at
    `spirit.data.<name>.data`, for clients to ask. Its cache rules (`cache`, an object) are exported where its
    family's clients keep a cache file, for appServer.
 6. **Found and downloaded by introspection** (Andy, on G41.28: *"We're not done until every family of the API tree as a
@@ -39,7 +39,7 @@ is the appServer serializes the cache to disk."*
    - for every family the node's own api tree names (a scratch node, `api`), the shell asks the family where its manager
      is, `<family>.FS.path({ path: 'api.js' })` (the owner's, on loopback), as `spirit.cacheManager`
      does; `data.js` is taken from the `api.js` it answers (`process/js/<name>/` or `spirit/<name>/`), and the
-     node serves it as a script that calls `spirit.data.family`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
+     node serves it as a script that calls `spirit.data.makeFamily`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
      every family the tree holds is asked in 1.
 
 7. **No other way** (Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js

@@ -9,36 +9,36 @@
 //                   its reads; spirit.data.<name>.cache is its rows, a level per node (Q5: "yes."), the same in a page and in an
 //                   appServer in client mode: cache[node][branch][row] -> value. node is the key of the node that served the
 //                   rows, in base64url (Q8: "yes."), so neither a path nor appServer's cache file name splits on its / or +.
-//   family(name, make)  the one way a family's data.js stands: make() runs once, for this data set, translates what it keeps
+//   makeFamily(name, make)  the one way a family's data.js stands: make() runs once, for this data set, translates what it keeps
 //                   and answers its reads, and they stand at spirit.data.<name>.data. Answers the family.
 //   a path          '<node>/<family>/<branch>/<row>' (a row may hold slashes, a file's path does); '<node>/<family>/<branch>'
 //                   is the branch. The tree is addressed through the family's own view, at(node, family), below.
-//   set(path, v)    the one write
-//   merge(path, f)  set(path, the value there with f's fields over it)
-//   del(path)       the other write
-//   watch(path, fn) the only event handling: fn(path, value) when that path is written, and for a branch's watch when
+//   setPath(path, v)    the one write
+//   mergePath(path, f)  set(path, the value there with f's fields over it)
+//   delPath(path)       the other write
+//   watchPath(path, fn) the only event handling: fn(path, value) when that path is written, and for a branch's watch when
 //                   any row of it is; value undefined on a delete. Answers the unwatch.
-//   rows(branch)    the branch as [{ key, ...value }], what a list draws (a view: ranking is the list's)
-//   ready(branch)   true once the stream has handed the whole branch over (files: the watcher's treeComplete)
-//   seat(branch, items)  a search answer's items ({ key, label: json }) merged into the tree like any event
+//   rowsOf(branch)    the branch as [{ key, ...value }], what a list draws (a view: ranking is the list's)
+//   readyBranch(branch)   true once the stream has handed the whole branch over (files: the watcher's treeComplete)
+//   seatRows(branch, items)  a search answer's items ({ key, label: json }) merged into the tree like any event
 //
 //   nodeId(key)     a public key in base64url, as data names the node
-//   home(key?)      the node a reader means when it names none: on a page the node that served it (spirit.node.key,
+//   homeNode(key?)      the node a reader means when it names none: on a page the node that served it (spirit.node.key,
 //                   which spirit.js asks of node.card once as the page loads; Andy, Q10: "yes."), in a process the node
 //                   whose rows it last took. Given a key on a page, it is the page's node from now on.
-//   at(node, family)  a family's view of the tree: get, set, merge, del, watch, rows, seat, ready, quietly and branch
+//   viewAt(node, family)  a family's view of the tree: get, set, merge, del, watch, rows, seat, ready, quietly and branch
 //                   take '<branch>/<row>' and '<branch>', and path(branch) is the branch's whole path, for a list that is a
 //                   view of it (probabilitySearch's data). node null is home(), asked again at each call.
 //
-//   follow(o)       a server's ask for its own node's events (goal/G43.5): the one stream, into the translators; on a page it
+//   followStream(o)       a server's ask for its own node's events (goal/G43.5): the one stream, into the translators; on a page it
 //                   is fed anyway. o.onConnection(up) is told each time the stream comes up or goes down.
-//   translate(t)    a type's translator, registered by its row element (goal/G30.20, G41.16): t.onJob(job, D), t.onRename(d, D), t.onRelay(event); answers its release;
+//   addTranslator(t)    a type's translator, registered by its row element (goal/G30.20, G41.16): t.onJob(job, D), t.onRename(d, D), t.onRelay(event); answers its release;
 //                   every one ends in set, merge or del. A job comes with fromNode, the node that served it, so the
 //                   translator files it under that node. This file knows no type.
 //
-//   forget()        everything kept goes, each type told once (type, undefined): a connect, the partner pushes it whole
-//   recording(fn)   the paths fn wrote (set, merge, del), so a stream's row can take what it wrote with it (goal/G41.12)
-//   cap(n?)         the byte cap: reads it, or sets it in a process
+//   forgetAll()        everything kept goes, each type told once (type, undefined): a connect, the partner pushes it whole
+//   recordPaths(fn)   the paths fn wrote (set, merge, del), so a stream's row can take what it wrote with it (goal/G41.12)
+//   byteCap(n?)         the byte cap: reads it, or sets it in a process
 //
 // NO CAP ON A PAGE (box v17; Andy: "the browsers side will flush on every page-refresh, so we'll avoid the complication of
 // bounding those browser site caches completely. no cache bounding on the browser side."). A PROCESS'S CACHE IS A NODE
@@ -369,11 +369,13 @@
     return { items: r.items, more: r.more || more };
   }
 
-  var api = { family: family, get: get, set: set, merge: merge, del: del, watch: watch, rows: rows, seat: seat,
-    translate: translate, quietly: quietly, ready: ready, branch: branch, search: search, forget: forget, cap: cap,
-    recording: recording, nodeId: nodeId, home: home, at: at, branches: branches,
+  // A HELPER'S NAME HOLDS A CAPITAL, so it is no word and no family can land on it (goal/G43.7; Andy: "all the helperFunctions in
+  // objects like spirit.data should potential "words" the should have a capital in it"). A view at() hands back is no such object.
+  var api = { makeFamily: family, getPath: get, setPath: set, mergePath: merge, delPath: del, watchPath: watch, rowsOf: rows, seatRows: seat,
+    addTranslator: translate, setQuietly: quietly, readyBranch: ready, branchAt: branch, searchAll: search, forgetAll: forget, byteCap: cap,
+    recordPaths: recording, nodeId: nodeId, homeNode: home, viewAt: at, allBranches: branches,
     // For a suite: the stream's events fed by hand.
-    take: onJob, rename: onRename };
+    takeJob: onJob, takeRename: onRename };
 
   // FED BY THE PAGE'S ONE STREAM, spirit.events.subscribe (goal/G40.6). A relay's own events go to whichever translator
   // keeps them (onRelay), as everything else on that stream does.
@@ -400,7 +402,7 @@
     s.events.subscribe({ onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent,
       onConnection: function (up) { followers.slice().forEach(function (fn) { try { fn(up); } catch (e) { /* one reader's fault */ } }); } });
   }
-  api.follow = follow;
+  api.followStream = follow;
   (root.spirit = root.spirit || {}).data = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof window !== 'undefined' ? window : globalThis));

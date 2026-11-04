@@ -68,7 +68,7 @@ fs.writeFileSync(path.join(scratch, 'sender.js'), [
 fs.writeFileSync(path.join(scratch, 'translator.js'), [
   '(function (root) {',
   '  var D = (root.spirit || {}).data;',
-  "  D.translate({ onJob: function (job) { if (job && job.module === 'process/js/sender' && job.app && job.app.said) D.set('heard/' + job.app.said, job.app); } });",
+  "  D.addTranslator({ onJob: function (job) { if (job && job.module === 'process/js/sender' && job.app && job.app.said) D.setPath('heard/' + job.app.said, job.app); } });",
   '}(globalThis));',
 ].join('\n'));
 fs.writeFileSync(path.join(scratch, 'follower.js'), [

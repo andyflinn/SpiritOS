@@ -52,7 +52,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
   global.window.spirit.node = { key: NODE_KEY };
-  D.home(NODE_KEY);
+  D.homeNode(NODE_KEY);
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set.
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
@@ -95,7 +95,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('names from the mirror; fs.search only by contents');
   const none = await o.api.verb('fs.search', o.args('a', { in: 'names' }));
   ok(asked.length === 0 && none.body && none.body.items.length === 0, 'a search of names asks the node nothing: the mirror answers it', 'asked: ' + short(asked));
-  D.take({ id: 'job-fs', type: 'fs-watcher', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
+  D.takeJob({ id: 'job-fs', type: 'fs-watcher', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
   const found = await o.api.verb('fs.search', o.args('hello', { in: 'contents' }));
   const items = (found.body && found.body.items) || [];
   let first = null; try { first = JSON.parse(items[0].label); } catch (e) { first = null; }

@@ -54,7 +54,7 @@
     }
     function search() {
       return S.ready.then(function (s) { return s.app.search({ q: '' }); }).then(function (got) {
-        if (!gone) S.data.seat(S.data.app.data.branch, got.items);
+        if (!gone) S.data.seatRows(S.data.app.data.branch, got.items);
       });
     }
     parts.then(function () {

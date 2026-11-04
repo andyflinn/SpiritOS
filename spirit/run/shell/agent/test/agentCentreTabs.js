@@ -99,7 +99,7 @@ test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (go
 
     // Who listens, listens once: a press on a row that has its tab adds no second listener, and closing a tab lets go of its own.
     test.subHeading('a tab has one listener on its row, and lets go of it when it closes');
-    await c.evaluate('(function () { var D = window.spirit.data; var made = D.watch; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; D.watch = function (p, fn) { var mine = String(p).slice(-window.__rowPath.length) === window.__rowPath; var off = made.call(D, p, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; return true; }())');
+    await c.evaluate('(function () { var D = window.spirit.data; var made = D.watchPath; window.__live = 0; window.__rowPath = ' + JSON.stringify('/' + P.body.id) + '; D.watchPath = function (p, fn) { var mine = String(p).slice(-window.__rowPath.length) === window.__rowPath; var off = made.call(D, p, fn); if (!mine) return off; window.__live++; var done = false; return function () { if (!done) { done = true; window.__live--; } return off(); }; }; return true; }())');
     for (let i = 0; i < 3; i++) { await pressRow('zzProvider'); await sleep(250); }
     const stacked = await c.evaluate('window.__live');
     ok(stacked === 0, 'three more presses on an open row add no listener', stacked + ' more listeners on that row after three presses');

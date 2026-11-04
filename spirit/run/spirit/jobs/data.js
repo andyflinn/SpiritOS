@@ -22,12 +22,12 @@
     try { return JSON.stringify(obj); } catch (e) { return ''; }
   }
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
-  D.family('jobs', function () {
-    var HOME = D.at(null, 'jobs');
-    D.translate({
+  D.makeFamily('jobs', function () {
+    var HOME = D.viewAt(null, 'jobs');
+    D.addTranslator({
       onJob: function (job) {
         if (!job || !job.id) return;
-        var V = D.at(job.fromNode || null, 'jobs');
+        var V = D.viewAt(job.fromNode || null, 'jobs');
         var id = String(job.id);
         var row = Object.assign({}, job);
         delete row.fromNode;
@@ -44,7 +44,7 @@
       },
       onDelete: function (gone) {
         if (!gone || !gone.id) return;
-        var V = D.at(gone.fromNode || null, 'jobs');
+        var V = D.viewAt(gone.fromNode || null, 'jobs');
         V.del(EVENTS + '/' + String(gone.id));
         V.del(JOBS + '/' + String(gone.id));
       },

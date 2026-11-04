@@ -14,7 +14,7 @@
 //      runs them and in a page's window as a page runs them, are fed the same rows and end with the same spirit.data.desk.cache;
 //   4. the one difference is the disk: no data.js touches a file or the browser's storage, and appServer
 //      writes the cache to disk.
-//   5. every family's data.js is the same: required, it stands at spirit.data.<name> through spirit.data.family (and exports
+//   5. every family's data.js is the same: required, it stands at spirit.data.<name> through spirit.data.makeFamily (and exports
 //      its cache rules where its clients keep a cache file).
 //   6. the shell finds and downloads them by introspection (Andy, on G41.28: "We're not done until every family of the
 //      API tree as a clientCacheManager, and clients can use that to organize their spirit.data, and the shell can
@@ -111,7 +111,7 @@ function inNode() {
   try {
     const D = require(DATA);
     require(DESK);
-    D.home(SERVER);
+    D.homeNode(SERVER);
     ROWS.forEach(function (r) { D.desk.data.published(JSON.parse(JSON.stringify(r))); });
     out = JSON.parse(JSON.stringify(D.desk.cache));
   } catch (e) { out = { threw: e.message }; }
@@ -128,7 +128,7 @@ function inPage() {
     vm.runInContext(fs.readFileSync(DATA, 'utf8'), win, { filename: 'spirit/data.js' });
     vm.runInContext(fs.readFileSync(DESK, 'utf8'), win, { filename: 'data.js' });
     if (!win.spirit.data.desk) return { threw: 'the page has no spirit.data.desk once both files ran' };
-    win.spirit.data.home(SERVER);
+    win.spirit.data.homeNode(SERVER);
     ROWS.forEach(function (r) { win.spirit.data.desk.data.published(JSON.parse(JSON.stringify(r))); });
     return JSON.parse(JSON.stringify(win.spirit.data.desk.cache));
   } catch (e) { return { threw: e.message }; }
@@ -209,7 +209,7 @@ ok(!naming.length, 'no file in the repo names a replaced way: running uncached, 
       const at = where && typeof where.path === 'string' ? where.path.replace(/(family\/)?api\.js$/, 'data.js') : '';
       if (!at) { test.fail(name + ': ' + name + '.FS.path names no data.js: ' + short(where)); continue; }
       const got = await fetch(node.base + '/' + at).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
-      ok(at === managerOf(name) && got.status === 200 && got.text.indexOf('.family(') !== -1, name + ': the shell asks ' + name + '.FS.path and downloads its manager, /' + at,
+      ok(at === managerOf(name) && got.status === 200 && got.text.indexOf('.makeFamily(') !== -1, name + ': the shell asks ' + name + '.FS.path and downloads its manager, /' + at,
         name + ': ' + name + '.FS.path answered ' + at + (at === managerOf(name) ? '' : ', not ' + managerOf(name)) + '; /' + at + ' answered ' + got.status);
     }
   } finally {
