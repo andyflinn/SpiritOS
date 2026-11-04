@@ -92,13 +92,12 @@ globalThis.spirit = {
 globalThis.spirit.data = D;
 // What the checkout's watcher does on a file event, kept from its on('all').
 let watchAll = null;
-// The verifier's publishes, however this client listens: its subscribers on the node's event stream, and the data set.
+// The verifier's publishes, as this client hears them: its subscribers on the node's event stream.
 const eventSubscribers = [];
 globalThis.spirit.events = { subscribe: function (h) { eventSubscribers.push(h); return function () {}; }, publish: function () { return Promise.resolve({}); } };
 const verifierSays = function (run) {
   const job = { id: 'verify-job', module: 'process/js/deskVerify', data: {}, app: run };
-  eventSubscribers.forEach(function (h) { if (h && typeof h['job-updated'] === 'function') h['job-updated'](job); });
-  curD.take({ module: 'process/js/deskVerify', data: {}, app: run }, SELF_KEY);
+  eventSubscribers.forEach(function (h) { if (h && typeof h.onUpdate === 'function') h.onUpdate(job); });
 };
 const realLoad = Module._load;
 Module._load = function (request, parent, isMain) {

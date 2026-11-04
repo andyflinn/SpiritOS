@@ -108,6 +108,8 @@ Asks another node and waits for its answer.
   `{ ok: false, code: 'no-answer' }` after `waitMs` of silence. It resolves, never rejects.
 - In node: one post of `peer.post`, and the answer read off the node's events (`events.subscribe`, a stream through
   `post`), as a server, so it is handed no backlog and marks nothing taken; on a page, the home node's `peer.post`.
+- In a process, `spirit.events.subscribe` opens the stream as a server too (goal/G43.3), so it takes none of the waiting
+  lines of its node's owner.
 
 ### `check(name, spec, args)`
 

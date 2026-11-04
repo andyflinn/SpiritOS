@@ -51,8 +51,8 @@ function answer(b) {
   if (c === 'demo.FS.loadFile') return [200, { text: 'x' }];
   return [400, { ok: false, code: 'no-such-verb', error: 'no verb ' + c }];
 }
-// It also serves the node's events family: events.subscribe is a stream, as the real node's (a page is handed a snapshot
-// and then a job update; a server, which says X-Spirit-Reader: server, only the packets); a peer.post is answered with its
+// It also serves the node's events family: events.subscribe is a stream, as the real node's (a snapshot and then a job
+// update, for a page and for a server, which says X-Spirit-Reader: server and takes no packets); a peer.post is answered with its
 // hash, and the peer's answer arrives on the stream as a packet carrying re, as a real node hands it.
 const packet = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
 function fakeNode() {
@@ -71,10 +71,9 @@ function fakeNode() {
         res.writeHead(200, { 'Content-Type': 'text/event-stream' });
         res.write(': open\n\n');
         streams.push({ res: res, reader: reader });
-        if (reader !== 'server') {
-          res.write('event: snapshot\ndata: ' + JSON.stringify({ jobs: [{ id: 'j1', status: 'running' }] }) + '\n\n');
-          setTimeout(function () { res.write('event: job-updated\ndata: ' + JSON.stringify({ id: 'j1', status: 'done' }) + '\n\n'); }, 20);
-        }
+        b.reader = reader;
+        res.write('event: snapshot\ndata: ' + JSON.stringify({ jobs: [{ id: 'j1', status: 'running' }] }) + '\n\n');
+        setTimeout(function () { res.write('event: job-updated\ndata: ' + JSON.stringify({ id: 'j1', status: 'done' }) + '\n\n'); }, 20);
         return;
       }
       if (b.call === 'peer.post') {
@@ -352,6 +351,10 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       if (JSON.stringify(o.heard) === JSON.stringify(['up:true', 'snapshot:j1', 'update:j1:done']))
         test.check('spirit.events.subscribe: the node\'s events family as a stream, said up, then the snapshot, then each update, until unsubscribed');
       else test.fail('spirit.events.subscribe heard ' + short(o.heard));
+      // goal/G43.3: a process that followed the stream as a page would take its node's owner's waiting lines.
+      const subscribes = node.asked.filter(function (b) { return b.call === 'events.subscribe'; });
+      if (subscribes.length && subscribes.every(function (b) { return b.reader === 'server'; })) test.check('in a process, every events.subscribe says it is a server, so it takes no packets');
+      else test.fail('in a process, events.subscribe said: ' + short(subscribes.map(function (b) { return b.reader; })));
       const viaStream = node.streams.some(function (st) { return st.reader === 'server'; });
       if (o.peerAnswer && o.peerAnswer.said === 'answered by peerKey9' && viaStream && node.asked.some(function (b) { return b.call === 'peer.post' && b.args && b.args.to === 'peerKey9'; }))
         test.check('spirit.peerPost: one post of peer.post, the answer read off the node\'s events (events.subscribe) as a server, as it always worked');

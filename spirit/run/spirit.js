@@ -559,7 +559,9 @@
       streamDown = true;
       if (streamSubs.length) setTimeout(function () { if (!streamReader && !streamOpening && streamSubs.length) openStream(); }, 2000);
     };
-    post('events.subscribe', {}, { stream: true }).then(function (r) {
+    // A PROCESS IS NOT A PAGE (goal/G43.3, as peerPost says it below; goal/G16.9): it witnesses the packets and takes none, or
+    // it would eat the waiting lines of its node's owner.
+    post('events.subscribe', {}, isNode() ? { stream: true, headers: { 'X-Spirit-Reader': 'server' } } : { stream: true }).then(function (r) {
       if (!r || !r.ok || !r.body) throw refusal('no-stream', 'the node answered ' + (r && r.status));
       streamReader = r.body.getReader();
       streamOpening = false;

@@ -1133,7 +1133,7 @@ function heldPhase() {
   for (const id of Object.keys(items)) {
     const f = keptItem(id);
     if (!f || f.done || f.status === 'closed' || !heldByMe(f)) continue;
-    if ((f.phase === 'red' && f.red === SELF) || (f.phase === 'build' && f.builder === SELF)) return String(f.id);
+    if ((f.phase === 'red' && f.red === SELF) || (f.phase === 'build' && f.builder === SELF) || (f.phase === 'verify' && f.verifier === SELF)) return String(f.id);
   }
   return '';
 }
@@ -1186,4 +1186,30 @@ function watchCheckout(root) {
     }).on('error', function (e) { console.error('deskClient: the checkout watch stopped: ' + ((e && e.message) || e)); });
   } catch (e) { console.error('deskClient: the checkout cannot be watched: ' + ((e && e.message) || e)); }
 }
+// ITS OWN VERIFIER'S RUN REACHES THE DESK (goal/G43.3; Andy, the box: "the agents deskClient should relay the agents
+// deskVerifier status during a run, this will tell desk that the agent "is busy". with no held item, it shows on the agent
+// as working."). Each new line of a run goes as the status of the item it holds, which is a write, so the agent stays live;
+// with none held there is no item to say it under, so its word says it. When the run ends, its word goes back.
+let relayedLine = '';
+let relayedWorking = false;
+function relayVerifier(job) {
+  const run = job && job.module === 'process/js/deskVerify' ? job.app : null;
+  if (!run || typeof run.doing !== 'string') return;
+  let to = '';
+  try { to = deskKey(); } catch (e) { return; }
+  if (run.doing !== 'run') {
+    relayedLine = '';
+    if (relayedWorking) { relayedWorking = false; say(to, 'listening'); }
+    return;
+  }
+  const line = String(run.line || '');
+  if (line === relayedLine) return;
+  relayedLine = line;
+  const id = heldPhase();
+  if (id) { countedAsk(to, 'item.status', { id: id, word: line, tone: 'code' }).answer.catch(function () {}); return; }
+  // Said on every new line, not on the change: the word is a write, and a write is what keeps a busy agent live.
+  relayedWorking = true;
+  say(to, 'working');
+}
+if (globalThis.spirit && globalThis.spirit.events) globalThis.spirit.events.subscribe({ onUpdate: relayVerifier });
 gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });
