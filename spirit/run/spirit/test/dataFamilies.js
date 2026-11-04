@@ -126,6 +126,10 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
     const stray = Object.keys(got.keys).filter(function (k) { return got.keys[k] !== 'function' && FAMILIES.indexOf(k) === -1; });
     ok(Object.keys(got.keys).some(function (k) { return got.keys[k] === 'function'; }), 'spirit.data has its helper functions', 'spirit.data has no function: ' + short(got.keys));
     ok(!stray.length, 'and nothing else but the families', 'on spirit.data besides helpers and families: ' + stray.join(', '));
+    // Andy: "all the helperFunctions in objects like spirit.data should potential "words" the should have a capital in it like
+    // spirit.data.helper**F**unction()", and on Q10: "it belongs to "Fix 'data'", THIS item." A word is a to z, so no family can land on one.
+    const asWords = Object.keys(got.keys).filter(function (k) { return got.keys[k] === 'function' && !/[A-Z]/.test(k); });
+    ok(!asWords.length, 'every helper has a capital, so none is a word', 'helpers that are valid words, ' + asWords.length + ': ' + asWords.join(', '));
 
     // Q5, "Does spirit.data.<name>.cache hold a level per node, as the tree does today?", Andy: "yes."
     test.subHeading('Q5: .cache holds a level per node');

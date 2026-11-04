@@ -13,9 +13,10 @@ Andy, box: *"we rename it spirit/data.js and it IS the the spirit.data object."*
 - On a page, the first level of `spirit` holds no `<name>Data`.
 - *"spirit.data.<name>.data"* and *"spirit.data.<name>.cache"* stand for each family, under its own name (Q1), so `spirit.data.chatClerver` and `spirit.data.deskVerify`. All 19 are judged in node, and on a page all but `agent`, `chatClerver` and `deskClient`, which a scratch node does not offer to a page.
 - *"this object has only helper functions and object <name> for every application"*: nothing else is on `spirit.data`, so the shared tree `spirit.data.data` is gone.
+- Every helper on `spirit.data` has a capital in its name, Andy: *"all the helperFunctions in objects like spirit.data should potential \"words\" the should have a capital in it"*, and on Q10: *"it belongs to \"Fix 'data'\", THIS item."* A word is a to z, so no family can land on a helper.
 - Q5, *"Does spirit.data.<name>.cache hold a level per node, as the tree does today?"*, Andy: *"yes."* The app rows stand at `spirit.data.app.cache[<node>].apps`, and a row of another node stands under that node and not under this page's.
 - The reads moved: `spirit.data.app.data` answers `rows` and `watch`, and `spirit.data.fs.data.watch` stands, which `word.js` follows.
 
 ## Assumed by this test
 
-The box names no helper, so the test finds it by its call: a function called with the family's name as a string. A row of another node is written through `spirit.data.at(node, family)`, as nine families do today. If the build changes either, the verifier corrects the test.
+The box names no helper, so the test finds it by its call: a function called with the family's name as a string. A row of another node is written through `spirit.data.at(node, family)`, and the page node comes from `spirit.data.home()`. Those two names change with the capitals; the builder names the new ones and the verifier corrects the test.
