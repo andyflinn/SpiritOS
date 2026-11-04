@@ -98,7 +98,7 @@
     var turn = ++watching;
     Promise.resolve(window.spirit.cacheManager('fs')).then(function () {
       if (turn !== watching || !told.length) return;
-      unwatch = window.spirit.fsData.watch(function (p) {
+      unwatch = window.spirit.data.fs.data.watch(function (p) {
         if (!/(^|\/)word\.json$/.test(String(p || ''))) return;
         delete kept[p];
         told.slice().forEach(function (fn) { try { fn(); } catch (e) { /* one listener's fault */ } });

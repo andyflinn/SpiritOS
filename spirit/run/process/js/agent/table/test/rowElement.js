@@ -3,7 +3,7 @@
 // spirit/run/process/js/agent/table/test/rowElement.js
 // The tests of process/js/agent/table/rowElement.js, and of no other module (spec: ./rowElement.md; goal/G41.4, goal/G41.28).
 // Its tables' shared element (../tableElement.js, spirit.elements.agentDetail) is part of its tree and runs real beside it.
-// The browser file runs in node on a window of its own, over the real spirit.data (spirit/spiritData.js). The boxes,
+// The browser file runs in node on a window of its own, over the real spirit.data (spirit/data.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
 
@@ -87,17 +87,17 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   const w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  load(path.join(RUN, 'spirit', 'spiritData.js'));
+  load(path.join(RUN, 'spirit', 'data.js'));
   const D = global.window.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.node.key; a family's cache manager is found by spirit.cacheManager(name), the real one, which in node
-  // reads it from its own disk. The agent family's (process/js/agent/family/clientCacheManager.js) keeps the tables'
-  // branches, <node>/agent/<table>, and answers them through spirit.agentData.
+  // reads it from its own disk. The agent family's (process/js/agent/family/data.js) keeps the tables'
+  // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.home(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
-  const rowPath = function (table, id) { return global.window.spirit.agentData.branch(table) + '/' + id; };
+  const rowPath = function (table, id) { return global.window.spirit.data.agent.data.branch(table) + '/' + id; };
   const BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
   // The node's bundles (auth.bundle, the one dictionary of bundles): get answers a bundle the node has, refuses one it
   // has not; each ask kept.
@@ -167,7 +167,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   const r = E.agentRow.create(ed, { api: {}, table: 'provider', id: 'KR', added: true, look: look, fields: FIELDS });
   await settle();
   ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KR' }), 'with the row not in its branch, it asks provider { op: get, id }', 'calls: ' + short(w.calls));
-  ok(global.window.spirit.agentData.row('provider', 'KR') && global.window.spirit.agentData.row('provider', 'KR').label === 'Row one', 'and puts the answer at <node>/agent/provider/<id>, where the stream writes it', 'branch: ' + short(global.window.spirit.agentData.row('provider', 'KR')));
+  ok(global.window.spirit.data.agent.data.row('provider', 'KR') && global.window.spirit.data.agent.data.row('provider', 'KR').label === 'Row one', 'and puts the answer at <node>/agent/provider/<id>, where the stream writes it', 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KR')));
   ok(/<b>Add<\/b>/.test(ed.innerHTML) && ed.innerHTML.indexOf('Provider') !== -1, 'its title row says Add while the row is new', 'title: ' + short(ed.innerHTML.slice(0, 200)));
   const ids = Object.keys(ed.parts).map(function (k) { return k.replace(/^ar\d+-/, ''); });
   ok(ids.indexOf('icon') !== -1 && ids.indexOf('icon') < ids.indexOf('label'), 'the icon is its first field, before the ones the table names (Andy: "the detail panel\'s first input will be the icon")',
@@ -231,7 +231,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // "all table rows will have an icon, by default the tables icon"); a secret only when typed, so an untyped key is kept.
   ok(sets().length === 1 && whole.table === 'provider' && JSON.stringify(whole.args) === JSON.stringify({ op: 'set', id: 'KR', icon: '🏢', label: 'Typed', url: 'https://one.example', on: true, tags: ['a', 'b'] }),
     'changing the label saves the whole row by itself: provider { op: set, id, icon, label, url, on, tags }, the untyped secret left out', 'calls: ' + short(w.calls));
-  ok(global.window.spirit.agentData.row('provider', 'KR').label === 'From the stream', 'it draws nothing it typed into the row: the row changes only by the server\'s stream (rule/19)', 'branch: ' + short(global.window.spirit.agentData.row('provider', 'KR')));
+  ok(global.window.spirit.data.agent.data.row('provider', 'KR').label === 'From the stream', 'it draws nothing it typed into the row: the row changes only by the server\'s stream (rule/19)', 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KR')));
   // The server takes it and its stream says so, as rowTable publishes every row it changes.
   D.merge(rowPath('provider', 'KR'), { label: 'Typed' }); await settle();
   w.calls.length = 0;
@@ -277,8 +277,8 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   const r2 = E.agentRow.create(ed2, { api: {}, table: 'provider', id: 'KS', added: false, look: look, fields: FIELDS });
   await settle();
   ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KS' }), 'it asks provider { op: get, id }, though the branch holds a row', 'calls ' + short(w.calls));
-  ok(global.window.spirit.agentData.row('provider', 'KS') && global.window.spirit.agentData.row('provider', 'KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example',
-    'and the whole row goes where the stream writes it, its fields shown', 'branch: ' + short(global.window.spirit.agentData.row('provider', 'KS')));
+  ok(global.window.spirit.data.agent.data.row('provider', 'KS') && global.window.spirit.data.agent.data.row('provider', 'KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example',
+    'and the whole row goes where the stream writes it, its fields shown', 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KS')));
   ok(the(ed2, 'label').value === 'Seated' && /<b>Change<\/b>/.test(ed2.innerHTML), 'it says Change when opened from the list', 'label ' + short(the(ed2, 'label') && the(ed2, 'label').value));
   ok(w.icons[w.icons.length - 1].value === '🧪', 'the icon chooser shows the row\'s own icon', 'icon: ' + short(w.icons[w.icons.length - 1].value));
   r2.destroy();
@@ -329,7 +329,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   D.seat(BRANCH('model'), sctx.tables.model.verb.handler({ op: 'search', text: '' }).items);
   // Only what a search answers is in the branch, as when the model list was opened first: no row came whole on the stream.
   // What a row shows in the dropdown: its columns' values (from, else field), as the list draws its cells.
-  const cellsOf = function (s, key) { const r = global.window.spirit.agentData.row('model', key) || {}; return (s.o.columns || []).map(function (c) { const v = r[c.from || c.field]; return v == null ? '' : String(v); }).join(' ').trim(); };
+  const cellsOf = function (s, key) { const r = global.window.spirit.data.agent.data.row('model', key) || {}; return (s.o.columns || []).map(function (c) { const v = r[c.from || c.field]; return v == null ? '' : String(v); }).join(' ').trim(); };
   const narrowed = async function (models) {
     w.calls.length = 0;
     const before = w.searches.length;

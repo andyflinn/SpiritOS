@@ -80,7 +80,7 @@ function world() {
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
       cacheManager: function (name) {
         w.managers = (w.managers || []).concat(name);
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
         return Promise.resolve(true);
       },
       shell: { activateApp: function (d) { w.def = d; } } },
@@ -91,7 +91,7 @@ function world() {
   win.window = win;
   vm.createContext(win);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+INFO/NODE==' };
   win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
@@ -123,9 +123,9 @@ test.startTest('info.js: the Info app');
   ok(!!w.made.label && w.made.label.opts.api === w.api, 'the name block is changeMyLabel, handed the app\'s api', 'made: ' + short(Object.keys(w.made)));
   ok(!!w.made.description && w.made.description.opts.api === w.api, 'the description block is changeMyDescription', 'made: ' + short(Object.keys(w.made)));
   ok(w.calls.some(function (c) { return c.name === 'node.card'; }), 'it reads node.card', 'calls: ' + short(w.calls.map(function (c) { return c.name; })));
-  const N = w.api.win.spirit.nodeData;
+  const N = ((w.api.win.spirit.data || {}).node || {}).data;
   ok((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Andy' && N.card.get().description === 'a node',
-    'it loads the node manager, and node.card\'s answer is kept in spirit.nodeData\'s card, which each element draws itself from', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get()));
+    'it loads the node manager, and node.card\'s answer is kept in ((spirit.data || {}).node || {}).data\'s card, which each element draws itself from', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get()));
   ok(w.sets.length === 0, 'it sets neither field itself', 'sets: ' + short(w.sets));
   ok(w.posts.length === 0, 'no name is posted to any relay', 'posts: ' + short(w.posts));
 

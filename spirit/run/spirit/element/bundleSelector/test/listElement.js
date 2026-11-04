@@ -40,8 +40,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   global.spirit = global.window.spirit;
-  // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  // The page's one data set (spirit/data.js), which spirit.js brings with the client.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const DATA = global.window.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
@@ -51,7 +51,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
@@ -84,8 +84,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // goal/G41.14, Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set": the list is a
   // view of the node's bundles (goal/G41.28: the branch the auth family's cache manager keeps), so a bundle added anywhere
   // on the page shows in every bundle list (probabilitySearch's data).
-  const B = global.window.spirit.authData && global.window.spirit.authData.bundles;
-  ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s bundles (spirit.authData.bundles.branch), the spirit object\'s cache, which the node\'s stream keeps current', 'data: ' + short(o.data) + ', authData.bundles.branch ' + short(B && B.branch));
+  const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.bundles;
+  ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s bundles (spirit.data.auth.data.bundles.branch), the spirit object\'s cache, which the node\'s stream keeps current', 'data: ' + short(o.data) + ', authReads.bundles.branch ' + short(B && B.branch));
 
   const got = await o.api.verb(o.server + '.' + o.verb, o.args('  rea ', {}));
   ok(o.server === 'auth' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea',

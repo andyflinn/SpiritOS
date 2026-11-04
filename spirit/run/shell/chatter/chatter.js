@@ -49,10 +49,10 @@ var chIconPart = window.spirit && typeof window.spirit.require === 'function'
 
 // THE LINES ARE THE chatClerver FAMILY'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
 // buddies clientCacheManager.js must do so in this item. no exceptions."): every line a read, a search or a send brings is
-// kept by the family's cache manager (spirit.chatData.keep), and every line the server publishes too; the window places
+// kept by the family's cache manager (spirit.data.chatClerver.data.keep), and every line the server publishes too; the window places
 // a line of the open chat from there (its watch), and an arrival (its published) is read, made current and scrolled to.
 // chLines holds the window's own elements, each with the line it paints.
-function chData() { return (window.spirit && window.spirit.chatData) || null; }
+function chData() { return (window.spirit && ((window.spirit.data || {}).chatClerver || {}).data) || null; }
 function chKeep(peer, lines) { var C = chData(); if (C && peer) C.keep(peer, lines); }
 
 function chAsk(verb, args) {
@@ -324,7 +324,7 @@ function chSend() {
   });
 }
 
-// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.chatData.published): every kept line, written or
+// A LINE THE SERVER PUBLISHED, once the family's cache keeps it (spirit.data.chatClerver.data.published): every kept line, written or
 // received. The window has placed it already (its watch); another chat's line marks the peer list again only, and a new
 // line of the open chat is read, made current and scrolled to.
 function chArrived(peer, l, fresh) {
@@ -547,7 +547,7 @@ function chMount(container, api) {
     // well, so a line of another chat held from an earlier search never stands for this one; a press puts the line
     // in view when the window holds it.
     // A VIEW OF THE CHATS' LINES IN spirit.data (goal/G41.28): the probability search over the lines the chatClerver
-    // family's cache keeps (spirit.chatData.branch), each line the shared row element; the open chat's alone, by the
+    // family's cache keeps (spirit.data.chatClerver.data.branch), each line the shared row element; the open chat's alone, by the
     // who filter. Asked of chatClerver's chat.search once words are typed; every line found is seated in the branch and
     // so joins the history (Andy, 2026-10-18: "all found lines are added to the chat, if they're missing, that won't
     // hurt"), each by its time.
@@ -651,10 +651,10 @@ function chMount(container, api) {
     });
 
     // PRESENCE, as Contacts shows it (goal/G4.10: "same green and white dots i see in contacts"): each contact's present
-    // as the contact family's cache keeps it (spirit.contactData, goal/G41.28), drawn as the app opens and again on each
+    // as the contact family's cache keeps it (spirit.data.contact.data, goal/G41.28), drawn as the app opens and again on each
     // change; a key it no longer knows present goes white, as in Contacts: unknown is never present.
     Promise.resolve(spirit.cacheManager('contact')).then(function () {
-      var C = window.spirit.contactData;
+      var C = ((window.spirit.data || {}).contact || {}).data;
       if (!C) return;
       function dot(key, row) { if (chPane && typeof chPane.present === 'function') chPane.present(key, !!(row && row.present === true)); }
       var all = C.contacts();

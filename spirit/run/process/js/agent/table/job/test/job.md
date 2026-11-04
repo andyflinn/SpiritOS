@@ -26,9 +26,9 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
 
 - **elementRow.js loads the agent family's cache manager, which takes the job table's rows from the stream** (goal/G41.16;
   Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
-  asks `spirit.cacheManager('agent')`, and `spirit.agentData.branch('job')` is the home node's `<node>/agent/job`; a row
+  asks `spirit.cacheManager('agent')`, and `spirit.data.agent.data.branch('job')` is the home node's `<node>/agent/job`; a row
   of the agent stream (`{ agent: { table: 'job', row } }`, module `process/js/agent`) lands at `<node>/agent/job/<id>`,
-  read through `spirit.agentData.row`, and the branch's watcher hears it; a changed row is merged; one
+  read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
 ## Requirements (goal/G41.21, box v17)

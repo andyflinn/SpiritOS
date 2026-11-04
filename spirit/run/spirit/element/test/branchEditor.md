@@ -15,7 +15,7 @@ of itself"*). The way back is the shell's (*"the shell provides a back-button fr
 - It loads what it uses itself (rule/26): `spirit/element/apiFamilySelector.js` and `spirit/element/branchSelector.js`. The
   navigation is the shell's own.
 - **Its Delete row** (goal/G41.32): a rowForm below the list, ❌, *"Delete <bundle-name> bundle and branches"*, an armingButton whose
-  second press asks `auth.bundle { op: 'delete', id }`. Hearing that bundle's row gone in `spirit.authData.bundles`, from any screen,
+  second press asks `auth.bundle { op: 'delete', id }`. Hearing that bundle's row gone in `spirit.data.auth.data.bundles`, from any screen,
   it calls `options.gone`. A bundle whose `options.owner` is not `node` is shown only: no form, no Delete column.
 - It registers `branchEditor.create(container, options)`, and no page of its own, which draws the same editor into the container
   and answers a handle with `destroy` (the shell's element shape, goal/G41.19).

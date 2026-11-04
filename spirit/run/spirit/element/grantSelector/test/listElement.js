@@ -88,13 +88,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // family's cache manager's from the page's start: here the real data set and the auth family's manager, a list made
   // for the node's grants with no row drawn, and its first grant taken by spirit.data.
   {
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
     const DATA = global.window.spirit.data;
     // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
     global.window.spirit.node = { key: 'nOdE+key/one==' };
     DATA.home('nOdE+key/one==');
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'clientCacheManager.js'), 'utf8'), { filename: 'auth/clientCacheManager.js' });
-    const A = global.window.spirit.authData;
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'data.js'), 'utf8'), { filename: 'auth/data.js' });
+    const A = ((global.window.spirit.data || {}).auth || {}).data;
     const GRANTS = { get branch() { return A.grants.branch; }, key: 'key', label: 'label', search: function () { return Promise.resolve({ items: [], more: false }); },
       revoke: function () { return Promise.resolve({}); }, watch: function (fn) { return A.grants.watch(fn); } };
     const n = lists.length;

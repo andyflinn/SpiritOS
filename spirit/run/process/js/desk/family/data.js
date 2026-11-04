@@ -1,4 +1,4 @@
-// spirit/run/process/js/desk/family/clientCacheManager.js
+// spirit/run/process/js/desk/family/data.js
 // WHAT THE DESK KNOWS OF ITS ROWS AT THE RECEIVING END, IN THE DESK'S OWN FOLDER (goal/G41.24; Andy: "where
 // clientCacheManager.js must work in both browser and an appServer that subscribes? and deskClient can get it form its own
 // disc?"). Two halves: the cache rules, which were api.js's and are now cacheRules.js beside this file (a node's alone),
@@ -6,12 +6,12 @@
 // requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.data.
 // It is read by peers through the family's FS verbs like anything in this folder: rules, never secrets.
 //
-// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (spirit/spiritData.js),
+// THE DESK'S TRANSLATOR (goal/G33.3, goal/G33.4): what the desk's stream means for spirit.data (spirit/data.js),
 // in the page and in node alike. Andy: a desk client keeps what it learned of the current goal "like face-apps do", in
 // "an updated shared client block that handles this same for deskClient and the web-UI", so "anything the agent needs is
 // already on hand". THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM (goal/G41.28; Andy: "the FUCKING desk cache
 // is NOT to be found in spirit.data.data.desk", and "doesn't the fucking ... clientCacheManager.js take care of that"):
-// every reader, the page, deskDetails and deskClient, asks spirit.deskData (below), never a branch by its name.
+// every reader, the page, deskDetails and deskClient, asks spirit.data.desk.data (below), never a branch by its name.
 //   desk        id -> the item's facts, as items.search labels them and the List draws them (the trunk)
 //   deskItem    id -> the parts of an item read so far, each on its own: { box, version }, { chat, chatMore },
 //               { checks }, { files, filesMore } (a branch). goal/G33.4 (box v46): a part comes when it is needed, by
@@ -22,7 +22,7 @@
 // One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim); the
 // stream's bundles are appServer's, which hands their rows in one by one (goal/G41.12).
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.
-(function (root) {
+(function () {
   // THE CACHE RULES ARE NODE'S (goal/G41.28; Andy: "the file has to fit into MAX_PAYLOAD."): keep, shed and the kept
   // reads, in ./cacheRules.js, required in node alone (appServer, deskClient), handed this file's names; a page has none.
   // THE NAMES, here alone.
@@ -34,18 +34,9 @@
   var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
     ? require('./cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
-  // THE TRANSLATOR, ATTACHED TO ONE DATA SET ONCE: attach(root) on the root whose spirit.data it fills. A page attaches
-  // as it loads (below); in node the same module is required once and also read for its cache, so whoever holds the
-  // data set attaches it (appServer, as it takes the stream's translator): a require before the data set is there
-  // attaches nothing, and a second attach of the same set translates nothing twice, from this copy of the file or another
-  // (the mark is on the data set, under one shared symbol, and holds the set's spirit.deskData).
-  var ATTACHED = typeof Symbol === 'function' ? Symbol.for('spirit.desk.clientCacheManager') : '__deskClientCacheManager';
-  function attach(root) {
-    var D = ((root || {}).spirit || {}).data;
-    if (!D || typeof D.translate !== 'function') return;
-    // Attached before: the translator stays as it is, and this root is handed its spirit.deskData again (a root whose
-    // spirit object was made anew after the first attach has none).
-    if (D[ATTACHED]) { (root.spirit = root.spirit || {}).deskData = D[ATTACHED]; return; }
+  // THE TRANSLATOR, ONCE PER DATA SET: spirit.data.family runs this once, however often the file is loaded.
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../../spirit/data.js');
+  D.family('desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
     // SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk
     // family's view of one node. A row from the stream is filed under its job's node (fromNode); every read is of the
@@ -245,7 +236,7 @@
     doors.keep = function (door) { if (door && door.id) V.set(DOORS + '/' + String(door.id), door); };
     var doorRuns = rowTable(DOOR_RUNS);
     doorRuns.keep = function (id, run) { if (id && run && typeof run === 'object') V.set(DOOR_RUNS + '/' + String(id), run); };
-    var deskData = {
+    var deskReads = {
       rules: rules,
       parts: rowTable(PARTS),
       doors: doors,
@@ -266,10 +257,8 @@
       // A desk read answered from what is kept, as the desk would answer it, or null (cache.answer, on the home node).
       answer: function (verb, args, room) { return cache ? cache.answer(verb, args, HOME, room) : null; },
     };
-    try { Object.defineProperty(D, ATTACHED, { value: deskData }); } catch (e) { D[ATTACHED] = deskData; }
-    (root.spirit = root.spirit || {}).deskData = deskData;
-  }
-  // In node, for the subscribing appServer and deskClient: the cache rules and attach, as the module's export.
-  if (typeof module !== 'undefined' && module && module.exports) module.exports = { cache: cache, attach: attach };
-  attach(root);
-}(typeof window !== 'undefined' ? window : globalThis));
+    return deskReads;
+  });
+  // In node, for the subscribing appServer and deskClient: the cache rules, as the module's export.
+  if (typeof module !== 'undefined' && module && module.exports) module.exports = { cache: cache };
+}());

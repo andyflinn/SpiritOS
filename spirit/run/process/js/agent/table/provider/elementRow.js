@@ -5,8 +5,8 @@
 //   page's detail pane, whose look(table) gives the title row its icon and name
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  // Its table's rows are the agent family's cache (goal/G41.28): the family's own clientCacheManager
-  // (process/js/agent/family/clientCacheManager.js) translates them into the table's branch; it is loaded here, with
+  // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
+  // (process/js/agent/family/data.js) translates them into the table's branch; it is loaded here, with
   // this element.
   window.spirit.cacheManager('agent');
   var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'url', label: 'URL', kind: 'url' }, { field: 'apiKey', label: 'API key', kind: 'secret' },

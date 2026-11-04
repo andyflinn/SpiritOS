@@ -1,14 +1,16 @@
-// spirit/run/spirit/spiritData.js
+// spirit/run/spirit/data.js
 // THE FACELESS LAYER (goal/G30.16, box v14-v16). Andy: "we need to view the shell like a transient version of a node. it
 // needs a 100% faceless layer", "accurately mirror the exact state of the node that is its partner", "the shell stores
 // all data in one central location". The UI is a fast reading of this; nothing here touches the page, so it runs and
 // tests in node.
 //
-//   data            one tree, BY SERVER NODE FIRST (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
-//                   SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>....",
-//                   the same in a page and in an appServer in client mode): data[node][family][branch][row] -> value.
-//                   node is the key of the node that served the rows, in base64url (Q8: "yes."), so neither a path nor
-//                   appServer's cache file name splits on its / or +.
+//   spirit.data     HELPER FUNCTIONS AND ONE OBJECT PER FAMILY (goal/G43.7; Andy, the box: "this object has only helper functions
+//                   and object <name> for every application"). spirit.data.<name>.data is what the family's data.js answers,
+//                   its reads; spirit.data.<name>.cache is its rows, a level per node (Q5: "yes."), the same in a page and in an
+//                   appServer in client mode: cache[node][branch][row] -> value. node is the key of the node that served the
+//                   rows, in base64url (Q8: "yes."), so neither a path nor appServer's cache file name splits on its / or +.
+//   family(name, make)  the one way a family's data.js stands: make() runs once, for this data set, translates what it keeps
+//                   and answers its reads, and they stand at spirit.data.<name>.data. Answers the family.
 //   a path          '<node>/<family>/<branch>/<row>' (a row may hold slashes, a file's path does); '<node>/<family>/<branch>'
 //                   is the branch. The tree is addressed through the family's own view, at(node, family), below.
 //   set(path, v)    the one write
@@ -42,7 +44,7 @@
 // bounding those browser site caches completely. no cache bounding on the browser side."). A PROCESS'S CACHE IS A NODE
 // STORE (goal/G41.3, Q2): past its byte cap it sheds the oldest writes first, each told as a delete.
 (function (root) {
-  var data = Object.create(null);
+  var families = Object.create(null);  // name -> spirit.data.<name>
   var watchers = Object.create(null);   // path -> [fn]
   var readyOf = Object.create(null);
   var quiet = Object.create(null);      // a type being filled without telling (the tree arriving)
@@ -61,15 +63,36 @@
     return s;
   }
   function level(o, k) { return o[k] || (o[k] = Object.create(null)); }
-  function branchOf(s) { return level(level(level(data, s.node), s.family), s.branch); }
+  // A family stands once a row is written for it or its data.js has run. A name a helper holds is kept here alone, so it can
+  // never replace the helper.
+  function familyOf(name) {
+    var n = String(name);
+    if (!families[n]) {
+      families[n] = { data: null, cache: Object.create(null) };
+      if (!(n in api)) api[n] = families[n];
+    }
+    return families[n];
+  }
+  function family(name, make) {
+    var f = familyOf(name);
+    if (f.data === null) f.data = (typeof make === 'function' && make()) || Object.freeze({});
+    return f;
+  }
+  function branchOf(s) { return level(level(familyOf(s.family).cache, s.node), s.branch); }
   // A branch's rows, by its whole path; a shorter path answers that level of the tree. A READ MAKES NOTHING: a level
   // not there answers empty, and only a write grows the tree.
   var NONE = Object.freeze(Object.create(null));
   function branch(path) {
     var s = split(path);
-    var at = data[s.node];
-    if (at && s.family) at = at[s.family];
-    if (at && s.family && s.branch) at = at[s.branch];
+    if (!s.family) {
+      var kept = Object.keys(families).filter(function (f) { return families[f].cache[s.node]; });
+      if (!kept.length) return NONE;
+      var whole = Object.create(null);
+      kept.forEach(function (f) { whole[f] = families[f].cache[s.node]; });
+      return whole;
+    }
+    var at = families[s.family] && families[s.family].cache[s.node];
+    if (at && s.branch) at = at[s.branch];
     return at || NONE;
   }
   // A watch of the home node is kept under HOME_MARK in place of the node, so one made before the page knows its node
@@ -109,7 +132,7 @@
   // Every branch the tree holds, by its whole path.
   function branches() {
     var out = [];
-    Object.keys(data).forEach(function (n) { Object.keys(data[n]).forEach(function (f) { Object.keys(data[n][f]).forEach(function (b) { out.push(n + '/' + f + '/' + b); }); }); });
+    Object.keys(families).forEach(function (f) { Object.keys(families[f].cache).forEach(function (n) { Object.keys(families[f].cache[n]).forEach(function (b) { out.push(n + '/' + f + '/' + b); }); }); });
     return out;
   }
   // THE BYTES KEPT, IN A PROCESS: each write counted as its path and its JSON, and made the newest; past the cap the
@@ -194,7 +217,7 @@
     if (!homeNode && root.spirit && root.spirit.node && root.spirit.node.key) homeNode = nodeId(root.spirit.node.key);
     return homeNode;
   }
-  // A FAMILY'S VIEW (goal/G41.28): what its clientCacheManager or its row element addresses, its branches under its own
+  // A FAMILY'S VIEW (goal/G41.28): what its data.js or its row element addresses, its branches under its own
   // family of one node, so no reader spells a node or a family. A view of node null follows home().
   function at(node, family) {
     var fam = String(family || '');
@@ -346,7 +369,7 @@
     return { items: r.items, more: r.more || more };
   }
 
-  var api = { data: data, get: get, set: set, merge: merge, del: del, watch: watch, rows: rows, seat: seat,
+  var api = { family: family, get: get, set: set, merge: merge, del: del, watch: watch, rows: rows, seat: seat,
     translate: translate, quietly: quietly, ready: ready, branch: branch, search: search, forget: forget, cap: cap,
     recording: recording, nodeId: nodeId, home: home, at: at, branches: branches,
     // For a suite: the stream's events fed by hand.
@@ -360,7 +383,7 @@
     sp.events.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent });
   }
   // A SERVER THAT NEEDS ITS OWN NODE'S EVENTS ASKS FOR THEM HERE (goal/G43.5; Andy: "the rule covers everything, apps,
-  // element"; test/caches.js: only spiritData.js takes the node's stream). A server is otherwise fed by its streamListener
+  // element"; test/caches.js: only data.js takes the node's stream). A server is otherwise fed by its streamListener
   // (appServer) and opens nothing. follow({ onConnection(up) }): the one stream, opened at the first ask, into the same
   // translators. No snapshot: a connect forgets on a page, and here it would forget what the streamListener brought.
   var followers = [];

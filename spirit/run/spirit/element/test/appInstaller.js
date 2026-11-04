@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/element/test/appInstaller.js
 // The tests of spirit/element/appInstaller.js, and of no other module (spec: ./appInstaller.md; goal/G41.1, box v14). The
-// browser file runs in node on a window of its own: the spirit object's fs, the jobs family's cache (spirit.jobsData,
+// browser file runs in node on a window of its own: the spirit object's fs, the jobs family's cache (spirit.data.jobs.data,
 // goal/G41.28) and the face shell are stubs that keep what the element asked of them, and the test plays the node's
 // answers and the cache's changes.
 
@@ -48,10 +48,10 @@ function world(faces) {
   const win = { spirit: {
     ready: Promise.resolve({ fs: fsApi }), fs: fsApi,
     cacheManager: function (name) { w.managers.push(name); return Promise.resolve(true); },
-    jobsData: {
+    data: { jobs: { data: {
       find: function (fn) { return Object.keys(w.jobs).map(function (id) { return w.jobs[id]; }).find(fn); },
       watch: function (h) { w.subs.push(h); return function () { w.unsubscribed += 1; w.subs = w.subs.filter(function (x) { return x !== h; }); }; },
-    },
+    } } },
     shell: { faceApp: function (id) { w.faceApp.push(id); } },
     escapeHtml: function (s) { return String(s); },
   }, setTimeout: setTimeout, Promise: Promise, JSON: JSON, console: { log: function () {}, error: function () {} } };
@@ -100,7 +100,7 @@ test.startTest('appInstaller.js: one activate/deactivate button for one app');
   w.job('process/js/agent', 'cancelled'); await settle();
   ok(!onOf(h) && h.button.text === 'Activate', 'its job cancelled: Activate, off', 'after cancelled: ' + short(h.button.text));
   inst.destroy();
-  ok(w.unsubscribed === 1, 'destroy ends its watch on spirit.jobsData', 'unsubscribed ' + w.unsubscribed);
+  ok(w.unsubscribed === 1, 'destroy ends its watch on ((spirit.data || {}).jobs || {}).data', 'unsubscribed ' + w.unsubscribed);
   w.job('process/js/agent', 'running'); await settle();
   ok(!onOf(h), 'and nothing is drawn after it', 'drew after destroy');
 

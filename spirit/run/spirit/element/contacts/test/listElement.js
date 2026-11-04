@@ -5,7 +5,7 @@
 // create hands the search element, a row's button and a pressed row (spec: ./listElement.md).
 // The browser file runs in node on a window of its own; probabilitySearch is a recorder in its place, so this tests the
 // list and not the search under it; the rows are the real contactElement (contacts/rowElement.js), over the real data set
-// and the contact family's clientCacheManager (goal/G41.28), loaded as a page's spirit.cacheManager('contact') loads it,
+// and the contact family's data.js (goal/G41.28), loaded as a page's spirit.cacheManager('contact') loads it,
 // the page's node known as spirit.start makes it known (spirit.node.key, then data.home).
 
 const fs = require('fs');
@@ -38,7 +38,7 @@ window.spirit.require = function (p) { required.push(p); return Promise.resolve(
 // The page's stream, a recorder: who subscribes to it (goal/G41.28: no client but spirit.data takes it itself).
 const subscribers = [];
 window.spirit.events = { subscribe: function (h) { subscribers.push(h); return function () {}; } };
-load(path.join(JS, '..', '..', 'spirit', 'spiritData.js'));
+load(path.join(JS, '..', '..', 'spirit', 'data.js'));
 // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
 const NODE_KEY = 'nOdE+key/one==';
 window.spirit.node = { key: NODE_KEY };
@@ -47,7 +47,7 @@ window.spirit.data.home(NODE_KEY);
 const managers = [];
 window.spirit.cacheManager = function (name) {
   managers.push(String(name));
-  load(path.join(JS, '..', '..', 'spirit', String(name), 'clientCacheManager.js'));
+  load(path.join(JS, '..', '..', 'spirit', String(name), 'data.js'));
   return Promise.resolve(true);
 };
 load(path.join(JS, 'rowElement.js'));
@@ -97,9 +97,9 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
     return Promise.resolve(key === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } }); } };
   const pane = L.create(host, { api: api, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   const o = made.opts;
-  const CD = window.spirit.contactData;
+  const CD = ((window.spirit.data || {}).contact || {}).data;
   if (managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && o.filters === L.filters && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add')
-    test.check('a view of the contact family\'s contacts (spirit.contactData.branch), the list\'s filters, columns presence, status, label, add');
+    test.check('a view of the contact family\'s contacts (spirit.data.contact.data.branch), the list\'s filters, columns presence, status, label, add');
   else test.fail('the opts: ' + JSON.stringify({ data: o.data, contactBranch: CD && CD.branch, managers: managers, columns: o.columns }));
   if (made.refreshes === 1) test.check('it fills as soon as it is drawn: one refresh at create');
   else test.fail('refreshes at create: ' + made.refreshes);

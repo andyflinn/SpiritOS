@@ -206,18 +206,18 @@ function heldByMe(row) {
 // The answer the desk would give, from what the stream brought, or null when it is not all there. Any item the stream
 // brought answers, held or not (box v37: "up-to-date information at the agents' fingertips"). THE CACHE IS QUERIED
 // THROUGH THE DESK'S OWN FAMILY FILE (goal/G41.12, box v15: "The client queries its own cache through that api.js"; since
-// goal/G41.24 its clientCacheManager.js, Andy: "deskClient can get it form its own disc"): its cache.answer, on this
+// goal/G41.24 its data.js, Andy: "deskClient can get it form its own disc"): its cache.answer, on this
 // node's own copy, the same appServer's query uses.
 // The same file is the stream's translator (below), which appServer requires once the data set is there: it is required
 // here only when first read from, so that require is the one that runs it.
-const DESK_CCM = path.join(__dirname, '..', '..', '..', path.dirname(spirit.familyPath('desk')), 'clientCacheManager.js');
+const DESK_CCM = path.join(__dirname, '..', '..', '..', path.dirname(spirit.familyPath('desk')), 'data.js');
 function fromKept(name, args) {
   const k = kept();
   return k && typeof k.answer === 'function' ? k.answer(name, args, ANSWER_ROOM) : null;
 }
 // WHAT THE CACHE HOLDS OF THE DESK, ASKED OF ITS MANAGER (goal/G41.28; Andy: "doesn't the fucking ...
-// clientCacheManager.js take care of that"): spirit.deskData answers by what a thing is; no branch is named here.
-function kept() { return (globalThis.spirit && globalThis.spirit.deskData) || null; }
+// clientCacheManager.js take care of that"): spirit.data.desk.data answers by what a thing is; no branch is named here.
+function kept() { return (globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) || null; }
 function keptItem(id) { const k = kept(); return k ? k.item(String(id || '')) : null; }
 function keptPart(id) { const k = kept(); return k ? k.part(String(id || '')) : null; }
 function keptItems() { const k = kept(); return k ? k.items() : {}; }
@@ -262,7 +262,7 @@ function keepWhole(facts) {
     if (Array.isArray(whole[part]) || wholeAsked.has(key)) return;
     wholeAsked.add(key);
     countedAsk(to, verb, { id: id }).answer.then(function (got) {
-      if (got && typeof got === 'object' && got.ok !== false && globalThis.spirit && globalThis.spirit.deskData) globalThis.spirit.deskData.took(verb, { id: id }, got);
+      if (got && typeof got === 'object' && got.ok !== false && globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) globalThis.spirit.data.desk.data.took(verb, { id: id }, got);
     }, function () {}).then(function () { wholeAsked.delete(key); });
   });
 }
@@ -368,7 +368,7 @@ function streamed(row) {
   if (!row || typeof row !== 'object') return;
   heardAt = Date.now();
   // A RULE, KEPT AS IT COMES (goal/G41.2): every active rule with the bootstrap, then each rule write, kept in deskRules
-  // by the desk's translator (deskData), so the cache brings them back after a restart. A wake reads its rules from
+  // by the desk's translator (spirit.data.desk.data), so the cache brings them back after a restart. A wake reads its rules from
   // there and asks the desk for none; a rule row wakes nobody.
   if (row.rule && row.row && typeof row.row === 'object') return;
   wakeOnHeld(row, keepSinceWake(row));
@@ -905,7 +905,7 @@ const server = appServer.serve({
           if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });
           // A PART READ WHEN NEEDED STAYS (goal/G33.4, box v46: "the box and other parts will come when needed and stay"):
           // into spirit.data through the desk's translator, which the push keeps current from now on.
-          if (reading && got.ok !== false && globalThis.spirit && globalThis.spirit.deskData) globalThis.spirit.deskData.took(a.name, args, got);
+          if (reading && got.ok !== false && globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) globalThis.spirit.data.desk.data.took(a.name, args, got);
           return searchCached(a.name, args, got);
         });
         let timer = null;
@@ -1212,7 +1212,7 @@ function relayVerifier(run) {
 }
 // THROUGH spirit.data (goal/G43.5; Andy: "the rule covers everything"): the verifier's own cache manager keeps what it
 // publishes, the data set takes the node's stream, and this listens to the manager.
-require('../deskVerify/family/clientCacheManager.js').attach(globalThis);
-if (globalThis.spirit && globalThis.spirit.verifyData) globalThis.spirit.verifyData.watch(relayVerifier);
+require('../deskVerify/family/data.js');
+if (globalThis.spirit && ((globalThis.spirit.data || {}).deskVerify || {}).data) globalThis.spirit.data.deskVerify.data.watch(relayVerifier);
 if (globalThis.spirit && globalThis.spirit.data && typeof globalThis.spirit.data.follow === 'function') globalThis.spirit.data.follow();
 gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });

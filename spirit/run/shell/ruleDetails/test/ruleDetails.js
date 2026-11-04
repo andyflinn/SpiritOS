@@ -4,7 +4,7 @@
 // The tests of shell/ruleDetails/ruleDetails.js, and of no other module (spec: ./ruleDetails.md; goal/G41.9). The browser file runs in node
 // on a window of its own: the app's api records every verb; armingButton is a stub that keeps every button made or
 // attached with what it was handed, so each two-press button's run is driven here as its second press would. The page's
-// one data set and the desk family's cache manager are the real ones (spirit/spiritData.js, process/js/desk/family/).
+// one data set and the desk family's cache manager are the real ones (spirit/data.js, process/js/desk/family/).
 
 const FILE = require('path').join(__dirname, '..', 'ruleDetails.js');
 const fs = require('fs');
@@ -80,12 +80,12 @@ function world(answer) {
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
       w.managers = (w.managers || []).concat(name);
-      vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', String(name), 'family', 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', String(name), 'family', 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
       return Promise.resolve(true);
     } };
   vm.createContext(win);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+RULE/DETAILS==' };
   win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
@@ -164,10 +164,10 @@ function answer(name) {
   await v.def.mount(node('container'), v.api);
   await v.def.open({ key: 'rule/7' });
   await settle();
-  const K = v.win.spirit.deskData;
-  ok((v.managers || []).indexOf('desk') !== -1 && !!K, 'it loads the desk family\'s cache manager (spirit.deskData)', 'managers: ' + short(v.managers));
+  const K = ((v.win.spirit.data || {}).desk || {}).data;
+  ok((v.managers || []).indexOf('desk') !== -1 && !!K, 'it loads the desk family\'s cache manager (((spirit.data || {}).desk || {}).data)', 'managers: ' + short(v.managers));
   if (!K) return;
-  ok(!!K.rule('rule/7') && K.rule('rule/7').text === 'the text', 'rule.get\'s answer is kept in spirit.deskData', 'kept: ' + short(K.rule('rule/7')));
+  ok(!!K.rule('rule/7') && K.rule('rule/7').text === 'the text', 'rule.get\'s answer is kept in ((spirit.data || {}).desk || {}).data', 'kept: ' + short(K.rule('rule/7')));
   const part = K.part('rule/7');
   ok(!!part && Array.isArray(part.chat) && part.chat.length === 1 && part.chat[0].text === 'first line', 'item.chat\'s answer is kept there too, under the rule', 'kept: ' + short(part));
   ok(/first line/.test(byId['rd-chat'] ? byId['rd-chat'].innerHTML : ''), 'the chat drawn is the chat kept', 'chat: ' + short(byId['rd-chat'] && byId['rd-chat'].innerHTML));

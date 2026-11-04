@@ -9,7 +9,7 @@ each app's details panel. Each app is switched on and off by the app installer (
   and loads what it uses through `spirit.require`, the app installer among them.
 - **Its list is a view of the fs family's cache** (goal/G41.28; Andy, the box: *"anything not using the new
   spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions."*): it loads the fs
-  family's cache manager itself (`spirit.cacheManager('fs')`), and its list's data is `spirit.fsData.branch`, the node's
+  family's cache manager itself (`spirit.cacheManager('fs')`), and its list's data is `spirit.data.fs.data.branch`, the node's
   file tree in `spirit.data`.
 - **Its rows are two types only** (box v14): shell apps that depend on no appServer, and appServers.
   - An app is a `<name>/<name>.js` under `shell/` or `process/js/` with its `<name>.json` beside it in the Files cache.
@@ -30,7 +30,7 @@ each app's details panel. Each app is switched on and off by the app installer (
 
 ## What its test must try to break
 
-- A list that keeps rows of its own instead of being a view of `spirit.fsData.branch`.
+- A list that keeps rows of its own instead of being a view of `spirit.data.fs.data.branch`.
 - A shell app naming a server shown as its own row.
 - A process that is no server shown as a row.
 - A checkbox left in the panel.

@@ -4,7 +4,7 @@
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key)
 //
-// A VIEW OF THE app FAMILY'S CACHE (spirit.appData): app.search seats its rows there, and the node's stream keeps them
+// A VIEW OF THE app FAMILY'S CACHE (spirit.data.app.data): app.search seats its rows there, and the node's stream keeps them
 // current through the family's manager and the row element.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
@@ -22,7 +22,7 @@
     }
     var list = window.spirit.element.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
-      data: window.spirit.appData.branch,
+      data: window.spirit.data.app.data.branch,
       server: 'app',
       verb: 'search',
       face: o.face,
@@ -36,9 +36,9 @@
       empty: 'No app matches.',
     });
     list.refresh();
-    // A CONNECT FORGETS WHAT IS KEPT (spiritData's forget, goal/G41.3). A face with no star hears no 'apps' job to fill it
+    // A CONNECT FORGETS WHAT IS KEPT (spirit/data.js's forget, goal/G41.3). A face with no star hears no 'apps' job to fill it
     // again (spirit/app.js), so a forgotten branch, told with no row, asks again, or its list would stay empty.
-    var off = window.spirit.appData.watch(function (key) { if (!key) list.refresh(); });
+    var off = window.spirit.data.app.data.watch(function (key) { if (!key) list.refresh(); });
     return {
       list: list,
       refresh: function () { list.refresh(); },

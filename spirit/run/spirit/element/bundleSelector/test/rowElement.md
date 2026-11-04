@@ -22,14 +22,14 @@ listElement.js and a rowElement.js script to fit within the probabilitySearch fr
   from having their label mutilated."*): mounted, with the old `editable` option or without it, the label cell shows the
   label, escaped, and holds no input; the row asks the node no set, ever (there is none, `../../../../spirit/test/apiAuth.md`).
 - It repaints from the data set (goal/G41.14, Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that
-  changes their data set"*): when its row in the auth family's bundles (`spirit.authData.bundles.row(<its id>)`;
+  changes their data set"*): when its row in the auth family's bundles (`spirit.data.auth.data.bundles.row(<its id>)`;
   goal/G41.28, `<node>/auth/bundles/<id>` in `spirit.data`) changes, as the node's stream sets it, its label
   repaints; another bundle's row changes nothing.
 - No Edit and no Delete (goal/G41.32): a row pressed is the selector's, Delete is the branchEditor's.
 
 - The node's bundle rows are taken from the stream by the auth family's cache manager
-  (`spirit/run/spirit/auth/clientCacheManager.js`, goal/G41.28), which the row element loads itself
-  (`spirit.cacheManager('auth')`; G41.14 until then, its own translation), into `spirit.authData.bundles`: the node publishes each changed row of its two
+  (`spirit/run/spirit/auth/data.js`, goal/G41.28), which the row element loads itself
+  (`spirit.cacheManager('auth')`; G41.14 until then, its own translation), into `spirit.data.auth.data.bundles`: the node publishes each changed row of its two
   bundle tables on one permanent job of type `bundles`, `{ table, row }`, and `{ table, row: { id }, gone: true }`. A row
   published is kept by its id, published again replaces it, gone takes it out; the other table's rows, another job's, and
   a row with no id write nothing. It requires no data script.

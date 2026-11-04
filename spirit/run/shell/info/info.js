@@ -127,11 +127,11 @@ spirit.shell.activateApp({
 
     // TWO CALLS, NOT ONE AWAITING THE OTHER. The card is a file on this disk and lands at once; the relays are a
     // probe of every configured mailbox and take as long as the slowest of them.
-    // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.nodeData, and each of the
+    // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.data.node.data, and each of the
     // two fields draws itself from it and keeps what its save stored there.
     var fields = Promise.all([infoParts, spirit.cacheManager('node')]).then(function () {
       var el = window.spirit.element;
-      var N = window.spirit.nodeData;
+      var N = ((window.spirit.data || {}).node || {}).data;
       el.changeMyLabel.create(container.querySelector('[data-info="name"]'), { api: api });
       el.changeMyDescription.create(container.querySelector('[data-info="description"]'), { api: api });
       return Promise.resolve(api.verb('node.card', {})).then(function (r) {

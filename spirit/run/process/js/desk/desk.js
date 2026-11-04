@@ -2084,8 +2084,8 @@ let grantsRead = false;
 function isDeskPath(p) { return p === 'desk' || String(p).indexOf('desk.') === 0; }
 // key -> { label }, the keys holding a grant under desk, or null until the first answer.
 function grantsHeld() {
-  if (!grantsRead || !spirit.authData) return null;
-  const rows = spirit.authData.grants.rows() || {};
+  if (!grantsRead || !((spirit.data || {}).auth || {}).data) return null;
+  const rows = spirit.data.auth.data.grants.rows() || {};
   const held = Object.create(null);
   Object.keys(rows).forEach(function (id) {
     const r = rows[id];
@@ -2104,7 +2104,7 @@ function readGrants() {
     if (!Array.isArray(items)) return;
     // The table as it stands now, whole: a grant revoked while the stream was down goes with this.
     grantsRead = false;
-    const A = spirit.authData;
+    const A = ((spirit.data || {}).auth || {}).data;
     const before = A.grants.rows() || {};
     Object.keys(before).forEach(function (id) { spirit.data.del(A.grants.branch + '/' + id); });
     spirit.data.seat(A.grants.branch, items.map(function (i) {
@@ -2472,7 +2472,7 @@ function pushGoalWhole(gid) {
 // start, and in that same wake hands the agent every line of Andy's addressed to it that nobody took yet"). Every row
 // of it is under the one change it is pushed at and marked replace: the goal's facts and each item's, then each of his
 // lines to agents that nobody took yet (its row naming them, so each goes to its own), last its end. A deskClient drops
-// what it kept of the goal that the push does not carry (the desk family's clientCacheManager.js, its cache.keep).
+// what it kept of the goal that the push does not carry (the desk family's data.js, its cache.keep).
 function pushGoalReplace() {
   const s = S;
   const gid = s.current;
@@ -4193,6 +4193,6 @@ function pressCheck(a) {
 if (S.current) setImmediate(function () { pushGoalWhole(S.current); });
 // The node's grants: read each time the stream comes up, a restart of the node included, and followed from then on.
 Promise.resolve(spirit.cacheManager('auth')).then(function () {
-  spirit.authData.grants.watch(grantChanged);
+  spirit.data.auth.data.grants.watch(grantChanged);
   spirit.data.follow({ onConnection: function (up) { if (up) readGrants(); } });
 }).catch(function (e) { console.error('desk: the grants cannot be followed: ' + ((e && e.message) || e)); });

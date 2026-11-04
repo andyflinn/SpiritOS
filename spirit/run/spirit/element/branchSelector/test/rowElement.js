@@ -5,7 +5,7 @@
 // browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. The shared
 // row element is put there real; the arming button is a stand-in that records what it was handed. The node's auth
 // family is the spirit object's, each call recorded. The page's data set is real, and so is the auth family's
-// clientCacheManager (goal/G41.28), loaded as a page's spirit.cacheManager('auth') loads it, the page's node known as
+// data.js (goal/G41.28), loaded as a page's spirit.cacheManager('auth') loads it, the page's node known as
 // spirit.start makes it known (spirit.node.key, then data.home).
 
 const fs = require('fs');
@@ -48,8 +48,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.document = { createElement: function () { return {}; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   global.spirit = global.window.spirit;
-  // The page's one data set (spirit/spiritData.js): the stream's branch rows land there.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  // The page's one data set (spirit/data.js): the stream's branch rows land there.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const DATA = global.window.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
@@ -59,7 +59,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
@@ -68,12 +68,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   const E = global.window.spirit.element;
-  const A = global.window.spirit.authData;
+  const A = ((global.window.spirit.data || {}).auth || {}).data;
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }),
     'it requires the shared row element and the arming button through spirit.require', 'required: ' + short(required));
-  ok(managers.indexOf('auth') !== -1 && A && A.branches && typeof A.branches.row === 'function', 'it loads the auth family\'s cache manager, which puts spirit.authData on the page', 'managers: ' + short(managers));
+  ok(managers.indexOf('auth') !== -1 && A && A.branches && typeof A.branches.row === 'function', 'it loads the auth family\'s cache manager, which puts ((spirit.data || {}).auth || {}).data on the page', 'managers: ' + short(managers));
   if (!A || !A.branches || typeof A.branches.row !== 'function') return;
   ok(E.branchElement && typeof E.branchElement.create === 'function', 'it registers spirit.element.branchElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.branchElement || typeof E.branchElement.create !== 'function') return;

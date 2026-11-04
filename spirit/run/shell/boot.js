@@ -252,7 +252,7 @@
   var subscribers = [];
   // THE FACE LINK'S SNAPSHOT: what this face's stream hands a subscriber that comes late, as spirit.js's own stream keeps
   // its own (spirit.events). It is the stream, not a store: every reader reads the jobs from the jobs family's cache
-  // (spirit.jobsData, goal/G41.28), which this stream feeds.
+  // (spirit.data.jobs.data, goal/G41.28), which this stream feeds.
   var linkJobs = {};
   var presence = {};
   var streamStopped = false;
@@ -399,7 +399,7 @@
   // ── APPS, LOADED WHEN OPENED ────────────────────────────────────────────────────────────────────────────────────
   // WHICH APPS THE FACE HAS IS THE HOME NODE'S DATA (goal/G30.16, G30.21): an app is a shell/<app>/<app>.js whose
   // sidecar's face part says app: true, with the name and icon the face draws. The scripts are found in the file tree
-  // already in the page (spirit.fsData, the fs family's cache); each one's face part is asked once (fs.annotations), and each
+  // already in the page (spirit.data.fs.data, the fs family's cache); each one's face part is asked once (fs.annotations), and each
   // icon is drawn as its answer arrives. An app's script loads when it is opened. The home shell's .json manifests are
   // not read here. This file, served by the relay, only logs in and holds the link, so a new app on the face needs no tag.
   var apps = {};          // id -> { id, manifest, behavior }
@@ -454,12 +454,12 @@
   }
   // AN APP SHOWS ONLY WHILE ITS SERVER RUNS (goal/G27.16; on the face since goal/G41.1, box v14): an app naming a server
   // shows while a server job of that module is running or pending (between restarts); one naming none always shows. The
-  // jobs are the jobs family's cache (spirit.jobsData, goal/G41.28).
+  // jobs are the jobs family's cache (spirit.data.jobs.data, goal/G41.28).
   function serverUp(app) {
     var s = app && app.manifest && app.manifest.server;
     if (!s) return true;
     var module = 'process/js/' + s;
-    var J = window.spirit.jobsData;
+    var J = ((window.spirit.data || {}).jobs || {}).data;
     return !!J && !!J.find(function (j) {
       return !!j && j.kind === 'server' && j.module === module && (j.status === 'running' || j.status === 'pending');
     });
@@ -486,7 +486,7 @@
     var now = row.mine === true;
     if (now === link.starred) return;
     link.starred = now;
-    var F = window.spirit.fsData;
+    var F = ((window.spirit.data || {}).fs || {}).data;
     if (F) Object.keys(F.files()).forEach(function (k) { var m = SHELL_APP.exec(k); if (m) readFace(m[1]); });
   }
   // A SERVER STARTED OR STOPPED: the desktop drawn again, and the open pages of every app whose server went closed.
@@ -498,9 +498,9 @@
     Object.keys(apps).forEach(function (id) { if (!serverUp(apps[id])) closePages(id); });
     hand();
   }
-  // The file tree is the fs family's cache (goal/G41.28): spirit.fsData, which the files row element brings.
+  // The file tree is the fs family's cache (goal/G41.28): spirit.data.fs.data, which the files row element brings.
   function listApps() {
-    var F = window.spirit.fsData;
+    var F = ((window.spirit.data || {}).fs || {}).data;
     if (!F) return;
     var SCRIPT = /^(shell\/([^/]+))\/\2\.js$/;
     var read = Object.create(null);   // the apps already asked, so another file's change asks nothing again
@@ -555,7 +555,7 @@
     var take = function (job) { if (job && job.type === 'join-steps') { joinJob = job.data || {}; joinChanged(); } };
     events({ onSnapshot: function (jobs) { (jobs || []).forEach(take); }, onUpdate: take });
     // Join's fact changed (it writes its state file): the file tree says so, and it is read again.
-    if (window.spirit.fsData) window.spirit.fsData.watchFile(JOIN_STATE, function () { joinReadFact().then(joinChanged); });
+    if (((window.spirit.data || {}).fs || {}).data) window.spirit.data.fs.data.watchFile(JOIN_STATE, function () { joinReadFact().then(joinChanged); });
   }
 
   function loadApp(id) {
@@ -610,7 +610,7 @@
       armUntilElsewhere: function (disarm) { if (typeof disarm === 'function') armed = { disarm: disarm, at: currentClick }; },
       isVisible: function () { return page.isTop(); },
       // NO onJobs (goal/G41.28; Andy: "anything not using the new spiritData.js and it's buddies clientCacheManager.js
-      // must do so in this item. no exceptions."): an app reads the jobs from the jobs family's cache, spirit.jobsData.
+      // must do so in this item. no exceptions."): an app reads the jobs from the jobs family's cache, spirit.data.jobs.data.
       onFiles: function () { return function () {}; },
       // What a relay the home node owns did, as the old shell hands it (goal/G30.15): Relay Details redraws on it.
       onRelayEvent: function (fn) { return events({ onRelayEvent: fn }); },
@@ -807,7 +807,7 @@
       openStream(false);
       listApps();
       // The servers' jobs as they change, in the jobs family's cache: an app comes or goes with its server (goal/G27.16).
-      if (window.spirit.jobsData) window.spirit.jobsData.watch(function (id, job) { if (job) { followFace(job); followStar(job); } followServers(); });
+      if (((window.spirit.data || {}).jobs || {}).data) window.spirit.data.jobs.data.watch(function (id, job) { if (job) { followFace(job); followStar(job); } followServers(); });
       followServers();
       if (home) startJoin();
       // The mailed join link, at home and on a relay face alike, once logged in (goal/G40.10, box v25).

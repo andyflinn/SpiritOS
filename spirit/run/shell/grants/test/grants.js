@@ -80,7 +80,7 @@ function world() {
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
       cacheManager: function (name) {
         w.managers = (w.managers || []).concat(String(name));
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
         return Promise.resolve(true);
       },
       shell: { activateApp: function (d) { w.def = d; } }, escapeHtml: api.escapeHtml },
@@ -91,7 +91,7 @@ function world() {
   win.window = win;
   vm.createContext(win);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+GRANTS/APP==' };
   win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
@@ -142,9 +142,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const ids = p.cfg.ids || {};
   ok(ids.table === 'loopback://api/contact/search', 'its ID table is the contacts\', loopback://api/contact/search', 'ids: ' + short(ids));
   const g = p.cfg.grants || {};
-  const A = w.win.spirit.authData;
+  const A = ((w.win.spirit.data || {}).auth || {}).data;
   ok((w.managers || []).indexOf('auth') !== -1 && !!A && g.branch === A.grants.branch && g.key === 'key' && g.label === 'label',
-    'its grants table is the node\'s, the auth family\'s cache (spirit.authData.grants.branch), keyed key, labelled label', 'managers ' + short(w.managers) + ', grants: ' + short({ branch: g.branch, key: g.key, label: g.label }));
+    'its grants table is the node\'s, the auth family\'s cache (spirit.data.auth.data.grants.branch), keyed key, labelled label', 'managers ' + short(w.managers) + ', grants: ' + short({ branch: g.branch, key: g.key, label: g.label }));
   ok(['search', 'grant', 'revoke', 'watch'].every(function (f) { return typeof g[f] === 'function'; }) && !('stream' in g), 'with search, grant, revoke and watch, and no stream of its own', 'grants: ' + short(Object.keys(g)));
   if (!A || !['search', 'grant', 'revoke', 'watch'].every(function (f) { return typeof g[f] === 'function'; })) return;
   let at = w.calls.length;

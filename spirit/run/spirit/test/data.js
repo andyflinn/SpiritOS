@@ -1,27 +1,27 @@
 'use strict';
 
-// spirit/run/spirit/test/spiritData.js
-// The tests of spirit/spiritData.js, and of no other module (spec: ./spiritData.md). The faceless layer runs in node:
+// spirit/run/spirit/test/data.js
+// The tests of spirit/data.js, and of no other module (spec: ./spirit/data.js.md). The faceless layer runs in node:
 // required, it answers its api and ranks with the spirit's own probability files.
 
 const path = require('path');
 const test = require(path.join(path.resolve(__dirname, '../..'), 'test', 'testReport.js'));
 
-const D = require(path.join(__dirname, '..', 'spiritData.js'));
+const D = require(path.join(__dirname, '..', 'data.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 // THE TREE IS BY SERVER NODE FIRST (goal/G41.28; Andy, the box: "spirit.data.<server-public-key-in-base64url>.<api-family>....").
-// Every check below writes and reads through one family's view of one node, at(NODE, FAMILY), as a clientCacheManager
+// Every check below writes and reads through one family's view of one node, at(NODE, FAMILY), as a data.js
 // does; T() is that family's level of the tree, and W(p) the whole path a watcher is told. NODE holds a + and a /.
 const NODE = 'KEY+SPIRIT/DATA==';
 const NID = D.nodeId(NODE);
 const FAMILY = 'probe';
 const V = D.at(NODE, FAMILY);
-function T() { return ((D.data || {})[NID] || {})[FAMILY] || {}; }
+function T() { return ((D[FAMILY] || {}).cache || {})[NID] || {}; }
 function W(p) { return NID + '/' + FAMILY + '/' + p; }
 function heard(p) { const calls = []; const off = V.watch(p, function (at, v) { calls.push([at, v]); }); return { calls: calls, off: off }; }
 
-test.startTest('spiritData.js: the faceless layer');
+test.startTest('data.js: the faceless layer');
 
 test.subHeading('set and get: one write, by path');
 const byPath = heard('files/a/b.txt');
@@ -37,8 +37,8 @@ ok(byType.calls.length === 1 && byType.calls[0][0] === W('files/a/b.txt'), 'the 
 ok(other.calls.length === 0, 'another type\'s watcher hears nothing', 'contacts heard: ' + JSON.stringify(other.calls));
 ok(V.get('files') === T().files, 'a bare type gets the branch', 'get(type) is not the branch');
 V.set('files', 1); V.set('files/', 2); V.set('', 3); D.set(null, 4);
-ok(byType.calls.length === 1 && !('' in T().files) && !('' in D.data), 'a path without a key writes nothing and tells nobody',
-  'keyless set: ' + JSON.stringify({ calls: byType.calls.length, files: Object.keys(T().files), data: Object.keys(D.data) }));
+ok(byType.calls.length === 1 && !('' in T().files) && !('' in D), 'a path without a key writes nothing and tells nobody',
+  'keyless set: ' + JSON.stringify({ calls: byType.calls.length, files: Object.keys(T().files), data: D.branches() }));
 ok(V.get('nosuch/key') === undefined && Object.keys(V.branch('fresh') || {}).length === 0 && V.rows('fresh').length === 0, 'a missing key reads undefined; a missing branch answers empty',
   'missing: ' + JSON.stringify(V.get('nosuch/key')));
 
@@ -144,13 +144,14 @@ ok(tree.calls.length === 2 && tree.calls[1][0] === W('tree/z'), 'ready ends the 
 tree.off(); treeKey.off(); others.off(); byType.off(); other.off();
 
 test.subHeading('search: every branch held, ranked, bounded');
-for (const t of Object.keys(D.data)) delete D.data[t];
+D.forget();
 V.set('contacts/a', { name: 'anna' });
 V.set('contacts/b', { name: 'bert' });
 V.set('files/x/anna.txt', { size: 1 });
 V.set('prefs/theme', 'dark');
 const told = heard('contacts');
-const snapshot = JSON.stringify(D.data);
+const kept = function () { return JSON.stringify(D.branches().map(function (b) { return [b, D.branch(b)]; })); };
+const snapshot = kept();
 const r = D.search({ text: 'anna' });
 ok(r.items.length === 4 && r.more === false, 'every row of every branch comes back when there is room', 'items: ' + JSON.stringify(r));
 ok(r.items[0].key === W('contacts/a') && r.items[0].probability > r.items[1].probability, 'the best match ranks first',
@@ -163,7 +164,7 @@ ok(r.items.every(function (i, n) { return n === 0 || r.items[n - 1].probability 
   'probabilities: ' + r.items.map(function (i) { return i.probability; }));
 ok(r.items[0].label === '{"name":"anna"}' && r.items.filter(function (i) { return i.key === W('prefs/theme'); })[0].label === '"dark"',
   'the label is the row as JSON, the key the row\'s whole path', 'labels: ' + JSON.stringify(r.items));
-ok(JSON.stringify(D.data) === snapshot && told.calls.length === 0, 'search writes nothing and tells nobody', 'heard ' + told.calls.length);
+ok(kept() === snapshot && told.calls.length === 0, 'search writes nothing and tells nobody', 'heard ' + told.calls.length);
 const blank = D.search({});
 ok(blank.items.length === 4 && blank.items.every(function (i) { return i.probability === 0; }), 'with no text every row comes back at 0',
   'blank: ' + JSON.stringify(blank.items.map(function (i) { return i.probability; })));
@@ -192,7 +193,7 @@ function pageCopy() {
   const h = {};
   const win = { spirit: { node: { key: NODE }, isBrowser: function () { return true; }, events: { subscribe: function (x) { Object.assign(h, x); return function () {}; } } } };
   win.window = win;
-  vm.runInNewContext(require('fs').readFileSync(path.join(__dirname, '..', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInNewContext(require('fs').readFileSync(path.join(__dirname, '..', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   // P is the page's view of the family, as its manager addresses it; P.whole the page's data set itself.
   const view = win.spirit.data.at(NODE, FAMILY);
   view.whole = win.spirit.data;
@@ -211,9 +212,9 @@ ok(typeof D.forget === 'function', 'forget is part of the api', 'there is no for
 if (typeof D.forget === 'function') {
   D.forget();
   // Every branch the tree holds, node by node and family by family: forget empties each.
-  const branches = []; Object.keys(D.data).forEach(function (n) { Object.keys(D.data[n] || {}).forEach(function (f) { Object.keys(D.data[n][f] || {}).forEach(function (b) { branches.push(D.data[n][f][b]); }); }); });
+  const branches = D.branches().map(function (b) { return D.branch(b); });
   ok(branches.length > 0 && branches.every(function (b) { return !Object.keys(b).length; }) && V.ready('files') === false,
-    'every branch is empty and no type is ready', 'after forget: ' + JSON.stringify({ data: D.data, ready: V.ready('files') }));
+    'every branch is empty and no type is ready', 'after forget: ' + JSON.stringify({ data: kept(), ready: V.ready('files') }));
   ok(forgot.calls.length === 1 && forgot.calls[0][0] === W('files') && forgot.calls[0][1] === undefined, 'a type\'s watcher is told once, (type, undefined)',
     'files watcher heard: ' + JSON.stringify(forgot.calls));
 }

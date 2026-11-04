@@ -4,7 +4,7 @@
 //   - One search in two tiers. contact.search answers at once from the one table (goal/G40.11): the people and relays
 //     the owner keeps, owns, holds or blocked; and starts a network search on the node, whose finds land in the table
 //     held, each streaming in as one row. All of it lands in
-//     data.contacts, the faceless layer (spirit/spiritData.js, goal/G30.16), and this list is a view of it: every list
+//     data.contacts, the faceless layer (spirit/data.js, goal/G30.16), and this list is a view of it: every list
 //     of contacts on the page shows the same rows.
 //   - One list, cached by key: one row per ID, a relay as well as a person. One row of filters instead of two folds:
 //     all, my puppets, blocked, held, relays, and at its end a network toggle, off at first (box v8): on, the held rows
@@ -90,8 +90,8 @@
 
     list = window.spirit.element.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
-      // A view of the node's contacts, the branch the contact family's manager keeps (spirit.contactData.branch).
-      data: window.spirit.contactData.branch,
+      // A view of the node's contacts, the branch the contact family's manager keeps (spirit.data.contact.data.branch).
+      data: window.spirit.data.contact.data.branch,
       server: 'contact',
       verb: 'search',
       face: o.face,

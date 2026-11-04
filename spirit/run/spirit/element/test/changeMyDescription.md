@@ -21,7 +21,7 @@ its test folder"): one shell element, the Description field, its Save and the by
 - **Save asks the node**, `node.setDescription` with the field as typed, and then shows what the node stored (rule/19),
   says saved, and keeps the stored description in the node card. Enter in the field saves as Save does.
 - **What it changes, it listens for** (goal/G41.28): it loads the node family's cache (`spirit.cacheManager('node')`)
-  and draws the field from `spirit.nodeData.card.watch`; a description changed in the card from elsewhere redraws the
+  and draws the field from `spirit.data.node.data.card.watch`; a description changed in the card from elsewhere redraws the
   field.
 - A refusal from the node is said beside the field; the field keeps what was typed.
 

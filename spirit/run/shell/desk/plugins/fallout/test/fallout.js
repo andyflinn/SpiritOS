@@ -148,10 +148,10 @@ function listStub(totals) {
 }
 // The real data set with its node known, and the verifier's own cache manager over it (goal/G41.28).
 function verifierCache(win) {
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+FALLOUT/NODE==' };
   win.spirit.data.home(win.spirit.node.key);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'process/js/deskVerify/family/clientCacheManager.js'), 'utf8'), win, { filename: 'deskVerify/family/clientCacheManager.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'process/js/deskVerify/family/data.js'), 'utf8'), win, { filename: 'deskVerify/family/data.js' });
 }
 function world(withList, totals) {
   const document = makeDom();
@@ -288,11 +288,11 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(w.list.mostInAir === 1, 'never more than one search in the air (Andy: "MAX one search in flight")', 'most in the air: ' + w.list.mostInAir);
   // THROUGH THE VERIFIER'S CACHE (goal/G41.28; Andy: "These rules apply to ALL clients. including deskVerify"): the list
   // is a view of the tests its cache manager keeps, and a publish kept there counts again; no stream of its own.
-  const V = w.win.spirit.verifyData;
-  ok(!!w.list.made[0] && w.list.made[0].opts.data === V.testsBranch, 'its list is a view of the tests the verifier\'s cache keeps (spirit.verifyData.testsBranch)', 'data: ' + short(w.list.made[0] && w.list.made[0].opts.data));
+  const V = ((w.win.spirit.data || {}).deskVerify || {}).data;
+  ok(!!w.list.made[0] && w.list.made[0].opts.data === V.testsBranch, 'its list is a view of the tests the verifier\'s cache keeps (spirit.data.deskVerify.data.testsBranch)', 'data: ' + short(w.list.made[0] && w.list.made[0].opts.data));
   ok(w.ctx.streams.filter(function (s) { return s.server === 'deskVerify'; }).length === 0, 'it follows no deskVerify stream of its own', 'streams: ' + short(w.ctx.streams.map(function (s) { return s.server; })));
   w.win.spirit.data.take({ id: 'job_v', module: 'process/js/deskVerify', app: { doing: 'idle', line: 'idle' } }); await settle();
-  ok(w.list.asks.length === 4 && w.list.mostInAir === 1, 'each deskVerify publish kept in spirit.verifyData counts again, one search at a time', 'asks ' + w.list.asks.length + ', most in air ' + w.list.mostInAir);
+  ok(w.list.asks.length === 4 && w.list.mostInAir === 1, 'each deskVerify publish kept in ((spirit.data || {}).deskVerify || {}).data counts again, one search at a time', 'asks ' + w.list.asks.length + ', most in air ' + w.list.mostInAir);
   const w0 = world(true, { red: 0, green: 0 });
   w0.win.spirit.deskPlugins.fallout.open(w0.container, w0.ctx); await settle();
   ok(w0.$('fallout-summary').textContent === '❌ 0 red of 0 tests now.', 'no tests at all: no percentage', w0.$('fallout-summary').textContent);
@@ -323,7 +323,7 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(asked.length === 1 && scripts.length === 0, 'it asks spirit.require for spirit/element/probabilitySearch.js, and puts no script tag on the page',
     'required ' + short(wl.win.required.map(function (r) { return r.path; })) + ', scripts ' + scripts.length);
   ok(wl.list.made.length === 0, 'and no list is made before it loads', 'made: ' + wl.list.made.length);
-  const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/family/clientCacheManager.js'; });
+  const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/family/data.js'; });
   ok(askedV.length === 1, 'it asks spirit.require for the verifier\'s cache manager, its own family\'s (goal/G41.28)', 'required ' + short(wl.win.required.map(function (r) { return r.path; })));
   wl.win.spirit.element.probabilitySearch = { create: wl.list.create };
   if (asked[0]) asked[0].resolve({}); if (askedV[0]) askedV[0].resolve({}); await settle();

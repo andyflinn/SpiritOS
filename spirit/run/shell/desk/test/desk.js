@@ -183,11 +183,11 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
-  const REAL = ['spirit/spiritData.js', 'process/js/desk/family/clientCacheManager.js', 'process/js/backup/family/clientCacheManager.js'];
+  const REAL = ['spirit/data.js', 'process/js/desk/family/data.js', 'process/js/backup/family/data.js'];
   const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,
-    // The page's caches are the desk and backup families' clientCacheManager.js, over the one spirit.data (goal/G41.28): both run as
+    // The page's caches are the desk and backup families' data.js, over the one spirit.data (goal/G41.28): both run as
     // they are, so the List is a search of what the cache holds; anything else is answered and not run.
     require: function (p) {
       const rel = String(p).replace(/^\/+/, '');
@@ -200,7 +200,7 @@ function deskWorld(goal, items) {
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
-  win.spirit.require('spirit/spiritData.js');
+  win.spirit.require('spirit/data.js');
   // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the key as
   // spirit.node.key, so a page files its own node's rows under it?" "yes."): as spirit.start does once node.card answers,
   // the key kept on spirit.node and handed to the data set, so the cache files the page's rows under its node.
@@ -214,7 +214,7 @@ function deskWorld(goal, items) {
     await settle();
     // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, the one its last
     // goal.whole named; the page reads it from there, never from a search answer.
-    const K = win.spirit.deskData;
+    const K = ((win.spirit.data || {}).desk || {}).data;
     if (K && typeof K.published === 'function') { [goal].concat(items).forEach(function (r) { K.published({ verb: 'goal.whole', item: r, change: 1 }); }); await settle(); }
     // The List's rows, drawn by the page's own element into the List's box, where its click listener hears them.
     if (listOpts) {

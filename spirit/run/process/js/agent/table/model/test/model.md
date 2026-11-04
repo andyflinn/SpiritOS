@@ -50,9 +50,9 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
 
 - **elementRow.js loads the agent family's cache manager, which takes the model table's rows from the stream** (goal/G41.16;
   Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
-  asks `spirit.cacheManager('agent')`, and `spirit.agentData.branch('model')` is the home node's `<node>/agent/model`; a row
+  asks `spirit.cacheManager('agent')`, and `spirit.data.agent.data.branch('model')` is the home node's `<node>/agent/model`; a row
   of the agent stream (`{ agent: { table: 'model', row } }`, module `process/js/agent`) lands at `<node>/agent/model/<id>`,
-  read through `spirit.agentData.row`, and the branch's watcher hears it; a changed row is merged; one
+  read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
 ### The provider shown, never picked (goal/G41.21)

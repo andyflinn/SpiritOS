@@ -245,7 +245,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
     test.check('nothing in spirit.js but isNode() and isBrowser() asks where it runs');
   else test.fail('spirit.js asks where it runs outside isNode() and isBrowser()');
   // data: the cache, spirit.data (goal/G41.3); familyPath: the one family path function (goal/G41.12); cacheManager: a
-  // family's clientCacheManager, found by its FS.path and loaded (goal/G41.28, Andy: "the shell can introspect to find and
+  // family's data.js, found by its FS.path and loaded (goal/G41.28, Andy: "the shell can introspect to find and
   // download their clientCacheManagers").
   const MEMBERS = ['DEFAULT_SPIRIT_PORT', 'MIME_TYPES', 'VERSION', 'cacheManager', 'check', 'data', 'debug', 'error', 'escapeHtml', 'events', 'familyPath', 'formatBytes', 'isBrowser', 'isLoopback', 'isNode', 'jobs', 'node', 'outcome', 'peerPost', 'require', 'rules', 'tree'];
   if (JSON.stringify(Object.keys(s).filter(function (k) { return typeof s[k] !== 'object' || ['MIME_TYPES', 'data', 'events', 'jobs', 'node'].indexOf(k) !== -1 || Array.isArray(s[k]); }).sort()) === JSON.stringify(MEMBERS))
@@ -521,7 +521,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
 
   // ── 7b. spirit.js LOADS THE CACHE ITSELF (goal/G41.3, Q2) ──────────────
   // Andy: spirit.js "on start of this client functionality ... AUTOMATICALLY caches ALL streamed datasets", "yes." The
-  // cache is spirit/spiritData.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.
+  // cache is spirit/data.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.
   test.subHeading('7b. spirit.js loads the cache itself, on a page and in a process');
   const isCache = function (d) { return !!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'; };
   const cq = page();
@@ -530,10 +530,10 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   else test.fail('on a page spirit.js does not load the cache: spirit.data is ' + short(cq.spirit.data && Object.keys(cq.spirit.data)));
   // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the file tree's meaning is the files row element's, which
   // loads with a files element (rule/26); spirit.js loads the cache and no data script.
-  if (!/data\.js/.test(JSON.stringify(cq.fetched).replace(/spiritData\.js/g, ''))) test.check('on a page spirit.js loads no data script with the cache: no spirit/element/files/data.js (goal/G41.16)');
-  else test.fail('on a page spirit.js still loads a data script: ' + short(cq.fetched.map(function (f) { return f.url; }).filter(function (u) { return /data\.js/.test(u) && !/spiritData/.test(u); })));
+  if (!/data\.js/.test(JSON.stringify(cq.fetched).replace(/data\.js/g, ''))) test.check('on a page spirit.js loads no data script with the cache: no spirit/element/files/data.js (goal/G41.16)');
+  else test.fail('on a page spirit.js still loads a data script: ' + short(cq.fetched.map(function (f) { return f.url; }).filter(function (u) { return /data\.js/.test(u) && !/data/.test(u); })));
   // goal/G41.19, Andy: no preloading elements: the cache alone; an element comes with whoever draws with it.
-  const preloaded = cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/spiritData\.js/.test(u) && /shell\//.test(u); });
+  const preloaded = cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/data\.js/.test(u) && /shell\//.test(u); });
   if (!preloaded.length) test.check('on a page spirit.js loads the cache and no element: no files row element with it (goal/G41.19)');
   else test.fail('on a page spirit.js still loads elements with the cache: ' + short(preloaded));
   const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'));", path.join(RUN, 'spirit.js')], { encoding: 'utf8', timeout: 20000 });

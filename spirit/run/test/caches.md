@@ -10,51 +10,51 @@ is the appServer serializes the cache to disk."*
 
 ## Requirements
 
-1. **Every family in the api tree has a clientCacheManager**: each family's interface, `process/js/<name>/family/api.js`
-   (`spirit.familyPath`) and the node's own `spirit/<name>/api.js`, has `clientCacheManager.js` beside it. Each family
+1. **Every family in the api tree has a data.js**: each family's interface, `process/js/<name>/family/api.js`
+   (`spirit.familyPath`) and the node's own `spirit/<name>/api.js`, has `data.js` beside it. Each family
    is its own check, named by the family.
 2. **One code**:
-   - the data set is one file, `spirit/spiritData.js`: `spirit.js` brings it to a page, appServer requires the
+   - the data set is one file, `spirit/data.js`: `spirit.js` brings it to a page, appServer requires the
      same file;
-   - appServer takes a family's cache from the family's own `clientCacheManager.js`, beside its api.js;
+   - appServer takes a family's cache from the family's own `data.js`, beside its api.js;
    - a manager's branches (the names it gives `var` constants, `var ITEMS = 'desk'`) are named by it alone: no other
      file hands a path of them to a `spirit.data` reader or writer (`D.get('desk/' + id)`). Every other file asks the
      manager.
-3. **The same rows make the same cache**: the desk's `clientCacheManager.js` and the data set, run in node as appServer
-   runs them (required, attached to the process's global) and in a page's window as a page runs them (plain scripts,
+3. **The same rows make the same cache**: the desk's `data.js` and the data set, run in node as appServer
+   runs them (required, on the process's global) and in a page's window as a page runs them (plain scripts,
    no module), are told the same serving node (`home(key)`, a key holding a `+` and a `/`) and handed the same rows (two
-   goal pushes, an item as a JSON string, a rule), and end with the same `spirit.data`. Its top level is that node
-   alone, its key in base64url, with the desk family under it (Andy, the box: *"spirit.data.<server-public-key-in-base64url>.<api-family>...."*).
-4. **The one difference is the disk**: no `clientCacheManager.js` requires `fs` or `path`, writes or reads a file, or
+   goal pushes, an item as a JSON string, a rule), and end with the same `spirit.data.desk.cache`. Its top level is that node
+   alone, its key in base64url (Q5 of goal/G43.7: *"yes."*).
+4. **The one difference is the disk**: no `data.js` requires `fs` or `path`, writes or reads a file, or
    uses the browser's storage; appServer writes each sender's cache to its own file; no other module writes a cache
    file of its own.
 
-5. **One contract**: every `clientCacheManager.js` exports an `attach`, and attached it puts its reader on `spirit`, for
-   clients to ask (as the desk's puts `spirit.deskData`). Its cache rules (`cache`, an object) are exported where its
+5. **One contract**: every `data.js` stands through `spirit.data.family`, required or loaded, so its reads are at
+   `spirit.data.<name>.data`, for clients to ask. Its cache rules (`cache`, an object) are exported where its
    family's clients keep a cache file, for appServer.
 6. **Found and downloaded by introspection** (Andy, on G41.28: *"We're not done until every family of the API tree as a
    clientCacheManager, and clients can use that to organize their spirit.data, and the shell can introspect to find and
    download their clientCacheManagers."*):
-   - `spirit.js` knows where a family's `clientCacheManager.js` lives, so a page finds it by the family's name alone;
+   - `spirit.js` knows where a family's `data.js` lives, so a page finds it by the family's name alone;
    - for every family the node's own api tree names (a scratch node, `api`), the shell asks the family where its manager
-     is, `<family>.FS.path({ path: 'clientCacheManager.js' })` (the owner's, on loopback), as `spirit.cacheManager`
+     is, `<family>.FS.path({ path: 'data.js' })` (the owner's, on loopback), as `spirit.cacheManager`
      does; the path answered is the one beside its interface (`process/js/<name>/family/` or `spirit/<name>/`), and the
-     node serves it as a script with an `attach`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
+     node serves it as a script that calls `spirit.data.family`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
      every family the tree holds is asked in 1.
 
 7. **No other way** (Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js
    must do so in this item. no exceptions."*, and *"any notion that there is an alternative approach must disappear
    from all documentation and all comments and all code and tests in the entire repo."*):
    - no client file (under `shell/` or `process/js/`, but `shell/boot.js`, the face's own transport) takes the node's
-     stream itself (`events.subscribe`): only `spiritData.js` takes it, for every client;
+     stream itself (`events.subscribe`): only `spirit/data.js` takes it, for every client;
    - no file of the repo (`.js`, `.md`, `.html`, `.json`; the desk's `currentGoal.json` and Andy's vault aside) names a
-     replaced way: a page or client that runs `uncached`, `spirit/element/spiritData.js`, `shell/shared/js/spiritData.js`, `deskData.js`, the desk's two-level
+     replaced way: a page or client that runs `uncached`, the desk's two-level
      branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;
      any other notion is read for by hand.
 
 ## What its test must try to break
 
-- A family without a clientCacheManager.js.
+- A family without a data.js.
 - A data set or a manager loaded from somewhere else by node than by the page.
 - A file other than the manager naming one of its branches.
 - A manager that does one thing in node and another in a page.

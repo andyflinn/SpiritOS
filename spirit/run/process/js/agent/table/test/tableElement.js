@@ -2,7 +2,7 @@
 
 // spirit/run/process/js/agent/table/test/tableElement.js
 // The tests of process/js/agent/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4, goal/G41.18).
-// The browser file runs in node on a window of its own, over the real spirit.data (spirit/spiritData.js). The boxes,
+// The browser file runs in node on a window of its own, over the real spirit.data (spirit/data.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
 
@@ -85,17 +85,17 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
-  load(path.join(RUN, 'spirit', 'spiritData.js'));
+  load(path.join(RUN, 'spirit', 'data.js'));
   const D = global.window.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.node.key; a family's cache manager is found by spirit.cacheManager(name), the real one, which in node
-  // reads it from its own disk. The agent family's (process/js/agent/family/clientCacheManager.js) keeps the tables'
-  // branches, <node>/agent/<table>, and answers them through spirit.agentData.
+  // reads it from its own disk. The agent family's (process/js/agent/family/data.js) keeps the tables'
+  // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.home(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
-  const rowPath = function (table, id) { return global.window.spirit.agentData.branch(table) + '/' + id; };
+  const rowPath = function (table, id) { return global.window.spirit.data.agent.data.branch(table) + '/' + id; };
   const BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
   // The node's bundles (auth.bundle, the one dictionary of bundles): get answers a bundle the node has, refuses one it
   // has not; each ask kept.
@@ -156,14 +156,14 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(AD.titleRow({ icon: '<x>' }, ['a&b']).indexOf('<x>') === -1, 'and escapes what it shows', 'titleRow: ' + short(AD.titleRow({ icon: '<x>' }, ['a&b'])));
   const fl = AD.fieldLine('L', '<input>');
   ok(/display:flex/.test(fl) && /gap:1em/.test(fl) && /flex:1 1 0/.test(fl), 'fieldLine(label, input): the label, 1em, then the input to the right edge', 'fieldLine: ' + short(fl));
-  ok(AD.branchOf('job') === BRANCH('job'), 'branchOf(table) is the home node\'s <node>/agent/<table>, as spirit.agentData names it (goal/G41.28)', 'branchOf: ' + short(AD.branchOf('job')));
+  ok(AD.branchOf('job') === BRANCH('job'), 'branchOf(table) is the home node\'s <node>/agent/<table>, as ((spirit.data || {}).agent || {}).data names it (goal/G41.28)', 'branchOf: ' + short(AD.branchOf('job')));
   // A page where the agent family's cache could not be loaded (its server not running on the node) is refused, saying
   // why: never a list drawn with no branch.
-  const keptAD = global.window.spirit.agentData;
-  delete global.window.spirit.agentData;
+  const keptAD = ((global.window.spirit.data || {}).agent || {}).data;
+  delete ((global.window.spirit.data || {}).agent || {}).data;
   let why = null; let drawn;
   try { drawn = AD.branchOf('job'); } catch (e) { why = e; }
-  global.window.spirit.agentData = keptAD;
+  global.window.spirit.data.agent.data = keptAD;
   ok(!!why && /agent/.test(String(why.message)) && /cache/.test(String(why.message)), 'with no agent family\'s cache on the page, branchOf refuses and says why', 'branchOf answered ' + short(drawn) + (why ? ', said ' + short(why.message) : ''));
 
   test.subHeading('unconfigured, the table says so and throws nothing (goal/G41.19)');

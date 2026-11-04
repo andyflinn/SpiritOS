@@ -13,7 +13,7 @@
 // /<name>/<name>.json"), read from the disk at each search, so no list names one. appSelector/ and test/ are no plugins.
 //
 // WHO PAINTS, LISTENS (Andy, G41.32): the permanent job 'apps' holds every plugin's row, { apps: { key: row } }, published
-// whole as a plugin's file changes, so a connect's snapshot is the whole push a cache forgets for (spiritData's forget).
+// whole as a plugin's file changes, so a connect's snapshot is the whole push a cache forgets for (spirit/data.js's forget).
 // The fs watcher hears the disk; nothing here watches it again. A face with no star keeps today's stream (goal/G41.33), so
 // it hears no such job: it asks again when a connect forgets (./app/appSelector/listElement.js).
 

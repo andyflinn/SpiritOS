@@ -16,7 +16,7 @@
 var grApi = null;
 
 // The node's grants, as the panel, the grant list and the grant row take a grants table: kept by the auth family's
-// cache manager (spirit.authData.grants, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
+// cache manager (spirit.data.auth.data.grants, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
 // row arrives on the auth tables' job (table grant, gone when revoked, goal/G41.14), which the manager translates. WHO
 // ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27): what grant and revoke send comes back through watch, the manager's.
 function grAnswer(a) {
@@ -25,9 +25,9 @@ function grAnswer(a) {
   return { ok: false, code: String(b.code || ''), error: String(b.error || b.code || 'refused') };
 }
 var GR_GRANTS = {
-  get branch() { return window.spirit.authData.grants.branch; },
+  get branch() { return window.spirit.data.auth.data.grants.branch; },
   // watch(fn): fn(id + newline + path, row) on every grant kept or let go; answers its release.
-  watch: function (fn) { return window.spirit.authData.grants.watch(fn); },
+  watch: function (fn) { return window.spirit.data.auth.data.grants.watch(fn); },
   key: 'key',
   label: 'label',
   // auth.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the

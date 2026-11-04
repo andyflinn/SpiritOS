@@ -20,7 +20,7 @@ the table)"*.
     1em between the inputs label and the input itself"*).
   - `search(host, o, more)`: the one table search, for lists and pickers alike.
   - `branchOf(table)` is the home node's `<node>/agent/<table>`, as the agent family's cache manager names it
-    (`spirit.agentData.branch`, goal/G41.28). With no agent family's cache on the page (its server not running on the
+    (`spirit.data.agent.data.branch`, goal/G41.28). With no agent family's cache on the page (its server not running on the
     node) it refuses and says why: no list is drawn without its branch.
   - `whyOf(refusal)` is the server's own reason (its `extra.why`), else the refusal's words, else `refused`.
 - **A table**, `agentTable.create(container, { api, table, detail, row, add, matched, buttons, columns })`:
@@ -46,7 +46,7 @@ the table)"*.
     (goal/G41.19).
 
 - It requires no data script (goal/G41.16): the agent family's cache manager
-  (`process/js/agent/family/clientCacheManager.js`, goal/G41.28), asked for by the element as it runs, takes the tables'
+  (`process/js/agent/family/data.js`, goal/G41.28), asked for by the element as it runs, takes the tables'
   rows from the stream into `<node>/agent/<table>`.
 
 ### Add (goal/G41.21, box v23)

@@ -19,7 +19,7 @@ panel draws and does is the panel's (`spirit/element/test/grantsPanel.md`).
   editor with the app's api.
 - It configures the panel for contacts and the node's grants:
   - `ids`: the contacts' table, `loopback://api/contact/search`;
-  - `grants`: the auth family's cache (`spirit.cacheManager('auth')`, its branch `spirit.authData.grants.branch`;
+  - `grants`: the auth family's cache (`spirit.cacheManager('auth')`, its branch `spirit.data.auth.data.grants.branch`;
     goal/G41.28), keyed `key`, labelled `label`;
     - `search(text)` asks `auth.search { text }` and answers its `{ items, more }`, each found grant carrying whose it
       is in the label field, `label` (auth.search says it as `name`; found live by cw, goal/G41.16);

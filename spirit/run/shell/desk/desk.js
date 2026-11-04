@@ -48,9 +48,9 @@ var deskApi = null;
 // content to be drawn." "no pulling". ITS ROWS ARE spirit.data's (goal/G41.28; Andy: "the FUCKING desk cache is NOT to
 // be found in spirit.data.data.desk... something keeps throwing out that shit", and "doesn't the fucking ...
 // clientCacheManager.js take care of that"): the desk's rows the cache manager keeps, every goal pushed and every
-// search answer seated there, read through spirit.deskData. The page keeps no rows of its own, so a search that answers
+// search answer seated there, read through spirit.data.desk.data. The page keeps no rows of its own, so a search that answers
 // few rows drops none; what the toggles leave out is decided here, in the order goal, then its members.
-function deskKept() { return (typeof window !== 'undefined' && window.spirit && window.spirit.deskData) || null; }
+function deskKept() { return (typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).desk || {}).data) || null; }
 function deskIdOrder(a, b) {
   var x = String(a.id).match(/\d+/g) || [];
   var y = String(b.id).match(/\d+/g) || [];
@@ -464,7 +464,7 @@ function deskRowKeyOf(obj) {
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
   // What is kept of the current goal takes every publish first (goal/G33.3).
-  if (typeof window !== 'undefined' && window.spirit && window.spirit.deskData) window.spirit.deskData.published(obj);
+  if (typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).desk || {}).data) window.spirit.data.desk.data.published(obj);
   // A RULE CHANGED (goal/G6.5): the desk server publishes {rule: key}; the Rules tab, if shown, asks again.
   // goal/G27.9 (S1): the rule's row travels with it, so the list takes it without asking again; the rule list's own
   // element repaints it. A search typed in the Rules box still asks, since the server ranks by text.
@@ -488,7 +488,7 @@ function deskOnPublished(obj) {
   // CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record, published or not, so reading the chat again on
   // every jump asked the desk once per row. A real gap is a reconnect, and the chat is read again then (deskLoad).
   // EACH ROW ON ITS OWN (goal/G33.4): a side row of an item ({table, id, row}) is no List row; the group chat's line is
-  // drawn here, the rest is the dialog's and the kept items' (the desk family's clientCacheManager.js).
+  // drawn here, the rest is the dialog's and the kept items' (the desk family's data.js).
   if (obj.table) {
     if (obj.table === 'chat' && obj.id === DESK_GROUP && obj.row && !obj.removed) {
       if (deskGroup) {
@@ -538,10 +538,10 @@ var deskTeamElement = null;
 var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
 // THE DESK'S TRANSLATOR (goal/G33.3): spirit.data keeps the current goal for this page and the item dialog, as
 // deskClient keeps it in node; loaded once by the app, as the shared element is. Since goal/G41.24 it is the desk
-// family's clientCacheManager.js, from the node that served this page.
-var DESK_DATA = '/process/js/desk/family/clientCacheManager.js';
+// family's data.js, from the node that served this page.
+var DESK_DATA = '/process/js/desk/family/data.js';
 // The verifier's cache manager, its own family's (goal/G41.28).
-var DESK_VERIFY_DATA = '/process/js/deskVerify/family/clientCacheManager.js';
+var DESK_VERIFY_DATA = '/process/js/deskVerify/family/data.js';
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21: "always look for existing code", and Andy, on the add-rule
 // dropdown that sometimes never appeared: "FIX IT"): spirit.require, never a script tag of its own. It loads a part once
 // for the page and answers when it has run.
@@ -576,13 +576,13 @@ function deskWatchIcons(root) {
   if (typeof MutationObserver === 'function' && root) new MutationObserver(function () { deskPaintIcons(root); }).observe(root, { childList: true, subtree: true });
 }
 function deskLoadData() {
-  if (typeof window === 'undefined' || (window.spirit && window.spirit.deskData)) return;
+  if (typeof window === 'undefined' || (window.spirit && ((window.spirit.data || {}).desk || {}).data)) return;
   deskNeed(DESK_DATA);
 }
 // Everything kept of whole items is forgotten after a gap: what was published while the stream was down was never heard.
 function deskForgetKept() {
   // Asked of the cache's manager (goal/G41.28): it names its branches, this page does not.
-  var K = typeof window !== 'undefined' && window.spirit && window.spirit.deskData;
+  var K = typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).desk || {}).data;
   if (K && typeof K.forgetAll === 'function') K.forgetAll();
 }
 // THE RUN IN THE STATUS COLUMN (goal/G33.6): the shared rendering the dialog uses too, loaded once by the app, as the
@@ -1362,8 +1362,8 @@ function deskLoad() {
 //   Andy: "how can i trust the copy mechanist when i cant see it working".
 // The backup server's status.get: its last check and last copy, marked red
 // when something was closed after the last check. Kept by the backup family's
-// cache manager (goal/G41.28), spirit.backupData; the line follows its watch.
-var DESK_BACKUP_DATA = '/process/js/backup/family/clientCacheManager.js';
+// cache manager (goal/G41.28), spirit.data.backup.data; the line follows its watch.
+var DESK_BACKUP_DATA = '/process/js/backup/family/data.js';
 var deskBackupWatched = null;
 function deskBackupPaint() {
   // Its own line alone once the page is drawn (goal/G27.9: one change, one element repainted).
@@ -1372,7 +1372,7 @@ function deskBackupPaint() {
 }
 function deskAskBackup() {
   return deskNeed(DESK_BACKUP_DATA).then(function () {
-    var B = window.spirit.backupData;
+    var B = ((window.spirit.data || {}).backup || {}).data;
     if (!deskBackupWatched) deskBackupWatched = B.watch(deskBackupPaint);
     return Promise.resolve(deskApi.verb('backup.status.get', {})).then(function (r) {
       B.keep(r && r.status === 200 ? r.body : null);
@@ -1380,7 +1380,7 @@ function deskAskBackup() {
   });
 }
 function deskBackupHtml() {
-  var B = typeof window !== 'undefined' && window.spirit && window.spirit.backupData;
+  var B = typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).backup || {}).data;
   var deskBackup = B ? B.status() : null;
   if (!deskBackup) return '';
   var stale = false;
@@ -1920,9 +1920,9 @@ spirit.shell.activateApp({
     // goal/G8.11: whether a verifier runs here decides whether the tab exists at all, so it is asked at mount.
     // goal/G8.12: and from then on it listens - deskVerify publishes every change of its run, so the tab never pulls.
     // THROUGH spirit.data (goal/G41.28; Andy: "These rules apply to ALL clients. including deskVerify"): the verifier's
-    // own cache manager keeps what it publishes, and the tab follows that (spirit.verifyData.watch).
+    // own cache manager keeps what it publishes, and the tab follows that (spirit.data.deskVerify.data.watch).
     deskNeed(DESK_VERIFY_DATA).then(function () {
-      var V = window.spirit && window.spirit.verifyData;
+      var V = window.spirit && ((window.spirit.data || {}).deskVerify || {}).data;
       if (!V) return;
       V.watch(deskVerifyEvent);
       if (V.state()) deskVerifyEvent(V.state());

@@ -32,7 +32,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   const FILE = path.join(RUN, 'spirit', 'app.js');
   const FOLDER = path.join(RUN, 'spirit', 'app');
   ok(fs.existsSync(FILE), 'spirit/app.js is there, the family\'s core module', 'spirit/app.js is not there');
-  ['api.js', 'AGENTS.md', 'clientCacheManager.js', 'search.json'].forEach(function (f) {
+  ['api.js', 'AGENTS.md', 'data.js', 'search.json'].forEach(function (f) {
     ok(fs.existsSync(path.join(FOLDER, f)), 'spirit/app/' + f + ' is there, as in every core family', 'spirit/app/' + f + ' is not there');
   });
 

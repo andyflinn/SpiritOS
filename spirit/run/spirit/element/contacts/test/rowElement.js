@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/contacts/test/rowElement.js
 // The tests of spirit/element/contacts/rowElement.js, and of no other module: one contact as a row element (spec:
 // ./rowElement.md). The browser file runs in node on a window of its own, over the shared rowElement.js and the
-// faceless layer it reads, with the contact family's clientCacheManager (goal/G41.28) loaded as a page's
+// faceless layer it reads, with the contact family's data.js (goal/G41.28) loaded as a page's
 // spirit.cacheManager('contact') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
 // data.home); the node behind spirit.ready is a recorder.
 
@@ -27,7 +27,7 @@ window.spirit.element = { contactDetails: { open: function (o) { asked.push({ ve
 // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
 const required = [];
 window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
-load(path.join(JS, '..', '..', 'spirit', 'spiritData.js'));
+load(path.join(JS, '..', '..', 'spirit', 'data.js'));
 // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
 const NODE_KEY = 'nOdE+key/one==';
 window.spirit.node = { key: NODE_KEY };
@@ -36,14 +36,14 @@ window.spirit.data.home(NODE_KEY);
 const managers = [];
 window.spirit.cacheManager = function (name) {
   managers.push(String(name));
-  load(path.join(JS, '..', '..', 'spirit', String(name), 'clientCacheManager.js'));
+  load(path.join(JS, '..', '..', 'spirit', String(name), 'data.js'));
   return Promise.resolve(true);
 };
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'contacts', 'rowElement.js'));
 const C = window.spirit.element.contactElement;
 const D = window.spirit.data;
-const CD = window.spirit.contactData;
+const CD = ((window.spirit.data || {}).contact || {}).data;
 // The direct writes below are the contact family's own view of the home node, as its manager files them.
 const V = D.at(null, 'contact');
 const names = function (el) { return el.actions.map(function (a) { return a.name; }).join(','); };
@@ -70,7 +70,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   if (byPublic.key === 'K9') test.check('a row carrying publicKey instead of key is keyed by it');
   else test.fail('publicKey row keyed ' + byPublic.key);
 
-  if (managers.indexOf('contact') !== -1 && CD && typeof CD.contact === 'function') test.check('the row loads the contact family\'s cache manager, which puts spirit.contactData on the page');
+  if (managers.indexOf('contact') !== -1 && CD && typeof CD.contact === 'function') test.check('the row loads the contact family\'s cache manager, which puts ((spirit.data || {}).contact || {}).data on the page');
   else test.fail('managers asked: ' + JSON.stringify(managers));
   if (!CD || typeof CD.contact !== 'function') { test.reportSuccessFailureCount(); return; }
 

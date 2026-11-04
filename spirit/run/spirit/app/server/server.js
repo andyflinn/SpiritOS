@@ -14,17 +14,17 @@
     box.style.cssText = 'display:flex;align-items:center;justify-content:center;flex:1;min-height:0;height:100%;font-size:4em';
     container.appendChild(box);
     function paint() {
-      var row = window.spirit.appData.rows()[NAME];
+      var row = window.spirit.data.app.data.rows()[NAME];
       box.textContent = row ? row.label : '';
     }
     function ask() {
       spirit.ready.then(function (s) { return s.app.search({ q: '' }); }).then(function (got) {
-        if (box.parentNode) window.spirit.data.seat(window.spirit.appData.branch, got.items);
+        if (box.parentNode) window.spirit.data.seat(window.spirit.data.app.data.branch, got.items);
       });
     }
     // WHO PAINTS, LISTENS (Andy, G41.32); a connect forgetting what is kept, a word with no row, asks again.
-    var offRow = window.spirit.appData.watchApp(NAME, paint);
-    var offAll = window.spirit.appData.watch(function (key) { if (!key) ask(); });
+    var offRow = window.spirit.data.app.data.watchApp(NAME, paint);
+    var offAll = window.spirit.data.app.data.watch(function (key) { if (!key) ask(); });
     paint();
     if (!box.textContent) ask();
     return { destroy: function () { offRow(); offAll(); container.innerHTML = ''; } };

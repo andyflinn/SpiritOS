@@ -134,7 +134,7 @@
     }
     var left = false;
     Promise.resolve(window.spirit.cacheManager('contact')).then(function () {
-      if (!left && window.spirit.contactData) stop = window.spirit.contactData.watch(take);
+      if (!left && ((window.spirit.data || {}).contact || {}).data) stop = window.spirit.data.contact.data.watch(take);
     });
     box._spJoinStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
     // THE FIELD STOPS AT ITS LIMIT (goal/G40.10, box v20): past fieldRules' 254 bytes nothing more is taken.

@@ -17,7 +17,7 @@ based table calls its label)"*.
   it. Nothing of the old shell's list search is in it (goal/G40.8).
 - With no table named, it searches the contacts, `contact.search`, and a row is the contact's key and name, as before.
 - **The contacts are the contact family's cache** (goal/G41.28): it loads `spirit.cacheManager('contact')` and, with no
-  table named, its list is a view of `spirit.contactData.branch`. It takes no search of its caller's own.
+  table named, its list is a view of `spirit.data.contact.data.branch`. It takes no search of its caller's own.
 - **A caller's hidden filters** (Andy: *"Why can't chatter insert a hidden filter when it draws contacts?"*):
   `options.filters`, `[{ name, when, test(row) }]`, are passed on to the list after its own.
 - `options.table` is the ID table's loopback api location, `loopback://api/<family>/<verb>`. It is searched through

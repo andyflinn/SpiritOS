@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/files/test/rowElement.js
 // The tests of spirit/element/files/rowElement.js, and of no other module (spec: ./rowElement.md; goal/G30.18, goal/G41.16).
 // The browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. The shared
-// row element and the page's data set are real, and so is the fs family's clientCacheManager (goal/G41.28), loaded as a
+// row element and the page's data set are real, and so is the fs family's data.js (goal/G41.28), loaded as a
 // page's spirit.cacheManager('fs') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
 // data.home); the node's fs family is the spirit object's, each call recorded.
 
@@ -34,7 +34,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, formatBytes: function (n) { return n + ' Bytes'; },
     ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };
   global.spirit = global.window.spirit;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const D = global.window.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
@@ -44,18 +44,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   const E = global.window.spirit.element;
-  const F = global.window.spirit.fsData;
+  const F = ((global.window.spirit.data || {}).fs || {}).data;
 
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(required.indexOf('spirit/element/rowElement.js') !== -1 && !required.some(function (p) { return /data\.js$/.test(p); }), 'it requires the shared row element, and no data script', 'required: ' + short(required));
-  ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts spirit.fsData on the page', 'managers: ' + short(managers));
+  ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 'managers: ' + short(managers));
   if (!F || typeof F.file !== 'function') return;
   ok(E.fileElement && typeof E.fileElement.create === 'function', 'it registers spirit.element.fileElement.create', 'elements: ' + short(Object.keys(E)));
   if (!E.fileElement || typeof E.fileElement.create !== 'function') return;

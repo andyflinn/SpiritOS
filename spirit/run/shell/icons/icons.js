@@ -65,9 +65,9 @@ function iconsPanelDraw(host, page, api, row, glyph) {
   function back() { page.close(); }
   // WHAT IT CHANGES, IT FOLLOWS IN spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
   // changes shit it listens to fucking update via the spirit object"): the icon's row in the icon set the fs family's
-  // cache keeps (spirit.fsData.icons). A save confirmed there repaints the keywords, unless they are being typed; the
+  // cache keeps (spirit.data.fs.data.icons). A save confirmed there repaints the keywords, unless they are being typed; the
   // row gone, the page closes. It lets go once the page has left.
-  var F = window.spirit.fsData;
+  var F = ((window.spirit.data || {}).fs || {}).data;
   var off = F ? F.icons.watch(glyph, function (v) {
     if (!host.isConnected) { if (typeof off === 'function') off(); return; }
     if (!v) { back(); return; }

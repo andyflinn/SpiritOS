@@ -54,21 +54,21 @@
     }
     function search() {
       return S.ready.then(function (s) { return s.app.search({ q: '' }); }).then(function (got) {
-        if (!gone) S.data.seat(S.appData.branch, got.items);
+        if (!gone) S.data.seat(S.data.app.data.branch, got.items);
       });
     }
     parts.then(function () {
       if (gone) return;
       list = S.element.probabilitySearch.create(box, {
         face: 'tiles',
-        data: S.appData.branch,
+        data: S.data.app.data.branch,
         columns: [{ field: 'label', label: 'App' }],
         pick: function (row) { if (row) open(row); },
         empty: 'No app matches.',
       });
       // WHO PAINTS, LISTENS (Andy, G41.32): the list is a view of the cache, and a connect forgetting what is kept (a word with
-      // no row, spiritData's forget) asks again.
-      off = S.appData.watch(function (key) { if (!key) search(); });
+      // no row, spirit/data.js's forget) asks again.
+      off = S.data.app.data.watch(function (key) { if (!key) search(); });
       search();
     });
     return {

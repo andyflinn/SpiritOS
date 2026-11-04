@@ -1,13 +1,13 @@
-# process/js/desk/family/clientCacheManager.js
+# process/js/desk/family/data.js
 
 What the desk knows of its own rows at the receiving end, in the page and in a subscribing appServer alike: the desk's
-translator into spirit.data (`spirit/spiritData.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
+translator into spirit.data (`spirit/data.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
 it beside the real spirit.data, as the module runs.
 
 **Where it lives** (goal/G41.24): beside the desk family's `api.js`, so it works in the browser and in an appServer
 that subscribes, which reads it from its own disc.
 
-- It is `process/js/desk/family/clientCacheManager.js`.
+- It is `process/js/desk/family/data.js`.
 - Required in node, as the subscribing appServer requires it from its own disc, it answers `cache { keep, shed, answer }`:
   the cache rules the desk family's `api.js` held, which now holds its verbs alone.
 - deskClient's stream names it as its translator. The page loads it from the node that served it, with `spirit.require`.
@@ -17,11 +17,11 @@ that subscribes, which reads it from its own disc.
 ## API
 
 It registers a translator on `spirit.data` (its `onJob` reads jobs of module `process/js/desk` whose `app` is an
-object) and answers `spirit.deskData = { published(o), took(verb, args, answer), item, items, part, current, change,
+object) and answers `spirit.data.desk.data = { published(o), took(verb, args, answer), item, items, part, current, change,
 ... }`. Without `spirit.data` it does nothing. It writes only through `set`, `merge` and `del`, into the desk family's
 view of the node that served the row (goal/G41.28, Andy, the box: *"The RAM-CACHE-is organized BY SERVER-NODE-ID at
 it's lowest level."*): a row comes with its job's `fromNode`, appServer's sender. Its branches are its own and only it
-names them; the test reads through `spirit.deskData`: `item(id)` an item's facts, `items()` every one, `part(id)` the
+names them; the test reads through `spirit.data.desk.data`: `item(id)` an item's facts, `items()` every one, `part(id)` the
 parts read so far, `current()` the goal last pushed whole, `change()` the newest change number heard.
 
 ## Requirements

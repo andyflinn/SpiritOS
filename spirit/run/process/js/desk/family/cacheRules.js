@@ -1,6 +1,6 @@
 // spirit/run/process/js/desk/family/cacheRules.js
 // THE DESK FAMILY'S CACHE RULES, FOR NODE ALONE (goal/G41.28): what a subscribing appServer keeps of the desk's rows, and
-// the reads deskClient answers from them. They stood in clientCacheManager.js; a page loads that file through the
+// the reads deskClient answers from them. They stood in data.js; a page loads that file through the
 // family's own FS (spirit.<family>.FS.loadFile), and Andy, on G41.28: "the file has to fit into MAX_PAYLOAD." The
 // rules are node's only, so they live here, and the manager requires them in node. The branch names are the
 // manager's alone: it hands them in (rules({ items, parts, state })).
@@ -98,7 +98,7 @@ module.exports = function rules(N) {
   // THE CACHE ANSWERS A READ AS THE DESK WOULD (goal/G41.11's kept reads; box v15: "The client queries its own cache
   // through that api.js"): item.get from an item's facts, item.box, item.checks, item.chat and item.files from the parts
   // kept, each filled to room as the desk fills its answer; null when the cache does not hold it all, so the desk is
-  // asked. D is the client's data set as the desk's translator (deskData) keeps it.
+  // asked. D is the client's data set as the desk's translator (spirit.data.desk.data) keeps it.
   function bytes(x) { return Buffer.byteLength(JSON.stringify(x), 'utf8'); }
   function answer(verb, args, D, room) {
     var id = String((args && args.id) || '');

@@ -46,7 +46,7 @@ const asksOf = function (verb) { return desk.asks.filter(function (a) { return a
 
 // ── THE STUBS ────────────────────────────────────────────────────────
 const STATE = fs.mkdtempSync(path.join(os.tmpdir(), 'deskClient-test-'));
-const D = require(path.join(RUN, 'spirit', 'spiritData.js'));
+const D = require(path.join(RUN, 'spirit', 'data.js'));
 let served = null;
 let subscribes = 0;   // each time deskClient asks its node's appServer to subscribe it to the desk
 const subscribeArgs = [];   // what each subscribe was handed: { key, family, since }
@@ -56,8 +56,8 @@ let cacheAnswer = [];   // what appServer answers: [{ file, bytes }], a file per
 // goal/G41.22: the rows appServer's cache keeps, as it keeps them (the desk family's own cache.keep, spirit/appServer.js
 // keepRow), and, set before a restart, the rows it reads back into the fresh data set at the start, before deskClient
 // runs a line past serve() (appServer restoreCaches): through the translator, no onRow.
-// goal/G41.24: the desk's cache rules and its translator are one file in the desk's family folder, clientCacheManager.js.
-const CCM = path.join(RUN, path.dirname(familyPath('desk')), 'clientCacheManager.js');
+// goal/G41.24: the desk's cache rules and its translator are one file in the desk's family folder, data.js.
+const CCM = path.join(RUN, path.dirname(familyPath('desk')), 'data.js');
 const DESK_API = (function () { try { return require(CCM); } catch (e) { return { cache: { keep: function (rows, r) { return rows.concat([r]); } } }; } }());
 let cacheRows = [];
 let restoreRows = null;
@@ -66,8 +66,7 @@ const appServerStub = {
   serve: function (verbs, opts) {
     // As appServer takes a stream's translator (goal/G41.24): required, and attached to the data set when it hands an attach.
     if (opts && opts.stream && opts.stream.translator) {
-      const t = require(path.resolve(String(opts.stream.translator)));
-      if (t && typeof t.attach === 'function') t.attach(globalThis);
+      require(path.resolve(String(opts.stream.translator)));
     }
     // Each row under its sender, as appServer's restoreCaches writes it (written(st, row): take(job, st.key); goal/G41.28).
     if (restoreRows) { restoreRows.forEach(function (r) { curD.take({ module: 'process/js/desk', data: {}, app: r }, DESK); }); restoreRows = null; }
@@ -88,7 +87,7 @@ globalThis.spirit = {
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function () { return { status: 0, body: null }; }); },
 };
-// The data set lives on the one spirit object, where the desk's translator finds it (spirit/spiritData.js).
+// The data set lives on the one spirit object, where the desk's translator finds it (spirit/data.js).
 globalThis.spirit.data = D;
 // What the checkout's watcher does on a file event, kept from its on('all').
 let watchAll = null;
@@ -136,9 +135,9 @@ const at = function () { tick += 1000; return new Date(tick).toISOString(); };
 function factsOf(extra) { return Object.assign({ id: ITEM, goal: GOAL, title: 'an item', version: 1, with: '', phase: '', go: true }, extra || {}); }
 const verb = function (name) { return served.verbs[name]; };
 // WHAT THE CACHE HOLDS, ASKED OF THE DESK'S MANAGER (goal/G41.28; Andy: "doesn't the fucking ... clientCacheManager.js take
-// care of that"): spirit.deskData answers by what a thing is, the running deskClient's (a restart attaches it anew); no
+// care of that"): spirit.data.desk.data answers by what a thing is, the running deskClient's (a restart attaches it anew); no
 // branch is named here.
-const DD = function () { return globalThis.spirit.deskData || { item: function () { return null; }, part: function () { return null; }, current: function () { return ''; }, change: function () { return 0; } }; };
+const DD = function () { return ((globalThis.spirit.data || {}).desk || {}).data || { item: function () { return null; }, part: function () { return null; }, current: function () { return ''; }, change: function () { return 0; } }; };
 function call(name, args, caller) { return Promise.resolve().then(function () { return verb(name).handler(args || {}, caller || OWNER); }); }
 function ask(name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}) }); }
 // One wait, as the agent's listener asks it: its lines, or a refusal's code.
@@ -427,8 +426,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   // goal/G41.12: saving is appServer's (within 10 ms of each row, spirit/test/appServer.js); deskClient only switches it on.
   test.subHeading('the cache is appServer\'s: deskClient switches it on and saves nothing itself');
   ok(served.opts.stream && served.opts.stream.cache === true, 'deskClient follows the desk\'s stream with the cache switch on', 'stream: ' + short(served.opts.stream && { cache: served.opts.stream.cache }));
-  // goal/G41.24, Andy: "deskClient can get it form its own disc": its translator is the desk family's clientCacheManager.js.
-  ok(served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM, 'its stream\'s translator is process/js/desk/family/clientCacheManager.js, from its own disc', 'translator: ' + short(served.opts.stream && served.opts.stream.translator));
+  // goal/G41.24, Andy: "deskClient can get it form its own disc": its translator is the desk family's data.js.
+  ok(served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM, 'its stream\'s translator is process/js/desk/family/data.js, from its own disc', 'translator: ' + short(served.opts.stream && served.opts.stream.translator));
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: 'goal/G9.6', title: 'saved soon' }) });
   await settle();
   await new Promise(function (r) { setTimeout(r, 40); });
@@ -462,8 +461,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   test.subHeading('a restarted deskClient subscribes to its desk, the position appServer\'s');
   await new Promise(function (r) { setTimeout(r, 40); });
   const heard = DD().change();
-  [FILE, path.join(RUN, 'spirit', 'spiritData.js'), CCM].forEach(function (f) { try { delete require.cache[require.resolve(f)]; } catch (e) { /* not there yet */ } });
-  curD = require(path.join(RUN, 'spirit', 'spiritData.js'));
+  [FILE, path.join(RUN, 'spirit', 'data.js'), CCM].forEach(function (f) { try { delete require.cache[require.resolve(f)]; } catch (e) { /* not there yet */ } });
+  curD = require(path.join(RUN, 'spirit', 'data.js'));
   globalThis.spirit.data = curD;
   served = null;
   subscribeArgs.length = 0;
@@ -589,8 +588,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   await push(rowF);
   await settle();
   // The restart: a new deskClient on the same state folder, its data set read back from appServer's cache.
-  [FILE, path.join(RUN, 'spirit', 'spiritData.js'), CCM].forEach(function (f) { try { delete require.cache[require.resolve(f)]; } catch (e) { /* not there yet */ } });
-  curD = require(path.join(RUN, 'spirit', 'spiritData.js'));
+  [FILE, path.join(RUN, 'spirit', 'data.js'), CCM].forEach(function (f) { try { delete require.cache[require.resolve(f)]; } catch (e) { /* not there yet */ } });
+  curD = require(path.join(RUN, 'spirit', 'data.js'));
   globalThis.spirit.data = curD;
   served = null;
   restoreRows = cacheRows.slice();

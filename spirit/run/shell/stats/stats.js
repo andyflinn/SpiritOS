@@ -62,10 +62,10 @@ function statsCountsHtml(counts) {
 
 // THE NODE'S server-stats JOB, AS spirit.data KEEPS IT (goal/G41.28; Andy: "anything not using the new spiritData.js and
 // it's buddies clientCacheManager.js must do so in this item. no exceptions."): the jobs family's cache manager
-// (spirit.jobsData), loaded here; the tiles are drawn again each time that job changes there.
+// (spirit.data.jobs.data), loaded here; the tiles are drawn again each time that job changes there.
 var statsParts = Promise.resolve(spirit.cacheManager('jobs'));
 function statsJob() {
-  var J = window.spirit.jobsData;
+  var J = ((window.spirit.data || {}).jobs || {}).data;
   return J ? J.find(function (job) { return job && job.type === 'server-stats'; }) : null;
 }
 function statsDraw() { statsRender(); }
@@ -73,7 +73,7 @@ function statsDraw() { statsRender(); }
 spirit.shell.activateApp({
   mount: function (container) {
     statsParts.then(function () {
-      var J = window.spirit.jobsData;
+      var J = ((window.spirit.data || {}).jobs || {}).data;
       if (J) J.watch(function (id, job) { if (!id || (job && job.type === 'server-stats')) statsDraw(); });
       statsDraw();
     }, function () { /* the tiles wait for stats */ });

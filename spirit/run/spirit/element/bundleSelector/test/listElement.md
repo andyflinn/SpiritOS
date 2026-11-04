@@ -6,7 +6,7 @@ dropdown. Its test is `./listElement.js`.
 
 Andy, box: *"bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and
 selecting bundle rows."* Since goal/G41.14 it is a view of the node's bundles (since goal/G41.28 the auth family's cache manager's,
-`spirit.authData.bundles.branch`), kept current by the node's stream, which its row element takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
+`spirit.data.auth.data.bundles.branch`), kept current by the node's stream, which its row element takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
 list of bundles on a page shows the same rows (Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 their data set"*).
 
@@ -35,7 +35,7 @@ their data set"*).
   bundleSelector will show/search ALL/ANY bundles"*, and *"if the bundleSelector IS configured for an appServer, then it
   will only list bundles \"owned\" by that Appserver"*. With `opts.family`:
   - its search asks `auth.bundle { op: 'search', text, owner: family }`;
-  - of the bundles the page holds (`spirit.authData.bundles`), it offers that owner's alone, as the real `probabilitySearch.order` judges its
+  - of the bundles the page holds (`spirit.data.auth.data.bundles`), it offers that owner's alone, as the real `probabilitySearch.order` judges its
     state.
   Without it, its search names no owner and it offers every bundle.
 

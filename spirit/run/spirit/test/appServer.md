@@ -57,7 +57,7 @@ stream"); Desk and deskClient move onto it.
 - **Its cache in spirit.data by sender node** (box v19: *"The RAM-CACHE-is organized BY SERVER-NODE-ID at it's lowest
   level. IE: spirit.data.<server-public-key-in-base64>.<api-family>...."*): the data set holds at its top the sender's
   key in base64url and nothing beside it, and under it the family (`<key>.desk`). The test reads what the cache holds through the
-  family's clientCacheManager (`spirit.deskData`), never by a branch's name.
+  family's data.js (`spirit.data.desk.data`), never by a branch's name.
 - **It keeps every goal the sender sends**, no filtering on the client side, within its limit.
 - **A sender whose family has no folder on this node** (`familyPath` of it resolved from the run root) is not cached.
 - **The cache keeps to its limit, and the sender's family api.js on the client's node does the shedding**, declaring

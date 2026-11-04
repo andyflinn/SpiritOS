@@ -136,7 +136,7 @@
   function mountList() {
     var P = win.spirit.element && win.spirit.element.probabilitySearch;
     var el = document.getElementById('fallout-list');
-    var V = win.spirit.verifyData;
+    var V = ((win.spirit.data || {}).deskVerify || {}).data;
     if (!P || typeof P.create !== 'function' || !el || !ctx || !V) return;
     list = P.create(el, {
       // A VIEW OF THE TESTS THE VERIFIER'S CACHE MANAGER KEEPS (goal/G41.28; Andy: "These rules apply to ALL clients.
@@ -154,15 +154,15 @@
     });
     list.refresh();
     summary();
-    // The summary follows deskVerify too, through its cache manager (spirit.verifyData.watch): each publish it keeps counts
+    // The summary follows deskVerify too, through its cache manager (spirit.data.deskVerify.data.watch): each publish it keeps counts
     // again, through the same slot.
     V.watch(function () { summary(); });
   }
   // THE PROBABILITY SEARCH, LOADED ON DEMAND through the one loader (goal/G41.11; rule/21): spirit.require, once per page;
   // and the verifier's cache manager, its own family's (goal/G41.28).
   function withList(done) {
-    if (win.spirit.element && win.spirit.element.probabilitySearch && win.spirit.verifyData) { done(); return; }
-    Promise.all([String(LIST_SCRIPT), 'process/js/deskVerify/family/clientCacheManager.js'].map(function (p) {
+    if (win.spirit.element && win.spirit.element.probabilitySearch && ((win.spirit.data || {}).deskVerify || {}).data) { done(); return; }
+    Promise.all([String(LIST_SCRIPT), 'process/js/deskVerify/family/data.js'].map(function (p) {
       return Promise.resolve(win.spirit.require(String(p).replace(/^\/+/, '')));
     })).then(function () { done(); }, function () { /* no list */ });
   }

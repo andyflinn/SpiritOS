@@ -31,7 +31,7 @@ test.startTest('apiDoor.js: the gate');
   for (const grants of [['desk'], ['desk.FS.loadFile', 'desk.FS.path']]) {
     for (const verb of ['FS.loadFile', 'FS.path', 'FS.saveFile']) {
       const s = servers();
-      const ask = { desk: {} }; ask.desk[verb] = { path: 'clientCacheManager.js' };
+      const ask = { desk: {} }; ask.desk[verb] = { path: 'data.js' };
       const r = await answer(s, ask, member(grants));
       ok(r && r.body && r.body.ok === false && r.body.code === 'owner-only' && !s.reached.length,
         'a member granted ' + grants.join(', ') + ' asking desk.' + verb + ' is refused owner-only, and no server is asked',
@@ -47,7 +47,7 @@ test.startTest('apiDoor.js: the gate');
   ok(verbs.indexOf('chat.add') !== -1 && !verbs.some(function (v) { return /^FS\./.test(v); }),
     'a member granted the desk whole is served its tree without the FS group', 'its tree: ' + short(tree && tree.body));
   const s3 = servers();
-  const owner = await answer(s3, { desk: { 'FS.path': { path: 'clientCacheManager.js' } } }, { owner: true });
+  const owner = await answer(s3, { desk: { 'FS.path': { path: 'data.js' } } }, { owner: true });
   ok(owner && owner.body && owner.body.ok === true && s3.reached.length === 1, 'the owner\'s desk.FS.path reaches the server', 'owner: ' + short(owner));
 
   test.subHeading('goal/G41.30: the star is the owner\'s alone');

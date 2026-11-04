@@ -1728,8 +1728,8 @@ var ndPage = ({
     // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
     // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
     ndStops.push(Promise.resolve(spirit.cacheManager('contact')).then(function () {
-      if (ndGone || !window.spirit.contactData) return function () {};
-      return window.spirit.contactData.watch(ndHearRow);
+      if (ndGone || !((window.spirit.data || {}).contact || {}).data) return function () {};
+      return window.spirit.data.contact.data.watch(ndHearRow);
     }));
     // ITS REPORT, ON THE RELAY EVENT (goal/G41.32): whole, paced by the node (presenceNode.js), so this keeps no timer.
     // Through spirit.data, which takes the node's stream for every client (goal/G43.5).
@@ -1890,7 +1890,7 @@ function ndHearRow(key, row) {
   if (key !== ndKey) return;
   // A change with no value is not a row gone until the cache says so.
   if (!row) {
-    if (window.spirit.contactData.contact(key)) return;
+    if (window.spirit.data.contact.data.contact(key)) return;
     ndBadge = null; ndUnlisted = true; ndRender(); return;
   }
   var next = Object.assign({}, ndBadge || {}, row);

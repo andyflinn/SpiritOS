@@ -355,12 +355,12 @@
   // folder is process/js/<name>/family/; appServer.js hands out this same function. No other file writes the path.
   function familyPath(name) { return 'process/js/' + String(name || '') + '/family/api.js'; }
   // A FAMILY'S CACHE MANAGER, FOUND BY ITS NAME (goal/G41.28; Andy: "the shell can introspect to find and download their
-  // clientCacheManagers."): clientCacheManager.js beside the family's api.js, a node family's (spirit/<name>/) or a
-  // server's (its family folder). cacheManager(name) loads it once through the one loader; the manager attaches itself
-  // and puts its reader on spirit. A family with none answers not-found.
+  // clientCacheManagers."): data.js beside the family's api.js, a node family's (spirit/<name>/) or a
+  // server's (its family folder). cacheManager(name) loads it once through the one loader, the data set first; it stands
+  // at spirit.data.<name>. A family with none answers not-found.
   function managerPaths(name) {
     var n = String(name || '');
-    return ['spirit/' + n + '/clientCacheManager.js', familyPath(n).replace(/api\.js$/, 'clientCacheManager.js')];
+    return ['spirit/' + n + '/data.js', familyPath(n).replace(/api\.js$/, 'data.js')];
   }
   // ON A PAGE, FOUND THROUGH THE FAMILY'S OWN FS AND LOADED BY A GET (goal/G41.28; Andy: "for the owner, the api tree
   // returns a FS set of verbs for every family", and on FS.path: "my approval is set, unless there's a valid objection"):
@@ -369,7 +369,7 @@
   // and through the face alike. In node, its own disk.
   // Asked as a file runs, it is part of that file's tree: the file's require answers once it has, and a family with
   // none fails no tree.
-  var MANAGER = 'clientCacheManager.js';
+  var MANAGER = 'data.js';
   var managers = Object.create(null);
   function cacheManager(name) {
     var n = String(name || '');
@@ -385,7 +385,7 @@
         }).then(function (b) {
           var p = b && typeof b.path === 'string' ? b.path : '';
           if (!p) throw refusal('not-found', 'the family ' + n + ' has no ' + MANAGER);
-          return requireOne(p);
+          return requireOne('spirit/data.js').then(function () { return requireOne(p); });
         });
       }
       managers[n].then(null, function () { /* asked again next time */ delete managers[n]; });
@@ -733,7 +733,7 @@
     // translator, which its type loads; a process follows a stream only through appServer's streamListener.
     // Through the one loader, as every component is; in a process its require runs at once, so spirit.data is there now.
     module.exports = self;
-    requireOne('spirit/spiritData.js');
+    requireOne('spirit/data.js');
     return;
   }
 
@@ -751,11 +751,11 @@
       return Promise.all(Object.keys(names || {}).map(function (fam) { return bindOwn(fam).then(null, function () { /* a family without an interface is not on the object */ }); }));
     }).then(function () {
       // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each family through its own
-      // clientCacheManager (goal/G41.28). Asked once the page is parsed, so a page that loads it by tag keeps the one
+      // data.js (goal/G41.28). Asked once the page is parsed, so a page that loads it by tag keeps the one
       // cache it made.
       // No element comes with it (goal/G41.19; Andy: no preloading elements): the files row element is loaded by
       // whoever draws with the file tree, the face's boot for its home among them.
-      return parsed().then(function () { return requireOne('spirit/spiritData.js'); });
+      return parsed().then(function () { return requireOne('spirit/data.js'); });
     }).then(function () {
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.node.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.node as a

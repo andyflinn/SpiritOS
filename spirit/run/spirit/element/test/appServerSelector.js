@@ -49,17 +49,17 @@ function world() {
   win.window = win;
   vm.createContext(win);
   // The page's one data set, which spirit.js brings before any element runs (goal/G41.28: the api tree is kept there).
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   pageData = win.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   win.spirit.node = { key: 'nOdE+key/one==' };
   pageData.home('nOdE+key/one==');
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the api
-  // tree is the node family's (spirit.nodeData).
+  // tree is the node family's (spirit.data.node.data).
   w.managers = [];
   win.spirit.cacheManager = function (name) {
     w.managers.push(String(name));
-    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });

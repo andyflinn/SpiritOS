@@ -48,7 +48,7 @@
         face: 'dropdown',
         placeholder: options.placeholder || 'All Verbs',
         all: 'All Verbs',
-        data: own ? window.spirit.nodeData.verbsBranch : undefined,
+        data: own ? window.spirit.data.node.data.verbsBranch : undefined,
         rows: own ? undefined : rows,
         filters: own ? [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server && offered(row.name) ? 1 : 0; } }] : [],
         columns: [{ field: 'name' }],

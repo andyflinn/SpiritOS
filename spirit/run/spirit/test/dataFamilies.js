@@ -15,7 +15,8 @@ const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'events', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'];
 const SERVER_FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
-const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'process', 'js', name, 'family'); };
+const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.dirname(path.join(RUN, familyPath(name))); };
 // The old spirit.<name>Data: chatData was chatClerver's, verifyData deskVerify's.
 const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|deskVerify|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
 // A retired name's parts, so this file does not hold it whole.
@@ -25,7 +26,7 @@ const OLD_MODULE = 'spirit' + 'Data';
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // Code only: a comment may quote Andy, and his words are never rewritten.
-function code(text) { return String(text).split('\n').map(function (l) { return l.replace(/(^|\s)\/\/.*$/, ''); }).join('\n'); }
+function code(text) { return String(text).split(/\r?\n/).map(function (l) { return l.replace(/(^|\s)\/\/.*$/, ''); }).join('\n'); }
 
 function walk(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {

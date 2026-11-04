@@ -15,14 +15,14 @@ var textEditorParts = Promise.all(['spirit/element/files/listElement.js', 'spiri
   .concat([spirit.cacheManager('fs')]));
 
 // WHAT IT SAVES, IT LISTENS FOR (goal/G41.27, G41.28; Andy, Q21: "\"changed on disk\""): the open file's row in the
-// node's file tree, as the fs family's cache keeps it (spirit.fsData). Its own save is "saved" once the tree has it;
+// node's file tree, as the fs family's cache keeps it (spirit.data.fs.data). Its own save is "saved" once the tree has it;
 // any other change of the open file is "changed on disk".
 var textEditorStop = null;
 var textEditorSaving = false;
 function textEditorFollow(path) {
   if (textEditorStop) textEditorStop();
   textEditorSaving = false;
-  textEditorStop = window.spirit.data.watch(window.spirit.fsData.branch + '/' + path, function (whole, row) {
+  textEditorStop = window.spirit.data.watch(window.spirit.data.fs.data.branch + '/' + path, function (whole, row) {
     var statusEl = document.getElementById('editor-status');
     if (!row || !statusEl) return;
     statusEl.textContent = textEditorSaving ? 'saved' : 'changed on disk';

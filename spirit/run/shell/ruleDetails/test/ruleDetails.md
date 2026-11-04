@@ -18,7 +18,7 @@ shell element armingButton (`spirit/element/armingButton.js`); the dialog keeps 
   helper, no armed class.
 - **The rule and its chat are the desk family's cache** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to make
   sure when it changes shit it listens to fucking update via the spirit object"*): it loads the desk manager
-  (`spirit.cacheManager('desk')`), keeps `rule.get`'s answer in `spirit.deskData.rules` and `item.chat`'s under the rule
+  (`spirit.cacheManager('desk')`), keeps `rule.get`'s answer in `spirit.data.desk.data.rules` and `item.chat`'s under the rule
   in its parts, and draws from `rules.watch` and `parts.watch`. It has no listener of its own on the desk's publishes.
 - **A rule row changed in the cache repaints it**; the textbox keeps his typing, and is refilled only by the row that
   comes back after his Version (`rule.version`, the textbox as it stands), never by a draft come back. Version asks

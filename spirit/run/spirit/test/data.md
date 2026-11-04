@@ -1,4 +1,4 @@
-# spirit/spiritData.js
+# spirit/data.js
 
 The faceless layer: one tree, a branch per type, mirroring the shell's partner node. Lists are views of it. It touches
 no page, so it runs in node, where `require` answers the api.

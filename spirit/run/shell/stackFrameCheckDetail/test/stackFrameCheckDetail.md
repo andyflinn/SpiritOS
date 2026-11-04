@@ -17,7 +17,7 @@ shell element armingButton (`spirit/element/armingButton.js`); the dialog keeps 
 - **Nothing hand-rolled is left**: no `data-armed`, no call to `armUntilElsewhere`, no `sdArmed`, no armed class.
 - **The door and its run are the desk family's cache** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to make
   sure when it changes shit it listens to fucking update via the spirit object"*): it loads the desk manager
-  (`spirit.cacheManager('desk')`), keeps the plugin's door read in `spirit.deskData.doors` and its runState read in
+  (`spirit.cacheManager('desk')`), keeps the plugin's door read in `spirit.data.desk.data.doors` and its runState read in
   `doorRuns`, and draws both from their watches: a door or a run changed in the cache is drawn. It sets no listener of
   its own on the desk's publishes.
 - **What the plugin says changed is read again**: its publish for this door drops the run kept, and for any change but

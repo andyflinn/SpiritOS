@@ -29,7 +29,7 @@
 // EVERY ELEMENT LISTENS BY ITSELF, THROUGH THE ONE FRAMEWORK (Andy, on G41.4: "make sure that all element LISTEN to what
 // needs listening to, by themselves, automatically. This should also be a general implementation. if those table
 // searches and list were make properly from a probability framework, this should not have happened"): a table is its
-// branch of spirit.data, the agent family's cache manager's (spirit.agentData.branch(table), goal/G41.28), which the
+// branch of spirit.data, the agent family's cache manager's (spirit.data.agent.data.branch(table), goal/G41.28), which the
 // stream keeps current. A list is probabilitySearch
 // with that branch as its data, so a search's answer is seated there and any write redraws it; an editor watches its
 // row's path there. Nothing here hears the stream by hand.
@@ -54,13 +54,13 @@
   }
   function needs(paths) { return Promise.all(paths.map(function (p) { return spirit.require(p); })).then(function () { E = window.spirit.elements; }); }
   // A TABLE'S BRANCH IS THE agent FAMILY'S CACHE (goal/G41.28): its whole path in spirit.data, as the family's own
-  // clientCacheManager keeps it (spirit.agentData), loaded with this element, as part of its tree. A page where it could
+  // data.js keeps it (spirit.data.agent.data), loaded with this element, as part of its tree. A page where it could
   // not be loaded (the agent server not running on its node, so the family is not there) is refused, never drawn
   // without its branch.
   spirit.cacheManager('agent');
   function branchOf(table) {
-    if (!window.spirit.agentData) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
-    return window.spirit.agentData.branch(table);
+    if (!((window.spirit.data || {}).agent || {}).data) throw new Error('the agent family\'s cache manager is not on this page: the agent server does not run on this node');
+    return window.spirit.data.agent.data.branch(table);
   }
   function D() { return window.spirit.data; }
 

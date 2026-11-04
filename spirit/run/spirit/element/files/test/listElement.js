@@ -4,7 +4,7 @@
 // The tests of spirit/element/files/listElement.js, and of no other module (spec: ./listElement.md; goal/G30.20, goal/G41.16).
 // The browser file runs in node on a BARE window (rule/26): nothing is on the page until the list requires it. Then the
 // search element is a recorder in its place, so this tests the list and not the search under it; the row element and
-// the file viewer are stand-ins; the page's data set is real, and so is the fs family's clientCacheManager (goal/G41.28),
+// the file viewer are stand-ins; the page's data set is real, and so is the fs family's data.js (goal/G41.28),
 // loaded as a page's spirit.cacheManager('fs') loads it, the page's node known as spirit.start makes it known
 // (spirit.node.key, then data.home). The node's fs family is the spirit object's.
 
@@ -47,7 +47,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };
   global.spirit = global.window.spirit;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const D = global.window.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
@@ -57,20 +57,20 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
   vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
   await settle();
   const E = global.window.spirit.element;
-  const F = global.window.spirit.fsData;
+  const F = ((global.window.spirit.data || {}).fs || {}).data;
 
   test.subHeading('it loads what it uses itself (rule/26), and no data script');
   ok(['spirit/element/files/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/fileViewer.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires its row element, the search element and the file viewer', 'required: ' + short(required));
   // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the row element's.
   ok(!required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script: the file tree\'s stream is its row element\'s', 'required: ' + short(required));
-  ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts spirit.fsData on the page', 'managers: ' + short(managers));
+  ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 'managers: ' + short(managers));
   if (!F || typeof F.file !== 'function') return;
   ok(E.fileList && typeof E.fileList.create === 'function', 'it registers spirit.element.fileList.create', 'elements: ' + short(Object.keys(E)));
   if (!E.fileList || typeof E.fileList.create !== 'function') return;
@@ -84,7 +84,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML), 'it draws one probabilitySearch into a fill box of its host', 'host: ' + short(host.innerHTML.slice(0, 120)));
   if (!l) return;
   const o = l.o;
-  ok(typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]', 'it is a view of the fs family\'s file tree (spirit.fsData.branch), in path order, filled as it is drawn', 'data ' + short(o.data) + ' (fsData.branch ' + short(F.branch) + ')' + ', sorted ' + short(l.sorted) + ', refreshes ' + l.refreshes);
+  ok(typeof F.branch === 'string' && F.branch !== '' && o.data === F.branch && l.refreshes === 1 && JSON.stringify(l.sorted) === '["name","asc"]', 'it is a view of the fs family\'s file tree (spirit.data.fs.data.branch), in path order, filled as it is drawn', 'data ' + short(o.data) + ' (fsReads.branch ' + short(F.branch) + ')' + ', sorted ' + short(l.sorted) + ', refreshes ' + l.refreshes);
   ok(JSON.stringify((o.columns || []).map(function (c) { return c.field; })) === '["name","size","changed"]', 'its columns are name, size and changed', 'columns: ' + short(o.columns));
   const el = o.element({ kind: 'file' }, 'docs/a.md');
   ok(el && el.kind === 'file' && el.row.path === 'docs/a.md', 'each row is a fileElement of its path', 'element: ' + short(el));

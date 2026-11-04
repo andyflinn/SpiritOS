@@ -24,7 +24,7 @@ with Load and written with Save. It writes the same files on a face as in the ol
   file tree has the save, or `save failed: <reason>`. An app's own script (`shell/<name>/<name>.js`) is refused before
   anything is asked.
 - **What it saves, it listens for** (goal/G41.28): it loads the fs family's cache (`spirit.cacheManager('fs')`) and
-  watches the open file's row in `spirit.data` under `spirit.fsData.branch`. Any change of the open file that is not
+  watches the open file's row in `spirit.data` under `spirit.data.fs.data.branch`. Any change of the open file that is not
   its own save says `changed on disk` (Andy, Q21); a change of another file says nothing.
 
 - **A load the node refuses is said as a refusal** (goal/G41.30; Andy, of a face with no star: *"not found (or empty) — you can

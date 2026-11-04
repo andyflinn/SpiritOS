@@ -21,7 +21,7 @@
   function mount(box, o) {
     var E = window.spirit.element;
     box.innerHTML = '';
-    var A = window.spirit.authData;
+    var A = ((window.spirit.data || {}).auth || {}).data;
     // ITS DELETION HEARD, FROM THIS SCREEN OR ANY OTHER: the mounter closes it.
     var offBundle = A && typeof o.gone === 'function' ? A.bundles.watch(function (key, v) {
       if (String(key) === String(o.bundle) && !v) o.gone();
@@ -49,7 +49,7 @@
     function say(text) { said.textContent = String(text || ''); }
     // WHAT IT ADDS, IT FOLLOWS IN spirit.data (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure when it
     // changes shit it listens to fucking update via the spirit object"): the branches the auth family's cache keeps
-    // (spirit.authData.branches). The branch asked for, once there, is said added.
+    // (spirit.data.auth.data.branches). The branch asked for, once there, is said added.
     var waiting = null;
     var off = A ? A.branches.watch(function (id, v) {
       if (!waiting || !v) return;

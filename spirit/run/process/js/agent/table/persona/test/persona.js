@@ -112,10 +112,10 @@ test.startTest('persona/: the persona table');
   } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
-  // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client: the stream lands there, under
+  // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
   // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.home(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
@@ -155,16 +155,16 @@ test.startTest('persona/: the persona table');
 
   test.subHeading('elementRow.js loads the agent family\'s cache manager, which takes the persona table\'s rows from the stream (goal/G41.16, G41.28)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
-  // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's clientCacheManager's
-  // (process/js/agent/family/clientCacheManager.js, goal/G41.28), loaded with the row element; it files the rows under the
-  // node that served them, and is read through spirit.agentData.
+  // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's data.js's
+  // (process/js/agent/family/data.js, goal/G41.28), loaded with the row element; it files the rows under the
+  // node that served them, and is read through spirit.data.agent.data.
   {
     const DATA = global.window.spirit.data;
-    const AD = global.window.spirit.agentData;
+    const AD = ((global.window.spirit.data || {}).agent || {}).data;
     ok(!made.required.some(function (p) { return /data\.js$/.test(p); }), 'its page files require no data script', 'required: ' + short(made.required));
     const BRANCH = DATA.nodeId(HOME_KEY) + '/agent/persona';
-    ok(!!AD && typeof AD.branch === 'function' && AD.branch('persona') === BRANCH, 'the agent family\'s cache manager is loaded: spirit.agentData.branch(\'persona\') is the home node\'s <node>/agent/persona',
-      'agentData: ' + short(AD ? AD.branch('persona') : AD));
+    ok(!!AD && typeof AD.branch === 'function' && AD.branch('persona') === BRANCH, 'the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'persona\') is the home node\'s <node>/agent/persona',
+      'agentReads: ' + short(AD ? AD.branch('persona') : AD));
     // With no manager loaded the check above is red; nothing below would judge anything.
     if (AD) {
       const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };

@@ -182,9 +182,9 @@
         all: isPane ? undefined : options.all,
         // A VIEW OF spirit.data (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the
         // whole row, as cached in spirit.data"): the node's contacts are the contacts branch the contact family's manager
-        // keeps (spirit.contactData.branch), so a pick finds what any list of contacts was answered; an ID table of another
+        // keeps (spirit.data.contact.data.branch), so a pick finds what any list of contacts was answered; an ID table of another
         // family is the branch its caller names (options.data).
-        data: options.data || (table ? undefined : window.spirit.contactData.branch),
+        data: options.data || (table ? undefined : window.spirit.data.contact.data.branch),
         api: api,
         server: 'node',
         verb: 'contact.search',

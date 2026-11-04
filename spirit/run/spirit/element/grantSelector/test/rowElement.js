@@ -6,9 +6,9 @@
 // it. The shared row element and the page's data set are real; the arming button is a stand-in that records what it was
 // handed. The grants table is the caller's, handed in as a configuration (goal/G41.16), each call recorded; two are
 // tried, so nothing of either is the row's own: the node's auth grants as the Grants app configures them since
-// goal/G41.28 (shell/grants/grants.js: the branch the auth family's cache manager keeps, spirit.authData.grants.branch,
+// goal/G41.28 (shell/grants/grants.js: the branch the auth family's cache manager keeps, spirit.data.auth.data.grants.branch,
 // and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.data path
-// (node/family/branch) and its watch that branch's. The auth family's clientCacheManager is loaded as a
+// (node/family/branch) and its watch that branch's. The auth family's data.js is loaded as a
 // page's spirit.cacheManager('auth') loads it, as the Grants app asks it, the page's node known as spirit.start makes it
 // known (spirit.node.key, then data.home).
 
@@ -44,8 +44,8 @@ function grantsTable(o) {
   return t;
 }
 // As shell/grants/grants.js configures the node's grants (goal/G41.28): the auth family's branch and its watch.
-const NODE = grantsTable({ get branch() { return global.window.spirit.authData ? global.window.spirit.authData.grants.branch : ''; }, key: 'key', label: 'label',
-  watch: function (fn) { return global.window.spirit.authData.grants.watch(fn); } });
+const NODE = grantsTable({ get branch() { return ((global.window.spirit.data || {}).auth || {}).data ? global.window.spirit.data.auth.data.grants.branch : ''; }, key: 'key', label: 'label',
+  watch: function (fn) { return global.window.spirit.data.auth.data.grants.watch(fn); } });
 // A second table, its branch a whole spirit.data path of the home node, its watch that branch's.
 const AGENT = grantsTable({ get branch() { return global.window.spirit.data.at(null, 'agent').path('grant'); }, key: 'job_id', label: 'job',
   watch: function (fn) { const v = global.window.spirit.data.at(null, 'agent'); return v.watch('grant', function (whole, row) { fn(v.row(whole, 'grant'), row); }); } });
@@ -65,7 +65,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.document = { createElement: function () { return {}; } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, ready: Promise.resolve({}), element: {} } };
   global.spirit = global.window.spirit;
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const DATA = global.window.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
@@ -76,11 +76,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
   await global.window.spirit.cacheManager('auth');
-  const A = global.window.spirit.authData;
+  const A = ((global.window.spirit.data || {}).auth || {}).data;
   // The direct writes below are the auth family's own view of the home node, as its manager files them.
   const V = DATA.at(null, 'auth');
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
@@ -89,7 +89,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const E = global.window.spirit.element;
 
   ok(!!A && !!A.grants && typeof A.grants.row === 'function' && typeof NODE.branch === 'string' && NODE.branch !== '' && typeof AGENT.branch === 'string' && AGENT.branch !== '' && NODE.branch !== AGENT.branch,
-    'the auth family\'s cache manager is on the page, and each table names a branch of its own', 'authData: ' + short(A && Object.keys(A)) + ', branches ' + short([NODE.branch, AGENT.branch]));
+    'the auth family\'s cache manager is on the page, and each table names a branch of its own', 'authReads: ' + short(A && Object.keys(A)) + ', branches ' + short([NODE.branch, AGENT.branch]));
   if (!A || !A.grants) return;
 
   test.subHeading('it loads what it uses itself (rule/26), and knows no grants table');

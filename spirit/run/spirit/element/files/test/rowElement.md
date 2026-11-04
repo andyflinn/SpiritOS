@@ -4,8 +4,8 @@
 what the fs-watcher's stream means for the page's mirror of the node's tree. Its test is `./rowElement.js`.
 
 Since goal/G41.28 the tree is the fs family's cache: its translator and its branch are
-`spirit/run/spirit/fs/clientCacheManager.js`'s, filed in `spirit.data` under the serving node
-(`<node>/fs/files/<path>`), and read through `spirit.fsData`. The element loads that manager itself
+`spirit/run/spirit/fs/data.js`'s, filed in `spirit.data` under the serving node
+(`<node>/fs/files/<path>`), and read through `spirit.data.fs.data`. The element loads that manager itself
 (`spirit.cacheManager('fs')`); the test loads it as a page does, the page's node known (`spirit.node.key`, `data.home`).
 
 Andy, goal/G41.16: *"get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"*: the
@@ -16,9 +16,9 @@ a subject needs), loaded with it.
 
 - It loads what it uses itself (rule/26): `spirit/element/rowElement.js` and the fs family's cache manager; no data script.
 - It registers `spirit.element.fileElement.create(row)`.
-- **What the stream means for the file tree** (`spirit.fsData`) (fs-watcher jobs, `data.command { op, path, size, modified, core }`):
-  - before `treeComplete` the branch fills unready; `treeComplete` makes the tree ready (`fsData.ready()`);
-  - `createDirectory` is a folder at its path (`fsData.file(path)`); any other create or change sets a file with its size, its time and
+- **What the stream means for the file tree** (`spirit.data.fs.data`) (fs-watcher jobs, `data.command { op, path, size, modified, core }`):
+  - before `treeComplete` the branch fills unready; `treeComplete` makes the tree ready (`spirit.data.fs.data.ready()`);
+  - `createDirectory` is a folder at its path (`spirit.data.fs.data.file(path)`); any other create or change sets a file with its size, its time and
     its core flag (the node's word, kept), its kind kept when it was known;
   - `deleteFile` takes that file out; `deleteDirectory` the folder and everything under it;
   - another job's command, or a command with no path, writes nothing.

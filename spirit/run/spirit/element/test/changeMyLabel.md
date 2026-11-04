@@ -20,7 +20,7 @@ this node may.
 - **Save asks the node**, `node.setName` with the field as typed, and then shows what the node stored (rule/19), says
   saved, and keeps the stored name in the node card. Enter in the field saves as Save does.
 - **What it changes, it listens for** (goal/G41.28): it loads the node family's cache (`spirit.cacheManager('node')`)
-  and draws the field from `spirit.nodeData.card.watch`; a name changed in the card from elsewhere redraws the field.
+  and draws the field from `spirit.data.node.data.card.watch`; a name changed in the card from elsewhere redraws the field.
 - A refusal from the node is said beside the field; the field keeps what was typed.
 
 ## What its test must try to break

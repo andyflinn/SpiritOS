@@ -30,7 +30,7 @@ var SD_SHARED = { deskDoorFields: '/shell/shared/js/deskDoorFields.js', createDe
 var sdParts = spirit.require('spirit/element/armingButton.js');
 // THE DOOR AND ITS RUN ARE THE DESK FAMILY'S CACHE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure
 // when it changes shit it listens to fucking update via the spirit object"): what the plugin's reads answered is kept
-// in spirit.deskData (doors, doorRuns), the dialog drawing from their watches; the plugin's publish drops what changed,
+// in spirit.data.desk.data (doors, doorRuns), the dialog drawing from their watches; the plugin's publish drops what changed,
 // and the watch reads it again.
 var sdData = spirit.cacheManager('desk');
 var sdStops = [];
@@ -132,7 +132,7 @@ function sdReadRun() {
   var id = sdId;
   if (!id) return Promise.resolve();
   return sdAsk('stackFrameChecks.runState', { id: id }).then(function (r) {
-    if (sdId === id) window.spirit.deskData.doorRuns.keep(id, r);
+    if (sdId === id) window.spirit.data.desk.data.doorRuns.keep(id, r);
   }, function (e) { if (sdId === id) sdSay('Its run could not be read: ' + sdErr(e)); });
 }
 // The door as the plugin holds it: its own read (goal/G33.7: one door, never the whole list).
@@ -141,7 +141,7 @@ function sdReadDoor() {
   return sdAsk('stackFrameChecks.door', { id: id }).then(function (r) {
     if (sdId !== id) return;
     if (!r || r.id !== id) { sdSay('The list has no door ' + id + ' any more.'); return; }
-    window.spirit.deskData.doors.keep(r);
+    window.spirit.data.desk.data.doors.keep(r);
   }, function (e) { if (sdId === id) sdSay('The door could not be read: ' + sdErr(e)); });
 }
 // The two watches of this door, made at each open and let go at the next: each draws what is kept, and a row the
@@ -149,7 +149,7 @@ function sdReadDoor() {
 function sdWatch() {
   sdStops.forEach(function (stop) { stop(); });
   var id = sdId;
-  var K = window.spirit.deskData;
+  var K = ((window.spirit.data || {}).desk || {}).data;
   sdStops = [
     K.doors.watch(id, function (door) {
       if (sdId !== id) return;

@@ -18,7 +18,7 @@ the same wherever it is used (the Apps list's column, the app's details panel). 
     the face shell (`spirit.shell.faceApp('shell/<name>')`) when there is one.
   - It draws only what the node answers: the annotations read again after the write, never the click.
 - **An appServer**: it is on while the server runs: a server job of its module (`process/js/<name>`), running or
-  pending, as the jobs family's cache keeps it (`spirit.cacheManager('jobs')`, then `spirit.jobsData`; goal/G41.28).
+  pending, as the jobs family's cache keeps it (`spirit.cacheManager('jobs')`, then `spirit.data.jobs.data`; goal/G41.28).
   - A press writes the whole face part with `home` turned over and every other field kept; the node then starts or
     stops the server.
   - It draws only what the cache says (rule/19): a press leaves the button as it was until the job changes.
@@ -27,7 +27,7 @@ the same wherever it is used (the Apps list's column, the app's details panel). 
   a shell app's turns on or off with `app`, and an app made intrinsic loses its button. Another app's is ignored.
 - **The button** says `Activate` while off and `Deactivate` while on, and carries `data-on`.
 - **A press stays its own**: the click does not reach the row or panel around it (a row's press opens its details).
-- **destroy** ends its watch on `spirit.jobsData`; nothing is drawn after it.
+- **destroy** ends its watch on `spirit.data.jobs.data`; nothing is drawn after it.
 
 ## What its test must try to break
 

@@ -88,7 +88,7 @@ function world() {
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
       w.managers = (w.managers || []).concat(name);
-      vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
       return Promise.resolve(true);
     },
     shell: { activateApp: function (d) { w.def = d; }, faceApp: function () {} }, escapeHtml: function (s) { return String(s); } },
@@ -97,7 +97,7 @@ function world() {
   win.window = win;
   vm.createContext(win);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+APPS/NODE==' };
   win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
@@ -127,8 +127,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
   // item. no exceptions."
   ok((w.managers || []).indexOf('fs') !== -1, 'it loads the fs family\'s cache manager itself', 'managers: ' + short(w.managers));
-  ok(!!w.win.spirit.fsData && w.made.opts.data === w.win.spirit.fsData.branch && typeof w.made.opts.data === 'string' && w.made.opts.data.length > 0,
-    'its list\'s data is spirit.fsData\'s branch, the node\'s file tree in spirit.data', 'data: ' + short(w.made.opts.data) + ', fsData.branch ' + short(w.win.spirit.fsData && w.win.spirit.fsData.branch));
+  ok(!!((w.win.spirit.data || {}).fs || {}).data && w.made.opts.data === w.win.spirit.data.fs.data.branch && typeof w.made.opts.data === 'string' && w.made.opts.data.length > 0,
+    'its list\'s data is ((spirit.data || {}).fs || {}).data\'s branch, the node\'s file tree in spirit.data', 'data: ' + short(w.made.opts.data) + ', fsReads.branch ' + short(((w.win.spirit.data || {}).fs || {}).data && w.win.spirit.data.fs.data.branch));
 
   test.subHeading('its rows: standalone shell apps and appServers only');
   const o = w.made.opts;

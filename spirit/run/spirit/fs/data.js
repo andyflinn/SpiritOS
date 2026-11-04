@@ -1,4 +1,4 @@
-// spirit/run/spirit/fs/clientCacheManager.js
+// spirit/run/spirit/fs/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S FILES, IN THE fs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done until every
 // family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data", and the box:
 // "the clientCacheManager stores the in-RAM cache EXACTLY the same in spirit.data, in the browser AND in an appServer
@@ -6,21 +6,18 @@
 // spirit.data, under the node that served the tree.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the files rows and list, the Apps, the Icons, the
-// face's boot) asks spirit.fsData (below), never a branch by name.
+// face's boot) asks spirit.data.fs.data (below), never a branch by name.
 //   files   path -> { kind, size, modified, core }, the node's file tree as its fs-watcher streams it
 //   icons   glyph -> { glyph, keywords }, the icon set, a file the family serves, as the icons list last read it
 //           (goal/G41.28, moved here from the icons list element): a set read again replaces it whole
 // The tree comes as updates of one job, the fs-watcher's: a connecting page is handed the tree as create commands, then
 // treeComplete: the branch fills quietly and its watchers hear one word at the end; after that each change is told by
 // path (goal/G30.18, moved here from the files row element). Every event ends in set or del; it asks nothing.
-(function (root) {
+(function () {
   var FILES = 'files';
   var ICONS = 'icons';
-  var ATTACHED = typeof Symbol === 'function' ? Symbol.for('spirit.fs.clientCacheManager') : '__fsClientCacheManager';
-  function attach(root) {
-    var D = ((root || {}).spirit || {}).data;
-    if (!D || typeof D.translate !== 'function') return;
-    if (D[ATTACHED]) { (root.spirit = root.spirit || {}).fsData = D[ATTACHED]; return; }
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  D.family('fs', function () {
     // The fs family's view of the home node (a page's own); a stream's job is filed under the node that sent it.
     var HOME = D.at(null, 'fs');
     D.translate({
@@ -50,7 +47,7 @@
     //                    or forgotten; answers its release
     //   watchFile(p, fn) fn(row) when that one file changes; answers its release
     //   branch           the tree's whole path, for a list that is a view of it (probabilitySearch's data)
-    var fsData = {
+    var fsReads = {
       file: function (p) { return p ? HOME.get(FILES + '/' + p) || null : null; },
       files: function () { return HOME.branch(FILES); },
       ready: function () { return !!HOME.ready(FILES); },
@@ -71,13 +68,6 @@
         get branch() { return HOME.path(ICONS); },
       },
     };
-    try { Object.defineProperty(D, ATTACHED, { value: fsData }); } catch (e) { D[ATTACHED] = fsData; }
-    (root.spirit = root.spirit || {}).fsData = fsData;
-  }
-  if (typeof module !== 'undefined' && module && module.exports) module.exports = { attach: attach };
-  // A page without the data set yet loads it first, as part of this file's tree.
-  var sp = root.spirit;
-  if (sp && !sp.data && typeof sp.require === 'function' && typeof sp.isBrowser === 'function' && sp.isBrowser()) {
-    Promise.resolve(sp.require('spirit/spiritData.js')).then(function () { attach(root); }, function () { /* no data set: nothing kept */ });
-  } else attach(root);
-}(typeof window !== 'undefined' ? window : globalThis));
+    return fsReads;
+  });
+}());

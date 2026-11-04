@@ -2,7 +2,7 @@
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
 // (mine, blocked, held: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
 // and add (a button on a row the owner does not keep). It reads the node's contacts as the contact family's cache
-// manager keeps them (spirit.contactData, goal/G41.28), which presence, renames, the network search and every contact
+// manager keeps them (spirit.data.contact.data, goal/G41.28), which presence, renames, the network search and every contact
 // search keep, so a peer arriving repaints that peer's dot and a rename that peer's label, and nothing else.
 // rowElement.js does the shared work; this file says what a contact is.
 //
@@ -24,10 +24,10 @@
   var contacts = null;
 
   // A NODE'S CONTACTS ARE THE contact FAMILY'S CACHE (goal/G41.28): what the stream means for them, and their branch, are
-  // the family's own clientCacheManager's (spirit/contact/clientCacheManager.js), which this element loads itself
-  // (rule/26), as part of its tree; a row reads spirit.contactData.
-  function contactData() { return (window.spirit && window.spirit.contactData) || null; }
-  var contactReady = Promise.resolve(window.spirit.cacheManager('contact')).then(function () { return contactData(); });
+  // the family's own data.js's (spirit/contact/data.js), which this element loads itself
+  // (rule/26), as part of its tree; a row reads spirit.data.contact.data.
+  function contactReads() { return (window.spirit && ((window.spirit.data || {}).contact || {}).data) || null; }
+  var contactReady = Promise.resolve(window.spirit.cacheManager('contact')).then(function () { return contactReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
@@ -61,7 +61,7 @@
     return { normalize: R.normalize, problem: R.problem, maxBytes: R.MAX_BYTES };
   }
 
-  function known(key) { var C = contactData(); return C ? C.contact(key) : null; }
+  function known(key) { var C = contactReads(); return C ? C.contact(key) : null; }
   // A RELAY'S ROW IS KEYED BY ITS OWN ID (goal/G40.11: a row of the one table), and the node marks a relay's own key
   // present while it holds the stream to it (goal/G40.5): its dot is its own key's, like anybody's.
   // A write to data.contacts, by key, to the rows that show that key: only the fields a row shows.
@@ -82,7 +82,7 @@
       });
     }
     // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
-    listen(contactData());
+    listen(contactReads());
     if (!off) contactReady.then(listen);
     return function () { gone = true; if (typeof off === 'function') off(); };
   }

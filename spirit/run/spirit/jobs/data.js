@@ -1,10 +1,10 @@
-// spirit/run/spirit/jobs/clientCacheManager.js
+// spirit/run/spirit/jobs/data.js
 // WHAT A CLIENT KNOWS OF A NODE'S JOBS, IN THE jobs FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the new
 // spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it through
 // spirit.cacheManager('jobs'); it keeps the node's jobs in that page's spirit.data, under the node that served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the Jobs app and its details dialog, Stats, the
-// face's boot) asks spirit.jobsData (below), never a branch by name.
+// face's boot) asks spirit.data.jobs.data (below), never a branch by name.
 //   jobs     id -> the job as the stream last handed it
 //   events   id -> { lines: [{ at, json }] }, the job's last EVENT_WINDOW events, oldest falling off the top (moved here
 //            from the job details dialog, goal/G29.14): an event is what a job publishes, its app object when it differs
@@ -12,7 +12,7 @@
 //            node's other jobs (server-stats, relay-presence) their data, each time it changes. Nothing is asked of the node.
 // Every job the node's stream hands over is kept as it came, and one the stream deletes goes; a connect hands the whole
 // set again (spirit.data forgets on a snapshot). It asks nothing.
-(function (root) {
+(function () {
   var JOBS = 'jobs';
   var EVENTS = 'events';
   var EVENT_WINDOW = 256;
@@ -21,11 +21,8 @@
     if (!obj || typeof obj !== 'object') return '';
     try { return JSON.stringify(obj); } catch (e) { return ''; }
   }
-  var ATTACHED = typeof Symbol === 'function' ? Symbol.for('spirit.jobs.clientCacheManager') : '__jobsClientCacheManager';
-  function attach(root) {
-    var D = ((root || {}).spirit || {}).data;
-    if (!D || typeof D.translate !== 'function') return;
-    if (D[ATTACHED]) { (root.spirit = root.spirit || {}).jobsData = D[ATTACHED]; return; }
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../data.js');
+  D.family('jobs', function () {
     var HOME = D.at(null, 'jobs');
     D.translate({
       onJob: function (job) {
@@ -58,7 +55,7 @@
     //   watch(fn)    fn(id, job) on every change, job undefined once it is gone, id '' when the set is forgotten; answers
     //                its release
     //   branch       the jobs' whole path, for a list that is a view of it (probabilitySearch's data)
-    var jobsData = {
+    var jobsReads = {
       job: function (id) { return id ? HOME.get(JOBS + '/' + id) || null : null; },
       jobs: function () { return HOME.branch(JOBS); },
       events: function (id) { var k = id ? HOME.get(EVENTS + '/' + id) : null; return k && Array.isArray(k.lines) ? k.lines : []; },
@@ -71,9 +68,6 @@
       watch: function (fn) { return HOME.watch(JOBS, function (whole, v) { if (typeof fn === 'function') fn(HOME.row(whole, JOBS), v); }); },
       get branch() { return HOME.path(JOBS); },
     };
-    try { Object.defineProperty(D, ATTACHED, { value: jobsData }); } catch (e) { D[ATTACHED] = jobsData; }
-    (root.spirit = root.spirit || {}).jobsData = jobsData;
-  }
-  if (typeof module !== 'undefined' && module && module.exports) module.exports = { attach: attach };
-  attach(root);
-}(typeof window !== 'undefined' ? window : globalThis));
+    return jobsReads;
+  });
+}());

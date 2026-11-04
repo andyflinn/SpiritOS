@@ -42,8 +42,8 @@
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['label', 'owner'];
     list = window.spirit.element.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
-      // A view of the node's bundles, the branch the auth family's manager keeps (spirit.authData.bundles.branch).
-      data: window.spirit.authData.bundles.branch,
+      // A view of the node's bundles, the branch the auth family's manager keeps (spirit.data.auth.data.bundles.branch).
+      data: window.spirit.data.auth.data.bundles.branch,
       server: 'auth',
       verb: 'bundle',
       face: o.face,

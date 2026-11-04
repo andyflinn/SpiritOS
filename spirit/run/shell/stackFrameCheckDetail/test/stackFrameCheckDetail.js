@@ -4,7 +4,7 @@
 // The tests of shell/stackFrameCheckDetail/stackFrameCheckDetail.js, and of no other module (spec: ./stackFrameCheckDetail.md; goal/G41.9). The browser file runs in node
 // on a window of its own: the app's api records every verb; armingButton is a stub that keeps every button made or
 // attached with what it was handed, so each two-press button's run is driven here as its second press would. The page's
-// one data set and the desk family's cache manager are the real ones (spirit/spiritData.js, process/js/desk/family/).
+// one data set and the desk family's cache manager are the real ones (spirit/data.js, process/js/desk/family/).
 
 const FILE = require('path').join(__dirname, '..', 'stackFrameCheckDetail.js');
 const fs = require('fs');
@@ -80,7 +80,7 @@ function world(answer, fields) {
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
       w.managers = (w.managers || []).concat(name);
-      vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', String(name), 'family', 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', String(name), 'family', 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
       return Promise.resolve(true);
     } };
   // The door's fields, the shared element, as a stand-in whose form says the door it is handed (fields).
@@ -88,7 +88,7 @@ function world(answer, fields) {
     why: function () { return ''; }, door: function () { return fields; } };
   vm.createContext(win);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+STACK/FRAME==' };
   win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
@@ -162,11 +162,11 @@ function asked(w, verb) { return w.calls.filter(function (c) { return c.name ===
   await v.def.mount(cv, v.api);
   await v.def.open({ id: 'D3' });
   await settle();
-  const K = v.win.spirit.deskData;
-  ok((v.managers || []).indexOf('desk') !== -1 && !!K, 'it loads the desk family\'s cache manager (spirit.deskData)', 'managers: ' + short(v.managers));
+  const K = ((v.win.spirit.data || {}).desk || {}).data;
+  ok((v.managers || []).indexOf('desk') !== -1 && !!K, 'it loads the desk family\'s cache manager (((spirit.data || {}).desk || {}).data)', 'managers: ' + short(v.managers));
   if (!K) return;
   const kept = v.win.spirit.data.at(null, 'desk');
-  ok(!!kept.get('deskDoors/D3') && kept.get('deskDoors/D3').gate === 'g', 'the plugin\'s door read is kept in spirit.deskData\'s doors', 'kept: ' + short(kept.get('deskDoors/D3')));
+  ok(!!kept.get('deskDoors/D3') && kept.get('deskDoors/D3').gate === 'g', 'the plugin\'s door read is kept in ((spirit.data || {}).desk || {}).data\'s doors', 'kept: ' + short(kept.get('deskDoors/D3')));
   ok(!!kept.get('deskDoorRuns/D3') && kept.get('deskDoorRuns/D3').running === false, 'and its runState read in its doorRuns', 'kept: ' + short(kept.get('deskDoorRuns/D3')));
   ok(v.listeners === 0, 'it sets no listener of its own on the desk\'s publishes: the cache is what it hears', 'onPublished asked ' + v.listeners + ' time(s)');
   K.doorRuns.keep('D3', { ok: true, running: false, endedAt: '2026-11-02T10:00:00.000Z', verdict: { ran: true, green: true, of: 4 } }); await settle();

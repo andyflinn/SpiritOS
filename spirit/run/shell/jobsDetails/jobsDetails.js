@@ -19,7 +19,7 @@
 //
 // LIVE THROUGH spirit.data (goal/G41.28; Andy: "anything not using the new spiritData.js and it's buddies
 // clientCacheManager.js must do so in this item. no exceptions."): the job and its last events are the jobs family's
-// cache manager's (spirit.jobsData), which keeps every job's events whatever is on screen, so a reopen shows what came
+// cache manager's (spirit.data.jobs.data), which keeps every job's events whatever is on screen, so a reopen shows what came
 // meanwhile. The screen repaints when its job changes there.
 
 var jdEscapeHtml = spirit.escapeHtml;
@@ -29,7 +29,7 @@ var jdId = '';          // which job this screen is about
 var jdView = null;      // the Extract box's read-only text view
 // What it reads from, it loads itself (rule/26): the jobs family's cache manager.
 var jdParts = Promise.resolve(spirit.cacheManager('jobs'));
-function jdData() { return window.spirit.jobsData || null; }
+function jdData() { return ((window.spirit.data || {}).jobs || {}).data || null; }
 
 // The canonical set lives in js/jobs.js, node-side; shell/jobs/jobs.js and app/stats keep the same copy.
 var JD_TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
@@ -50,7 +50,7 @@ function jdJob() {
 }
 
 // THE EVENTS, THE LAST 256 PER JOB (goal/G29.14): what a job publishes, as the jobs family's cache manager keeps them
-// (spirit.jobsData.events, oldest falling off the top); nothing is asked of the node.
+// (spirit.data.jobs.data.events, oldest falling off the top); nothing is asked of the node.
 function jdLines(id) { var J = jdData(); return J ? J.events(id) : []; }
 
 function jdLogHtml(job) {

@@ -1,7 +1,7 @@
 # files/listElement.js
 
 `spirit/run/spirit/element/files/listElement.js` is the files list (goal/G30.20): the node's files on the standard list tool,
-each row a `fileElement`, the list a view of the node's file tree, the branch the fs family's cache manager keeps (`spirit.fsData.branch`,
+each row a `fileElement`, the list a view of the node's file tree, the branch the fs family's cache manager keeps (`spirit.data.fs.data.branch`,
 `<node>/fs/files` in `spirit.data`, goal/G41.28). The Files app draws it as a pane, an app picking a file as a
 dropdown. Its test is `./listElement.js`.
 
@@ -10,11 +10,11 @@ dropdown. Its test is `./listElement.js`.
 - It loads what it uses itself (rule/26): `spirit/element/files/rowElement.js`, `spirit/element/probabilitySearch.js` and
   `spirit/element/fileViewer.js`, and no data script (goal/G41.16): the file tree's stream is its row element's.
 - It registers `spirit.element.fileList.create(host, opts)`, drawing one probabilitySearch into a `fill` box of its host.
-- It is a view of the file tree (`spirit.fsData.branch`), in path order (`sort('name', 'asc')`), filled as it is drawn. Its columns are `name`,
+- It is a view of the file tree (`spirit.data.fs.data.branch`), in path order (`sort('name', 'asc')`), filled as it is drawn. Its columns are `name`,
   `size` and `changed`; each row a `fileElement` of its path; a picked file is shown by its path, and reaches
   `opts.pick`.
 - Names are answered from the mirror: a search of names asks the node nothing. By contents it asks
-  `fs.search { q, contents: 'yes' }`; each find carries its facts from the file tree (`spirit.fsData.file`) and its matched line, a folder
+  `fs.search { q, contents: 'yes' }`; each find carries its facts from the file tree (`spirit.data.fs.data.file`) and its matched line, a folder
   without its trailing slash; by contents a file ranks by the node's score, by names the list ranks.
 - **The tree**: a filter drawn as no button. With no words a folder shows, and what is inside a folded one does not; a
   folder's press opens it and is never a pick, a file's press is no fold. `opts.accept` hides files of other types,

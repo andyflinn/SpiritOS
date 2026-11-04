@@ -22,7 +22,7 @@
     return Math.floor(total / 3600) + 'h ' + Math.floor((total % 3600) / 60) + 'm ' + (total % 60) + 's';
   }
   function reading() {
-    var job = S.jobsData.find(function (j) { return j && j.type === 'server-stats'; });
+    var job = S.data.jobs.data.find(function (j) { return j && j.type === 'server-stats'; });
     return job && job.data && job.data.memory ? job.data : null;
   }
   function rowsOf(d) {
@@ -63,7 +63,7 @@
       if (gone) return;
       list = S.element.valued.create(container, { rows: rows, columns: COLUMNS });
       // WHO PAINTS, LISTENS (Andy, G41.32): each new reading repaints. A forgotten set or a job gone may be the reading's.
-      off = S.jobsData.watch(function (id, job) { if (!id || !job || job.type === 'server-stats') list.redraw(); });
+      off = S.data.jobs.data.watch(function (id, job) { if (!id || !job || job.type === 'server-stats') list.redraw(); });
     });
     return {
       destroy: function () {

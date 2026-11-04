@@ -65,7 +65,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   global.spirit = global.window.spirit;
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+BUNDLE/EDITOR==' };
   global.window.spirit.data.home(global.window.spirit.node.key);
   // A family's cache: the family's own manager, run on this window; the watches on its bundles table counted, and their
@@ -74,8 +74,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const watches = { made: 0, released: 0 };
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
-    const T = global.window.spirit.authData && global.window.spirit.authData.bundles;
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
+    const T = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.bundles;
     if (T && !T.counted) {
       const own = T.watch; T.counted = true;
       T.watch = function (fn) { watches.made += 1; const stop = own(fn); return function () { watches.released += 1; return stop(); }; };
@@ -138,14 +138,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // was mounted for an appServer".
   ok(asked.length === 1 && asked[0].op === 'add' && asked[0].label === 'Reader' && Object.keys(asked[0]).length === 2, 'a valid label asks auth.bundle { op: add, label }, the label as the rule writes it (goal/G41.32: a user makes node-owned bundles alone)', 'asked: ' + short(asked));
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
-  // via the spirit object"): what it adds, it listens for, in spirit.authData.bundles.
+  // via the spirit object"): what it adds, it listens for, in spirit.data.auth.data.bundles.
   ok(input.value === '  Reader ' && !/\badded\b/.test(text(box)), 'answered, before the bundle is in the auth family\'s cache, the label stays and nothing is said added', 'input ' + short(input.value) + ', text: ' + short(text(box)));
   arrive(7, 'Somebody else');
   await settle();
   ok(input.value === '  Reader ', 'another bundle arriving leaves the label as it is', 'input ' + short(input.value));
   arrive(8, 'Reader');
   await settle();
-  ok(input.value === '' && /\badded\b/.test(text(box)), 'once the bundle it asked for is in spirit.authData.bundles, the input is empty for the next and the add is said', 'input ' + short(input.value) + ', text: ' + short(text(box)));
+  ok(input.value === '' && /\badded\b/.test(text(box)), 'once the bundle it asked for is in spirit.data.auth.data.bundles, the input is empty for the next and the add is said', 'input ' + short(input.value) + ', text: ' + short(text(box)));
   ok(sel.refreshed === r0, 'it asks its pane to search nothing again: the pane is a view of that branch', 'refreshed ' + (sel.refreshed - r0));
   answer = function () { return Promise.reject(Object.assign(new Error('label refused'), { refusal: 'bad-request' })); };
   input.value = 'Writer';
@@ -159,7 +159,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const w0 = watches.released;
     made.destroy();
     ok(box.kids.length === 0, 'destroy empties its box', 'kids left: ' + box.kids.length);
-    ok(watches.released === w0 + 1, 'destroy lets its watch on spirit.authData.bundles go', 'released ' + (watches.released - w0) + ' of ' + watches.made + ' made');
+    ok(watches.released === w0 + 1, 'destroy lets its watch on spirit.data.auth.data.bundles go', 'released ' + (watches.released - w0) + ' of ' + watches.made + ' made');
     ok(sel.destroyed === 1, 'destroy lets its bundle pane go', 'pane destroyed ' + sel.destroyed);
   }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },

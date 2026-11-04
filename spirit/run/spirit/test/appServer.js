@@ -17,7 +17,7 @@ const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const FILE = path.join(__dirname, '..', 'appServer.js');
 const SELF_FILE = __filename;
-const TRANSLATOR = path.join(RUN, path.dirname(require(path.join(RUN, 'spirit.js')).familyPath('desk')), 'clientCacheManager.js');
+const TRANSLATOR = path.join(RUN, path.dirname(require(path.join(RUN, 'spirit.js')).familyPath('desk')), 'data.js');
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
 const test = CHILD ? null : require(path.join(RUN, 'test', 'testReport.js'));
 
@@ -67,7 +67,7 @@ const asked = [];
 // loads the data set as it is required, onto the real spirit object; it is let go again, so appServer's own load of it
 // puts it on the stand-in, where the desk's translator finds it.
 const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
-delete require.cache[require.resolve(path.join(RUN, 'spirit', 'spiritData.js'))];
+delete require.cache[require.resolve(path.join(RUN, 'spirit', 'data.js'))];
 const fake = {
   familyPath: familyPath,
   require: function (p, key) {
@@ -128,9 +128,9 @@ function start(streamOpts, publisherOpts) {
   });
   return { A: A, s: s, D: A.data };
 }
-// What the client's cache holds, asked of the desk's clientCacheManager, which alone names its branches (goal/G41.28; Andy:
-// "the client manager should keep that cache"): spirit.deskData, attached by appServer to the process's spirit.
-const kept = function () { return (globalThis.spirit && globalThis.spirit.deskData) || null; };
+// What the client's cache holds, asked of the desk's data.js, which alone names its branches (goal/G41.28; Andy:
+// "the client manager should keep that cache"): spirit.data.desk.data, attached by appServer to the process's spirit.
+const kept = function () { return (globalThis.spirit && ((globalThis.spirit.data || {}).desk || {}).data) || null; };
 const itemOf = function (id) { const K = kept(); return K ? K.item(id) : null; };
 const partOf = function (id) { const K = kept(); return K ? K.part(id) : null; };
 const hasIn = function (D, n) { return !!itemOf('goal/G9.' + n); };
@@ -149,10 +149,11 @@ async function child(mode) {
     out.one = hasIn(D, 1); out.two = hasIn(D, 2);
     // THE CACHE BY SERVER NODE (box v19: "The RAM-CACHE-is organized BY SERVER-NODE-ID at it's lowest level. IE:
     // spirit.data.<server-public-key-in-base64>.<api-family>...."): what the data set holds at its top, and under it.
-    const top = Object.keys((D && D.data) || {});
+    const kept = (D && D.branches()) || [];
+    const top = kept.map(function (b) { return b.split('/')[0]; }).filter(function (n, i, all) { return all.indexOf(n) === i; });
     out.top = top;
     out.byNode = top.filter(namesSender);
-    out.family = out.byNode.length === 1 && D.data[out.byNode[0]] && typeof D.data[out.byNode[0]] === 'object' ? Object.keys(D.data[out.byNode[0]]) : [];
+    out.family = out.byNode.length === 1 ? kept.filter(function (b) { return b.split('/')[0] === out.byNode[0]; }).map(function (b) { return b.split('/')[1]; }).filter(function (f, i, all) { return all.indexOf(f) === i; }) : [];
   } else if (mode === 'restart') {
     // The same client again, a new process: the publisher in it a new run. Its cache read back before any subscribe.
     const { s, D } = start({ cache: true });
@@ -460,8 +461,8 @@ if (CHILD) {
     ok(!/cache\.json/.test(clientJs), 'deskClient keeps no cache.json of its own', 'deskClient.js still names cache.json');
 
     // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
-    // goal/G41.24: the desk's translator is its family's clientCacheManager.js; the stream checks below follow it.
-    if (!fs.existsSync(TRANSLATOR)) { test.fail('the desk\'s translator, process/js/desk/family/clientCacheManager.js, is not there: the stream checks wait on it'); test.reportSuccessFailureCount(); process.exit(0); }
+    // goal/G41.24: the desk's translator is its family's data.js; the stream checks below follow it.
+    if (!fs.existsSync(TRANSLATOR)) { test.fail('the desk\'s translator, process/js/desk/family/data.js, is not there: the stream checks wait on it'); test.reportSuccessFailureCount(); process.exit(0); }
     const { A, s, D } = start({}, { logMax: 5 });
     await tick(100);
     ok(!!D && typeof D.get === 'function' && !!s && typeof s.subscribe === 'function', 'it serves, keeps a data set and has its client half (subscribe)', 'data ' + typeof (D && D.get) + ', subscribe ' + typeof (s && s.subscribe));

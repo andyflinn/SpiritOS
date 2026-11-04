@@ -13,7 +13,7 @@
 // Activate and Delete are each one version with that status, both armed: the first press asks, the second sends.
 // THE RULE AND ITS CHAT ARE THE DESK FAMILY'S CACHE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure
 // when it changes shit it listens to fucking update via the spirit object"): what rule.get and item.chat answered is kept
-// in spirit.deskData, and the dialog draws from its watches; each of his writes comes back there, never by asking again.
+// in spirit.data.desk.data, and the dialog draws from its watches; each of his writes comes back there, never by asking again.
 
 var rdApi = null;
 var rdKey = '';
@@ -25,7 +25,7 @@ var rdNote = '';
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): Activate and Delete are armingButtons
 // (spirit/element/armingButton.js), which the dialog loads itself; each arms, says so, and hands the shell its disarm.
 var rdParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('spirit/element/armingButton.js') : null);
-// And the desk family's cache manager, which keeps the rule and its chat (spirit.deskData).
+// And the desk family's cache manager, which keeps the rule and its chat (spirit.data.desk.data).
 var rdData = spirit.cacheManager('desk');
 
 function rdEsc(s) { return rdApi.escapeHtml(String(s == null ? '' : s)); }
@@ -168,12 +168,12 @@ function rdText() { var el = document.getElementById('rd-text'); return el ? Str
 var rdRefill = false;
 var rdStops = [];
 function rdLoadRule() {
-  return rdAsk('rule.get', { key: rdKey }).then(function (r) { window.spirit.deskData.rules.keep(r); });
+  return rdAsk('rule.get', { key: rdKey }).then(function (r) { window.spirit.data.desk.data.rules.keep(r); });
 }
 function rdLoadChat() {
   var key = rdKey;
   return rdAsk('item.chat', { id: key }).then(function (c) {
-    window.spirit.deskData.keepPart(key, { chat: c.chat || [], chatMore: !!c.chatMore });
+    window.spirit.data.desk.data.keepPart(key, { chat: c.chat || [], chatMore: !!c.chatMore });
   });
 }
 function rdSaid(e) {
@@ -184,7 +184,7 @@ function rdSaid(e) {
 function rdWatch() {
   rdStops.forEach(function (stop) { stop(); });
   var key = rdKey;
-  var K = window.spirit.deskData;
+  var K = ((window.spirit.data || {}).desk || {}).data;
   rdStops = [
     K.rules.watch(key, function (row) {
       if (rdKey !== key || !row) return;

@@ -20,7 +20,7 @@
   if (window.spirit.require) ['spirit/element/files/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/fileViewer.js'].forEach(function (p) { window.spirit.require(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
   window.spirit.cacheManager('fs');
-  function fsData() { return (window.spirit && window.spirit.fsData) || null; }
+  function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
 
   function accepted(accept, row) {
     if (row.kind === 'folder' || accept == null) return true;
@@ -42,7 +42,7 @@
     if (!a.contents || !a.q) { found(Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
     return spirit.ready.then(function (s) { return s.fs.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
       body = body || {};
-      var F = fsData();
+      var F = fsReads();
       var next = Object.create(null);
       var items = (body.items || []).map(function (i) {
         var row = null;
@@ -72,8 +72,8 @@
     var inner = host.lastChild;
     list = E.probabilitySearch.create(inner, {
       api: { verb: function (name, args) { return search(args, function (next) { scores = next; }); } },
-      // A view of the node's file tree, the branch the fs family's manager keeps (spirit.fsData.branch).
-      data: fsData().branch,
+      // A view of the node's file tree, the branch the fs family's manager keeps (spirit.data.fs.data.branch).
+      data: fsReads().branch,
       server: 'fs',
       verb: 'search',
       face: o.face,

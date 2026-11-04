@@ -75,13 +75,13 @@ function world(opts) {
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
       w.managers = (w.managers || []).concat(name);
-      vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
       return Promise.resolve(true);
     },
   };
   vm.createContext(win);
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+TEXT/EDITOR==' };
   win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
@@ -89,7 +89,7 @@ function world(opts) {
   // A change of one file in the node's tree, as its fs-watcher streams it to the page once the whole tree has come
   // (before then the branch fills quietly).
   w.tree = function (p) {
-    if (!win.spirit.fsData.ready()) win.spirit.data.take({ id: 'job_fs', type: 'fs-watcher', data: { treeComplete: true } }); win.spirit.data.take({ id: 'job_fs', type: 'fs-watcher', data: { command: { op: 'writeFile', path: p, size: 1, modified: Date.now() } } }); };
+    if (!win.spirit.data.fs.data.ready()) win.spirit.data.take({ id: 'job_fs', type: 'fs-watcher', data: { treeComplete: true } }); win.spirit.data.take({ id: 'job_fs', type: 'fs-watcher', data: { command: { op: 'writeFile', path: p, size: 1, modified: Date.now() } } }); };
   return w;
 }
 function lastView(w) { return w.views[w.views.length - 1] || null; }
@@ -141,7 +141,7 @@ test.startTest('textEditor.js: the TextEditor app, face-able');
   ok(w.saved.length === 1 && w.saved[0].path === 'shell/textEditor/notes.txt' && w.saved[0].content === 'my notes, edited', 'fs.saveFile(the current path, the view\'s value())', 'saved: ' + short(w.saved));
   ok(status() === 'saving…', 'the node\'s ok alone does not say saved', 'status: ' + short(status()));
   w.tree('shell/textEditor/notes.txt'); await settle();
-  ok(status() === 'saved', 'then saved, once the open file\'s row in spirit.data (spirit.fsData.branch) has the save', 'status: ' + short(status()));
+  ok(status() === 'saved', 'then saved, once the open file\'s row in spirit.data (spirit.data.fs.data.branch) has the save', 'status: ' + short(status()));
   w.tree('docs/a.md'); await settle();
   ok(status() === 'saved', 'a change of another file says nothing', 'status: ' + short(status()));
 

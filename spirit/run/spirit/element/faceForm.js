@@ -102,7 +102,7 @@
       var mineNow = function (r) { return r && (r.key === key || (row && row.url && r.url === row.url)); };
       if (!row) {
         // A change with no value is not a row gone until the cache says so.
-        if (window.spirit.contactData.contact(key)) return;
+        if (window.spirit.data.contact.data.contact(key)) return;
         box._spFace.relays = now.filter(function (r) { return !mineNow(r); });
       } else {
         if (row.relay !== true) return;
@@ -123,7 +123,7 @@
     }
     var left = false;
     Promise.resolve(window.spirit.cacheManager('contact')).then(function () {
-      if (!left && window.spirit.contactData) stop = window.spirit.contactData.watch(take);
+      if (!left && ((window.spirit.data || {}).contact || {}).data) stop = window.spirit.data.contact.data.watch(take);
     });
     box._spFaceStop = function () { left = true; if (typeof stop === 'function') stop(); stop = null; };
 

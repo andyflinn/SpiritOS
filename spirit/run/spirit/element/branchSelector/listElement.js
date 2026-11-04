@@ -50,8 +50,8 @@
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['family', 'verb'];
     list = E.probabilitySearch.create(box, {
       api: { verb: function (name, args) { return search(args); } },
-      // A view of the node's branches, the branch the auth family's manager keeps (spirit.authData.branches.branch).
-      data: window.spirit.authData.branches.branch,
+      // A view of the node's branches, the branch the auth family's manager keeps (spirit.data.auth.data.branches.branch).
+      data: window.spirit.data.auth.data.branches.branch,
       server: 'auth',
       verb: 'branch',
       face: o.face,

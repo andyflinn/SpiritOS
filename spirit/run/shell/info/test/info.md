@@ -11,7 +11,7 @@ in `spirit/coreFiles.js`, so every face shows it.
   `spirit/element/changeMyDescription.js`, `spirit/element/joinForm.js` and `spirit/element/faceForm.js`.
 - **Its two blocks are the two shell elements** (Andy, Q1): changeMyLabel for the name, changeMyDescription for the
   description, each handed the app's api. Info reads `node.card` and keeps its answer in the node family's cache
-  (`spirit.cacheManager('node')`, then `spirit.nodeData.card.keep`; goal/G41.28); each element draws itself from that
+  (`spirit.cacheManager('node')`, then `spirit.data.node.data.card.keep`; goal/G41.28); each element draws itself from that
   card and holds its own rule, check, limit and save.
 - **"What each relay calls you" is dropped** (Andy, 2026-10-27): no table of relays and the name each calls this node,
   no push of a saved name to every relay, no rename. Its code is deleted and tested gone.

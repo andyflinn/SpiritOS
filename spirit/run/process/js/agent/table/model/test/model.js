@@ -137,17 +137,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     busyButton: { attach: function (button, opts) { const a = { button: button, opts: opts || {}, answers: [] }; made.busy.push(a); button.addEventListener('click', function () { if (typeof a.opts.run === 'function') a.answers.push(a.opts.run()); }); return button; } },
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
-    // family's cache manager names it (spirit.agentData.branch, goal/G41.28).
-    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = global.window.spirit.agentData; const s3 = E2.probabilitySearch.create(host, Object.assign({ api: o2.api, server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
+    // family's cache manager names it (spirit.data.agent.data.branch, goal/G41.28).
+    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.probabilitySearch.create(host, Object.assign({ api: o2.api, server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   } } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(p === AGENT ? made.family : true); };
-  // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client: the stream lands there, under
+  // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
   // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
   // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.home(HOME_KEY);
   global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
@@ -238,16 +238,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('elementRow.js loads the agent family\'s cache manager, which takes the model table\'s rows from the stream (goal/G41.16, G41.28)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
-  // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's clientCacheManager's
-  // (process/js/agent/family/clientCacheManager.js, goal/G41.28), loaded with the row element; it files the rows under the
-  // node that served them, and is read through spirit.agentData.
+  // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's data.js's
+  // (process/js/agent/family/data.js, goal/G41.28), loaded with the row element; it files the rows under the
+  // node that served them, and is read through spirit.data.agent.data.
   {
     const DATA = global.window.spirit.data;
-    const AD = global.window.spirit.agentData;
+    const AD = ((global.window.spirit.data || {}).agent || {}).data;
     ok(!made.required.some(function (p) { return /data\.js$/.test(p); }), 'its page files require no data script', 'required: ' + short(made.required));
     const BRANCH = DATA.nodeId(HOME_KEY) + '/agent/model';
-    ok(!!AD && typeof AD.branch === 'function' && AD.branch('model') === BRANCH, 'the agent family\'s cache manager is loaded: spirit.agentData.branch(\'model\') is the home node\'s <node>/agent/model',
-      'agentData: ' + short(AD ? AD.branch('model') : AD));
+    ok(!!AD && typeof AD.branch === 'function' && AD.branch('model') === BRANCH, 'the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'model\') is the home node\'s <node>/agent/model',
+      'agentReads: ' + short(AD ? AD.branch('model') : AD));
     // With no manager loaded the check above is red; nothing below would judge anything.
     if (AD) {
       const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };

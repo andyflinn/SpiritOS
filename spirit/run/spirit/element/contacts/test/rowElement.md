@@ -2,7 +2,7 @@
 
 One contact as a row element: `spirit.element.contactElement.create(row)` builds it through the shared
 `rowElement.create` (`spirit/element/rowElement.js`). Its subject is a public key; it reads the node's contacts as the contact
-family's cache manager keeps them (`spirit/run/spirit/contact/clientCacheManager.js`, `spirit.contactData`; goal/G41.28:
+family's cache manager keeps them (`spirit/run/spirit/contact/data.js`, `spirit.data.contact.data`; goal/G41.28:
 in `spirit.data` under the serving node, `<node>/contact/contacts/<key>`), loads that manager itself
 (`spirit.cacheManager('contact')`), and repaints from it. The test loads it as a page does, the page's node known
 (`spirit.node.key`, `data.home`).
@@ -24,8 +24,8 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
   first requires the page it opens (`contactDetails/contactDetails.js`, `relayPanel.js`), then opens it.
 - **Cells**: presence 🟢 present, 🔴 absent, ⚪ not known; status ❌ blocked over ⌛ held over ⭐ mine, else blank; label
   the name, HTML-escaped; add an Add button only on a row neither in the book nor a relay.
-- **Presence already known** in the contacts (`spirit.contactData`) wins over the row's own `present` at create.
-- **Dispatch**: one watch on the contacts (`spirit.contactData.watch`); a write to a key repaints every live row of that key, only the fields
+- **Presence already known** in the contacts (`spirit.data.contact.data`) wins over the row's own `present` at create.
+- **Dispatch**: one watch on the contacts (`spirit.data.contact.data.watch`); a write to a key repaints every live row of that key, only the fields
   whose values (or `from` values) changed. A destroyed row is no longer repainted.
 - **Label editor**: normalizes and checks the name by `spirit.fieldRules` first; a refused name is answered
   `{ ok: false, error }` without asking; a good one asks `contact.label { publicKey, myLabel }`.

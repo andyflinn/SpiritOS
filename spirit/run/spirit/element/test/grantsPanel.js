@@ -114,7 +114,7 @@ function world() {
       // A family's cache (goal/G41.28): the jobs family's own manager, run on this window, so the server jobs the test
       // hands spirit.data reach the panel as the page's would.
       cacheManager: function (name) {
-        if (name === 'jobs') vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'jobs', 'clientCacheManager.js'), 'utf8'), win, { filename: 'clientCacheManager.js' });
+        if (name === 'jobs') vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'jobs', 'data.js'), 'utf8'), win, { filename: 'data.js' });
         return Promise.resolve(true);
       },
       escapeHtml: api.escapeHtml },
@@ -126,7 +126,7 @@ function world() {
   win.window = win;
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
   w.win = win; w.api = api; w.page = page;
   return w;

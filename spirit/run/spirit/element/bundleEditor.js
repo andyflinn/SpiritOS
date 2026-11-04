@@ -52,10 +52,10 @@
 
       function say(text) { said.textContent = String(text || ''); }
       // WHAT IT ADDS, IT LISTENS FOR (goal/G41.27, G41.28): the bundle arrives in the auth family's cache
-      // (spirit.authData.bundles), which the pane is a view of, so it shows there by itself; once it is there, Add's
+      // (spirit.data.auth.data.bundles), which the pane is a view of, so it shows there by itself; once it is there, Add's
       // label is cleared and the add is said.
       var waitingFor = '';
-      stop = window.spirit.authData.bundles.watch(function (key, v) {
+      stop = window.spirit.data.auth.data.bundles.watch(function (key, v) {
         if (!waitingFor || !v || String(v.label || '') !== waitingFor) return;
         waitingFor = '';
         input.value = '';

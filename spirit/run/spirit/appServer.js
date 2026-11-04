@@ -377,7 +377,7 @@ const RUN_ROOT = path.resolve(__dirname, '..');
 // A server that follows a stream hands serve() opts.stream = { module, translator, onRow, cache }: the module the
 // sender publishes as (process/js/<name>), the stream's translator (its data.js), a handler for each row if it wants
 // one, and the cache switch. serve() then adds the verb streamListener {json} -> {heard: true}: one bundle. Each row
-// goes straight into the server's spirit.data (spirit/spiritData.js) through the translator, exactly as a face app
+// goes straight into the server's spirit.data (spirit/data.js) through the translator, exactly as a face app
 // keeps it in the page, and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror of its
 // own. Only a sender the server follows is heard (server.follow(key)); any other caller is refused not-granted.
 // follow(key) also grants that key the verb on this server's own node (auth.grant <server>.streamListener, through the
@@ -400,12 +400,12 @@ const CACHE_LIMIT = 4 * 1024 * 1024;
 const CACHE_SAVE_MS = 10;
 let streamData = null;
 function dataSet() {
-  if (!streamData) streamData = require('./spiritData.js');
+  if (!streamData) streamData = require('./data.js');
   return streamData;
 }
 // One per sender this server follows: where it stands and what it keeps.
 //   { key, family, run, n, rows: [{ row, paths }], pushing: [{ row, paths }] | null, cached, api, saving }
-// paths are what the row wrote into the data set (spiritData recording), so a row that goes takes them with it.
+// paths are what the row wrote into the data set (spirit/data.js recording), so a row that goes takes them with it.
 const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
 // THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28; Andy, the box: "this way an appServer in client-mode can derive the
@@ -413,10 +413,10 @@ let following = null;            // { module, onRow, limit, cache: bool, name } 
 function cacheDir() { return path.join(RUN_ROOT, 'relay-state', following.name); }
 function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '.json'); }
 // The sender's cache rules on this node, or null: none there, no cache. They are its family folder's
-// clientCacheManager.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
+// data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
   if (!family || !/^[A-Za-z]\w*$/.test(String(family))) return null;
-  const file = path.join(RUN_ROOT, path.dirname(spirit.familyPath(String(family))), 'clientCacheManager.js');
+  const file = path.join(RUN_ROOT, path.dirname(spirit.familyPath(String(family))), 'data.js');
   if (!fs.existsSync(file)) return null;
   try { return require(file); } catch (e) { return null; }
 }
@@ -550,12 +550,8 @@ function heard(st, from, e) {
 function withStreamListener(verbs, stream, followed, name) {
   if (!stream || typeof stream !== 'object' || Object.prototype.hasOwnProperty.call(verbs, 'streamListener')) return verbs;
   dataSet();
-  // A translator that hands an attach is attached to this server's data set here (goal/G41.24: the desk's
-  // clientCacheManager.js, required also for its cache rules, so its require may come before the data set).
-  if (stream.translator) {
-    const t = require(path.resolve(String(stream.translator)));
-    if (t && typeof t.attach === 'function') t.attach(globalThis);
-  }
+  // A family's data.js stands on this server's data set as it is required (goal/G41.24, goal/G43.7).
+  if (stream.translator) require(path.resolve(String(stream.translator)));
   const cache = stream.cache === true || isPlain(stream.cache);
   following = {
     module: String(stream.module || ''),
@@ -904,7 +900,7 @@ function saveCaches() {
 // spirit.js reads itself as it is required: the port from relay-state/environment.json, the rest from --node.
 
 module.exports = {
-  // goal/G33.4: the data set a following server keeps (spirit/spiritData.js), filled by its stream's translator.
+  // goal/G33.4: the data set a following server keeps (spirit/data.js), filled by its stream's translator.
   get data() { return dataSet(); },
   // goal/G33.8: the one publish, to the pages and to the subscribers.
   publish: publish,

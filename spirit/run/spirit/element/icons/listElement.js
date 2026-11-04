@@ -24,11 +24,11 @@
 
   // THE ICON SET IN spirit.data (goal/G41.28; Andy, box v15: "If its rows are NOT cached in the proper place, with the shells
   // one and only spirit.data object, then that must be fixed, too."): kept by the fs family's cache manager, the set
-  // being a file the family serves (spirit.fsData.icons, glyph -> its row), loaded with this element. A set read again
+  // being a file the family serves (spirit.data.fs.data.icons, glyph -> its row), loaded with this element. A set read again
   // replaces it whole: a glyph the set no longer has leaves it.
   window.spirit.cacheManager('fs');
-  function fsData() { return (window.spirit && window.spirit.fsData) || null; }
-  function keepSet(set) { var F = fsData(); if (F) F.icons.keep(set); }
+  function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
+  function keepSet(set) { var F = fsReads(); if (F) F.icons.keep(set); }
 
   function create(host, opts) {
     var o = opts || {};
@@ -51,7 +51,7 @@
       all: o.all,
       name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
       // A view of the icon set's branch: what keepSet writes, it draws.
-      data: fsData().icons.branch,
+      data: fsReads().icons.branch,
       columns: [
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },
@@ -62,7 +62,7 @@
       empty: o.empty || 'No icon matches.',
     });
     // The set written again (by the Icons app, or anyone): read again.
-    var unwatch = fsData() ? fsData().watchFile(SET, function () { reload(); }) : null;
+    var unwatch = fsReads() ? fsReads().watchFile(SET, function () { reload(); }) : null;
     var destroy = list.destroy;
     list.destroy = function () { if (typeof unwatch === 'function') unwatch(); destroy(); };
     list.reload = reload;

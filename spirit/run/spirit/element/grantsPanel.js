@@ -113,10 +113,10 @@
         if (treeAgain) { treeAgain = false; treeChanged(); }
       });
     }
-    // The servers' jobs as the jobs family's cache keeps them (spirit.jobsData, goal/G41.28), followed while mounted.
+    // The servers' jobs as the jobs family's cache keeps them (spirit.data.jobs.data, goal/G41.28), followed while mounted.
     var unfollow = null;
     function followServers() {
-      var J = window.spirit.jobsData;
+      var J = ((window.spirit.data || {}).jobs || {}).data;
       if (!J || unfollow) return;
       var seen = Object.create(null);   // job id -> its last status, so a write of the same says nothing new
       Object.keys(J.jobs()).forEach(function (id) { var j = J.job(id); if (j && j.kind === 'server') seen[id] = String(j.status || ''); });

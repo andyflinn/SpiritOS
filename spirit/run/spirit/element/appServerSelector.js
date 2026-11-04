@@ -18,12 +18,12 @@
 
   // THE NODE'S API TREE IN spirit.data (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
   // apiTree branch of spirit.data, read again when a server job changes, and the family, verb and app-server selectors
-  // draw from it?" "yes."): this selector reads it, and the node family's cache manager keeps it (spirit.nodeData:
+  // draw from it?" "yes."): this selector reads it, and the node family's cache manager keeps it (spirit.data.node.data:
   // families, and each family's verbs, as apiTreeIndex reads the tree). Read again, the tree replaces both whole. A
   // server job changing on the stream reads it again: one translator for every selector.
   // Another party's tree (options.tree: introSpector's peer or relay) is that party's, and stays out of it.
   function keepTree(tree) {
-    window.spirit.nodeData.keepTree(tree, window.spirit.apiTreeIndex);
+    window.spirit.data.node.data.keepTree(tree, window.spirit.apiTreeIndex);
   }
   var reading = null;
   function readOwnTree() {
@@ -39,7 +39,7 @@
     if (D && typeof D.translate === 'function') D.translate({ onJob: function (job) { if (job && job.kind === 'server') readOwnTree(); } });
   }
   if (window.spirit && window.spirit.data) follow(window.spirit.data);
-  else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('spirit/spiritData.js')).then(function () { follow(window.spirit.data); }, function () {});
+  else if (window.spirit && window.spirit.require) Promise.resolve(window.spirit.require('spirit/data.js')).then(function () { follow(window.spirit.data); }, function () {});
 
   // ── THE APPSERVER SELECTOR (apiAuth/G1.8) ──────────────────────────
   //
@@ -86,7 +86,7 @@
         face: 'dropdown',
         placeholder: options.placeholder || 'choose a server…',
         all: options.all,
-        data: own ? window.spirit.nodeData.treeBranch : undefined,
+        data: own ? window.spirit.data.node.data.treeBranch : undefined,
         rows: own ? undefined : rows,
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },

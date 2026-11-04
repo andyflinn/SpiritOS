@@ -56,8 +56,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   global.document = { createElement: function (t) { return node(t); } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   global.spirit = global.window.spirit;
-  // The page's one data set (spirit/spiritData.js), which spirit.js brings with the client.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  // The page's one data set (spirit/data.js), which spirit.js brings with the client.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const DATA = global.window.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   const NODE_KEY = 'nOdE+key/one==';
@@ -67,7 +67,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p] && !STANDS[p].done) { STANDS[p].done = true; STANDS[p](global.window.spirit.element); } return Promise.resolve(true); };
@@ -92,8 +92,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(l.refreshes >= 1, 'it fills as soon as it is drawn', 'refreshes: ' + l.refreshes);
   // goal/G41.14: a view of the node's branches, kept current by the node's stream, so every branch list on a page agrees;
   // goal/G41.28: the branch the auth family's cache manager keeps.
-  const B = global.window.spirit.authData && global.window.spirit.authData.branches;
-  ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s branches (spirit.authData.branches.branch), the spirit object\'s cache', 'data: ' + short(o.data) + ', authData.branches.branch ' + short(B && B.branch));
+  const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.branches;
+  ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s branches (spirit.data.auth.data.branches.branch), the spirit object\'s cache', 'data: ' + short(o.data) + ', authReads.branches.branch ' + short(B && B.branch));
 
   const got = await o.api.verb(o.server + '.' + o.verb, o.args(' cha ', {}));
   ok(o.server === 'auth' && o.verb === 'branch' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'cha' && asked[0].bundle === 7,

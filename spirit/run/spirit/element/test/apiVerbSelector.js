@@ -47,7 +47,7 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
       cacheManager: function (name) {
         w.managers = (w.managers || []).concat(name);
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node(t); } },
@@ -59,7 +59,7 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'apiTreeIndex.js'), 'utf8'), win, { filename: 'apiTreeIndex.js' });
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+VERB/SELECTOR==' };
   win.spirit.data.home(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
@@ -101,8 +101,8 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   const mine = made.create(node('div'), {});
   await settle();
   const m = w.lists[w.lists.length - 1];
-  const N = win.spirit.nodeData;
-  ok((w.managers || []).indexOf('node') !== -1 && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined, 'it loads the node manager, and its list is a view of spirit.nodeData\'s verbs, no rows of its own', 'managers ' + short(w.managers) + ', data ' + short(m.opts.data) + ', rows ' + typeof m.opts.rows);
+  const N = ((win.spirit.data || {}).node || {}).data;
+  ok((w.managers || []).indexOf('node') !== -1 && !!N && m.opts.data === N.verbsBranch && m.opts.rows === undefined, 'it loads the node manager, and its list is a view of ((spirit.data || {}).node || {}).data\'s verbs, no rows of its own', 'managers ' + short(w.managers) + ', data ' + short(m.opts.data) + ', rows ' + typeof m.opts.rows);
   N.keepTree(TREE, win.spirit.apiTreeIndex);
   mine.show(TREE, 'fs');
   const kept = win.spirit.data.get(N.verbsBranch) || {};

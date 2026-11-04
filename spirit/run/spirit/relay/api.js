@@ -31,7 +31,7 @@ module.exports = {
       return one.contact.search({ q: '*', relay: 'yes', keep: 'yes' });
     }
     return {
-      // Each relay got is kept by the family's own cache manager (goal/G41.28), spirit.relayData.
+      // Each relay got is kept by the family's own cache manager (goal/G41.28), spirit.data.relay.data.
       status: function (name) {
         var one = typeof spirit !== 'undefined' ? spirit : (typeof window !== 'undefined' ? window.spirit : null);
         return listed().then(function (s) {
@@ -40,7 +40,7 @@ module.exports = {
             return call('get', { key: i.key }).then(function (g) { return g; }, function () { return null; });
           }))).then(function (got) {
             var gets = got.slice(1);
-            gets.forEach(function (g) { one.relayData.keep(g); });
+            gets.forEach(function (g) { one.data.relay.data.keep(g); });
             var rows = [];
             var relayStatus = {};
             gets.forEach(function (g) {

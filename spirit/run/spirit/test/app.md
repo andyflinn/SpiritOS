@@ -6,7 +6,7 @@ Andy, box: *"we build a skeleton core-api-family, not a separate server, precise
 
 ## Requirements
 
-- `spirit/app.js` beside `spirit/app/`, which holds what every core family holds: `api.js`, `AGENTS.md`, `clientCacheManager.js`, `search.json`.
+- `spirit/app.js` beside `spirit/app/`, which holds what every core family holds: `api.js`, `AGENTS.md`, `data.js`, `search.json`.
 - One verb, `app.search`, one optional search string, no filters: *"it's minimum, no filters, just a search string."* A filter is refused at the door.
 - The node's api names the family beside the others.
 - `spirit/app/server/server.json` has `identity.icon` and `identity.label`. The plugins are exactly `monitor` and `server`. No app may take the name of a verb of the family: a folder named `search` is no app (goal/G43.6).

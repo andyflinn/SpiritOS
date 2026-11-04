@@ -1,6 +1,6 @@
 // spirit/run/spirit/element/files/rowElement.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
-// it reads the node's file tree as the fs family's cache manager keeps it (spirit.fsData, goal/G41.28), which the
+// it reads the node's file tree as the fs family's cache manager keeps it (spirit.data.fs.data, goal/G41.28), which the
 // fs-watcher's stream keeps, so a change to a file repaints that file's cells and nothing else. rowElement.js does the
 // shared work; this file says what a file is.
 //
@@ -18,11 +18,11 @@
   var files = null;
 
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
-  // clientCacheManager's (spirit/fs/clientCacheManager.js), which this element loads itself (rule/26), with the data set
-  // it fills; a row reads spirit.fsData.
-  function fsData() { return (window.spirit && window.spirit.fsData) || null; }
+  // data.js's (spirit/fs/data.js), which this element loads itself (rule/26), with the data set
+  // it fills; a row reads spirit.data.fs.data.
+  function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
   // Asked as this file runs, so it is part of this file's tree: whoever requires this element has the manager with it.
-  var fsReady = Promise.resolve(window.spirit.cacheManager('fs')).then(function () { return fsData(); });
+  var fsReady = Promise.resolve(window.spirit.cacheManager('fs')).then(function () { return fsReads(); });
 
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
   function esc(s) {
@@ -78,7 +78,7 @@
     return dir.split('/').filter(Boolean).map(function (part) { return wordSpan(part, part, colours) + '/'; }).join('');
   }
 
-  function known(p) { var F = fsData(); return F ? F.file(p) : null; }
+  function known(p) { var F = fsReads(); return F ? F.file(p) : null; }
   // A write to data.files, by path, to the rows that show that path; its release answered to the index, which lets it go
   // with the kind's last row (rowElement.index).
   // Made once the fs family's manager is on the page; let go at once if the index lets it go first.
@@ -96,7 +96,7 @@
       });
     }
     // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
-    listen(fsData());
+    listen(fsReads());
     if (!off) fsReady.then(listen);
     return function () { gone = true; if (typeof off === 'function') off(); };
   }

@@ -137,7 +137,7 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
     // WHAT THE FACE'S LISTS START WITH (Andy, of a face with no star: "none of the face-apps showed up"): each finds its family's
     // cache manager by FS.path, here on the node's real door.
     for (const fam of ['fs', 'jobs', 'contact']) {
-      const p = await face({ call: fam + '.FS.path', args: { path: 'clientCacheManager.js' } });
+      const p = await face({ call: fam + '.FS.path', args: { path: 'data.js' } });
       ok(p.status === 200 && p.body && typeof p.body.path === 'string' && p.body.path.indexOf(fam) !== -1, fam + '.FS.path from a face with no star names its cache manager', fam + '.FS.path from the face: ' + p.status + ' ' + short(p.text));
     }
     for (const q of [JOB, SAVE, OWNER]) {

@@ -123,13 +123,13 @@ function load(w) {
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
       w.managers = (w.managers || []).concat(name);
-      vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+      vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
       return Promise.resolve(true);
     } } };
   global.spirit = global.window.spirit;
   w.win = global.window;
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+AGENT/APP==' };
   global.window.spirit.data.home(global.window.spirit.node.key);
   global.document = { createElement: function () { return box('made'); }, addEventListener: function () {}, removeEventListener: function () {} };
@@ -276,9 +276,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   change(rb, false); await settle();
   const asked2 = w.calls[w.calls.length - 1];
   ok(asked2 && asked2.on === false, 'unticking it calls debug {on: false}', 'debug calls: ' + short(w.calls));
-  ok((w.managers || []).indexOf('jobs') !== -1 && !!w.win.spirit.jobsData, 'it loads the jobs family\'s cache manager (spirit.jobsData)', 'managers: ' + short(w.managers));
+  ok((w.managers || []).indexOf('jobs') !== -1 && !!((w.win.spirit.data || {}).jobs || {}).data, 'it loads the jobs family\'s cache manager (((spirit.data || {}).jobs || {}).data)', 'managers: ' + short(w.managers));
   w.stream(true); await settle();
-  ok(isOn(rb), 'the checkbox follows the server\'s state, its job in spirit.jobsData: on', 'after its job said on: unchecked');
+  ok(isOn(rb), 'the checkbox follows the server\'s state, its job in ((spirit.data || {}).jobs || {}).data: on', 'after its job said on: unchecked');
   w.stream(false); await settle();
   ok(!isOn(rb), 'and off', 'after its job said off: checked');
 

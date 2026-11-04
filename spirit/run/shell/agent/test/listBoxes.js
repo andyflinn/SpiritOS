@@ -131,7 +131,7 @@ function makeDom() {
 // The real files the app and its elements load, run on the page when they are required; anything else is answered and
 // not run.
 const REAL = [
-  'spirit/spiritData.js', 'spirit/element/workBench.js', 'process/js/agent/table/tableElement.js', 'process/js/agent/table/rowElement.js',
+  'spirit/data.js', 'spirit/element/workBench.js', 'process/js/agent/table/tableElement.js', 'process/js/agent/table/rowElement.js',
   'process/js/agent/table/provider/elementTable.js', 'process/js/agent/table/provider/elementRow.js',
   'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'spirit/element/busyButton.js',
   // The one-row form and the icon it draws with (goal/G41.27): the model table's Ask form is one.
@@ -173,15 +173,15 @@ function world() {
     // A family's cache (goal/G41.28): the family's own manager, a node family's or its server's, run on this page over
     // the real data set.
     cacheManager: function (name) {
-      const at = ['spirit/' + name + '/clientCacheManager.js', 'process/js/' + name + '/family/clientCacheManager.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); })[0];
-      if (!at) return Promise.reject(new Error('the family ' + name + ' has no clientCacheManager.js'));
+      const at = ['spirit/' + name + '/data.js', 'process/js/' + name + '/family/data.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); })[0];
+      if (!at) return Promise.reject(new Error('the family ' + name + ' has no data.js'));
       if (!loaded[at]) { loaded[at] = true; vm.runInContext(fs.readFileSync(path.join(RUN, at), 'utf8'), win, { filename: at }); }
       return Promise.resolve(true);
     },
   };
   win.spirit.ready = Promise.resolve(win.spirit);
   vm.createContext(win);
-  win.spirit.require('spirit/spiritData.js');
+  win.spirit.require('spirit/data.js');
   // Its node known (goal/G41.28, Q10), as spirit.start leaves it before any app runs.
   win.spirit.node = { key: 'KEY+AGENT/BOXES==' };
   win.spirit.data.home(win.spirit.node.key);
@@ -258,8 +258,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(all.length >= 4 && !bad.length, 'all ' + all.length + ' list panes drawn, none in a box only as tall as its content', 'not fill: ' + short(bad));
 
   test.subHeading('each list pane is a view of its table in the agent family\'s cache (goal/G41.28)');
-  const AD = w.win.spirit.agentData;
+  const AD = ((w.win.spirit.data || {}).agent || {}).data;
   const off = all.filter(function (p) { return !AD || !p.o.data || p.o.data !== AD.branch(p.o.verb); }).map(function (p) { return { verb: p.o.verb, data: p.o.data }; });
-  ok(!!AD && all.length >= 4 && !off.length, 'every list pane is handed its table\'s branch, spirit.agentData.branch(table)', 'agentData ' + !!AD + ', not its branch: ' + short(off));
+  ok(!!AD && all.length >= 4 && !off.length, 'every list pane is handed its table\'s branch, spirit.data.agent.data.branch(table)', 'agentReads ' + !!AD + ', not its branch: ' + short(off));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

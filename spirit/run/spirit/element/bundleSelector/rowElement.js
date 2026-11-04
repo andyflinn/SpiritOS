@@ -22,9 +22,9 @@
   if (window.spirit.require) window.spirit.require('spirit/element/rowElement.js');
 
   // A NODE'S BUNDLES ARE THE auth FAMILY'S CACHE (goal/G41.28): what a bundle row on the stream means, and its branch,
-  // are the family's own clientCacheManager's (spirit/auth/clientCacheManager.js), which this element loads itself
-  // (rule/26), as part of its tree; a row reads spirit.authData.bundles.
-  var authReady = Promise.resolve(window.spirit.cacheManager('auth')).then(function () { return window.spirit.authData.bundles; });
+  // are the family's own data.js's (spirit/auth/data.js), which this element loads itself
+  // (rule/26), as part of its tree; a row reads spirit.data.auth.data.bundles.
+  var authReady = Promise.resolve(window.spirit.cacheManager('auth')).then(function () { return window.spirit.data.auth.data.bundles; });
   // THE KIND'S INDEX: one watch on the bundles for every bundle row on the page, each change to the rows of that key;
   // its release answered to the index, which lets it go with the kind's last row.
   var bundles = null;
@@ -39,7 +39,7 @@
       });
     }
     // At once when the manager is on the page already, so a change in the tick a row mounts is heard.
-    listen(window.spirit.authData && window.spirit.authData.bundles);
+    listen(((window.spirit.data || {}).auth || {}).data && window.spirit.data.auth.data.bundles);
     if (!off) authReady.then(listen);
     return function () { gone = true; if (off) off(); off = null; };
   }

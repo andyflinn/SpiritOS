@@ -8,7 +8,7 @@
 //
 // A VIEW OF THE NODE'S JOBS IN spirit.data (goal/G41.28; Andy: "anything not using the new spiritData.js and it's buddies
 // clientCacheManager.js must do so in this item. no exceptions."): the probability search over the jobs branch the jobs
-// family's cache manager keeps (spirit.jobsData), each row the shared row element. Words match the whole job; the kind
+// family's cache manager keeps (spirit.data.jobs.data), each row the shared row element. Words match the whole job; the kind
 // filter is one choice (all, node, servers, transient, and failed last: goal/G29.16). Columns: the green dot, status,
 // name (module, else type), kind, progress, updated.
 //
@@ -102,7 +102,7 @@ spirit.shell.activateApp({
     jobsApi = api;
     container.innerHTML = '';
     return jobsParts.then(function () {
-      var J = window.spirit.jobsData;
+      var J = ((window.spirit.data || {}).jobs || {}).data;
       jobsList = window.spirit.element.probabilitySearch.create(container, {
         data: J.branch,
         columns: [

@@ -58,13 +58,13 @@ test.startTest('contactSelector.js: the configurable ID selector');
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { required.push(String(p)); if (STANDS[p]) STANDS[p](global.window.spirit.element); return Promise.resolve(true); };
   // The page's one data set, its node known (goal/G41.28, Q10), and a family's cache: the family's own manager, run here.
-  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), { filename: 'spiritData.js' });
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: 'KEY+CONTACT/SELECTOR==' };
   global.window.spirit.data.home(global.window.spirit.node.key);
   const managers = [];
   global.window.spirit.cacheManager = function (name) {
     managers.push(String(name));
-    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), { filename: name + '/clientCacheManager.js' });
+    vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), { filename: name + '/data.js' });
     return Promise.resolve(true);
   };
   vm.runInThisContext(SRC, { filename: FILE });
@@ -88,8 +88,8 @@ test.startTest('contactSelector.js: the configurable ID selector');
   if (!lists.length) return;
 
   test.subHeading('by default, the contacts the contact family\'s cache keeps (goal/G41.28)');
-  const CD = global.window.spirit.contactData;
-  ok(managers.indexOf('contact') !== -1 && !!CD && lists[0].o.data === CD.branch, 'it loads the contact manager, and its list is a view of spirit.contactData\'s branch', 'managers ' + short(managers) + ', data ' + short(lists[0].o.data));
+  const CD = ((global.window.spirit.data || {}).contact || {}).data;
+  ok(managers.indexOf('contact') !== -1 && !!CD && lists[0].o.data === CD.branch, 'it loads the contact manager, and its list is a view of ((spirit.data || {}).contact || {}).data\'s branch', 'managers ' + short(managers) + ', data ' + short(lists[0].o.data));
   ok(!/options\.search\b/.test(SRC), 'it takes no search of its caller\'s own', 'contactSelector.js still reads options.search');
   const hid = { name: 'not me', when: function () { return true; }, test: function () { return true; } };
   make({ filters: [hid] }); await settle();

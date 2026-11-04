@@ -201,7 +201,7 @@ function panelIcon(w, key) { return w.document.querySelector('[data-panel="' + k
 // The dialog is driven: mounted on a small page of its own, opened on an item, and each two-press button clicked twice.
 // armingButton is a working stand-in that writes down every button it is handed; the node's desk is a recorder.
 const vm = require('vm');
-const VERIFY_CCM = 'process/js/deskVerify/family/clientCacheManager.js';
+const VERIFY_CCM = 'process/js/deskVerify/family/data.js';
 
 function ddWorld(facts, checks, o) {
   const document = makeDom();
@@ -245,7 +245,7 @@ function ddWorld(facts, checks, o) {
   if (o && o.real) {
     // A page, as spirit.js says it is in a browser: a page's stream is its own node's, and its home is never a sender's.
     win.spirit.isBrowser = function () { return true; };
-    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+    vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
     win.spirit.node = { key: 'KEY+DESK/DETAILS==' };
     win.spirit.data.home(win.spirit.node.key);
     delete win.spirit.elements.deskRunStatus;
@@ -560,14 +560,14 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   // ── goal/G41.28: THE VERIFIER'S RUN, THROUGH SPIRIT.DATA ────────────────────────────────────────────────────────────
   // Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
   // object". The run of this item (goal/G33.6) is the verifier's own publish, kept by its family's cache manager; the
-  // dialog loads that manager itself and draws the run from spirit.verifyData, through the shared run status.
+  // dialog loads that manager itself and draws the run from spirit.data.deskVerify.data, through the shared run status.
   test.subHeading('goal/G41.28: the verifier\'s run reaches the dialog through spirit.data');
   const RUNNING = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: [], verified: 'none', verifyRunning: true, blocked: [] };
   const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'process/js/deskVerify' }, o2); };
   const RUN1 = { doing: 'run', suite: 'spirit/run/shell/info/test/info.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
   const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
   let v = ddWorld(RUNNING, [], { real: true }); await v.open();
-  ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!v.win.spirit.verifyData, 'it loads the verifier\'s cache manager itself, ' + VERIFY_CCM, 'required: ' + JSON.stringify(v.required));
+  ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data, 'it loads the verifier\'s cache manager itself, ' + VERIFY_CCM, 'required: ' + JSON.stringify(v.required));
   const runBefore = runShown(v);
   v.win.spirit.data.take(runJob({ app: RUN1 })); await settle();
   ok(/verifying info\.js, suite 2 of 4/.test(runShown(v)) && !!v.document.getElementById('dd-run') && !!v.document.getElementById('dd-run').querySelector('progress'), 'a verifier publish taken into spirit.data redraws the run: its progress, its suite and how far',

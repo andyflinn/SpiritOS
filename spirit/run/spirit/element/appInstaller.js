@@ -43,9 +43,9 @@
       host.innerHTML = '<span class="job-manifest-note">always on</span>';
     }
     // A SERVER IS ON WHILE A SERVER JOB OF ITS MODULE RUNS, or is pending between restarts (as goal/G27.16 counts it): the
-    // jobs as the jobs family's cache keeps them (spirit.jobsData, goal/G41.28).
+    // jobs as the jobs family's cache keeps them (spirit.data.jobs.data, goal/G41.28).
     function serverOn() {
-      var J = sp().jobsData;
+      var J = ((sp().data || {}).jobs || {}).data;
       return !!J && !!J.find(function (j) { return j.kind === 'server' && j.module === module && (j.status === 'running' || j.status === 'pending'); });
     }
     // ONE STATE, DRAWN WHEN IT CHANGES: exempt (intrinsic, or the Apps app), else on or off.
@@ -59,7 +59,7 @@
       if (isExempt) exempt(); else draw();
     }
     // EVERY BUTTON LISTENS (box v15): its app's face part as the node streams it (an app-face job), and a server's job,
-    // both through the jobs family's cache (spirit.jobsData.watch, goal/G41.28).
+    // both through the jobs family's cache (spirit.data.jobs.data.watch, goal/G41.28).
     function heard(id, job) {
       if (!job) { if (isServer) render(); return; }
       if (job.type === 'app-face') {
@@ -93,7 +93,8 @@
       return Promise.resolve(sp().cacheManager('jobs')).then(function () {
         if (gone) return;
         render();
-        if (sp().jobsData) off = sp().jobsData.watch(heard) || off;
+        var J = ((sp().data || {}).jobs || {}).data;
+        if (J) off = J.watch(heard) || off;
       });
     }, function () { if (!gone && host) host.innerHTML = '<span class="job-manifest-note">' + esc('could not read ' + path) + '</span>'; });
 

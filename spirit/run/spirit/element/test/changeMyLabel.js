@@ -59,7 +59,7 @@ function world(answer) {
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
       cacheManager: function (name) {
         w.managers = (w.managers || []).concat(name);
-        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'clientCacheManager.js'), 'utf8'), win, { filename: name + '/clientCacheManager.js' });
+        vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
         return Promise.resolve(true);
       } },
     document: { createElement: function (t) { return node('<' + t + '>'); }, createTextNode: function (t) { const x = node('#text'); x.textContent = String(t); return x; } },
@@ -70,7 +70,7 @@ function world(answer) {
   vm.createContext(win);
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'fieldRules.js'), 'utf8'), win, { filename: 'fieldRules.js' });
   // The page's one data set, its node known (goal/G41.28, Q10), as spirit.start leaves it before any element runs.
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'spiritData.js'), 'utf8'), win, { filename: 'spiritData.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+LABEL/NODE==' };
   win.spirit.data.home(win.spirit.node.key);
   if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
@@ -141,8 +141,8 @@ test.startTest('changeMyLabel.js: the node\'s name, changed');
   ok(/saved/.test(said.textContent), 'and it says saved', 'said: ' + said.textContent);
 
   test.subHeading('what it changes, it listens for: the node card in the node family\'s cache (goal/G41.28)');
-  const N = w.win.spirit.nodeData;
-  ok((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Bob', 'it loads the node manager, and the name the node stored is kept in spirit.nodeData\'s card', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get()));
+  const N = ((w.win.spirit.data || {}).node || {}).data;
+  ok((w.managers || []).indexOf('node') !== -1 && !!N && !!N.card.get() && N.card.get().name === 'Bob', 'it loads the node manager, and the name the node stored is kept in ((spirit.data || {}).node || {}).data\'s card', 'managers: ' + short(w.managers) + ', card ' + short(N && N.card.get()));
   N.card.keep({ name: 'Eve' }); await settle();
   ok(input.value === 'Eve', 'a name changed in the card, from elsewhere, redraws the field', 'value: "' + input.value + '"');
   input.value = 'Carl'; input.fire('keydown', { key: 'Enter', preventDefault: function () {} }); await settle();

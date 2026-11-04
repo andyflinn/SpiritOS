@@ -1,9 +1,9 @@
 'use strict';
 
-// spirit/run/process/js/desk/family/test/clientCacheManager.js
-// The tests of process/js/desk/family/clientCacheManager.js, and of no other module (spec: ./clientCacheManager.md;
+// spirit/run/process/js/desk/family/test/data.js
+// The tests of process/js/desk/family/data.js, and of no other module (spec: ./data.js.md;
 // goal/G41.11, goal/G41.24). The translator
-// runs as it does: in a window of its own beside the real spirit.data (spirit/spiritData.js), which it writes into;
+// runs as it does: in a window of its own beside the real spirit.data (spirit/data.js), which it writes into;
 // the desk's rows are handed in as appServer's streamListener hands them, jobs of module process/js/desk.
 
 const fs = require('fs');
@@ -11,8 +11,8 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const FILE = path.join(__dirname, '..', 'clientCacheManager.js');
-const SPIRIT_DATA = path.join(RUN, 'spirit', 'spiritData.js');
+const FILE = path.join(__dirname, '..', 'data.js');
+const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -26,10 +26,10 @@ function world() {
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
   const D = win.spirit.data;
   let n = 0;
-  const X = win.spirit.deskData;
+  const X = ((win.spirit.data || {}).desk || {}).data;
   // THE ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY SERVER-NODE-ID at
   // it's lowest level."): a row comes as appServer hands it, with its sender's key (take(job, key)); every read is
-  // spirit.deskData's, which alone names the desk's branches.
+  // spirit.data.desk.data's, which alone names the desk's branches.
   return { win: win, D: D, X: X,
     // A row as the stream hands it: a job of module process/js/desk whose app is the desk's publish, from SENDER.
     job: function (app, module) { D.take({ id: 'j' + (++n), module: module || 'process/js/desk', data: {}, app: app }, SENDER); },
@@ -44,12 +44,12 @@ const SENDER = 'Ab+c/DeF0123456789abcdefghijklmnopqrstuvwxy=';
 const it = function (id, goal, more) { return Object.assign({ id: id, goal: goal, title: id }, more || {}); };
 const whole = function (f) { return { verb: 'goal.whole', item: f }; };
 
-test.startTest('clientCacheManager.js: the desk\'s translator into spirit.data, and its cache rules');
+test.startTest('data.js: the desk\'s translator into spirit.data, and its cache rules');
 
 // The one file holds what the desk knows of its rows at the receiving end: the translator, and the cache rules (keep,
 // shed, answer) (goal/G41.24). That no other file or doc names another way is test/caches.js's, for the whole repo.
 test.subHeading('goal/G41.24: where it lives');
-ok(fs.existsSync(FILE), 'process/js/desk/family/clientCacheManager.js is there', 'no ' + FILE);
+ok(fs.existsSync(FILE), 'process/js/desk/family/data.js is there', 'no ' + FILE);
 const inNode = (function () { try { return require(FILE); } catch (e) { return { threw: String(e && e.message) }; } }());
 const CACHE = inNode && inNode.cache;
 ok(!!CACHE && ['keep', 'shed', 'answer'].every(function (f) { return typeof CACHE[f] === 'function'; }),
@@ -61,7 +61,7 @@ if (!fs.existsSync(FILE)) { test.fail('the translator\'s checks wait on the file
 
 test.subHeading('it registers on spirit.data');
 const w = world();
-ok(!!w.X && typeof w.X.published === 'function' && typeof w.X.took === 'function', 'with spirit.data it answers spirit.deskData { published, took }', short(w.X && Object.keys(w.X)));
+ok(!!w.X && typeof w.X.published === 'function' && typeof w.X.took === 'function', 'with spirit.data it answers ((spirit.data || {}).desk || {}).data { published, took }', short(w.X && Object.keys(w.X)));
 
 test.subHeading('a goal pushed whole: its rows kept, it is current');
 w.job(whole(it('goal/G9.1', 'goal/G9')));

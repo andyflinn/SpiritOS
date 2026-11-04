@@ -48,7 +48,7 @@ Andy, the box: *"anything not using the new spiritData.js and it's buddies clien
 item. no exceptions."*
 
 - Every list pane the app drew is a view of its table in the agent family's cache: it is handed that table's branch,
-  `spirit.agentData.branch(table)`. The page runs the real data set, its node known, and the families' own managers
+  `spirit.data.agent.data.branch(table)`. The page runs the real data set, its node known, and the families' own managers
   (`spirit.cacheManager(name)`).
 
 ## What its test must try to break

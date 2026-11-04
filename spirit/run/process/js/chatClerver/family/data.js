@@ -1,28 +1,25 @@
-// spirit/run/process/js/chatClerver/family/clientCacheManager.js
+// spirit/run/process/js/chatClerver/family/data.js
 // WHAT A CLIENT KNOWS OF THE CHATS, IN THE chatClerver FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it
 // through spirit.cacheManager('chatClerver'); it keeps the chats' lines in that page's spirit.data, under the node that
 // served them.
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (Chatter's window and its search) asks
-// spirit.chatData (below), never a branch by name.
+// spirit.data.chatClerver.data (below), never a branch by name.
 //   lines   peer + newline + sent + ':' + seq -> the line { peer, sent, seq, at, text, receivedAt, re, refused }
 //   chats   peer -> that chat's row as chats.search answers it { at, sent, seq, unanswered }
 // Every line the server publishes ({ line }, goal/G4.2: each kept line, written or received, and each change of a
 // written line's mark) is kept as it came; a reader seats the lines a read or a search answered (keep). It asks nothing.
-(function (root) {
+(function () {
   var LINES = 'lines';
   var CHATS = 'chats';
-  var ATTACHED = typeof Symbol === 'function' ? Symbol.for('spirit.chatClerver.clientCacheManager') : '__chatClerverClientCacheManager';
   function keyOf(peer, sent, seq) { return String(peer) + '\n' + Number(sent) + ':' + Number(seq); }
   function lineOf(peer, l) {
     return { peer: String(peer), sent: Number(l.sent), seq: Number(l.seq), at: String(l.at || ''), text: String(l.text || ''),
       receivedAt: String(l.receivedAt || ''), re: l.re || { writer: '', seq: 0 }, refused: String(l.refused || '') };
   }
-  function attach(root) {
-    var D = ((root || {}).spirit || {}).data;
-    if (!D || typeof D.translate !== 'function') return;
-    if (D[ATTACHED]) { (root.spirit = root.spirit || {}).chatData = D[ATTACHED]; return; }
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../../spirit/data.js');
+  D.family('chatClerver', function () {
     var HOME = D.at(null, 'chatClerver');
     function put(V, peer, l) {
       if (!peer || !l || l.seq === undefined || l.sent === undefined) return;
@@ -47,7 +44,7 @@
     //   published(fn)       fn(peer, line, fresh) for a line the server published, once kept (an arrival, not a read);
     //                       fresh when it was not kept before (a new line, not a mark changed); answers its release
     //   branch              the lines' whole path, for a list that is a view of it (probabilitySearch's data)
-    var chatData = {
+    var chatReads = {
       keep: function (peer, lines) { (lines || []).forEach(function (l) { put(HOME, peer, l); }); },
       // The chats' rows a chats.search answered ({ items: [{ key: peer, label: json }] }), kept by peer; chat(peer) one.
       keepChats: function (answer) {
@@ -74,9 +71,6 @@
       get branch() { return HOME.path(LINES); },
       keyOf: keyOf,
     };
-    try { Object.defineProperty(D, ATTACHED, { value: chatData }); } catch (e) { D[ATTACHED] = chatData; }
-    (root.spirit = root.spirit || {}).chatData = chatData;
-  }
-  if (typeof module !== 'undefined' && module && module.exports) module.exports = { attach: attach };
-  attach(root);
-}(typeof window !== 'undefined' ? window : globalThis));
+    return chatReads;
+  });
+}());

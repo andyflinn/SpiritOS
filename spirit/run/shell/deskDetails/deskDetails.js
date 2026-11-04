@@ -1014,11 +1014,11 @@ function ddRename() {
 // EACH PANEL ITS OWN ANSWER. Andy: "lazy load the panels when thy open". The facts first, then the box, the
 // checks and the chat, each asked on its own, so no answer carries the sum of them.
 // THE ITEM KEPT WHOLE (goal/G33.3). Andy: Desk clients keep what they learned of the current goal "like face-apps do",
-// one cache for deskClient and this page: spirit.data (spirit/spiritData.js) with the desk's translator
-// (the desk family's clientCacheManager.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
+// one cache for deskClient and this page: spirit.data (spirit/data.js) with the desk's translator
+// (the desk family's data.js), which the desk's publishes keep current. An item opened before is shown from it; its panels
 // are asked once, when it is first opened, and after a gap.
-// Asked of the cache's manager (goal/G41.28): spirit.deskData answers an item's parts; no branch is named here.
-function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && s.deskData && typeof s.deskData.part === 'function' ? s.deskData : null; }
+// Asked of the cache's manager (goal/G41.28): spirit.data.desk.data answers an item's parts; no branch is named here.
+function ddKept() { var s = typeof window !== 'undefined' && window.spirit; return s && ((s.data || {}).desk || {}).data && typeof s.data.desk.data.part === 'function' ? ((s.data || {}).desk || {}).data : null; }
 function ddForget(id) { var K = ddKept(); if (K && id) K.forget(id); }
 function ddLoad() {
   var id = ddId;
@@ -1145,8 +1145,8 @@ spirit.shell.activateApp({
     if (typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
     // deskVerify's own run objects, for the run of this item (goal/G33.6).
     // The verifier's run, through spirit.data (goal/G41.28): its own cache manager keeps what it publishes.
-    ddNeed('/process/js/deskVerify/family/clientCacheManager.js').then(function () {
-      var V = window.spirit && window.spirit.verifyData;
+    ddNeed('/process/js/deskVerify/family/data.js').then(function () {
+      var V = window.spirit && ((window.spirit.data || {}).deskVerify || {}).data;
       if (!V) return;
       V.watch(ddHearVerifier);
       if (V.state()) ddHearVerifier(V.state());

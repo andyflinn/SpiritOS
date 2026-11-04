@@ -181,7 +181,7 @@
       }
 
       // THE SERVER'S STATE, from its job as spirit.data keeps it (goal/G41.28): its job's app, { agent: { debug } }, in
-      // the jobs family's cache (spirit.jobsData), read as the app opens and again each time that job changes.
+      // the jobs family's cache (spirit.data.jobs.data), read as the app opens and again each time that job changes.
       function stateOf(job) { var app = job && job.app; return app && app.agent && typeof app.agent.debug === 'boolean' ? app.agent.debug : null; }
       function heard(job) {
         var now = stateOf(job);
@@ -191,7 +191,7 @@
         title();
       }
       Promise.resolve(spirit.cacheManager('jobs')).then(function () {
-        var J = window.spirit.jobsData;
+        var J = ((window.spirit.data || {}).jobs || {}).data;
         if (!J) return;
         heard(J.find(function (j) { return stateOf(j) !== null; }));
         J.watch(function (id, job) { heard(job); });
