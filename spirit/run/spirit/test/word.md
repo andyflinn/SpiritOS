@@ -6,13 +6,14 @@ Andy, box: *"i will track nameSpace claims."*
 
 ## Requirements
 
-- A word is a string of `a` to `z`. Five are hard-coded: `spirit`, `app`, `element`, `contact`, `job`, *"(this may change)"*. When they change, so does `HARD` in the test.
+- A word is a string of `a` to `z`. Five are hard-coded: `spirit`, `app`, `element`, `identity`, `job`, *"(this may change)"*. When they change, so does `HARD` in the test.
 - `check('path.in.words', 'word')` compares case-insensitively and answers the lower-case word, else null. It looks at the `word.json` of each level on its path below the root, and at the hard-coded words. It reads no `run://spirit/word.json`. It sees nothing lower down and nothing in another branch.
 - A word an object inherits, like `constructor`, is not reserved. A missing `word.json` counts as empty. A `word.json` is an object of word to `true`.
 - A changed `word.json` is seen by the next `check`.
 - On a page `spirit.word.check` answers through a promise, since a page asks its node for each `word.json`, kept until the node's file stream says it changed; `spirit.word.changed(fn)` tells a listener when one does. `spirit/element/files/rowElement.js` paints from these; its test judges them.
 - `add('path.in.words', 'word')`, Andy: *"all, implement add()"*, answers a boolean. *"add('spirit.app', 'activate') would add the 'activate' to "run://spirit/app/word.json"."* The word goes in with the value `true`, the words already in the file stay, and a level with no `word.json` yet gets one.
 - `add` answers `false` and writes nothing on what is no word, on what `check` finds (*"no words can be added that already exists toward the root of the tree"*, and *"a boolean 'false' if the word already exists"*), and on a word a level below holds (Andy's yes to Q4). A word in another branch does not stop it. It also answers `false` on a path with no level `check` reads, such as `spirit`, on a path that is not in words, and on a `word.json` that is not an object of JSON, which it will not overwrite. No test holds these three yet.
+- A level with no folder yet gets one. Q7, *"Should add refuse a level whose folder does not exist, instead of creating the folder?"*, Andy: *"no."* A path holds words, a to z, so a capital in it answers `false` and makes no folder.
 - `add` is in node only. Q5, *"Should add work from a page too, the way check does?"*, Andy: *"no."*
 
 ## The tree
@@ -26,4 +27,4 @@ Andy, box: *"i will track nameSpace claims."*
 
 ## Red by design
 
-This suite does not go fully green while a word has no home. Today it must fail on exactly `job`, because the node has `jobs`, and no other.
+This suite does not go fully green while a word has no home. Today it must fail on exactly `job`, because the node has `jobs`, and `identity`, which has no folder and no object yet, and no other.

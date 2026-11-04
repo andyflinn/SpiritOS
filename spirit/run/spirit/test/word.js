@@ -16,7 +16,7 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 // The box: "word.js will have hardcoded intitialized set of keys", "(this may change)". When it does, so does this line.
-const HARD = ['spirit', 'app', 'element', 'contact', 'job'];
+const HARD = ['spirit', 'app', 'element', 'identity', 'job'];
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -71,7 +71,7 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
       ['one level up', 'spirit.app.table.add', 'THING', 'thing'],
       ['two levels up', 'spirit.app.table.add', 'aCtIvAtE', 'activate'],
       ['a level with no word.json of its own still looks up', 'spirit.app.table.none', 'thing', 'thing'],
-      ['a hard-coded word, from any path, lower-cased', 'spirit.app.table.add', 'Contact', 'contact'],
+      ['a hard-coded word, from any path, lower-cased', 'spirit.app.table.add', 'Identity', 'identity'],
       ['a hard-coded word, at the root', 'spirit', 'JOB', 'job'],
       ['a word lower down is not seen from above', 'spirit.app', 'thing', null],
       ['a word in another branch is not seen', 'spirit.app.table.add', 'sibling', null],
@@ -126,7 +126,7 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
       ['a dash', 'spirit.app', 'new-word', false],
     ]);
     addCases('add refuses what check finds: "no words can be added that already exists toward the root of the tree"', [
-      ['a hard-coded word, in any case', 'spirit.app.table', 'CoNtAcT', false],
+      ['a hard-coded word, in any case', 'spirit.app.table', 'IdEnTiTy', false],
       ['a word one level toward the root', 'spirit.app.table.add', 'THING', false],
       ['a word two levels toward the root', 'spirit.app.table.add', 'later', false],
     ]);
@@ -142,7 +142,13 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
       // cw, on the object's own keys: "constructor" is a to z.
       ['a word an object inherits is a word like any other', 'spirit.app', 'constructor', true],
       ['a level with no word.json yet gets one', 'spirit.element.files', 'fresh', true],
+      // Q7, "Should add refuse a level whose folder does not exist, instead of creating the folder?", Andy: "no."
+      ['a level with no folder yet gets one', 'spirit.nosuch.level', 'made', true],
     ]);
+    ok((wordsIn('nosuch/level') || {}).made === true, 'the word stands in the new folder (Q7)', 'spirit/nosuch/level/word.json: ' + short(wordsIn('nosuch/level')));
+    // 'path.in.words', and "'word' is a string containing only characters from 'a' to 'z'": a capital is no level.
+    addCases('add takes no capitals in its path', [['a capital in the path', 'spirit.Capital', 'word', false]]);
+    ok(!fs.existsSync(path.join(run, 'spirit', 'Capital')), 'and makes no folder of it', 'add made spirit/Capital');
     app = wordsIn('app') || {};
     ok(app.sibling === true && Object.prototype.hasOwnProperty.call(app, 'constructor') && app.constructor === true, 'both words stand in spirit/app/word.json', 'spirit/app/word.json: ' + short(app));
     ok(JSON.stringify(wordsIn('element/files')) === '{"fresh":true}', 'the new spirit/element/files/word.json holds that word and nothing else', 'spirit/element/files/word.json: ' + short(wordsIn('element/files')));
