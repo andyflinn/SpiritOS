@@ -2073,6 +2073,64 @@ function limboOf(s, it) {
 
 // THE AGENTS HERE NOW: every agent whose last write is inside LIVE_MS, sorted. The goal's facts say it, and the
 // waive of goal/G2.22 is decided by it.
+// THE AGENTS ARE WHO HOLD A GRANT TO DESK (goal/G43.3; Andy: "if the ID has grants to desk, desk should list it as one of
+// it's agents, it keeps all agent rows in its db, to preserve label and nick, but without grant, no matter how small,
+// there's no point showing an agent bubble."). The node's grant table is read over loopback, as its owner, when the stream
+// comes up (no grant and no new verb: "on the local node all loopback requester are "owner""), and followed on its
+// permanent job 'bundles'. key -> { label, paths }; null until the first answer, and every agent shows until then. An
+// agent's row in the agents table stays either way, so a key granted again comes back with its label and nick.
+let grantsHeld = null;
+function isDeskPath(p) { return p === 'desk' || String(p).indexOf('desk.') === 0; }
+function noteGrant(held, key, path, label) {
+  if (!isDeskPath(path)) return;
+  const g = held[key] || (held[key] = { label: '', paths: {} });
+  g.paths[path] = true;
+  if (label) g.label = String(label);
+}
+function publishGoalRow() {
+  if (S.current && S.items[S.current]) publishOne(rowPublish(S, S.current, 'grants', S.change));
+}
+function readGrants() {
+  return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.search({ text: 'desk' }); })).then(function (r) {
+    const items = r && r.status === 200 && r.body && r.body.items;
+    if (!Array.isArray(items)) return;
+    const held = Object.create(null);
+    items.forEach(function (i) {
+      let row = null;
+      try { row = JSON.parse(i.label); } catch (e) { row = null; }
+      if (row && row.key) noteGrant(held, String(row.key), row.path, row.name);
+    });
+    grantsHeld = held;
+    publishGoalRow();
+  }, function () { /* the next time the stream comes up asks again */ });
+}
+function grantChanged(job) {
+  const d = job && job.type === 'bundles' ? job.data : null;
+  if (!d || d.table !== 'grant' || !d.row || !d.row.key || !grantsHeld) return;
+  const key = String(d.row.key);
+  const path = String(d.row.path || '');
+  if (!isDeskPath(path)) return;
+  if (d.gone === true) {
+    if (!grantsHeld[key]) return;
+    delete grantsHeld[key].paths[path];
+    if (!Object.keys(grantsHeld[key].paths).length) delete grantsHeld[key];
+  } else noteGrant(grantsHeld, key, path, d.row.label);
+  publishGoalRow();
+}
+// The agents to show, label -> key: the labels the desk has heard for a key with a grant, and for one it has not heard yet,
+// the grant's own label, else its name. A key is never shown (Andy, goal/G21.1).
+function grantedAgents(s) {
+  const out = {};
+  const heard = {};
+  Object.keys(s.agentKey).forEach(function (l) { heard[s.agentKey[l]] = l; if (!grantsHeld || grantsHeld[s.agentKey[l]]) out[l] = s.agentKey[l]; });
+  if (grantsHeld) Object.keys(grantsHeld).forEach(function (k) {
+    if (heard[k]) return;
+    const p = s.profiles[k];
+    const label = grantsHeld[k].label || (p && p.name) || '';
+    if (label) out[label] = k;
+  });
+  return out;
+}
 function waiveIfAlone(id, by) {
   const st = walkState();
   const m = st.items[String(id)];
@@ -2203,7 +2261,8 @@ function facts(s, it) {
     }).length;
     // AN AGENT NOT INCLUDED IS ABSENT (goal/G21.1), whatever it last wrote: out of live, named in excluded.
     f.excluded = Object.keys(s.agentKey).filter(function (l) { return excludedKey(s, s.agentKey[l]); }).sort();
-    f.live = liveAgents(s).filter(function (l) { return f.excluded.indexOf(l) === -1; });
+    const shown = grantedAgents(s);
+    f.live = liveAgents(s).filter(function (l) { return f.excluded.indexOf(l) === -1 && !!shown[l]; });
     // WHO IS WORKING (goal/G2.3): the live agents whose last word is working. A stale working clears with
     // liveness, since an ear killed by its limit or a node restart says nothing (Andy: "while an agent is
     // working, i should leave it alone.").
@@ -2214,7 +2273,7 @@ function facts(s, it) {
     // "yes" to the pane opening for every agent the desk knows), so an agent with no listener keeps its pane; live
     // still says who is here now.
     f.agents = {};
-    Object.keys(s.agentKey).sort().forEach(function (a) { f.agents[a] = s.agentKey[a]; });
+    Object.keys(shown).sort().forEach(function (a) { f.agents[a] = shown[a]; });
   }
   // A ROW ALWAYS FITS ONE ANSWER (goal/G33.4, box v46: "Bound the facts themselves ... so a row always fits"). Measured
   // as it travels in item.get, JSON inside the answer's JSON; past FACTS_ROOM the lists that can grow give way, failure
@@ -4131,3 +4190,5 @@ function pressCheck(a) {
 // THE CURRENT GOAL, WHOLE, ONCE THE DESK SERVES (goal/G33.4). Andy, in the item's box: "a client that was away gets the
 // current goal pushed whole again"; after this desk's own start every client is one that was away from it.
 if (S.current) setImmediate(function () { pushGoalWhole(S.current); });
+// The node's grants: read each time the stream comes up, a restart of the node included, and followed from then on.
+spirit.events.subscribe({ onConnection: function (up) { if (up) readGrants(); }, onUpdate: grantChanged });
