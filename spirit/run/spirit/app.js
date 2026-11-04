@@ -27,6 +27,9 @@ const ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true,
 // A plugin's own file, or its folder: what changes the table.
 const PLUGIN_PATH = /^spirit\/app\/([^/]+)(\/\1\.json)?$/;
 
+// goal/G43.6, Andy, box: "spirit.app also holds the family's verb, search, so no app may take the name of a verb."
+const VERBS = require('./app/api.js').verbs;
+
 function createApp(opts) {
   const o = opts || {};
   const folder = path.join(o.rootDir, 'spirit', 'app');
@@ -40,7 +43,7 @@ function createApp(opts) {
   }
   function names() {
     try {
-      return fs.readdirSync(folder, { withFileTypes: true }).filter(function (d) { return d.isDirectory(); }).map(function (d) { return d.name; });
+      return fs.readdirSync(folder, { withFileTypes: true }).filter(function (d) { return d.isDirectory() && !VERBS[d.name]; }).map(function (d) { return d.name; });
     } catch (e) { return []; }
   }
 

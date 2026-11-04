@@ -48,7 +48,8 @@
       shell.querySelector('.app-container-close').addEventListener('click', function () { closeOpen(); });
       var name = String(row.key);
       window.spirit.require('spirit/app/' + name + '/' + name + '.js').then(function () {
-        if (!closed) made = window.spirit.elements[name].create(shell.querySelector('.app-container-pane'));
+        // goal/G43.6, Andy, box: "The app tiles open it from spirit.app." server stays on spirit.elements.
+        if (!closed) made = (window.spirit.app[name] || window.spirit.elements[name]).create(shell.querySelector('.app-container-pane'));
       });
     }
     function draw() {
