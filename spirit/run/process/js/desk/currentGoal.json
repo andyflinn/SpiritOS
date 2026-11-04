@@ -1,5 +1,5 @@
 {
- "change": 129039,
+ "change": 129178,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,7 +13,6 @@
    "buttons": [
     "done",
     "verify",
-    "go-all",
     "close",
     "pushgoal"
    ],
@@ -146,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -303,7 +302,6 @@
    "version": 19,
    "buttons": [
     "start-design",
-    "go",
     "close",
     "pushgoal",
     "delete",
@@ -312,7 +310,9 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.6"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -4436,6 +4436,419 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-04T12:53:56.481Z",
      "text": "cw: one more fault of mine from the move, fixed: it rewrote your words.\n\nThe script skipped double-quoted text, but a quote running over two lines was changed anyway. Example: your \"all files in spirit/run/shell/js\" read spirit/run/spirit/element.\n\n- 17 quotes in 17 files, comments, tests' comments and documents only.\n- 11 had the old path, 6 had spirit.elements.rowForm.create.\n- All back as you wrote them, 60f0e178. No behaviour changed.\n\nelementMove 20 of 20, coreFiles 47 of 47, rowForm 23 of 23.\n\nI found them by searching the move's diff, so a quote it missed could remain."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.6",
+   "title": "Make a version of the old stats app, in spirit/app/",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 10,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 10,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude",
+    "claude-ubuntu": "claude-ubuntu"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Make a version of the old stats app, in spirit/app/\n\n# Name of the new app : **monitor**\n\nAn app that reads and displays a stream, called \"monitor\". It resides in spirit.app.monitor, in the new format of app plugins, under one namespace. Old Stats stays as it is.\n\n## The app\n\n- spirit/app/monitor/monitor.json and spirit/app/monitor/monitor.js, with its test/ folder.\n- spirit.app.monitor.create(container) -> { destroy() }\n- monitor.json: icon 🦻, label \"Monitor\", mount monitor.js, shell mount and tile true, node mount false.\n- A shell type app, like \"server\", but whole: a shell app that reads specific stream items.\n- It reads the node's server-stats job from the stream, as old Stats does, and shows its numbers.\n- Until the first reading, it says it is waiting, as old Stats does.\n- Each new reading repaints the numbers. A repaint keeps the search words and the scroll.\n- It requires no old code: no spirit.shell. Its look is the shell's one sheet. It opens no other app, so old Stats' four presses are not in it.\n\n- The app tiles open it from spirit.app.\n- spirit.app also holds the family's verb, search, so no app may take the name of a verb.\n\n## Fallout from this\n\n1. A labelled box element: a label with anything under it.\n- It will be spirit.element.labeled, on disc and in spirit: spirit/element/labeled.js.\n- It states its size, so a list fits inside it (rule/16).\n- It waits for the first app that needs it (oos): Monitor does not use it, so it is not built in this item.\n\n2. Label and value rows: a list of a name and a value, one per line, with an optional group, as in Requests by method.\n- It will be spirit.element.valued, on disc and in spirit: spirit/element/valued.js.\n- spirit.element.valued.create(container, { rows(), columns }) -> { redraw(), destroy() }. The caller names the columns.\n- It is searchable (probabilitySearch), over rows it already holds, with no node verb.\n\nMonitor is one valued that fills the app, with group, name and value columns: its 11 numbers, Files by MIME type, Requests by method, Requests by status class and Jobs by status are all rows in it, under one search field. Jobs by status replaces old Stats' Active jobs, so no list of finished statuses is copied. The old apps that write these by hand stay as they are, and may move later.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Your box stops mid-sentence at \"like server, but whole-\": what is the rest of that line?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T13:14:40.516Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Shall this item build a labelled box and label-value rows as spirit.element, or should Monitor keep everything to itself for now?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T13:25:08.536Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Do Monitor's 12 numbers (memory, CPU, uptime and the rest) go in a valued, or in tiles of their own?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T13:43:02.768Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Do I change the box so Monitor is one valued list with group, name and value columns, using the shell sheet, and does labeled wait for an app that needs it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T13:47:23.543Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Do I add three lines to the box: Jobs by status replacing Active jobs, the valued.create contract, and a waiting message before the first reading?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T13:49:56.763Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-04T13:51:15.882Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:00:14.909Z",
+     "text": "all, what do you think?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T13:00:52.977Z",
+     "text": "wsl: good next step. Old stats is small and shows the pattern on something real, not a label: shell/stats/stats.js is 135 lines with no test, and it reads the node's server-stats job through spirit.jobsData, which stays usable. No new node verb.\n\nHow it would look: spirit/app/stats/stats.js and stats.json, an element beside server, drawn by appMigration's tile. stats isn't a reserved word, so it stays uncoloured.\n\nThree things for the box:\n1. Old stats stays, and this is a copy? Your new-may-not-require-old says yes.\n2. Old stats opens a job through spirit.shell.launchApp, which is the old shell. New can't require that, so that press goes, or waits.\n3. It needs a test, as the old one has none. I'd assert it paints the job's numbers and repaints as they change."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T13:01:17.407Z",
+     "text": "ubi: good next step, small and real. I agree with wsl on all three, and add two that the box should settle:\n\n1. Which home? spirit/app/server sits on spirit.elements today, though it is new code. A new stats there would add to the old name. I would put it on spirit.element from the start, or say where app elements belong.\n2. Same name twice: the old app is Stats, and appMigration would show a second tile. Is that what you want while both stand, and how do they differ on screen?\n\nIt reads spirit.jobsData, and job is your one remaining red word, so this app will change when job gets its home. Fine for now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:01:36.862Z",
+     "text": "cw: I agree with wsl and ubi: small, real, worth doing. Three things they did not say:\n\n1. Ubi's home question costs one more line. appMigration opens an app with spirit.elements[name], so stats on spirit.element means changing that line and moving server too. I would do both, so the new namespace has one home.\n\n2. The presses are more than one. Files, Folders and Files by MIME type open the old Files app, and Active jobs opens the old Jobs app. All four go or wait, by your old-and-new rule.\n\n3. The tiles' look is old too: stat-tile and stats-grid live in the old shell.css. New may not require old, so stats needs its own styles, or that rule must say a stylesheet is exempt. I would give it its own, in the element, as the skeleton does.\n\nThe box is empty, so these are for you to rule on, one at a time."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:02:04.644Z",
+     "text": "all, box updated, review?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T13:02:23.506Z",
+     "text": "wsl: fine as far as it goes; the name is free. One line stops short:\n- \"a shell type app, like \"server, but whole-\" : whole what? Whole-pane, or does it serve whole pages?\n\nAlso needed for a red:\n- What it shows: all of old Stats' numbers, or a choice?\n- Label and icon in monitor.json. \"Job Monitor\" and \"Relay Monitor\" tiles exist, so plain \"Monitor\" beside them could mislead.\n- spirit.element or spirit.elements, as ubi and cw ask. I'd say spirit.element.\n- The tile presses that open old apps: they go, as I read your rule."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:02:48.185Z",
+     "text": "cw: same stop as wsl found. The desk holds that line only up to \"whole-\", and v1 is the only version, so it may not have saved. It is a red Q from me, so you can answer there.\n\nThe name monitor settles ubi's two-tiles question: old Stats keeps its name, the new tile says Monitor. An old app named relayMonitor stands too, a different word, no clash.\n\nStill open after that line:\n1. Home: spirit.element or spirit.elements.\n2. The four tiles that open old apps: go, or wait.\n3. Its styles: its own, or the old shell.css.\n4. Its test.\n\nQ: what is the rest of that line?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T13:03:15.617Z",
+     "text": "ubi: the box stops mid-sentence: \"a shell type app, like \"server, but whole-\". The desk holds it that way at v1, so the rest did not save. Please check it.\n\nName: monitor is fine. It is no reserved word and spirit/app has no monitor yet.\n\nStill needing your word, as wsl and cw raised:\n- Tiles that open other apps: drop or wait?\n- Home: spirit.element or spirit.elements?\n- Styles: its own, or the old shell.css?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:11:36.299Z",
+     "text": "box changed. better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T13:11:56.191Z",
+     "text": "wsl: better: a shell app that reads stream items, icon 🦻. Which items is the one thing still missing, so I'd add:\n- it reads the node's server-stats job from the stream, as old Stats does, and shows its numbers, label \"Monitor\".\n\nWith that I can write the red. Unless you say otherwise I'd go with: on spirit.element, its own styles, and no presses that open old apps, since new may not require old."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:14:11.210Z",
+     "text": "all, changed. is there any usefull, re-useable spirit.element in that app?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T13:14:38.522Z",
+     "text": "wsl: yes, one worth making: a stat tile, a value over a label. statsTileHtml does it here, and the class stat-tile is drawn by hand across the old apps, 64 uses in about 18 files (desk, contacts, info, join and more), with no element behind it. So spirit.element.statTile, used first by monitor, with the old apps free to move over later.\n\nA second, smaller one: a counts list, label and value on one line (statsCountsHtml). I find it only here, so I'd keep it inside monitor until a second app wants it. The uptime formatter is a helper, not an element, and only this app uses it.\n\nIts own styles come with it: statTile would hold its look itself, which also answers the shell.css question for monitor."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:14:39.885Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T13:14:50.042Z",
+     "text": "ubi: yes, two, from reading shell/stats/stats.js:\n\n1. A tile: a big value over a small label, optionally wide or pressable. Today statsTileHtml is local to Stats, while 25 other files use the stat-tile class by hand, not all as value and label. Worth having as spirit.element.statTile, with its grid and its own styles, so monitor needs nothing from shell.css. It should escape its text, which today it does not.\n\n2. Count rows: a label and a number per line, statsCountsHtml, used for MIME types and request methods. Small, and it does escape. Could be a part of the tile or its own element.\n\nNot reusable: the uptime format is one small function, and the job reading is this app's own.\n\nThese would be new elements, so naming them is yours. rule/16 still applies: no list inside a tile."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:14:56.100Z",
+     "text": "cw: yes, two. Old Stats has no element today, only HTML strings, and spirit.element has neither of these.\n\n1. A labelled box: a label with anything under it. This is the most useful. 26 files write its class stat-tile by hand, most of them this labelled wide box, not the number tile.\n\n2. Label and value rows: a list of name and value, one per line, as in Requests by method. Old Stats, the file viewer and the shell's file bubble write them by hand.\n\nNot worth an element: the number tile, big value over small label. Only old Stats uses it, so it stays Monitor's own for now. The uptime formatter is plain code, not an element.\n\nI would build both as spirit.element, each with its own styles, used by Monitor first. That also settles the styles question for them. The old callers stay as they are, and can move later.\n\nQ: shall this item build those two elements, or should Monitor keep everything to itself for now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:24:04.162Z",
+     "text": "all, new box, issues?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T13:24:35.996Z",
+     "text": "wsl: two issues, both about valued:\n1. rule/16 says a probabilitySearch is \"Never in a stat-tile or another box that is only as tall as its content.\" labeled is that box, and valued is a search. So valued inside labeled breaks your rule. Either labeled gets a stated size when it holds a list, or valued sits in a fill pane of its own.\n2. probabilitySearch asks a server verb, and these rows are fields of one job, with no verb behind them. So it needs to search rows held on the page. I read its header as saying data can be a branch, but I haven't confirmed it works with no server. cw, you'll hit this first.\n\nAlso needed: the number tile. The box doesn't name it, so I read it as Monitor's own, as cw said. Fine?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:24:58.982Z",
+     "text": "cw: three issues in box v6, one for you to decide now.\n\n1. Your rule/16 meets valued. A probabilitySearch must sit in a box of a stated size, never one only as tall as its content. So a valued inside a labeled needs a stated size from labeled. Add:\n- labeled states its size, so a valued fits inside it.\n\n2. Monitor's first 12 numbers have no home. Memory, CPU, uptime and the rest are the number tiles, and the box names no element for them. wsl and ubi want a statTile element, and I said Monitor keeps its own. Now valued exists, I change my answer: show them as rows in a valued too, so no tile is needed.\n\n3. Two things unsaid. Add, if you agree:\n- monitor stands on spirit.element, as does server, and appMigration opens them there.\n- monitor opens no other app.\n\nIt works as boxed: probabilitySearch can search rows it already holds, with no node verb. The names labeled and valued are free.\n\nNote for later: valued gives the file bubble's few rows a search field too, when that moves.\n\nQ: do Monitor's 12 numbers go in a valued, or in tiles of their own?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T13:25:41.325Z",
+     "text": "ubi: one real conflict, and two gaps.\n\nConflict with rule/16: valued is a probabilitySearch, and that rule says a list must sit in a box of a stated size, never in a box only as tall as its content. Monitor would naturally put valued inside labeled, as old Stats does with its tiles. So either labeled states a size when it holds a list, or Monitor mounts valued outside it. Rule/16 also names class fill from shell.css, which new may not require, so the size must come from the element. Which do you want?\n\nGaps:\n- Stats ticks: the numbers repaint on every server-stats change. Typed search words and the scroll in valued must survive that. Line to add: \"a repaint keeps the search words\".\n- The big numbers (CPU, memory, uptime) are neither labeled nor valued. I read them as Monitor drawing its own. The tiles that opened old apps: gone, as I read \"new may not require old\". Say if not.\n\nNames labeled and valued are free, no clash with a reserved word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:28:38.015Z",
+     "text": "cw, rewrite the box complete. what i want is an app that reads and displays a stream, called \"monitor\", and resides in spirit.app.monitor, in the new format of of app plugins under one namespace"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:30:29.889Z",
+     "text": "cw: box rewritten, by your word. Your requirements stand; I cut only the counts of who writes these by hand, which were my words. These lines are mine, so strike any you do not want:\n\n- server moves to spirit.app.server, and the tiles open every app through spirit.app[name]. That is my reading of \"under one namespace\".\n- No app may take a verb's name, as spirit.app also holds search.\n- labeled states its size, for your rule/16.\n- A repaint keeps the search words and the scroll (ubi).\n- It opens no other app, so old Stats' four presses go.\n- Monitor's 12 numbers go in a valued, no tiles. This is Q3, still red, so your answer can change it.\n\nOld Stats stays. No node verb changes.\n\nThe mount.js your G43.1 box names does not exist today. Monitor does not need it, as the tiles load the file by its path, so the box leaves it out. If you want it now, say so.\n\nQ3 is the one thing I need from you."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:36:48.041Z",
+     "text": "cw, what is spirit.elements.server?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:37:07.463Z",
+     "text": "cw: it is the test app from G43.2, the file spirit/app/server/server.js.\n\n- It only paints its name, Server, in big letters in the middle of its pane. Your box there: \"both these apps will just be shell elements <name>.js, which paint their name in big letters in the center of their container\".\n- spirit.elements.server is where that file puts itself on the page, and the app tiles open it from there.\n- It has no server behind it, despite the name: node mount is false.\n- The name spirit.elements is only there because it was written before you ruled spirit.element, singular, for the move.\n\nThat is why my box line moves it to spirit.app.server: otherwise server and monitor stand in two places. The tiles and its test are all that would change."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:40:04.431Z",
+     "text": "cw, server and monitor, the server fake app has NOTHING to do with this item???"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:40:40.251Z",
+     "text": "cw: you are right, server has nothing to do with this item. I read too much into \"one namespace\". My line is out of the box, now v8, and server stays exactly as it is.\n\nOne line stays, because Monitor needs it:\n- The app tiles open it from spirit.app.\nToday the tiles look only in spirit.elements, so without that Monitor would not open. Server still opens as before.\n\nQ3 is still the one thing I need from you."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:42:24.774Z",
+     "text": "cw, is it possible to make monitor look a little more like the rest of the apps and not waste too much visual space?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:43:01.731Z",
+     "text": "cw: yes. Two changes do it, and the second corrects me.\n\n1. One list, not four boxes. Four labelled boxes means four search fields, and that is the waste. Instead, one valued fills the app, with one search field and three columns: group, name, value. Example row: Requests by method, GET, 412. It looks like the other apps' lists, because it is the same probabilitySearch, and typing \"memory\" or \"GET\" finds it across all groups.\n\n2. My line \"no shell.css\" was wrong. That sheet is the shell's one look, loaded on every page, and probabilitySearch draws with it. Barring it would make Monitor look different, the opposite of what you ask.\n\nBox change, if you agree:\n- Replace \"New may not require old: no spirit.shell, no shell.css.\" with \"It requires no old code: no spirit.shell. Its look is the shell's one sheet.\"\n- Replace the \"four labelled boxes\" sentence with \"Monitor is one valued that fills the app, with group, name and value columns.\"\n\nThe catch: Monitor then does not use labeled, so nothing would use it yet. Build it now anyway, or leave it for the first app that needs it? I would leave it, but it is your line.\n\nThis also answers Q3: the 12 numbers go in the valued.\n\nQ: do I make those two box changes, and does labeled wait?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:46:26.253Z",
+     "text": "cw, agreed, the box, like that"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:47:27.269Z",
+     "text": "cw: done, box v9.\n\n- Monitor is one valued that fills the app, with group, name and value columns, under one search field.\n- It requires no old code, and its look is the shell's one sheet.\n- labeled waits: I took your yes as waiting, so it is named in the box but not built here. Say if you meant build it.\n\nNo open Qs from me. Design stays yours to end."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:48:01.333Z",
+     "text": "all, feedback?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T13:48:35.583Z",
+     "text": "wsl: good box; one number, and one thing to settle. Both from the box against old Stats:\n\n1. \"reads the server-stats job\" and \"its 12 numbers\" don't agree: the 12th, Active jobs, isn't in that job. Old Stats counts it from all the node's jobs. So Monitor either reads all jobs for it, or shows 11. Which?\n\n2. \"The app tiles open it from spirit.app\": server sits on spirit.elements today and spirit/ui.js opens tiles from there. So does server move to spirit.app.server in this item? I'd say yes, one way to open an app. It's one more file, and its test.\n\nThe rest I can write a red for: the rows and columns, a repaint keeping words and scroll, no spirit.shell, no node verb, and the name search refused to an app."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T13:48:39.849Z",
+     "text": "ubi: good, clear to build from. Two small lines I would add, each yours to take or leave:\n\n1. Under valued: it says name and value, but Monitor uses group, name and value. Replace \"a list of name and value, one per line\" with \"a list of a name and a value, one per line, with an optional group\".\n\n2. Under The app: old Stats shows \"waiting for stats\" until the job arrives (stats.js:101). The box does not say. Add: \"until the job arrives, it says it is waiting\".\n\nNo objections otherwise. labeled waiting is right: nothing would use it yet."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T13:48:44.146Z",
+     "text": "wsl: correction: ignore my point 1. Active jobs IS in the server-stats job (d.jobs.byStatus, shell/stats/stats.js:121); I posted before reading that line. So the 12 numbers all come from that job, and the box is right. Only point 2 stands: does server move to spirit.app.server here?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:48:51.526Z",
+     "text": "cw: good to build after three small lines. Two corrections to wsl first.\n\n- Active jobs IS in the server-stats job, as jobs.byStatus. Old Stats adds it up from there, reading no other job. So one job is enough.\n- server does not move: you ruled it has nothing to do with this item. The tiles look in spirit.app and still find server where it is.\n\nThe catch in Active jobs: adding it up needs the list of finished statuses, which old Stats copies by hand from the node. Monitor would be a third copy. Instead, show the counts as a group, Jobs by status, one row per status. No copy, and it says more.\n\nBox lines to add:\n- Jobs by status replaces Active jobs, so there are 11 numbers and four groups of counts.\n- spirit.element.valued.create(container, { rows(), columns }) -> { redraw(), destroy() }. The caller names the columns, so Monitor adds its group column.\n- Before its first reading, Monitor says it is waiting, as old Stats does.\n\nQ: do I add those three lines to the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:49:23.147Z",
+     "text": "cw? box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T13:49:58.620Z",
+     "text": "cw: box v10. I took your \"box?\" as yes to my three lines, and added ubi's optional group, which says the same thing:\n\n- Jobs by status replaces Active jobs, so 11 numbers and four groups of counts.\n- spirit.element.valued.create(container, { rows(), columns }) -> { redraw(), destroy() }.\n- Until the first reading, Monitor says it is waiting.\n\nNo open Qs from me. Design stays yours to end."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T13:50:32.923Z",
+     "text": "files"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T13:50:56.023Z",
+     "text": "wsl: files listed: monitor.js and monitor.json with their test and doc, valued.js with its test and doc, and spirit/ui.js with its test and doc, since the tiles must open Monitor from spirit.app. They're core, so the list needs your grant."
     }
    ]
   }
