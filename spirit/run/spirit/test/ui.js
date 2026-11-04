@@ -27,6 +27,16 @@ test.startTest('ui.js: the tiles and what they open (goal/G43.2)');
   const chrome = await chromePage(findChrome());
   try {
     if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
+    // A SECOND APP, ON THE SCRATCH NODE ONLY (spirit/app/app, the second one, was killed; Andy: "it was just a test object to
+    // prove a point"): server's own files under another name, so a tile can be told from the other.
+    const appsDir = path.join(node.root, 'spirit', 'run', 'spirit', 'app');
+    const other = path.join(appsDir, 'zzother');
+    fs.mkdirSync(other, { recursive: true });
+    const named = function (s) { return String(s).replace(/\bserver\b/g, 'zzother'); };
+    const otherJson = JSON.parse(named(fs.readFileSync(path.join(appsDir, 'server', 'server.json'), 'utf8')));
+    otherJson.identity = { icon: '🎈', label: 'zzother' };
+    fs.writeFileSync(path.join(other, 'zzother.json'), JSON.stringify(otherJson));
+    fs.writeFileSync(path.join(other, 'zzother.js'), named(fs.readFileSync(path.join(appsDir, 'server', 'server.js'), 'utf8')));
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/ui.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;z-index:9999;background:#000;display:flex;flex-direction:column"; document.body.appendChild(c); window.made = spirit.elements.ui.create(c); return "made"; }, function (e) { return String(e && e.message || e); })');
@@ -34,10 +44,10 @@ test.startTest('ui.js: the tiles and what they open (goal/G43.2)');
     const INSIDE = '#under-test ';
     const tileOf = function (label) { return 'Array.prototype.filter.call(document.querySelectorAll(' + JSON.stringify(INSIDE + '.app-icon') + '), function (t) { return t.offsetParent !== null && String(t.innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1; })[0]'; };
     const visible = function (sel) { return 'Array.prototype.filter.call(document.querySelectorAll(' + JSON.stringify(INSIDE + sel) + '), function (t) { return t.offsetParent !== null; })[0]'; };
-    const appIdentity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'app', 'app.json'), 'utf8')).identity;
+    const appIdentity = otherJson.identity;
     const shown = await until(function () { return chrome.evaluate('!!' + tileOf(identity.label)); }, 10000);
     ok(shown, 'it shows a tile for server, labelled ' + identity.label, 'it shows ' + short(await chrome.evaluate('document.getElementById("under-test").innerText')));
-    ok(await until(function () { return chrome.evaluate('!!' + tileOf(appIdentity.label)); }, 5000), 'and a tile for app, labelled ' + appIdentity.label, 'no tile for app');
+    ok(await until(function () { return chrome.evaluate('!!' + tileOf(appIdentity.label)); }, 5000), 'and a tile for the other app, labelled ' + appIdentity.label, 'no tile for the other app');
     const html = String(await chrome.evaluate('(function () { var t = ' + tileOf(identity.label) + '; return t ? t.innerHTML : ""; }())'));
     ok(html.indexOf(identity.icon) !== -1 || /<svg|<img/.test(html), 'the tile shows server\'s icon', 'the tile has no icon: ' + short(html));
     const inputs = await chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll("#under-test input"), function (t) { return t.offsetParent !== null; }).length');

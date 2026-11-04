@@ -83,9 +83,9 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
 
     // ONLY A FOLDER WITH ITS OWN <name>/<name>.json IS A PLUGIN (Andy, G43.1 box: "the new \"default\" pattern in that module
     // is: /<name>/<name>.json"), and it comes from the disk, not from a list naming server.
-    // Andy's own commit added spirit/app/app/app.json: the plugins are exactly those two, and appSelector and test are not taken for apps.
+    // The plugin is exactly server (spirit/app/app, a test object, was killed), and appSelector and test are not taken for apps.
     const keys = (items || []).map(function (i) { return i.key; }).sort().join();
-    ok(keys === 'app,server', 'the plugins are app and server: appSelector and test are not taken for apps', 'an empty search found ' + short(keys));
+    ok(keys === 'server', 'the plugin is server: appSelector and test are not taken for apps', 'an empty search found ' + short(keys));
     const plugin = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'zzplugin');
     fs.mkdirSync(plugin, { recursive: true });
     fs.writeFileSync(path.join(plugin, 'zzplugin.json'), JSON.stringify({ identity: { icon: '🧩', label: 'Zz Plugin Label' } }));
