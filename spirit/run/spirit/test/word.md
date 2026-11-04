@@ -21,7 +21,7 @@ Andy, box: *"i will track nameSpace claims."*
 *"the test for word will go red if the word system and the tree contradict."* Held against this checkout, leaving out `test` folders and `state`:
 
 - The same word defined twice along a path is red.
-- A folder or file below the root named after a word reserved above it is red (*"a word 'abc' reservers any 'abc.js' or 'abc/' or 'abc.anything'"*).
+- A folder or file below the root named after a word reserved above it is red (*"a word 'abc' reservers any 'abc.js' or 'abc/' or 'abc.anything'"*). A file that borrows from the word is no second definition, Q11: *"the word is defined ONCE, at the \"largest\" scope"*. Only `data` can show it today: its `data.js` calls `makeFamily`. A `data.js` that does not stays red.
 - A hard-coded word without its folder or file at `spirit/`, or without its object on the browser's spirit object, is red. Andy answered cw's Q2 that this red holds the item, and his box says *"the red generated from this will point us toward the next steps in restructuring the namespace. live with it."*
 - `spirit` is exempt: *"in tests it is exempt from discrepancy rules."*
 

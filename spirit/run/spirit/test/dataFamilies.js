@@ -133,9 +133,9 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
 
     // Q5, "Does spirit.data.<name>.cache hold a level per node, as the tree does today?", Andy: "yes."
     test.subHeading('Q5: .cache holds a level per node');
-    await H.until(function () { return page.evaluate('(function () { var a = (window.spirit.data || {}).app; var c = a && a.cache && a.cache[window.spirit.data.home()]; return !!(c && c.apps && Object.keys(c.apps).length); })()').then(Boolean); }, 8000).catch(function () { return false; });
-    const cached = await ask('(function () { var D = window.spirit.data || {}; var a = D.app || {}; var c = a.cache || {}; var home = typeof D.home === "function" ? D.home() : ""; var r = { home: !!home, apps: Object.keys((c[home] || {}).apps || {}).length };' +
-      ' try { D.at("othernode", "app").set("apps/onlythere", { key: "onlythere" }); } catch (e) { r.threw = String(e); }' +
+    await H.until(function () { return page.evaluate('(function () { var a = (window.spirit.data || {}).app; var c = a && a.cache && a.cache[window.spirit.data.homeNode()]; return !!(c && c.apps && Object.keys(c.apps).length); })()').then(Boolean); }, 8000).catch(function () { return false; });
+    const cached = await ask('(function () { var D = window.spirit.data || {}; var a = D.app || {}; var c = a.cache || {}; var home = typeof D.homeNode === "function" ? D.homeNode() : ""; var r = { home: !!home, apps: Object.keys((c[home] || {}).apps || {}).length };' +
+      ' try { D.viewAt("othernode", "app").set("apps/onlythere", { key: "onlythere" }); } catch (e) { r.threw = String(e); }' +
       ' r.there = !!(((c.othernode || {}).apps || {}).onlythere); r.notHome = !((c[home] || {}).apps || {}).onlythere;' +
       ' return JSON.stringify(r); })()');
     ok(cached.home && cached.apps > 0, 'the app rows stand under this page\'s node', 'spirit.data.app.cache[home].apps: ' + short(cached));

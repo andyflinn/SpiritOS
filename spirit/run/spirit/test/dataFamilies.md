@@ -19,4 +19,4 @@ Andy, box: *"we rename it spirit/data.js and it IS the the spirit.data object."*
 
 ## Assumed by this test
 
-The box names no helper, so the test finds it by its call: a function called with the family's name as a string. A row of another node is written through `spirit.data.at(node, family)`, and the page node comes from `spirit.data.home()`. Those two names change with the capitals; the builder names the new ones and the verifier corrects the test.
+The box names no helper, so the test finds it by its call: a function called with the family's name as a string. A row of another node is written through `spirit.data.viewAt(node, family)`, and the page node comes from `spirit.data.homeNode()`, the builder's names.

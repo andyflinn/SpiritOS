@@ -204,10 +204,14 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
     });
     ok(!twice.length, 'no word stands twice along a path', 'a word stands twice along a path: ' + twice.join('; '));
     test.subHeading('the tree: "node-side a word \'abc\' reservers any \'abc.js\' or \'abc/\' or \'abc.anything\'": nothing below may take a word reserved above it');
+    // Q11, Andy: "the word is defined ONCE, at the "largest" scope", and "spirit/app/data.js is "plugin" of spirit/data.js": a file
+    // below that borrows from the word is no second definition. Only data has a way to show it: the file calls the one helper.
+    const BORROWS = { data: /\.makeFamily\(/ };
+    const borrows = function (e) { const re = BORROWS[stem(e.name)]; return !!re && !e.dir && re.test(fs.readFileSync(path.join(SPIRIT, e.rel), 'utf8')); };
     const taken = [];
     tree.forEach(function (e) {
       const where = path.dirname(e.rel);
-      if (where === '.' || e.name === 'word.json') return;
+      if (where === '.' || e.name === 'word.json' || borrows(e)) return;
       above(where).forEach(function (l) {
         if (l.words.indexOf(stem(e.name)) !== -1 && !(l.at !== 'hard-coded' && path.dirname(l.at) === where)) taken.push('spirit/' + e.rel + ' (reserved in ' + l.at + ')');
       });
