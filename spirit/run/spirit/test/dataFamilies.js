@@ -1,0 +1,138 @@
+'use strict';
+
+// spirit/run/spirit/test/dataFamilies.js
+// The tests of goal/G43.7 (spec: ./dataFamilies.md). Andy, the box: "we rename it spirit/data.js and it IS the the spirit.data
+// object", "ALL "clientCacheManager.js" files will be converted to "data.js" files with the SAME pattern." Every check is per
+// family, so the count of what is owed falls as each family moves.
+
+const fs = require('fs');
+const path = require('path');
+const RUN = path.resolve(__dirname, '../..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+
+// Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
+const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'events', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'];
+const SERVER_FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
+const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
+const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'process', 'js', name, 'family'); };
+// The old spirit.<name>Data: chatData was chatClerver's, verifyData deskVerify's.
+const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|deskVerify|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
+// A retired name's parts, so this file does not hold it whole.
+const OLD_MANAGER = 'clientCache' + 'Manager';
+const OLD_MODULE = 'spirit' + 'Data';
+
+function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+// Code only: a comment may quote Andy, and his words are never rewritten.
+function code(text) { return String(text).split('\n').map(function (l) { return l.replace(/(^|\s)\/\/.*$/, ''); }).join('\n'); }
+
+function walk(dir, out) {
+  fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+    if (e.name === 'node_modules' || e.name === 'brains' || e.name === 'relay-state' || e.name === 'app-state' || e.name === 'state' || e.name === 'media' || e.name === 'published') return;
+    const at = path.join(dir, e.name);
+    if (e.isDirectory()) walk(at, out); else out.push(at);
+  });
+  return out;
+}
+
+test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/data.js (goal/G43.7)');
+
+(async function () {
+  const files = walk(RUN, []);
+  const rel = function (f) { return path.relative(RUN, f); };
+
+  test.subHeading('the box: "we rename it spirit/data.js"');
+  ok(fs.existsSync(path.join(RUN, 'spirit', 'data.js')), 'spirit/data.js stands', 'spirit/data.js is missing');
+  ok(!fs.existsSync(path.join(RUN, 'spirit', OLD_MODULE + '.js')), 'the old module is gone', 'spirit/' + OLD_MODULE + '.js still stands');
+
+  test.subHeading('the box: "ALL ... files will be converted to "data.js" files"');
+  const pattern = {};
+  FAMILIES.forEach(function (name) {
+    const folder = folderOf(name);
+    const file = path.join(folder, 'data.js');
+    ok(fs.existsSync(file), name + ': has its data.js', name + ': no ' + rel(file));
+    ok(!fs.existsSync(path.join(folder, OLD_MANAGER + '.js')), name + ': the old file is gone', name + ': ' + rel(path.join(folder, OLD_MANAGER + '.js')) + ' still stands');
+    if (!fs.existsSync(file)) return;
+    const text = code(fs.readFileSync(file, 'utf8'));
+    // "using the module spirit/data.js": the guard, the attach and the write on spirit are its, not a family's.
+    ok(!/Symbol\.for|function attach|\.spirit\s*=|spirit\.[A-Za-z]+Data\s*=/.test(text), name + ': rolls none of it by hand', name + ': data.js still rolls its own guard, attach or spirit write');
+    const called = new RegExp('\\.([A-Za-z]+)\\(\\s*[\'"]' + name + '[\'"]').exec(text);
+    if (called) pattern[name] = called[1];
+  });
+  test.subHeading('the box: "with the SAME pattern": one helper of spirit.data, called with the family\'s own name');
+  const helpers = Object.keys(pattern).map(function (n) { return pattern[n]; }).filter(function (h, i, all) { return all.indexOf(h) === i; });
+  ok(Object.keys(pattern).length === FAMILIES.length, 'all 19 call a helper with their own name', 'these do not: ' + FAMILIES.filter(function (n) { return !pattern[n]; }).join(', '));
+  ok(helpers.length === 1, 'and it is the one helper: ' + helpers.join(), 'not one helper: ' + short(helpers));
+
+  test.subHeading('the box: "instead of spirit.<name>Data": nothing in the tree\'s code says the old names');
+  const offenders = { reader: [], manager: [], module: [] };
+  files.filter(function (f) { return /\.(js|html)$/.test(f) && f !== __filename; }).forEach(function (f) {
+    const text = code(fs.readFileSync(f, 'utf8'));
+    if (OLD_READER.test(text)) offenders.reader.push(rel(f));
+    if (text.indexOf(OLD_MANAGER) !== -1) offenders.manager.push(rel(f));
+    if (text.indexOf(OLD_MODULE) !== -1) offenders.module.push(rel(f));
+  });
+  const say = function (l) { return l.length + ': ' + l.slice(0, 6).join(', ') + (l.length > 6 ? ', ...' : ''); };
+  ok(!offenders.reader.length, 'no code reads a spirit.<name>Data', 'code that reads a spirit.<name>Data, ' + say(offenders.reader));
+  ok(!offenders.manager.length, 'no code names ' + OLD_MANAGER, 'code that names ' + OLD_MANAGER + ', ' + say(offenders.manager));
+  ok(!offenders.module.length, 'no code names ' + OLD_MODULE, 'code that names ' + OLD_MODULE + ', ' + say(offenders.module));
+
+  // ── ON A PAGE ───────────────────────────────────────────────────────────────────
+  const chrome = H.findChrome();
+  const node = await H.scratchNode();
+  let page = null;
+  try {
+    page = chrome && node.up ? await H.chromePage(chrome) : null;
+    if (!page || page.error) { test.fail('no browser to ask: ' + short(page ? page.error : 'no Chrome, or the scratch node did not come up')); return; }
+    await page.send('Page.navigate', { url: node.base + '/index.html' });
+    await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
+    await page.evaluate('window.spirit.ready.then(function () { return true; })').catch(function () { return false; });
+    await H.sleep(2500);
+    const ask = async function (js) { try { return JSON.parse(await page.evaluate(js)); } catch (e) { return { threw: String(e) }; } };
+    const got = await ask('(function () { var S = window.spirit; var names = ' + JSON.stringify(FAMILIES) + ';' +
+      ' return Promise.all(names.map(function (n) { return Promise.resolve(S.cacheManager(n)).then(null, function () { return null; }); })).then(function () {' +
+      ' var D = S.data || {}; var out = { first: Object.keys(S), keys: {}, families: {} };' +
+      ' Object.keys(D).forEach(function (k) { out.keys[k] = typeof D[k]; });' +
+      ' names.forEach(function (n) { var f = D[n]; out.families[n] = { data: f && typeof f.data, cache: f && typeof f.cache }; });' +
+      ' return JSON.stringify(out); }); })()');
+    if (got.threw) { test.fail('the page answered nothing: ' + short(got)); return; }
+
+    test.subHeading('the box: "de-clutter": the first level of spirit holds no <name>Data');
+    const left = got.first.filter(function (k) { return /Data$/.test(k); });
+    ok(!left.length, 'none is left', 'still on spirit: ' + left.join(', '));
+
+    test.subHeading('the box: "spirit.data.<name>.data" and "spirit.data.<name>.cache"');
+    FAMILIES.forEach(function (n) {
+      const f = got.families[n] || {};
+      ok(f.data === 'object' && f.cache === 'object', 'spirit.data.' + n + ' has data and cache', 'spirit.data.' + n + ': ' + short(f));
+    });
+
+    test.subHeading('the box: "this object has only helper functions and object <name> for every application"');
+    const stray = Object.keys(got.keys).filter(function (k) { return got.keys[k] !== 'function' && FAMILIES.indexOf(k) === -1; });
+    ok(Object.keys(got.keys).some(function (k) { return got.keys[k] === 'function'; }), 'spirit.data has its helper functions', 'spirit.data has no function: ' + short(got.keys));
+    ok(!stray.length, 'and nothing else but the families', 'on spirit.data besides helpers and families: ' + stray.join(', '));
+
+    // Q5, "Does spirit.data.<name>.cache hold a level per node, as the tree does today?", Andy: "yes."
+    test.subHeading('Q5: .cache holds a level per node');
+    await H.until(function () { return page.evaluate('(function () { var a = (window.spirit.data || {}).app; var c = a && a.cache && a.cache[window.spirit.data.home()]; return !!(c && c.apps && Object.keys(c.apps).length); })()').then(Boolean); }, 8000).catch(function () { return false; });
+    const cached = await ask('(function () { var D = window.spirit.data || {}; var a = D.app || {}; var c = a.cache || {}; var home = typeof D.home === "function" ? D.home() : ""; var r = { home: !!home, apps: Object.keys((c[home] || {}).apps || {}).length };' +
+      ' try { D.at("othernode", "app").set("apps/onlythere", { key: "onlythere" }); } catch (e) { r.threw = String(e); }' +
+      ' r.there = !!(((c.othernode || {}).apps || {}).onlythere); r.notHome = !((c[home] || {}).apps || {}).onlythere;' +
+      ' return JSON.stringify(r); })()');
+    ok(cached.home && cached.apps > 0, 'the app rows stand under this page\'s node', 'spirit.data.app.cache[home].apps: ' + short(cached));
+    ok(cached.there === true, 'a row of another node stands under that node', 'a row of another node: ' + short(cached));
+    ok(cached.notHome === true, 'and not under this page\'s', 'a row of another node under the home node: ' + short(cached));
+
+    test.subHeading('the reads moved with it: spirit.data.<name>.data answers what spirit.<name>Data did');
+    const reads = await ask('(function () { var D = window.spirit.data || {}; var a = (D.app || {}).data || {}; var f = (D.fs || {}).data || {}; return JSON.stringify({ rows: typeof a.rows, watch: typeof a.watch, count: typeof a.rows === "function" ? Object.keys(a.rows()).length : 0, fsWatch: typeof f.watch }); })()');
+    ok(reads.rows === 'function' && reads.watch === 'function' && reads.count > 0, 'spirit.data.app.data reads the app rows', 'spirit.data.app.data: ' + short(reads));
+    ok(reads.fsWatch === 'function', 'spirit.data.fs.data.watch stands, which word.js follows', 'spirit.data.fs.data: ' + short(reads));
+  } finally {
+    if (page && page.kid) page.kid.kill();
+    if (node.child) node.child.kill();
+    try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  }
+}()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
+  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });
