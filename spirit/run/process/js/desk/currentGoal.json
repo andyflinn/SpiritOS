@@ -1,5 +1,5 @@
 {
- "change": 129600,
+ "change": 129601,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -3281,12 +3281,11 @@
    "id": "goal/G43.4",
    "title": "Word",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 23,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
