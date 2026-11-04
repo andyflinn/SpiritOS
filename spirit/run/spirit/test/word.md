@@ -13,7 +13,7 @@ Andy, box: *"i will track nameSpace claims."*
 - On a page `spirit.word.check` answers through a promise, since a page asks its node for each `word.json`, kept until the node's file stream says it changed; `spirit.word.changed(fn)` tells a listener when one does. `spirit/element/files/rowElement.js` paints from these; its test judges them.
 - `add('path.in.words', 'word')`, Andy: *"all, implement add()"*, answers a boolean. *"add('spirit.app', 'activate') would add the 'activate' to "run://spirit/app/word.json"."* The word goes in with the value `true`, the words already in the file stay, and a level with no `word.json` yet gets one.
 - `add` answers `false` and writes nothing on what is no word, on what `check` finds (*"no words can be added that already exists toward the root of the tree"*, and *"a boolean 'false' if the word already exists"*), and on a word a level below holds (Andy's yes to Q4). A word in another branch does not stop it. It also answers `false` on a path with no level `check` reads, such as `spirit`, on a path that is not in words, and on a `word.json` that is not an object of JSON, which it will not overwrite. No test holds these three yet.
-- A level with no folder yet gets one. Q7, *"Should add refuse a level whose folder does not exist, instead of creating the folder?"*, Andy: *"no."* A path holds words, a to z, so a capital in it answers `false` and makes no folder.
+- `add` makes no folder. Andy: *"wince fucking when does add() add a MOTHERFUCKING FOLDER?"* A level with no folder answers `false`. A path holds words, a to z, so a capital in it answers `false` too.
 - `add` is in node only. Q5, *"Should add work from a page too, the way check does?"*, Andy: *"no."*
 
 ## The tree

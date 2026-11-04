@@ -142,10 +142,10 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
       // cw, on the object's own keys: "constructor" is a to z.
       ['a word an object inherits is a word like any other', 'spirit.app', 'constructor', true],
       ['a level with no word.json yet gets one', 'spirit.element.files', 'fresh', true],
-      // Q7, "Should add refuse a level whose folder does not exist, instead of creating the folder?", Andy: "no."
-      ['a level with no folder yet gets one', 'spirit.nosuch.level', 'made', true],
     ]);
-    ok((wordsIn('nosuch/level') || {}).made === true, 'the word stands in the new folder (Q7)', 'spirit/nosuch/level/word.json: ' + short(wordsIn('nosuch/level')));
+    // Andy, on Q8: "wince fucking when does add() add a MOTHERFUCKING FOLDER?" With no folder there is no level to write to.
+    addCases('add makes no folder', [['a level with no folder', 'spirit.nosuch.level', 'made', false]]);
+    ok(!fs.existsSync(path.join(run, 'spirit', 'nosuch')), 'and spirit/nosuch stays absent', 'add made spirit/nosuch');
     // 'path.in.words', and "'word' is a string containing only characters from 'a' to 'z'": a capital is no level.
     addCases('add takes no capitals in its path', [['a capital in the path', 'spirit.Capital', 'word', false]]);
     ok(!fs.existsSync(path.join(run, 'spirit', 'Capital')), 'and makes no folder of it', 'add made spirit/Capital');
