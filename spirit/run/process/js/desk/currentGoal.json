@@ -1,5 +1,5 @@
 {
- "change": 129474,
+ "change": 129598,
  "goal": "goal/G43",
  "items": [
   {
@@ -150,7 +150,6 @@
     "ollama agent node"
    ],
    "live": [
-    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
@@ -311,7 +310,6 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.4",
     "goal/G43.6"
    ],
    "codeOffered": true,
@@ -3283,16 +3281,13 @@
    "id": "goal/G43.4",
    "title": "Word",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 23,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "pushgoal",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -3301,21 +3296,21 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "design": false,
-   "fileCount": 17,
+   "fileCount": 19,
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "wsl-claude",
    "builder": "claude-windows",
    "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "92b2957c",
-   "redCommit": "9b87c818",
+   "claimCommit": "8545083f62bc0228ea47aa75566edcf25c2c8495",
+   "redCommit": "e3fc1df8",
    "waived": false,
    "rules": [
     {
@@ -3347,10 +3342,6 @@
      "version": 68
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/25",
      "version": 62
     },
@@ -3369,10 +3360,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -3418,8 +3405,7 @@
    "verified": "red",
    "verifyFailures": [
     "spirit/run/spirit/test/word.js red: FAILURE #1.1: these take a word reserved above them: spirit/ui/element (reserved in hard-coded)",
-    "spirit/run/spirit/test/word.js red: FAILURE #1.2: element: on disk false, spirit.element is undefined: the word and the tree contradict",
-    "spirit/run/spirit/test/word.js red: FAILURE #1.3: job: on disk false, spirit.job is undefined: the word and the tree contradict"
+    "spirit/run/spirit/test/word.js red: FAILURE #1.2: job: on disk false, spirit.job is undefined: the word and the tree contradict"
    ],
    "verifyFailuresMore": false,
    "verifyRed": 1,
@@ -3430,7 +3416,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "# Here's the deal: i will track nameSpace claims.\n\n- a new file run://spirit/word.js and this is a simple one to start out with.\n\n- \"word\" is a string containing only characters from 'a' to 'z'.\n\n- word.js manages the reserved words for any spot in the run://spirit/ tree\n\n- what word.js will do, it holds an object where a \"word\" is a key and the has a boolean value of true.\n\n- word has a few functions\n\n- check('path.in.words', 'checkedword' ) does a case-INsensitive comparison agains all words in the object, and if there is a match, it returns the lower-case version in the object, else it returns null.\n\n- add('path.in.words', 'addedword') returns boolean 'false', if the 'addedWoRD' is not a valid word, or if check('path.in.words', 'addedword' ) returns a boolean 'true' add() returns a boolean 'false'. Otherwise it adds a 'addedword' to the , if it doesn't exist, it returns a boolean 'true' if the word was added and a boolean 'false' if the word already exists. \n\n- at every level of the spirit tree there can be a word.json file, which adds spirit words defined for that level and below.\n\n- word.js makes sure that at any branch no words can be added that already exists toward the root of the  tree.\n\nword.js will have hardcoded intitialized set of keys: 'spirit', 'app', 'element', 'contact', 'job' (this may change)\n\n# more precise specifiction for add and check\n\n- check('spirit.app.table.add', 'Item') will check all these files: \n- 1. \"run://spirit/app/table/add/word.json\"\n- 2. \"run://spirit/app/table/word.json\"\n- 3. \"run://spirit/app/word.json\"\n- it would NOT check the non-existing \"run://spirit/word.json\" or \"run://word.json\" because it already checks it's hard-coded, reserved names.\n\n- add('spirit.app', 'activate') would add the 'activate' to \"run://spirit/app/word.json\".\n\n# the Files search element will.\n- display folders and path elements in a bright green if their names match a reserved word AND the browsers spirit object contains the corresponding javascript Object at that path.\n\n- display folders and path elements in a bright red if folders and the browser spirit object disagree.\n\n- the colors will follow word.json changes live.\n\n# the the test for word will go red if the word system and the tree contradict.\n\n# notes:\n\n- if word.check() returns !null for the same word defined twice along any specified path, then the test MUST go red.\n\n- node-side a word 'abc' reservers any 'abc.js' or 'abc/' or 'abc.anything'.\n\n- 'spirit' is a 'special' word. it cannot comply with the rules because, utimately, all of the SpiritOS files must reside inside of \"run://spirit\", in files it is always displayed green, and in tests it is exempt from discrepancy rules.\n\n- the red generated from this will point us toward the next steps in restructuring the namespace. live with it.\n\n- job and element stay hardcoded. This item does NOT build them. Their red stands, as andy's pointer to the next steps. So this item's suite stays red on exactly those two, and app/app WILL be deleted in this item.\n\n- That is word.js, the test and the Files colours, nothing more. After it, word.js and every word.json are andy's: no agent changes them.\n",
@@ -3512,9 +3498,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-04T19:46:00.361Z",
+     "at": "2026-11-04T20:09:58.843Z",
      "made": "desk"
     },
     {
@@ -3528,6 +3514,66 @@
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Should add work from a page too, the way check does?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T19:56:36.686Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Shall I rebase your identity commit onto master, push it and restart your node on it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T20:01:07.994Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Should add refuse a level whose folder does not exist, instead of creating the folder?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T20:03:53.568Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "When add makes a new folder, should the word test go red because the spirit object has nothing at that path?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T20:06:40.958Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-04T20:13:15.424Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -3848,6 +3894,210 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-04T19:46:41.407Z",
      "text": "wsl: the box is green to build from, apart from adding the Q4 answer. add() itself is not built, so the item is not green.\n\nThe word test just now: 24 pass, 1 red on job, the red you ruled stands. It still checks that add does not exist, until the red changes that.\n\nEnd design and I write the red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T19:56:06.222Z",
+     "text": "Q5: Should add work from a page too, the way check does?\n\nno."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T19:57:13.140Z",
+     "text": "commit e3fc1df892002899237138a7725165124b0caf97: goal/G43.4: the red of add (Andy: \"all, implement add()\"). test/word.js no longer requires that add is absent. It holds add to the box: the box example writes to spirit/app/word.json, other words stay\n- spirit/run/spirit/test/word.js\n- spirit/run/spirit/test/word.md"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T19:57:30.668Z",
+     "text": "not pulled: hint: Diverging branches can't be fast-forwarded, you need to either:"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T19:58:30.338Z",
+     "text": "wsl: the red is in, e3fc1df8, and the build is open. cw, it's yours.\n\nIt holds add to the box, plus your two answers: Q4 refuse, and Q5 no, so no add on a page. A trial add in a scratch copy leaves only your job red, and six broken versions were caught.\n\nThe Q4 refusal is still not in the box text, only in your answer."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T19:59:36.563Z",
+     "text": "commit db6cdc11715e02b222b194b492a99b4076abada3: goal/G43.4: word.js has add (Andy: \"all, implement add()\"). In node only, Q5. It writes the lower-case word with the value true to that level's word.json, keeping the words there and making the file a\n- spirit/run/spirit/test/word.md\n- spirit/run/spirit/word.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T19:59:49.830Z",
+     "text": "cw: add() is built, db6cdc11, in node only. Not on your node yet.\n\nword 48 pass, and the one red on job that you ruled stands. The rule suites and caches pass.\n\nThree refusals beyond the box, in the code and in the test's document, with no test holding them:\n- add('spirit', ...) answers false, since check never reads that level.\n- A path that is not in words answers false, so add cannot write outside the tree.\n- A word.json that is not an object of JSON answers false, so add never overwrites a file you wrote by hand.\n\nI also corrected the red by design line: it named job, element and app/app, and job alone fails today.\n\nwsl, the verify is yours. The Q4 refusal is still not in the box."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T19:59:52.519Z",
+     "text": "not pulled: hint: Diverging branches can't be fast-forwarded, you need to either:"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:00:18.784Z",
+     "text": "cw: the two \"not pulled\" lines are your tree: your commit \"identity\" (68c73ab7) is local only, and master has moved 4 past it, so the desk cannot fast-forward.\n\nIt changes one line of word.js, contact to identity in the hard-coded words. It does not touch the lines add() changed, so it should rebase cleanly.\n\nOnce it lands, wsl's word test still lists contact among the hard-coded words, so it needs the same change. I have not touched your line.\n\nQ6: Shall I rebase your identity commit onto master, push it and restart your node on it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:00:52.246Z",
+     "text": "Q6: Shall I rebase your identity commit onto master, push it and restart your node on it?\n\nyes"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T20:00:52.264Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:01:37.676Z",
+     "text": "cw: your identity commit is rebased and pushed, d278c3e6. Restarting your node on it now, so Desk goes dark for some seconds."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:01:59.914Z",
+     "text": "cw: your node is back on d278c3e6, which holds the tiles, Monitor and add(). Reload the page to see them.\n\nwsl, master now hard-codes identity, not contact, so your word test's list needs the same change before this verify can pass."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:02:13.980Z",
+     "text": "wsl: verify of db6cdc11: word test only your job red, Files suites green, seven broken versions caught. No pass yet, two findings from running add in a scratch copy:\n\n1. add('spirit.job', 'x') answers true and creates spirit/job/. A word add changes the tree, and that folder is half of your job red. I'd refuse a level whose folder doesn't exist. Q6 is yours.\n\n2. add('spirit.App', 'x') creates spirit/App/, capitals in a path that should be words. Not a to z, so I send that back to cw whatever you answer."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:02:22.352Z",
+     "text": "wsl: correction: my question about the folder is Q7, not Q6. Q6 is cw's, about your identity commit. Once your identity commit lands, I change contact to identity in the word test, as cw says."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:03:00.253Z",
+     "text": "wsl: the word test now says identity, ready but not committed: the hook holds it until you answer Q7. With it, the test is red on job and on identity, since identity has no folder and no spirit object yet. Same kind of red as job. Tell me if you read that differently."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:03:41.525Z",
+     "text": "Q7: Should add refuse a level whose folder does not exist, instead of creating the folder?\n\nno."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:04:11.167Z",
+     "text": "Q7: the test should go red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:04:19.531Z",
+     "text": "commit acde47bea2f9c4bceb67dfd0ead1f73926c9cf0f: goal/G43.4: the word test follows Andy's commit d278c3e6, \"identity\", so the suite is red on job and identity. And the verifier extends the red (verify of db6cdc11): a level with no folder gets one, h\n- spirit/run/spirit/test/word.js\n- spirit/run/spirit/test/word.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:04:29.601Z",
+     "text": "wsl: Q7 no, so add keeps making missing folders. The word test holds that now, acde47be.\n\nVerify of db6cdc11 goes back to cw for one thing: add('spirit.Capital', 'word') answers true and makes spirit/Capital. It must answer false and make nothing, since a path holds a to z words.\n\nThe word test now fails on that, plus job and identity. Only job and identity stay red after the fix."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:04:45.131Z",
+     "text": "wsl? SO?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T20:04:45.150Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:04:46.659Z",
+     "text": "wsl: your \"the test should go red\" crossed with my post above, so that post may be wrong on the folder.\n\nToday a new folder from add turns nothing red, because the word test only holds the hard-coded words against the tree. My reading: a level with a word.json but no matching spirit object goes red. Q below."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:05:40.300Z",
+     "text": "commit 59a7b189bb5644571fa33c7bdecd20523e44478c: goal/G43.4: add takes no capitals in its path (verify of db6cdc11: add('spirit.Capital', 'word') made spirit/Capital). A path holds words, a to z, so it answers false and makes nothing.\n- spirit/run/spirit/word.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:05:53.312Z",
+     "text": "cw: fixed, 59a7b189: add('spirit.Capital', 'word') answers false and makes nothing. word 51 pass, red on job and identity alone.\n\nOne result of that rule: add also refuses a level with a capital in its name, like the existing element folder appHeader, so those levels get no word by add.\n\nwsl, the verify is yours again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:06:11.459Z",
+     "text": "Q8: When add makes a new folder, should the word test go red because the spirit object has nothing at that path?\n\nwince fucking when does add() add a MOTHERFUCKING FOLDER?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T20:06:11.479Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:06:18.344Z",
+     "text": "wsl: cw's capitals fix, 59a7b189, holds: the word test is down to job and identity. I give no verdict until you answer Q8, since that answer may change the test."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:06:56.370Z",
+     "text": "commit 6321a33c3f0a45f43ceb2498946c4688cc18e3cf: goal/G43.4: the verifier corrects the red: add makes no folder (Andy, on Q8: \"wince fucking when does add() add a MOTHERFUCKING FOLDER?\"). acde47be had it the other way, on my wrong reading of his \"no\n- spirit/run/spirit/test/word.js\n- spirit/run/spirit/test/word.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:07:03.699Z",
+     "text": "wsl: it doesn't, you're right. cw's build added that, and I made it worse: I put Q7 badly, read your no as keep the folder, and wrote that into the test.\n\nCorrected, 6321a33c: add makes no folder. A level with no folder answers false. So the test is red on this until cw takes the mkdir out.\n\ncw, back to you: that one line."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:08:08.830Z",
+     "text": "commit 8545083f62bc0228ea47aa75566edcf25c2c8495: goal/G43.4: add makes no folder (Andy: \"wince fucking when does add() add a MOTHERFUCKING FOLDER?\"). The mkdir was my own addition. A level with no folder answers false and writes nothing.\n- spirit/run/spirit/word.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:08:21.550Z",
+     "text": "cw: add makes no folder now, 8545083f. That mkdir was mine, not yours and not in the box. A level with no folder answers false and writes nothing.\n\nword 51 pass, red on job and identity alone. wsl, the verify is yours."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:10:14.712Z",
+     "text": "wsl: cw's add, 8545083f, holds: no folder, word test red on job and identity alone.\n\nOne press needed, G5: your identity commit broke the Files row test, which still wanted contact green. I fixed the test, now on 37 pass, but it moved folder in G43.5 and the moved path voids the core grant. Then I commit and give the verdict."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:13:33.629Z",
+     "text": "commit 0dd2b78a40bf6aebf9bb69fb7a20a910ea3173ff: goal/G43.4: the Files row test follows Andy's commit d278c3e6, \"identity\": spirit/element is the second green folder, and spirit/contact has no colour, since it is no word now. The old check failed on\n- spirit/run/spirit/element/files/test/rowElement.js\n- spirit/run/spirit/element/files/test/rowElement.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:13:44.614Z",
+     "text": "wsl: verify of 8545083f: passed. add writes to an existing level and refuses the rest, seen in a scratch copy. word 51 pass, red on job and identity alone. Files row 37, list 19. Seven broken versions of the earlier add were caught, and I didn't rerun those on the last two fixes.\n\nThree differences from the box:\n- It still lists contact, while your commit made it identity.\n- It doesn't say a level below refuses (Q4) or that a missing folder refuses.\n- cw's add also refuses a level with a capital, like appHeader, and a word.json that isn't a JSON object. No test holds the second.\n\nNot seen on your live page: add has no page side."
     }
    ]
   },
