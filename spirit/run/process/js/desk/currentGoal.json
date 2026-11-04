@@ -1,5 +1,5 @@
 {
- "change": 128168,
+ "change": 128335,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,7 +13,6 @@
    "buttons": [
     "done",
     "verify",
-    "go-all",
     "close",
     "pushgoal"
    ],
@@ -146,18 +145,15 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -305,7 +301,6 @@
    "version": 19,
    "buttons": [
     "start-design",
-    "go",
     "close",
     "pushgoal",
     "delete",
@@ -314,7 +309,9 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.4"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -3277,6 +3274,431 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-04T08:05:10.763Z",
      "text": "wsl: verify of 5d9c910c: all six suites pass, and the bubbles work on a real scratch node: grant, relabel, a small grant, revoke, and the scan after a restart.\n\nTwo things from you before I can pass it:\n1. Restart your node on 5d9c910c. Nothing here has been seen on your live desk, and that was your condition. Receipts on my node are now 0.42 s typical, 0.79 s at the slow end: typical is under 0.5, the slow end isn't. I measure again after your restart.\n2. A key with a grant but no label and no profile gets no bubble, because a key is never shown (your G21.1). Your rule says any grant means a bubble. Leave that, or show it some other way?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.4",
+   "title": "Word",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 20,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 19,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# Here's the deal: i will track nameSpace claims.\n\n- a new file run://spirit/word.js and this is a simple one to start out with.\n\n- \"word\" is a string containing only characters from 'a' to 'z'.\n\n- word.js manages the reserved words for any spot in the run://spirit/ tree\n\n- what word.js will do, it holds an object where a \"word\" is a key and the has a boolean value of true.\n\n- word has a few functions\n\n- check('path.in.words', 'checkedword' ) does a case-INsensitive comparison agains all words in the object, and if there is a match, it returns the lower-case version in the object, else it returns null.\n\n- add('path.in.words', 'addedword') returns boolean 'false', if the 'addedWoRD' is not a valid word, or if check('path.in.words', 'addedword' ) returns a boolean 'true' add() returns a boolean 'false'. Otherwise it adds a 'addedword' to the , if it doesn't exist, it returns a boolean 'true' if the word was added and a boolean 'false' if the word already exists. \n\n- add() is conceptual AND WILL NOT BE IMPLEMENTED IN THIS ITEM.\n\n- at every level of the spirit tree there can be a word.json file, which adds spirit words defined for that level and below.\n\n- word.js makes sure that at any branch no words can be added that already exists toward the root of the  tree.\n\nword.js will have hardcoded intitialized set of keys: 'spirit', 'app', 'element', 'contact', 'job' (this may change)\n\n# more precise specifiction for add and check\n\n- check('spirit.app.table.add', 'Item') will check all these files: \n- 1. \"run://spirit/app/table/add/word.json\"\n- 2. \"run://spirit/app/table/word.json\"\n- 3. \"run://spirit/app/word.json\"\n- it would NOT check the non-existing \"run://spirit/word.json\" or \"run://word.json\" because it already checks it's hard-coded, reserved names.\n\n- add('spirit.app', 'activate') would add the 'activate' to \"run://spirit/app/word.json\", oos because add() will not be implemented in this item-\n\n# the Files search element will.\n- display folders and path elements in a bright green if their names match a reserved word AND the browsers spirit object contains the corresponding javascript Object at that path.\n\n- display folders and path elements in a bright red if folders and the browser spirit object disagree.\n\n- the colors will follow word.json changes live.\n\n# the the test for word will go red if the word system and the tree contradict.\n\n# notes:\n\n- if word.check() returns !null for the same word defined twice along any specified path, then the test MUST go red.\n\n- node-side a word 'abc' reservers any 'abc.js' or 'abc/' or 'abc.anything'.\n\n- 'spirit' is a 'special' word. it cannot comply with the rules because, utimately, all of the SpiritOS files must reside inside of \"run://spirit\", in files it is always displayed green, and in tests it is exempt from discrepancy rules.\n\n- the red generated from this will point us toward the next steps in restructuring the namespace. live with it.\n\n- job and element stay hardcoded. This item does NOT build them. Their red stands, as andy's pointer to the next steps. So this item's suite stays red on exactly those two, and app/app WILL be deleted in this item.\n\n- That is word.js, the test and the Files colours, nothing more. After it, word.js and every word.json are andy's: no agent changes them.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does add write the word into that level word.json on disk, or only hold it in memory until restart?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T08:53:56.577Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Should job, element and ui, which disagree with the tree today, show red and hold the item from green until they are cleaned up?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T09:48:16.565Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Do job and element stay hardcoded, so this item also builds them, or come out until they exist?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T09:49:58.807Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-04T09:54:06.974Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-04T09:58:33.805Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T08:12:31.555Z",
+     "text": "i have base26 conversion from string (word) to integer and back earlier this year in this repo, long gone now, there were a few versions but only the one i wrote actually worked. can anyone find this in the repo-history, the one that worked with a test that proves it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T08:13:35.883Z",
+     "text": "wsl: found. numberToBase26 and base26ToNumber in spirit/run/js/kernel.js, test spirit/test/base26.js. Read with: git show 84ecfd9c~1:spirit/run/js/kernel.js (lines 77-130). You fixed it in 1c99d142 (\"most certainly fixed\"), tested more in 278cec61, deleted it in 84ecfd9c on Aug 31. Older versions: packages/hxm/src/types/registry.js and packages/hxm/test/base26-test.js, gone in 20515bc5. I can't say from the history which version you mean; this is the last one.\n\nI ran its code just now. Number to word and back: its 19 test values and 20000 random integers, 0 wrong.\n\nThe catch for word.js: z is 0, so word to number and back loses leading z's: zebra is 89701, which comes back as ebra; za and a are both 1; z, zz and zzz are all 0. Its test only goes number first, so it never showed that. A word as a name claim would need a formula where every word gets its own number."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T08:27:34.875Z",
+     "text": "all, box changed, idea more detailed."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T08:28:09.129Z",
+     "text": "wsl: simple and doable. Checked against the tree, three clashes with what stands:\n1. spirit/app/app/ exists, and app is a root claim, so the rule forbids it. spirit.ui.element from G43.2's box goes the same way: element is a root claim too. Do these become exceptions, or get renamed?\n2. a to z only: names like appSelector and clientCacheManager already stand under spirit/ and aren't words. Does word.js ignore them, or do they change?\n3. Root holds 5 claims, but jobs, relay, auth and others already stand there. Unclaimed, anyone could add them. Should they be claimed at start? Also job and jobs would both be free to exist.\n\nTwo gaps, both yours:\n- add() in a deep branch first, then the same word at the root later: your rule only looks toward the root, so both stand. Refuse it too?\n- Does add() write the word.json, or last only until restart?\n\nThe box no longer has the integer, so my z catch doesn't apply."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T08:28:27.136Z",
+     "text": "cw: box v3 is clear as an idea. Open points, from the tree at 5d9c910c:\n\nDown the tree: your rule looks toward the root. If spirit/app/word.json holds \"foo\" and someone then adds \"foo\" at the root, nothing refuses it, and foo now exists on both levels.\n\nToday's names: appServer and spiritData are not words, only a to z. The folder is jobs, your claim is job. So nothing can check today's tree against the claims yet; it can only guard what comes next.\n\nA false from add: \"already exists\" and an invalid word, like Bad1, would both say false. I would refuse an invalid word with an error.\n\nOne for the build: \"constructor\" is a to z, and on a plain object it already looks taken, so the object holds no inherited keys.\n\nBase26 does not appear in the box, so I leave wsl's z problem out.\n\nword.js and any word.json are core files, so they will need your grant.\n\nQ: does add write the word into that level's word.json on disk, or only hold it in memory until restart?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T08:31:09.441Z",
+     "text": "ALL, can someone KILL app/app (the second one) it was just a test object to prove a point.?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T08:33:37.994Z",
+     "text": "cw: app/app is removed and ready in my worktree, not pushed.\n\nThe hook refuses it: this item is in design with no Go. Nothing else depended on it but two tests. spirit/test/ui.js used it as its second tile, and now makes one on its scratch node only. spirit/test/app.js now says the plugin is exactly server. All five suites pass.\n\nOne word from you lands it: push past the hook, or Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T08:52:56.870Z",
+     "text": "Q1: Does add write the word into that level word.json on disk, or only hold it in memory until restart?\n\nbox changed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T08:53:07.313Z",
+     "text": "all, box better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T08:53:36.163Z",
+     "text": "wsl: better. add writing to word.json answers cw's Q1. Left to settle:\n\n- Typo: \"run://app/word.json\" should be \"run://spirit/app/word.json\", as your check list has it.\n- add('spirit.app', 'word') when word already stands lower down, in spirit.app.table: refused or allowed? Your rule still only looks toward the root.\n- add with a word that isn't a to z, or with capitals: I'd refuse it with an error, because false means it already exists.\n- spirit.ui.element clashes with the hard-coded element, as your G43.2 box has it. Renamed, or does that rule bend?\n\nI read check as also comparing the hard-coded words, though it reads no root file. Missing word.json files simply count as empty."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T08:53:50.875Z",
+     "text": "cw: Better. Q1 is answered: add writes to that level's word.json. Three small asks, each a change you can make or refuse:\n\n- Line add('spirit.app', 'activate'): replace \"run://app/word.json\" with \"run://spirit/app/word.json\", as your check list has it.\n\n- Under the check list, add: \"check also compares against the hardcoded keys.\" I read that from your reason, but the list does not say it.\n\n- Under add, add one of these: \"add also refuses a word that exists further down the tree\" or \"it looks only toward the root\". Say spirit/app/table/word.json holds foo, then add('spirit.app', 'foo'): your rule allows it today, and foo stands on both levels.\n\nI would also refuse an uppercase or non a to z word in add with an error, not false. Yours to rule.\n\nOtherwise green from me."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T08:54:44.859Z",
+     "text": "ubi: better. add writing word.json answers the persistence question. Four things in v7 I would ask you to settle:\n\n1. Likely typo: add says \"run://app/word.json\". The check list says \"run://spirit/app/word.json\". I read it as the second.\n2. check says it skips the root file. I read that as: it still checks the hard-coded words, so check(x, \"App\") gives \"app\". Correct?\n3. Down the tree: add(\"spirit.app\", \"foo\") when spirit/app/table/word.json already holds foo. Nothing refuses it yet. Should it?\n4. check and add return plain values, which fits the node. A page cannot read files without an ask, and nothing is preloaded. So is word.js node only, or must a page use it too? Then they answer through a promise.\n\nFrom reading the box and tree, nothing built."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T09:07:28.861Z",
+     "text": "all, box changed. better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T09:07:53.004Z",
+     "text": "wsl: better, the typo and the hard-coded compare are settled. One line doesn't match, so this change:\n\n- In add, replace \"if check('path.in.words', 'addedword' ) returns a boolean 'true'\" with \"if check('path.in.words', 'addedword' ) returns a word\". check returns a word or null, never true, so as written that test never fires.\n\nStill yours: a word that stands lower down when add is called higher up, which is allowed as written; and spirit.ui.element against the hard-coded element, which is refused as written. If both are meant, I can write the red from this box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T09:08:01.472Z",
+     "text": "cw: Better. Hardcoded words are now plain, and an invalid word gives false: I drop my error idea.\n\nOne line contradicts itself:\n\n- In add: replace \"check(...) returns a boolean 'true'\" with \"check(...) returns a word\". check returns the word or null, never true.\n\nTwo things only you can rule:\n\n- Down the tree: add('spirit.app', 'foo') while spirit/app/table/word.json holds foo. Today it is added, and foo stands on both levels. Fine, or refused?\n\n- ubi's point: a page cannot read word.json files without asking the node. Is word.js for the node only? I would say yes, since add writes files.\n\nThe one wsl raised: your G43.2 box wants spirit.ui.element, and element is now hardcoded. Those two meet when that item comes up, so it need not hold this one."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T09:08:03.433Z",
+     "text": "ubi: better. v11 settles the path typo, the hard-coded compare and invalid words. Changes I would ask for, each yours to make or refuse:\n\n- add line: replace \"returns a boolean true\" with \"finds a match\". check returns the word or null, never true.\n- add line: after \"adds a addedword to the ,\" a word is missing. I read it as \"that level word.json\". The rest of that sentence then repeats itself and can go.\n\nStill needing your word:\n- Down the tree: add(\"spirit.app\", \"foo\") when spirit/app/table/word.json holds foo. check only looks upward, so it is allowed today. Allowed or refused?\n- Node or page: does a page use word.js too? If so, check and add must answer through a promise. Plain values fit the node only."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T09:31:36.565Z",
+     "text": "all, box updated. errors?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T09:32:27.811Z",
+     "text": "cw: Errors and catches in v14:\n\n- Notes line: replace \"word.check returns true\" with \"word.check finds\". check returns the word or null.\n\n- Correction to my last post: I said node only. Your Files colours run in the browser, so a page needs the words too. There check cannot just return a value, since a page must ask the node for each word.json. It answers through a promise, or from a kept copy that follows the changes.\n\nExpect red on day one, as written. job: the folder and object are jobs. element: the object is spirit.elements. ui: there is a file spirit/ui.js, but I find no spirit.ui object. app/app also contradicts while it stands, and its removal still waits on your word.\n\nThe word test goes red the same way if it judges these. Is that what you want to see, a red list to clean up, with the item unable to go green until then?\n\nFolders that match no reserved word, like appSelector: I read that they stay uncoloured."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T09:32:34.407Z",
+     "text": "ubi: v14 has four problems, checked against the tree at 5d9c910c.\n\n1. Last section: \"word.check returns true\" for a word in \"run://spirit/word.json\". check returns a word or null, and your box says that file is never read. I read it as the hard-coded words. Replace with: \"a word.json repeats a hard-coded word\".\n\n2. \"Go red if the word system and the tree contradict\" does not say what a contradiction is. Today job has no job/ or job.js, only jobs/. DEBUG, relaySelf, sendMail, auth, net and others hold no claim. If those count, the test is red from day one and those folders must change. Which count?\n\n3. Colours: the Files element runs on a page, so word.js must too. Then check needs a promise, since nothing is preloaded. Also, a spirit object not loaded yet would show red, though nothing is wrong. Should it ask for it first?\n\n4. Unclaimed folders: red, or no colour? I would say no colour.\n\nAlso, app/app is still there and would turn the test red. cw has its removal waiting for your word."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T09:32:35.685Z",
+     "text": "wsl: one error, and today's tree would go red. Checked in a real browser and on disk.\n\nError: in the notes, word.check \"returns true\". check returns a word or null, and only walks one path. So: \"if the same word stands in two word.json files on one path, or in one and the hard-coded keys, the test MUST go red.\"\n\nToday's reserved words:\n- app, contact: folder and spirit object both there: green.\n- ui: spirit/ui.js exists, spirit.ui doesn't: red, and the test red, until spirit.ui is built.\n- element, job: neither exists (the real ones are elements and jobs): no folder to paint. Is reserved-but-unbuilt fine?\n- spirit: the folder exists, spirit.spirit doesn't. Exempt it as the root?\n- spirit/app/app: red until cw's removal lands; it still waits for your word.\n\nTwo more for you:\n- Names not reserved, like jobs and hub: no colour, and no red?\n- The Files page must ask the node for word.json files, so check answers a page through a promise. Fine?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T09:39:30.384Z",
+     "text": "all, changed, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T09:40:00.311Z",
+     "text": "wsl: better: spirit is settled, and with ui gone from the hard-coded words, spirit/ui.js no longer clashes.\n\nOne line still can't be tested: the note names \"run://spirit/word.json\", which your box says is never read. So:\n- Replace \"AND run://spirit/word.json\" with \"AND the hard-coded words\".\n\nThe one thing I still can't write a red for is \"contradict\". I'd say the test is red when:\n- a word stands twice on one path\n- a folder or file is named after a word reserved above it, like spirit/app/app\n- a reserved word has a folder but no spirit object, or the reverse\nThat leaves job and element quiet, because they have neither, so they don't hold the item. cw's Q2 asks you the opposite way. Your word there settles it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T09:40:08.873Z",
+     "text": "cw: Better. spirit is settled. Left from me:\n\n- Notes line: replace \"AND \"run://spirit/word.json\"\" with \"AND the hard-coded keys\". Your check list says that file is never read, as ubi notes.\n\n- A catch for the colours: families load when asked, so an object not loaded yet would read as missing and show red though nothing is wrong. I would have Files ask for the family first, then colour.\n\nThe add line's \"returns a boolean true\" no longer matters, since add is out of this item.\n\nThe one thing that decides the build is still Q2. As written ui goes red, and job and element reserve names that nothing uses yet. Say which you want, and the red can be written.\n\nQ: should ui, job and element show red and hold the item from green until they are cleaned up?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T09:40:44.031Z",
+     "text": "ubi: better. The return value and spirit are settled. Still needing your word, each a short answer:\n\n- Red on day one: ui, element and job do not match today. Red list to clean up, with this item unable to go green until then, or only report them? That is cw Q2.\n- Names with no claim, like jobs and auth: no colour and no red? We all read it so.\n- A page reads words through a promise: fine?\n- Notes line: \"run://spirit/word.json\" is a file your box says is never read. I read it as the hard-coded words."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T09:47:39.928Z",
+     "text": "Q2: Should job, element and ui, which disagree with the tree today, show red and hold the item from green until they are cleaned up?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T09:48:14.917Z",
+     "text": "cw: Understood, Q2 closed: red, and it holds the item from green. Since v19 ui is no longer hardcoded, so that leaves job and element.\n\nFlagging the cost once, then I build your choice. Neither has a folder today: the real ones are jobs and elements. 6 files outside tests use spirit.jobs, and 86 use spirit.elements. Your ruling says old stays until the end and new duplicates, with no big port. So green here does not mean renaming those. It means new spirit/job and spirit/element built beside them, or the two words taken out of the hardcoded list until they are built, as you did with ui.\n\nThe second keeps this item small: word.js, the test, the Files colours, and each word added when its new home exists.\n\nQ: do job and element stay hardcoded, so this item also builds them, or come out until they exist?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T09:48:26.999Z",
+     "text": "all, green? objections? errors?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T09:48:50.068Z",
+     "text": "cw: Box v19: no errors. One objection: not green until Q3, because job and element decide how big this item is.\n\nNot in the box, so the red goes by these unless you say otherwise:\n\n- Contradiction, as wsl put it: a word twice on one path; a folder or file named after a word reserved above it; a reserved word with a folder but no spirit object, or the reverse.\n\n- A name with no claim, like jobs or auth: no colour, no red.\n\n- On a page, check answers through a promise.\n\nQ3 stands: do job and element stay hardcoded, so this item also builds them, or come out until they exist?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T09:49:01.282Z",
+     "text": "wsl: green from me, no errors. How I read it, for the red:\n- The word test is red whenever a word stands twice on a path, a name is reserved above it, or a reserved word lacks its folder or its spirit object.\n- Today that names exactly job, element and spirit/app/app, until cw's removal lands. By your \"live with it\", that red stays until the namespace work clears it.\n\nOne consequence, so nobody is surprised: the item's own suite stays red by design, so it can't read verified green. At verify I'd check it fails on exactly those names and no others, and you close it over that red. Objection only if you'd rather have it another way. cw's Q3 still decides whether job and element stay in the list."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T09:49:17.944Z",
+     "text": "ubi: box v19, no errors. Green from me apart from cw Q3.\n\nQ3 is the one real choice: your last note says live with the red, and Q2 says red holds the item from green. If job and element stay hardcoded, the item cannot go green until they are built. I would take cw second way: out until they exist.\n\nA small build note: check stops at its first match, so it cannot see a word defined twice. The test must read the word files itself.\n\nAlso, git from this machine has been failing on and off since about 09:39 UTC: Permission denied. So my clone may lag and my chores may not publish. wsl, cw, are you seeing that? I changed nothing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T09:49:24.176Z",
+     "text": "Q3: Do job and element stay hardcoded, so this item also builds them, or come out until they exist?\n\nYES, and after this item is done, ANDY owns word.js and ALL word.json files."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T09:49:57.248Z",
+     "text": "cw: My Q3 had two parts, so I name how I read your yes, with the box's \"the red generated from this will point us toward the next steps in restructuring the namespace. live with it.\"\n\njob and element stay hardcoded. This item does NOT build them. Their red stands, as your pointer to the next steps. So this item's suite stays red on exactly those two, and app/app until its removal lands, and you close over that red, as wsl says.\n\nThat is word.js, the test and the Files colours, nothing more. After it, word.js and every word.json are yours: no agent changes them.\n\nSay if that reading is wrong. Otherwise green from me. I close Q3 on it.\n\nubi: git works from here, I fetched just now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T09:53:20.653Z",
+     "text": "files."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T09:53:47.217Z",
+     "text": "wsl: files listed: spirit/word.js and its test and doc in spirit/test/, and shell/files/files.js with its test and doc. word.js is core, so the list needs your grant. Any word.json comes later and is yours, as the box says."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T09:54:08.173Z",
+     "text": "cw: files listed, beside wsl's six.\n\nThe Files colours: rowElement and listElement in shell/js/files, with their tests and documents. A row draws its own folder, so that is where the colour goes.\n\napp/app: its four files, and the three tests I changed for its removal.\n\nAll are core, so one grant press from you covers them. No word.json is listed: today none exists, and your box hard-codes the first set."
     }
    ]
   }
