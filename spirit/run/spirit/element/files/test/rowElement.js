@@ -144,8 +144,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const app = await row('spirit/app');
     ok(app.app === 'green', 'spirit/app: reserved, and the spirit object holds spirit.app: green', 'spirit/app: ' + short(app));
     ok(app.spirit === 'green', 'its path element spirit: "in files it is always displayed green"', 'spirit/app: ' + short(app));
+    const element = await row('spirit/element');
+    ok(element.element === 'green', 'spirit/element: green', 'spirit/element: ' + short(element));
+    // Andy's commit d278c3e6, "identity": contact is no hard-coded word now.
     const contact = await row('spirit/contact');
-    ok(contact.contact === 'green', 'spirit/contact: green', 'spirit/contact: ' + short(contact));
+    ok(contact.contact === 'none', 'spirit/contact: no colour, it is no word now', 'spirit/contact: ' + short(contact));
     const inside = await row('spirit/app/api.js', 'file');
     ok(inside.app === 'green' && inside.spirit === 'green', 'a file inside: its path elements carry the colours too', 'spirit/app/api.js: ' + short(inside));
     const plain = await row('spirit/jobs');

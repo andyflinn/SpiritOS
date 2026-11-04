@@ -43,7 +43,7 @@ Andy, box: *"display folders and path elements in a bright green if their names 
 
 `./rowElement-words.html` shows real rows on a scratch node. Each path element is its own element, so its colour is its own:
 
-- `spirit` is green. `spirit/app` and `spirit/contact` are green, as a folder row and in the path of a file inside.
+- `spirit` is green. `spirit/app` and `spirit/element` are green, as a folder row and in the path of a file inside. `spirit/contact` has no colour: it is no word since Andy's commit d278c3e6.
 - `spirit/job` (reserved, a folder, no `spirit.job`) is red.
 - A name not reserved has no colour (`spirit/jobs`, `spirit/hub.js`), and outside `spirit/` no word holds (`shell/app`).
 - A `word.json` gaining a word turns the open row red with no reload, an object at that path makes it green, and `word.json` gone takes the colour away.
