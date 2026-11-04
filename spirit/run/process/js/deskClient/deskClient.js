@@ -1127,7 +1127,7 @@ setInterval(function resubscribeQuiet() {
 // The status shows the changed file's name only, without its path; its colour says which kind: red a test file, white a
 // production file." Each change is one item.status, as the agent; the desk keeps the file name and counts the write as
 // activity, so a hold whose files move is never stale. A file git ignores (logs, node state, this server's own db) is
-// no change to the work. A path under spirit/test/ is tone test, any other code.
+// no change to the work. A path in a test folder is tone test, any other code.
 function heldPhase() {
   const items = keptItems() || {};
   for (const id of Object.keys(items)) {
@@ -1162,6 +1162,9 @@ function statusWorthy(rel) {
   const name = p.split('/').pop();
   return !/\.tmp\.\d+\.[0-9a-f]+$|^sed[A-Za-z0-9]{6}$|\.sw[op]$|~$/.test(name);
 }
+// A PRODUCT TEST SHOWS RED (goal/G43.3; Andy, the box: "when product tests are modified, they should show up as red
+// file-status in desk. product tests are the test folders under spirit/run/.").
+const PRODUCT_TEST = /^spirit\/run\/(?:[^/]+\/)*test\//;
 function watchCheckout(root) {
   try {
     const skip = function (full) {
@@ -1178,7 +1181,7 @@ function watchCheckout(root) {
         if (skipped) return;
         let to = '';
         try { to = deskKey(); } catch (e) { return; }
-        countedAsk(to, 'item.status', { id: id, word: rel + ' ' + WHAT[event], tone: rel.indexOf('spirit/test/') === 0 ? 'test' : 'code' }).answer.catch(function () {});
+        countedAsk(to, 'item.status', { id: id, word: rel + ' ' + WHAT[event], tone: PRODUCT_TEST.test(rel) ? 'test' : 'code' }).answer.catch(function () {});
       });
     }).on('error', function (e) { console.error('deskClient: the checkout watch stopped: ' + ((e && e.message) || e)); });
   } catch (e) { console.error('deskClient: the checkout cannot be watched: ' + ((e && e.message) || e)); }

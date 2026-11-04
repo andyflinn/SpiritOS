@@ -377,6 +377,8 @@ function ddBlinkIcons() {
 function ddQsHtml() {
   var qs = ddChecks.filter(function (c) { return c.kind === 'Q' && c.state === 'open'; }).map(function (c) {
     return '<div><span data-question="' + ddEsc(c.number) + '" style="color:#d00;cursor:pointer" title="answer it below">' + ddEsc(c.number) + ': ' + ddEsc(c.words) + '</span> ' +
+      // WHO ASKED (goal/G43.3; Andy, the box: "red Q's should indicate who posted them.").
+      (c.placedBy ? '<span class="job-manifest-note">(' + ddEsc(ddName(String(c.placedBy))) + ')</span> ' : '') +
       // THE REMOVE ASKS ARE-YOU-SURE (goal/G41.11). Andy: "the remove button for red Q's must ask: are-you-sure?".
       '<button type="button" data-qclear="' + ddEsc(c.number) + '" data-arming="Remove: sure?" title="remove this red Q">remove</button></div>';
   }).join('');
@@ -434,6 +436,53 @@ var ddBoxFocused = false;
 var ddBoxFocusId = '';
 var ddBoxAtFocus = '';
 var ddBoxLoaded = false;  // true once item.box has answered for the open item (goal/G9.15)
+// THE BOX ON SCREEN IS A CODEMIRROR (goal/G43.3; Andy, the box: "i want the UI to allow me to search the box currently
+// displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show
+// line-numbers?", and "above the box i want to see the the last-stored version number of the box."). One view for the open
+// item, kept across repaints, or his words in the search and his place in the text would go with every row that comes.
+// { id, el, view, find }; until it has loaded the textarea stands, so the box is never out of his reach.
+var ddBoxView = null;
+var ddBoxViewAsked = '';
+function ddBoxText() {
+  if (ddBoxView && ddBoxView.id === ddId) return ddBoxView.view.value();
+  var el = document.getElementById('dd-box-input');
+  return el ? String(el.value || '') : '';
+}
+function ddBoxMount() {
+  var host = document.getElementById('dd-box-host');
+  if (!host) return;
+  if (!ddBoxView || ddBoxView.id !== ddId) {
+    if (ddBoxViewAsked === ddId) return;
+    var id = ddId;
+    ddBoxViewAsked = id;
+    ddNeed('shell/js/codeMirror.js').then(function () { return ddNeed(DD_SEARCH); }).then(function () {
+      var el = document.createElement('div');
+      el.className = 'fill';
+      el.style.cssText = 'min-height:0;height:100%;display:flex;flex-direction:column';
+      el.innerHTML = '<div style="display:flex;gap:1em;align-items:center;margin-bottom:0.25em"><span class="job-manifest-note" data-box-version></span>' +
+        '<input type="text" data-box-find placeholder="find in this box" style="flex:1 1 auto"></div><div data-box-editor style="flex:1 1 0;min-height:0;position:relative"></div>';
+      return window.spirit.elements.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
+        // He went into the textarea meanwhile, or left the item: it stays as it is, and the next item asks anew.
+        if (ddId !== id || ddBoxFocused) { ddBoxViewAsked = ''; return; }
+        // It fills what the version row leaves, and scrolls inside it (goal/G40.8: only a list or a viewer scrolls).
+        view.cm.getWrapperElement().style.cssText += ';position:absolute;top:0;left:0;right:0;bottom:0;height:auto';
+        view.cm.on('focus', ddBoxFocus);
+        view.cm.on('blur', ddBoxBlur);
+        var find = el.querySelector('[data-box-find]');
+        find.addEventListener('input', function () { view.mark(find.value); });
+        ddBoxView = { id: id, el: el, view: view, find: find };
+        ddPaint();
+      });
+    }).catch(function () { /* the textarea stands */ });
+    return;
+  }
+  var v = ddBoxView;
+  host.innerHTML = '';
+  host.appendChild(v.el);
+  v.el.querySelector('[data-box-version]').textContent = 'version ' + ddVersion;
+  if (!ddBoxFocused && v.view.value() !== ddBox) { v.view.cm.setValue(ddBox); v.view.mark(v.find.value); }
+  v.view.cm.refresh();
+}
 function ddBoxHtml() {
   // A TAKEN BOX IS RED (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
   // is red. cap also." Red until the taker writes it; the taker's name is on it.
@@ -454,7 +503,8 @@ function ddBoxHtml() {
   // So the box is a textarea holding the whole text, as tall as its panel; the take happens on focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
   // THE FULL HEIGHT OF ITS PANE (goal/G41.22; Andy: "the box must use the full vertical space"): the old upper half's
   // 30% is gone with the half itself.
-  return '<div' + taken + ' class="fill" style="' + cap + 'min-height:0;box-sizing:border-box">' +
+  if (ddBoxView && ddBoxView.id === ddId) return '<div' + taken + ' id="dd-box-host" class="fill" style="' + cap + 'min-height:0;box-sizing:border-box"></div>';
+  return '<div' + taken + ' id="dd-box-host" class="fill" style="' + cap + 'min-height:0;box-sizing:border-box">' +
     '<textarea id="dd-box-input" style="flex:1 1 auto;min-height:0;width:100%;box-sizing:border-box;white-space:pre-wrap;resize:none;overflow-y:auto">' + ddEsc(ddBox) + '</textarea></div>';
 }
 
@@ -517,12 +567,21 @@ function ddLinksHtml() {
 // market as requiring grants." One line per path with the agent that wrote it; a core path is marked data-core="1"
 // and says it needs his grant. The server decides which is core (js/coreFiles.js), never this page.
 function ddFilesHtml() {
-  var files = ddFiles;
+  // ONE ROW A PATH (goal/G43.3; Andy, the box: "file list should not show duplicates"): a list row answered or a row the
+  // stream brought, each writer's, is shown once, with all who added it.
+  var seen = {};
+  var files = [];
+  ddFiles.forEach(function (e) {
+    var by = (e && e.by ? [e.by] : []).concat((e && e.also) || []);
+    if (seen[e.path]) { by.forEach(function (w) { if (seen[e.path].writers.indexOf(w) === -1) seen[e.path].writers.push(w); }); return; }
+    seen[e.path] = Object.assign({}, e, { writers: by });
+    files.push(seen[e.path]);
+  });
   if (!files.length) return '';
   return '<div class="stat-tile wide"><div class="label">Files touched</div>' + files.map(function (e) {
     var core = e && e.core === true;
     return '<div data-file="' + ddEsc(e.path) + '"' + (core ? ' data-core="1" title="a core file: it needs your grant"' : '') + '>' +
-      (core ? '🔒 ' : '') + ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.by ? ddName(e.by) : '') + ')</span></div>';
+      (core ? '🔒 ' : '') + ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.writers.map(ddName).join(', ')) + ')</span></div>';
   }).join('') + (ddFilesMore ? '<div class="job-manifest-note">' + ddEsc(String((ddFacts && ddFacts.fileCount) || '')) + ' files in all; the core ones are shown first.</div>' : '') + '</div>';
 }
 
@@ -642,7 +701,7 @@ function ddPaint() {
   // The chat search stands in the frame; it is made once the frame is drawn (ddMountChatFind), never again by a paint.
   if (!ddChatFind || ddChatFindHost !== document.getElementById('dd-chat-find')) ddMountChatFind();
   // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
-  if (!(ddPanelSel === 'box' && ddBoxFocused)) ddSet('dd-panel', ddPanelHtml());
+  if (!(ddPanelSel === 'box' && ddBoxFocused)) { ddSet('dd-panel', ddPanelHtml()); if (ddPanelSel === 'box') ddBoxMount(); }
   // The add-blocking form stands in the frame, so what he types survives; it shows with the blocks panel only.
   var addRow = document.getElementById('dd-add-row');
   if (addRow && addRow.style) addRow.style.display = ddPanelSel === 'blocks' ? '' : 'none';
@@ -751,6 +810,7 @@ var ddRulePick = null;
 var ddRulePickHost = null;   // the box the dropdown was made in: a frame drawn again is a new box, so a new dropdown
 // The rule types, as the desk server's RULE_TYPES (goal/G40.12 added test).
 var DD_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
+var ddRulePressed = {};
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21, and Andy, of the add-rule dropdown: "Sometimes the dropdown
 // does NOT appear at ALL!"): spirit.require, never a script tag of its own. It loads a part once and answers once it ran.
 function ddNeed(p) {
@@ -788,16 +848,20 @@ function ddMountRulePick() {
       api: ddApi, server: 'desk', verb: 'rules.search',
       // A TYPE FILTER BESIDE THE WORDS, as the Rules list has (Andy: "where are my type filters, when i search for rules
       // to attach to a goal or item?"). Active rules only: a proposed rule is not yet a rule to attach.
-      // THE SAME TOGGLES AS ON THE RULES LIST (Andy, quoting: "the type toggles (ui, code, design, desk, test) beside the
-      // dropdown, sent as its types filter, the same toggles as on the Rules list"): a button per type, each on until
-      // pressed off (the multi filter keeps the ones pressed off); all on asks every type.
+      // ALL OFF UNTIL PRESSED (goal/G43.3; Andy, the box: "when i manually add rules to an item, the rule-picker should
+      // default to all filters off. Now i always have to turn of all but one search filter to actually find the rule I'm
+      // looking for."): a toggle per type, as [Include Closed] is. None pressed asks every type; pressed, those types.
       args: function (text, values) {
-        var off = (values || {}).type || {};
-        var on = DD_RULE_TYPES.filter(function (t) { return !off[t]; });
-        return { text: text, types: on.length === DD_RULE_TYPES.length ? [] : on, statuses: ['active'] };
+        var v = values || {};
+        return { text: text, types: DD_RULE_TYPES.filter(function (t) { return v['type-' + t] === true; }), statuses: ['active'] };
       },
-      filters: [{ name: 'type', multi: true, choices: DD_RULE_TYPES.map(function (t) { return { value: t, word: t }; }),
-        test: function (row, off) { return (off || {})[row.type] ? 0 : 1; } }],
+      // Each toggle says whether it is pressed; the last filter, which draws nothing, judges the row by them all.
+      filters: DD_RULE_TYPES.map(function (t) {
+        return { name: 'type-' + t, toggle: true, word: t, test: function (row, on) { ddRulePressed[t] = on === true; return 1; } };
+      }).concat([{ name: 'types', when: function () { return false; }, test: function (row) {
+        var pressed = DD_RULE_TYPES.filter(function (t) { return ddRulePressed[t]; });
+        return !pressed.length || pressed.indexOf(row.type) !== -1 ? 1 : 0;
+      } }]),
       columns: [{ field: 'label', label: 'Rule', sort: 'text' }, { field: 'type', label: 'Type', sort: 'text' }],
       face: 'dropdown', placeholder: 'attach a rule…',
       pick: function (row, key) { if (key) ddWrite('item.rules.add', { id: ddId, rule: String(key) }); },
@@ -913,15 +977,27 @@ function ddBoxFocus() {
   if (ddBoxFocused) return;
   ddBoxFocused = true;
   ddBoxFocusId = ddId;
-  var el = document.getElementById('dd-box-input');
-  ddBoxAtFocus = el ? String(el.value || '') : '';
-  ddWrite('box.take', { id: ddBoxFocusId });
+  ddBoxAtFocus = ddBoxText();
+  var id = ddBoxFocusId;
+  // THE NEWEST TEXT COMES WITH HIS TAKE (goal/G43.3): no agent writes from here on, so what he read now cannot move under
+  // him, and a write that landed before his take is not refused box-moved at the end of his typing.
+  ddWrite('box.take', { id: id }).then(function () {
+    return ddAsk('item.box', { id: id }).then(function (b) {
+      if (ddId !== id || !ddBoxFocused) return;
+      ddVersion = Number(b.version) || ddVersion;
+      if (ddBoxText() !== ddBoxAtFocus || String(b.box || '') === ddBoxAtFocus) { ddPaint(); return; }
+      ddBox = String(b.box || '');
+      ddBoxAtFocus = ddBox;
+      if (ddBoxView && ddBoxView.id === id) ddBoxView.view.cm.setValue(ddBox);
+      else { var el = document.getElementById('dd-box-input'); if (el) el.value = ddBox; }
+      ddPaint();
+    });
+  }).catch(function () { /* the take's own note says what went wrong */ });
 }
 function ddBoxBlur() {
   if (!ddBoxFocused) return;
   ddBoxFocused = false;
-  var el = document.getElementById('dd-box-input');
-  var text = el ? String(el.value || '') : '';
+  var text = ddBoxText();
   var id = ddBoxFocusId || ddId;
   if (text !== ddBoxAtFocus) ddWrite('box.write', { id: id, text: text, version: ddVersion }).then(function () { ddLoad(); });
   else ddWrite('box.release', { id: id }).then(function () { ddPaint(); });
@@ -1088,6 +1164,8 @@ spirit.shell.activateApp({
     ddFacts = null;
     ddBox = '';
     ddBoxLoaded = false;
+    ddBoxView = null;
+    ddBoxViewAsked = '';
     ddVersion = 0;
     ddChecks = [];
     ddFiles = [];

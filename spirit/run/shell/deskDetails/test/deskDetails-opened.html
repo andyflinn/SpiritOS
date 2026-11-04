@@ -105,11 +105,14 @@ window.boxTake = function () {
   if (!el) return Promise.resolve(JSON.stringify({ error: 'no CodeMirror in the box panel' }));
   var cm = el.CodeMirror;
   window.asked.length = 0;
+  // This page is not the browser's focused tab, so the focus and blur a real press brings are sent to the same input.
   cm.focus();
+  cm.getInputField().dispatchEvent(new Event('focus'));
   return wait(300).then(function () {
     var took = window.asked.filter(function (a) { return a.name === 'desk.box.take'; }).length;
     cm.setValue('his new text');
     cm.getInputField().blur();
+    cm.getInputField().dispatchEvent(new Event('blur'));
     return wait(300).then(function () {
       var wrote = window.asked.filter(function (a) { return a.name === 'desk.box.write'; })[0];
       return JSON.stringify({ took: took, wrote: wrote ? wrote.args : null });
@@ -124,7 +127,7 @@ window.rulePick = function () {
   var icon = document.querySelector('[data-tool="rules"]');
   if (!icon) return Promise.resolve(JSON.stringify({ error: 'no icon for rules' }));
   if (!icon.hasAttribute('data-current')) icon.click();
-  var buttons = function () { return Array.prototype.slice.call(document.querySelectorAll('#dd-rule-pick button[data-filter="type"]')); };
+  var buttons = function () { return Array.prototype.slice.call(document.querySelectorAll('#dd-rule-pick button[data-filter^="type-"]')); };
   var on = function (b) { return /font-weight:\s*bold/.test(b.getAttribute('style') || ''); };
   var lastTypes = function () { var r = window.asked.filter(function (a) { return a.name === 'desk.rules.search'; }).pop(); return r && r.args ? r.args.types : null; };
   return wait(1200).then(function () {
@@ -132,13 +135,13 @@ window.rulePick = function () {
     if (box) { box.focus(); box.dispatchEvent(new Event('focus')); }
     return wait(400);
   }).then(function () {
-    var out = { buttons: buttons().length, on: buttons().filter(on).map(function (b) { return b.getAttribute('data-value'); }) };
-    var code = buttons().filter(function (b) { return b.getAttribute('data-value') === 'code'; })[0];
+    var out = { buttons: buttons().length, on: buttons().filter(on).map(function (b) { return b.getAttribute('data-filter').slice(5); }) };
+    var code = buttons().filter(function (b) { return b.getAttribute('data-filter') === 'type-code'; })[0];
     if (!code) return JSON.stringify(out);
     window.asked.length = 0;
     code.click();
     return wait(600).then(function () {
-      out.afterOn = buttons().filter(on).map(function (b) { return b.getAttribute('data-value'); });
+      out.afterOn = buttons().filter(on).map(function (b) { return b.getAttribute('data-filter').slice(5); });
       out.afterTypes = lastTypes();
       return JSON.stringify(out);
     });
@@ -161,7 +164,7 @@ window.panel = function (key) {
       var over = el.scrollHeight - el.clientHeight;
       if (over > 1 && /auto|scroll/.test(getComputedStyle(el).overflowY) && el.getClientRects().length && (!best || over > best.over)) best = { el: el, over: over };
     });
-    var out = { pane: rect(pane), paneScrolls: pane.scrollHeight > pane.clientHeight + 1, scroller: best ? rect(best.el) : null };
+    var out = { pane: rect(pane), paneScrolls: pane.scrollHeight > pane.clientHeight + 1, scroller: best ? rect(best.el.closest('.CodeMirror') || best.el) : null };
     var grant = pane.querySelector('[data-grant]');
     if (!grant || !best) return JSON.stringify(out);
     out.grantInList = best.el.contains(grant);

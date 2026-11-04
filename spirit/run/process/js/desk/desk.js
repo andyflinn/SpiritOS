@@ -1683,6 +1683,13 @@ function apply(s, r, b, item, goalOf) {
       if (String(b.phase) === 'build') { press(s, it, 'claim-done', r, goalOf, b); it.claimCommit = String(b.commit || ''); }
       // A red claim keeps its commit; its suites are the item's suite rows, added one a write (goal/G40.3).
       else if (String(b.phase) === 'red') it.redCommit = String(b.commit || '');
+      // A CLAIM ENDS ITS PHASE (goal/G43.3; Andy, the box: "a red-claim or a code-done should automatically trigger a
+      // phase-wake for all agents, since there could be only 1."): the next phase is open, nobody holding it, and the row
+      // saying so is what wakes every deskClient.
+      if (it.code && it.phase === String(b.phase)) {
+        it.with = ''; it.phaseWith = ''; it.withKey = ''; it.phaseWithKey = '';
+        it.phase = String(b.phase) === 'red' ? 'build' : 'verify';
+      }
       return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
@@ -2066,6 +2073,15 @@ function limboOf(s, it) {
 
 // THE AGENTS HERE NOW: every agent whose last write is inside LIVE_MS, sorted. The goal's facts say it, and the
 // waive of goal/G2.22 is decided by it.
+function waiveIfAlone(id, by) {
+  const st = walkState();
+  const m = st.items[String(id)];
+  const live = liveAgents(st);
+  if (m && !m.done && !m.closed && m.waived !== true && live.length === 1 && live[0] === by) {
+    write('press', { id: id, what: 'waive', by: 'desk', key: '' });
+    write('chat.add', { id: id, text: 'waived: ' + by + ' is the only agent here, so it may take the next phase of this item itself.', by: 'desk', key: '' });
+  }
+}
 function liveAgents(s) {
   const now = Date.now();
   return Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
@@ -2076,6 +2092,18 @@ function liveAgents(s) {
 function boxSize(box, version) { return Buffer.byteLength(JSON.stringify({ box: String(box), version: version }), 'utf8'); }
 function boxFull(box, version) { return boxSize(box, version) >= limits.ANSWER_MAX * 0.75; }
 function isLate(it, by, p) { return Array.isArray(it.lateFiles) && it.lateFiles.indexOf(by + '|' + String(p)) !== -1; }
+// ONE ROW A PATH (goal/G43.3; Andy, the box: "file list should not show duplicates"): a path several agents added, under
+// the first of them, the others in also. filesOf stays per writer: what a writer may remove is its own.
+function fileRows(it) {
+  const at = Object.create(null);
+  const out = [];
+  filesOf(it).forEach(function (e) {
+    if (!at[e.path]) { at[e.path] = e; out.push(e); return; }
+    at[e.path].also = (at[e.path].also || []).concat(e.by);
+    if (e.late) at[e.path].late = true;
+  });
+  return out;
+}
 // THE ITEM'S FILE LIST, FLATTENED (goal/G8.8): every writer's paths as one list of { path, by, core }, sorted by path
 // so the Details draws it the same way twice. core is coreFiles.isCore, never a second list of its own.
 function filesOf(it) {
@@ -2117,7 +2145,7 @@ function facts(s, it) {
     design: it.design === true,
     // THE FILES TOUCHED (goal/G8.8) are item.files' own answer since goal/G32.2: a 142-file list in the facts made
     // every write to the item too large to come back. The facts say only how many.
-    fileCount: filesOf(it).length,
+    fileCount: fileRows(it).length,
     // DESIGN-GREEN (goal/G6.8): no open red question on it; goal/G41.11: and a code item has a file listed (redWhy).
     green: !redWhy(it),
     // goal/G5.7: the phase it is in, and who did each.
@@ -2207,6 +2235,21 @@ const FACTS_ROOM = ANSWER_ROOM - 512;
 // (matchesText, the substring filter of items.search, went with goal/G18.5: items are ranked, not filtered.)
 
 // The goal first, then its items in session order; the newest goal first.
+// WHAT THE LIST'S ROW HOLDS (goal/G43.3; Andy, the box: "the search needs only those fields of a row that it actually
+// displays."): what its cells, its presses and its filters read (shell/desk/desk.js). A word is still matched against the
+// whole row and the chat here, on the server (goal/G41.28); a page merges this into the row it keeps.
+const LIST_FIELDS = ['id', 'goal', 'title', 'status', 'statusTone', 'buttons', 'verified', 'verifyFailures', 'verifyRed', 'verifyRunning', 'asks', 'alert', 'with', 'names', 'blocking', 'blocked'];
+function listRow(row) {
+  const out = {};
+  // An empty value stays out too, so a goal of 25 fits one answer; goal stays, since '' is what says a row is a goal. The
+  // page reads each of these as optional, and the stream's rows, always whole, are what clear a value it holds.
+  LIST_FIELDS.forEach(function (k) {
+    const v = row[k];
+    const empty = v === undefined || v === '' || v === false || v === 0 || (Array.isArray(v) && !v.length) || (v && typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length);
+    if (k === 'goal' || !empty) out[k] = v;
+  });
+  return out;
+}
 function searchItems(a) {
   const s = walkState();
   const rawText = String(a.text || '').trim();
@@ -2235,10 +2278,12 @@ function searchItems(a) {
       // The item's row as item.get serves it, and every chat line, case ignored; the answer is that row, never the box or
       // the chat. RANKED, NOT FILTERED (goal/G18.5): every listed item goes in with its probability; the bucket orders them.
       const row = facts(s, it);
-      out.push({ probability: itemProbability(rawText, row, it.chat), json: JSON.stringify(row) });
+      out.push({ probability: itemProbability(rawText, row, it.chat), closed: row.status === 'closed', json: JSON.stringify(listRow(row)) });
     });
   });
-  return out;
+  // OPEN ROWS FIRST (goal/G43.3; Andy, the box: "the search filter [include closed] doesn't mean "exclude open ones"!!!!"):
+  // equal rows keep this order and an answer is cut when full, so old closed rows no longer push the open ones out.
+  return out.filter(function (x) { return !x.closed; }).concat(out.filter(function (x) { return x.closed; }));
 }
 
 
@@ -3063,7 +3108,7 @@ appServer.serve(withPlugins({
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
       const under = typeof a.under === 'string' ? a.under : '';
-      const all = filesOf(it).filter(function (e) { return !under || e.path.indexOf(under) === 0; });
+      const all = fileRows(it).filter(function (e) { return !under || e.path.indexOf(under) === 0; });
       const order = all.filter(function (e) { return e.core; }).concat(all.filter(function (e) { return !e.core; }));
       const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ filesMore: true }), 'utf8');
       const found = walked(order.map(function (e, i) { return i; }), function (i) { return { key: String(i), label: JSON.stringify(order[i]) }; }, room);
@@ -3100,7 +3145,7 @@ appServer.serve(withPlugins({
   }),
   'item.files.search': tableSearch({
     request: { id: '' },
-    rows: function (a, st) { const it = itemFor(st, a); return filesOf(it).map(function (e) { return { key: e.by + '|' + e.path, label: e }; }); },
+    rows: function (a, st) { const it = itemFor(st, a); return fileRows(it).map(function (e) { return { key: e.path, label: e }; }); },
   }),
   'item.claims.search': tableSearch({
     request: { id: '' },
@@ -3331,6 +3376,13 @@ appServer.serve(withPlugins({
       // facts' full, the dialog's red border) has the desk offer the cap itself, as his "cap" line does (addressOf):
       // to every included agent with cap on, decided at the write and kept in it (capOffer). Below red, nothing.
       const st0 = walkState();
+      // AN AGENT'S UPDATE FAILS WHILE THE BOX IS HIS, AND THE CHAT SAYS SO (goal/G43.3; Andy, the box: "desk cannot refuse
+      // the box to the user. agent updates will fail it the user takes the box, and desk will note so in the chat.").
+      const under = st0.items[String(a.id)];
+      if (under && w.by !== 'andy' && under.boxTakenBy === 'andy') {
+        write('chat.add', { id: under.id, text: 'the box is taken by Andy, so the update of ' + w.by + ' failed', by: 'desk', key: '' });
+        throw refused('taken');
+      }
       const capOffer = boxFull(String(a.text), (Number(a.version) || 0) + 1) ? addressOf(st0, 'cap', null).to : null;
       const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }, capOffer ? { capOffer: capOffer } : {}), function (st, it) {
         // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9). ONE RULE FOR EVERYBODY SINCE goal/G9.3:
@@ -3338,7 +3390,8 @@ appServer.serve(withPlugins({
         // among agents as well, the box is taken, and released after edit. it also helps agents stay out of each others
         // way." So his write is refused over another's take as an agent's is; he was the exception until then.
         // By key since goal/G21.1: a hold his nick request started is that agent's one write, his own included.
-        if (it.boxTakenBy && !holdsBox(it, w)) throw refused('taken');
+        // goal/G43.3 replaces G9.3 and G21.1 for him: an agent's take never refuses him.
+        if (w.by !== 'andy' && it.boxTakenBy && !holdsBox(it, w)) throw refused('taken');
         if (a.version !== it.version) throw refused('box-moved');
       });
       const written = { change: s.change, version: s.items[a.id].version };
@@ -3519,6 +3572,12 @@ appServer.serve(withPlugins({
     request: { id: '', phase: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
+      // ALONE, IT TAKES THE NEXT PHASE ITSELF (goal/G43.3; Andy, the box: "or the same agent that did the red phase, if
+      // that's the only one available"), decided when it asks: a claim opens the phase with no holder, and who is here
+      // is of this moment. Only where the rule would refuse it, so a first take of a red waives nothing.
+      const st0 = walkState();
+      const it0 = st0.items[String(a.id)];
+      if (it0 && mayTake(st0, it0, String(a.phase), w.by) === 'not-offered') waiveIfAlone(a.id, w.by);
       return { change: write('phase.take', { id: a.id, phase: String(a.phase), by: w.by, key: w.key }, function (st, it) {
         const why = mayTake(st, it, String(a.phase), w.by);
         if (why) throw refused(why);
@@ -3559,13 +3618,7 @@ appServer.serve(withPlugins({
       // EVERY handover, not the red's alone: the rules hand each phase to somebody else (mayTake), so alone the item
       // would stall at whichever one it reached. DECIDED HERE, AT THE WRITE, AND RECORDED AS A PRESS: who is live is
       // of this moment only, and a walk of the records must not re-decide it later, when everyone reads as stale.
-      const st = walkState();
-      const m = st.items[String(a.id)];
-      const live = liveAgents(st);
-      if (m && !m.done && !m.closed && m.waived !== true && live.length === 1 && live[0] === w.by) {
-        write('press', { id: a.id, what: 'waive', by: 'desk', key: '' });
-        write('chat.add', { id: a.id, text: 'waived: ' + w.by + ' is the only agent here, so it may take the next phase of this item itself.', by: 'desk', key: '' });
-      }
+      waiveIfAlone(a.id, w.by);
       if (comesToWait) return verifyEvent('').then(function () { return { change: change }; });
       return { change: change };
     },
@@ -3810,13 +3863,14 @@ appServer.serve(withPlugins({
       const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
       mayWrite(st, w);
-      // A HOLD IS ONE AGENT'S (goal/G21.1): "nobody else takes it meanwhile, Andy included". By key.
-      if (it.boxTakenBy && !holdsBox(it, w)) {
+      // A HOLD IS ONE AGENT'S (goal/G21.1), among agents. HE IS NEVER REFUSED (goal/G43.3; Andy, the box: "desk cannot
+      // refuse the box to the user."): his take replaces an agent's, which replaces "Andy included" of G21.1.
+      if (w.by !== 'andy' && it.boxTakenBy && !holdsBox(it, w)) {
         if (it.boxHoldUntil) throw refusedWhy('taken', 'the box of ' + a.id + ' is held for ' + (nameOfKey(st, it.boxTakenKey) || it.boxTakenBy) + ' for one write, or until its minute is over');
         throw refused('taken');
       }
       // Its holder taking it again changes nothing: the hold and its minute stand.
-      if (it.boxTakenBy && it.boxHoldUntil) return { change: st.change };
+      if (it.boxTakenBy && holdsBox(it, w) && it.boxHoldUntil) return { change: st.change };
       // HIS CAP OFFERED (goal/G21.1): "the first to take it holds it under the one-write rule"; an agent with cap off
       // "gets a cap only when addressed by its nick". He is no agent: his own take is a plain take.
       const body = { id: a.id, by: w.by, key: w.key };

@@ -68,7 +68,7 @@ function deskRowShown(row) {
   if (deskFilter.goalsOnly && row.goal !== '') return false;
   if (!deskFilter.includeClosed && row.status === 'closed') return false;
   var K = deskKept();
-  if (deskFilter.currentGoalOnly && !deskFilter.goalsOnly && deskGoalOf(row) !== (K ? K.current() : '')) return false;
+  if (deskFilter.currentGoalOnly && !deskFilter.goalsOnly && deskGoalOf(row) !== deskCurrentGoal()) return false;
   return true;
 }
 function deskHeld() {
@@ -412,10 +412,19 @@ function deskLabels(r) {
 // after it.
 var deskSearching = false;
 var deskSearchAgain = false;
+// THE CURRENT GOAL AT OPEN (goal/G43.3; Andy, the box: "[Current Goal only] is the only filter On by default, and it MUST
+// show the current goal when the page opens."): the stream's push names it, and it may not have come yet, or at all; the
+// answer to the first search asked for the current goal names it too, so the List does not wait for the stream.
+var deskSearchedGoal = '';
+function deskCurrentGoal() {
+  var K = deskKept();
+  return (K && K.current()) || deskSearchedGoal;
+}
 function deskSearchItems() {
   if (deskSearching) { deskSearchAgain = true; return Promise.resolve(); }
   deskSearching = true;
   var text = String(deskFilter.text || '');
+  var forCurrent = deskFilter.currentGoalOnly && !deskFilter.goalsOnly && !text;
   var done = function () {
     deskSearching = false;
     if (deskSearchAgain) { deskSearchAgain = false; deskSearchItems(); }
@@ -425,8 +434,12 @@ function deskSearchItems() {
       // The answer seated in the desk's branch of spirit.data, beside what is there: nothing held is dropped.
       var D = window.spirit && window.spirit.data;
       var K = deskKept();
+      if (forCurrent) ((r && r.items) || []).forEach(function (it) { try { var row = JSON.parse(it.label); if (row.goal === '' && !deskSearchedGoal) deskSearchedGoal = row.id; } catch (e) { /* not a row */ } });
       if (D && K && typeof D.seat === 'function') D.seat(K.branch, (r && r.items) || []);
-      deskNotePlugins(deskLabels(r)); deskDraw(); done();
+      deskNotePlugins(deskLabels(r)); deskDraw();
+      // The List may have drawn its own answer before this one named the goal.
+      if (deskList) deskList.redraw();
+      done();
     }, function (e) { done(); deskWriteError('read its list')(e); });
 }
 // A published row: {change, verb, item: <facts>, listed, key} (goal/G33.4: one publish per row). A new session
@@ -884,10 +897,25 @@ function deskArmRow(hosts) {
   var what = b.getAttribute('data-press');
   deskArming(b, b.getAttribute('data-arming'), function () { deskPress(id, what); });
 }
+// [CURRENT GOAL ONLY] AND [GOALS ONLY] EXCLUDE EACH OTHER (goal/G43.3; Andy, the box: "MUST be mutually exclusive, both can be
+// off, but only one of them can be active at once."): the one he just pressed on wins, and the other's own button is pressed
+// off, so what the buttons show is what is asked. The element holds their values; a press is the one way to move them.
+var deskFiltersOn = { current: true, goalsOnly: false };
+function deskPressFilter(name) {
+  setTimeout(function () {
+    var b = document.querySelector('#desk-list button[data-filter="' + name + '"]');
+    if (b) b.click();
+  }, 0);
+}
 function deskListFilter(values) {
   var v = values || {};
   var goalsOnly = v.goalsOnly === true;
-  return { currentGoalOnly: !goalsOnly && !((v.current || {}).on), goalsOnly: goalsOnly, includeClosed: v.includeClosed === true };
+  var current = !(v.current || {}).on;
+  if (goalsOnly && current) {
+    if (deskFiltersOn.current) { current = false; deskPressFilter('current'); } else { goalsOnly = false; deskPressFilter('goalsOnly'); }
+  }
+  deskFiltersOn = { current: current, goalsOnly: goalsOnly };
+  return { currentGoalOnly: current, goalsOnly: goalsOnly, includeClosed: v.includeClosed === true };
 }
 function deskMountList() {
   var el = document.getElementById('desk-list');
@@ -919,7 +947,7 @@ function deskMountList() {
         // and its items, unless Goals Only is on (a multi filter, on until pressed off).
         { name: 'current', multi: true, choices: [{ value: 'on', word: 'Current Goal Only' }], test: function (row, v) {
           var only = !(v && v.on) && !deskFilter.goalsOnly;
-          return !only || deskGoalOf(row) === K.current() ? 1 : 0;
+          return !only || deskGoalOf(row) === deskCurrentGoal() ? 1 : 0;
         } },
         // The group chat's goal is on no List (goal/G3.10); no button.
         { name: 'group', when: function () { return false; }, test: function (row) { return row && row.id !== DESK_GROUP ? 1 : 0; } },
@@ -930,6 +958,9 @@ function deskMountList() {
       details: function (row, key) { deskOpenRow(String(key)); },
       empty: 'Nothing to show.',
     });
+    // ITS FIRST SEARCH IS ASKED NOW (goal/G43.3): the page's own, at mount, came back before the cache manager had loaded,
+    // and an answer with nowhere to sit left the List empty until the stream pushed something.
+    deskSearchItems();
     deskList.redraw();
     });
   });
