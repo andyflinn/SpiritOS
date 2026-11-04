@@ -78,7 +78,9 @@ test.startTest('probabilitySearch: the face tiles (goal/G43.6)');
     ok(missed.length === 2, 'the world: two others behind the best', short(missed.length));
     await type('');
     test.subHeading('"arrow keys also go left and right": Enter picks where they went');
-    const press = async function (key) { await js('(function () { var i = [].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0]; i.focus(); i.dispatchEvent(new KeyboardEvent("keydown", { key: ' + JSON.stringify(key) + ', bubbles: true, cancelable: true })); return true; })()'); await sleep(120); };
+    // Each key goes where the focus really is, as a real key does: from the empty search field an arrow moves into the tiles.
+    await js('[].filter.call(window.__box.querySelectorAll("input"), function (x) { return x.getClientRects().length && x.type !== "checkbox"; })[0].focus(); true');
+    const press = async function (key) { await js('(function () { var at = document.activeElement || document.body; at.dispatchEvent(new KeyboardEvent("keydown", { key: ' + JSON.stringify(key) + ', bubbles: true, cancelable: true })); return true; })()'); await sleep(120); };
     const order = (await read()).tiles.map(function (t) { return t.text; });
     await press('ArrowRight'); await press('ArrowRight'); await press('ArrowLeft'); await press('Enter');
     const picked1 = JSON.parse(await js('JSON.stringify(window.__picked)'));
