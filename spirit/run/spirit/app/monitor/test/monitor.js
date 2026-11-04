@@ -51,17 +51,17 @@ test.startTest('monitor.js: an app that reads and displays a stream (goal/G43.6)
     };
     const started = await js('window.spirit.ready.then(function () { return window.spirit.cacheManager("jobs"); }).then(function () { return window.spirit.require("spirit/app/monitor/monitor.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
     ok(started === 'loaded', 'monitor.js loads on a page', 'loading it: ' + short(started));
-    test.subHeading('"It resides in spirit.app.monitor": spirit.app.monitor.create(container) -> { destroy() }');
-    const home = await js('(function () { return JSON.stringify({ app: typeof (window.spirit.app || {}).monitor, create: typeof ((window.spirit.app || {}).monitor || {}).create, search: typeof (window.spirit.app || {}).search, old: typeof (window.spirit.elements || {}).monitor, element: typeof (window.spirit.element || {}).monitor }); })()');
+    test.subHeading('"It resides in spirit.app.monitor": spirit.app.monitor.createApp(container) -> { destroy() }');
+    const home = await js('(function () { return JSON.stringify({ app: typeof (window.spirit.app || {}).monitor, create: typeof ((window.spirit.app || {}).monitor || {}).createApp, search: typeof (window.spirit.app || {}).search, old: typeof (window.spirit.elements || {}).monitor, element: typeof (window.spirit.element || {}).monitor }); })()');
     let h = {}; try { h = JSON.parse(home); } catch (e) { h = {}; }
-    ok(h.create === 'function', 'spirit.app.monitor.create is there', 'spirit.app: ' + short(h));
+    ok(h.create === 'function', 'spirit.app.monitor.createApp is there', 'spirit.app: ' + short(h));
     ok(h.search === 'function', 'and the family\'s verb, spirit.app.search, is still beside it', 'spirit.app: ' + short(h));
     ok(h.old === 'undefined' && h.element === 'undefined', 'it is on neither spirit.elements nor spirit.element', 'spirit.app: ' + short(h));
     if (h.create !== 'function') return;
 
     test.subHeading('"Until the first reading, it says it is waiting, as old Stats does."');
     // No reading on the page: the job taken out of the page's data set; the next one the stream brings is its first.
-    await js('(function () { var J = ((window.spirit.data || {}).jobs || {}).data; var job = J.find(function (j) { return j && j.type === "server-stats"; }); if (job) window.spirit.data.viewAt(null, "jobs").del("jobs/" + job.id); window.__job = job ? job.id : ""; var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__said = []; new MutationObserver(function () { var t = d.innerText; if (t) window.__said.push(/waiting/i.test(t) && !/Uptime/.test(t) ? "waiting" : "other"); }).observe(d, { childList: true, subtree: true, characterData: true }); window.__made = window.spirit.app.monitor.create(d); return true; })()');
+    await js('(function () { var J = ((window.spirit.data || {}).jobs || {}).data; var job = J.find(function (j) { return j && j.type === "server-stats"; }); if (job) window.spirit.data.viewAt(null, "jobs").del("jobs/" + job.id); window.__job = job ? job.id : ""; var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__said = []; new MutationObserver(function () { var t = d.innerText; if (t) window.__said.push(/waiting/i.test(t) && !/Uptime/.test(t) ? "waiting" : "other"); }).observe(d, { childList: true, subtree: true, characterData: true }); window.__made = window.spirit.app.monitor.createApp(d); return true; })()');
     // WHAT IT SAID FIRST, watched as it is drawn: the stream's next reading can come at any moment after the job is taken out.
     await until(function () { return js('window.__said.length > 0'); }, 8000);
     const said = await js('window.__said[0] || ""');

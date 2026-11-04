@@ -3,7 +3,7 @@
 // its list as tiles, with extra info in a tooltip." Its contract and its test: ./test/tiles.md and ./test/tiles.js. What a tile
 // looks like is probabilitySearch's face tiles.
 //
-//   spirit.app.tiles.create(container) -> { destroy() }
+//   spirit.app.tiles.createApp(container) -> { destroy() }
 //
 // A PRESSED TILE OPENS THAT APP ON TOP OF IT, here alone: "NO SHELL WILL FUCKING TOUCH WHAT's inside". The internal
 // appContainer (his "appCountainer"): "a titlebar, and a pane below, into which the "elements" are mounted"; on the bar's left
@@ -49,7 +49,8 @@
       var name = String(row.key);
       S.require('spirit/app/' + name + '/' + name + '.js').then(function () {
         // Andy, box: "The app tiles open it from spirit.app." server stays on spirit.elements.
-        if (!closed) made = (S.app[name] || S.elements[name]).create(shell.querySelector('.app-container-pane'));
+        var pane = shell.querySelector('.app-container-pane');
+        if (!closed) made = S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane);
       });
     }
     function search() {
@@ -82,5 +83,5 @@
     };
   }
 
-  (S.app = S.app || {}).tiles = { create: create };
+  (S.app = S.app || {}).tiles = { createApp: create };
 }());

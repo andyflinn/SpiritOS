@@ -7,7 +7,7 @@ Andy, box: *"An app that reads and displays a stream, called "monitor". It resid
 ## Requirements
 
 - `monitor.json`: icon 🦻, label `Monitor`, mount `monitor.js`, shell mount and tile true, node mount false.
-- `spirit.app.monitor.create(container) -> { destroy() }`, beside the family's verb `spirit.app.search`, and on neither `spirit.elements` nor `spirit.element`.
+- `spirit.app.monitor.createApp(container) -> { destroy() }`, beside the family's verb `spirit.app.search`, and on neither `spirit.elements` nor `spirit.element`.
 - It requires no old code: no `spirit.shell`, nothing under `shell/`, nothing through `spirit.elements`. It opens no other app. It loads and uses `spirit/element/valued.js`.
 - Until the first reading it says it is waiting. The reading the stream brings replaces that.
 - One `valued` fills the app, under one search field: the 11 numbers (`Memory (RSS)`, `Heap used`, `CPU`, `Uptime`, `Event loop mean`, `Event loop max`, `Event loop p99`, `Files`, `Folders`, `SSE connections`, `Requests total`) and the four groups of counts (`Jobs by status`, `Files by MIME type`, `Requests by method`, `Requests by status class`), each count a row. `Jobs by status` replaces `Active jobs`.

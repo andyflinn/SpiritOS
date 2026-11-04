@@ -41,7 +41,7 @@ test.startTest('tiles.js: the tiles and what they open (goal/G43.2, goal/G43.6)'
     fs.writeFileSync(path.join(other, 'zzother.js'), named(fs.readFileSync(path.join(appsDir, 'server', 'server.js'), 'utf8')));
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
-    const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/tiles.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;z-index:9999;background:#000;display:flex;flex-direction:column"; document.body.appendChild(c); window.made = spirit.app.tiles.create(c); return "made"; }, function (e) { return String(e && e.message || e); })');
+    const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/tiles.js"); }).then(function () { var c = document.createElement("div"); c.id = "under-test"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;z-index:9999;background:#000;display:flex;flex-direction:column"; document.body.appendChild(c); window.made = spirit.app.tiles.createApp(c); return "made"; }, function (e) { return String(e && e.message || e); })');
     ok(made === 'made', 'it loads through spirit.require and mounts by itself', 'it did not mount: ' + short(made));
     const INSIDE = '#under-test ';
     const tileOf = function (label) { return 'Array.prototype.filter.call(document.querySelectorAll(' + JSON.stringify(INSIDE + '.app-icon') + '), function (t) { return t.offsetParent !== null && String(t.innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1; })[0]'; };
@@ -55,8 +55,8 @@ test.startTest('tiles.js: the tiles and what they open (goal/G43.2, goal/G43.6)'
     // goal/G43.6; Andy, box: "The tiles get a search field."
     const inputs = await chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll("#under-test input"), function (t) { return t.offsetParent !== null; }).length');
     ok(inputs === 1, 'the tiles have one search field', inputs + ' input(s) on show');
-    const homes = JSON.parse(await chrome.evaluate('JSON.stringify({ tiles: typeof ((window.spirit.app || {}).tiles || {}).create, ui: typeof (window.spirit.elements || {}).ui, search: typeof (window.spirit.app || {}).search })'));
-    ok(homes.tiles === 'function' && homes.ui === 'undefined' && homes.search === 'function', 'spirit.app.tiles.create, beside spirit.app.search, and no spirit.elements.ui', 'homes: ' + short(homes));
+    const homes = JSON.parse(await chrome.evaluate('JSON.stringify({ tiles: typeof ((window.spirit.app || {}).tiles || {}).createApp, ui: typeof (window.spirit.elements || {}).ui, search: typeof (window.spirit.app || {}).search })'));
+    ok(homes.tiles === 'function' && homes.ui === 'undefined' && homes.search === 'function', 'spirit.app.tiles.createApp, beside spirit.app.search, and no spirit.elements.ui', 'homes: ' + short(homes));
     const code = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, '');
     ok(/face\s*:\s*['"]tiles['"]/.test(code) && /probabilitySearch/.test(code), 'it is a probabilitySearch, in its face tiles', 'tiles.js does not make a probabilitySearch with face tiles');
 

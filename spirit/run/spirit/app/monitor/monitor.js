@@ -3,7 +3,7 @@
 // resides in spirit.app.monitor, in the new format of app plugins, under one namespace." Its contract and its test:
 // ./test/monitor.md and ./test/monitor.js.
 //
-//   spirit.app.monitor.create(container) -> { destroy() }
+//   spirit.app.monitor.createApp(container) -> { destroy() }
 //
 // One valued that fills the app: the node's server-stats job as the stream hands it to the jobs family's cache, each number
 // and count one row. "Jobs by status replaces old Stats' Active jobs, so no list of finished statuses is copied."
@@ -75,5 +75,5 @@
     };
   }
 
-  (S.app = S.app || {}).monitor = { create: create };
+  (S.app = S.app || {}).monitor = { createApp: create };
 }());
