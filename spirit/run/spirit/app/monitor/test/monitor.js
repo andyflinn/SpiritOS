@@ -61,10 +61,11 @@ test.startTest('monitor.js: an app that reads and displays a stream (goal/G43.6)
 
     test.subHeading('"Until the first reading, it says it is waiting, as old Stats does."');
     // No reading on the page: the job taken out of the page's data set; the next one the stream brings is its first.
-    await js('(function () { var J = window.spirit.jobsData; var job = J.find(function (j) { return j && j.type === "server-stats"; }); if (job) window.spirit.data.at(null, "jobs").del("jobs/" + job.id); window.__job = job ? job.id : ""; var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.app.monitor.create(d); return true; })()');
-    await sleep(200);
-    const first = await read();
-    ok(/waiting/i.test(String(first.text)), 'with no reading it says it is waiting', 'with no reading it shows: ' + short(first.text));
+    await js('(function () { var J = window.spirit.jobsData; var job = J.find(function (j) { return j && j.type === "server-stats"; }); if (job) window.spirit.data.at(null, "jobs").del("jobs/" + job.id); window.__job = job ? job.id : ""; var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:800px;height:240px;display:flex;flex-direction:column"; window.__box = d; window.__said = []; new MutationObserver(function () { var t = d.innerText; if (t) window.__said.push(/waiting/i.test(t) && !/Uptime/.test(t) ? "waiting" : "other"); }).observe(d, { childList: true, subtree: true, characterData: true }); window.__made = window.spirit.app.monitor.create(d); return true; })()');
+    // WHAT IT SAID FIRST, watched as it is drawn: the stream's next reading can come at any moment after the job is taken out.
+    await until(function () { return js('window.__said.length > 0'); }, 8000);
+    const said = await js('window.__said[0] || ""');
+    ok(said === 'waiting', 'with no reading it says it is waiting, before the first numbers', 'the first it showed was ' + short(said));
 
     test.subHeading('"It reads the node\'s server-stats job from the stream ... and shows its numbers."');
     const came = await until(function () { return read().then(function (r) { return NUMBERS.every(function (n) { return String(r.text).indexOf(n) !== -1; }); }); }, 20000);
