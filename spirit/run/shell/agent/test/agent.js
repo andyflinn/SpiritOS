@@ -105,9 +105,9 @@ function world(configText) {
     verb: function (name, args) { w.verbs.push({ name: name, args: args }); return Promise.resolve({ status: 200, body: { ok: true, debug: !!(args && args.on) } }); },
     setScreenTitle: function (t) { w.titles.push(String(t)); },
     escapeHtml: function (s) { return String(s); },
-    ui: { elements: {} },
+    ui: { elements: {}, element: {} },
   };
-  w.api.ui.elements.workBench = w.workBench;
+  w.api.ui.element.workBench = w.workBench;
   // The agent server's interface, as spirit.require hands it: its debug call recorded, answered as the server does.
   w.calls = []; w.required = [];
   w.family = { debug: function (args) { w.calls.push(args); return Promise.resolve({ debug: !!(args && args.on) }); } };
@@ -118,7 +118,7 @@ function world(configText) {
 }
 // The app loaded on a window of its own, with this world's stubs.
 function load(w) {
-  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, elements: { workBench: w.workBench, tabContainer: w.tabContainer }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath, isBrowser: function () { return true; },
+  global.window = { spirit: { shell: { activateApp: function (def) { w.def = def; } }, get element() { return this.elements; }, elements: { workBench: w.workBench, tabContainer: w.tabContainer }, fs: w.fs, escapeHtml: function (s) { return String(s); }, familyPath: familyPath, isBrowser: function () { return true; },
     require: function (p) { w.required.push(String(p)); return Promise.resolve(p === AGENT_FAMILY ? w.family : true); },
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
@@ -244,12 +244,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   {
     const before = w.required.length;
     const editors = [];
-    global.window.spirit.elements.bundleEditor = { create: function (into, cfg) { editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
+    global.window.spirit.element.bundleEditor = { create: function (into, cfg) { editors.push({ into: into, cfg: cfg || {} }); return { destroy: function () {} }; } };
     const bb = box('bundles'); BUNDLE_TOOL.mount(bb); await settle();
     const asked = w.required.slice(before);
-    ok(asked.indexOf('shell/js/bundleEditor.js') !== -1, 'its mount requires shell/js/bundleEditor.js', 'required: ' + short(asked));
+    ok(asked.indexOf('spirit/element/bundleEditor.js') !== -1, 'its mount requires spirit/element/bundleEditor.js', 'required: ' + short(asked));
     ok(editors.length === 1 && editors[0].into === bb && editors[0].cfg.api === w.api, 'and makes the bundle editor in the box it is handed, with the app\'s api', 'bundle editors: ' + short(editors.map(function (x) { return { here: x.into === bb, api: x.cfg.api === w.api }; })));
-    delete global.window.spirit.elements.bundleEditor;
+    delete global.window.spirit.element.bundleEditor;
   }
 
   test.subHeading('the left tool keeps the app\'s own config');
@@ -312,10 +312,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const required = [];
   const def3 = load(w3);
   global.window.spirit.elements = {};
-  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.elements.workBench = w3.workBench; global.window.spirit.elements.tabContainer = w3.tabContainer; return Promise.resolve(true); };
-  w3.api.ui.elements = global.window.spirit.elements;
+  global.window.spirit.require = function (p) { required.push(String(p)); global.window.spirit.element.workBench = w3.workBench; global.window.spirit.element.tabContainer = w3.tabContainer; return Promise.resolve(true); };
+  w3.api.ui.elements = global.window.spirit.elements; w3.api.ui.element = global.window.spirit.elements;
   def3.mount(box('app3'), w3.api); await settle();
-  ok(required.indexOf('shell/js/workBench.js') !== -1 && w3.created.length === 1, 'with no workBench on the page it loads shell/js/workBench.js through spirit.require, then builds one',
+  ok(required.indexOf('spirit/element/workBench.js') !== -1 && w3.created.length === 1, 'with no workBench on the page it loads spirit/element/workBench.js through spirit.require, then builds one',
     'required ' + short(required) + ', workbenches ' + w3.created.length);
 
   test.subHeading('with no config of its own');

@@ -45,15 +45,15 @@ const ADDRESS = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
 const NAMED = ADDRESS.slice('/DEBUG'.length);
 // WHAT IS MOUNTED IS KNOWN BY ITS PATH (goal/G41.19, box v17; Andy: "the test knows bloody fucking well if a scripts is
 // an app (from the path pattern), why the fuck would would it need manifests for standard patterns?", "the test knows
-// fucking well, which are elements scripts in ./shell/js/"): an app is shell/<app>/<app>.js, an element any script
-// under shell/js/. Anything else in its reach is neither, and is not mounted.
+// fucking well, which are elements scripts in ./spirit/element/"): an app is shell/<app>/<app>.js, an element any script
+// under spirit/element/. Anything else in its reach is neither, and is not mounted.
 // THE AGENT TABLES' PAGES ARE ELEMENTS TOO (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element
 // (process/js/agent/table/tableElement.js), its row editor (rowElement.js, goal/G41.28) and each table's list and
 // editor (<table>/elementTable.js, elementRow.js).
 // Their servers beside them are not pages, and are not mounted.
 function kindOf(file) {
   const f = String(file || '');
-  if (/^shell\/js\/.+\.js$/.test(f)) return 'element';
+  if (/^spirit\/element\/.+\.js$/.test(f)) return 'element';
   // THE APP FAMILY'S SELECTOR (goal/G43.2): an element in the new folder, judged as the shell's are.
   if (/^spirit\/app\/appSelector(\/[^/]+)?\.js$/.test(f)) return 'element';
   // AN APP IN THE NEW FOLDER IS AN ELEMENT TOO (goal/G43.2; Andy, box: "both of these apps are face-app skeletons (elements)").
@@ -159,7 +159,7 @@ const WATCH = String.raw`(function () {
   function searches(els) {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
-    var cur = els.probabilitySearch;
+    var cur = window.spirit.element.probabilitySearch;
     function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
   // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.data path the module watches, and whether its
   // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
@@ -276,23 +276,23 @@ const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(
 // like another inline character? ... glyphs are legal in labels and description true, and in that context they don't
 // need special handling", then "narrow the rules so."): a shell script (no test, no vendor code) whose code, comments
 // left out, holds a pictograph (Unicode Extended_Pictographic) alone in a string or alone between two tags, or that
-// paints icons it is handed (named below, read by hand), loads shell/js/icon.js. A glyph among words is text. Each is
+// paints icons it is handed (named below, read by hand), loads spirit/element/icon.js. A glyph among words is text. Each is
 // its own check, named by its path.
-const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'shell/contacts/contacts.js', 'shell/js/icons/listElement.js',
-  'shell/js/icons/rowElement.js', 'shell/js/iconSelector.js', 'shell/js/workBench.js'];
+const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'shell/contacts/contacts.js', 'spirit/element/icons/listElement.js',
+  'spirit/element/icons/rowElement.js', 'spirit/element/iconSelector.js', 'spirit/element/workBench.js'];
 // A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
 const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]*)+\s*(['"`]|<)/u;
 // A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
 // (Andy: "glyphs are legal in labels and description true").
 const TEXT_ONLY = {
   'shell/jobsDetails/jobsDetails.js': 'its status glyph is drawn before the job\'s type and its status word',
-  'shell/js/contactDetails/contactDetails.js': 'its blocked and held marks are drawn before the person\'s name',
-  'shell/js/contacts/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
+  'spirit/element/contactDetails/contactDetails.js': 'its blocked and held marks are drawn before the person\'s name',
+  'spirit/element/contacts/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
   return tracked.filter(function (f) {
-    if (!/\.js$/.test(f) || /\/test\/|node_modules|codeMirror/.test(f) || f === 'shell/js/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
+    if (!/\.js$/.test(f) || /\/test\/|node_modules|codeMirror/.test(f) || f === 'spirit/element/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
     if (FROM_DATA.indexOf(f) !== -1) return true;
     if (TEXT_ONLY[f]) return false;
     const code = fs.readFileSync(path.join(RUN, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
@@ -308,8 +308,8 @@ function iconsLoaded() {
     const src = fs.readFileSync(path.join(RUN, f), 'utf8');
     // A file that hands its glyphs to the one-row form (goal/G41.27) paints them through it: rowForm loads the icon element
     // itself (rule/26).
-    const through = src.indexOf('shell/js/icon.js') !== -1 ? 'loads shell/js/icon.js' : src.indexOf('shell/js/rowForm.js') !== -1 ? 'paints them through shell/js/rowForm.js, which loads it' : '';
-    ok(!!through, f + ': it paints icons and ' + through, f + ': it paints icons and never loads shell/js/icon.js');
+    const through = src.indexOf('spirit/element/icon.js') !== -1 ? 'loads spirit/element/icon.js' : src.indexOf('spirit/element/rowForm.js') !== -1 ? 'paints them through spirit/element/rowForm.js, which loads it' : '';
+    ok(!!through, f + ': it paints icons and ' + through, f + ': it paints icons and never loads spirit/element/icon.js');
   });
 }
 
@@ -349,11 +349,11 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
 (async function () {
   if (!arg) return every();
   if (!full) { test.fail('no shell app or element to judge: ' + JSON.stringify(arg)); return; }
-  if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under shell/js/, or an agent table\'s page): not mounted'); return; }
+  if (!kindOf(rel)) { test.subHeading(NAMED); test.check(rel + ' is neither an app (shell/<app>/<app>.js) nor an element (under spirit/element/, or an agent table\'s page): not mounted'); return; }
   // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
   // search the whole row, as cached in spirit.data."): no app or element hands a search a matched(row) of its own; the
   // search element itself matches the whole row.
-  if (rel !== 'shell/js/probabilitySearch.js') {
+  if (rel !== 'spirit/element/probabilitySearch.js') {
     test.subHeading(NAMED + ': ' + 'its searches match the whole row');
     const src = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
     ok(!/\bmatched\s*:/.test(src), 'it hands no search a matched() of its own', 'it hands a search matched(), a few fields in place of the whole row');
@@ -455,7 +455,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
       '  var inIcon = !!mark && !!el && !!el.closest("." + mark); if (inIcon || !el.getClientRects().length) continue;' +
       '  var parts = []; for (var e = el; e && e !== box; e = e.parentNode) { if (e.id || e === el) parts.unshift(e.tagName.toLowerCase() + (e.id ? "#" + e.id : "")); }' +
       '  out.push(g.join("") + " in " + parts.join(" > ")); } return out; }())';
-    await page.evaluate('Promise.resolve().then(function () { return spirit.require("shell/js/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.elements.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
+    await page.evaluate('Promise.resolve().then(function () { return spirit.require("spirit/element/icon.js"); }).then(function () { var p = document.createElement("div"); var i = spirit.element.icon.create(p, { glyph: "A" }); window.spiritIconMark = String(i && i.className || "").trim().split(/\\s+/)[0] || ""; }, function () { window.spiritIconMark = ""; })');
     const iconMark = await page.evaluate('window.spiritIconMark || ""');
     const loose = {};
     const iconProbe = async function () { const s = await page.evaluate('JSON.stringify(' + ICONS + ')'); (s ? JSON.parse(s) : []).forEach(function (x) { loose[x] = true; }); };
@@ -485,7 +485,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     test.subHeading(NAMED + ': ' + 'every icon it paints is the icon element');
     const looseList = Object.keys(loose);
     ok(!!iconMark && !looseList.length, 'every pictograph it draws lies inside the icon element (class ' + iconMark + ')',
-      iconMark ? looseList.length + ' drawn outside the icon element: ' + short(looseList.slice(0, 5)) : 'no icon element to paint through: shell/js/icon.js made no element with a class');
+      iconMark ? looseList.length + ' drawn outside the icon element: ' + short(looseList.slice(0, 5)) : 'no icon element to paint through: spirit/element/icon.js made no element with a class');
     test.subHeading(NAMED + ': ' + 'its box never grows');
     const spills = await page.evaluate('(function () { var b = window.spiritMount.box; return b.scrollHeight > b.clientHeight + 1 || document.documentElement.scrollWidth > document.documentElement.clientWidth + 1; }())');
     ok(spills === false, 'it never grows its box, and the page never scrolls sideways', 'its box overflows, or the page scrolls sideways');
@@ -537,7 +537,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // OUTSIDE goal/G41.28, AND STILL RED (Andy, G41.28: "WSL will drop Q23 from this item, and mark those two related reds as
     // outside it"): login fetches its steps file before the page has a link to its node, and the file viewer fetches a
     // file at home piece by piece. Each red names that it is outside the item; it is not met, so it is not green.
-    const OUTSIDE = own.some(function (c) { return /^shell\/(login\/login|js\/fileViewer)\.js$/.test(String(c.file || '')); }) ? ' (outside goal/G41.28, Andy: "WSL will drop Q23 from this item, and mark those two related reds as outside it")' : '';
+    const OUTSIDE = own.some(function (c) { return /^(shell\/login\/login|spirit\/element\/fileViewer)\.js$/.test(String(c.file || '')); }) ? ' (outside goal/G41.28, Andy: "WSL will drop Q23 from this item, and mark those two related reds as outside it")' : '';
     ok(!own.length, 'every call it puts on the wire goes through spirit (' + W.net.length + ' made)', own.length + ' made by itself: ' + short(own.map(function (c) { return c.kind + ' ' + c.url.replace(node.base, '') + ' from ' + (c.file || 'an unnamed script'); })) + OUTSIDE);
 
     // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27; Andy: "elements that change things, also subscribe to the changes
@@ -554,7 +554,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.data path it watches must change
     // its box. A watch that redraws nothing is not listening.
     let probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
-    // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (shell/js/probabilitySearch.js, setOpen: "opened, ... draw()"): while
+    // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (spirit/element/probabilitySearch.js, setOpen: "opened, ... draw()"): while
     // nothing it watches has redrawn, each closed dropdown on the page is opened in turn, what it watches written again,
     // and shut. A path that redrew in any of them redrew.
     const DROPDOWNS = 'Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("button[id$=field]"), function (b) { var p = document.getElementById(b.id.replace(/field$/, "popup")); return p && p.hidden && b.getClientRects().length; })';
@@ -599,7 +599,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // ONE EXCEPTION, DEFERRED, AND STILL RED (Andy, the box: "the only exception is introspector, deferred for network-scope
     // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
     // its own page, mounted bare, still makes one. The red names the deferral; it is not met, so it is not green.
-    const DEFERRED = rel === 'shell/js/probabilitySearch.js' || rel === 'shell/introSpector/introSpector.js' ? ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
+    const DEFERRED = rel === 'spirit/element/probabilitySearch.js' || rel === 'shell/introSpector/introSpector.js' ? ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
     if (!made.length) unjudged('it makes no search');
     else ok(!off.length, 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })) + DEFERRED);
     // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a

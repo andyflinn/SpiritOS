@@ -122,7 +122,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     if (table === 'then') return undefined;
     return function (args) { made.calls.push({ table: table, args: args }); const a = made.answer ? made.answer(table, args) : {}; return a instanceof Error ? Promise.reject(a) : Promise.resolve(a); };
   } });
-  global.window = { spirit: { familyPath: familyPath, elements: {
+  global.window = { spirit: { familyPath: familyPath, get element() { return this.elements; }, elements: {
     // The providerSelector:dropdown and the busyButton, each tested in its own folder: stand-ins that keep what they were
     // handed, as the Update model list pane's test had them.
     probabilitySearch: { create: function (host, o) { const s2 = { host: host, o: o, value: '', row: null, refresh: function () {}, destroy: function () { s2.destroyed = true; } }; made.searches.push(s2); return s2; } },
@@ -138,7 +138,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
     // family's cache manager names it (spirit.agentData.branch, goal/G41.28).
-    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.elements; const AD2 = global.window.spirit.agentData; const s3 = E2.probabilitySearch.create(host, Object.assign({ api: o2.api, server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
+    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = global.window.spirit.agentData; const s3 = E2.probabilitySearch.create(host, Object.assign({ api: o2.api, server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   } } };
@@ -178,7 +178,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!((o && o.buttons) || []).some(function (b2) { return b2 && b2.label === 'provider models'; }), 'the list is handed no provider models button', 'buttons: ' + short(o && o.buttons));
   ok(!fs.existsSync(path.join(DIR, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.md')), 'the Update model list pane is gone: model/updatePanel.js and its test', 'still there: ' + short(['updatePanel.js', 'test/updatePanel.js', 'test/updatePanel.md'].filter(function (f) { return fs.existsSync(path.join(DIR, f)); })));
   ok(made.required.indexOf('process/js/agent/table/model/updatePanel.js') === -1 && !E.modelUpdate, 'and nothing loads it', 'required: ' + short(made.required));
-  ok(made.required.indexOf('shell/js/probabilitySearch.js') !== -1 && made.required.indexOf('shell/js/busyButton.js') !== -1 && made.required.indexOf('shell/js/rowForm.js') !== -1,
+  ok(made.required.indexOf('spirit/element/probabilitySearch.js') !== -1 && made.required.indexOf('spirit/element/busyButton.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1,
     'it loads what the form uses itself (rule/26): the search element, the busyButton and the rowForm', 'required: ' + short(made.required));
   // goal/G41.27, Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]": the form is a rowForm, ❓, the
   // providerSelector:dropdown in its span, Ask its button; the word from at its start goes, as new and grant did.

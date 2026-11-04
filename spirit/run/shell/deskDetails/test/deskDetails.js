@@ -132,7 +132,7 @@ function makeDom() {
   return doc;
 }
 
-// A working armingButton, as its spec says (shell/js/test/armingButton.md), that writes down every button it is handed.
+// A working armingButton, as its spec says (spirit/element/test/armingButton.md), that writes down every button it is handed.
 function armingStub(document, made) {
   var loaded = null;
   function attach(b, o) {
@@ -160,7 +160,7 @@ function armingStub(document, made) {
   return { attach: attach, create: create };
 }
 
-// A working workBench, as its spec says (shell/js/test/workBench.md), that writes down every bench it makes: its strips
+// A working workBench, as its spec says (spirit/element/test/workBench.md), that writes down every bench it makes: its strips
 // are buttons by data-tool, a click shows that tool in its side's pane, a tool's mount is called once with a box of its own.
 function workBenchStub(document, benches) {
   function create(container, o) {
@@ -231,12 +231,12 @@ function ddWorld(facts, checks, o) {
     require: function (p) {
       const q = String(p).replace(/^\/+/, '');
       required.push(q);
-      if (q === 'shell/js/workBench.js') win.spirit.elements.workBench = workBenchStub(document, benches);
+      if (q === 'spirit/element/workBench.js') win.spirit.element.workBench = workBenchStub(document, benches);
       // The verifier's cache manager and the shared run status, the real ones, where the page's data set is (below).
       if (o && o.real && (q === VERIFY_CCM || q === 'shell/shared/js/deskRunStatus.js')) vm.runInContext(fs.readFileSync(path.join(RUN, q), 'utf8'), win, { filename: q });
       return Promise.resolve({});
     },
-    elements: { armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
+    get element() { return this.elements; }, elements: { armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
       probabilitySearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
@@ -288,7 +288,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   const GOAL = { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: ['done', 'go-all', 'waive', 'delete', 'close'], verified: 'red', claims: 1, blocked: ['goal/G9.1'] };
   const w0 = ddWorld(GOAL, []);
   await w0.open();
-  ok(w0.required.indexOf('shell/js/armingButton.js') !== -1, 'it requires shell/js/armingButton.js through spirit.require', 'required: ' + JSON.stringify(w0.required));
+  ok(w0.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + JSON.stringify(w0.required));
   const left = ['data-armed', 'armUntilElsewhere', 'ddArmed', 'ddDisarm', 'armedClose', 'armedAll', "classList.add('armed')"].filter(function (s) { return plain.indexOf(s) !== -1; });
   ok(!left.length, 'nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 'still in deskDetails.js: ' + left.join(', '));
 
@@ -380,9 +380,9 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     const r = ddWorld(RULED, []);
     r.searches = [];
     const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
-    delete r.win.spirit.elements.probabilitySearch;
+    delete r.win.spirit.element.probabilitySearch;
     const req = r.win.spirit.require;
-    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'shell/js/probabilitySearch.js') r.win.spirit.elements.probabilitySearch = make; return req(p); };
+    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/probabilitySearch.js') r.win.spirit.element.probabilitySearch = make; return req(p); };
     return r;
   };
   const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };
@@ -445,7 +445,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     'the shell\'s title bar says the id, the title and the status', 'the title bar was given ' + JSON.stringify(wt.titles));
   test.subHeading('goal/G41.22: one workBench, the button row above it');
   const wb = ddWorld(ITEM, []); await wb.open();
-  ok(wb.required.indexOf('shell/js/workBench.js') !== -1, 'it requires shell/js/workBench.js through spirit.require', 'required: ' + JSON.stringify(wb.required));
+  ok(wb.required.indexOf('spirit/element/workBench.js') !== -1, 'it requires spirit/element/workBench.js through spirit.require', 'required: ' + JSON.stringify(wb.required));
   const bench = wb.benches[0] || null;
   ok(wb.benches.length === 1 && !!bench && inside(bench.container, wb.document.getElementById('dd-body')), 'it makes one workBench, inside its own body',
     'workBenches made: ' + wb.benches.length);

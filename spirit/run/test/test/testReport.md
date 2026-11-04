@@ -12,7 +12,7 @@ test files went by 8 names (six were `rowElement.js`), and a red in Fallout did 
 
 - A record's `suite` is the module the test tests, as `/<path>/<module>`: the folders between `spirit/run/` and the
   module, and the module's name without extension. The reporter makes it from the test's own path, so no test changes:
-  - `spirit/run/shell/js/test/workBench.js` is sent as `/shell/js/workBench`;
+  - `spirit/run/spirit/element/test/workBench.js` is sent as `/spirit/element/workBench`;
   - `spirit/run/process/js/agent/table/model/test/rowElement.js` and
     `spirit/run/process/js/agent/table/provider/test/rowElement.js` are two names, each with its folder;
   - `spirit/run/spirit/test/DEBUG.js` is sent as `/spirit/DEBUG`;

@@ -12,7 +12,7 @@
 //     the first is scrolled into view.
 //
 // NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
-//   - one shell element, shell/js/textView.js: window.spirit.elements.createTextView(container, { text, words,
+//   - one shell element, spirit/element/textView.js: window.spirit.elements.createTextView(container, { text, words,
 //     readOnly, path }) answers { value(), cm }, on window.CodeMirror; it marks each match with className
 //     'text-view-match' and scrolls the first into view. The launcher and the editor both make one.
 //   - the text launcher (index.html) passes params.words through; the editor (shell/textEditor) saves view.value().
@@ -30,7 +30,7 @@ const OWED = 'OWED by goal/G29.12: ';
 const REPO = path.resolve(__dirname, '..', '..');
 const RUN = path.join(__dirname, '..', 'run');
 const CM = path.join(RUN, 'shell', 'node_modules', 'codemirror');
-const VIEW = path.join(RUN, 'shell', 'js', 'textView.js');
+const VIEW = path.join(RUN, 'spirit', 'element', 'textView.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
 function code(file) { try { return fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { return ''; } }
@@ -87,8 +87,8 @@ function fakeElement() {
   else test.fail(OWED + 'fileServable refuses shell/node_modules/codemirror/lib/codemirror.js');
   const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
   const at = function (s) { return index.indexOf(s); };
-  if (at('/shell/node_modules/codemirror/lib/codemirror.css') !== -1 && at('/shell/node_modules/codemirror/lib/codemirror.js') !== -1 && at('/shell/js/textView.js') > at('/shell/node_modules/codemirror/lib/codemirror.js')) test.check('index.html loads CodeMirror\'s css and js, then textView.js');
-  else test.fail(OWED + 'index.html: codemirror.css at ' + at('/shell/node_modules/codemirror/lib/codemirror.css') + ', codemirror.js at ' + at('/shell/node_modules/codemirror/lib/codemirror.js') + ', textView.js at ' + at('/shell/js/textView.js'));
+  if (at('/shell/node_modules/codemirror/lib/codemirror.css') !== -1 && at('/shell/node_modules/codemirror/lib/codemirror.js') !== -1 && at('/spirit/element/textView.js') > at('/shell/node_modules/codemirror/lib/codemirror.js')) test.check('index.html loads CodeMirror\'s css and js, then textView.js');
+  else test.fail(OWED + 'index.html: codemirror.css at ' + at('/shell/node_modules/codemirror/lib/codemirror.css') + ', codemirror.js at ' + at('/shell/node_modules/codemirror/lib/codemirror.js') + ', textView.js at ' + at('/spirit/element/textView.js'));
 
   // Andy, 2026-10-18: "does the editor have tools like search, replace?", then "add them here." CodeMirror 5's own
   // add-ons, after its core, in the order they need each other: dialog, searchcursor, search, jump-to-line.
@@ -114,7 +114,7 @@ function fakeElement() {
   if ((listSrc.match(/new RegExp/g) || []).length === 1 && /function mark\(text\)[\s\S]{0,400}?(spirit\.matchRanges|matchRanges)\(/.test(listSrc)) test.check('the list marks its rows with that same function');
   else test.fail(OWED + 'listSearch.js: RegExps ' + (listSrc.match(/new RegExp/g) || []).length + ', its mark() uses the shared ranges ' + /function mark\(text\)[\s\S]{0,400}?(spirit\.matchRanges|matchRanges)\(/.test(listSrc));
   const make = win.spirit.elements && win.spirit.elements.createTextView;
-  if (typeof make !== 'function') { test.fail(OWED + 'no window.spirit.elements.createTextView (shell/js/textView.js)'); }
+  if (typeof make !== 'function') { test.fail(OWED + 'no window.spirit.elements.createTextView (spirit/element/textView.js)'); }
   else {
     const TEXT = 'first line\nthe Screwdriver is here\nno match\na screwdriver and another SCREWDRIVER';
     const view = make(fakeElement(), { text: TEXT, words: 'screwdriver', readOnly: true, path: 'notes.txt' });

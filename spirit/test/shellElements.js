@@ -1,18 +1,18 @@
 'use strict';
 
-// goal/G2.12: the shell's element factories move out of the shell program into spirit/run/shell/js/elements.js,
+// goal/G2.12: the shell's element factories move out of the shell program into spirit/run/spirit/element/elements.js,
 // still handed to apps as api.ui.elements. Red on today's tree.
 //   RULING (Andy, 2026-10-02, verbatim, under goal/G2): "i want them to be available in the interface object that
 //   the shell passes to apps, as tools to build their interfaces, as element-factories." ... "the shell-elements
-//   are better of being in 'spirit/run/shell/js/' since they should be UI-component-factories supplied in the
+//   are better of being in 'spirit/run/spirit/element/' since they should be UI-component-factories supplied in the
 //   interface passed to shell-apps during mount." — then "yes." to the move as an item.
 //   In the tree: createIconSelector (js/client/shell.js:762), createContactSelector (:915), createAppServerSelector
 //   (:963), createApiBranchSelector (:1002), closed over shell.js's helpers and handed out at shell.js:1634 as
-//   api.ui.elements; index.html loads /spirit/client/shell.js last (index.html:1366). No shell/js/ folder exists.
+//   api.ui.elements; index.html loads /spirit/client/shell.js last (index.html:1366). No spirit/element/ folder exists.
 // AMENDED, the same day (Andy, verbatim, on the one elements.js the first build made): "why all in one?" — no
 // good reason, said back — "i can guarantee you: there will be many". So one file per element.
 // The contract the builder follows (the shape in goal/G2.12's box):
-//   1. One file per element in spirit/run/shell/js/: iconSelector.js, contactSelector.js, appServerSelector.js,
+//   1. One file per element in spirit/run/spirit/element/: iconSelector.js, contactSelector.js, appServerSelector.js,
 //      apiBranchSelector.js. Each defines its one factory and adds it to window.spirit.elements (created by
 //      whichever loads first), on the globals every shell script has (spirit, window.spirit.iconIndex,
 //      window.spirit.apiTreeIndex, document) and nothing inside shell.js or another element's closure; the
@@ -33,7 +33,7 @@ const spirit = require('../run/spirit/kernel.js');
 // The split was ruled after G2.12 closed on the one-file build; it is goal/G2.14's.
 const OWED = 'OWED by goal/G2.14: ';
 const RUN = path.join(__dirname, '..', 'run');
-const DIR = path.join(RUN, 'shell', 'js');
+const DIR = path.join(RUN, 'spirit', 'element');
 const FILES = { createIconSelector: 'iconSelector.js', createContactSelector: 'contactSelector.js', createAppServerSelector: 'appServerSelector.js', createApiBranchSelector: 'apiBranchSelector.js' };
 const SHELL = path.join(RUN, 'spirit', 'client', 'shell.js');
 const INDEX = path.join(RUN, 'index.html');
@@ -62,7 +62,7 @@ function fakeElement(tag) {
 // the root fires its own, so a listener on the root hears one change, not two.
 function FakeEvent(type, init) { const ev = this; ev.type = type; ev.bubbles = !!(init && init.bubbles); ev.stopped = false; ev.stopPropagation = function () { ev.stopped = true; }; ev.preventDefault = function () {}; }
 
-test.startTest('goal/G2.12: one file per element factory in shell/js/, handed to apps as before');
+test.startTest('goal/G2.12: one file per element factory in spirit/element/, handed to apps as before');
 
 const shell = fs.readFileSync(SHELL, 'utf8');
 const index = fs.readFileSync(INDEX, 'utf8');
@@ -75,14 +75,14 @@ const wrong = FOUR.filter(function (n) { return src[n] && (src[n].indexOf('funct
 if (!missing.length && !wrong.length) test.check('iconSelector.js, contactSelector.js, appServerSelector.js and apiBranchSelector.js each define their one factory and add it to spirit.elements');
 else test.fail(OWED + (missing.length ? 'missing files: ' + missing.map(function (n) { return FILES[n]; }).join(', ') : '') + (wrong.length ? ' wrong contents: ' + wrong.map(function (n) { return FILES[n]; }).join(', ') : ''));
 if (!fs.existsSync(path.join(DIR, 'elements.js'))) test.check('and the all-in-one elements.js is gone');
-else test.fail(OWED + 'shell/js/elements.js still exists');
+else test.fail(OWED + 'spirit/element/elements.js still exists');
 
 test.subHeading('2. loaded by index.html before the shell, app-server before api-branch');
-const at = {}; FOUR.forEach(function (n) { at[n] = index.indexOf('src="/shell/js/' + FILES[n] + '"'); });
+const at = {}; FOUR.forEach(function (n) { at[n] = index.indexOf('src="/spirit/element/' + FILES[n] + '"'); });
 const atShell = index.indexOf('src="/spirit/client/shell.js"');
-if (FOUR.every(function (n) { return at[n] !== -1 && at[n] < atShell; }) && at.createAppServerSelector < at.createApiBranchSelector && index.indexOf('/shell/js/elements.js') === -1) {
+if (FOUR.every(function (n) { return at[n] !== -1 && at[n] < atShell; }) && at.createAppServerSelector < at.createApiBranchSelector && index.indexOf('/spirit/element/elements.js') === -1) {
   test.check('index.html loads the four before /spirit/client/shell.js, app-server before api-branch, and no elements.js');
-} else test.fail(OWED + 'index.html positions ' + JSON.stringify(at) + ', shell at ' + atShell + ', elements.js tag ' + (index.indexOf('/shell/js/elements.js') !== -1));
+} else test.fail(OWED + 'index.html positions ' + JSON.stringify(at) + ', shell at ' + atShell + ', elements.js tag ' + (index.indexOf('/spirit/element/elements.js') !== -1));
 
 test.subHeading('3. the shell defines none of them and hands them out as before');
 const stillDefined = FOUR.filter(function (n) { return shell.indexOf('function ' + n) !== -1; });

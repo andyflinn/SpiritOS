@@ -553,7 +553,7 @@ function deskNeed(p) {
 // AN ICON THAT STANDS ALONE IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell
 // elements and apps.", and "isn't a glyph inside flowing text just like another inline character? ... they don't need
 // special handling"): the row's type, the sword, a rule's status. Written as a placeholder holding its glyph, so the
-// markup is never empty; once shell/js/icon.js is on the page each one in the container is made the icon element
+// markup is never empty; once spirit/element/icon.js is on the page each one in the container is made the icon element
 // (deskPaintIcons, watching the container). A glyph among words stays text.
 // Its own escape: the sword is made as the file loads, before deskApi is there.
 function deskGlyph(glyph, title) {
@@ -562,7 +562,7 @@ function deskGlyph(glyph, title) {
 }
 var deskIconReady = null;
 function deskPaintIcons(root) {
-  var I = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.icon;
+  var I = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.icon;
   if (!I || !root || typeof root.querySelectorAll !== 'function') return;
   Array.prototype.forEach.call(root.querySelectorAll('[data-icon]'), function (p) {
     if (p.querySelector('.shell-icon')) return;
@@ -571,7 +571,7 @@ function deskPaintIcons(root) {
   });
 }
 function deskWatchIcons(root) {
-  if (!deskIconReady) deskIconReady = deskNeed('/shell/js/icon.js').then(null, function () { /* the glyphs stay text */ });
+  if (!deskIconReady) deskIconReady = deskNeed('/spirit/element/icon.js').then(null, function () { /* the glyphs stay text */ });
   deskIconReady.then(function () { deskPaintIcons(root); });
   if (typeof MutationObserver === 'function' && root) new MutationObserver(function () { deskPaintIcons(root); }).observe(root, { childList: true, subtree: true });
 }
@@ -863,10 +863,10 @@ function deskAddGoal() {
 }
 // ── THE LIST, ON THE PROBABILITY SEARCH (goal/G40.12) ─────────────────
 //
-// The element in its pane face (shell/js/probabilitySearch.js): the search box, the filters in the row above it, its
+// The element in its pane face (spirit/element/probabilitySearch.js): the search box, the filters in the row above it, its
 // one call on the wire. IT IS A VIEW OF THE DESK'S BRANCH OF spirit.data (goal/G41.28), the cache manager's (its data
 // option, deskKept().branch), which every publish keeps current; items.search's answers to the words are seated in it. Each row is a row element
-// (shell/js/rowElement.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
+// (spirit/element/rowElement.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
 // repaints the cells that changed. A press in a row is the page's (data-press), a press on the row opens it.
 //
 // THE TOGGLES (goal/G9.2, goal/G4.20 point 1): Current Goal Only, on when Desk opens (a multi filter: on until pressed
@@ -875,7 +875,7 @@ function deskAddGoal() {
 var deskList = null;
 var deskListIndex = null;
 function deskListElement(row, key) {
-  var E = window.spirit.elements;
+  var E = window.spirit.element;
   deskListIndex = deskListIndex || E.rowElement.index(function () { /* a publish redraws the list; each element applies its row */ });
   var el = E.rowElement.create({
     kind: 'deskRow', key: key, index: deskListIndex, row: row,
@@ -923,7 +923,7 @@ function deskMountList() {
   deskLoadSearch(function () {
     // The List is drawn once the cache manager is there, its branch the List's (goal/G41.28).
     deskNeed(DESK_DATA).then(function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    var P = window.spirit && window.spirit.element && window.spirit.element.probabilitySearch;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskList || !K) return;
     deskList = P.create(el, {
@@ -1162,14 +1162,14 @@ function deskMountChat(el, goal) {
 // neither should be an accident." The first press arms the button and asks
 // "sure?"; only a second press fires it.
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button on the page is an
-// armingButton (shell/js/armingButton.js), which the page loads itself. It arms, says so, and hands the shell its
+// armingButton (spirit/element/armingButton.js), which the page loads itself. It arms, says so, and hands the shell its
 // disarm, so it disarms the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
 var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
-  ? Promise.all([spirit.require('shell/js/armingButton.js'), spirit.require('shell/js/fieldInput.js')]) : null);
+  ? Promise.all([spirit.require('spirit/element/armingButton.js'), spirit.require('spirit/element/fieldInput.js')]) : null);
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.armingButton;
     if (!A || typeof button.armed === 'function') return;
     A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run, api: deskApi });
   }, function () { /* no armingButton, no second press */ });
@@ -1233,7 +1233,7 @@ function deskDraw() {
 //   (goal/G6.4)."
 //
 // THE PROBABILITY SEARCH (goal/G40.12, box v7, first set 3: "all searches in desk are of the new probability variety"):
-// the list is shell/js/probabilitySearch.js over rules.search, ranking as he types with the matched words marked, a type
+// the list is spirit/element/probabilitySearch.js over rules.search, ranking as he types with the matched words marked, a type
 // filter and a status filter beside the words; a row opens ruleDetails. A rule's publish asks it again.
 // The test type since goal/G40.12 (box v7, first set 4), as the desk server's RULE_TYPES.
 var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
@@ -1241,13 +1241,13 @@ var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
 var DESK_RULE_ICON = { proposed: '✏️', active: '🔒', deleted: '💀' };
 var deskRulesNote = '';
 var deskRulesList = null;
-var DESK_SEARCH = '/shell/js/probabilitySearch.js';
+var DESK_SEARCH = '/spirit/element/probabilitySearch.js';
 function deskRulesSearch() {
   if (deskRulesList) { deskRulesList.refresh(); return; }
   var el = document.getElementById('desk-rule-list');
   if (!el) return;
   var make = function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    var P = window.spirit && window.spirit.element && window.spirit.element.probabilitySearch;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskRulesList || !K) return;
     // THE TOGGLES OF THE RULES LIST, as they always were (goal/G6.5): a button per type and per status, each on until he
@@ -1262,7 +1262,7 @@ function deskRulesSearch() {
         var v = values || {};
         return { text: text, types: kept(DESK_RULE_TYPES, v.type), statuses: kept(DESK_RULE_STATUSES, v.status) };
       },
-      // A RULE ROW IS A ROW ELEMENT (shell/js/rowElement.js, the element's own element(row, key)): it paints its status as
+      // A RULE ROW IS A ROW ELEMENT (spirit/element/rowElement.js, the element's own element(row, key)): it paints its status as
       // its icon, as the Rules list always drew it (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), and its key.
       columns: [{ field: 'status', label: '', sort: 'text' }, { field: 'label', label: 'Label', sort: 'text' },
         { field: 'type', label: 'Type', sort: 'text' }, { field: 'key', label: 'Key' }],
@@ -1281,7 +1281,7 @@ function deskRulesSearch() {
 // One rule row's element: its four cells, the status drawn as its icon.
 var deskRuleIndex = null;
 function deskRuleElement(row, key) {
-  var E = window.spirit.elements;
+  var E = window.spirit.element;
   deskRuleIndex = deskRuleIndex || E.rowElement.index(function () { /* the list asks again on a rule's publish */ });
   return E.rowElement.create({
     kind: 'rule', key: key, index: deskRuleIndex,
@@ -1295,7 +1295,7 @@ function deskRuleElement(row, key) {
   });
 }
 // probabilitySearch.js and the rowElement it draws rule rows with, through the one loader (it loads each once).
-var DESK_ROW_ELEMENT = '/shell/js/rowElement.js';
+var DESK_ROW_ELEMENT = '/spirit/element/rowElement.js';
 function deskLoadSearch(done) {
   Promise.all([deskNeed(DESK_ROW_ELEMENT), deskNeed(DESK_SEARCH)]).then(function () { done(); }, function () { /* no search on this page */ });
 }
@@ -1669,9 +1669,9 @@ function deskVerifyEvent(obj) {
 function deskHeader(api) {
   var old = document.getElementById('desk-bars');
   var els = api && api.ui && api.ui.elements;
-  if (!old || !els || !els.appHeader) return;
+  if (!old || !els || !window.spirit.element.appHeader) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
-  var head = els.appHeader.create(old.parentNode);
+  var head = window.spirit.element.appHeader.create(old.parentNode);
   old.parentNode.insertBefore(head, old);
   head.id = 'desk-bars';
   while (old.firstChild) head.appendChild(old.firstChild);
@@ -1730,7 +1730,7 @@ spirit.shell.activateApp({
             '<input type="text" id="desk-goal-title" placeholder="title"></label>' +
             '<button type="button" id="desk-goal-add">Add</button></div>' +
           // THE LIST IS THE PROBABILITY SEARCH (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
-          // same. That is part of the whole probability search frame work"): shell/js/probabilitySearch.js in its pane
+          // same. That is part of the whole probability search frame work"): spirit/element/probabilitySearch.js in its pane
           // face over items.search, its toggles the element's filters in the row above the box, each row a row element
           // (deskMountList). The error line above it.
           '<div id="desk-top" class="fill"><div id="desk-list-error"></div><div id="desk-list" class="fill"></div></div></div>' +
@@ -1779,7 +1779,7 @@ spirit.shell.activateApp({
     // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the team
     // box held to fieldRules' line rule as it is typed, by fieldInput, which the page loads itself.
     deskParts.then(function () {
-      var F = window.spirit && window.spirit.elements && window.spirit.elements.fieldInput;
+      var F = window.spirit && window.spirit.element && window.spirit.element.fieldInput;
       var say = container.querySelector('#desk-team-say');
       if (F && say) F.attach(say, 'line');
     });

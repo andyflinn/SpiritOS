@@ -31,7 +31,7 @@ const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G33.8 (stream): ';
 const APP_SERVER = path.join(__dirname, '..', 'run', 'spirit', 'appServer.js');
-const SPIRIT_DATA = path.join(__dirname, '..', 'run', 'shell', 'js', 'spiritData.js');
+const SPIRIT_DATA = path.join(__dirname, '..', 'run', 'spirit', 'element', 'spiritData.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }

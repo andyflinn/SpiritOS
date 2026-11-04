@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.27 (Andy, on G41.27: "faceForm:\n\n[❓] [Relay▾][Face-name-input][Ask-button]"; the box: "a line saying what a
+// press did (a refusal, a result) is the mounter's, below the bubble, not in it."): the face form mounted in boxes, the
+// rowForms it makes recorded, and what the browser makes of them, measured. Opened by ./faceForm.js at
+// /DEBUG/spirit/element/test/faceForm-laid.html.
+window.laid = function () {
+  var made = [];
+  return spirit.require('spirit/element/rowForm.js').catch(function () { return null; }).then(function () {
+    var R = (spirit.element || {}).rowForm;
+    if (R && typeof R.create === 'function') {
+      var real = R.create;
+      R.create = function (c, o) { var f = real.call(R, c, o); made.push({ opts: o || {}, f: f }); return f; };
+    }
+    return spirit.require('spirit/element/faceForm.js');
+  }).catch(function () { return null; }).then(function () {
+    var F = (spirit.element || {}).faceForm;
+    var out = { made: !!F && typeof F.mount === 'function' };
+    if (!out.made) return JSON.stringify(out);
+    // The form offers the relays this node is seated on (goal/G40.11): Beta and Gamma; Alpha, with no seat, is not.
+    var RELAYS = [{ url: 'wss://a.example', label: 'Alpha' }, { url: 'wss://b.example', label: 'Beta', claimed: true, face: { name: 'andy' } }, { url: 'wss://c.example', label: 'Gamma', owned: true }];
+    function box() { var b = document.createElement('div'); b.style.cssText = 'width:600px;margin:10px'; document.body.appendChild(b); return b; }
+    function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+    function seen(b) {
+      var live = made.filter(function (m) { return b.contains(m.f.root); });
+      var m = live[live.length - 1];
+      var s = { forms: live.length };
+      if (!m) return s;
+      var f = m.f;
+      var first = f.root.children[0];
+      s.icon = first && /\bshell-icon\b/.test(first.className) ? first.textContent : '';
+      s.button = f.button.textContent.trim();
+      s.span = Array.prototype.slice.call(f.span.querySelectorAll('select,input,button,textarea')).map(function (k) {
+        return { tag: k.tagName, type: k.type || '', disabled: !!k.disabled, options: k.tagName === 'SELECT' ? Array.prototype.map.call(k.options, function (o) { return o.value; }) : null };
+      });
+      s.bubbleWords = f.root.textContent.replace(/\s+/g, ' ').trim();
+      var leaves = Array.prototype.slice.call(b.querySelectorAll('*')).filter(function (el) { return !el.children.length; });
+      var title = leaves.filter(function (el) { return /^A face name on one relay$/.test(el.textContent.trim()); })[0] || null;
+      s.title = title ? title.textContent.trim() : '';
+      s.titleAbove = !!title && !f.root.contains(title) && (title.compareDocumentPosition(f.root) & 4) !== 0;
+      var holds = leaves.filter(function (el) { return /This node holds|No face name on this relay/.test(el.textContent); })[0] || null;
+      s.holds = holds ? holds.textContent.trim() : '';
+      s.holdsBelow = !!holds && !f.root.contains(holds) && (f.root.compareDocumentPosition(holds) & 4) !== 0;
+      s.others = Array.prototype.slice.call(b.querySelectorAll('button')).filter(function (x) { return x !== f.button && /^Ask$/.test(x.textContent.trim()); }).length;
+      s.f = m;
+      return s;
+    }
+    var b1 = box();
+    F.mount(b1, { relays: RELAYS });
+    return wait(200).then(function () {
+      var s1 = seen(b1);
+      out.pane = Object.assign({}, s1, { f: undefined });
+      // A press with no face name: the line saying why stands below the bubble.
+      if (s1.f) { var nm = s1.f.f.span.querySelector('input'); if (nm) nm.value = ''; s1.f.f.button.click(); }
+      return wait(300);
+    }).then(function () {
+      var s2 = seen(b1);
+      var leaves = Array.prototype.slice.call(b1.querySelectorAll('*')).filter(function (el) { return !el.children.length; });
+      var line = leaves.filter(function (el) { return /a face name is needed/.test(el.textContent); })[0] || null;
+      out.said = line ? line.textContent : '';
+      out.saidBelow = !!line && !!s2.f && !s2.f.f.root.contains(line) && (s2.f.f.root.compareDocumentPosition(line) & 4) !== 0;
+      var b2 = box();
+      F.mount(b2, { relays: RELAYS, fixed: 'wss://c.example' });
+      return wait(200).then(function () {
+        out.fixed = Object.assign({}, seen(b2), { f: undefined });
+        // No relay with a seat: the form draws nothing (Andy: "doesn't show up if the user has zero verified emails anywhere").
+        var b3 = box();
+        F.mount(b3, { relays: [RELAYS[0]] });
+        return wait(200).then(function () { out.none = { forms: seen(b3).forms, text: b3.textContent.trim(), kids: b3.children.length }; return JSON.stringify(out); });
+      });
+    });
+  });
+};
+</script>
+</body>
+</html>

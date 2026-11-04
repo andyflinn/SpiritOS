@@ -6,7 +6,7 @@
 //   THE STREAM: the watcher's updates each carry the stat, size and modified, for every create and change; a delete
 //   carries none. The first load is the same commands. The shell holds every path, its kind and its stat.
 //   FILES ON THE SHARED LIST: the file selector this suite drove was deleted by goal/G30.20; the files list element
-//   (shell/js/files/listElement.js) took its place, asserted by listElements.js.
+//   (spirit/element/files/listElement.js) took its place, asserted by listElements.js.
 //   THE DROPDOWN: its field stands inline like any input control; only the pane pops up under it.
 //   THE NODE'S fs.search: stays, on the node's own tree; words ranked by the probability modules, best first; the
 //   patterns (* and ?) go.
@@ -158,8 +158,8 @@ const TREE = [
   test.subHeading('6. Files, the text editor and Desk on the shell\'s tree; pathSelector gone');
   const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
   const at = function (s) { return index.indexOf(s); };
-  if (!fs.existsSync(path.join(RUN, 'shell', 'js', 'pathSelector.js')) && at('pathSelector') === -1 && !/createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js')))) test.check('pathSelector is deleted: its file, its script tag, createPathSelector');
-  else test.fail(OWED + 'pathSelector remains: file ' + fs.existsSync(path.join(RUN, 'shell', 'js', 'pathSelector.js')) + ', in index.html ' + (at('pathSelector') !== -1) + ', in shell.js ' + /createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js'))));
+  if (!fs.existsSync(path.join(RUN, 'spirit', 'element', 'pathSelector.js')) && at('pathSelector') === -1 && !/createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js')))) test.check('pathSelector is deleted: its file, its script tag, createPathSelector');
+  else test.fail(OWED + 'pathSelector remains: file ' + fs.existsSync(path.join(RUN, 'spirit', 'element', 'pathSelector.js')) + ', in index.html ' + (at('pathSelector') !== -1) + ', in shell.js ' + /createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js'))));
   if (!/contact-selector-face-dropdown\s+\.contact-selector-pane\s*\{[^}]*position:\s*absolute/.test(index)) test.check('index.html no longer floats the contact selector\'s whole pane');
   else test.fail(OWED + 'index.html still floats .contact-selector-face-dropdown .contact-selector-pane');
   const desk = code(path.join(RUN, 'shell', 'desk', 'desk.js'));

@@ -1,5 +1,5 @@
 // spirit/run/spirit/app/appSelector/rowElement.js
-// ONE APP, AS A ROW ELEMENT (goal/G43.2), as shell/js/bundleSelector/rowElement.js is one bundle. rowElement.js does the
+// ONE APP, AS A ROW ELEMENT (goal/G43.2), as spirit/element/bundleSelector/rowElement.js is one bundle. rowElement.js does the
 // shared work; this file says what an app is. Its contract and its test: ./test/rowElement.md and ./test/rowElement.js.
 //
 //   appElement.create(row) -> a rowElement of kind app; row { key, label, icon }
@@ -9,7 +9,7 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  ['shell/js/rowElement.js', 'shell/js/icon.js'].forEach(function (p) { window.spirit.require(p); });
+  ['spirit/element/rowElement.js', 'spirit/element/icon.js'].forEach(function (p) { window.spirit.require(p); });
   var appReady = Promise.resolve(window.spirit.cacheManager('app')).then(function () { return window.spirit.appData; });
 
   var apps = null;
@@ -28,22 +28,22 @@
     return function () { gone = true; if (off) off(); off = null; };
   }
   function index() {
-    apps = apps || E.rowElement.index(dispatch);
+    apps = apps || window.spirit.element.rowElement.index(dispatch);
     return apps;
   }
 
   function esc(s) { return window.spirit.escapeHtml(s); }
   // THE ICON IS THE ICON ELEMENT (goal/G41.23), handed on as its markup, since a cell is painted as text.
   function iconHtml(glyph) {
-    if (!E.icon) return esc(glyph);
+    if (!window.spirit.element.icon) return esc(glyph);
     var hold = document.createElement('span');
-    E.icon.create(hold, { glyph: glyph });
+    window.spirit.element.icon.create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
 
   function create(row) {
     var r = row || {};
-    return E.rowElement.create({
+    return window.spirit.element.rowElement.create({
       kind: 'app',
       key: String(r.key || ''),
       index: index(),

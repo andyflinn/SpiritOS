@@ -5,16 +5,16 @@ Intrinsic, so it shows on every face, the loopback face's and a relay face's ali
 else can i give someone access when i travel?"). Its test is `./grants.js`.
 
 Since goal/G41.16 it is a wrapper (Andy: *"the shell app shell/grans/grants/ must be a wrapper for a new shell element:
-shell/js/grantsPanel.js"*): its Grants tab is the grants panel, which knows no table; this app configures it (*"the
+spirit/element/grantsPanel.js"*): its Grants tab is the grants panel, which knows no table; this app configures it (*"the
 callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel element"*). What the
-panel draws and does is the panel's (`shell/js/test/grantsPanel.md`).
+panel draws and does is the panel's (`spirit/element/test/grantsPanel.md`).
 
 ## Requirements
 
 - It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
 - Nothing of the old shell: no `shellCreateListSearch`, no `api.ui.elements`, no `apiBranchSelector`.
-- It loads what it uses itself (rule/26): `shell/js/grantsPanel.js`, `shell/js/tabContainer.js` and
-  `shell/js/bundleEditor.js`. It draws nothing itself: no markup, no list, no selector of its own (by either shape,
+- It loads what it uses itself (rule/26): `spirit/element/grantsPanel.js`, `spirit/element/tabContainer.js` and
+  `spirit/element/bundleEditor.js`. It draws nothing itself: no markup, no list, no selector of its own (by either shape,
   `createContactSelector` or `contactSelector.create`), no data script.
 - Two tabs, one `tabContainer`: `grants`, the grants panel in its own box with the app's api; `bundles`, the bundle
   editor with the app's api.

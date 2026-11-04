@@ -5,8 +5,8 @@
 // writes it and builds it (one agent). The box, in short:
 //   - rowElements carry the listeners and painters a subject needs for real-time updates, wherever they are used: a
 //     list row and a details panel show the same element, so nothing has to keep the two in sync. The family:
-//     fileElement and contactElement now (shell/js/rows/), jobElement and goalElement later.
-//   - shell/js/rowElement.js does the shared work once: paints each field into its cell, registers the one listener,
+//     fileElement and contactElement now (spirit/element/rows/), jobElement and goalElement later.
+//   - spirit/element/rowElement.js does the shared work once: paints each field into its cell, registers the one listener,
 //     drops it on destroy, runs expandInfo and keeps its answer. rowElement.create(parts) builds an element from the parts
 //     fileElement or contactElement hands in.
 //   - The stream dispatch lives per kind, in the element's own file: one stream subscription for all rows of a kind and
@@ -15,14 +15,14 @@
 //     editor asks and never paints; the confirmed change on the stream repaints.
 //   - A rowElement carries its actions (add, block, remove, open). expandInfo fetches what is too large for a row.
 // NAMED HERE where the box names none:
-//   - window.spirit.elements.rowElement.create(parts): parts { kind, key, row, index, fields: [{ name, rule, paint(row),
+//   - window.spirit.element.rowElement.create(parts): parts { kind, key, row, index, fields: [{ name, rule, paint(row),
 //     edit }], actions: [{ name, label, run(el, ctx) }], expand(el) } -> el { kind, key, row, cells() [{ name, html }],
 //     mount(hosts by field name), apply(changes), act(name, ctx), expandInfo(), destroy() }.
-//   - window.spirit.elements.rowElement.index(subscribe) -> { add(key, el), remove(key, el), forKey(key) }: subscribe(index)
+//   - window.spirit.element.rowElement.index(subscribe) -> { add(key, el), remove(key, el), forKey(key) }: subscribe(index)
 //     is called once, on the first add.
-//   - window.spirit.elements.fileElement.create(row): row { path, kind, size, modified }; key path; fields icon, name,
+//   - window.spirit.element.fileElement.create(row): row { path, kind, size, modified }; key path; fields icon, name,
 //     size, changed; fed by fs-watcher job-updated commands for its path. Actions open and remove.
-//   - window.spirit.elements.contactElement.create(row): row { key, name, owned, blocked, held }; fields presence, status,
+//   - window.spirit.element.contactElement.create(row): row { key, name, owned, blocked, held }; fields presence, status,
 //     label; fed by the relay-presence job and contact renames. Actions open, block, unblock, remove.
 // The elements are browser scripts; this runs them in a sandbox with a stand-in window and spirit.core, and checks what
 // they paint and ask. rule/11: through testSupport only.
@@ -52,11 +52,11 @@ const spirit = { core: {
 window.spirit = spirit;
 const ctx = vm.createContext({ window: window, spirit: spirit, console: console, Promise: Promise, document: { addEventListener: function () {} } });
 const loaded = {};
-['spirit/fieldRules.js', 'shell/js/rowElement.js', 'shell/js/files/rowElement.js', 'shell/js/contacts/rowElement.js'].forEach(function (rel) {
+['spirit/fieldRules.js', 'spirit/element/rowElement.js', 'spirit/element/files/rowElement.js', 'spirit/element/contacts/rowElement.js'].forEach(function (rel) {
   try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
   catch (e) { loaded[rel] = e.message; }
 });
-const E = window.spirit.elements;
+const E = window.spirit.element;
 function host() { return { innerHTML: '', paints: 0, set html(v) { this.innerHTML = v; this.paints += 1; } }; }
 // A host whose innerHTML setter counts paints.
 function counted() {

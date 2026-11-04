@@ -16,7 +16,7 @@ Desk's call and stream, `ctx.callDialog(app, params)` the shell's dialog. `ctx.c
   list (`#fallout-list`), and the Items pane. No goal chat since goal/G41.22, box v25 (below).
 - **Two inner tabs**, Reds and Items, Reds selected at first (`aria-selected`); Items says it holds nothing yet and is
   hidden. A press on a tab shows its pane and hides the other; the click is wired once per container.
-- **The Reds list is the probability search** (goal/G40.12), loaded on demand from `/shell/js/probabilitySearch.js`
+- **The Reds list is the probability search** (goal/G40.12), loaded on demand from `/spirit/element/probabilitySearch.js`
   when not on the page, made once in `#fallout-list` and refreshed: server `deskVerify`, verb `search`, through the
   ctx's own call and stream.
   - `args(text, filters)`: `{over: 'tests', current: 'yes', slim: 'yes'}`, the outcome filter along, a suite's file
@@ -97,7 +97,7 @@ the goal chat at the bottom.") goes. The Desk mounts a plugin's chat only in the
 - **Each ✅ or ❌ through the icon element** (Andy, goal/G41.21: *"this element will replace icons painting all shell
   elements and apps."*; then *"fix the fucking code."*): the list draws each test by a row element (`element(row)`, as
   Contacts and Icons do), and the Result cell holds the icon element alone, its class the one an icon made on the page
-  carries. Fallout loads `shell/js/rowElement.js` and `shell/js/icon.js` itself. Deskverify's rows and the Desk's call
+  carries. Fallout loads `spirit/element/rowElement.js` and `spirit/element/icon.js` itself. Deskverify's rows and the Desk's call
   are untouched, the column's field is `outcome`.
 - The real-list page runs a shell file Fallout asks for once, as it runs the list's libraries, and its markup is made
   from what each element holds now, as a page's is.

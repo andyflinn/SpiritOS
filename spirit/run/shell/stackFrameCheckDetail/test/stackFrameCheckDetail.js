@@ -111,7 +111,7 @@ function nothingHandRolled(flag) {
   ok(!/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE) && !/armedButton/.test(CODE), 'no armed class and no armedButton helper of its own', 'its code still has an armed class or an armedButton helper');
 }
 function loadsArming(w) {
-  ok(w.required.indexOf('shell/js/armingButton.js') !== -1, 'it loads shell/js/armingButton.js itself, through spirit.require', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it loads spirit/element/armingButton.js itself, through spirit.require', 'required: ' + short(w.required));
 }
 
 test.startTest('stackFrameCheckDetail.js: one stack-frame door, its Remove on the arming button');
@@ -138,7 +138,7 @@ function asked(w, verb) { return w.calls.filter(function (c) { return c.name ===
 
   test.subHeading('Remove is an arming button');
   const a = armingFor(w, 'sfcd-remove', 'Remove');
-  ok(!!a, 'Remove is made or attached through window.spirit.elements.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
+  ok(!!a, 'Remove is made or attached through window.spirit.element.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
   if (!a) return;
   const label = a.opts.label != null ? a.opts.label : a.button.textContent;
   ok(label === 'Remove' && a.opts.armedLabel === 'Remove: sure?', 'it says Remove, and armed Remove: sure?', 'label ' + short(label) + ', armedLabel ' + short(a.opts.armedLabel));

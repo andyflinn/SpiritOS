@@ -158,7 +158,7 @@ function world(withList, totals) {
   const win = { document: document, setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Math: Math };
   win.window = win;
   const list = listStub(totals || { red: 3, green: 7 });
-  win.spirit = { elements: withList ? { probabilitySearch: { create: list.create } } : {} };
+  win.spirit = { get element() { return this.elements; }, elements: withList ? { probabilitySearch: { create: list.create } } : {} };
   // The one loader (spirit.require): what it was asked, each held until the test lets it answer.
   win.required = [];
   win.spirit.require = function (p) { return new Promise(function (resolve) { win.required.push({ path: String(p), resolve: resolve }); }); };
@@ -188,14 +188,14 @@ function realWorld(rows) {
   // The one loader as a page has it: a shell file Fallout asks for (its row element, the icon element) runs on the page
   // once, as the list's libraries do (goal/G41.23; cw: "The page should load what Fallout asks for").
   const ran = {};
-  win.spirit = { elements: {}, require: function (p) {
+  win.spirit = { get element() { return this.elements; }, elements: {}, require: function (p) {
     const rel = String(p || '').replace(/^\/+/, '');
-    if (/^(shell|process\/js)\/.+\.js$/.test(rel) && !ran[rel] && fs.existsSync(path.join(RUN, rel))) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
+    if (/^(shell|spirit\/element|process\/js)\/.+\.js$/.test(rel) && !ran[rel] && fs.existsSync(path.join(RUN, rel))) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
     return Promise.resolve(true);
   } };
   vm.createContext(win);
   verifierCache(win);
-  ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/probabilitySearch.js', null].forEach(function (rel) {
+  ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/probabilitySearch.js', null].forEach(function (rel) {
     const f = rel ? path.join(RUN, rel) : FILE;
     vm.runInContext(fs.readFileSync(f, 'utf8'), win, { filename: f });
   });
@@ -319,13 +319,13 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   const wl = world(false);
   wl.win.spirit.deskPlugins.fallout.open(wl.container, wl.ctx); await settle();
   const scripts = wl.document.body.children.filter(function (c) { return c.tagName === 'SCRIPT'; });
-  const asked = wl.win.required.filter(function (r) { return r.path === 'shell/js/probabilitySearch.js'; });
-  ok(asked.length === 1 && scripts.length === 0, 'it asks spirit.require for shell/js/probabilitySearch.js, and puts no script tag on the page',
+  const asked = wl.win.required.filter(function (r) { return r.path === 'spirit/element/probabilitySearch.js'; });
+  ok(asked.length === 1 && scripts.length === 0, 'it asks spirit.require for spirit/element/probabilitySearch.js, and puts no script tag on the page',
     'required ' + short(wl.win.required.map(function (r) { return r.path; })) + ', scripts ' + scripts.length);
   ok(wl.list.made.length === 0, 'and no list is made before it loads', 'made: ' + wl.list.made.length);
   const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/family/clientCacheManager.js'; });
   ok(askedV.length === 1, 'it asks spirit.require for the verifier\'s cache manager, its own family\'s (goal/G41.28)', 'required ' + short(wl.win.required.map(function (r) { return r.path; })));
-  wl.win.spirit.elements.probabilitySearch = { create: wl.list.create };
+  wl.win.spirit.element.probabilitySearch = { create: wl.list.create };
   if (asked[0]) asked[0].resolve({}); if (askedV[0]) askedV[0].resolve({}); await settle();
   ok(wl.list.made.length === 1 && wl.list.made[0].host === wl.$('fallout-list') && wl.$('fallout-summary').textContent === '❌ 3 red of 10 tests now (30%).',
     'once it loads, the list is made and the summary counted', 'made ' + wl.list.made.length + ', summary ' + wl.$('fallout-summary').textContent);
@@ -376,11 +376,11 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(cellsOf('/shell/desk/plugins/fallout').indexOf('❌') !== -1 && cellsOf('relayGates.js').indexOf('❌') !== -1, 'a red test\'s row has a cell reading ❌', 'red rows: ' + short([cellsOf('/shell/desk/plugins/fallout'), cellsOf('relayGates.js')]));
   // THROUGH THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements
   // and apps."): the cell reading ✅ or ❌ holds the icon element alone, its class the one an icon made here carries.
-  const probe = wr.win.spirit.elements.icon && typeof wr.win.spirit.elements.icon.create === 'function' ? wr.win.spirit.elements.icon.create(wr.document.createElement('span'), { glyph: 'A' }) : null;
+  const probe = wr.win.spirit.element.icon && typeof wr.win.spirit.element.icon.create === 'function' ? wr.win.spirit.element.icon.create(wr.document.createElement('span'), { glyph: 'A' }) : null;
   const mark = probe ? String(probe.className || '').trim().split(/\s+/)[0] : '';
   const inIcon = wr.shown().every(function (r) { const i = r.cells.findIndex(function (c) { return c === '✅' || c === '❌'; }); return i !== -1 && !!mark && r.alone[i].split(/\s+/).indexOf(mark) !== -1; });
   ok(!!mark && wr.shown().length > 0 && inIcon, 'each ✅ or ❌ cell holds the icon element (class ' + mark + ')',
-    mark ? 'cells not drawn through the icon element: ' + short(wr.shown().map(function (r) { return r.alone; })) : 'the page has no icon element: Fallout did not load shell/js/icon.js');
+    mark ? 'cells not drawn through the icon element: ' + short(wr.shown().map(function (r) { return r.alone; })) : 'the page has no icon element: Fallout did not load spirit/element/icon.js');
   ok(all.length && all.every(function (r) { return r.cells.every(function (c) { return c !== 'green' && c !== 'red'; }); }), 'no cell says green or red in words', 'rows: ' + short(all));
 
   test.subHeading('goal/G41.22: a filter shows product tests only, the tests under spirit/run; spirit/test is hidden');

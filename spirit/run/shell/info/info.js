@@ -45,8 +45,8 @@ var infoApi = null;
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.6; Andy: every app bootstraps its own components, "lazy-load, is
 // a tree...."): its two field elements, the two forms and the rowForm of its key rotation, through spirit.require.
-var infoParts = Promise.all(['shell/js/changeMyLabel.js', 'shell/js/changeMyDescription.js', 'shell/js/joinForm.js',
-  'shell/js/faceForm.js', 'shell/js/rowForm.js'].map(function (p) { return spirit.require(p); }));
+var infoParts = Promise.all(['spirit/element/changeMyLabel.js', 'spirit/element/changeMyDescription.js', 'spirit/element/joinForm.js',
+  'spirit/element/faceForm.js', 'spirit/element/rowForm.js'].map(function (p) { return spirit.require(p); }));
 
 // ── EVERY RELAY THIS NODE HOLDS A SEAT ON ────────────────────────────
 //
@@ -65,7 +65,7 @@ function infoSeats() {
 // relay.face is {url, name}; the relay pairs the name with the verified email it holds for this node (box v30).
 function infoDrawForms(container) {
   return infoParts.then(function () {
-    var el = (window.spirit && window.spirit.elements) || {};
+    var el = (window.spirit && window.spirit.element) || {};
     var escape = infoApi && infoApi.escapeHtml;
     if (el.joinForm) el.joinForm.mount(container.querySelector('[data-info="email"]'), { relays: infoSeats(), pick: 'seated', escape: escape });
     if (el.faceForm) el.faceForm.mount(container.querySelector('[data-info="face"]'), { relays: infoSeats(), reload: function () { return infoLoadRelays(container); }, escape: escape });
@@ -117,7 +117,7 @@ spirit.shell.activateApp({
       '<div data-info="rotate"></div>';
 
     infoParts.then(function () {
-      var rotate = window.spirit.elements.rowForm.create(container.querySelector('[data-info="rotate"]'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
+      var rotate = window.spirit.element.rowForm.create(container.querySelector('[data-info="rotate"]'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
       rotate.button.addEventListener('click', function () {
         infoApi.callDialog('shell/rotateKey', {});
       });
@@ -130,7 +130,7 @@ spirit.shell.activateApp({
     // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.nodeData, and each of the
     // two fields draws itself from it and keeps what its save stored there.
     var fields = Promise.all([infoParts, spirit.cacheManager('node')]).then(function () {
-      var el = window.spirit.elements;
+      var el = window.spirit.element;
       var N = window.spirit.nodeData;
       el.changeMyLabel.create(container.querySelector('[data-info="name"]'), { api: api });
       el.changeMyDescription.create(container.querySelector('[data-info="description"]'), { api: api });

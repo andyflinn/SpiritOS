@@ -6,7 +6,7 @@
 // don't fill the second tab yet". So two inner tabs: Reds, and Items, empty for now, saying so.
 //
 // FALLOUT TALKS TO DESKVERIFY ONLY (goal/G29.5; Andy, 2026-10-17: "correct. fallout talks to deskVerify only."). Its
-// Reds list is the probability search (shell/js/probabilitySearch.js; goal/G40.12: "all searches in desk are of the new
+// Reds list is the probability search (spirit/element/probabilitySearch.js; goal/G40.12: "all searches in desk are of the new
 // probability variety"), over deskVerify's own search verb and stream; the pane keeps no cache, no wire slot, no timer and no ranking of its
 // own: the list does all of that the same way everywhere. Desk hands the pane its own call (ctx.verb) and stream
 // (ctx.onPublished); they are the list's api. THE SUMMARY GOES THROUGH THE LIST'S ONE SLOT (list.ask): Andy, on
@@ -18,7 +18,7 @@
 (function () {
   var win = typeof window !== 'undefined' ? window : {};
   var held = (win.spirit = win.spirit || {}).deskPlugins = win.spirit.deskPlugins || {};
-  var LIST_SCRIPT = '/shell/js/probabilitySearch.js';
+  var LIST_SCRIPT = '/spirit/element/probabilitySearch.js';
   var ctx = null;
   var inner = 'reds';
   var list = null;
@@ -67,12 +67,12 @@
   // icons are the reporter's own: ✅ green, ❌ red"; goal/G41.21: "this element will replace icons painting all shell
   // elements and apps."). The list takes a row element for each row (element(row), as Contacts and Icons do), and it
   // paints the cells: the Result cell is the outcome deskVerify answers, drawn as its icon through the icon element
-  // (shell/js/icon.js). The row stays deskVerify's own, and the call the Desk's own.
+  // (spirit/element/icon.js). The row stays deskVerify's own, and the call the Desk's own.
   var ICONS = { green: '✅', red: '❌' };
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   // Made by icon.create and handed on as its markup, since a cell is painted as text; as text while icon.js has not loaded.
   function iconHtml(glyph) {
-    var I = win.spirit.elements && win.spirit.elements.icon;
+    var I = win.spirit.element && win.spirit.element.icon;
     if (!I || typeof I.create !== 'function') return esc(glyph);
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
@@ -80,10 +80,10 @@
   }
   // WHAT ITS ROWS ARE MADE OF, IT LOADS ITSELF as it loads (rule/26): the shared row element and the icon element, asked
   // here so they are on the page before deskVerify's first answer; a row asked for before then is drawn as plain text.
-  if (typeof win.spirit.require === 'function') ['shell/js/rowElement.js', 'shell/js/icon.js'].forEach(function (p) { Promise.resolve(win.spirit.require(p)).then(null, function () {}); });
+  if (typeof win.spirit.require === 'function') ['spirit/element/rowElement.js', 'spirit/element/icon.js'].forEach(function (p) { Promise.resolve(win.spirit.require(p)).then(null, function () {}); });
   var rowIndex = null;
   function testRow(row) {
-    var R = win.spirit.elements && win.spirit.elements.rowElement;
+    var R = win.spirit.element && win.spirit.element.rowElement;
     if (!R || typeof R.create !== 'function') return null;
     var r = row || {};
     rowIndex = rowIndex || R.index(function () {});
@@ -134,7 +134,7 @@
   }
 
   function mountList() {
-    var P = win.spirit.elements && win.spirit.elements.probabilitySearch;
+    var P = win.spirit.element && win.spirit.element.probabilitySearch;
     var el = document.getElementById('fallout-list');
     var V = win.spirit.verifyData;
     if (!P || typeof P.create !== 'function' || !el || !ctx || !V) return;
@@ -161,7 +161,7 @@
   // THE PROBABILITY SEARCH, LOADED ON DEMAND through the one loader (goal/G41.11; rule/21): spirit.require, once per page;
   // and the verifier's cache manager, its own family's (goal/G41.28).
   function withList(done) {
-    if (win.spirit.elements && win.spirit.elements.probabilitySearch && win.spirit.verifyData) { done(); return; }
+    if (win.spirit.element && win.spirit.element.probabilitySearch && win.spirit.verifyData) { done(); return; }
     Promise.all([String(LIST_SCRIPT), 'process/js/deskVerify/family/clientCacheManager.js'].map(function (p) {
       return Promise.resolve(win.spirit.require(String(p).replace(/^\/+/, '')));
     })).then(function () { done(); }, function () { /* no list */ });

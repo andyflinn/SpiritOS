@@ -23,7 +23,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
 - It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own
-  components."): with no workBench on the page, it loads `shell/js/workBench.js` through `spirit.require`, then builds.
+  components."): with no workBench on the page, it loads `spirit/element/workBench.js` through `spirit.require`, then builds.
 - The workBench has one tool on its right strip, and on its left the app's own tool, then one per table of `agent.db`,
   in the order provider, model, persona, job, grant, each with an icon of its own (goal/G41.4, box v22: "every one of
   these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI
@@ -48,7 +48,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
   and does not show it otherwise. It follows both as they change.
 
 - **The grant tool mounts the grants panel** (goal/G41.16; Andy: *"could we then show the grants element in the left
-  pane, connected to the grants-by-job table?"*): it requires `shell/js/grantsPanel.js` into a fill box, and the agent's
+  pane, connected to the grants-by-job table?"*): it requires `spirit/element/grantsPanel.js` into a fill box, and the agent's
   own grant table element no more, and creates the panel once with the app's api, configured by this app:
   - `ids`: the agent's jobs, `loopback://api/agent/job`, with their key and label fields;
   - `grants`: branch `agent.grant`, keyed `job_id`, labelled `job`; `search(text)` asks the agent's grant verb
@@ -60,7 +60,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 ## Requirements (goal/G41.21, box v17)
 
 - **The right strip gets its first real tool: the bundle editor.** Two right tools: the agent server's DEBUG box
-  (`server`) and the bundle editor, whose mount requires `shell/js/bundleEditor.js` and makes it in the box it is
+  (`server`) and the bundle editor, whose mount requires `spirit/element/bundleEditor.js` and makes it in the box it is
   handed, with the app's api.
 - **The Grants tool goes**: the left strip holds the app's tool and one per table, provider, model, persona and job; the
   app names no grants panel and no grant table.

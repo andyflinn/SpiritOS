@@ -139,7 +139,7 @@ async function main() {
   // (shell.js openBinderIfUnbound); the email field sits there and asks relay.join with the email.
   const nd = code('shell/natterDetails/natterDetails.js');
   // The form is the shell element joinForm since goal/G30.1 (box v33): natterDetails draws it, the element asks.
-  const jf = code('shell/js/joinForm.js');
+  const jf = code('spirit/element/joinForm.js');
   if (/spirit\.elements\.joinForm/.test(nd) && /type="email"/.test(jf) && /\.relay\.join\(\{[^}]*email/.test(jf)) test.check('the first-run claim screen (natterDetails) draws the join form, whose email field asks relay.join with it');
   else test.fail(OWED + 'the first-run screen has no email field asking relay.join');
   const relayServer = code('spirit/relayServer.js');

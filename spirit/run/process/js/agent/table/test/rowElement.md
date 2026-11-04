@@ -48,7 +48,7 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   `{ op: 'search', text, <field>: <this row's id> }`, and it asks the table the same narrowed search. While that search
   answers no row, the field is hidden (*"The Model field is hidden while the model table holds no model of this
   provider"*); with one, it is shown.
-- **A bundle field: kind `bundle`.** The editor loads `shell/js/bundleSelector.js` itself and makes a bundle selector in
+- **A bundle field: kind `bundle`.** The editor loads `spirit/element/bundleSelector.js` itself and makes a bundle selector in
   the field, in dropdown mode; the bundle picked is saved as the field (`{ op: 'set', id, bundle }`). It lists every
   bundle, whoever owns it (goal/G41.25, Andy: *"so the bundle pickers in the persona and job details will always list ALL
   bundles"*): the selector is mounted for no app server.
@@ -62,7 +62,7 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   itself, a secret only when typed so an untyped key is kept. A refused save says the server's reason. The editor still
   draws only what the stream brings (rule/19).
 - **Delete is an are-you-sure button** (Andy: *"and why are the 'Delete' buttons in the detail panels not
-  armingButtons?"*): the editor loads `shell/js/armingButton.js` itself and attaches its Delete button; a first press
+  armingButtons?"*): the editor loads `spirit/element/armingButton.js` itself and attaches its Delete button; a first press
   deletes nothing, the second calls `{ op: delete, id }` once.
 - **A bundle gone is said** (*"A bundle deleted while a job names it leaves that job with no grant, and the job says so
   in its detail panel, never silently."*): a row naming a bundle asks the node for it (`auth.bundle { op: get, id }`);

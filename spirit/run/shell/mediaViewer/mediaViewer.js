@@ -1,11 +1,11 @@
 // Media Viewer (goal/G30.20): a mountable wrapper over two shell elements, the files list as a dropdown
-// (shell/js/files/listElement.js) showing only what the mediaViewer plays (images, audio, video), and the mediaViewer
-// element (shell/js/mediaViewer.js) under it. A pick drops the file shown before and plays the new one.
+// (spirit/element/files/listElement.js) showing only what the mediaViewer plays (images, audio, video), and the mediaViewer
+// element (spirit/element/mediaViewer.js) under it. A pick drops the file shown before and plays the new one.
 
 var mediaViewerShown = null;
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var mediaViewerParts = Promise.all(['shell/js/files/listElement.js', 'shell/js/mediaViewer.js', 'shell/js/fileViewer.js']
+var mediaViewerParts = Promise.all(['spirit/element/files/listElement.js', 'spirit/element/mediaViewer.js', 'spirit/element/fileViewer.js']
   .map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
@@ -13,7 +13,7 @@ spirit.shell.activateApp({
     container.innerHTML = '<div class="stat-tile wide"><div data-media="pick"></div><div data-media="viewer" style="margin-top:1em"></div></div>';
     var viewer = container.querySelector('[data-media="viewer"]');
     return mediaViewerParts.then(function () {
-      var E = window.spirit.elements;
+      var E = window.spirit.element;
       E.fileList.create(container.querySelector('[data-media="pick"]'), {
         api: api,
         face: 'dropdown',

@@ -70,7 +70,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     await sleep(WAIT_MS);
     ok(inc.status === 201 && fs.existsSync(mark('included')), 'an included process/js/<name>/<name>.js starts', 'an included process: answered ' + inc.status + ' ' + short(inc.text) + ', ran ' + fs.existsSync(mark('included')));
     const helper = plant('process/js/desk/zzHelper.js', mark('helper'));
-    // THE FILE VIEWER'S START JOB SENDS PLAIN node (shell/js/textViewer.js:55): it names this node's own executable.
+    // THE FILE VIEWER'S START JOB SENDS PLAIN node (spirit/element/textViewer.js:55): it names this node's own executable.
     const plainNode = await call({ command: 'node', args: ['process/js/zzIncluded/zzIncluded.js'] });
     ok(plainNode.status >= 200 && plainNode.status < 300, 'plain node with an included process starts, as Start Job sends it', 'node with an included process answered ' + plainNode.status + ' ' + String(plainNode.text || '').slice(0, 160));
     const help = await call({ command: process.execPath, args: [helper] });

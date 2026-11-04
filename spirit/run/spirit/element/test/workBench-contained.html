@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.22 (Andy: "workBench if, contained, needs to be restreicted by its container, be that the shell app itself or
+// another container."): one workBench at a time in a container of its own, every pane given 5000 pixels of content, and
+// what the browser makes of it, measured. Opened by ./workBench.js at /DEBUG/spirit/element/test/workBench-contained.html.
+window.contained = function (name) {
+  return spirit.require('spirit/element/workBench.js').then(function () {
+    document.body.querySelectorAll('.case').forEach(function (n) { n.remove(); });
+    var c;
+    var outer = null;
+    if (name === 'app') {
+      // The home page's app area, as index.html draws it.
+      outer = document.createElement('div');
+      outer.id = 'app-container';
+      outer.className = 'case';
+      outer.innerHTML = '<div id="app-header"><div id="app-title">a title</div></div><div id="app-content"></div>';
+      document.body.appendChild(outer);
+      c = document.getElementById('app-content');
+    } else {
+      c = document.createElement('div');
+      c.className = 'case';
+      c.style.cssText = 'height:300px;width:900px' + (name === 'flex' ? ';display:flex;flex-direction:column' : '');
+      document.body.appendChild(c);
+    }
+    function tall(box) { var d = document.createElement('div'); d.style.cssText = 'height:5000px;flex:none'; d.textContent = 'tall'; box.appendChild(d); }
+    var b = spirit.element.workBench.create(c, {
+      left: [{ name: 'a', icon: 'A', title: 'a', mount: tall }],
+      right: [{ name: 'b', icon: 'B', title: 'b', mount: tall }],
+    });
+    tall(b.center);
+    var root = c.firstElementChild;
+    var room = name === 'app' ? { top: 0, bottom: window.innerHeight, height: window.innerHeight } : c.getBoundingClientRect();
+    var rr = root.getBoundingClientRect();
+    function pane(el) { var r = el.getBoundingClientRect(); return { scrolls: el.scrollHeight > el.clientHeight + 1, bottom: Math.round(r.bottom) }; }
+    var panes = {};
+    root.querySelectorAll('[id$="pane-left"],[id$="pane-right"]').forEach(function (p) { panes[p.id.replace(/^wb\d+-/, '')] = pane(p); });
+    panes.centre = pane(b.center);
+    var page = document.scrollingElement;
+    return JSON.stringify({
+      room: Math.round(room.bottom), bench: { bottom: Math.round(rr.bottom), height: Math.round(rr.height) }, roomHeight: Math.round(room.height),
+      spilt: c.scrollHeight > c.clientHeight + 1,
+      pageScrolls: page.scrollHeight > page.clientHeight + 1 || !!(outer && outer.scrollHeight > outer.clientHeight + 1),
+      panes: panes,
+      // goal/G41.23 (Andy: "the buttons are still not square", "the rounded shape, it that's the button, id DEFINITELY
+      // NOT square"): each strip button's width and height, in this container.
+      buttons: Array.prototype.map.call(root.querySelectorAll('[id$="strip-left"] button, [id$="strip-right"] button'), function (x) { var r = x.getBoundingClientRect(); return [Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10]; }),
+    });
+  });
+};
+// goal/G41.23 (Andy, goal/G41.21: "the workBench will provide space for a possible vertical scrollbar, in the icons,
+// strip.", and "this element will replace icons painting all shell elements and apps."): a workBench of n left tools in
+// a box of 300 pixels, its strip measured. An icon made here gives the class the icon element carries.
+window.strip = function (n) {
+  return Promise.all([spirit.require('spirit/element/workBench.js'), Promise.resolve().then(function () { return spirit.require('spirit/element/icon.js'); }).catch(function () { return null; })]).then(function () {
+    document.body.querySelectorAll('.case').forEach(function (x) { x.remove(); });
+    var mark = '';
+    if (spirit.element.icon && typeof spirit.element.icon.create === 'function') {
+      var probe = document.createElement('div');
+      var made = spirit.element.icon.create(probe, { glyph: 'A' });
+      mark = String(made && made.className || '').trim().split(/\s+/)[0] || '';
+    }
+    var c = document.createElement('div');
+    c.className = 'case';
+    c.style.cssText = 'height:300px;width:900px';
+    document.body.appendChild(c);
+    var tools = [];
+    for (var i = 0; i < n; i++) tools.push({ name: 't' + i, icon: ['🔑', '📦', '🧠', '📁', '⚙️', '🗂️'][i % 6], title: 't' + i, mount: function () {} });
+    spirit.element.workBench.create(c, { left: tools });
+    var s = c.querySelector('[id$="strip-left"]');
+    var sr = s.getBoundingClientRect();
+    var inner = sr.left + s.clientLeft + s.clientWidth;
+    var buttons = Array.prototype.slice.call(s.querySelectorAll('button[data-tool]'));
+    var painted = buttons.filter(function (b, k) { var e = mark ? b.querySelector('.' + mark) : null; return !!e && e.textContent === tools[k].icon; }).length;
+    // What is drawn of a button, its glyph too: the box of its contents, which a button squeezed narrower overflows.
+    var outside = buttons.filter(function (b) { var r = document.createRange(); r.selectNodeContents(b); return Math.max(b.getBoundingClientRect().right, r.getBoundingClientRect().right) > inner + 0.5; }).length;
+    return JSON.stringify({ mark: mark, width: Math.round(sr.width), bar: s.offsetWidth - s.clientWidth - s.clientLeft * 2, scrollsDown: s.scrollHeight > s.clientHeight + 1,
+      sideways: s.scrollWidth > s.clientWidth + 1, buttons: buttons.length, firstLeft: buttons.length ? Math.round(buttons[0].getBoundingClientRect().left - sr.left) : null, firstWidth: buttons.length ? Math.round(buttons[0].getBoundingClientRect().width) : null, painted: painted, outside: outside });
+  });
+};
+</script>
+</body>
+</html>

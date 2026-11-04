@@ -156,7 +156,7 @@ function run(handler, body) {
     'a relay asked api by peerPost': /peerPost\(\s*'relay'\s*,[^)]*'api'\s*\)/.test(app),
     'the contact selector': /createContactSelector\(/.test(app),
     // the family dropdown is the app-server selector the api-branch selector builds and feeds options.tree
-    'the app-server selector': /createAppServerSelector\(/.test(app) || (/createApiBranchSelector\(\{[^}]*tree:/.test(app) && /createAppServerSelector\(\{[^}]*tree: options\.tree/.test(code('shell/js/apiBranchSelector.js'))),
+    'the app-server selector': /createAppServerSelector\(/.test(app) || (/createApiBranchSelector\(\{[^}]*tree:/.test(app) && /createAppServerSelector\(\{[^}]*tree: options\.tree/.test(code('spirit/element/apiBranchSelector.js'))),
     'the api-branch selector': /createApiBranchSelector\(/.test(app),
     'a CodeMirror text view for the reply': /textView|createTextView|CodeMirror/.test(app),
     'no verbs available': /no verbs available/.test(app),
@@ -165,7 +165,7 @@ function run(handler, body) {
   const missing = Object.keys(uses).filter(function (k) { return !uses[k]; });
   if (app && !missing.length) test.check('the app: self through the apiDoor, peers and relays by peerPost, the existing selectors, a CodeMirror reply, no jobs');
   else test.fail(OWED + 'the app lacks ' + short(missing));
-  if (/options\.tree/.test(code('shell/js/appServerSelector.js'))) test.check('appServerSelector takes options.tree, so it lists the chosen party\'s tree');
+  if (/options\.tree/.test(code('spirit/element/appServerSelector.js'))) test.check('appServerSelector takes options.tree, so it lists the chosen party\'s tree');
   else test.fail(OWED + 'appServerSelector reads only this node\'s tree');
   if (/probabilityBucket|createProbabilityBucket/.test(code('shell/shared/js/listSearch.js'))) test.check('the dropdowns cache search results in the list search\'s probability bucket');
   else test.fail(OWED + 'the list search keeps no probability bucket');

@@ -29,7 +29,7 @@
   function D() { return window.spirit.data; }
   var STRETCH = 'width:100%;box-sizing:border-box';
   // EVERY ROW'S EDITOR OPENS ON ITS ICON (Andy: "the detail panel's first input will be the icon i choose for that row"),
-  // chosen with the shell's icon selector (shell/js/iconSelector.js).
+  // chosen with the shell's icon selector (spirit/element/iconSelector.js).
   var ICON_FIELD = { field: 'icon', label: 'Icon', kind: 'icon' };
 
   function createRow(container, options) {
@@ -119,7 +119,7 @@
       // THE CODE FIELD TAKES THE FREE HEIGHT (Andy: "the codeMirror pane in details must not be allowed to move the
       // pane-dividers of workBench. it's width must be constrained by the middle workbench pane, it is allowed to take up
       // free vertical space"): a fill box whose CodeMirror takes the height left and scrolls inside it (shell.css
-      // .text-view.fill). Its width is the centre's, which the workBench holds (shell/js/workBench.js).
+      // .text-view.fill). Its width is the centre's, which the workBench holds (spirit/element/workBench.js).
       container.innerHTML = '<div class="fill">' + head() +
         simple.map(function (f) {
           var line = fieldLine('<label for="' + pre + f.field + '">' + esc(f.label) + '</label>', cell(f, row[f.field]));
@@ -130,22 +130,22 @@
           : '<button type="button" id="' + pre + 'delete">Delete</button>') + ' <span id="' + pre + 'note">' + esc(note) + '</span></div></div>';
       fields.forEach(function (f) {
         var el = input(f);
-        if ((f.kind === 'name' || f.kind === 'description') && E.fieldInput) E.fieldInput.attach(el, f.kind);
+        if ((f.kind === 'name' || f.kind === 'description') && window.spirit.element.fieldInput) window.spirit.element.fieldInput.attach(el, f.kind);
         // A FIELD CHANGED SAVES THE ROW (Andy: "and why the fuck does a row not automatically save when i make a change to a
         // field?"; on Q2: "yes, send the whole row for update. it costs nothing, and we don't need more fucking verbs than
         // necessary."): an input's change, a pick, a bundle picked; there is no Save.
         if (el && f.kind !== 'pick' && f.kind !== 'icon' && f.kind !== 'bundle' && f.kind !== 'code') el.addEventListener('change', save);
         // The row's icon, or its table's while it has none.
         if (f.kind === 'icon') {
-          needs(['shell/js/iconSelector.js']).then(function () {
+          needs(['spirit/element/iconSelector.js']).then(function () {
             if (gone || !el.isConnected) return;
-            icons[f.field] = E.iconSelector.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
+            icons[f.field] = window.spirit.element.iconSelector.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
             if (icons[f.field] && typeof icons[f.field].addEventListener === 'function') icons[f.field].addEventListener('change', save);
           });
         }
         if (f.kind === 'code') {
-          needs(['shell/js/codeMirror.js']).then(function () {
-            return E.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
+          needs(['spirit/element/codeMirror.js']).then(function () {
+            return window.spirit.element.codeMirror.create(el, { mode: 'edit', text: String(row[f.field] || ''), path: f.field + '.md' });
           }).then(function (cm) { editors[f.field] = cm; });
         }
         // The field shows the row picked now, by its label from the other table's branch, until another is picked; only a
@@ -165,7 +165,7 @@
             }(f.pick, row[f.field]));
           }
           var current = other ? nameOf(Object.assign({ key: row[f.field] }, other), columnsOf(f.pick)) : '';
-          needs(['shell/js/probabilitySearch.js', 'shell/js/icon.js']).then(function () {
+          needs(['spirit/element/probabilitySearch.js', 'spirit/element/icon.js']).then(function () {
             if (gone) return;
             picks[f.field] = search(el, { api: o.api, table: f.pick }, Object.assign({
               face: 'dropdown', placeholder: current || 'Pick a ' + f.pick, pick: function () { save(); },
@@ -190,12 +190,12 @@
         // A BUNDLE FIELD (goal/G41.21; Andy, box v17: "sets it with a bundleSelector in dropdown mode"): the shell's bundle
         // selector, loaded here (rule/26); only a new pick is saved, as for a pick field.
         if (f.kind === 'bundle') {
-          needs(['shell/js/bundleSelector.js']).then(function () {
-            if (gone || !E.bundleSelector) return;
+          needs(['spirit/element/bundleSelector.js']).then(function () {
+            if (gone || !window.spirit.element.bundleSelector) return;
             // The bundle by its label, as the node has it (Andy: "why would the bundle picker show \"bundle 2\" for it's
             // selection instead of the fucking label?"); its number only once the node has no such bundle.
             var says = !row[f.field] ? 'Pick a bundle' : bundleLabel[row[f.field]] !== undefined ? bundleLabel[row[f.field]] : bundleHeld[row[f.field]] === false ? 'bundle ' + row[f.field] : '…';
-            bundles[f.field] = E.bundleSelector.create(el, { api: o.api, placeholder: says });
+            bundles[f.field] = window.spirit.element.bundleSelector.create(el, { api: o.api, placeholder: says });
             if (bundles[f.field] && typeof bundles[f.field].addEventListener === 'function') bundles[f.field].addEventListener('change', save);
           });
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
@@ -219,9 +219,9 @@
       // shell's arming button, loaded here (rule/26); the first press arms, the second deletes.
       if (adding) { container.querySelector('#' + pre + 'addnew').addEventListener('click', addNew); return; }
       var del = container.querySelector('#' + pre + 'delete');
-      needs(['shell/js/armingButton.js']).then(function () {
-        if (gone || !del.isConnected || !E.armingButton) return;
-        E.armingButton.attach(del, { label: 'Delete', run: remove, api: o.api });
+      needs(['spirit/element/armingButton.js']).then(function () {
+        if (gone || !del.isConnected || !window.spirit.element.armingButton) return;
+        window.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove, api: o.api });
       });
     }
     // THE WHOLE ROW, as the verb takes it (Andy, Q2: "yes, send the whole row for update"): every field as the editor shows

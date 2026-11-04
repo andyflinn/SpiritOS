@@ -27,7 +27,7 @@ Andy, on G41.19:
 
 `/DEBUG/<path>/<module>/<generatorScript>.<ext>`: the folders between `spirit/run/` and the module, exactly as they are;
 the module's name without extension; the generator script's name without `.js`, the extension being the reply's type
-(`.html` a page, `.json` data). For example `/DEBUG/shell/js/workBench/headLessBrowser.html`.
+(`.html` a page, `.json` data). For example `/DEBUG/spirit/element/workBench/headLessBrowser.html`.
 
 ### DEBUG off
 
@@ -82,10 +82,10 @@ Box v20-v23: *"DEBUG.js will, if the generator implied by the URL does NOT exist
 implied by the URL, Leaving \"DEBUG/\" out"*, so an element's own test can open several pages of its own,
 `./test/<element>-<case>.html`.
 
-- `/DEBUG/shell/js/test/workBench.md` answers 200 with that file as it is.
-- Only a file inside a `test/` folder: `/DEBUG/shell/js/workBench.js` (the element's own script) and
+- `/DEBUG/spirit/element/test/workBench.md` answers 200 with that file as it is.
+- Only a file inside a `test/` folder: `/DEBUG/spirit/element/workBench.js` (the element's own script) and
   `/DEBUG/spirit/serveCommon.js` are refused.
-- Refused: no such generator and no such file (`/DEBUG/shell/js/test/noSuchPage.html`); a test file asked with a
+- Refused: no such generator and no such file (`/DEBUG/spirit/element/test/noSuchPage.html`); a test file asked with a
   forwarded-from header.
 
 ### DEBUG on: what it refuses
@@ -111,7 +111,7 @@ address as no route.
 
 Every section starts with the address it asks, `/DEBUG` left off, or the file it reads (Andy: *"please start the test
 descriptions always with the exact URL to the server, without \"/DEBUG\" service"*; box v13: *"EVERY MOTHERFUCKING
-TEST NAME in the product three STARTS WITH THE MUTHERCUCKING PATH"*): `/shell/js/workBench/headLessBrowser.html, the
+TEST NAME in the product three STARTS WITH THE MUTHERCUCKING PATH"*): `/spirit/element/workBench/headLessBrowser.html, the
 node, DEBUG on`.
 
 ## How it is tried

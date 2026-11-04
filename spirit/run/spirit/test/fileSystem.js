@@ -44,7 +44,7 @@ const CLOSED_WRITE = [
   ['relay-state/identity.json', 'the node\'s private key'],
   ['relay-state/new.json', 'anything under relay-state'],
   ['spirit/server.js', 'a core file'],
-  ['shell/js/icon.js', 'a core file under shell/js'],
+  ['spirit/element/icon.js', 'a core file under spirit/element'],
   ['shell/info/info.js.sidecar.json', 'a sidecar\'s own path'],
 ];
 CLOSED_WRITE.forEach(function (c) {
@@ -66,7 +66,7 @@ test.subHeading('Windows spellings of a closed path are refused, for reading and
   ['relay-state /identity.json', 'a folder name ending in a space'],
   ['spirit./server.js', 'a core folder ending in a dot'],
   ['spirit/server.js.', 'a file name ending in a dot'],
-  ['shell/js/icon.js ', 'a file name ending in a space'],
+  ['spirit/element/icon.js ', 'a file name ending in a space'],
   ['spirit/server.js::$DATA', 'the file\'s data stream, ::$DATA'],
   ['relay-state/identity.json:secret', 'a named stream, a : in the name'],
 ].forEach(function (c) {
@@ -75,7 +75,7 @@ test.subHeading('Windows spellings of a closed path are refused, for reading and
 });
 
 test.subHeading('what is open stays open');
-[['index.html', 'fileServable'], ['shell/js/icon.js', 'fileServable'], ['preferences.json', 'fileWritable']].forEach(function (c) {
+[['index.html', 'fileServable'], ['spirit/element/icon.js', 'fileServable'], ['preferences.json', 'fileWritable']].forEach(function (c) {
   ok(ask(c[1], c[0]) === true, c[1] + ' keeps ' + c[0] + ' open', c[1] + ' closed ' + c[0] + ': the fix went too wide');
 });
 

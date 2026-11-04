@@ -5,7 +5,7 @@ table's `elementTable.js` and the row editor (`../rowElement.js`) build on it. I
 `./tableElement.js`.
 
 Andy, box v22: *"elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using
-the probablility-group of elements in shell/js/)"* and *"elementRow.js (a panel element, to maintain and edit one row of
+the probablility-group of elements in spirit/element/)"* and *"elementRow.js (a panel element, to maintain and edit one row of
 the table)"*.
 
 ## Requirements

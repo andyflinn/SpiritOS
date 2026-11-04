@@ -14,7 +14,7 @@
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically through the
 // fucking apirit.require functionality"): the family selector, the contacts list as its party, and the reply's codeMirror.
-var isParts = Promise.all(['shell/js/apiFamilySelector.js', 'shell/js/contacts/listElement.js', 'shell/js/codeMirror.js'].map(function (p) {
+var isParts = Promise.all(['spirit/element/apiFamilySelector.js', 'spirit/element/contacts/listElement.js', 'spirit/element/codeMirror.js'].map(function (p) {
   return spirit.require(p);
 }));
 var isApi = null;
@@ -146,10 +146,10 @@ function isMount(api) {
     var line = document.getElementById('is-line');
     var party = document.createElement('span');
     line.appendChild(party);
-    var branch = window.spirit.elements.apiFamilySelector.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
-    // THE PARTY: the contacts list as a dropdown (goal/G30.20, shell/js/contacts/listElement.js), the book and this
+    var branch = window.spirit.element.apiFamilySelector.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
+    // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/contacts/listElement.js), the book and this
     // node's relays; None is self.
-    window.spirit.elements.contactList.create(party, {
+    window.spirit.element.contactList.create(party, {
       api: api,
       face: 'dropdown',
       placeholder: 'self (this node)',
@@ -164,7 +164,7 @@ function isMount(api) {
       },
     });
     // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7: it replaced the text view), loaded with its parts.
-    Promise.resolve(window.spirit.elements.codeMirror.create(document.getElementById('is-reply'), { mode: 'read', text: '', path: 'reply.json' }))
+    Promise.resolve(window.spirit.element.codeMirror.create(document.getElementById('is-reply'), { mode: 'read', text: '', path: 'reply.json' }))
       .then(function (view) { isReply = view; }, function () { /* the reply stays unshown */ });
 
     // What a party answered decides what shows: no families, no dropdowns, and the input pane says why.

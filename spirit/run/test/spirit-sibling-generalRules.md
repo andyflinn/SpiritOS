@@ -18,10 +18,10 @@ Each file is its own test id. A rule a file breaks fails that file's test, not t
 
 **What is mounted is known by its path** (goal/G41.19, box v17; Andy: *"the test knows bloody fucking well if a scripts
 is an app (from the path pattern), why the fuck would would it need manifests for standard patterns?"*, *"the test knows
-fucking well, which are elements scripts in ./shell/js/"*):
+fucking well, which are elements scripts in ./spirit/element/"*):
 
 - an **app** is `shell/<app>/<app>.js`;
-- an **element** is any script under `shell/js/`, and an agent table's page: the tables' shared element
+- an **element** is any script under `spirit/element/`, and an agent table's page: the tables' shared element
   (`process/js/agent/table/tableElement.js`), its row editor (`rowElement.js`, goal/G41.28) and each table's list
   and editor (`<table>/elementTable.js`, `elementRow.js`). Their servers beside them are not pages (goal/G41.27; Andy, Q5: *"it covers them, too"*). Like
   every module, each is judged once it has its own test (`TEST_SYSTEM.md`, opting in): today `tableElement.js` alone;
@@ -114,7 +114,7 @@ box is its own check, named by the element's path and the box's id chain."*
   all shell elements and apps."*; box v5: *"new-face apps will be updated to use the new "icon" element."*; Q1: *"plus
   the intrinsic apps, plus the icons app. all apps that use icons."*): every glyph it draws that is a pictograph
   (Unicode `Extended_Pictographic`, as its icons are), is shown and **stands alone**, its element's whole text, lies
-  inside an element of the class the icon element (`shell/js/icon.js`) carries. A glyph among words is a character of
+  inside an element of the class the icon element (`spirit/element/icon.js`) carries. A glyph among words is a character of
   the text and is left as it is (Andy: *"isn't a glyph inside flowing text just like another inline character? ...
   glyphs are legal in labels and description true, and in that context they don't need special handling"*, then
   *"narrow the rules so."*). The class is read from an icon made after the mount, so nothing is preloaded. Judged as
@@ -124,7 +124,7 @@ box is its own check, named by the element's path and the box's id chain."*
   mounts: a bare mount draws no data, so most icons are seen only in the code). A shell script, no test and no vendor
   code, whose code (comments left out) holds a pictograph alone in a string or alone between two tags, or that paints
   icons it is handed (`FROM_DATA`, named by hand: the shell frame, Apps, Icons, Contacts, the Icons list and row, the
-  icon selector, the workBench), names `shell/js/icon.js`, or hands them to the one-row form, `shell/js/rowForm.js`,
+  icon selector, the workBench), names `spirit/element/icon.js`, or hands them to the one-row form, `spirit/element/rowForm.js`,
   which paints them through the icon element and loads it itself (goal/G41.27). Each is its own check, named by its path. Three files whose lone glyph strings are drawn only
   before words are left out by hand (`TEXT_ONLY`, each with its reason): jobsDetails' status glyph, contactDetails'
   blocked and held marks, and the contacts list's filter icons, drawn before their words.
@@ -205,7 +205,7 @@ box is its own check, named by the element's path and the box's id chain."*
 **What is seen, not the box** (goal/G41.27; Andy: *"change the test for codeMirror."*): a box is judged by what the
 boxes above it that clip (overflow other than `visible`) leave of it on screen. CodeMirror's scroller sits 50px past its
 frame on purpose, to hide the native scrollbars (its own css: *"Things will break if this is overridden"*), and its frame
-cuts the extra off, so nothing spills: `shell/js/codeMirror` and `shell/textEditor/textEditor` are no longer deferred.
+cuts the extra off, so nothing spills: `spirit/element/codeMirror` and `shell/textEditor/textEditor` are no longer deferred.
 **CodeMirror's own scrollbars are not containers** (goal/G41.28): `CodeMirror-vscrollbar` and `CodeMirror-hscrollbar`
 hold only the library's own sizer, as long as the text, and nothing is ever mounted in one; they are not asked. The
 editor's scroller still is.

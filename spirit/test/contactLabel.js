@@ -2,7 +2,7 @@
 
 // spirit/test/contactLabel.js
 // goal/G4.13: the contact label, a shell element showing a contact's name by key, renamed where it appears and
-// redrawn wherever a rename happens. RED on today's tree: there is no shell/js/contactLabel.js, and contact.label
+// redrawn wherever a rename happens. RED on today's tree: there is no spirit/element/contactLabel.js, and contact.label
 // announces nothing on the node's event stream.
 //
 //   Andy, 2026-10-03, his go-all on goal/G4; the rulings stand verbatim in the box of goal/G4.13: "the element has two
@@ -20,7 +20,7 @@
 //   2. THE PAGE: the kernel's one stream hands contact.rename to the subscriber's handlers.onContactRename(data)
 //      (NAMED, as onRelayEvent); the shell, on it, dispatches on document a CustomEvent 'contact.rename' with that data
 //      as detail (NAMED), so any element can listen without a stream of its own.
-//   3. THE ELEMENT: shell/js/contactLabel.js (NAMED, beside contactSelector.js), adding
+//   3. THE ELEMENT: spirit/element/contactLabel.js (NAMED, beside contactSelector.js), adding
 //      window.spirit.elements.createContactLabel({key, caption, editable}) (NAMED), handed to apps as
 //      api.ui.elements.createContactLabel beside the other elements; it answers a root element.
 //      - It shows the caption it is given, or, given none, asks contact.get {key} and shows person.caption.
@@ -46,7 +46,7 @@ const packet = require('../run/spirit/client/packet');
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.13: ';
 const OWED10 = 'owed by goal/G4.10: ';
-const ELEMENT = path.join(RUN, 'shell', 'js', 'contactLabel.js');
+const ELEMENT = path.join(RUN, 'spirit', 'element', 'contactLabel.js');
 const KERNEL = path.join(RUN, 'spirit', 'kernel.js');
 const SHELL = path.join(RUN, 'spirit', 'client', 'shell.js');
 const PEER = 'MCowBQYDK2VwAyEApeerpeerpeerpeerpeerpeerpeerpeerpeerppeerpe=';
@@ -249,14 +249,14 @@ function mountElement() {
 }
 
 async function theElement() {
-  test.subHeading('3. shell/js/contactLabel.js: two modes, and both listen');
-  if (!fs.existsSync(ELEMENT)) { test.fail(OWED + 'there is no shell/js/contactLabel.js'); return; }
+  test.subHeading('3. spirit/element/contactLabel.js: two modes, and both listen');
+  if (!fs.existsSync(ELEMENT)) { test.fail(OWED + 'there is no spirit/element/contactLabel.js'); return; }
   let m = null;
-  try { m = mountElement(); } catch (e) { test.fail(OWED + 'shell/js/contactLabel.js did not load: ' + e.message); return; }
+  try { m = mountElement(); } catch (e) { test.fail(OWED + 'spirit/element/contactLabel.js did not load: ' + e.message); return; }
   if (typeof m.make !== 'function') { test.fail(OWED + 'window.spirit.elements.createContactLabel is missing'); return; }
   const indexHtml = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
-  if (/<script src="\/shell\/js\/contactLabel\.js"><\/script>/.test(indexHtml)) test.check('index.html loads /shell/js/contactLabel.js with the other elements');
-  else test.fail(OWED + 'index.html does not load /shell/js/contactLabel.js');
+  if (/<script src="\/spirit\/element\/contactLabel\.js"><\/script>/.test(indexHtml)) test.check('index.html loads /spirit/element/contactLabel.js with the other elements');
+  else test.fail(OWED + 'index.html does not load /spirit/element/contactLabel.js');
   const shellSrc = fs.readFileSync(SHELL, 'utf8').replace(/\n/g, ' ');
   if (/elements:\s*\{[^}]*createContactLabel:\s*shellElements\.createContactLabel/.test(shellSrc)) test.check('the shell hands it to apps as api.ui.elements.createContactLabel');
   else test.fail(OWED + 'api.ui.elements has no createContactLabel');

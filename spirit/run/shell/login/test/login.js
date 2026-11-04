@@ -75,7 +75,7 @@ function world() {
   };
   win.window = win;
   win.spirit = {
-    elements: E,
+    get element() { return this.elements; }, elements: E,
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     shell: { activateLogin: function (d) { w.def = d; }, activateApp: function () {} },
   };
@@ -104,7 +104,7 @@ test.startTest('login.js: the face\'s Login app');
   if (!w.def) return;
 
   test.subHeading('it loads armingButton itself (goal/G41.3)');
-  ok(w.required.indexOf('shell/js/armingButton.js') !== -1, 'it requires shell/js/armingButton.js through spirit.require', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
 
   test.subHeading('Log out is an armingButton, on a face');
   const pane = w.node('<div>');

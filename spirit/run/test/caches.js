@@ -179,7 +179,7 @@ test.subHeading('7. nothing keeps node rows but spirit.data, and no file names a
 // item. no exceptions." A client that takes the node's stream itself keeps rows outside spirit.data: only spiritData.js
 // takes it, for every client. boot.js is the face's own transport, before spirit (Andy: "boot.js MUST be an exception").
 // The node's own side (spirit/, kernel, events) serves the stream and is no client.
-const clients = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && /^(shell|process\/js)\//.test(f) && f !== 'shell/boot.js'; });
+const clients = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && /^(shell|spirit\/element|process\/js)\//.test(f) && f !== 'shell/boot.js'; });
 const takers = clients.filter(function (f) { return /\bevents\.subscribe\(|\bev\.subscribe\(/.test(code(path.join(RUN, f))); });
 ok(!takers.length, 'no client takes the node\'s stream itself: spiritData.js takes it for all', 'clients taking the stream themselves, their rows outside spirit.data: ' + short(takers));
 // "any notion that there is an alternative approach must disappear from all documentation and all comments in the
@@ -187,7 +187,7 @@ ok(!takers.length, 'no client takes the node\'s stream itself: spiritData.js tak
 // branches the desk kept before the tree was by node, and a page or client that runs "uncached", without them. The desk's record (currentGoal.json) and Andy's vault are no
 // documentation of the repo's code; this file and its spec name them to find them.
 const REPO = path.join(RUN, '..', '..');
-const OLD = [/\buncached\b/i, /shell\/js\/spiritData\.js/, /shell\/shared\/js\/spiritData\.js/, /deskData\.js/, /['"]deskItems?\//, /['"]deskState\//, /\bD\.data\.(files|contacts|desk)\b/];
+const OLD = [/\buncached\b/i, /spirit\/element\/spiritData\.js/, /shell\/shared\/js\/spiritData\.js/, /deskData\.js/, /['"]deskItems?\//, /['"]deskState\//, /\bD\.data\.(files|contacts|desk)\b/];
 const every = require('child_process').execFileSync('git', ['ls-files'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) {
   return f && /\.(js|md|html|json)$/.test(f) && !/currentGoal\.json$|^spirit\/run\/brains\//.test(f) && f !== 'spirit/run/test/caches.js' && f !== 'spirit/run/test/caches.md';
 });

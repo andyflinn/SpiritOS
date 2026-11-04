@@ -131,11 +131,11 @@ function makeDom() {
 // The real files the app and its elements load, run on the page when they are required; anything else is answered and
 // not run.
 const REAL = [
-  'spirit/spiritData.js', 'shell/js/workBench.js', 'process/js/agent/table/tableElement.js', 'process/js/agent/table/rowElement.js',
+  'spirit/spiritData.js', 'spirit/element/workBench.js', 'process/js/agent/table/tableElement.js', 'process/js/agent/table/rowElement.js',
   'process/js/agent/table/provider/elementTable.js', 'process/js/agent/table/provider/elementRow.js',
-  'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'shell/js/busyButton.js',
+  'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'spirit/element/busyButton.js',
   // The one-row form and the icon it draws with (goal/G41.27): the model table's Ask form is one.
-  'shell/js/rowForm.js', 'shell/js/icon.js',
+  'spirit/element/rowForm.js', 'spirit/element/icon.js',
   'process/js/agent/table/persona/elementTable.js', 'process/js/agent/table/persona/elementRow.js',
   'process/js/agent/table/job/elementTable.js', 'process/js/agent/table/job/elementRow.js',
 ];
@@ -159,7 +159,7 @@ function world() {
     fs: { loadFile: function () { return Promise.reject(new Error('none')); }, saveFile: function () { return Promise.resolve(); } },
     tree: function () { return Promise.resolve({}); },
     shell: { activateApp: function (d) { win.def = d; } },
-    elements: {
+    get element() { return this.elements; }, elements: {
       // The recorder: the box each list is made in, and whether it is a dropdown.
       probabilitySearch: { create: function (host, o) { panes.push({ host: host, o: o || {} }); return { refresh: function () {}, redraw: function () {}, destroy: function () {}, value: '' }; } },
       contactSelector: selector, bundleSelector: selector, apiFamilySelector: selector,

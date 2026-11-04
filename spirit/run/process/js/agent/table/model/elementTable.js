@@ -17,8 +17,8 @@
       var gone = false;
       // WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search, the busyButton and the rowForm.
       Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('process/js/agent/table/model/elementRow.js'),
-        spirit.require('shell/js/probabilitySearch.js'), spirit.require('shell/js/busyButton.js'),
-        spirit.require('shell/js/rowForm.js')]).then(function () {
+        spirit.require('spirit/element/probabilitySearch.js'), spirit.require('spirit/element/busyButton.js'),
+        spirit.require('spirit/element/rowForm.js')]).then(function () {
         if (gone) return;
         E = window.spirit.elements;
         container.innerHTML = '<div class="fill">' +
@@ -28,11 +28,11 @@
         // A ROWFORM (goal/G41.27; Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]"): ❓, the
         // providerSelector:dropdown in its span, the same the job detail has (../tableElement.js, agentDetail.search), Ask
         // its button; "from" gone.
-        var form = E.rowForm.create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask' });
+        var form = window.spirit.element.rowForm.create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask' });
         drop = E.agentDetail.search(form.span, { api: api, table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
         var said = container.querySelector('#' + pre + 'said');
         // ASK WAITS AS A BUSY BUTTON (goal/G41.23): its request the provider table's ask, which updates the model table.
-        E.busyButton.attach(form.button, { run: function () {
+        window.spirit.element.busyButton.attach(form.button, { run: function () {
           var id = drop && drop.value ? String(drop.value) : '';
           if (!id) return null;
           said.textContent = '';

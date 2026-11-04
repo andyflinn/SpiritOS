@@ -23,8 +23,8 @@ var rdChatMore = false;
 var rdNote = '';
 
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): Activate and Delete are armingButtons
-// (shell/js/armingButton.js), which the dialog loads itself; each arms, says so, and hands the shell its disarm.
-var rdParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('shell/js/armingButton.js') : null);
+// (spirit/element/armingButton.js), which the dialog loads itself; each arms, says so, and hands the shell its disarm.
+var rdParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('spirit/element/armingButton.js') : null);
 // And the desk family's cache manager, which keeps the rule and its chat (spirit.deskData).
 var rdData = spirit.cacheManager('desk');
 
@@ -66,7 +66,7 @@ function rdFrame() {
     '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="rd-chat"></div></div>';
   rdHeader();
   rdParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.armingButton;
     if (!A) return;
     [['rd-activate', 'Activate', 'active'], ['rd-delete', 'Delete', 'deleted']].forEach(function (b) {
       var button = document.getElementById(b[0]);
@@ -78,7 +78,7 @@ function rdFrame() {
 // under the titlebar, and takes its id. As deskDetails' ddHeader.
 function rdHeader() {
   var old = document.getElementById('rd-bars');
-  var els = rdApi && rdApi.ui && rdApi.ui.elements;
+  var els = rdApi && rdApi.ui && rdApi.ui.element;
   if (!old || !old.parentNode || !els || !els.appHeader) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
   var head = els.appHeader.create(old.parentNode);

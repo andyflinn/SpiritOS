@@ -1,7 +1,7 @@
 // spirit/run/process/js/agent/table/tableElement.js
 // WHAT THE TABLES' ELEMENTS SHARE (goal/G41.4), in the page: each table's elementTable.js and elementRow.js name their
 // columns and fields and build on these two. Andy, box v22: "elementTable.js (an face-shell compatible interface to the
-// table for browsers, with search-list using the probablility-group of elements in shell/js/)" and "elementRow.js (a
+// table for browsers, with search-list using the probablility-group of elements in spirit/element/)" and "elementRow.js (a
 // panel element, to maintain and edit one row of the table)".
 //
 //   spirit.elements.agentTable.create(container, { api, table, detail, row, add }) -> { refresh, destroy }
@@ -23,7 +23,7 @@
 //                                       row says only whether it is set ("<field>Set"), the secret never reaches a page
 //       bool                            a checkbox
 //       list                            a list typed as words split by commas
-//       code                            a CodeMirror editor (shell/js/codeMirror.js)
+//       code                            a CodeMirror editor (spirit/element/codeMirror.js)
 //       pick                            a row of another table, from a dropdown search of it (pick: that table)
 //
 // EVERY ELEMENT LISTENS BY ITSELF, THROUGH THE ONE FRAMEWORK (Andy, on G41.4: "make sure that all element LISTEN to what
@@ -72,9 +72,9 @@
   //   table's name, a list pane's the table's name alone.
   // ITS ICON IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
   // apps."): made by icon.create and written as the markup it made, since the row is text; the glyph as text only while
-  // shell/js/icon.js has not loaded (every pane that draws a title row loads it first, below).
+  // spirit/element/icon.js has not loaded (every pane that draws a title row loads it first, below).
   function iconHtml(glyph, size) {
-    var I = window.spirit.elements && window.spirit.elements.icon;
+    var I = window.spirit.element && window.spirit.element.icon;
     if (!I || typeof I.create !== 'function') return '<span style="font-size:' + size + 'em">' + esc(glyph) + '</span>';
     var hold = document.createElement('span');
     I.create(hold, { glyph: String(glyph || ''), size: size });
@@ -116,7 +116,7 @@
   }
   function search(host, o, more) {
     var columns = o.columns || columnsOf(o.table);
-    var s = E.probabilitySearch.create(host, Object.assign({
+    var s = window.spirit.element.probabilitySearch.create(host, Object.assign({
       api: o.api, server: 'agent', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },
       columns: columns,
@@ -164,7 +164,7 @@
       // it opens the detail in Add mode, an editor with no row of its own; the row is made there, whole.
       open('', true);
     });
-    needs(['shell/js/probabilitySearch.js', 'shell/js/icon.js']).then(function () {
+    needs(['spirit/element/probabilitySearch.js', 'spirit/element/icon.js']).then(function () {
       if (gone) return;
       // The title's icon, drawn before icon.js was there, through the icon element now (goal/G41.23).
       var title = container.querySelector('.agent-title');

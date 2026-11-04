@@ -113,12 +113,12 @@ apps.forEach(function (name) {
 // is an armingButton, which asks the shell for the disarm and marks data-armed itself, so no app arms by hand.
 // deskAgentRemote is the one exception, left as it is (Andy, 2026-10-27: "add the deskAgentRemote exception to the
 // box."), and it still has to meet every check below.
-const ELEMENT = path.join(RUN_DIR, 'shell', 'js', 'armingButton.js');
+const ELEMENT = path.join(RUN_DIR, 'spirit', 'element', 'armingButton.js');
 const element = fs.existsSync(ELEMENT) ? codeOf(ELEMENT) : '';
 if (/armUntilElsewhere/.test(element) && /data-armed/.test(element)) {
   test.check('the armingButton element asks the shell for the disarm and marks data-armed');
 } else {
-  test.fail('shell/js/armingButton.js is missing, or arms without the shell or without data-armed');
+  test.fail('spirit/element/armingButton.js is missing, or arms without the shell or without data-armed');
 }
 const byHand = arming.filter(function (name) { return name !== 'deskAgentRemote'; });
 if (byHand.length === 0) {

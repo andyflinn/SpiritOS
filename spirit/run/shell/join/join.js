@@ -26,11 +26,11 @@ var joinWaiting = false;  // handed something new while he was typing
 // components, "lazy-load, is a tree...."): through spirit.require, and the steps are drawn again once they are in.
 // Its step marks are the icon element (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell
 // elements and apps."), loaded here too.
-var joinParts = Promise.all(['shell/js/joinForm.js', 'shell/js/faceForm.js', 'shell/js/contacts/listElement.js', 'shell/js/icon.js'].map(function (p) { return spirit.require(p); }));
+var joinParts = Promise.all(['spirit/element/joinForm.js', 'spirit/element/faceForm.js', 'spirit/element/contacts/listElement.js', 'spirit/element/icon.js'].map(function (p) { return spirit.require(p); }));
 joinParts.then(function () { joinShown = ''; joinShow(); }, function () { /* a form missing leaves its step without one */ });
 function joinEl() {
   var w = window.spirit.elements || {};
-  return { joinForm: w && window.spirit.elements.joinForm, contactList: w && window.spirit.elements.contactList, faceForm: w && window.spirit.elements.faceForm };
+  return { joinForm: w && window.spirit.element.joinForm, contactList: w && window.spirit.element.contactList, faceForm: w && window.spirit.element.faceForm };
 }
 // ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
 var JOIN_DONE = '☑️';
@@ -39,7 +39,7 @@ var JOIN_OPEN = '⬜';
 // the icon element is made there (joinIcons), once the list is drawn and icon.js is in. A glyph among words stays text.
 function joinMark(glyph) { return '<span data-icon="' + glyph + '">' + glyph + '</span>'; }
 function joinIcons(host) {
-  var I = window.spirit.elements && window.spirit.elements.icon;
+  var I = window.spirit.element && window.spirit.element.icon;
   if (!host || !I || typeof I.create !== 'function') return;
   Array.prototype.forEach.call(host.querySelectorAll('[data-icon]'), function (p) {
     if (p.querySelector('.shell-icon')) return;

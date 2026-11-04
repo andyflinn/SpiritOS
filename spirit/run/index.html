@@ -109,36 +109,36 @@
     <script src="/shell/node_modules/codemirror/mode/xml/xml.js"></script>
     <script src="/shell/node_modules/codemirror/mode/htmlmixed/htmlmixed.js"></script>
     <script src="/shell/node_modules/codemirror/mode/markdown/markdown.js"></script>
-    <script src="/shell/js/iconSelector.js"></script>
-    <script src="/shell/js/appHeader/appHeader.js"></script>
-    <script src="/shell/js/contactLabel.js"></script>
-    <script src="/shell/js/joinForm.js"></script>
-    <script src="/shell/js/faceForm.js"></script>
-    <script src="/shell/js/joinSteps.js"></script>
-    <!-- The shared progress bar (goal/G29.14), handed to apps as api.ui.elements.progressBar. -->
-    <script src="/shell/js/progressBar.js"></script>
-    <script src="/shell/js/contactSelector.js"></script>
-    <script src="/shell/js/appServerSelector.js"></script>
-    <script src="/shell/js/apiFamilySelector.js"></script>
+    <script src="/spirit/element/iconSelector.js"></script>
+    <script src="/spirit/element/appHeader/appHeader.js"></script>
+    <script src="/spirit/element/contactLabel.js"></script>
+    <script src="/spirit/element/joinForm.js"></script>
+    <script src="/spirit/element/faceForm.js"></script>
+    <script src="/spirit/element/joinSteps.js"></script>
+    <!-- The shared progress bar (goal/G29.14), handed to apps as api.ui.element.progressBar. -->
+    <script src="/spirit/element/progressBar.js"></script>
+    <script src="/spirit/element/contactSelector.js"></script>
+    <script src="/spirit/element/appServerSelector.js"></script>
+    <script src="/spirit/element/apiFamilySelector.js"></script>
     <!-- The faceless layer (goal/G30.16): one data tree mirroring the node, before every element that reads it; the
          shared row base and the standard list-tool (goal/G30.17, G30.18). -->
     <script src="/spirit/spiritData.js"></script>
-    <script src="/shell/js/rowElement.js"></script>
-    <script src="/shell/js/probabilitySearch.js"></script>
+    <script src="/spirit/element/rowElement.js"></script>
+    <script src="/spirit/element/probabilitySearch.js"></script>
     <!-- The viewers as shell elements (goal/G30.16): the frame both share, then text and media. -->
-    <script src="/shell/js/fileViewer.js"></script>
-    <script src="/shell/js/textViewer.js"></script>
-    <script src="/shell/js/mediaViewer.js"></script>
+    <script src="/spirit/element/fileViewer.js"></script>
+    <script src="/spirit/element/textViewer.js"></script>
+    <script src="/spirit/element/mediaViewer.js"></script>
     <!-- One folder per object type (goal/G30.20): its row, which takes its type's stream (goal/G41.16), and its drop-in list. -->
-    <script src="/shell/js/files/rowElement.js"></script>
-    <script src="/shell/js/files/listElement.js"></script>
-    <script src="/shell/js/contacts/rowElement.js"></script>
-    <script src="/shell/js/contacts/listElement.js"></script>
+    <script src="/spirit/element/files/rowElement.js"></script>
+    <script src="/spirit/element/files/listElement.js"></script>
+    <script src="/spirit/element/contacts/rowElement.js"></script>
+    <script src="/spirit/element/contacts/listElement.js"></script>
     <!-- Icons (goal/G30.21): a row and a list, no translator: the set is one file. -->
-    <script src="/shell/js/icons/rowElement.js"></script>
-    <script src="/shell/js/icons/listElement.js"></script>
+    <script src="/spirit/element/icons/rowElement.js"></script>
+    <script src="/spirit/element/icons/listElement.js"></script>
     <!-- An input stops at its field rule's limit as it is typed (goal/G32.2). -->
-    <script src="/shell/js/fieldInput.js"></script>
+    <script src="/spirit/element/fieldInput.js"></script>
     <script src="/spirit/client/shell.js"></script>
     <script>
       (function () {
@@ -164,7 +164,7 @@
         // stay here, and Files opens them through api.launchApp.
 
         // ---- The two launchers: the viewer elements (goal/G30.16) ----
-        // The viewers are shell elements now (shell/js/fileViewer.js, textViewer.js, mediaViewer.js), so the face has
+        // The viewers are shell elements now (spirit/element/fileViewer.js, textViewer.js, mediaViewer.js), so the face has
         // them too; their inline bodies and the job form stood here. Only reachable via launchApp(id, { path }) from
         // Files, Open with or the Processes app — no desktop icon (hidden: true). A launcher, not a dialog: every one of
         // its launches replaces its own stack entry (assertOneHiddenApp, shell.js). mount runs once; loadFile shows each
@@ -182,7 +182,7 @@
           },
           loadFile: function (path, params) {
             setViewerTitle(path);
-            window.spirit.elements.textViewer.create(this._host, { path: path, words: params && params.words, line: params && params.line, launcherId: 'text-file-launcher' });
+            window.spirit.element.textViewer.create(this._host, { path: path, words: params && params.words, line: params && params.line, launcherId: 'text-file-launcher' });
           },
           render: function () {},
         });
@@ -199,7 +199,7 @@
           loadFile: function (path) {
             setViewerTitle(path);
             if (mediaShown) mediaShown.destroy();
-            mediaShown = window.spirit.elements.mediaViewer.create(this._host, { path: path, launcherId: 'media-launcher' });
+            mediaShown = window.spirit.element.mediaViewer.create(this._host, { path: path, launcherId: 'media-launcher' });
           },
           render: function () {},
         });

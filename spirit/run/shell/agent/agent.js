@@ -18,7 +18,7 @@
 //   a list is edited in the workBench's centre, the one detail pane of the app.
 //   NO GRANT TOOL (goal/G41.21, box v17: "agent.grant is removed altogether: its table, its server, and the Grants tool
 //   in the left strip. A job's grant is its bundle"). THE BUNDLE EDITOR IN THE RIGHT STRIP ("The right strip gets its
-//   first real tool: the bundle editor"): shell/js/bundleEditor.js, beside the agent server's DEBUG box.
+//   first real tool: the bundle editor"): spirit/element/bundleEditor.js, beside the agent server's DEBUG box.
 (function () {
   var CONFIG = 'relay-state/shell/agent/config.json';
   var AGENT = spirit.familyPath('agent');
@@ -34,7 +34,7 @@
 
   spirit.shell.activateApp({
     mount: function (container, api) {
-      var E = (api && api.ui && api.ui.elements) || (window.spirit && window.spirit.elements) || {};
+      var E = (api && api.ui && api.ui.element) || (window.spirit && window.spirit.element) || {};
       var showDebug = false;
       var debug = false;
       var serverBox = null;
@@ -50,9 +50,9 @@
       container.innerHTML = '<div id="agent-bench" class="fill"></div>';
       var benchBox = container.querySelector('#agent-bench');
       // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
-      // apps."), painted by the workBench's strip through shell/js/icon.js, loaded here with it.
-      var loaded = Promise.all([E.workBench ? null : spirit.require('shell/js/workBench.js'), spirit.require('shell/js/icon.js'), spirit.require('shell/js/tabContainer.js')]);
-      loaded.then(function () { E = (window.spirit && window.spirit.elements) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
+      // apps."), painted by the workBench's strip through spirit/element/icon.js, loaded here with it.
+      var loaded = Promise.all([E.workBench ? null : spirit.require('spirit/element/workBench.js'), spirit.require('spirit/element/icon.js'), spirit.require('spirit/element/tabContainer.js')]);
+      loaded.then(function () { E = (window.spirit && window.spirit.element) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
       // THE WORKBENCH'S CENTRE IS CLOSABLE TABS (goal/G41.31; Andy: "i need a tabContainer permanently situated in the center pane of
       // the workBench.", "each panel, that the agent app placed into the center panel now becomes a closable tab in the
       // tabContainer, activated if it already exists, created if it doesn't have a tab yet."). They stay when the left tool
@@ -169,8 +169,8 @@
           // open in this centre's tabs (goal/G41.31; Andy: "agent: <bundle-name>."; "if the bundle is not node-owned:
           // (<bundle-name>) in italic print.").
           box.className = 'fill';
-          Promise.resolve(spirit.require('shell/js/bundleEditor.js')).then(function () {
-            window.spirit.elements.bundleEditor.create(box, { api: api, tabs: tabs, tabLabel: function (row) {
+          Promise.resolve(spirit.require('spirit/element/bundleEditor.js')).then(function () {
+            window.spirit.element.bundleEditor.create(box, { api: api, tabs: tabs, tabLabel: function (row) {
               var label = String(row.label || '');
               return String(row.owner || 'node') === 'node' ? label : { label: '(' + label + ')', italic: true };
             } });

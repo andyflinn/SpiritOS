@@ -11,12 +11,12 @@ and `fileWritable` (can it be written). This test holds one part of it (goal/G41
   - fileServable: relay-state/identity.json, an app server's relay-state at depth, a server script (spirit/server.js),
     the DEBUG folder, a sidecar's own path;
   - fileWritable: relay-state/identity.json, anything under relay-state, a core file (spirit/server.js,
-    shell/js/icon.js), a sidecar's own path.
+    spirit/element/icon.js), a sidecar's own path.
 - **Windows spellings of a closed path are refused, by both gates** (goal/G41.30, the review: *"8.3 short names like
   RELAY-~1/IDENTI~1.JSO ... folder names ending in a dot or space; and ::$DATA"*): an 8.3 short name, a folder or file
   name ending in a dot or a space, the ::$DATA stream and a named stream (a : in a name), each on relay-state, a server
   script or a core file.
-- **What is open stays open**: index.html and shell/js/icon.js servable, preferences.json writable.
+- **What is open stays open**: index.html and spirit/element/icon.js servable, preferences.json writable.
 - Nothing is read or written: the gates are asked only.
 
 ## What its test must try to break

@@ -83,7 +83,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   test.subHeading('its file');
   if (!fs.existsSync(FILE)) { test.fail('process/js/agent/table/tableElement.js is not there'); return; }
   const w = world();
-  global.window = { spirit: { elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
+  global.window = { spirit: { get element() { return this.elements; }, elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
   load(path.join(RUN, 'spirit', 'spiritData.js'));
   const D = global.window.spirit.data;
@@ -110,28 +110,28 @@ test.startTest('tableElement.js: what the tables\' elements share');
     w.required.push(String(p));
     // The bundle selector (goal/G41.21), tested in its own folder: a stand-in on the page once it is asked for, keeping
     // what it was handed.
-    // The are-you-sure button (shell/js/armingButton.js), tested in its own folder: a stand-in whose first press arms and
+    // The are-you-sure button (spirit/element/armingButton.js), tested in its own folder: a stand-in whose first press arms and
     // whose second runs, as the real one does.
-    if (p === 'shell/js/armingButton.js') global.window.spirit.elements.armingButton = { attach: function (button, opts) {
+    if (p === 'spirit/element/armingButton.js') global.window.spirit.element.armingButton = { attach: function (button, opts) {
       const a = { button: button, opts: opts || {}, armed: false };
       w.arming.push(a);
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
     } };
-    if (p === 'shell/js/bundleSelector.js') global.window.spirit.elements.bundleSelector = { create: function (c, opts) {
+    if (p === 'spirit/element/bundleSelector.js') global.window.spirit.element.bundleSelector = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;
     } };
     return Promise.resolve(p === AGENT ? w.family : true);
   };
-  global.window.spirit.elements.probabilitySearch = { create: function (host, o) {
+  global.window.spirit.element.probabilitySearch = { create: function (host, o) {
     const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
       refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
     w.searches.push(s); return s;
   } };
   // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
-  global.window.spirit.elements.iconSelector = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
+  global.window.spirit.element.iconSelector = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   load(FILE);
   // The element asks for the agent family's cache manager as it runs; the page has it once the element's tree has loaded.
   await settle();

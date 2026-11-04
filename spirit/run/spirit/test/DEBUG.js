@@ -76,7 +76,7 @@ function outsideAddress() {
 // server, without \"/DEBUG\" service"; box v13: "EVERY MOTHERFUCKING TEST NAME in the product three STARTS WITH THE
 // MUTHERCUCKING PATH"): each section is named by the address it asks, /DEBUG left off, or the file it reads.
 function named(p) { return p.indexOf('/DEBUG/') === 0 ? p.slice('/DEBUG'.length) : p; }
-const PAGE = '/DEBUG/shell/js/workBench/headLessBrowser.html';
+const PAGE = '/DEBUG/spirit/element/workBench/headLessBrowser.html';
 const GARBAGE = '/DEBUG/process/js/fileServer/fileServer/garbageArguments.json';
 
 // What a page must be: the most minimal page for one module.
@@ -219,7 +219,7 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     ok(on && on.debug === true, 'the scratch node\'s DEBUG is switched on, by node.debug', 'node.debug answered ' + short(on));
 
     test.subHeading(named(PAGE) + ', the node, DEBUG on');
-    judgePage(await ask('127.0.0.1', N, PAGE), 'shell/js/workBench', 'the node');
+    judgePage(await ask('127.0.0.1', N, PAGE), 'spirit/element/workBench', 'the node');
 
     test.subHeading(named(GARBAGE) + ', the node, DEBUG on');
     const g = await ask('127.0.0.1', N, GARBAGE);
@@ -268,22 +268,22 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
       const r = await ask('127.0.0.1', N, p, { headers: headers });
       ok(r.status >= 400 && r.status < 500, 'refused: ' + why, why + ': answered ' + r.status + ' ' + short(r.text.slice(0, 120)));
     };
-    await refused('/DEBUG/shell/js/noSuchModule/headLessBrowser.html', {}, 'no such module under spirit/run');
-    await refused('/DEBUG/shell/js/../js/workBench/headLessBrowser.html', {}, 'a ".." in the address');
-    await refused('/DEBUG/shell/js/workBench/noSuchGenerator.html', {}, 'no such generator script, and no such file');
+    await refused('/DEBUG/spirit/element/noSuchModule/headLessBrowser.html', {}, 'no such module under spirit/run');
+    await refused('/DEBUG/spirit/element/../js/workBench/headLessBrowser.html', {}, 'a ".." in the address');
+    await refused('/DEBUG/spirit/element/workBench/noSuchGenerator.html', {}, 'no such generator script, and no such file');
     await refused(PAGE, { 'X-Forwarded-For': '203.0.113.9' }, 'a request carrying X-Forwarded-For');
     await refused(PAGE, { 'Forwarded': 'for=203.0.113.9' }, 'a request carrying Forwarded');
     // NO GENERATOR, THEN THE EXACT FILE OF THE ADDRESS, /DEBUG LEFT OFF (box v20-v23: "DEBUG.js will, if the generator
     // implied by the URL does NOT exist, will attempt to serve the exact file implied by the URL"), and only a file
     // inside a test/ folder: an element's own test pages, ./test/<element>-<case>.html.
-    const PAGE_FILE = 'shell/js/test/workBench.md';
+    const PAGE_FILE = 'spirit/element/test/workBench.md';
     const own = fs.readFileSync(path.join(RUN, PAGE_FILE), 'utf8');
     test.subHeading('/' + PAGE_FILE + ', the node, DEBUG on: the file itself');
     const served = await ask('127.0.0.1', N, '/DEBUG/' + PAGE_FILE);
     ok(served.status === 200 && served.text === own, 'a file inside a test/ folder is served as it is', '/DEBUG/' + PAGE_FILE + ' answered ' + served.status + ' ' + short(served.text.slice(0, 120)));
-    await refused('/DEBUG/shell/js/workBench.js', {}, 'a file outside a test/ folder (the element\'s own script)');
+    await refused('/DEBUG/spirit/element/workBench.js', {}, 'a file outside a test/ folder (the element\'s own script)');
     await refused('/DEBUG/spirit/serveCommon.js', {}, 'a server script');
-    await refused('/DEBUG/shell/js/test/noSuchPage.html', {}, 'no such file in a test/ folder');
+    await refused('/DEBUG/spirit/element/test/noSuchPage.html', {}, 'no such file in a test/ folder');
     await refused('/DEBUG/' + PAGE_FILE, { 'X-Forwarded-For': '203.0.113.9' }, 'a test file asked with X-Forwarded-For');
     for (const p of ['/spirit/DEBUG.js', '/spirit/DEBUG/headLessBrowser.js', '/spirit/DEBUG/garbageArguments.js']) {
       test.subHeading(p + ', the node, DEBUG on');

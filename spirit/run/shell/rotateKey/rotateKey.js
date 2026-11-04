@@ -19,7 +19,7 @@ var rkBusy = false;
 var rkResult = null;
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.9): the arming button, through spirit.require.
-var rkParts = spirit.require('shell/js/armingButton.js');
+var rkParts = spirit.require('spirit/element/armingButton.js');
 
 function rkEsc(s) { return rkApi.escapeHtml(String(s == null ? '' : s)); }
 
@@ -51,7 +51,7 @@ function rkDraw() {
   // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9): an armingButton; its second press rotates.
   var b = document.getElementById('rk-rotate');
   if (b) rkParts.then(function () {
-    window.spirit.elements.armingButton.attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again',
+    window.spirit.element.armingButton.attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again',
       api: rkApi, run: rkRotate });
   });
 }

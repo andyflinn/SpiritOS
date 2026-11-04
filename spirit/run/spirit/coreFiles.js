@@ -5,11 +5,11 @@
 // reads. It needs nothing of the desk's.
 //
 //   Andy, 2026-10-06 (goal/G6.7): "coreFiles.js goes in \"spirit/run/spirit/coreFiles.js\", with NO dependencies on any desk
-//   stuff, and it is updated to include all files in spirit/run/shell/js"; "apps in spirit/run/shell/<appname>/ are
+//   stuff, and it is updated to include all files in spirit/run/spirit/element"; "apps in spirit/run/shell/<appname>/ are
 //   intrinsic (core) if the manifest says so."; index.html, shell/elements.css and shell/tokens.css core: "yes."
 //
 //   Andy, 2026-10-04: "the scope still has a grant-lock on core files.", and asked which: "basicall run/js and
-//   intrinsics". So a file is core when it lies under spirit/run/spirit/ or spirit/run/shell/js/, is the shell's frame, or
+//   intrinsics". So a file is core when it lies under spirit/run/spirit/ or spirit/run/spirit/element/, is the shell's frame, or
 //   is a code file (.js, .css, .html) of an app or server on the coded INTRINSIC list (goal/G41.1, below). A
 //   commit touching one needs his grant on the item, inside an agent's scope or not (commitCheck.js).
 //
@@ -39,7 +39,7 @@ function isIntrinsic(root, dir, name) { return intrinsic(dir + '/' + name); }
 // The shell's frame: every app is loaded and drawn by these (goal/G6.7).
 // spirit.js at the run root is the one spirit object (goal/G40.1): core.
 // The navigation wrapper, the shell's one stack, too (goal/G41.30; Andy: "make the nav wrapper \"core\""): core while it
-// lived in shell/js/, it moved to shell/ in goal/G41.19 and no rule named it there.
+// lived in spirit/element/, it moved to shell/ in goal/G41.19 and no rule named it there.
 // The run root's shell.css and favicon.svg too (goal/G41.30; Andy: "those files that core files depend on, are core-files,
 // too"): index.html and face.html load them on every boot.
 const FRAME = ['spirit/run/index.html', 'spirit/run/spirit.js', 'spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css', 'spirit/run/shell/navigationWrapper.js',
@@ -71,11 +71,11 @@ function isCore(repoPath, repoRoot) {
   if (/^spirit\/run\/(shell|process\/js)\/([^/]+)\/\2\.json$/.test(p)) return false;
   // shell/json/ too (goal/G40.8; Andy: "the folder spirit/run/shell/json/ is a core folder as well. this way i can update
   // that system file manually once in a while, when i actually want it to go into github").
-  if (p.indexOf('spirit/run/spirit/') === 0 || p.indexOf('spirit/run/shell/js/') === 0 || p.indexOf('spirit/run/shell/json/') === 0) return true;
+  if (p.indexOf('spirit/run/spirit/') === 0 || p.indexOf('spirit/run/spirit/element/') === 0 || p.indexOf('spirit/run/shell/json/') === 0) return true;
   // WHAT index.html LOADS ON EVERY BOOT IS CORE TOO (goal/G41.30; the review, H5): CodeMirror under shell/node_modules/
   // (Andy: "shell/node_modules/codemirror/ MUST BE \"core\""). NOT shell/shared/ (Andy: "no \"core\" files should reside in
   // shell/shared/ since that folder was meant to be a place where non-intrinsic apps could share modules"): the one
-  // core-loaded file it held, the progress bar, lives in shell/js/ since.
+  // core-loaded file it held, the progress bar, lives in spirit/element/ since.
   if (p.indexOf('spirit/run/shell/node_modules/') === 0) return true;
   // THE ROOT TEST FOLDER IS CORE (goal/G40.6; Andy: "also: additional \"core\" designation: spirit/run/test/"): the
   // product's permanent tests need his grant like the code they judge.

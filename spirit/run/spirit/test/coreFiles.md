@@ -17,11 +17,11 @@ grant on the item. It needs nothing of the desk's.
 - The face's boot: `face.html`, `shell/boot.js`, `shell/seal.js`, `shell/face.css`, `shell/favicon.svg`.
 - Login and join, whole: every file under `shell/login/` and `shell/join/`, their `.json` included.
 - Never a manifest: `shell/<name>/<name>.json` and `process/js/<name>/<name>.json`, an intrinsic app's included.
-- Everything under `spirit/run/spirit/`, `spirit/run/shell/js/`, `spirit/run/shell/json/` and `spirit/run/test/`.
+- Everything under `spirit/run/spirit/`, `spirit/run/spirit/element/`, `spirit/run/shell/json/` and `spirit/run/test/`.
 - Everything under `spirit/run/shell/node_modules/` (CodeMirror), which `index.html` loads on every boot (goal/G41.30,
   the review's H5; Andy: *"shell/node_modules/codemirror/ MUST BE \"core\""*).
 - Never `spirit/run/shell/shared/`, where apps that are not intrinsic share modules (Andy: *"no \"core\" files should
-  reside in shell/shared/"*); the progress bar it held lives in `shell/js/`.
+  reside in shell/shared/"*); the progress bar it held lives in `spirit/element/`.
 - The frame: `index.html`, `spirit.js`, `shell/elements.css`, `shell/tokens.css`, and `shell/navigationWrapper.js`
   (goal/G41.30, Andy: *"make the nav wrapper \"core\""*), its companion tests with it.
 - An intrinsic app's or server's code only (`.js`, `.css`, `.html`); its data files stay writable.

@@ -38,7 +38,7 @@ test.startTest('test/testReport.js: a test is sent by the module it tests, /<pat
 
 test.subHeading('a test of a module');
 const CASES = [
-  ['shell/js/test/workBench.js', '/shell/js/workBench'],
+  ['spirit/element/test/workBench.js', '/spirit/element/workBench'],
   ['process/js/agent/table/model/test/rowElement.js', '/process/js/agent/table/model/rowElement'],
   ['process/js/agent/table/provider/test/rowElement.js', '/process/js/agent/table/provider/rowElement'],
   ['spirit/test/DEBUG.js', '/spirit/DEBUG'],
@@ -57,17 +57,17 @@ const general = suitesOf(sent('test/spirit-sibling-generalRules.js', ['shell/age
 ok(general.length === 1 && general[0] === '/shell/agent/agent', 'spirit-sibling-generalRules.js judging shell/agent/agent.js is sent as /shell/agent/agent', 'it was sent as ' + short(general));
 
 test.subHeading('the rest of a record as before');
-const recs = sent('shell/js/test/workBench.js', [], true);
+const recs = sent('spirit/element/test/workBench.js', [], true);
 const green = recs.filter(function (r) { return r.outcome === 'green'; })[0];
 const red = recs.filter(function (r) { return r.outcome === 'red'; })[0];
 // EVERY TEST NAME STARTS WITH THE PATH (Andy, box v13: "EVERY MOTHERFUCKING TEST NAME in the product three STARTS WITH
 // THE MUTHERCUCKING PATH!!!!!!!!!!"): the title is "/<path>/<module> <section> #<n>", so a title read alone names its
 // module.
-ok(green && green.title === '/shell/js/workBench a case #1', 'a green\'s title starts with its path: "/<path>/<module> <section> #<n>"', 'the green record: ' + short(green));
-ok(red && red.title === '/shell/js/workBench a case #2' && /one red/.test(String(red.failure)), 'a red\'s title starts with its path, and it carries its failure', 'the red record: ' + short(red));
+ok(green && green.title === '/spirit/element/workBench a case #1', 'a green\'s title starts with its path: "/<path>/<module> <section> #<n>"', 'the green record: ' + short(green));
+ok(red && red.title === '/spirit/element/workBench a case #2' && /one red/.test(String(red.failure)), 'a red\'s title starts with its path, and it carries its failure', 'the red record: ' + short(red));
 const twinTitles = CASES.slice(1, 3).map(function (c) { return (sent(c[0], [], true)[0] || {}).title; });
 ok(twinTitles[0] && twinTitles[1] && twinTitles[0] !== twinTitles[1] && twinTitles.every(function (t, i) { return t.indexOf(CASES[i + 1][1] + ' ') === 0; }),
   'the titles of the two rowElement.js tests start with their own paths', 'their titles: ' + short(twinTitles));
-ok(!sent('shell/js/test/workBench.js', [], false).length, 'nothing is sent when the verifier did not start the run', 'a record was sent with no --verify-port');
+ok(!sent('spirit/element/test/workBench.js', [], false).length, 'nothing is sent when the verifier did not start the run', 'a record was sent with no --verify-port');
 
 test.reportSuccessFailureCount();

@@ -13,7 +13,7 @@
 // name (module, else type), kind, progress, updated.
 //
 // ITS PROGRESS (goal/G29.14 on the job cycle of goal/G29.15): each process publishes {job: {state, name, done, total,
-// text}} as its job's app object; the bar is the shared progressBar (shell/js/progressBar.js), drawn from the job
+// text}} as its job's app object; the bar is the shared progressBar (spirit/element/progressBar.js), drawn from the job
 // as kept. A server between jobs shows idle, no bar; a transient process IS its job, so its progress alone draws the bar.
 
 var jobsEscapeHtml = spirit.escapeHtml;
@@ -36,7 +36,7 @@ var jobsRowIndex = null;
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list, the shared row and icon elements, the progress bar, and the
 // jobs family's cache manager.
-var jobsParts = Promise.all(['shell/js/probabilitySearch.js', 'shell/js/rowElement.js', 'shell/js/icon.js', 'shell/js/progressBar.js']
+var jobsParts = Promise.all(['spirit/element/probabilitySearch.js', 'spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/progressBar.js']
   .map(function (p) { return spirit.require(p); }).concat([spirit.cacheManager('jobs')]));
 
 function jobsName(job) { return String(job.module || job.type || job.kind || job.id); }
@@ -53,7 +53,7 @@ function jobsKind(job) { return job.kind === 'permanent' ? 'node' : job.kind ===
 // The bar from the job's own app object: a job open (start or progress) draws it, an ended one or a terminal job none.
 function jobsProgress(job) {
   var c = job && job.app && typeof job.app === 'object' ? job.app.job : null;
-  var bar = window.spirit && window.spirit.elements && window.spirit.elements.progressBar;
+  var bar = window.spirit && window.spirit.element && window.spirit.element.progressBar;
   if (!c || typeof c !== 'object' || JOBS_TERMINAL.indexOf(job.status) !== -1 || typeof bar !== 'function') return '';
   if (c.state === 'start') return bar(0, 0, String(c.name || ''));
   if (c.state === 'progress') return bar(Number(c.done) || 0, Number(c.total) || 0, String(c.text || ''));
@@ -64,7 +64,7 @@ function jobsProgress(job) {
 // and apps."): made by icon.create and handed on as its markup, since a cell is painted as text. Its word beside it
 // stays text.
 function jobsGlyph(glyph) {
-  var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+  var I = window.spirit && window.spirit.element && window.spirit.element.icon;
   if (!I || typeof I.create !== 'function') return jobsEscapeHtml(glyph);
   var hold = document.createElement('span');
   I.create(hold, { glyph: glyph });
@@ -73,7 +73,7 @@ function jobsGlyph(glyph) {
 
 // EACH JOB A ROW ELEMENT (goal/G41.21: the row element paints every list's rows): its cells drawn from the job as kept.
 function jobsRow(row) {
-  var R = window.spirit.elements.rowElement;
+  var R = window.spirit.element.rowElement;
   var job = row || {};
   jobsRowIndex = jobsRowIndex || R.index(function () {});
   return R.create({
@@ -103,7 +103,7 @@ spirit.shell.activateApp({
     container.innerHTML = '';
     return jobsParts.then(function () {
       var J = window.spirit.jobsData;
-      jobsList = window.spirit.elements.probabilitySearch.create(container, {
+      jobsList = window.spirit.element.probabilitySearch.create(container, {
         data: J.branch,
         columns: [
           { field: 'latest', label: '' },

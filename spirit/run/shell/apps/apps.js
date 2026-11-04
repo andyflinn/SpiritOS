@@ -1,5 +1,5 @@
 // Apps (goal/G30.21): every app of this node, a mountable wrapper over the standard list-tool
-// (shell/js/probabilitySearch.js) as a view of data.files, the Files cache: nothing of its own is kept or asked for the
+// (spirit/element/probabilitySearch.js) as a view of data.files, the Files cache: nothing of its own is kept or asked for the
 // list. An app is a <name>/<name>.js under shell/ or process/js/ with its <name>/<name>.json beside it, two types,
 // shell and process; only the .js is a row. A press opens the app's detail panel, the editor of its face annotation
 // space: the face part of the .js sidecar (app, intrinsic, name, icon, description), read with fs.annotations. Its
@@ -19,10 +19,10 @@ var APP_SCRIPT = /^(shell|process\/js)\/([^/]+)\/\2\.js$/;
 function appsEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function appsOnFace() { return !!(window.spirit && spirit.shell && typeof spirit.shell.faceApp === 'function'); }
 // THE APP'S ICON, SHOWN AS AN ICON (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
-// apps."): through shell/js/icon.js, which appsParts loads; its glyph as text only until then, so it is never empty.
+// apps."): through spirit/element/icon.js, which appsParts loads; its glyph as text only until then, so it is never empty.
 function appsShowIcon(holder, glyph) {
   if (!holder) return;
-  var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+  var I = window.spirit && window.spirit.element && window.spirit.element.icon;
   holder.textContent = '';
   if (I && typeof I.create === 'function') I.create(holder, { glyph: glyph }); else holder.textContent = glyph;
 }
@@ -98,7 +98,7 @@ function appsPanelDraw(host, api, path) {
         ' · intrinsic: ' + (face.intrinsic === true ? 'yes, its code is core' : 'no') + '</div>' +
       '<div data-apps="installer"></div>' +
       '<label class="field-label">Name <input type="text" data-face="name" value="' + appsEsc(face.name || manifest.name || '') + '"' + dis + '></label>' +
-      // THE ICON IS THE GLYPH ITSELF (goal/G30.21), picked from the icons list (shell/js/icons/listElement.js).
+      // THE ICON IS THE GLYPH ITSELF (goal/G30.21), picked from the icons list (spirit/element/icons/listElement.js).
       '<label class="field-label">Icon <span data-apps="icon-shown" style="font-size:1.3em"></span> <span data-apps="icon-pick"></span>' +
         '<input type="hidden" data-face="icon" value="' + appsEsc(face.icon || '') + '"></label>' +
       '<label class="field-label">Description <input type="text" data-face="description" value="' + appsEsc(face.description || manifest.description || '') + '"' + dis + '></label>' +
@@ -106,7 +106,7 @@ function appsPanelDraw(host, api, path) {
       '<div data-apps="said" class="job-manifest-note"></div>';
     appsShowIcon(panel.querySelector('[data-apps="icon-shown"]'), String(face.icon || ''));
     var installerBox = panel.querySelector('[data-apps="installer"]');
-    if (installerBox) window.spirit.elements.appInstaller.create(installerBox, { path: path });
+    if (installerBox) window.spirit.element.appInstaller.create(installerBox, { path: path });
     if (!canWrite) return;
     // NO SAVE BUTTON (Andy: "why would there be a save button when the face can re-write annotations as soon as a field
     // changes?"): every change writes the whole face part at once.
@@ -121,14 +121,14 @@ function appsPanelDraw(host, api, path) {
         if (m[1] === 'shell') spirit.shell.faceApp(id);
       }, function (err) { said.textContent = 'not saved: ' + ((err && err.message) || err); });
     }
-    // The name and the description stop at their limits as they are typed (shell/js/fieldInput.js).
-    window.spirit.elements.fieldInput.attach(panel.querySelector('[data-face="name"]'), 'name');
-    window.spirit.elements.fieldInput.attach(panel.querySelector('[data-face="description"]'), 'description');
+    // The name and the description stop at their limits as they are typed (spirit/element/fieldInput.js).
+    window.spirit.element.fieldInput.attach(panel.querySelector('[data-face="name"]'), 'name');
+    window.spirit.element.fieldInput.attach(panel.querySelector('[data-face="description"]'), 'description');
     panel.addEventListener('change', function (e) {
       if (!e || !e.target || !e.target.getAttribute || !e.target.getAttribute('data-face')) return;
       save();
     });
-    window.spirit.elements.iconList.create(panel.querySelector('[data-apps="icon-pick"]'), {
+    window.spirit.element.iconList.create(panel.querySelector('[data-apps="icon-pick"]'), {
       api: api,
       face: 'dropdown',
       placeholder: 'choose an icon…',
@@ -144,8 +144,8 @@ function appsPanelDraw(host, api, path) {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var appsParts = Promise.all(['shell/js/files/rowElement.js', 'shell/js/probabilitySearch.js', 'shell/js/fieldInput.js',
-  'shell/js/icons/listElement.js', 'shell/js/appInstaller.js', 'shell/js/icon.js'].map(function (p) { return spirit.require(p); })
+var appsParts = Promise.all(['spirit/element/files/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/fieldInput.js',
+  'spirit/element/icons/listElement.js', 'spirit/element/appInstaller.js', 'spirit/element/icon.js'].map(function (p) { return spirit.require(p); })
   .concat([spirit.cacheManager('fs')]));
 
 spirit.shell.activateApp({
@@ -160,7 +160,7 @@ spirit.shell.activateApp({
 });
 
 function appsDraw(listHost, api) {
-    var E = window.spirit.elements;
+    var E = window.spirit.element;
     appsList = E.probabilitySearch.create(listHost, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
       data: window.spirit.fsData.branch,

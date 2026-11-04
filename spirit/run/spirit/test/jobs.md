@@ -14,7 +14,7 @@ own, so whether it ran is read from the disk.
 - **What this node may start still starts**: an included `process/js/<name>/<name>.js`, and a helper in an included
   process's folder, as `desk.js:2589` and `deskClient.js:535` start theirs by this node's executable and its whole path.
 
-- **Plain `node` with an included process starts** (Andy, Q5: keep the file viewer's Start Job, *"ok."*): `shell/js/textViewer.js:55`
+- **Plain `node` with an included process starts** (Andy, Q5: keep the file viewer's Start Job, *"ok."*): `spirit/element/textViewer.js:55`
   sends it so, and it names this node's own executable.
 
 ## What its test must try to break

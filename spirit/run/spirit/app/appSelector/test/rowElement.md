@@ -1,6 +1,6 @@
 # appSelector/rowElement.js
 
-One app as a row (goal/G43.2), as `shell/js/bundleSelector/rowElement.js` is one bundle. Its test is `./rowElement.js`.
+One app as a row (goal/G43.2), as `spirit/element/bundleSelector/rowElement.js` is one bundle. Its test is `./rowElement.js`.
 
     spirit.elements.appElement.create(row) -> a row element, row { key, label, icon }
 

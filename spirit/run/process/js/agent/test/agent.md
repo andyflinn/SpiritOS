@@ -67,7 +67,7 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
   add, set, get or search carries the API key or a private key.
 - **The folders**: process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for provider,
   model, persona and job; grant with server.js alone, its page files gone since goal/G41.16 (the grants panel,
-  shell/js/grantsPanel.js, configured by the agent app, draws the grants by job). The table servers publish their rows.
+  spirit/element/grantsPanel.js, configured by the agent app, draws the grants by job). The table servers publish their rows.
 - Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.
 - A grant table or verb left, or an old grant table kept at start.
 - A description column left on an agent table; a model name column.

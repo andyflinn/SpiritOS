@@ -198,7 +198,7 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
     CM.push(cm);
     return cm;
   };
-  new Function('window', 'document', 'spirit', fs.readFileSync(path.join(RUN, 'shell', 'js', 'textView.js'), 'utf8'))(p2.win, p2.doc, sp);
+  new Function('window', 'document', 'spirit', fs.readFileSync(path.join(RUN, 'spirit', 'element', 'textView.js'), 'utf8'))(p2.win, p2.doc, sp);
   p2.win.spirit.elements.createTextView(p2.node(), { text: 'a\nb\nc\nd\ne\n', readOnly: true, line: 4 });
   const sc = (CM[CM.length - 1] || { scrolled: [] }).scrolled[0];
   if (sc && sc.line === 3) test.check('createTextView puts line 4 in view (0-based 3)');

@@ -1,6 +1,6 @@
 // spirit/run/spirit/app/appSelector.js
 // ONE ELEMENT: the app selector (goal/G43.2; Andy, box: "the face part of this api will be an probabilitySearch
-// derivative"), following shell/js/bundleSelector.js. Its contract and its test: ./test/appSelector.md and
+// derivative"), following spirit/element/bundleSelector.js. Its contract and its test: ./test/appSelector.md and
 // ./test/appSelector.js.
 //
 // A THIN SELECTOR OVER ITS OWN LIST, ./appSelector/listElement.js, WHICH IT LOADS ITSELF (rule/26).

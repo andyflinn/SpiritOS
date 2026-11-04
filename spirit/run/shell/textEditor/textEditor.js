@@ -11,7 +11,7 @@ var APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.7; Andy: every app bootstraps its own components, "lazy-load, is
 // a tree...."): the files list and the codeMirror element, through spirit.require.
-var textEditorParts = Promise.all(['shell/js/files/listElement.js', 'shell/js/codeMirror.js'].map(function (p) { return spirit.require(p); })
+var textEditorParts = Promise.all(['spirit/element/files/listElement.js', 'spirit/element/codeMirror.js'].map(function (p) { return spirit.require(p); })
   .concat([spirit.cacheManager('fs')]));
 
 // WHAT IT SAVES, IT LISTENS FOR (goal/G41.27, G41.28; Andy, Q21: "\"changed on disk\""): the open file's row in the
@@ -58,7 +58,7 @@ function textEditorShow(path, words, line, content) {
   textEditorView = null;
   return textEditorParts.then(function () {
     textEditorFollow(path);
-    return window.spirit.elements.codeMirror.create(place, { mode: 'edit', text: content == null ? '' : content, words: words || '', line: line || 0, path: path });
+    return window.spirit.element.codeMirror.create(place, { mode: 'edit', text: content == null ? '' : content, words: words || '', line: line || 0, path: path });
   }).then(function (view) {
     textEditorView = view;
     document.getElementById('editor-status').textContent = content == null ? 'not found (or empty) — you can still Save to create it' : 'loaded';
@@ -106,8 +106,8 @@ spirit.shell.activateApp({
 
     return textEditorParts.then(function () {
       // Its text types only (goal/G29.8: "A file dropdown takes a hidden type filter the app configures").
-      // The files list as a dropdown (goal/G30.20, shell/js/files/listElement.js).
-      var picker = window.spirit.elements.fileList.create(document.getElementById('editor-picker'), {
+      // The files list as a dropdown (goal/G30.20, spirit/element/files/listElement.js).
+      var picker = window.spirit.element.fileList.create(document.getElementById('editor-picker'), {
         api: api,
         face: 'dropdown',
         accept: ['text/', 'application/json', 'application/javascript', '.md'],

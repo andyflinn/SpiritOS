@@ -73,7 +73,7 @@ function world(answer) {
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  win.spirit = { elements: { armingButton: stub },
+  win.spirit = { get element() { return this.elements; }, elements: { armingButton: stub },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     shell: { activateApp: function (d) { w.def = d; } } };
   vm.createContext(win);
@@ -96,7 +96,7 @@ function nothingHandRolled(flag) {
   ok(!/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE) && !/armedButton/.test(CODE), 'no armed class and no armedButton helper of its own', 'its code still has an armed class or an armedButton helper');
 }
 function loadsArming(w) {
-  ok(w.required.indexOf('shell/js/armingButton.js') !== -1, 'it loads shell/js/armingButton.js itself, through spirit.require', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it loads spirit/element/armingButton.js itself, through spirit.require', 'required: ' + short(w.required));
 }
 
 test.startTest('rotateKey.js: the Rotate key dialog, on the arming button');
@@ -115,7 +115,7 @@ test.startTest('rotateKey.js: the Rotate key dialog, on the arming button');
 
   test.subHeading('Rotate is an arming button');
   const a = armingFor(w, 'rk-rotate', 'Rotate the key');
-  ok(!!a, 'the Rotate button is made or attached through window.spirit.elements.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
+  ok(!!a, 'the Rotate button is made or attached through window.spirit.element.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
   if (!a) return;
   const label = a.opts.label != null ? a.opts.label : a.button.textContent;
   ok(label === 'Rotate the key' && a.opts.armedLabel === 'Rotate the key: press again', 'it says Rotate the key, and armed Rotate the key: press again', 'label ' + short(label) + ', armedLabel ' + short(a.opts.armedLabel));

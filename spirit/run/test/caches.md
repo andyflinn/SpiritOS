@@ -48,7 +48,7 @@ is the appServer serializes the cache to disk."*
    - no client file (under `shell/` or `process/js/`, but `shell/boot.js`, the face's own transport) takes the node's
      stream itself (`events.subscribe`): only `spiritData.js` takes it, for every client;
    - no file of the repo (`.js`, `.md`, `.html`, `.json`; the desk's `currentGoal.json` and Andy's vault aside) names a
-     replaced way: a page or client that runs `uncached`, `shell/js/spiritData.js`, `shell/shared/js/spiritData.js`, `deskData.js`, the desk's two-level
+     replaced way: a page or client that runs `uncached`, `spirit/element/spiritData.js`, `shell/shared/js/spiritData.js`, `deskData.js`, the desk's two-level
      branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;
      any other notion is read for by hand.
 

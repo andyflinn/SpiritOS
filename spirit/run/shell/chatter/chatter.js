@@ -44,7 +44,7 @@ var chParts = {};
 function chEl(id) { return chParts[id] || null; }
 // THE ICON ELEMENT, LOADED BY THE APP ITSELF (goal/G41.23, rule/26): through the one loader, once.
 var chIconPart = window.spirit && typeof window.spirit.require === 'function'
-  ? Promise.resolve(window.spirit.require('shell/js/icon.js')).then(null, function () { /* the arrows stay text */ })
+  ? Promise.resolve(window.spirit.require('spirit/element/icon.js')).then(null, function () { /* the arrows stay text */ })
   : Promise.resolve();
 
 // THE LINES ARE THE chatClerver FAMILY'S CACHE (goal/G41.28; Andy: "anything not using the new spiritData.js and it's
@@ -258,7 +258,7 @@ function chOpen(key) {
   var slot = chEl('ch-title-name');
   if (slot) {
     slot.innerHTML = '';
-    window.spirit.elements.contactLabel.create(slot, { key: key, editable: true });
+    window.spirit.element.contactLabel.create(slot, { key: key, editable: true });
   }
   // The count is said once, as the chat opens ("Andy: 35 new messages"), and the chat is then read.
   var row = chData() ? chData().chat(key) : null;
@@ -375,7 +375,7 @@ function chApplyStyle() {
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the contact selector (its peer pane) and the contact label, before it
 // mounts, so no shell has to have put them on the page.
-var chElements = Promise.all(['shell/js/contactSelector.js', 'shell/js/contactLabel.js'].map(function (p) { return spirit.require(p); }));
+var chElements = Promise.all(['spirit/element/contactSelector.js', 'spirit/element/contactLabel.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
@@ -484,10 +484,10 @@ function chMount(container, api) {
       var paneEl = chEl(paneId);
       var divider = chEl(dividerId);
       // goal/G41.23: the arrow is an icon (Andy: "this element will replace icons painting all shell elements and apps."),
-      // through shell/js/icon.js once it has loaded (chIconPart), its glyph as text until then.
+      // through spirit/element/icon.js once it has loaded (chIconPart), its glyph as text until then.
       function paint() {
         var glyph = paneEl.hidden ? foldedGlyph : openGlyph;
-        var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+        var I = window.spirit && window.spirit.element && window.spirit.element.icon;
         btn.textContent = '';
         if (I && typeof I.create === 'function') I.create(btn, { glyph: glyph }); else btn.textContent = glyph;
       }
@@ -533,7 +533,7 @@ function chMount(container, api) {
     var left = document.createElement('div');
     left.className = 'fill';
     chEl('ch-left').appendChild(left);
-    chPane = window.spirit.elements.contactSelector.create(left, {
+    chPane = window.spirit.element.contactSelector.create(left, {
       face: 'pane', filters: [CH_OFFERED],
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
       statuses: [{ status: 'none' }, { status: 'unanswered', glyph: '⌛' }],
@@ -553,7 +553,7 @@ function chMount(container, api) {
     // hurt"), each by its time.
     var chSearchRows = null;
     function chSearchRow(row) {
-      var R = window.spirit.elements.rowElement;
+      var R = window.spirit.element.rowElement;
       var l = row || {};
       chSearchRows = chSearchRows || R.index(function () {});
       return R.create({
@@ -566,10 +566,10 @@ function chMount(container, api) {
         actions: [],
       });
     }
-    Promise.all([spirit.require('shell/js/probabilitySearch.js'), spirit.require('shell/js/rowElement.js'), spirit.cacheManager('chatClerver')]).then(function () {
+    Promise.all([spirit.require('spirit/element/probabilitySearch.js'), spirit.require('spirit/element/rowElement.js'), spirit.cacheManager('chatClerver')]).then(function () {
       var C = chData();
       if (!C) return;
-      chSearch = window.spirit.elements.probabilitySearch.create(chEl('ch-search'), {
+      chSearch = window.spirit.element.probabilitySearch.create(chEl('ch-search'), {
         data: C.branch,
         api: {
           verb: function (name, body) {

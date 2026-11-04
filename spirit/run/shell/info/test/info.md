@@ -7,8 +7,8 @@ in `spirit/coreFiles.js`, so every face shows it.
 ## Requirements
 
 - It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
-- **It loads what it uses itself** (goal/G41.3), through `spirit.require`: `shell/js/changeMyLabel.js`,
-  `shell/js/changeMyDescription.js`, `shell/js/joinForm.js` and `shell/js/faceForm.js`.
+- **It loads what it uses itself** (goal/G41.3), through `spirit.require`: `spirit/element/changeMyLabel.js`,
+  `spirit/element/changeMyDescription.js`, `spirit/element/joinForm.js` and `spirit/element/faceForm.js`.
 - **Its two blocks are the two shell elements** (Andy, Q1): changeMyLabel for the name, changeMyDescription for the
   description, each handed the app's api. Info reads `node.card` and keeps its answer in the node family's cache
   (`spirit.cacheManager('node')`, then `spirit.nodeData.card.keep`; goal/G41.28); each element draws itself from that
@@ -19,7 +19,7 @@ in `spirit/coreFiles.js`, so every face shows it.
   (`spirit.relay.status`, a row claimed or owned whose roll names the relay's key), as it is drawn. A relay's row
   changing in the contact family's cache is the two forms' to follow, reading nothing (goal/G41.32).
 - **The key rotation is a rowForm** (goal/G41.27; Andy: *"Info App\n\n[🆘] [Rotate this node's cipher key]"*): it loads
-  `shell/js/rowForm.js` itself and makes one rowForm, its icon 🆘 and its button `Rotate this node's cipher key`, its
+  `spirit/element/rowForm.js` itself and makes one rowForm, its icon 🆘 and its button `Rotate this node's cipher key`, its
   span empty, and no Rotate button of its own. Its button opens the Rotate key page (`shell/rotateKey`); nothing here
   rotates a key itself.
 

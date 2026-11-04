@@ -1,5 +1,5 @@
-// Files (goal/G30.16, G30.20): a mountable wrapper over the files list element, shell/js/files/listElement.js, as a
-// pane. A press opens the file in this pane, in the viewer for its kind (shell/js/textViewer.js, mediaViewer.js, both
+// Files (goal/G30.16, G30.20): a mountable wrapper over the files list element, spirit/element/files/listElement.js, as a
+// pane. A press opens the file in this pane, in the viewer for its kind (spirit/element/textViewer.js, mediaViewer.js, both
 // on fileViewer.js), at home and on the face alike; ← Files goes back.
 //
 // Intrinsic, so it sits in the Spirit group and its name, icon and place are locked. Its id is 'shell/files' (see
@@ -9,7 +9,7 @@ var filesList = null;
 var filesShown = null;                 // the media viewer open, dropped when another file or the list is shown
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var filesParts = Promise.all(['shell/js/files/listElement.js', 'shell/js/textViewer.js', 'shell/js/mediaViewer.js', 'shell/js/fileViewer.js']
+var filesParts = Promise.all(['spirit/element/files/listElement.js', 'spirit/element/textViewer.js', 'spirit/element/mediaViewer.js', 'spirit/element/fileViewer.js']
   .map(function (p) { return spirit.require(p); }));
 
 // A FILE OPENED IS A PAGE (goal/G40.8: back is the same for everything, the frame's): pushed on the navigation, the
@@ -20,7 +20,7 @@ function filesShow(path, words, line) {
     unmount: function () { if (filesShown) { filesShown.destroy(); filesShown = null; } } });
 }
 function filesView(viewer, path, words, line) {
-  var E = window.spirit.elements;
+  var E = window.spirit.element;
   if (filesShown) { filesShown.destroy(); filesShown = null; }
   var kind = E.fileViewer.kindOf(E.fileViewer.mimeOf(path));
   if (kind === 'code') E.textViewer.create(viewer, { path: path, words: words, line: line, launcherId: 'text-file-launcher' });
@@ -35,7 +35,7 @@ spirit.shell.activateApp({
     container.innerHTML = '<div data-files="list" class="fill"></div>';
     var listHost = container.querySelector('[data-files="list"]');
     return filesParts.then(function () {
-      filesList = window.spirit.elements.fileList.create(listHost, {
+      filesList = window.spirit.element.fileList.create(listHost, {
         api: api,
         face: 'pane',
         // A file found by its contents opens at that line with the words marked (goal/G29.11).

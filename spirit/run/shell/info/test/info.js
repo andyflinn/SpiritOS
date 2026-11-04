@@ -74,7 +74,7 @@ function world() {
     callDialog: function (id, p) { w.dialogs.push(id); },
   };
   const win = {
-    spirit: { elements: E,
+    spirit: { get element() { return this.elements; }, elements: E,
       require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
       relay: { status: function () { w.statuses = (w.statuses || 0) + 1; return Promise.resolve({ body: { rows: ROWS } }); } },
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
@@ -111,7 +111,7 @@ test.startTest('info.js: the Info app');
   if (!w.def) return;
 
   test.subHeading('it loads what it uses itself (goal/G41.3)');
-  ['shell/js/changeMyLabel.js', 'shell/js/changeMyDescription.js', 'shell/js/joinForm.js', 'shell/js/faceForm.js'].forEach(function (p) {
+  ['spirit/element/changeMyLabel.js', 'spirit/element/changeMyDescription.js', 'spirit/element/joinForm.js', 'spirit/element/faceForm.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
 
@@ -145,7 +145,7 @@ test.startTest('info.js: the Info app');
   test.subHeading('the key rotation, a rowForm: 🆘 [Rotate this node\'s cipher key] (goal/G41.27)');
   // Andy, on G41.27: "Info App\n\n[🆘] [Rotate this node's cipher key]". The box: "the first element is always an icon
   // shell-element", "the last element is always a button", "between the icon and the button is a span".
-  ok(w.required.indexOf('shell/js/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(w.required));
   const rot = w.rowForms.filter(function (f) { return /Rotate/.test(f.opts.button || ''); });
   const rf = rot[0];
   ok(rot.length === 1 && rf.opts.icon === '🆘' && rf.opts.button === 'Rotate this node\'s cipher key', 'the key rotation is one rowForm, its icon 🆘 and its button Rotate this node\'s cipher key', 'rowForms: ' + short(w.rowForms.map(function (f) { return f.opts; })));

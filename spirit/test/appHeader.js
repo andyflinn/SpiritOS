@@ -9,7 +9,7 @@
 //   "cap"; his Go.
 //
 // THE SHAPES (the box's):
-//   1  spirit/run/shell/js/appHeader/appHeader.js adds createAppHeader to window.spirit.elements, on the shell's globals.
+//   1  spirit/run/spirit/element/appHeader/appHeader.js adds createAppHeader to window.spirit.elements, on the shell's globals.
 //   2  createAppHeader() returns an empty div: position sticky, its top the titlebar's measured height, a background, a
 //      z-index above the content; measured again when the window resizes.
 //   3  index.html loads it beside iconSelector.js, before the shell; the shell hands it to apps as api.ui.elements.
@@ -30,7 +30,7 @@ const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G6.1: ';
 const RUN = path.join(__dirname, '..', 'run');
-const FILE = path.join(RUN, 'shell', 'js', 'appHeader', 'appHeader.js');
+const FILE = path.join(RUN, 'spirit', 'element', 'appHeader', 'appHeader.js');
 const INDEX = path.join(RUN, 'index.html');
 const SHELL = path.join(RUN, 'spirit', 'client', 'shell.js');
 const DESK = path.join(RUN, 'shell', 'desk', 'desk.js');
@@ -88,8 +88,8 @@ const index = read(INDEX) || '';
 const shell = read(SHELL) || '';
 
 test.subHeading('1. appHeader.js adds createAppHeader to spirit.elements');
-if (src && src.indexOf('createAppHeader') !== -1 && /spirit\.elements/.test(src)) test.check('spirit/run/shell/js/appHeader/appHeader.js defines createAppHeader and adds it to spirit.elements');
-else test.fail(OWED + (src ? 'appHeader.js has no createAppHeader added to spirit.elements' : 'no spirit/run/shell/js/appHeader/appHeader.js'));
+if (src && src.indexOf('createAppHeader') !== -1 && /spirit\.elements/.test(src)) test.check('spirit/run/spirit/element/appHeader/appHeader.js defines createAppHeader and adds it to spirit.elements');
+else test.fail(OWED + (src ? 'appHeader.js has no createAppHeader added to spirit.elements' : 'no spirit/run/spirit/element/appHeader/appHeader.js'));
 
 test.subHeading('2. the div: empty, sticky at the titlebar\'s height, opaque, above, measured again on resize');
 let pending = Promise.resolve();
@@ -134,9 +134,9 @@ else {
 
 pending = pending.then(function () {
   test.subHeading('3. loaded by index.html before the shell, handed to apps as api.ui.elements');
-  const at = index.indexOf('src="/shell/js/appHeader/appHeader.js"');
+  const at = index.indexOf('src="/spirit/element/appHeader/appHeader.js"');
   const atShell = index.indexOf('src="/spirit/client/shell.js"');
-  if (at !== -1 && atShell !== -1 && at < atShell) test.check('index.html loads /shell/js/appHeader/appHeader.js before /spirit/client/shell.js');
+  if (at !== -1 && atShell !== -1 && at < atShell) test.check('index.html loads /spirit/element/appHeader/appHeader.js before /spirit/client/shell.js');
   else test.fail(OWED + 'index.html: appHeader at ' + at + ', shell at ' + atShell);
   if (/createAppHeader\s*:\s*shellElements\.createAppHeader/.test(shell)) test.check('shell.js hands createAppHeader to apps from spirit.elements, beside the others');
   else test.fail(OWED + 'shell.js does not hand createAppHeader: spirit.elements.createAppHeader under ui.elements (shell.js 1338-1344 hands each by name)');

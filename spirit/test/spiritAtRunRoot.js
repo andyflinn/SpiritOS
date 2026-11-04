@@ -197,7 +197,7 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
       return Promise.resolve({ status: 404, body: null });
     },
     file: function (p) {
-      const text = p === 'shell/js/sample.js' ? 'module.exports = { answer: 42 };' : '';
+      const text = p === 'spirit/element/sample.js' ? 'module.exports = { answer: 42 };' : '';
       return Promise.resolve({ status: text ? 200 : 404, type: 'application/javascript', bytes: new Uint8Array(Buffer.from(text, 'utf8')) });
     },
   };
@@ -206,8 +206,8 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
   if (!s || typeof s.require !== 'function') {
     test.fail(OWED + 'a spirit made on a transport has no require (' + (s ? typeof s.require : 'no spirit') + ')');
   } else {
-    const c = await Promise.resolve(s.require('shell/js/sample.js')).then(function (m) { return m; }, function (e) { return { threw: e.message }; });
-    if (c && c.answer === 42) test.check('a component comes through the link and runs: spirit.require(\'shell/js/sample.js\').answer is 42');
+    const c = await Promise.resolve(s.require('spirit/element/sample.js')).then(function (m) { return m; }, function (e) { return { threw: e.message }; });
+    if (c && c.answer === 42) test.check('a component comes through the link and runs: spirit.require(\'spirit/element/sample.js\').answer is 42');
     else test.fail(OWED + 'spirit.require of a component on a face gave ' + short(c));
     await Promise.resolve(s.require('process/js/desk/desk.family/api.js')).catch(function () {});
     if (s.desk && typeof s.desk['item.get'] === 'function') test.check('spirit.require(\'process/js/desk/desk.family/api.js\') binds spirit.desk');

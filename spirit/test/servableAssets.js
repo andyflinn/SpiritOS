@@ -237,7 +237,7 @@ test.subHeading('A refused folder is not listed either');
 
   // The rest of the tree is untouched — this narrows one folder, it does
   // not start hiding things nobody asked to hide.
-  const kept = ['shell', 'js', 'index.html'].filter(function (name) { return names.indexOf(name) === -1; });
+  const kept = ['spirit', 'element', 'index.html'].filter(function (name) { return names.indexOf(name) === -1; });
   if (kept.length === 0) {
     test.check('and everything else is still listed');
   } else {

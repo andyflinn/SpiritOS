@@ -66,7 +66,7 @@ function world(opts) {
   };
   win.window = win;
   win.spirit = {
-    elements: E,
+    get element() { return this.elements; }, elements: E,
     fs: files,
     ready: Promise.resolve({ fs: files }),
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
@@ -110,7 +110,7 @@ test.startTest('textEditor.js: the TextEditor app, face-able');
   if (!w.def) return;
 
   test.subHeading('it loads what it uses itself (goal/G41.3)');
-  ['shell/js/files/listElement.js', 'shell/js/codeMirror.js'].forEach(function (p) {
+  ['spirit/element/files/listElement.js', 'spirit/element/codeMirror.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
 

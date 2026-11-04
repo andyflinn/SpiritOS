@@ -68,16 +68,16 @@ function ddWrite(verb, args) {
 function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
 
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button here is an armingButton
-// (shell/js/armingButton.js), which the dialog loads itself. A button drawn with data-arming="<what it says armed>" is
+// (spirit/element/armingButton.js), which the dialog loads itself. A button drawn with data-arming="<what it says armed>" is
 // made one after each paint; it arms, says so, and hands the shell its disarm, and its second press is ddSecondPress.
 // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the say box
 // held to fieldRules' line rule by fieldInput, loaded here with the armingButton and attached after each paint.
 var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
-  ? Promise.all([spirit.require('shell/js/armingButton.js'), spirit.require('shell/js/fieldInput.js')]) : null);
+  ? Promise.all([spirit.require('spirit/element/armingButton.js'), spirit.require('spirit/element/fieldInput.js')]) : null);
 function ddArming() {
   return ddParts.then(function () {
-    var A = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.armingButton;
-    var F = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.fieldInput;
+    var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.armingButton;
+    var F = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.fieldInput;
     var say = document.getElementById('dd-say');
     if (F && say && !say.getAttribute('data-held')) { F.attach(say, 'line'); say.setAttribute('data-held', 'line'); }
     var body = document.getElementById('dd-body');
@@ -124,7 +124,7 @@ function ddSecondPress(b) {
 // loads that element too, as it draws with it (Andy: "this element will replace icons painting all shell elements and
 // apps."). The lock before a core file's path is a glyph among words, and stays text.
 var ddBenchParts = typeof spirit !== 'undefined' && spirit.require
-  ? Promise.all([spirit.require('shell/js/workBench.js'), spirit.require('shell/js/icon.js')])
+  ? Promise.all([spirit.require('spirit/element/workBench.js'), spirit.require('spirit/element/icon.js')])
   : Promise.resolve(null);
 var ddBench = null;
 var ddBenchBoxes = {};
@@ -190,7 +190,7 @@ function ddShowLeft(name) {
   if (left && box && left.parentNode !== box) box.appendChild(left);
 }
 function ddMakeBench(n) {
-  var W = window.spirit && window.spirit.elements && window.spirit.elements.workBench;
+  var W = window.spirit && window.spirit.element && window.spirit.element.workBench;
   var host = document.getElementById('dd-bench');
   var hold = document.getElementById('dd-hold');
   var centre = document.getElementById('dd-centre');
@@ -455,13 +455,13 @@ function ddBoxMount() {
     if (ddBoxViewAsked === ddId) return;
     var id = ddId;
     ddBoxViewAsked = id;
-    ddNeed('shell/js/codeMirror.js').then(function () { return ddNeed(DD_SEARCH); }).then(function () {
+    ddNeed('spirit/element/codeMirror.js').then(function () { return ddNeed(DD_SEARCH); }).then(function () {
       var el = document.createElement('div');
       el.className = 'fill';
       el.style.cssText = 'min-height:0;height:100%;display:flex;flex-direction:column';
       el.innerHTML = '<div style="display:flex;gap:1em;align-items:center;margin-bottom:0.25em"><span class="job-manifest-note" data-box-version></span>' +
         '<input type="text" data-box-find placeholder="find in this box" style="flex:1 1 auto"></div><div data-box-editor style="flex:1 1 0;min-height:0;position:relative"></div>';
-      return window.spirit.elements.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
+      return window.spirit.element.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
         // He went into the textarea meanwhile, or left the item: it stays as it is, and the next item asks anew.
         if (ddId !== id || ddBoxFocused) { ddBoxViewAsked = ''; return; }
         // It fills what the version row leaves, and scrolls inside it (goal/G40.8: only a list or a viewer scrolls).
@@ -805,7 +805,7 @@ function ddLoadSuites(id) {
 // delete (item.rules.remove), read from the facts; their names from the rules search, asked when the icon is pressed. The
 // add is the dropdown in the frame (dd-rule-pick), a probability search of rules.search; a pick is item.rules.add.
 var ddRuleNames = Object.create(null);
-var DD_SEARCH = 'shell/js/probabilitySearch.js';
+var DD_SEARCH = 'spirit/element/probabilitySearch.js';
 var ddRulePick = null;
 var ddRulePickHost = null;   // the box the dropdown was made in: a frame drawn again is a new box, so a new dropdown
 // The rule types, as the desk server's RULE_TYPES (goal/G40.12 added test).
@@ -842,7 +842,7 @@ function ddMountRulePick() {
   ddRulePick = null;
   ddRulePickHost = el;
   var make = function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    var P = window.spirit && window.spirit.element && window.spirit.element.probabilitySearch;
     if (!P || typeof P.create !== 'function' || ddRulePickHost !== el || ddRulePick) return;
     ddRulePick = P.create(el, {
       api: ddApi, server: 'desk', verb: 'rules.search',
@@ -869,7 +869,7 @@ function ddMountRulePick() {
     });
     ddRulePick.refresh();
   };
-  if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
+  if (window.spirit && window.spirit.element && window.spirit.element.probabilitySearch) { make(); return; }
   ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 function ddSuitesHtml() {
@@ -896,7 +896,7 @@ function ddMountChatFind() {
   ddChatFind = null;
   ddChatFindHost = el;
   var make = function () {
-    var P = window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch;
+    var P = window.spirit && window.spirit.element && window.spirit.element.probabilitySearch;
     if (!P || typeof P.create !== 'function' || ddChatFindHost !== el || ddChatFind) return;
     ddChatFind = P.create(el, {
       api: ddApi, server: 'desk', verb: 'chat.search',
@@ -908,7 +908,7 @@ function ddMountChatFind() {
     });
     ddChatFind.refresh();
   };
-  if (window.spirit && window.spirit.elements && window.spirit.elements.probabilitySearch) { make(); return; }
+  if (window.spirit && window.spirit.element && window.spirit.element.probabilitySearch) { make(); return; }
   ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 

@@ -15,13 +15,13 @@
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.9): the arming button, through spirit.require. Asked as the app
   // loads, and again as Log out is drawn: the relay serves the face only its own parts before login, and a refused
   // require is not kept, so once the face is linked home the second ask reaches the node.
-  function loginParts() { return spirit.require('shell/js/armingButton.js'); }
+  function loginParts() { return spirit.require('spirit/element/armingButton.js'); }
   loginParts().then(null, function () {});
   // THE ICON ELEMENT TOO (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell elements and
   // apps."): a step's tick and its icon stand alone, so each is made by icon.create and handed on as its markup. Logged out
   // the relay serves no icon.js, so they are plain text until it loads; then the steps are drawn again.
   var lastDrawn = null;
-  Promise.resolve().then(function () { return spirit.require('shell/js/icon.js'); }).then(function () {
+  Promise.resolve().then(function () { return spirit.require('spirit/element/icon.js'); }).then(function () {
     if (pane && lastDrawn) { shown = ''; draw(lastDrawn); }
   }, function () { /* the glyphs stay text */ });
 
@@ -29,7 +29,7 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   function iconHtml(glyph) {
-    var I = window.spirit && window.spirit.elements && window.spirit.elements.icon;
+    var I = window.spirit && window.spirit.element && window.spirit.element.icon;
     if (!glyph || !I || typeof I.create !== 'function') return escape(glyph || '');
     var hold = document.createElement('span');
     I.create(hold, { glyph: glyph });
@@ -95,7 +95,7 @@
       // it, a press anywhere else disarms it, the second logs out.
       var out = document.getElementById('face-logout');
       if (out) loginParts().then(function () {
-        spirit.elements.armingButton.attach(out, { label: 'Log out', armedLabel: 'Log out? Press again', api: api,
+        spirit.element.armingButton.attach(out, { label: 'Log out', armedLabel: 'Log out? Press again', api: api,
           run: function () { api.post('logout').then(function () { window.location.reload(); }, api.refresh); } });
       });
     }

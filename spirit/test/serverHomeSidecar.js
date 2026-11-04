@@ -193,11 +193,11 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
   test.subHeading('H7. the Apps app writes it, the text viewer reads it');
   const apps = read('shell/apps/apps.js');
   // A shell app still says where it runs in its manifest (goal/G30.20); only a server's switch moved. Since box v14 the
-  // switch is the app installer's button, no checkbox (its own test holds the rest: shell/js/test/appInstaller.js).
-  const installer = read('shell/js/appInstaller.js');
+  // switch is the app installer's button, no checkbox (its own test holds the rest: spirit/element/test/appInstaller.js).
+  const installer = read('spirit/element/appInstaller.js');
   eq(/appInstaller\.create\(/.test(apps) && /face\.home === true/.test(apps) && /isServer \? 'home' : 'app'/.test(installer), true,
     'the Apps app switches a server through the app installer, which writes home into its face part; it reads it from there', OWED + 'the Apps app has no installer writing home');
-  const viewer = read('shell/js/textViewer.js');
+  const viewer = read('spirit/element/textViewer.js');
   eq(!/manifest\.runs/.test(viewer) && /\.home === true/.test(viewer), true, 'the text viewer\'s Start reads the sidecar\'s home, not the manifest\'s runs',
     OWED + 'textViewer.js still reads manifest.runs');
 }()).then(function () {

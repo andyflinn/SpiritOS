@@ -138,7 +138,7 @@ if (/row\.face\s*=/.test(hubSrc) && /faceOf\(/.test(hubSrc)) test.check('each re
 else test.fail(OWED + '(open on goal/G40.11) hub.js puts no kept face on the relay rows relay.get answers');
 const info = code('shell/info/info.js');
 // Info's face form is the shell element faceForm since goal/G30.1 (box v39); Info draws it.
-const faceForm = code('shell/js/faceForm.js');
+const faceForm = code('spirit/element/faceForm.js');
 if (/spirit\.elements\.faceForm/.test(info) && /\.face\b/.test(faceForm) && /addEventListener\('change'/.test(faceForm)) test.check('the info app draws the kept face of the selected relay and follows a change of selection');
 else test.fail(OWED + 'the info app does not show the kept face of the selected relay');
 if (/\.relay\.face\(/.test(faceForm)) test.check('the info app asks relay.face, through faceForm');

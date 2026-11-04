@@ -138,8 +138,8 @@ spirit.shell.activateApp({
     // THE EXTRACT BOX ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7: it replaced the text view), loaded by this app.
     var extract = document.getElementById('jd-extract');
     if (extract) {
-      Promise.resolve(spirit.require('shell/js/codeMirror.js')).then(function () {
-        return window.spirit.elements.codeMirror.create(extract, { mode: 'read', text: '', path: 'event.json' });
+      Promise.resolve(spirit.require('spirit/element/codeMirror.js')).then(function () {
+        return window.spirit.element.codeMirror.create(extract, { mode: 'read', text: '', path: 'event.json' });
       }).then(function (view) {
         jdView = view;
         if (jdView && jdView.cm && typeof jdView.cm.setSize === 'function') jdView.cm.setSize('100%', '100%');

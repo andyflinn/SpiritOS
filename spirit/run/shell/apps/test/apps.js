@@ -83,7 +83,7 @@ function world() {
     fieldInput: { attach: function () {} },
     iconList: { create: function () { return { destroy: function () {} }; } },
   };
-  const win = { spirit: { elements: E, fs: fsApi, ready: Promise.resolve({ fs: fsApi }),
+  const win = { spirit: { get element() { return this.elements; }, elements: E, fs: fsApi, ready: Promise.resolve({ fs: fsApi }),
     require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
@@ -118,7 +118,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (!w.def) return;
   const box = node('container');
   w.def.mount(box, {}); await settle();
-  ok(w.required.indexOf('shell/js/appInstaller.js') !== -1, 'it loads the app installer through spirit.require', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/appInstaller.js') !== -1, 'it loads the app installer through spirit.require', 'required: ' + short(w.required));
   ok(!!w.made, 'it draws its list', 'no list made');
   if (!w.made) return;
   ok(/\bfill\b/.test(String((box.nodes[0] || {}).className || '')), 'into a box of a stated size (fill)', 'the list box: ' + short(box.innerHTML));

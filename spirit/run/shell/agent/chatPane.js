@@ -33,7 +33,7 @@
       '</div>';
     container.appendChild(root);
     var gone = false;
-    Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('shell/js/icon.js')]).then(function () {
+    Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('spirit/element/icon.js')]).then(function () {
       if (gone) return;
       root.querySelector('#' + pre + 'title').innerHTML = window.spirit.elements.agentDetail.titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
     });

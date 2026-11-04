@@ -106,7 +106,7 @@ function isShellState(canonical) {
   return parts.length >= 4 && parts[0] === 'relay-state' && parts[1] === 'shell' && !!parts[2] && parts.lastIndexOf('relay-state') === 0;
 }
 
-// A CORE FILE, by the one rule the commit check reads (js/coreFiles.js): spirit/run/spirit/, spirit/run/shell/js/, the
+// A CORE FILE, by the one rule the commit check reads (js/coreFiles.js): spirit/run/spirit/, spirit/run/spirit/element/, the
 // shell's frame and an intrinsic app's folder, never a manifest. The repo root is two folders above the run folder.
 function isCoreFile(canonical) {
   return require('./coreFiles').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));

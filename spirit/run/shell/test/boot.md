@@ -18,7 +18,7 @@ app loads its own components, as a tree, through spirit.require.
 
 - Only what it runs itself (Andy: "shell boot.js will ONLY boot itself and the neccessary home and join components as
   the stand. that's the only pre-load allowed."): the paths of components in its code are spirit.js's own libraries, the
-  shell's sheet, the seal, the login app, the Join app and the navigation it draws apps in. No other shell/js element,
+  shell's sheet, the seal, the login app, the Join app and the navigation it draws apps in. No other spirit/element element,
   and no other app's file. (This reads "the home and join components" as the login app, the navigation, and Join with
   its steps; and, since spirit.js loads no element, the file tree's row element, which the home lists its apps from,
   goal/G41.19.)
@@ -42,7 +42,7 @@ app loads its own components, as a tree, through spirit.require.
 - `spirit/client/iconIndex.js` (kernel's ICON table under another name) and `spirit/client/chatLog.js` are gone.
 - boot loads neither and names no icon table: a step's icon and a manifest's icon are drawn as the glyph they are.
 - Its parts, the only components it loads (goal/G41.23): spirit's libraries, the sheet, the seal, the login app, Join,
-  the navigation, the file tree's row element, and the icon element (`shell/js/icon.js`), through which the home paints
+  the navigation, the file tree's row element, and the icon element (`spirit/element/icon.js`), through which the home paints
   its app tiles' icons (Andy, goal/G41.21: *"this element will replace icons painting all shell elements and apps."*).
 - Every app manifest names its icon as the glyph itself, never a key.
 

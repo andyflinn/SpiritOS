@@ -9,7 +9,7 @@
 <script src="/spirit.js"></script>
 <script>
 // goal/G41.27 (Andy: "icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]"; the box: "new shell element:
-// rowForm", "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "a line saying what
+// rowForm", "spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "a line saying what
 // a press did (a refusal, a result) is the mounter's, below the bubble, not in it."): the icons app mounted in a box, the
 // rowForm it makes recorded, and what the browser makes of its add row, measured. Opened by ./icons.js at
 // /DEBUG/shell/icons/test/icons-laid.html.
@@ -18,9 +18,9 @@ window.laid = function () {
   var def = null;
   spirit.shell = spirit.shell || {};
   spirit.shell.activateApp = function (d) { def = d; };
-  return spirit.require('shell/js/rowForm.js').catch(function () { return null; }).then(function () {
+  return spirit.require('spirit/element/rowForm.js').catch(function () { return null; }).then(function () {
     // The real rowForm, each form it makes kept as made.
-    var R = (spirit.elements || {}).rowForm;
+    var R = (spirit.element || {}).rowForm;
     if (R && typeof R.create === 'function') {
       var real = R.create;
       R.create = function (c, o) { var f = real.call(R, c, o); made.push({ opts: o || {}, f: f }); return f; };

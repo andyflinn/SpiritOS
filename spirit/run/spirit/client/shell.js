@@ -569,7 +569,7 @@
   // WHERE THE JOIN APP'S STEPS STAND (goal/G30.1, box v39 and v40). An app whose manifest lists steps has its tile on
   // the desktop beside the Spirit group while a step is open, named and marked by that step; past the last one the tile
   // is gone. The facts are the node's join-steps job, heard on the jobs stream below (takeStepsJob) and never asked:
-  // the node publishes it the moment a seat, a contact or a face changes. joinSteps (shell/js/joinSteps.js) decides
+  // the node publishes it the moment a seat, a contact or a face changes. joinSteps (spirit/element/joinSteps.js) decides
   // the open step from it and the app's own override faceOpened. null until heard.
   // DECIDED ONCE, HERE (goal/G30.1, box v42; Andy: "Why, when the shell already figured out that the join-app must
   // appear, does the join app figure out AGAIN where the user stands?"). The shell hands the app what it worked out
@@ -585,7 +585,7 @@
     Object.keys(apps).forEach(function (id) { if (apps[id].steps) handSteps(apps[id]); });
   }
   function stepsOf(app) {
-    var steps = window.spirit && window.spirit.elements && window.spirit.elements.joinSteps;
+    var steps = window.spirit && window.spirit.element && window.spirit.element.joinSteps;
     if (!steps || !stepFacts) return null;
     var facts = steps.fromJob(stepFacts, !!getAppOverride(app.id).faceOpened);
     var open = steps.current(app.steps, facts);
@@ -704,14 +704,14 @@
   }
 
   // THE ELEMENT FACTORIES STOOD HERE (createIconSelector and the three
-  // selectors of apiAuth/G1.7-G1.9). They live in spirit/run/shell/js/, one
+  // selectors of apiAuth/G1.7-G1.9). They live in spirit/run/spirit/element/, one
   // file per element (goal/G2.12, G2.14) — Andy: "the shell-elements are
-  // better of being in 'spirit/run/shell/js/'", "there will be many" —
+  // better of being in 'spirit/run/spirit/element/'", "there will be many" —
   // loaded by index.html before this file, and
   // handed to apps below as api.ui.elements, unchanged. A host that loaded
   // this file without it (a fixture booting the shell alone) hands apps no
   // factories rather than failing to boot.
-  var shellElements = (typeof window !== 'undefined' && window.spirit && window.spirit.elements) || {};
+  var shellElements = (typeof window !== 'undefined' && window.spirit && window.spirit.element) || {};
 
   function registerApp(app) {
     apps[app.id] = app;
@@ -1306,9 +1306,9 @@
           contactLabel: shellElements.contactLabel,
           appServerSelector: shellElements.appServerSelector,
           apiFamilySelector: shellElements.apiFamilySelector,
-          // One bar drawn from (done, total, text); the app hooks it to its job (goal/G29.14, shell/js/progressBar.js).
+          // One bar drawn from (done, total, text); the app hooks it to its job (goal/G29.14, spirit/element/progressBar.js).
           progressBar: shellElements.progressBar,
-          // The header area an app fills, sticky under the titlebar (goal/G6.1, shell/js/appHeader/appHeader.js).
+          // The header area an app fills, sticky under the titlebar (goal/G6.1, spirit/element/appHeader/appHeader.js).
           appHeader: shellElements.appHeader,
         },
       },
@@ -2621,7 +2621,7 @@
   }
 
   // THE FILE INFO BUBBLE AND THE ANNOTATIONS (renderFileInfoBubble, pathValue, renderAnnotationsSection and its
-  // helpers) STOOD HERE: they are the viewer elements' now (shell/js/fileViewer.js, goal/G30.16), asking asynchronously.
+  // helpers) STOOD HERE: they are the viewer elements' now (spirit/element/fileViewer.js, goal/G30.16), asking asynchronously.
 
   // Dynamically-loaded apps: discovery reads only each app's manifest
   // (app/<name>/<name>.json — same folder/basename convention process/
@@ -2936,7 +2936,7 @@
     onRelayEvent: function (event) { deliverRelayEvent(event); },
 
     // A CONTACT RENAMED (goal/G4.13). Said once on document, so every
-    // contact label listens without a stream of its own (shell/js/contactLabel.js).
+    // contact label listens without a stream of its own (spirit/element/contactLabel.js).
     onContactRename: function (data) {
       document.dispatchEvent(new CustomEvent('contact.rename', { detail: data }));
     },

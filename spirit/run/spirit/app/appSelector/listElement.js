@@ -1,5 +1,5 @@
 // spirit/run/spirit/app/appSelector/listElement.js
-// THE APP LIST, A DROP-IN ELEMENT (goal/G43.2), as shell/js/bundleSelector/listElement.js is the bundle list: the
+// THE APP LIST, A DROP-IN ELEMENT (goal/G43.2), as spirit/element/bundleSelector/listElement.js is the bundle list: the
 // probabilitySearch the selector draws. Its contract and its test: ./test/listElement.md and ./test/listElement.js.
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key)
@@ -8,7 +8,7 @@
 // current through the family's manager and the row element.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  ['shell/js/probabilitySearch.js', 'spirit/app/appSelector/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
+  ['spirit/element/probabilitySearch.js', 'spirit/app/appSelector/rowElement.js'].forEach(function (p) { window.spirit.require(p); });
   window.spirit.cacheManager('app');
 
   function create(host, opts) {
@@ -20,7 +20,7 @@
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.elements.probabilitySearch.create(host, {
+    var list = window.spirit.element.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
       data: window.spirit.appData.branch,
       server: 'app',

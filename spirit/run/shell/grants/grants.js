@@ -8,8 +8,8 @@
 //   auth app, who can report deprecated branches", and on the name: "YES to your name".
 //
 // A WRAPPER OF THE GRANTS PANEL (goal/G41.16; Andy: "the shell app shell/grans/grants/ must be a wrapper for a new shell
-// element: shell/js/grantsPanel.js"). Two tabs (goal/G41.13): Grants, the grants panel (shell/js/grantsPanel.js);
-// Bundles, the bundle editor (shell/js/bundleEditor.js). The panel knows no table; this app configures it (Andy: "the
+// element: spirit/element/grantsPanel.js"). Two tabs (goal/G41.13): Grants, the grants panel (spirit/element/grantsPanel.js);
+// Bundles, the bundle editor (spirit/element/bundleEditor.js). The panel knows no table; this app configures it (Andy: "the
 // callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel element"): its IDs
 // are the contacts, its grants the node's auth table. Its contract and its test: ./test/grants.md and ./test/grants.js.
 // Nothing here writes node.db; every change goes through the loopback verbs apiAuth.js answers.
@@ -49,14 +49,14 @@ var GR_GRANTS = {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.5; Andy: every app bootstraps its own components, "lazy-load, is a
 // tree...."): through spirit.require, each element bringing its own.
-var grParts = Promise.all(['shell/js/grantsPanel.js', 'shell/js/tabContainer.js', 'shell/js/bundleEditor.js']
+var grParts = Promise.all(['spirit/element/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js']
   .map(function (p) { return spirit.require(p); }).concat([spirit.cacheManager('auth')]));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
     grApi = api;
     return grParts.then(function () {
-      var E = window.spirit.elements;
+      var E = window.spirit.element;
       // The bundles pane opens each bundle's branchEditor as a closable tab in this row (goal/G41.32; Andy: "in the Grants
       // app, this will be the grant app's tabContainer."), each named owner-bundle (Andy: "Grants: <owner>-<bundle>.").
       var tabs = E.tabContainer.create(container, {

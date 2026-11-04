@@ -6,7 +6,7 @@
 // so is core as well. index.html, shell/elements.css and shell/tokens.css are core too.
 //   Andy, 2026-10-05/06, under goal/G6.1 and G6.7: "i never saw coreFiles.js"; "well, we'll fix that, before
 //   anything else."; "1. coreFiles.js goes in \"spirit/run/spirit/coreFiles.js\", with NO dependencies on any
-//   desk stuff, and it is updated to include all files in spirit/run/shell/js"; "2. remove the intrinsic mark
+//   desk stuff, and it is updated to include all files in spirit/run/spirit/element"; "2. remove the intrinsic mark
 //   in desk-related components"; to Q1 "apps in spirit/run/shell/<appname>/ are intrinsic (core) if the
 //   manifest says so."; to Q2 (index.html, elements.css, tokens.css core?): "yes."; to Q3 (agents' include
 //   lists): "leave it to each node, and correct AGENT_ONBOARDING accordingly." claude-ubuntu wrote this red,
@@ -16,7 +16,7 @@
 //   A  coreFiles.js lives at spirit/run/spirit/coreFiles.js and exports isCore(file, top). The old path
 //      spirit/run/process/js/desk/coreFiles.js is gone (removed, not left as a stub).
 //   B  spirit/run/spirit/coreFiles.js require()s nothing under spirit/run/process/js/desk/.
-//   C  isCore returns true for: a file under spirit/run/spirit/; a file under spirit/run/shell/js/;
+//   C  isCore returns true for: a file under spirit/run/spirit/; a file under spirit/run/spirit/element/;
 //      spirit/run/index.html; spirit/run/shell/elements.css; spirit/run/shell/tokens.css; a file in a
 //      spirit/run/shell/<app>/ whose <app>.json says "intrinsic": true. isCore returns false for a file in
 //      a shell/<app>/ whose manifest says "intrinsic": false (desk.json and deskDetails.json today) and for
@@ -26,7 +26,7 @@
 //      is present, the old one is absent.
 //
 // DRY-RUN NOTE: against today's tree every section fails by shape (file still at the old path, isCore does
-// not count shell/js/ or the three face files, the require path points at process/js/desk/). On a scratch
+// not count spirit/element/ or the three face files, the require path points at process/js/desk/). On a scratch
 // patch each check turns green.
 
 const fs = require('fs');
@@ -42,7 +42,7 @@ const DESK_SCOPES_TEST = path.join(__dirname, 'deskCoreGrants.js'); // deskScope
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 
-test.startTest('goal/G6.7: coreFiles.js moves to spirit/run/spirit/, counts shell/js and the shell frame, no desk dependency');
+test.startTest('goal/G6.7: coreFiles.js moves to spirit/run/spirit/, counts spirit/element and the shell frame, no desk dependency');
 
 test.subHeading('A. the file at its new location, the old one gone');
 if (fs.existsSync(NEW_PATH)) test.check('spirit/run/spirit/coreFiles.js exists');
@@ -68,12 +68,12 @@ if (fs.existsSync(NEW_PATH)) {
   test.fail(OWED + 'skipping dependency check until the file is at its new location');
 }
 
-test.subHeading('C. isCore reads: run/js, run/shell/js, index.html, elements.css, tokens.css, intrinsic apps only');
+test.subHeading('C. isCore reads: run/js, run/spirit/element, index.html, elements.css, tokens.css, intrinsic apps only');
 if (core && typeof core.isCore === 'function') {
   const top = path.resolve(path.join(RUN, '..', '..'));
   const cases = [
     { file: 'spirit/run/spirit/relay.js', want: true, why: 'under spirit/run/js' },
-    { file: 'spirit/run/shell/js/appHeader/appHeader.js', want: true, why: 'under spirit/run/shell/js' },
+    { file: 'spirit/run/spirit/element/appHeader/appHeader.js', want: true, why: 'under spirit/run/spirit/element' },
     { file: 'spirit/run/index.html', want: true, why: 'index.html' },
     { file: 'spirit/run/shell/elements.css', want: true, why: 'elements.css' },
     { file: 'spirit/run/shell/tokens.css', want: true, why: 'tokens.css' },

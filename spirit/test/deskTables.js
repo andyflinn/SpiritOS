@@ -42,7 +42,7 @@
 // NOT ASSERTED HERE, OWED ELSEWHERE:
 //   - the client data set's own bound (about 132 MB, one SpiritOS-wide constant, culling its oldest entries) is a
 //     shell-wide feature of spirit.data, managed by no app and no server: it needs its own item.
-//   - "a client never grabs, never culls": the client side (shell/js/desk/data.js, deskClient) is not driven here.
+//   - "a client never grabs, never culls": the client side (spirit/element/desk/data.js, deskClient) is not driven here.
 //   - each side table's own probability search: asserted only as bounded by goal (section 6), not its ranking.
 //   - agent profiles keyed by agent, rules by rule number: no outcome of his names them yet.
 // rule/11: through testSupport only; its own folders, its own pipes, a pretend node on a port the OS picks, every
@@ -609,14 +609,14 @@ function noHandRolled() {
   const code = function (rel) { return fs.readFileSync(path.join(RUN_DIR, rel), 'utf8').split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); };
   const desk = code('process/js/desk/desk.js');
   const client = code('process/js/deskClient/deskClient.js');
-  const translator = code('shell/js/desk/data.js');
+  const translator = code('spirit/element/desk/data.js');
   const packets = [['deskClient.js', client, /\{\s*desk\s*:\s*\{/], ['desk.js', desk, /\{\s*deskClient\s*:\s*\{/], ['data.js', translator, /\{\s*desk\s*:\s*\{/]]
     .filter(function (x) { return x[2].test(x[1]); }).map(function (x) { return x[0]; });
   // box v43: the desk calls no deskClient at all; its one publish reaches them (appServer.publish).
   if (!packets.length && /forPeer\(/.test(client) && !/forPeer\(|peerPost\(/.test(desk)) test.check('no hand-built {desk: ...} or {deskClient: ...} packet: deskClient calls the desk by forPeer, and the desk calls no client');
   else test.fail(OWED + 'hand-built packets in ' + short(packets) + '; forPeer used by deskClient ' + /forPeer\(/.test(client) + ', the desk posts to clients itself ' + /forPeer\(|peerPost\(/.test(desk));
   if (!/new Map\(|Object\.create\(null\)|^ {2}var\s+\w+\s*=\s*(\{\s*\}|\[\s*\])/m.test(translator)) test.check('the translator keeps nothing beside spirit.data');
-  else test.fail(OWED + 'shell/js/desk/data.js keeps a store of its own');
+  else test.fail(OWED + 'spirit/element/desk/data.js keeps a store of its own');
   const publishes = (desk.match(/appServer\.publish\(/g) || []).length;
   if (publishes >= 1 && !/jobs\.publish\(|process\.send\(|\.write\('event:/.test(desk)) test.check('the desk publishes through appServer\'s publish alone, no channel of its own');
   else test.fail(OWED + 'the desk publishes ' + publishes + ' time(s) by appServer.publish, or keeps a channel of its own (jobs.publish beside it)');

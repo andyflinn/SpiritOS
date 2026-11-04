@@ -16,10 +16,10 @@ The Desk app's page: the List of goals and items, the rules, the group chat. Thi
 
 ## Requirements (goal/G41.9)
 
-Every are-you-sure on the page is an armingButton (`shell/js/armingButton.js`; Andy, Q1: "absolutely"), in place of
+Every are-you-sure on the page is an armingButton (`spirit/element/armingButton.js`; Andy, Q1: "absolutely"), in place of
 the arming desk.js hand-rolled.
 
-- **It loads armingButton itself**, through `spirit.require('shell/js/armingButton.js')`.
+- **It loads armingButton itself**, through `spirit.require('spirit/element/armingButton.js')`.
 - **Nothing hand-rolled is left**: no `data-armed`, no `armUntilElsewhere`, no armed flag of its own (`deskArmed`,
   `deskArmOrFire`, `deskDisarm`); armingButton arms, says so, and hands the shell its disarm.
 - **Each two-press button is an armingButton handed the app's api**, saying today's armed wording; its first press

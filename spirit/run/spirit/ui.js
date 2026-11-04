@@ -10,7 +10,7 @@
 // edge the tile's icon and label, on its right a close icon, which closes the app and brings the tiles back.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  window.spirit.require('shell/js/icon.js');
+  window.spirit.require('spirit/element/icon.js');
   window.spirit.cacheManager('app');
 
   function create(container) {
@@ -32,7 +32,7 @@
         '<span class="app-container-head" style="display:flex;align-items:center;gap:0.5em"><span class="icon"></span><span class="label"></span></span>' +
         '<button type="button" class="app-container-close" title="Close">✕</button></div>' +
         '<div class="app-container-pane fill"></div>';
-      window.spirit.elements.icon.create(shell.querySelector('.icon'), { glyph: row.icon });
+      window.spirit.element.icon.create(shell.querySelector('.icon'), { glyph: row.icon });
       shell.querySelector('.label').textContent = row.label;
       box.style.display = 'none';
       root.appendChild(shell);
@@ -60,7 +60,7 @@
         var tile = document.createElement('div');
         tile.className = 'app-icon';
         tile.innerHTML = '<span class="icon"></span><span class="label"></span>';
-        window.spirit.elements.icon.create(tile.querySelector('.icon'), { glyph: row.icon });
+        window.spirit.element.icon.create(tile.querySelector('.icon'), { glyph: row.icon });
         tile.querySelector('.label').textContent = row.label;
         tile.addEventListener('click', function () { open(row); });
         box.appendChild(tile);

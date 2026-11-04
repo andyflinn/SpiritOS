@@ -1,6 +1,6 @@
 // Icons (goal/G30.21): the icon set this node's face uses, relay-state/shell/icons/iconSet.json (below), each key a glyph (the icon itself,
 // never a key into a table) and its value the keywords it is found by. A mountable wrapper over the icons list
-// (shell/js/icons/listElement.js) as a pane. A press opens the icon: its keywords edited, or the icon removed; a glyph
+// (spirit/element/icons/listElement.js) as a pane. A press opens the icon: its keywords edited, or the icon removed; a glyph
 // added at the top. Every change writes the whole set at once (fs.save), and every icons list on the page reads it
 // again from the Files cache's word that it changed.
 //
@@ -54,10 +54,10 @@ function iconsPanelDraw(host, page, api, row, glyph) {
     '<div data-icons="said" class="job-manifest-note"></div></div>';
   var said = host.querySelector('[data-icons="said"]');
   // THE ICON IT OPENS IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell
-  // elements and apps."): the glyph written as text until shell/js/icon.js is here, then made the element in its place.
+  // elements and apps."): the glyph written as text until spirit/element/icon.js is here, then made the element in its place.
   iconsParts.then(function () {
     var heading = host.querySelector('[data-icons="glyph"]');
-    var I = window.spirit.elements.icon;
+    var I = window.spirit.element.icon;
     if (!heading || !I || heading.querySelector('.shell-icon')) return;
     heading.textContent = '';
     I.create(heading, { glyph: glyph });
@@ -75,9 +75,9 @@ function iconsPanelDraw(host, page, api, row, glyph) {
     if (field && document.activeElement !== field) field.value = (v.keywords || []).join(', ');
   }) : null;
   // Saved as the field changes, no Save button (as the Apps panel).
-  // The keywords stop at their limit as they are typed (shell/js/fieldInput.js), the description rule (goal/G41.27; Andy:
+  // The keywords stop at their limit as they are typed (spirit/element/fieldInput.js), the description rule (goal/G41.27; Andy:
   // "icon text follows description rules.").
-  window.spirit.elements.fieldInput.attach(host.querySelector('[data-icons="keywords"]'), 'description');
+  window.spirit.element.fieldInput.attach(host.querySelector('[data-icons="keywords"]'), 'description');
   host.querySelector('[data-icons="keywords"]').addEventListener('change', function (e) {
     var words = iconsWords(e.target.value);
     iconsChange(api, function (set) { set[glyph] = words; }, said);
@@ -89,11 +89,11 @@ function iconsPanelDraw(host, page, api, row, glyph) {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var iconsParts = Promise.all(['shell/js/icons/listElement.js', 'shell/js/fieldInput.js', 'shell/js/icon.js', 'shell/js/rowForm.js'].map(function (p) { return spirit.require(p); }));
+var iconsParts = Promise.all(['spirit/element/icons/listElement.js', 'spirit/element/fieldInput.js', 'spirit/element/icon.js', 'spirit/element/rowForm.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
-    var E = window.spirit.elements;
+    var E = window.spirit.element;
     container.innerHTML =
       // Its list column takes its pane: the add row fixed on top, the list's box the rest (goal/G40.8).
       '<div data-icons="list" class="fill">' +
@@ -102,7 +102,7 @@ spirit.shell.activateApp({
         '<div data-icons="pane" class="fill"></div>' +
       '</div>';
     var drawn = iconsParts.then(function () {
-      E = window.spirit.elements;
+      E = window.spirit.element;
       // THE ADD ROW IS A ROWFORM (goal/G41.27; Andy: "icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]"):
       // ➕, the icon to paste and its keywords in its span, Add its button; what Add did is said below it.
       var form = E.rowForm.create(container.querySelector('[data-icons="form"]'), { icon: '➕', button: 'Add' });
@@ -124,7 +124,7 @@ spirit.shell.activateApp({
     function add() {
       var glyph = String(container.querySelector('[data-icons="new-glyph"]').value || '').trim();
       var words = iconsWords(container.querySelector('[data-icons="new-keywords"]').value);
-      if (!window.spirit.elements.fieldInput.fits(words.join(', '), 'description')) { container.querySelector('[data-icons="added"]').textContent = 'too many keywords'; return; }
+      if (!window.spirit.element.fieldInput.fits(words.join(', '), 'description')) { container.querySelector('[data-icons="added"]').textContent = 'too many keywords'; return; }
       var said = container.querySelector('[data-icons="added"]');
       if (!glyph) { said.textContent = 'paste an icon first'; return; }
       // A DUPLICATE IS REFUSED (Andy: "the icon app allowed me to add a duplicate icon.... that shouldn't work"): an

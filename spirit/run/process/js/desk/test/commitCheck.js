@@ -67,7 +67,7 @@ fs.writeFileSync(PRELOAD, [
 ].join('\n'));
 
 const ID = 'goal/G41.11';
-const CORE = 'spirit/run/shell/js/someElement.js';
+const CORE = 'spirit/run/spirit/element/someElement.js';
 const PLAIN = 'docs/notes.md';
 const STRAY = 'docs/stray.md';
 const FACTS = { id: ID, goal: 'goal/G41', go: true, status: 'build', phase: 'build', red: 'claude-windows', phaseWith: 'wsl-claude', with: 'wsl-claude' };

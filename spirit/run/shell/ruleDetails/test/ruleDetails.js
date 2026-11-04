@@ -74,7 +74,7 @@ function world(answer) {
     console: { log: function () {}, error: function () {} },
   };
   win.window = win;
-  win.spirit = { elements: { armingButton: stub },
+  win.spirit = { get element() { return this.elements; }, elements: { armingButton: stub },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     shell: { activateApp: function (d) { w.def = d; } },
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
@@ -108,7 +108,7 @@ function nothingHandRolled(flag) {
   ok(!/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE) && !/armedButton/.test(CODE), 'no armed class and no armedButton helper of its own', 'its code still has an armed class or an armedButton helper');
 }
 function loadsArming(w) {
-  ok(w.required.indexOf('shell/js/armingButton.js') !== -1, 'it loads shell/js/armingButton.js itself, through spirit.require', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it loads spirit/element/armingButton.js itself, through spirit.require', 'required: ' + short(w.required));
 }
 
 test.startTest('ruleDetails.js: one rule of the desk, its Activate and Delete on the arming button');
@@ -140,7 +140,7 @@ function answer(name) {
   for (const c of cases) {
     test.subHeading(c.label + ' is an arming button');
     const a = armingFor(w, c.id, c.label);
-    ok(!!a, c.label + ' is made or attached through window.spirit.elements.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
+    ok(!!a, c.label + ' is made or attached through window.spirit.element.armingButton', 'arming buttons: ' + short(w.arming.map(function (x) { return x.button && x.button.id || x.opts.label; })));
     if (!a) continue;
     const label = a.opts.label != null ? a.opts.label : a.button.textContent;
     ok(label === c.label && a.opts.armedLabel === c.armed, 'it says ' + c.label + ', and armed ' + c.armed, 'label ' + short(label) + ', armedLabel ' + short(a.opts.armedLabel));

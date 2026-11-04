@@ -276,7 +276,7 @@ let actedOn = null;
     // 3) MALFORMED PATHS, GET AND POST (the box, rule 2: "malformed paths").
     const PATHS = ['/..', '/../../../../etc/passwd', '/%2e%2e/%2e%2e/etc/passwd', '/shell/%2f%2f..%2f..%2fetc', 
       '/' + 'a'.repeat(9000), '/%', '/%zz', '/%E0%A4%A', '/api/%2e%2e/spirit', '//api//spirit', '/DEBUG/../../relay-state/node.json',
-      '/shell/js/../../../relay-state/identity.json', '/api/spirit/../../relay-state/node.json', '/\\..\\..\\relay-state', '/?%', '/#x', '*',
+      '/spirit/element/../../../relay-state/identity.json', '/api/spirit/../../relay-state/node.json', '/\\..\\..\\relay-state', '/?%', '/#x', '*',
       // A null byte last: it may kill the node, and every path before it is still thrown.
       '/%00', '/index.html%00.js'];
     PATHS.forEach(function (p) {

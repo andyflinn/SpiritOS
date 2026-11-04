@@ -127,7 +127,7 @@ function makeDom() {
   return doc;
 }
 
-// A working armingButton, as its spec says (shell/js/test/armingButton.md), that writes down every button it is handed.
+// A working armingButton, as its spec says (spirit/element/test/armingButton.md), that writes down every button it is handed.
 function armingStub(document, made) {
   var loaded = null;
   function attach(b, o) {
@@ -195,7 +195,7 @@ function deskWorld(goal, items) {
       if (REAL.indexOf(rel) !== -1 && !ran[rel]) { ran[rel] = true; vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel }); }
       return Promise.resolve({});
     },
-    elements: { armingButton: armingStub(document, made),
+    get element() { return this.elements; }, elements: { armingButton: armingStub(document, made),
       probabilitySearch: { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
@@ -206,7 +206,7 @@ function deskWorld(goal, items) {
   // the key kept on spirit.node and handed to the data set, so the cache files the page's rows under its node.
   win.spirit.node = { key: PAGE_NODE_KEY };
   win.spirit.data.home(PAGE_NODE_KEY);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'shell', 'js', 'rowElement.js'), 'utf8'), win, { filename: 'rowElement.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'rowElement.js'), 'utf8'), win, { filename: 'rowElement.js' });
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
   w.mount = async function () {
@@ -258,7 +258,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const plain = raw.replace(/\/\/[^\n]*/g, '');
   const w0 = deskWorld({ id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], design: false, blocked: [] }, []);
   await w0.mount();
-  ok(w0.required.indexOf('shell/js/armingButton.js') !== -1, 'it requires shell/js/armingButton.js through spirit.require', 'required: ' + JSON.stringify(w0.required));
+  ok(w0.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + JSON.stringify(w0.required));
   const left = ['data-armed', 'armUntilElsewhere', 'deskArmed', 'deskArmOrFire', 'deskDisarm', "classList.add('armed')"].filter(function (s) { return plain.indexOf(s) !== -1; });
   ok(!left.length, 'nothing hand-rolled is left: no data-armed, no armUntilElsewhere, no armed flag of its own', 'still in desk.js: ' + left.join(', '));
 
@@ -384,8 +384,8 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   // drawn as a dropdown stands inline, as every dropdown in the tree does (Grants, Icons), and is not asked here.
   const wf = deskWorld(goal, [item]);
   const panes = [];
-  const realCreate = wf.win.spirit.elements.probabilitySearch.create;
-  wf.win.spirit.elements.probabilitySearch.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
+  const realCreate = wf.win.spirit.element.probabilitySearch.create;
+  wf.win.spirit.element.probabilitySearch.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
   await wf.mount();
   const mountBox = wf.document.body.children[wf.document.body.children.length - 1];
   const rulesTab = wf.document.querySelector('[data-tab="rules"]');

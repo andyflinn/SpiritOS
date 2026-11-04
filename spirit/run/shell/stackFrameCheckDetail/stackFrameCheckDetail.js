@@ -27,7 +27,7 @@ var sdChat = null;      // the mounted chat of its item
 var SD_PRE = 'sfcd-';
 var SD_SHARED = { deskDoorFields: '/shell/shared/js/deskDoorFields.js', createDeskChat: '/shell/shared/js/deskChat.js' };
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3, goal/G41.9): the arming button, through spirit.require.
-var sdParts = spirit.require('shell/js/armingButton.js');
+var sdParts = spirit.require('spirit/element/armingButton.js');
 // THE DOOR AND ITS RUN ARE THE DESK FAMILY'S CACHE (goal/G41.28; Andy: "EVERY FUCKING ELEMENT is verified to make sure
 // when it changes shit it listens to fucking update via the spirit object"): what the plugin's reads answered is kept
 // in spirit.deskData (doors, doorRuns), the dialog drawing from their watches; the plugin's publish drops what changed,

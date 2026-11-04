@@ -1,7 +1,7 @@
 # shell/apps/apps.js
 
 The Apps app (goal/G30.21; goal/G41.1, box v14): every app of this node as a list, a view of the Files cache, and
-each app's details panel. Each app is switched on and off by the app installer (`shell/js/appInstaller.js`).
+each app's details panel. Each app is switched on and off by the app installer (`spirit/element/appInstaller.js`).
 
 ## Requirements
 

@@ -487,7 +487,7 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 #app-content button.desk-design-end:not([data-armed]) { background: #c00; color: #fff; font-weight: bold; box-shadow: inset 0 0 0 2px #600; }
 #app-content button.desk-design-start:not([data-armed]) { background: #1a7f37; color: #fff; font-weight: bold; box-shadow: inset 0 0 0 2px #0b4a1e; }
 
-/* THE ICON ELEMENT (goal/G41.23; shell/js/icon.js; Andy: "it centers the glyph, in a square box, the size of which
+/* THE ICON ELEMENT (goal/G41.23; spirit/element/icon.js; Andy: "it centers the glyph, in a square box, the size of which
    follows font-size", "like like text characters, it follows, its container in most attributes"): a square of its own
    font size, which is its container's times its size; the glyph centred; never shrinking in a row. */
 .shell-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box;
@@ -495,11 +495,11 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 
 /* THE BUBBLE (goal/G41.27; Andy, box: "they form a bubble with transparent background, and a border with the color of
    the type-face. The bubble is one shared style, the same probabilitySearch's search bubble uses."): the one style, the
-   rowForm's (shell/js/rowForm.js) and probabilitySearch's search bubble alike. */
+   rowForm's (spirit/element/rowForm.js) and probabilitySearch's search bubble alike. */
 .shell-bubble { background: transparent; border: 1px solid currentColor; border-radius: 1em; padding: 0.3em 0.6em;
   box-sizing: border-box; }
 
-/* THE ONE-ROW FORM (goal/G41.27; shell/js/rowForm.js; Andy, box: "one row forms show as blocks taking up the full width of
+/* THE ONE-ROW FORM (goal/G41.27; spirit/element/rowForm.js; Andy, box: "one row forms show as blocks taking up the full width of
    their container, and wrap", "the first element is always an icon shell-element, and takes the (top-) left position",
    "the last element is always a button that is positioned at the (bottom-) right", "between the icon and the button is
    a span, into which the form elements can be dropped."): a block the container's width; the span takes what is left
@@ -510,7 +510,7 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
 .shell-row-form > .shell-row-form-span > * { max-width: 100%; box-sizing: border-box; }
 .shell-row-form > button { flex: none; align-self: flex-end; margin-left: auto; }
 
-/* THE BUSY BUTTON'S TURN (goal/G41.23; shell/js/busyButton.js; Andy: "an animated icon showing to the left of the
+/* THE BUSY BUTTON'S TURN (goal/G41.23; spirit/element/busyButton.js; Andy: "an animated icon showing to the left of the
    buttons label, when the button is waiting"): one turn for every app, here in the one sheet. */
 .shell-busy { display: inline-block; flex: none; width: 0.8em; height: 0.8em; margin-right: 0.4em; box-sizing: border-box;
   border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -0.1em;
@@ -670,14 +670,14 @@ select option { background: var(--shell-pane); color: #eee; }
 .icon-selector-row:hover,
 .icon-selector-row.is-active { background: var(--shell-accent); }
 
-/* The contact selector (shell/js/contactSelector.js) draws through the
+/* The contact selector (spirit/element/contactSelector.js) draws through the
    shared list (shell/shared/js/listSearch.js), which lays out its own
    field, pane and popup. A dropdown stands inline like any input control;
    only its pane pops up (goal/G29.8). */
 .contact-selector { position: relative; }
 .contact-selector-face-dropdown { display: inline-block; }
 
-/* The contact label (shell/js/contactLabel.js, goal/G4.13). It takes
+/* The contact label (spirit/element/contactLabel.js, goal/G4.13). It takes
    the style of its container, so nothing here sets its face or size;
    only the editable one says it can be clicked, and a refusal shows
    beside it. */
@@ -1217,7 +1217,7 @@ details.stat-tile > summary {
    Hidden stays hidden. */
 .fill { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .fill[hidden] { display: none; }
-/* A TAB CONTAINER'S CONTENT (shell/js/tabContainer.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy
+/* A TAB CONTAINER'S CONTENT (spirit/element/tabContainer.js; goal/G41.13, Andy: "our standard 0.5em padding", "it must occupy
    all remaining vertical space, that it must be constrained to", "a bubble of of darker green than already is on the
    page"): the height left, scrolling inside itself, in a rounded well. */
 .tab-content { padding: 0.5em; min-height: 0; overflow: auto; border-radius: 8px; background: var(--shell-well); }

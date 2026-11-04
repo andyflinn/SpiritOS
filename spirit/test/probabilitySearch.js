@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/probabilitySearch.js
-// goal/G30.17: shell/js/probabilitySearch.js, the standard shell list-tool. Red on today's tree; claude-windows writes it
+// goal/G30.17: spirit/element/probabilitySearch.js, the standard shell list-tool. Red on today's tree; claude-windows writes it
 // and builds it (one agent). The box, in short:
 //   - Taken from shell/shared/js/listSearch.js: rows kept by key in one unbounded probability bucket, a later answer
 //     replacing a row with the same key; ranking as you type (probabilityStringObjectMatch times every filter's test),
@@ -19,7 +19,7 @@
 //     cells only. destroy drops every listener.
 //   - Apps not yet ported keep using listSearch until none does.
 // NAMED HERE where the box names none:
-//   - window.spirit.elements.probabilitySearch = { create(container, options), order(entries, state) }. order is the pure
+//   - window.spirit.element.probabilitySearch = { create(container, options), order(entries, state) }. order is the pure
 //     heart of the list: entries [{ key, row, at, gone }], state { words, values, filters, sort: { field, direction },
 //     columns, matched, score } -> [{ key, row, rank }] in the order drawn. It is what the list draws from, so it is
 //     what this suite holds to the box.
@@ -40,11 +40,11 @@ test.startTest('goal/G30.17: probabilitySearch, the standard shell list-tool');
 const window = test.withSpirit({ 'spirit.elements': {} });
 const ctx = vm.createContext({ window: window, console: console, document: { addEventListener: function () {} } });
 const loaded = {};
-['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'shell/js/probabilitySearch.js'].forEach(function (rel) {
+['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/probabilitySearch.js'].forEach(function (rel) {
   try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
   catch (e) { loaded[rel] = e.message; }
 });
-const PS = window.spirit.elements.probabilitySearch;
+const PS = window.spirit.element.probabilitySearch;
 
 // Five files, in the order they came.
 const entries = [
@@ -79,7 +79,7 @@ if (keys(plain) === 'abcde' && keys(bySizeUp) === 'dbeac' && keys(bySizeDown) ==
 else test.fail(OWED + 'plain ' + keys(plain) + ', size up ' + keys(bySizeUp) + ', size down ' + keys(bySizeDown) + ', name ' + keys(byName) + ', changed ' + keys(byDate) + ', files only ' + keys(filesOnly));
 
 test.subHeading('3. the element, by its code');
-const ps = code('shell/js/probabilitySearch.js');
+const ps = code('spirit/element/probabilitySearch.js');
 const checks = {
   ownFile: !!ps,
   bucket: /createProbabilityBucket\(Infinity\)/.test(ps),
@@ -89,11 +89,11 @@ const checks = {
   elements: /\.mount\(/.test(ps) && /\.destroy\(\)/.test(ps) && /element/.test(ps),
   marksAndBar: /<mark>/.test(ps) && /spirit-match/.test(ps),
   oldStays: !!code('shell/shared/js/listSearch.js'),
-  loaded: /shell\/js\/probabilitySearch\.js/.test(fs.readFileSync(path.join(RUN, 'index.html'), 'utf8')),
+  loaded: /spirit\/element\/probabilitySearch\.js/.test(fs.readFileSync(path.join(RUN, 'index.html'), 'utf8')),
 };
 const missing = Object.keys(checks).filter(function (k) { return !checks[k]; });
 if (!missing.length)
-  test.check('its own file in shell/js, one unbounded bucket, headers that sort, no count line, one call on the wire, rowElements mounted and destroyed, marks and the match bar, listSearch kept, loaded by index.html');
+  test.check('its own file in spirit/element, one unbounded bucket, headers that sort, no count line, one call on the wire, rowElements mounted and destroyed, marks and the match bar, listSearch kept, loaded by index.html');
 else test.fail(OWED + 'missing: ' + missing.join(', '));
 
 test.reportSuccessFailureCount();

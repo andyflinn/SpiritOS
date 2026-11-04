@@ -2,7 +2,7 @@
 
 // spirit/run/shell/grants/test/grants.js
 // The tests of shell/grants/grants.js, and of no other module (spec: ./grants.md; goal/G41.5, goal/G41.13, goal/G41.14,
-// goal/G41.16). Since G41.16 the app is a wrapper: its Grants tab is the grants panel (shell/js/grantsPanel.js, tested in
+// goal/G41.16). Since G41.16 the app is a wrapper: its Grants tab is the grants panel (spirit/element/grantsPanel.js, tested in
 // its own file), configured by this app for contacts and the node's grants. The browser file runs in node on a BARE
 // window (rule/26): each element is put on the page only once the app requires it, a stand-in that keeps what the app
 // handed it. The node is a stub that answers and keeps every ask.
@@ -72,10 +72,10 @@ function world() {
       return Promise.resolve({ status: 200, body: { ok: true } }); },
     ui: { elements: {} },
   };
-  const FILES = { 'shell/js/tabContainer.js': ['tabContainer'], 'shell/js/bundleEditor.js': ['bundleEditor'], 'shell/js/grantsPanel.js': ['grantsPanel'] };
+  const FILES = { 'spirit/element/tabContainer.js': ['tabContainer'], 'spirit/element/bundleEditor.js': ['bundleEditor'], 'spirit/element/grantsPanel.js': ['grantsPanel'] };
   const page = {};
   const win = {
-    spirit: { elements: page,
+    spirit: { get element() { return this.elements; }, elements: page,
       require: function (p) { w.required.push(String(p)); (FILES[p] || []).forEach(function (k) { page[k] = E[k]; }); return Promise.resolve(true); },
       // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
       cacheManager: function (name) {
@@ -112,7 +112,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (!w.def) return;
 
   test.subHeading('a wrapper: it loads the panel, the tabs and the bundle editor, and nothing it draws itself');
-  ['shell/js/grantsPanel.js', 'shell/js/tabContainer.js', 'shell/js/bundleEditor.js'].forEach(function (p) {
+  ['spirit/element/grantsPanel.js', 'spirit/element/tabContainer.js', 'spirit/element/bundleEditor.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
   // goal/G41.16: "the shell app shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js".
@@ -311,7 +311,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     // "in the agent app, this will be the tabContainer in the center tab of the workBench, oos for this item. and Edit/Delete
     // in the bundleSelector:pane go anyway."
     const mark = chrome.heard.length;
-    await chrome.evaluate('Promise.resolve(window.spirit.require("shell/js/bundleEditor.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.height = "300px"; document.body.appendChild(h); window.spirit.elements.bundleEditor.create(h, { api: { escapeHtml: function (t) { return String(t); }, verb: function (v, a) { return window.spirit.call ? window.spirit.call(v, a) : Promise.resolve({}); } } }); return true; })');
+    await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/bundleEditor.js")).then(function () { var h = document.createElement("div"); h.id = "zzAgentLike"; h.style.height = "300px"; document.body.appendChild(h); window.spirit.element.bundleEditor.create(h, { api: { escapeHtml: function (t) { return String(t); }, verb: function (v, a) { return window.spirit.call ? window.spirit.call(v, a) : Promise.resolve({}); } } }); return true; })');
     await H.sleep(1500);
     const noBtn = await chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzAgentLike button")).filter(function (b) { return /^(Edit|Delete)$/.test(b.textContent.trim()); }).length');
     ok(noBtn === 0, 'no Edit or Delete there either', noBtn + ' Edit or Delete buttons with no tabContainer');
