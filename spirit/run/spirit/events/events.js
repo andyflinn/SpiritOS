@@ -90,6 +90,8 @@ function createEvents(o) {
     // Bound to 'error' as well as 'close': a socket that dies without a clean close (a killed browser, a dropped
     // network) never fired 'close', leaving the heartbeat writing to a dead response forever and every listener
     // attached. Guarded so it runs once whichever fires first.
+    // THE RESPONSE'S CLOSE, NOT THE REQUEST'S (goal/G43.3; Andy: "this is a severe core-bug"): the door reads the body
+    // before this runs, so the request's close has already fired, and every stream that ended stayed subscribed for good.
     let torndown = false;
     function teardown() {
       if (torndown) return;
@@ -98,7 +100,7 @@ function createEvents(o) {
       clearInterval(heartbeat);
       off();
     }
-    req.on('close', teardown);
+    res.on('close', teardown);
     req.on('error', teardown);
     res.on('error', teardown);
   }
