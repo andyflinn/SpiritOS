@@ -15,8 +15,10 @@ const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'events', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'];
 const SERVER_FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
-const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.dirname(path.join(RUN, familyPath(name))); };
+// Andy: "process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"
+const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'process', 'js', name); };
+// A scratch node does not offer these three to a page, so a page cannot load them; all 19 are judged in node as well.
+const NOT_ON_SCRATCH = ['agent', 'chatClerver', 'deskClient'];
 // The old spirit.<name>Data: chatData was chatClerver's, verifyData deskVerify's.
 const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|deskVerify|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
 // A retired name's parts, so this file does not hold it whole.
@@ -79,6 +81,17 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
   ok(!offenders.manager.length, 'no code names ' + OLD_MANAGER, 'code that names ' + OLD_MANAGER + ', ' + say(offenders.manager));
   ok(!offenders.module.length, 'no code names ' + OLD_MODULE, 'code that names ' + OLD_MODULE + ', ' + say(offenders.module));
 
+  test.subHeading('in node: each family\'s data.js stands at spirit.data.<name>, with data and cache');
+  const inNode = require('child_process').spawnSync(process.execPath, ['-e', 'const D = require(' + JSON.stringify(path.join(RUN, 'spirit', 'data.js')) + '); const out = {};' +
+    JSON.stringify(FAMILIES.map(function (n) { return [n, path.join(folderOf(n), 'data.js')]; })) + '.forEach(function (p) { try { require(p[1]); const f = D[p[0]]; out[p[0]] = { data: f && typeof f.data, cache: f && typeof f.cache }; } catch (e) { out[p[0]] = { threw: String(e).slice(0, 200) }; } });' +
+    'console.log("ANSWER" + JSON.stringify(out)); process.exit(0);'], { cwd: RUN, encoding: 'utf8', timeout: 30000 });
+  let nodeView = {};
+  try { nodeView = JSON.parse(String(inNode.stdout).split('\n').filter(function (l) { return l.indexOf('ANSWER') === 0; })[0].slice('ANSWER'.length)); } catch (e) { test.fail('node answered nothing: ' + short(inNode.stderr || inNode.stdout)); }
+  FAMILIES.forEach(function (n) {
+    const f = nodeView[n] || {};
+    ok(f.data === 'object' && f.cache === 'object', n + ': in node, data and cache', n + ': in node: ' + short(f));
+  });
+
   // ── ON A PAGE ───────────────────────────────────────────────────────────────────
   const chrome = H.findChrome();
   const node = await H.scratchNode();
@@ -104,7 +117,7 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
     ok(!left.length, 'none is left', 'still on spirit: ' + left.join(', '));
 
     test.subHeading('the box: "spirit.data.<name>.data" and "spirit.data.<name>.cache"');
-    FAMILIES.forEach(function (n) {
+    FAMILIES.filter(function (n) { return NOT_ON_SCRATCH.indexOf(n) === -1; }).forEach(function (n) {
       const f = got.families[n] || {};
       ok(f.data === 'object' && f.cache === 'object', 'spirit.data.' + n + ' has data and cache', 'spirit.data.' + n + ': ' + short(f));
     });
