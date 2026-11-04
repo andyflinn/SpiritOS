@@ -183,7 +183,7 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
-  const REAL = ['spirit/data.js', 'process/js/desk/family/data.js', 'process/js/backup/family/data.js'];
+  const REAL = ['spirit/data.js', 'process/js/desk/data.js', 'process/js/backup/data.js'];
   const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,

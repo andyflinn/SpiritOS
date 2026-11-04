@@ -46,7 +46,7 @@ the table)"*.
     (goal/G41.19).
 
 - It requires no data script (goal/G41.16): the agent family's cache manager
-  (`process/js/agent/family/data.js`, goal/G41.28), asked for by the element as it runs, takes the tables'
+  (`process/js/agent/data.js`, goal/G41.28), asked for by the element as it runs, takes the tables'
   rows from the stream into `<node>/agent/<table>`.
 
 ### Add (goal/G41.21, box v23)

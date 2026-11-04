@@ -201,7 +201,7 @@ function panelIcon(w, key) { return w.document.querySelector('[data-panel="' + k
 // The dialog is driven: mounted on a small page of its own, opened on an item, and each two-press button clicked twice.
 // armingButton is a working stand-in that writes down every button it is handed; the node's desk is a recorder.
 const vm = require('vm');
-const VERIFY_CCM = 'process/js/deskVerify/family/data.js';
+const VERIFY_CCM = 'process/js/deskVerify/data.js';
 
 function ddWorld(facts, checks, o) {
   const document = makeDom();

@@ -29,7 +29,7 @@ Desk's call and stream, `ctx.callDialog(app, params)` the shell's dialog. `ctx.c
   one slot (`list.ask`), never two in the air; it says `❌ <red> red of <all> tests now (<pct>%).`, no percentage when
   there are no tests. Each deskVerify publish kept in the verifier's cache (`spirit.data.deskVerify.data.watch`) counts again.
 - **Through the verifier's cache** (goal/G41.28; Andy: *"These rules apply to ALL clients. including deskVerify"*): it
-  loads `process/js/deskVerify/family/data.js` itself; its list is a view of `spirit.data.deskVerify.data.testsBranch`;
+  loads `process/js/deskVerify/data.js` itself; its list is a view of `spirit.data.deskVerify.data.testsBranch`;
   it follows no deskVerify stream of its own.
 - A ctx without chat, stream or dialog is harmless.
 

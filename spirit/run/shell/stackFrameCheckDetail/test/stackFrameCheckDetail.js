@@ -80,7 +80,7 @@ function world(answer, fields) {
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
       w.managers = (w.managers || []).concat(name);
-      vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', String(name), 'family', 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
+      vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
       return Promise.resolve(true);
     } };
   // The door's fields, the shared element, as a stand-in whose form says the door it is handed (fields).

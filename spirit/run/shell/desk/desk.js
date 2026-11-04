@@ -539,9 +539,9 @@ var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
 // THE DESK'S TRANSLATOR (goal/G33.3): spirit.data keeps the current goal for this page and the item dialog, as
 // deskClient keeps it in node; loaded once by the app, as the shared element is. Since goal/G41.24 it is the desk
 // family's data.js, from the node that served this page.
-var DESK_DATA = '/process/js/desk/family/data.js';
+var DESK_DATA = '/process/js/desk/data.js';
 // The verifier's cache manager, its own family's (goal/G41.28).
-var DESK_VERIFY_DATA = '/process/js/deskVerify/family/data.js';
+var DESK_VERIFY_DATA = '/process/js/deskVerify/data.js';
 // EVERY PART THROUGH THE ONE LOADER (goal/G41.11; rule/21: "always look for existing code", and Andy, on the add-rule
 // dropdown that sometimes never appeared: "FIX IT"): spirit.require, never a script tag of its own. It loads a part once
 // for the page and answers when it has run.
@@ -1363,7 +1363,7 @@ function deskLoad() {
 // The backup server's status.get: its last check and last copy, marked red
 // when something was closed after the last check. Kept by the backup family's
 // cache manager (goal/G41.28), spirit.data.backup.data; the line follows its watch.
-var DESK_BACKUP_DATA = '/process/js/backup/family/data.js';
+var DESK_BACKUP_DATA = '/process/js/backup/data.js';
 var deskBackupWatched = null;
 function deskBackupPaint() {
   // Its own line alone once the page is drawn (goal/G27.9: one change, one element repainted).

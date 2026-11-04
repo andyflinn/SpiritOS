@@ -297,7 +297,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('elementRow.js loads the agent family\'s cache manager, which takes the provider table\'s rows from the stream (goal/G41.16, G41.28)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
   // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's data.js's
-  // (process/js/agent/family/data.js, goal/G41.28), loaded with the row element; it files the rows under the
+  // (process/js/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
   // node that served them, and is read through spirit.data.agent.data.
   {
     const DATA = global.window.spirit.data;

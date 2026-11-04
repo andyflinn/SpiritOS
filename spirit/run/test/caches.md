@@ -11,12 +11,12 @@ is the appServer serializes the cache to disk."*
 ## Requirements
 
 1. **Every family in the api tree has a data.js**: each family's interface, `process/js/<name>/family/api.js`
-   (`spirit.familyPath`) and the node's own `spirit/<name>/api.js`, has `data.js` beside it. Each family
+   (`spirit.familyPath`) and the node's own `spirit/<name>/api.js`, has `data.js` in its own folder, `process/js/<name>/` or `spirit/<name>/`. Each family
    is its own check, named by the family.
 2. **One code**:
    - the data set is one file, `spirit/data.js`: `spirit.js` brings it to a page, appServer requires the
      same file;
-   - appServer takes a family's cache from the family's own `data.js`, beside its api.js;
+   - appServer takes a family's cache from the family's own `data.js`;
    - a manager's branches (the names it gives `var` constants, `var ITEMS = 'desk'`) are named by it alone: no other
      file hands a path of them to a `spirit.data` reader or writer (`D.get('desk/' + id)`). Every other file asks the
      manager.
@@ -37,8 +37,8 @@ is the appServer serializes the cache to disk."*
    download their clientCacheManagers."*):
    - `spirit.js` knows where a family's `data.js` lives, so a page finds it by the family's name alone;
    - for every family the node's own api tree names (a scratch node, `api`), the shell asks the family where its manager
-     is, `<family>.FS.path({ path: 'data.js' })` (the owner's, on loopback), as `spirit.cacheManager`
-     does; the path answered is the one beside its interface (`process/js/<name>/family/` or `spirit/<name>/`), and the
+     is, `<family>.FS.path({ path: 'api.js' })` (the owner's, on loopback), as `spirit.cacheManager`
+     does; `data.js` is taken from the `api.js` it answers (`process/js/<name>/` or `spirit/<name>/`), and the
      node serves it as a script that calls `spirit.data.family`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
      every family the tree holds is asked in 1.
 

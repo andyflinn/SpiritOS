@@ -57,7 +57,7 @@ let cacheAnswer = [];   // what appServer answers: [{ file, bytes }], a file per
 // keepRow), and, set before a restart, the rows it reads back into the fresh data set at the start, before deskClient
 // runs a line past serve() (appServer restoreCaches): through the translator, no onRow.
 // goal/G41.24: the desk's cache rules and its translator are one file in the desk's family folder, data.js.
-const CCM = path.join(RUN, path.dirname(familyPath('desk')), 'data.js');
+const CCM = path.join(RUN, path.dirname(path.dirname(familyPath('desk'))), 'data.js');
 const DESK_API = (function () { try { return require(CCM); } catch (e) { return { cache: { keep: function (rows, r) { return rows.concat([r]); } } }; } }());
 let cacheRows = [];
 let restoreRows = null;
@@ -427,7 +427,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   test.subHeading('the cache is appServer\'s: deskClient switches it on and saves nothing itself');
   ok(served.opts.stream && served.opts.stream.cache === true, 'deskClient follows the desk\'s stream with the cache switch on', 'stream: ' + short(served.opts.stream && { cache: served.opts.stream.cache }));
   // goal/G41.24, Andy: "deskClient can get it form its own disc": its translator is the desk family's data.js.
-  ok(served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM, 'its stream\'s translator is process/js/desk/family/data.js, from its own disc', 'translator: ' + short(served.opts.stream && served.opts.stream.translator));
+  ok(served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM, 'its stream\'s translator is process/js/desk/data.js, from its own disc', 'translator: ' + short(served.opts.stream && served.opts.stream.translator));
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: 'goal/G9.6', title: 'saved soon' }) });
   await settle();
   await new Promise(function (r) { setTimeout(r, 40); });

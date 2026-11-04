@@ -151,7 +151,7 @@ function verifierCache(win) {
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.node = { key: 'KEY+FALLOUT/NODE==' };
   win.spirit.data.home(win.spirit.node.key);
-  vm.runInContext(fs.readFileSync(path.join(RUN, 'process/js/deskVerify/family/data.js'), 'utf8'), win, { filename: 'deskVerify/family/data.js' });
+  vm.runInContext(fs.readFileSync(path.join(RUN, 'process/js/deskVerify/data.js'), 'utf8'), win, { filename: 'deskVerify/data.js' });
 }
 function world(withList, totals) {
   const document = makeDom();
@@ -323,7 +323,7 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(asked.length === 1 && scripts.length === 0, 'it asks spirit.require for spirit/element/probabilitySearch.js, and puts no script tag on the page',
     'required ' + short(wl.win.required.map(function (r) { return r.path; })) + ', scripts ' + scripts.length);
   ok(wl.list.made.length === 0, 'and no list is made before it loads', 'made: ' + wl.list.made.length);
-  const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/family/data.js'; });
+  const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/data.js'; });
   ok(askedV.length === 1, 'it asks spirit.require for the verifier\'s cache manager, its own family\'s (goal/G41.28)', 'required ' + short(wl.win.required.map(function (r) { return r.path; })));
   wl.win.spirit.element.probabilitySearch = { create: wl.list.create };
   if (asked[0]) asked[0].resolve({}); if (askedV[0]) askedV[0].resolve({}); await settle();

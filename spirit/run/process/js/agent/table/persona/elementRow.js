@@ -6,7 +6,7 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // Its table's rows are the agent family's cache (goal/G41.28): the family's own data.js
-  // (process/js/agent/family/data.js) translates them into the table's branch; it is loaded here, with
+  // (process/js/agent/data.js) translates them into the table's branch; it is loaded here, with
   // this element.
   window.spirit.cacheManager('agent');
   var FIELDS = [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'persona', label: 'Persona, given with every prompt', kind: 'code' },

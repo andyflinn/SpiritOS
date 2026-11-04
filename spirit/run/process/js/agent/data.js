@@ -1,4 +1,4 @@
-// spirit/run/process/js/agent/family/data.js
+// spirit/run/process/js/agent/data.js
 // WHAT A CLIENT KNOWS OF THE AGENT SERVER'S TABLES, IN THE agent FAMILY'S OWN FOLDER (goal/G41.28). Andy: "We're not done
 // until every family of the API tree as a clientCacheManager, and clients can use that to organize their spirit.data". A
 // page loads it through spirit.cacheManager('agent'); it runs the translator into that page's spirit.data, under the
@@ -13,7 +13,7 @@
 // rows, another module's, or a row with no id write nothing. It asks nothing.
 (function () {
   var TABLES = ['job', 'model', 'persona', 'provider'];
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
   D.family('agent', function () {
     var HOME = D.at(null, 'agent');
     D.translate({

@@ -30,7 +30,7 @@ const RUN = path.join(__dirname, '..');
 const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
 // A family's manager, beside its interface: the app's beside spirit.familyPath(name), the node's own beside its api.js.
 const appFamilies = {};
-function managerOf(name) { return appFamilies[name] ? path.posix.join(path.posix.dirname(familyPath(name)), 'data.js') : 'spirit/' + name + '/data.js'; }
+function managerOf(name) { return appFamilies[name] ? path.posix.join(path.posix.dirname(path.posix.dirname(familyPath(name))), 'data.js') : 'spirit/' + name + '/data.js'; }
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
@@ -44,7 +44,7 @@ test.startTest('caches: every family has a data.js, one code in the browser and 
 // The api tree's families are their interfaces: an app's at spirit.familyPath(name), and the node's own,
 // spirit/<name>/api.js (spirit.js, interfaceName). A test folder's api.js is a test, not a family. Every family path is
 // spirit.familyPath's (the appServer test's rule: no file writes one by hand).
-test.subHeading('1. every family in the api tree has a data.js beside its api.js');
+test.subHeading('1. every family in the api tree has a data.js in its own folder');
 // An app's family is a process folder whose familyPath is tracked.
 tracked.forEach(function (f) { const m = /^process\/js\/([^/]+)\//.exec(f); if (m && tracked.indexOf(familyPath(m[1])) !== -1) appFamilies[m[1]] = true; });
 const families = Object.keys(appFamilies).sort().map(function (n) { return familyPath(n); })
@@ -52,9 +52,9 @@ const families = Object.keys(appFamilies).sort().map(function (n) { return famil
 test.comment(families.length + ' families: ' + families.map(function (f) { return f.split('/').slice(-3, -1).join('/'); }).join(', '));
 ok(families.length > 0, 'the api tree has ' + families.length + ' families', 'no family found in the tree');
 families.forEach(function (api) {
-  const manager = path.posix.join(path.posix.dirname(api), 'data.js');
+  const manager = api.replace(/(family\/)?api\.js$/, 'data.js');
   const name = /^process\/js\/([^/]+)\//.exec(api) ? /^process\/js\/([^/]+)\//.exec(api)[1] : /^spirit\/([^/]+)\//.exec(api)[1];
-  ok(tracked.indexOf(manager) !== -1, name + ': ' + manager + ' is there', name + ': no ' + manager + ' beside ' + api);
+  ok(tracked.indexOf(manager) !== -1, name + ': ' + manager + ' is there', name + ': no ' + manager + ' for ' + api);
 });
 
 // ── 2. ONE CODE ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -66,8 +66,8 @@ const appServer = code(path.join(RUN, 'spirit', 'appServer.js'));
 ok(/['"]spirit\/data\.js['"]/.test(spiritJs) && /require\(\s*['"]\.\/data\.js['"]\s*\)/.test(appServer),
   'the data set is one file: spirit.js brings spirit/data.js to a page, and appServer requires the same file', 'spirit.js or appServer.js loads a data set from somewhere else than spirit/data.js');
 ok(tracked.indexOf('spirit/data.js') !== -1, 'the data set is spirit/data.js', 'spirit/data.js is not tracked');
-ok(/path\.dirname\(\s*spirit\.familyPath\([^;]{0,60}?\)\s*\)\s*,\s*['"]data\.js['"]/.test(appServer),
-  'appServer takes a family\'s cache from the family\'s own data.js, beside its api.js', 'appServer finds a family\'s cache somewhere else than beside its api.js');
+ok(/path\.dirname\(\s*path\.dirname\(\s*spirit\.familyPath\([^;]{0,60}?\)\s*\)\s*\)\s*,\s*['"]data\.js['"]/.test(appServer),
+  'appServer takes a family\'s cache from the family\'s own data.js', 'appServer finds a family\'s cache somewhere else than the family\'s folder');
 const managers = tracked.filter(function (f) { return /\/data\.js$/.test(f) && f !== 'spirit/data.js' && !/\/test\//.test(f); });
 // What each manager names: its branches, the strings it gives its names to (var ITEMS = 'desk').
 const owned = {};
@@ -205,8 +205,8 @@ ok(!naming.length, 'no file in the repo names a replaced way: running uncached, 
         .then(function (r) { return r.json(); }, function () { return null; });
     };
     for (const name of names) {
-      const where = await ask(name + '.FS.path', { path: 'data.js' });
-      const at = where && typeof where.path === 'string' ? where.path : '';
+      const where = await ask(name + '.FS.path', { path: 'api.js' });
+      const at = where && typeof where.path === 'string' ? where.path.replace(/(family\/)?api\.js$/, 'data.js') : '';
       if (!at) { test.fail(name + ': ' + name + '.FS.path names no data.js: ' + short(where)); continue; }
       const got = await fetch(node.base + '/' + at).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
       ok(at === managerOf(name) && got.status === 200 && got.text.indexOf('.family(') !== -1, name + ': the shell asks ' + name + '.FS.path and downloads its manager, /' + at,

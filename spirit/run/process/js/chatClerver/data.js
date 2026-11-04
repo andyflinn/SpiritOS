@@ -1,4 +1,4 @@
-// spirit/run/process/js/chatClerver/family/data.js
+// spirit/run/process/js/chatClerver/data.js
 // WHAT A CLIENT KNOWS OF THE CHATS, IN THE chatClerver FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it
 // through spirit.cacheManager('chatClerver'); it keeps the chats' lines in that page's spirit.data, under the node that
@@ -18,7 +18,7 @@
     return { peer: String(peer), sent: Number(l.sent), seq: Number(l.seq), at: String(l.at || ''), text: String(l.text || ''),
       receivedAt: String(l.receivedAt || ''), re: l.re || { writer: '', seq: 0 }, refused: String(l.refused || '') };
   }
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
   D.family('chatClerver', function () {
     var HOME = D.at(null, 'chatClerver');
     function put(V, peer, l) {

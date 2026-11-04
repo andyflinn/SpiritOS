@@ -146,7 +146,7 @@ verb's arguments are the build's; the test asserts only the verb sent.
 Andy: *"EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update via the spirit
 object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept by its family's cache manager.
 
-- **It loads the verifier's cache manager itself**, `process/js/deskVerify/family/data.js`, through
+- **It loads the verifier's cache manager itself**, `process/js/deskVerify/data.js`, through
   `spirit.require`, and draws the run from `spirit.data.deskVerify.data`, through the shared run status
   (`shell/shared/js/deskRunStatus.js`), on the page's real data set.
 - With an item open whose facts say `verifyRunning`, a verifier publish taken into spirit.data (a job of module

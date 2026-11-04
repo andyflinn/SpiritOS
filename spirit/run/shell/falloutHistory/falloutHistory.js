@@ -39,9 +39,9 @@ spirit.shell.activateApp({
       '<div id="fh-note" class="job-manifest-note">Reading its flips.</div><div id="fh-rows" style="margin-top:1em"></div></div>';
     // THE FLIPS KEPT IN SPIRIT.DATA (goal/G41.28; Andy, the box: "If its rows are NOT cached in the proper place, with the
     // shells one and only spirit.data object, then that must be fixed, too."): the answer is seated by the verifier's own
-    // cache manager (process/js/deskVerify/family/data.js), and the lines are drawn from what it keeps.
+    // cache manager (process/js/deskVerify/data.js), and the lines are drawn from what it keeps.
     var V = null;
-    return Promise.resolve(spirit.require('process/js/deskVerify/family/data.js')).then(function () {
+    return Promise.resolve(spirit.require('process/js/deskVerify/data.js')).then(function () {
       V = ((spirit.data || {}).deskVerify || {}).data;
       if (!V) throw new Error('the verifier\'s cache manager did not load');
       return fhAsk('search', { over: 'tests', suite: suite, heading: heading, history: 'yes', slim: 'yes' });

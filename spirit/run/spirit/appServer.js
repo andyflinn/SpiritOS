@@ -416,7 +416,7 @@ function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '
 // data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
   if (!family || !/^[A-Za-z]\w*$/.test(String(family))) return null;
-  const file = path.join(RUN_ROOT, path.dirname(spirit.familyPath(String(family))), 'data.js');
+  const file = path.join(RUN_ROOT, path.dirname(path.dirname(spirit.familyPath(String(family)))), 'data.js');
   if (!fs.existsSync(file)) return null;
   try { return require(file); } catch (e) { return null; }
 }

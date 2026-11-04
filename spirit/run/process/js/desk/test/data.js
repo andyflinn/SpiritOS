@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/desk/family/test/data.js
-// The tests of process/js/desk/family/data.js, and of no other module (spec: ./data.js.md;
+// spirit/run/process/js/desk/test/data.js
+// The tests of process/js/desk/data.js, and of no other module (spec: ./data.js.md;
 // goal/G41.11, goal/G41.24). The translator
 // runs as it does: in a window of its own beside the real spirit.data (spirit/data.js), which it writes into;
 // the desk's rows are handed in as appServer's streamListener hands them, jobs of module process/js/desk.
@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../../../..');
+const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'data.js');
 const SPIRIT_DATA = path.join(RUN, 'spirit', 'data.js');
@@ -49,12 +49,12 @@ test.startTest('data.js: the desk\'s translator into spirit.data, and its cache 
 // The one file holds what the desk knows of its rows at the receiving end: the translator, and the cache rules (keep,
 // shed, answer) (goal/G41.24). That no other file or doc names another way is test/caches.js's, for the whole repo.
 test.subHeading('goal/G41.24: where it lives');
-ok(fs.existsSync(FILE), 'process/js/desk/family/data.js is there', 'no ' + FILE);
+ok(fs.existsSync(FILE), 'process/js/desk/data.js is there', 'no ' + FILE);
 const inNode = (function () { try { return require(FILE); } catch (e) { return { threw: String(e && e.message) }; } }());
 const CACHE = inNode && inNode.cache;
 ok(!!CACHE && ['keep', 'shed', 'answer'].every(function (f) { return typeof CACHE[f] === 'function'; }),
   'in node, as an appServer that subscribes requires it, it answers cache { keep, shed, answer }', 'required: ' + short(inNode && Object.keys(inNode)));
-const DESK_API = (function () { try { return require(path.join(__dirname, '..', 'api.js')); } catch (e) { return {}; } }());
+const DESK_API = (function () { try { return require(path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath('desk'))); } catch (e) { return {}; } }());
 ok(!('cache' in DESK_API), 'and the desk family\'s api.js holds its verbs alone, no cache', 'api.js exports ' + short(Object.keys(DESK_API)));
 // Its translator is tested below, run as the page and the subscribing appServer run it; without the file there is none.
 if (!fs.existsSync(FILE)) { test.fail('the translator\'s checks wait on the file'); test.reportSuccessFailureCount(); process.exit(0); }

@@ -91,7 +91,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   const D = global.window.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.node.key; a family's cache manager is found by spirit.cacheManager(name), the real one, which in node
-  // reads it from its own disk. The agent family's (process/js/agent/family/data.js) keeps the tables'
+  // reads it from its own disk. The agent family's (process/js/agent/data.js) keeps the tables'
   // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.home(HOME_KEY);

@@ -162,7 +162,7 @@
   // and the verifier's cache manager, its own family's (goal/G41.28).
   function withList(done) {
     if (win.spirit.element && win.spirit.element.probabilitySearch && ((win.spirit.data || {}).deskVerify || {}).data) { done(); return; }
-    Promise.all([String(LIST_SCRIPT), 'process/js/deskVerify/family/data.js'].map(function (p) {
+    Promise.all([String(LIST_SCRIPT), 'process/js/deskVerify/data.js'].map(function (p) {
       return Promise.resolve(win.spirit.require(String(p).replace(/^\/+/, '')));
     })).then(function () { done(); }, function () { /* no list */ });
   }

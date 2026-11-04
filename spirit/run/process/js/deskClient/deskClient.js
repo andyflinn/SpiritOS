@@ -210,7 +210,7 @@ function heldByMe(row) {
 // node's own copy, the same appServer's query uses.
 // The same file is the stream's translator (below), which appServer requires once the data set is there: it is required
 // here only when first read from, so that require is the one that runs it.
-const DESK_CCM = path.join(__dirname, '..', '..', '..', path.dirname(spirit.familyPath('desk')), 'data.js');
+const DESK_CCM = path.join(__dirname, '..', '..', '..', path.dirname(path.dirname(spirit.familyPath('desk'))), 'data.js');
 function fromKept(name, args) {
   const k = kept();
   return k && typeof k.answer === 'function' ? k.answer(name, args, ANSWER_ROOM) : null;
@@ -1212,7 +1212,7 @@ function relayVerifier(run) {
 }
 // THROUGH spirit.data (goal/G43.5; Andy: "the rule covers everything"): the verifier's own cache manager keeps what it
 // publishes, the data set takes the node's stream, and this listens to the manager.
-require('../deskVerify/family/data.js');
+require('../deskVerify/data.js');
 if (globalThis.spirit && ((globalThis.spirit.data || {}).deskVerify || {}).data) globalThis.spirit.data.deskVerify.data.watch(relayVerifier);
 if (globalThis.spirit && globalThis.spirit.data && typeof globalThis.spirit.data.follow === 'function') globalThis.spirit.data.follow();
 gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });

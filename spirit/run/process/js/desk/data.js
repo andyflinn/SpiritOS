@@ -1,7 +1,7 @@
-// spirit/run/process/js/desk/family/data.js
+// spirit/run/process/js/desk/data.js
 // WHAT THE DESK KNOWS OF ITS ROWS AT THE RECEIVING END, IN THE DESK'S OWN FOLDER (goal/G41.24; Andy: "where
 // clientCacheManager.js must work in both browser and an appServer that subscribes? and deskClient can get it form its own
-// disc?"). Two halves: the cache rules, which were api.js's and are now cacheRules.js beside this file (a node's alone),
+// disc?"). Two halves: the cache rules, which were api.js's and are now family/cacheRules.js (a node's alone),
 // and the translator. A page loads it from the node that served it (spirit.require); a subscribing appServer
 // requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.data.
 // It is read by peers through the family's FS verbs like anything in this folder: rules, never secrets.
@@ -33,9 +33,9 @@
   var DOORS = 'deskDoors';
   var DOOR_RUNS = 'deskDoorRuns';
   var cache = typeof module !== 'undefined' && module && module.exports && typeof require === 'function'
-    ? require('./cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
+    ? require('./family/cacheRules.js')({ items: ITEMS, parts: PARTS, state: STATE }) : null;
   // THE TRANSLATOR, ONCE PER DATA SET: spirit.data.family runs this once, however often the file is loaded.
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
   D.family('desk', function () {
     // THE DESK'S ROWS UNDER THE NODE THAT SERVED THEM (goal/G41.28; Andy, the box: "The RAM-CACHE-is organized BY
     // SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>...."): V is the desk

@@ -1,6 +1,6 @@
-// spirit/run/process/js/deskVerify/family/data.js
+// spirit/run/process/js/deskVerify/data.js
 // WHAT A CLIENT KNOWS OF THE VERIFIER, IN THE VERIFIER'S OWN FOLDER (goal/G41.28), as the desk's own is
-// (process/js/desk/family/data.js). Andy: "These rules apply to ALL clients. including deskVerify", and the box:
+// (process/js/desk/data.js). Andy: "These rules apply to ALL clients. including deskVerify", and the box:
 // "All client side searches will be fixed, too, and search the whole row, as cached in spirit.data". A page loads it from
 // the node that served it (spirit.require); it runs the translator into that page's spirit.data.
 //
@@ -16,7 +16,7 @@
   var STATE = 'verify';
   var TESTS = 'verifyTests';
   var FLIPS = 'verifyFlips';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
   D.family('deskVerify', function () {
     // The deskVerify family's view of the home node; a publish is filed under the node that sent it (goal/G41.28).
     var HOME = D.at(null, 'deskVerify');

@@ -354,18 +354,18 @@
   // Q3, on holding it here, since this file runs on a page where appServer.js cannot load: "sure"). A server's family
   // folder is process/js/<name>/family/; appServer.js hands out this same function. No other file writes the path.
   function familyPath(name) { return 'process/js/' + String(name || '') + '/family/api.js'; }
-  // A FAMILY'S CACHE MANAGER, FOUND BY ITS NAME (goal/G41.28; Andy: "the shell can introspect to find and download their
-  // clientCacheManagers."): data.js beside the family's api.js, a node family's (spirit/<name>/) or a
-  // server's (its family folder). cacheManager(name) loads it once through the one loader, the data set first; it stands
+  // A FAMILY'S data.js, FOUND BY ITS NAME (goal/G41.28; Andy: "the shell can introspect to find and download their
+  // clientCacheManagers."): data.js in the family's own folder, a node family's (spirit/<name>/) or a
+  // server's (process/js/<name>/; Andy: "process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"). cacheManager(name) loads it once through the one loader, the data set first; it stands
   // at spirit.data.<name>. A family with none answers not-found.
   function managerPaths(name) {
     var n = String(name || '');
-    return ['spirit/' + n + '/data.js', familyPath(n).replace(/api\.js$/, 'data.js')];
+    return ['spirit/' + n + '/data.js', familyPath(n).replace(/family\/api\.js$/, 'data.js')];
   }
   // ON A PAGE, FOUND THROUGH THE FAMILY'S OWN FS AND LOADED BY A GET (goal/G41.28; Andy: "for the owner, the api tree
   // returns a FS set of verbs for every family", and on FS.path: "my approval is set, unless there's a valid objection"):
-  // spirit.<family>.FS.path names where the family's folder holds it, the node's or its server's alike, so no folder is
-  // guessed and no 404 is ever asked; then the one loader GETs that path, so a manager of any size travels, on loopback
+  // spirit.<family>.FS.path names where the family's api.js is, the node's or its server's alike, and data.js is taken from
+  // that, so no folder is guessed and no 404 is ever asked; then the one loader GETs that path, so a manager of any size travels, on loopback
   // and through the face alike. In node, its own disk.
   // Asked as a file runs, it is part of that file's tree: the file's require answers once it has, and a family with
   // none fails no tree.
@@ -381,9 +381,9 @@
       } else {
         managers[n] = bindOwn(n).then(function (fam) {
           if (!fam || !fam.FS || typeof fam.FS.path !== 'function') throw refusal('not-found', 'the family ' + n + ' has no FS');
-          return fam.FS.path({ path: MANAGER });
+          return fam.FS.path({ path: 'api.js' });
         }).then(function (b) {
-          var p = b && typeof b.path === 'string' ? b.path : '';
+          var p = b && typeof b.path === 'string' ? b.path.replace(/(family\/)?api\.js$/, MANAGER) : '';
           if (!p) throw refusal('not-found', 'the family ' + n + ' has no ' + MANAGER);
           return requireOne('spirit/data.js').then(function () { return requireOne(p); });
         });
