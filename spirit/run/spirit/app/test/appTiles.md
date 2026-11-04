@@ -1,8 +1,8 @@
 # tiles.js
 
-`spirit/run/spirit/app/tiles.js` shows the apps as tiles (goal/G43.2, goal/G43.6). Andy, box: *"spirit/app/tiles.js: an element, a probabilitySearch variant, that displays its list as tiles, with extra info in a tooltip."* Its test is `./tiles.js`. The tile face itself is `spirit/element/test/probabilitySearchTiles.js`'s.
+`spirit/run/spirit/app/appTiles.js` shows the apps as tiles (goal/G43.2, goal/G43.6). Andy, box: *"spirit/app/tiles.js: an element, a probabilitySearch variant, that displays its list as tiles, with extra info in a tooltip."* Its test is `./appTiles.js`. The tile face itself is `spirit/element/test/probabilitySearchTiles.js`'s.
 
-    spirit.app.tiles.createApp(container) -> { destroy() }
+    spirit.app.appTiles.createApp(container) -> { destroy() }
 
 ## Requirements
 

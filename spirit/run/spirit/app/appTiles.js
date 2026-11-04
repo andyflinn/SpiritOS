@@ -1,9 +1,9 @@
-// spirit/run/spirit/app/tiles.js
+// spirit/run/spirit/app/appTiles.js
 // THE APPS AS TILES (goal/G43.2, goal/G43.6). Andy, box: "spirit/app/tiles.js: an element, a probabilitySearch variant, that displays
-// its list as tiles, with extra info in a tooltip." Its contract and its test: ./test/tiles.md and ./test/tiles.js. What a tile
+// its list as tiles, with extra info in a tooltip." Its contract and its test: ./test/appTiles.md and ./test/appTiles.js. What a tile
 // looks like is probabilitySearch's face tiles.
 //
-//   spirit.app.tiles.createApp(container) -> { destroy() }
+//   spirit.app.appTiles.createApp(container) -> { destroy() }
 //
 // A PRESSED TILE OPENS THAT APP ON TOP OF IT, here alone: "NO SHELL WILL FUCKING TOUCH WHAT's inside". The internal
 // appContainer (his "appCountainer"): "a titlebar, and a pane below, into which the "elements" are mounted"; on the bar's left
@@ -83,5 +83,5 @@
     };
   }
 
-  (S.app = S.app || {}).tiles = { createApp: create };
+  (S.app = S.app || {}).appTiles = { createApp: create };
 }());
