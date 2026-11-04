@@ -36,3 +36,14 @@ a subject needs), loaded with it.
 - A folder's children left behind its delete; a core flag dropped; another job's command taken.
 - A name drawn unescaped; a folder given a size.
 - A row that does not repaint, or is not marked gone.
+
+## goal/G43.4: the reserved words in colour
+
+Andy, box: *"display folders and path elements in a bright green if their names match a reserved word AND the browsers spirit object contains the corresponding javascript Object at that path."*, *"display folders and path elements in a bright red if folders and the browser spirit object disagree."*, *"the colors will follow word.json changes live."*, and *"in files it is always displayed green"* of `spirit`.
+
+`./rowElement-words.html` shows real rows on a scratch node. Each path element is its own element, so its colour is its own:
+
+- `spirit` is green. `spirit/app` and `spirit/contact` are green, as a folder row and in the path of a file inside.
+- `spirit/job` (reserved, a folder, no `spirit.job`) is red.
+- A name not reserved has no colour (`spirit/jobs`, `spirit/hub.js`), and outside `spirit/` no word holds (`shell/app`).
+- A `word.json` gaining a word turns the open row red with no reload, an object at that path makes it green, and `word.json` gone takes the colour away.

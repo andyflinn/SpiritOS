@@ -122,5 +122,63 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(asked.some(function (c) { return c.verb === 'fs.delete' && c.args.path === 'web/page<1>.html'; }), 'remove asks fs.delete { path } through the spirit object', 'asked: ' + short(asked));
   const info = await el.expandInfo();
   ok(info && info.stat && info.annotations && asked.some(function (c) { return c.verb === 'fs.stat'; }) && asked.some(function (c) { return c.verb === 'fs.annotations'; }), 'expandInfo asks fs.stat and fs.annotations', 'info: ' + short(info));
+
+  // ── goal/G43.4: THE RESERVED WORDS IN COLOUR, IN A REAL BROWSER ───────────────────────────────────
+  // Real rows on a scratch node (./rowElement-words.html), spirit/word.js and the node's own file stream under them.
+  test.subHeading('goal/G43.4: a path element is green where word and spirit object agree, red where they disagree');
+  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const chrome = H.findChrome();
+  if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
+  const node = await H.scratchNode();
+  let page = null;
+  // Written on the scratch node's disk: the node refuses fs.save under spirit/, and its fs-watcher hears the disk.
+  const put = function (rel, text) { const f = path.join(node.root, 'spirit', 'run', rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
+  const del = function (rel) { fs.rmSync(path.join(node.root, 'spirit', 'run', rel), { force: true }); };
+  try {
+    page = node.up && node.debug ? await H.chromePage(chrome) : null;
+    if (!page || page.error) { test.fail(page ? page.error : 'the scratch node did not come up with its DEBUG on'); return; }
+    await page.send('Page.navigate', { url: node.base + '/DEBUG/shell/js/files/test/rowElement-words.html' });
+    await H.until(function () { return page.evaluate('typeof window.ready === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+    await page.evaluate('window.ready()');
+    const row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return { threw: String(e) }; } };
+    const app = await row('spirit/app');
+    ok(app.app === 'green', 'spirit/app: reserved, and the spirit object holds spirit.app: green', 'spirit/app: ' + short(app));
+    ok(app.spirit === 'green', 'its path element spirit: "in files it is always displayed green"', 'spirit/app: ' + short(app));
+    const contact = await row('spirit/contact');
+    ok(contact.contact === 'green', 'spirit/contact: green', 'spirit/contact: ' + short(contact));
+    const inside = await row('spirit/app/api.js', 'file');
+    ok(inside.app === 'green' && inside.spirit === 'green', 'a file inside: its path elements carry the colours too', 'spirit/app/api.js: ' + short(inside));
+    const plain = await row('spirit/jobs');
+    ok(plain.jobs === 'none', 'spirit/jobs: not reserved: no colour', 'spirit/jobs: ' + short(plain));
+    const hub = await row('spirit/hub.js', 'file');
+    ok(hub['hub.js'] === 'none', 'spirit/hub.js: not reserved: no colour', 'spirit/hub.js: ' + short(hub));
+    const elsewhere = await row('shell/app', 'folder');
+    ok(elsewhere.app === 'none', 'outside spirit/ no word holds: shell/app has no colour', 'shell/app: ' + short(elsewhere));
+    put('spirit/job/keep.txt', 'a folder for the word job');
+    const job = await row('spirit/job');
+    ok(job.job === 'red', 'spirit/job: reserved, a folder, and no spirit.job: red', 'spirit/job: ' + short(job));
+    del('spirit/job/keep.txt');
+
+    test.subHeading('goal/G43.4: "the colors will follow word.json changes live."');
+    put('spirit/app/thing/keep.txt', 'a folder');
+    const before = await row('spirit/app/thing');
+    ok(before.thing === 'none', 'the folder spirit/app/thing, no word: no colour', 'spirit/app/thing: ' + short(before));
+    put('spirit/app/word.json', JSON.stringify({ thing: true }));
+    const red = await row('spirit/app/thing');
+    ok(red.thing === 'red', 'word.json gains the word: the same row goes red, with no reload: no spirit.app.thing', 'spirit/app/thing: ' + short(red));
+    await page.evaluate('window.setObject(true); window.fresh("spirit/app/thing")');
+    const green = await row('spirit/app/thing');
+    ok(green.thing === 'green', 'with spirit.app.thing on the object: green', 'spirit/app/thing: ' + short(green));
+    await page.evaluate('window.setObject(false)');
+    del('spirit/app/word.json');
+    const gone = await row('spirit/app/thing');
+    ok(gone.thing === 'none', 'word.json gone: the row loses its colour, with no reload', 'spirit/app/thing: ' + short(gone));
+    del('spirit/app/thing/keep.txt');
+  } finally {
+    if (page && page.kid) page.kid.kill();
+    if (node.child) node.child.kill();
+    try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
