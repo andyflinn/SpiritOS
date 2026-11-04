@@ -28,7 +28,8 @@
 //   face                       'pane' (the default) or 'dropdown' (goal/G30.20): a closed field with the chosen row's name
 //                              or the placeholder, opening to the same list; a pick closes it. placeholder, all (a None
 //                              button that picks nothing, its words the field's while nothing is chosen) and name(row)
-//                              are the dropdown's
+//                              are the dropdown's. Or 'tiles' (goal/G43.6): the same ranked rows, each row.icon above
+//                              the relevance above row.label, the row itself in the tooltip; no headers, no sorting
 //   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch; the words
 //                              are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
@@ -147,6 +148,7 @@
     var shown = [];
     var snap = false;
     var dropdown = o.face === 'dropdown';
+    var tiles = o.face === 'tiles';
     var open = !dropdown;
     var self = { value: '', row: null };
 
@@ -304,9 +306,34 @@
           return '<td data-field="' + esc(c.field) + '"' + (c.align ? ' align="' + esc(c.align) + '"' : '') + '>' + html + '</td>';
         }).join('');
       }
+      // THE FACE TILES (goal/G43.6). Andy, box: "A tile: its image, the relevance, its label.", "The relevance is a centered,
+      // horizontal bar, between the tile image and the tile label: the bar the lists draw, the same colour and number.", "With no
+      // search words there is no bar. Its space stays, so the tiles do not jump."
+      function tileBar(w) {
+        var pct = top > 0 ? Math.round((w.rank / top) * 1000) / 10 : 0;
+        return '<div class="list-rank" style="width:3em;height:0.8em;flex:none"' + (searching ? ' title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '"' : '') + '>' +
+          '<div style="width:' + pct + '%;margin:0 auto;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div>';
+      }
+      // Andy, box: "The tooltip shows the contents of the row, one above the other", "If the object is nested, it shows the js
+      // object path", "It drops the icon row: the user is hovering over it."
+      function tileTip(row) {
+        return (typeof P().measureObject === 'function' ? P().measureObject(row || {}) : []).filter(function (r) {
+          return (!r.isKey || r.flag) && r.path !== 'icon';
+        }).map(function (r) { return r.path + ': ' + (r.isKey ? 'true' : r.objectString); }).join('\n');
+      }
       var list = el('list');
       if (!list) return;
       if (snap) list.scrollTop = 0;
+      if (tiles) {
+        list.innerHTML = rows.length
+          ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:16px;align-content:start">' + rows.map(function (w) {
+            var cur = w.key === currentKey;
+            return '<div class="app-icon' + (cur ? ' current' : '') + '" data-key="' + esc(w.key) + '" title="' + esc(tileTip(w.row)) + '"' + (cur ? ' style="background:rgba(255,255,255,0.12)"' : '') + '>' +
+              '<span class="icon">' + iconHtml(w.row && w.row.icon) + '</span>' + tileBar(w) + '<span class="label">' + mark(w.row && w.row.label) + '</span></div>';
+          }).join('') + '</div>'
+          : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>';
+        return;
+      }
       list.innerHTML = (dropdown && o.all ? '<button id="' + pre + 'none" type="button" style="margin-top:0.5em">None</button>' : '') + (rows.length
         ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '>' + headHtml(searching) + '<tbody>' + rows.map(function (w) {
           var cur = w.key === currentKey;
@@ -434,8 +461,10 @@
       setOpen(true);
       draw();
       var l = el('list');
-      var cur = l && typeof l.querySelector === 'function' ? l.querySelector('tr.current') : null;
+      var cur = l && typeof l.querySelector === 'function' ? l.querySelector('[data-key].current') : null;
       if (cur && typeof cur.scrollIntoView === 'function') cur.scrollIntoView({ block: 'nearest' });
+      // On tiles too the keys move on into the list, so Enter there picks.
+      if (tiles && l && typeof l.focus === 'function') l.focus();
       // In a dropdown the keys move on into the list, so Enter there picks; the field says the current row.
       if (dropdown) { if (l && typeof l.focus === 'function') l.focus(); if (byKey[currentKey]) paintField(byKey[currentKey].row); }
     }
@@ -450,6 +479,10 @@
     // page while this list is on screen and nothing else that takes typing has the focus.
     function onKeys(e) {
       var stop = function () { if (typeof e.preventDefault === 'function') e.preventDefault(); };
+      // Andy, box: "arrow keys also go left and right" on tiles; words in the search field keep them for its caret.
+      if (tiles && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !(e.target && e.target.id === pre + 'text' && words())) {
+        stop(); move(e.key === 'ArrowRight' ? 1 : -1); return true;
+      }
       if (e.key === 'ArrowDown') { stop(); move(1); return true; }
       if (e.key === 'ArrowUp') { stop(); move(-1); return true; }
       if (e.key === 'PageDown') { stop(); move('pagedown'); return true; }

@@ -41,25 +41,28 @@ function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array
 // MEASURE THE OBJECT: every key (but one whose value is false), every string value, every number as text, of it, of
 // the plain objects inside it and of every array element, in the order met. Empty strings are left out. An object or an
 // array met again (a cycle) is measured once.
+// EACH STRING WITH ITS JS OBJECT PATH (goal/G43.6; Andy, box: "assembled by scanning the row without knowing its meaning, with the
+// one scan probabilityStringObjectMatch uses"): stats.cpu, files[0].name. A key's own row says isKey, and flag when its value is true.
 function measureObject(object) {
   var table = [];
   var seen = [];
-  function value(v) {
-    if (typeof v === 'string') { if (v !== '') table.push({ objectString: v, weight: 0.0 }); }
-    else if (typeof v === 'number') table.push({ objectString: String(v), weight: 0.0 });
-    else if (Array.isArray(v)) { if (seen.indexOf(v) === -1) { seen.push(v); v.forEach(value); } }
-    else if (isPlainObject(v)) walk(v);
+  function value(v, path) {
+    if (typeof v === 'string') { if (v !== '') table.push({ objectString: v, weight: 0.0, path: path }); }
+    else if (typeof v === 'number') table.push({ objectString: String(v), weight: 0.0, path: path });
+    else if (Array.isArray(v)) { if (seen.indexOf(v) === -1) { seen.push(v); v.forEach(function (e, i) { value(e, path + '[' + i + ']'); }); } }
+    else if (isPlainObject(v)) walk(v, path);
   }
-  function walk(o) {
+  function walk(o, at) {
     if (seen.indexOf(o) !== -1) return;
     seen.push(o);
     Object.keys(o).forEach(function (key) {
       var v = o[key];
-      if (key !== '' && v !== false) table.push({ objectString: key, weight: 0.0 });
-      value(v);
+      var path = at ? at + '.' + key : key;
+      if (key !== '' && v !== false) table.push({ objectString: key, weight: 0.0, path: path, isKey: true, flag: v === true });
+      value(v, path);
     });
   }
-  walk(object);
+  walk(object, '');
   return table;
 }
 
@@ -81,9 +84,10 @@ function probabilityStringObjectMatch(string, object) {
 }
 
 // IN NODE AND IN A PAGE ALIKE (goal/G27.14): a page finds it on window.spirit.probability.
-if (typeof module !== 'undefined' && module && module.exports) module.exports = { probabilityStringObjectMatch: probabilityStringObjectMatch };
+if (typeof module !== 'undefined' && module && module.exports) module.exports = { measureObject: measureObject, probabilityStringObjectMatch: probabilityStringObjectMatch };
 if (typeof window !== 'undefined' && window) {
   (window.spirit = window.spirit || {}).probability = window.spirit.probability || {};
   window.spirit.probability.probabilityStringObjectMatch = probabilityStringObjectMatch;
+  window.spirit.probability.measureObject = measureObject;
 }
 }());

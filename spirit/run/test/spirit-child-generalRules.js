@@ -48,7 +48,7 @@ if (!full) {
   test.subHeading('the spirit object is a global before anything else is loaded');
   const first = requires[0];
   // PAGE CODE RUNS ON THE PAGE, where spirit.js is already there, and node never loads it (goal/G43.5: the elements moved
-  // under spirit/; spirit/ui.js and spirit/app stood there already). A file that exports nothing and speaks to window.
+  // under spirit/; spirit/app stood there already). A file that exports nothing and speaks to window.
   const pageCode = !isSpirit && /\bwindow\b/.test(code) && !/\bmodule\.exports\b/.test(code);
   if (pageCode) {
     test.check(name + ' is page code: node never loads it');

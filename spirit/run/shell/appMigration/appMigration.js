@@ -7,8 +7,8 @@ spirit.shell.activateApp({
   mount: function (container) {
     appMigrationGone = false;
     container.classList.add('fill');
-    window.spirit.require('spirit/ui.js').then(function () {
-      if (!appMigrationGone) appMigrationMade = window.spirit.elements.ui.create(container);
+    window.spirit.require('spirit/app/tiles.js').then(function () {
+      if (!appMigrationGone) appMigrationMade = window.spirit.app.tiles.create(container);
     });
   },
   unmount: function () {
