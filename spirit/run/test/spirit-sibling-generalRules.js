@@ -219,8 +219,8 @@ const WATCH = String.raw`(function () {
   function hook(o) {
     if (!o || typeof o !== 'object' || o.__watched) return;
     Object.defineProperty(o, '__watched', { value: true });
-    var els = o.elements;
-    Object.defineProperty(o, 'elements', { configurable: true, enumerable: true, get: function () { return els; }, set: function (v) { els = v; searches(v); } });
+    var els = o.element;
+    Object.defineProperty(o, 'element', { configurable: true, enumerable: true, get: function () { return els; }, set: function (v) { els = v; searches(v); } });
     searches(els);
     [['events', 'subscribe'], ['data', 'watch']].forEach(function (k) {
       var cur = o[k[0]];

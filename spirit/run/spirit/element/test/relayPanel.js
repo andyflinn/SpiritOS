@@ -184,6 +184,8 @@ function world(rows, relayStatus) {
     ownerBadge: { removalRefusal: function () { return ''; } },
     // The stream, for its report on the relay event (goal/G41.32).
     events: { subscribe: function (h) { (w.streams = w.streams || []).push(h); return function () {}; } },
+    // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
+    data: { translate: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     relay: { status: function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); } },
     // The contact family's cache (goal/G41.28): its manager loads, and the page watches spirit.contactData's rows.

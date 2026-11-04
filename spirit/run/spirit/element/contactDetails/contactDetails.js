@@ -463,7 +463,7 @@ if (window.spirit && window.spirit.require) window.spirit.require('spirit/elemen
     return done;
   },
   open: function (params) {
-    return window.spirit.element.navigation.push({ title: 'Contact', mount: function (box, page) {
+    return window.spirit.elements.navigation.push({ title: 'Contact', mount: function (box, page) {
       cdPage.mount(box, page.api);
       cdPage.open(params || {});
     } });

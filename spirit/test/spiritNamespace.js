@@ -58,7 +58,7 @@ try {
   g.spirit.fieldRules = require('../run/spirit/fieldRules.js');
   delete require.cache[require.resolve('../run/spirit/element/fieldInput.js')];
   require('../run/spirit/element/fieldInput.js');
-  const F = g.spirit.elements && g.spirit.element.fieldInput;
+  const F = g.spirit.element && g.spirit.element.fieldInput;
   fits = F ? { name64: F.fits('x'.repeat(64), 'name'), name65: F.fits('x'.repeat(65), 'name'), desc128: F.fits('é'.repeat(64), 'description'), desc129: F.fits('é'.repeat(64) + 'x', 'description') } : { missing: true };
 } catch (e) { fits = { threw: e.message }; }
 if (fits && fits.name64 === true && fits.name65 === false && fits.desc128 === true && fits.desc129 === false)

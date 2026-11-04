@@ -1192,8 +1192,7 @@ function watchCheckout(root) {
 // with none held there is no item to say it under, so its word says it. When the run ends, its word goes back.
 let relayedLine = '';
 let relayedWorking = false;
-function relayVerifier(job) {
-  const run = job && job.module === 'process/js/deskVerify' ? job.app : null;
+function relayVerifier(run) {
   if (!run || typeof run.doing !== 'string') return;
   let to = '';
   try { to = deskKey(); } catch (e) { return; }
@@ -1211,5 +1210,9 @@ function relayVerifier(job) {
   relayedWorking = true;
   say(to, 'working');
 }
-if (globalThis.spirit && globalThis.spirit.events) globalThis.spirit.events.subscribe({ onUpdate: relayVerifier });
+// THROUGH spirit.data (goal/G43.5; Andy: "the rule covers everything"): the verifier's own cache manager keeps what it
+// publishes, the data set takes the node's stream, and this listens to the manager.
+require('../deskVerify/family/clientCacheManager.js').attach(globalThis);
+if (globalThis.spirit && globalThis.spirit.verifyData) globalThis.spirit.verifyData.watch(relayVerifier);
+if (globalThis.spirit && globalThis.spirit.data && typeof globalThis.spirit.data.follow === 'function') globalThis.spirit.data.follow();
 gitIn(['rev-parse', '--show-toplevel'], __dirname).then(function (top) { if (top.status === 0 && top.out) watchCheckout(top.out); });

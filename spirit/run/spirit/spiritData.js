@@ -28,7 +28,9 @@
 //                   take '<branch>/<row>' and '<branch>', and path(branch) is the branch's whole path, for a list that is a
 //                   view of it (probabilitySearch's data). node null is home(), asked again at each call.
 //
-//   translate(t)    a type's translator, registered by its row element (goal/G30.20, G41.16): t.onJob(job, D), t.onRename(d, D);
+//   follow(o)       a server's ask for its own node's events (goal/G43.5): the one stream, into the translators; on a page it
+//                   is fed anyway. o.onConnection(up) is told each time the stream comes up or goes down.
+//   translate(t)    a type's translator, registered by its row element (goal/G30.20, G41.16): t.onJob(job, D), t.onRename(d, D), t.onRelay(event); answers its release;
 //                   every one ends in set, merge or del. A job comes with fromNode, the node that served it, so the
 //                   translator files it under that node. This file knows no type.
 //
@@ -232,11 +234,13 @@
   // answered; they are kept as seen, and handed over once home() is known, as a late translator is handed them.
   function handing() { return !onPage || !!home(); }
   function translate(t) {
-    if (!t || typeof t !== 'object') return;
+    if (!t || typeof t !== 'object') return function () {};
     translators.push(t);
-    if (!handing()) return;
+    var release = function () { var i = translators.indexOf(t); if (i !== -1) translators.splice(i, 1); };
+    if (!handing()) return release;
     seenJobs.forEach(function (job) { one(t, 'onJob', stamped(job, '')); });
     seenRenames.forEach(function (d) { one(t, 'onRename', stamped(d, '')); });
+    return release;
   }
   function replay() {
     seenJobs.forEach(function (job) { each('onJob', stamped(job, '')); });
@@ -348,12 +352,32 @@
     // For a suite: the stream's events fed by hand.
     take: onJob, rename: onRename };
 
-  // FED BY THE PAGE'S ONE STREAM, spirit.events.subscribe (goal/G40.6), on a page only: a server process that loads this
-  // file is fed by its own streamListener (appServer) and opens no stream of its own.
+  // FED BY THE PAGE'S ONE STREAM, spirit.events.subscribe (goal/G40.6). A relay's own events go to whichever translator
+  // keeps them (onRelay), as everything else on that stream does.
   var sp = root.spirit;
+  function relayEvent(ev) { each('onRelay', ev); }
   if (onPage && sp.events && typeof sp.events.subscribe === 'function') {
-    sp.events.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename });
+    sp.events.subscribe({ onSnapshot: onSnapshot, onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent });
   }
+  // A SERVER THAT NEEDS ITS OWN NODE'S EVENTS ASKS FOR THEM HERE (goal/G43.5; Andy: "the rule covers everything, apps,
+  // element"; test/caches.js: only spiritData.js takes the node's stream). A server is otherwise fed by its streamListener
+  // (appServer) and opens nothing. follow({ onConnection(up) }): the one stream, opened at the first ask, into the same
+  // translators. No snapshot: a connect forgets on a page, and here it would forget what the streamListener brought.
+  var followers = [];
+  var following = false;
+  function follow(o) {
+    if (onPage) return;
+    if (o && typeof o.onConnection === 'function') followers.push(o.onConnection);
+    // Asked now, not at load: this file may be required before the spirit object has its events.
+    var s = root.spirit;
+    if (following || !s || !s.events || typeof s.events.subscribe !== 'function') return;
+    following = true;
+    // A process its node did not name still keeps its rows somewhere: a level of the tree needs a name.
+    if (!home()) homeNode = 'local';
+    s.events.subscribe({ onUpdate: onJob, onDelete: function (id) { onGone(id); }, onContactRename: onRename, onRelayEvent: relayEvent,
+      onConnection: function (up) { followers.slice().forEach(function (fn) { try { fn(up); } catch (e) { /* one reader's fault */ } }); } });
+  }
+  api.follow = follow;
   (root.spirit = root.spirit || {}).data = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 }(typeof window !== 'undefined' ? window : globalThis));

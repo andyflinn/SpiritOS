@@ -1732,7 +1732,8 @@ var ndPage = ({
       return window.spirit.contactData.watch(ndHearRow);
     }));
     // ITS REPORT, ON THE RELAY EVENT (goal/G41.32): whole, paced by the node (presenceNode.js), so this keeps no timer.
-    ndStops.push(Promise.resolve(window.spirit.events.subscribe({ onRelayEvent: function (event) {
+    // Through spirit.data, which takes the node's stream for every client (goal/G43.5).
+    ndStops.push(Promise.resolve(window.spirit.data.translate({ onRelay: function (event) {
       if (ndGone || !event || event.kind !== 'status' || !event.report || !ndBadge || event.relay !== ndUrl) return;
       ndBadge.report = event.report;
       ndRender();
@@ -1952,7 +1953,7 @@ return {
     return panel(container, o);
   },
   open: function (params) {
-    return window.spirit.element.navigation.push({ title: 'Relay', mount: function (box, page) {
+    return window.spirit.elements.navigation.push({ title: 'Relay', mount: function (box, page) {
       return panel(box, Object.assign({}, params || {}, { api: page.api }));
     } });
   },

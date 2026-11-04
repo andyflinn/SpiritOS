@@ -2077,15 +2077,23 @@ function limboOf(s, it) {
 // it's agents, it keeps all agent rows in its db, to preserve label and nick, but without grant, no matter how small,
 // there's no point showing an agent bubble."). The node's grant table is read over loopback, as its owner, when the stream
 // comes up (no grant and no new verb: "on the local node all loopback requester are "owner""), and followed on its
-// permanent job 'bundles'. key -> { label, paths }; null until the first answer, and every agent shows until then. An
-// agent's row in the agents table stays either way, so a key granted again comes back with its label and nick.
-let grantsHeld = null;
+// permanent job 'bundles', through spirit.data and the auth family's cache manager (goal/G43.5; Andy: "the rule covers
+// everything"). Until the first answer every agent shows. An agent's row in the agents table stays either way, so a key
+// granted again comes back with its label and nick.
+let grantsRead = false;
 function isDeskPath(p) { return p === 'desk' || String(p).indexOf('desk.') === 0; }
-function noteGrant(held, key, path, label) {
-  if (!isDeskPath(path)) return;
-  const g = held[key] || (held[key] = { label: '', paths: {} });
-  g.paths[path] = true;
-  if (label) g.label = String(label);
+// key -> { label }, the keys holding a grant under desk, or null until the first answer.
+function grantsHeld() {
+  if (!grantsRead || !spirit.authData) return null;
+  const rows = spirit.authData.grants.rows() || {};
+  const held = Object.create(null);
+  Object.keys(rows).forEach(function (id) {
+    const r = rows[id];
+    if (!r || !r.key || !isDeskPath(r.path)) return;
+    const g = held[r.key] || (held[r.key] = { label: '' });
+    if (r.label || r.name) g.label = String(r.label || r.name);
+  });
+  return held;
 }
 function publishGoalRow() {
   if (S.current && S.items[S.current]) publishOne(rowPublish(S, S.current, 'grants', S.change));
@@ -2094,39 +2102,32 @@ function readGrants() {
   return spirit.outcome(spirit.require('spirit/auth/api.js').then(function (auth) { return auth.search({ text: 'desk' }); })).then(function (r) {
     const items = r && r.status === 200 && r.body && r.body.items;
     if (!Array.isArray(items)) return;
-    const held = Object.create(null);
-    items.forEach(function (i) {
-      let row = null;
-      try { row = JSON.parse(i.label); } catch (e) { row = null; }
-      if (row && row.key) noteGrant(held, String(row.key), row.path, row.name);
-    });
-    grantsHeld = held;
+    // The table as it stands now, whole: a grant revoked while the stream was down goes with this.
+    grantsRead = false;
+    const A = spirit.authData;
+    const before = A.grants.rows() || {};
+    Object.keys(before).forEach(function (id) { spirit.data.del(A.grants.branch + '/' + id); });
+    spirit.data.seat(A.grants.branch, items.map(function (i) {
+      let row = {};
+      try { row = JSON.parse(i.label); } catch (e) { row = {}; }
+      return { key: A.grantKey(row.key, row.path), label: i.label };
+    }));
+    grantsRead = true;
     publishGoalRow();
   }, function () { /* the next time the stream comes up asks again */ });
 }
-function grantChanged(job) {
-  const d = job && job.type === 'bundles' ? job.data : null;
-  if (!d || d.table !== 'grant' || !d.row || !d.row.key || !grantsHeld) return;
-  const key = String(d.row.key);
-  const path = String(d.row.path || '');
-  if (!isDeskPath(path)) return;
-  if (d.gone === true) {
-    if (!grantsHeld[key]) return;
-    delete grantsHeld[key].paths[path];
-    if (!Object.keys(grantsHeld[key].paths).length) delete grantsHeld[key];
-  } else noteGrant(grantsHeld, key, path, d.row.label);
-  publishGoalRow();
-}
+function grantChanged() { if (grantsRead) publishGoalRow(); }
 // The agents to show, label -> key: the labels the desk has heard for a key with a grant, and for one it has not heard yet,
 // the grant's own label, else its name. A key is never shown (Andy, goal/G21.1).
 function grantedAgents(s) {
   const out = {};
   const heard = {};
-  Object.keys(s.agentKey).forEach(function (l) { heard[s.agentKey[l]] = l; if (!grantsHeld || grantsHeld[s.agentKey[l]]) out[l] = s.agentKey[l]; });
-  if (grantsHeld) Object.keys(grantsHeld).forEach(function (k) {
+  const held = grantsHeld();
+  Object.keys(s.agentKey).forEach(function (l) { heard[s.agentKey[l]] = l; if (!held || held[s.agentKey[l]]) out[l] = s.agentKey[l]; });
+  if (held) Object.keys(held).forEach(function (k) {
     if (heard[k]) return;
     const p = s.profiles[k];
-    const label = grantsHeld[k].label || (p && p.name) || '';
+    const label = held[k].label || (p && p.name) || '';
     if (label) out[label] = k;
   });
   return out;
@@ -4191,4 +4192,7 @@ function pressCheck(a) {
 // current goal pushed whole again"; after this desk's own start every client is one that was away from it.
 if (S.current) setImmediate(function () { pushGoalWhole(S.current); });
 // The node's grants: read each time the stream comes up, a restart of the node included, and followed from then on.
-spirit.events.subscribe({ onConnection: function (up) { if (up) readGrants(); }, onUpdate: grantChanged });
+Promise.resolve(spirit.cacheManager('auth')).then(function () {
+  spirit.authData.grants.watch(grantChanged);
+  spirit.data.follow({ onConnection: function (up) { if (up) readGrants(); } });
+}).catch(function (e) { console.error('desk: the grants cannot be followed: ' + ((e && e.message) || e)); });

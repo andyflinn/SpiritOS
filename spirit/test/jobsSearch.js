@@ -79,7 +79,7 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
 (async function () {
   // ── 1. the shared progressBar ─────────────────────────────────────────
   test.subHeading('1. progressBar: one shared element, drawn from (done, total, text)');
-  const bar = win.spirit.elements && win.spirit.element.progressBar;
+  const bar = win.spirit.element && win.spirit.element.progressBar;
   if (hasBar && typeof bar === 'function') test.check('shell/shared/js/progressBar.js sets window.spirit.element.progressBar');
   else test.fail(OWED + 'no progressBar in shell/shared/js');
   const known = typeof bar === 'function' ? String(bar(3, 10, 'image 3')) : '';

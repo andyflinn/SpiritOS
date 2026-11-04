@@ -37,7 +37,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const code = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); } catch (e) { return ''; } };
 const raw = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } };
 function element(rel, name) {
-  try { const win = {}; new Function('window', raw(rel))(win); return (win.spirit.elements || {})[name] || null; } catch (e) { return null; }
+  try { const win = {}; new Function('window', raw(rel))(win); return (win.spirit.element || {})[name] || null; } catch (e) { return null; }
 }
 function settle() { return new Promise(function (r) { setTimeout(r, 5); }); }
 const homes = [];
@@ -145,12 +145,12 @@ const joinApp = code('shell/join/join.js');
 const contactSearch = element('spirit/element/contacts/listElement.js', 'contactList');
 const faceForm = element('spirit/element/faceForm.js', 'faceForm');
 if (contactSearch && typeof contactSearch.create === 'function' && /\.contact\.search\(/.test(code('spirit/element/contacts/listElement.js')) && /\.peer\.acquire\(/.test(code('spirit/element/contacts/rowElement.js'))
-    && /spirit\.elements\.contactList/.test(contacts) && /spirit\.elements\.contactList/.test(joinApp)
+    && /spirit\.element\.contactList/.test(contacts) && /spirit\.element\.contactList/.test(joinApp)
     && !/function contactsSeenSource|function contactsSeenCells|function contactsAskCard|function contactsSeenAdd/.test(contacts))
   test.check('Find someone is the one list, contactSearch (contact.search, Add by peer.acquire); Contacts and the Join app draw it, Contacts keeps no copy');
 else test.fail(OWED + 'contactSearch is missing, or Contacts keeps its own find panel, or the Join app does not draw it');
 if (faceForm && typeof faceForm.mount === 'function' && /\.relay\.face\(/.test(code('spirit/element/faceForm.js'))
-    && /spirit\.elements\.faceForm/.test(info) && /spirit\.elements\.faceForm/.test(joinApp) && !/'relay\.face'/.test(info))
+    && /spirit\.element\.faceForm/.test(info) && /spirit\.element\.faceForm/.test(joinApp) && !/'relay\.face'/.test(info))
   test.check('the face form is the faceForm element (relay.face); Info and the Join app draw it, Info keeps no copy');
 else test.fail(OWED + 'faceForm is missing, or Info keeps its own face form, or the Join app does not draw it');
 if (['contacts/listElement', 'faceForm', 'joinSteps'].every(function (nm) { return new RegExp('src="/spirit/element/' + nm + '\\.js"').test(index); }))
@@ -158,8 +158,8 @@ if (['contacts/listElement', 'faceForm', 'joinSteps'].every(function (nm) { retu
 else test.fail(OWED + 'index.html does not load all three elements');
 // Box v42: decided once, in the shell. The shell hands the Join app what it worked out (onSteps); the app neither
 // subscribes nor decides.
-if (/onSteps:/.test(joinApp) && !/spirit\.elements\.joinSteps|jobs\.subscribe|\.current\(|\.done\(/.test(joinApp)
-    && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spirit\.elements\.joinForm/.test(joinApp))
+if (/onSteps:/.test(joinApp) && !/spirit\.element\.joinSteps|jobs\.subscribe|\.current\(|\.done\(/.test(joinApp)
+    && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spirit\.element\.joinForm/.test(joinApp))
   test.check('the Join app draws what the shell hands it (onSteps): it neither subscribes nor decides, draws the join form and keeps the opened link as its override');
 else test.fail(OWED + 'the Join app still decides or subscribes, or lacks onSteps, the join form or faceOpened');
 if (/apps\[id\]\.onSteps = behavior\.onSteps/.test(shell) && /\.onSteps\(/.test(shell) && /function handSteps\(/.test(shell))

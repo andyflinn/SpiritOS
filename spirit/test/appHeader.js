@@ -88,7 +88,7 @@ const index = read(INDEX) || '';
 const shell = read(SHELL) || '';
 
 test.subHeading('1. appHeader.js adds createAppHeader to spirit.elements');
-if (src && src.indexOf('createAppHeader') !== -1 && /spirit\.elements/.test(src)) test.check('spirit/run/spirit/element/appHeader/appHeader.js defines createAppHeader and adds it to spirit.elements');
+if (src && src.indexOf('createAppHeader') !== -1 && /spirit\.element\b/.test(src)) test.check('spirit/run/spirit/element/appHeader/appHeader.js defines createAppHeader and adds it to spirit.elements');
 else test.fail(OWED + (src ? 'appHeader.js has no createAppHeader added to spirit.elements' : 'no spirit/run/spirit/element/appHeader/appHeader.js'));
 
 test.subHeading('2. the div: empty, sticky at the titlebar\'s height, opaque, above, measured again on resize');

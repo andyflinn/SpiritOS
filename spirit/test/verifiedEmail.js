@@ -141,7 +141,7 @@ if (/status:\s*said\.status === 200 \? 200 : 201/.test(relayJoinSrc) && /Email a
   test.check('the node passes the relay\'s 200 for a change on, and the page says Email address verified');
 else test.fail(OWED + 'relay.join hands no change apart from a new seat, or the page never says Email address verified');
 // Info's face form is the shell element faceForm since box v39.
-const infoFace = /spirit\.elements\.faceForm/.test(info) ? code('spirit/element/faceForm.js') : (info.split('function infoDrawFace')[1] || '');
+const infoFace = /spirit\.element\.faceForm/.test(info) ? code('spirit/element/faceForm.js') : (info.split('function infoDrawFace')[1] || '');
 if (/emailVerified/.test(infoFace) && /Verify your email in Contacts/.test(infoFace) && /callDialog\('shell\/natterDetails'/.test(infoFace))
   test.check('Info draws no face form for a relay with no verified email, and offers its natterDetails instead');
 else test.fail(OWED + 'Info draws the face form without a verified email, or offers no way to natterDetails');
@@ -168,7 +168,7 @@ try {
   const src = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'joinForm.js'), 'utf8');
   const win = { spirit: test.spiritFor(function (verb, args) { asked = { verb: verb, args: args }; return { status: 200, body: { ok: true } }; }) };
   new Function('window', 'spirit', src)(win, win.spirit);
-  element = win.spirit.elements && win.spirit.element.joinForm;
+  element = win.spirit.element && win.spirit.element.joinForm;
 } catch (e) { element = null; }
 let said = null;
 let drawn = '';
@@ -186,7 +186,7 @@ const elementDone = sendIt().then(function (r) {
   const index = (function () { try { return fs.readFileSync(path.join(RUN, 'index.html'), 'utf8'); } catch (e) { return ''; } }());
   const ndSrc = code('shell/natterDetails/natterDetails.js');
   const joinSrc = code('shell/join/join.js');
-  if (/src="\/spirit\/element\/joinForm\.js"/.test(index) && /spirit\.elements\.joinForm/.test(ndSrc) && /spirit\.elements\.joinForm/.test(joinSrc)
+  if (/src="\/spirit\/element\/joinForm\.js"/.test(index) && /spirit\.element\.joinForm/.test(ndSrc) && /spirit\.element\.joinForm/.test(joinSrc)
       && !/type="email"/.test(ndSrc) && !/type="email"/.test(joinSrc) && !/'relay\.join'/.test(ndSrc) && !/'relay\.join'/.test(joinSrc))
     test.check('index.html loads it; natterDetails and the Join app draw it and keep no email form or relay.join of their own');
   else test.fail(OWED + 'joinForm is not loaded, or natterDetails or the Join app keeps its own form');
