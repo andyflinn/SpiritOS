@@ -8,7 +8,7 @@
 //                                    asks its node for each file.
 //   add('path.in.words', 'Word')     in node only (Q5, Andy: "no."): writes the lower-case word with the value true to that level's
 //                                    word.json, and answers true. Answers false and writes nothing on what is no word, on what
-//                                    check finds, on a word a level below holds (Andy's yes to Q4), on a path with no level
+//                                    check finds, on a word a level below holds (Andy's yes to Q4), on a level with no folder, on a path with no level
 //                                    check would read, and on a word.json it cannot read back, which it will not overwrite.
 //   changed(fn)                      on a page: fn() when a word.json changes on the disk; answers its release.
 //
@@ -64,7 +64,10 @@
         // A path holds words, a to z, so nothing but a level of the tree is ever written.
         if (!w || !rel || !/^[a-z]+(\.[a-z]+)*$/.test(String(at)) || check(at, w)) return false;
         var file = path.join(__dirname, '..', rel);
-        if (heldBelow(path.dirname(file), w)) return false;
+        // Andy: "wince fucking when does add() add a MOTHERFUCKING FOLDER?" A level is a folder that stands.
+        var dir = path.dirname(file);
+        try { if (!fs.statSync(dir).isDirectory()) return false; } catch (e) { return false; }
+        if (heldBelow(dir, w)) return false;
         var text = readOr(file);
         var o = {};
         if (text !== null) {
@@ -72,7 +75,6 @@
           if (!o || typeof o !== 'object' || Array.isArray(o)) return false;
         }
         o[w] = true;
-        fs.mkdirSync(path.dirname(file), { recursive: true });
         fs.writeFileSync(file, JSON.stringify(o, null, 2) + '\n');
         return true;
       },
