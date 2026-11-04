@@ -13,7 +13,7 @@ const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 't
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
-const FILE = path.join(RUN, 'spirit', 'app', 'tiles.js');
+const FILE = path.join(RUN, 'spirit', 'app', 'appTiles.js');
 
 test.startTest('tiles.js: the tiles and what they open (goal/G43.2, goal/G43.6)');
 
