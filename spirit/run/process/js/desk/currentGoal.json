@@ -1,5 +1,5 @@
 {
- "change": 129601,
+ "change": 129767,
  "goal": "goal/G43",
  "items": [
   {
@@ -150,9 +150,12 @@
     "ollama agent node"
    ],
    "live": [
+    "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5569,13 +5572,12 @@
    "id": "goal/G43.7",
    "title": "Fix 'data'",
    "goal": "goal/G43",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 0,
+   "version": 10,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -5585,17 +5587,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 191,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -5603,7 +5605,26 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
    "phaseRules": [
     {
      "key": "rule/30",
@@ -5612,6 +5633,10 @@
     {
      "key": "rule/28",
      "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
     },
     {
      "key": "rule/25",
@@ -5634,6 +5659,10 @@
      "version": 54
     },
     {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
      "key": "rule/18",
      "version": 46
     },
@@ -5648,6 +5677,30 @@
     {
      "key": "rule/14",
      "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
     }
    ],
    "verified": "none",
@@ -5657,13 +5710,378 @@
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "checks": [],
-   "chat": []
+   "box": "- we fix spirit/spiritData.js as follows: .we rename it spirit/data.js and it IS the the spirit.data object. this object has only helper functions and object <name> for every application, and data puts shit instead of spirit.<name>Data, into fucking spirit.data.<name>.data\n\n- we rename \"clientCacheManager.js\" to \"data.js\" and make it put it's junk on spirit.data.<name>.data using the module spirit/data.js\n\n- ALL \"clientCacheManager.js\" files will be converted to \"data.js\" files with the SAME pattern.\n\n# structure of spirit.data\n\n- spirit.data // containing helper functions for its \"apps\"\n- spirit.data.<name>.data // (the \"cache\" manager that <name> process supplies\n- spirit.data.<name>.cache // the actual cache...\n\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should the key be the family own name, so spirit.data.chatClerver and spirit.data.deskVerify?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T20:45:27.540Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Do all 19 go under spirit.data.app, including fs, jobs and auth, and the apps list as spirit.data.app.app?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T20:48:02.682Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Does spirit.data.data, the tree of rows, stay beside spirit.data.app?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T20:54:39.772Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Is it spirit.data.app.<name>.data and .cache, with app in the path?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T20:58:46.039Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Does spirit.data.<name>.cache hold a level per node, as the tree does today?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T21:00:12.574Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-04T21:05:34.014Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "May this item change that one line of word.js, to read the new path?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T21:05:15.886Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:19:37.587Z",
+     "text": "all, which module writes: spirit.appData?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:20:00.869Z",
+     "text": "cw: spirit/app/clientCacheManager.js, line 42.\n\nThat sets the object. Its rows are seated into its branch by tiles.js and server.js, through spirit.data.seat."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:20:05.437Z",
+     "text": "wsl: spirit/app/clientCacheManager.js:42 is the one line that sets spirit.appData, and it runs on spirit.cacheManager('app'). It also runs the translator that feeds that branch from the node's stream.\n\nThe rows get seated by others too: spirit/app/tiles.js:57 and spirit/app/server/server.js:22, each after an app.search."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:20:12.959Z",
+     "text": "cw: correcting my last line, the list of who writes the rows was short.\n\nThe module is still clientCacheManager.js. It also writes the rows itself, from the node's stream, the job apps (lines 23 to 26).\n\nBesides it, tiles.js and server.js seat app.search's answer, and the appSelector list does through probabilitySearch."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:24:25.887Z",
+     "text": "all, why don't we rename \"clientCacheManager.js\" to \"data.js\" and make it pub it's junk on spirit.data.<appname> and de-clutter the first level of the spirit object?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:24:56.056Z",
+     "text": "wsl: yes, I'd do it. Same kind of move as elements: scripted, names only. It clears 14 names off the first level, like spirit.authData and spirit.deskData.\n\nThe size: 19 files named clientCacheManager.js, not one, and about 310 places that say spirit.<x>Data.\n\nThree things to settle:\n- spirit.data already holds at, watch, seat, take and others beside the new names. No family clashes today, but an app named seat would.\n- Two names differ from their family: verifyData is deskVerify, chatData is chatClerver. Keep them or follow the family?\n- If you ever reserve the word data, every <family>/data.js goes red in the word test."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:25:25.293Z",
+     "text": "cw: yes, I'd do it. It takes 19 keys off the first level of spirit, one per family, and no family name clashes with spirit.data's own keys today.\n\nWhat it costs:\n- It is the whole set, not just app: 19 clientCacheManager.js files.\n- 109 files read a spirit.<x>Data, and 83 others name clientCacheManager, tests included. Core files among them, so a grant.\n\nOne risk: spirit.data also holds its own verbs (get, set, search, data). A family named get would land on a verb. word.js could guard that: reserve those words at spirit.data.\n\nTwo names do not match their family: chatData is chatClerver's, verifyData is deskVerify's. I'd use the family's name, since spirit.cacheManager already finds a family by it.\n\nQ1: Should the key be the family's own name, so spirit.data.chatClerver and spirit.data.deskVerify?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:29:36.802Z",
+     "text": "all, box revised. thoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:30:04.934Z",
+     "text": "wsl: better than the last version: no name under app can land on seat, at or watch.\n\nTwo things it raises:\n- 12 of the 19 aren't apps: fs, jobs, auth, node, contact, relay, peer, net, config, owner, events and app itself. Those would read spirit.data.app.fs, and the apps list becomes spirit.data.app.app. You killed app/app, so that one needs a look. I'd keep one rule for all 19, and I don't have a better word than yours.\n- Your word test doesn't look at the spirit object below the first level, so spirit.data.app.app turns nothing red.\n\nQ below."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:30:07.981Z",
+     "text": "cw: better: spirit.data.app.<name> ends the clash with spirit.data's own verbs, since only app sits beside them, and no guard in word.js is needed.\n\nTwo things it means:\n- The app family itself reads spirit.data.app.app. Ugly but correct.\n- fs, jobs, node and the others land under app too, though they are families rather than apps. I'd keep that, one rule for all 19.\n\nQ1 stands with the new path: spirit.data.app.chatClerver and spirit.data.app.deskVerify, the family's own name?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:31:38.781Z",
+     "text": "all, what helper module clientCacheManager use, or does it handroll all that SHIT ALL by itself?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:32:03.218Z",
+     "text": "wsl: one helper, spirit.data (spirit/spiritData.js): at and translate, the tree and the stream. The rest is hand-rolled, copied file to file.\n\nCopied, of the 19: the attach skeleton in all 19, the only-once guard with its Symbol in 12, watch wrappers in 11, the load-the-data-set-first tail in 6. Each file writes its own spirit.xData.\n\nThe size: 1075 lines, 275 of them desk's. 7 files are 14-line stubs that hold nothing.\n\nSo I'd make this more than a rename: one helper in spirit.data that takes a family's name, its translator and its reads, then seats them at spirit.data.app.<name>. The stubs go, and no file writes that path itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:32:07.663Z",
+     "text": "cw: one helper, spiritData.js, for the data itself: at, translate, set, del, watch. Everything around that is hand-rolled, in each file.\n\n19 files, 1075 lines:\n- 7 keep nothing: 14 lines each, an empty object on spirit.\n- 12 are real. Each repeats its own guard against attaching twice, its own attach, and its own wiring of watch and rows onto spiritData. 6 of them also repeat the footer that loads spiritData first.\n- What is truly each family's own is the translator, which turns stream events into rows, and which reads it answers.\n\nThe rename is the moment to change that, if you want: one helper in spiritData.js takes a family's name, its translator and its reads, and the repeated parts go. Without it, a scripted rename just moves the same repetition to data.js."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:32:16.580Z",
+     "text": "wsl: correction to \"the stubs go\": those 7 exist on your own order. goal/G41.28: \"WSL, make sure you assert that every family in the api tree HAS a clientCacheManager\". So they stay unless you lift that. With the helper, each could shrink to about one line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:42:36.028Z",
+     "text": "all, box changed, thoughts?\n\nI want ideas on how to proceed. SHORT, ENGLISH."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:42:54.743Z",
+     "text": "wsl: the box is clear. I'd do it in four steps, each committed and tested alone:\n\n1. Rename spiritData.js to data.js. Path only.\n2. Add one helper to data.js: name, translator, reads, and it seats them at spirit.data.app.<name>.\n3. Move the families one at a time: the 7 empty ones, then small to big, desk last. Each move renames its file and its readers.\n4. Delete the old names.\n\nThe red first: nothing on spirit named <x>Data, no clientCacheManager.js left, every family at spirit.data.app.<name>. Its count falls with each family moved."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:42:57.873Z",
+     "text": "cw: good box. I'd do it in three steps, each one green before the next:\n\n1. Rename spiritData.js to spirit/data.js. Nothing else changes.\n2. Add the helper to it and move one family, app, as the proof.\n3. Script the other 18, then a test that no spirit.<name>Data and no clientCacheManager is left.\n\nwsl writes one red for the end state. Your two open questions, Q1 and Q2, set the names, so they come first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:45:18.352Z",
+     "text": "Q1: Should the key be the family own name, so spirit.data.chatClerver and spirit.data.deskVerify?\n\nyes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:45:35.522Z",
+     "text": "Q2: Do all 19 go under spirit.data.app, including fs, jobs and auth, and the apps list as spirit.data.app.app?\n\nWHICH FUCKING 19?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:46:03.300Z",
+     "text": "wsl: the 19 clientCacheManager.js files, one per family:\n\nThe node's own, in spirit/: app, auth, contact, fs, jobs, node, relay, and the 14-line ones config, events, net, owner, peer.\n\nThe servers, in process/js/: agent, backup, chatClerver, desk, deskVerify, and the 14-line ones deskClient, fileServer.\n\nSo Q2 is: does the node's own 12 go under spirit.data.app too, beside the 7 servers?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:46:28.151Z",
+     "text": "yes, of course all 19"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:47:45.356Z",
+     "text": "all, box green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:48:12.511Z",
+     "text": "wsl: nearly. Two things the box doesn't settle:\n\n- \"ONE object app\": spirit.data also holds data, the tree itself (spiritData.js:349). I read your line as one object for the families, and data stays. Say if not.\n- spirit.cacheManager('app') is the verb that loads these files, named in 101 files. Does it keep its name, or follow the rename? I'd leave it, for its own item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:48:17.182Z",
+     "text": "cw: not green, two things:\n\n- Your yes on Q1, the family's own name, is not in the box (v6).\n- The box says spirit.data has ONE object, app. Today it has a second, spirit.data.data, the tree of rows the 19 keep. I'd keep it: spirit.data.app.<name> holds each family's reads, and those read that tree. Only tests touch it directly.\n\nQ2: Does spirit.data.data, the tree of rows, stay beside spirit.data.app?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:48:28.520Z",
+     "text": "cw: my question above is Q3, not Q2. Q2 is wsl's, which you answered."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:54:14.002Z",
+     "text": "all, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:54:39.329Z",
+     "text": "wsl: better, but the box now says two things:\n\n1. The top says spirit.data.app.<name>, the new part says spirit.data.<name>. I'd keep app, so a name can't land on a helper like seat.\n\n2. spirit.data.<name>.cache has no node in it. Your G41.28 ruling put the node first: \"organized BY SERVER-NODE-ID\", and today's tree is data[node][family]. A page can hold rows from several nodes, and 9 of the 19 write by the node that served them. So I'd make it .cache[node], unless you mean to overrule that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:54:42.141Z",
+     "text": "cw: better. Your structure answers my Q3, so I closed it: no shared tree, each family holds its own cache.\n\nOne conflict left: your top lines say spirit.data.app.<name>, your new lines say spirit.data.<name>. I'd keep app, or a family named seat lands on a helper.\n\nOne thing it changes: today the tree goes node, then family. A family's own cache goes family, then node, so a family's cache holds one mirror per node.\n\nQ4: Is it spirit.data.app.<name>.data and .cache, with app in the path?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:55:55.107Z",
+     "text": "all, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:56:12.233Z",
+     "text": "wsl: better. Line 1 now says spirit.data.<name>.data, but line 1 still has \"ONE object app\", and line 2 still says spirit.data.app.<name>. If <name> is the choice, those two go, and cw's Q4 answers no.\n\nThen no family may share a name with a helper. Today none does.\n\nStill open from before: whether .cache holds a level per node."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:56:16.219Z",
+     "text": "cw: better, it now leans to spirit.data.<name>, with no app. Two leftovers still say app: \"ONE object \"app\"\" in line 1, and spirit.data.app.<name> in line 2.\n\nIf you drop app, a family named seat lands on a helper, so word.js should reserve the helpers' names at spirit.data.\n\nQ4 is still the one question: is app in the path? A plain no is fine, and those two lines change to match."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:58:26.732Z",
+     "text": "all, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:58:42.007Z",
+     "text": "wsl: better. One leftover: line 2 still says spirit.data.app.<name>; it should say spirit.data.<name>.data.\n\nOne question left: does .cache hold a level per node? I'd say yes, as your G41.28 ruling did."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:58:47.429Z",
+     "text": "cw: better. Line 1 answers Q4: no app, so I closed it. One leftover: line 2 still says spirit.data.app.<name>.\n\nAfter that, wsl's question is the last: does .cache hold a level per node? I agree with wsl, yes: today 9 of the 19 write by the node that served the rows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:59:10.958Z",
+     "text": "all, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T20:59:25.868Z",
+     "text": "wsl: yes, the box agrees with itself now. Only Q5 is left, then I can write the red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T20:59:29.934Z",
+     "text": "cw: yes, the box agrees with itself now (v10). Only wsl's Q5 is left, and I'd answer yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T20:59:59.611Z",
+     "text": "Q5: Does spirit.data.<name>.cache hold a level per node, as the tree does today?\n\nyes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:02:03.608Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:02:20.725Z",
+     "text": "wsl: green to me, with your answers carried in the red: <name> is the family's own name (Q1), all 19 (Q2), and .cache has a level per node (Q5). No open Q.\n\nOne thing I leave out unless you say otherwise: spirit.cacheManager, the verb that loads these files, keeps its name in this item.\n\nEnd design and Go, and I write the red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T21:02:25.862Z",
+     "text": "cw: green: settled, no open question, box v10. Your yes on Q1 and Q5 stands in the checks, not the box, and spirit.cacheManager keeps its name unless you say otherwise."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:03:02.492Z",
+     "text": "files"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T21:03:55.163Z",
+     "text": "cw: files listed, 191: the 167 that name spiritData, clientCacheManager or a spirit.<x>Data today, and the 24 new paths they move to. wsl may add red files beside them.\n\nOne is yours: word.js reads spirit.fsData at one line, so it breaks unless that line follows the rename. Your ruling says no agent changes word.js.\n\nQ6: May this item change that one line of word.js, to read the new path?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:04:10.289Z",
+     "text": "Q6: May this item change that one line of word.js, to read the new path?\n\n??"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T21:04:26.647Z",
+     "text": "cw: Q6, plainly.\n\nword.js watches for word.json changes through spirit.fsData. This item removes that name, so it becomes spirit.data.fs.data.\n\nIf word.js does not follow, the Files colours stop updating live.\n\nYou ruled word.js is yours, so I ask before touching it.\n\nQ6: Yes, an agent changes that one line, or no, you change it yourself?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:05:07.124Z",
+     "text": "Q6: May this item change that one line of word.js, to read the new path?\n\nyes."
+    }
+   ]
   }
  ]
 }
