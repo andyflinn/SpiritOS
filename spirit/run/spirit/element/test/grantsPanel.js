@@ -175,7 +175,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('the grant form, a rowForm: ➕ [ID] [bundle] [Grant] (goal/G41.27)');
   // Andy, on G41.27: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]". The box: "new shell element:
-  // rowForm", "spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
+  // rowForm",
+  // "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops
   // its form elements into span and wires the button itself (a busyButton or a click)."
   ok(w.bundles.length === 1 && w.ids.length === 2 && w.families.length === 1, 'one bundle selector, two ID selectors (the form\'s and the filter), one family selector', 'bundle ' + w.bundles.length + ', ID ' + w.ids.length + ', family ' + w.families.length);
   const parts = w.bundles.concat(w.ids, w.families);

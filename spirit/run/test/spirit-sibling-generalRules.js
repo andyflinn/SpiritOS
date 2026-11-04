@@ -44,8 +44,8 @@ const rel = full ? path.relative(RUN, full).split(path.sep).join('/') : arg;
 const ADDRESS = '/DEBUG/' + rel.replace(/\.js$/, '') + '/headLessBrowser.html';
 const NAMED = ADDRESS.slice('/DEBUG'.length);
 // WHAT IS MOUNTED IS KNOWN BY ITS PATH (goal/G41.19, box v17; Andy: "the test knows bloody fucking well if a scripts is
-// an app (from the path pattern), why the fuck would would it need manifests for standard patterns?", "the test knows
-// fucking well, which are elements scripts in ./spirit/element/"): an app is shell/<app>/<app>.js, an element any script
+// an app (from the path pattern), why the fuck would would it need manifests for standard patterns?",
+// "the test knows fucking well, which are elements scripts in ./shell/js/"): an app is shell/<app>/<app>.js, an element any script
 // under spirit/element/. Anything else in its reach is neither, and is not mounted.
 // THE AGENT TABLES' PAGES ARE ELEMENTS TOO (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element
 // (process/js/agent/table/tableElement.js), its row editor (rowElement.js, goal/G41.28) and each table's list and

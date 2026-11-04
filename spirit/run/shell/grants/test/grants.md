@@ -4,8 +4,7 @@ The Grants app (apiAuth/G1.6; goal/G41.5, G41.13, G41.14, G41.16): the owner's s
 Intrinsic, so it shows on every face, the loopback face's and a relay face's alike (Andy, Q1: "Of course on both, how
 else can i give someone access when i travel?"). Its test is `./grants.js`.
 
-Since goal/G41.16 it is a wrapper (Andy: *"the shell app shell/grans/grants/ must be a wrapper for a new shell element:
-spirit/element/grantsPanel.js"*): its Grants tab is the grants panel, which knows no table; this app configures it (*"the
+Since goal/G41.16 it is a wrapper (Andy: *"the shell app shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js"*): its Grants tab is the grants panel, which knows no table; this app configures it (*"the
 callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel element"*). What the
 panel draws and does is the panel's (`spirit/element/test/grantsPanel.md`).
 

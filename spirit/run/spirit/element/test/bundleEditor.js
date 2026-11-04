@@ -104,8 +104,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const add = all(box).filter(function (k) { return k.tag === 'button' && /^\s*Add\s*$/.test(k.textContent || ''); })[0];
   ok(!!input && !!add, 'it draws a label input and an Add button', 'input ' + !!input + ', Add ' + !!add);
   if (!input || !add) return;
-  // Andy, on G41.27: "bundleEditor:\n[➕] [label] [Add]". The box: "spirit.element.rowForm.create(container, { icon,
-  // button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the button itself".
+  // Andy, on G41.27: "bundleEditor:\n[➕] [label] [Add]". The box: "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }", "The mounter drops its form elements into span and wires the button itself".
   ok(required.indexOf('spirit/element/rowForm.js') !== -1, 'it loads the rowForm itself (rule/26)', 'required: ' + short(required));
   const rf = forms[0];
   ok(forms.length === 1 && rf.opts.icon === '➕' && rf.opts.button === 'Add' && all(box).indexOf(rf.root) !== -1, 'its add form is one rowForm in its box, its icon ➕ and its button Add', 'rowForms: ' + short(forms.map(function (f) { return f.opts; })));

@@ -3,10 +3,7 @@
 //
 //   Desk rule 8 (Andy): "Shell and application elements, should bring their subscriptions with them, so that they're
 //   automatically subscribed to the events that update them."
-//   The item's box, D: "a new folder spirit/run/shell/shared/js (Andy, 2026-10-15: spirit/run/spirit/element is a core
-//   folder and stays the shell's own), one file per element, each named with the desk prefix ... each adding itself to
-//   window.spirit.elements as the shell elements do. The element is made with the keys it shows and a paint function
-//   and subscribes to the stream itself."
+//   The item's box, D: "a new folder spirit/run/shell/shared/js (Andy, 2026-10-15: spirit/run/shell/js is a core folder and stays the shell's own), one file per element, each named with the desk prefix ... each adding itself to window.spirit.elements as the shell elements do. The element is made with the keys it shows and a paint function and subscribes to the stream itself."
 //
 // createDeskElement({ subscribe, wants, paint }) -> { destroy }
 //   subscribe(handler)  the stream the element listens to, an app's onPublished bound to its server; answers its

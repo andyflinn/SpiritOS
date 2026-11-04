@@ -17,8 +17,8 @@ agent tables alike."*). It was `shell/test/boot-sibling-generalRules.js`, whose 
 Each file is its own test id. A rule a file breaks fails that file's test, not the item that brought the test.
 
 **What is mounted is known by its path** (goal/G41.19, box v17; Andy: *"the test knows bloody fucking well if a scripts
-is an app (from the path pattern), why the fuck would would it need manifests for standard patterns?"*, *"the test knows
-fucking well, which are elements scripts in ./spirit/element/"*):
+is an app (from the path pattern), why the fuck would would it need manifests for standard patterns?"*,
+*"the test knows fucking well, which are elements scripts in ./shell/js/"*):
 
 - an **app** is `shell/<app>/<app>.js`;
 - an **element** is any script under `spirit/element/`, and an agent table's page: the tables' shared element

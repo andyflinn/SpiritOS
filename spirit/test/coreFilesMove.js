@@ -5,8 +5,9 @@
 // itself, except that an app with "intrinsic": true in its manifest is still part of the shipped shell and
 // so is core as well. index.html, shell/elements.css and shell/tokens.css are core too.
 //   Andy, 2026-10-05/06, under goal/G6.1 and G6.7: "i never saw coreFiles.js"; "well, we'll fix that, before
-//   anything else."; "1. coreFiles.js goes in \"spirit/run/spirit/coreFiles.js\", with NO dependencies on any
-//   desk stuff, and it is updated to include all files in spirit/run/spirit/element"; "2. remove the intrinsic mark
+//   anything else.";
+//   "1. coreFiles.js goes in \"spirit/run/spirit/coreFiles.js\", with NO dependencies on any desk stuff, and it is updated to include all files in spirit/run/shell/js";
+//   "2. remove the intrinsic mark
 //   in desk-related components"; to Q1 "apps in spirit/run/shell/<appname>/ are intrinsic (core) if the
 //   manifest says so."; to Q2 (index.html, elements.css, tokens.css core?): "yes."; to Q3 (agents' include
 //   lists): "leave it to each node, and correct AGENT_ONBOARDING accordingly." claude-ubuntu wrote this red,

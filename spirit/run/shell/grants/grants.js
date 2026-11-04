@@ -7,8 +7,8 @@
 //   issue or revoke grand rows for that key.", "so we defer pruning to be triggered by the owners
 //   auth app, who can report deprecated branches", and on the name: "YES to your name".
 //
-// A WRAPPER OF THE GRANTS PANEL (goal/G41.16; Andy: "the shell app shell/grans/grants/ must be a wrapper for a new shell
-// element: spirit/element/grantsPanel.js"). Two tabs (goal/G41.13): Grants, the grants panel (spirit/element/grantsPanel.js);
+// A WRAPPER OF THE GRANTS PANEL (goal/G41.16; Andy: "the shell app shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js").
+// Two tabs (goal/G41.13): Grants, the grants panel (spirit/element/grantsPanel.js);
 // Bundles, the bundle editor (spirit/element/bundleEditor.js). The panel knows no table; this app configures it (Andy: "the
 // callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel element"): its IDs
 // are the contacts, its grants the node's auth table. Its contract and its test: ./test/grants.md and ./test/grants.js.

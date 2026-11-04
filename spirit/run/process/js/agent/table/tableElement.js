@@ -1,7 +1,7 @@
 // spirit/run/process/js/agent/table/tableElement.js
 // WHAT THE TABLES' ELEMENTS SHARE (goal/G41.4), in the page: each table's elementTable.js and elementRow.js name their
-// columns and fields and build on these two. Andy, box v22: "elementTable.js (an face-shell compatible interface to the
-// table for browsers, with search-list using the probablility-group of elements in spirit/element/)" and "elementRow.js (a
+// columns and fields and build on these two. Andy, box v22:
+// "elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using the probablility-group of elements in shell/js/)" and "elementRow.js (a
 // panel element, to maintain and edit one row of the table)".
 //
 //   spirit.elements.agentTable.create(container, { api, table, detail, row, add }) -> { refresh, destroy }

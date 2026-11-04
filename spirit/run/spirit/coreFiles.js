@@ -4,12 +4,12 @@
 // WHICH FILES ARE CORE, GRANT-LOCKED (goal/G4.23, fixed in goal/G6.7). The one table the commit check reads and the test
 // reads. It needs nothing of the desk's.
 //
-//   Andy, 2026-10-06 (goal/G6.7): "coreFiles.js goes in \"spirit/run/spirit/coreFiles.js\", with NO dependencies on any desk
-//   stuff, and it is updated to include all files in spirit/run/spirit/element"; "apps in spirit/run/shell/<appname>/ are
+//   Andy, 2026-10-06 (goal/G6.7): "coreFiles.js goes in \"spirit/run/spirit/coreFiles.js\", with NO dependencies on any desk stuff, and it is updated to include all files in spirit/run/shell/js";
+//   "apps in spirit/run/shell/<appname>/ are
 //   intrinsic (core) if the manifest says so."; index.html, shell/elements.css and shell/tokens.css core: "yes."
 //
 //   Andy, 2026-10-04: "the scope still has a grant-lock on core files.", and asked which: "basicall run/js and
-//   intrinsics". So a file is core when it lies under spirit/run/spirit/ or spirit/run/spirit/element/, is the shell's frame, or
+//   intrinsics". So a file is core when it lies under spirit/run/spirit/, is the shell's frame, or
 //   is a code file (.js, .css, .html) of an app or server on the coded INTRINSIC list (goal/G41.1, below). A
 //   commit touching one needs his grant on the item, inside an agent's scope or not (commitCheck.js).
 //

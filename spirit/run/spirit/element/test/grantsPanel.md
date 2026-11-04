@@ -4,8 +4,7 @@
 The Grants app draws it for contacts and the node's grants; the agent app for its jobs and its grants by job. Its test is
 `./grantsPanel.js`.
 
-Andy, goal/G41.16: *"the shell app shell/grans/grants/ must be a wrapper for a new shell element: spirit/element/grantsPanel.js,
-and spirit/element/grantsPanel.js is configurable with an ID table"*, and *"the callers (Grants and agent shell apps should
+Andy, goal/G41.16: *"the shell app shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js, and shell/js/grantsPanel.js is configurable with an ID table"*, and *"the callers (Grants and agent shell apps should
 boody well know how to configure the damn grantsPanel element"*.
 
 ## Its configuration

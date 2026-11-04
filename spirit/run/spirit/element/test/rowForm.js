@@ -38,8 +38,7 @@ test.startTest('rowForm.js: the one-row form, in a bubble');
     let m = null;
     try { m = JSON.parse(s); } catch (e) { m = null; }
     if (!m) { test.fail('the page measured nothing: ' + JSON.stringify(s).slice(0, 300)); return; }
-    // Andy, box: "spirit.element.rowForm.create(container, { icon, button }) -> { root, span, button }: icon is the
-    // glyph, button the button's words."
+    // Andy, box: "spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }: icon is the glyph, button the button's words."
     ok(m.made, 'it adds rowForm.create(container, { icon, button }) to window.spirit.element', 'no window.spirit.element.rowForm.create');
     if (!m.made) return;
     const one = m.one || {};

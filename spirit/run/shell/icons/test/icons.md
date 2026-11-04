@@ -2,8 +2,7 @@
 
 The icons app's add row, a rowForm (goal/G41.27). Its test is `./icons.js`.
 
-Andy, on G41.27: *"icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]"*. The box: *"spirit.element.rowForm.create(container,
-{ icon, button }) -> { root, span, button }"*, *"The mounter drops its form elements into span and wires the button
+Andy, on G41.27: *"icons app:\n[➕] [an icon:paste] [keywords, comma separated][Add]"*. The box: *"spirit.elements.rowForm.create(container, { icon, button }) -> { root, span, button }"*, *"The mounter drops its form elements into span and wires the button
 itself"*, and *"a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it."*
 
 Asked of a real browser, the real rowForm composed: `./icons-laid.html`, opened at
