@@ -6,9 +6,13 @@
 //                                    the hard-coded words and the word.json of each level of the path below the root, never
 //                                    a level beside it or below it. In node a plain answer; on a page a promise, since a page
 //                                    asks its node for each file.
+//   add('path.in.words', 'Word')     in node only (Q5, Andy: "no."): writes the lower-case word with the value true to that level's
+//                                    word.json, and answers true. Answers false and writes nothing on what is no word, on what
+//                                    check finds, on a word a level below holds (Andy's yes to Q4), on a path with no level
+//                                    check would read, and on a word.json it cannot read back, which it will not overwrite.
 //   changed(fn)                      on a page: fn() when a word.json changes on the disk; answers its release.
 //
-// A word is a to z. add() is conceptual, and not implemented here (the box).
+// A word is a to z.
 (function () {
   // The box: "hardcoded intitialized set of keys", "(this may change)". No inherited keys: "constructor" is a to z.
   var HARD = Object.create(null);
@@ -33,14 +37,44 @@
     require('../spirit.js');
     var fs = require('fs');
     var path = require('path');
+    var readOr = function (file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { return null; } };
+    var check = function (at, word) {
+      var w = wordOf(word);
+      if (!w) return null;
+      if (HARD[w]) return w;
+      return levels(at).some(function (rel) {
+        try { return holds(fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'), w); } catch (e) { return false; }
+      }) ? w : null;
+    };
+    // A word.json anywhere below a folder holding the word.
+    var heldBelow = function (dir, w) {
+      var names = [];
+      try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return false; }
+      return names.some(function (e) {
+        if (!e.isDirectory() || e.name === 'node_modules') return false;
+        var below = path.join(dir, e.name);
+        return holds(readOr(path.join(below, 'word.json')), w) || heldBelow(below, w);
+      });
+    };
     module.exports = {
-      check: function (at, word) {
+      check: check,
+      add: function (at, word) {
         var w = wordOf(word);
-        if (!w) return null;
-        if (HARD[w]) return w;
-        return levels(at).some(function (rel) {
-          try { return holds(fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'), w); } catch (e) { return false; }
-        }) ? w : null;
+        var rel = levels(at)[0];
+        // A path is in words, so nothing but a level of the tree is ever written.
+        if (!w || !rel || !String(at).split('.').every(wordOf) || check(at, w)) return false;
+        var file = path.join(__dirname, '..', rel);
+        if (heldBelow(path.dirname(file), w)) return false;
+        var text = readOr(file);
+        var o = {};
+        if (text !== null) {
+          try { o = JSON.parse(text); } catch (e) { return false; }
+          if (!o || typeof o !== 'object' || Array.isArray(o)) return false;
+        }
+        o[w] = true;
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, JSON.stringify(o, null, 2) + '\n');
+        return true;
       },
     };
     return;
