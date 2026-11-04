@@ -6,7 +6,7 @@ Andy, box: *"i will track nameSpace claims."*
 
 ## Requirements
 
-- A word is a string of `a` to `z`. Five are hard-coded: `spirit`, `app`, `element`, `identity`, `job`, *"(this may change)"*. When they change, so does `HARD` in the test.
+- A word is a string of `a` to `z`. Six are hard-coded: `spirit`, `app`, `data`, `element`, `identity`, `job`, *"(this may change)"*. When they change, so does `HARD` in the test.
 - `check('path.in.words', 'word')` compares case-insensitively and answers the lower-case word, else null. It looks at the `word.json` of each level on its path below the root, and at the hard-coded words. It reads no `run://spirit/word.json`. It sees nothing lower down and nothing in another branch.
 - A word an object inherits, like `constructor`, is not reserved. A missing `word.json` counts as empty. A `word.json` is an object of word to `true`.
 - A changed `word.json` is seen by the next `check`.
