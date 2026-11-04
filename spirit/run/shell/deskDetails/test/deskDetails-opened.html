@@ -22,15 +22,17 @@ var checks = Array.from({ length: 60 }, function (x, i) { return { number: 'Q' +
   .concat([1, 2, 3].map(function (n) { return { number: 'G' + n, kind: 'G', state: 'open', words: 'core grant: a file' }; }));
 var files = Array.from({ length: 150 }, function (x, i) { return { path: 'spirit/run/shell/a' + i + '.js', by: 'claude-windows', core: i < 3 }; });
 var suites = Array.from({ length: 60 }, function (x, i) { return { key: String(i), label: JSON.stringify({ path: 'spirit/run/shell/test/s' + i + '.js' }) }; });
+window.asked = [];
 var api = {
   escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
   setScreenTitle: function () {}, closeDialog: function () {}, onPublished: function () { return function () {}; }, armUntilElsewhere: function () {},
-  verb: function (n) {
+  verb: function (n, a) {
+    window.asked.push({ name: n, args: a });
     var b = { ok: true };
     if (n === 'desk.item.get') b = { item: JSON.stringify(facts), version: 1, change: 1 };
     if (n === 'desk.item.chat') b = { chat: lines };
     if (n === 'desk.item.checks') b = { checks: checks };
-    if (n === 'desk.item.box') b = { box: Array(300).join('a box line\n'), version: 1 };
+    if (n === 'desk.item.box') b = { box: Array(250).join('a box line\n') + 'the needle line\n' + Array(50).join('a box line\n'), version: 37 };
     if (n === 'desk.item.files') b = { files: files };
     if (n === 'desk.item.suites.search') b = { items: suites, more: false };
     return Promise.resolve({ status: 200, body: b });
@@ -61,6 +63,57 @@ window.opened = function () {
     out.leftShown = current ? current.getAttribute('data-tool') : '';
     out.panelAtOpen = panel ? Math.round(panel.getBoundingClientRect().height) : 0;
     return JSON.stringify(out);
+  });
+};
+
+// goal/G43.3, the box panel. Andy: "i want the UI to allow me to search the box currently displayed: the exact content of
+// the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?", and "above the box i
+// want to see the the last-stored version number of the box." What shows, what stands above the box, and what his words
+// typed into the search of the panel mark.
+window.boxView = function () {
+  var icon = document.querySelector('[data-tool="box"]');
+  if (!icon) return Promise.resolve(JSON.stringify({ error: 'no icon for box' }));
+  if (!icon.hasAttribute('data-current')) icon.click();
+  return wait(1200).then(function () {
+    var panel = document.getElementById('dd-panel');
+    var cm = panel.querySelector('.CodeMirror');
+    var box = cm || panel.querySelector('textarea');
+    var out = { codeMirror: !!cm, numbers: panel.querySelectorAll('.CodeMirror-linenumber').length };
+    var top = box ? box.getBoundingClientRect().top : 0;
+    var above = '';
+    panel.querySelectorAll('*').forEach(function (el) { if (!box.contains(el) && !el.children.length && el.getBoundingClientRect().bottom <= top + 1) above += ' ' + el.textContent; });
+    out.above = above;
+    var find = Array.prototype.filter.call(panel.querySelectorAll('input'), function (i) { return !box.contains(i) && i.getClientRects().length; })[0];
+    out.find = !!find;
+    if (!find) return JSON.stringify(out);
+    find.value = 'needle';
+    find.dispatchEvent(new Event('input', { bubbles: true }));
+    return wait(800).then(function () {
+      var marks = panel.querySelectorAll('.text-view-match');
+      out.marks = marks.length;
+      var box2 = rect(box);
+      var m = marks.length ? rect(marks[0]) : null;
+      out.markShown = !!m && m.top >= box2.top && m.bottom <= box2.bottom;
+      out.markText = marks.length ? marks[0].textContent : '';
+      return JSON.stringify(out);
+    });
+  });
+};
+// The take on that box, as he goes in and out of it: going in takes it, leaving with a change writes it.
+window.boxTake = function () {
+  var el = document.querySelector('#dd-panel .CodeMirror');
+  if (!el) return Promise.resolve(JSON.stringify({ error: 'no CodeMirror in the box panel' }));
+  var cm = el.CodeMirror;
+  window.asked.length = 0;
+  cm.focus();
+  return wait(300).then(function () {
+    var took = window.asked.filter(function (a) { return a.name === 'desk.box.take'; }).length;
+    cm.setValue('his new text');
+    cm.getInputField().blur();
+    return wait(300).then(function () {
+      var wrote = window.asked.filter(function (a) { return a.name === 'desk.box.write'; })[0];
+      return JSON.stringify({ took: took, wrote: wrote ? wrote.args : null });
+    });
   });
 };
 

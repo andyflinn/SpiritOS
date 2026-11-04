@@ -403,10 +403,10 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const PULL = { id: 'goal/G300', title: 'Pull test' };
     const PULL_ITEMS = ['goal/G300.1', 'goal/G300.2', 'goal/G300.3'];
     const pullSession = { goal: PULL, items: PULL_ITEMS.map(function (id) { return { id: id, title: 'Pull ' + id, blocks: [PULL.id] }; }) };
-    const startDesk = async function (name, records, values) {
+    const startDesk = async function (name, records, values, sessions) {
       const root = path.join(scratch, name);
       const st = path.join(root, 'state');
-      seed(st, [pullSession]);
+      seed(st, sessions || [pullSession]);
       records.forEach(function (r) { seedRecord(st, r.verb, r.by, r.body); });
       const p = appClient.pipePathFor(root, 'desk', process.platform, 'process');
       if (process.platform !== 'win32') fs.mkdirSync(path.dirname(p), { recursive: true });
@@ -436,6 +436,167 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     const jobsDone = async function () { for (let i = 0; i < 150 && node.jobs.some(function (j) { return j.exit === null; }); i++) await sleep(100); };
     const deskLines = async function (ask, id) { return (((await ask('item.chat', { id: id }, ANDY)).chat) || []).filter(function (l) { return l && l.by === 'desk'; }); };
     const waitFor = async function (cond, ms) { for (let i = 0; i < ms / 100; i++) { if (await cond()) return true; await sleep(100); } return !!(await cond()); };
+
+    // ── goal/G43.3, THE BOX (Andy: "desk cannot refuse the box to the user. agent updates will fail it the user takes the
+    // box, and desk will note so in the chat."). This replaces his G9.3 and G21.1 words on a hold. ───────────────────
+    test.subHeading('goal/G43.3: the desk never refuses him the box; an agent\'s update fails, and the chat says so');
+    const askB = await startDesk('desk-box', [], {});
+    ok(!!askB, 'the world: a desk of its own starts', 'the desk did not start: the box is not judged');
+    if (askB) {
+      await profiles(askB);
+      const factsB = async function (id) { const r = await askB('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
+      const failsAndSays = async function (id, agent, what) {
+        const lines0 = (await deskLines(askB, id)).length;
+        const v = (await factsB(id)).version || 0;
+        const before = (await askB('item.box', { id: id }, ANDY)).box;
+        const up = await askB('box.write', { id: id, text: 'the agent\'s update', version: v }, agent);
+        const after = (await askB('item.box', { id: id }, ANDY)).box;
+        ok(up.ok === false && up.code === 'taken' && after === before, what + ': the agent\'s update fails, and the box stays his', what + ': the update answered ' + short(up) + ', the box now ' + short(after));
+        const said = await waitFor(async function () { return (await deskLines(askB, id)).length > lines0; }, 3000);
+        ok(said, what + ': and the desk notes it in the chat', what + ': no line of the desk\'s under the item after the update failed');
+      };
+      await askB('box.take', { id: 'goal/G300.1' }, CW);
+      const overTake = await askB('box.take', { id: 'goal/G300.1' }, ANDY);
+      ok(!!overTake.change && (await factsB('goal/G300.1')).boxTaken === 'andy', 'an agent holds the box: his take is not refused, and the box is his', 'his take answered ' + short(overTake) + ', boxTaken ' + short((await factsB('goal/G300.1')).boxTaken));
+      await failsAndSays('goal/G300.1', CW, 'after his take over cw');
+      // The one-write hold of the cap (goal/G21.1) is an agent's hold too: "nobody else takes it meanwhile, Andy included" goes.
+      const tooBigB = await askB('box.write', { id: 'goal/G300.2', text: 'x'.repeat(20000), version: 0 }, ANDY);
+      const roomB = tooBigB && tooBigB.extra ? Number(tooBigB.extra.max) || 0 : 0;
+      const v2 = (await factsB('goal/G300.2')).version || 0;
+      const bigB = await askB('box.write', { id: 'goal/G300.2', text: 'y'.repeat(Math.ceil(roomB * 0.8)), version: v2 }, ANDY);
+      const heldB = await askB('box.take', { id: 'goal/G300.2' }, UBI);
+      ok(roomB > 0 && !!bigB.change && !!heldB.change && (await factsB('goal/G300.2')).boxTaken === UBI.label, 'the world: ubi holds the box under the one-write hold of the cap', 'room ' + roomB + ', the write ' + short(bigB) + ', ubi\'s take ' + short(heldB));
+      const overHold = await askB('box.take', { id: 'goal/G300.2' }, ANDY);
+      ok(!!overHold.change && (await factsB('goal/G300.2')).boxTaken === 'andy', 'an agent\'s one-write hold: his take is not refused either', 'his take answered ' + short(overHold) + ', boxTaken ' + short((await factsB('goal/G300.2')).boxTaken));
+      await failsAndSays('goal/G300.2', UBI, 'after his take over ubi\'s hold');
+      const v3 = (await factsB('goal/G300.1')).version || 0;
+      const hisWrite = await askB('box.write', { id: 'goal/G300.1', text: 'his own text', version: v3 }, ANDY);
+      ok(!!hisWrite.change && (await askB('item.box', { id: 'goal/G300.1' }, ANDY)).box === 'his own text', 'his own write under his take lands', 'his write answered ' + short(hisWrite));
+    }
+
+    // ── goal/G43.3, THE PHASE WAKE (Andy: "when the red phase ends, the desk must summon/wake another agent to take the
+    // build phase, or the same agent that did the red phase, if that's the only one available", and "a red-claim or a
+    // code-done should automatically trigger a phase-wake for all agents, since there could be only 1."). What wakes a
+    // deskClient is a row of an item with an open phase, nobody holding it (deskClient.js, streamed). ─────────────────
+    test.subHeading('goal/G43.3: a red claim, and a code-done, wake every agent for the next phase');
+    const worldW = gitWorld(path.join(scratch, 'git-w'));
+    const askW = await startDesk('desk-wake', [], { goalRepo: worldW.checkout });
+    ok(!!askW, 'the world: a desk of its own starts', 'the desk did not start: the wake is not judged');
+    if (askW) {
+      await profiles(askW);
+      const factsW = async function (id) { const r = await askW('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
+      await askW('subscribe', { family: 'deskClient' }, CW);
+      await askW('subscribe', { family: 'deskClient' }, UBI);
+      const opened = function (from, key, id, phase) {
+        return node.sent.slice(from).some(function (x) { return x.to === key && x.row && x.row.item && x.row.item.id === id && x.row.item.phase === phase && !x.row.item.phaseWith; });
+      };
+      await ready(askW, 'goal/G300.1', UBI);
+      await jobsDone();
+      const tookRed = await askW('phase.take', { id: 'goal/G300.1', phase: 'red' }, UBI);
+      ok(!!tookRed.change, 'the world: ubi takes the red', 'its take answered ' + short(tookRed));
+      const hW = worldW.push();
+      const fromR = node.sent.length;
+      const redW = await askW('claim', { id: 'goal/G300.1', phase: 'red', commit: hW }, UBI);
+      ok(!!redW.change, 'the world: ubi\'s red claim is taken', 'the claim answered ' + short(redW));
+      const fW = await factsW('goal/G300.1');
+      ok(fW.phase === 'build' && !fW.phaseWith, 'the red claim alone ends the red: the build is open, nobody holding it', 'after the claim: phase ' + short(fW.phase) + ', held by ' + short(fW.phaseWith));
+      const wokeCW = await waitFor(function () { return opened(fromR, CW.key, 'goal/G300.1', 'build'); }, 5000);
+      const wokeUBI = await waitFor(function () { return opened(fromR, UBI.key, 'goal/G300.1', 'build'); }, 2000);
+      ok(wokeCW && wokeUBI, 'the row that opens the build reaches every subscribed agent, the red\'s author included', 'reached cw ' + wokeCW + ', ubi ' + wokeUBI);
+      await askW('agent.state', { word: 'listening' }, CW);
+      const redAuthor = await askW('phase.take', { id: 'goal/G300.1', phase: 'build' }, UBI);
+      ok(redAuthor.ok === false, 'with another agent here, the red\'s author does not take the build', 'its take answered ' + short(redAuthor));
+      const tookBuild = await askW('phase.take', { id: 'goal/G300.1', phase: 'build' }, CW);
+      ok(!!tookBuild.change, 'the other agent takes it', 'cw\'s take answered ' + short(tookBuild));
+      const hB = worldW.push();
+      const fromB = node.sent.length;
+      const doneW = await askW('claim', { id: 'goal/G300.1', phase: 'build', commit: hB }, CW);
+      ok(!!doneW.change, 'the world: cw\'s code-done is taken', 'the claim answered ' + short(doneW));
+      const fV = await factsW('goal/G300.1');
+      ok(fV.phase === 'verify' && !fV.phaseWith, 'the code-done alone opens the verify, nobody holding it', 'after the claim: phase ' + short(fV.phase) + ', held by ' + short(fV.phaseWith));
+      const wokeCW2 = await waitFor(function () { return opened(fromB, CW.key, 'goal/G300.1', 'verify'); }, 5000);
+      const wokeUBI2 = await waitFor(function () { return opened(fromB, UBI.key, 'goal/G300.1', 'verify'); }, 2000);
+      ok(wokeCW2 && wokeUBI2, 'the row that opens the verify reaches every subscribed agent', 'reached cw ' + wokeCW2 + ', ubi ' + wokeUBI2);
+    }
+    test.subHeading('goal/G43.3: alone, the agent that wrote the red takes the build itself');
+    const worldL = gitWorld(path.join(scratch, 'git-l'));
+    const askL = await startDesk('desk-alone', [], { goalRepo: worldL.checkout });
+    ok(!!askL, 'the world: a desk of its own starts', 'the desk did not start: alone is not judged');
+    if (askL) {
+      await profiles(askL);
+      await ready(askL, 'goal/G300.1', CW);
+      await jobsDone();
+      await askL('phase.take', { id: 'goal/G300.1', phase: 'red' }, CW);
+      const redL = await askL('claim', { id: 'goal/G300.1', phase: 'red', commit: worldL.push() }, CW);
+      const tookL = await askL('phase.take', { id: 'goal/G300.1', phase: 'build' }, CW);
+      ok(!!redL.change && !!tookL.change, 'the only agent here claims the red and takes the build, with no press of his', 'the claim ' + short(redL) + ', the take ' + short(tookL));
+    }
+
+    // ── goal/G43.3, THE LIST'S SEARCH (Andy: "reduce the number of fields that a front page ("list-tab") search returns for
+    // every returned rows, so MORE rows fit into a search result. the search needs only those fields of a row that it
+    // actually displays."; "when i open desk, i want to see immediately, the current goal, with all open items, or as many
+    // as fit into the first search."; "the search filter [include closed] doesn't mean "exclude open ones"!!!!") ─────
+    test.subHeading('goal/G43.3: items.search answers a row with what the List draws, so more rows fit');
+    const LIST_GOAL = { id: 'goal/G400', title: 'The list' };
+    const LIST_ITEMS = Array.from({ length: 25 }, function (x, i) { return 'goal/G400.' + (i + 1); });
+    const askS = await startDesk('desk-list', [], {}, [{ goal: LIST_GOAL, items: LIST_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [LIST_GOAL.id] }; }) }]);
+    ok(!!askS, 'the world: a desk of its own starts', 'the desk did not start: the search is not judged');
+    if (askS) {
+      await profiles(askS);
+      // What the List's cells, its presses and its filters read (shell/desk/desk.js deskRowCells, deskRowPresses, deskRowShown;
+      // shell/shared/js/deskRunStatus.js), and nothing else.
+      const LIST_FIELDS = ['id', 'goal', 'title', 'status', 'statusTone', 'buttons', 'verified', 'verifyFailures', 'verifyRed', 'verifyRunning', 'asks', 'alert', 'with', 'names', 'blocking', 'blocked'];
+      const search = async function (ask, o) { const r = await ask('items.search', Object.assign({ text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, o || {}), ANDY); return { more: r.more === true, rows: (r.items || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return {}; } }), keys: (r.items || []).map(function (x) { return x.key; }) }; };
+      const first = await search(askS);
+      const extra = {};
+      first.rows.forEach(function (row) { Object.keys(row).forEach(function (k) { if (LIST_FIELDS.indexOf(k) === -1) extra[k] = true; }); });
+      ok(first.rows.length > 0 && !Object.keys(extra).length, 'a row holds only what the List draws, presses and filters on', 'the first search\'s rows also hold: ' + Object.keys(extra).join(', '));
+      const openShown = LIST_ITEMS.filter(function (id) { return first.keys.indexOf(id) !== -1; });
+      ok(first.keys.indexOf(LIST_GOAL.id) !== -1 && openShown.length === LIST_ITEMS.length && !first.more, 'the first search holds the current goal and all its 25 open items', 'the first search holds ' + first.keys.length + ' rows, ' + openShown.length + ' of the 25 open items, more ' + first.more);
+      // His ruling of goal/G41.28 stands on the server: a search covers the whole row, and the chat.
+      await askS('chat.add', { id: 'goal/G400.20', text: 'zebrafinch' }, ANDY);
+      const byChat = await search(askS, { text: 'zebrafinch' });
+      ok(byChat.keys[0] === 'goal/G400.20', 'the server still searches what the row no longer carries: a chat word finds its item first', 'searching a chat word answers first ' + short(byChat.keys[0]));
+
+      // goal/G43.3: Andy: "file list should not show duplicates". A path two agents added is one row.
+      test.subHeading('goal/G43.3: a file on the list is one row, however many agents added it');
+      await askS('item.take', { id: 'goal/G400.1' }, CW);
+      await askS('item.files.add', { id: 'goal/G400.1', path: 'spirit/run/twice.js' }, CW);
+      await askS('item.take', { id: 'goal/G400.1' }, UBI);
+      await askS('item.files.add', { id: 'goal/G400.1', path: 'spirit/run/twice.js' }, UBI);
+      await askS('item.files.add', { id: 'goal/G400.1', path: 'spirit/run/once.js' }, UBI);
+      const twice = (((await askS('item.files', { id: 'goal/G400.1' }, ANDY)).files) || []).map(function (e) { return e.path; });
+      ok(twice.filter(function (p) { return p === 'spirit/run/twice.js'; }).length === 1 && twice.indexOf('spirit/run/once.js') !== -1, 'two agents add one path: it is one row, and the other file stays', 'the list: ' + short(twice));
+
+      // goal/G43.3: Andy: "when i add a rule to an item or goal, it will not immediately display in the rule-list."
+      test.subHeading('goal/G43.3: a rule attached reaches his page at once, on an item and on a goal');
+      const made = await askS('rule.add', { type: 'code', label: 'A rule to attach', text: 'the text of a rule' }, ANDY);
+      ok(!!made.key, 'the world: a rule exists', 'rule.add answered ' + short(made));
+      for (const id of ['goal/G400.2', LIST_GOAL.id]) {
+        const fromP = node.pages.length;
+        const attached = await askS('item.rules.add', { id: id, rule: made.key }, ANDY);
+        const reached = await waitFor(function () { return node.pages.slice(fromP).some(function (o) { return o && o.item && o.item.id === id && (o.item.rules || []).some(function (r) { return r.key === made.key; }); }); }, 3000);
+        ok(!!attached.change && reached, id + ': the row naming the new rule is published to his page', id + ': the attach ' + short(attached) + ', a row naming it published ' + reached);
+      }
+    }
+    test.subHeading('goal/G43.3: [include closed] adds the closed rows, and the open ones stay in the first answer');
+    const MIX_GOAL = { id: 'goal/G500', title: 'Closed first' };
+    const MIX_ITEMS = Array.from({ length: 45 }, function (x, i) { return 'goal/G500.' + (i + 1); });
+    const askM = await startDesk('desk-mixed', [], {}, [{ goal: MIX_GOAL, items: MIX_ITEMS.map(function (id) { return { id: id, title: 'Item ' + id, blocks: [MIX_GOAL.id] }; }) }]);
+    ok(!!askM, 'the world: a desk of its own starts', 'the desk did not start: [include closed] is not judged');
+    if (askM) {
+      await askM('press', { id: MIX_GOAL.id, what: 'end-design' }, ANDY);
+      const CLOSED = MIX_ITEMS.slice(0, 40); const OPEN = MIX_ITEMS.slice(40);
+      for (const id of CLOSED) await askM('press', { id: id, what: 'close' }, ANDY);
+      const searchM = async function (o) { const r = await askM('items.search', Object.assign({ text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, o), ANDY); return (r.items || []).map(function (x) { return x.key; }); };
+      const without = await searchM({ includeClosed: false });
+      ok(without.filter(function (k) { return CLOSED.indexOf(k) !== -1; }).length === 0 && OPEN.every(function (k) { return without.indexOf(k) !== -1; }), 'the world: 40 closed items, the oldest; without the filter only the 5 open show', 'without the filter: ' + short(without));
+      const withC = await searchM({ includeClosed: true });
+      const missing = OPEN.filter(function (k) { return withC.indexOf(k) === -1; });
+      ok(!missing.length, 'with [include closed] every open item is still in the answer', 'with [include closed] these open items are gone: ' + missing.join(', ') + ', the answer holds ' + withC.length + ' rows');
+      const firstClosed = withC.findIndex(function (k) { return CLOSED.indexOf(k) !== -1; });
+      ok(firstClosed !== -1 && OPEN.every(function (k) { const at = withC.indexOf(k); return at !== -1 && at < firstClosed; }), 'and the open items come before the closed ones, and closed ones show', 'the order: ' + short(withC.slice(0, 12)));
+    }
 
     test.subHeading('auto pull: a red claim or a build claim taken, the desk pulls its own checkout');
     const worldA = gitWorld(path.join(scratch, 'git-a'));

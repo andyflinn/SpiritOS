@@ -90,11 +90,21 @@ globalThis.spirit = {
 };
 // The data set lives on the one spirit object, where the desk's translator finds it (spirit/spiritData.js).
 globalThis.spirit.data = D;
+// What the checkout's watcher does on a file event, kept from its on('all').
+let watchAll = null;
+// The verifier's publishes, however this client listens: its subscribers on the node's event stream, and the data set.
+const eventSubscribers = [];
+globalThis.spirit.events = { subscribe: function (h) { eventSubscribers.push(h); return function () {}; }, publish: function () { return Promise.resolve({}); } };
+const verifierSays = function (run) {
+  const job = { id: 'verify-job', module: 'process/js/deskVerify', data: {}, app: run };
+  eventSubscribers.forEach(function (h) { if (h && typeof h['job-updated'] === 'function') h['job-updated'](job); });
+  curD.take({ module: 'process/js/deskVerify', data: {}, app: run }, SELF_KEY);
+};
 const realLoad = Module._load;
 Module._load = function (request, parent, isMain) {
   if (/(^|\/)spirit\.js$/.test(request) && parent && parent.filename === FILE) return globalThis.spirit;
   if (/spirit\/appServer\.js$/.test(request)) return appServerStub;
-  if (request === 'chokidar') return { watch: function () { const w = { on: function () { return w; } }; return w; } };
+  if (request === 'chokidar') return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
   return realLoad.apply(this, arguments);
 };
 // resubscribeMs 1: any silence at all would count as expired, so a client that still expires its subscribe shows it.
@@ -152,6 +162,61 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   await push({ verb: 'goal.whole', goal: 9, item: { id: GOAL, goal: '', title: 'the goal', version: 1 } });
   await push({ verb: 'goal.whole', goal: 9, item: factsOf() });
   await settle();
+
+  // ── goal/G43.3: WHAT THE AGENT IS DOING REACHES THE DESK ─────────────────────────────────────────
+  const statusesOf = function (from) { return asksOf('item.status').slice(from).map(function (a) { return a.args; }); };
+  const waitAsk = async function (fn, ms) { for (let i = 0; i < ms / 50; i++) { await settle(); if (fn()) return true; await new Promise(function (r) { setTimeout(r, 50); }); } return !!fn(); };
+  const HELD = 'goal/G9.60';
+  await push({ verb: 'phase.done', goal: 9, item: factsOf({ id: HELD, phase: 'red', red: SELF, with: SELF, withKey: SELF_KEY, phaseWith: SELF, go: true }) });
+  await settle();
+
+  // Andy: "when product tests are modified, they should show up as red file-status in desk. product tests are the test
+  // folders under spirit/run/."
+  test.subHeading('goal/G43.3: a product test modified shows as a test, in red; a production file as code');
+  const CHECKOUT = path.resolve(RUN, '..', '..');
+  await waitAsk(function () { return !!watchAll; }, 5000);
+  ok(!!watchAll, 'the world: the client watches its checkout', 'no watcher was set: the file status is not judged');
+  if (watchAll) {
+    const toneOf = async function (rel) {
+      const from = asksOf('item.status').length;
+      watchAll('change', path.join(CHECKOUT, rel));
+      await waitAsk(function () { return statusesOf(from).length > 0; }, 4000);
+      const said = statusesOf(from)[0];
+      return said && said.id === HELD ? said.tone : '(' + short(said) + ')';
+    };
+    for (const rel of ['spirit/run/shell/desk/test/desk.js', 'spirit/run/spirit/test/relay.js', 'spirit/run/test/testModule.js']) {
+      const tone = await toneOf(rel);
+      ok(tone === 'test', rel + ': tone test', rel + ': tone ' + short(tone));
+    }
+    const prod = await toneOf('spirit/run/shell/desk/desk.js');
+    ok(prod === 'code', 'a production file under spirit/run/: tone code', 'spirit/run/shell/desk/desk.js: tone ' + short(prod));
+  }
+
+  // Andy: "the agents deskClient should relay the agents deskVerifier status during a run, this will tell desk that the
+  // agent "is busy". with no held item, it shows on the agent as working."
+  test.subHeading('goal/G43.3: its own verifier\'s run is relayed to the desk');
+  const running = function (i) { return { doing: 'run', suite: 'spirit/test/a.js', index: i, of: 256, line: 'running a.js, suite ' + i + ' of 256', since: at() }; };
+  const fromRun = asksOf('item.status').length;
+  verifierSays(running(1));
+  const relayed = await waitAsk(function () { return statusesOf(fromRun).some(function (a) { return a.id === HELD && /suite 1 of 256/.test(a.word); }); }, 3000);
+  ok(relayed, 'a run under a held item: its status goes under that item', 'the statuses asked: ' + short(statusesOf(fromRun)));
+  const fromRun2 = asksOf('item.status').length;
+  verifierSays(running(2));
+  const relayed2 = await waitAsk(function () { return statusesOf(fromRun2).some(function (a) { return /suite 2 of 256/.test(a.word); }); }, 3000);
+  ok(relayed2, 'and each next suite the same', 'the statuses asked: ' + short(statusesOf(fromRun2)));
+  await push({ verb: 'phase.done', goal: 9, item: factsOf({ id: HELD, phase: 'verify', verifier: SELF, with: SELF, withKey: SELF_KEY, phaseWith: SELF, go: true }) });
+  await settle();
+  const fromRun3 = asksOf('item.status').length;
+  verifierSays(running(3));
+  const relayed3 = await waitAsk(function () { return statusesOf(fromRun3).some(function (a) { return a.id === HELD && /suite 3 of 256/.test(a.word); }); }, 3000);
+  ok(relayed3, 'a verify it holds counts as held too', 'the statuses asked: ' + short(statusesOf(fromRun3)));
+  await push({ verb: 'phase.done', goal: 9, item: factsOf({ id: HELD, phase: 'build', with: '', withKey: '', phaseWith: '', go: true }) });
+  await settle();
+  const fromIdle = asksOf('item.status').length;
+  const stateFrom = asksOf('agent.state').length;
+  verifierSays(running(4));
+  const working = await waitAsk(function () { return asksOf('agent.state').slice(stateFrom).some(function (a) { return a.args && a.args.word === 'working'; }); }, 3000);
+  ok(working && statusesOf(fromIdle).length === 0, 'a run with no held item: the agent shows as working, and no item gets a status', 'agent.state asked ' + short(asksOf('agent.state').slice(stateFrom)) + ', statuses ' + short(statusesOf(fromIdle)));
 
   // goal/G41.12: the cache is appServer's, saved as relay-state/deskClient/<desk key in base64url>.json (goal/G41.28); deskClient
   // keeps no cache file of its own, and its cache.dump asks appServer to save now (Andy, goal/G41.15: "the 3 cache.json

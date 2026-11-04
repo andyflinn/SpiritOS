@@ -101,3 +101,8 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   cannot be seen from inside deskClient: its handler's answer has left. What is tested is its stand-in: a wait that
   names no key, or an older one. The listener's half (its arm, `--read <key>`, passed to `next` as `read`) is
   `deskAgentEar.js`'s, tested beside it.
+
+## goal/G43.3: what the agent is doing reaches the desk
+
+- *"when product tests are modified, they should show up as red file-status in desk. product tests are the test folders under spirit/run/."* A file in a test folder under `spirit/run/` goes as `item.status` with tone `test`; a production file there with tone `code`.
+- *"the agents deskClient should relay the agents deskVerifier status during a run, this will tell desk that the agent "is busy". with no held item, it shows on the agent as working."* While the agent holds an item (red, build or verify), each suite its verifier announces goes as `item.status` under that item. With no held item, `agent.state` says `working` and no item gets a status. The verifier's publishes are fed both ways a client can hear them: its subscribers on the event stream, and the data set.

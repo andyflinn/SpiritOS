@@ -411,6 +411,32 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   // panel, we leave blank, but will carry plugin-desk-apps".
   const walkAll = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walkAll(c, out); }); return out; };
   const inside = function (n, box) { for (let p = n; p; p = p.parentNode) { if (p === box) return true; } return false; };
+  // goal/G43.3: Andy: "red Q's should indicate who posted them."
+  test.subHeading('goal/G43.3: a red Q says who posted it');
+  {
+    const asker = ddWorld(ITEM, [{ number: 'Q2', kind: 'Q', state: 'open', words: 'Whose question?', placedBy: 'claude-windows', placedKey: 'KEY-CW' }]);
+    await asker.open();
+    asker.document.click(panelIcon(asker, 'qs')); await settle();
+    const qsText = asker.document.getElementById('dd-panel').textContent;
+    ok(qsText.indexOf('Whose question?') !== -1 && qsText.indexOf('claude-windows') !== -1, 'the question and its poster both show', 'the panel says: ' + JSON.stringify(qsText.slice(0, 200)));
+  }
+  // goal/G43.3: Andy: "when i add a rule to an item or goal, it will not immediately display in the rule-list."
+  test.subHeading('goal/G43.3: a rule attached shows in the open rules panel as its row comes, with nothing asked');
+  for (const open of [ITEM, { id: 'goal/G9', title: 'A goal', goal: '', status: 'open', buttons: [], verified: 'none', blocked: [] }]) {
+    const ruled = ddWorld(open, []);
+    let heard = null;
+    ruled.api.onPublished = function (fn) { heard = fn; return function () {}; };
+    await ruled.open();
+    ruled.document.click(panelIcon(ruled, 'rules')); await settle();
+    const before = ruled.document.getElementById('dd-panel').textContent;
+    const asked0 = ruled.asked.length;
+    if (heard) heard({ item: Object.assign({}, open, { rules: [{ key: 'rule/77' }] }) });
+    await settle();
+    const after = ruled.document.getElementById('dd-panel').textContent;
+    ok(!!heard && before.indexOf('rule/77') === -1 && after.indexOf('rule/77') !== -1 && !ruled.asked.slice(asked0).some(function (a) { return a.name === 'desk.item.get'; }),
+      open.id + ': the new rule shows at once, from the row', open.id + ': heard ' + !!heard + ', the panel now: ' + JSON.stringify(after.slice(0, 200)));
+  }
+
   test.subHeading('goal/G41.22: no appHeader; the id, title and status in the shell\'s title bar');
   ok(!/appHeader/.test(plain), 'deskDetails.js names no appHeader', 'deskDetails.js still names appHeader');
   const wt = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.7', title: 'A titled item', status: 'running' }), []); await wt.open();
@@ -589,6 +615,19 @@ const byId = function (w, id) { return function () { return w.document.getElemen
             'the newest line: ' + JSON.stringify(m.newest) + ', the chat ends at ' + JSON.stringify(m.chat));
           ok(!!m.leftShown && m.panelAtOpen > 0, 'at open a left panel shows (' + m.leftShown + '), as the details did before the workBench',
             'at open no left panel shows: ' + JSON.stringify({ shown: m.leftShown, height: m.panelAtOpen }));
+          // goal/G43.3: the box on screen is a CodeMirror with line numbers, its last stored version above it, and a search of
+          // exactly that text.
+          let v = null;
+          try { v = JSON.parse(await page.evaluate('window.boxView()')); } catch (e) { v = null; }
+          ok(!!v && v.codeMirror === true && v.numbers > 0, 'goal/G43.3: the box is a CodeMirror, showing line numbers', 'the box panel: ' + JSON.stringify(v));
+          ok(!!v && /\b37\b/.test(String(v.above)), 'goal/G43.3: above the box stands its last stored version', 'above the box: ' + JSON.stringify(v && v.above));
+          ok(!!v && v.find === true, 'goal/G43.3: the panel has a search field beside the box', 'the box panel: ' + JSON.stringify(v));
+          ok(!!v && v.marks === 1 && v.markText === 'needle' && v.markShown === true, 'goal/G43.3: words typed in it mark the match in the text on screen, and it is put in view',
+            'the search marked: ' + JSON.stringify(v && { marks: v.marks, text: v.markText, shown: v.markShown }));
+          let t = null;
+          try { t = JSON.parse(await page.evaluate('window.boxTake()')); } catch (e) { t = null; }
+          ok(!!t && t.took === 1, 'goal/G43.3: going into that box takes it, as the textarea did', 'going in: ' + JSON.stringify(t));
+          ok(!!t && !!t.wrote && t.wrote.text === 'his new text' && t.wrote.version === 37, 'goal/G43.3: leaving it changed writes his text, on the version it read', 'leaving it: ' + JSON.stringify(t));
           // EVERY LEFT PANEL USES ALL THE HEIGHT (Andy, on G41.22: "the box must use the full vertical space", "all left
           // side panels must fucking use all available vertical space, especially the lists"): given long content, the
           // pane never scrolls itself; the panel's own list (the box's text) scrolls, its bottom at the pane's.

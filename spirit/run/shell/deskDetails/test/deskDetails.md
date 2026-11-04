@@ -159,3 +159,10 @@ object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept 
 
 - A run the dialog reads by itself, or not at all; a watch that hears nothing; a kept run not drawn at open.
 - Another node's verifier drawn as this node's; a publish with no `doing` drawn as a run.
+
+## goal/G43.3: the box panel, who asked, the rules panel
+
+- *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers, the panel has a search field, and a word typed there marks its match in the text on screen and puts it in view. No server is asked. Going into the box takes it, and leaving it changed writes his text on the version it read, as the textarea did.
+- *"above the box i want to see the the last-stored version number of the box."* The version the desk answered stands above the box.
+- *"red Q's should indicate who posted them."* The Qs panel shows the question and who placed it.
+- *"when i add a rule to an item or goal, it will not immediately display in the rule-list."* With the rules panel open on an item or a goal, a row naming a new rule shows it at once, with no read asked.

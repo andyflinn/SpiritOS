@@ -103,3 +103,15 @@ format alone.
 - A red or build claim taken and the checkout not pulled.
 - A pull over an edit of its own (or an autostash that moves HEAD), or while deskVerify's run goes on; a refused pull
   that says nothing under the item.
+
+## goal/G43.3: the box, the phase wake, the List's search, the file list
+
+From the item's box, in Andy's words. Each of these runs on a desk of its own.
+
+- *"desk cannot refuse the box to the user. agent updates will fail it the user takes the box, and desk will note so in the chat."* His `box.take` is not refused while an agent holds the box, nor under the cap's one-write hold (this replaces his goal/G9.3 and goal/G21.1 words on a hold). The agent's `box.write` then answers `taken`, the box stays as it was, and a line by the desk appears under the item. His own write under his take lands.
+- *"a red-claim or a code-done should automatically trigger a phase-wake for all agents"*. A red claim alone ends the red: the phase is `build`, nobody holding it. A code-done alone opens `verify` the same way. Each time, the row that says so reaches every subscribed client, the claimer's included. That row is what wakes a client (`deskClient.js`, streamed).
+- *"or the same agent that did the red phase, if that's the only one available"*. With another agent here, the red's author does not take the build, and the other does. Alone, the author takes it with no press of his.
+- *"the search needs only those fields of a row that it actually displays."* An `items.search` row holds only what the List's cells, presses and filters read. On a goal of 25 open items, the first answer holds the goal and all 25. The server still searches what the row no longer carries (goal/G41.28): a chat word finds its item first.
+- *"file list should not show duplicates"*. A path two agents added is one row of `item.files`.
+- *"when i add a rule to an item or goal, it will not immediately display in the rule-list."* The row naming the rule is published to his page, on an item and on a goal.
+- *"the search filter [include closed] doesn't mean "exclude open ones"!!!!"* With 40 closed items older than 5 open ones, the filter off shows the open only. On, every open item is in the answer, ahead of the closed ones, and closed ones show.
