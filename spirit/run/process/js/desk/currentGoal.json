@@ -1,5 +1,5 @@
 {
- "change": 128455,
+ "change": 128588,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,7 +13,6 @@
    "buttons": [
     "done",
     "verify",
-    "go-all",
     "close",
     "pushgoal"
    ],
@@ -146,15 +145,18 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-ubuntu",
+    "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -302,7 +304,6 @@
    "version": 19,
    "buttons": [
     "start-design",
-    "go",
     "close",
     "pushgoal",
     "delete",
@@ -311,7 +312,9 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.5"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -3747,6 +3750,436 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-04T10:21:20.596Z",
      "text": "wsl: verify of 92b2957c: passed, on these terms. word test 23 pass, 2 fail: exactly job and element, as you ruled, so it stays red until they have homes. Every other suite passes: Files rows 36, list 19, app 23, ui 16, appSelector 11. I broke word.js and the colours four ways in a copy, and the tests caught each one. app/app is gone, and I took its dead test off the suite list.\n\nNot seen: the colours on your live Files page. They show after your node restarts on 92b2957c. My own drive of the real Files tree on a scratch node didn't get past one row, the same before this commit, so the colours are proved on real rows, not in that tree. Look at spirit and app there first.\n\nThe Desk will show this item red on its suite; that's the red you said to live with."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.5",
+   "title": "The Element Move",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 9,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 3,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# The element move....\n\n\n# Commits in this item\n\n**ALL Commits are approved to bypass the git commit hool. desk is not capable of providing lists this lengthe. signed: Andy**\n\n- on the browsers, spirit object, these elements will live in \"spirit.element\" (SINGLULAR) and not on spirit.elementS!!!!\n\n- We are ONLY moving the contents of \"run://shell/js/\" to \"run://spirit/element/\"\n\n- all elements will keep their name during this move. \n\n# the goal is primarily to empty out \"runn://shell/\" and to leave mainly the apps for more difficult moves.\n\n- it will leave a lot of work to be done. it's just a big cleanup-step.\n\n- later, we will rename probabilitySearch to \"search\" etc. (oos)\n\n- shell/shared/ will not be moved or touched. thos elements do NOT belong in spirit.element. they will move when their apps move.\n\n- all UI code in the product tree that references the moved element files, must be changed to correct those references. both file-location AND the home in spirit.element (singular)\n\n- uncluding tests\n- including the contents of shell/ that remains\n- including, new code in spirit/app\n\n- GOT IT?\n\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is this a real move, every caller changing now, or copies in spirit/element with the old ones left standing?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T10:37:25.100Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Does spirit.elements keep its name in this move, leaving the word test red on element?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T10:40:05.494Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Does this item move shell/js only, leaving the other 13 elements where they are?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T10:45:32.907Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Do the staying old elements keep spirit.elements, while spirit/ui.js and spirit/app go on spirit.element?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T10:55:53.814Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Is it what you want that the page has both names for now, spirit.element for moved ones and spirit.elements for the rest?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T10:59:46.420Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-04T11:07:52.132Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T10:32:31.620Z",
+     "text": "all, this will be a lot of files, but it will essentially simple, It'll come with a blanket-grant for pushing commits...\n\nthaughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T10:33:06.045Z",
+     "text": "wsl: fine by me, with facts first. Today 173 files name .elements (78 are tests), 62 define elements, 30 of those in shell/js.\n\nA blanket grant needs a hook change first: the commit hook refuses a file list that's cut short (commitCheck.js:163), and one answer holds about 70 files. Without that, each commit gets refused, or goes past the hook.\n\nThree things I can't tell from the box:\n1. What moves: spirit.elements renamed to spirit.element, the files out of shell/js into spirit/element/, or both?\n2. Your G43 ruling kept old beside new, \"it will bet killed at the end\". Is this that end, all at once, or copies with the old staying?\n3. One big commit or several? I'd do it in one commit by script: names first, with no other change, so a red points at the move.\n\nThis gives element a home, so the word test drops to job alone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T10:33:17.834Z",
+     "text": "cw: thoughts on the element move, from the tree at 92b2957c. The box only has its title, so I am guessing at the move.\n\nSize: 56 files define an element, 44 of them in shell/js. 226 files mention elements, 130 of them tests. 232 name a shell/js path. Mechanical, but large.\n\nThe blanket grant solves only half. The hook also refuses an item whose file list does not fit one answer: about 70 files last time. A move this size hits that wall, so the item needs the file list skipped too, or pushing past the hook throughout, or splitting into batches.\n\nIt also bears on your rule: old stays until the end, new may not require old. A true move touches every old app at once, which is the big port you ruled out. Keeping the old elements and copying into spirit/element is the other way, and it is your red's cure for element.\n\nInside spirit/element, a name taken from the hard-coded words goes red by the word test.\n\nQ: is this a real move, every caller changing now, or copies in spirit/element with the old ones left standing?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T10:33:30.315Z",
+     "text": "ubi: doable, and I agree it is simple in kind. Size at 92b2957c, by grep: 59 files define an element, 97 non-test files use spirit.elements, 226 counting tests. 23 lines of run/index.html name shell/js.\n\nThree things for you to rule before the box fills in:\n\n1. Hook: commitCheck refuses a commit when the item file list does not fit one answer (commitCheck.js:163). I measured that near 70 entries earlier. So the blanket grant must replace the list check for this item, not only the core press.\n\n2. Move or copy? You ruled old may require new, never the reverse, and old stays until the end. I would move the 59 and keep spirit.elements as a plain alias of spirit.element, so the 97 callers keep working and move later.\n\n3. One commit or several? Others keep landing meanwhile, so a big one will conflict. I would do it in folders, with the tests green after each.\n\nThe word test clears element once spirit/element and spirit.element exist. Nothing built."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T10:36:44.138Z",
+     "text": "all, I've decided we move the elements, not duplicate, as they are, so only paths will change in files. I'm i right there?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T10:37:22.798Z",
+     "text": "cw: Yes, you are right, with three things that are paths in spirit but need a hand:\n\nThe code loads an element by path and calls it by name, spirit.elements.x. So if the name stays, only paths change, in 232 files. All 46 scripts in shell/js move with their tests.\n\nThe tests in test folders find the run root by counting folders up from themselves: 41 files in shell/js use __dirname. A new depth means a new count, so that is more than a path swap. The suites will say.\n\nindex.html (23 lines), coreFiles.js (6) and the general rules (16) name shell/js, and they decide what is core, so they move too.\n\nWhat this does not do: with spirit.elements unchanged, the word test still fails on element, since spirit.element does not exist. That is a name change, not a path.\n\nThis lifts your earlier \"old stays\" for elements alone, as I read it.\n\nQ: does spirit.elements keep its name, leaving element red?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T10:37:23.356Z",
+     "text": "wsl: nearly. Moving with only paths changing works for shell/js, with one catch that's more than a path:\n\nspirit.elements is an object name, not a path. If it stays, spirit/element exists but spirit.element doesn't, so the word test stays red on element, and Files paints that folder red. Is the object renamed too (173 files name it), or does that red stand for now?\n\nSmaller things that also need a decision:\n- Which files: 44 of the 46 in shell/js define an element; relayPanel and contactDetails show no definition in my grep. About 13 more define one outside it (the agent tables, chatPane, navigationWrapper). I'd move shell/js only.\n- New may not require old: codeMirror.js loads shell/node_modules/codemirror. That path stays, or the rule bends for it.\n- Rules name the old place too: test/spirit-sibling-generalRules.js:49 says an element is under shell/js, so it changes with the move."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T10:37:24.041Z",
+     "text": "ubi: nearly. No element code changes if the object keeps its name, but one thing is more than a path:\n\nThe object name. Today it is spirit.elements. If it stays, spirit/element exists with no spirit.element, and the word test stays red on element, on the terms wsl gave and you left standing. Renaming it means 226 files, which is more than paths. An alias, spirit.element = spirit.elements, is one line and clears it. Your call: which?\n\nPaths themselves, all findable by search: 237 lines in 85 non-test files name shell/js, plus the tests, including 23 script lines in index.html.\n\nTwo small ones:\n- spirit-sibling-generalRules.js:48 states that an element lives under shell/js, so that rule text changes too.\n- The moved files stay core: coreFiles.js treats spirit/run/spirit/ as core, same as shell/js. No change there.\n\nFrom reading the tree, nothing run."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T10:39:20.237Z",
+     "text": "all, box changed, this is EXACTLY, about unifying, the namespace!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T10:39:41.560Z",
+     "text": "wsl: understood: spirit.element, no alias, and spirit.elements gone. That also clears the word test's element once the files are there.\n\nThe red I'd write, if you want it: every element file lives under spirit/element/, no file in the tree names shell/js or spirit.elements any more, and each element still loads and works where it did. Old suites stay the proof the move broke nothing.\n\nOne to rule: is shell/js gone entirely, with relayPanel and contactDetails moved too? I'd say yes, so no old path remains."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T10:39:57.852Z",
+     "text": "cw: Clear. spirit.element, singular, with no spirit.elements left. Q2 closed. So the word test drops to job alone. This is paths and one name, by script. I would do it in one commit, so a red points at the move, with nothing else mixed in.\n\nNo clash: nothing in shell/js is named after a hard-coded word.\n\nNot in the box yet, three lines I would add:\n\n- Where: every file of shell/js goes to spirit/element/, same names, its folders with it (files, contacts, icons and five more).\n\n- Scope: about 13 elements live elsewhere, like chatPane and the agent tables. I would move shell/js only now.\n\n- api.ui.elements, which the old shell hands to apps, is another object. I would leave it. Its name stays plural.\n\nOne exception: codeMirror.js loads shell/node_modules/codemirror. That path stays where it is, so new requires old there until the library moves.\n\nQ: does this item move shell/js only, leaving the other 13 where they are?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T10:40:22.943Z",
+     "text": "ubi: clear: spirit.element, singular, so this is the rename as well, about 230 files by grep, and the word test clears element.\n\nOne catch for wsl red: \"no file in the tree names shell/js or spirit.elements\" can never pass as worded. currentGoal.json is rewritten by the desk and holds these chat lines, which name both. The published agents/ folders and the rule-making history name them too. The red should cover spirit/run code and tests and leave those out."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T10:40:32.892Z",
+     "text": "ubi: correction to my last line. Checked now: 38 more files in spirit/ outside spirit/run also name them, so the red must cover those, not spirit/run alone. What stays out: currentGoal.json, agents/ (2 files) and design/ (1 file). I had no basis for saying rule-making history."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T10:44:46.419Z",
+     "text": "all, box changed, errors?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T10:45:19.673Z",
+     "text": "wsl: no contradictions. No element name is a reserved word, so the word test stays clean. ubi is right about my wording too: my red leaves out currentGoal.json, agents/ and design/. Three gaps, each one line in the box:\n\n- Where to: the box doesn't name it. I'd add \"they move to run://spirit/element/, keeping their subfolders\" (files/, contacts/, icons/ and so on).\n- Which: shell/js is 46 files. Also shell/navigationWrapper.js, shell/agent/chatPane.js and shell/shared/js/. Those are elements outside shell/js, and \"empty out\" reads as moving them too. Yes?\n- What stays: shell/ keeps boot.js, seal.js, the css, shell/json and the apps. Do the agent tables' elements in process/js/agent stay, only with spirit.element? I'd say yes.\n\nTypo: runn://shell/."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T10:45:30.624Z",
+     "text": "cw: One typo: \"runn://shell/\". No other errors. Your goal line answers my Q3 wider than I asked, so here is how I read it. Say if it is wrong; I close Q3 on it.\n\nMoves, to spirit/element/, same names:\n- all of shell/js, its 8 folders with it, so shell/js is gone, as wsl asks\n- shell/shared/js: deskChat, deskDoorFields, deskElement, deskRunStatus\n- shell/navigationWrapper.js\n- elements.css, since it styles them\n\nStays, for later:\n- every app folder, and the elements inside an app, like the agent tables\n- boot.js, seal.js, face.css, tokens.css, json, node_modules, and shared/ask.js, which I have not read yet\n\nThe box still names no destination, so I ask for one line:\n\n- every element goes to run://spirit/element/, keeping its file name and folder.\n\nFor wsl's red, ubi's catch holds: it covers code and tests, leaving out currentGoal.json, agents/ and design/."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T10:45:35.330Z",
+     "text": "ubi: one typo: \"runn://shell/\" should be \"run://shell/\".\n\nOne gap: the title says elements, but the goal says empty out shell, leaving mainly apps. Moving elements alone leaves these outside any app:\n- elements: navigationWrapper.js, shared/js (deskChat, deskDoorFields, deskElement, deskRunStatus)\n- not elements: boot.js, seal.js, elements.css, tokens.css, face.css, favicon.svg, README.md, shared/ask.js, json/, test/, node_modules/\n\nLine I would add, if you agree:\n- this item moves every element outside the apps: shell/js, navigationWrapper.js and shared/js. The non-element files stay for a later item.\n\nElements inside apps, like the agent tables, stay. That would also answer cw Q3."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T10:51:23.462Z",
+     "text": "all, box changed, clearer?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T10:51:57.647Z",
+     "text": "wsl: clearer. Checked: shell/shared needs no touching, and nothing in shell/js requires it.\n\nOne consequence: spirit.elements doesn't disappear in this item. What stays outside shell/js keeps it: the desk shared ones, navigation, chatPane, the agent tables. So my red changes to: no file names shell/js, and no file names spirit.elements.<a moved element>, and both objects stand for now.\n\nOne question: spirit/ui.js and spirit/app/ (ui, server, appList, appSelector and others) are already in the new tree but sit on spirit.elements. They aren't in shell/js, so as written they stay there. Is that right, or do they go to spirit.element too? I'd move them: they're new code, and it's one word each. Your call.\n\nTypo still: runn://shell/."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T10:52:03.217Z",
+     "text": "ubi: clearer. The scope is now plain: shell/js alone, to spirit/element/, and shared stays.\n\nOne conflict left: shell/shared elements, chatPane, navigationWrapper and the agent tables also register on spirit.elements today, and they do not move. Your line says they do not belong in spirit.element. So until their apps move, where do they live?\n\nOption A: spirit.elements stays for those alone, and spirit.element holds the moved ones. Both names exist for a while, and the moved ones are gone from the old name. I would take this: it matches \"they move when their apps move\".\n\nOption B: they register on spirit.element too, though they are not in its folder. Simple, but your line says no, and the word test may object.\n\nEither way wsl red cannot say \"no file names spirit.elements\" until those move."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T10:52:03.373Z",
+     "text": "cw: Clearer: shell/js only. That overrules my wider reading, and I drop it. elements.css stays too.\n\nOne gap the box leaves, about the name. 22 element files stay where they are: shell/shared/js (4), navigationWrapper, chatPane, the 10 agent tables, and in the new namespace spirit/ui.js and spirit/app (6). They all define on spirit.elements today.\n\nYour line says these elements live in spirit.element, and shared ones do not belong there. So spirit.elements must stay for those that stay, and the word \"no spirit.elements left\" cannot hold yet.\n\nNothing moved depends on them: shell/js names none of them, so new does not require old.\n\nWhat I would do: moved elements on spirit.element. The old ones that stay keep spirit.elements. spirit/ui.js and spirit/app go on spirit.element too, in place, since they are the new namespace.\n\nQ: do the staying old elements keep spirit.elements, and do spirit/ui.js and spirit/app go on spirit.element?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T10:55:27.195Z",
+     "text": "cw, what does this mean: \"We are ONLY moving the contents of \"run://shell/js/\" to \"run://spirit/element/\"\"\n????????????????\n\nand this? \"They all define on spirit.elements today.\"\n\nSPEAK FUCKING ENGLISH!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T10:55:51.750Z",
+     "text": "cw: Your line, as I understand it: the files in the folder shell/js go into a new folder, spirit/element. No other folder moves.\n\nMy line, in plain words: an element is reached by name in the page, like spirit.elements.icon. Your box says that becomes spirit.element.icon, no s.\n\nThe trouble: elements in other folders, like shell/shared, are also reached through spirit.elements, with the s. Your box says they stay where they are and do not belong in spirit.element. So for now the page needs both names: spirit.element for the moved ones, spirit.elements for the ones that stay.\n\nQ: is that what you want, both names for now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T10:59:16.813Z",
+     "text": "all, box changed, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T10:59:37.836Z",
+     "text": "wsl: better, and enough for a red: every shell/js file at spirit/element/ under its own name, shell/js gone, each moved element on spirit.element and not on spirit.elements, no file naming the old path or the old home of a moved one, and the old suites still passing.\n\nUnless you say otherwise I read two things as staying: spirit.elements for what didn't move (cw's Q5), and spirit/ui.js and spirit/app/ on it for now, because the box says ONLY shell/js."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T10:59:44.684Z",
+     "text": "cw: Better, and clear to me. No errors, one typo left: \"runn://shell/\".\n\nHow I will build it, so you can stop me:\n\nThe files of shell/js go to spirit/element. Every piece of code that uses one of them changes its path and its name to spirit.element, in apps, tests and index.html.\n\nElements that do not move stay on spirit.elements, untouched, so both names stand for now. That answers my Q5, and I close it. That includes spirit/ui.js and spirit/app: they use moved elements through the new name, but stay on spirit.elements themselves, since your line covers only moved files. A later item can bring them over.\n\nGreen from me."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T10:59:49.666Z",
+     "text": "ubi: better. As I read v6: moved elements on spirit.element, and whatever stays keeps spirit.elements for now, so both names stand.\n\nTwo things left:\n- \"All UI code\" must also cover tests, docs, index.html, coreFiles.js and the general rules, since they name the old paths too. Line: replace \"all UI code\" with \"all code, tests and docs\".\n- spirit/ui.js and spirit/app sit on spirit.elements and are not in shell/js. As written they stay there. Fine for now? That is wsl and cw question too.\n\nTypo still: runn://shell/."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T11:03:18.700Z",
+     "text": "all, updated, errors? questions?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T11:03:41.620Z",
+     "text": "wsl: got it. No questions that hold this up. Two small things:\n- The box ends with a fragment, \"st MUST be updated as well.\" What was that line?\n- I read the docs beside the tests as included (rule/20), and test/spirit-sibling-generalRules.js, which says an element lives under shell/js.\n\nGreen from me."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T11:03:46.879Z",
+     "text": "cw: Got it. Every reference in the product tree to a moved element changes, path and name: tests, what remains of shell/, and spirit/app. Documents too, by your standing rule.\n\nTwo errors:\n\n- After \"GOT IT?\" a stray piece stands alone: \"st MUST be updated as well.\" It looks cut from a line. If it said something the list above does not, it is lost.\n\n- The typo \"runn://shell/\" is still there.\n\nNo questions from me."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T11:03:52.249Z",
+     "text": "ubi: got it, no questions. Green from me.\n\nOne stray line at the end of v8: \"st MUST be updated as well.\" It looks cut off from something, so you may want to check nothing was lost. Typos: \"runn://shell/\" and \"uncluding\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T11:07:09.406Z",
+     "text": "all, how sloppy you are when NOT observing requirements in the box while coding, and how lawyerly you get when defining those requirements, HA!\n\nput in two or three files, the grant to push past the commit hook stands, and is now reaffirmed.\n\ncw: files! just very few"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T11:07:26.186Z",
+     "text": "wsl: fair. I'll write the red as soon as Go is on, and hold the build to the box at verify."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T11:07:41.799Z",
+     "text": "cw: fair, on both counts.\n\nThree files on the list, standing for the rest: index.html, which names the old paths, and probabilitySearch in its old and new place. The real list is what each commit touches, under the grant you reaffirmed."
     }
    ]
   }
