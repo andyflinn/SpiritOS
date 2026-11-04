@@ -141,7 +141,7 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
       ['a word in another branch does not stop it', 'spirit.app', 'sibling', true],
       // cw, on the object's own keys: "constructor" is a to z.
       ['a word an object inherits is a word like any other', 'spirit.app', 'constructor', true],
-      ['a level with no word.json yet gets one', 'spirit.element.files', 'fresh', true],
+      ['a level with no word.json yet gets one', 'spirit.fs', 'fresh', true],
     ]);
     // Andy, on Q8: "wince fucking when does add() add a MOTHERFUCKING FOLDER?" With no folder there is no level to write to.
     addCases('add makes no folder', [['a level with no folder', 'spirit.nosuch.level', 'made', false]]);
@@ -151,7 +151,7 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
     ok(!fs.existsSync(path.join(run, 'spirit', 'Capital')), 'and makes no folder of it', 'add made spirit/Capital');
     app = wordsIn('app') || {};
     ok(app.sibling === true && Object.prototype.hasOwnProperty.call(app, 'constructor') && app.constructor === true, 'both words stand in spirit/app/word.json', 'spirit/app/word.json: ' + short(app));
-    ok(JSON.stringify(wordsIn('element/files')) === '{"fresh":true}', 'the new spirit/element/files/word.json holds that word and nothing else', 'spirit/element/files/word.json: ' + short(wordsIn('element/files')));
+    ok(JSON.stringify(wordsIn('fs')) === '{"fresh":true}', 'the new spirit/fs/word.json holds that word and nothing else', 'spirit/fs/word.json: ' + short(wordsIn('fs')));
     // Q5, "Should add work from a page too, the way check does?", Andy: "no." word.js's page half, run on a bare window.
     const bare = { window: { spirit: {} } };
     require('vm').runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'word.js'), 'utf8'), bare);
