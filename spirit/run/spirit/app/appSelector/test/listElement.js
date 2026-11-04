@@ -30,7 +30,7 @@ test.startTest('appSelector/listElement.js: the app list (goal/G43.2)');
     const text = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerText || "")'); };
     const html = function () { return chrome.evaluate('String((document.getElementById("under-test") || {}).innerHTML || "")'); };
     const R = JSON.stringify(ROW);
-    const made = await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.search; spirit.app.search = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; window.list = spirit.elements.appList.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; }())');
+    const made = await chrome.evaluate('(function () { window.asked = []; var real = spirit.app.searchApp; spirit.app.searchApp = function (a) { window.asked.push(a); return real.call(spirit.app, a); }; window.picks = []; window.list = spirit.elements.appList.create(document.getElementById("under-test"), { face: "pane", pick: function (row) { window.picks.push(row); } }); return true; }())');
     ok(made === true, 'spirit.elements.appList.create(host, opts) makes a list', 'it made no list: ' + short(made));
     const identity = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'server', 'server.json'), 'utf8')).identity;
     const drawn = await until(function () { return text().then(function (x) { return x.indexOf(identity.label) !== -1; }); }, 8000);

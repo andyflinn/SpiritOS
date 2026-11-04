@@ -55,8 +55,8 @@ test.startTest('tiles.js: the tiles and what they open (goal/G43.2, goal/G43.6)'
     // goal/G43.6; Andy, box: "The tiles get a search field."
     const inputs = await chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll("#under-test input"), function (t) { return t.offsetParent !== null; }).length');
     ok(inputs === 1, 'the tiles have one search field', inputs + ' input(s) on show');
-    const homes = JSON.parse(await chrome.evaluate('JSON.stringify({ tiles: typeof ((window.spirit.app || {}).tiles || {}).createApp, ui: typeof (window.spirit.elements || {}).ui, search: typeof (window.spirit.app || {}).search })'));
-    ok(homes.tiles === 'function' && homes.ui === 'undefined' && homes.search === 'function', 'spirit.app.tiles.createApp, beside spirit.app.search, and no spirit.elements.ui', 'homes: ' + short(homes));
+    const homes = JSON.parse(await chrome.evaluate('JSON.stringify({ tiles: typeof ((window.spirit.app || {}).tiles || {}).createApp, ui: typeof (window.spirit.elements || {}).ui, search: typeof (window.spirit.app || {}).searchApp })'));
+    ok(homes.tiles === 'function' && homes.ui === 'undefined' && homes.search === 'function', 'spirit.app.tiles.createApp, beside spirit.app.searchApp, and no spirit.elements.ui', 'homes: ' + short(homes));
     const code = fs.readFileSync(FILE, 'utf8').replace(/\/\/[^\n]*/g, '');
     ok(/face\s*:\s*['"]tiles['"]/.test(code) && /probabilitySearch/.test(code), 'it is a probabilitySearch, in its face tiles', 'tiles.js does not make a probabilitySearch with face tiles');
 

@@ -52,10 +52,10 @@ test.startTest('monitor.js: an app that reads and displays a stream (goal/G43.6)
     const started = await js('window.spirit.ready.then(function () { return window.spirit.cacheManager("jobs"); }).then(function () { return window.spirit.require("spirit/app/monitor/monitor.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
     ok(started === 'loaded', 'monitor.js loads on a page', 'loading it: ' + short(started));
     test.subHeading('"It resides in spirit.app.monitor": spirit.app.monitor.createApp(container) -> { destroy() }');
-    const home = await js('(function () { return JSON.stringify({ app: typeof (window.spirit.app || {}).monitor, create: typeof ((window.spirit.app || {}).monitor || {}).createApp, search: typeof (window.spirit.app || {}).search, old: typeof (window.spirit.elements || {}).monitor, element: typeof (window.spirit.element || {}).monitor }); })()');
+    const home = await js('(function () { return JSON.stringify({ app: typeof (window.spirit.app || {}).monitor, create: typeof ((window.spirit.app || {}).monitor || {}).createApp, search: typeof (window.spirit.app || {}).searchApp, word: typeof (window.spirit.app || {}).search, old: typeof (window.spirit.elements || {}).monitor, element: typeof (window.spirit.element || {}).monitor }); })()');
     let h = {}; try { h = JSON.parse(home); } catch (e) { h = {}; }
     ok(h.create === 'function', 'spirit.app.monitor.createApp is there', 'spirit.app: ' + short(h));
-    ok(h.search === 'function', 'and the family\'s verb, spirit.app.search, is still beside it', 'spirit.app: ' + short(h));
+    ok(h.search === 'function' && h.word === 'undefined', 'and the function that implements the family\'s verb, spirit.app.searchApp, is beside it, and no spirit.app.search', 'spirit.app: ' + short(h));
     ok(h.old === 'undefined' && h.element === 'undefined', 'it is on neither spirit.elements nor spirit.element', 'spirit.app: ' + short(h));
     if (h.create !== 'function') return;
 

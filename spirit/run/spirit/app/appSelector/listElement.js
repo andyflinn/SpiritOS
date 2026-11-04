@@ -16,7 +16,7 @@
     // THE SOURCE: app.search, with a search string and nothing more (Andy, box: "no filters, just a search string").
     function search(args) {
       var q = String((args && args.text) || '').trim();
-      return spirit.ready.then(function (s) { return s.app.search({ q: q }); }).then(function (got) {
+      return spirit.ready.then(function (s) { return s.app.searchApp({ q: q }); }).then(function (got) {
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }

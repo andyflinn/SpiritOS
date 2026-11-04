@@ -12,7 +12,7 @@
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
 //   - The rest comes from the api.js every family folder holds (js/fs/api.js, js/contact/api.js ...; a server's in
 //     its family folder, familyPath(name)), written to this file's standard: module.exports = { verbs: { <verb>:
-//     { <argument>: '<rule>' } }, names(call, tools) }. One member per family: spirit.fs.load({path}),
+//     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per family: spirit.fs.load({path}),
 //     spirit.contact.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
 //     there in camel case (spirit.chatClerver.lineWrite for line.write).
 //   - WHERE A MEMBER COMES FROM (goal/G32.3). Andy, 2026-10-22: "the api.js files should not assume the namespace they
@@ -233,6 +233,9 @@
       });
     }
     Object.keys(def.verbs || {}).forEach(function (verb) {
+      // A family may name the function that implements a verb (def.functions; goal/G43.7): the verb stays as it is on the wire.
+      var named = def.functions && def.functions[verb];
+      if (named) { out[named] = function (args) { return call(verb, args); }; return; }
       out[verb] = function (args) { return call(verb, args); };
       // line.write is spirit.chatClerver.lineWrite as well.
       var camel = verb.replace(/\.([a-zA-Z0-9])/g, function (m, c) { return c.toUpperCase(); });

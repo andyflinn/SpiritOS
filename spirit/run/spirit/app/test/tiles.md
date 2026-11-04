@@ -6,7 +6,7 @@
 
 ## Requirements
 
-- It finds the apps through `spirit.app.search({ q: "" })`, with one search field, and shows one tile per app, as the desktop's tiles (`.app-icon`).
+- It finds the apps through `spirit.app.searchApp({ q: "" })`, with one search field, and shows one tile per app, as the desktop's tiles (`.app-icon`).
 - A pressed tile opens that app's element on top of it, in an internal `appContainer` (*"that shows a titlebar, and a pane below, into which the "elements" are mounted"*):
 
       .app-container

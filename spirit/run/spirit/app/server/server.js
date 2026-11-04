@@ -18,7 +18,7 @@
       box.textContent = row ? row.label : '';
     }
     function ask() {
-      spirit.ready.then(function (s) { return s.app.search({ q: '' }); }).then(function (got) {
+      spirit.ready.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
         if (box.parentNode) window.spirit.data.seatRows(window.spirit.data.app.data.branch, got.items);
       });
     }
