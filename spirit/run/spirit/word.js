@@ -61,8 +61,8 @@
       add: function (at, word) {
         var w = wordOf(word);
         var rel = levels(at)[0];
-        // A path is in words, so nothing but a level of the tree is ever written.
-        if (!w || !rel || !String(at).split('.').every(wordOf) || check(at, w)) return false;
+        // A path holds words, a to z, so nothing but a level of the tree is ever written.
+        if (!w || !rel || !/^[a-z]+(\.[a-z]+)*$/.test(String(at)) || check(at, w)) return false;
         var file = path.join(__dirname, '..', rel);
         if (heldBelow(path.dirname(file), w)) return false;
         var text = readOr(file);
