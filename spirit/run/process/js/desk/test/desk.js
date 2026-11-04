@@ -549,10 +549,21 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
       const search = async function (ask, o) { const r = await ask('items.search', Object.assign({ text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, o || {}), ANDY); return { more: r.more === true, rows: (r.items || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return {}; } }), keys: (r.items || []).map(function (x) { return x.key; }) }; };
       const first = await search(askS);
       const extra = {};
-      first.rows.forEach(function (row) { Object.keys(row).forEach(function (k) { if (LIST_FIELDS.indexOf(k) === -1) extra[k] = true; }); });
+      // THE GOAL'S ROW DRAWS MORE (found at the verify of f181acfb): the page reads the agent bubbles, the working blink, the
+      // waiting count and the design state from it (shell/desk/desk.js deskBubblesHtml, deskWorkingAgents, deskWaitingOnAndy,
+      // deskDesignOn), and at open this answer is all it has.
+      const GOAL_FIELDS = ['live', 'agents', 'working', 'waiting', 'design', 'excluded'];
+      first.rows.forEach(function (row) { Object.keys(row).forEach(function (k) { if (LIST_FIELDS.indexOf(k) === -1 && !(row.goal === '' && GOAL_FIELDS.indexOf(k) !== -1)) extra[k] = true; }); });
       ok(first.rows.length > 0 && !Object.keys(extra).length, 'a row holds only what the List draws, presses and filters on', 'the first search\'s rows also hold: ' + Object.keys(extra).join(', '));
       const openShown = LIST_ITEMS.filter(function (id) { return first.keys.indexOf(id) !== -1; });
       ok(first.keys.indexOf(LIST_GOAL.id) !== -1 && openShown.length === LIST_ITEMS.length && !first.more, 'the first search holds the current goal and all its 25 open items', 'the first search holds ' + first.keys.length + ' rows, ' + openShown.length + ' of the 25 open items, more ' + first.more);
+      await askS('agent.state', { word: 'working' }, CW);
+      await askS('press', { id: LIST_GOAL.id, what: 'start-design' }, ANDY);
+      const goalRow = (await search(askS)).rows.filter(function (r) { return r.id === LIST_GOAL.id; })[0] || {};
+      const whole = JSON.parse((await askS('item.get', { id: LIST_GOAL.id }, ANDY)).item || '{}');
+      ok(Array.isArray(goalRow.live) && goalRow.live.indexOf(CW.label) !== -1 && Array.isArray(goalRow.working) && goalRow.working.indexOf(CW.label) !== -1, 'the goal\'s row still names the agents here and who is working: the page draws its bubbles from it', 'the goal\'s row: ' + short(goalRow));
+      ok(!!goalRow.agents && Object.keys(goalRow.agents).length > 0, 'and the agents the desk knows', 'the goal\'s row: ' + short(goalRow));
+      ok(goalRow.design === whole.design, 'and the design state, as item.get says it', 'the goal\'s row says design ' + short(goalRow.design) + ', item.get ' + short(whole.design));
       // His ruling of goal/G41.28 stands on the server: a search covers the whole row, and the chat.
       await askS('chat.add', { id: 'goal/G400.20', text: 'zebrafinch' }, ANDY);
       const byChat = await search(askS, { text: 'zebrafinch' });
