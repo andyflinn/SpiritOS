@@ -134,6 +134,21 @@ test.startTest('elementMove.js: shell/js into spirit/element, its elements on sp
   });
   ok(!oldPath.length, 'no code, test or document names shell/js', oldPath.length + ' lines name shell/js, the first: ' + short(oldPath.slice(0, 12)));
   ok(!oldHome.length, 'no code, test or document reaches a moved element through spirit.elements', oldHome.length + ' lines do, the first: ' + short(oldHome.slice(0, 12)));
+  // THE OTHER WAY ROUND (found live: Andy, "contact detail don't load in contacts"): contactDetails reached navigation, which did
+  // not move, through spirit.element, so the page threw when a contact was opened. Nothing else names an element there unless it moved.
+  const notMoved = [];
+  tracked.filter(function (f) { return !out(f) && /\.(js|html)$/.test(f); }).forEach(function (f) {
+    const full = path.join(REPO, f);
+    if (!fs.existsSync(full)) return;
+    fs.readFileSync(full, 'utf8').split('\n').forEach(function (raw, i) {
+      const cut = raw.search(/(^|[^:'"])\/\//);
+      const line = cut === -1 ? raw : raw.slice(0, cut + 1);
+      const re = /\bspirit\.element\.([A-Za-z_]\w*)/g;
+      let m = null;
+      while ((m = re.exec(line))) { if (MOVED_NAMES.indexOf(m[1]) === -1) notMoved.push(f + ':' + (i + 1) + ' ' + m[1]); }
+    });
+  });
+  ok(!notMoved.length, 'no code reaches through spirit.element for an element that did not move', notMoved.length + ' lines do: ' + short(notMoved.slice(0, 12)));
 
   test.subHeading('the page: "these elements will live in "spirit.element" (SINGLULAR) and not on spirit.elementS!!!!"');
   const chrome = H.findChrome();
