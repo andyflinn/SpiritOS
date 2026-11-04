@@ -2239,8 +2239,13 @@ const FACTS_ROOM = ANSWER_ROOM - 512;
 // displays."): what its cells, its presses and its filters read (shell/desk/desk.js). A word is still matched against the
 // whole row and the chat here, on the server (goal/G41.28); a page merges this into the row it keeps.
 const LIST_FIELDS = ['id', 'goal', 'title', 'status', 'statusTone', 'buttons', 'verified', 'verifyFailures', 'verifyRed', 'verifyRunning', 'asks', 'alert', 'with', 'names', 'blocking', 'blocked'];
+// A GOAL'S ROW DRAWS MORE: the page reads its agent bubbles, who is working, the waiting count and the design state from it
+// (shell/desk/desk.js deskBubblesHtml, deskWorkingAgents, deskWaitingOnAndy, deskDesignOn), and at open this is all it has.
+// These stay even when empty, so a goal's design going off or its last agent leaving clears what the page holds.
+const GOAL_FIELDS = ['live', 'agents', 'working', 'waiting', 'design', 'excluded'];
 function listRow(row) {
   const out = {};
+  if (row.goal === '') GOAL_FIELDS.forEach(function (k) { if (row[k] !== undefined) out[k] = row[k]; });
   // An empty value stays out too, so a goal of 25 fits one answer; goal stays, since '' is what says a row is a goal. The
   // page reads each of these as optional, and the stream's rows, always whole, are what clear a value it holds.
   LIST_FIELDS.forEach(function (k) {
