@@ -21,8 +21,8 @@ on a file's text, in one of two modes. The text viewer (`spirit/element/textView
 ## Requirements
 
 - **It loads the CodeMirror library itself**, through `spirit.require`:
-  `shell/node_modules/codemirror/lib/codemirror.js`, and the mode file of the path's syntax
-  (`shell/node_modules/codemirror/mode/<mode>/<mode>.js`). Its stylesheets, `lib/codemirror.css` and
+  `spirit/element/codeMirror/lib/codemirror.js`, and the mode file of the path's syntax
+  (`spirit/element/codeMirror/mode/<mode>/<mode>.js`). Its stylesheets, `lib/codemirror.css` and
   `theme/material-darker.css`, are put on the page. **It never reads `index.html`** (goal/G40.7: the face never reads
   the old shell's page) and nothing of it asks for it.
 - **Read mode** makes CodeMirror read-only; **edit mode** editable, and `value()` answers what was typed.

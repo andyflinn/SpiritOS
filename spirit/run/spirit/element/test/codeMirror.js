@@ -12,7 +12,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'codeMirror.js');
-const CM = 'shell/node_modules/codemirror/';
+const CM = 'spirit/element/codeMirror/';
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

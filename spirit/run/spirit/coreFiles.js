@@ -72,11 +72,9 @@ function isCore(repoPath, repoRoot) {
   // shell/json/ too (goal/G40.8; Andy: "the folder spirit/run/shell/json/ is a core folder as well. this way i can update
   // that system file manually once in a while, when i actually want it to go into github").
   if (p.indexOf('spirit/run/spirit/') === 0 || p.indexOf('spirit/run/spirit/element/') === 0 || p.indexOf('spirit/run/shell/json/') === 0) return true;
-  // WHAT index.html LOADS ON EVERY BOOT IS CORE TOO (goal/G41.30; the review, H5): CodeMirror under shell/node_modules/
-  // (Andy: "shell/node_modules/codemirror/ MUST BE \"core\""). NOT shell/shared/ (Andy: "no \"core\" files should reside in
-  // shell/shared/ since that folder was meant to be a place where non-intrinsic apps could share modules"): the one
-  // core-loaded file it held, the progress bar, lives in spirit/element/ since.
-  if (p.indexOf('spirit/run/shell/node_modules/') === 0) return true;
+  // WHAT index.html LOADS ON EVERY BOOT IS CORE TOO (goal/G41.30; the review, H5): CodeMirror lives in spirit/element/codeMirror/
+  // since goal/G43.5, so the line above holds it, and so with the progress bar. NOT shell/shared/ (Andy: "no \"core\" files
+  // should reside in shell/shared/ since that folder was meant to be a place where non-intrinsic apps could share modules").
   // THE ROOT TEST FOLDER IS CORE (goal/G40.6; Andy: "also: additional \"core\" designation: spirit/run/test/"): the
   // product's permanent tests need his grant like the code they judge.
   if (p.indexOf('spirit/run/test/') === 0) return true;

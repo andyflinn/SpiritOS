@@ -18,7 +18,7 @@ grant on the item. It needs nothing of the desk's.
 - Login and join, whole: every file under `shell/login/` and `shell/join/`, their `.json` included.
 - Never a manifest: `shell/<name>/<name>.json` and `process/js/<name>/<name>.json`, an intrinsic app's included.
 - Everything under `spirit/run/spirit/`, `spirit/run/spirit/element/`, `spirit/run/shell/json/` and `spirit/run/test/`.
-- Everything under `spirit/run/shell/node_modules/` (CodeMirror), which `index.html` loads on every boot (goal/G41.30,
+- CodeMirror in `spirit/run/spirit/element/codeMirror/`, which `index.html` loads on every boot (goal/G41.30,
   the review's H5; Andy: *"shell/node_modules/codemirror/ MUST BE \"core\""*).
 - Never `spirit/run/shell/shared/`, where apps that are not intrinsic share modules (Andy: *"no \"core\" files should
   reside in shell/shared/"*); the progress bar it held lives in `spirit/element/`.

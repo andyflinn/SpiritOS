@@ -5,9 +5,9 @@
 // claude-windows writes it and builds it (one agent). The item's box, in short:
 //   - A file display and the text editor, both on CodeMirror 5: a file opens with given words, every match marked, the
 //     first in view; the text editor edits and saves on the same CodeMirror, its plain text area gone.
-//   - CodeMirror 5 is copied, licence included, into spirit/run/shell/node_modules/codemirror/: served as any file
+//   - CodeMirror 5 is copied, licence included, into spirit/run/spirit/element/codeMirror/: served as any file
 //     (fileServable), kept out of the tree and Files as every node_modules is. No build step.
-//   - .gitignore gains a second exception for spirit/run/shell/node_modules.
+//   - no .gitignore exception is needed there.
 //   - The text launcher takes the words with the path; every match is marked the way the shared list marks a match, and
 //     the first is scrolled into view.
 //
@@ -29,7 +29,7 @@ const kernel = require('../run/spirit/kernel.js');
 const OWED = 'OWED by goal/G29.12: ';
 const REPO = path.resolve(__dirname, '..', '..');
 const RUN = path.join(__dirname, '..', 'run');
-const CM = path.join(RUN, 'shell', 'node_modules', 'codemirror');
+const CM = path.join(RUN, 'spirit', 'element', 'codeMirror');
 const VIEW = path.join(RUN, 'spirit', 'element', 'textView.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
@@ -76,29 +76,27 @@ function fakeElement() {
   const pkg = (function () { try { return JSON.parse(fs.readFileSync(path.join(CM, 'package.json'), 'utf8')); } catch (e) { return {}; } }());
   const licence = fs.existsSync(CM) && fs.readdirSync(CM).some(function (f) { return /^licen[cs]e/i.test(f); });
   const main = ['lib/codemirror.js', 'lib/codemirror.css'].every(function (f) { return fs.existsSync(path.join(CM, f)); });
-  if (/^5\./.test(String(pkg.version || '')) && licence && main) test.check('spirit/run/shell/node_modules/codemirror holds CodeMirror ' + pkg.version + ', lib/codemirror.js and .css, and its licence');
+  if (/^5\./.test(String(pkg.version || '')) && licence && main) test.check('spirit/run/spirit/element/codeMirror holds CodeMirror ' + pkg.version + ', lib/codemirror.js and .css, and its licence');
   else test.fail(OWED + 'codemirror: version ' + short(pkg.version) + ', licence ' + licence + ', lib files ' + main);
-  if (tracked('spirit/run/shell/node_modules/codemirror/lib/codemirror.js')) test.check('it is committed: git tracks lib/codemirror.js');
-  else test.fail(OWED + 'git does not track spirit/run/shell/node_modules/codemirror/lib/codemirror.js');
-  const ignore = fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8');
-  if (/^!\/spirit\/run\/shell\/node_modules\/\s*$/m.test(ignore)) test.check('.gitignore lets spirit/run/shell/node_modules in, as it lets spirit/run/node_modules');
-  else test.fail(OWED + '.gitignore has no exception for spirit/run/shell/node_modules');
-  if (kernel.core.fs.fileServable('shell/node_modules/codemirror/lib/codemirror.js')) test.check('fileServable serves shell/node_modules/codemirror/lib/codemirror.js');
-  else test.fail(OWED + 'fileServable refuses shell/node_modules/codemirror/lib/codemirror.js');
+  if (tracked('spirit/run/spirit/element/codeMirror/lib/codemirror.js')) test.check('it is committed: git tracks lib/codemirror.js');
+  else test.fail(OWED + 'git does not track spirit/run/spirit/element/codeMirror/lib/codemirror.js');
+  if (kernel.core.fs.fileServable('spirit/element/codeMirror/lib/codemirror.js')) test.check('fileServable serves spirit/element/codeMirror/lib/codemirror.js');
+  else test.fail(OWED + 'fileServable refuses spirit/element/codeMirror/lib/codemirror.js');
+  // goal/G43.5; Andy: "only access to codeMirror library is through the element!"
   const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
   const at = function (s) { return index.indexOf(s); };
-  if (at('/shell/node_modules/codemirror/lib/codemirror.css') !== -1 && at('/shell/node_modules/codemirror/lib/codemirror.js') !== -1 && at('/spirit/element/textView.js') > at('/shell/node_modules/codemirror/lib/codemirror.js')) test.check('index.html loads CodeMirror\'s css and js, then textView.js');
-  else test.fail(OWED + 'index.html: codemirror.css at ' + at('/shell/node_modules/codemirror/lib/codemirror.css') + ', codemirror.js at ' + at('/shell/node_modules/codemirror/lib/codemirror.js') + ', textView.js at ' + at('/spirit/element/textView.js'));
+  if (at('element/codeMirror/') === -1 && at('codemirror') === -1) test.check('index.html loads nothing of the library: the element does');
+  else test.fail(OWED + 'index.html still names the library');
 
   // Andy, 2026-10-18: "does the editor have tools like search, replace?", then "add them here." CodeMirror 5's own
   // add-ons, after its core, in the order they need each other: dialog, searchcursor, search, jump-to-line.
   const ADDONS = ['addon/dialog/dialog.js', 'addon/search/searchcursor.js', 'addon/search/search.js', 'addon/search/jump-to-line.js'];
-  const missing = ADDONS.concat(['addon/dialog/dialog.css']).filter(function (f) { return !fs.existsSync(path.join(CM, f)) || !tracked('spirit/run/shell/node_modules/codemirror/' + f); });
+  const missing = ADDONS.concat(['addon/dialog/dialog.css']).filter(function (f) { return !fs.existsSync(path.join(CM, f)) || !tracked('spirit/run/spirit/element/codeMirror/' + f); });
   if (!missing.length) test.check('the search add-ons are in the tree and committed: dialog (with its css), searchcursor, search, jump-to-line');
   else test.fail(OWED + 'add-ons missing or not committed: ' + short(missing));
-  const order = ['lib/codemirror.js'].concat(ADDONS).map(function (f) { return at('/shell/node_modules/codemirror/' + f); });
-  if (order.every(function (n, i) { return n !== -1 && (i === 0 || n > order[i - 1]); }) && at('/shell/node_modules/codemirror/addon/dialog/dialog.css') !== -1) test.check('index.html loads them after CodeMirror, in order, and the dialog\'s css');
-  else test.fail(OWED + 'index.html places them at ' + short(order) + ', dialog.css at ' + at('/shell/node_modules/codemirror/addon/dialog/dialog.css'));
+  const element = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'codeMirror.js'), 'utf8');
+  if (ADDONS.every(function (f) { return element.indexOf("'" + f + "'") !== -1; }) && element.indexOf("'addon/dialog/dialog.css'") !== -1) test.check('the element loads them after the library, the css with them');
+  else test.fail(OWED + 'the element does not name every add-on');
 
   test.subHeading('2. textView marks every match and scrolls to the first');
   const CodeMirror = fakeCodeMirror();

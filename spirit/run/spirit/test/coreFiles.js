@@ -25,7 +25,7 @@ each(['spirit/run/shell/login/login.js', 'spirit/run/shell/login/login.json', 's
 each(['spirit/run/shell/apps/apps.json', 'spirit/run/process/js/fileServer/fileServer.json', 'spirit/run/shell/desk/desk.json'], false, 'a manifest is never core');
 each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/contactSelector.js', 'spirit/run/shell/json/x.json', 'spirit/run/test/testReport.js'], true, 'the core folders');
 // goal/G41.30, the review's H5: what index.html loads on every boot.
-each(['spirit/run/shell/node_modules/codemirror/lib/codemirror.js', 'spirit/run/shell/node_modules/codemirror/lib/codemirror.css', 'spirit/run/spirit/element/progressBar.js'], true, 'loaded by index.html on every boot');
+each(['spirit/run/spirit/element/codeMirror/lib/codemirror.js', 'spirit/run/spirit/element/codeMirror/lib/codemirror.css', 'spirit/run/spirit/element/progressBar.js'], true, 'loaded by index.html on every boot');
 // Andy: "no \"core\" files should reside in shell/shared/ since that folder was meant to be a place where non-intrinsic
 // apps could share modules".
 each(['spirit/run/shell/shared/ask.js', 'spirit/run/shell/shared/js/deskChat.js', 'spirit/run/shell/shared/js/test/deskChat.js'], false, 'shell/shared, where apps share modules');

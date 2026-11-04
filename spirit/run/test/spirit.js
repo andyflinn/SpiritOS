@@ -481,11 +481,11 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   const boxed = page();
   const defined = [];
   boxed.CodeMirror = { defineMode: function (name) { defined.push(name); }, defineMIME: function () {}, registerHelper: function () {}, resolveMode: function () { return {}; } };
-  await boxed.spirit.require('shell/node_modules/codemirror/mode/css/css.js');
+  await boxed.spirit.require('spirit/element/codeMirror/mode/css/css.js');
   if (defined.indexOf('css') !== -1 && !boxed.scriptError)
     test.check('on a page: a CodeMirror mode file, required, runs as the page script it is, finds CodeMirror and defines its mode');
   else test.fail('on a page a CodeMirror mode file did not run as a script: ' + short([defined, boxed.scriptError && boxed.scriptError.message]));
-  const sheet = await wq.spirit.require('shell/node_modules/codemirror/lib/codemirror.css');
+  const sheet = await wq.spirit.require('spirit/element/codeMirror/lib/codemirror.css');
   if (sheet && wq.styles.length === 1 && /\.CodeMirror/.test(wq.styles[0]))
     test.check('on a page: a stylesheet required is put on the page as a style');
   else test.fail('on a page a stylesheet was not put on as a style: ' + wq.styles.length + ' styles');

@@ -21,8 +21,9 @@ const fs = require('fs');
 const path = require('path');
 
 const RUN = path.join(__dirname, '..');
-// Never walked: installed packages, node state, git.
-const SKIP = ['node_modules', 'relay-state', 'app-state', '.git'];
+// Never walked: installed packages, node state, git, and the CodeMirror library in its folder spirit/element/codeMirror/
+// (goal/G43.5), vendor code like an installed package.
+const SKIP = ['node_modules', 'relay-state', 'app-state', '.git', 'codeMirror'];
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
 

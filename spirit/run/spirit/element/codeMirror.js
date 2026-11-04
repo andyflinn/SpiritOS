@@ -5,7 +5,8 @@
 //   and that the text viewer uses that new element as well." It replaces spirit/element/textView.js, which is gone; the text
 //   viewer (spirit/element/textViewer.js) and the TextEditor app draw with it.
 //
-// IT LOADS THE LIBRARY ITSELF, once, from the shell's local copy (shell/node_modules/codemirror/), never by reading
+// THE ONLY DOOR TO THE LIBRARY (goal/G43.5; Andy: "only access to codeMirror library is through the element!"): no page loads it
+// beside this. IT LOADS THE LIBRARY ITSELF, once, from its local copy (spirit/element/codeMirror/), never by reading
 // index.html (goal/G40.7: the face never reads it): the library, its two stylesheets and the mode files of the path's
 // syntax, each through spirit.require.
 //
@@ -16,7 +17,7 @@
 //   line    a 1-based line put in view instead (goal/G29.11: a file found by its contents opens at its line)
 //   path    the file's path, which picks the syntax colours by its extension
 (function () {
-  var CM = 'shell/node_modules/codemirror/';
+  var CM = 'spirit/element/codeMirror/';
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // The syntax by extension, and the mode files each needs, in the order they load (a mode it builds on first).
   var MODES = {
@@ -30,7 +31,9 @@
     markdown: ['mode/xml/xml.js', 'mode/markdown/markdown.js'],
     htmlmixed: ['mode/xml/xml.js', 'mode/javascript/javascript.js', 'mode/css/css.js', 'mode/htmlmixed/htmlmixed.js'],
   };
-  var SHEETS = ['lib/codemirror.css', 'theme/material-darker.css'];
+  var SHEETS = ['lib/codemirror.css', 'theme/material-darker.css', 'addon/dialog/dialog.css'];
+  // Search and replace, CodeMirror's own add-ons (goal/G29.12): Ctrl+F, Ctrl+G, Shift+Ctrl+F, Alt+G, after the library.
+  var ADDONS = ['addon/dialog/dialog.js', 'addon/search/searchcursor.js', 'addon/search/search.js', 'addon/search/jump-to-line.js'];
 
   function modeOf(p) {
     var name = String(p || '');
@@ -47,7 +50,11 @@
   function library() {
     return Promise.all([need('lib/codemirror.js')].concat(SHEETS.map(function (p) {
       return need(p).then(null, function () { /* a sheet missing leaves the text plain */ });
-    }))).then(function () { return window.CodeMirror; });
+    }))).then(function () {
+      return ADDONS.reduce(function (chain, p) {
+        return chain.then(function () { return need(p).then(null, function () { /* an add-on missing leaves no search keys */ }); });
+      }, Promise.resolve());
+    }).then(function () { return window.CodeMirror; });
   }
   function modeFiles(mode) {
     return (FILES[modeName(mode)] || []).reduce(function (chain, p) {
