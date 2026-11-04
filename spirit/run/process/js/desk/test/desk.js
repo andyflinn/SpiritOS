@@ -110,6 +110,8 @@ function entriesOf(got) { return Array.isArray(got) ? got : got && Array.isArray
 // A job (jobs.create {command, args}) is started for real, as a node starts it, and kept in jobs with its exit.
 function pretendNode() {
   const pages = []; const posts = []; const sent = []; const streams = []; const deaf = new Set(); const jobs = [];
+  // THE NODE'S GRANT TABLE (goal/G43.3), as auth.search answers it: every test agent holds the desk unless a case says otherwise.
+  const grants = [CW, WSL, UBI, KEYED, OUT].map(function (a) { return { key: a.key, path: 'desk', name: a.label }; });
   const server = http.createServer(function (req, res) {
     let raw = '';
     req.on('data', function (c) { raw += c; });
@@ -122,6 +124,7 @@ function pretendNode() {
       }
       res.writeHead(200, { 'Content-Type': 'application/json' });
       if (b.verb === 'events.publish') { if (b.app) pages.push(b.app); res.end('{"ok":true}'); return; }
+      if (b.verb === 'auth.search') { res.end(JSON.stringify({ ok: true, more: false, items: grants.map(function (g) { return { key: g.key + '\n' + g.path, label: JSON.stringify(g) }; }) })); return; }
       if (b.verb === 'jobs.create' && typeof b.command === 'string') {
         const job = { command: b.command, args: Array.isArray(b.args) ? b.args.map(String) : [], exit: null };
         jobs.push(job);
@@ -151,7 +154,12 @@ function pretendNode() {
       setImmediate(function () { streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: String(b.to), text: made.text }) + '\n\n'); } catch (e) { /* gone */ } }); });
     });
   });
-  return { server: server, pages: pages, posts: posts, sent: sent, deaf: deaf, jobs: jobs };
+  // A grant given or revoked, as the node publishes it: its permanent job 'bundles' (spirit/server.js).
+  const grantEvent = function (row, gone) {
+    const job = { id: 'job_bundles', kind: 'permanent', type: 'bundles', status: 'running', data: { table: 'grant', row: row, gone: gone === true } };
+    streams.forEach(function (st) { try { st.write('event: job-updated\ndata: ' + JSON.stringify(job) + '\n\n'); } catch (e) { /* gone */ } });
+  };
+  return { server: server, pages: pages, posts: posts, sent: sent, deaf: deaf, jobs: jobs, grants: grants, grantEvent: grantEvent };
 }
 
 const GOAL = { id: 'goal/G100', title: 'Desk test' };
@@ -590,6 +598,54 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
         ok(!!attached.change && reached, id + ': the row naming the new rule is published to his page', id + ': the attach ' + short(attached) + ', a row naming it published ' + reached);
       }
     }
+    // ── goal/G43.3, THE AGENT BUBBLES FOLLOW THE GRANTS. Andy: "the real thing would be: the desk listens to the grants and
+    // adds/removes thos bubbles accordingly", and "if the ID has grants to desk, desk should list it as one of it's agents, it
+    // keeps all agent rows in its db, to preserve label and nick, but without grant, no matter how small, there's no point
+    // showing an agent bubble." The page draws its bubbles from the goal row's agents and live. ─────────────────────
+    test.subHeading('goal/G43.3: a bubble for each key with a grant to desk, and for no other');
+    const NOBODY = { key: 'MCowBQYDK2VwAyEAdeskProductTestNOGRANTAAAAAAAAAAAAAAAAA=', label: 'no-grant' };
+    const CLIENT_ONLY = { key: 'MCowBQYDK2VwAyEAdeskProductTestCLIENTAAAAAAAAAAAAAAAAA=', label: 'client-only' };
+    const heldGrants = node.grants.splice(0, node.grants.length);
+    node.grants.push({ key: CW.key, path: 'desk', name: CW.label }, { key: UBI.key, path: 'desk.item.get', name: UBI.label }, { key: CLIENT_ONLY.key, path: 'deskClient.streamListener', name: CLIENT_ONLY.label }, { key: OUT.key, path: 'desk.item.get', name: 'never written' });
+    const askG = await startDesk('desk-grants', [], {});
+    ok(!!askG, 'the world: a desk of its own starts', 'the desk did not start: the bubbles are not judged');
+    if (askG) {
+      await profiles(askG);
+      await askG('profile.set', { agent: NOBODY.key, name: 'No Grant', nick: 'nog', included: true, cap: true }, ANDY);
+      for (const a of [CW, UBI, NOBODY, CLIENT_ONLY]) await askG('agent.state', { word: 'listening' }, a);
+      const goalG = async function () { const r = await askG('item.get', { id: PULL.id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
+      const bubbled = function (f) {
+        const byKey = Object.keys(f.agents || {}).map(function (l) { return f.agents[l]; });
+        return { keys: byKey, labels: Object.keys(f.agents || {}).concat(f.live || []) };
+      };
+      const has = function (f, a) { return bubbled(f).keys.indexOf(a.key) !== -1; };
+      const shows = function (f, a) { return bubbled(f).labels.indexOf(a.label) !== -1; };
+      const settled = await waitFor(async function () { return has(await goalG(), CW); }, 5000);
+      let f0 = await goalG();
+      ok(settled && has(f0, CW) && has(f0, UBI), 'at start: a key holding desk whole has a bubble, and a key holding one small desk verb too', 'the goal row: ' + short({ agents: f0.agents, live: f0.live }));
+      ok(has(f0, OUT), 'a key with a grant that has never written to this desk has one too', 'the goal row: ' + short({ agents: f0.agents }));
+      ok(!has(f0, NOBODY) && !shows(f0, NOBODY), 'a key that has written, with a profile and no grant, has none', 'the goal row: ' + short({ agents: f0.agents, live: f0.live }));
+      ok(!has(f0, CLIENT_ONLY) && !shows(f0, CLIENT_ONLY), 'a grant on deskClient is no grant to desk: none', 'the goal row: ' + short({ agents: f0.agents, live: f0.live }));
+      node.grants.push({ key: NOBODY.key, path: 'desk.item.get', name: NOBODY.label });
+      node.grantEvent({ key: NOBODY.key, path: 'desk.item.get', label: NOBODY.label });
+      const given = await waitFor(async function () { return has(await goalG(), NOBODY); }, 5000);
+      ok(given, 'a grant given while it runs: the bubble comes, with nothing else asked', 'the goal row: ' + short((await goalG()).agents));
+      const profileRow = async function (key) { const r = await askG('agents.search', { text: '' }, ANDY); return (r.items || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return {}; } }).filter(function (x) { return x.key === key; })[0] || null; };
+      node.grants.splice(node.grants.findIndex(function (g) { return g.key === NOBODY.key; }), 1);
+      node.grantEvent({ key: NOBODY.key, path: 'desk.item.get' }, true);
+      const revoked = await waitFor(async function () { const f = await goalG(); return !has(f, NOBODY) && !shows(f, NOBODY); }, 5000);
+      ok(revoked, 'its last grant revoked: the bubble goes', 'the goal row: ' + short((await goalG()).agents));
+      const kept = await profileRow(NOBODY.key);
+      ok(!!kept && kept.name === 'No Grant', 'and its row stays in the desk, its profile with it', 'agents.search says of it: ' + short(kept));
+      node.grants.push({ key: UBI.key, path: 'desk.chat.add', name: UBI.label });
+      node.grantEvent({ key: UBI.key, path: 'desk.chat.add', label: UBI.label });
+      node.grants.splice(node.grants.findIndex(function (g) { return g.key === UBI.key && g.path === 'desk.item.get'; }), 1);
+      node.grantEvent({ key: UBI.key, path: 'desk.item.get' }, true);
+      await sleep(800);
+      ok(has(await goalG(), UBI), 'one of two grants revoked: the bubble stays', 'the goal row: ' + short((await goalG()).agents));
+    }
+    node.grants.splice(0, node.grants.length); heldGrants.forEach(function (g) { node.grants.push(g); });
+
     test.subHeading('goal/G43.3: [include closed] adds the closed rows, and the open ones stay in the first answer');
     const MIX_GOAL = { id: 'goal/G500', title: 'Closed first' };
     const MIX_ITEMS = Array.from({ length: 45 }, function (x, i) { return 'goal/G500.' + (i + 1); });
