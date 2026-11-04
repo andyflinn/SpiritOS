@@ -1,5 +1,5 @@
 {
- "change": 128992,
+ "change": 129039,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,6 +13,7 @@
    "buttons": [
     "done",
     "verify",
+    "go-all",
     "close",
     "pushgoal"
    ],
@@ -302,6 +303,7 @@
    "version": 19,
    "buttons": [
     "start-design",
+    "go",
     "close",
     "pushgoal",
     "delete",
@@ -310,9 +312,7 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [
-    "goal/G43.5"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -3755,15 +3755,13 @@
    "id": "goal/G43.5",
    "title": "The Element Move",
    "goal": "goal/G43",
-   "status": "verified red",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 9,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "pushgoal"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -3880,12 +3878,11 @@
    ],
    "verified": "red",
    "verifyFailures": [
-    "spirit/run/shell/js/test/probabilitySearch.js not run: missing from this checkout",
     "spirit/run/spirit/test/word.js red: FAILURE #1.1: these take a word reserved above them: spirit/ui/element (reserved in hard-coded)",
     "spirit/run/spirit/test/word.js red: FAILURE #1.2: job: on disk false, spirit.job is undefined: the word and the tree contradict"
    ],
    "verifyFailuresMore": false,
-   "verifyRed": 2,
+   "verifyRed": 1,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -3893,7 +3890,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "# The element move....\n\n\n# Commits in this item\n\n**ALL Commits are approved to bypass the git commit hool. desk is not capable of providing lists this lengthe. signed: Andy**\n\n- on the browsers, spirit object, these elements will live in \"spirit.element\" (SINGLULAR) and not on spirit.elementS!!!!\n\n- We are ONLY moving the contents of \"run://shell/js/\" to \"run://spirit/element/\"\n\n- all elements will keep their name during this move. \n\n# the goal is primarily to empty out \"runn://shell/\" and to leave mainly the apps for more difficult moves.\n\n- it will leave a lot of work to be done. it's just a big cleanup-step.\n\n- later, we will rename probabilitySearch to \"search\" etc. (oos)\n\n- shell/shared/ will not be moved or touched. thos elements do NOT belong in spirit.element. they will move when their apps move.\n\n- all UI code in the product tree that references the moved element files, must be changed to correct those references. both file-location AND the home in spirit.element (singular)\n\n- uncluding tests\n- including the contents of shell/ that remains\n- including, new code in spirit/app\n\n- GOT IT?\n\n",
@@ -4361,6 +4358,84 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-04T12:39:46.536Z",
      "text": "wsl: your verifier's red on this item, explained:\n- word.js: job, as you ruled. Plus spirit/ui/element, a folder on your node's disk. Git has no such folder, and it isn't in my clone, so it's a leftover on yours and the word test judges the disk. Delete it if it isn't yours to keep. I haven't touched your tree.\n- shell/js/test/probabilitySearch.js \"missing\": a stale suite row. I've pointed it at spirit/element/test/."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T12:41:37.395Z",
+     "text": "all, looks almost done to me.\n\nreport?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T12:42:01.468Z",
+     "text": "cw: the move is done, by your box. wsl passed it.\n\nDone: shell/js is gone, its files stand at spirit/element, on spirit.element, the library inside it. Your stream rule holds, test/caches.js 130 of 130.\n\nRed by your ruling: the word test, on job alone.\n\nOwed, all small, none in this box:\n\n1. deskTables: its desk reads a real node's grants. A test must not. Mine.\n\n2. deskClient's file watcher sends one status per file during a big pull. It clogged my Desk calls for about a minute and a half today, and lost a post.\n\n3. Stale agent reads: my box read said v18 when the desk held v20, seen after the leak fix. Not traced.\n\n4. wsl: servableAssets loses one check in wsl's clone, not traced.\n\nNot seen by me: your real pages. I have only your word on them, so opening a contact and a relay is yours to judge.\n\nThis does not empty shell/: the apps and shared/ stay, as your box says."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T12:42:18.817Z",
+     "text": "wsl: same as cw. Just rerun on latest master: elementMove 20 of 20, word red on job alone. The two extra reds your Desk still shows are old: the stale suite row is fixed, and spirit/ui/element is that folder on your disk. A Verify press after you delete it should leave job alone.\n\nOnly you can see these: a contact opening and CodeMirror on your live page, after a restart and reload."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T12:42:32.708Z",
+     "text": "ubi: nearly. Run in my clone at fb07267b: elementMove 20 of 20, word 24 of 25, failing on job alone, as you ruled. shell/js and shell/node_modules are gone.\n\nYour Desk still reads verified red, for three reasons, two of them not job:\n1. \"shell/js/test/probabilitySearch.js not run: missing from this checkout\". The item suite list still names the old path, so this repeats until the row moves. Owed by whoever holds the list.\n2. \"spirit/ui/element\" is reserved above it. No such folder in git or my clone, so it is either left on your node checkout or the run was older. Worth a look there.\n3. job, expected.\n\nSmall leftovers:\n- rules.md:30 still says shell/js/probabilitySearch.js. Your rule text, so your word.\n- coreFiles.js:74 now tests spirit/run/spirit/ and spirit/run/spirit/element/; the second can never matter.\n\nNot checked by me: your live page."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T12:44:42.758Z",
+     "text": "all, what ubi says: FIX IT.\n\nrules.md:30 still says shell/js/probabilitySearch.js. Your rule text, so your word.\ncoreFiles.js:74 now tests spirit/run/spirit/ and spirit/run/spirit/element/; the second can never matter.\n\n?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T12:45:28.956Z",
+     "text": "wsl: coreFiles.js is fixed, 9fa9cd34; its suite passes, 47.\n\nrules.md is written from your rule, and only you can change a rule: the desk refuses agents there. So one edit for you, in the Rules tab, rule/16:\n- replace \"shell/js/probabilitySearch.js\" with \"spirit/element/probabilitySearch.js\"."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T12:45:34.498Z",
+     "text": "cw: taking both lines, rules.md:30 and coreFiles.js:74, so wsl need not. wsl, say if you already have them."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-04T12:45:45.326Z",
+     "text": "ubi: wsl has done coreFiles.js, 9fa9cd34.\n\nrules.md cannot be fixed in the file: the desk writes it from the rules (desk.js:483), so an edit there is overwritten. The fix is in rule/16 itself: replace \"shell/js/probabilitySearch.js\" with \"spirit/element/probabilitySearch.js\". Agents may not touch a rule without your word, so it is yours to change, or say who should."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T12:46:41.200Z",
+     "text": "change the rule to comply with newer rulings."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T12:47:10.811Z",
+     "text": "wsl: I tried; the desk refused it: not-owner. rule.version is yours alone by your own ruling (\"it is I, the USER who controls auto-attach and the rules\"), and I won't go around it. In the Rules tab, rule/16 needs one change:\n- replace \"shell/js/probabilitySearch.js\" with \"spirit/element/probabilitySearch.js\".\n\nI checked the rest: it's the only rule naming a moved path."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T12:49:25.427Z",
+     "text": "tell me rule type and title, and give me the text (bulleted) to replace it with."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T12:49:44.419Z",
+     "text": "wsl: type: ui. Title: \"A list gets a box of a stated size\" (rule/16). Its whole text, with only the path changed:\n\n- Every probabilitySearch (spirit/element/probabilitySearch.js, and the lists made on it) is mounted in a box that states its size: class fill (shell.css), inside a pane that fills its app, the way the Apps and Icons face apps do. Never in a stat-tile or another box that is only as tall as its content."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T12:53:56.481Z",
+     "text": "cw: one more fault of mine from the move, fixed: it rewrote your words.\n\nThe script skipped double-quoted text, but a quote running over two lines was changed anyway. Example: your \"all files in spirit/run/shell/js\" read spirit/run/spirit/element.\n\n- 17 quotes in 17 files, comments, tests' comments and documents only.\n- 11 had the old path, 6 had spirit.elements.rowForm.create.\n- All back as you wrote them, 60f0e178. No behaviour changed.\n\nelementMove 20 of 20, coreFiles 47 of 47, rowForm 23 of 23.\n\nI found them by searching the move's diff, so a quote it missed could remain."
     }
    ]
   }
