@@ -71,7 +71,7 @@ function isCore(repoPath, repoRoot) {
   if (/^spirit\/run\/(shell|process\/js)\/([^/]+)\/\2\.json$/.test(p)) return false;
   // shell/json/ too (goal/G40.8; Andy: "the folder spirit/run/shell/json/ is a core folder as well. this way i can update
   // that system file manually once in a while, when i actually want it to go into github").
-  if (p.indexOf('spirit/run/spirit/') === 0 || p.indexOf('spirit/run/spirit/element/') === 0 || p.indexOf('spirit/run/shell/json/') === 0) return true;
+  if (p.indexOf('spirit/run/spirit/') === 0 || p.indexOf('spirit/run/shell/json/') === 0) return true;
   // WHAT index.html LOADS ON EVERY BOOT IS CORE TOO (goal/G41.30; the review, H5): CodeMirror lives in spirit/element/codeMirror/
   // since goal/G43.5, so the line above holds it, and so with the progress bar. NOT shell/shared/ (Andy: "no \"core\" files
   // should reside in shell/shared/ since that folder was meant to be a place where non-intrinsic apps could share modules").
