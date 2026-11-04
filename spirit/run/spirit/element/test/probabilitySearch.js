@@ -486,9 +486,9 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
 
   test.subHeading('create: a view of the data layer');
   const watched = []; const seatedIn = []; let unwatched = 0;
-  window.spirit.data = { rows: function (type) { return type === 'people' ? [{ key: 'p1', name: 'pia' }] : []; },
-    seat: function (type, items) { seatedIn.push([type, items]); },
-    watch: function (type, fn) { watched.push([type, fn]); return function () { unwatched += 1; }; } };
+  window.spirit.data = { rowsOf: function (type) { return type === 'people' ? [{ key: 'p1', name: 'pia' }] : []; },
+    seatRows: function (type, items) { seatedIn.push([type, items]); },
+    watchPath: function (type, fn) { watched.push([type, fn]); return function () { unwatched += 1; }; } };
   const c7 = container();
   const A7 = api();
   A7.answer = { status: 200, body: { ok: true, items: [{ key: 'p2', label: '{"name":"per"}' }] } };

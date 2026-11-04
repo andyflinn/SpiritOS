@@ -53,7 +53,7 @@ function world() {
   pageData = win.spirit.data;
   // THE PAGE KNOWS ITS NODE (goal/G41.28): spirit.start asks node.card, keeps the key and hands it to the data set.
   win.spirit.node = { key: 'nOdE+key/one==' };
-  pageData.home('nOdE+key/one==');
+  pageData.homeNode('nOdE+key/one==');
   // spirit.cacheManager(name), as a page's: the family's manager loaded once, attaching itself to the data set; the api
   // tree is the node family's (spirit.data.node.data).
   w.managers = [];
@@ -71,7 +71,7 @@ function world() {
 // another party's tree, kept out of the node's, the rows it is handed; narrowed by its filters; each by its name.
 let pageData = null;
 const names = function (l) {
-  const rows = l.opts.data ? (pageData ? pageData.rows(l.opts.data) : []) : (typeof l.opts.rows === 'function' ? l.opts.rows() : []);
+  const rows = l.opts.data ? (pageData ? pageData.rowsOf(l.opts.data) : []) : (typeof l.opts.rows === 'function' ? l.opts.rows() : []);
   return rows.filter(function (r) { return (l.opts.filters || []).every(function (f) { return typeof f.test !== 'function' || f.test(r, undefined) > 0; }); })
     .map(function (r) { return r.name != null ? r.name : r.key; }).sort();
 };

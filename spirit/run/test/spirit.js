@@ -523,7 +523,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   // Andy: spirit.js "on start of this client functionality ... AUTOMATICALLY caches ALL streamed datasets", "yes." The
   // cache is spirit/data.js (spirit.data); spirit.js loads it when its client part starts, page and process alike.
   test.subHeading('7b. spirit.js loads the cache itself, on a page and in a process');
-  const isCache = function (d) { return !!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'; };
+  const isCache = function (d) { return !!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'; };
   const cq = page();
   try { await cq.spirit.start(); } catch (e) { /* the cache is the question here */ }
   if (isCache(cq.spirit.data)) test.check('on a page: once spirit.js has started, spirit.data is the cache, nothing else loading it');
@@ -536,7 +536,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   const preloaded = cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/data\.js/.test(u) && /shell\//.test(u); });
   if (!preloaded.length) test.check('on a page spirit.js loads the cache and no element: no files row element with it (goal/G41.19)');
   else test.fail('on a page spirit.js still loads elements with the cache: ' + short(preloaded));
-  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.get === 'function' && typeof d.set === 'function' && typeof d.translate === 'function'));", path.join(RUN, 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
+  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'));", path.join(RUN, 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
   if (inProcess.stdout === 'true') test.check('in a process: require(spirit.js) gives spirit.data, the cache');
   else test.fail('in a process spirit.js does not load the cache: ' + short(inProcess.stdout + inProcess.stderr));
 

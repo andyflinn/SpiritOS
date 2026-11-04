@@ -99,7 +99,7 @@
       // AN OUTPUT FIELD IS SHOWN, NEVER PICKED OR SENT (Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER
       // ordered a fucking picker for that............."): the other table's row by its icon and label, as the branch holds it.
       if (f.kind === 'output') {
-        var shown = f.pick && v ? D().get(branchOf(f.pick) + '/' + v) : null;
+        var shown = f.pick && v ? D().getPath(branchOf(f.pick) + '/' + v) : null;
         return '<div id="' + id + '">' + esc(shown ? nameOf(Object.assign({ key: v }, shown), columnsOf(f.pick)) : (v || '')) + '</div>';
       }
       if (f.kind === 'list') v = Array.isArray(v) ? v.join(', ') : '';
@@ -151,7 +151,7 @@
         // The field shows the row picked now, by its label from the other table's branch, until another is picked; only a
         // new pick is saved.
         if (f.kind === 'pick') {
-          var other = row[f.field] ? D().get(branchOf(f.pick) + '/' + row[f.field]) : null;
+          var other = row[f.field] ? D().getPath(branchOf(f.pick) + '/' + row[f.field]) : null;
           // THE PICK NAMES ITS ROW AS THE PANEL OPENS (Andy: "provider details: when the panel opens, pickers must reflect
           // the value or the row field (model)"): a row the page does not hold yet is asked of its table once (get).
           if (row[f.field] && !other && !pickAsked[f.field + '|' + row[f.field]]) {
@@ -159,7 +159,7 @@
             (function (table, key) {
               call(table, { op: 'get', id: key }).then(function (r) {
                 if (gone || !r || r.refused || !r.id) return;
-                D().merge(branchOf(table) + '/' + key, r);
+                D().mergePath(branchOf(table) + '/' + key, r);
                 paint();
               });
             }(f.pick, row[f.field]));
@@ -293,7 +293,7 @@
     // THE ROW AS spirit.data HOLDS IT: what the stream writes there repaints this editor, a delete says so.
     var unwatch = function () {};
     function attach() {
-    unwatch = D().watch(path, function (p, value) {
+    unwatch = D().watchPath(path, function (p, value) {
       if (value === undefined) { row = null; note = 'Deleted.'; paint(); return; }
       row = value;
       paint();
@@ -307,9 +307,9 @@
     call(o.table, { op: 'get', id: o.id }).then(function (r) {
       if (gone) return;
       if (r.refused) { note = 'Not found: ' + r.refused; paint(); return; }
-      D().set(path, r);
+      D().setPath(path, r);
       // A set that changes nothing tells no watcher: the editor takes the answer itself.
-      if (!row) { row = D().get(path) || r; paint(); }
+      if (!row) { row = D().getPath(path) || r; paint(); }
     });
     }
     if (adding) { row = {}; paint(); } else attach();
