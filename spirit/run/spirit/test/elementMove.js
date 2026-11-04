@@ -84,7 +84,7 @@ const MODULES = [
   'workBench.js',
 ];
 // What does not move, and stays on spirit.elements: "those elements do NOT belong in spirit.element."
-const STAYS = [['shell/shared/js/deskElement.js', 'createDeskElement'], ['shell/shared/js/deskRunStatus.js', 'deskRunStatus'], ['spirit/ui.js', 'ui']];
+const STAYS = [['shell/shared/js/deskElement.js', 'createDeskElement'], ['shell/shared/js/deskRunStatus.js', 'deskRunStatus']];
 
 const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
 const IN_RUN = tracked.filter(function (f) { return f.indexOf('spirit/run/') === 0; }).map(function (f) { return f.slice('spirit/run/'.length); });

@@ -34,13 +34,13 @@ test.startTest('appMigration.js: the throw-away host of appSelector (goal/G43.2)
     ok(tile, 'the face\'s desktop shows it at home, with no switch and no star', 'no tile: ' + short(await chrome.evaluate('document.body.innerText')));
     const opened = await chrome.evaluate('(function () { var all = document.querySelectorAll("*"); var hit = null; for (var i = 0; i < all.length; i++) { if (!all[i].children.length && String(all[i].innerText || "").trim() === "appMigration") hit = all[i]; } if (!hit) return false; hit.click(); return true; }())');
     ok(opened === true, 'its tile can be pressed', 'no tile to press');
-    // JUST A WRAPPER (Andy, box: "appMigration becomes JUST a wrapper for \"run/spirit/ui.js\""): what it does is spirit/ui.js's, whose test judges it (spirit/test/ui.js). Here: it mounts that, in the real shell.
+    // JUST A WRAPPER (Andy, box: "appMigration becomes JUST a wrapper for \"run/spirit/ui.js\""): what it does is spirit/app/tiles.js's, whose test judges it (spirit/test/ui.js). Here: it mounts that, in the real shell.
     const tileOf = function (label) { return 'Array.prototype.filter.call(document.querySelectorAll(".app-icon"), function (t) { return t.offsetParent !== null && String(t.innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1; })[0]'; };
     const visible = function (sel) { return 'Array.prototype.filter.call(document.querySelectorAll(' + JSON.stringify(sel) + '), function (t) { return t.offsetParent !== null; })[0]'; };
-    const shown = await until(function () { return chrome.evaluate('!!(window.spirit.elements && window.spirit.elements.ui) && !!' + tileOf(identity.label)); }, 10000);
-    ok(shown, 'opened, it mounts spirit/ui.js, and server\'s tile is there', 'opened, the page shows ' + short(await chrome.evaluate('document.body.innerText')));
+    const shown = await until(function () { return chrome.evaluate('!!(window.spirit.app && window.spirit.app.tiles) && !!' + tileOf(identity.label)); }, 10000);
+    ok(shown, 'opened, it mounts spirit/app/tiles.js, and server\'s tile is there', 'opened, the page shows ' + short(await chrome.evaluate('document.body.innerText')));
     const others = await chrome.evaluate('Array.prototype.filter.call(document.querySelectorAll(".app-icon"), function (t) { return t.offsetParent !== null; }).map(function (t) { return t.innerText; }).join("|")');
-    ok(String(others).indexOf('Job Monitor') === -1, 'the desktop is gone: these are ui\'s tiles', 'the desktop\'s tiles are still on show: ' + short(others));
+    ok(String(others).indexOf('Job Monitor') === -1, 'the desktop is gone: these are spirit.app.tiles\' tiles', 'the desktop\'s tiles are still on show: ' + short(others));
     // NONE OF THE SHELL'S BUSINESS (Andy, box: "NO INTERFERENCE FROM ANY FUCKING SHELL").
     const shellNow = function () { return chrome.evaluate('(function () { var b = document.querySelector("#app-close"); return JSON.stringify({ t: document.title, closeShown: !!(b && b.offsetParent !== null) }); }())'); };
     const shellBefore = await shellNow();
@@ -50,7 +50,7 @@ test.startTest('appMigration.js: the throw-away host of appSelector (goal/G43.2)
     const shellOpen = await shellNow();
     ok(shellOpen === shellBefore, 'the shell does not notice: its title and its own button stay as they were', 'the shell changed: ' + shellBefore + ' to ' + shellOpen);
     const src = fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '');
-    ok(src.indexOf('spirit/ui.js') !== -1 && !/app-icon|app-container|\.search\(|createElement/.test(src), 'its own script draws nothing and asks nothing', 'its script still does the work: ' + short(src));
+    ok(src.indexOf('spirit/app/tiles.js') !== -1 && !/app-icon|app-container|\.search\(|createElement/.test(src), 'its own script draws nothing and asks nothing', 'its script still does the work: ' + short(src));
   } finally {
     try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
     try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
