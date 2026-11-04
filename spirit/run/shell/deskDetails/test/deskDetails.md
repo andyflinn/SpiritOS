@@ -166,3 +166,4 @@ object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept 
 - *"above the box i want to see the the last-stored version number of the box."* The version the desk answered stands above the box.
 - *"red Q's should indicate who posted them."* The Qs panel shows the question and who placed it.
 - *"when i add a rule to an item or goal, it will not immediately display in the rule-list."* With the rules panel open on an item or a goal, a row naming a new rule shows it at once, with no read asked.
+- *"when i manually add rules to an item, the rule-picker should default to all filters off. Now i always have to turn of all but one search filter to actually find the rule I'm looking for."* In a real browser: the picker opens with no type filter on, and one type pressed is the only one on, the search asking for that type.

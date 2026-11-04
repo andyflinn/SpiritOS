@@ -117,6 +117,34 @@ window.boxTake = function () {
   });
 };
 
+// goal/G43.3 (Andy: "when i manually add rules to an item, the rule-picker should default to all filters off. Now i always
+// have to turn of all but one search filter to actually find the rule I'm looking for."): the picker's type buttons, as the
+// search element draws them, and what a press of one asks.
+window.rulePick = function () {
+  var icon = document.querySelector('[data-tool="rules"]');
+  if (!icon) return Promise.resolve(JSON.stringify({ error: 'no icon for rules' }));
+  if (!icon.hasAttribute('data-current')) icon.click();
+  var buttons = function () { return Array.prototype.slice.call(document.querySelectorAll('#dd-rule-pick button[data-filter="type"]')); };
+  var on = function (b) { return /font-weight:\s*bold/.test(b.getAttribute('style') || ''); };
+  var lastTypes = function () { var r = window.asked.filter(function (a) { return a.name === 'desk.rules.search'; }).pop(); return r && r.args ? r.args.types : null; };
+  return wait(1200).then(function () {
+    var box = document.querySelector('#dd-rule-pick input');
+    if (box) { box.focus(); box.dispatchEvent(new Event('focus')); }
+    return wait(400);
+  }).then(function () {
+    var out = { buttons: buttons().length, on: buttons().filter(on).map(function (b) { return b.getAttribute('data-value'); }) };
+    var code = buttons().filter(function (b) { return b.getAttribute('data-value') === 'code'; })[0];
+    if (!code) return JSON.stringify(out);
+    window.asked.length = 0;
+    code.click();
+    return wait(600).then(function () {
+      out.afterOn = buttons().filter(on).map(function (b) { return b.getAttribute('data-value'); });
+      out.afterTypes = lastTypes();
+      return JSON.stringify(out);
+    });
+  });
+};
+
 // One left panel shown, and what fills and what scrolls in it, measured: the box that scrolls most inside the pane, and
 // whether the pane itself scrolls. A grant row is measured before and after its list is scrolled to its end.
 window.panel = function (key) {

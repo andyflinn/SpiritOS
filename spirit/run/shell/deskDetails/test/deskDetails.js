@@ -628,6 +628,11 @@ const byId = function (w, id) { return function () { return w.document.getElemen
           try { t = JSON.parse(await page.evaluate('window.boxTake()')); } catch (e) { t = null; }
           ok(!!t && t.took === 1, 'goal/G43.3: going into that box takes it, as the textarea did', 'going in: ' + JSON.stringify(t));
           ok(!!t && !!t.wrote && t.wrote.text === 'his new text' && t.wrote.version === 37, 'goal/G43.3: leaving it changed writes his text, on the version it read', 'leaving it: ' + JSON.stringify(t));
+          // goal/G43.3: Andy: "the rule-picker should default to all filters off."
+          let rp = null;
+          try { rp = JSON.parse(await page.evaluate('window.rulePick()')); } catch (e) { rp = null; }
+          ok(!!rp && rp.buttons > 0 && rp.on.length === 0, 'goal/G43.3: the rule picker opens with all its type filters off', 'the picker: ' + JSON.stringify(rp));
+          ok(!!rp && JSON.stringify(rp.afterOn) === '["code"]' && JSON.stringify(rp.afterTypes) === '["code"]', 'goal/G43.3: one type pressed: that filter alone is on, and the search asks for that type', 'after pressing code: ' + JSON.stringify(rp));
           // EVERY LEFT PANEL USES ALL THE HEIGHT (Andy, on G41.22: "the box must use the full vertical space", "all left
           // side panels must fucking use all available vertical space, especially the lists"): given long content, the
           // pane never scrolls itself; the panel's own list (the box's text) scrolls, its bottom at the pane's.

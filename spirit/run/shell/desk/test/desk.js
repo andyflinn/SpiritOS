@@ -333,6 +333,50 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   const tOther = teamLines();
   ok(tOther.length === 3 && tOther[0] === tAfter[0] && tOther[1] === tBefore[0] && tOther[2] === tBefore[1],
     'a change that is no Team line (a new List row) leaves every Team line as it was', 'drawn again by a List row');
+  // ── goal/G43.3: THE LIST'S FILTERS, IN A REAL BROWSER ───────────────────────────────────────────
+  // Andy: "on the list search item.search, these two filters: [Current Goal Only] and [Goals only] MUST be mutually
+  // exclusive, both can be off, but only one of them can be active at once. so [Current Goal only] is the only filter On by
+  // default, and it MUST show the current goal when the page opens."
+  test.subHeading('goal/G43.3: /shell/desk/test/desk-opened.html: the page opened, with nothing on the stream');
+  {
+    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const chrome = H.findChrome();
+    if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
+    else {
+      const node = await H.scratchNode();
+      let page = null;
+      try {
+        page = node.up && node.debug ? await H.chromePage(chrome) : null;
+        if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up with its DEBUG on');
+        else {
+          await page.send('Page.navigate', { url: node.base + '/DEBUG/shell/desk/test/desk-opened.html' });
+          await H.until(function () { return page.evaluate('typeof window.opened === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+          const read = async function (js) { try { return JSON.parse(await page.evaluate(js)); } catch (e) { return { error: String(e) }; } };
+          const o = await read('window.opened()');
+          ok(o.found === true, 'the world: the List draws its filter buttons', 'the page: ' + JSON.stringify(o));
+          ok(o.current === true && o.goals === false && o.closed === false, '[Current Goal Only] is the only filter on by default', 'at open: ' + JSON.stringify(o));
+          ok(!!o.args && o.args.currentGoalOnly === true && o.args.goalsOnly === false && o.args.includeClosed === false, 'the first search asks for the current goal alone', 'at open it asked ' + JSON.stringify(o.args));
+          ok(o.currentGoal === true && o.openItem === true, 'and the page shows the current goal and its item when it opens', 'at open: ' + JSON.stringify(o));
+          const g = await read('window.press("goalsOnly")');
+          ok(g.goals === true && g.current === false, '[Goals Only] pressed: [Current Goal Only] goes off', 'after [Goals Only]: ' + JSON.stringify(g));
+          ok(!!g.args && g.args.goalsOnly === true && g.args.currentGoalOnly === false, 'and the search asks for goals, every goal', 'it asked ' + JSON.stringify(g.args));
+          ok(g.currentGoal === true && g.olderGoal === true && g.olderItem === false && g.openItem === false, 'and the List shows the goals, no item', 'after [Goals Only]: ' + JSON.stringify(g));
+          const c = await read('window.press("current")');
+          ok(c.current === true && c.goals === false, '[Current Goal Only] pressed: [Goals Only] goes off', 'after [Current Goal Only]: ' + JSON.stringify(c));
+          ok(c.openItem === true && c.olderGoal === false && c.olderItem === false, 'and the List shows the current goal alone', 'after [Current Goal Only]: ' + JSON.stringify(c));
+          const off = await read('window.press("current")');
+          ok(off.current === false && off.goals === false, 'pressed again: both are off', 'pressed again: ' + JSON.stringify(off));
+          ok(!!off.args && off.args.currentGoalOnly === false && off.args.goalsOnly === false && off.openItem === true && off.olderItem === true, 'and the List shows every goal\'s items', 'both off: ' + JSON.stringify(off));
+        }
+      } finally {
+        if (page && page.kid) page.kid.kill();
+        if (node.child) node.child.kill();
+        try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+        try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+      }
+    }
+  }
+
   test.subHeading('goal/G41.11: every list of Desk stands in a box of a stated size (rule/16)');
   // Andy, on G41.11: "the rules list is NOT placed properly in a size-limited container.... is this the same everywhere
   // in desk?" rule/16: every probabilitySearch is mounted in a box that states its size, class fill, inside a pane that

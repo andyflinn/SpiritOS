@@ -59,3 +59,13 @@ Andy: "the rules list is NOT placed properly in a size-limited container.... is 
 Every probabilitySearch list of the Desk page, the List (items.search) and the Rules list (rules.search), is mounted in a
 box of class fill, and every box between it and the app's own box is fill too: no stat-tile, no box only as tall as its
 content. A dropdown stands inline, as every dropdown in the tree does, and is not asked.
+
+## Requirements (goal/G43.3)
+
+Andy: *"on the list search item.search, these two filters: [Current Goal Only] and [Goals only] MUST be mutually exclusive, both can be off, but only one of them can be active at once. so [Current Goal only] is the only filter On by default, and it MUST show the current goal when the page opens."*
+
+`./desk-opened.html` opens the real page in a real browser, on a stand-in desk, with nothing on the stream:
+
+- At open, [Current Goal Only] alone is on, the first search asks for the current goal, and the current goal and its item show. No push from the stream is needed for that: a search answer asked with `currentGoalOnly` holds the current goal.
+- [Goals Only] pressed turns [Current Goal Only] off, and the other way round. The search and the rows follow.
+- Pressed again, both are off, and every goal's items show.
