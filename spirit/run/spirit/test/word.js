@@ -25,11 +25,22 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function asks(run, list) {
   const code = 'const w = require(' + JSON.stringify(path.join(run, 'spirit', 'word.js')) + ');' +
     'Promise.all(' + JSON.stringify(list) + '.map(function (a) { return Promise.resolve(w.check(a[0], a[1])); }))' +
-    '.then(function (r) { console.log("ANSWER" + JSON.stringify({ answers: r, add: typeof w.add })); process.exit(0); },' +
+    '.then(function (r) { console.log("ANSWER" + JSON.stringify({ answers: r })); process.exit(0); },' +
     ' function (e) { console.log("ANSWER" + JSON.stringify({ threw: String(e) })); process.exit(0); });';
+  return answerOf(run, code);
+}
+function answerOf(run, code) {
   const r = spawnSync(process.execPath, ['-e', code], { cwd: run, encoding: 'utf8', timeout: 30000 });
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('ANSWER') === 0; })[0];
   try { return JSON.parse(line.slice('ANSWER'.length)); } catch (e) { return { threw: String(r.stderr || r.stdout || 'no answer').slice(0, 300) }; }
+}
+// What add answers, each in turn in one child and unwrapped: the box's add "returns boolean", so a promise is no answer.
+function adds(run, list) {
+  const code = 'const w = require(' + JSON.stringify(path.join(run, 'spirit', 'word.js')) + ');' +
+    'try { console.log("ANSWER" + JSON.stringify({ answers: ' + JSON.stringify(list) + '.map(function (a) { return w.add(a[0], a[1]); }) })); }' +
+    ' catch (e) { console.log("ANSWER" + JSON.stringify({ threw: String(e) })); }' +
+    ' process.exit(0);';
+  return answerOf(run, code);
 }
 
 test.startTest('word.js: the reserved words, and the tree held against them (goal/G43.4)');
@@ -76,12 +87,74 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
     else cases.forEach(function (c, i) {
       ok(got.answers[i] === c[3], c[0] + ': check(' + c[1] + ', ' + c[2] + ') answers ' + JSON.stringify(c[3]), c[0] + ': check(' + c[1] + ', ' + c[2] + ') answered ' + short(got.answers[i]));
     });
-    test.subHeading('add: "add() is conceptual AND WILL NOT BE IMPLEMENTED IN THIS ITEM."');
-    ok(got.add === 'undefined', 'word.js has no add', 'word.js has an add: ' + short(got.add));
     test.subHeading('a change to a word.json is seen by the next check');
     plant('app', ['activate', 'later']);
     const after = asks(run, [['spirit.app', 'later']]);
     ok(Array.isArray(after.answers) && after.answers[0] === 'later', 'a word written to the file answers', 'after the write: ' + short(after));
+
+    // ── ADD, Andy: "all, implement add()" ──────────────────────────────────────────
+    const wordsIn = function (dir) {
+      try { return JSON.parse(fs.readFileSync(path.join(run, 'spirit', dir, 'word.json'), 'utf8')); } catch (e) { return null; }
+    };
+    // Each case: why, the level, the word, what add answers, and what must then stand in that level's word.json.
+    const addCases = function (heading, list) {
+      test.subHeading(heading);
+      const r = adds(run, list.map(function (c) { return [c[1], c[2]]; }));
+      if (!Array.isArray(r.answers)) { test.fail('add answered nothing: ' + short(r)); return; }
+      list.forEach(function (c, i) {
+        ok(r.answers[i] === c[3], c[0] + ': add(' + c[1] + ', ' + c[2] + ') answers ' + c[3], c[0] + ': add(' + c[1] + ', ' + c[2] + ') answered ' + short(r.answers[i]));
+      });
+    };
+    plant('app', ['later']);
+    addCases('add: the box\'s example, "add(\'spirit.app\', \'activate\') would add the \'activate\' to run://spirit/app/word.json"', [
+      ['a new word', 'spirit.app', 'activate', true],
+      ['"a boolean \'false\' if the word already exists"', 'spirit.app', 'activate', false],
+    ]);
+    let app = wordsIn('app') || {};
+    ok(app.activate === true, 'the word stands in spirit/app/word.json with the value true', 'spirit/app/word.json after add: ' + short(app));
+    ok(app.later === true, 'the words already in that file stay', 'spirit/app/word.json lost a word: ' + short(app));
+    const seen = asks(run, [['spirit.app', 'activate'], ['spirit.app.table.add', 'activate'], ['spirit.contact', 'activate']]);
+    ok(Array.isArray(seen.answers) && seen.answers[0] === 'activate', 'check finds the added word at its level', 'check at its level: ' + short(seen));
+    ok(Array.isArray(seen.answers) && seen.answers[1] === 'activate', 'and below it (the box: "for that level and below")', 'check below it: ' + short(seen));
+    ok(Array.isArray(seen.answers) && seen.answers[2] === null, 'and not in another branch', 'check in another branch: ' + short(seen));
+
+    const before = JSON.stringify([wordsIn('app'), wordsIn('app/table'), wordsIn('app/table/add')]);
+    addCases('add refuses what is no word: "\'word\' is a string containing only characters from \'a\' to \'z\'"', [
+      ['a digit', 'spirit.app', 'app1', false],
+      ['empty', 'spirit.app', '', false],
+      ['a space', 'spirit.app', 'a b', false],
+      ['a dash', 'spirit.app', 'new-word', false],
+    ]);
+    addCases('add refuses what check finds: "no words can be added that already exists toward the root of the tree"', [
+      ['a hard-coded word, in any case', 'spirit.app.table', 'CoNtAcT', false],
+      ['a word one level toward the root', 'spirit.app.table.add', 'THING', false],
+      ['a word two levels toward the root', 'spirit.app.table.add', 'later', false],
+    ]);
+    // Andy's yes to cw's Q4, "If a level below already holds the word, should add refuse it, rather than let the word test go red?"
+    addCases('add refuses a word a level below holds (Q4)', [
+      ['one level below', 'spirit.app', 'thing', false],
+      ['two levels below', 'spirit.app', 'item', false],
+    ]);
+    ok(JSON.stringify([wordsIn('app'), wordsIn('app/table'), wordsIn('app/table/add')]) === before, 'a refused add writes nothing', 'a refused add changed a word.json: ' + JSON.stringify([wordsIn('app'), wordsIn('app/table'), wordsIn('app/table/add')]));
+
+    addCases('add writes what no level on its path holds', [
+      ['a word in another branch does not stop it', 'spirit.app', 'sibling', true],
+      // cw, on the object's own keys: "constructor" is a to z.
+      ['a word an object inherits is a word like any other', 'spirit.app', 'constructor', true],
+      ['a level with no word.json yet gets one', 'spirit.element.files', 'fresh', true],
+    ]);
+    app = wordsIn('app') || {};
+    ok(app.sibling === true && Object.prototype.hasOwnProperty.call(app, 'constructor') && app.constructor === true, 'both words stand in spirit/app/word.json', 'spirit/app/word.json: ' + short(app));
+    ok(JSON.stringify(wordsIn('element/files')) === '{"fresh":true}', 'the new spirit/element/files/word.json holds that word and nothing else', 'spirit/element/files/word.json: ' + short(wordsIn('element/files')));
+    // Q5, "Should add work from a page too, the way check does?", Andy: "no." word.js's page half, run on a bare window.
+    const bare = { window: { spirit: {} } };
+    require('vm').runInNewContext(fs.readFileSync(path.join(RUN, 'spirit', 'word.js'), 'utf8'), bare);
+    const onPage = bare.window.spirit.word || {};
+    ok(typeof onPage.check === 'function' && onPage.add === undefined, 'on a page spirit.word has check and no add (Q5)', 'on a page spirit.word has check ' + typeof onPage.check + ', add ' + typeof onPage.add);
+    // Whether add takes a word in capitals is the box's "addedWoRD": what lands in the file is a to z either way.
+    const mixed = adds(run, [['spirit.contact', 'MiXeD']]);
+    ok(Array.isArray(mixed.answers) && typeof mixed.answers[0] === 'boolean', 'add of a word in capitals answers a boolean', 'add of a word in capitals: ' + short(mixed));
+    ok(Object.keys(wordsIn('contact') || {}).every(function (k) { return /^[a-z]+$/.test(k); }), 'and no key but a to z lands in the file', 'spirit/contact/word.json: ' + short(wordsIn('contact')));
 
     // ── THE TREE, THIS CHECKOUT'S ─────────────────────────────────────────────────────────────────
     const SPIRIT = path.join(RUN, 'spirit');

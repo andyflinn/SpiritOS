@@ -11,7 +11,9 @@ Andy, box: *"i will track nameSpace claims."*
 - A word an object inherits, like `constructor`, is not reserved. A missing `word.json` counts as empty. A `word.json` is an object of word to `true`.
 - A changed `word.json` is seen by the next `check`.
 - On a page `spirit.word.check` answers through a promise, since a page asks its node for each `word.json`, kept until the node's file stream says it changed; `spirit.word.changed(fn)` tells a listener when one does. `spirit/element/files/rowElement.js` paints from these; its test judges them.
-- *"add() is conceptual AND WILL NOT BE IMPLEMENTED IN THIS ITEM."* `word.js` has no `add`.
+- `add('path.in.words', 'word')`, Andy: *"all, implement add()"*, answers a boolean. *"add('spirit.app', 'activate') would add the 'activate' to "run://spirit/app/word.json"."* The word goes in with the value `true`, the words already in the file stay, and a level with no `word.json` yet gets one.
+- `add` answers `false` and writes nothing on what is no word, on what `check` finds (*"no words can be added that already exists toward the root of the tree"*, and *"a boolean 'false' if the word already exists"*), and on a word a level below holds (Andy's yes to Q4). A word in another branch does not stop it.
+- `add` is in node only. Q5, *"Should add work from a page too, the way check does?"*, Andy: *"no."*
 
 ## The tree
 
