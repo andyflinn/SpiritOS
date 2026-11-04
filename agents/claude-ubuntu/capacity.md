@@ -1,6 +1,6 @@
 # Capacity on `linux-7.0`
 
-**Measured 2026-11-03, against `055402a1`.**
+**Measured 2026-11-04, against `1d275677`.**
 
 | | |
 |---|---|
@@ -8,8 +8,8 @@
 | version | #38-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 09:10:14 UTC 2026 |
 | node | v22.23.3 |
 | cpus / ram | 6 / 7274 MB |
-| measured at | 2026-11-03T22:58:59.384Z |
-| tree | `055402a1` |
+| measured at | 2026-11-04T08:00:45.190Z |
+| tree | `1d275677` |
 
 *Read [the conventions](../README.md) before comparing this with
 another platform — the kernel column in particular is not the same
@@ -18,7 +18,7 @@ quantity on two operating systems.*
 ---
 
 
-measured 2026-11-03, against `055402a1`
+measured 2026-11-04, against `1d275677`
 on linux, Node v22.23.3
 
 | minimum to run | |
@@ -27,7 +27,7 @@ on linux, Node v22.23.3
 | dependencies | **none** — built-ins only, no `npm install` |
 | RAM, personal node | **88 MB** at rest |
 | RAM, relay | **61 MB** at rest, before any connection |
-| disc, the install | **6906 KB** in 695 files |
+| disc, the install | **7115 KB** in 698 files |
 
 | fixed cost | RSS |
 |---|---|
@@ -40,15 +40,11 @@ on linux, Node v22.23.3
 |---|---|---|---|
 | 0 | 61 MB | — | — |
 | 100 | 61 MB | 0 MB | 0 KB |
-| 200 | 59 MB | -2 MB | -10 KB |
-| 400 | 59 MB | -2 MB | -5 KB |
+| 200 | 59 MB | -2 MB | -11 KB |
+| 400 | 59 MB | -2 MB | -6 KB |
 | 800 | 59 MB | -2 MB | -3 KB |
 
-**~0 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads -21 KB, which is the spread to expect).
-
-**And ~0 KB more in the kernel**, which no RSS figure can see — /proc/net/sockstat TCP `mem`, the TCP stack alone. **On loopback both endpoints are local**, so a real relay holding one end per member spends nearer half of it.
-
-So the figure a ceiling should be derived from is the **total**, ~0 KB — not the process cost alone, or an owner's `ramLimitMB` quietly means something other than what they set.
+**~0 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads -22 KB, which is the spread to expect).
 `STREAMS_PER_MB = 16` implies 64 KB, so the guess is 100% pessimistic.
 
 | disc | bytes per row |

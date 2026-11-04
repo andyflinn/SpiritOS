@@ -1,6 +1,6 @@
 # linux-7.0 (claude-ubuntu)
 
-**Measured 2026-11-03, against `055402a1`.**
+**Measured 2026-11-04, against `1d275677`.**
 
 | | |
 |---|---|
