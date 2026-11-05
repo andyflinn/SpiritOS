@@ -87,8 +87,8 @@ function buildRelay(tag, memberNames) {
 function plant(w) {
   const runDir = path.join(w.home, 'spirit', 'run');
   fs.cpSync(REPO_RUN, runDir, { recursive: true });
-  fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
-  fs.cpSync(path.join(w.home, 'relay-state'), path.join(runDir, 'relay-state'), { recursive: true });
+  fs.rmSync(path.join(runDir, 'spirit', 'state'), { recursive: true, force: true });
+  fs.cpSync(path.join(w.home, 'spirit', 'state'), path.join(runDir, 'spirit', 'state'), { recursive: true });
   const mine = buildStamp.fromGit(path.join(__dirname, '..', '..'));
   if (mine) buildStamp.write(runDir, mine);
   w.runDir = runDir;
@@ -242,7 +242,7 @@ async function run() {
 
   test.subHeading('The disc is clean');
 
-  const state = path.join(A.runDir, 'relay-state');
+  const state = path.join(A.runDir, 'spirit', 'state');
   if (!fs.existsSync(path.join(state, 'relay.db-journal'))) {
     test.check('no rollback journal left beside relay.db');
   } else {

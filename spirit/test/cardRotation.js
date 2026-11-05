@@ -65,7 +65,7 @@ function everyFileUnder(dir) {
       test.fail('rotate: ' + JSON.stringify([r1, r2]) + ', counters ' + [at0, at1, at2].join(' → '));
     }
     // "Crisis measure, no grace": the old private key must not survive anywhere.
-    const holders = everyFileUnder(path.join(n.home, 'relay-state')).filter(function (f) {
+    const holders = everyFileUnder(path.join(n.home, 'spirit', 'state')).filter(function (f) {
       try { return fs.readFileSync(f, 'utf8').indexOf(oldPrivate) !== -1; } catch (e) { return false; }
     });
     if (!holders.length) {

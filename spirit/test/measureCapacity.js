@@ -369,8 +369,8 @@ async function plantedRelay(memberCount) {
 
   const runDir = path.join(home, 'spirit', 'run');
   plantRun.plantRunTree(runDir);
-  fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
-  fs.cpSync(path.join(home, 'relay-state'), path.join(runDir, 'relay-state'), { recursive: true });
+  fs.rmSync(path.join(runDir, 'spirit', 'state'), { recursive: true, force: true });
+  fs.cpSync(path.join(home, 'spirit', 'state'), path.join(runDir, 'spirit', 'state'), { recursive: true });
   const stamp = buildStamp.fromGit(REPO);
   if (stamp) buildStamp.write(runDir, stamp);
   return { home: home, runDir: runDir, ids: ids };

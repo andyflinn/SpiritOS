@@ -74,8 +74,8 @@ function buildRelayHome() {
   // a test must never start a server on the working directory.
   const runDir = path.join(home, 'spirit', 'run');
   plantRun.plantRunTree(runDir);
-  fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
-  fs.cpSync(path.join(home, 'relay-state'), path.join(runDir, 'relay-state'), { recursive: true });
+  fs.rmSync(path.join(runDir, 'spirit', 'state'), { recursive: true, force: true });
+  fs.cpSync(path.join(home, 'spirit', 'state'), path.join(runDir, 'spirit', 'state'), { recursive: true });
 
   // A COPY IS A TREE, NOT A REPOSITORY, so it cannot answer "which
   // commit am I" by itself — it reported `unknown`, honestly, until this

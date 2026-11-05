@@ -91,7 +91,7 @@ test.subHeading('ONE FILE — the ruling, and what depends on it');
     test.fail('the seal key was not written beside the signing key');
   }
 
-  const strays = fs.readdirSync(path.join(dir, 'relay-state'))
+  const strays = fs.readdirSync(path.join(dir, 'spirit', 'state'))
     .filter(function (f) { return /seal|cipher|box/i.test(f); });
   if (!strays.length) {
     test.check('and no second key file was made — half an identity is a state nothing here knows how to be');

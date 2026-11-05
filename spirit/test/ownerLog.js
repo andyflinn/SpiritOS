@@ -559,7 +559,7 @@ test.subHeading('And the relay still keeps nothing');
     bella.publicKey, '10.0.0.7', 'dog', PHONE);
   box.forgetPeer(L.peer('bert').publicKey);
 
-  const dir = path.join(L.home, 'relay-state');
+  const dir = path.join(L.home, 'spirit', 'state');
   const files = fs.readdirSync(dir).sort();
   // relay.db holds the roll, the invites and the partner roll since cycle 3.
   // pending-owner.json left this list in cycle 3 (Part B): nothing writes

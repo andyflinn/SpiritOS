@@ -277,8 +277,8 @@ function buildRelayHome() {
 
   const runDir = path.join(home, 'spirit', 'run');
   plantRun.plantRunTree(runDir);
-  fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
-  fs.cpSync(path.join(home, 'relay-state'), path.join(runDir, 'relay-state'), { recursive: true });
+  fs.rmSync(path.join(runDir, 'spirit', 'state'), { recursive: true, force: true });
+  fs.cpSync(path.join(home, 'spirit', 'state'), path.join(runDir, 'spirit', 'state'), { recursive: true });
   return {
     runDir: runDir, relayId: relayId, owner: owner,
     token: minted && minted.invite && minted.invite.token,

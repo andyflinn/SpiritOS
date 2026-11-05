@@ -122,7 +122,7 @@ async function makeNode(name, type, port, config, ownerKey) {
   // The owner is written before the restart, as bash/install-units writes it before a relay serves
   // (goal/G16.8): a relay reads its owner once, at start, and no claim can make one.
   if (config || ownerKey) {
-    const dir = path.join(homeOf(id), 'relay-state');
+    const dir = path.join(homeOf(id), 'spirit', 'state');
     fs.mkdirSync(dir, { recursive: true });
     if (config) fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(config));
     if (ownerKey) auth.writeOwner(homeOf(id), ownerKey);

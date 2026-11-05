@@ -60,15 +60,17 @@ function hex12(key) { return crypto.createHash('sha256').update(key).digest('hex
 function plantNode(label, extraConfig) {
   const run = path.join(scratch, label, 'spirit', 'run');
   const rs = path.join(run, 'relay-state');
+  const top = path.join(run, 'spirit', 'state');
+  fs.mkdirSync(top, { recursive: true });
   fs.mkdirSync(path.join(rs, 'process', 'desk'), { recursive: true });
   fs.mkdirSync(path.join(rs, 'process', 'other'), { recursive: true });
   fs.mkdirSync(path.join(rs, 'process', 'backup'), { recursive: true });
   const pub = 'MCowBQYDK2VwAyEA' + crypto.randomBytes(24).toString('base64');
   // A decoy: if the backup read identity.json, node.json would name WRONG.
-  fs.writeFileSync(path.join(rs, 'identity.json'), JSON.stringify({ name: 'WRONG', publicKey: 'WRONG-KEY', privateKey: 'SECRET-' + label }));
-  fs.writeFileSync(path.join(rs, 'relayKeys.json'), JSON.stringify({ key: 'SECRET-RELAY-' + label }));
-  fs.writeFileSync(path.join(rs, 'contacts.json'), '{}');
-  if (extraConfig) fs.writeFileSync(path.join(rs, 'config.json'), JSON.stringify(extraConfig));
+  fs.writeFileSync(path.join(top, 'identity.json'), JSON.stringify({ name: 'WRONG', publicKey: 'WRONG-KEY', privateKey: 'SECRET-' + label }));
+  fs.writeFileSync(path.join(top, 'relayKeys.json'), JSON.stringify({ key: 'SECRET-RELAY-' + label }));
+  fs.writeFileSync(path.join(top, 'contacts.json'), '{}');
+  if (extraConfig) fs.writeFileSync(path.join(top, 'config.json'), JSON.stringify(extraConfig));
   fs.writeFileSync(path.join(rs, 'process', 'desk', 'voice.jsonl'), JSON.stringify({ text: 'first', day: '2026-09-29' }) + '\n');
   fs.writeFileSync(path.join(rs, 'process', 'other', 'state.json'), JSON.stringify({ n: 1 }));
   fs.writeFileSync(path.join(rs, 'process', 'backup', 'own.json'), '{}');

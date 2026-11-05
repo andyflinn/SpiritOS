@@ -94,6 +94,7 @@ async function nodeWith(leftovers, already) {
   const run = path.join(scratch, 'spirit', 'run');
   plantRun.plantRunTree(run);
   fs.rmSync(path.join(run, 'relay-state'), { recursive: true, force: true });
+  fs.rmSync(path.join(run, 'spirit', 'state'), { recursive: true, force: true });
   fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(run, auth.generateIdentity('renameprobe-' + crypto.randomBytes(3).toString('hex')));
   Object.keys(leftovers).forEach(function (rel) { write(path.join(run, 'app', rel), leftovers[rel]); });

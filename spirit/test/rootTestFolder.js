@@ -45,7 +45,7 @@ function testFilesUnder(root) {
     let names = [];
     try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
     for (const d of names) {
-      if (d.name === 'node_modules' || d.name === 'relay-state' || d.name === 'app-state' || d.name === '.git') continue;
+      if (d.name === 'node_modules' || d.name === 'relay-state' || d.name === 'state' || d.name === 'app-state' || d.name === '.git') continue;
       const full = path.join(dir, d.name);
       if (d.isDirectory()) walk(full);
       else if (d.isFile() && /\.js$/.test(d.name) && path.basename(dir) === 'test') out.push(full);

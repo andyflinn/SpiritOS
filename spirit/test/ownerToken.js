@@ -33,6 +33,7 @@ function freshRepo() {
   const run = path.join(root, 'spirit', 'run');
   fs.cpSync(REPO_RUN, run, { recursive: true });
   fs.rmSync(path.join(run, 'relay-state'), { recursive: true, force: true });
+  fs.rmSync(path.join(run, 'spirit', 'state'), { recursive: true, force: true });
   return { root: root, run: run };
 }
 

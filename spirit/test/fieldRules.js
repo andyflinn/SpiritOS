@@ -58,7 +58,7 @@ function walk(dir, out) {
   names.forEach(function (d) {
     const p = path.join(dir, d.name);
     if (d.isDirectory()) {
-      if (d.name === 'node_modules' || d.name === 'relay-state' || d.name === 'brains' || d.name.charAt(0) === '.') return;
+      if (d.name === 'node_modules' || d.name === 'relay-state' || d.name === 'state' || d.name === 'brains' || d.name.charAt(0) === '.') return;
       walk(p, out);
     } else if (/\.(js|html|json)$/.test(d.name)) out.push(p);
   });

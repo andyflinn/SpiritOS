@@ -91,8 +91,8 @@ try {
   const store = require('../run/spirit/nodeStore');
   const s = store.open(nodeHome);
   const { DatabaseSync } = require('node:sqlite');
-  const file = fs.readdirSync(path.join(nodeHome, 'relay-state')).filter(function (f) { return /^node\.db$/.test(f); })[0];
-  const db = new DatabaseSync(path.join(nodeHome, 'relay-state', file), { readOnly: true });
+  const file = fs.readdirSync(path.join(nodeHome, 'spirit', 'state')).filter(function (f) { return /^node\.db$/.test(f); })[0];
+  const db = new DatabaseSync(path.join(nodeHome, 'spirit', 'state', file), { readOnly: true });
   // The relays table went into seen with goal/G40.11; a face would be columns of the relay's row there.
   cols = db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; });
   db.close();

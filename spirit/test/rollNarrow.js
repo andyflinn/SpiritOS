@@ -88,7 +88,7 @@ function walk(dir, out) {
     if (entry.isDirectory()) {
       // node_modules is nobody's code here; relay-state/ is a node's state,
       // not code; brains/ is Andy's own repo (.gitignore says why).
-      if (entry.name === 'node_modules' || entry.name === 'relay-state' || entry.name === 'brains') return;
+      if (entry.name === 'node_modules' || entry.name === 'relay-state' || entry.name === 'state' || entry.name === 'brains') return;
       walk(full, out);
       return;
     }

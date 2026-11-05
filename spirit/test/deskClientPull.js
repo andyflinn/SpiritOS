@@ -135,7 +135,7 @@ async function main() {
   git(clone, ['init', '-q', '--initial-branch=master']);
   git(clone, ['config', 'core.autocrlf', 'false']);
   plantRun.plantRunTree(path.join(clone, 'spirit', 'run'));
-  fs.writeFileSync(path.join(clone, '.gitignore'), 'spirit/run/relay-state/\nspirit/run/app-state/\n');
+  fs.writeFileSync(path.join(clone, '.gitignore'), 'spirit/run/relay-state/\nspirit/run/spirit/state/\nspirit/run/app-state/\n');
   fs.writeFileSync(path.join(clone, 'shared.txt'), 'line one\nline two\n');
   git(clone, ['add', '-A']);
   git(clone, ['commit', '-q', '-m', 'the planted tree']);

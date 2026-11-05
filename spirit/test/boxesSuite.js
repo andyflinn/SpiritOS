@@ -28,7 +28,7 @@ test.startTest('His boxes add up from his own servers, and over-committed is onl
 function world(serverKeys) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-boxes-'));
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
-  const file = path.join(root, 'relay-state', boxes.SERVERS);
+  const file = path.join(root, 'spirit', 'state', boxes.SERVERS);
   if (serverKeys) fs.writeFileSync(file, JSON.stringify({ keys: serverKeys }));
   const b = boxes.createBoxes({ rootDir: root });
   return {

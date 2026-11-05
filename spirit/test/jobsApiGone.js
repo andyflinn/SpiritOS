@@ -34,7 +34,7 @@ function walk(dir, out) {
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   entries.forEach(function (e) {
     // Not code: the desk's shared record of the current goal (its box text) and the vault.
-    if (e.name === 'node_modules' || e.name === '.git' || e.name === 'relay-state' || e.name === 'brains' || e.name === 'currentGoal.json') return;
+    if (e.name === 'node_modules' || e.name === '.git' || e.name === 'relay-state' || e.name === 'state' || e.name === 'brains' || e.name === 'currentGoal.json') return;
     const p = path.join(dir, e.name);
     if (e.isDirectory()) walk(p, out);
     else if (/\.(js|json)$/.test(e.name)) out.push(p);

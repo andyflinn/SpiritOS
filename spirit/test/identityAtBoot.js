@@ -72,7 +72,7 @@ function plantedModule() {
   const run = path.join(scratch, 'spirit', 'run');
   const js = path.join(run, 'spirit');
   fs.mkdirSync(js, { recursive: true });
-  ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN_JS, f), path.join(js, f)); });
+  ['relayAuth.js', 'fieldRules.js', 'shellMove.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN_JS, f), path.join(js, f)); });
   const file = path.join(js, 'relayAuth.js');
 
   let auth = null;
@@ -139,7 +139,7 @@ function plantedModule() {
     test.fail('loadIdentity answered null for a nameless identity with keys');
   }
   fs.mkdirSync(path.join(bare, 'spirit'), { recursive: true });
-  ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN_JS, f), path.join(bare, 'spirit', f)); });
+  ['relayAuth.js', 'fieldRules.js', 'shellMove.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN_JS, f), path.join(bare, 'spirit', f)); });
   freshRequire(path.join(bare, 'spirit', 'relayAuth.js'));
   const keptOnDisc = readIdentity(bare);
   if (planted && keptOnDisc && keptOnDisc.publicKey === planted.publicKey && keptOnDisc.name === os.hostname()) {
@@ -158,6 +158,7 @@ async function bootedNode() {
   const run = path.join(scratch, 'spirit', 'run');
   plantRun.plantRunTree(run);
   fs.rmSync(path.join(run, 'relay-state'), { recursive: true, force: true });
+  fs.rmSync(path.join(run, 'spirit', 'state'), { recursive: true, force: true });
 
   let kid = null;
   async function start() {

@@ -163,7 +163,7 @@ async function ensureNode(name, type, port, config, ownerKey) {
 // at start, and no claim can make one.
 async function withConfig(id, config, ownerKey) {
   if (!config && !ownerKey) return;
-  const dir = path.join(homeOf(id), 'relay-state');
+  const dir = path.join(homeOf(id), 'spirit', 'state');
   fs.mkdirSync(dir, { recursive: true });
   if (config) fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(config));
   if (ownerKey) auth.writeOwner(homeOf(id), ownerKey);

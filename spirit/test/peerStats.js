@@ -211,8 +211,8 @@ test.subHeading('One file per peer, named by peerFile, in the node\'s own state'
 
   // goal/G16.3: under spirit/state/peerStats/, node state the fs gate keeps
   // from every app, and still named by peerFile so the name says whose.
-  if (rel.length === 3 && rel[0] === 'relay-state' && rel[1] === 'peerStats' &&
-      rel[2] === peerFile.fileName(BERT)) {
+  if (rel.length === 4 && rel[0] === 'spirit' && rel[1] === 'state' && rel[2] === 'peerStats' &&
+      rel[3] === peerFile.fileName(BERT)) {
     test.check('a sidecar is spirit/state/peerStats/ plus the name peerFile gives it');
   } else {
     test.fail('path: ' + rel.join('/'));

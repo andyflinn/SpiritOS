@@ -121,7 +121,7 @@ const kids = [];
   const naming = [];
   (function walk(dir) {
     fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-      if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === '.git') return;
+      if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === '.git') return;
       const full = path.join(dir, e.name);
       if (e.isDirectory()) walk(full);
       else if (/\.js$/.test(e.name) && /removeWhenDone/.test(fs.readFileSync(full, 'utf8'))) naming.push(path.relative(RUN, full).split(path.sep).join('/'));

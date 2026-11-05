@@ -74,7 +74,7 @@ test.subHeading('The file and its directory are written tight at creation');
 
   const file = path.join(dir, 'spirit', 'state', 'identity.json');
   const fileMode = fs.statSync(file).mode & 0o777;
-  const dirMode = fs.statSync(path.join(dir, 'relay-state')).mode & 0o777;
+  const dirMode = fs.statSync(path.join(dir, 'spirit', 'state')).mode & 0o777;
 
   if (EXPRESSES_MODES) {
     if (fileMode === 0o600) {
@@ -83,9 +83,9 @@ test.subHeading('The file and its directory are written tight at creation');
       test.fail('identity.json is ' + fileMode.toString(8) + ', not 600');
     }
     if (dirMode === 0o700) {
-      test.check('and relay-state/ is 700, so the file cannot be reached by listing the directory');
+      test.check('and spirit/state/ is 700, so the file cannot be reached by listing the directory');
     } else {
-      test.fail('relay-state/ is ' + dirMode.toString(8) + ', not 700');
+      test.fail('spirit/state/ is ' + dirMode.toString(8) + ', not 700');
     }
   } else {
     // NOT A SKIP. The assertion is that the identity was written and the

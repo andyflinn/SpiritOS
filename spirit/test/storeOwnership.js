@@ -88,7 +88,7 @@ const RETIRED = [
 function filesIn(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
     if (e.isDirectory()) {
-      if (e.name === 'node_modules') return;
+      if (e.name === 'node_modules' || e.name === 'test') return;
       filesIn(path.join(dir, e.name), out);
       return;
     }

@@ -92,8 +92,8 @@ function buildRelay(memberNames) {
 function plant(w, config) {
   const runDir = path.join(w.home, 'spirit', 'run');
   plantRun.plantRunTree(runDir);
-  fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
-  fs.cpSync(path.join(w.home, 'relay-state'), path.join(runDir, 'relay-state'),
+  fs.rmSync(path.join(runDir, 'spirit', 'state'), { recursive: true, force: true });
+  fs.cpSync(path.join(w.home, 'spirit', 'state'), path.join(runDir, 'spirit', 'state'),
     { recursive: true });
   if (config) {
     fs.writeFileSync(path.join(runDir, 'spirit', 'state', 'config.json'), JSON.stringify(config));

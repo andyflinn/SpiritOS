@@ -20,7 +20,7 @@ const relayStore = require('../run/spirit/relayStore');
 test.startTest('The one-time import — JSON to relay.db, and never again');
 
 const H = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-import-'));
-const state = path.join(H, 'relay-state');
+const state = path.join(H, 'spirit', 'state');
 fs.mkdirSync(state, { recursive: true });
 
 // The shape spirit-3 wrote, including what the old readers tolerated: a
@@ -86,7 +86,7 @@ if (names.indexOf('routingTable.json.imported') !== -1 && names.indexOf('invites
     names.indexOf('routingTable.json') === -1 && names.indexOf('invites.json') === -1) {
   test.check('both files renamed *.imported — nothing deleted, nothing left to import');
 } else {
-  test.fail('relay-state holds: ' + names.join(', '));
+  test.fail('spirit/state holds: ' + names.join(', '));
 }
 
 relayStore.closeAll();

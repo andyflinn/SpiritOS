@@ -227,7 +227,7 @@ if (threw && again.members.get('KX') === null) {
 }
 
 const empty = home();
-if (relayStore.openReadOnly(empty) === null && !fs.existsSync(path.join(empty, 'relay-state'))) {
+if (relayStore.openReadOnly(empty) === null && !fs.existsSync(path.join(empty, 'spirit', 'state'))) {
   test.check('and dumping a box with no relay.db creates nothing');
 } else {
   test.fail('openReadOnly created state on an empty home');

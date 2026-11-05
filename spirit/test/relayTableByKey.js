@@ -159,7 +159,7 @@ test.subHeading('1. no relays table: a relay is a row of the one table, keyed by
 test.subHeading('3. the first boot moves the old files into the table and deletes them; 4. a second boot changes nothing');
 {
   const root = freshRoot('import');
-  const rs = path.join(root, 'relay-state');
+  const rs = path.join(root, 'spirit', 'state');
   fs.writeFileSync(path.join(rs, 'relays.json'), JSON.stringify([{ label: 'lab', url: LAB.url + '/' }, { label: 'never-reached', url: NOPIN }], null, 2));
   fs.writeFileSync(path.join(rs, 'relayKeys.json'), JSON.stringify({
     'http://127.0.0.1:4100': { publicKey: LAB.key, firstSeen: '2026-03-01T00:00:00.000Z', acceptedAt: '2026-03-02T00:00:00.000Z' },

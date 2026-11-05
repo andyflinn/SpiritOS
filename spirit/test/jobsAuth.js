@@ -57,7 +57,7 @@ fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
 // The fake's node.db survives between runs; a second run must not find
 // its own rows (claude-windows, building this: "already-granted").
 ['node.db', 'node.db-wal', 'node.db-shm'].forEach(function (f) {
-  try { fs.unlinkSync(path.join(root, 'relay-state', f)); } catch (e) { /* first run */ }
+  try { fs.unlinkSync(path.join(root, 'spirit', 'state', f)); } catch (e) { /* first run */ }
 });
 // One served app, so a grant has a live path to take: the desk server.
 // The desk server runs: the copied tree's manifest says home (goal/G30.20).

@@ -60,7 +60,7 @@ test.startTest('Relay route gates (relay.js / relayAuth.js)');
 
 const targets = setupRelayFakes();
 const relayNode = targets.relay;
-const RELAY_STATE = path.join(relayNode, 'relay-state');
+const RELAY_STATE = path.join(relayNode, 'spirit', 'state');
 const createRelay = require(path.join(relayNode, 'spirit', 'relay.js')).createRelay;
 
 // createRelay() reads both files at construction, so each phase below gets

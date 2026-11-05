@@ -69,7 +69,7 @@ function there(p) { try { fs.statSync(p); return true; } catch (e) { return fals
 function runFiles(rel, into) {
   const abs = path.join(RUN, rel);
   fs.readdirSync(abs).forEach(function (name) {
-    if (name === 'node_modules' || name === 'relay-state') return;
+    if (name === 'node_modules' || name === 'relay-state' || name === 'state') return;
     const sub = path.join(abs, name);
     let st; try { st = fs.statSync(sub); } catch (e) { return; }
     if (st.isDirectory()) runFiles(path.join(rel, name), into);

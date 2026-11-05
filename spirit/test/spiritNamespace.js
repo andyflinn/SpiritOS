@@ -28,7 +28,7 @@ function walk(dir, out) {
   try { es = fs.readdirSync(path.join(RUN, dir), { withFileTypes: true }); } catch (e) { return out; }
   es.forEach(function (e) {
     const rel = dir ? dir + '/' + e.name : e.name;
-    if (e.isDirectory()) { if (e.name !== 'node_modules' && e.name !== 'relay-state' && e.name !== '.git') walk(rel, out); }
+    if (e.isDirectory()) { if (e.name !== 'node_modules' && e.name !== 'relay-state' && e.name !== 'state' && e.name !== '.git') walk(rel, out); }
     else if (/\.(js|html)$/.test(e.name)) out.push(rel);
   });
   return out;

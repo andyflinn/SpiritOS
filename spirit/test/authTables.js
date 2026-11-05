@@ -44,7 +44,7 @@ fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'), JSON.stringi
 fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
 // The fake's node.db survives between runs; this suite plants exact rows.
 ['node.db', 'node.db-wal', 'node.db-shm'].forEach(function (f) {
-  try { fs.unlinkSync(path.join(root, 'relay-state', f)); } catch (e) { /* first run */ }
+  try { fs.unlinkSync(path.join(root, 'spirit', 'state', f)); } catch (e) { /* first run */ }
 });
 // The desk server runs: the copied tree's manifest says home (goal/G30.20).
 fs.writeFileSync(path.join(root, 'spirit', 'state', 'contacts.json'), JSON.stringify([{ publicKey: KEYA, myLabel: 'alice' }]), 'utf8');

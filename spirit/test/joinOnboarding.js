@@ -86,7 +86,7 @@ async function main() {
   const row = rollOf(home).filter(function (r) { return r.publicKey === ann.publicKey; })[0] || {};
   if (done.ok === true && done.status === 201 && row.publicLabel === 'ann.smith') test.check('the right code under ann\'s key seats her at once, as ann.smith');
   else test.fail(OWED + 'joinConfirm answered ' + short(done) + ', row ' + short(row));
-  const dump = (function () { try { return JSON.stringify(rollOf(home)) + fs.readdirSync(path.join(home, 'relay-state')).join(','); } catch (e) { return ''; } }());
+  const dump = (function () { try { return JSON.stringify(rollOf(home)) + fs.readdirSync(path.join(home, 'spirit', 'state')).join(','); } catch (e) { return ''; } }());
   if (dump.indexOf('example.org') === -1) test.check('the email is published nowhere in the roll');
   else test.fail(OWED + 'the roll holds the email');
   const twice = await call('joinConfirm', [ann.publicKey, c2]);

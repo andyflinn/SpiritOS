@@ -132,11 +132,11 @@ test.startTest('goal/G19.6: the git helpers touch only what they put there thems
   {
     const w = world();
     const clone = w.ours;
-    fs.writeFileSync(path.join(clone, '.gitignore'), 'spirit/run/relay-state/\n');
+    fs.writeFileSync(path.join(clone, '.gitignore'), 'spirit/run/relay-state/\nspirit/run/spirit/state/\n');
     commitFile(clone, 'tracked.txt', 'tracked before\n', 'a tracked file');
     git(clone, ['push', '-q', 'origin', 'master']);
     // The traffic log publishData reads: the table, no rows.
-    const dbDir = path.join(clone, 'spirit', 'run', 'relay-state');
+    const dbDir = path.join(clone, 'spirit', 'run', 'spirit', 'state');
     fs.mkdirSync(dbDir, { recursive: true });
     const { DatabaseSync } = require('node:sqlite');
     const tdb = new DatabaseSync(path.join(dbDir, 'node.db'));
