@@ -131,6 +131,17 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
     const asWords = Object.keys(got.keys).filter(function (k) { return got.keys[k] === 'function' && !/[A-Z]/.test(k); });
     ok(!asWords.length, 'every helper has a capital, so none is a word', 'helpers that are valid words, ' + asWords.length + ': ' + asWords.join(', '));
 
+    // Andy: "the helpes must not be words there either, this goes for all spirit.app contained objects."
+    test.subHeading('spirit.app: no helper is a word, on it or on an app it holds');
+    const onApp = await ask('(function () { var S = window.spirit; return Promise.all(["spirit/app/appTiles.js", "spirit/app/monitor/monitor.js"].map(function (p) { return Promise.resolve(S.require(p)).then(null, function () { return null; }); })).then(function () {' +
+      ' var out = { keys: Object.keys(S.app || {}), words: [] };' +
+      ' out.keys.forEach(function (k) { var v = S.app[k]; if (typeof v === "function" && !/[A-Z]/.test(k)) out.words.push(k);' +
+      ' else if (k !== "FS" && v && typeof v === "object") Object.keys(v).forEach(function (h) { if (typeof v[h] === "function" && !/[A-Z]/.test(h)) out.words.push(k + "." + h); }); });' +
+      ' out.apps = out.keys.filter(function (k) { return S.app[k] && typeof S.app[k].createApp === "function"; });' +
+      ' return JSON.stringify(out); }); })()');
+    ok(Array.isArray(onApp.apps) && onApp.apps.indexOf('appTiles') !== -1 && onApp.apps.indexOf('monitor') !== -1, 'appTiles and monitor stand there, each with createApp', 'on spirit.app: ' + short(onApp));
+    ok(Array.isArray(onApp.words) && !onApp.words.length, 'and no helper there is a word', 'helpers on spirit.app that are words: ' + short(onApp.words || onApp));
+
     // Q5, "Does spirit.data.<name>.cache hold a level per node, as the tree does today?", Andy: "yes."
     test.subHeading('Q5: .cache holds a level per node');
     await H.until(function () { return page.evaluate('(function () { var a = (window.spirit.data || {}).app; var c = a && a.cache && a.cache[window.spirit.data.homeNode()]; return !!(c && c.apps && Object.keys(c.apps).length); })()').then(Boolean); }, 8000).catch(function () { return false; });
