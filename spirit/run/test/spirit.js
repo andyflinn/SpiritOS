@@ -97,7 +97,7 @@ function fakeNode() {
 function scratchRoot(port) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-root-'));
   fs.copyFileSync(path.join(RUN, 'spirit.js'), path.join(root, 'spirit.js'));
-  fs.cpSync(path.join(RUN, 'spirit'), path.join(root, 'spirit'), { recursive: true });
+  fs.cpSync(path.join(RUN, 'spirit'), path.join(root, 'spirit'), { recursive: true, filter: function (src) { return src !== path.join(RUN, 'spirit', 'state'); } });
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   if (port) fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: port }));
   return root;

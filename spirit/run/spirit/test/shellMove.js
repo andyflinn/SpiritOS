@@ -9,7 +9,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawn, execSync } = require('child_process');
+const { spawn, spawnSync, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
@@ -149,7 +149,7 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/ at 
     test.subHeading('the box: "stopping if that fails", "a failed move cannot bring the node up as someone else"');
     const b = scratch();
     oldLayout(b.run, { 'identity.json': '{"publicKey":"broken","privateKey":"not a key"}' });
-    execSync(process.execPath + ' -e "require(\'./spirit/relayAuth.js\')"', { cwd: b.run, stdio: 'ignore' });
+    spawnSync(process.execPath, ['-e', 'require("./spirit/relayAuth.js")'], { cwd: b.run, stdio: 'ignore' });
     ok(!fs.existsSync(path.join(b.run, 'spirit', 'state', 'identity.json')), 'a process loading relayAuth before the boot mints no second key', 'relayAuth minted a key while the old one waits to move');
     const port = await freePort();
     const bad = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: b.run, stdio: 'ignore' }); live.push(bad);

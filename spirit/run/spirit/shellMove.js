@@ -171,4 +171,7 @@ function moveRelayState(rootDir, say) {
   return { moved: moved };
 }
 
-module.exports = { moveLeftovers: moveLeftovers, moveAppState: moveAppState, moveRelayState: moveRelayState, LEGACY_APP_DIR: LEGACY_APP_DIR, LEGACY_APP_STATE_DIR: LEGACY_APP_STATE_DIR };
+// Whether this tree's key still waits at the old place for the boot's move (relayAuth asks before it would mint one).
+function keyWaitsToMove(rootDir) { return fs.existsSync(path.join(rootDir, 'relay-state', 'identity.json')); }
+
+module.exports = { moveLeftovers: moveLeftovers, moveAppState: moveAppState, moveRelayState: moveRelayState, keyWaitsToMove: keyWaitsToMove, LEGACY_APP_DIR: LEGACY_APP_DIR, LEGACY_APP_STATE_DIR: LEGACY_APP_STATE_DIR };

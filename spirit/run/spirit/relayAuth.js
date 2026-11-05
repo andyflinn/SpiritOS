@@ -775,5 +775,5 @@ module.exports = {
 // identity next, not by a module that would not load.
 // NOT WHILE THE OLD KEY WAITS TO MOVE (goal/G43.8): a process loading this file after a pull and before the node's boot would
 // mint a second key, and the boot's move then stops the node rather than choose one (spirit/shellMove.js).
-try { if (!fs.existsSync(path.resolve(__dirname, '..', 'relay-state', 'identity.json'))) ensureIdentity(path.resolve(__dirname, '..')); }
+try { if (!require('./shellMove').keyWaitsToMove(path.resolve(__dirname, '..'))) ensureIdentity(path.resolve(__dirname, '..')); }
 catch (e) { /* see above: never out of require */ }

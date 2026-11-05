@@ -21,7 +21,7 @@ test.startTest('fileSystem.js: its gates refuse a path in any case');
 const CLOSED_READ = [
   ['spirit/state/identity.json', 'the node\'s private key'],
   ['process/js/desk/spirit/state/identity.json', 'an app server\'s private key, at depth'],
-  ['process/js/desk/relay-state/identity.json', 'a private key under an old relay-state, at depth'],
+  ['process/js/desk/relay-state/new.json', 'a file under an old relay-state, at depth'],
   ['spirit/server.js', 'a server script'],
   ['spirit/DEBUG/garbageArguments.js', 'the DEBUG folder'],
   ['shell/info/info.js.sidecar.json', 'a sidecar\'s own path'],
