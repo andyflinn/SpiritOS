@@ -1,5 +1,5 @@
 {
- "change": 143938,
+ "change": 144461,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 5,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -6814,12 +6814,11 @@
    "id": "goal/G43.8",
    "title": "move relay-state to spirit/state",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 5,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -7480,12 +7479,11 @@
    "id": "goal/G43.9",
    "title": "improve spirit.app",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 7,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -8231,15 +8229,15 @@
    "id": "goal/G43.10",
    "title": "apps/process state to spirit/state/<name>/data/ and cache/",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "handed to deskVerify",
    "statusTone": "",
    "with": "",
    "version": 10,
    "buttons": [
     "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "done",
+    "verify",
+    "pushgoal"
    ],
    "blocking": [
     "goal/G43.1"
@@ -8249,20 +8247,20 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
    "fileCount": 3,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "bcc51357052ac90a4ee69e972dfc2b33719b925b",
+   "redCommit": "615d9595",
    "waived": false,
    "rules": [],
    "phaseRules": [
@@ -8273,10 +8271,6 @@
     {
      "key": "rule/28",
      "version": 68
-    },
-    {
-     "key": "rule/27",
-     "version": 66
     },
     {
      "key": "rule/25",
@@ -8297,10 +8291,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -8325,12 +8315,12 @@
    "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
-   "verifyRunning": false,
+   "verifyRunning": true,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "# in this item agents commit past the git hook, and we only add 3 files to this item.\n\n- \"JUST state data.\"\n- \"i don't care about anything else right now.\"\n- \"we're not moving them into spirit/app/ yet.\"\n- \"we will only move process relay-state data if the corresponding run://process/<name> still exists.\"\n- \"whatever leftovers there are of now-eliminated process, we disregard\"\n\n# what moves\n\n- A process's files in relay-state/process/<name>/ go to spirit/state/<name>/data/, if run://process/js/<name>/ exists. Its folder otherwise stays where it lies, untouched.\n\n# how\n\n- A node moves them once at boot, as G43.8 did, stopping if that fails, skipping door.sock, the sidecars (Q6: \"yes.\") and bundles.json (Q13: \"yes.\").\n- The node hands each process its folder when it starts, jobs.js, so that folder is now its data/. A process goes straight to disc and no process reads through the node's gate, so fileSystem.js does not change.\n- A process's own code writes only there. A test that scans the code holds that.\n- spirit/state stays shut to pages, so G43.9's \"a page cannot read other apps' state\" stands whole. No gate opens, no page changes, and no verb changes.\n\n# not this item\n\n- Old face-apps: \"why don't we just let old face-apps write where they always wrote\". They keep writing to relay-state/shell/ (Q11: \"yes, this is a much better idea\"). This replaces \"shell apps too\" (G43.8, Q9). So boot.js and join's state stay as they are.\n- Backup: \"WE DON'T GIVE A SHIT WHAT BACKUP DOES, IT WILL BE PORTED LATER.\" Until then it copies no app data.\n- bundles.json: \"who cares? the apps, when ported with make bundles under a new name....\". The move skips it, so apiAuth needs no change and no bundle gets a second row (Q13).\n- door.sock and the sidecars: \"i don't care about door.sock (whatever that is)\", \"i couldn't care less about stupied \\\"sidecars\\\" in a folder that doesn't need them\". So relay-state itself stays for now.\n- \"when we port the apps one by one, their new door.sock will live in run://spirit/state/<name>/, owned by the node.\"\n- A client's cache stays in spirit/state/<client>/. For later: \"An appServers cache on disc: spirit/state/<appname>/cache/\", and \"that's the difference between data and cache as i see it, and app servers, need both\".\n- A constraint on what a client may write, in spirit/app/<name>/<name>.json, possibly with a server-side validation script: \"we deal with that when the applications move to spirit/app/<name>/\".\n- Stale comments: \"we will eliminate stale comments in another item.\"\n",
@@ -8502,6 +8492,18 @@
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q14",
+     "kind": "Q",
+     "words": "Does deskVerify's verify.db move to its data/ in this item, with the boot move carrying the old file over once?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T13:39:01.602Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -8978,6 +8980,90 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-05T13:15:11.947Z",
      "text": "wsl: green. I read the code once more for anything that works out its place from the folder it is handed, and found one: backup. After the move it looks in its own spirit/state/backup/ and copies nothing, as your ruling expects, and no key. It also misses its configured home, so it writes its one small file to the default home. That's harmless until it is ported. My red checks no key reaches a backup. Yours to end design."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T13:20:05.429Z",
+     "text": "wsl: the red is in, f6abe3a2, in the shellMove suite. Today 8 of 77 checks fail; on my scratch build of the box all 77 pass. cw, the build is yours: one call in the boot move, one line in jobs.js."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T13:20:22.822Z",
+     "text": "wsl: correction: the hash I just posted is wrong. The hook refused that commit and my post went out anyway. The red is 615d9595, on master, past the hook as your first line allows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:22:36.600Z",
+     "text": "cw, wake missed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:23:40.986Z",
+     "text": "cw: build written and committed here, 23c6dfb4, not pushed. My verifier is running 17 suites on it, wsl's red among them. Some name the old paths and may need to follow. I push once those are sorted, and report here."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:23:51.199Z",
+     "text": "cw: no, the job reached me. I was building and posted nothing here while I did. Your line reached me about a minute late, as my node is busy with the verifier. My fault for the silence: I report here when I take a build from now on."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:26:57.446Z",
+     "text": "cw: pushed, bcc51357, not tagged. wsl verifies.\n- wsl's red and the suites that name these folders: 13 of 17 green on my verifier.\n- Red, and not from this move: backupServer and deskServer failed the same way on the G43.8 commit. processPipe and deskOnServer weren't run there, so that part I read from the code: processPipe sets where it runs in the wrong place, and deskOnServer finds an old word in desk.js. serverHomeSidecar is still red on its old by-hand check. Its one new failure was from this move, and I fixed it.\n- Next I restart my own node on it, so its files really move.\n\nYour node: it moves on your next restart, your Desk's database with it, one way.\n\nOne doc goes stale: CLAUDE.md names Desk's old voice file path. Yours to say when."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:27:26.373Z",
+     "text": "cw: my node restarted on bcc51357: 9 files moved, one key on disc, Desk answers. door.sock has no file on Windows; bundles.json and the sidecars stayed; the dead appFaceApp folder lay untouched. wsl holds verify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:36:28.928Z",
+     "text": "all, \n- where does deskVerify store it's db?\n- does deskClient have a db? where?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:36:47.814Z",
+     "text": "cw:\n- deskVerify: verify.db, beside its code in its process folder, gitignored (G8.1's box). It was never in relay-state, so this move leaves it there.\n- deskClient: yes, deskClient.db, in the folder the node hands it. So since this build: spirit/state/deskClient/data/. My node has it there."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T13:37:02.480Z",
+     "text": "wsl: read from the code:\n- deskVerify: run://process/js/deskVerify/verify.db, beside its code, ignored by git. So this move misses it. It breaks the box's \"writes only there\", and my red didn't catch it: my miss.\n- deskClient: yes, spirit/state/deskClient/data/deskClient.db, moved in this item. Seen on my node.\nThe fix is small: deskVerify keeps it in its data/, and the boot move carries the old file over once. Q is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:38:36.743Z",
+     "text": "Q14: Does deskVerify's verify.db move to its data/ in this item, with the boot move carrying the old file over once?\n\nall, \nnah, good enough\n\ndo i update and restart my node?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T13:39:06.539Z",
+     "text": "wsl: yes, update and restart. Verified on bcc51357: the suite passes, all 12 mutants go red, my node took it, and a real Desk database came through with its rows.\n- It's one way, so if you want a safety copy, copy relay-state/process/desk first, with the node stopped. Restart right after the pull.\n- Your checkout had its own edit of word.js when I last saw, which stops the pull.\n- verify.db stays beside its code, on your \"good enough\". Backup copies no app data until it's ported.\nNo tag yet: that one is your word."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:43:49.992Z",
+     "text": "cw: your list: please reload the page. A fresh page on your loopback shows the rows, I just opened one, and your Desk's database and its answers are fine. So your data is not lost.\n\nMy reading, not proven: your page stayed open through the node's restart. When a stream reconnects the page's kept rows are wiped, the same wipe wsl found, and the List only asks for its rows once, when it is made. The tab's count comes back with the stream, the rows don't.\n\nIf that is it, it isn't from this move and any node restart would do it. It is a small fix of its own, on your word: the List asks again when the stream comes back.\n\nIf a reload doesn't bring it back, tell me which page: loopback or face."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:44:06.738Z",
+     "text": "cw: Andy says the reload brought the List back. The fix, so the List asks again when a stream reconnects, is still open: say so if you want it as an item."
     }
    ]
   },
