@@ -1,12 +1,13 @@
 // spirit/run/spirit/element/icons/listElement.js
-// THE ICONS LIST, A DROP-IN SHELL ELEMENT (goal/G30.21): the Icons app's set (relay-state/shell/icons/iconSet.json, else shell/json/iconSet.json, each glyph with
+// THE ICONS LIST, A DROP-IN SHELL ELEMENT (goal/G30.21): the system set (spirit/iconSet.json, each glyph with
 // the keywords it is found by) on the standard list-tool (spirit/element/probabilitySearch.js), each row an iconElement. The
 // Icons app draws it as a pane; the Apps panel's icon field as a dropdown. Words are matched against the glyph and its
 // keywords. A
 // pick hands over the glyph itself, never a key into a table.
 //
-// No data.js: the set is one file. It is read once, and again when the Files cache says it changed.
+// No data.js: the set is one file, a constant, read once by the page (below).
 //
+//   set() -> the set, { glyph: [keywords] }, as the page holds it; the icon selector offers the same one
 //   create(host, opts) -> the list (value, row, words(), refresh(), redraw(), destroy(), reload())
 //     opts.api           the app's shell api (verb), to read the set
 //     opts.face          'pane' or 'dropdown'
@@ -18,29 +19,45 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   // goal/G41.23: each icon it lists is the icon element (spirit/element/icon.js), which its rows paint through.
   if (window.spirit.require) ['spirit/element/icons/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/icon.js'].forEach(function (p) { window.spirit.require(p); });
-  // The owner's own set, out of git; the system set until he has one (goal/G40.8, shell/icons/icons.js says why).
-  var SET = 'relay-state/shell/icons/iconSet.json';
-  var SYSTEM_SET = 'shell/json/iconSet.json';
+  // Andy, goal/G43.11: "run://spirit/iconSet.json IS the system set now."
+  var SET = 'spirit/iconSet.json';
 
-  // THE ICON SET IN spirit.data (goal/G41.28; Andy, box v15: "If its rows are NOT cached in the proper place, with the shells
-  // one and only spirit.data object, then that must be fixed, too."): kept by the fs family's cache manager, the set
-  // being a file the family serves (spirit.data.fs.data.icons, glyph -> its row), loaded with this element. A set read again
-  // replaces it whole: a glyph the set no longer has leaves it.
+  // Loaded with this element for the Icons app's panel, which follows spirit.data.fs.data.icons until its own item.
   window.spirit.cacheManager('fs');
-  function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
-  function keepSet(set) { var F = fsReads(); if (F) F.icons.keep(set); }
+
+  // THE SET IS A CONSTANT (goal/G43.11; Andy: "we make it a constant, that way i cannot change, and leave code that reads it
+  // hanging"). The page reads the file once and holds it here, where a stream connecting does not wipe it: an exception to
+  // goal/G41.28's "the shells one and only spirit.data object", for this constant. Andy's commit shows after a page reload.
+  // A read that is refused is not kept, so a face that gets its star can read it later.
+  var held = null;
+  var reading = null;
+  function readSet() {
+    if (held) return Promise.resolve(held);
+    if (reading) return reading;
+    // Through the spirit object (goal/G32.2).
+    reading = spirit.ready.then(function (s) { return s.fs.loadFile(SET); }).then(function (text) {
+      reading = null;
+      var set = JSON.parse(text);
+      if (!set || typeof set !== 'object') return {};
+      held = set;
+      return held;
+    }).catch(function () { reading = null; return {}; });
+    return reading;
+  }
+  function rowsOf(set) {
+    return Object.keys(set).map(function (g) { return { key: g, glyph: g, keywords: Array.isArray(set[g]) ? set[g] : [] }; });
+  }
 
   function create(host, opts) {
     var o = opts || {};
     var list = null;
+    var rows = [];
     function reload() {
-      // Through the spirit object (goal/G32.2).
-      return spirit.ready.then(function (s) { return s.fs.loadFile(SET).then(function (own) { return own != null ? own : s.fs.loadFile(SYSTEM_SET); }); }).then(function (text) {
-        var set = {};
-        try { set = JSON.parse(text || '{}'); } catch (e) { set = {}; }
-        keepSet(set);
+      return readSet().then(function (set) {
+        rows = rowsOf(set);
+        if (list) list.redraw();
         return set;
-      }, function () { keepSet({}); return {}; });
+      });
     }
     list = E.probabilitySearch.create(host, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
@@ -50,8 +67,7 @@
       placeholder: o.placeholder || 'choose an icon…',
       all: o.all,
       name: function (row) { return String(row.glyph || '') + ' ' + String((row.keywords || [])[0] || ''); },
-      // A view of the icon set's branch: what keepSet writes, it draws.
-      data: fsReads().icons.branch,
+      rows: function () { return rows; },
       columns: [
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },
@@ -61,14 +77,10 @@
       details: typeof o.details === 'function' ? function (row, key) { o.details(row, key); } : undefined,
       empty: o.empty || 'No icon matches.',
     });
-    // The set written again (by the Icons app, or anyone): read again.
-    var unwatch = fsReads() ? fsReads().watchFile(SET, function () { reload(); }) : null;
-    var destroy = list.destroy;
-    list.destroy = function () { if (typeof unwatch === 'function') unwatch(); destroy(); };
     list.reload = reload;
     reload();
     return list;
   }
 
-  E.iconList = { create: create, SET: SET };
+  E.iconList = { create: create, set: readSet, SET: SET };
 }());
