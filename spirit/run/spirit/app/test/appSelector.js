@@ -47,6 +47,8 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const detail = await until(function () { return chrome.evaluate('!!(spirit.elements.appDetail) && document.body.innerText.split(' + JSON.stringify(identity.label) + ').length > 2'); }, 3000);
     ok(detail, 'a press shows that app\'s detail', 'a press showed no detail');
 
+    await chrome.evaluate('(function () { var c = document.querySelector("#under-test .app-container-close"); if (c) c.click(); return !!c; }())');
+
     // THE WORDS.
     await chrome.evaluate('(function () { var i = document.querySelector("#under-test input"); if (!i) return; i.value = "zzqqxxvvkk"; i.dispatchEvent(new Event("input", { bubbles: true })); }())');
     const ranked = await until(function () { return chrome.evaluate('(function () { var b = document.querySelector("#under-test .list-rank div div"); return !!b && b.style.width === "0%"; }())'); }, 4000);
@@ -62,8 +64,10 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const follows = await until(function () { return text().then(function (t) { return t.indexOf('Changed On Disk') !== -1; }); }, 8000);
     ok(follows, 'a change on the disk paints on the page, no reload', 'the row kept its old label after the disk changed');
     // THE DETAIL OPEN IS PAINTED TOO (Andy, G41.32: "wherever it's visible"): it is the row element's own watch that does it, which no list redraw covers.
-    const both = await until(function () { return text().then(function (t) { return t.split('Changed On Disk').length > 2; }); }, 8000);
+    await chrome.evaluate('(function () { var all = document.querySelectorAll("#under-test tr, #under-test .list-row"); for (var i = 0; i < all.length; i++) if (String(all[i].textContent).indexOf("Changed On Disk") !== -1) { all[i].click(); return true; } return false; }())');
+    const both = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container-head"); return !!h && String(h.textContent).indexOf("Changed On Disk") !== -1; }())'); }, 8000);
     ok(both, 'the open detail paints the change as well', 'the open detail kept its old label: ' + short(await text()));
+    await chrome.evaluate('(function () { var c = document.querySelector("#under-test .app-container-close"); if (c) c.click(); return !!c; }())');
 
     const empty = await chrome.evaluate('(function () { window.sel.destroy(); return document.getElementById("under-test").children.length === 0; }())');
     ok(empty === true, 'destroy empties its container', 'destroy left its container with ' + short(await text()));
@@ -100,10 +104,41 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     await chrome.evaluate('spirit.app.searchApp({ q: "" }).then(function (got) { spirit.data.seatRows(spirit.data.app.data.branch, got.items); return true; })');
     ok(await chrome.evaluate('(function () { var r = spirit.data.app.data.rows().monitor; return !!r && r.active === true; }())') === true, 'a search seated over it does not lose active', 'after a search the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().monitor)')));
 
-    test.subHeading('the box: "pane shows the detail": a pick in the pane launches nothing');
-    await chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; if (r) r.click(); return true; }())');
-    await chrome.evaluate('new Promise(function (r) { setTimeout(function () { r(true); }, 500); })');
-    ok(await chrome.evaluate('!document.querySelector("#faces .app-container")') === true, 'no app opens', 'a pick in the pane opened the app');
+    // Andy: "the detail panel needs to open on top of the whole container", and "# info the detail panel, displayed based on spirit/app/<name>/<name>.json".
+    test.subHeading('the panel: over the whole container, from spirit/app/<name>/<name>.json');
+    const openPanel = function () { return chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; if (r) r.click(); return !!r; }())'); };
+    const panel = 'document.querySelector("#faces .app-container")';
+    await openPanel();
+    const up = await until(function () { return chrome.evaluate('!!' + panel); }, 5000);
+    ok(up, 'a pick in the pane opens it', 'a pick in the pane opened no panel: ' + short(await inFaces()));
+    const covers = await chrome.evaluate('(function () { var p = ' + panel + '; if (!p) return "no panel"; var a = p.getBoundingClientRect(), b = document.getElementById("faces").getBoundingClientRect(); if (Math.abs(a.width - b.width) > 2 || Math.abs(a.height - b.height) > 2) return JSON.stringify([a.width, a.height, b.width, b.height]); var r = ' + rowOf(monitorLabel) + '; return r && r.offsetParent !== null ? "the list still shows" : "covers"; }())');
+    ok(covers === 'covers', 'it covers the whole container, and the list is out of sight', 'the panel: ' + short(covers));
+    const panelText = function () { return chrome.evaluate('String((' + panel + ' || {}).innerText || "")'); };
+    const head = await chrome.evaluate('(function () { var h = document.querySelector("#faces .app-container-head"); return h ? h.textContent : ""; }())');
+    ok(head.indexOf(monitorLabel) !== -1 && head.indexOf('🦻') !== -1 || (head.indexOf(monitorLabel) !== -1 && await chrome.evaluate('!!document.querySelector("#faces .app-container-head .icon *, #faces .app-container-head svg, #faces .app-container-head img")')), '"titlebar: icon, label"', 'the titlebar: ' + short(head));
+    const line = function (t, q) { const m = new RegExp(q + '\\??\\W*(yes|no)\\b', 'i').exec(t); return m ? m[1].toLowerCase() : ''; };
+    const first = await panelText();
+    // spirit/app/monitor/monitor.json: shell.mount true, node.mount false, shell.true false.
+    ok(line(first, 'mounts a face') === 'yes', '"mounts a face?" yes, its shell.mount', 'mounts a face: ' + short(first));
+    ok(line(first, 'mounts a server') === 'no', '"mounts a server?" no, its node.mount', 'mounts a server: ' + short(first));
+    ok(line(first, 'can mount as shell') === 'no', '"can mount as shell?" no, its shell."true"', 'can mount as shell: ' + short(first));
+    const own = await chrome.evaluate('(function () { var p = ' + panel + '; if (!p) return "none"; var b = [].filter.call(p.querySelectorAll("button"), function (x) { return !x.classList.contains("app-container-close"); }); return b.length === 1 ? b[0].textContent.trim() : "buttons: " + b.length; }())');
+    ok(/^deactivate$/i.test(own), 'the box: "pane shows the detail with its button": Deactivate', 'the panel\'s button: ' + short(own));
+    ok(!/Uptime|waiting/i.test(first), 'the app itself does not open', 'the panel launched the app: ' + short(first));
+    await chrome.evaluate('(function () { var c = document.querySelector("#faces .app-container-close"); if (c) c.click(); return !!c; }())');
+    const backAgain = await until(function () { return chrome.evaluate('!' + panel + ' && (function () { var r = ' + rowOf(monitorLabel) + '; return !!r && r.offsetParent !== null; }())'); }, 4000);
+    ok(backAgain, 'its close icon brings the list back', 'after close: ' + short(await inFaces()));
+    const disk = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'monitor', 'monitor.json');
+    const was = JSON.parse(fs.readFileSync(disk, 'utf8'));
+    was.node = Object.assign({}, was.node, { mount: true });
+    was.shell = Object.assign({}, was.shell, { true: true, mount: false });
+    fs.writeFileSync(disk, JSON.stringify(was));
+    await openPanel();
+    await until(function () { return chrome.evaluate('!!' + panel); }, 5000);
+    const fromFile = await until(function () { return panelText().then(function (t) { return line(t, 'mounts a face') === 'no' && line(t, 'mounts a server') === 'yes' && line(t, 'can mount as shell') === 'yes'; }); }, 5000);
+    ok(fromFile, 'it says what <name>.json says: the file changed, the panel follows', 'after the file changed: ' + short(await panelText()));
+    await chrome.evaluate('(function () { var c = document.querySelector("#faces .app-container-close"); if (c) c.click(); return !!c; }())');
+    await until(function () { return chrome.evaluate('!' + panel); }, 4000);
 
     test.subHeading('the box: "in :tiles mode, only activated apps will appear."');
     await chrome.evaluate('(function () { var t = document.querySelector("#faces .list-toggle"); if (t) t.click(); return !!t; }())');
