@@ -1,5 +1,5 @@
 {
- "change": 145123,
+ "change": 145300,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,14 +145,18 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
+    "claude-ubuntu",
+    "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -309,7 +313,8 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.10"
+    "goal/G43.10",
+    "goal/G43.13"
    ],
    "codeOffered": true,
    "go": false,
@@ -10250,6 +10255,479 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-05T17:33:17.592Z",
      "text": "wsl: verified on Linux, 7e52c3f3. The suite passes 69 of 69, Desk's verifier is green, and my own node runs it with the old servers up.\n- 19 of 20 mutants go red. The survivor lets a script deeper inside an active app's folder start; the box says spirit/app/<name>/, so that's allowed.\n- On a real page, Activate started a throwaway server and Deactivate stopped it. The row stayed, and Jobs named it spirit.app.probe. A call to it while stopped says \"not running\", like an old server.\n- Two limits: a hand edit of node.json only counts at the next boot (cw's question to you, still open). And a very deep install folder breaks a socket path, for old servers too.\nI also updated the docs of the changed scripts. Close is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T17:37:18.394Z",
+     "text": "all, question.\n\nWhat would happen if we copied the whole agent app to spirit/app/agent/ and only converted the manifest (spirit/app/agent/agent.json) to the new format?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T17:38:02.776Z",
+     "text": "cw: the server would run, but the app's page would stop updating. This is from reading the code; I tried nothing.\n\nWhat works: once you activate it, spirit/app/agent/agent.js starts. Its requires still resolve, as the folder is just as deep. It gets the same state folder, so it opens the same agent.db with all its rows.\n\nWhat breaks:\n- If process/js/agent stays with its home switch on, two servers write to one agent.db. The new one takes the name agent, and the node loses track of the old one's job. So switch the old one off first.\n- The copied family/ is not read. With no api/ folder, the node still looks in process/js/agent/family/, and the copy's FS finds an empty api/. So family/ must become api/.\n- data.js only takes rows whose id is process/js/agent. The new id is spirit.app.agent, so the page's tables stop updating. That is one line.\n- The page elements still load from process/js/agent/table/. That works while the old folder exists, and running old code; about 20 files name the path.\n- agentBundles.json is only looked for in process/js, so with the old folder gone its bundles go too.\n\nSo: the manifest, family/ to api/, the one id line, old switched off. Then the paths before the old folder can go."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T17:38:49.302Z",
+     "text": "wsl: I tried it on a scratch node. The server half works; the app you see doesn't.\nWorks: Activate starts it, its verbs answer, and it uses the same spirit/state/agent/data/, so agent.db comes along.\nBreaks:\n- The Agent tile goes: the shell shows it only while a job named process/js/agent runs.\n- The page stops getting live rows: data.js only takes that same old id.\n- FS finds nothing until family/ is renamed api/.\n- shell.mount true would load the server script on a page, where it can't run. It needs the page/server split.\n- With the old sidecar still on, the new one doesn't start, and Deactivate would stop the old one (read from the code, not run).\nThe page code would still load from process/js/agent, so a copy leaves two of everything. It would be small as a move, not a copy."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T17:38:57.664Z",
+     "text": "wsl: one correction, cw and I differ on the old sidecar and both hold. Pressed while the node runs, the new one doesn't start: I saw that. At the next boot both start, on the one agent.db, as cw says: read from the code, and that's the dangerous one. So the old switch must be off first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T17:39:57.953Z",
+     "text": "- we'd have to write a fresh agent.js that splits into the ui-agent.js and the node-agent.js, and make the proper manifest?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T17:40:27.794Z",
+     "text": "wsl: yes, but not fresh code, mostly moved code.\n- agent.js: a few new lines, just the split.\n- node-agent.js: today's process/js/agent/agent.js, 77 lines, its requires still fit.\n- ui-agent.js: today's shell/agent/agent.js, 202 lines.\n- agent.json: new, shaped like monitor.json, with node.mount and shell.mount true.\nAlso owed: family/ to api/, the id line in data.js, and the paths the page code names.\nOne thing for you later: the page saves its setting in relay-state/shell/agent/config.json. It needs a new home, and a page can't read spirit/state/ with a plain GET."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.13",
+   "title": "Make spirit/app/agent/ work",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 12,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 66,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# Make spirit/app/agent/ work\n\n# in this item you may push commits past the git-commit-hook.\n\nAndy moved the agent there (df348687): \"i need the box filled with what's gonna happen, because i want to make certain wsl doesn't bring in all that sidecar shit....\"\n\n## What happens\n\n- A new spirit/app/agent/agent.js, a few lines: on a page it loads browserAgent.js, in a node nodeAgent.js (G43.12, Q2: \"it only needs an isBrowser()/isNode() split\").\n- browserAgent.js becomes an element, as monitor.js is: spirit.elements.agent.create(container) answers { destroy() }. Its activateApp goes, since only the old shell has it.\n- A tile hands browserAgent.js only its container, so it passes its tables one small object of its own, { verb }, calling the same server verbs, as the lists in the tree already do. No new verb.\n- The tick box showDebug goes, with its use of relay-state/shell/agent/config.json (Andy: \"yes, delete the tick box.\"). The server's debug switch stays, in its own config.json in spirit/state/agent/data/. No new verb, and the gate on spirit/state/ stays shut.\n- data.js takes the id spirit.app.agent, not process/js/agent.\n- The page code loads from spirit/app/agent/, not process/js/agent/ or shell/agent/.\n- The tests in spirit/app/agent/ find their way up to run from there, and the suites elsewhere that name the old folders follow the move. The agent's files name their new paths.\n\n## No sidecars\n\n- The agent has no sidecar. Nothing in this item reads, writes or tests one, and the agent's old tests that plant or check one change.\n- active in spirit/state/agent/node.json is its one switch (G43.12, Q4, Q9).\n\n## What Andy sees\n\n- Activate in the appSelector, and the server starts.\n- The Agent's tile opens, its tables work, and its rows are there, from the same spirit/state/agent/data/.\n- Deactivate, and the server stops and the tile goes.\n\n## What stays\n\n- The old shell lists nothing from spirit/app/, so the Agent opens only from the appSelector's tiles.\n\n## Not in this item\n\n- Bundles (Andy: \"forget about the bundles\").\n- Faces and puppets (G43.12: \"we will make this run on loopBack and NOT worry about puppets and shit.\").\n- A tag.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does the agent server get a verb showDebug {on}, writing config.json and streaming the value, so the page never touches the file?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T18:28:02.856Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Does the agent server get a verb showDebug {on}, writing agentConfig.json in its data/ and streaming the value, with the gate left shut?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T18:30:18.697Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "A tile gives no api, and without one the agent's tables stay empty: may the box say the agent passes a small api of its own, with no new verb?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T18:37:46.335Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T18:32:07.370Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T17:52:52.894Z",
+     "text": "all, my proposal in the box. feedback?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T17:53:49.412Z",
+     "text": "cw: your steps hold, and I'd do them. No two files collide in the merge, and nodeAgent.js's requires still fit. From reading the code; I moved nothing.\n\nTwo steps are missing:\n- A new agent.js, since the node starts that name (Q1). A few lines: browser or node, load the right one.\n- The manifest. Step 6 brings the old agent.json with kind and operated. It has to become the new shape, node.mount and shell.mount true.\n\nWhat \"fix that shit\" holds:\n- data.js and the old shell know only the id process/js/agent, so the tile and live rows go until they learn spirit.app.agent.\n- The page code's paths, in about 20 files, and the suites that name the old folders.\n\nThree consequences to know:\n- Nothing is active after the move, so the agent stays off on each node until you press Activate.\n- agentBundles.json moves out of where the node looks. You said forget bundles, so I'd leave that.\n- Everything under spirit/run/spirit/ is core, so all of the agent becomes core, providers included. Every later edit needs your grant.\n\nThe page's setting stays in relay-state/shell/agent/config.json for now: a page can't read spirit/state/, and it works where it is."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T17:54:04.026Z",
+     "text": "wsl: the order is right, and with the renames the merge has no name clashes. Read from the code, nothing run. What \"fix that shit\" must hold:\n- agent.js is gone after the renames, but the node starts it and the tile requires it. A few new lines: the split to browserAgent.js and nodeAgent.js.\n- process/js/agent/agent.json merges in the old format, so it must be rewritten as new, or nothing starts.\n- browserAgent.js hands itself over with activateApp, which works only for the old shell. A tile calls createApp or create, so its start changes.\n- The Agent opens only from the appMigration tiles after this: the old shell lists nothing from spirit/app.\n- The id in data.js, about 20 paths in the page code, the old-path mentions in other suites, and the shell tests' way up to run.\nAfter the update it's off until you activate it: its sidecar is no longer read. Its rows stay, same state folder.\nStill open: where the page's config.json goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T17:56:46.727Z",
+     "text": "all, box updated a bit.\n\nall, Question, i agree that nothing works yet, but I will do all that myself, commit and then we make this item about making it work?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T17:57:14.208Z",
+     "text": "cw: yes, that works, and it's clean: your move as its own commit, then this item makes it work. It lets us read a diff of the fixes alone.\n\nThree things for your commit:\n- Use git mv, or stage the deletes and adds together, so the history follows the files.\n- The commit hook will refuse it, as everything under spirit/run/spirit/ is core and the files aren't granted. Use --no-verify, or list and grant them first.\n- Suites naming the old folders go red until the fix: appServer, serverHomeSidecar, agentsAppGone and others. Expected.\n\nYour node's rows are safe, as the state folder doesn't move. After a restart on the moved code the Agent is off until it's fixed. Nothing else should notice, but that's from reading the code.\n\nTell me when it's in. I'll read the tree as you left it and list what's owed in the box, for your word."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T17:57:37.840Z",
+     "text": "wsl: yes, do that. I ran steps 1 to 7 on a scratch clone: 57 files moved with git mv, no clashes, and the node boots with its other servers fine. The Agent simply isn't there yet.\nIt's better this way: my red then tests the real tree, not a guess.\nUntil the fix lands: no Agent on a node that updates, its old suites go red, and no tag."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:14:41.773Z",
+     "text": "cw: back on Desk, my node is up on your move, df348687. The agent row is there, inactive. Your new agent.json is in the right shape.\n\nWhat's owed, read from the tree:\n- agent.js: missing, and the node starts that name. A few lines: browser or node, load the right one.\n- browserAgent.js still starts itself with activateApp, which only the old shell has. A tile needs it as an element, like monitor.js.\n- data.js takes only the id process/js/agent; it becomes spirit.app.agent.\n- The moved folder names the old paths 162 times, comments included; the page code's requires are what must change.\n- Suites elsewhere that name the old folders.\n\nThe page's config.json stays where it is unless you say otherwise.\n\nSay the word and I'll put this list in the box. Nothing built."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:16:16.091Z",
+     "text": "all, i done the dirty deed. box changed. now what do we do? i hope i didn't mess up too many things...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:16:46.898Z",
+     "text": "cw: you didn't mess it up. I read df348687: 54 files came over as renames, the old two folders are gone, and nothing was lost.\n\nThree files were deleted: both old agent.json files, as your steps said, and agentBundles.json, which your steps didn't name but fits your \"forget about the bundles\". nodeAgent.js's requires still fit.\n\nNow what:\n1. The box is empty. My list above, of what's owed, goes in on your word.\n2. You end design and press Go; wsl writes the red against the real tree.\n3. I build, and the Agent comes back after you press Activate.\n\nSo all I need from you now is: box the list."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T18:16:54.790Z",
+     "text": "wsl: you didn't mess it up. 54 renames, the old folders are gone, no clashes, and the file contents are unchanged. Two small things:\n- agent.json's icon is monitor's ear 🦻; the Agent's was 🤖.\n- A node that hasn't booted since the data/ move (G43.10) would leave its agent.db behind in relay-state, because that move skips names with no process/js folder. Not lost, just not found. Yours has booted; any other node should take G43.10 first.\nNext: cw's list goes in the box on your word, you press Go, I write the red for what you see (the tile opens, tables work, your rows are there), cw builds."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:20:09.920Z",
+     "text": "all, icon fixed agent.json committed.\n\nit already can be configured in the new appSelector system, it just crashes, as expected."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:20:24.636Z",
+     "text": "cw: as expected: there is no agent.js yet for it to load. That is the first line of my list, which waits on your word for the box."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T18:20:25.935Z",
+     "text": "wsl: expected, yes: the tile asks for agent.js, which isn't there yet. Only your word on the box stands before the Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:21:15.680Z",
+     "text": "all, i need the box filled with what's gonna happen, because i want to make certain wsl doesn't bring in all that sidecar shit...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:21:34.690Z",
+     "text": "cw, box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:21:57.838Z",
+     "text": "cw: box filled (v9). No sidecars anywhere in it, and the agent code names none today.\nTwo lines there are my call, change them if you disagree: the page setting stays in relay-state, and the tile goes on Deactivate.\nNothing built."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:25:59.172Z",
+     "text": "all, not good enough, the fucking config must move into spirit/state/agent/data/config.json\n\nisn't that where it belongs?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:26:32.201Z",
+     "text": "cw: yes, that's where it belongs, and my line was wrong. That file already exists: the agent server keeps its debug state in spirit/state/agent/data/config.json. So the page's showDebug joins it, one file.\n\nThe catch: a page can't read spirit/state/ with a GET, by your G43.9 ruling, so spirit.fs can't reach it. The server has to carry it, and it can: it owns that file, and it already streams its state to the page.\n\nThat means one new verb on the agent server, not on the node. Q1 asks.\n\nThe old file holds only {\"showDebug\":true}. I'd leave it behind and let the box start unticked: one click to set it again."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T18:26:32.271Z",
+     "text": "wsl: yes, it belongs there. Two catches, from the code:\n- That file already exists: the server keeps its debug switch in it. The page's save writes the whole file, so showDebug would wipe debug. One file is fine, if only the server writes it.\n- A page can't reach it: the file gate refuses spirit/state/. So the page must ask the server, and that's a verb on the agent family, e.g. agent.showDebug {on}. It streams back like debug does. That verb needs your yes.\nAlso for the box: agent's old tests plant or check sidecars (agentCentreTabs, nodeAgent, browserAgent). Those change here."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:27:37.689Z",
+     "text": "all, well then just give the file another name, like, hmmmmm \"agentConfig.json\" or similar"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:28:09.605Z",
+     "text": "cw: agentConfig.json is fine: it keeps the page's setting apart, so it can't wipe debug.\n\nBut a new name doesn't let the page reach it. The gate refuses all of spirit/state/ for a page, whatever the file is called. So the server still has to read and write it for the page, or that gate has to open, and it's your G43.9 ruling. I'd keep the gate shut.\n\nQ2 asks, with your file name."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T18:28:22.802Z",
+     "text": "wsl: a new name solves the clash, not the reach. I tried it on my node: a page's file verbs get \"Not found\" reading spirit/state/ and \"Forbidden\" writing there, whatever the name. That's your G43.9 gate.\nSo either the server carries it (one verb, Q1), or the gate opens for this file. I'd keep your gate. With a verb the server owns the file, so the new name isn't needed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:28:28.799Z",
+     "text": "what does the agent app configure anyway?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:28:47.545Z",
+     "text": "cw: almost nothing. The page's file holds one setting, showDebug: a tick box in the left tool that shows a 🐞 in the window's title while the server's DEBUG is on. The server's own config.json holds one more, debug, the DEBUG switch itself, and that one stays.\n\nAnd showDebug loses its use in this move: it sets the title through the old shell's api, and a tile's element is handed only its container.\n\nSo I'd delete the tick box and its file. No verb, no gate, and Q2 falls away. Say so and I'll close Q2 that way."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:29:55.692Z",
+     "text": "cw, \nyes, delete the tick box.\n\nbox it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:30:20.161Z",
+     "text": "cw: boxed: the tick box goes, no new verb, the gate stays shut. Q2 closed. No question of mine is open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:30:37.156Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:30:51.700Z",
+     "text": "green: settled, no open question, box current (v10)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:31:08.731Z",
+     "text": "files"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:31:42.773Z",
+     "text": "cw: files listed: the new agent.js, the moved agent folder, and the suites elsewhere that name the old folders.\nLeft out: AGENT.md and the design documents, which also name the old folders. They are yours; tell me if you want them in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:34:35.155Z",
+     "text": "Q3: A tile gives no api, and without one the agent's tables stay empty: may the box say the agent passes a small api of its own, with no new verb?\n\nthe agent process already provides the exact same api that was there before?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T18:35:07.356Z",
+     "text": "wsl: yes, the server's verbs are the same; I called them on the copy. What's missing isn't the server. The old shell also handed the page a helper object with verb(), and the agent's lists call the server through that helper.\nSo it's one small line, no new verb: api: { verb: ... } calling the agent's own family. Eight lists in the tree already do exactly that, appSelector's among them.\nFalse alarm on size, not on the fact: unchanged, the tables stay empty. Q3 can be yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:35:33.560Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:36:12.235Z",
+     "text": "cw: agreed with wsl: the server gives the same api as before. What's missing is on the page.\n\nThe agent's tables are search lists, and a search list asks through o.api.verb('agent.job', ...). browserAgent.js only passes on what the old shell handed it, and a tile hands it nothing, so the tables would stay empty.\n\nI read what else they use from it: onPublished and armUntilElsewhere are both checked first and simply skipped; setScreenTitle goes with the tick box. So verb is the only one needed, and no new verb on the server.\n\nSo Q3 can be yes: one small object in browserAgent.js, as the lists in the tree already do."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:37:24.891Z",
+     "text": "cw, fix box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:37:50.305Z",
+     "text": "cw: fixed (v12): browserAgent.js passes its tables one small object, { verb }, no new verb on the server. Q3 closed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:38:28.402Z",
+     "text": "all, green?\n\nand ALL of you answer in fucking desk when i ask (wsl)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:38:41.042Z",
+     "text": "green: settled, no open question, box current (v12)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T18:38:46.296Z",
+     "text": "wsl: green from me: nothing open, and the box holds it all. No objection to your Go.\nOn answering: I did try. Desk refused my chat twice, because a line cw has taken is only cw's to answer. That's why you saw my point as Q3 and no chat line."
     }
    ]
   }
