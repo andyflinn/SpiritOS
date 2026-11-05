@@ -79,7 +79,7 @@ function keysOnDisc(run) {
 }
 const THE_TOP = /relay-state['"`]?\s*[,/]\s*['"`]?(config\.json|environment\.json|identity\.json|node\.db|traffic\.json|relay\.db|peerStats|owner\.json|relays\.json|mail\.json|node\.json|face\.json|servers\.json|relayKeys\.json|invites\.json|pendingArrivals\.json|pending-owner\.json|device\.json|include\.json)/;
 
-test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/ at boot (goal/G43.8)');
+test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/, and a process\'s to its data/, at boot (goal/G43.8, goal/G43.10)');
 
 (async function () {
   const live = [];
@@ -209,6 +209,94 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/ at 
     ok(keysOnDisc(c.run).join() === 'spirit/state/identity.json', 'one private key on disc', 'private keys on disc: ' + short(keysOnDisc(c.run)));
     await stop(r);
     fs.rmSync(c.root, { recursive: true, force: true });
+
+    // goal/G43.10. Andy: "JUST state data.", "we will only move process relay-state data if the corresponding run://process/<name> still
+    // exists.", "whatever leftovers there are of now-eliminated process, we disregard". The box: "A process's files in
+    // relay-state/process/<name>/ go to spirit/state/<name>/data/", "skipping door.sock, the sidecars (Q6: "yes.") and bundles.json (Q13: "yes.")".
+    test.subHeading('goal/G43.10: a process\'s files move to spirit/state/<name>/data/ at boot');
+    const procCode = execSync('git ls-files -- spirit/run/process/js', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && !/\/backup\//.test(f) && fs.existsSync(path.join(REPO, f)); });
+    const buildsOld = procCode.filter(function (f) { return /relay-state/.test(fs.readFileSync(path.join(REPO, f), 'utf8').split(/\r?\n/).filter(function (x) { return !/^\s*(\/\/|\*)/.test(x); }).join('\n')); });
+    ok(procCode.length > 0 && !buildsOld.length, 'no process builds a path into relay-state (backup is ported later)', 'these still do: ' + short(buildsOld));
+    const homeOf = path.join(os.tmpdir(), 'spirit-state-move-home-' + process.pid);
+    fs.rmSync(homeOf, { recursive: true, force: true });
+    fs.mkdirSync(homeOf, { recursive: true });
+    const bootHome = async function (run) {
+      const port = await freePort();
+      const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { HOME: homeOf, USERPROFILE: homeOf }) });
+      const base = 'http://127.0.0.1:' + port;
+      const up = await until(function () { return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'api', args: {} }) }).then(function (x) { return x.status === 200; }, function () { return false; }); }, 60000);
+      return { child: child, base: base, port: port, up: up };
+    };
+    const d = scratch();
+    const dId = keyOf(d.run);
+    oldLayout(d.run, { 'identity.json': JSON.stringify(dId) });
+    const proc = path.join(d.run, 'relay-state', 'process');
+    const data = function (name, f) { return path.join(d.run, 'spirit', 'state', name, 'data', f); };
+    const plant = function (name, f, text) { const p = path.join(proc, name, f); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, text); };
+    plant('desk', 'note.json', '{"mine":"desk"}');
+    plant('desk', 'deep/down/note.json', '{"mine":"deep"}');
+    plant('desk', 'door.sock', 'not data');
+    plant('desk', 'desk.js.sidecar.json', '{"face":{"home":true}}');
+    plant('desk', 'bundles.json', '{}');
+    plant('backup', 'backup.js.sidecar.json', '{"face":{"home":true}}');
+    plant('chatClerver', 'memory.txt', 'a process that is not running');
+    plant('gonelong', 'old.json', '{"mine":"a dead process"}');
+    let dn = await bootHome(d.run); live.push(dn.child);
+    ok(dn.up, 'it comes up', 'it did not come up');
+    ok(readText(data('desk', 'note.json')) === '{"mine":"desk"}', 'a process\'s file reaches its data/', 'not in spirit/state/desk/data/: note.json');
+    ok(readText(data('desk', 'deep/down/note.json')) === '{"mine":"deep"}', 'a file in a folder of its, too', 'not in spirit/state/desk/data/: deep/down/note.json');
+    ok(!fs.existsSync(path.join(proc, 'desk', 'note.json')) && !fs.existsSync(path.join(proc, 'desk', 'deep')), 'and neither stays behind', 'relay-state/process/desk still holds them');
+    ok(readText(data('chatClerver', 'memory.txt')) === 'a process that is not running', 'a process that is not running moves too', 'not in spirit/state/chatClerver/data/: memory.txt');
+    test.subHeading('the box: "skipping door.sock, the sidecars and bundles.json"');
+    ['door.sock', 'desk.js.sidecar.json', 'bundles.json'].forEach(function (f) {
+      ok(fs.existsSync(path.join(proc, 'desk', f)) && !fs.existsSync(data('desk', f)), f + ' stays where it is', f + ': in the old place ' + fs.existsSync(path.join(proc, 'desk', f)) + ', in data/ ' + fs.existsSync(data('desk', f)));
+    });
+    test.subHeading('"whatever leftovers there are of now-eliminated process, we disregard"');
+    ok(readText(path.join(proc, 'gonelong', 'old.json')) === '{"mine":"a dead process"}', 'a dead process\'s folder stays where it lies', 'relay-state/process/gonelong lost its file');
+    ok(!fs.existsSync(path.join(d.run, 'spirit', 'state', 'gonelong')), 'and gets no new home', 'spirit/state/gonelong was made');
+    test.subHeading('the box: "The node hands each process its folder when it starts"');
+    const dbUp = await until(function () { return Promise.resolve(fs.existsSync(data('desk', 'desk.db'))); }, 30000);
+    ok(!!dbUp, 'the running process keeps its database in its data/', 'no spirit/state/desk/data/desk.db');
+    ok(!fs.existsSync(path.join(proc, 'desk', 'desk.db')), 'and none in the old place', 'relay-state/process/desk/desk.db stands');
+    ok(fs.existsSync(path.join(proc, 'desk', 'door.sock')), 'its door is in the old place', 'no relay-state/process/desk/door.sock');
+    test.subHeading('the ruling on backup: "it will be ported later". Until then no key reaches a backup');
+    const backups = path.join(homeOf, '.SpiritOS');
+    const ran = await until(function () { return Promise.resolve(fs.existsSync(backups)); }, 20000);
+    ok(!!ran, 'the world: backup ran, in a home of this test', 'backup left nothing in ' + backups + ': nothing judged');
+    await sleep(6000);
+    const holdingKey = [];
+    (function walk(dir) { (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : []).forEach(function (e) { const p = path.join(dir, e.name); if (e.isDirectory()) return walk(p); if (e.isFile() && /privateKey/.test(fs.readFileSync(p).toString('latin1'))) holdingKey.push(path.relative(homeOf, p)); }); }(backups));
+    ok(!holdingKey.length, 'no private key is in it', 'a private key in the backup: ' + short(holdingKey));
+    ok(keysOnDisc(d.run).join() === 'spirit/state/identity.json', 'one private key on disc', 'private keys on disc: ' + short(keysOnDisc(d.run)));
+    test.subHeading('once: a second boot moves nothing');
+    const bundlesBefore = readText(path.join(proc, 'desk', 'bundles.json'));
+    await stop(dn.child);
+    dn = await bootHome(d.run); live.push(dn.child);
+    ok(dn.up, 'it comes up again', 'it did not come up again');
+    ok(readText(data('desk', 'note.json')) === '{"mine":"desk"}' && fs.existsSync(data('desk', 'desk.db')), 'the data stays', 'spirit/state/desk/data/ changed');
+    ok(fs.existsSync(path.join(proc, 'desk', 'door.sock')) && !fs.existsSync(data('desk', 'door.sock')), 'and its door did not move', 'a second boot moved door.sock');
+    ok(readText(path.join(proc, 'desk', 'bundles.json')) === bundlesBefore, 'and bundles.json is the same, so no second bundle', 'bundles.json changed: ' + short(readText(path.join(proc, 'desk', 'bundles.json'))));
+    await stop(dn.child);
+    fs.rmSync(d.root, { recursive: true, force: true });
+    test.subHeading('the box: "stopping if that fails"');
+    const e = scratch();
+    const eId = keyOf(e.run);
+    oldLayout(e.run, { 'identity.json': JSON.stringify(eId) });
+    const eOld = path.join(e.run, 'relay-state', 'process', 'chatClerver');
+    const eNew = path.join(e.run, 'spirit', 'state', 'chatClerver', 'data');
+    fs.mkdirSync(eOld, { recursive: true });
+    fs.mkdirSync(eNew, { recursive: true });
+    fs.writeFileSync(path.join(eOld, 'memory.txt'), 'the old one');
+    fs.writeFileSync(path.join(eNew, 'memory.txt'), 'the newer one');
+    const ePort = await freePort();
+    const eChild = spawn(process.execPath, ['spirit/server.js', '--port', String(ePort)], { cwd: e.run, stdio: 'ignore', env: Object.assign({}, process.env, { HOME: homeOf, USERPROFILE: homeOf }) }); live.push(eChild);
+    await until(function () { return Promise.resolve(eChild.exitCode !== null); }, 20000);
+    ok(eChild.exitCode !== null && eChild.exitCode !== 0, 'a name its data/ already holds stops the node', 'the node: exit ' + short(eChild.exitCode));
+    ok(readText(path.join(eNew, 'memory.txt')) === 'the newer one', 'and what stood there is not written over', 'spirit/state/chatClerver/data/memory.txt was written over');
+    ok(readText(path.join(eOld, 'memory.txt')) === 'the old one', 'and the old file stays', 'relay-state/process/chatClerver/memory.txt changed or went');
+    await stop(eChild);
+    fs.rmSync(e.root, { recursive: true, force: true });
+    fs.rmSync(homeOf, { recursive: true, force: true });
     await sleep(100);
   } finally {
     live.forEach(function (x) { try { x.kill(); } catch (e) { /* gone */ } });

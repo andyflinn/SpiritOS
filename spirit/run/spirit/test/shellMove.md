@@ -18,6 +18,19 @@ Andy, box: *"remove proxy.json (no longer needed) and we move just the remaining
 - A relay of the old layout does the same: its key, its owner, its other files, one private key on disc.
 - No code, script or test builds an old path, `appServer.js`'s `cacheDir` included. Comments are not judged.
 
+## A process's files (goal/G43.10)
+
+Andy: *"JUST state data."*, *"we will only move process relay-state data if the corresponding run://process/<name> still exists."*, *"whatever leftovers there are of now-eliminated process, we disregard"*. The box: *"A process's files in relay-state/process/<name>/ go to spirit/state/<name>/data/"*, *"skipping door.sock, the sidecars (Q6: "yes.") and bundles.json (Q13: "yes.")"*, and *"stopping if that fails"*.
+
+- A process's files move, folders in them too, running or not. None stays behind.
+- `door.sock`, its sidecar and `bundles.json` stay where they are, and none reaches `data/`.
+- A folder with no `process/js/<name>/` stays where it lies and gets no new home.
+- A running process keeps its database in its `data/`, none in the old place, and its door in the old place.
+- No process's code builds a path into `relay-state`. Backup is the exception, as *"it will be ported later"*.
+- Backup runs in a home of the test's own, and no private key reaches it. One private key stays on disc.
+- A second boot moves nothing, and `bundles.json` is unchanged, so no second bundle.
+- A name `data/` already holds stops the node, non-zero. Neither file is written over.
+
 ## Not judged
 
 The box's *"tried on a copy of a relay's files"* is this test's relay case, on files laid out by hand, not a copy taken from a live relay. The rehearsals before and around the tag `v-2026-11-05-10-55` were run by hand on scratch relays at the previous tag, and are not part of this test.
