@@ -26,7 +26,10 @@
       var J = S.data.jobs && S.data.jobs.data;
       return J ? J.find(function (j) { return !!j && j.kind === 'server' && j.module === module && LIVE[j.status] === true; }) : null;
     }
-    function on() { var j = job(); return !!(j && j.data && j.data.debug === true); }
+    // WHAT THE SERVER SAID WHEN ASKED (its DEBUG {}): a page opened after the server started finds no job in its cache, since the
+    // stream's snapshot came before the jobs cache was loaded; the server's own answer stands in until its job next changes.
+    var asked = null;
+    function on() { var j = job(); return j ? !!(j.data && j.data.debug === true) : asked === true; }
     function press() {
       var want = !on();
       Promise.resolve(S.require(S.familyPath(key))).then(function (fam) { return fam.DEBUG({ on: want }); }).then(null, function () { /* the job stays */ });
@@ -35,14 +38,14 @@
     t.root.hidden = true;
     function paint() {
       if (gone) return;
-      if (!serves || !job()) { t.root.hidden = true; return; }
+      if (!serves || (!job() && asked === null)) { t.root.hidden = true; return; }
       var now = on();
       t.set(now, 'turn ' + (now ? 'off' : 'on') + ' DEBUG ' + label());
       t.root.hidden = false;
     }
     Promise.resolve(S.cacheManager('jobs')).then(function () {
       if (gone) return;
-      offJobs = S.data.jobs.data.watch(function () { paint(); });
+      offJobs = S.data.jobs.data.watch(function (id, j) { if (j && j.module === module) asked = null; paint(); });
       paint();
     }, function () { /* no jobs, no server to show */ });
     var offRow = S.data.app.data.watchApp(key, paint);
@@ -50,6 +53,10 @@
       var j = JSON.parse(String(text));
       serves = !!(j.node && j.node.mount === true);
       paint();
+      if (serves) return Promise.resolve(S.require(S.familyPath(key))).then(function (fam) { return fam.DEBUG({}); }).then(function (r) {
+        if (!job()) asked = !!(r && r.debug === true);
+        paint();
+      }, function () { /* not running: it stays hidden */ });
     }).then(null, function () { /* a face that may not read the file: nothing to switch */ });
     return { destroy: function () { gone = true; offJobs(); offRow(); t.destroy(); } };
   }
