@@ -116,15 +116,6 @@ function cdLoad() {
     .catch(function (e) { cdStatus('could not read the book: ' + e.message); });
 }
 
-// A rate is messages per day across peerStats' window, to one decimal,
-// with the unit riding along. Same reading the table's own panel gave
-// before this screen took it over.
-function cdRate(perDay) {
-  var n = Number(perDay);
-  if (!isFinite(n) || n < 0) n = 0;
-  return n.toFixed(1) + ' / day';
-}
-
 // The titlebar says WHOSE row this is, because the app's own name
 // ("Contact") is the least useful word available on a screen that only
 // ever shows one person. The mark comes with it: a screen about somebody
@@ -213,15 +204,11 @@ function cdRender() {
   // answer the second half are the buttons underneath — accept, block,
   // and leaving them where they are.
   //
-  // Rates are per day over peerStats' 14-day window, not lifetime: a
-  // lifetime total only ever grows, so it ranks contacts by how long they
-  // have been in the book, which is the opposite of the question.
+  // NO COUNTERS (goal/G43.14; Andy: "KILL those fields in shadow-roll, KILL the functionality, KILL it!"): unanswered inbound
+  // and the two rates went, even for a row that still carries them.
   var facts = spirit.shell.factRow([
     ['Public Handle', cdPerson.publicLabel || '(none)'],
     ['My Label', cdPerson.myLabel || '(none)'],
-    ['Unanswered inbound', String(cdPerson.unansweredInbound || 0)],
-    ['Inbound rate', cdRate(cdPerson.inboundPerDay)],
-    ['Outbound rate', cdRate(cdPerson.outboundPerDay)],
     ['Storage', spirit.formatBytes(cdPerson.bytesHeld || 0)],
   ]);
 

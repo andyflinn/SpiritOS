@@ -1,7 +1,7 @@
 # bundleSelector/listElement.js
 
 `spirit/run/spirit/element/bundleSelector/listElement.js` is the bundle list (goal/G41.14), as
-`spirit/element/contacts/listElement.js` is the contacts list: the probabilitySearch the bundle selector draws, pane or
+`spirit/element/contact/listElement.js` is the contacts list: the probabilitySearch the bundle selector draws, pane or
 dropdown. Its test is `./listElement.js`.
 
 Andy, box: *"bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and

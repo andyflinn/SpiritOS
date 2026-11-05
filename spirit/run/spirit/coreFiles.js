@@ -25,7 +25,7 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
 // node starting servers (js/jobs.js), and every face part the node hands out (js/fileSystem.js).
 const INTRINSIC = [
   'process/js/fileServer',
-  'shell/apps', 'shell/contacts', 'shell/files', 'shell/grants', 'shell/icons', 'shell/info',
+  'shell/apps', 'shell/files', 'shell/grants', 'shell/icons', 'shell/info',
   'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/rotateKey', 'shell/stats',
 ];
 // An app folder (shell/<name> or process/js/<name>), or a path inside one, is intrinsic.
@@ -36,6 +36,13 @@ function intrinsic(folder) {
 }
 const INTRINSIC_LOWER = INTRINSIC.map(function (f) { return f.toLowerCase(); });
 function isIntrinsic(root, dir, name) { return intrinsic(dir + '/' + name); }
+// AN APP OF spirit/app/ SAYS IT ITSELF (goal/G43.14; Andy: "i think in spirit/app/<name>/<name>.json
+// (identity:intrinsic:true|false)", and Q2: "anything in spirit/app/ is core unless spirit/app/<name>/<name>.json says it's not
+// intrinsic."): what its <name>.json says of identity.intrinsic, read on disc ("no dependency on git"), undefined when it
+// says nothing or there is none.
+function appIntrinsic(root, name) {
+  try { return JSON.parse(require('fs').readFileSync(path.join(root, 'spirit', 'run', 'spirit', 'app', name, name + '.json'), 'utf8')).identity.intrinsic; } catch (e) { return undefined; }
+}
 // The shell's frame: every app is loaded and drawn by these (goal/G6.7).
 // spirit.js at the run root is the one spirit object (goal/G40.1): core.
 // The navigation wrapper, the shell's one stack, too (goal/G41.30; Andy: "make the nav wrapper \"core\""): core while it
@@ -71,6 +78,11 @@ function isCore(repoPath, repoRoot) {
   if (/^spirit\/run\/(shell|process\/js)\/([^/]+)\/\2\.json$/.test(p)) return false;
   // shell/json/ too (goal/G40.8; Andy: "the folder spirit/run/shell/json/ is a core folder as well. this way i can update
   // that system file manually once in a while, when i actually want it to go into github").
+  // A FILE OF AN APP IN spirit/app/<name>/ (goal/G43.14): its <name>.json is always core, whatever it says, so turning intrinsic
+  // off needs his grant; the rest of its folder is core unless that json says intrinsic false. A folder with no json, as
+  // appSelector/ and test/ are, stays core.
+  const own = /^spirit\/run\/spirit\/app\/([^/]+)\/(.+)$/.exec(String(repoPath || '').replace(/\\/g, '/').replace(/^\.\//, ''));
+  if (own) return own[2].toLowerCase() === own[1].toLowerCase() + '.json' || appIntrinsic(repoRoot || DEFAULT_ROOT, own[1]) !== false;
   if (p.indexOf('spirit/run/spirit/') === 0 || p.indexOf('spirit/run/shell/json/') === 0) return true;
   // WHAT index.html LOADS ON EVERY BOOT IS CORE TOO (goal/G41.30; the review, H5): CodeMirror lives in spirit/element/codeMirror/
   // since goal/G43.5, so the line above holds it, and so with the progress bar. NOT shell/shared/ (Andy: "no \"core\" files
@@ -85,4 +97,4 @@ function isCore(repoPath, repoRoot) {
   return !!(app && /\.(js|css|html)$/.test(p) && isIntrinsic(repoRoot || DEFAULT_ROOT, app[1], app[2]));
 }
 
-module.exports = { isCore: isCore, INTRINSIC: INTRINSIC, intrinsic: intrinsic };
+module.exports = { isCore: isCore, INTRINSIC: INTRINSIC, intrinsic: intrinsic, appIntrinsic: appIntrinsic };

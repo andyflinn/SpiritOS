@@ -41,6 +41,11 @@ Andy: *"JUST loading functional server and associating the <name> as "familiy" n
 - A process without its home switch is refused `process-not-included`. A script outside the two places is refused `not-a-process`.
 - A member without a grant is refused and no server is asked. A member granted `<name>.ping` reaches it.
 
+### Intrinsic (goal/G43.14)
+
+- A server app whose `<name>.json` says `identity.intrinsic` true runs from the boot with nothing pressed, and nothing is written to its `node.json`.
+- `app.active` with false does not stop it.
+
 ## Not judged here
 
 - What the box puts out of this item: bundles, the process-less face-app, the app key, faces and puppets, and a name in both places.

@@ -141,8 +141,8 @@ const done = (async function () {
   const shell = code('spirit/run/shell/boot.js');
   const rs = code('spirit/run/spirit/relayServer.js');
   const nd = code('spirit/run/shell/natterDetails/natterDetails.js');
-  const cs = code('spirit/run/spirit/element/contacts/listElement.js');
-  const ct = code('spirit/run/shell/contacts/contacts.js');
+  const cs = code('spirit/run/spirit/element/contact/listElement.js');
+  const ct = code('spirit/run/spirit/app/contact/contact.js');
   const login = code('spirit/run/shell/login/login.js');
   const checks = {
     ownerEventsWired: /faceHome\.ownerEvent\(/.test(srv),

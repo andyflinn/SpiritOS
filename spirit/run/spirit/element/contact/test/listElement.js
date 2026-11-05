@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/contacts/test/listElement.js
-// The tests of spirit/element/contacts/listElement.js, and of no other module: the contacts list's filters, and what its
+// spirit/run/spirit/element/contact/test/listElement.js
+// The tests of spirit/element/contact/listElement.js, and of no other module: the contacts list's filters, and what its
 // create hands the search element, a row's button and a pressed row (spec: ./listElement.md).
 // The browser file runs in node on a window of its own; probabilitySearch is a recorder in its place, so this tests the
 // list and not the search under it; the rows are the real contactElement (contacts/rowElement.js), over the real data set
@@ -51,9 +51,9 @@ window.spirit.cacheManager = function (name) {
   return Promise.resolve(true);
 };
 load(path.join(JS, 'rowElement.js'));
-load(path.join(JS, 'contacts', 'rowElement.js'));
+load(path.join(JS, 'contact', 'rowElement.js'));
 const dataSubscribed = subscribers.length;
-load(path.join(JS, 'contacts', 'listElement.js'));
+load(path.join(JS, 'contact', 'listElement.js'));
 const L = window.spirit.element.contactList;
 const F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
@@ -63,7 +63,7 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
 
   test.subHeading('it loads what it uses');
   // goal/G41.16: no data script; what the stream means for contacts is the contact family's manager's (goal/G41.28).
-  const own = ['spirit/element/contacts/rowElement.js', 'spirit/element/probabilitySearch.js'];
+  const own = ['spirit/element/contact/rowElement.js', 'spirit/element/probabilitySearch.js'];
   if (own.every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); })) test.check('loading, it requires its row and the search element through spirit.require, and no data script');
   else test.fail('as it loaded, the list required: ' + JSON.stringify(required));
 

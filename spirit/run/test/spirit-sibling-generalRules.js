@@ -276,7 +276,7 @@ const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(
 // left out, holds a pictograph (Unicode Extended_Pictographic) alone in a string or alone between two tags, or that
 // paints icons it is handed (named below, read by hand), loads spirit/element/icon.js. A glyph among words is text. Each is
 // its own check, named by its path.
-const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'shell/contacts/contacts.js', 'spirit/element/icons/listElement.js',
+const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/contact.js', 'spirit/element/icons/listElement.js',
   'spirit/element/icons/rowElement.js', 'spirit/element/iconSelector.js', 'spirit/element/workBench.js'];
 // A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
 const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]*)+\s*(['"`]|<)/u;
@@ -285,7 +285,7 @@ const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u
 const TEXT_ONLY = {
   'shell/jobsDetails/jobsDetails.js': 'its status glyph is drawn before the job\'s type and its status word',
   'spirit/element/contactDetails/contactDetails.js': 'its blocked and held marks are drawn before the person\'s name',
-  'spirit/element/contacts/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
+  'spirit/element/contact/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');

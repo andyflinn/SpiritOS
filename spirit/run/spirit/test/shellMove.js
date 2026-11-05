@@ -36,11 +36,11 @@ function oldLayout(run, extra) {
   const old = path.join(run, 'relay-state');
   fs.mkdirSync(path.join(old, 'process', 'keepme'), { recursive: true });
   fs.mkdirSync(path.join(old, 'shell', 'keepme'), { recursive: true });
-  fs.mkdirSync(path.join(old, 'peerStats'), { recursive: true });
+  fs.mkdirSync(path.join(old, 'aFolder'), { recursive: true });
   fs.mkdirSync(path.join(old, 'someClient'), { recursive: true });
   fs.writeFileSync(path.join(old, 'process', 'keepme', 'kept.json'), '{"kept":"process"}');
   fs.writeFileSync(path.join(old, 'shell', 'keepme', 'kept.json'), '{"kept":"shell"}');
-  fs.writeFileSync(path.join(old, 'peerStats', 'a.json'), '{"peer":"a"}');
+  fs.writeFileSync(path.join(old, 'aFolder', 'a.json'), '{"peer":"a"}');
   fs.writeFileSync(path.join(old, 'someClient', 'cached.json'), '{"cached":true}');
   fs.writeFileSync(path.join(old, 'proxy.json'), '{"gone":"with its verbs"}');
   fs.writeFileSync(path.join(old, 'traffic.jsonl.imported'), 'garbage\n');
@@ -77,7 +77,7 @@ function keysOnDisc(run) {
   }(run));
   return out;
 }
-const THE_TOP = /relay-state['"`]?\s*[,/]\s*['"`]?(config\.json|environment\.json|identity\.json|node\.db|traffic\.json|relay\.db|peerStats|owner\.json|relays\.json|mail\.json|node\.json|face\.json|servers\.json|relayKeys\.json|invites\.json|pendingArrivals\.json|pending-owner\.json|device\.json|include\.json)/;
+const THE_TOP = /relay-state['"`]?\s*[,/]\s*['"`]?(config\.json|environment\.json|identity\.json|node\.db|traffic\.json|relay\.db|owner\.json|relays\.json|mail\.json|node\.json|face\.json|servers\.json|relayKeys\.json|invites\.json|pendingArrivals\.json|pending-owner\.json|device\.json|include\.json)/;
 
 test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/, and a process\'s to its data/, at boot (goal/G43.8, goal/G43.10)');
 
@@ -110,7 +110,7 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/, an
     const state = path.join(a.run, 'spirit', 'state');
     const old = path.join(a.run, 'relay-state');
     const there = function (f) { return fs.existsSync(path.join(state, f)); };
-    ['identity.json', 'config.json', 'unknown.txt', 'proxy.json', 'traffic.jsonl.imported', 'store.db', 'store.db-wal', 'peerStats/a.json', 'someClient/cached.json', 'environment.json', 'node.db'].forEach(function (f) {
+    ['identity.json', 'config.json', 'unknown.txt', 'proxy.json', 'traffic.jsonl.imported', 'store.db', 'store.db-wal', 'aFolder/a.json', 'someClient/cached.json', 'environment.json', 'node.db'].forEach(function (f) {
       ok(there(f), 'spirit/state/' + f, 'not in spirit/state/: ' + f);
     });
     const top = fs.existsSync(old) ? fs.readdirSync(old).sort().join() : '';
@@ -199,7 +199,7 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/, an
     const rUp = await until(function () { return fetch('http://127.0.0.1:' + rPort + '/').then(function (x) { return x.status > 0; }, function () { return false; }); }, 30000);
     ok(rUp, 'the relay comes up', 'the relay did not come up');
     const rState = path.join(c.run, 'spirit', 'state');
-    ['identity.json', 'owner.json', 'face.json', 'peerStats/a.json', 'unknown.txt'].forEach(function (f) { ok(fs.existsSync(path.join(rState, f)), 'spirit/state/' + f, 'not in spirit/state/: ' + f); });
+    ['identity.json', 'owner.json', 'face.json', 'aFolder/a.json', 'unknown.txt'].forEach(function (f) { ok(fs.existsSync(path.join(rState, f)), 'spirit/state/' + f, 'not in spirit/state/: ' + f); });
     // A relay imports these into its database at start and renames them, so either name will do; only not left at the old top.
     ['invites.json', 'relays.json'].forEach(function (f) { ok(fs.existsSync(path.join(rState, f)) || fs.existsSync(path.join(rState, f + '.imported')), 'spirit/state/' + f + ' or its .imported', 'neither name in spirit/state/: ' + f); });
     ok((readJson(path.join(rState, 'identity.json')) || {}).publicKey === relayId.publicKey, 'it keeps its key', 'the relay\'s key: ' + short(readJson(path.join(rState, 'identity.json'))));

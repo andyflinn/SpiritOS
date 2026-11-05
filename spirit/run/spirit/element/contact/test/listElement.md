@@ -1,4 +1,4 @@
-# spirit/element/contacts/listElement.js
+# spirit/element/contact/listElement.js
 
 The contacts list, a drop-in shell element: a pane in Contacts and Join, a dropdown in grants and introSpector. It is
 a view of the node's contacts, the branch the contact family's cache manager keeps (`spirit.data.contact.data.branch`,

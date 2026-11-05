@@ -24,7 +24,7 @@
 //   data                       optional: a branch of the faceless layer (spirit/data.js, goal/G30.16): the list is
 //                              a view of it. Its rows are the branch's, the server's answers are seated in it, and a
 //                              write to it redraws the list
-//   element(row, key)          optional: the rowElement that draws a row (spirit/element/files/, spirit/element/contacts/)
+//   element(row, key)          optional: the rowElement that draws a row (spirit/element/files/, spirit/element/contact/)
 //   face                       'pane' (the default) or 'dropdown' (goal/G30.20): a closed field with the chosen row's name
 //                              or the placeholder, opening to the same list; a pick closes it. placeholder, all (a None
 //                              button that picks nothing, its words the field's while nothing is chosen) and name(row)

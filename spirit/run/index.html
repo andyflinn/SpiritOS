@@ -47,7 +47,7 @@
          move a relay's value except by asking the relay. -->
     <script src="/spirit/lever.js"></script>
     <!-- One peer, one file, named by the peer's whole public key. Stays up
-         in js/ because hub.js and peerStats.js name files with it too. -->
+         in js/ because hub.js names files with it too. -->
     <script src="/spirit/peerFile.js"></script>
     <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spirit.limits,
          so the size a page refuses is the size the relay refuses. -->
@@ -116,8 +116,8 @@
     <!-- One folder per object type (goal/G30.20): its row, which takes its type's stream (goal/G41.16), and its drop-in list. -->
     <script src="/spirit/element/files/rowElement.js"></script>
     <script src="/spirit/element/files/listElement.js"></script>
-    <script src="/spirit/element/contacts/rowElement.js"></script>
-    <script src="/spirit/element/contacts/listElement.js"></script>
+    <script src="/spirit/element/contact/rowElement.js"></script>
+    <script src="/spirit/element/contact/listElement.js"></script>
     <!-- Icons (goal/G30.21): a row and a list, no translator: the set is one file. -->
     <script src="/spirit/element/icons/rowElement.js"></script>
     <script src="/spirit/element/icons/listElement.js"></script>
@@ -215,7 +215,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps', 'shell/files', 'shell/contacts']
+            renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps', 'shell/files']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });

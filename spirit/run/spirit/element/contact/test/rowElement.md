@@ -1,4 +1,4 @@
-# spirit/element/contacts/rowElement.js
+# spirit/element/contact/rowElement.js
 
 One contact as a row element: `spirit.element.contactElement.create(row)` builds it through the shared
 `rowElement.create` (`spirit/element/rowElement.js`). Its subject is a public key; it reads the node's contacts as the contact
@@ -39,7 +39,7 @@ HTML name; a blank name; a relay that is also kept; acting a verb the row lacks;
 
 ## What the stream means for contacts (goal/G41.16)
 
-The contacts' translation, `spirit/element/contacts/data.js` until G41.16, then this element's, is since goal/G41.28 the contact
+The contacts' translation, `spirit/element/contact/data.js` until G41.16, then this element's, is since goal/G41.28 the contact
 family's cache manager's, which this element loads (Andy: *"get rid of thos FUCKING
 data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"*; G30.18: rowElements carry the listeners a subject
 needs). It registers one translation with `spirit.data.addTranslator` as it loads, requires no data script, and writes only

@@ -42,8 +42,7 @@
 //
 // ── PRIVACY, ON PURPOSE ──────────────────────────────────────────────
 //
-// peerStats.js chose day grain deliberately: "you cannot rebuild a
-// conversation from it." This file is the opposite, and by a wider margin
+// A per-day counter cannot rebuild a conversation. This file is the opposite, and by a wider margin
 // than a metadata log would have been — it holds the messages themselves,
 // in and out, across every app that uses the router.
 //
@@ -64,9 +63,7 @@ const path = require('path');
 // not a byte cap: a count would have been a guess about traffic, and a
 // clock is a promise that can be stated exactly and checked exactly.
 //
-// It follows the idiom peerStats already uses — a 14-day window rather
-// than a number of rows. Same idea at a finer grain: that file buckets by
-// day because it is measuring a rate, this one keeps whole packets
+// A window rather than a number of rows: this one keeps whole packets
 // because it is keeping a record.
 // PERMANENT.
 //
@@ -263,7 +260,7 @@ function append(rootDir, row) {
 
 // opts: { rootDir, relayMode, now }
 //
-// `now` is injectable, the way peerStats takes one. A retention rule
+// `now` is injectable. A retention rule
 // stated in hours that could only be tested by waiting hours is a rule
 // that would not be tested.
 // ── THE MIGRATION (transport/R19.5) ───────────────────────────────────

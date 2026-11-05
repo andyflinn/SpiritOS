@@ -1,7 +1,7 @@
 # branchSelector/rowElement.js
 
 `spirit/run/spirit/element/branchSelector/rowElement.js` is one branch as a row element (goal/G41.14), as
-`spirit/element/contacts/rowElement.js` is one contact. The branch list draws its rows with it. Its test is `./rowElement.js`.
+`spirit/element/contact/rowElement.js` is one contact. The branch list draws its rows with it. Its test is `./rowElement.js`.
 
 Andy, box: *"branchSelector:pane, with table columns as follows: 1. Family (duh?) 2. Verb 3. armingButton 'Delete'"*,
 and *"A branch row with an empty verb shows as \"(ALL)\", as the filter does."*

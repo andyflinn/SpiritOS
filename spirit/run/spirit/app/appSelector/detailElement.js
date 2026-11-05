@@ -20,7 +20,7 @@
     var E = S.element;
     var key = String(row.key || '');
     var gone = false;
-    var mounts = { face: false, server: false };
+    var mounts = { face: false, server: false, intrinsic: false };
     var box = document.createElement('div');
     box.className = 'app-detail';
     var iconBox = document.createElement('div');
@@ -73,7 +73,10 @@
       if (document.activeElement !== input) input.value = String(r.label || '');
       var on = r.active === true;
       var parts = (mounts.face ? ['face'] : []).concat(mounts.server ? ['server'] : []);
-      flip(activeBox, on, [(on ? 'Deactivate' : 'Activate'), r.label].concat(parts.length ? [parts.join(' and ')] : []).join(' '), function () {
+      // AN INTRINSIC APP HAS NO SUCH ROW (goal/G43.14; Andy, Q1: "in appSelector:detail the rowForm allowing to
+      // activate/de-activate will not be shown for intrinsic apps.").
+      if (mounts.intrinsic) activeBox.innerHTML = '';
+      else flip(activeBox, on, [(on ? 'Deactivate' : 'Activate'), r.label].concat(parts.length ? [parts.join(' and ')] : []).join(' '), function () {
         app().then(function (s) { return s.app.activeApp({ key: key, active: !on }); }).then(null, function () { /* the row stays */ });
       });
       shellBox.innerHTML = '';
@@ -87,7 +90,7 @@
     paint();
     app().then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
       var j = JSON.parse(String(text));
-      mounts = { face: !!(j.shell && j.shell.mount === true), server: !!(j.node && j.node.mount === true) };
+      mounts = { face: !!(j.shell && j.shell.mount === true), server: !!(j.node && j.node.mount === true), intrinsic: !!(j.identity && j.identity.intrinsic === true) };
       paint();
     }).then(null, function () { /* a face that may not read the file: the form says nothing of what it mounts */ });
     return { destroy: function () { gone = true; off(); iconList.destroy(); host.innerHTML = ''; } };

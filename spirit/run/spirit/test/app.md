@@ -37,3 +37,9 @@ Q4, *"Do a label change and allow-as-shell go in spirit/state/<name>/node.json, 
 Q6, *"Does a changed icon go in spirit/state/<name>/node.json through a third new verb, app.icon?"*, Andy: *"yes."* `app.icon` is held the same way.
 
 The first activate, Andy: *"on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json"*, and on Q7: *"it just holds active (boolean), icon (glyph), label(string) and shell (boolean),"*. It copies those three, holds nothing else, and keeps what the node already chose.
+
+## Intrinsic (goal/G43.14)
+
+- An app whose `<name>.json` says `identity.intrinsic` true is always active: its row says so with no press and nothing written to its `node.json`.
+- `app.active` with false does not switch it off.
+- Before any press, no row says active but an intrinsic app's.

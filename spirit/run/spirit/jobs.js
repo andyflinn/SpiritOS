@@ -460,6 +460,8 @@ module.exports = function installJobs(port) {
   // and for every script of its folder. node.mount in spirit/app/<name>/<name>.json says it has a server at all; the old kind
   // and operated stay with process/js.
   function appActive(root, name) {
+    // An intrinsic app is always active (goal/G43.14): its <name>.json says so, and node.json is not asked.
+    if (require('./coreFiles').appIntrinsic(path.resolve(root, '..', '..'), name) === true) return true;
     try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
   }
   function appServes(root, name) {
@@ -532,11 +534,7 @@ module.exports = function installJobs(port) {
   // since goal/G43.12 an app of spirit/app/ too, its door kind 'app'.
   // ONE SERVER STARTED, ITS JOB KEPT BY NAME (goal/G41.1): at boot for every server that runs at home, and again whenever
   // its sidecar is written to say so (followHome, below). The node it runs on is the one startNodeServers was handed.
-  const nodeServers = new Map();   // name -> its server job, a process/js server's
-  // AN APP'S SERVER IS KEPT APART (goal/G43.13): an old sidecar left in relay-state/process/<name>/, with no process/js/<name>/
-  // beside it any more, said "not at home" and stopped the app's server of the same name, 3 s after the boot started it (found
-  // on Andy's node). So a sidecar follows only a process/js server, and active only an app's.
-  const appServers = new Map();    // name -> its server job, a spirit/app/<name>/ server's
+  const nodeServers = new Map();   // name -> its server job
   let serverHost = null;            // { rootDir, client }, from startNodeServers
   function startNodeServer(rootDir, client, name) {
     const base = path.join(rootDir, 'process', 'js');
@@ -564,7 +562,7 @@ module.exports = function installJobs(port) {
       try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
     }
     const job = startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir)), { type: type, operated: 'node' });
-    (kind === 'app' ? appServers : nodeServers).set(name, job);
+    nodeServers.set(name, job);
     if (client && typeof client.register === 'function') client.register(name, pipe);
     return job;
   }
@@ -634,12 +632,12 @@ module.exports = function installJobs(port) {
   // by the app family as it writes node.json. Its name stays in the table, as a stopped process/js server's does.
   function followApp(rootDir, name) {
     if (!serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;
-    const job = appServers.get(name);
+    const job = nodeServers.get(name);
     const now = job && getJob(job.id);
     const live = !!now && !TERMINAL_STATUSES.has(now.status);
     const want = appServes(rootDir, name);
     if (want && !live) startAppServer(rootDir, serverHost.client, name);
-    else if (!want && live) { cancelJob(job.id); appServers.delete(name); }
+    else if (!want && live) { cancelJob(job.id); nodeServers.delete(name); }
   }
 
   function startStatsJob(options) {

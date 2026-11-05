@@ -1,4 +1,4 @@
-// spirit/run/spirit/element/contacts/rowElement.js
+// spirit/run/spirit/element/contact/rowElement.js
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
 // (mine, blocked, held: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
 // and add (a button on a row the owner does not keep). It reads the node's contacts as the contact family's cache
