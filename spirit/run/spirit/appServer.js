@@ -355,7 +355,11 @@ function withDebug(verbs) {
 // in the job's data, which the node merges, so the server's next publish leaves it; every page hears it, no peer does. The node
 // keeps it from there for an app of spirit/app/ (spirit/jobs.js, Q2, Q3).
 function reportDebug() {
-  Promise.resolve(spirit.jobs.report({ data: { debug: spirit.debug() === true } })).catch(function () { /* not started by a node */ });
+  // Quietly, when this process has no job to report on (a suite's stand-in, a server started by hand).
+  if (!spirit.jobs || typeof spirit.jobs.report !== 'function') return;
+  try {
+    Promise.resolve(spirit.jobs.report({ data: { debug: spirit.debug() === true } })).catch(function () { /* not started by a node */ });
+  } catch (e) { /* not started by a node */ }
 }
 
 // ── THE STREAM: ONE PROTOCOL FOR EVERY SERVER (goal/G41.12, box v15) ──────
