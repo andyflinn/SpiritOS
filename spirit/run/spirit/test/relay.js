@@ -20,7 +20,7 @@ function scratchRelay() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-'));
   const js = path.join(home, 'spirit');
   fs.mkdirSync(js, { recursive: true });
-  ['relayAuth.js', 'fieldRules.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN, 'spirit', f), path.join(js, f)); });
+  ['relayAuth.js', 'fieldRules.js', 'shellMove.js'].forEach(function (f) { fs.copyFileSync(path.join(RUN, 'spirit', f), path.join(js, f)); });
   const planted = require(path.join(js, 'relayAuth.js'));
   planted.nameIdentity(home, 'relay');
   // Its owner, written at install as a relay's is: a relay with none seats nobody.

@@ -51,7 +51,7 @@ relayStore.closeAll();
 const refused = spawnSync(process.execPath, ['spirit/relayServer.js', '--port', '0'],
   { cwd: B.run, encoding: 'utf8', timeout: 20000 });
 const said = (refused.stderr || '') + (refused.stdout || '');
-if (refused.status === 78 && /2 member\(s\) but relay-state\/owner\.json names no owner/.test(said)) {
+if (refused.status === 78 && /2 member\(s\) but spirit\/state\/owner\.json names no owner/.test(said)) {
   test.check('it exits 78 and says why: ' + said.trim().split('\n')[0].slice(0, 120));
 } else {
   test.fail('relay start with members and no owner: status=' + refused.status + ' out=' + said.slice(0, 400));

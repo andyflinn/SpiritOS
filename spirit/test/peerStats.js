@@ -218,10 +218,10 @@ test.subHeading('One file per peer, named by peerFile, in the node\'s own state'
     test.fail('path: ' + rel.join('/'));
   }
 
-  if (peerFile.keyFromFileName(rel[2]) === BERT) {
+  if (peerFile.keyFromFileName(rel[3]) === BERT) {
     test.check('and the name says whose it is, so nothing has to be indexed');
   } else {
-    test.fail('name does not round-trip: ' + rel[2]);
+    test.fail('name does not round-trip: ' + rel[3]);
   }
 
   // Two peers, two files, no shared state.

@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 
 const RUN_JS = path.join(__dirname, '..', 'run', 'spirit');
-const FILES = ['relayAuth.js', 'fieldRules.js'];
+const FILES = ['relayAuth.js', 'fieldRules.js', 'shellMove.js'];
 
 function ensureAt(root, name) {
   const js = path.join(root, 'spirit');

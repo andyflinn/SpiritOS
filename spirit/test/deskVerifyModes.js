@@ -74,6 +74,7 @@ async function start(name, apps) {
   const root = path.join(scratch, name);
   const state = path.join(root, 'relay-state', 'process', 'deskVerify');
   fs.mkdirSync(state, { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   const db = path.join(root, 'verify.db');
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'deskVerify', 'win32', 'process') : path.join(root, 'door.sock');
