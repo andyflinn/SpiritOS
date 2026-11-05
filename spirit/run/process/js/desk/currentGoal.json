@@ -1,5 +1,5 @@
 {
- "change": 135082,
+ "change": 135084,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,6 +13,7 @@
    "buttons": [
     "done",
     "verify",
+    "go-all",
     "close",
     "pushgoal"
    ],
@@ -301,6 +302,7 @@
    "version": 19,
    "buttons": [
     "start-design",
+    "go",
     "close",
     "pushgoal",
     "delete",
@@ -309,9 +311,7 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [
-    "goal/G43.7"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -5569,15 +5569,13 @@
    "id": "goal/G43.7",
    "title": "Fix 'data'",
    "goal": "goal/G43",
-   "status": "verified red",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 10,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "pushgoal"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -5586,7 +5584,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -5711,7 +5709,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "- we fix spirit/spiritData.js as follows: .we rename it spirit/data.js and it IS the the spirit.data object. this object has only helper functions and object <name> for every application, and data puts shit instead of spirit.<name>Data, into fucking spirit.data.<name>.data\n\n- we rename \"clientCacheManager.js\" to \"data.js\" and make it put it's junk on spirit.data.<name>.data using the module spirit/data.js\n\n- ALL \"clientCacheManager.js\" files will be converted to \"data.js\" files with the SAME pattern.\n\n# structure of spirit.data\n\n- spirit.data // containing helper functions for its \"apps\"\n- spirit.data.<name>.data // (the \"cache\" manager that <name> process supplies\n- spirit.data.<name>.cache // the actual cache...\n\n",
