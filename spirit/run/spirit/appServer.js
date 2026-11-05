@@ -416,7 +416,9 @@ function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '
 // data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
   if (!family || !/^[A-Za-z]\w*$/.test(String(family))) return null;
-  const file = path.join(RUN_ROOT, path.dirname(path.dirname(spirit.familyPath(String(family)))), 'data.js');
+  // In the new namespace it sits beside <name>.js, as it does in process/js (goal/G43.12).
+  const own = path.join(RUN_ROOT, 'spirit', 'app', String(family), 'data.js');
+  const file = fs.existsSync(own) ? own : path.join(RUN_ROOT, path.dirname(path.dirname(spirit.familyPath(String(family)))), 'data.js');
   if (!fs.existsSync(file)) return null;
   try { return require(file); } catch (e) { return null; }
 }
@@ -753,7 +755,9 @@ function subscribersFromGrants(name) {
 // reaches nothing above it. The manifest stays with the script, so none is in the folder.
 function withAgents(verbs, script) {
   const resolved = path.resolve(String(script || ''));
-  const folder = path.basename(path.dirname(familyPath(path.basename(resolved, '.js'))));
+  // A SCRIPT OF spirit/app/<name>/ HAS ./api/ (goal/G43.12; Andy: "what is the "family" folder in the old system is now the ./api/folder").
+  const inApp = /^spirit[\/\\]app[\/\\][^\/\\]+$/.test(path.relative(RUN_ROOT, path.dirname(resolved)));
+  const folder = inApp ? 'api' : path.basename(path.dirname(familyPath(path.basename(resolved, '.js'))));
   const made = require('./introSpector').family(path.join(path.dirname(resolved), folder), {
     declared: Object.keys(verbs),
   });

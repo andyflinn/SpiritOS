@@ -8,7 +8,8 @@
 //   createApp({ rootDir, jobs }) -> { search(body), active(body) }
 //     search({ q })   the plugins the words fit, best first, as { key: the folder's name, label: the row as JSON }; no
 //                     words is every plugin. "it's minimum, no filters, just a search string."
-//     active({ key, active })  sets a plugin's active in spirit/state/<key>/node.json, and publishes the rows. It only writes.
+//     active({ key, active })  sets a plugin's active in spirit/state/<key>/node.json, publishes the rows, and the node starts or
+//                     stops its server, if it has one (goal/G43.12).
 //                     A key that is no plugin is refused, so no path can be written through it (goal/G43.9).
 //     label({ key, label }), icon({ key, icon }), shell({ key, shell })  the same, for its label, its icon and whether it may
 //                     mount as shell. <name>.json gives the default, node.json overrides it, and none writes <name>.json
@@ -87,6 +88,8 @@ function createApp(opts) {
     fs.mkdirSync(path.dirname(stateFile(key)), { recursive: true });
     fs.writeFileSync(stateFile(key), JSON.stringify(state, null, 2) + '\n');
     publish();
+    // active starts and stops its server (goal/G43.12).
+    if (o.jobs && typeof o.jobs.followApp === 'function') o.jobs.followApp(o.rootDir, key);
     return { ok: true, status: 200 };
   }
   // Andy: "on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json",

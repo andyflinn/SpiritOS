@@ -1340,7 +1340,11 @@ catch (e) {
     },
     // A served app's family folder, where its api.js is (goal/G32.3), as the one family path function names it
     // (spirit.familyPath, goal/G41.12).
-    familyDir: function (name) { return path.join(ROOT_DIR, path.dirname(spirit.familyPath(name))); },
+    // An app of spirit/app/ has it in ./api/ (goal/G43.12); the node finds the folder, so a page binds by the name alone.
+    familyDir: function (name) {
+      const api = path.join(ROOT_DIR, 'spirit', 'app', String(name), 'api');
+      return require('fs').existsSync(api) ? api : path.join(ROOT_DIR, path.dirname(spirit.familyPath(name)));
+    },
   });
   // EACH APPSERVER'S BUNDLES ARE WRITTEN BY apiAuth AS IT IS MADE, below (goal/G41.24; Andy, box: "the apiAuth.js module,
   // when the node boots, will check for all valid ... Bundles.json files"). Everything from here to there runs in this one

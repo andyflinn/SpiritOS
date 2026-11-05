@@ -72,10 +72,14 @@ const STATUS = {
 // 'process-', so it never equals the legacy app/ pipe of the same name.
 function pipePathFor(rootDir, appName, platform, kind) {
   const proc = kind === 'process';
+  // kind 'app' (goal/G43.12): a server of spirit/app/. Andy: "their new door.sock will live in run://spirit/state/<name>/,
+  // owned by the node."
+  const app = kind === 'app';
   if ((platform || process.platform) === 'win32') {
     const tag = crypto.createHash('sha256').update(path.resolve(String(rootDir))).digest('hex').slice(0, 12);
-    return '\\\\.\\pipe\\spirit-' + tag + '-' + (proc ? 'process-' : '') + appName;
+    return '\\\\.\\pipe\\spirit-' + tag + '-' + (proc ? 'process-' : app ? 'app-' : '') + appName;
   }
+  if (app) return path.join(rootDir, 'spirit', 'state', appName, 'door.sock');
   return proc
     ? path.join(rootDir, 'relay-state', 'process', appName, 'door.sock')
     : path.join(rootDir, 'app-state', appName, 'door.sock');

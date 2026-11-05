@@ -363,7 +363,7 @@
   // at spirit.data.<name>. A family with none answers not-found.
   function managerPaths(name) {
     var n = String(name || '');
-    return ['spirit/' + n + '/data.js', familyPath(n).replace(/family\/api\.js$/, 'data.js')];
+    return ['spirit/' + n + '/data.js', familyPath(n).replace(/family\/api\.js$/, 'data.js'), 'spirit/app/' + n + '/data.js'];
   }
   // ON A PAGE, FOUND THROUGH THE FAMILY'S OWN FS AND LOADED BY A GET (goal/G41.28; Andy: "for the owner, the api tree
   // returns a FS set of verbs for every family", and on FS.path: "my approval is set, unless there's a valid objection"):
@@ -386,7 +386,7 @@
           if (!fam || !fam.FS || typeof fam.FS.path !== 'function') throw refusal('not-found', 'the family ' + n + ' has no FS');
           return fam.FS.path({ path: 'api.js' });
         }).then(function (b) {
-          var p = b && typeof b.path === 'string' ? b.path.replace(/(family\/)?api\.js$/, MANAGER) : '';
+          var p = b && typeof b.path === 'string' ? b.path.replace(/((family|api)\/)?api\.js$/, MANAGER) : '';
           if (!p) throw refusal('not-found', 'the family ' + n + ' has no ' + MANAGER);
           return requireOne('spirit/data.js').then(function () { return requireOne(p); });
         });

@@ -455,24 +455,41 @@ module.exports = function installJobs(port) {
     try { side = JSON.parse(fs.readFileSync(path.join(root, 'relay-state', 'process', name, name + '.js.sidecar.json'), 'utf8')); } catch (e) { side = null; }
     return !!(side && side.face && side.face.home === true);
   }
-  // A script under <root>/process/js/<name>/, read as {root, name}; null for
-  // anything else. The one reading of a script's path, for where it runs and
-  // for the module a job is an instance of (slim/G1.5).
+  // AN APP OF THE NEW NAMESPACE (goal/G43.12). Andy: "active is exactly that: "running"", and "that's how the node knows, at
+  // re-boot time, which servers it must autostart." active in spirit/state/<name>/node.json is the one switch, for its server
+  // and for every script of its folder. node.mount in spirit/app/<name>/<name>.json says it has a server at all; the old kind
+  // and operated stay with process/js.
+  function appActive(root, name) {
+    try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
+  }
+  function appServes(root, name) {
+    let own = null;
+    try { own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { return false; }
+    return !!(own && own.node && own.node.mount === true) && appActive(root, name);
+  }
+  // A script under <root>/process/js/<name>/ or <root>/spirit/app/<name>/, read as {root, name}, the second with app: true; null
+  // for anything else. The one reading of a script's path, for where it runs and for the module a job is an instance of
+  // (slim/G1.5). THE SECOND PLACE IS FOR THE MIGRATION (goal/G43.12, Q3; Andy: "it widens until all processes are migrated, then
+  // it tightens back to the new side...").
   function processOf(script, cwd) {
     if (typeof script !== 'string' || !/\.js$/.test(script)) return null;
     const abs = path.resolve(cwd || process.cwd(), script);
     const m = /^(.*)[\/\\]process[\/\\]js[\/\\]([^\/\\]+)[\/\\][^\/\\]+\.js$/.exec(abs);
-    return m ? { root: m[1], name: m[2] } : null;
+    if (m) return { root: m[1], name: m[2] };
+    const a = /^(.*)[\/\\]spirit[\/\\]app[\/\\]([^\/\\]+)[\/\\][^\/\\]+\.js$/.exec(abs);
+    return a ? { root: a[1], name: a[2], app: true } : null;
   }
   // THE NODE OWNS EVERY MODULE ID, BY PATH (slim/G1.5). Andy: "what we see in
   // jobs monitor are ID-instances". The id is the module's path.
   function moduleOf(script, cwd) {
     const p = processOf(script, cwd);
+    // Andy: "the id of modules in the new framework is: "spirit.app.<name>" (goal/G43.12).
+    if (p && p.app) return 'spirit.app.' + p.name;
     return p ? 'process/js/' + p.name : '';
   }
   function refuseUnlisted(script, cwd) {
     const p = processOf(script, cwd);
-    if (!p || runsHome(p.root, p.name)) return;
+    if (!p || (p.app ? appActive(p.root, p.name) : runsHome(p.root, p.name))) return;
     const e = new Error('process not included on this node: ' + p.name);
     e.refusal = 'process-not-included';
     e.process = p.name;
@@ -511,8 +528,8 @@ module.exports = function installJobs(port) {
   // THE NODE NAMES ITS PIPE (desk/G1.6, appPair D15): each node-operated
   // server process starts with --pipe <the name the node chose>, and is
   // registered with `client` (appClient) so 'api' and calls reach it. Only
-  // process/js gets this (desk/G1 D11, Andy: "THERE ARE NO APP SERVERS!",
-  // "you want the support, move to precess/js").
+  // process/js got this (desk/G1 D11, Andy: "THERE ARE NO APP SERVERS!"), and
+  // since goal/G43.12 an app of spirit/app/ too, its door kind 'app'.
   // ONE SERVER STARTED, ITS JOB KEPT BY NAME (goal/G41.1): at boot for every server that runs at home, and again whenever
   // its sidecar is written to say so (followHome, below). The node it runs on is the one startNodeServers was handed.
   const nodeServers = new Map();   // name -> its server job
@@ -525,7 +542,16 @@ module.exports = function installJobs(port) {
     // ITS ARGUMENTS ARE ITS MANIFEST'S DEFAULTS: no central list overrides them (goal/G41.1, box v13).
     const values = {};
     (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
-    const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform, 'process');
+    return runServer(rootDir, client, name, script, 'process', m.label || name, values);
+  }
+  // ONE APP'S SERVER (goal/G43.12): spirit/app/<name>/<name>.js, with no arguments.
+  function startAppServer(rootDir, client, name) {
+    const script = path.join(rootDir, 'spirit', 'app', name, name + '.js');
+    if (!fs.existsSync(script)) return null;
+    return runServer(rootDir, client, name, script, 'app', name, {});
+  }
+  function runServer(rootDir, client, name, script, kind, type, values) {
+    const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform, kind);
     // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/<name>/data/ (goal/G43.10),
     // handed over as --state, so a process never works out its own folder.
     const state = path.join(rootDir, 'spirit', 'state', name, 'data');
@@ -533,7 +559,7 @@ module.exports = function installJobs(port) {
     if (process.platform !== 'win32') {
       try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
     }
-    const job = startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir)), { type: m.label || name, operated: 'node' });
+    const job = startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir)), { type: type, operated: 'node' });
     nodeServers.set(name, job);
     if (client && typeof client.register === 'function') client.register(name, pipe);
     return job;
@@ -571,8 +597,12 @@ module.exports = function installJobs(port) {
     try { names = fs.readdirSync(base); } catch (e) { return []; }
     serverHost = { rootDir: rootDir, client: client };
     // ONLY WHAT RUNS AT HOME: its sidecar says so (goal/G41.1).
+    let apps = [];
+    try { apps = fs.readdirSync(path.join(rootDir, 'spirit', 'app')); } catch (e) { apps = []; }
     return names.filter(function (name) { return runsHome(rootDir, name); })
-      .map(function (name) { return startNodeServer(rootDir, client, name); }).filter(Boolean);
+      .map(function (name) { return startNodeServer(rootDir, client, name); })
+      .concat(apps.filter(function (name) { return appServes(rootDir, name); }).map(function (name) { return startAppServer(rootDir, client, name); }))
+      .filter(Boolean);
   }
   // A SIDECAR WRITTEN STARTS OR STOPS ITS SERVER (goal/G41.1, box v13: "the node starts or stops the server when that
   // sidecar changes"): heard by the fs watcher, on the node startNodeServers was handed.
@@ -594,6 +624,17 @@ module.exports = function installJobs(port) {
     const live = !!now && !TERMINAL_STATUSES.has(now.status);
     const want = runsHome(rootDir, name);
     if (want && !live) startNodeServer(rootDir, serverHost.client, name);
+    else if (!want && live) { cancelJob(job.id); nodeServers.delete(name); }
+  }
+  // active WRITTEN STARTS OR STOPS ITS SERVER (goal/G43.12, Q4: "exactly.", "that's why sidecars will go out-of style."): told
+  // by the app family as it writes node.json. Its name stays in the table, as a stopped process/js server's does.
+  function followApp(rootDir, name) {
+    if (!serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;
+    const job = nodeServers.get(name);
+    const now = job && getJob(job.id);
+    const live = !!now && !TERMINAL_STATUSES.has(now.status);
+    const want = appServes(rootDir, name);
+    if (want && !live) startAppServer(rootDir, serverHost.client, name);
     else if (!want && live) { cancelJob(job.id); nodeServers.delete(name); }
   }
 
@@ -683,6 +724,7 @@ module.exports = function installJobs(port) {
     fsTreeEntries: fsTreeEntries,
     startProcessJob: startProcessJob,
     startServerJob: startServerJob,
+    followApp: followApp,
     startJob: startJob,
     startNodeServers: startNodeServers,
     startStatsJob: startStatsJob,
