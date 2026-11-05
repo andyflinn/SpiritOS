@@ -51,6 +51,18 @@ test.startTest('iconSelector.js: it offers spirit/iconSet.json (goal/G43.11)');
     ok(missing.length === 0, 'it offers every icon of that file: ' + want.length, missing.length + ' are not offered, ' + short(missing.slice(0, 20)));
     ok(offered.length === want.length, 'and nothing else', 'it offers ' + offered.length + ' of ' + want.length);
     ok(offered.indexOf(left) === -1, 'an excluded glyph stays off it', 'an excluded glyph is offered');
+
+    // The box: "A page reads the file once". A fresh page, the list and the selector made at the same moment, the set not yet there.
+    test.subHeading('the box: "A page reads the file once"');
+    await chrome.send('Page.navigate', { url: N.base + '/face.html' });
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+    await chrome.evaluate('window.spirit.ready.then(function (s) { window.__asks = []; var read = s.fs.loadFile; s.fs.loadFile = function (p) { window.__asks.push(String(p)); return read.apply(this, arguments); };' +
+      ' return Promise.all([window.spirit.require("spirit/element/iconSelector.js"), window.spirit.require("spirit/element/icons/listElement.js")]); }).then(function () { var box = document.body.appendChild(document.createElement("div"));' +
+      ' window.__root = window.spirit.element.iconSelector.create(box, {}); window.spirit.element.iconList.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); window.spirit.element.iconList.create(document.body.appendChild(document.createElement("div")), { face: "pane" }); return 1; })');
+    await until(function () { return rows().then(function (r) { return r.length > 0; }); }, 8000);
+    const once = (parsed(await chrome.evaluate('JSON.stringify(window.__asks)')) || []).filter(function (p) { return /iconSet\.json$/.test(p); });
+    ok(once.length === 1, 'a selector and two lists made together read it once', 'reads: ' + short(once));
+    ok((await rows()).length === glyphs.length, 'and the selector has all of it', 'the selector offers ' + (await rows()).length + ' of ' + glyphs.length);
   } finally {
     if (chrome && chrome.kid) chrome.kid.kill();
     if (N.child) N.child.kill();
