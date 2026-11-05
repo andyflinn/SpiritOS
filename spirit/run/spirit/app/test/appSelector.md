@@ -23,6 +23,7 @@
 - A press writes `spirit/state/<key>/node.json`; the stream brings `active` to the row and the button follows, no search asked. A search seated over the row does not lose `active`.
 - The panel, Andy: *"the detail panel needs to open on top of the whole container"*. A pick in the pane opens it over the whole container, with the list out of sight, and its close icon brings the list back. It launches nothing.
 - The title bar of all panels, a launched app's too, is one rowForm: *"[app-icon] "<app-label> [x]"*. Its close button keeps the class `.app-container-close`.
+- *"row 0: rowForm: [✏️] "Icon" [iconSelector:dropdown] [Change]"*. It shows the app's icon; a changed icon writes `icon` to `node.json`, not to `<name>.json`, and the bar follows. The test sets it through `spirit.app.iconApp`; pressing the dropdown itself is not driven.
 - *"row 1: rowForm: [✏️] "Label" [label input box] [Change]"*. Change writes `label` to `spirit/state/<name>/node.json`, not to `<name>.json` (Q4), and the row and the panel follow.
 - Row 2: *"if inactive: [🔴] "Activate <app-label> "face" "and" "server" [🟢]"*, *"if active: [🟢] "Deactivate <app-label> "face" "and" "server" [🔴]"*. *"face"* only if `shell.mount`, *"server"* only if `node.mount`, *"and"* only if both.
 - Row 3, *"shown only if shell-mount==true"*: *"[🔴] "Allow <app-label> as shell" [🟢]"* or *"[🟢] "Don't allow <app-label> as shell" [🔴]"*. A press writes `shell` to `node.json`, not to `<name>.json`.

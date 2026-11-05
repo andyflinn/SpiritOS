@@ -1,0 +1,4 @@
+{
+  "description": "Sets the icon this node shows for an app in its app folder, in spirit/state/<key>/node.json, over what <key>.json says. A key that is no app is refused. It answers no rows: the node publishes them on its 'apps' job.",
+  "parameters": "key is the app's folder name, icon the glyph; an empty icon goes back to <key>.json's."
+}

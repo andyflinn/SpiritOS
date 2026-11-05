@@ -32,3 +32,7 @@ Q4, *"Do a label change and allow-as-shell go in spirit/state/<name>/node.json, 
 - Each names its arguments, has its file, writes `node.json` keeping what else it holds, and never writes `<name>.json`.
 - `node.json` overrides `<name>.json`: a search answers the new label.
 - A face with no star is refused both, and both refuse a key that is no app.
+
+Q6, *"Does a changed icon go in spirit/state/<name>/node.json through a third new verb, app.icon?"*, Andy: *"yes."* `app.icon` is held the same way.
+
+The first activate, Andy: *"on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json"*, and on Q7: *"it just holds active (boolean), icon (glyph), label(string) and shell (boolean),"*. It copies those three, holds nothing else, and keeps what the node already chose.

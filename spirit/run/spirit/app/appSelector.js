@@ -47,9 +47,16 @@
       bar.button.className = 'app-container-close';
       bar.button.title = 'Close';
       bar.span.textContent = row.label;
-      var offRow = S.data.app.data.watchApp(String(row.key), function (now) { if (now) bar.span.textContent = now.label; });
+      var offRow = S.data.app.data.watchApp(String(row.key), function (now) {
+        if (!now) return;
+        bar.span.textContent = now.label;
+        var hold = document.createElement('span');
+        S.element.icon.create(hold, { glyph: now.icon });
+        bar.root.replaceChild(hold.firstChild, bar.root.firstChild);
+      });
       var pane = document.createElement('div');
       pane.className = 'app-container-pane fill';
+      pane.style.marginTop = '1em';
       shell.appendChild(pane);
       // Not hidden: a list's box is a flex box, and its display would win.
       listBox.style.display = 'none';

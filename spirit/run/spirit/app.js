@@ -10,8 +10,9 @@
 //                     words is every plugin. "it's minimum, no filters, just a search string."
 //     active({ key, active })  sets a plugin's active in spirit/state/<key>/node.json, and publishes the rows. It only writes.
 //                     A key that is no plugin is refused, so no path can be written through it (goal/G43.9).
-//     label({ key, label }), shell({ key, shell })  the same, for the label and whether the app may mount as shell. <name>.json
-//                     gives the default, node.json overrides it, and neither writes <name>.json (Q4: "yes.").
+//     label({ key, label }), icon({ key, icon }), shell({ key, shell })  the same, for its label, its icon and whether it may
+//                     mount as shell. <name>.json gives the default, node.json overrides it, and none writes <name>.json
+//                     (Q4: "yes.", Q6: "that would apply to all changes").
 //
 // A PLUGIN IS A FOLDER WITH ITS OWN <name>/<name>.json (Andy, G43.1's box: "the new "default" pattern in that module is:
 // /<name>/<name>.json"), read from the disk at each search, so no list names one. appSelector/ and test/ are no plugins.
@@ -51,7 +52,7 @@ function createApp(opts) {
     const i = own && own.identity && typeof own.identity === 'object' ? own.identity : {};
     const s = stateOf(name);
     const asShell = typeof s.shell === 'boolean' ? s.shell : !!(own && own.shell && own.shell.true === true);
-    return { key: name, label: String(s.label || i.label || name), icon: String(i.icon || ''), active: s.active === true, shell: asShell };
+    return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: s.active === true, shell: asShell };
   }
   function names() {
     try {
@@ -88,8 +89,16 @@ function createApp(opts) {
     publish();
     return { ok: true, status: 200 };
   }
-  function active(body) { return write(body, { active: !!(body && body.active === true) }); }
+  // Andy: "on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json",
+  // and Q7: "it just holds active (boolean), icon (glyph), label(string and shell (boolean)". What the node already chose stays.
+  function active(body) {
+    const on = !!(body && body.active === true);
+    const key = String((body && body.key) || '');
+    const row = on && names().indexOf(key) !== -1 ? rowOf(key) : null;
+    return write(body, row ? { active: true, label: row.label, icon: row.icon, shell: row.shell } : { active: on });
+  }
   function label(body) { return write(body, { label: String((body && body.label) || '') }); }
+  function icon(body) { return write(body, { icon: String((body && body.icon) || '') }); }
   function shell(body) { return write(body, { shell: !!(body && body.shell === true) }); }
   if (o.jobs) {
     const job = o.jobs.createJob('permanent', 'apps', { apps: table() });
@@ -101,7 +110,7 @@ function createApp(opts) {
     });
   }
 
-  return { search: search, active: active, label: label, shell: shell };
+  return { search: search, active: active, label: label, icon: icon, shell: shell };
 }
 
 module.exports = { createApp: createApp };
