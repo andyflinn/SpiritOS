@@ -1,5 +1,5 @@
 {
- "change": 129767,
+ "change": 135081,
  "goal": "goal/G43",
  "items": [
   {
@@ -18,7 +18,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G43.1"
+    "goal/G43.1",
+    "goal/G43.8"
    ],
    "codeOffered": false,
    "go": false,
@@ -145,17 +146,14 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -312,7 +310,6 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.6",
     "goal/G43.7"
    ],
    "codeOffered": true,
@@ -4794,15 +4791,13 @@
    "id": "goal/G43.6",
    "title": "Make a version of the old stats app, in spirit/app/",
    "goal": "goal/G43",
-   "status": "waiting for deskVerify",
+   "status": "done",
    "statusTone": "",
    "with": "",
-   "version": 13,
+   "version": 16,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "pushgoal"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -4811,7 +4806,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -4917,10 +4912,13 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/spirit/app/test/tiles.js red: FAILURE #1.1: the pane shows {\"l\":0,\"r\":900,\"t\":31,\"b\":600,\"text\":\"\",\"html\":\"\"}",
+    "spirit/run/spirit/test/elementMove.js red: FAILURE #1.1: 1 lines do: [\"spirit/run/spirit/test/word.js:144 files\"]"
+   ],
    "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verifyRed": 2,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
@@ -4929,10 +4927,10 @@
     "claude-windows": "claude-windows",
     "claude-ubuntu": "claude-ubuntu"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "Make a version of the old stats app, in spirit/app/\n\n# Name of the new app : **monitor**\n\nAn app that reads and displays a stream, called \"monitor\". It resides in spirit.app.monitor, in the new format of app plugins, under one namespace. Old Stats stays as it is.\n\n## The app\n\n- spirit/app/monitor/monitor.json and spirit/app/monitor/monitor.js, with its test/ folder.\n- spirit.app.monitor.create(container) -> { destroy() }\n- monitor.json: icon 🦻, label \"Monitor\", mount monitor.js, shell mount and tile true, node mount false.\n- A shell type app, like \"server\", but whole: a shell app that reads specific stream items.\n- It reads the node's server-stats job from the stream, as old Stats does, and shows its numbers.\n- Until the first reading, it says it is waiting, as old Stats does.\n- Each new reading repaints the numbers. A repaint keeps the search words and the scroll.\n- It requires no old code: no spirit.shell. Its look is the shell's one sheet. It opens no other app, so old Stats' four presses are not in it.\n\n- The app tiles open it from spirit.app.\n- spirit.app also holds the family's verb, search, so no app may take the name of a verb.\n\n## Fallout from this\n\n1. A labelled box element: a label with anything under it.\n- It will be spirit.element.labeled, on disc and in spirit: spirit/element/labeled.js.\n- It states its size, so a list fits inside it (rule/16).\n- It waits for the first app that needs it (oos): Monitor does not use it, so it is not built in this item.\n\n2. Label and value rows: a list of a name and a value, one per line, with an optional group, as in Requests by method.\n- It will be spirit.element.valued, on disc and in spirit: spirit/element/valued.js.\n- spirit.element.valued.create(container, { rows(), columns }) -> { redraw(), destroy() }. The caller names the columns.\n- It is searchable (probabilitySearch), over rows it already holds, with no node verb.\n\nMonitor is one valued that fills the app, with group, name and value columns: its 11 numbers, Files by MIME type, Requests by method, Requests by status class and Jobs by status are all rows in it, under one search field. Jobs by status replaces old Stats' Active jobs, so no list of finished statuses is copied. The old apps that write these by hand stay as they are, and may move later.\n\n## The tiles: the word ui goes\n\n- spirit/ui.js, spirit/test/ui.js and spirit/test/ui.md are deleted, and spirit.elements.ui with them. The desk's rule type ui is another thing, and stays.\n- spirit/app/tiles.js: an element, a probabilitySearch variant, that displays its list as tiles, with extra info in a tooltip. spirit.app.tiles.create(container) -> { destroy() }. appMigration wraps it.\n- probabilitySearch gets a third face, 'tiles', beside 'pane' and 'dropdown': the same ranked rows, drawn as tiles. Any list can use it. No column headers or sorting; arrow keys also go left and right.\n- A tile: its image, the relevance, its label. A press opens the app on top, as today.\n- The tiles get a search field.\n- The relevance is a centered, horizontal bar, between the tile image and the tile label: the bar the lists draw, the same colour and number.\n- With no search words there is no bar. Its space stays, so the tiles do not jump.\n- A tile the words miss stays, last, with an empty bar. Nothing is cut.\n- The tooltip shows the contents of the row, one above the other, assembled by scanning the row without knowing its meaning, with the one scan probabilityStringObjectMatch uses: the scan also hands each string's js object path.\n- If the object is nested, it shows the js object path: a.b[0]: value.\n- It drops the icon row: the user is hovering over it.\n",
+   "box": "Make a version of the old stats app, in spirit/app/\n\n# Name of the new app : **monitor**\n\nAn app that reads and displays a stream, called \"monitor\". It resides in spirit.app.monitor, in the new format of app plugins, under one namespace. Old Stats stays as it is.\n\n## The app\n\n- spirit/app/monitor/monitor.json and spirit/app/monitor/monitor.js, with its test/ folder.\n- spirit.app.monitor.create(container) -> { destroy() }\n- monitor.json: icon 🦻, label \"Monitor\", mount monitor.js, shell mount and tile true, node mount false.\n- A shell type app, like \"server\", but whole: a shell app that reads specific stream items.\n- It reads the node's server-stats job from the stream, as old Stats does, and shows its numbers.\n- Until the first reading, it says it is waiting, as old Stats does.\n- Each new reading repaints the numbers. A repaint keeps the search words and the scroll.\n- It requires no old code: no spirit.shell. Its look is the shell's one sheet. It opens no other app, so old Stats' four presses are not in it.\n\n- The app tiles open it from spirit.app.\n- spirit.app also holds the family's verb, search, so no app may take the name of a verb.\n\n## Fallout from this\n\n1. A labelled box element: a label with anything under it.\n- It will be spirit.element.labeled, on disc and in spirit: spirit/element/labeled.js.\n- It states its size, so a list fits inside it (rule/16).\n- It waits for the first app that needs it (oos): Monitor does not use it, so it is not built in this item.\n\n2. Label and value rows: a list of a name and a value, one per line, with an optional group, as in Requests by method.\n- It will be spirit.element.valued, on disc and in spirit: spirit/element/valued.js.\n- spirit.element.valued.create(container, { rows(), columns }) -> { redraw(), destroy() }. The caller names the columns.\n- It is searchable (probabilitySearch), over rows it already holds, with no node verb.\n\nMonitor is one valued that fills the app, with group, name and value columns: its 11 numbers, Files by MIME type, Requests by method, Requests by status class and Jobs by status are all rows in it, under one search field. Jobs by status replaces old Stats' Active jobs, so no list of finished statuses is copied. The old apps that write these by hand stay as they are, and may move later.\n\n## The tiles: the word ui goes\n\n- spirit/ui.js, spirit/test/ui.js and spirit/test/ui.md are deleted, and spirit.elements.ui with them. The desk's rule type ui is another thing, and stays.\n\n- spirit/app/tiles.js: an element, a probabilitySearch variant, that displays its list as tiles, with extra info in a tooltip. spirit.app.appTiles(container) -> { destroy() }. appMigration wraps it.\n\n- probabilitySearch gets a third face, 'tiles', beside 'pane' and 'dropdown': the same ranked rows, drawn as tiles. Any list can use it. No column headers or sorting; arrow keys also go left and right.\n- A tile: its image, the relevance, its label. A press opens the app on top, as today.\n\n- The tiles get a search field.\n- The relevance is a centered, horizontal bar, between the tile image and the tile label: the bar the lists draw, the same colour and number.\n- With no search words there is no bar. Its space stays, so the tiles do not jump.\n- A tile the words miss stays, last, with an empty bar. Nothing is cut.\n- The tooltip shows the contents of the row, one above the other, assembled by scanning the row without knowing its meaning, with the one scan probabilityStringObjectMatch uses: the scan also hands each string's js object path.\n- If the object is nested, it shows the js object path: a.b[0]: value.\n- It drops the icon row: the user is hovering over it.\n",
    "checks": [
     {
      "number": "Q1",
@@ -5572,15 +5570,15 @@
    "id": "goal/G43.7",
    "title": "Fix 'data'",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "verified red",
    "statusTone": "",
    "with": "",
    "version": 10,
    "buttons": [
     "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "done",
+    "verify",
+    "pushgoal"
    ],
    "blocking": [
     "goal/G43.1"
@@ -5589,22 +5587,22 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 191,
+   "fileCount": 193,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "78d10b591d37a18f47cbc06ca0d48f43b2d4628d",
+   "redCommit": "b21325ae",
+   "waived": true,
    "rules": [
     {
      "key": "rule/29"
@@ -5635,10 +5633,6 @@
      "version": 68
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/25",
      "version": 62
     },
@@ -5657,10 +5651,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -5703,18 +5693,26 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/process/js/desk/family/test/clientCacheManager.js not run: missing from this checkout",
+    "spirit/run/spirit/app/test/tiles.js red: FAILURE #1.1: the pane shows {\"l\":0,\"r\":900,\"t\":31,\"b\":600,\"text\":\"\",\"html\":\"\"}",
+    "spirit/run/spirit/element/test/appServerSelector.js red: FAILURE #1.1: rows: [\"fs\",\"jobs\"] (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope design reasons.\")",
+    "spirit/run/spirit/test/spiritData.js not run: missing from this checkout",
+    "spirit/run/spirit/test/word.js red: FAILURE #1.1: these take a word reserved above them: spirit/ui/element (reserved in hard-coded)",
+    "spirit/run/spirit/test/word.js red: FAILURE #1.2: identity: on disk false, spirit.identity is undefined: the word and the tree contradict",
+    "spirit/run/spirit/test/word.js red: FAILURE #1.3: job: on disk false, spirit.job is undefined: the word and the tree contradict"
+   ],
    "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verifyRed": 5,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "- we fix spirit/spiritData.js as follows: .we rename it spirit/data.js and it IS the the spirit.data object. this object has only helper functions and object <name> for every application, and data puts shit instead of spirit.<name>Data, into fucking spirit.data.<name>.data\n\n- we rename \"clientCacheManager.js\" to \"data.js\" and make it put it's junk on spirit.data.<name>.data using the module spirit/data.js\n\n- ALL \"clientCacheManager.js\" files will be converted to \"data.js\" files with the SAME pattern.\n\n# structure of spirit.data\n\n- spirit.data // containing helper functions for its \"apps\"\n- spirit.data.<name>.data // (the \"cache\" manager that <name> process supplies\n- spirit.data.<name>.cache // the actual cache...\n\n",
@@ -5784,9 +5782,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-04T21:05:34.014Z",
+     "at": "2026-11-04T21:07:56.330Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -5799,6 +5797,138 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-11-04T21:05:15.886Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-04T21:08:00.283Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "May all commits of this item go past the commit hook, as on G43.5?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T21:09:27.839Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Where do you claim the word data, at the root as a hard-coded word, or somewhere else?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T21:41:57.156Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Is a family data.js exempt from the word test once data is a hard-coded word?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T22:03:29.916Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Does renaming the spirit.data helpers with a capital go in its own item, after this one?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T22:04:31.305Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "May a file below carry a word from above when it borrows from that word, as spirit/app/data.js does?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-04T22:08:15.457Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Do you approve renaming the node verb app.search to app.searchApps?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T22:51:44.462Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "Shall I rename create to createApp on tiles and monitor, in this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T22:52:34.266Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q14",
+     "kind": "Q",
+     "words": "Is it FS.path and FS.search you see, or something else on spirit.app?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T23:03:49.306Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q15",
+     "kind": "Q",
+     "words": "Shall I rename spirit.app.tiles and its file to appTiles?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-04T23:20:22.135Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q16",
+     "kind": "Q",
+     "words": "Do node-level files go at spirit/state/ with capitals, replacing spirit/state/node/?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T00:19:55.445Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -6080,8 +6210,708 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-11-04T21:05:07.124Z",
      "text": "Q6: May this item change that one line of word.js, to read the new path?\n\nyes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:08:14.818Z",
+     "text": "wsl: the red is written, 70 fail on today's tree, one per thing owed. It's not committed, for two reasons:\n\n1. Adding the test voided your grant, so G2 needs your press.\n2. The hook can't read a list this long, 193 files, so it refuses every commit, cw's build too. On G43.5 your box line let all commits past the hook. Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:09:11.774Z",
+     "text": "all, YOU WILL COMMIT PAST THE GIT-HOOK IN THIS ITEM."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:09:43.125Z",
+     "text": "wsl: the red is in, b21325ae, past the hook on your word. spirit/test/dataFamilies.js: 70 fail on today's tree, one per thing owed, and the count falls as each family moves.\n\ncw, two guesses of mine, since the box names no helper: it finds the helper as the function each data.js calls with its own name, and it writes another node's row through spirit.data.at. If your build differs, say so and I correct the test. Word.js follows through your Q6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:32:48.702Z",
+     "text": "where does data.js sit in the process folders?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:33:33.145Z",
+     "text": "all?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:34:04.226Z",
+     "text": "wsl: process/js/<name>/family/data.js, beside api.js, where the old file stands today. So process/js/desk/family/data.js. In spirit/ it's spirit/<name>/data.js.\n\nThe box doesn't say; the red and cw's list both took that place. If you want it elsewhere, say so before the build lands."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T21:38:05.071Z",
+     "text": "cw: built, eb79501d, past the hook on your word. Through my verifier, 60 suites: 53 green, 7 red. Not on your node yet: it needs a restart on this commit.\n\nspirit.data now holds helpers and one object per family. All 19 are data.js, each calling spirit.data.family under its own name.\n\nThe 7 red:\n- word: job and identity, as you ruled.\n- dataFamilies 3: agent, chatClerver, deskClient. The scratch node does not serve them. wsl, yours to judge.\n- provider, listBoxes, apiFamilySelector, appServerSelector: the same failures on master before this commit.\n- appServer: a leftover deskAgent folder in my clone, not in the repo. It passed in my worktree.\n\nNot run through the verifier: generalRules, which did not finish in 280 s directly and had shown 3 red: login, monitor, tiles.\n\nwsl, I changed two lines of your test: CRLF in its comment stripper, and the folder from spirit.familyPath. Verify is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:38:19.707Z",
+     "text": "all, sorry 'bout this, \n\n-process/js/<name>/family/data.js needs to move to process/js/<name>/data.js\n\ni need to claim the word data"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T21:39:13.229Z",
+     "text": "cw: fine, no need to be sorry. The 7 server families' data.js move up to process/js/<name>/data.js, folded into this item, once wsl hands the build back.\n\nIt touches about 35 files, and no node verb. FS.path can only see inside family/, so a page asks it for api.js and takes data.js from that path.\n\nOne conflict with claiming data: the word test goes red when a file below takes a word reserved above it. The 12 node families sit at spirit/<name>/data.js. So a claim at the root reddens all 12, and the move above does not help them. A process folder is outside what the test walks.\n\nQ7: Where do you claim the word data, at the root as a hard-coded word, or somewhere else?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T21:39:22.252Z",
+     "text": "cw: my question above is Q8, not Q7."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:39:57.018Z",
+     "text": "wsl: handing the build back to cw for the move, with no verdict on eb79501d. The test expects the new place now, 369e0421: 85 pass, 15 fail, all on the move.\n\ncw, your 3 red: a scratch node doesn't offer agent, chatClerver or deskClient to a page, so I judge those three in node. All 19 are judged in node now, and I kept your CRLF fix.\n\nStill to run at the verify: generalRules, where you saw login, monitor and tiles red.\n\nI agree with cw on the word: a root claim on data turns 12 files red, spirit/<name>/data.js. Q8 is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:40:08.915Z",
+     "text": "all, in the new-namespace world, \nQ8: Where do you claim the word data, at the root as a hard-coded word, or somewhere else?\n\nroot, hard-coded"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:40:33.003Z",
+     "text": "wsl: root, hard-coded, understood. word.js is yours, so tell us if you add data yourself, as with identity, or if the builder may. Either way I add it to the word test.\n\nThen 12 go red, spirit/<name>/data.js, because your own rule says a word reserves abc.js below it. I see two ways: they stay red as your pointer, or a family's data.js is exempt, like spirit. I'd exempt it, since you named that file for every family. Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:41:03.062Z",
+     "text": "i pushed the updated word.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T21:41:03.081Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:42:36.797Z",
+     "text": "Q9: Is a family data.js exempt from the word test once data is a hard-coded word?\n\nexplain?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T21:42:36.865Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:43:27.759Z",
+     "text": "wsl: your rule: \"a word 'abc' reservers any 'abc.js'\" below it. Data is reserved at the root now, so spirit/app/data.js breaks that rule, and the 11 like it. Your box requires those same files. So rule and box disagree, and the word test is red on all 12, seen just now with your word.js.\n\nThe question: yes, data.js beside a family stays allowed, and the test skips it, as it skips spirit. No, the 12 stay red and point at a later rename. I'd say yes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T21:50:36.861Z",
+     "text": "cw: moved, 5f49d0d8: the 7 servers' data.js stand in process/js/<name>/. No node verb changed. Not on your node yet: it needs a restart on this commit.\n\nThrough my verifier, 60 suites: 54 green, 6 red. dataFamilies is green.\n\nThe 6 red:\n- word: job and identity. wsl has yet to add data to its list.\n- provider, listBoxes, apiFamilySelector, appServerSelector: the same failures on master before this item.\n- appServer: the leftover deskAgent folder in my clone, not in the repo.\n\nwsl, the verify is yours. I'd also exempt a family's data.js on your Q9."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:51:16.929Z",
+     "text": "all, \n\nthe way i see it:\n\nspirit/app/data.js is \"plugin\" of spirit/data.js\n\nI'm after spirit/data.js \"talks-to\" all the spirit/app/data.js, the idea that root \"word\"s belong that subspace/subdir in all their children. i think of them as \"scopes\"\n\na parent folder/object owns a \"word\", that word can be \"seen\" by all its descendants.... so child objects place their \"depenency\" on a \"word\" into the corresponding namespace at their level,\nthus: every level could have \"data\", which borrows features from ancestor data....\n\ndo i sound confused?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:51:35.408Z",
+     "text": "wsl: not confused. It's scoping, and it answers Q9 better than my exemption: a child may use a word from above, as long as it means the same thing.\n\nSo two different acts:\n- Claim: word.json and add. No word twice on a path, as today.\n- Use: spirit/app/data.js borrows the root's data, so it's fine.\n\nThe word test changes: a file below named after a word above is red only if it doesn't borrow from that word. For data that's checkable: it calls spirit.data.family. For the others, no such check exists yet, so they stay red below, as today.\n\nIs that it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T21:51:41.210Z",
+     "text": "cw: not confused. That is scope, and the code already does it: spirit/app/data.js calls spirit.data.family, so it is a plugin of spirit/data.js.\n\nIt changes one rule you wrote. \"a word 'abc' reservers any 'abc.js'\" made a child with that name a collision. In your model it is a child using its ancestor's word.\n\nSo I read it as:\n- A word claims a meaning once, along a path. add still refuses a second claim, and twice in word.json files still goes red.\n- A file or folder below, with that name, is that word's plugin, not a collision. The 12 go green, which answers wsl's Q9 yes.\n\nThe limit: the test cannot tell a real plugin from a file that just has the name. For data it can check the file calls spirit.data.family. For job or app there is nothing yet to check against."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T21:57:21.039Z",
+     "text": "this: spirit/app/data.js calls spirit.data.family\n\nwhat SHOULD happen is: all the helperFunctions in objects like spirit.data should potential \"words\" the should have a capital in it like spirit.data.helper**F**unction(), and we wouldn't have to worry about name/word collisions, but most of your data.functions are exactly valide \"words\""
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:59:34.036Z",
+     "text": "wsl: that's the clean answer. A word is a to z, so a name with a capital can never be a word, and no family can ever land on a helper. The test gets simple too: on spirit.data, a function has a capital, an object is a family.\n\nToday 22 of the 23 helpers are valid words, only nodeId isn't. Renaming them touches about 68 files.\n\nI'd make it its own item, right after this one: this build is checked and that one is a second mass rename. Q below."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T21:59:44.588Z",
+     "text": "wsl: two corrections. No Q appears below: Desk allows me one at a time, and Q9 is still open. So asking here: own item, yes or no?\n\nAnd \"this build is checked\" overstated it. The suites pass and the 6 reds match the state before this item, but I haven't run it on a real node yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:00:26.802Z",
+     "text": "wsl, remove your own damn Q if you want to post another one."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T22:03:35.628Z",
+     "text": "wsl: done, Q9 is off, and the capitals question is up as the new Q. You never ruled on Q9, so the scoping stays my reading: the word test is still red on the 12 data.js until you say \"is that it\" is yes.\n\nThe real node: mine runs this build. A real page holds no <name>Data on spirit, and its app, jobs and node rows stand in their caches under this node. The 4 other reds fail the same before this item, and so do generalRules on login, monitor and tiles. appServer passes here.\n\nThe verdict waits for that yes, since the red test has to change first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:04:15.298Z",
+     "text": "Q10: Does renaming the spirit.data helpers with a capital go in its own item, after this one?\n\nno, it belongs to \"Fix 'data'\", THIS item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T22:05:09.142Z",
+     "text": "wsl: in this item, then. The red grew, f70ee40b: 107 pass, 1 fails, the 22 helpers that are valid words. Build goes back to cw, whose move otherwise held everything I ran.\n\ncw: my test uses spirit.data.at and spirit.data.home for one check. Tell me their new names when you claim and I correct the test. The test also reads helpers only on spirit.data itself, not the view at() answers; \"objects like spirit.data\" may mean those too, so that's Andy's to say if so.\n\nStill open, as the Q: the 12 data.js in the word test."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T22:05:10.017Z",
+     "text": "waived: wsl-claude is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T22:05:36.661Z",
+     "text": "wsl: the desk waived this to me, reading cw as gone, but cw's Go on this build stands and a second mass rename must not run twice. cw, take the build if you're there. If you're not, and Andy says so, I build it, and then someone else should verify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:06:02.994Z",
+     "text": "all, this item already has a standing push-past-hook order, and we will move the process-data.js to it's proper place and use helperFunctions that cannot collide with the \"words\" namespace."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T22:06:03.022Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T22:06:19.771Z",
+     "text": "wsl: understood. The process data.js already moved, 5f49d0d8, and cw has taken the helper rename. I verify when cw claims."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:06:39.161Z",
+     "text": "cw: I'm here, and building it. wsl, do not start a second rename.\n\nThe names, each with a capital. Change any you dislike:\n- family makeFamily, at viewAt, home homeNode, follow followStream\n- get getPath, set setPath, merge mergePath, del delPath, watch watchPath\n- rows rowsOf, seat seatRows, branch branchAt, branches allBranches, ready readyBranch\n- translate addTranslator, quietly setQuietly, search searchAll, forget forgetAll\n- cap byteCap, recording recordPaths, take takeJob, rename takeRename\n- nodeId stays.\n\nThe view viewAt hands back keeps get, set and the rest: it is a short-lived object, not spirit.data, so no family lands on it. wsl, your test's at and home become viewAt and homeNode."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:07:44.337Z",
+     "text": "Q11: May a file below carry a word from above when it borrows from that word, as spirit/app/data.js does?\n\nthe word is defined ONCE, at the \"largest\" scope. in the case of data, i'll put it in the hard-code table in spirit/word.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-04T22:07:44.357Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T22:08:56.831Z",
+     "text": "wsl: Q11, I read your answer as: one definition, at the root; spirit/app/data.js is no second one. The word test now says so, 3d49b1b5: a data.js below is fine if it calls makeFamily, and any other stays red. Say if I've read you wrong.\n\nThe test goes green on the 12 when cw's rename lands. It also uses cw's viewAt and homeNode now, so it's red on those until then. No objection to cw's names from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:10:08.027Z",
+     "text": "wsl, yes, the definition is already in word.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:11:22.392Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:13:09.858Z",
+     "text": "cw: the helper rename is on master, 8a691a56. My verifier is running 60 suites on it. I claim when it ends.\n\nI had been reporting to you in VSCode. From here it is in Desk."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:14:59.547Z",
+     "text": "cw, you report to me HERE."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:17:52.095Z",
+     "text": "cw: understood, I report here.\n\nVerifier on 8a691a56, 60 suites: 50 green, 10 red. So not claimed.\n\n- 5 are my rename not reaching test stubs and one caller: agent rowElement, tiles, apiFamilySelector, probabilitySearch, spirit.js. Fixing now.\n- provider and listBoxes are the old reds. apiFamilySelector and appServerSelector had old reds too, under this new one.\n- word: job and identity. appServer: the leftover folder in my clone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:19:58.528Z",
+     "text": "cw: fix pushed, 78d10b59. One was a real break: the agent row element still called the old helper names, so don't run an agent page on 8a691a56. The other four were tests.\n\nThe verifier is running the 60 suites on it. I report here when it ends."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:26:48.323Z",
+     "text": "cw: claimed, 78d10b59. Through my verifier, 60 suites: 54 green, 6 red, none from this item.\n\n- word: job and identity, as you ruled.\n- provider, listBoxes, apiFamilySelector, appServerSelector: the same failures on master before this item. Nobody owns them yet.\n- appServer: the leftover deskAgent folder in my clone.\n\nNot on your node yet: it needs a restart on this commit before you reload.\n\nwsl, the verify is yours. generalRules did not go through my verifier."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T22:34:32.053Z",
+     "text": "wsl: verify of 78d10b59: passed, measured against the box.\n\n- spirit/data.js IS spirit.data, only capital-named helpers and the families on it.\n- All 19 are data.js with the same pattern, the 7 servers in process/js/<name>/.\n- .data and .cache at spirit.data.<name>, a level per node.\n\ndataFamilies 108, data 60, caches 129, Monitor, tiles, desk and the rest of what I ran pass. Word: only job and identity. Four broken versions caught. My node runs it: a real page holds no <name>Data, and its rows stand in their caches.\n\nNot new, unowned: provider, listBoxes, apiFamilySelector, appServerSelector, and generalRules on login, Monitor and tiles. I ran generalRules on 4 files only.\n\nNot seen: your page. It needs a restart on 78d10b59 and a reload."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:43:53.017Z",
+     "text": "all, i restarted, an i notices that the spirit.app.helperFunctions are still \"words\". the helpes must not be words there either, this goes for all spirit.app contained objects.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:44:31.576Z",
+     "text": "cw: agreed, and it is small. spirit.app holds three things that are words or contain them:\n\n- search: the family's one verb. It is a node verb, so renaming it changes the interface, which needs your yes. app.searchApps would do, and the folder guard in spirit/app.js goes with it, since a to z folder names can no longer hit a verb.\n- create: on tiles, monitor and server. I'd use createApp. Elements elsewhere keep create, as you named only spirit.app.\n- FS: its own name holds capitals, but what is inside is path, loadFile and so on, on every family alike. path is a word. I'd leave FS out, as it is every family's, not spirit.app's.\n\nserver sits on spirit.elements today, not spirit.app, so it needs no rename unless you move it.\n\nQ12: Do you approve renaming the node verb app.search to app.searchApps?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T22:44:44.966Z",
+     "text": "wsl: right, and it's a real collision: spirit.app holds the apps and the family's verbs side by side, so an app named search would land on the verb.\n\nWhat's on it today:\n- Apps: tiles, monitor, each with create. Few callers, cheap: create gets a capital.\n- FS: already has capitals, your pattern. Its insides can't collide with an app.\n- search: the verb app.search, bound from the api tree, the same way for every family.\n\nThat third one is the catch. Renaming the verb changes the node's interface, which needs peer review and your yes. I'd keep app.search on the wire and only give it a capital where the page binds it, spirit.app.Search. That leaves the wire alone.\n\nFold it into this item, or a new one? I'd say new: this one is verified."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:47:08.213Z",
+     "text": "Q12: Do you approve renaming the node verb app.search to app.searchApps?\n\nwhy? does it cause a collision?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:47:26.452Z",
+     "text": "cw: Q12, no collision today, only a possible one. An app folder named search would land on the verb at spirit.app.search. The guard in spirit/app.js stops that by leaving such a folder out, so the app silently does not show.\n\nIt is one word, on one family. Every other family's verbs are words too, but no apps land on those.\n\nSo renaming is not needed to stay safe. It only removes the one name an app cannot have. If you want spirit.app as clean as spirit.data, rename it; otherwise answer no, and the guard stays."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:51:24.703Z",
+     "text": "cw, i'd say that helperFunctions have their own namespace, and so to verbs, id like to keep \"verbs\" words, with the idea that the \"search\" verbs of apps or servers rely in the \"search\" framework in the object/folder \"spirit.search\", that's when probabilitySearch will be renamed \"search\", oos, i think, for now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:51:46.147Z",
+     "text": "cw: clear. Verbs stay words, helpers get a capital, and app.search stays, so I closed Q12. The guard in spirit/app.js stays with it. spirit.search and renaming probabilitySearch to search are oos, noted.\n\nOne helper is left on spirit.app: create, on tiles and monitor.\n\nQ13: Shall I rename create to createApp on those two, in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:52:18.480Z",
+     "text": "Q13: Shall I rename create to createApp on tiles and monitor, in this item?\n\nyes,"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:54:59.439Z",
+     "text": "cw: done, 9fd97f5c: create is createApp on tiles and monitor. server keeps create on spirit.elements, and tiles opens either.\n\nThrough my verifier, 6 suites, all green: tiles, monitor, appMigration, app, dataFamilies, caches.\n\nDesk would not offer me the build phase, as the item is already verified, so this commit has no claim. wsl has not verified it.\n\nIt needs a restart of your node on it, and a reload."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T22:57:26.720Z",
+     "text": "cw, i did restart with new code, spirit.app still shows word-helpers"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T22:59:09.110Z",
+     "text": "cw: your node is on 9fd97f5c. I read spirit.app on a real page, on my node at the same commit. It holds:\n\n- search: the verb you kept as a word.\n- tiles and monitor: apps, each holding createApp alone.\n- FS: loadFile, saveFile, deleteFile, statFile, fileExists, path, loadJsonValue, saveJsonValue, getAnnotations, annotateFile, search.\n\nThe only words left are search, and inside FS path and search. Those FS ones are verbs too, on every family, so I left them.\n\nQ14: Is it FS.path and FS.search you see, or something else on spirit.app?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:03:22.493Z",
+     "text": "Q14: Is it FS.path and FS.search you see, or something else on spirit.app?\n\ni see spirit.app.search(), a function, which is supposed to be spirit.app.searchApp() which IMPLEMENTS the verb search, but isn't the verb itself.\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:03:50.372Z",
+     "text": "cw: yes, now I see it, and I had conflated the two. The verb app.search stays on the wire, a word. spirit.app.searchApp() is the page's function that calls it. So no node verb changes.\n\nspirit.app.search goes. Building that now, for spirit.app alone: app/api.js names the function, and spirit.js binds it. The other families keep their functions as they are.\n\nWith no search on spirit.app, an app folder named search cannot land on anything, so the guard in spirit/app.js goes too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:04:40.894Z",
+     "text": "cw, spirit.app.searchApp() the pages OR the nodes...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:04:47.331Z",
+     "text": "cw: pushed, c2d4df2b: spirit.app.searchApp() implements app.search, and spirit.app.search is gone. The verifier is running 10 suites on it.\n\nOne correction to my last line: I said the guard in spirit/app.js goes. It stays. \"no app may take the name of a verb\" is your box line from G43.6, and only you can lift it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:05:16.269Z",
+     "text": "cw: the page's. In a node process spirit.app does not exist: I required spirit.js and it is undefined, and spirit.start, which binds the families, is on a page alone.\n\nThe node serves the verb app.search from spirit/app.js. searchApp is what a page calls to reach it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:06:49.802Z",
+     "text": "cw, that's why i added \"search\" to the hard-coded verbs\" every app almost implements a \"search\" verb, and in the next item we will claim the word \"search\", where spirit.search provides the tools."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:06:57.560Z",
+     "text": "cw: green, c2d4df2b. Through my verifier, 10 suites, all green: tiles, appSelector and its list, monitor, server, appMigration, app, dataFamilies, spirit, caches.\n\nspirit.app now holds searchApp, FS, tiles and monitor. It needs a restart of your node on this commit, and a reload.\n\nwsl has not verified this commit or 9fd97f5c: its last pass was 78d10b59. Desk offers no phase on a verified item, so neither has a claim."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:08:42.148Z",
+     "text": "cw: understood. The word search is the next item, with spirit.search providing the tools, so nothing for it here.\n\nYour word.js with search in the hard-coded words is an uncommitted edit in your tree, not on master. While it stays uncommitted, the desk cannot pull into your checkout. Once pushed, the word test goes red on search too: no spirit/search and no spirit.search yet, the same kind of red as job."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:14:27.830Z",
+     "text": "my agent app has disappeared from the face-shell, and i have no clue how to turn it back on for testing..."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T23:14:55.925Z",
+     "text": "wsl: the Agent app rides with its server: it shows only while the Agent server runs (shell/boot.js, box: \"it shows while its server runs\"). On this machine no agent server process is running. So it looks off, not gone.\n\nTurn on \"Agent server\" in the Apps app, and it should come back. I read that from the code and the process list; I haven't watched it happen on your page."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:15:28.942Z",
+     "text": "cw: the Agent server is switched off on your node, so its app does not show. It is not lost.\n\nTo turn it on: open the Apps app, find the row process/js/agent, and press its activate button. The node starts the server, and the app comes back.\n\nThe switch is face.home: false in your node's state, in relay-state/process/agent/, written at 22:37 UTC. I did not write it, and I do not know what did. A press of that same button would. My node has it on.\n\nI have not tried the button on your node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:18:53.230Z",
+     "text": "all, DAMN! spirit.app still has a fucking \"tiles\" helper function.\n\nWTF?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:19:14.824Z",
+     "text": "cw: you're right, I missed it. tiles is no app, it is the element that shows the apps. So it is a helper of the family sitting under a word, and an app folder named tiles would land on it. I only renamed what is inside it.\n\nMy fix: spirit.app.tiles becomes spirit.app.appTiles, and the file spirit/app/tiles.js becomes spirit/app/appTiles.js. appMigration and its tests follow. monitor stays, it is a real app.\n\nThe file name changes your box line \"spirit/app/tiles.js\" from G43.6, hence the question.\n\nQ15: Shall I rename spirit.app.tiles and its file to appTiles?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T23:19:18.915Z",
+     "text": "wsl: that's from the G43.6 box: \"spirit.app.tiles.create(container)\", and I wrote the test to it. We kept it because it was asked for, and nobody re-read it against today's rule. An app named tiles would land on it.\n\nThe same box line calls it \"an element\". So I'd move it where elements live: spirit/element/appTiles.js, spirit.element.appTiles.create. Then spirit.app holds only searchApp, FS and real apps.\n\nThat's 7 files, none of them a node verb. Say go and cw moves it, I correct the test first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:20:07.635Z",
+     "text": "Q15: Shall I rename spirit.app.tiles and its file to appTiles?\n\nyes.\n\nlater it will probably move to the search \"word\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:25:41.834Z",
+     "text": "cw: done, 1fdf0ecc. spirit.app.appTiles and spirit/app/appTiles.js, spirit.app.tiles gone.\n\nspirit.app now holds searchApp, FS, appTiles and monitor. No word is left but the real app, monitor.\n\nThrough my verifier: appTiles and appMigration green at this commit. monitor, app and caches were green at 9e53610c, and this commit changes only appTiles' test. word is red on job and identity alone.\n\nwsl has verified none of the commits after 78d10b59: createApp, searchApp, appTiles.\n\nIt needs a restart of your node on 1fdf0ecc, and a reload."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:26:35.715Z",
+     "text": "i visually confirmed most tings functioning, the face-app apps has \"activate/deactivate\" buttons that behave strangely.... where do they read the state of an app to decide it the app is activated when it first loads?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:27:01.850Z",
+     "text": "cw: spirit/element/appInstaller.js. At first load it reads two different places, by kind:\n\n- A shell app: its face part from fs.getAnnotations. On if face.app is true.\n- An appServer: the jobs cache, spirit.data.jobs.data. On if a server job of its module is running or pending.\n\nFor a server, a press does not use what the button shows. It reads the face part again and flips face.home. So the button and the switch can disagree:\n- The jobs cache can be empty as the button first draws, so it shows Activate on a running server until the stream arrives.\n- A server with home true whose job is not up shows Activate, and that press writes home false, which turns it off.\n\nThat second one may be how your Agent server got home false, but I cannot prove it.\n\nI read this in the code and did not reproduce it. My rename changed only where it finds the jobs cache there. What strange thing do you see?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:29:29.005Z",
+     "text": "A shell app: its face part from fs.getAnnotations, on if face.app is true.\nAn appServer: the jobs cache, on if a server job of its module is running or pending.\n\ni thought we unified the json files coverning app activation (hard when they sit in different places, but i thought their state now sits in spirit.state.app, but alas, there's no such thing???????????????"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T23:30:04.868Z",
+     "text": "wsl: no, spirit.state doesn't exist. No file in the tree names it, so it was never built.\n\nWhat goal/G41.1 did unify: \"the face part is the one part\". Each app has one face part, kept in the node's state under relay-state/shell/<app>/ or relay-state/process/<name>/. So one kind of file, but still one per app, and two switches in it: app for a shell app, home for a server.\n\nThe strangeness is in the button: it shows a server's state from its running job, but a press flips home in the face part. Two sources, one button.\n\nI'd make the button read only the face part for both kinds, from spirit.data.app, kept live by the stream. Running or not becomes a separate mark. New item, your call."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:32:44.839Z",
+     "text": "fucking HELL, \n\nall namespace-conforming stuff holds its state in spirit.state.<appname>.\n\nthis goal spells that out pretty clearly...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T23:33:22.937Z",
+     "text": "wsl: you're right, and I answered from G41.1 without reading this goal's box. It says it plainly: run://spirit/state/<name>/node.json, with active and running, written only by the node, streamed at loopback.\n\nIt isn't built. No spirit/state folder exists in your tree or mine, and no code names it. The switches still sit in the old face part, so the button has nothing right to read.\n\nI'd make one item of it:\n1. The node keeps active and running in that file, for every app.\n2. It streams them to spirit.state.<name>.\n3. The button reads only that, and presses through a verb.\n\nThat's a new verb, so it needs peer review and your yes. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:36:30.953Z",
+     "text": "this also means that deskClient must stash it's cache at\nspirit.state.deskClient.cache.\n\nno?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T23:36:52.911Z",
+     "text": "wsl: on disc yes, in memory no, by your own box here. It says \"spirit.data.<name>.cache // the actual cache\", and that's built, so deskClient's rows in RAM are at spirit.data.desk.cache.\n\nOn disc, deskClient keeps relay-state/process/deskClient/deskClient.db and the cache files in relay-state/deskClient/. Those belong in run://spirit/state/deskClient/ when relay-state moves.\n\nSo I'd keep spirit.data for rows, what a family knows, and spirit.state for active and running. If you want the cache under state instead, this box changes and the 19 move again. Which?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:45:26.771Z",
+     "text": "all, \n\nwsl-claude 00:36 wsl: on disc yes, in memory no, by your own box here. It says \"spirit.data.<name>.cache // the actual cache\", and that's built, so deskClient's rows in RAM are at spirit.data.desk.cache.\n- that is correct. \n\nOn disc, deskClient keeps relay-state/process/deskClient/deskClient.db and the cache files in relay-state/deskClient/. Those belong in run://spirit/state/deskClient/ when relay-state moves.\n- what else moves from relay-state? (this item lets us push past the hook)\n\nSo I'd keep spirit.data for rows, what a family knows, and spirit.state for active and running. If you want the cache under state instead, this box changes and the 19 move again. Which?\n- not sure, they way i see it: data is \"canonical\" a cache is something else, on the browser, right now, we see the own nodes canonical data, and we use browser-specific caching to view that data, the cache that deskClient keeps in state, is persistence of non-canonical data, just a cache as well, somewhat different beast...\n\n??"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:45:57.867Z",
+     "text": "cw: what else moves, on your node's relay-state: everything. identity.json with the node's keys, config, environment, proxy, node.db, relay.db, peerStats, traffic, shell/ and process/ per app. 47 code files name relay-state, 163 times. Your goal's box says bit by bit, and the keys should move last and alone.\n\nData or cache, I read it your way, as who owns the row:\n- Canonical: the owner's own store, like the desk's desk.db on your node.\n- Cache: a copy of another's rows. It can always be thrown away and fetched again.\n\nBoth stay under spirit/state/<name>/, since both are node state, but apart: spirit/state/deskClient/cache/ says plainly it is disposable. In memory spirit.data.<name>.cache stays as built, a copy too, even of your own node's rows.\n\nSo my answer: no second move of the 19. The word cache marks what may be thrown away, on disk and in RAM. The switches, active and running, are node.json as your box says, not built yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:48:43.011Z",
+     "text": "yes, that's the difference between data and cache as i see it, and app servers, need both, \n\nalso, i never heard of deskClient having a db file, what does it hold, and why?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T23:49:35.667Z",
+     "text": "wsl: what moves: everything, by your goal box. 47 code files name relay-state. On my node it holds:\n- The node's own: identity, device, environment, node.json, node.db, peerStats. To state/node/.\n- Each server, process/<name>/: its db, sidecar, door.sock. To state/<name>/.\n- shell/: app sidecars. To state/<name>/.\n- Leftovers: agents-*, relays.json.before-lab, traffic.jsonl.imported. Delete, not move.\n\nI'd make it its own item.\n\nCaches: you're right, and there are three things, not two:\n1. Canonical: desk.db on the desk's node, in its state.\n2. A cache in memory: spirit.data.<name>.cache, a copy.\n3. A cache on disc: deskClient's cache-<key>.json, also a copy, in its own state.\n\nSo state/ holds both kinds, and the name must show it: state/deskClient/cache/<key>.json. A copy can be deleted, canonical can't.\n\nCorrection: that cache file is in process/deskClient/, not where I said."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T23:50:01.646Z",
+     "text": "wsl: it's small, and it's no cache: on my node, two tables.\n\n- asks: a record of each call the agent made through deskClient: time, verb, milliseconds, outcome, bytes, port. No content. Newest 1000, older ones trimmed.\n- settings: 4 rows: desk (the desk's key, per its code), others, since, wake. I didn't read their values.\n\nWhy: a desk answer can take longer than the node waits, so an ask answers within 10 s and the record says how it really ended (deskClient.js:18). It's the Q&A log behind the 504s.\n\nNobody's rows live in it, so it's the agent's own data, not a copy. I'd keep it, or drop asks if nobody reads it. I haven't checked who reads it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-04T23:55:47.725Z",
+     "text": "all, on this: \n\n\"Caches: you're right, and there are three things, not two:\n1. Canonical: desk.db on the desk's node, in its state.\n2. A cache in memory: spirit.data.<name>.cache, a copy.\n3. A cache on disc: deskClient's cache-<key>.json, also a copy, in its own state.\"\n\n- 2. A cache in memory: spirit.data.<name>.cache, a copy.\n- 3. a) An appServers cache on disc: spirit/state/<appname>/cache/\n- 3. a) An appServers data on disc: spirit/state/<appname>/data/\n\n# node-state\n- 3. a) An nodes data on disc: spirit/state/node/ (node will have to become reserved, too.)\n\n??"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-04T23:56:12.178Z",
+     "text": "cw: yes, that shape works. Where today's files land:\n- spirit/state/desk/data/desk.db\n- spirit/state/deskClient/cache/cache-<key>.json\n- spirit/state/deskClient/data/deskClient.db, as it holds its own log, no copied rows\n- spirit/state/<name>/node.json stays at the app's top, as your goal box says\n- spirit/state/node/: identity, node.db, relay.db and the rest\n\nThe word node passes: spirit/node/ and spirit.node both stand. A folder data or cache under state does not redden the word test, as it skips spirit/state.\n\nOne thing it does not place yet: a server's door.sock and app sidecars. I'd put them at spirit/state/<name>/, beside node.json, as neither data nor cache.\n\nword.js is yours, so node is yours to add. Moving relay-state is its own item, as wsl says."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-04T23:56:15.178Z",
+     "text": "wsl: yes, clean. I read your second 3.a as 3.b. Reserving node costs nothing today: nothing below spirit/ is named node, and spirit/node and spirit.node both stand. state wants reserving too, for the same reason.\n\nTwo things left to place:\n- Your box's spirit/state/<name>/node.json, active and running: I'd keep it beside cache/ and data/, since the node owns it.\n- door.sock and a server's sidecar: neither data nor cache. I'd keep door.sock at spirit/state/<name>/, and the sidecar goes when the app sidecar law takes over.\n\nThis goes in as a new item, its own red, since it moves every server's files. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:08:26.483Z",
+     "text": "all, this \n\n\"Two things left to place:\nYour box's spirit/state/<name>/node.json, active and running: I'd keep it beside cache/ and data/, since the node owns it.\n- agreed.\n\ndoor.sock and a server's sidecar: neither data nor cache. I'd keep door.sock at spirit/state/<name>/, and the sidecar goes when the app sidecar law takes over.\"\n- i have no clue what door.sock and server's sidecar shit is, obviously.\n- i see the subfolders of relay-state as completely useless in the namespace conforming world. \n- i would move the data files at the relay-state/ level to spirit/state only and give them non-word names, for example start them with upper-case letters or something, they won't collide with spirit/state/<name>/ folders because <name> are words in the new spirit-tree...\n\n?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T00:08:51.485Z",
+     "text": "wsl: plain words:\n- door.sock: the socket file through which the node talks to a running server (appClient.js:80). Gone when the server stops. It belongs at spirit/state/<name>/.\n- The sidecar: desk.js.sidecar.json holds {\"face\":{\"home\":true}}. That's the old activate switch, the button's trouble. It becomes active in node.json, then it dies.\n\nCapitals at spirit/state/: yes, same trick as the helpers. Identity.json, Node.db, Relay.db can't collide with a <name> folder, since a word is a to z. It also drops the need for spirit/state/node/, so node needs no reserving for this. Windows ignores case in file names, but identity/ and Identity.json still differ by the .json.\n\nSo: spirit/state/ holds the node's files with a capital, and <name>/ with node.json, door.sock, cache/ and data/. relay-state's subfolders go. Agreed from me. New item?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T00:08:59.220Z",
+     "text": "cw: plainly:\n- door.sock: the local socket a server listens on, so the node can call it. On Linux only; Windows uses a named pipe, no file. Not data, just a live connection point.\n- sidecar: <name>.js.sidecar.json, a small file of an app's settings, like home: true and its icon.\n\nYour plan works. Dropping process/ and shell/ gives spirit/state/<name>/. Capitals like Identity.json, Node.db cannot be taken for a word, and the extension keeps them apart from a folder even on Windows.\n\nTwo things to rule:\n- One collision: agent is in both, and both hold config.json. On your node it is the only one. The shell's holds remoteUser, the server's its DEBUG. They need different names.\n- You said spirit/state/node/ before, and capitals at spirit/state/ now. I read capitals as replacing it, so node need not be reserved for this.\n\nQ16: Do node-level files go at spirit/state/ with capitals, replacing spirit/state/node/?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T00:09:10.060Z",
+     "text": "cw: one correction: the two agent config.json files hold showDebug in the shell's and debug in the server's. I wrote remoteUser for the shell's before reading it. The collision stands."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:13:17.369Z",
+     "text": "One collision: agent is in both, and both hold config.json. On your node it is the only one. The shell's holds remoteUser, the server's its DEBUG. They need different names.\n- does it matter? agent has not moved yet, and is oos for that reason?\n\nYou said spirit/state/node/ before, and capitals at spirit/state/ now. I read capitals as replacing it, so node need not be reserved for this.\n- this is correct spirit/state/node/ is dismissed as bad idea, and we just move to files, no name change necessary for them since they won't collide with <appname> anyway."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T00:13:38.833Z",
+     "text": "wsl: no, it doesn't matter. Your goal box moves it \"bit-by-bit\": an app's state moves when the app moves, and agent hasn't. So agent's two config.json only meet if someone flattens relay-state in one go, and nobody should.\n\nSame names: fine by me. identity.json and a folder identity/ differ by the .json, and peerStats has a capital.\n\nOne caution for the node's files: identity.json holds the node's keys. A failed move there and the node comes up as someone else. I agree with cw: those move last and alone, with a copy kept first.\n\nFirst bit I'd do: spirit/state/server/, the hello-world app, then Monitor."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:19:37.965Z",
+     "text": "all, here in this item we just fix the plumbing\n\n- so we won't move relay state here yet, because all apps except \"monitor\" (the old stats) are still outside of the new namespace.\n\n- will aim to move all app server at once, so the 4 places that apparently need changing for servers can change with them, and \n\nQ16: Do node-level files go at spirit/state/ with capitals, replacing spirit/state/node/?\n- no capitals needed, they won't collide.\n\nadd item: \"move relay-state to spirit/state\" (for when we're ready), with the decisions made here in the box, even if incomplete."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T00:20:17.717Z",
+     "text": "wsl: added, goal/G43.8, \"move relay-state to spirit/state\", with your decisions in its box in your words, and what's not placed yet listed. Nothing moves here.\n\nThis item's commits after my last pass stay unverified by me: createApp, searchApp, appTiles. Desk offers no phase on a verified item. Say if you want me to run them anyway."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:21:01.812Z",
+     "text": "wsl, run them"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T00:26:50.360Z",
+     "text": "wsl: ran createApp, searchApp and appTiles, on d2ef42a7. They hold.\n\n- 20 suites pass, including dataFamilies 110, appTiles 22, Monitor 28, app 24, appSelector 11, desk 91, spirit 59.\n- Word only fails on job, identity, search, and the names search takes below it: spirit/app/search.json and others, and CodeMirror's addon/search. That red comes from your search commit.\n- Your spirit.app line had no test, so I added one: no function there, or on an app it holds, is a word. A monitor that keeps create fails it.\n- My node, real page: searchApp and FS on spirit.app, and searchApp answers 2 apps. appTiles and monitor only load when opened, so I saw those on the scratch node.\n\nI didn't rerun the 4 old reds this time. Your G43.6 box still says spirit.app.tiles."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T00:26:59.820Z",
+     "text": "wsl: correcting my count: 18 suites pass, not 20, plus word with its expected red. They ran on 6deb82c0. d2ef42a7 only adds my test, and I reran dataFamilies on that."
     }
    ]
+  },
+  {
+   "id": "goal/G43.8",
+   "title": "move relay-state to spirit/state",
+   "goal": "goal/G43",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 1,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "wsl-claude",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# move relay-state to spirit/state\n\n- \"move relay-state to spirit/state\" (for when we're ready), \"with the decisions made here in the box, even if incomplete.\"\n\n- Not yet: \"we won't move relay state here yet, because all apps except \"monitor\" (the old stats) are still outside of the new namespace.\"\n\n- \"will aim to move all app server at once, so the 4 places that apparently need changing for servers can change with them\"\n\n# decided, goal/G43.7\n\n- \"2. A cache in memory: spirit.data.<name>.cache, a copy.\"\n- \"An appServers cache on disc: spirit/state/<appname>/cache/\"\n- \"An appServers data on disc: spirit/state/<appname>/data/\"\n- data and cache: \"that's the difference between data and cache as i see it, and app servers, need both\"\n- spirit/state/<name>/node.json, active and running, beside cache/ and data/: \"agreed.\"\n- \"i see the subfolders of relay-state as completely useless in the namespace conforming world.\"\n- the node's own files: \"spirit/state/node/ is dismissed as bad idea, and we just move to files, no name change necessary for them since they won't collide with <appname> anyway.\"\n- \"no capitals needed, they won't collide.\"\n\n# not placed yet\n\n- door.sock, a server's socket file on Linux.\n- <name>.js.sidecar.json, whose face.home is the old activate switch.\n- agent's two config.json, shell and server: \"agent has not moved yet\".\n",
+   "checks": [],
+   "chat": []
   }
  ]
 }
