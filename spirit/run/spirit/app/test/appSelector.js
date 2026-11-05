@@ -43,9 +43,9 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const html = await chrome.evaluate('String((document.getElementById("under-test") || {}).innerHTML || "")');
     ok(html.indexOf(identity.icon) !== -1 || /<svg|<img/.test(html), 'the list shows its icon', 'no icon in the list: ' + short(html));
     // ONLY ICON AND LABEL (Andy, box): what is left of the row once those two are taken out is nothing.
-    const rowText = await chrome.evaluate('(function () { var want = ' + JSON.stringify(identity.label) + '; var all = document.getElementById("under-test").querySelectorAll("*"); var best = null; for (var i = 0; i < all.length; i++) { if (String(all[i].innerText || "").indexOf(want) !== -1 && all[i].children.length) best = all[i]; } if (!best) return ""; var c = best.cloneNode(true); [].forEach.call(c.querySelectorAll("button"), function (b) { b.remove(); }); return c.textContent; }())');
+    const rowText = await chrome.evaluate('(function () { var want = ' + JSON.stringify(identity.label) + '; var all = document.getElementById("under-test").querySelectorAll("*"); var outside = function (e) { var c = e.cloneNode(true); [].forEach.call(c.querySelectorAll(".shell-row-form, button"), function (b) { b.remove(); }); return c.textContent; }; var best = null; for (var i = 0; i < all.length; i++) { if (all[i].children.length && !all[i].closest(".shell-row-form") && outside(all[i]).indexOf(want) !== -1) best = all[i]; } if (!best) return ""; return outside(best); }())');
     const rest = String(rowText).split(identity.label).join('').split(identity.icon).join('').trim();
-    ok(rowText !== '' && rest === '', 'the row shows icon and label and nothing else', 'the row also shows: ' + short(rest || rowText));
+    ok(rowText !== '' && rest === '', 'the row shows icon and label and nothing else', 'the row also shows: ' + short({ rest: rest, rowText: rowText }));
 
     // A PRESS PICKS, AND SHOWS ITS DETAIL.
     const pressed = await chrome.evaluate('(function () { var want = ' + JSON.stringify(identity.label) + '; var all = document.getElementById("under-test").querySelectorAll("*"); var hit = null; for (var i = 0; i < all.length; i++) { if (String(all[i].innerText || "").trim() && String(all[i].innerText).indexOf(want) !== -1 && !all[i].children.length) hit = all[i]; } if (!hit) return false; hit.click(); return true; }())');
@@ -70,7 +70,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     was.identity.label = 'Changed On Disk';
     fs.writeFileSync(disk, JSON.stringify(was));
     const follows = await until(function () { return text().then(function (t) { return t.indexOf('Changed On Disk') !== -1; }); }, 8000);
-    ok(follows, 'a change on the disk paints on the page, no reload', 'the row kept its old label after the disk changed');
+    ok(follows, 'a change on the disk paints on the page, no reload', 'the row kept its old label after the disk changed: ' + short(await text()));
     // THE DETAIL OPEN IS PAINTED TOO (Andy, G41.32: "wherever it's visible"): it is the row element's own watch that does it, which no list redraw covers.
     await chrome.evaluate('(function () { var all = document.querySelectorAll("#under-test tr, #under-test .list-row"); for (var i = 0; i < all.length; i++) if (String(all[i].textContent).indexOf("Changed On Disk") !== -1) { all[i].click(); return true; } return false; }())');
     const both = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container .shell-row-form"); return !!h && String(h.textContent).indexOf("Changed On Disk") !== -1; }())'); }, 8000);
@@ -98,8 +98,9 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const both = await until(function () { return inFaces().then(function (t) { return t.indexOf(monitorLabel) !== -1 && t.indexOf(serverLabel) !== -1; }); }, 8000);
     ok(both, 'the pane lists both, neither active', 'the pane shows: ' + short(await inFaces()));
     const buttonOf = function (label) { return 'var r = ' + rowOf(label) + '; if (!r) return "no row"; var bs = r.querySelectorAll("button"); if (bs.length !== 1) return "buttons: " + bs.length; var b = bs[0]; var all = r.querySelectorAll("*"); var last = null; for (var i = 0; i < all.length; i++) { if (all[i].getClientRects().length && !all[i].children.length) last = all[i]; } if (!(last === b || b.contains(last))) return "not last"; '; };
-    const says = function (label) { return chrome.evaluate('(function () { ' + buttonOf(label) + 'return b.textContent.trim(); }())'); };
-    const said = await until(function () { return says(monitorLabel).then(function (t) { return /^activate$/i.test(t); }); }, 8000);
+    // The switch's words, which stand beside its 🟢/🔴 button (rowFormAppActive, goal/G43.15).
+    const says = function (label) { return chrome.evaluate('(function () { ' + buttonOf(label) + 'var w = r.querySelector(".shell-row-form-span"); return (w || b).textContent.trim(); }())'); };
+    const said = await until(function () { return says(monitorLabel).then(function (t) { return /^activate\b/i.test(t); }); }, 8000);
     ok(said, 'each row ends in its one button, Activate', 'Hearing\'s row: ' + short(await says(monitorLabel)));
     test.subHeading('the box: "The node writes spirit/state/<key>/node.json and republishes its \'apps\' job, whose rows gain active. The list follows by itself."');
     await chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; var b = r && r.querySelector("button"); if (b) b.click(); return !!b; }())');
@@ -107,7 +108,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(written, 'a press writes active true to spirit/state/hearing/node.json', 'after a press the file is not active');
     const rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())'); }, 5000);
     ok(rowActive, 'the stream brings active to the row, no search asked', 'the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().hearing)')));
-    const flipped = await until(function () { return says(monitorLabel).then(function (t) { return /^deactivate$/i.test(t); }); }, 5000);
+    const flipped = await until(function () { return says(monitorLabel).then(function (t) { return /^deactivate\b/i.test(t); }); }, 5000);
     ok(flipped, 'the button follows: Deactivate', 'the button says: ' + short(await says(monitorLabel)));
     await chrome.evaluate('spirit.app.searchApp({ q: "" }).then(function (got) { spirit.data.seatRows(spirit.data.app.data.branch, got.items); return true; })');
     ok(await chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())') === true, 'a search seated over it does not lose active', 'after a search the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().hearing)')));
