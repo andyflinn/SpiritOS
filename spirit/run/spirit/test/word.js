@@ -16,7 +16,7 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 // The box: "word.js will have hardcoded intitialized set of keys", "(this may change)". When it does, so does this line.
-const HARD = ['spirit', 'app', 'element', 'identity', 'job', 'data'];
+const HARD = ['spirit', 'app', 'element', 'identity', 'job', 'data', 'search'];
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
