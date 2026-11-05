@@ -44,7 +44,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(pressed === true, 'its row can be pressed', 'no row to press');
     const picked = await until(function () { return chrome.evaluate('window.changes >= 1 && !!window.sel.row && window.sel.value !== ""'); }, 3000);
     ok(picked, 'a press sets value and row, and says change', 'a press gave ' + short(await chrome.evaluate('JSON.stringify({ changes: window.changes, value: window.sel.value, row: window.sel.row })')));
-    const detail = await until(function () { return chrome.evaluate('!!(spirit.elements.appDetail) && document.body.innerText.split(' + JSON.stringify(identity.label) + ').length > 2'); }, 3000);
+    const detail = await until(function () { return chrome.evaluate('(function () { var h = document.querySelector("#under-test .app-container-head"); return !!(spirit.elements.appDetail) && !!h && String(h.textContent).indexOf(' + JSON.stringify(identity.label) + ') !== -1; }())'); }, 3000);
     ok(detail, 'a press shows that app\'s detail', 'a press showed no detail');
 
     await chrome.evaluate('(function () { var c = document.querySelector("#under-test .app-container-close"); if (c) c.click(); return !!c; }())');
