@@ -84,7 +84,7 @@ function boot(run) {
 }
 const typesOf = function (booted) { return booted.map(function (j) { return j.type; }).sort().join(','); };
 async function valuesOf(run, name) {
-  const file = path.join(run, 'relay-state', 'process', name, 'values.json');
+  const file = path.join(run, 'spirit', 'state', name, 'data', 'values.json');
   for (let i = 0; i < 40 && !fs.existsSync(file); i++) await sleep(100);
   return readJson(file);
 }
