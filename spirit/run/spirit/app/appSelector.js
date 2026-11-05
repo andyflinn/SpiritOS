@@ -9,11 +9,18 @@
 //     root.value   the chosen app's key, '' while none is
 //     root.row     the chosen app, null while none is
 //     one bubbling `change` on a pick, which shows that app's detail under the list; refresh() asks again
-//     options.face 'pane' is the list itself; the default is the dropdown
+//     options.face 'pane' is the list itself, 'tiles' the apps as tiles; the default is the dropdown
+//     options.toggle true: a pane or tiles flips between the two (goal/G43.9)
+//
+// ONE appSelector, THREE FACES (goal/G43.9; Andy, box: "One appSelector, with three faces: dropdown, pane and tiles."): "tiles
+// shows active only, pane shows all", "and the picks differ: tiles launches, pane shows the detail with its button." A launched
+// app opens on top, here alone, with its icon and label on the bar's left edge and a close icon on its right, which brings the
+// tiles back. spirit.elements holds server, spirit.app the rest.
 (function () {
   function createAppSelector(options) {
     var o = options || {};
-    var isPane = o.face === 'pane';
+    var face = o.face === 'pane' || o.face === 'tiles' ? o.face : 'dropdown';
+    var isPane = face !== 'dropdown';
     var root = document.createElement('div');
     // A LIST GETS A BOX OF A STATED SIZE (rule/16): the pane face fills the box it is mounted in, its list scrolling inside.
     root.className = 'app-selector ' + (isPane ? 'app-selector-face-pane fill' : 'app-selector-face-dropdown');
@@ -28,26 +35,64 @@
     var made = null;
     var detail = null;
     var gone = false;
+    var closeOpen = null;
 
+    function open(row) {
+      var S = window.spirit;
+      var shell = document.createElement('div');
+      shell.className = 'app-container fill';
+      shell.innerHTML = '<div class="app-container-bar" style="display:flex;align-items:center;justify-content:space-between;flex:none;padding:0.25em 0">' +
+        '<span class="app-container-head" style="display:flex;align-items:center;gap:0.5em"><span class="icon"></span><span class="label"></span></span>' +
+        '<button type="button" class="app-container-close" title="Close">✕</button></div>' +
+        '<div class="app-container-pane fill"></div>';
+      S.element.icon.create(shell.querySelector('.icon'), { glyph: row.icon });
+      shell.querySelector('.label').textContent = row.label;
+      listBox.hidden = true;
+      root.appendChild(shell);
+      var made2 = null;
+      var closed = false;
+      closeOpen = function () {
+        closed = true;
+        closeOpen = null;
+        if (made2) made2.destroy();
+        root.removeChild(shell);
+        listBox.hidden = false;
+      };
+      shell.querySelector('.app-container-close').addEventListener('click', function () { closeOpen(); });
+      var name = String(row.key);
+      S.require('spirit/app/' + name + '/' + name + '.js').then(function () {
+        var pane = shell.querySelector('.app-container-pane');
+        if (!closed) made2 = S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane);
+      });
+    }
+    function clearDetail() { if (detail) detail.destroy(); detail = null; }
     function pick(row) {
       root.value = row && row.key ? String(row.key) : '';
       root.row = row || null;
       root.dispatchEvent(new Event('change', { bubbles: true }));
-      if (detail) detail.destroy();
+      clearDetail();
+      if (row && face === 'tiles') { open(row); return; }
       detail = row ? window.spirit.elements.appDetail.create(detailBox, { row: row }) : null;
     }
+    function onFace(now) {
+      face = now;
+      clearDetail();
+      if (closeOpen) closeOpen();
+    }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.all([window.spirit.require('spirit/app/appSelector/listElement.js'), window.spirit.require('spirit/app/appSelector/detailElement.js')]).then(function () {
+    Promise.all([window.spirit.require('spirit/app/appSelector/listElement.js'), window.spirit.require('spirit/app/appSelector/detailElement.js'), window.spirit.require('spirit/element/icon.js')]).then(function () {
       if (gone) return;
-      made = window.spirit.elements.appList.create(listBox, { face: isPane ? 'pane' : 'dropdown', pick: pick });
+      made = window.spirit.elements.appList.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
+        // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
+        visible: function (row) { return face !== 'tiles' || (!!row && row.active === true); } });
     });
 
     root.refresh = function () { if (made) made.refresh(); };
     // Destroy lets its parts go, their watches with them, and takes itself out of its container, which it leaves empty.
     root.destroy = function () {
       gone = true;
-      if (detail) detail.destroy();
-      detail = null;
+      if (closeOpen) closeOpen();
+      clearDetail();
       if (made) made.destroy();
       made = null;
       if (root.parentNode) root.parentNode.removeChild(root);

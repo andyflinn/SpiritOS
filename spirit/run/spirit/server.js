@@ -1806,6 +1806,8 @@ catch (e) {
   const appFamily = require('./app').createApp({ rootDir: ROOT_DIR, jobs: jobs });
   loopbackVerbs.mount('app', path.join(__dirname, 'app'), {
     'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return appFamily.search(b); }) },
+    // goal/G43.9, peer review wsl, Andy's yes on Q1. Off the face with no star: spirit/faceHome.js.
+    'active': { request: { key: '', active: false }, reply: {}, handler: proxyVerb(function (b) { return appFamily.active(b); }) },
   }, { wire: false, by: 'server.js' });
 
   // THE GATE IS NOT IN HERE, and that is the point of this namespace.

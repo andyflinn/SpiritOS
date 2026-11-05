@@ -78,6 +78,8 @@ spirit/test/pix
 # Unanchored on purpose — matches spirit/run/relay-state/ and any other
 # node home's copy, wherever it ends up.
 relay-state/
+# The companion of relay-state and its future replacement (goal/G43's box: "repo://spirit/run/spirit/state/", ".gitignored").
+spirit/run/spirit/state/
 
 # Relay Chat's remembered binding (chat 1): which public label this node
 # claimed, so a reload does not ask again. Per-node session state, like

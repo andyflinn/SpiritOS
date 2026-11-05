@@ -11,7 +11,7 @@ Andy, box: *"when all apps and processes are migrated, andy will simply delete t
 - Opened in the real shell, the desktop goes and ui's tiles show, and a pressed tile opens the app inside it.
 - No shell notices (*"NO INTERFERENCE FROM ANY FUCKING SHELL"*): the shell's title and its own button stay as they were.
 - Nothing outside its folder names it, so his delete breaks nothing.
-- Since goal/G43.6 it wraps `spirit/app/appTiles.js`, `spirit.app.appTiles`: Andy's words above named the file that held it then.
+- Since goal/G43.9 it wraps `spirit/app/appSelector.js`: Andy's words above named the file that held it then.
 
 ## It wraps appSelector (goal/G43.9)
 

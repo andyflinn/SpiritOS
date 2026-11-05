@@ -6,6 +6,8 @@
 //   create(host, { path }) -> { destroy() }; path is the app's script, shell/<name>/<name>.js or
 //   process/js/<name>/<name>.js.
 //
+//   An app in spirit/app is on while its row says active: true; a press asks the node, spirit.app.activeApp, and the
+//   button draws what the stream then brings (goal/G43.9).
 //   A shell app is on while its face part says app: true; a press writes the face part with app turned over and tells
 //   the face shell. An appServer is on while a server job of its module runs; a press writes its face part's home,
 //   and the node starts or stops it (goal/G41.1: a server runs at home by its own sidecar). Either way the face part is
@@ -14,6 +16,7 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   var SCRIPT = /^(shell|process\/js)\/([^/]+)\/\2\.js$/;
+  var APP = /^spirit\/app\/([^/]+)\/\1\.js$/;
 
   function esc(s) {
     var f = window.spirit && window.spirit.escapeHtml;
@@ -22,8 +25,46 @@
   function sp() { return window.spirit || {}; }
   function fsOf() { return Promise.resolve(sp().ready).then(function (s) { return (s && s.fs) || sp().fs; }); }
 
+  // AN APP IN spirit/app: ONE STATE, THE ROW'S ACTIVE.
+  function createForApp(host, key) {
+    var gone = false;
+    var off = function () {};
+    var shown = null;
+    function reads() { return ((sp().data || {}).app || {}).data; }
+    function isOn() { var A = reads(); var row = A ? A.rows()[key] : null; return !!row && row.active === true; }
+    function press(e) {
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      var want = !isOn();
+      Promise.resolve(sp().ready).then(function (s) { return s.app.activeApp({ key: key, active: want }); }).then(null, function () { /* not written: the button stays as the node last said */ });
+    }
+    function render() {
+      if (gone || !host) return;
+      var on = isOn();
+      if (on === shown) return;
+      shown = on;
+      host.innerHTML = '<button type="button" class="app-installer" data-on="' + (on ? 'true' : 'false') + '">' + (on ? 'Deactivate' : 'Activate') + '</button>';
+      var b = host.querySelector('button');
+      if (b) b.addEventListener('click', press);
+    }
+    Promise.resolve(sp().cacheManager('app')).then(function () {
+      if (gone) return;
+      render();
+      var A = reads();
+      if (A) off = A.watchApp(key, render) || off;
+    });
+    return {
+      destroy: function () {
+        if (gone) return;
+        gone = true;
+        try { off(); } catch (e) { /* gone already */ }
+      },
+    };
+  }
+
   function create(host, opts) {
     var path = String((opts && opts.path) || '');
+    var app = APP.exec(path);
+    if (app) return createForApp(host, app[1]);
     var m = SCRIPT.exec(path);
     var gone = false;
     var face = {};

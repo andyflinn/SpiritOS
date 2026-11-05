@@ -30,6 +30,9 @@
 //                              button that picks nothing, its words the field's while nothing is chosen) and name(row)
 //                              are the dropdown's. Or 'tiles' (goal/G43.6): the same ranked rows, each row.icon above
 //                              the relevance above row.label, the row itself in the tooltip; no headers, no sorting
+//   toggle                     true: a button after Search flips pane and tiles, the words kept (goal/G43.9); never on a dropdown
+//   onFace(face)               told the new face, 'pane' or 'tiles', before the list draws
+//   visible(row)               false holds a row back; asked at every draw
 //   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch; the words
 //                              are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
@@ -149,6 +152,9 @@
     var snap = false;
     var dropdown = o.face === 'dropdown';
     var tiles = o.face === 'tiles';
+    // THE TOGGLE (goal/G43.9; Andy, box: "A new option, toggle: true."): pane and tiles only, as "Dropdown closes to a field".
+    var toggling = o.toggle === true && !dropdown;
+    function toggleGlyph() { return tiles ? '☰' : '▦'; }
     var open = !dropdown;
     var self = { value: '', row: null };
 
@@ -207,6 +213,7 @@
           '<button id="' + pre + 'clear" type="button" title="Clear" style="position:absolute;right:0.3em;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer">✕</button>' +
         '</span>' +
         '<button id="' + pre + 'search" type="button">Search</button>' +
+        (toggling ? '<button id="' + pre + 'toggle" class="list-toggle" type="button" title="List or tiles">' + toggleGlyph() + '</button>' : '') +
       '</div>' +
       '</div>' +
       // EVERY LIST SCROLLS IN ITS OWN BOX (goal/G40.8, the contained-app rule: "only a list or a viewer scrolls, inside
@@ -288,6 +295,8 @@
       var fs0 = el('filters');
       if (filters.length && fs0) fs0.innerHTML = filterHtml();
       var entries = Object.keys(byKey).map(function (k) { var e = byKey[k]; elementOf(e); return e; });
+      // Its owner may hold some rows back (o.visible; appSelector's tiles show active apps alone, goal/G43.9).
+      if (typeof o.visible === 'function') entries = entries.filter(function (e) { return o.visible(e.row); });
       var searching = !!words();
       var rows = order(entries, { words: words(), values: values, filters: filters, sort: sortBy, columns: columns, score: o.score });
       shown = rows;
@@ -527,6 +536,14 @@
       if (t.id === pre + 'none') { currentKey = null; choose(null, ''); return; }
       if (t.id === pre + 'clear') { var box = el('text'); if (box) box.value = ''; typed(); return; }
       if (t.id === pre + 'search') { ask(); return; }
+      // The face changes, the words stay, and the owner is told before the list draws (Andy, box: "It tells its owner the new face.").
+      if (t.id === pre + 'toggle') {
+        tiles = !tiles;
+        t.textContent = toggleGlyph();
+        if (typeof o.onFace === 'function') o.onFace(tiles ? 'tiles' : 'pane');
+        draw();
+        return;
+      }
       // A HEADER PRESS sorts by its column, a second reverses (only while the field is empty: no header is a trigger then).
       var th = typeof t.closest === 'function' ? t.closest('th[data-sort]') : null;
       if (th) {

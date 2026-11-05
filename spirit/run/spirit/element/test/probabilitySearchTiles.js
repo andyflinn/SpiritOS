@@ -118,7 +118,7 @@ test.startTest('probabilitySearch: the face tiles (goal/G43.6)');
     ok(await toggles() === 0, 'tiles without the option have no toggle', 'tiles without the option have a toggle');
     await drop();
     test.subHeading('the box: "It flips pane and tiles only. Dropdown closes to a field, so it never shows the toggle."');
-    await make({ toggle: true });
+    await make({ face: 'dropdown', toggle: true });
     ok(await toggles() === 0, 'a dropdown with the option has no toggle', 'a dropdown shows a toggle');
     await drop();
     await make({ face: 'pane', toggle: true });

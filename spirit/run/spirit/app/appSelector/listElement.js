@@ -26,11 +26,15 @@
       server: 'app',
       verb: 'search',
       face: o.face,
+      toggle: o.toggle === true,
+      onFace: o.onFace,
+      visible: o.visible,
       placeholder: 'choose an app…',
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       args: function (text) { return { text: text }; },
       // Andy, box: "the appSelector will only show icon and label in the list."
-      columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }],
+      // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
+      columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),
       element: function (row) { return window.spirit.elements.appElement.create(row); },
       name: function (row) { return String((row && row.label) || ''); },
       empty: 'No app matches.',

@@ -58,8 +58,6 @@ function kindOf(file) {
   if (/^spirit\/app\/appSelector(\/[^/]+)?\.js$/.test(f)) return 'element';
   // AN APP IN THE NEW FOLDER IS AN ELEMENT TOO (goal/G43.2; Andy, box: "both of these apps are face-app skeletons (elements)").
   if (/^spirit\/app\/([^/]+)\/\1\.js$/.test(f)) return 'element';
-  // AND THE ELEMENT THAT SHOWS THEM (goal/G43.2, goal/G43.6; Andy, box: "spirit/app/tiles.js: an element").
-  if (f === 'spirit/app/appTiles.js') return 'element';
   if (/^process\/js\/agent\/table\/(tableElement|rowElement|[^/]+\/element(Table|Row))\.js$/.test(f)) return 'element';
   const m = /^shell\/([^/]+)\/([^/]+)\.js$/.exec(f);
   return m && m[1] === m[2] ? 'app' : '';

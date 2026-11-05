@@ -128,7 +128,8 @@ const SIDECAR_SUFFIX = '.sidecar.json';
 // fileSystem.js, this file, joined it when it was lifted out of kernel.js (goal/G40.6).
 // DEBUG.js and its generators joined it with goal/G41.19: server code, never a page's (spirit/test/DEBUG.md).
 const UNSERVABLE_FILES = ['spirit/kernel.js', 'spirit/fileSystem.js', 'spirit/jobs.js', 'spirit/server.js', 'spirit/relayServer.js', 'spirit/serveCommon.js', 'spirit/relayConfig.js', 'spirit/relay.js', 'spirit/hub.js', 'spirit/relayAuth.js', 'spirit/DEBUG.js'].map(function (p) { return p.toLowerCase(); });
-const UNSERVABLE_FOLDERS = ['spirit/DEBUG/'].map(function (p) { return p.toLowerCase(); });
+// goal/G43.9, Andy's box: "spirit/state/ is not servable, so a page cannot read other apps' state through a plain GET."
+const UNSERVABLE_FOLDERS = ['spirit/DEBUG/', 'spirit/state/'].map(function (p) { return p.toLowerCase(); });
 
 // Path-only, caller-independent by design: nothing server-side can verify
 // which app is really asking, only whether the path itself is allowed.
@@ -180,6 +181,7 @@ function fileWritable(filePath) {
   if (canonical === null) return false;
   if (isOwnState(canonical)) return true;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFace touches a sidecar's own path
+  if (canonical.toLowerCase().indexOf('spirit/state/') === 0) return false; // the node's alone
   if (isShellState(canonical)) return true;
   if (canonical.split('/').indexOf('relay-state') !== -1) return false;
   if (canonical.indexOf('/') === -1) return WRITABLE_ROOT_FILES.indexOf(canonical) !== -1;
