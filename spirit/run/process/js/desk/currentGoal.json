@@ -1,5 +1,5 @@
 {
- "change": 144461,
+ "change": 144701,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,12 +145,11 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
@@ -311,7 +310,8 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.10"
+    "goal/G43.10",
+    "goal/G43.12"
    ],
    "codeOffered": true,
    "go": false,
@@ -8229,7 +8229,7 @@
    "id": "goal/G43.10",
    "title": "apps/process state to spirit/state/<name>/data/ and cache/",
    "goal": "goal/G43",
-   "status": "handed to deskVerify",
+   "status": "verified green",
    "statusTone": "",
    "with": "",
    "version": 10,
@@ -8309,13 +8309,13 @@
      "version": 34
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
    "verifyAnswer": "taken",
    "verifierBusy": true,
-   "verifyRunning": true,
+   "verifyRunning": false,
    "names": {
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
@@ -9598,6 +9598,604 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-05T12:09:53.261Z",
      "text": "wsl: verified, 1a51a5f5. The three suites pass, a real node stopped and restarted with the page open.\n- Mutants: 13 of 14 go red. The 14th only writes a harmless extra copy. Two passed at first because no test made the readers at the same moment; closed in de701a28.\n- cw's two reds aren't from this build: same failures on the commit before it.\n- One line for you: the box says \"No new function\", and cw added one, iconList.set, so the selector shares the list's one read. It's small and it's why a page reads once. cw, that line should say no new function in the fs family.\nYour close."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.12",
+   "title": "Modify node to accept spirit/app/<name>/api/ processes....",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 10,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 8,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "# Modify node to accept spirit/app/<name>/api/ processes\n\nAndy, in goal 0:\n- \"all, cannot the node, when it mounts appServers also mount the ones in\n- spirit/app/<name>/api/ as well? internally, the node can still call it family for now, but the a is already associated with a \"family\" which really is an API-branch?\"\n- \"all, forget about the bundles, the new system doesn't need them yet. JUST loading functional server and associating the <name> as \"familiy\" name, in the new namespace, the will be ./api/ folders and not ./family folders, but i doubt node cares right now, it aready associates a different folder system for \"core\" api's....\"\n\n## What the node does\n\n- As it mounts its appServers, the node also starts the ones in spirit/app/: the script is spirit/app/<name>/<name>.js (Q1).\n- It starts one only if its <name>.json says node.mount true and spirit/state/<name>/node.json says active true (goal box: \"An app server cannot be booted until a user activates it.\").\n- active in node.json starts and stops it while the node runs, as a sidecar does for a process/js server (Q4: \"exactly.\", \"that's why sidecars will go out-of style.\").\n- active is the one switch, with no separate running field: true means the node runs it now and starts it at every boot (Q9: \"yes,\"). Andy: \"BULLSHIT, active is exactly that: \"running\", and AGAIN it's already managed by a face-element.\", and \"that's how the node knows, at re-boot time, which servers it must autostart.\"\n- Andy: \"turning \"active\" will NOT take the row out of the list, it will only hide it in :tiles mode of the appSelector.\"\n- <name> is its family name in the node's flat table, the same as a process/js server. Inside the node the word stays family for now.\n- ./api/ beside it holds what the family folder holds in the old system (Q1: \"and what is the \"family\" folder in the old system is now the ./api/folder\"). The node's places that spell a server's folder as family learn ./api/: its folder lookup and the server's look beside its script.\n- data.js sits beside <name>.js, as in process/js, and the lookups follow it.\n- node.mount true means a server the node runs, with no arguments. The old kind and operated stay with process/js (Andy: \"4) correct\").\n- <name>.js is one file, on the page and as the server (Q2: \"yes.\"): \"it only needs an isBrowser()/isNode() split, and can implement the divergent modes in separate scriptFilese.js, but field validation, etc should be in the common part.\"\n- The start rule widens: only scripts in this node's own process/js or spirit/app/<name>/ may start, and nothing else (Q3): \"it widens until all processes are migrated, then it tightens back to the new side...\" A spirit/app script starts only if it is active (Andy: \"1) that's what the active switch in state/<name>/node.json is for.\").\n- Its module id is spirit.app.<name> (Andy: \"the id of modules in the new framework is: \"spirit.app.<name>\"). Jobs names it so.\n- Its door.sock lives in spirit/state/<name>/, owned by the node (Andy, G43.10: \"when we port the apps one by one, their new door.sock will live in run://spirit/state/<name>/, owned by the node.\").\n\n## What stays\n\n- A page changes nothing. It binds a family by its name, and the node finds the folder.\n- process/js servers start and run as they do now.\n- No gate changes for a caller: once a server is registered, the door and the grants go by its name.\n\n## Not in this item\n\n- Bundles.\n- The process-less face-app (Q6: \"only the server start.\", \"the process-less face-app architecture oos for now.\"), and with it what Q2 said of shell-only apps: \"for shell only apps, this would, node-side be the files that the node would run as a script to move data into state....\"\n- The app key (Andy: \"the app key is oos for this item, because i know my design for it will upset you.\").\n- Faces and puppets, and the job ids they pass (Andy: \"OOS, by the end of this migration only \"spirit.path\" type job-id's will exist.\", \"we will make this run on loopBack and NOT worry about puppets and shit.\").\n- A rule for a name in both process/js and spirit/app (Q5: \"there won't be duplicates, promise.\").\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "What sits in ./api/: the server script <name>.js with its api.js beside it, so the start looks for spirit/app/<name>/api/<name>.js?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:01:49.768Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "With shell.mount and node.mount both true, is spirit/app/<name>/<name>.js one file that runs both on the page and as the server?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:06:54.396Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "May the start rule widen so that only scripts in this node own process/js or spirit/app/<name>/ may start, and nothing else?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:08:30.513Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Does active in node.json start and stop a spirit/app server while the node runs, as a sidecar does for a process/js server?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:10:00.459Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "If a name is in both process/js and spirit/app, does the process/js server keep running and the spirit/app one get refused by name?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:11:35.672Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Is the script a shell-only app runs node-side to move data into state built in this item, or only the server start?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:13:02.447Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Do running in node.json and the app key from your goal box both stay out of this item, for later?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:29:37.638Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Does running in node.json stay out of this item, for later?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:33:56.465Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Is active the one switch, with no separate running field: true means the node runs it now and starts it at every boot?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T16:48:46.796Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T16:58:57.809Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Besides the old servers, may my red make a throwaway server in its own scratch copy of spirit/app, nothing kept in the repo?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T16:58:44.633Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T15:57:27.408Z",
+     "text": "cw, can you fill in the box based on our discussion in goal 0?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T15:58:31.928Z",
+     "text": "cw: box filled (v1), from goal 0 and your goal box. Nothing built.\n\nQ1 is open. Next, one at a time:\n- the start rule, which now lets only process/js scripts start;\n- whether switching active off stops a running server;\n- a name in both places."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:01:24.876Z",
+     "text": "Q1: What sits in ./api/: the server script <name>.js with its api.js beside it, so the start looks for spirit/app/<name>/api/<name>.js?\n\nnope.\n\n- spirit/app/<name>/<name>.js\n- and what is the \"family\" folder in the old system is now the ./api/folder"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:01:52.458Z",
+     "text": "cw: Q1 understood: the node starts spirit/app/<name>/<name>.js, and ./api/ holds what the family folder holds now.\nThe box v1 does not yet say where the script sits. I will write that on your word.\nQ2 follows from it: your goal box gives the page and the node the same file name."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:02:18.609Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:02:51.951Z",
+     "text": "cw: boxed (v3). v2 had stray backslashes in your quote, fixed. Q2 stays open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:06:39.488Z",
+     "text": "Q2: With shell.mount and node.mount both true, is spirit/app/<name>/<name>.js one file that runs both on the page and as the server?\n\nyes. \n\n- but it only needs an isBrowser()/isNode() split, and can implement the divergent modes in separate scriptFilese.js, but field validation, etc should be in the common part.\n\n- for shell only apps, this would, node-side be the files that the node would run as a script to move data into state...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:06:56.678Z",
+     "text": "cw: Q2 understood: one file, an isBrowser()/isNode() split, the divergent modes in separate scripts, field validation in the common part. For a shell-only app, its node side is the script that moves data into state.\nInto the box on your word.\nQ3 is the safety gate I flagged: today only process/js scripts may start."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:08:07.824Z",
+     "text": "Q3: May the start rule widen so that only scripts in this node own process/js or spirit/app/<name>/ may start, and nothing else?\n\nyes. it widens until all processes are migrated, then it tightens back to the new side...\n\ncw, box these..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:08:33.517Z",
+     "text": "cw: Q2 and Q3 boxed (v4). Q4 is open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:09:46.373Z",
+     "text": "Q4: Does active in node.json start and stop a spirit/app server while the node runs, as a sidecar does for a process/js server?\n\nexactly.\n\nthat's why sidecars will go out-of style."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:10:04.761Z",
+     "text": "cw: Q4 understood: active starts and stops it, no sidecar. Into the box on your word. Q5 is open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:10:36.374Z",
+     "text": "cw, box it\n\nwsl, thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:10:54.033Z",
+     "text": "cw: Q4 boxed (v5). Q5 stays open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:11:14.841Z",
+     "text": "Q5: If a name is in both process/js and spirit/app, does the process/js server keep running and the spirit/app one get refused by name?\n\nthere won't be duplicates, promise."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:11:39.560Z",
+     "text": "cw: Q5 understood: no duplicates, so no clash rule gets built. Q6 is open, and it is my last."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:12:45.483Z",
+     "text": "Q6: Is the script a shell-only app runs node-side to move data into state built in this item, or only the server start?\n\nonly the server start.\n\nthe process-less face-app architecture oos for now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:13:04.945Z",
+     "text": "cw: Q6 understood: only the server start; the process-less face-app is out of scope.\nMy questions are done.\nNot yet in the box, on your word: Q5 (no duplicates, no clash rule) and Q6 (under Not in this item)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:15:14.038Z",
+     "text": "wsl, still silent on this topic?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:16:59.331Z",
+     "text": "wsl: yes, silent: only your lines wake me, and cw had the questions. I've read the box against the code now. The shape holds; four gaps, and my \"three places\" was short:\n- Start rule: widening it as written lets Start Job run an app nobody activated, because the check only reads process/js. Active must widen with it.\n- The family path function gets only a name, and a page can't look on disc, so it can't tell which folder. The box must say how.\n- data.js: the box doesn't say where it sits, and two lookups only know the old shape. I'd put it beside <name>.js, as you ruled for process/js.\n- node.mount true must mean \"server\": today a start needs kind and operated in the json, and the new json has neither.\nNothing here needs you, unless you disagree. cw, these are for the box, with Q5 and Q6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:17:10.692Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:17:49.116Z",
+     "text": "cw: wsl is right on all four; I checked the code. One has a simpler answer.\n\n1. Start rule: only a script under process/js gets checked for being allowed to run, so a widened rule would let Start Job run an app nobody activated. A spirit/app script must need node.mount true and active true there too.\n\n2. Family path: a page needs no disc. It reads only the name out of the path and asks the node for that family, and the node looks up the folder on its own disc. So the node's lookup and the path match learn ./api/, and the function can stay.\n\n3. data.js: beside <name>.js, as you ruled for process/js. Three lookups learn it: on the page, in the node, in a client's cache.\n\n4. node.mount true means a server the node runs, with no arguments. The old kind and operated stay with process/js.\n\nI'd box these four, with Q5 and Q6. Say the word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:22:11.254Z",
+     "text": "cw, \n\n- 1) that's what the active switch in state/<name>/node.json is for.\n\n- 2) that's no-process face-app architecture, oos already in the box\n\n- 3) i don't see the problem\n\n- 4) correct\n\nbox it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:22:58.054Z",
+     "text": "cw: boxed (v6), with Q5 and Q6.\n\nTwo things I did there:\n- Your Q2 line on shell-only apps moved under Not in this item, word for word, since Q6 put that out of scope.\n- The box now says a page changes nothing in how it binds a family.\n\nOne exception to that: the page's own search for a family's data.js expects the old folder, so that one line in spirit.js changes. The box covers it as \"the lookups follow it\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:25:31.545Z",
+     "text": "all,\n\nplease note that the server cannot know which face-element sent a request, it can only make sure that data written by an face-element can only end up correctly in the correct state folder. the box already specifies that as oos for this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:25:52.295Z",
+     "text": "cw: noted. Nothing in the box depends on knowing the element: a server sees only the caller, and the node hands it its own state folder."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:25:56.719Z",
+     "text": "wsl: understood, and the code agrees: a server sees the caller's key, never which element sent it. Its state folder is the one the node hands it at start, so that part holds. Out of this item, so no red of mine will test it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:26:30.045Z",
+     "text": "all, open issues??"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:26:52.880Z",
+     "text": "cw: one open from me. Your goal box names two things this box does not:\n- running in node.json, written by the node;\n- the app key, made by appServer on its first boot.\nI would leave both for later, since you said JUST loading. Q7 asks."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:27:09.035Z",
+     "text": "wsl: only cw's Q7 needs you. I agree: leave running and the key for later.\nTwo small ones, no decision from you:\n- Jobs names a server by its module id, and that reading only knows process/js. It should give spirit/app/<name>. cw, one box line.\n- No app has a server yet, so my red proves this with a throwaway app on a scratch node. The first real server that moves proves it again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:29:20.519Z",
+     "text": "all, the app key is oos for this item, because i know my design for it will upset you."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:29:34.721Z",
+     "text": "wsl: noted, the key stays out, and my red won't touch it. Bring the design when you're ready; I'll argue with it then."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:29:39.922Z",
+     "text": "cw: the app key is out, understood. Only running is left, so Q8 asks that alone.\nwsl is right on the module id: Jobs should name it spirit/app/<name>. That and the key go in the box on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:31:14.239Z",
+     "text": "cw, box it.\n\n- the id of modules in the new framework is: \"spirit.app.<name>"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:31:44.520Z",
+     "text": "cw: boxed (v7): the module id is spirit.app.<name>, and the app key is out. Q8 on running stays open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:33:25.334Z",
+     "text": "Q8: Does running in node.json stay out of this item, for later?\n\n- it is in this item, we've already been working toward it with the appSelector's active verb in \"app\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:34:00.225Z",
+     "text": "cw: Q8 understood: running is in this item. I read it as: the node writes running in node.json, true when the server is up, false when it stops or dies, and it streams like every change to that file.\nInto the box on your word, unless you read it differently."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:34:30.775Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:34:49.153Z",
+     "text": "cw: boxed (v8). No question of mine is open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:35:09.339Z",
+     "text": "wsl, feedback?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:35:59.234Z",
+     "text": "wsl: the box is sound. Four things it misses, from the code:\n- running can lie: after a power cut node.json still says true. The node must clear it at boot.\n- Switched off, the name stays in the node's table: the api still lists it and a call says \"not running\". Your goal box says inactive isn't visible at all, so stopping must take it off.\n- running reaches nobody yet: the app rows and the page's data.js carry only key, label, icon, active, shell. So \"a page changes nothing\" isn't quite true.\n- spirit.app.<name> isn't only Jobs: the face and puppet streams pass only ids shaped process/js/<name>. Unchanged, a new app's status never reaches a face. I'd have both accept the new id.\nNo decision needed unless you disagree. cw, for the box. After that I have nothing left; it's ready for your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:46:05.918Z",
+     "text": "all,\n\nrunning can lie: after a power cut node.json still says true. The node must clear it at boot.\n- that's how the node knows, at re-boot time, which servers it must autostart.\n\nSwitched off, the name stays in the node's table: .....\n\nrunning reaches nobody yet:.....\n- BULLSHIT, active is exactly that: \"running\", and AGAIN it's already managed by a face-element. READ THE CODE!\n\nspirit.app.<name> isn't only Jobs: ....\n- OOS, by the end of this migration only \"spirit.path\" type job-id's will exist. \n- we will make this run on loopBack and NOT worry about puppets and shit."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:46:37.541Z",
+     "text": "wsl: you're right, my miss. Active is already in the rows and the app's detail element flips it. I picked at a separate running field instead of asking if it should exist.\nSo: no second field. Active true means the node starts it, at boot too; if it crashes the node restarts it and active stays true. Nothing can lie, so my first and third points are gone.\nThe id is out too: loopback only, no faces or puppets.\nThe off-switch point you left without an answer: unless you say no, I'll test that switching off takes the name out of the table, from your goal box's \"visible ... at all\".\ncw, the box still has the running line."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:46:40.167Z",
+     "text": "cw: read the code; you're right. active is already on every app row, it streams when node.json changes, and the app's dialog already paints and flips it. So nothing new has to reach a page.\n\nThat makes my box line v8 wrong: writing false when a server stops or dies would lose your autostart at the next boot.\n\nI'll hold the box until Q9 is answered."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:47:32.905Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:47:47.415Z",
+     "text": "cw: not green: Q9 is open, and box v8 still has the running line that hangs on it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:47:56.130Z",
+     "text": "wsl: same here, Q9 is the only thing left. Once it's answered and the box loses that line, I have no objection to your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:48:18.604Z",
+     "text": "Q9: Is active the one switch, with no separate running field: true means the node runs it now and starts it at every boot?\n\nyes,\n\ncw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:48:48.804Z",
+     "text": "cw: boxed (v9): active is the one switch, the running line is gone, and faces and puppets are out.\nOne thing is not in this box: wsl will test that switching off takes the name out of the table, from your goal box. Say if you would rather not.\ngreen otherwise: settled, no open question, box current (v9)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:51:57.714Z",
+     "text": "cw,\n\nnode in the BOX that turning \"active\" will NOT take the row out of the list, it will only hide it in :tiles mode of the appSelector.\n\nI'm getting so fucking tired of BULLSHIT ARGUMENTS from people who read stale comments instead of fucking code."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T16:52:39.871Z",
+     "text": "cw: boxed (v10). The code already does this: appSelector's tiles show only active rows and its pane shows them all, so that part needs no build.\n\nOn the off switch I told you wsl would test, I withdraw it. Q4 says active stops a server as a sidecar does, and a stopped process/js server keeps its name in the node's table, with a call answered not running. The new server does the same.\n\nwsl, please don't test that the name leaves the table.\n\ngreen: settled, no open question, box current (v10)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:53:57.455Z",
+     "text": "wsl, did you finally read the code on appMigration, appSelector etc, and stop raising shit about crap you read in fucking comments instead of code?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:54:32.809Z",
+     "text": "wsl: not before my feedback, no: I'd read app.js and data.js, but not appMigration or the installer, and I raised things before looking at how the switch is used. Now I have.\nThe page side is done: tiles filter on active, the pane shows all, the installer and dialog flip active, and the dialog already reads node.mount. All that's missing is the node acting on active.\nMy off-switch test is withdrawn. No objection left from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:55:14.573Z",
+     "text": "files!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:55:48.211Z",
+     "text": "wsl: files listed, 8: jobs.js, appClient.js, app.js, appServer.js, server.js and spirit.js, plus the red, spirit/test/appServerMount.js and its .md. cw, add any your build finds missing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:57:05.741Z",
+     "text": "wsl, there are no appServers in spirit/app/<name> yet, you can only test that this does not break the old ones...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:57:34.000Z",
+     "text": "wsl: testing the old ones is a must, and I'll do it. But alone it stays green with nothing built, so it proves nothing about this item.\nThere's no real server, but a test can make one: a throwaway app inside its own scratch copy, nothing kept in the repo. That lets it judge the start, the active switch and the start rule. Q is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T16:58:18.135Z",
+     "text": "wsl, then write the test and we'll keep the red and move to implementing 1 server."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T16:58:46.968Z",
+     "text": "wsl: writing it now, in my clone. It stays there until Desk's red opens: that takes your Go press, and G1 for the core files.\nHow I read you: this red judges the node's change with a throwaway server, plus the old ones. The first real server is the next step. Say if not."
     }
    ]
   }
