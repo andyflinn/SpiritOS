@@ -44,6 +44,44 @@ test.startTest('icons.js: the icons app\'s add row, a rowForm');
     // The box: "a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it."
     ok(/paste an icon first/.test(m.said || ''), 'its Add is wired: pressed with no icon, it says paste an icon first', 'said: ' + short(m.said));
     ok(!!m.said && !m.saidInBubble && m.saidBelow, 'on a line below the bubble, not in it', 'in the bubble ' + m.saidInBubble + ', below ' + m.saidBelow);
+
+    // The box: "the Icons app's one fallback path changes to this file", and "Until then the Icons app writes its old file, relay-state/shell/icons/iconSet.json".
+    test.subHeading('goal/G43.11: its fallback is spirit/iconSet.json, and it writes its old file');
+    const SET = 'spirit/iconSet.json';
+    const OWN = path.join(node.root, 'spirit', 'run', 'relay-state', 'shell', 'icons', 'iconSet.json');
+    const setOnDisc = path.join(node.root, 'spirit', 'run', SET);
+    const before = fs.readFileSync(setOnDisc, 'utf8');
+    const glyphs = Object.keys(JSON.parse(before));
+    const code = fs.readFileSync(path.join(RUN, 'shell', 'icons', 'icons.js'), 'utf8');
+    ok(code.indexOf('shell/json/iconSet.json') === -1, 'it does not name the old system set', 'icons.js still names shell/json/iconSet.json');
+    // Glyphs the set does not have: Add refuses one it has.
+    const fresh = [];
+    for (let c = 0x1F980; c < 0x1FB00 && fresh.length < 3; c++) { const g = String.fromCodePoint(c); if (!glyphs.includes(g)) fresh.push(g); }
+    if (fresh.length < 3) { test.fail('the world: the set has every glyph tried'); return; }
+    // The real app on the real desktop: the page above has no spirit.ready, so its Add cannot save.
+    await page.send('Page.navigate', { url: node.base + '/' });
+    await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, H.WAIT);
+    const pressed = await H.until(function () { return page.evaluate('(function () { var e = [].filter.call(document.querySelectorAll("*"), function (x) { return x.offsetParent !== null && !x.children.length && x.textContent.trim() === "Icons"; })[0]; if (!e) return false; e.click(); return true; }())'); }, H.WAIT);
+    ok(!!pressed, 'the Icons app opens on the desktop', 'no Icons tile on the desktop: nothing judged');
+    if (!pressed) return;
+    await H.until(function () { return page.evaluate('!!document.querySelector("[data-icons=add]")'); }, H.WAIT);
+    const add = function (glyph, words) {
+      return page.evaluate('(function () { var g = document.querySelector("[data-icons=new-glyph]"); var w = document.querySelector("[data-icons=new-keywords]"); g.value = ' + JSON.stringify(glyph) + '; w.value = ' + JSON.stringify(words) + '; document.querySelector("[data-icons=add]").click(); return true; })()');
+    };
+    const ownHolds = function (g) { try { return Object.prototype.hasOwnProperty.call(JSON.parse(fs.readFileSync(OWN, 'utf8')), g); } catch (e) { return false; } };
+    ok(!fs.existsSync(OWN), 'the world: no own file yet', 'the node already has an own file');
+    await add(fresh[0], 'probe');
+    await H.until(function () { return Promise.resolve(ownHolds(fresh[0])); }, 8000);
+    ok(ownHolds(fresh[0]), 'an Add writes its old file', 'the Add did not reach ' + OWN);
+    const lost = glyphs.filter(function (g) { return !ownHolds(g); });
+    ok(lost.length === 0, 'with no own file it starts from ' + SET + ': all ' + glyphs.length + ' icons', lost.length + ' icons of ' + SET + ' are not in it, ' + short(lost.slice(0, 20)));
+    ok(fs.readFileSync(setOnDisc, 'utf8') === before, SET + ' is not written', SET + ' changed');
+    const trimmed = {}; trimmed[fresh[1]] = ['own'];
+    fs.writeFileSync(OWN, JSON.stringify(trimmed));
+    await add(fresh[2], 'second');
+    await H.until(function () { return Promise.resolve(ownHolds(fresh[2])); }, 8000);
+    ok(ownHolds(fresh[2]) && ownHolds(fresh[1]), 'with an own file it starts from that', 'the second Add did not keep the own file\'s glyph');
+    ok(!ownHolds(glyphs[0]), 'and the set is not mixed in', 'the second Add mixed ' + SET + ' in');
   } finally {
     if (page && page.kid) page.kid.kill();
     if (node.child) node.child.kill();

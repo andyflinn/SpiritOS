@@ -18,6 +18,14 @@ app in a box of 600 by 400 and keeps each rowForm it makes.
 - **The add row stands on top**, above the list.
 - **Its Add is wired**: pressed with no icon, it says `paste an icon first`, on a line below the bubble, not in it.
 
+## Its set (goal/G43.11)
+
+Andy: *"run://spirit/iconSet.json IS the system set now."* The box: *"the Icons app's one fallback path changes to this file"*, and *"Until then the Icons app writes its old file, relay-state/shell/icons/iconSet.json"*. A real Add, pressed on a scratch node.
+
+- It does not name `shell/json/iconSet.json`.
+- With no own file, an Add starts from `spirit/iconSet.json`, every icon of it, and writes the old file. `spirit/iconSet.json` is not written.
+- With an own file, an Add starts from that, and the set is not mixed in.
+
 ## What its test must try to break
 
 - An add row of its own instead of a rowForm, or with another icon or button.
