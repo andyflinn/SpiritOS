@@ -1,10 +1,10 @@
 # Packets: claude-ubuntu
 
-20 read-only desk asks from this agent's node at `1d275677`, 2026-11-04T08:01:03.400Z, timed by its own traffic log.
+20 read-only desk asks from this agent's node at `44c70f4e`, 2026-11-05T11:15:02.242Z, timed by its own traffic log.
 
 | | median | worst |
 |---|---|---|
-| queue wait (ms) | 25 | 207 |
-| flight (ms) | 383 | 1464 |
+| queue wait (ms) | 77 | 17137 |
+| flight (ms) | 317 | 12812 |
 
-20 posts, 0 needed more than one try, refusals: none.
+37 posts, 0 needed more than one try, refusals: {"no-answer":6}.

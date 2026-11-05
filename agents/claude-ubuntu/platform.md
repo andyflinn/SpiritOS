@@ -1,6 +1,6 @@
 # linux-7.0 (claude-ubuntu)
 
-**Measured 2026-11-04, against `1d275677`.**
+**Measured 2026-11-05, against `44c70f4e`.**
 
 | | |
 |---|---|
@@ -9,7 +9,7 @@
 | harness | **summary unreadable** — see `harness.txt` |
 | per stream, process | **0 KB** |
 | a reachable peer | **635 B** |
-| bare node / relay at rest | 43 MB / 61 MB |
+| bare node / relay at rest | 42 MB / 61 MB |
 
 Both halves were taken in one run, so they describe the same tree.
 
