@@ -67,7 +67,7 @@
       var cell = hosts && hosts.active;
       if (cell) {
         // A press on the switch is the switch's, never the row's pick (as the installer it replaced stopped it).
-        cell.addEventListener('click', function (e) { e.stopPropagation(); });
+        cell.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('button')) e.stopPropagation(); });
         // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
         var made = Promise.resolve(window.spirit.require('spirit/app/appSelector/rowFormAppActive.js')).then(function () {
           if (installer !== made) return;
