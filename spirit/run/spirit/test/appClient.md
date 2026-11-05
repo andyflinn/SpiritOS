@@ -5,6 +5,11 @@ where a requirement here names it.
 
 ## Requirements
 
+### A server of spirit/app/ has its door in spirit/state/<name>/ (goal/G43.12)
+
+`pipePathFor(root, name, platform, 'app')` names it, and Windows gets a pipe name of its own. Andy: *"their new door.sock will
+live in run://spirit/state/<name>/, owned by the node."* Judged in `./appServerMount.md`.
+
 ### The owner's answer on loopback comes back whole (goal/G41.28)
 
 The ruling cw built to, for a manager bigger than one answer: the owner's call that came in on loopback is marked, and
