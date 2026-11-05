@@ -526,9 +526,9 @@ module.exports = function installJobs(port) {
     const values = {};
     (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
     const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform, 'process');
-    // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): relay-state/process/<name>/,
+    // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/<name>/data/ (goal/G43.10),
     // handed over as --state, so a process never works out its own folder.
-    const state = path.join(rootDir, 'relay-state', 'process', name);
+    const state = path.join(rootDir, 'spirit', 'state', name, 'data');
     try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the server says why */ }
     if (process.platform !== 'win32') {
       try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }

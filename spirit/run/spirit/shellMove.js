@@ -140,7 +140,7 @@ function moveIdentity(from, to) {
   try { fs.chmodSync(to, 0o600); } catch (e) { /* no such thing on this disc */ }
   fs.unlinkSync(from);
 }
-function moveRelayState(rootDir, say) {
+function moveRelayStateTop(rootDir, say) {
   const tell = typeof say === 'function' ? say : function (line) { console.log(line); };
   const from = path.join(rootDir, 'relay-state');
   const to = path.join(rootDir, 'spirit', 'state');
@@ -169,6 +169,48 @@ function moveRelayState(rootDir, say) {
   }
   tell('state: moved ' + moved.length + ' from relay-state to spirit/state: ' + moved.join(', '));
   return { moved: moved };
+}
+
+// A PROCESS'S FILES MOVE TO ITS data/ (goal/G43.10; Andy: "JUST state data.", "we will only move process relay-state data if the
+// corresponding run://process/<name> still exists.", "whatever leftovers there are of now-eliminated process, we disregard"). Once, at
+// boot, after relay-state's top. A folder with no process/js/<name>/ stays where it lies. door.sock, the sidecars (Q6) and bundles.json
+// (Q13) stay: door.sock and the sidecars are not state data, and bundles.json is the node's own record (apiAuth.js). Every name is
+// checked before anything moves, so a name data/ already holds stops the node (Q6) with nothing written over and nothing half moved.
+const STAYS_WITH_PROCESS = ['door.sock', 'bundles.json'];
+function staysWithProcess(rel) { return STAYS_WITH_PROCESS.indexOf(rel) !== -1 || rel.endsWith('.sidecar.json'); }
+function moveProcessState(rootDir, say) {
+  const tell = typeof say === 'function' ? say : function (line) { console.log(line); };
+  const from = path.join(rootDir, 'relay-state', 'process');
+  let names = [];
+  try { names = fs.readdirSync(from, { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); } catch (e) { return { moved: [] }; }
+  names = names.filter(function (n) { return fs.existsSync(path.join(rootDir, 'process', 'js', n)); });
+  const moved = [];
+  try {
+    const moves = [];
+    names.forEach(function (name) {
+      filesUnder(path.join(from, name)).filter(function (rel) { return !staysWithProcess(rel); }).forEach(function (rel) {
+        const dest = path.join(rootDir, 'spirit', 'state', name, 'data', ...rel.split('/'));
+        if (fs.existsSync(dest)) throw new Error('spirit/state/' + name + '/data/' + rel + ' already exists');
+        moves.push({ name: name, rel: rel, from: path.join(from, name, ...rel.split('/')), to: dest });
+      });
+    });
+    moves.forEach(function (m) {
+      fs.mkdirSync(path.dirname(m.to), { recursive: true });
+      renameSoon(m.from, m.to);
+      moved.push(m.name + '/' + m.rel);
+    });
+    names.forEach(function (name) { removeEmptyDirs(path.join(from, name)); });
+  } catch (e) {
+    console.error('state: could not move relay-state/process to spirit/state/<name>/data: ' + ((e && e.message) || e));
+    process.exit(1);
+  }
+  if (moved.length) tell('state: moved ' + moved.length + ' from relay-state/process to spirit/state/<name>/data');
+  return { moved: moved };
+}
+// server.js and relayServer.js call this first of all (above).
+function moveRelayState(rootDir, say) {
+  const top = moveRelayStateTop(rootDir, say);
+  return { moved: top.moved, processes: moveProcessState(rootDir, say).moved };
 }
 
 // Whether this tree's key still waits at the old place for the boot's move (relayAuth asks before it would mint one).
