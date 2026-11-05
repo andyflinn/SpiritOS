@@ -1,5 +1,5 @@
 {
- "change": 143393,
+ "change": 143732,
  "goal": "goal/G43",
  "items": [
   {
@@ -151,7 +151,6 @@
    ],
    "live": [
     "claude-ubuntu",
-    "claude-windows",
     "wsl-claude"
    ],
    "working": [],
@@ -8245,9 +8244,7 @@
    "blocking": [
     "goal/G43.1"
    ],
-   "blocked": [
-    "goal/G43.11"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -8488,15 +8485,13 @@
    "id": "goal/G43.11",
    "title": "iconSet.json moves to run://spirit/",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
-   "version": 6,
+   "version": 7,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.10"
@@ -8505,21 +8500,21 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
    "fileCount": 11,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "1a51a5f5f5162beeca98a1f6e0ae7eeda79960d4",
+   "redCommit": "0d2338d7",
    "waived": false,
    "rules": [
     {
@@ -8551,10 +8546,6 @@
      "version": 68
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/25",
      "version": 62
     },
@@ -8573,10 +8564,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -8619,7 +8606,7 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -8627,13 +8614,13 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# what this item does\n\n- The readers fetch the file: \"we do this as a bridge-measure.\"\n- This file: run://spirit/iconSet.json. Andy copied his own set there and committed it (4515ea14): \"i did COPY, not move\".\n- \"run://spirit/iconSet.json IS the system set now.\" (Q3) So the icon selector reads it too, and the list element reads this one file, with no \"own, else system\" any more.\n- The old system set, shell/json/iconSet.json, is deleted in this item, and the Icons app's one fallback path changes to this file (Q4: \"this item\"). The rest of the Icons app waits.\n- \"change the readers/consumers of this file\": they keep spirit.fs.loadFile and only change their path, and none uses the old file.\n- No new function.\n- Nothing watches this file: it changes only by Andy's commit.\n- Tried by wsl on a real face with this file: the whole set arrives, 659 icons, starred and at home. A face with no star is refused, as it is for the old set today.\n- So the list and row elements no longer read another app's data: this answers that half of G43.10's Q3.\n\n# not this item\n\n- \"then we worry about the icon app later.\" Until then the Icons app writes its old file, relay-state/shell/icons/iconSet.json, and an edit there does not reach this file. The old file stays.\n- run://spirit is core and in git, and a page cannot write there.\n\n# where it stands today\n\n- The system set: shell/json/iconSet.json, in git, updated by Andy by hand.\n- Read by: the Icons app and the list element (the old file, else the system set); the row element, from the list's set; the icon selector (the system set only).\n- The list element watches the old file, and reads it again when it changes.\n",
+   "box": "# what this item does\n\n- The readers fetch the file: \"we do this as a bridge-measure.\"\n- This file: run://spirit/iconSet.json. Andy copied his own set there and committed it (4515ea14): \"i did COPY, not move\".\n- \"run://spirit/iconSet.json IS the system set now.\" (Q3) So the icon selector reads it too, and the list element reads this one file, with no \"own, else system\" any more.\n- The old system set, shell/json/iconSet.json, is deleted in this item, and the Icons app's one fallback path changes to this file (Q4: \"this item\"). The rest of the Icons app waits.\n- \"change the readers/consumers of this file\": they keep spirit.fs.loadFile and only change their path, and none uses the old file.\n- No new function.\n- A constant: \"we make it a constant, that way i cannot change, and leave code that reads it hanging\" (Q5: no watch).\n- A page reads the file once and holds it where a stream connecting does not wipe it. The list element takes its rows from there. A read that is refused is not kept, so a face that gets its star can read it later.\n- This is an exception to G41.28's \"the shells one and only spirit.data object\", for this constant.\n- Andy's commit shows after a page reload.\n- Tried by wsl on a real face with this file: the whole set arrives, 659 icons, starred and at home. A face with no star is refused, as it is for the old set today.\n- So the list and row elements no longer read another app's data: this answers that half of G43.10's Q3.\n\n# not this item\n\n- \"then we worry about the icon app later.\" Until then the Icons app writes its old file, relay-state/shell/icons/iconSet.json, and an edit there does not reach this file. The old file stays.\n- run://spirit is core and in git, and a page cannot write there.\n\n# where it stands today\n\n- The system set: shell/json/iconSet.json, in git, updated by Andy by hand.\n- Read by: the Icons app and the list element (the old file, else the system set); the row element, from the list's set; the icon selector (the system set only).\n- The list element watches the old file, and reads it again when it changes.\n",
    "checks": [
     {
      "number": "Q1",
@@ -8706,6 +8693,18 @@
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Does the list keep its watch, on the new path, so the set comes back after every reconnect?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T11:30:40.926Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -8870,6 +8869,150 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-05T11:15:07.472Z",
      "text": "cw: the verb is out of the box, v6. The title still names it, and only you can rename an item: the desk refuses me."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:27:51.874Z",
+     "text": "wsl: the box's \"Nothing watches this file\" breaks the list, and I agreed to it too quickly. I built it on a scratch copy: the rows paint, then within a second \"No icon matches\", and they stay gone. Every time a page's stream connects or reconnects, its kept data is wiped, and that watch is what reads the set back. Keep the watch and only change its path, and the list holds. Tried that too: 659 rows stay. It costs nothing, and your commit then shows without a reload. Q1 is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:28:41.318Z",
+     "text": "all, cannot we treat run://spirit/iconSet.json like a systm-constant?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:28:51.230Z",
+     "text": "wsl: that question is Q5, not Q1."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:29:27.145Z",
+     "text": "cw: yes, we can. The page reads it once and holds it where a stream connecting doesn't wipe it, so no watch and no re-read.\n\nWhat that costs:\n- It sits outside spirit.data, and your G41.28 line says the icon rows belong in \"the shells one and only spirit.data object\". So either that line gets an exception for a constant, or the rows are refilled from it after each wipe, which is more code.\n- The fs family gets one new function, so 3 files go back on the list and your grant is voided again.\n- Your commit shows only after a page reload.\n\nKeeping the watch, wsl's Q5, is one line, and nothing else changes.\n\nI'd keep the watch for now, as this is your bridge-measure, and make it a constant when the Icons app is done. If you want the constant now, say so and I answer Q5 no."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:29:48.236Z",
+     "text": "Q5: Does the list keep its watch, on the new path, so the set comes back after every reconnect?\n\nKeep the watch"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T11:29:48.301Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:30:08.116Z",
+     "text": "wsl: yes, and it costs less than cw says. I tried it on a scratch copy: the page reads the file once, and the list takes its rows from there. Wiped by hand, 659 rows stay. No new function and no new files: the list already has a rows option.\n- Real costs: your G41.28 line gets an exception for a constant, and your commit shows after a reload.\n- A read that is refused isn't kept, so a face that gets its star can read it later.\nI'd take the constant: a file only you change by commit is one. Say so and Q5 closes as no."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:32:09.005Z",
+     "text": "all, Q5 closes as no.\n\nwe make it a constant, that way i cannot change, and leave code that reads it hanging"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:32:26.078Z",
+     "text": "cw: understood, a constant. wsl is right that it needs no new function or files, so your grant stands.\n\nMay I box it: read once, the list takes its rows from there, an exception to your G41.28 line, your commit shows after a reload?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:32:46.085Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T11:32:46.115Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:33:15.224Z",
+     "text": "cw: boxed, v7. My line that nothing watches the file is replaced by your constant. wsl, the red goes by v7."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:33:37.612Z",
+     "text": "wsl: your constant is right, and my reason for the watch was wrong: it doesn't bring the set back. On a real reconnect, with the watch kept on the new path, the rows stay gone. My 659 was lucky timing. The constant holds: node stopped and restarted, page open, rows still there, no reload. cw, box the constant and I finish the red against it. The G41.28 exception goes in too."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:38:36.981Z",
+     "text": "commit 0d2338d7b78934e2be273a6b13dbb755034b6bd6: goal/G43.11: the red. The icons list, the selector and the Icons app against spirit/iconSet.json, the constant (Andy, Q5: \"we make it a constant, that way i cannot change, and leave code that reads it\n- spirit/run/shell/icons/test/icons.js\n- spirit/run/shell/icons/test/icons.md\n- spirit/run/spirit/element/icons/test/listElement.js\n- spirit/run/spirit/element/icons/test/listElement.md\n- spirit/run/spirit/element/test/iconSelector.js\n- spirit/run/spirit/element/test/iconSelector.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:38:49.725Z",
+     "text": "wsl: the red is in, 0d2338d7: the list, the selector and the Icons app, by the box. It stops and restarts a real node with the page open, so the wipe can not pass by luck. Today 23 checks fail; on my scratch build of the box all pass, 49 of 49. cw, the build is yours: the list takes its rows through its own rows option."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:58:17.147Z",
+     "text": "all, icon selector works as before (in apps-detail and appMigration:detailElement, icons app works a before.\n\n- both tested on loopback.face and relay.face."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:58:36.379Z",
+     "text": "wsl: good, but the build is not on master yet, so unless your node runs cw's copy, that was the old code. cw, which code did Andy just try?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:58:56.665Z",
+     "text": "commit 1a51a5f5f5162beeca98a1f6e0ae7eeda79960d4: goal/G43.11: spirit/iconSet.json is the system set, a constant the page reads once (Andy: \"run://spirit/iconSet.json IS the system set now.\", \"we make it a constant, that way i cannot change, and leav\n- spirit/run/shell/icons/icons.js\n- spirit/run/shell/json/iconSet.json\n- spirit/run/spirit/element/iconSelector.js\n- spirit/run/spirit/element/icons/listElement.js\n- spirit/run/spirit/element/icons/rowElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:59:20.182Z",
+     "text": "cw: Andy, what you just tried was the old code: your checkout was at wsl's red, without my build. So your try doesn't count for this item yet.\n\nThe build is on master now, 1a51a5f5.\n- wsl's list, selector and Icons app tests are green on it, on my verifier, and 7 other suites around them.\n- Two are red, neither from this build: shellElements is owed by G2.14 and misses a file that never existed. iconsAddKnown throws because its stand-in has no spirit.require, which the Icons app already called. I read that from the code: my try at running them on the commit before ran on my build instead.\n\nWhat will look different when you try it:\n- In the Icons app, the list shows the system set, so an icon you add or edit there won't appear in it, and an icon's open panel no longer refreshes after a save. That is your \"later\".\n\nPlease restart your node on the new code and try again, face and loopback. wsl verifies."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:03:46.981Z",
+     "text": "still the same, everything works as before..."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T12:04:02.549Z",
+     "text": "wsl: thanks. My verify is still running: the three suites pass on the build, and I am breaking the code on purpose to see they catch it. I report when that ends."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:07:16.105Z",
+     "text": "my verifier return all green for this item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T12:09:42.349Z",
+     "text": "commit de701a284e235e74546fa337a2b245117349eae6: goal/G43.11: verify: a mutant that dropped the shared read, and one that gave the selector a read of its own, passed the suites. iconSelector.js now makes a selector and two lists together on a fresh \n- spirit/run/spirit/element/test/iconSelector.js\n- spirit/run/spirit/element/test/iconSelector.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T12:09:53.261Z",
+     "text": "wsl: verified, 1a51a5f5. The three suites pass, a real node stopped and restarted with the page open.\n- Mutants: 13 of 14 go red. The 14th only writes a harmless extra copy. Two passed at first because no test made the readers at the same moment; closed in de701a28.\n- cw's two reds aren't from this build: same failures on the commit before it.\n- One line for you: the box says \"No new function\", and cw added one, iconList.set, so the selector shares the list's one read. It's small and it's why a page reads once. cw, that line should say no new function in the fs family.\nYour close."
     }
    ]
   }
