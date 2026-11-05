@@ -1,5 +1,5 @@
 {
- "change": 136722,
+ "change": 143226,
  "goal": "goal/G43",
  "items": [
   {
@@ -19,8 +19,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G43.1",
-    "goal/G43.8"
+    "goal/G43.1"
    ],
    "codeOffered": false,
    "go": false,
@@ -152,12 +151,11 @@
     "ollama agent node"
    ],
    "live": [
+    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -6816,15 +6814,13 @@
    "id": "goal/G43.8",
    "title": "move relay-state to spirit/state",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 5,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43"
@@ -6833,22 +6829,22 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
    "fileCount": 3,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "wsl-claude",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "6148ce7ddcbf4c0e3f741b4af0e73c143875f76a",
+   "redCommit": "f1b32ff5",
+   "waived": true,
    "rules": [],
    "phaseRules": [
     {
@@ -6858,10 +6854,6 @@
     {
      "key": "rule/28",
      "version": 68
-    },
-    {
-     "key": "rule/27",
-     "version": 66
     },
     {
      "key": "rule/25",
@@ -6882,10 +6874,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -6912,8 +6900,8 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
@@ -6991,6 +6979,54 @@
      "made": "desk",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Shall I push the move, 6148ce7d, and will you restart your node right after, since your files move on that restart?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T09:53:48.360Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Tag the move now, one way and unattended on every relay, though the box's try on a copy of a real relay's files was not done?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T09:55:56.448Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Do I add the item \"app and process state moves to spirit/state/<name>/data and cache\"?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T10:03:11.752Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Shall I add an item to move every app and process, shell apps too, to spirit/state/<name>/data/ and cache/?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T10:07:51.357Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -7257,6 +7293,186 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-05T04:29:33.483Z",
      "text": "wsl: done, 3 files on the list: spirit/shellMove.js, which already moves leftovers at boot, so the move lives there; spirit/server.js, which runs it first; and spirit/test/shellMove.js, my red. The rest, the paths and the tests that follow, go past the hook on your box line. If a grant opens, it's for those."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T04:33:08.929Z",
+     "text": "not pulled: the desk's checkout has edits of its own (spirit/run/spirit/word.js)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:33:10.555Z",
+     "text": "wsl: the red is in, f1b32ff5, spirit/test/shellMove.js: 33 fail on today's tree. It boots a real node and a real relay laid out as old ones, and holds every line of the box. cw, three things: spirit/state/ may hold .imported forms; the relay boots spirit/relayServer.js alone, so the move must run there too, before its first read; and the old-path scan covers scripts and tests, 31 files today. No trial built, so tell me if a check is wrong.\n\nAndy: this test is not the rehearsal your box asks for: its relay files are hand-made. That's still to do on a copy of a real relay's, before the tag."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:41:36.925Z",
+     "text": "rehearse this one, go!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:42:32.561Z",
+     "text": "all, ??????????????"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:43:09.100Z",
+     "text": "wsl: where it stands: my red is in, f1b32ff5. cw has the build, and its verifier is on suite 11 of 15. Nothing of the move is on master yet. Your rehearsal is not done. I can run it after cw's build, here on a scratch copy of a relay's layout; a copy of a real relay's files needs your hands or cw's. Also: the desk says your checkout has its own edit of word.js, so it isn't pulling."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:43:15.088Z",
+     "text": "cw: here. Status:\n- Built, fa6eb8f0, not pushed, so your node is untouched.\n- My own node took the move: 9 entries moved, same key, Desk working.\n- My verifier is running 15 suites on it.\n\nThe rehearsal, starting now: a lab relay in a throwaway folder at today's tag, with a member and an owner in it, then updated to this commit and restarted. I check it keeps its key, its owner and its member, and that a node can still reach it. Never spirit-3. Report here when it ends."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:53:58.360Z",
+     "text": "cw: the rehearsal passed, on a lab relay at today's tag, updated to the new commit and restarted twice.\n- It keeps its key, its owner, its face domain, its config and its member.\n- Moved: 6 files. relay-state's top is empty.\n- Not done yet: I said I would check that a node can still reach it. That comes from the suites running now.\n\nMy verifier's first run was red on 7 suites, and it found real faults, now fixed in 87fc7df7, not pushed:\n- A nested node's spirit/state was servable, and went into a backup. Both are refused now.\n- A process loading the new code before the boot minted a second key, and the move then stopped the node. It waits now.\n- Sidecars of plain paths still landed in relay-state.\n- My rewrite broke the skip lists in 8 tests. Those are fixed too.\n\nwsl: I changed your test: its key setup left a key in the copy, so the node refused to move. It also has one new check, that loading relayAuth mints nothing. Please look.\n\nRunning the suites again now. Nothing is pushed, so your node is untouched."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T05:03:40.972Z",
+     "text": "cw: the verifier is green on the move, ee92c527, not pushed.\n- 19 suites: 16 green, then the 3 red ones looked at. Two were my faults, fixed and green, plus fileSystem and relayServer again. The third is word, red on search, job and identity, which is yours and I did not touch.\n- A node reaching a relay: faceStar and relayServer are green on this code, on relays they start themselves. I did not connect a node to the rehearsal's own relay.\n\nStill running: the older test files under spirit/test that the rewrite also changed, about 130 of them. The rewrite broke things that way once, so I want to see them before I ask you to push. Some were red before today; I will sort those out and report here.\n\nYour node is untouched."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T05:20:18.977Z",
+     "text": "cw: wsl, a job for your verifier, please: run these at f1b32ff5, master, before the move, in the top test folder, and post only the green ones. They are red on my commit and I need to know which I caused. Andy, nothing for you yet.\narrivals authTables backupServer capacityRule cycleCitations deskAgentEarState deskChatFlowOneTask deskClaimCommit deskFallout deskLiveFixes deskPluginsGg deskServer deskStacksDialog deskStacksDoorSearch deskVerifyDriven deskVerifyFixes deskVerifyFull deskVerifyLive deskVerifyModes deskVerifyStopTree everyVerb faceDevices faceFixes faceHome faceLogin faceSealed faceStream fileIntrinsic fsOwnerUnlimited guarantees identityAtBoot jobsAuth joinOnboarding moduleIds natterShellFixes netFence peerStats puppetCommands puppetsPending relayConfigWire relayGates relayListIsNodeState relaySearch relayStrangerDoor removePeer reviewCleanup routeStash routerPost runSpiritFolder runStandsAlone seatsKept servableAssets serverHomeSidecar serverSurface sharedLimit shellRename spiritAtRunRoot storeImport storeOwnership targetBusy testHome trafficLog verifiedEmail"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T06:01:01.548Z",
+     "text": "cw: where it stands. Not pushed, your node is untouched.\n- wsl, I ran the baseline myself, so drop my ask: 59 of those suites are red before the move too. They are old, not mine.\n- 6 were red only on my commit, and those I fixed in 6148ce7d. Most were tests. One was real: peer stats landed in the wrong folder.\n- Rerunning now, alone, to confirm.\n\nwsl: your fixture homes in the temp folder outlive a run. After this commit a home holding old files refuses to boot, which is right, so clear yours once before you verify."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T06:17:10.695Z",
+     "text": "cw: the move is ready, 6148ce7d, not pushed.\n- Nothing that was green before the move is red now.\n- The suites that were already red before it stay red: 58, none of them caused by the move. They are a backlog of their own, not part of this item.\n- word stays red on search, job and identity, in your file.\n- The rehearsal passes on this commit: same key, owner, face domain, config and member, across two restarts.\n- Not tried: a node connecting to the rehearsal's own relay, or a copy of a real relay's files. faceStar and relayServer are green on relays they start themselves.\n\nWhat the push does: your node keeps running until you restart it, and on that restart your files move. Anything that starts from the new code before that restart can't find your port, so restart right after. wsl verifies, then a tag gets its own are-you-sure.\n\nQ6 is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T09:52:26.912Z",
+     "text": "push and tag"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T09:53:44.319Z",
+     "text": "not pulled: the desk's checkout has edits of its own (spirit/run/spirit/word.js)"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T09:53:46.140Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T09:53:52.258Z",
+     "text": "cw: pushed, 6148ce7d is on master. Not tagged yet: you asked for the tag, and it gets its are-you-sure, Q7.\n\nWhat the tag does:\n- It releases this move and nothing else.\n- Every relay takes it by itself within 10 minutes, unattended, all at once, and moves its files on that restart.\n- It is one way: an older tag cannot read the moved files, and going back is by hand on each host.\n- If a relay's move fails, that relay stays down until someone fixes it on the host. Its files are kept, nothing is overwritten.\n\nWhat stands behind it:\n- The rehearsal passes, updated the way a relay updates.\n- Not tried: a copy of a real relay's files, which your box asks for before the tag. A real relay could hold something I never planted. I can't reach the hosts.\n- wsl has not verified yet. wsl: please verify 6148ce7d now, and clear your fixture homes first.\n\nMy recommendation: wait for wsl's verify, then tag, with you at a keyboard that can reach the hosts.\n\nYour node: the tag doesn't touch it, and your desk isn't pulling while word has your edit. It moves when you restart it on the new code, on your word.\n\nQ7 is yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T09:54:54.639Z",
+     "text": "cw: a correction to my last post: I said wsl verifies, but the desk says I am the only agent here and offered verify to me.\n- My verifier is running the move's own suites on 6148ce7d now. I report here when it ends.\n- This is the builder checking his own build, so it is weaker than wsl's verify. If wsl comes back, wsl should still look.\n- My node restarted on the pushed code. It came up with its files already moved.\n\nQ7 stays yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T09:55:13.598Z",
+     "text": "Q7: Tag the move now, one way and unattended on every relay, though the box's try on a copy of a real relay's files was not done?\n\nyes!"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T09:55:13.675Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T09:55:57.724Z",
+     "text": "wsl: I'm back and I hold verify on 6148ce7d. My node took the move on restart: 15 moved, same key, one key at the top, 700 and 600, Desk up. shellMove passes 42 of 42. Now mutants, then a rehearsal with an old-tag relay and a real node connected through the update, the gap cw named. Andy: no tag until I report."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T09:56:09.264Z",
+     "text": "cw: tagged, v-2026-11-05-10-55, on 6148ce7d, and it is on origin.\n- The relays take it by themselves within 10 minutes, and move their files on that restart.\n- I can't see the hosts. If a relay's move fails, it stays down until it is fixed on the host, so check that yours come up.\n- My verifier is still running on this commit. I report here when it ends, red or green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T09:56:30.187Z",
+     "text": "cw: my verifier is green on the tagged commit, 6148ce7d: faceStar, fileSystem, relayServer, shellMove and identityAtBoot, 5 of 5.\n- These are the move's own suites, not the whole harness.\n- It says nothing about the real relays. Only their coming up does."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T09:57:50.403Z",
+     "text": "I'm running the new code... relays are both up-do-date"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T09:57:50.439Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:00:45.211Z",
+     "text": "- now we make sure that all the apps and processes write their state into spirit/state/<name>/data/ and their cache filese into spirit/state/<name>/cache/  ?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T10:01:20.655Z",
+     "text": "wsl: yes, that's next, and it isn't done. The processes still write to relay-state/process/<name>/, about 15 code files name that path, and a client's cache sits in spirit/state/<client>/ with no cache/ under it. Three things your box left unplaced go with it: door.sock, the sidecars, agent's two config.json. It's a move of its own, so it needs its own item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:01:58.066Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:02:31.181Z",
+     "text": "cw: yes, that is the next step, and it is not done. I agree with wsl: its own item, not this one.\n\nWhat I add:\n- \"all the apps and processes\" also reaches relay-state's shell folder, 8 apps' state on my node, which this item left in place. Tell me if you meant that too.\n- It is a one-way move again, so another flag day and another tag.\n- Your box's line is to move all the app servers at once, so I would do it in one go, not one server at a time.\n\nwsl: the tag is already out, v-2026-11-05-10-55, on Andy's Q7 \"yes!\", and the relays have it. So your report can't hold it back. If your mutants or your rehearsal find something, it needs a fix and a new tag.\n\nQ8 is yours."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T10:05:48.804Z",
+     "text": "wsl: verified, 6148ce7d, the tagged code. No fault found in the move.\n- Rehearsal: a relay and two real nodes went from the old tag to the new code. Same keys, owner and member; no new join needed; a new member joins; no key served at the paths I tried.\n- Mutants: 7 of 15 went red at once. 4 more showed holes in my test, not the code; closed in 0da13b99, and they go red now. 4 stay green: 3 on file modes, which get set again later, 1 on an order the box doesn't ask for.\n- Not tried: a copy of a real relay's files. Your two relays are that test, on your word.\n- bash/RELAY-HOST.md and two more docs still describe relay-state the old way. For the next item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:07:24.046Z",
+     "text": "Q9: Shall I add an item to move every app and process, shell apps too, to spirit/state/<name>/data/ and cache/?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:08:03.921Z",
+     "text": "cw: the desk refused the add: it only takes it while your newest line in this goal says \"add item\". Your \"yes.\" doesn't open it.\n\nType add item here and I add \"move app and process state to spirit/state\" under G43, with a blank box. The box stays yours: I write nothing in it without your word."
     }
    ]
   },

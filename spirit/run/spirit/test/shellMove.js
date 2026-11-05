@@ -161,6 +161,34 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/ at 
     await stop(bad);
     fs.rmSync(b.root, { recursive: true, force: true });
 
+    // Three moves that must stop, each with a key that reads: a key that is not its own, and a name the new place already holds.
+    for (const stops of [
+      { what: 'a private key that does not give its public key', key: function (one, two) { return Object.assign({}, one, { privateKey: two.privateKey }); }, held: null },
+      { what: 'a file spirit/state/ already holds', key: function (one) { return one; }, held: { name: 'unknown.txt', text: function () { return 'the newer one'; } } },
+      { what: 'a key spirit/state/ already holds', key: function (one) { return one; }, held: { name: 'identity.json', text: function (one, two) { return JSON.stringify(two); } } },
+    ]) {
+      const s = scratch();
+      const one = keyOf(s.run);
+      const two = keyOf(s.run);
+      const oldKey = JSON.stringify(stops.key(one, two));
+      oldLayout(s.run, { 'identity.json': oldKey });
+      const stateDir = path.join(s.run, 'spirit', 'state');
+      const heldText = stops.held ? stops.held.text(one, two) : null;
+      const oldText = stops.held ? readText(path.join(s.run, 'relay-state', stops.held.name)) : null;
+      if (stops.held) { fs.mkdirSync(stateDir, { recursive: true }); fs.writeFileSync(path.join(stateDir, stops.held.name), heldText); }
+      const stopPort = await freePort();
+      const stopped = spawn(process.execPath, ['spirit/server.js', '--port', String(stopPort)], { cwd: s.run, stdio: 'ignore' }); live.push(stopped);
+      await until(function () { return Promise.resolve(stopped.exitCode !== null); }, 20000);
+      ok(stopped.exitCode !== null && stopped.exitCode !== 0, stops.what + ': the node stops', stops.what + ': the node: exit ' + short(stopped.exitCode));
+      ok(readText(path.join(s.run, 'relay-state', 'identity.json')) === oldKey, 'and the old key stays as it was', stops.what + ': the old key changed or went');
+      if (stops.held) {
+        ok(readText(path.join(stateDir, stops.held.name)) === heldText, 'and what stood in spirit/state/ is not written over', stops.what + ': spirit/state/' + stops.held.name + ' was written over');
+        ok(readText(path.join(s.run, 'relay-state', stops.held.name)) === oldText, 'and the old file stays', stops.what + ': relay-state/' + stops.held.name + ' changed or went');
+      } else ok(!fs.existsSync(path.join(stateDir, 'identity.json')), 'and no key reaches spirit/state/', stops.what + ': a key reached spirit/state/');
+      await stop(stopped);
+      fs.rmSync(s.root, { recursive: true, force: true });
+    }
+
     test.subHeading('the box: "So the move is tried on a copy of a relay\'s files": a relay of the old layout');
     const c = scratch();
     const relayId = keyOf(c.run);
