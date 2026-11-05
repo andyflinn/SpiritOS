@@ -14,7 +14,7 @@ const RUN = path.resolve(__dirname, '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 // Up here, before the first result: under the verifier testReport.js loads spirit.js for its records with the global
 // put aside, and a server module required after that finds no global spirit.
-require(path.join(RUN, 'spirit.js'));
+const { familyPath } = require(path.join(RUN, 'spirit.js'));
 const { answer } = require(path.join(RUN, 'spirit', 'apiDoor.js'));
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'test', 'headLessChrome.js'));
@@ -29,13 +29,15 @@ const NAME = 'probe';
 const MODULE = 'spirit.app.' + NAME;
 const NOTE = 'what ./api/ holds';
 const INTERFACE = '// the interface in ./api/';
+// The old folder's name, as the one family path function gives it: the decoy below, and no path of this file's own.
+const OLD_FOLDER = path.basename(path.dirname(familyPath(NAME)));
 
 // THE THROWAWAY APP, written as the box describes one: one file, a split for the page and the node, its folder ./api/, its data.js
 // beside it, and a <name>.json without the old kind and operated. Its family/ is a decoy: only process/js has one.
 function plantApp(run, name, mount) {
   const dir = path.join(run, 'spirit', 'app', name);
   fs.mkdirSync(path.join(dir, 'api'), { recursive: true });
-  fs.mkdirSync(path.join(dir, 'family'), { recursive: true });
+  fs.mkdirSync(path.join(dir, OLD_FOLDER), { recursive: true });
   fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify({ identity: { icon: '🧪', label: name }, mount: { [name + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: mount } }));
   fs.writeFileSync(path.join(dir, name + '.js'), [
     "'use strict';",
@@ -51,8 +53,8 @@ function plantApp(run, name, mount) {
   fs.writeFileSync(path.join(dir, 'helper.js'), "require('fs').writeFileSync(process.argv[2], 'ran');\n");
   fs.writeFileSync(path.join(dir, 'api', 'api.js'), INTERFACE + '\nmodule.exports = { verbs: { ping: {} } };\n');
   fs.writeFileSync(path.join(dir, 'api', 'note.txt'), NOTE);
-  fs.writeFileSync(path.join(dir, 'family', 'api.js'), '// the decoy\nmodule.exports = { verbs: { decoy: {} } };\n');
-  fs.writeFileSync(path.join(dir, 'family', 'note.txt'), 'the decoy');
+  fs.writeFileSync(path.join(dir, OLD_FOLDER, 'api.js'), '// the decoy\nmodule.exports = { verbs: { decoy: {} } };\n');
+  fs.writeFileSync(path.join(dir, OLD_FOLDER, 'note.txt'), 'the decoy');
   fs.writeFileSync(path.join(dir, 'data.js'), [
     '(function () {',
     "  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../data.js');",
@@ -189,7 +191,7 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     const oldFace = (await call(N.base, 'api', { family: 'agent' })).body || {};
     ok(String(oldFace.interface || '').indexOf('provider') !== -1, 'its interface is still the api.js in its family folder', 'api {family: agent}: ' + short(oldFace));
     const oldAt = (await call(N.base, 'agent.FS.path', { path: 'api.js' })).body || {};
-    ok(oldAt.path === 'process/js/agent/family/api.js', 'FS.path still names process/js/agent/family/api.js', 'FS.path: ' + short(oldAt));
+    ok(oldAt.path === familyPath('agent'), 'FS.path still names what the family path function names', 'FS.path: ' + short(oldAt));
     if (POSIX) ok(fs.existsSync(path.join(s.run, 'relay-state', 'process', 'agent', 'door.sock')), 'its door stays in relay-state/process', 'no door in relay-state/process/agent');
     ok(fs.existsSync(path.join(s.run, 'spirit', 'state', 'agent', 'data', 'agent.db')), 'its state stays in its data/', 'no agent.db in spirit/state/agent/data');
     const notHome = await call(N.base, 'jobs.create', { command: 'node', args: ['process/js/counterServer/counterServer.js'], type: 'the red' });
