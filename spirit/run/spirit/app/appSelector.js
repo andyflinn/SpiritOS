@@ -13,9 +13,9 @@
 //     options.toggle true: a pane or tiles flips between the two (goal/G43.9)
 //
 // ONE appSelector, THREE FACES (goal/G43.9; Andy, box: "One appSelector, with three faces: dropdown, pane and tiles."): "tiles
-// shows active only, pane shows all", "and the picks differ: tiles launches, pane shows the detail with its button." A launched
-// app opens on top, here alone, with its icon and label on the bar's left edge and a close icon on its right, which brings the
-// tiles back. spirit.elements holds server, spirit.app the rest.
+// shows active only, pane shows all", "and the picks differ: tiles launches, pane shows the detail with its button." Both open on
+// top, here alone (Andy: "the detail panel needs to open on top of the whole container"), with the icon and label on the bar's
+// left edge and a close icon on its right, which brings the list back. spirit.elements holds server, spirit.app the rest.
 (function () {
   function createAppSelector(options) {
     var o = options || {};
@@ -37,7 +37,8 @@
     var gone = false;
     var closeOpen = null;
 
-    function open(row) {
+    // THE BAR AND ITS PANE, OVER THE WHOLE CONTAINER. fill(pane) answers what to destroy on close, or a promise of it.
+    function open(row, fill) {
       var S = window.spirit;
       var shell = document.createElement('div');
       shell.className = 'app-container fill';
@@ -47,7 +48,8 @@
         '<div class="app-container-pane fill"></div>';
       S.element.icon.create(shell.querySelector('.icon'), { glyph: row.icon });
       shell.querySelector('.label').textContent = row.label;
-      listBox.hidden = true;
+      // Not hidden: a list's box is a flex box, and its display would win.
+      listBox.style.display = 'none';
       root.appendChild(shell);
       var made2 = null;
       var closed = false;
@@ -56,14 +58,26 @@
         closeOpen = null;
         if (made2) made2.destroy();
         root.removeChild(shell);
-        listBox.hidden = false;
+        listBox.style.display = '';
       };
       shell.querySelector('.app-container-close').addEventListener('click', function () { closeOpen(); });
-      var name = String(row.key);
-      S.require('spirit/app/' + name + '/' + name + '.js').then(function () {
-        var pane = shell.querySelector('.app-container-pane');
-        if (!closed) made2 = S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane);
+      Promise.resolve(fill(shell.querySelector('.app-container-pane'), function () { return closed; })).then(function (m) {
+        if (closed) { if (m) m.destroy(); return; }
+        made2 = m;
       });
+    }
+    function launch(row) {
+      var S = window.spirit;
+      var name = String(row.key);
+      open(row, function (pane, closed) {
+        return S.require('spirit/app/' + name + '/' + name + '.js').then(function () {
+          if (closed()) return null;
+          return S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane);
+        });
+      });
+    }
+    function panel(row) {
+      open(row, function (pane) { return window.spirit.elements.appDetail.create(pane, { row: row, panel: true }); });
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
     function pick(row) {
@@ -71,7 +85,8 @@
       root.row = row || null;
       root.dispatchEvent(new Event('change', { bubbles: true }));
       clearDetail();
-      if (row && face === 'tiles') { open(row); return; }
+      if (row && face === 'tiles') { launch(row); return; }
+      if (row && face === 'pane') { panel(row); return; }
       detail = row ? window.spirit.elements.appDetail.create(detailBox, { row: row }) : null;
     }
     function onFace(now) {
