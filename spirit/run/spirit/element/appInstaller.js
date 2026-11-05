@@ -32,6 +32,8 @@
     var shown = null;
     function reads() { return ((sp().data || {}).app || {}).data; }
     function isOn() { var A = reads(); var row = A ? A.rows()[key] : null; return !!row && row.active === true; }
+    // AN INTRINSIC APP GETS NO BUTTON (goal/G43.15): its row says so, and app.active would refuse it.
+    function isIntrinsic() { var A = reads(); var row = A ? A.rows()[key] : null; return !!row && row.intrinsic === true; }
     function press(e) {
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       var want = !isOn();
@@ -39,6 +41,7 @@
     }
     function render() {
       if (gone || !host) return;
+      if (isIntrinsic()) { shown = null; host.innerHTML = ''; return; }
       var on = isOn();
       if (on === shown) return;
       shown = on;

@@ -8,6 +8,7 @@
 // (de)activate button (goal/G43.9, Q2: "in the detail as well.").
 (function () {
   window.spirit.require('spirit/app/appSelector/rowElement.js');
+  window.spirit.require('spirit/element/appInstaller.js');
   // goal/G43.15: the switches are elements of their own, each hiding itself where it does not apply.
   window.spirit.require('spirit/app/appSelector/rowFormAppActive.js');
   window.spirit.require('spirit/app/appSelector/rowFormAppShell.js');
@@ -96,7 +97,7 @@
     var button = document.createElement('span');
     button.style.marginLeft = '0.5em';
     box.appendChild(button);
-    var installer = window.spirit.elements.rowFormAppActive.create(button, { key: key });
+    var installer = window.spirit.element.appInstaller.create(button, { path: 'spirit/app/' + key + '/' + key + '.js' });
     host.appendChild(box);
     return {
       destroy: function () { installer.destroy(); row.destroy(); host.innerHTML = ''; },

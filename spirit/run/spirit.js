@@ -255,6 +255,18 @@
         });
       };
     });
+    // EVERY SERVER'S DEBUG (desk/G2.5, appServer's own verb), bound as FS is (goal/G43.15): {} reads it, {on} sets it, and it
+    // answers {debug}. A family's api.js does not list it, so serverDEBUG would find no such function without this.
+    if (!out.DEBUG) out.DEBUG = function (args) {
+      var a = args || {};
+      var keys = Object.keys(a);
+      if (keys.some(function (k) { return k !== 'on'; }) || ('on' in a && typeof a.on !== 'boolean')) return Promise.reject(refusal('no-such-argument', 'DEBUG takes {} or {on}'));
+      return Promise.resolve(ask(fam + '.DEBUG', a)).then(function (r) {
+        if (r && r.status >= 200 && r.status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
+        var b = (r && r.body) || {};
+        throw refusal(String(b.code || 'refused'), saidWhy(r, r && r.status), { status: r && r.status, body: b });
+      });
+    };
     if (typeof def.names === 'function') {
       var extra = def.names(call, { file: function (p) { return getFile(p); }, text: text, refusal: refusal, check: check });
       Object.keys(extra || {}).forEach(function (k) { if (!(k in out)) out[k] = extra[k]; });
@@ -465,8 +477,9 @@
   // spirit.js, same for the MIME table, same for the DEBUG switch, same for the nodes default port, all go to spirit.js."
   var VERSION = '0.0.1';
   var DEFAULT_SPIRIT_PORT = 65432;
-  // DEBUG (desk/G2.5): one switch per process, off at start, never persisted. Andy: "DEBUG is Off by default, returned
-  // and set by owner-only api", "DEBUG is not persisted. it lives in RAM only".
+  // DEBUG (desk/G2.5): one switch per process, off at start. Andy: "DEBUG is Off by default, returned and set by owner-only
+  // api". Since goal/G43.15 the node keeps an app's across restarts (Q2: "i think we should persist it, always."), and hands it
+  // back as --debug (appServer.js).
   var DEBUG = false;
   function debug(on) { if (typeof on === 'boolean') DEBUG = on; return DEBUG; }
 

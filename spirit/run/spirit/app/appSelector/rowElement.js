@@ -9,7 +9,7 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/app/appSelector/rowFormAppActive.js'].forEach(function (p) { window.spirit.require(p); });
+  ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/appInstaller.js'].forEach(function (p) { window.spirit.require(p); });
   var appReady = Promise.resolve(window.spirit.cacheManager('app')).then(function () { return ((window.spirit.data || {}).app || {}).data; });
 
   var apps = null;
@@ -53,8 +53,8 @@
         { name: 'label', paint: function (v) { return esc(v.label); } },
       ],
     });
-    // ITS BUTTON, where the row is given a cell for it (Andy, box: "the (de)activate buttons at the end of each row"):
-    // rowFormAppActive (goal/G43.15), which follows the row's active itself and hides itself for an intrinsic app. A cell is painted again at each draw, so it is made anew.
+    // ITS BUTTON, where the row is given a cell for it (Andy, box: "the (de)activate buttons at the end of each row"): the shared
+    // appInstaller, which reads and follows the row's active itself, and draws none for an intrinsic app (goal/G43.15). A cell is painted again at each draw, so it is made anew.
     var key = String(r.key || '');
     var installer = null;
     function dropInstaller() { if (installer) installer.destroy(); installer = null; }
@@ -63,7 +63,7 @@
     el.mount = function (hosts) {
       mount(hosts);
       dropInstaller();
-      if (hosts && hosts.active) installer = window.spirit.elements.rowFormAppActive.create(hosts.active, { key: key });
+      if (hosts && hosts.active) installer = window.spirit.element.appInstaller.create(hosts.active, { path: 'spirit/app/' + key + '/' + key + '.js' });
       return el;
     };
     el.destroy = function () { dropInstaller(); return destroy(); };
