@@ -1,5 +1,5 @@
 {
- "change": 135084,
+ "change": 135085,
  "goal": "goal/G43",
  "items": [
   {
@@ -147,7 +147,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -5569,12 +5569,11 @@
    "id": "goal/G43.7",
    "title": "Fix 'data'",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 10,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
