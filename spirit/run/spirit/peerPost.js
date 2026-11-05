@@ -236,11 +236,6 @@ function createPeerPost(opts) {
   var arrived = [];
   var nextItem = 1;
   var onArrival = opts.onArrival || null;
-  // Injected rather than required, so a suite can watch it without a
-  // home on disk — and so this file states its dependency instead of
-  // reaching for one.
-  var stats = opts.stats || null;
-
   // WHO THIS NODE WILL HEAR, asked rather than decided here.
   //
   // Handed in for the same reason `traffic` is: the answer needs the
@@ -1598,19 +1593,6 @@ function createPeerPost(opts) {
     // The floor is the one thing that must skip this, and it does so by
     // returning above: an over-budget stranger leaves no trace but a
     // refusal in the log.
-    if (stats) {
-      // Only a node passes stats, so only a node loads the book (see the
-      // note at the top of this file).
-      var contactBook = require('./contacts');
-      var seen = null;
-      try { seen = contactBook.byPublicKey(rootDir, body.from); }
-      catch (e) { seen = null; }
-      if (seen && !contactBook.isBlocked(seen)) {
-        try { stats.noteIn(rootDir, body.from, hash); }
-        catch (e) { /* a counter must not break a delivery */ }
-      }
-    }
-
     // APPS SEE ADMITTED SENDERS ONLY, and the order is the whole of it.
     // onArrival is app delivery — code running on somebody else's input —
     // so a stranger reaches it only once this node has decided to hear

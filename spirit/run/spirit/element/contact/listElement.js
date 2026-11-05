@@ -1,4 +1,4 @@
-// spirit/run/spirit/element/contacts/listElement.js
+// spirit/run/spirit/element/contact/listElement.js
 // THE CONTACTS LIST, A DROP-IN SHELL ELEMENT (goal/G30.19, G30.20). Contacts draws it as a pane, and Join as its contact
 // step; grants and introSpector draw it as a dropdown (opts.face, placeholder, all, pick(row, key)). The box:
 //   - One search in two tiers. contact.search answers at once from the one table (goal/G40.11): the people and relays
@@ -24,7 +24,7 @@
 //     opts.empty                              the words when nothing matches
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) ['spirit/element/contacts/rowElement.js', 'spirit/element/probabilitySearch.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.require) ['spirit/element/contact/rowElement.js', 'spirit/element/probabilitySearch.js'].forEach(function (p) { window.spirit.require(p); });
   // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
   window.spirit.cacheManager('contact');
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.

@@ -180,7 +180,7 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
   });
   eq(marked.join(','), '', 'no manifest names intrinsic', OWED + 'manifests naming intrinsic: ' + marked.join(', '));
   const core = require('../run/spirit/coreFiles.js');
-  const LIST = ['process/js/fileServer', 'shell/apps', 'shell/contacts', 'shell/files', 'shell/grants', 'shell/icons', 'shell/info',
+  const LIST = ['process/js/fileServer', 'shell/apps', 'shell/files', 'shell/grants', 'shell/icons', 'shell/info',
     'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/rotateKey', 'shell/stats'];
   eq(JSON.stringify((core.INTRINSIC || []).slice().sort()), JSON.stringify(LIST.slice().sort()), 'coreFiles.js holds INTRINSIC, the coded list: today\'s fourteen', OWED + 'INTRINSIC: ' + short(core.INTRINSIC));
   // THE GROUPS APP IS GONE (Andy: "let's delete the groups legacy app, it is dead now"): its folder and every reference.

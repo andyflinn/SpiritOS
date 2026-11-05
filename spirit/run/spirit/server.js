@@ -1036,12 +1036,8 @@ common.refuseListenError(server, port, 'spirit/server.js');
 // counters advanced whether or not a chat window was open. Deleted with
 // the ring by R8 on 2026-09-15.
 //
-// The thing it was protecting is still protected, one layer down and
-// without a timer: peerPost calls peerStats.noteIn on arrival, keyed by
-// the request hash. Counters now move when a packet actually lands
-// rather than when somebody remembers to poll, which is what the sweep
-// was approximating. See R11 in
-// design/cycles/2026-09-12-transport-below-the-boundary.md.
+// The per-peer counters it fed went too, with goal/G43.14 (Andy: "KILL those fields in shadow-roll, KILL the
+// functionality, KILL it!").
 //
 // NOTHING REPLACES IT and nothing should. A node that polls is a node
 // asking a relay to have kept something, and a relay keeps nothing
@@ -1304,10 +1300,6 @@ catch (e) {
     // arrives while no browser is open.
     onArrival: arrivals.note,
     traffic: trafficLog,
-    // The peer's own numbers, on the transport that did not move them.
-    // countInbound did it on the `inbox` path and nothing did it here, so
-    // a node fully on the router would have stopped counting silently.
-    stats: require('./peerStats'),
   });
 
   // ── THE SERVER PROCESSES ON THIS BOX ──────────────────────────────

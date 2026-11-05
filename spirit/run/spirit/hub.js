@@ -77,7 +77,6 @@ function learnPresence(rootDir, toKey, answer) {
   catch (e) { /* a cache that will not take a row is not a reason to fail the post */ }
 }
 const peerFile = require('./peerFile');
-const peerStats = require('./peerStats');
 // What this node says about itself — the same two fields a stranger is
 // answered with, so the screen that edits them and the wire that sends
 // them cannot drift.
@@ -330,7 +329,6 @@ function buildPeople(rootDir) {
     // of people to write to that opens with yourself reads as a mistake.
     .filter(function (row) { return row.publicKey !== myKey; })
     .map(function (row) {
-      var stats = peerStats.readSummary(rootDir, row.publicKey);
       return {
         publicKey: row.publicKey,
         publicLabel: row.publicLabel || '',
@@ -348,19 +346,6 @@ function buildPeople(rootDir) {
         // cost nothing yet — an absent field would make the app decide
         // between "none" and "not asked", which are not the same answer.
         bytesHeld: bytesHeld[row.publicKey] || 0,
-        // What they cost in attention. Computed from the sidecar
-        // (peerStats), never from a field on the row: a row is
-        // what a human decided, and a packet counter is not a decision.
-        //
-        // A missing sidecar summarises as zeros, and zeros are the true
-        // answer — the counters start when counting starts. NOT
-        // backfilled from chat's log: that ring caps at 500, so a total
-        // taken from it stops rising exactly when somebody becomes worth
-        // looking at, and it would speak for the node while measuring one
-        // app (packet 7).
-        unansweredInbound: stats.unansweredInbound,
-        inboundPerDay: stats.inboundPerDay,
-        outboundPerDay: stats.outboundPerDay,
       };
     });
 
@@ -743,13 +728,7 @@ function remember(rootDir, from, verdict, relayUrl) {
 // node's 60-second sweep ran so the two could not drift. Deleted with the
 // ring (R8, 2026-09-15).
 //
-// R11 is why this is safe to delete rather than move: peerPost already
-// calls peerStats.noteIn on the arrival path, keyed by the REQUEST HASH
-// rather than by a relay's message id. The id existed only because a
-// non-destructive poll could hand the same line twice; the hash is over
-// the exact bytes rather than a number somebody else assigned. Counting
-// was the one thing the ring's read half did that the router did not, and
-// it was fixed before this deletion, not with it.
+// The counting it did went too, with goal/G43.14 (Andy: "KILL those fields in shadow-roll, KILL the functionality, KILL it!").
 //
 // Grok's three skips survive in peerPost and contactBook, unchanged: our own
 // traffic is not somebody else's, a silent stranger gets no row and so no

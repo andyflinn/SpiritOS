@@ -1,3 +1,10 @@
+// spirit/run/spirit/app/contact/contact.js
+// CONTACTS, AN ELEMENT (goal/G43.14; Andy: "the new contact app will be exactly the same as the old, merely placed where it
+// now belongs."): a tile hands it only its container, as the agent's (goal/G43.13). Its contract and its test:
+// ./test/contact.md and ./test/contact.js.
+//
+//   spirit.elements.contact.create(container) -> { destroy() }
+//
 // The address book, which used to be three panels inside Relay Chat
 // (packet 2, ARCHITECTURAL-CONCERNS.md). contactBook is still the store and
 // the hub still owns every verb; what moved is the view.
@@ -81,7 +88,7 @@ var CONTACTS_UNKNOWN_LABELS = {
   },
 };
 
-// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, spirit/element/contacts/listElement.js,
+// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, spirit/element/contact/listElement.js,
 // which Join draws too. Its rows are contactElements and keep themselves current; this app paints no presence. The
 // book's contactSelector pane and the Find someone on the network fold (peerFind) stood here and are deleted.
 var contactsList = null;
@@ -253,11 +260,10 @@ function contactsPaintUnknown() {
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
 // replace icons painting all shell elements and apps."), so the icon element comes with the list.
-var contactsParts = Promise.all([spirit.require('spirit/element/contacts/listElement.js'), spirit.require('spirit/element/icon.js')]);
+var contactsParts = Promise.all([spirit.require('spirit/element/contact/listElement.js'), spirit.require('spirit/element/icon.js')]);
 
-spirit.shell.activateApp({
-  mount: function (container, api) {
-    contactsApi = api;
+function contactCreate(container) {
+    var gone = false;
 
     container.innerHTML =
       // THE PAGE IS A FLEX COLUMN, AND THE LIST TAKES WHAT IT LEAVES (goal/G40.13, rule/16; as in Apps and Icons, goal/G40.8:
@@ -375,14 +381,23 @@ spirit.shell.activateApp({
     // THE ONE LIST (goal/G30.19). A row opens the person (contactsDetails) or the relay (natterDetails) by its element's
     // open; a dialog that changed something asks the list again.
     var book = document.getElementById('contacts-book');
-    return contactsParts.then(function () {
+    contactsParts.then(function () {
+      if (gone) return;
       contactsList = window.spirit.element.contactList.create(book, {
         api: contactsApi,
         say: contactsStatus,
         empty: 'Nobody matches: the network is searched as you type.',
       });
     }, function () { book.textContent = 'The contacts list could not be loaded.'; });
-  },
+    return {
+      destroy: function () {
+        gone = true;
+        if (contactsList) contactsList.destroy();
+        contactsList = null;
+        container.innerHTML = '';
+      },
+    };
+}
 
-  render: function () {},
-});
+(window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+window.spirit.elements.contact = { create: contactCreate };

@@ -460,6 +460,8 @@ module.exports = function installJobs(port) {
   // and for every script of its folder. node.mount in spirit/app/<name>/<name>.json says it has a server at all; the old kind
   // and operated stay with process/js.
   function appActive(root, name) {
+    // An intrinsic app is always active (goal/G43.14): its <name>.json says so, and node.json is not asked.
+    if (require('./coreFiles').appIntrinsic(path.resolve(root, '..', '..'), name) === true) return true;
     try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
   }
   function appServes(root, name) {
