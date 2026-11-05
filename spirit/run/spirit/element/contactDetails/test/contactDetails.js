@@ -174,7 +174,8 @@ function world(person, relayRows) {
   win.spirit = {
     escapeHtml: function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); },
     formatBytes: function (n) { return String(n) + ' B'; },
-    shell: { factRow: function () { return '<div class="facts"></div>'; } },
+    // The shell's fact rows, drawn as the shell draws them: each name with its value, so what the detail shows can be read.
+    shell: { factRow: function (rows) { return '<div class="facts">' + (rows || []).map(function (r) { return '<div>' + String(r[0]) + ' ' + String(r[1]) + '</div>'; }).join('') + '</div>'; } },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
     get element() { return this.elements; }, elements: {
@@ -273,6 +274,18 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
   // THE STAR, AT HOME, TWO PRESSES (goal/G41.30; Andy: "so this button will put the star on relays and puppets. AND take it
   // away."; "NO signature. just the armingButton, with a precise documentation of the risk."; every contact's details
   // panel has it, at home; the face does not show it).
+  // goal/G43.14, Andy: "KILL those fields in shadow-roll, KILL the functionality, KILL it!": a row that still carried them shows none.
+  test.subHeading('the box: "a contact\'s detail no longer shows them"');
+  {
+    const wc = world({ key: 'KC', publicLabel: 'carol', myLabel: '', blocked: false, held: false, unansweredInbound: 7, inboundPerDay: 3.5, outboundPerDay: 1.25 }, []);
+    wc.win.spirit.element.contactDetails.open({ key: 'KC' });
+    await settle();
+    const shown = wc.box ? String(wc.box.textContent || '') : '';
+    ok(/carol/.test(shown) && /Public Handle/.test(shown), 'the world: the detail of carol is drawn, with its facts', 'the detail: ' + short(shown));
+    ok(!/Unanswered inbound|Inbound rate|Outbound rate/.test(shown), 'it shows no unanswered inbound, no inbound rate and no outbound rate', 'the detail: ' + short(shown));
+    ok(shown.indexOf('3.5') === -1 && shown.indexOf('1.25') === -1, 'and none of their numbers', 'the detail: ' + short(shown));
+  }
+
   test.subHeading('the star: an arming button, its risk said beside it');
   const page = function (x) { return x.box ? String(x.box.textContent || '') : ''; };
   const starOf = function (x) { const b = x.document.getElementById('cd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };

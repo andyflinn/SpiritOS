@@ -41,3 +41,14 @@ files in the test-folder core files as well."
 - A companion of a core file left writable, its `.md` above all.
 - A companion of a file that is not core turned core.
 - A manifest or an intrinsic app's data file turned core.
+
+## Intrinsic for the new apps (goal/G43.14)
+
+Andy: *"i think in spirit/app/<name>/<name>.json (identity:intrinsic:true|false)"*, *"no dependency on git"*.
+
+- `spirit/app/<name>/<name>.json` is always core, whatever it says.
+- The code beside it (`.js`, `.css`, `.html`) is core while it says `identity.intrinsic` true.
+- With false, nothing else in the folder is core: code, data and tests alike.
+- Q2, Andy: *"anything in spirit/app/ is core unless spirit/app/<name>/<name>.json says it's not intrinsic."* A json saying nothing of intrinsic keeps the folder core, and so does a folder with no json, as `appSelector/` and `test/` are.
+- The rule reads the json as it is on disc, on a tree handed as the repo root.
+- `shell/contacts` is off the coded list, and `spirit/app/contact/` is core in this tree.

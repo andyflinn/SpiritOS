@@ -6,7 +6,7 @@ Andy, box: *"remove proxy.json (no longer needed) and we move just the remaining
 
 ## Requirements
 
-- Every file and folder at the top of `relay-state` moves, by what is there and not by a list: files no list names, garbage, a database with its journal, `peerStats`, a client's cache folder. Only `process/` and `shell/` stay, and what is in them stays.
+- Every file and folder at the top of `relay-state` moves, by what is there and not by a list: files no list names, garbage, a database with its journal, a folder, a client's cache folder. Only `process/` and `shell/` stay, and what is in them stays.
 - A node is who it was: `node.card` answers the same public key.
 - *"No second private key stays on disc."* One file holds a private key after the move, `spirit/state/identity.json`.
 - A key that does not read back stops the node, non-zero. The old file stays and no new key is made.

@@ -1,7 +1,7 @@
 # branchSelector/listElement.js
 
 `spirit/run/spirit/element/branchSelector/listElement.js` is the branch list (goal/G41.14), as
-`spirit/element/contacts/listElement.js` is the contacts list: the probabilitySearch the branch selector draws, pane or
+`spirit/element/contact/listElement.js` is the contacts list: the probabilitySearch the branch selector draws, pane or
 dropdown, with its filter. Its test is `./listElement.js`.
 
 Andy, box: *"the branchSelector element will use the standard apiFamilySelector and apiVerbSelector elements as pickers

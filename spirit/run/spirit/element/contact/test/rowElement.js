@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/contacts/test/rowElement.js
-// The tests of spirit/element/contacts/rowElement.js, and of no other module: one contact as a row element (spec:
+// spirit/run/spirit/element/contact/test/rowElement.js
+// The tests of spirit/element/contact/rowElement.js, and of no other module: one contact as a row element (spec:
 // ./rowElement.md). The browser file runs in node on a window of its own, over the shared rowElement.js and the
 // faceless layer it reads, with the contact family's data.js (goal/G41.28) loaded as a page's
 // spirit.cacheManager('contact') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
@@ -40,7 +40,7 @@ window.spirit.cacheManager = function (name) {
   return Promise.resolve(true);
 };
 load(path.join(JS, 'rowElement.js'));
-load(path.join(JS, 'contacts', 'rowElement.js'));
+load(path.join(JS, 'contact', 'rowElement.js'));
 const C = window.spirit.element.contactElement;
 const D = window.spirit.data;
 const CD = ((window.spirit.data || {}).contact || {}).data;
@@ -173,7 +173,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   else test.fail('held/relay expand: ' + JSON.stringify(nothing));
 
   // ── WHAT THE STREAM MEANS FOR CONTACTS, IN THE TYPE'S OWN ELEMENT (goal/G41.16; Andy: "get rid of thos FUCKING data.js
-  // scripts, DIDN't WE INSIST on the PROPER way to do this shit?"). The contacts' translation, spirit/element/contacts/data.js
+  // scripts, DIDN't WE INSIST on the PROPER way to do this shit?"). The contacts' translation, spirit/element/contact/data.js
   // until now, is the row element's (G30.18: "rowElements carry the listeners and painters a subject needs for real-time
   // updates"): loaded with it, no data script required.
   test.subHeading('the type\'s own element takes the contacts\' stream: no data script');

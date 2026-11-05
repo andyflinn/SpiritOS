@@ -34,3 +34,9 @@ This spec covers what goal/G41.9 asks of it: its two are-you-sure buttons are th
 - Block or Forget drawn as a plain button, or with other wording.
 - A run that asks for another key, or a Forget that forgets before the seats are given up.
 - Two presses on the drawn Block that block without the element.
+
+## The peer counters are gone (goal/G43.14)
+
+Andy: *"KILL those fields in shadow-roll, KILL the functionality, KILL it!"*
+
+- A contact's detail shows no unanswered inbound, no inbound rate and no outbound rate, even for a row that still carries them.

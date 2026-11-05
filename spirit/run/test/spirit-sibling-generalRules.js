@@ -285,7 +285,7 @@ const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u
 const TEXT_ONLY = {
   'shell/jobsDetails/jobsDetails.js': 'its status glyph is drawn before the job\'s type and its status word',
   'spirit/element/contactDetails/contactDetails.js': 'its blocked and held marks are drawn before the person\'s name',
-  'spirit/element/contacts/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
+  'spirit/element/contact/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');

@@ -114,8 +114,10 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     test.subHeading('the box: "The user sets active, so Monitor and server start off"');
     ok(activeIn('monitor') !== true && activeIn('server') !== true, 'neither is active before a press', 'active before a press: ' + short([activeIn('monitor'), activeIn('server')]));
     const before = rows(await ask(node.base, 'app.search', {})) || [];
-    const lit = before.filter(function (i) { return (parsed(i.label) || {}).active === true; }).map(function (i) { return i.key; });
-    ok(before.length > 0 && !lit.length, 'and no row says active', before.length ? 'rows that say active before a press: ' + short(lit) : 'app.search answered no rows');
+    // An intrinsic app is always active (goal/G43.14), so it is no app the user set.
+    const intrinsicApp = function (k) { try { return JSON.parse(fs.readFileSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', k, k + '.json'), 'utf8')).identity.intrinsic === true; } catch (e) { return false; } };
+    const lit = before.filter(function (i) { return (parsed(i.label) || {}).active === true && !intrinsicApp(i.key); }).map(function (i) { return i.key; });
+    ok(before.length > 0 && !lit.length, 'and no row but an intrinsic app\'s says active', before.length ? 'rows that say active before a press: ' + short(lit) : 'app.search answered no rows');
     test.subHeading('the box: "The node writes spirit/state/<key>/node.json"');
     const on = await ask(node.base, 'app.active', { key: 'monitor', active: true });
     ok(on.status === 200 && activeIn('monitor') === true, 'active true lands in spirit/state/monitor/node.json', 'after active true: ' + short({ status: on.status, text: on.text, file: activeIn('monitor') }));
@@ -132,6 +134,16 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     const off = await ask(node.base, 'app.active', { key: 'monitor', active: false });
     ok(off.status === 200 && activeIn('monitor') === false, 'active false lands there too', 'after active false: ' + short({ status: off.status, file: activeIn('monitor') }));
     await ask(node.base, 'app.active', { key: 'monitor', active: true });
+    // ── intrinsic (goal/G43.14) ──
+    test.subHeading('the box: "intrinsic true: the app is always active", "app.active does not switch it off"');
+    const rowFor = async function (k) { const got = rows(await ask(node.base, 'app.search', { q: '' })) || []; const r = got.filter(function (i) { return i.key === k; })[0]; return r ? parsed(r.label) : null; };
+    ok(intrinsicApp('contact'), 'the world: contact.json says intrinsic true', 'spirit/app/contact/contact.json does not say intrinsic true');
+    const c0 = await rowFor('contact');
+    ok(!!c0 && c0.active === true && activeIn('contact') === undefined, 'its row says active with no press, and nothing was written for it', 'its row: ' + short(c0) + ', node.json active ' + short(activeIn('contact')));
+    await ask(node.base, 'app.active', { key: 'contact', active: false });
+    const c1 = await rowFor('contact');
+    ok(!!c1 && c1.active === true, 'app.active false does not switch it off: its row still says active', 'after app.active false: ' + short(c1));
+
     test.subHeading('the box: "A key not in spirit/app is refused, so no path can be written through it."');
     for (const bad of ['nosuchapp', '../evil', '..', 'appSelector', 'test', 'monitor/../../evil', '']) {
       const r = await ask(node.base, 'app.active', { key: bad, active: true });

@@ -1,7 +1,7 @@
 # bundleSelector/rowElement.js
 
 `spirit/run/spirit/element/bundleSelector/rowElement.js` is one bundle as a row element (goal/G41.14), as
-`spirit/element/contacts/rowElement.js` is one contact. The bundle list draws its rows with it. Its test is
+`spirit/element/contact/rowElement.js` is one contact. The bundle list draws its rows with it. Its test is
 `./rowElement.js`.
 
 Andy, box: *"these shell elements must follow the design pattern of the contactSelector, with a sibling folder for a

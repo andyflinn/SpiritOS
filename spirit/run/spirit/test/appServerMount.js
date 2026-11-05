@@ -34,11 +34,11 @@ const OLD_FOLDER = path.basename(path.dirname(familyPath(NAME)));
 
 // THE THROWAWAY APP, written as the box describes one: one file, a split for the page and the node, its folder ./api/, its data.js
 // beside it, and a <name>.json without the old kind and operated. Its family/ is a decoy: only process/js has one.
-function plantApp(run, name, mount) {
+function plantApp(run, name, mount, intrinsic) {
   const dir = path.join(run, 'spirit', 'app', name);
   fs.mkdirSync(path.join(dir, 'api'), { recursive: true });
   fs.mkdirSync(path.join(dir, OLD_FOLDER), { recursive: true });
-  fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify({ identity: { icon: '🧪', label: name }, mount: { [name + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: mount } }));
+  fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify({ identity: Object.assign({ icon: '🧪', label: name }, intrinsic === undefined ? {} : { intrinsic: intrinsic }), mount: { [name + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: mount } }));
   fs.writeFileSync(path.join(dir, name + '.js'), [
     "'use strict';",
     "if (typeof window !== 'undefined') { window.__appOnPage = '" + name + "'; } else {",
@@ -71,6 +71,8 @@ function scratch() {
   const run = path.join(root, 'spirit', 'run');
   plantApp(run, NAME, true);
   plantApp(run, 'quiet', false);
+  // goal/G43.14: a server app the development team made intrinsic.
+  plantApp(run, 'always', true, true);
   // A follower of a sender's stream, with its cache on: what it kept comes back at its start only if the sender's family has a
   // data.js on this node (appServer.js, familyApi), and its translator says so by a file. Named by its own script, as a server is.
   const follow = path.join(run, 'spirit', 'app', NAME);
@@ -144,6 +146,14 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     ok(!(await liveJob(N.base, MODULE)), 'not active: no server job', 'a server job ran before it was activated');
     ok(!fs.existsSync(started), 'not active: the script did not run', 'the script ran before it was activated');
     ok(!answers(await pingOf(N.base)), 'not active: its verb is not answered', 'its verb answered before it was activated');
+
+    test.subHeading('goal/G43.14, the box: "intrinsic true: the app is always active. It runs at boot with no Activate, and app.active does not switch it off."');
+    ok(await until(function () { return pingOf(N.base, 'always').then(answers); }, 30000), 'an intrinsic server runs from the boot, with nothing pressed', 'always.ping: ' + short((await pingOf(N.base, 'always')).text));
+    ok(!readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json')), 'and nothing was written to its node.json', 'its node.json: ' + short(readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json'))));
+    const alwaysPid = Number(((await pingOf(N.base, 'always')).body || {}).pid);
+    await call(N.base, 'app.active', { key: 'always', active: false });
+    await sleep(3000);
+    ok(answers(await pingOf(N.base, 'always')) && alive(alwaysPid), 'app.active false does not stop it', 'after app.active false: ' + short((await pingOf(N.base, 'always')).text));
 
     test.subHeading('the box: "only scripts in this node\'s own process/js or spirit/app/<name>/ may start, and nothing else", "A spirit/app script starts only if it is active"');
     const ranHelper = path.join(s.root, 'helper-ran.txt');
