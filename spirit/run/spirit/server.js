@@ -1801,7 +1801,7 @@ catch (e) {
   // where a module runs is its manifest's runs, nothing else. Andy: "keep the config family for later use."
   loopbackVerbs.mount('config', path.join(__dirname, 'config'), {}, { wire: false, by: 'server.js' });
 
-  // THE app FAMILY (goal/G43.2; Andy, box: "the "app" api-family will sit nicely beside all other families"): its one verb,
+  // THE app FAMILY (goal/G43.2; Andy, box: "the "app" api-family will sit nicely beside all other families"): its verbs,
   // "just a search string", over the plugins in its folder (spirit/app.js). A face with no star may call it (Andy, box).
   const appFamily = require('./app').createApp({ rootDir: ROOT_DIR, jobs: jobs });
   loopbackVerbs.mount('app', path.join(__dirname, 'app'), {
