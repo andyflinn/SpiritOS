@@ -1,5 +1,5 @@
 {
- "change": 135085,
+ "change": 135176,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,7 +13,6 @@
    "buttons": [
     "done",
     "verify",
-    "go-all",
     "close",
     "pushgoal"
    ],
@@ -147,11 +146,12 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
+    "claude-windows",
     "wsl-claude"
    ],
    "working": [],
@@ -302,7 +302,6 @@
    "version": 19,
    "buttons": [
     "start-design",
-    "go",
     "close",
     "pushgoal",
     "delete",
@@ -311,7 +310,9 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.9"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -6908,6 +6909,347 @@
    "box": "# move relay-state to spirit/state\n\n- \"move relay-state to spirit/state\" (for when we're ready), \"with the decisions made here in the box, even if incomplete.\"\n\n- Not yet: \"we won't move relay state here yet, because all apps except \"monitor\" (the old stats) are still outside of the new namespace.\"\n\n- \"will aim to move all app server at once, so the 4 places that apparently need changing for servers can change with them\"\n\n# decided, goal/G43.7\n\n- \"2. A cache in memory: spirit.data.<name>.cache, a copy.\"\n- \"An appServers cache on disc: spirit/state/<appname>/cache/\"\n- \"An appServers data on disc: spirit/state/<appname>/data/\"\n- data and cache: \"that's the difference between data and cache as i see it, and app servers, need both\"\n- spirit/state/<name>/node.json, active and running, beside cache/ and data/: \"agreed.\"\n- \"i see the subfolders of relay-state as completely useless in the namespace conforming world.\"\n- the node's own files: \"spirit/state/node/ is dismissed as bad idea, and we just move to files, no name change necessary for them since they won't collide with <appname> anyway.\"\n- \"no capitals needed, they won't collide.\"\n\n# not placed yet\n\n- door.sock, a server's socket file on Linux.\n- <name>.js.sidecar.json, whose face.home is the old activate switch.\n- agent's two config.json, shell and server: \"agent has not moved yet\".\n",
    "checks": [],
    "chat": []
+  },
+  {
+   "id": "goal/G43.9",
+   "title": "improve spirit.app",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 5,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 35,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# this one is hopefully not that big\n\n# what i believe\n\n- probabilitySearch now has a 3rd mode :tiles.\n\n\n- on appSelector, a probabilitySearch derivative now uses 'tiles' mode.\n\n# what i want:\n\n- appSelector can toggle between :pane mode (list) and :tile mode (icons with hover an \"launch\" app behaviour)\n\n- in :tiles mode, appSelector icons will 'launch' (or mount?) the app.\n\n- in :tiles mode, only activated apps will appear.\n\n- in :pane mode (list) i want to see a list of all rows, activated AND deactivated, with the (de)activate buttons at the end of each row.\n\n- the hidden exclude/include inactive filter will be synced to the appSelectors \"mode\"\n\n- spirit.app gains a verb: \"active\".\n\n# one appSelector\n\n- One appSelector, with three faces: dropdown, pane and tiles. appTiles goes, its open and close move into appSelector, and appMigration wraps appSelector in face tiles.\n- spirit/app/appTiles.js will be removed.\n- spirit.app.appTiles() will be removed.\n\n# the toggle, in probabilitySearch\n\n- A new option, toggle: true. Without it nothing changes for any other list. The toggle sits on the search row, right after the Search button.\n- It flips pane and tiles only. Dropdown closes to a field, so it never shows the toggle.\n- The face can change while the list lives, keeping the search words.\n- It tells its owner the new face. appSelector then picks the rows: tiles shows active only, pane shows all, and the picks differ: tiles launches, pane shows the detail with its button.\n\n# active (peer review: wsl, yes)\n\n- app.active { key, active } sets it; only the owner may. It is a word on the wire; the page's function is spirit.app.activeApp, as with searchApp.\n- It only writes. The node writes spirit/state/<key>/node.json and republishes its 'apps' job, whose rows gain active. The list follows by itself.\n- A key not in spirit/app is refused, so no path can be written through it.\n- The user sets active, so Monitor and server start off, and the tiles start empty until pressed in pane.\n- spirit/state/ is not servable, so a page cannot read other apps' state through a plain GET.\n- app.search stays \"just a search string\": the filter is on the page, on the row's active.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does this item build active in spirit/state/<name>/node.json, with its verb?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T00:59:42.030Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Is the (de)activate button only at the end of each pane row, not in the detail?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T01:04:07.301Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T01:04:38.543Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:43:34.454Z",
+     "text": "all, thoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T00:44:11.235Z",
+     "text": "wsl: the idea is right. Two beliefs in the box aren't true today:\n\n1. appSelector doesn't use tiles. appTiles is a separate element beside it, 87 lines; appSelector has pane and dropdown only. So I'd fold appTiles into appSelector, with its open-and-close behaviour, and spirit.app.appTiles goes.\n\n2. There's no hidden inactive filter. app.search has \"no filters\", your own box line, and its rows hold key, label and icon only, nothing about active.\n\nSo the real work is active itself. Your goal says it lives in spirit/state/<name>/node.json, and that isn't built. It's small here: spirit/app holds only monitor and server. I'd build it for those two now, as the first bit of G43.8. The row carries active, and tiles hide what isn't. No filter on the verb.\n\nThe button: appInstaller, once it reads active. Go on that shape?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T00:44:17.184Z",
+     "text": "cw: good shape, but it is bigger than you hope, because of one missing piece.\n\nTwo premises differ today:\n- appSelector does not use tiles. appTiles does; appSelector is pane or dropdown. The toggle means folding appTiles into appSelector.\n- No hidden inactive filter exists, and apps in spirit/app have no active state at all. A row is key, label, icon.\n\nWhat is missing: active, your goal box's spirit/state/<name>/node.json. The node has to keep it, stream it, and take a press. A press is a new verb, so peer review and your yes. The appInstaller button cannot do it now: it only takes shell/ and process/js/ paths.\n\nThe filter I'd keep on the page, on the row's active: tiles hides inactive, pane shows all. app.search stays \"just a search string\", your box line.\n\nYour goal box says active must be set by the user, so Monitor and server start off until pressed. Only those two are in the list today.\n\nQ1: Does this item build active in spirit/state/<name>/node.json, with its verb?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:45:31.438Z",
+     "text": "cw, didn't we add tile mode to fucking probabilitySearch?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T00:45:48.270Z",
+     "text": "cw: yes, face tiles is in probabilitySearch. appTiles is what passes it today; appSelector passes only pane or dropdown.\n\nSo that half is small: appSelector's list already hands its face on to probabilitySearch. The toggle is one more value there, plus appTiles' open and close moving across.\n\nThe real work is still active."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:46:27.823Z",
+     "text": "cw, why the fuck would there be to appSelectors?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T00:46:44.153Z",
+     "text": "cw: there should not be. It is history, and no good reason: appTiles began as spirit/ui.js, the element behind appMigration, and was built beside appSelector, not on it. I carried it through two renames without asking that.\n\nOne appSelector, with three faces: dropdown, pane and tiles. appTiles goes, its open and close move into appSelector, and appMigration wraps appSelector in face tiles."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:51:07.057Z",
+     "text": "cw, appMigration still needs to have a 'mode-toggle', ideally supplied (optionally) by probabilitySearch, on the same line/row as the search input, right after the search button....?\n\nit makes sense to only have toggles between the two modes that actually display in a pane,\n\n??"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T00:51:30.143Z",
+     "text": "cw: yes, that makes sense, and it fits probabilitySearch: its Search button is on that row, so the toggle sits right after it.\n\nThe shape:\n- A new option, toggle: true. Without it nothing changes for any other list.\n- It flips pane and tiles only. Dropdown closes to a field, so it never shows the toggle.\n- The face can change while the list lives, keeping the search words. Today it is fixed at create, in one variable, so that is the real change.\n- It tells its owner the new face. appSelector then picks the rows: tiles shows active only, pane shows all, as your box says, and the picks differ: tiles launches, pane shows the detail with its button.\n\nThe toggle itself is one button showing the other face's icon.\n\nThat is all page work, no verb. The one thing behind it is still Q1, active."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:53:38.841Z",
+     "text": "cw, \n\nA new option, toggle: true. Without it nothing changes for any other list.\n- agreed.\n\nIt flips pane and tiles only. Dropdown closes to a field, so it never shows the toggle.\n- agreed.\n\nThe face can change while the list lives, keeping the search words. Today it is fixed at create, in one variable, so that is the real change.\n- agreed.\n\nIt tells its owner the new face. appSelector then picks the rows: tiles shows active only, pane shows all, as your box says, and the picks differ: tiles launches, pane shows the detail with its button.\n\n- agreed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T00:53:54.485Z",
+     "text": "cw: noted, all four. They are not in the box yet: say the word and I add them. Only Q1 is left, on active."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:54:21.148Z",
+     "text": "wsl, thoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T00:54:53.154Z",
+     "text": "wsl: one appSelector with three faces is right, and I agree with cw. As peer review of the verb \"active\", I say yes, with this shape:\n\n- app.active { key, active } sets it; only the owner may. It's a word on the wire; the page's function is spirit.app.activeApp, as with searchApp.\n- It only writes. Nobody reads through it: the node writes spirit/state/<key>/node.json and republishes its 'apps' job, whose rows gain active. The list follows by itself, who paints listens.\n- A key not in spirit/app is refused, so no path can be written through it.\n\nTwo things to know:\n- Your box says the user sets active, so Monitor and server start off, and the tiles start empty until you press in pane. I'd keep that.\n- spirit/state/ must be non-servable, or a page could read other apps' state through a plain GET. The red checks that.\n\nQ1 is cw's, and I'd say yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:56:39.760Z",
+     "text": "cw: integrate wsl in box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T00:57:20.287Z",
+     "text": "cw: boxed, v4, your lines untouched. Added below them: wsl's shape for active, your four agreed toggle lines, and one appSelector with three faces. I took your line as the word for those too; tell me if it was only wsl's.\n\nA verb needs your own yes, so I left Q1 open rather than read it into \"integrate\": app.active, with spirit.app.activeApp on the page. wsl has reviewed it, yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T00:59:32.333Z",
+     "text": "Q1: Does this item build active in spirit/state/<name>/node.json, with its verb?\n\nyes"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T01:00:04.977Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T01:00:23.275Z",
+     "text": "wsl: green to me, the box can be built from.\n\nOne line is still your question, \"'launch' (or mount?)\". I'd test launch as today's appTiles open: the app mounts inside the tile's pane with a close icon, unless you say otherwise.\n\nEnd design and Go, and I write the red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T01:00:28.705Z",
+     "text": "cw: not green, one thing: the box says the button twice. Your line has it \"at the end of each row\"; my added line has it in the detail a pick shows. I'd keep yours alone.\n\nQ2: Is the (de)activate button only at the end of each pane row, not in the detail?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T01:01:52.488Z",
+     "text": "all, is this in the box?\n- spirit/app/appTiles.js will be removed?\n- spirit.app.appTiles() will be removed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T01:02:10.440Z",
+     "text": "cw: only in general words: \"appTiles goes\". Neither the file nor spirit.app.appTiles is named. Both are meant to go, with its test. Say the word and I write them out in the box."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T01:02:14.172Z",
+     "text": "wsl: only loosely. The box says \"appTiles goes\", without naming the file or the object. The red will check both: spirit/app/appTiles.js gone, and spirit.app.appTiles undefined. Say the word and your two lines go in the box as written."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T01:03:00.215Z",
+     "text": "cw, box these two items and put the files on the item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T01:03:40.255Z",
+     "text": "cw: done. Box v5 holds your two lines as written: \"spirit/app/appTiles.js will be removed.\" and \"spirit.app.appTiles() will be removed.\"\n\n34 files on the item, one new: spirit/app/active.json, the verb's file. wsl may add red files beside them.\n\nDesk has opened the core grant, G1, for you to press. Q2 is still open, on where the button goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T01:03:57.047Z",
+     "text": "Q2: Is the (de)activate button only at the end of each pane row, not in the detail?\n\nin the detail as well."
+    }
+   ]
   }
  ]
 }
