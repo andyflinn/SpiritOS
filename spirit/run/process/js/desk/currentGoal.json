@@ -1,5 +1,5 @@
 {
- "change": 146305,
+ "change": 146308,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,6 +13,7 @@
    "buttons": [
     "done",
     "verify",
+    "go-all",
     "close",
     "pushgoal"
    ],
@@ -303,6 +304,7 @@
    "version": 19,
    "buttons": [
     "start-design",
+    "go",
     "close",
     "pushgoal",
     "delete",
@@ -311,9 +313,7 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [
-    "goal/G43.10"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -8230,15 +8230,13 @@
    "id": "goal/G43.10",
    "title": "apps/process state to spirit/state/<name>/data/ and cache/",
    "goal": "goal/G43",
-   "status": "verified green",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 10,
    "buttons": [
-    "start-design",
-    "done",
-    "verify",
-    "pushgoal"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -8321,7 +8319,7 @@
     "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "# in this item agents commit past the git hook, and we only add 3 files to this item.\n\n- \"JUST state data.\"\n- \"i don't care about anything else right now.\"\n- \"we're not moving them into spirit/app/ yet.\"\n- \"we will only move process relay-state data if the corresponding run://process/<name> still exists.\"\n- \"whatever leftovers there are of now-eliminated process, we disregard\"\n\n# what moves\n\n- A process's files in relay-state/process/<name>/ go to spirit/state/<name>/data/, if run://process/js/<name>/ exists. Its folder otherwise stays where it lies, untouched.\n\n# how\n\n- A node moves them once at boot, as G43.8 did, stopping if that fails, skipping door.sock, the sidecars (Q6: \"yes.\") and bundles.json (Q13: \"yes.\").\n- The node hands each process its folder when it starts, jobs.js, so that folder is now its data/. A process goes straight to disc and no process reads through the node's gate, so fileSystem.js does not change.\n- A process's own code writes only there. A test that scans the code holds that.\n- spirit/state stays shut to pages, so G43.9's \"a page cannot read other apps' state\" stands whole. No gate opens, no page changes, and no verb changes.\n\n# not this item\n\n- Old face-apps: \"why don't we just let old face-apps write where they always wrote\". They keep writing to relay-state/shell/ (Q11: \"yes, this is a much better idea\"). This replaces \"shell apps too\" (G43.8, Q9). So boot.js and join's state stay as they are.\n- Backup: \"WE DON'T GIVE A SHIT WHAT BACKUP DOES, IT WILL BE PORTED LATER.\" Until then it copies no app data.\n- bundles.json: \"who cares? the apps, when ported with make bundles under a new name....\". The move skips it, so apiAuth needs no change and no bundle gets a second row (Q13).\n- door.sock and the sidecars: \"i don't care about door.sock (whatever that is)\", \"i couldn't care less about stupied \\\"sidecars\\\" in a folder that doesn't need them\". So relay-state itself stays for now.\n- \"when we port the apps one by one, their new door.sock will live in run://spirit/state/<name>/, owned by the node.\"\n- A client's cache stays in spirit/state/<client>/. For later: \"An appServers cache on disc: spirit/state/<appname>/cache/\", and \"that's the difference between data and cache as i see it, and app servers, need both\".\n- A constraint on what a client may write, in spirit/app/<name>/<name>.json, possibly with a server-side validation script: \"we deal with that when the applications move to spirit/app/<name>/\".\n- Stale comments: \"we will eliminate stale comments in another item.\"\n",
