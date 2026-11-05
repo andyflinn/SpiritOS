@@ -34,11 +34,15 @@
 
   // ITS TABLES ASK THROUGH { verb } (goal/G43.13): what the old shell handed every app, made here, as the lists in the tree make
   // it. verb('agent.provider', args) calls that verb of that family, answering { status, body }, as a list reads it. No new verb.
+  // A family the page found at its start is on spirit.ready; a server activated after it, as the agent's own is, is bound then.
   var api = {
     verb: function (name, args) {
       var n = String(name || '');
       var dot = n.indexOf('.');
-      return Promise.resolve(spirit.ready).then(function (s) { return s[n.slice(0, dot)][n.slice(dot + 1)](args || {}); }).then(function (body) {
+      var fam = n.slice(0, dot);
+      return Promise.resolve(spirit.ready).then(function (s) { return s[fam] || spirit.require(spirit.familyPath(fam)); }).then(function (f) {
+        return f[n.slice(dot + 1)](args || {});
+      }).then(function (body) {
         return { status: 200, body: body };
       }, function (e) {
         return { status: (e && e.status) || 500, body: (e && e.body) || { ok: false, code: String((e && e.code) || 'handler-failed'), error: String((e && e.message) || e) } };
