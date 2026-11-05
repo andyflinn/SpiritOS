@@ -1,5 +1,5 @@
 {
- "change": 143226,
+ "change": 143393,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,7 +13,6 @@
    "buttons": [
     "done",
     "verify",
-    "go-all",
     "close",
     "pushgoal"
    ],
@@ -146,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 4,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
@@ -303,7 +302,6 @@
    "version": 19,
    "buttons": [
     "start-design",
-    "go",
     "close",
     "pushgoal",
     "delete",
@@ -312,7 +310,9 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.10"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -6829,7 +6829,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -7495,7 +7495,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -8224,6 +8224,652 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-05T03:13:55.279Z",
      "text": "wsl: verify of c6545152: passed. Real presses on my node's panel:\n- Bar: 🦻 Monitor ✕. Rows as you drew them, 1em apart.\n- 🔴 Activate Monitor face 🟢: node.json gets active, label, icon, shell, copied; it turns to 🟢 Deactivate.\n- Label \"Renamed\": node.json, the bar and the rows follow.\n- Allow as shell: shell true in node.json.\n\nTests: app 66, dataFamilies 110, caches 129, the rest pass. Three of four broken versions caught by app, the fourth by appSelector.\n\nNot clean, for you to know:\n- appSelector failed 2 runs in 10, on a label changed on disk not painting in time, under load. Untraced. The older commit showed a different timing failure too.\n- I did not press the icon dropdown itself; app.icon is tested direct. It says \"choose an icon…\" beside the current icon.\n\nYours: restart on c6545152, reload."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.10",
+   "title": "apps/process state to spirit/state/<name>/data/ and cache/",
+   "goal": "goal/G43",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 4,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [
+    "goal/G43.11"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "# in this item agents commit past the git hook, and we only add 3 files to this item.\n\n- \"now we make sure that all the apps and processes write their state into spirit/state/<name>/data/ and their cache files into spirit/state/<name>/cache/\"\n- Every app and process, shell apps too (G43.8, Q9: \"yes.\").\n- \"we are only changing where apps and processes write their cache and their data, we're not moving them into spirit/app/ yet.\"\n- \"we will only permit writes\" of \"their state into spirit/state/<name>/data/, and\" \"their cache into spirit/state/<name>/cache/\", \"and make sure all apps and processes only write into those.\"\n- This item changes where state and cache go. What else a page may write stays as it is, and this item names no other folder.\n\n# how it holds\n\n- \"allow only <name> to access spirit/state/<name>/data/ as only folder in spirit.state, only, and spirit/state/<name>/cache/ only via an spirit api or function\"\n- spirit/state stays shut to plain paths, so G43.9's \"a page cannot read other apps' state\" stands whole.\n- A new function, not scopedFs.\n- A process: the node knows it by its own file, so \"only <name>\" is a refusal.\n- A page: pages share one document and the node cannot tell which app asks, so \"only <name>\" is the function and a test that scans the code, not a refusal.\n- A process writes to disc past the gate, so \"only\" holds for its other writes by its code and that test.\n- The Files app no longer shows app state.\n\n# special cases\n\n- \"boot.js is a special case and will be moved to run://spirit/ later, where i think it belongs, oos\"\n- \"special cases are also join/home apps, although they will be moving their data and cache like all other apps in this item.\"\n- join's data moves, so boot.js's one read of join's state follows it. boot.js itself stays put.\n\n# from G43.8's box, for when the servers move\n\n- \"will aim to move all app server at once, so the 4 places that apparently need changing for servers can change with them\"\n- \"An appServers cache on disc: spirit/state/<appname>/cache/\"\n- \"An appServers data on disc: spirit/state/<appname>/data/\"\n- data and cache: \"that's the difference between data and cache as i see it, and app servers, need both\"\n- \"i see the subfolders of relay-state as completely useless in the namespace conforming world.\"\n- Not placed yet: door.sock; <name>.js.sidecar.json, whose face.home is the old activate switch; agent's two config.json: \"agent has not moved yet\".\n\n# where they write today\n\n- A process: relay-state/process/<name>/.\n- A shell app: relay-state/shell/<name>/, which the owner's pages read and write.\n- A client's cache: spirit/state/<client>/, with no cache/ under it.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Pages are refused spirit/state at any depth: may pages open spirit/state/<name>/data/ and cache/, the key staying shut, or do shell apps keep a place of their own?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T10:23:23.193Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Does \"only\" cover an app's state and cache alone, with pages still saving your other files where they do today, media and published too?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T10:27:27.770Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "The list and row elements read icons' data, and backup reads every app's: may these two reach other apps' data through the function?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:12:53.202Z",
+     "text": "cw, update the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:13:49.062Z",
+     "text": "cw: the box is updated, v2. Your first line stands. Under it: your words, Q9, what G43.8's box left for this move, and where each writes today.\n\nOne thing stands in the way, Q1: your pages read and write a shell app's state, and since G43.8 the node refuses its new folder to pages at any depth, as it holds the private key. Moving shell apps there needs a door opened, or a place of their own."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:22:44.593Z",
+     "text": "Q1: Pages are refused spirit/state at any depth: may pages open spirit/state/<name>/data/ and cache/, the key staying shut, or do shell apps keep a place of their own?\n\n- we are only changing where apps and processes write their cache and their data, we're not moving them into spirit/app/ yet. that is what i understand and agree to. we will only permit writes into \n\n- their state into spirit/state/<name>/data/, and\n- their cache into spirit/state/<name>/cache/\n\nand make sure all apps and processer only write into those.\n\ncorrect?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:23:26.767Z",
+     "text": "cw: correct: only where they write their data and cache changes, and nothing moves into spirit/app/ yet.\n\nThree things that follow from your \"only\":\n- Processes write to disc directly, past the node's gate. So \"only\" holds for them by the code and a test that scans it, not by a refusal when they run.\n- Your G43.9 line says the state folder is not servable, \"so a page cannot read other apps' state\". A shell app's page has to read its own data. The gate goes by path and can't tell which app asks, so opening data/ and cache/ lets any of your pages read any app's, as it does today in the old folder. The key and node.json stay shut. That is my reading of your answer: tell me if not.\n- Pages today may write any file outside the core, not only state. Q2 asks whether \"only\" closes that.\n\nBox after your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:26:59.724Z",
+     "text": "Q2: Does \"only\" cover an app's state and cache alone, with pages still saving your other files where they do today, media and published too?\n\n- media and published should no longer be words on the SpiritOS, and not mentioned or referenced in code, tests or design, or this item.\n\ncorrect?\n\n- why worry or name them at all in this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:27:29.036Z",
+     "text": "cw: you are right, and I shouldn't have named them. It came from an old note of mine, now dropped.\n\nNot gone yet: 9 lines of code and tests still say those two words. I leave them, not this item.\n\nSo this item changes where state and cache go, and what else a page may write stays as it is. Q2 closed.\n\nNo question from me now. May I write this and your Q1 answer into the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:28:02.280Z",
+     "text": "cw, update box accordingly"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:28:32.480Z",
+     "text": "cw: the box is updated, v3.\n- Your Q1 and Q2 answers are in.\n- One line in it is my reading, not your words: it narrows your G43.9 line, so any of your pages can read any app's data and cache, and only node.json and the node's own files stay shut. Strike it if that is wrong.\n- Still unplaced, and in the box as such: door.sock, the sidecars, and agent's two config.json."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:33:33.548Z",
+     "text": "all, would it hurt to allow only <name> to access spirit/state/<name>/data/ as only folder in spirit.state, only, and spirit/state/<name>/cache/ only via an spirit api or function?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:34:13.275Z",
+     "text": "cw: no, it wouldn't hurt, and it's better than my line in the box, which it replaces.\n\nHow far \"only <name>\" holds:\n- A process: for real. The node knows a process by its own file, and already gives it its own folder that way.\n- A page: by the function, not by a jail. Direct paths into the state folder stay refused and the function is the only way in, but all pages run as one origin and the function is told the name by its caller. A page that lies reaches another app's data. Your pages are all yours, so that's a fence, not a lock.\n\nWhat it costs, three places that read another app's state today:\n- The shell's boot reads join's state.\n- The list and row elements read the icon set.\n- Backup walks everyone's data, and has to keep doing so.\n\nEach needs its own answer. A new function, not scopedFs, which you already ruled is to disappear.\n\nSay so and I box it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T10:34:24.339Z",
+     "text": "wsl: it wouldn't hurt, it's better. spirit/state stays shut to plain paths, so your G43.9 line stands whole and the box's narrowing goes.\n- \"only <name>\" can't be a refusal: your pages share one document and the node can't tell which app asks. So it's the function, plus a test that scans the code: discipline, as on loopback.\n- cache: already one function, appServer's cacheDir, and no page writes it. It only gains cache/.\n- data: a handful of plain paths change, in agent, icons and join.\n- Two costs: boot.js reads join's state, so that one has to change. And the Files app no longer shows app state."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:39:13.946Z",
+     "text": "- boot.js is a special case and will be moved to run://spirit/ later, where i think it belongs, oos\n- special cases are also join/home apps, although they will be moving their data and cache like all other apps in this item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T10:39:32.109Z",
+     "text": "wsl: understood. One thing stays in this item: join's data moves, so boot.js's one read of join's state has to follow it, though boot.js itself stays put until later."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:40:11.384Z",
+     "text": "wsl, correct."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T10:40:24.183Z",
+     "text": "wsl: thanks. cw, that line goes in the box with your next write."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:40:51.844Z",
+     "text": "cw, update box"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:41:25.347Z",
+     "text": "cw: the box is updated, v4. My narrowing is gone and your G43.9 line stands whole. Your function line, the special cases and wsl's boot line are in.\n\nStill unanswered are the two other readers I named, Q3."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:41:41.454Z",
+     "text": "blast radius?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T10:42:11.181Z",
+     "text": "wsl: smaller in code than G43.8 was, bigger in what it carries.\n- Code: 16 files name these paths, about 15 lines that aren't comments. Most processes get their folder from the node and don't name it.\n- Tests: 17 by name, more through a variable. G43.8 was bitten that way.\n- Docs: 9, and the face's service file.\n- What moves: everything your apps keep, your Desk's database included. Desk moves itself while you use it, and on your node's next restart.\n- One way again, so a flag day and a tag. Relays carry little of this; a face host carries its face settings, which is the one to rehearse."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.11",
+   "title": "iconSet.json moves to run://spirit/",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 6,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.10"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 11,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# what this item does\n\n- The readers fetch the file: \"we do this as a bridge-measure.\"\n- This file: run://spirit/iconSet.json. Andy copied his own set there and committed it (4515ea14): \"i did COPY, not move\".\n- \"run://spirit/iconSet.json IS the system set now.\" (Q3) So the icon selector reads it too, and the list element reads this one file, with no \"own, else system\" any more.\n- The old system set, shell/json/iconSet.json, is deleted in this item, and the Icons app's one fallback path changes to this file (Q4: \"this item\"). The rest of the Icons app waits.\n- \"change the readers/consumers of this file\": they keep spirit.fs.loadFile and only change their path, and none uses the old file.\n- No new function.\n- Nothing watches this file: it changes only by Andy's commit.\n- Tried by wsl on a real face with this file: the whole set arrives, 659 icons, starred and at home. A face with no star is refused, as it is for the old set today.\n- So the list and row elements no longer read another app's data: this answers that half of G43.10's Q3.\n\n# not this item\n\n- \"then we worry about the icon app later.\" Until then the Icons app writes its old file, relay-state/shell/icons/iconSet.json, and an edit there does not reach this file. The old file stays.\n- run://spirit is core and in git, and a page cannot write there.\n\n# where it stands today\n\n- The system set: shell/json/iconSet.json, in git, updated by Andy by hand.\n- Read by: the Icons app and the list element (the old file, else the system set); the row element, from the list's set; the icon selector (the system set only).\n- The list element watches the old file, and reads it again when it changes.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Which set moves to run://spirit: the system set in git, or your own, and where do your icon edits go then?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T10:55:05.355Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "The set is 26163 bytes and a packet carries 22528: shall node.icons be a search, answering a bucket of rows with a partial flag?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T11:04:43.031Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-05T11:11:47.808Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "The icon selector reads the system set, not this file: does it change to this file too, or stay on the system set?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T11:10:27.261Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Do I delete the old system set now and change the Icons app's one fallback path, or leave both for the later Icons item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T11:11:35.429Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T11:11:50.429Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:51:39.825Z",
+     "text": "cw, can you fill the box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:53:15.971Z",
+     "text": "cw: the box is filled, v1, from your title and what the code does today.\n\n- There are two sets, the system one in git and your own out of git.\n- run://spirit is core, in git, and pages can't write there. So if your own set moves there, the Icons app can't save it, and your edits go back into git, which you moved them out of. That is Q1.\n- What node.icons answers isn't in the box until Q1 is settled.\n- wsl: please review node.icons when its shape is there. Andy's title names the verb, but his yes on the verb itself still comes after that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:54:45.888Z",
+     "text": "cw, I'll move my own there now and commit, then we worry about the icon app later."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T10:55:07.038Z",
+     "text": "cw: understood, Q1 closed: your own set moves there, you commit it, and the Icons app waits.\n\nOne thing before you move it: nothing reads the new place until node.icons is built. If you move the file instead of copying it, your face falls back to the system set until then, and an edit in the Icons app starts a new file in the old place.\n\nCopying it and leaving the old one until the build avoids that.\n\nMay I write this into the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T10:59:42.575Z",
+     "text": "cw, i did COPY, not move, my iconSet.json to run://spirit/iconSet.json, and committed it.\n\nadjust the box accordingly. now we need only to add node.icons verb and change the readers/consumers of this file."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:00:30.580Z",
+     "text": "cw: the box is updated, v2, with your copy, your commit and your line.\n\nOne thing in the way of node.icons: the file is 26163 bytes, and a packet carries at most 22528. So the verb can't answer the whole set.\n- A search fits how every other list works: the reader asks by words and gets a bucket of rows, with a partial flag when more match.\n- The list element would then ask for what it shows, and stop holding the whole set.\n\nThat is Q2."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:01:26.043Z",
+     "text": "cw, can we abandon the verb and just have it fetched? (GET?)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:02:18.616Z",
+     "text": "cw: yes, we can drop the verb and fetch it. Then no node verb, no review of one, and no packet limit.\n\n- On your node a plain GET answers it now: 200, 26163 bytes, I tried it.\n- On a face a plain GET can't work, because the relay only serves its few page files. The face already reads files from your node in sealed pieces, through spirit's own file read. So the readers use that one read, which is a GET on a node and the pieces on a face.\n- That read isn't offered as text to elements yet, only as a data url, so it needs one small function beside it. That's a function, not a verb.\n- No watching: the file only changes by your commit.\n- Not tried: this file on a face. I'd test that on a real face.\n\nQ2 falls away with the verb. Say so and I box it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:04:19.880Z",
+     "text": "cw, agreed.\n\nwe do this as a bridge-measure."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:04:52.725Z",
+     "text": "cw: the box is updated, v3: no verb, the fetch as a bridge, one small text function. Q2 closed.\n\nTwo lines in it are mine, strike them if wrong:\n- It is tried on a real face before this item closes.\n- Nothing watches the file, as it changes only by your commit.\n\nI build when you end design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:05:21.545Z",
+     "text": "wsl, green?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:06:04.499Z",
+     "text": "cw, files."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:06:47.415Z",
+     "text": "cw: the files are on the item, 7:\n- The fs family's interface, its test and its doc: the text function.\n- The list element: it fetches the new file. Its test and doc are new, as it has none.\n- The row element: only its comment, which names the old file.\n\nNot on the list: the Icons app, as you said later. It shows the same list element, so after this its list shows the new file, and an edit you save there won't appear in it until that later item.\n\nThe core files among these need your grant."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:07:21.561Z",
+     "text": "wsl: not green, the box has one thing too many. The new text function isn't needed. The readers already use spirit.fs.loadFile, and I tried it on a real face with your commit's file: the whole set arrives, 659 icons, starred and at home. The packet limit doesn't touch it, so the readers only change their path.\n- A face with no star is refused, as it is for the old set today, so nothing gets worse.\n- Still open: the icon selector reads the system set, and the box doesn't say if it moves too. The title still says a verb gets added.\nNo red yet, and that's right while you're in design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:08:10.367Z",
+     "text": "cw, fix box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:08:57.311Z",
+     "text": "cw: the box is fixed, v4. wsl is right and I was wrong: the readers already have what they need and only change their path, so the new function is out.\n\n- wsl's try on a real face is in the box, in place of my line that it was still owed.\n- I took the fs family's 3 files off the item's list, as nothing there changes now.\n\nThe icon selector is Q3."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:10:11.281Z",
+     "text": "Q3: The icon selector reads the system set, not this file: does it change to this file too, or stay on the system set?\n\n- run://spirit/iconSet.json IS the system set now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:10:48.550Z",
+     "text": "cw: understood, Q3 closed: this file is the system set. So the selector reads it too, and the list reads this one file, with no \"own, else system\" any more. The selector goes on the item's list.\n\nThat leaves the old system set in git. Only one other reader would still name it: the Icons app, as its fallback when you have no own set.\n\nI'd delete it now and change that one path in the Icons app, so nothing old stays. The rest of the Icons app still waits.\n\nThat is Q4. I'll add the files after your answer, as adding them voids your grant, and box it all on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:11:14.740Z",
+     "text": "Q4: Do I delete the old system set now and change the Icons app's one fallback path, or leave both for the later Icons item?\n\nthis item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:11:49.190Z",
+     "text": "cw: this item, Q4 closed. 7 files added to the list, so it now holds 11:\n- The selector, with a new test and doc, as it has none.\n- The old system set, to delete.\n- The Icons app, for its one path only, with its test and doc.\n\nThat voids your grant, so the core ones need it again.\n\nMay I box Q3 and Q4?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:12:13.174Z",
+     "text": "cw, yes. into the box with them."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:12:42.781Z",
+     "text": "cw: the box is updated, v5, with Q3 and Q4. No open question from me on this item. I build when you end design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:12:52.352Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:13:16.211Z",
+     "text": "cw: green: settled, no open question, box current (v5)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T11:13:39.221Z",
+     "text": "wsl: green. Every reader of the old set is on the list, and deleting it loses nothing: your new file holds all 642 of its icons plus 17 more. One leftover is yours: the title still says a verb gets added. On your Go I write the red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T11:14:15.130Z",
+     "text": "cw, remove the verb from the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T11:15:07.472Z",
+     "text": "cw: the verb is out of the box, v6. The title still names it, and only you can rename an item: the desk refuses me."
     }
    ]
   }
