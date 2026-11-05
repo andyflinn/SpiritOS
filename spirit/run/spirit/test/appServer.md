@@ -15,7 +15,7 @@ stream"); Desk and deskClient move onto it.
   goal/G41.12 Q3); it is the one other file that writes the path.
 - **A script of `spirit/app/<name>/` has `./api/` instead** (goal/G43.12, Andy: *"what is the "family" folder in the old system is
   now the ./api/folder"*). A client's cache finds such a family's `data.js` beside `<name>.js`. Specified in `./appServerMount.md`.
-- **The family folders are `process/js/<name>/family/`** (agent, backup, chatClerver, desk, deskClient,
+- **The family folders are `process/js/<name>/family/`** (backup, chatClerver, desk, deskClient,
   deskVerify, fileServer); no `<name>.family` is left.
 - **deskAgent is killed** (Andy, goal/G41.28: *"all, KILL deskAgent!"*): `process/js/deskAgent/` is gone and no file names
   the server. The desk's bundle named `deskAgent` is his name for a desk agent, and stays.
@@ -96,8 +96,6 @@ stream"); Desk and deskClient move onto it.
   - deskVerify: `deskAgent` and `remoteUser`, *"both get only \"search\""*.
   - deskClient: `deskServer`, *"only the verbs desk currently uses"*: `streamListener`, the one deskClient verb desk
     reaches, through its stream.
-  - agent: `remoteUser`, *"the full agent family, minus FS.*"*: every verb of `process/js/agent/family/api.js`, and since
-    goal/G41.30 (the review, RH4) minus `provider`: a peer must not reach the model keys.
 
 ## Not asserted yet, and why
 

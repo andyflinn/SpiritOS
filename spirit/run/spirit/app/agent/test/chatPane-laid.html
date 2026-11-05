@@ -13,9 +13,9 @@
 // input block, which contains, for now a chat input line, which sends when Enter is pressed, and adds \"\n\" when
 // SHIFT.Enter is pressed, and a send button on the right edge of that row.", "the space between the Title row and the
 // Chat input row is filled by an upward scrolling chat log."): the chat pane in a centre of a stated size, and what the
-// browser makes of it, measured. Opened by ./chatPane.js at /DEBUG/shell/agent/test/chatPane-laid.html.
+// browser makes of it, measured. Opened by ./chatPane.js at /DEBUG/spirit/app/agent/test/chatPane-laid.html.
 window.laid = function () {
-  return Promise.resolve().then(function () { return Promise.all([spirit.require('shell/agent/chatPane.js'), spirit.require('process/js/agent/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function () {
+  return Promise.resolve().then(function () { return Promise.all([spirit.require('spirit/app/agent/chatPane.js'), spirit.require('spirit/app/agent/table/tableElement.js').catch(function () { return null; })]); }).catch(function () { return null; }).then(function () {
     var E = (spirit.elements || {}).chatPane;
     var out = { made: !!E && typeof E.create === 'function' };
     if (!out.made) return JSON.stringify(out);
@@ -41,7 +41,7 @@ window.laid = function () {
     out.title = rect(title);
     // goal/G41.26 (Andy: "the title row in the chat panel (center or workBench) must have the same font size as all other
     // pane-titles in the agent UI"): the size the chat title's words are drawn at, beside the size of a pane title the
-    // agent tables draw (process/js/agent/table/tableElement.js, agentDetail.titleRow), in the same page.
+    // agent tables draw (spirit/app/agent/table/tableElement.js, agentDetail.titleRow), in the same page.
     function deepest(root, re) {
       var hits = Array.prototype.slice.call(root.querySelectorAll('*')).filter(function (el) { return re.test(el.textContent) && !el.querySelector('textarea,input,button'); });
       return hits.filter(function (el) { return !hits.some(function (k) { return k !== el && el.contains(k); }); })[0] || null;

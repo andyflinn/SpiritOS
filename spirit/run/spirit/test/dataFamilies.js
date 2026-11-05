@@ -16,7 +16,7 @@ const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'events', 'fs', 'jobs
 const SERVER_FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
 // Andy: "process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"
-const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'process', 'js', name); };
+const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : (fs.existsSync(path.join(RUN, 'spirit', 'app', name)) ? path.join(RUN, 'spirit', 'app', name) : path.join(RUN, 'process', 'js', name)); };
 // A scratch node does not offer these three to a page, so a page cannot load them; all 19 are judged in node as well.
 const NOT_ON_SCRATCH = ['agent', 'chatClerver', 'deskClient'];
 // The old spirit.<name>Data: chatData was chatClerver's, verifyData deskVerify's.

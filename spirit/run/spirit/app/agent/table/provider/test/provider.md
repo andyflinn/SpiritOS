@@ -1,6 +1,6 @@
 # provider/
 
-`spirit/run/process/js/agent/table/provider/` is the provider table (goal/G41.4): a model provider, its url and its API
+`spirit/run/spirit/app/agent/table/provider/` is the provider table (goal/G41.4): a model provider, its url and its API
 key. Its test is `./provider.js`. What every table shares is specified in `../../test/`.
 
 Andy, box v22: *"a provider table. keyed by ID same as the shadow-roll (with Label and Description, URL, and API_KEY
@@ -28,7 +28,7 @@ which will never reach the browser or any place outside of the agent process exc
   get and search:
   - A row that is not there is refused `no-such-row`.
   - **The plugin is the row's label**, matched in any case (*"<providerName> must match the label of a provider row"*,
-    *"case-insensitive"*): `process/js/agent/provider/<name>/<name>.js`, its `models({ url, apiKey })`. A row labelled
+    *"case-insensitive"*): `spirit/app/agent/provider/<name>/<name>.js`, its `models({ url, apiKey })`. A row labelled
     Anthropic or ANTHROPIC asks through the Anthropic plugin, with its key.
   - **A row no plugin matches asks through the OpenAI plugin** (Unsloth, the box's test case), `GET <url>/models`.
   - It answers `{ models: [{ modelName, label }], updated }`, the provider's list as the plugin gave it.
@@ -63,7 +63,7 @@ which will never reach the browser or any place outside of the agent process exc
 - **elementRow.js loads the agent family's cache manager, which takes the provider table's rows from the stream** (goal/G41.16;
   Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
   asks `spirit.cacheManager('agent')`, and `spirit.data.agent.data.branch('provider')` is the home node's `<node>/agent/provider`; a row
-  of the agent stream (`{ agent: { table: 'provider', row } }`, module `process/js/agent`) lands at `<node>/agent/provider/<id>`,
+  of the agent stream (`{ agent: { table: 'provider', row } }`, module `spirit.app.agent`) lands at `<node>/agent/provider/<id>`,
   read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 
@@ -81,7 +81,7 @@ Andy: *"the model picker for anthropic simply shows: "Nothing matches.", no if t
 and *"tests are not there to confirm what the fucking code does, they're there to assert what the user/designer
 wants"*. What he sees, asserted where he sees it: the real provider and model servers on a scratch agent.db, two
 providers, two models of one and one of the other; `./provider-picker.html`, opened at
-`/DEBUG/process/js/agent/table/provider/test/provider-picker.html` on a scratch node with its DEBUG on
+`/DEBUG/spirit/app/agent/table/provider/test/provider-picker.html` on a scratch node with its DEBUG on
 (`test/headLessChrome.js`), draws that provider's detail with the real row element, the real shared table element and
 the real dropdown, the agent server a stand-in answering what the real tables answered for each call. The page starts as
 the Agent app's does (`spirit.start()`: the data set, its home node from `node.card`), and the stand-in answers for the
@@ -109,7 +109,7 @@ The provider's ask adds each model with its label the model name exactly as the 
 - **A key never follows a changed url; a peer holds no way to change or ask a provider** (goal/G41.30, the review, RH4: *"make
   provider add, set, delete and ask owner-only, and clear apiKey whenever url changes without a new key"*; Andy: *"yes."*). A
   set of a new url with no new key clears the key, and an ask then sends that url no old key. A set of another field, or of the
-  same url, keeps it; a set of a url and a new key keeps the new key. `agentBundles.json`'s remoteUser grants no agent.provider.
+  same url, keeps it; a set of a url and a new key keeps the new key.
 
 ## What its test must try to break
 

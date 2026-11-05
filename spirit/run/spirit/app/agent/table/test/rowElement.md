@@ -1,6 +1,6 @@
 # rowElement.js
 
-`spirit/run/process/js/agent/table/rowElement.js` is one row of the agent's tables, edited in the page (goal/G41.4), an
+`spirit/run/spirit/app/agent/table/rowElement.js` is one row of the agent's tables, edited in the page (goal/G41.4), an
 element of its own (goal/G41.28). Each table's `elementRow.js` names its fields and builds on it. Its test is
 `./rowElement.js`.
 

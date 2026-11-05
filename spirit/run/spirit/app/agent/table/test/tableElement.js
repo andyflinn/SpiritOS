@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/agent/table/test/tableElement.js
-// The tests of process/js/agent/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4, goal/G41.18).
+// spirit/run/spirit/app/agent/table/test/tableElement.js
+// The tests of spirit/app/agent/table/tableElement.js, and of no other module (spec: ./tableElement.md; goal/G41.4, goal/G41.18).
 // The browser file runs in node on a window of its own, over the real spirit.data (spirit/data.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
 // of them; the agent server answers as rowTable.js does.
@@ -81,7 +81,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
 
 (async function () {
   test.subHeading('its file');
-  if (!fs.existsSync(FILE)) { test.fail('process/js/agent/table/tableElement.js is not there'); return; }
+  if (!fs.existsSync(FILE)) { test.fail('spirit/app/agent/table/tableElement.js is not there'); return; }
   const w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
@@ -89,7 +89,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const D = global.window.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.node.key; a family's cache manager is found by spirit.cacheManager(name), the real one, which in node
-  // reads it from its own disk. The agent family's (process/js/agent/data.js) keeps the tables'
+  // reads it from its own disk. The agent family's (spirit/app/agent/data.js) keeps the tables'
   // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.homeNode(HOME_KEY);

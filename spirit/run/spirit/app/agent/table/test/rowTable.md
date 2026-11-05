@@ -1,6 +1,6 @@
 # rowTable.js
 
-`spirit/run/process/js/agent/table/rowTable.js` is one keyed table of `agent.db` and its one verb (goal/G41.4). It holds
+`spirit/run/spirit/app/agent/table/rowTable.js` is one keyed table of `agent.db` and its one verb (goal/G41.4). It holds
 what the provider, model, persona and job tables share. Each table's `server.js` names its own fields and nothing else.
 Its test is `./rowTable.js`.
 

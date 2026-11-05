@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/agent/table/model/test/model.js
-// The tests of process/js/agent/table/model/, its server.js, elementTable.js and elementRow.js, and of no other module
+// spirit/run/spirit/app/agent/table/model/test/model.js
+// The tests of spirit/app/agent/table/model/, its server.js, elementTable.js and elementRow.js, and of no other module
 // (spec: ./model.md; goal/G41.4, goal/G41.18, goal/G41.26). What the tables share is tested in ../../test/. The Update
 // model list pane is gone (goal/G41.26): its Ask form sits at the top of the model list, tested here. The server is made on a scratch agent.db as agent.js
 // makes it, beside the provider table it names; the page files run in node on a window of their own, the shared
@@ -162,7 +162,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const pane = box('models');
   const list = E.modelTable.create(pane, api, detail);
   await settle();
-  ok(made.required.indexOf('process/js/agent/table/tableElement.js') !== -1 && made.required.indexOf('process/js/agent/table/model/elementRow.js') !== -1,
+  ok(made.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/table/model/elementRow.js') !== -1,
     'elementTable.js requires the shared element and its own row element', 'required: ' + short(made.required));
   const o = made.tables[0] && made.tables[0].o;
   ok(made.tables.length === 1 && !!made.tables[0].c && o.table === 'model' && o.api === api && o.detail === detail && o.add === false,
@@ -177,7 +177,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // button will no longer spit out a list, and simply update the agent.model table".
   ok(!((o && o.buttons) || []).some(function (b2) { return b2 && b2.label === 'provider models'; }), 'the list is handed no provider models button', 'buttons: ' + short(o && o.buttons));
   ok(!fs.existsSync(path.join(DIR, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.md')), 'the Update model list pane is gone: model/updatePanel.js and its test', 'still there: ' + short(['updatePanel.js', 'test/updatePanel.js', 'test/updatePanel.md'].filter(function (f) { return fs.existsSync(path.join(DIR, f)); })));
-  ok(made.required.indexOf('process/js/agent/table/model/updatePanel.js') === -1 && !E.modelUpdate, 'and nothing loads it', 'required: ' + short(made.required));
+  ok(made.required.indexOf('spirit/app/agent/table/model/updatePanel.js') === -1 && !E.modelUpdate, 'and nothing loads it', 'required: ' + short(made.required));
   ok(made.required.indexOf('spirit/element/probabilitySearch.js') !== -1 && made.required.indexOf('spirit/element/busyButton.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1,
     'it loads what the form uses itself (rule/26): the search element, the busyButton and the rowForm', 'required: ' + short(made.required));
   // goal/G41.27, Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]": the form is a rowForm, ❓, the
@@ -238,8 +238,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('elementRow.js loads the agent family\'s cache manager, which takes the model table\'s rows from the stream (goal/G41.16, G41.28)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
-  // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's data.js's
-  // (process/js/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
+  // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
+  // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
   // node that served them, and is read through spirit.data.agent.data.
   {
     const DATA = global.window.spirit.data;
@@ -250,7 +250,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       'agentReads: ' + short(AD ? AD.branch('model') : AD));
     // With no manager loaded the check above is red; nothing below would judge anything.
     if (AD) {
-      const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };
+      const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
       const heard = [];
       const off = DATA.watchPath(BRANCH, function (p) { heard.push(p); });
       DATA.takeJob(job({ table: 'model', row: { id: 'KT', label: 'First', extra: 1 } }));

@@ -1,4 +1,4 @@
-# shell/agent/test/agentCentreTabs.js
+# spirit/app/agent/test/agentCentreTabs.js
 
 goal/G41.31. The agent app's centre is a tabContainer, judged by real clicks in a real Chrome on a scratch node, at `/face.html`.
 

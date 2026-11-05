@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/shell/agent/test/agentCentreTabs.js
+// spirit/run/spirit/app/agent/test/agentCentreTabs.js
 // THE AGENT APP'S CENTRE IS TABS (goal/G41.31; Andy, the box: "i need a tabContainer permanently situated in the center pane of
 // the workBench."; "each panel, that the agent app placed into the center panel now becomes a closable tab in the
 // tabContainer, activated if it already exists, created if it doesn't have a tab yet."; each tab's header, by kind; "any tab
@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '..','..','..');
+const RUN = path.resolve(__dirname, '..','..','..','..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { scratchNode, chromePage, findChrome, sleep, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
@@ -23,7 +23,7 @@ const CHAT = '💬';
 test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (goal/G41.31)');
 
 (async function () {
-  const N = await scratchNode({ servers: ['agent'] });
+  const N = await scratchNode();
   let c = null;
   try {
     if (!N.up) { test.fail('the scratch node did not come up: nothing judged'); return; }
@@ -32,6 +32,8 @@ test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (go
       const text = await r.text();
       return { status: r.status, text: text, body: parsed(text) };
     };
+    // active is its one switch (goal/G43.13).
+    await home('app.active', { key: 'agent', active: true });
     let P = null;
     await until(function () { return home('agent.provider', { op: 'add', icon: ICON.provider, label: 'zzProvider', url: 'http://192.0.2.1:9/' }).then(function (a) { P = a; return a.status === 200 && !!(a.body && a.body.id); }); }, 20000);
     ok(!!(P && P.body && P.body.id), 'the agent server answers, and a provider stands', 'nothing judged: ' + short(P && P.text));
@@ -42,14 +44,6 @@ test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (go
     ok(M.status === 200 && Pe.status === 200 && J.status === 200, 'and a model, a persona and a job', 'nothing judged: ' + short([M.text, Pe.text, J.text]));
     const B = await home('auth.bundle', { op: 'add', label: 'zzNodeBundle' });
     ok(B.status === 200, 'and a bundle of the node\'s', 'auth.bundle: ' + short(B.text));
-    const rows = (((await home('auth.bundle', { op: 'search', text: '' })).body || {}).items || []).map(function (i) { return parsed(i.label) || {}; });
-    const server = rows.filter(function (r) { return r.owner && r.owner !== 'node'; })[0];
-    ok(!!server, 'and a server\'s: ' + (server && server.label), 'no server\'s bundle: its header is not judged');
-
-    // The app's mark on this node's face: a node's own state, off in a fresh checkout (goal/G41.1, box v16-v17).
-    const mark = path.join(N.root, 'spirit/run/relay-state/shell/agent');
-    fs.mkdirSync(mark, { recursive: true });
-    fs.writeFileSync(path.join(mark, 'agent.js.sidecar.json'), JSON.stringify({ face: { app: true, name: 'Agent', icon: '🤖' } }));
     const where = findChrome();
     if (!where) { test.fail('no Chrome here: nothing judged'); return; }
     c = await chromePage(where);
@@ -58,10 +52,8 @@ test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (go
     await until(function () { return c.evaluate('!!(window.spirit && window.spirit.events)'); }, 20000);
     const LEAF = 'function leaf(w, within) { var root = within ? document.querySelector(within) : document; if (!root) return null; return Array.prototype.slice.call(root.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === w && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === w; }); })[0] || null; }';
     const press = function (words, within) { return c.evaluate('(function () { ' + LEAF + ' var e = leaf(' + JSON.stringify(words) + ', ' + JSON.stringify(within || '') + '); if (!e) return false; e.click(); return true; }())'); };
-    // The page's job cache misses the opening snapshot, so an app naming a server shows only after that server's next update
-    // (found here; reported in the item, not this test's to judge). The server is nudged so the tile can be pressed.
-    await sleep(3000);
-    await home('agent.debug', { on: false });
+    // The Agent opens from the appSelector's tiles, as appMigration makes them (goal/G43.13).
+    await c.evaluate('(function () { var b = document.createElement("div"); b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { spirit.elements.appSelector.create(b, { face: "tiles" }); return 1; }); }())');
     await until(function () { return press('Agent'); }, 20000);
     await until(function () { return c.evaluate('!!document.querySelector("[data-tool=provider]")'); }, 10000);
     const appOpen = await c.evaluate('!!document.querySelector("[data-tool=provider]")');
@@ -126,13 +118,6 @@ test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (go
     ok((await tabOf('zzNodeBundle')).length === 1, 'a node\'s bundle: "zzNodeBundle" alone', 'tabs ' + short(await tabs()));
     const styleOf = function (words) { return c.evaluate('(function () { var b = Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).filter(function (x) { return x.textContent.indexOf(' + JSON.stringify(words) + ') !== -1; })[0]; if (!b) return null; var all = [b].concat(Array.prototype.slice.call(b.querySelectorAll("*"))); return all.some(function (e) { return e.textContent.indexOf(' + JSON.stringify(words) + ') !== -1 && getComputedStyle(e).fontStyle === "italic"; }); }())'); };
     ok((await styleOf('zzNodeBundle')) === false, 'in plain print', 'a node\'s bundle: italic ' + (await styleOf('zzNodeBundle')));
-    if (server) {
-      const wordsS = '(' + server.label + ')';
-      await until(function () { return pressRow(server.label); }, 6000);
-      await waitTab(wordsS);
-      ok((await tabOf(wordsS)).length === 1, 'a server\'s bundle: "' + wordsS + '"', 'tabs ' + short(await tabs()));
-      ok((await styleOf(wordsS)) === true, 'in italic print', 'a server\'s bundle: italic ' + (await styleOf(wordsS)));
-    }
 
     test.subHeading('a label changed anywhere: its tab says so');
     await home('agent.model', { op: 'set', id: M.body.id, label: 'zzModelTwo' });

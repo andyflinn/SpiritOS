@@ -14,7 +14,7 @@
 // it, the real row element, the real shared table element and the real dropdown, its Model field opened, and what the
 // browser shows in it. The agent server is the one stand-in: it answers what the real provider and model tables answered
 // in the test (./provider.js), handed in as window.picker(answers). Opened at
-// /DEBUG/process/js/agent/table/provider/test/provider-picker.html.
+// /DEBUG/spirit/app/agent/table/provider/test/provider-picker.html.
 window.picker = function (answers) {
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   var asked = [];
@@ -45,7 +45,7 @@ window.picker = function (answers) {
   var pane = document.getElementById('pane');
   // The page starts as the Agent app's does (goal/G41.28): the data set loaded and its home node known, from node.card,
   // before the row element is asked for.
-  return Promise.resolve(spirit.start()).then(function () { return spirit.require('process/js/agent/table/provider/elementRow.js'); }).then(function () {
+  return Promise.resolve(spirit.start()).then(function () { return spirit.require('spirit/app/agent/table/provider/elementRow.js'); }).then(function () {
     spirit.elements.providerRow.create(pane, api, answers.provider, false, detail);
     return wait(1500);
   }).then(function () {

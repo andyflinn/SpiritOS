@@ -1,4 +1,4 @@
-# shell/agent/agent.js
+# spirit/app/agent/browserAgent.js
 
 The agent face app (goal/G41.1): the face of the agent server, built on the `workBench` element. It runs on the face
 on loopback and through a relay alike.
@@ -8,61 +8,39 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 ## Its files
 
-- `shell/agent/agent.js`, the app.
-- `shell/agent/agent.json`, its manifest, naming its server, `agent`.
-- No sidecar beside its code: whether a node shows it on the face is that node's own state
-  (`relay-state/shell/agent/agent.js.sidecar.json`, goal/G41.1, box v16-v17).
-
-## Its state
-
-- `relay-state/shell/agent/config.json`, its own, out of git: `{ "showDebug": <true or false> }`, whether the window's
-  title bar shows the agent server's DEBUG state.
+- `spirit/app/agent/browserAgent.js`, the app on a page, loaded by `agent.js` (`./agent.md`).
+- `spirit/app/agent/agent.json`, its manifest, in the new shape.
 
 ## Requirements
 
-- It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
+- It is an element, as `monitor.js` is (goal/G43.13): `spirit.elements.agent.create(container)` answers `{ destroy() }`. It names no `activateApp`.
+- A tile hands it only its container, so it passes its tables one small object of its own, `{ verb }`, calling the same server verbs and answering `{ status, body }`. No new verb.
+- It keeps no state of its own: no `showDebug`, no `relay-state`, no title of the old shell, and opening it saves no file.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
 - It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own
   components."): with no workBench on the page, it loads `spirit/element/workBench.js` through `spirit.require`, then builds.
-- The workBench has one tool on its right strip, and on its left the app's own tool, then one per table of `agent.db`,
-  in the order provider, model, persona, job, grant, each with an icon of its own (goal/G41.4, box v22: "every one of
+- The workBench has one tool on its right strip, and on its left one per table of `agent.db`,
+  in the order provider, model, persona, job, each with an icon of its own (goal/G41.4, box v22: "every one of
   these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI
   used in this app").
-- A table's tool mounts that table's own element: it requires `process/js/agent/table/<name>/elementTable.js` into a
+- A table's tool mounts that table's own element: it requires `spirit/app/agent/table/<name>/elementTable.js` into a
   box of the shell's `fill` class.
-- The left tool keeps `relay-state/shell/agent/config.json`:
-  - At mount it reads the file through `spirit.fs.loadFile`; with none, `showDebug` is false.
-  - It draws one checkbox, checked when `showDebug` is true.
-  - Changing the checkbox saves the file through `spirit.fs.saveFile`, with the new `showDebug`.
 - The right tool sets the agent server's DEBUG state (Andy, Q5: "the app is supposed to require it's components, then use
   them."):
   - It draws one checkbox. Changing it requires the agent server's interface through spirit
-    (`spirit.require('process/js/agent/agent.family/api.js')`), then calls its `debug({ on })` with the checkbox's
-    state. Nothing goes out any other way: no `api.verb`.
+    (`spirit.require(spirit.familyPath('agent'))`), then calls its `debug({ on })` with the checkbox's
+    state.
   - The checkbox shows only what the server's job says (rule/19), never the click itself: after the call it shows the
     state last kept.
   - It follows the server's state in the jobs family's cache (goal/G41.28; `spirit.cacheManager('jobs')`, then
     `spirit.data.jobs.data`): a job whose app is `{ agent: { debug } }`, read from the jobs kept as the app opens and again
     each time that job changes, so a state kept before the app opened is there at once.
-- The title bar (`api.setScreenTitle`) shows the bug icon 🐞 while `showDebug` is true and the server's DEBUG state is on,
-  and does not show it otherwise. It follows both as they change.
-
-- **The grant tool mounts the grants panel** (goal/G41.16; Andy: *"could we then show the grants element in the left
-  pane, connected to the grants-by-job table?"*): it requires `spirit/element/grantsPanel.js` into a fill box, and the agent's
-  own grant table element no more, and creates the panel once with the app's api, configured by this app:
-  - `ids`: the agent's jobs, `loopback://api/agent/job`, with their key and label fields;
-  - `grants`: branch `agent.grant`, keyed `job_id`, labelled `job`; `search(text)` asks the agent's grant verb
-    `{ op: 'search', text }`; `grant(id, path)` asks `{ op: 'add', job_id, path }`, answering `{ ok: true }` or a refusal
-    as `{ ok: false, code, error }`; `revoke(id, path)` asks `{ op: 'delete', job_id, path }`; `stream(job)` takes the agent
-    stream's grant rows (`{ agent: { table: 'grant', row } }`, removed when revoked), and no job row nor the node's own
-    grants.
-
 ## Requirements (goal/G41.21, box v17)
 
 - **The right strip gets its first real tool: the bundle editor.** Two right tools: the agent server's DEBUG box
   (`server`) and the bundle editor, whose mount requires `spirit/element/bundleEditor.js` and makes it in the box it is
-  handed, with the app's api.
-- **The Grants tool goes**: the left strip holds the app's tool and one per table, provider, model, persona and job; the
+  handed.
+- **The Grants tool goes**: the left strip holds one tool per table, provider, model, persona and job; the
   app names no grants panel and no grant table.
 
 ### 💬 Select Persona, and the chat it opens (goal/G41.26)
@@ -71,19 +49,18 @@ Andy, box: *"the left site icon strip gains a [chat] icon, that opens the follow
 Persona\""*, *"this new panel, below the title contains, for now, only a personaSelector:pane."*, *"When the user clicks
 on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows up in the center pane of workBench"*.
 
-- The left strip holds one more tool beside the app's and the tables': icon 💬, title `Select Persona`.
+- The left strip holds one more tool beside the tables': icon 💬, title `Select Persona`.
 - Mounted, it loads the agent tables' element itself and draws its title row, 💬 Select Persona, then, in a box of its
-  own, only a personaSelector:pane: the persona table's search in pane mode (`agentDetail.search`, rule/29), with the
-  app's api, and no Add.
-- A persona picked there loads `shell/agent/chatPane.js` and opens the chat pane (`./chatPane.md`) in a closable tab of the
+  own, only a personaSelector:pane: the persona table's search in pane mode (`agentDetail.search`, rule/29), with its
+  `{ verb }`, and no Add.
+- A persona picked there loads `spirit/app/agent/chatPane.js` and opens the chat pane (`./chatPane.md`) in a closable tab of the
   workBench's centre, for that persona; another persona picked opens its own tab beside it (goal/G41.31:
-  `shell/agent/test/agentCentreTabs.md`).
+  `spirit/app/agent/test/agentCentreTabs.md`).
 
 ## What its test must try to break
 
-- A title that shows the bug with only one of the two on.
 - A checkbox that does not follow the server's job in spirit.data.jobs.data, or follows the click instead.
 - A state kept in the cache before the app opened, not shown at once.
-- A call that goes out as a raw verb instead of through the agent's interface.
-- A config saved anywhere but the app's own state folder.
+- A table handed no `{ verb }`, or one that does not reach the server.
+- A file saved at all.
 - A Grants tool left, or a right strip without the bundle editor.

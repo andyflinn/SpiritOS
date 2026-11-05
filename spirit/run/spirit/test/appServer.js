@@ -31,7 +31,7 @@ const PUBLISHER = Buffer.from('KEY-DESK\xfb\xef\xbf\xfe', 'latin1').toString('ba
 const PUBLISHER_HEX = Buffer.from(PUBLISHER, 'base64').toString('hex');
 const SELF = 'KEY-CLIENT';
 // The server families (box v15, Family folders); deskAgent killed on goal/G41.28 (Andy: "all, KILL deskAgent!").
-const FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
+const FAMILIES = ['backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
 
 const TMP = CHILD ? String(process.argv[4]) : fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
 // A server name of the test's own, so its cache folder (relay-state/process/<name>/) is no real server's.
@@ -446,13 +446,6 @@ if (CHILD) {
     const cB = bundlesOf('deskClient');
     ok(!!cB && JSON.stringify(Object.keys(cB)) === '["deskServer"]' && rowOk(cB.deskServer) && JSON.stringify(reach(cB.deskServer, 'deskClient')) === '["streamListener"]',
       'process/js/deskClient/deskClientBundles.json: deskServer, the one deskClient verb desk uses, its stream\'s streamListener', 'deskClientBundles.json: ' + short(cB));
-    const aB = bundlesOf('agent');
-    const AGENT = familyVerbs('agent');
-    // MINUS provider SINCE goal/G41.30 (the review, RH4: "make provider add, set, delete and ask owner-only"; Andy: "we fix
-    // the red from goal/G41.30 AND all the review items here in this item."): a grant cannot separate reads from writes.
-    const AGENT_REMOTE = AGENT.filter(function (v) { return v !== 'provider'; });
-    ok(!!aB && JSON.stringify(Object.keys(aB)) === '["remoteUser"]' && rowOk(aB.remoteUser) && AGENT.indexOf('provider') !== -1 && AGENT_REMOTE.length > 0 && JSON.stringify(reach(aB.remoteUser, 'agent')) === JSON.stringify(AGENT_REMOTE),
-      'process/js/agent/agentBundles.json: remoteUser, the agent family minus FS.* and minus provider', 'agentBundles.json: ' + short(aB) + ', reaches ' + short(reach(aB && aB.remoteUser, 'agent')));
 
     test.subHeading('what goes (box v15)');
     const deskJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.js'), 'utf8');

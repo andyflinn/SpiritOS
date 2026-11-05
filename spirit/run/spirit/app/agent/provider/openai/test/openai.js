@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/agent/provider/openai/test/openai.js
-// The tests of process/js/agent/provider/openai/openai.js, and of no other module (spec: ./openai.md; goal/G41.18). The
+// spirit/run/spirit/app/agent/provider/openai/test/openai.js
+// The tests of spirit/app/agent/provider/openai/openai.js, and of no other module (spec: ./openai.md; goal/G41.18). The
 // provider is a stand-in on 127.0.0.1 that answers as an OpenAI-compatible server does and keeps every request it was
 // asked; nothing here reaches a real provider.
 
@@ -37,7 +37,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
 (async function () {
   test.subHeading('its file');
-  if (!fs.existsSync(FILE)) { test.fail('process/js/agent/provider/openai/openai.js is not there'); return; }
+  if (!fs.existsSync(FILE)) { test.fail('spirit/app/agent/provider/openai/openai.js is not there'); return; }
   let plugin = null;
   try { plugin = require(FILE); } catch (e) { test.fail('it does not load: ' + e.message); return; }
   ok(plugin && typeof plugin.models === 'function', 'it is a plugin: models(provider) -> the provider\'s model list', 'exports: ' + short(plugin && Object.keys(plugin)));

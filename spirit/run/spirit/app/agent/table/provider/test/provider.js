@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/agent/table/provider/test/provider.js
-// The tests of process/js/agent/table/provider/, its server.js, elementTable.js and elementRow.js, and of no other module
+// spirit/run/spirit/app/agent/table/provider/test/provider.js
+// The tests of spirit/app/agent/table/provider/, its server.js, elementTable.js and elementRow.js, and of no other module
 // (spec: ./provider.md; goal/G41.4, goal/G41.18). What the tables share is tested in ../../test/. The server is made on
 // a scratch agent.db as agent.js makes it, with the model table beside it for ask, and the provider ask reaches is a
 // stand-in on 127.0.0.1; the plugins themselves are tested in ../../../provider/. The page files run in node on a window
@@ -238,14 +238,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     call(t.verb, { op: 'delete', id: row });
   }
 
-  test.subHeading('agentBundles.json: a peer holds no way to change or ask a provider (goal/G41.30)');
-  {
-    const bundles = JSON.parse(fs.readFileSync(path.join(RUN, 'process', 'js', 'agent', 'agentBundles.json'), 'utf8'));
-    const branches = (bundles.remoteUser && bundles.remoteUser.branches) || [];
-    ok(branches.length > 0, 'remoteUser holds ' + branches.length + ' branches to ask', 'remoteUser holds no branches: nothing judged');
-    ok(!branches.some(function (b) { return b.family === 'agent' && b.verb === 'provider'; }), 'remoteUser grants no agent.provider: add, set, delete and ask are the owner\'s', 'remoteUser grants agent.provider, whose ops a grant does not separate');
-  }
-
   test.subHeading('the page: elementTable.js and elementRow.js');
   const made = { tables: [], rows: [], required: [] };
   global.window = { spirit: { elements: {
@@ -271,7 +263,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const box = { innerHTML: '' };
   const list = E.providerTable.create(box, api, detail);
   await settle();
-  ok(made.required.indexOf('process/js/agent/table/tableElement.js') !== -1 && made.required.indexOf('process/js/agent/table/provider/elementRow.js') !== -1,
+  ok(made.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/table/provider/elementRow.js') !== -1,
     'elementTable.js requires the shared element and its own row element', 'required: ' + short(made.required));
   const o = made.tables[0] && made.tables[0].o;
   ok(made.tables.length === 1 && made.tables[0].c === box && o.table === 'provider' && o.api === api && o.detail === detail && !o.add,
@@ -296,8 +288,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('elementRow.js loads the agent family\'s cache manager, which takes the provider table\'s rows from the stream (goal/G41.16, G41.28)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
-  // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's data.js's
-  // (process/js/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
+  // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
+  // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
   // node that served them, and is read through spirit.data.agent.data.
   {
     const DATA = global.window.spirit.data;
@@ -308,7 +300,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       'agentReads: ' + short(AD ? AD.branch('provider') : AD));
     // With no manager loaded the check above is red; nothing below would judge anything.
     if (AD) {
-      const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };
+      const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
       const heard = [];
       const off = DATA.watchPath(BRANCH, function (p) { heard.push(p); });
       DATA.takeJob(job({ table: 'provider', row: { id: 'KT', label: 'First', extra: 1 } }));
@@ -333,7 +325,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // a scratch agent.db answer; ./provider-picker.html draws the provider's detail with the real elements in Chrome, on a
   // scratch node with its DEBUG on, and opens its Model field.
   {
-    const ADDRESS = '/DEBUG/process/js/agent/table/provider/test/provider-picker.html';
+    const ADDRESS = '/DEBUG/spirit/app/agent/table/provider/test/provider-picker.html';
     test.subHeading(ADDRESS.slice('/DEBUG'.length) + ': the provider\'s Model field, opened');
     const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
     const pdir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-picker-'));

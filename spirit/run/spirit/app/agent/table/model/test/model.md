@@ -1,6 +1,6 @@
 # model/
 
-`spirit/run/process/js/agent/table/model/` is the model table (goal/G41.4): one model of one provider. Its test is
+`spirit/run/spirit/app/agent/table/model/` is the model table (goal/G41.4): one model of one provider. Its test is
 `./model.js`. What every table shares is specified in `../../test/`.
 
 Andy, box v22: *"a model table, keyed by ID same as the shadow-roll (with Label and Description, provider-key, and
@@ -51,7 +51,7 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
 - **elementRow.js loads the agent family's cache manager, which takes the model table's rows from the stream** (goal/G41.16;
   Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
   asks `spirit.cacheManager('agent')`, and `spirit.data.agent.data.branch('model')` is the home node's `<node>/agent/model`; a row
-  of the agent stream (`{ agent: { table: 'model', row } }`, module `process/js/agent`) lands at `<node>/agent/model/<id>`,
+  of the agent stream (`{ agent: { table: 'model', row } }`, module `spirit.app.agent`) lands at `<node>/agent/model/<id>`,
   read through `spirit.data.agent.data.row`, and the branch's watcher hears it; a changed row is merged; one
   removed, by its id, is gone; another table's rows, another module's, and a row with no id write nothing.
 

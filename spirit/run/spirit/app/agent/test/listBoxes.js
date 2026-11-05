@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/shell/agent/test/listBoxes.js
-// The tests of shell/agent/agent.js as one app, and of no other module (spec: ./listBoxes.md; goal/G41.18): every list
+// spirit/run/spirit/app/agent/test/listBoxes.js
+// The tests of spirit/app/agent/agent.js as one app, and of no other module (spec: ./listBoxes.md; goal/G41.18): every list
 // pane it draws stands in a box of a stated size, each box above it up to the app too (rule/16). The app runs on a small
 // page, with the real workBench, the real table elements in it; the search element is a
 // recorder that keeps the box each list was made in, and the selectors and the agent server are stand-ins.
@@ -9,11 +9,11 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../..');
+const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
 
-const FILE = path.join(__dirname, '..', 'agent.js');
+const FILE = path.join(__dirname, '..', 'browserAgent.js');
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
@@ -131,13 +131,13 @@ function makeDom() {
 // The real files the app and its elements load, run on the page when they are required; anything else is answered and
 // not run.
 const REAL = [
-  'spirit/data.js', 'spirit/element/workBench.js', 'process/js/agent/table/tableElement.js', 'process/js/agent/table/rowElement.js',
-  'process/js/agent/table/provider/elementTable.js', 'process/js/agent/table/provider/elementRow.js',
-  'process/js/agent/table/model/elementTable.js', 'process/js/agent/table/model/elementRow.js', 'spirit/element/busyButton.js',
+  'spirit/data.js', 'spirit/element/workBench.js', 'spirit/app/agent/table/tableElement.js', 'spirit/app/agent/table/rowElement.js',
+  'spirit/app/agent/table/provider/elementTable.js', 'spirit/app/agent/table/provider/elementRow.js',
+  'spirit/app/agent/table/model/elementTable.js', 'spirit/app/agent/table/model/elementRow.js', 'spirit/element/busyButton.js',
   // The one-row form and the icon it draws with (goal/G41.27): the model table's Ask form is one.
   'spirit/element/rowForm.js', 'spirit/element/icon.js',
-  'process/js/agent/table/persona/elementTable.js', 'process/js/agent/table/persona/elementRow.js',
-  'process/js/agent/table/job/elementTable.js', 'process/js/agent/table/job/elementRow.js',
+  'spirit/app/agent/table/persona/elementTable.js', 'spirit/app/agent/table/persona/elementRow.js',
+  'spirit/app/agent/table/job/elementTable.js', 'spirit/app/agent/table/job/elementRow.js',
 ];
 
 function world() {
@@ -158,7 +158,6 @@ function world() {
     familyPath: familyPath, isBrowser: function () { return true; },
     fs: { loadFile: function () { return Promise.reject(new Error('none')); }, saveFile: function () { return Promise.resolve(); } },
     tree: function () { return Promise.resolve({}); },
-    shell: { activateApp: function (d) { win.def = d; } },
     get element() { return this.elements; }, elements: {
       // The recorder: the box each list is made in, and whether it is a dropdown.
       probabilitySearch: { create: function (host, o) { panes.push({ host: host, o: o || {} }); return { refresh: function () {}, redraw: function () {}, destroy: function () {}, value: '' }; } },
@@ -173,7 +172,7 @@ function world() {
     // A family's cache (goal/G41.28): the family's own manager, a node family's or its server's, run on this page over
     // the real data set.
     cacheManager: function (name) {
-      const at = ['spirit/' + name + '/data.js', 'process/js/' + name + '/data.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); })[0];
+      const at = ['spirit/' + name + '/data.js', 'process/js/' + name + '/data.js', 'spirit/app/' + name + '/data.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); })[0];
       if (!at) return Promise.reject(new Error('the family ' + name + ' has no data.js'));
       if (!loaded[at]) { loaded[at] = true; vm.runInContext(fs.readFileSync(path.join(RUN, at), 'utf8'), win, { filename: at }); }
       return Promise.resolve(true);
@@ -202,7 +201,7 @@ test.startTest('agent.js, as one app: every list in a box of a stated size (rule
 process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
 
 (async function () {
-  if (!fs.existsSync(FILE)) { test.fail('shell/agent/agent.js is not there'); return; }
+  if (!fs.existsSync(FILE)) { test.fail('spirit/app/agent/browserAgent.js is not there'); return; }
   // Andy, on G41.18: "the lists violate: rule/16 — A list gets a box of a stated size. Files and contacts do it right,
   // agents must as well."; "ALL lists, otherwise my took bars at the top of a container keep scrolling away...."; "when a
   // probabilitySearch is in pane-mode it must display 1) filters 2) search input row 3) a pane that uses the rest of the
@@ -212,8 +211,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const w = world();
   const app = w.document.body.appendChild(w.document.createElement('div'));
   app.className = 'fill';
-  w.win.def.mount(app, { setScreenTitle: function () {}, onJobs: function () {}, onPublished: function () {}, ui: {}, escapeHtml: w.win.spirit.escapeHtml,
-    verb: function () { return Promise.resolve({ status: 200, body: { items: [], more: false } }); } });
+  // A tile hands it only its container (goal/G43.13).
+  w.win.spirit.elements.agent.create(app);
   await settle();
   let modelOrder = null;
   // Where, in the app's order of elements, the Models title rows, the Ask row (its providerSelector:dropdown, since

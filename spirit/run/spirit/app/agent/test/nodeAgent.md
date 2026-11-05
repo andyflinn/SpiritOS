@@ -1,4 +1,4 @@
-# process/js/agent/agent.js
+# spirit/app/agent/nodeAgent.js
 
 The agent server (goal/G41.1): the server process behind the agent face app. It keeps all of the app's state, in
 `agent.db`, an SQLite database, and streams that state to its clients. In this item its state is its DEBUG state.
@@ -8,17 +8,14 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 ## Its files
 
-- `process/js/agent/agent.js`, the server, started by the node.
-- `process/js/agent/agent.json`, its manifest: a server (`kind: "server"`) the node operates (`operated: "node"`). It
-  names no `runs`.
-- No sidecar beside its code, and its manifest names neither `runs` nor `intrinsic`: whether a node runs it is that
-  node's own state, `relay-state/process/agent/agent.js.sidecar.json` (`face.home`, goal/G41.1, box v16-v17).
-- `process/js/agent/agent.family/api.js`, its interface: the verb `debug` with `on`, a `bool`.
-- `process/js/agent/agent.family/debug.json`, the verb's description and request.
+- `spirit/app/agent/nodeAgent.js`, the server. The node starts `agent.js` (`./agent.md`), which loads it.
+- `spirit/app/agent/agent.json`, its manifest, in the new shape: `node.mount` true, no `kind`, no `operated`.
+- `spirit/app/agent/api/api.js`, its interface: the verb `debug` with `on`, a `bool`.
+- `spirit/app/agent/api/debug.json`, the verb's description and request.
 
 ## Its state
 
-- In the folder the node hands it as `--state`, which is `relay-state/process/agent/` on a node: never in git.
+- In the folder the node hands it as `--state`, which is `spirit/state/agent/data/` on a node: never in git.
 - `agent.db` is created there at start, an SQLite database.
 - `config.json` there holds `{ "debug": <true or false> }`.
 
@@ -38,7 +35,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 - **agent.grant is removed altogether**: agent.db holds four tables, provider, model, persona and job; an agent.db that
   held a grant table from before loses it at start (*"its rows in agent.db are dropped"*). The interface declares four
-  verbs, no grant, and `process/js/agent/table/grant` is gone.
+  verbs, no grant, and `spirit/app/agent/table/grant` is gone.
 - The provider table has `model`; the job table `bundle`, `provider` and `persona`.
 
 ### No description, no model name (goal/G41.21)
@@ -65,7 +62,7 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
 - **No secret leaves the process** (Andy: API_KEY "will never reach the browser or any place outside of the agent
   process except the model providers API"; "The private halves of that set stay in the agent process"): no answer of
   add, set, get or search carries the API key or a private key.
-- **The folders**: process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for provider,
+- **The folders**: spirit/app/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for provider,
   model, persona and job; grant with server.js alone, its page files gone since goal/G41.16 (the grants panel,
   spirit/element/grantsPanel.js, configured by the agent app, draws the grants by job). The table servers publish their rows.
 - Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.

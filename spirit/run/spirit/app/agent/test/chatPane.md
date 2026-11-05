@@ -1,4 +1,4 @@
-# shell/agent/chatPane.js
+# spirit/app/agent/chatPane.js
 
 The chat with a persona, in the Agent app's centre (goal/G41.26). The Agent app opens it when a persona is picked in
 its 💬 Select Persona panel (`./agent.md`). Its test is `./chatPane.js`.
@@ -21,7 +21,7 @@ Chat input row is filled by an upward scrolling chat log."*, *"how the chat will
 
 - **Its title**, `💬 Chat with <the persona's label>`, the label escaped, pinned to the top of the container.
 - **Its title's font size** is that of every other pane title of the agent UI, the title row the agent tables draw
-  (`process/js/agent/table/tableElement.js`, `agentDetail.titleRow`). Andy, on G41.26: *"the title row in the chat panel
+  (`spirit/app/agent/table/tableElement.js`, `agentDetail.titleRow`). Andy, on G41.26: *"the title row in the chat panel
   (center or workBench) must have the same font size as all other pane-titles in the agent UI"*. The page measures
   once the title is drawn, since the pane may draw it after what it loads itself.
 - **Its input row**, pinned to the bottom: an input line that takes newlines (a textarea), and a Send button at the
@@ -32,7 +32,7 @@ Chat input row is filled by an upward scrolling chat log."*, *"how the chat will
 - **No component of the desk**: its code names none.
 
 Asked of a real browser, since pinned rows and a filling log are layout: `./chatPane-laid.html`, opened at
-`/DEBUG/shell/agent/test/chatPane-laid.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`), the pane
+`/DEBUG/spirit/app/agent/test/chatPane-laid.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`), the pane
 in a centre of 500 by 400.
 
 ## What its test must try to break

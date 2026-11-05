@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/agent/test/agent.js
-// The tests of process/js/agent/agent.js, and of no other module (spec: ./agent.md; goal/G41.1). The server is started
+// spirit/run/spirit/app/agent/test/agent.js
+// The tests of spirit/app/agent/agent.js, and of no other module (spec: ./agent.md; goal/G41.1). The server is started
 // as the node starts it, on a pipe of the test's own and a scratch --state folder, and asked through the pipe. It is
 // started without a job id, so what it publishes reaches no node.
 
@@ -25,18 +25,11 @@ test.startTest('agent.js: the agent server');
 
 (async function () {
   test.subHeading('its files');
-  if (!fs.existsSync(SERVER)) { test.fail('process/js/agent/agent.js is not there'); return; }
+  if (!fs.existsSync(SERVER)) { test.fail('spirit/app/agent/agent.js is not there'); return; }
   const manifest = readJson(path.join(DIR, 'agent.json')) || {};
-  ok(manifest.kind === 'server' && manifest.operated === 'node', 'its manifest says a server the node operates', 'agent.json: ' + short(manifest));
-  // Found on his node: not run at home, its face app's debug reached nobody. Its home switch is its own sidecar's, the only
-  // place (goal/G41.1, box v13).
-  // Since box v16-v17 that switch is each node's own state, relay-state/process/agent/agent.js.sidecar.json: nothing
-  // beside the code says it, and its manifest names neither runs nor intrinsic.
-  ok(!fs.existsSync(path.join(DIR, 'agent.js.sidecar.json')) && !Object.prototype.hasOwnProperty.call(manifest, 'runs') && !Object.prototype.hasOwnProperty.call(manifest, 'intrinsic'),
-    'whether a node runs it is that node\'s own: no sidecar beside its code, and its manifest names neither runs nor intrinsic',
-    'sidecar beside the code ' + fs.existsSync(path.join(DIR, 'agent.js.sidecar.json')) + ', manifest ' + short(manifest));
-  // Its family folder where the one family path function finds it (goal/G41.12).
-  const API = path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath('agent'));
+  ok(manifest.node && manifest.node.mount === true && !('kind' in manifest) && !('operated' in manifest), 'its manifest says a server the node runs, in the new shape', 'agent.json: ' + short(manifest));
+  // Its family folder is ./api/ (goal/G43.12).
+  const API = path.join(DIR, 'api', 'api.js');
   let family = null;
   try { family = require(API); } catch (e) { family = null; }
   ok(family && family.verbs && family.verbs.debug && family.verbs.debug.on === 'bool', 'its interface declares debug with on, a bool',
@@ -149,11 +142,11 @@ test.startTest('agent.js: the agent server');
     // goal/G41.26: the persona's provider is declared as the job's is, a key the call may leave out.
     ok(verbs.persona && verbs.job && verbs.persona.provider === verbs.job.provider && /^key\??$/.test(String(verbs.persona.provider || '')), 'the persona verb takes a provider, declared as the job\'s', 'persona: ' + short(verbs.persona) + ', job.provider ' + short(verbs.job && verbs.job.provider));
     const files = [];
-    TABLES.forEach(function (t) { ['server.js', 'elementTable.js', 'elementRow.js'].forEach(function (f) { files.push(path.join('process', 'js', 'agent', 'table', t, f)); }); });
+    TABLES.forEach(function (t) { ['server.js', 'elementTable.js', 'elementRow.js'].forEach(function (f) { files.push(path.join('spirit', 'app', 'agent', 'table', t, f)); }); });
     const absent = files.filter(function (f) { return !fs.existsSync(path.join(RUN, f)); });
-    ok(!absent.length, 'each table has its folder process/js/agent/table/<name>/ with server.js, elementTable.js and elementRow.js', absent.length + ' of 12 missing: ' + absent.join(', '));
-    // goal/G41.21: "With it go its folder (process/js/agent/table/grant)".
-    ok(!fs.existsSync(path.join(RUN, 'process', 'js', 'agent', 'table', 'grant')), 'the grant table\'s folder process/js/agent/table/grant is gone', 'process/js/agent/table/grant is still there');
+    ok(!absent.length, 'each table has its folder spirit/app/agent/table/<name>/ with server.js, elementTable.js and elementRow.js', absent.length + ' of 12 missing: ' + absent.join(', '));
+    // goal/G41.21: "With it go its folder (spirit/app/agent/table/grant)".
+    ok(!fs.existsSync(path.join(RUN, 'spirit', 'app', 'agent', 'table', 'grant')), 'the grant table\'s folder spirit/app/agent/table/grant is gone', 'spirit/app/agent/table/grant is still there');
     const served = (await ask('DEBUG', {})).status === 200;
     const answers = {};
     for (const t of TABLES) answers[t] = await ask(t, {});
@@ -210,7 +203,7 @@ test.startTest('agent.js: the agent server');
     ok(verbs.provider && !(junk.body && junk.body.code === 'no-such-verb') && !(junk.status === 200 && junk.body && junk.body.ok !== false), 'any other action of the verb is refused', 'provider {op: fly}: ' + short(junk.body || junk));
     look2.close();
     // What the server publishes carries no secret: read in its code, since a test server's stream reaches no node.
-    const srvCode = TABLES.map(function (t) { try { return fs.readFileSync(path.join(RUN, 'process', 'js', 'agent', 'table', t, 'server.js'), 'utf8'); } catch (e) { return ''; } }).filter(Boolean).join('\n');
+    const srvCode = TABLES.map(function (t) { try { return fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'table', t, 'server.js'), 'utf8'); } catch (e) { return ''; } }).filter(Boolean).join('\n');
     ok(srvCode.length > 0 && /publish\(/.test(srvCode + fs.readFileSync(SERVER, 'utf8')), 'the table servers publish their rows to the stream', 'no publish in the table servers');
 
     test.subHeading('the state persists across restarts');

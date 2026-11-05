@@ -1,13 +1,13 @@
 'use strict';
 
-// spirit/run/shell/agent/test/chatPane.js
-// The tests of shell/agent/chatPane.js, and of no other module (spec: ./chatPane.md; goal/G41.26). Asked of a real
+// spirit/run/spirit/app/agent/test/chatPane.js
+// The tests of spirit/app/agent/chatPane.js, and of no other module (spec: ./chatPane.md; goal/G41.26). Asked of a real
 // browser, since a title pinned to the top, an input row pinned to the bottom and a log filling between are layout:
 // ./chatPane-laid.html, on a scratch node with its DEBUG on, puts the chat pane in a centre of a stated size.
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '../../..');
+const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'chatPane.js');
@@ -16,11 +16,11 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const near = function (a, b) { return typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) <= 2; };
 
-const ADDRESS = '/DEBUG/shell/agent/test/chatPane-laid.html';
+const ADDRESS = '/DEBUG/spirit/app/agent/test/chatPane-laid.html';
 test.startTest('chatPane.js: the chat with a persona, in the centre');
 
 (async function () {
-  ok(fs.existsSync(FILE), 'shell/agent/chatPane.js exists', 'there is no shell/agent/chatPane.js');
+  ok(fs.existsSync(FILE), 'spirit/app/agent/chatPane.js exists', 'there is no spirit/app/agent/chatPane.js');
   // Andy, box: "NO component from \"desk\" will be used."
   const code = fs.existsSync(FILE) ? fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '') : '';
   ok(fs.existsSync(FILE) && !/desk/i.test(code), 'it uses no component of the desk: its code names none', 'chatPane.js names the desk');

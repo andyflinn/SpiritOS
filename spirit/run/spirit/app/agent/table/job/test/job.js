@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/agent/table/job/test/job.js
-// The tests of process/js/agent/table/job/, its server.js, elementTable.js and elementRow.js, and of no other module
+// spirit/run/spirit/app/agent/table/job/test/job.js
+// The tests of spirit/app/agent/table/job/, its server.js, elementTable.js and elementRow.js, and of no other module
 // (spec: ./job.md; goal/G41.4). What the tables share is tested in ../../test/. The server is made on a scratch
 // agent.db as agent.js makes it; the page files run in node on a window of their own, the shared elements stubs that
 // keep what they were handed.
@@ -130,7 +130,7 @@ test.startTest('job/: the job table');
   const box = { innerHTML: '' };
   const list = E.jobTable.create(box, api, detail);
   await settle();
-  ok(made.required.indexOf('process/js/agent/table/tableElement.js') !== -1 && made.required.indexOf('process/js/agent/table/job/elementRow.js') !== -1,
+  ok(made.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/table/job/elementRow.js') !== -1,
     'elementTable.js requires the shared element and its own row element', 'required: ' + short(made.required));
   const o = made.tables[0] && made.tables[0].o;
   ok(made.tables.length === 1 && made.tables[0].c === box && o.table === 'job' && o.api === api && o.detail === detail && !o.add,
@@ -155,8 +155,8 @@ test.startTest('job/: the job table');
 
   test.subHeading('elementRow.js loads the agent family\'s cache manager, which takes the job table\'s rows from the stream (goal/G41.16, G41.28)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
-  // means for this table, process/js/agent/table/data.js until G41.16, is the agent family's data.js's
-  // (process/js/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
+  // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
+  // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
   // node that served them, and is read through spirit.data.agent.data.
   {
     const DATA = global.window.spirit.data;
@@ -167,7 +167,7 @@ test.startTest('job/: the job table');
       'agentReads: ' + short(AD ? AD.branch('job') : AD));
     // With no manager loaded the check above is red; nothing below would judge anything.
     if (AD) {
-      const job = function (agent, module) { return { id: 'job-agent', module: module || 'process/js/agent', data: {}, app: { agent: agent } }; };
+      const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
       const heard = [];
       const off = DATA.watchPath(BRANCH, function (p) { heard.push(p); });
       DATA.takeJob(job({ table: 'job', row: { id: 'KT', label: 'First', extra: 1 } }));

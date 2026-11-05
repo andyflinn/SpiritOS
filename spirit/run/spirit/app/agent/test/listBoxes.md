@@ -1,4 +1,4 @@
-# shell/agent/agent.js, as one app: every list in a box of a stated size
+# spirit/app/agent/agent.js, as one app: every list in a box of a stated size
 
 The agent app's lists, walked from each list to the app (goal/G41.18; rule/16). Its test is `./listBoxes.js`. The app
 runs on a small page (the one Desk's suite drives, copied) with the real workBench, table elements and grants panel. The
@@ -24,7 +24,7 @@ asks that of the app as a whole, the way Desk's does (`shell/desk/test/desk.md`,
 - The app mounts into a `fill` box of the whole app area.
 - Shown by its strip button, the list pane of each tool stands in a `fill` box, and so does every box from it up to the
   app:
-  - provider, model, persona and job: the table's list (`process/js/agent/table/tableElement.js`);
+  - provider, model, persona and job: the table's list (`spirit/app/agent/table/tableElement.js`);
   - grant: the grants panel's grant list (`spirit/element/grantsPanel.js`, `spirit/element/grantSelector/listElement.js`).
 - Every list pane the app drew, five at least, meets the same rule. A list drawn as a dropdown stands inline, as every
   picker in the tree does, and is not asked.

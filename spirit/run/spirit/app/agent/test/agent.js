@@ -1,0 +1,212 @@
+'use strict';
+
+// spirit/run/spirit/app/agent/test/agent.js
+// The tests of spirit/app/agent/agent.js, and of the Agent as Andy sees it (spec: ./agent.md; goal/G43.13). Andy: "Make
+// spirit/app/agent/ work". A real node on a scratch copy of the tracked files, and real clicks in a real Chrome on the appSelector,
+// made as appMigration makes it. Neither Andy's node nor an agent's is touched.
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { spawn, execSync } = require('child_process');
+const RUN = path.resolve(__dirname, '../../../..');
+const REPO = path.resolve(RUN, '..', '..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+
+function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
+function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
+
+const MODULE = 'spirit.app.agent';
+const ROWS = { provider: 'zzProvider', model: 'zzModel', persona: 'zzPersona', job: 'zzJob' };
+
+function scratch() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-agent-'));
+  execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+    .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
+    .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  return { root: root, run: path.join(root, 'spirit', 'run') };
+}
+async function call(base, verb, args) {
+  try {
+    const r = await fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: verb, args: args || {} }) });
+    const text = await r.text();
+    return { status: r.status, text: text, body: parsed(text) };
+  } catch (e) { return { status: 0, text: String(e && e.message), body: null }; }
+}
+async function boot(run) {
+  const port = await freePort();
+  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  const base = 'http://127.0.0.1:' + port;
+  const up = await until(function () { return call(base, 'api').then(function (r) { return r.status === 200; }); }, 60000);
+  return { child: child, base: base, up: !!up };
+}
+function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== null) return r(); c.once('exit', function () { r(); }); c.kill(); setTimeout(r, 6000); }); }
+async function liveJob(base) {
+  const found = await call(base, 'jobs.search', { q: '' });
+  const rows = await Promise.all(((found.body && found.body.items) || []).map(function (i) { return call(base, 'jobs.get', { key: i.key }); }));
+  return rows.map(function (r) { return r.body && r.body.job; }).filter(function (j) { return !!j && j.kind === 'server' && j.module === MODULE && (j.status === 'running' || j.status === 'pending'); })[0] || null;
+}
+function answers(r) { return r.status === 200 && !!r.body && typeof r.body.debug === 'boolean'; }
+function serverUp(base) { return until(function () { return call(base, 'agent.debug', { on: false }).then(answers); }, 30000); }
+// Every file under a folder.
+function filesUnder(dir) {
+  const out = [];
+  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
+  return out;
+}
+
+test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/G43.13)');
+
+(async function () {
+  const s = scratch();
+  const live = [];
+  let c = null;
+  try {
+    let N = await boot(s.run); live.push(N.child);
+    ok(N.up, 'the world: a scratch node comes up', 'the scratch node did not come up: nothing judged');
+    if (!N.up) return;
+    const where = findChrome();
+    if (!where) { test.fail('no Chrome here: nothing judged'); return; }
+    c = await chromePage(where);
+    if (c.error) { test.fail('Chrome: ' + c.error); return; }
+    const open = async function () {
+      await c.send('Page.navigate', { url: N.base + '/' });
+      return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+    };
+    ok(await open(), 'the world: the page has its spirit', 'the page has no spirit: nothing judged');
+    // The appSelector, as appMigration makes it, over the page. A second call replaces the first.
+    const selector = function (face) {
+      return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.elements.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
+    };
+    const shown = function () { return c.evaluate('(document.getElementById("zzBox") || {}).innerText || ""').then(String); };
+    const shows = function (words) { return until(function () { return shown().then(function (t) { return t.indexOf(words) !== -1; }); }, 8000); };
+    // The innermost visible thing in the box that says these words, clicked.
+    const press = function (words) {
+      return c.evaluate('(function () { var box = document.getElementById("zzBox"); var all = Array.prototype.slice.call(box.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && String(e.innerText || "").trim().indexOf(' + JSON.stringify(words) + ') !== -1 && !Array.prototype.some.call(e.children, function (k) { return String(k.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }); }); if (!all.length) return false; all[0].click(); return true; }())');
+    };
+    // The installer button on the row that names the Agent.
+    const pressInstaller = function () {
+      return c.evaluate('(function () { var bs = Array.prototype.slice.call(document.querySelectorAll("#zzBox button.app-installer")); for (var i = 0; i < bs.length; i++) { var p = bs[i].parentElement; while (p && !String(p.innerText || "").replace(bs[i].innerText, "").trim()) p = p.parentElement; if (p && /Agent/.test(p.innerText)) { bs[i].click(); return bs[i].innerText; } } return ""; }())');
+    };
+    const tool = function (name) { return c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=' + name + ']"); if (!b) return false; b.click(); return true; }())'); };
+
+    test.subHeading('the box: active is its one switch; before it nothing runs');
+    ok(!(await liveJob(N.base)), 'not active: no server job', 'a server job before Activate');
+    ok(!answers(await call(N.base, 'agent.debug', { on: false })), 'not active: its verbs are not answered', 'its verb answered before Activate');
+    await selector('pane');
+    ok(await shows('Agent'), 'its row is in the appSelector\'s pane', 'the pane: ' + short(await shown()));
+    await selector('tiles');
+    await sleep(1500);
+    ok((await shown()).indexOf('Agent') === -1, 'and no tile yet', 'tiles: ' + short(await shown()));
+
+    test.subHeading('the box: "Activate in the appSelector, and the server starts."');
+    await selector('pane');
+    await shows('Agent');
+    const pressed = await until(function () { return pressInstaller().then(function (t) { return t === 'Activate'; }); }, 10000);
+    ok(pressed, 'the world: its row has an Activate button, and it is pressed', 'no Activate on the Agent\'s row: ' + short(await shown()));
+    ok(await serverUp(N.base), 'pressed, the server answers its verbs', 'pressed, agent.debug: ' + short((await call(N.base, 'agent.debug', { on: false })).text));
+    if (!answers(await call(N.base, 'agent.debug', { on: false }))) { test.fail('no server, so nothing further is judged'); return; }
+    ok(!!(await liveJob(N.base)), 'its job has the id ' + MODULE, 'no live job with that id');
+    const db = path.join(s.run, 'spirit', 'state', 'agent', 'data', 'agent.db');
+    ok(fs.existsSync(db), 'its rows are kept in spirit/state/agent/data/', 'no agent.db in spirit/state/agent/data/');
+
+    // Rows for the tables to show, made by the server's verbs as they ever were.
+    const P = await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: ROWS.provider, url: 'http://192.0.2.1:9/' });
+    const M = await call(N.base, 'agent.model', { op: 'add', icon: '🧬', label: ROWS.model, providerId: P.body && P.body.id });
+    const Pe = await call(N.base, 'agent.persona', { op: 'add', icon: '🧙', label: ROWS.persona, persona: 'zz', bundle: 'zz', provider: P.body && P.body.id });
+    const J = await call(N.base, 'agent.job', { op: 'add', icon: '🧰', label: ROWS.job, job: 'zz', bundle: 'zz', provider: P.body && P.body.id, persona: Pe.body && Pe.body.id });
+    ok([P, M, Pe, J].every(function (r) { return r.status === 200 && r.body && r.body.id; }), 'the world: the server takes a provider, a model, a persona and a job', 'rows: ' + short([P.text, M.text, Pe.text, J.text]));
+
+    const openTile = async function () {
+      await selector('tiles');
+      await shows('Agent');
+      await press('Agent');
+      return until(function () { return c.evaluate('!!document.querySelector("#zzBox [data-tool=provider]")'); }, 15000);
+    };
+    test.subHeading('the box: "The Agent\'s tile opens, its tables work, and its rows are there"');
+    ok(await openTile(), 'its tile opens the app', 'the tile opened nothing: ' + short(await shown()));
+    for (const name of Object.keys(ROWS)) {
+      const hit = await tool(name);
+      ok(hit && await shows(ROWS[name]), 'the ' + name + ' table shows its row, ' + ROWS[name], 'the ' + name + ' tool: ' + short(await shown()));
+    }
+
+    test.subHeading('the box: "data.js takes the id spirit.app.agent": a row the server adds comes live');
+    await tool('provider');
+    await shows(ROWS.provider);
+    const before = await shown();
+    ok(before.indexOf('zzLive') === -1, 'the world: the row is not there yet', 'the row was there before it was made');
+    await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.1:9/' });
+    ok(await shows('zzLive'), 'it shows with no reload', 'after the add: ' + short(await shown()));
+
+    test.subHeading('the box: "The server\'s debug switch stays, in its own config.json in spirit/state/agent/data/"');
+    await tool('server');
+    const boxTicked = function () { return c.evaluate('(function () { var i = document.querySelector("#zzBox input[type=checkbox]"); return i ? i.checked : null; }())'); };
+    ok(await until(function () { return boxTicked().then(function (v) { return v === false; }); }, 8000), 'its checkbox is there, off', 'the checkbox: ' + short(await boxTicked()));
+    await c.evaluate('document.querySelector("#zzBox input[type=checkbox]").click(); 1');
+    const config = path.join(s.run, 'spirit', 'state', 'agent', 'data', 'config.json');
+    ok(await until(function () { return Promise.resolve((readJson(config) || {}).debug === true); }, 8000), 'ticked, the server\'s config.json says debug true', 'config.json: ' + short(readJson(config)));
+    ok(await until(function () { return boxTicked().then(function (v) { return v === true; }); }, 8000), 'and the checkbox follows the server', 'the checkbox: ' + short(await boxTicked()));
+
+    test.subHeading('the box: "The tick box showDebug goes, with its use of relay-state/shell/agent/config.json"');
+    const page = await c.evaluate('document.getElementById("zzBox").innerText').then(String);
+    ok(!/DEBUG state in the title bar/.test(page), 'the tick box is not on the page', 'the page still says it');
+    ok(!fs.existsSync(path.join(s.run, 'relay-state', 'shell', 'agent', 'config.json')), 'and relay-state/shell/agent/config.json is not written', 'that file is there');
+
+    test.subHeading('the tile closes');
+    const closed = await c.evaluate('(function () { var b = document.querySelector("#zzBox .app-container-close"); if (!b) return false; b.click(); return true; }())');
+    ok(closed && await until(function () { return c.evaluate('!document.querySelector("#zzBox [data-tool=provider]")'); }, 8000), 'closed, the app is gone from the page', 'closing: ' + closed);
+    ok(await openTile(), 'and it opens again', 'it did not open again: ' + short(await shown()));
+
+    test.subHeading('the box: "Deactivate, and the server stops and the tile goes."');
+    await selector('pane');
+    await shows('Agent');
+    const deact = await until(function () { return pressInstaller().then(function (t) { return t === 'Deactivate'; }); }, 10000);
+    ok(deact, 'the world: its row has a Deactivate button, and it is pressed', 'no Deactivate on the Agent\'s row: ' + short(await shown()));
+    ok(await until(function () { return liveJob(N.base).then(function (j) { return !j; }); }, 15000), 'pressed, the server stops', 'a live server job stayed');
+    ok(!answers(await call(N.base, 'agent.debug', { on: false })), 'and its verbs are not answered', 'its verb answered after Deactivate');
+    ok(await shows('Agent'), 'its row stays in the pane', 'the pane: ' + short(await shown()));
+    await selector('tiles');
+    await sleep(1500);
+    ok((await shown()).indexOf('Agent') === -1, 'and its tile goes', 'tiles: ' + short(await shown()));
+
+    test.subHeading('the box: "its rows are there, from the same spirit/state/agent/data/": through a restart, active again');
+    await call(N.base, 'app.active', { key: 'agent', active: true });
+    await serverUp(N.base);
+    await stop(N.child);
+    N = await boot(s.run); live.push(N.child);
+    ok(N.up && await serverUp(N.base), 'a restarted node starts it', 'a restarted node did not start it');
+    await open();
+    ok(await openTile(), 'its tile opens', 'its tile did not open: ' + short(await shown()));
+    await tool('provider');
+    ok(await shows(ROWS.provider), 'and the row made before is there', 'the provider tool: ' + short(await shown()));
+
+    test.subHeading('the box: "The agent has no sidecar. Nothing in this item reads, writes or tests one"');
+    const sidecars = filesUnder(path.join(s.run, 'relay-state')).concat(filesUnder(path.join(s.run, 'spirit', 'state'))).concat(filesUnder(path.join(s.run, 'spirit', 'app', 'agent')))
+      .filter(function (f) { return /agent[^/\\]*\.sidecar\.json$/.test(f); });
+    ok(!sidecars.length, 'after all that, no sidecar of the agent stands anywhere', 'sidecars: ' + short(sidecars));
+    const code = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.js$/.test(f); })
+      .filter(function (f) { return /sidecar/i.test(fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')); }).map(function (f) { return path.relative(RUN, f); })
+      .filter(function (f) { return f !== path.relative(RUN, __filename); });
+    ok(!code.length, 'and no code or test of the agent names one', 'naming one: ' + short(code));
+
+    test.subHeading('the box: "The agent\'s files name their new paths."');
+    const old = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.(js|html)$/.test(f); })
+      .filter(function (f) { return /process\/js\/agent|shell\/agent/.test(fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')); }).map(function (f) { return path.relative(RUN, f); })
+      .filter(function (f) { return f !== path.relative(RUN, __filename); });
+    ok(!old.length, 'no code of the agent names its old folders', 'naming them: ' + short(old));
+
+    test.subHeading('nothing threw on the page');
+    const thrown = c.heard.filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
+    ok(!thrown.length, 'no uncaught error on the page, all the way', 'thrown: ' + short(thrown));
+    await stop(N.child);
+  } finally {
+    live.forEach(function (x) { try { x.kill(); } catch (e) { /* gone */ } });
+    if (c && c.kid) { try { c.kid.kill(); } catch (e) { /* gone */ } }
+    await sleep(300);
+    try { fs.rmSync(s.root, { recursive: true, force: true }); } catch (e) { /* a door still closing; the temp folder keeps it */ }
+  }
+}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
+  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

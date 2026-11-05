@@ -1,0 +1,32 @@
+# spirit/app/agent/agent.js
+
+The Agent in `spirit/app/agent/`, as Andy sees it (goal/G43.13). Its test is `./agent.js`: a real node on a scratch copy of the tracked files, and real clicks in a real Chrome on the appSelector, made as appMigration makes it.
+
+`agent.js` is a few lines: on a page it loads `browserAgent.js`, in a node `nodeAgent.js`. Their own suites are `./browserAgent.md` and `./nodeAgent.md`.
+
+## Requirements
+
+### Its one switch
+
+- `active` in `spirit/state/agent/node.json` is its one switch. Before Activate no server job runs, its verbs are not answered, its row is in the pane and it has no tile.
+- Activate on its row starts the server, under the job id `spirit.app.agent`, with its rows in `spirit/state/agent/data/`.
+- Deactivate stops the server. Its row stays in the pane and its tile goes.
+- A restarted node starts it while it is active, and the rows made before are there.
+
+### What Andy sees
+
+- Its tile opens the app, and closes and opens again.
+- The provider, model, persona and job tables each show their row.
+- A row the server adds shows with no reload, through `data.js` and the id `spirit.app.agent`.
+- The server's debug switch works: ticked, `spirit/state/agent/data/config.json` says debug true, and the checkbox follows the server.
+- Nothing throws on the page.
+
+### What goes
+
+- The tick box `showDebug` is off the page, and `relay-state/shell/agent/config.json` is not written.
+- No sidecar of the agent stands anywhere, and no code or test of the agent names one.
+- No code of the agent names `process/js/agent` or `shell/agent`.
+
+## Not judged here
+
+- What the box puts out of this item: bundles, faces and puppets, and a tag.

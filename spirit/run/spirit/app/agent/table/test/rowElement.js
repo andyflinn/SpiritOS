@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/agent/table/test/rowElement.js
-// The tests of process/js/agent/table/rowElement.js, and of no other module (spec: ./rowElement.md; goal/G41.4, goal/G41.28).
+// spirit/run/spirit/app/agent/table/test/rowElement.js
+// The tests of spirit/app/agent/table/rowElement.js, and of no other module (spec: ./rowElement.md; goal/G41.4, goal/G41.28).
 // Its tables' shared element (../tableElement.js, spirit.elements.agentDetail) is part of its tree and runs real beside it.
 // The browser file runs in node on a window of its own, over the real spirit.data (spirit/data.js). The boxes,
 // the probabilitySearch element, the icon selector and the agent server's interface are stubs that keep what was asked
@@ -83,7 +83,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
 
 (async function () {
   test.subHeading('its file');
-  if (!fs.existsSync(FILE)) { test.fail('process/js/agent/table/rowElement.js is not there'); return; }
+  if (!fs.existsSync(FILE)) { test.fail('spirit/app/agent/table/rowElement.js is not there'); return; }
   const w = world();
   global.window = { spirit: { get element() { return this.elements; }, elements: {}, familyPath: familyPath, isBrowser: function () { return false; } } };
   global.spirit = global.window.spirit;
@@ -91,7 +91,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   const D = global.window.spirit.data;
   // THE WINDOW AS THE PAGE NOW STARTS (goal/G41.28): the data set knows its home node, the page's own, from node.card,
   // kept as spirit.node.key; a family's cache manager is found by spirit.cacheManager(name), the real one, which in node
-  // reads it from its own disk. The agent family's (process/js/agent/data.js) keeps the tables'
+  // reads it from its own disk. The agent family's (spirit/app/agent/data.js) keeps the tables'
   // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
@@ -143,7 +143,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   await settle();
   // One file, one element (goal/G41.28; the general test: a file registers one element).
   ok(E.agentRow && typeof E.agentRow.create === 'function', 'it registers spirit.elements.agentRow, with create', 'elements: ' + short(Object.keys(E)));
-  ok(w.required.indexOf('process/js/agent/table/tableElement.js') !== -1, 'it loads the tables\' shared element itself, as part of its tree (rule/26)', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1, 'it loads the tables\' shared element itself, as part of its tree (rule/26)', 'required: ' + short(w.required));
   ok(!/E\.agentTable\s*=/.test(fs.readFileSync(FILE, 'utf8')), 'and registers no other element: agentTable is tableElement.js\'s', 'rowElement.js assigns agentTable');
   if (!E.agentRow) return;
 
