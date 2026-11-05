@@ -1,4 +1,4 @@
-// spirit/run/shell/agent/chatPane.js
+// spirit/run/spirit/app/agent/chatPane.js
 // THE CHAT WITH A PERSONA, IN THE AGENT APP'S CENTRE (goal/G41.26). The Agent app opens it when a persona is picked in its
 // 💬 Select Persona panel (./agent.js). Its contract and its test: ./test/chatPane.md and ./test/chatPane.js.
 // Andy, box: "the chat pane shows up in the center pane of workBench, titled: \"💬 Chat with <selected-persona-label>\".
@@ -9,7 +9,7 @@
 //
 // ITS TITLE IS THE AGENT PANES' OWN TITLE ROW (Andy, on G41.26: "the title row in the chat panel (center or workBench) must
 // have the same font size as all other pane-titles in the agent UI"): agentDetail.titleRow, from the agent tables' element
-// (process/js/agent/table/tableElement.js), loaded here with the icon element it paints with (rule/26).
+// (spirit/app/agent/table/tableElement.js), loaded here with the icon element it paints with (rule/26).
 //
 //   spirit.elements.chatPane.create(container, { persona }) -> { destroy() }   persona: the row picked, { id, label }
 (function () {
@@ -33,7 +33,7 @@
       '</div>';
     container.appendChild(root);
     var gone = false;
-    Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('spirit/element/icon.js')]).then(function () {
+    Promise.all([spirit.require('spirit/app/agent/table/tableElement.js'), spirit.require('spirit/element/icon.js')]).then(function () {
       if (gone) return;
       root.querySelector('#' + pre + 'title').innerHTML = window.spirit.elements.agentDetail.titleRow({ icon: '💬' }, ['Chat with ' + (persona.label || '')]);
     });

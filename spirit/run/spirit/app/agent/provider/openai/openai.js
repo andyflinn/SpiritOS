@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/agent/provider/openai/openai.js
+// spirit/run/spirit/app/agent/provider/openai/openai.js
 // THE OPENAI PLUGIN (goal/G41.18): the model list of an OpenAI-compatible provider. Andy, box v17: "if a provider row has
 // no matching plugin (case-insensitive), the OpenAPI plugin will be used", and "Unsloth will be the test case for
 // \"no-matching-plugin\"". So it serves a row labelled OpenAI and every row no other plugin matches.

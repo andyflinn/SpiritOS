@@ -1,4 +1,4 @@
-// spirit/run/process/js/agent/table/rowElement.js
+// spirit/run/spirit/app/agent/table/rowElement.js
 // ONE ROW OF THE AGENT'S TABLES, EDITED IN THE PAGE (goal/G41.4), an element of its own (goal/G41.28; the general test:
 // a file registers one element). Each table's elementRow.js names its fields and builds on this one; the title row, the
 // field line, the table's searches and the one way to its server are the tables' shared element's (./tableElement.js,
@@ -14,7 +14,7 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the tables' shared element, whose helpers it uses.
-  spirit.require('process/js/agent/table/tableElement.js');
+  spirit.require('spirit/app/agent/table/tableElement.js');
   var made = 0;
   function A() { return window.spirit.elements.agentDetail; }
   function esc(s) { return A().esc(s); }

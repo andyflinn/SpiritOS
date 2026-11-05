@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/agent/table/persona/server.js
+// spirit/run/spirit/app/agent/table/persona/server.js
 // THE PERSONA TABLE (goal/G41.4). Andy, box v22: "a persona table. keyed by ID same as the shadow-roll (with Label and
 // Description, and a codeMirror-field for the persona-description i give it with every prompt)": persona is that text.
 // SINCE goal/G41.26 a persona names its provider, kept as the job keeps its own (Andy, box: "agent.persona gains a provider

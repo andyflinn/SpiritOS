@@ -1,4 +1,4 @@
-// spirit/run/process/js/agent/table/model/elementTable.js
+// spirit/run/spirit/app/agent/table/model/elementTable.js
 // THE MODEL TABLE IN THE PAGE (goal/G41.4): a model of a provider, its rows in a search list, a row picked opening in its
 // editor (./elementRow.js) in the page's detail pane. Built on the tables' shared element (../tableElement.js).
 // THE ASK FORM AT THE TOP (goal/G41.26; Andy, box: "The form \"from [Pick a provider ▾] [Ask]\" moves to the top of the
@@ -16,7 +16,7 @@
       var drop = null;
       var gone = false;
       // WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search, the busyButton and the rowForm.
-      Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('process/js/agent/table/model/elementRow.js'),
+      Promise.all([spirit.require('spirit/app/agent/table/tableElement.js'), spirit.require('spirit/app/agent/table/model/elementRow.js'),
         spirit.require('spirit/element/probabilitySearch.js'), spirit.require('spirit/element/busyButton.js'),
         spirit.require('spirit/element/rowForm.js')]).then(function () {
         if (gone) return;

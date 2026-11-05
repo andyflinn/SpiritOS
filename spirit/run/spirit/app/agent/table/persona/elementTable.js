@@ -1,4 +1,4 @@
-// spirit/run/process/js/agent/table/persona/elementTable.js
+// spirit/run/spirit/app/agent/table/persona/elementTable.js
 // THE PERSONA TABLE IN THE PAGE (goal/G41.4): a persona, its rows in a search list, a row picked opening in its
 // editor (./elementRow.js) in the page's detail pane. Built on the tables' shared element (../tableElement.js).
 //   spirit.elements.personaTable.create(container, api, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
@@ -8,7 +8,7 @@
     create: function (container, api, detail) {
       var made = null;
       var gone = false;
-      Promise.all([spirit.require('process/js/agent/table/tableElement.js'), spirit.require('process/js/agent/table/persona/elementRow.js')]).then(function () {
+      Promise.all([spirit.require('spirit/app/agent/table/tableElement.js'), spirit.require('spirit/app/agent/table/persona/elementRow.js')]).then(function () {
         if (gone) return;
         E = window.spirit.elements;
         made = E.agentTable.create(container, {

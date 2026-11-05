@@ -1,4 +1,4 @@
-// spirit/run/process/js/agent/: the agent server's family interface, where spirit.familyPath('agent') finds it (goal/G41.12)
+// spirit/run/spirit/app/agent/api/: the agent server's family interface, where spirit.familyPath('agent') finds it (goal/G41.12)
 // THE agent SERVER'S INTERFACE (goal/G41.1): every verb it serves, each argument with its rule (spirit.js's standard).
 // A verb added to the server is added here, in the same commit. DEBUG is appServer's, not listed here.
 module.exports = {

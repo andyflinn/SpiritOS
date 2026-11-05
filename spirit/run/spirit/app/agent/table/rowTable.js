@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/agent/table/rowTable.js
+// spirit/run/spirit/app/agent/table/rowTable.js
 // ONE KEYED TABLE OF agent.db AND ITS ONE VERB (goal/G41.4), what the provider, model, persona and job tables share; each
 // table's server.js names its own fields and nothing else. The contract and the test: ../test/agent.md and
 // ../test/agent.js.

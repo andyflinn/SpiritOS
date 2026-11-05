@@ -1,29 +1,29 @@
-// spirit/run/shell/agent/agent.js
+// spirit/run/spirit/app/agent/browserAgent.js
 // THE AGENT FACE APP (goal/G41.1): the face of the agent server, built on the workBench element, on the face on
-// loopback and through a relay alike. Its contract and its test: ./test/agent.md and ./test/agent.js.
+// loopback and through a relay alike. Its contract and its test: ./test/browserAgent.md and ./test/browserAgent.js. Loaded
+// on a page by ./agent.js.
+//
+//   spirit.elements.agent.create(container) -> { destroy() }
+//
+// AN ELEMENT, AS monitor.js IS (goal/G43.13): a tile hands it only its container. It keeps no state of its own: the tick
+// box that showed the server's DEBUG in the old shell's title went with that title (Andy: "yes, delete the tick box.").
 //
 // NO AGENTS TALK TO EACH OTHER THROUGH IT (goal/G41.1, Q1; the ruling of 2026-10-02, goal/G3.1, stands): each agent
 // sees itself as the only agent and user of the node.
 //
-//   The left tool keeps this app's own state, relay-state/shell/agent/config.json: { showDebug }, whether the window's
-//   title bar shows the agent server's DEBUG state (Andy, under G41.1).
 //   The right tool sets the server's DEBUG state: it requires the server's interface through spirit and calls its
 //   debug {on} (Andy, Q5: "the app is supposed to require it's components, then use them."), and draws only what the
 //   server's stream says (rule/19: "the ui must propose all state changes to the server and only draw changes contained
 //   in the servers update/change stream"), the state arriving as { agent: { debug } } on the server's job.
-//   The title shows the bug while showDebug is true and the server's DEBUG state is on.
 //   THE DATA SET'S TABLES (goal/G41.4; Andy, box v22: "every one of these tables will come with a left-edge icon that
 //   puts up a panel in the left-side tool-display of the workBench UI used in this app"): one left tool per table of
-//   agent.db, each mounting that table's own element, process/js/agent/table/<name>/elementTable.js. A row opened from
+//   agent.db, each mounting that table's own element, spirit/app/agent/table/<name>/elementTable.js. A row opened from
 //   a list is edited in the workBench's centre, the one detail pane of the app.
 //   NO GRANT TOOL (goal/G41.21, box v17: "agent.grant is removed altogether: its table, its server, and the Grants tool
 //   in the left strip. A job's grant is its bundle"). THE BUNDLE EDITOR IN THE RIGHT STRIP ("The right strip gets its
 //   first real tool: the bundle editor"): spirit/element/bundleEditor.js, beside the agent server's DEBUG box.
 (function () {
-  var CONFIG = 'relay-state/shell/agent/config.json';
   var AGENT = spirit.familyPath('agent');
-  var NAME = 'Agent';
-  var BUG = '🐞';
   // one: the table's name as a detail pane's title row says it ("[Table-Icon] \"Add | Change\" [Table-name]").
   var TABLES = [
     { name: 'provider', icon: '🏢', title: 'Model providers', one: 'Provider' },
@@ -32,13 +32,26 @@
     { name: 'job', icon: '📋', title: 'Jobs', one: 'Job' },
   ];
 
-  spirit.shell.activateApp({
-    mount: function (container, api) {
-      var E = (api && api.ui && api.ui.element) || (window.spirit && window.spirit.element) || {};
-      var showDebug = false;
+  // ITS TABLES ASK THROUGH { verb } (goal/G43.13): what the old shell handed every app, made here, as the lists in the tree make
+  // it. verb('agent.provider', args) calls that verb of that family, answering { status, body }, as a list reads it. No new verb.
+  var api = {
+    verb: function (name, args) {
+      var n = String(name || '');
+      var dot = n.indexOf('.');
+      return Promise.resolve(spirit.ready).then(function (s) { return s[n.slice(0, dot)][n.slice(dot + 1)](args || {}); }).then(function (body) {
+        return { status: 200, body: body };
+      }, function (e) {
+        return { status: (e && e.status) || 500, body: (e && e.body) || { ok: false, code: String((e && e.code) || 'handler-failed'), error: String((e && e.message) || e) } };
+      });
+    },
+  };
+
+  function create(container) {
+      var E = (window.spirit && window.spirit.element) || {};
+      var gone = false;
       var debug = false;
       var serverBox = null;
-      function title() { if (api && typeof api.setScreenTitle === 'function') api.setScreenTitle(NAME + (showDebug && debug ? ' ' + BUG : '')); }
+      var offJobs = null;
       function drawServer() {
         var box = serverBox && serverBox.querySelector('input');
         if (box) box.checked = debug;
@@ -52,7 +65,7 @@
       // goal/G41.23: its tools' glyphs are icons (Andy: "this element will replace icons painting all shell elements and
       // apps."), painted by the workBench's strip through spirit/element/icon.js, loaded here with it.
       var loaded = Promise.all([E.workBench ? null : spirit.require('spirit/element/workBench.js'), spirit.require('spirit/element/icon.js'), spirit.require('spirit/element/tabContainer.js')]);
-      loaded.then(function () { E = (window.spirit && window.spirit.element) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
+      loaded.then(function () { if (gone) return; E = (window.spirit && window.spirit.element) || E; build(); }, function () { benchBox.textContent = 'The workbench could not be loaded.'; });
       // THE WORKBENCH'S CENTRE IS CLOSABLE TABS (goal/G41.31; Andy: "i need a tabContainer permanently situated in the center pane of
       // the workBench.", "each panel, that the agent app placed into the center panel now becomes a closable tab in the
       // tabContainer, activated if it already exists, created if it doesn't have a tab yet."). They stay when the left tool
@@ -110,35 +123,21 @@
       };
       function build() {
       bench = E.workBench.create(benchBox, {
-        left: [{ name: 'app', icon: '⚙️', title: 'This app', mount: function (box) {
-          box.innerHTML = '<label><input type="checkbox"> Show the server\'s DEBUG state in the title bar</label>';
-          Promise.resolve(spirit.fs.loadFile(CONFIG)).then(function (text) {
-            var c = null;
-            try { c = JSON.parse(text); } catch (e) { c = null; }
-            showDebug = !!(c && c.showDebug === true);
-            box.innerHTML = '<label><input type="checkbox"' + (showDebug ? ' checked' : '') + '> Show the server\'s DEBUG state in the title bar</label>';
-            title();
-          }, function () { title(); });
-          box.addEventListener('change', function (e) {
-            showDebug = !!(e && e.target && e.target.checked);
-            spirit.fs.saveFile(CONFIG, JSON.stringify({ showDebug: showDebug }) + '\n');
-            title();
-          });
-        } }].concat(TABLES.map(function (t) {
+        left: TABLES.map(function (t) {
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
-            Promise.resolve(spirit.require('process/js/agent/table/' + t.name + '/elementTable.js')).then(function () {
+            Promise.resolve(spirit.require('spirit/app/agent/table/' + t.name + '/elementTable.js')).then(function () {
               window.spirit.elements[t.name + 'Table'].create(box, api, detail);
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
           } };
-        })).concat([{ name: 'chat', icon: '💬', title: 'Select Persona', mount: function (box) {
+        }).concat([{ name: 'chat', icon: '💬', title: 'Select Persona', mount: function (box) {
           // 💬 SELECT PERSONA (goal/G41.26; Andy, box: "the left site icon strip gains a [chat] icon, that opens the
           // following, NEW panel, titled: \"💬 Select Persona\"", "this new panel, below the title contains, for now, only a
           // personaSelector:pane", and "When the user clicks on a persona in the left hand \"💬 Select Persona\" pane, the chat
           // pane shows up in the center pane of workBench"). The personaSelector:pane is the persona table's search in pane
           // mode (rule/29), the agent tables' own; a persona picked opens its chat in the centre, in place of what was there.
           box.className = 'fill';
-          Promise.resolve(spirit.require('process/js/agent/table/tableElement.js')).then(function () {
+          Promise.resolve(spirit.require('spirit/app/agent/table/tableElement.js')).then(function () {
             var D = window.spirit.elements.agentDetail;
             box.innerHTML = '<div class="fill">' + D.titleRow({ icon: '💬' }, ['Select Persona']) + '<div id="agent-personas" class="fill" style="margin-top:1em"></div></div>';
             D.search(box.querySelector('#agent-personas'), { api: api, table: 'persona' }, { face: 'pane', pick: function (row, key) {
@@ -147,7 +146,7 @@
               detail.open(function (centre) {
                 var pane = null;
                 var closed = false;
-                Promise.resolve(spirit.require('shell/agent/chatPane.js')).then(function () {
+                Promise.resolve(spirit.require('spirit/app/agent/chatPane.js')).then(function () {
                   if (!closed) pane = window.spirit.elements.chatPane.create(centre, { persona: picked });
                 });
                 return { destroy: function () { closed = true; if (pane) pane.destroy(); } };
@@ -188,15 +187,24 @@
         if (now === null) return;
         debug = now;
         drawServer();
-        title();
       }
       Promise.resolve(spirit.cacheManager('jobs')).then(function () {
         var J = ((window.spirit.data || {}).jobs || {}).data;
         if (!J) return;
         heard(J.find(function (j) { return stateOf(j) !== null; }));
-        J.watch(function (id, job) { heard(job); });
+        offJobs = J.watch(function (id, job) { heard(job); });
+        if (gone && typeof offJobs === 'function') offJobs();
       }, function () { /* the debug switch shows what it last knew */ });
-      title();
-    },
-  });
+      return {
+        destroy: function () {
+          gone = true;
+          if (typeof offJobs === 'function') offJobs();
+          if (bench && typeof bench.destroy === 'function') bench.destroy();
+          container.innerHTML = '';
+        },
+      };
+  }
+
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.agent = { create: create };
 }());

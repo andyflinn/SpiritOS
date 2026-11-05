@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/agent/agent.js
+// spirit/run/spirit/app/agent/nodeAgent.js
 // THE AGENT SERVER (goal/G41.1): the server process behind the agent face app. It keeps all of the app's state, in
 // agent.db, an SQLite database in the folder the node hands it as --state (relay-state/process/agent/ on a node, never in
 // git), and streams that state to its clients. In this item its state is its DEBUG state. Its contract and its test:
