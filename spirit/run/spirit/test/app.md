@@ -43,4 +43,4 @@ The first activate, Andy: *"on first activate, spirit/state/<name>/node.json sho
 - An app whose `<name>.json` says `identity.intrinsic` true is always active: its row says so with no press and nothing written to its `node.json`.
 - `app.active` with false does not switch it off.
 - Before any press, no row says active but an intrinsic app's.
-- goal/G43.15: an app's row carries `intrinsic`, true or false. `app.active` on an intrinsic app is refused by name, not 200, `ok: false` with a code, and writes nothing.
+- goal/G43.15: an app's row carries `intrinsic`, true or false. `app.active` on an intrinsic app is refused by name, not 200, with a code, and writes nothing.

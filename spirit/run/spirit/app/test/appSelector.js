@@ -23,6 +23,14 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
   const chrome = await chromePage(findChrome());
   try {
     if (!node.up || chrome.error) { test.fail('no scratch node or no Chrome: nothing judged. ' + short(chrome.error || '')); return; }
+    // AN APP THE USER SWITCHES, OF THIS TEST'S OWN (goal/G43.15): Monitor was it until Andy's 7f6ebbbe made it intrinsic, so always on. A copy
+    // of its json as it was then, and its script, planted on the scratch node's disc; the app family reads the disc.
+    if (!node.root) { test.fail('the scratch node is shared, so no app of the test\'s own can be planted: nothing judged'); return; }
+    const zz = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'hearing');
+    fs.mkdirSync(zz, { recursive: true });
+    fs.writeFileSync(path.join(zz, 'hearing.json'), JSON.stringify({ identity: { icon: '🦻', label: 'Hearing' }, mount: { 'hearing.js': true }, shell: { true: false, mount: true, tile: true }, node: { mount: false } }, null, 2));
+    // Monitor's script, registered under the planted app's own name, as a tile asks for it.
+    fs.writeFileSync(path.join(zz, 'hearing.js'), fs.readFileSync(path.join(RUN, 'spirit', 'app', 'monitor', 'monitor.js'), 'utf8').replace('(S.app = S.app || {}).monitor = ', '(S.app = S.app || {}).hearing = '));
     await chrome.send('Page.navigate', { url: node.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     const made = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/appSelector.js"); }).then(function () {' +
@@ -77,7 +85,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     test.subHeading('the box: "spirit/app/appTiles.js will be removed." "spirit.app.appTiles() will be removed."');
     ok(!fs.existsSync(path.join(RUN, 'spirit', 'app', 'appTiles.js')), 'the file is gone', 'spirit/app/appTiles.js still stands');
     ok(await chrome.evaluate('!(window.spirit.app && window.spirit.app.appTiles)') === true, 'and so is spirit.app.appTiles', 'spirit.app.appTiles still stands');
-    const monitorLabel = JSON.parse(fs.readFileSync(path.join(RUN, 'spirit', 'app', 'monitor', 'monitor.json'), 'utf8')).identity.label;
+    const monitorLabel = 'Hearing';
     const serverLabel = 'Changed On Disk';
     const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) old.remove(); var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:900px;height:600px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fs = spirit.elements.appSelector.create(c, ' + JSON.stringify(opts) + '); if (window.fs.parentNode !== c) c.appendChild(window.fs); return true; }())'); };
     const inFaces = function () { return chrome.evaluate('String((document.getElementById("faces") || {}).innerText || "")'); };
@@ -92,17 +100,17 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const buttonOf = function (label) { return 'var r = ' + rowOf(label) + '; if (!r) return "no row"; var bs = r.querySelectorAll("button"); if (bs.length !== 1) return "buttons: " + bs.length; var b = bs[0]; var all = r.querySelectorAll("*"); var last = null; for (var i = 0; i < all.length; i++) { if (all[i].getClientRects().length && !all[i].children.length) last = all[i]; } if (!(last === b || b.contains(last))) return "not last"; '; };
     const says = function (label) { return chrome.evaluate('(function () { ' + buttonOf(label) + 'return b.textContent.trim(); }())'); };
     const said = await until(function () { return says(monitorLabel).then(function (t) { return /^activate$/i.test(t); }); }, 8000);
-    ok(said, 'each row ends in its one button, Activate', 'Monitor\'s row: ' + short(await says(monitorLabel)));
+    ok(said, 'each row ends in its one button, Activate', 'Hearing\'s row: ' + short(await says(monitorLabel)));
     test.subHeading('the box: "The node writes spirit/state/<key>/node.json and republishes its \'apps\' job, whose rows gain active. The list follows by itself."');
     await chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; var b = r && r.querySelector("button"); if (b) b.click(); return !!b; }())');
-    const written = await until(function () { return Promise.resolve((function () { try { return JSON.parse(fs.readFileSync(stateFile('monitor'), 'utf8')).active === true; } catch (e) { return false; } }())); }, 5000);
-    ok(written, 'a press writes active true to spirit/state/monitor/node.json', 'after a press the file is not active');
-    const rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().monitor; return !!r && r.active === true; }())'); }, 5000);
-    ok(rowActive, 'the stream brings active to the row, no search asked', 'the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().monitor)')));
+    const written = await until(function () { return Promise.resolve((function () { try { return JSON.parse(fs.readFileSync(stateFile('hearing'), 'utf8')).active === true; } catch (e) { return false; } }())); }, 5000);
+    ok(written, 'a press writes active true to spirit/state/hearing/node.json', 'after a press the file is not active');
+    const rowActive = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())'); }, 5000);
+    ok(rowActive, 'the stream brings active to the row, no search asked', 'the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().hearing)')));
     const flipped = await until(function () { return says(monitorLabel).then(function (t) { return /^deactivate$/i.test(t); }); }, 5000);
     ok(flipped, 'the button follows: Deactivate', 'the button says: ' + short(await says(monitorLabel)));
     await chrome.evaluate('spirit.app.searchApp({ q: "" }).then(function (got) { spirit.data.seatRows(spirit.data.app.data.branch, got.items); return true; })');
-    ok(await chrome.evaluate('(function () { var r = spirit.data.app.data.rows().monitor; return !!r && r.active === true; }())') === true, 'a search seated over it does not lose active', 'after a search the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().monitor)')));
+    ok(await chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.active === true; }())') === true, 'a search seated over it does not lose active', 'after a search the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().hearing)')));
 
     // Andy: "the detail panel needs to open on top of the whole container", and the form he drew for it.
     test.subHeading('the panel: over the whole container');
@@ -116,10 +124,10 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(covers === 'covers', 'it covers the whole container, and the list is out of sight', 'the panel: ' + short(covers));
     // Each form of the panel, in order: its icon, its words, its input's value, its button.
     const clean = function (t) { return String(t).replace(/\s+/g, ' ').trim(); };
-    const forms = async function () { const j = await chrome.evaluate('JSON.stringify([].map.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { var sp = f.querySelector(".shell-row-form-span"); var bs = f.querySelectorAll("button"); var last = bs[bs.length - 1]; var inp = f.querySelector("input"); var ic = f.firstElementChild; return { icon: ic ? ic.textContent : "", words: sp ? sp.textContent : "", input: inp ? inp.value : null, button: last ? last.textContent : "", lastIsButton: !!last && f.lastElementChild === last }; }))'); return (JSON.parse(j) || []).map(function (x) { x.icon = clean(x.icon); x.words = clean(x.words); x.button = clean(x.button); return x; }); };
-    const press = function (n) { return chrome.evaluate('(function () { var f = document.querySelectorAll("#faces .app-container .shell-row-form")[' + n + ']; var b = f && f.querySelectorAll("button"); var last = b && b[b.length - 1]; if (last) last.click(); return !!last; }())'); };
-    const stateOf = function () { try { return JSON.parse(fs.readFileSync(stateFile('monitor'), 'utf8')); } catch (e) { return {}; } };
-    const disk = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'monitor', 'monitor.json');
+    const forms = async function () { const j = await chrome.evaluate('JSON.stringify([].map.call([].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; }), function (f) { var sp = f.querySelector(".shell-row-form-span"); var bs = f.querySelectorAll("button"); var last = bs[bs.length - 1]; var inp = f.querySelector("input"); var ic = f.firstElementChild; return { icon: ic ? ic.textContent : "", words: sp ? sp.textContent : "", input: inp ? inp.value : null, button: last ? last.textContent : "", lastIsButton: !!last && f.lastElementChild === last }; }))'); return (JSON.parse(j) || []).map(function (x) { x.icon = clean(x.icon); x.words = clean(x.words); x.button = clean(x.button); return x; }); };
+    const press = function (n) { return chrome.evaluate('(function () { var f = [].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[' + n + ']; var b = f && f.querySelectorAll("button"); var last = b && b[b.length - 1]; if (last) last.click(); return !!last; }())'); };
+    const stateOf = function () { try { return JSON.parse(fs.readFileSync(stateFile('hearing'), 'utf8')); } catch (e) { return {}; } };
+    const disk = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'hearing', 'hearing.json');
     const fileBefore = fs.readFileSync(disk, 'utf8');
     const waitForm = function (n, test2) { return until(function () { return forms().then(function (l) { return !!l[n] && test2(l[n]); }); }, 5000); };
 
@@ -135,12 +143,12 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const r0 = l[1] || none;
     ok(r0.icon.indexOf('✏') !== -1 && r0.words.indexOf('Icon') !== -1 && r0.button === 'Change', 'the pencil, Icon, Change', 'row 0: ' + short(r0));
     ok(r0.words.indexOf('🦻') !== -1, 'the selector shows the app\'s icon', 'row 0 shows: ' + short(r0.words));
-    await chrome.evaluate('spirit.app.iconApp({ key: "monitor", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
+    await chrome.evaluate('spirit.app.iconApp({ key: "hearing", icon: "🧪" }).then(function () { return true; }, function () { return false; })');
     const newIcon = await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🧪') !== -1; }); }, 5000);
     ok(newIcon, 'a changed icon reaches the bar, by the stream', 'the bar after a changed icon: ' + short((await forms())[0]));
-    ok(stateOf().icon === '🧪', 'it lands in spirit/state/monitor/node.json', 'node.json: ' + short(stateOf()));
-    ok(fs.readFileSync(disk, 'utf8') === fileBefore, 'and not in monitor.json', 'monitor.json was written');
-    await chrome.evaluate('spirit.app.iconApp({ key: "monitor", icon: "🦻" }).then(function () { return true; }, function () { return false; })');
+    ok(stateOf().icon === '🧪', 'it lands in spirit/state/hearing/node.json', 'node.json: ' + short(stateOf()));
+    ok(fs.readFileSync(disk, 'utf8') === fileBefore, 'and not in hearing.json', 'hearing.json was written');
+    await chrome.evaluate('spirit.app.iconApp({ key: "hearing", icon: "🦻" }).then(function () { return true; }, function () { return false; })');
     await until(function () { return forms().then(function (x) { return !!x[0] && x[0].icon.indexOf('🦻') !== -1; }); }, 5000);
 
     test.subHeading('"row 1: rowForm: [✏️] "Label" [label input box] [Change]"');
@@ -149,39 +157,39 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
 
     test.subHeading('row 2: "if active: [🟢] "Deactivate <app-label> "face" ..." [🔴]", "if inactive: [🔴] "Activate ..." [🟢]"');
     const r2 = l[3] || none;
-    ok(r2.icon.indexOf('🟢') !== -1 && r2.words === 'Deactivate ' + monitorLabel + ' face' && r2.button === '🔴', 'Monitor is active, and mounts a face only: [🟢] Deactivate Monitor face [🔴]', 'row 2: ' + short(r2));
+    ok(r2.icon.indexOf('🟢') !== -1 && r2.words === 'Deactivate ' + monitorLabel + ' face' && r2.button === '🔴', 'Hearing is active, and mounts a face only: [🟢] Deactivate Hearing face [🔴]', 'row 2: ' + short(r2));
     await press(3);
     const wentOff = await waitForm(3, function (x) { return x.icon.indexOf('🔴') !== -1 && x.words === 'Activate ' + monitorLabel + ' face' && x.button === '🟢'; });
-    ok(wentOff && stateOf().active === false, 'a press: [🔴] Activate Monitor face [🟢], and active false in node.json', 'after a press: ' + short((await forms())[3]) + ' ' + short(stateOf()));
+    ok(wentOff && stateOf().active === false, 'a press: [🔴] Activate Hearing face [🟢], and active false in node.json', 'after a press: ' + short((await forms())[3]) + ' ' + short(stateOf()));
     await press(3);
     const wentOn = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' face'; });
     ok(wentOn && stateOf().active === true, 'a press back turns it on', 'after a press back: ' + short((await forms())[3]));
 
     test.subHeading('row 3: "if shell.true==false: [🔴] "Allow <app-label> as shell" [🟢]", "if shell.true==true: [🟢] "Don\'t allow <app-label> as shell" [🔴]"');
     const r3 = l[4] || none;
-    ok(r3.icon.indexOf('🔴') !== -1 && r3.words === 'Allow ' + monitorLabel + ' as shell' && r3.button === '🟢', '[🔴] Allow Monitor as shell [🟢]', 'row 3: ' + short(r3));
+    ok(r3.icon.indexOf('🔴') !== -1 && r3.words === 'Allow ' + monitorLabel + ' as shell' && r3.button === '🟢', '[🔴] Allow Hearing as shell [🟢]', 'row 3: ' + short(r3));
     await press(4);
     const allowed = await waitForm(4, function (x) { return x.icon.indexOf('🟢') !== -1 && x.words === 'Don\'t allow ' + monitorLabel + ' as shell' && x.button === '🔴'; });
-    ok(allowed, 'a press: [🟢] Don\'t allow Monitor as shell [🔴]', 'after a press: ' + short((await forms())[4]));
-    ok(stateOf().shell === true, 'it lands in spirit/state/monitor/node.json', 'node.json: ' + short(stateOf()));
-    ok(fs.readFileSync(disk, 'utf8') === fileBefore, 'and not in monitor.json', 'monitor.json was written');
+    ok(allowed, 'a press: [🟢] Don\'t allow Hearing as shell [🔴]', 'after a press: ' + short((await forms())[4]));
+    ok(stateOf().shell === true, 'it lands in spirit/state/hearing/node.json', 'node.json: ' + short(stateOf()));
+    ok(fs.readFileSync(disk, 'utf8') === fileBefore, 'and not in hearing.json', 'hearing.json was written');
     await press(4);
     await waitForm(4, function (x) { return x.words === 'Allow ' + monitorLabel + ' as shell'; });
 
     test.subHeading('Q4: a changed label goes in node.json, and every row follows');
-    await chrome.evaluate('(function () { var f = document.querySelectorAll("#faces .app-container .shell-row-form")[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = "Renamed"; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
+    await chrome.evaluate('(function () { var f = [].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = "Renamed"; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
     await press(2);
     const renamed = await until(function () { return Promise.resolve(stateOf().label === 'Renamed'); }, 5000);
-    ok(renamed, 'Change writes label to spirit/state/monitor/node.json', 'node.json: ' + short(stateOf()));
-    ok(fs.readFileSync(disk, 'utf8') === fileBefore, 'and not to monitor.json', 'monitor.json was written');
-    const inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().monitor; return !!r && r.label === "Renamed"; }())'); }, 5000);
-    ok(inRow, 'the stream brings it to the row', 'the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().monitor)')));
+    ok(renamed, 'Change writes label to spirit/state/hearing/node.json', 'node.json: ' + short(stateOf()));
+    ok(fs.readFileSync(disk, 'utf8') === fileBefore, 'and not to hearing.json', 'hearing.json was written');
+    const inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.label === "Renamed"; }())'); }, 5000);
+    ok(inRow, 'the stream brings it to the row', 'the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().hearing)')));
     const follows = await until(function () { return forms().then(function (x) { return !!x[0] && !!x[3] && !!x[4] && x[0].words === 'Renamed' && x[3].words === 'Deactivate Renamed face' && x[4].words === 'Allow Renamed as shell'; }); }, 5000);
     ok(follows, 'the bar and the rows of the panel say it', 'the panel: ' + short(await forms()));
-    await chrome.evaluate('(function () { var f = document.querySelectorAll("#faces .app-container .shell-row-form")[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
+    await chrome.evaluate('(function () { var f = [].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
     await press(2);
     await until(function () { return Promise.resolve(stateOf().label === monitorLabel); }, 5000);
-    await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().monitor; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
+    await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
     ok(!/Uptime|waiting/i.test(await chrome.evaluate('String((' + panel + ' || {}).innerText || "")')), 'the app itself does not open', 'the panel launched the app');
     const shut = await closePanel();
     const backAgain = shut && await until(function () { return chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; return !!r && r.offsetParent !== null; }())'); }, 4000);
@@ -192,13 +200,13 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     rewrite(true, true);
     await openPanel();
     const bothWords = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' face and server'; });
-    ok(bothWords, 'both: Deactivate Monitor face and server', 'with both: ' + short((await forms())[3]));
+    ok(bothWords, 'both: Deactivate Hearing face and server', 'with both: ' + short((await forms())[3]));
     ok((await forms()).length === 5, 'and row 3 shows', 'with both, forms: ' + short(await forms()));
     await closePanel();
     rewrite(false, true);
     await openPanel();
     const serverWords = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' server'; });
-    ok(serverWords, 'node.mount alone: Deactivate Monitor server', 'with node.mount alone: ' + short((await forms())[3]));
+    ok(serverWords, 'node.mount alone: Deactivate Hearing server', 'with node.mount alone: ' + short((await forms())[3]));
     ok((await forms()).length === 4, 'and row 3 does not show', 'with shell.mount false, forms: ' + short(await forms()));
     await closePanel();
     fs.writeFileSync(disk, fileBefore);
@@ -207,7 +215,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     test.subHeading('the box: "in :tiles mode, only activated apps will appear."');
     await chrome.evaluate('(function () { var t = document.querySelector("#faces .list-toggle"); if (t) t.click(); return !!t; }())');
     const onlyActive = await until(function () { return chrome.evaluate('!!' + tileOf(monitorLabel) + ' && !' + tileOf(serverLabel)); }, 5000);
-    ok(onlyActive, 'the toggle shows tiles: Monitor, active, and not server', 'the tiles: ' + short(await inFaces()));
+    ok(onlyActive, 'the toggle shows tiles: Hearing, active, and not server', 'the tiles: ' + short(await inFaces()));
     await mount({ face: 'tiles' });
     const direct = await until(function () { return chrome.evaluate('!!' + tileOf(monitorLabel) + ' && !' + tileOf(serverLabel)); }, 5000);
     ok(direct, 'face tiles from the start: the same', 'the tiles: ' + short(await inFaces()));

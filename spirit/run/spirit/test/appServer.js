@@ -90,6 +90,10 @@ const fake = {
   },
   outcome: function (p) { return Promise.resolve(p).then(function (b) { return { status: 200, body: b }; }, function (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }); },
   events: { publish: function () {}, subscribe: function () {} },
+  // A server reports its DEBUG on its job (goal/G43.15); the stand-in node takes the report and keeps nothing.
+  jobs: { report: function () { return Promise.resolve({ ok: true }); } },
+  // Its DEBUG flag, as spirit.js keeps one: read with no argument, set with a boolean.
+  debug: (function () { let on = false; return function (v) { if (typeof v === 'boolean') on = v; return on; }; }()),
 };
 const realLoad = Module._load;
 Module._load = function (request, parent) {

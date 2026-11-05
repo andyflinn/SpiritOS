@@ -54,8 +54,8 @@ test.startTest('rowFormAppActive.js: Activate/Deactivate for one app, hidden whe
     const rows = function () { return chrome.evaluate('(function () { var out = {}; Array.prototype.slice.call(document.querySelectorAll("#pane tr, #pane [data-key]")).forEach(function (r) { var t = String(r.innerText || "").replace(/\\s+/g, " ").trim(); ["Contacts", "Agent"].forEach(function (n) { if (t.indexOf(n) !== -1 && !out[n]) out[n] = { text: t, buttons: Array.prototype.map.call(r.querySelectorAll("button"), function (x) { return String(x.textContent || "").trim(); }) }; }); }); return out; }())'); };
     ok(await until(function () { return rows().then(function (r) { return !!r.Contacts && !!r.Agent; }); }, 10000), 'the world: the pane lists Contacts and the Agent', 'the pane: ' + short(await rows()));
     const r = await rows();
-    ok(!!r.Agent && r.Agent.buttons.some(function (b) { return /Activate/.test(b); }), 'the Agent\'s row has its Activate', 'the Agent\'s row: ' + short(r.Agent));
-    ok(!!r.Contacts && !r.Contacts.buttons.some(function (b) { return /Activate|Deactivate/.test(b); }), 'Contacts\' row has no Activate and no Deactivate', 'Contacts\' row: ' + short(r.Contacts));
+    ok(!!r.Agent && /Activate|Deactivate/.test(r.Agent.text) && r.Agent.buttons.length > 0, 'the Agent\'s row has its Activate or Deactivate, with a button', 'the Agent\'s row: ' + short(r.Agent));
+    ok(!!r.Contacts && !/Activate|Deactivate/.test(r.Contacts.text), 'Contacts\' row says neither Activate nor Deactivate', 'Contacts\' row: ' + short(r.Contacts));
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }

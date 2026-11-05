@@ -50,7 +50,8 @@ async function liveJob(base) {
   return rows.map(function (r) { return r.body && r.body.job; }).filter(function (j) { return !!j && j.kind === 'server' && j.module === MODULE && (j.status === 'running' || j.status === 'pending'); })[0] || null;
 }
 function answers(r) { return r.status === 200 && !!r.body && typeof r.body.debug === 'boolean'; }
-function serverUp(base) { return until(function () { return call(base, 'agent.debug', { on: false }).then(answers); }, 30000); }
+// The server is up when appServer's DEBUG answers (its own debug verb went in goal/G43.15).
+function serverUp(base) { return until(function () { return call(base, 'agent.DEBUG', {}).then(answers); }, 30000); }
 // Every file under a folder.
 function filesUnder(dir) {
   const out = [];
@@ -97,7 +98,7 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
 
     test.subHeading('the box: active is its one switch; before it nothing runs');
     ok(!(await liveJob(N.base)), 'not active: no server job', 'a server job before Activate');
-    ok(!answers(await call(N.base, 'agent.debug', { on: false })), 'not active: its verbs are not answered', 'its verb answered before Activate');
+    ok(!answers(await call(N.base, 'agent.DEBUG', {})), 'not active: its verbs are not answered', 'its verb answered before Activate');
     await selector('pane');
     ok(await shows('Agent'), 'its row is in the appSelector\'s pane', 'the pane: ' + short(await shown()));
     await selector('tiles');
@@ -109,8 +110,8 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     await shows('Agent');
     const pressed = await until(function () { return pressInstaller().then(function (t) { return t === 'Activate'; }); }, 10000);
     ok(pressed, 'the world: its row has an Activate button, and it is pressed', 'no Activate on the Agent\'s row: ' + short(await shown()));
-    ok(await serverUp(N.base), 'pressed, the server answers its verbs', 'pressed, agent.debug: ' + short((await call(N.base, 'agent.debug', { on: false })).text));
-    if (!answers(await call(N.base, 'agent.debug', { on: false }))) { test.fail('no server, so nothing further is judged'); return; }
+    ok(await serverUp(N.base), 'pressed, the server answers its verbs', 'pressed, agent.debug: ' + short((await call(N.base, 'agent.DEBUG', {})).text));
+    if (!answers(await call(N.base, 'agent.DEBUG', {}))) { test.fail('no server, so nothing further is judged'); return; }
     ok(!!(await liveJob(N.base)), 'its job has the id ' + MODULE, 'no live job with that id');
     const db = path.join(s.run, 'spirit', 'state', 'agent', 'data', 'agent.db');
     ok(fs.existsSync(db), 'its rows are kept in spirit/state/agent/data/', 'no agent.db in spirit/state/agent/data/');
@@ -173,7 +174,7 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     const deact = await until(function () { return pressInstaller().then(function (t) { return t === 'Deactivate'; }); }, 10000);
     ok(deact, 'the world: its row has a Deactivate button, and it is pressed', 'no Deactivate on the Agent\'s row: ' + short(await shown()));
     ok(await until(function () { return liveJob(N.base).then(function (j) { return !j; }); }, 15000), 'pressed, the server stops', 'a live server job stayed');
-    ok(!answers(await call(N.base, 'agent.debug', { on: false })), 'and its verbs are not answered', 'its verb answered after Deactivate');
+    ok(!answers(await call(N.base, 'agent.DEBUG', {})), 'and its verbs are not answered', 'its verb answered after Deactivate');
     ok(await shows('Agent'), 'its row stays in the pane', 'the pane: ' + short(await shown()));
     await selector('tiles');
     await sleep(1500);

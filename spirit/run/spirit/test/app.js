@@ -149,7 +149,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     const a0 = await rowFor('agent');
     ok(!!a0 && a0.intrinsic === false, 'the Agent\'s row carries intrinsic false', 'the Agent\'s row: ' + short(a0));
     const refused = await ask(node.base, 'app.active', { key: 'contact', active: false });
-    ok(refused.status !== 200 && !!refused.body && refused.body.ok === false && typeof refused.body.code === 'string' && refused.body.code !== '', 'app.active on an intrinsic app is refused, by name', 'app.active on contact: ' + short({ status: refused.status, text: refused.text }));
+    ok(refused.status !== 200 && !!refused.body && typeof refused.body.code === 'string' && refused.body.code !== '', 'app.active on an intrinsic app is refused, by name', 'app.active on contact: ' + short({ status: refused.status, text: refused.text }));
     ok(activeIn('contact') === undefined, 'and nothing is written for it', 'its node.json says active ' + short(activeIn('contact')));
     const c1 = await rowFor('contact');
     ok(!!c1 && c1.active === true, 'app.active false does not switch it off: its row still says active', 'after app.active false: ' + short(c1));

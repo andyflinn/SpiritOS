@@ -29,3 +29,7 @@
 - Row 3, *"shown only if shell-mount==true"*: *"[🔴] "Allow <app-label> as shell" [🟢]"* or *"[🟢] "Don't allow <app-label> as shell" [🔴]"*. A press writes `shell` to `node.json`, not to `<name>.json`.
 - *"in :tiles mode, only activated apps will appear."* Reached by the toggle or from the start; an app made active appears and one made inactive leaves, no search asked.
 - *"in :tiles mode, appSelector icons will 'launch'"*: Andy left "(or mount?)" open and raised no objection to today's behaviour, so a tile opens its app inside through `spirit.app.<name>.createApp`, and the close icon brings the tiles back.
+
+## The app it switches (goal/G43.15)
+
+Monitor is intrinsic since Andy's 7f6ebbbe, so always on. The suite plants an app of its own on the scratch node, Hearing, a copy of Monitor as it was before, and switches that. It counts only the forms that show, since a self-hiding row is drawn hidden.
