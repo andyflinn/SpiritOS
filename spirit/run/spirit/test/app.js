@@ -113,6 +113,9 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     const activeIn = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')).active; } catch (e) { return undefined; } };
     test.subHeading('the box: "The user sets active, so Monitor and server start off"');
     ok(activeIn('monitor') !== true && activeIn('server') !== true, 'neither is active before a press', 'active before a press: ' + short([activeIn('monitor'), activeIn('server')]));
+    const before = rows(await ask(node.base, 'app.search', {})) || [];
+    const lit = before.filter(function (i) { return (parsed(i.label) || {}).active === true; }).map(function (i) { return i.key; });
+    ok(before.length > 0 && !lit.length, 'and no row says active', before.length ? 'rows that say active before a press: ' + short(lit) : 'app.search answered no rows');
     test.subHeading('the box: "The node writes spirit/state/<key>/node.json"');
     const on = await ask(node.base, 'app.active', { key: 'monitor', active: true });
     ok(on.status === 200 && activeIn('monitor') === true, 'active true lands in spirit/state/monitor/node.json', 'after active true: ' + short({ status: on.status, text: on.text, file: activeIn('monitor') }));
