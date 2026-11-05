@@ -58,7 +58,7 @@ function isCall(x) {
 // owner too (Andy: "gets everything back, jobs, files, grants, puppets"): its command is signed by this node and a puppet
 // obeys it, so on a relay that is not starred it would hand the face that puppet's jobs, files and grants.
 const OFF_THE_FACE_FAMILIES = ['jobs', 'fs', 'fileServer', 'owner'];
-const OFF_THE_FACE_VERBS = ['app.active', 'net.fetch', 'auth.grant', 'auth.revoke', 'auth.bundle', 'auth.branch', 'node.rotateCipher'];
+const OFF_THE_FACE_VERBS = ['app.active', 'app.label', 'app.shell', 'net.fetch', 'auth.grant', 'auth.revoke', 'auth.bundle', 'auth.branch', 'node.rotateCipher'];
 const STAYS_ON_THE_FACE = ['fs.annotations'];
 // ON A RELAY THIS NODE'S OWNER STARRED, THE LIMITS ARE GONE (goal/G41.30; Andy: "your face on a relay you own gets everything
 // back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the limits stay until

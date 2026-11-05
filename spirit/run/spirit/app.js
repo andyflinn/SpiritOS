@@ -10,6 +10,8 @@
 //                     words is every plugin. "it's minimum, no filters, just a search string."
 //     active({ key, active })  sets a plugin's active in spirit/state/<key>/node.json, and publishes the rows. It only writes.
 //                     A key that is no plugin is refused, so no path can be written through it (goal/G43.9).
+//     label({ key, label }), shell({ key, shell })  the same, for the label and whether the app may mount as shell. <name>.json
+//                     gives the default, node.json overrides it, and neither writes <name>.json (Q4: "yes.").
 //
 // A PLUGIN IS A FOLDER WITH ITS OWN <name>/<name>.json (Andy, G43.1's box: "the new "default" pattern in that module is:
 // /<name>/<name>.json"), read from the disk at each search, so no list names one. appSelector/ and test/ are no plugins.
@@ -44,10 +46,12 @@ function createApp(opts) {
 
   // A plugin's row, or null when the folder has no file of its own, or one that says nothing readable.
   function rowOf(name) {
-    let identity = null;
-    try { identity = JSON.parse(fs.readFileSync(path.join(folder, name, name + '.json'), 'utf8')).identity; } catch (e) { return null; }
-    const i = identity && typeof identity === 'object' ? identity : {};
-    return { key: name, label: String(i.label || name), icon: String(i.icon || ''), active: stateOf(name).active === true };
+    let own = null;
+    try { own = JSON.parse(fs.readFileSync(path.join(folder, name, name + '.json'), 'utf8')); } catch (e) { return null; }
+    const i = own && own.identity && typeof own.identity === 'object' ? own.identity : {};
+    const s = stateOf(name);
+    const asShell = typeof s.shell === 'boolean' ? s.shell : !!(own && own.shell && own.shell.true === true);
+    return { key: name, label: String(s.label || i.label || name), icon: String(i.icon || ''), active: s.active === true, shell: asShell };
   }
   function names() {
     try {
@@ -75,16 +79,18 @@ function createApp(opts) {
     return all;
   }
   let publish = function () {};
-  function active(body) {
+  function write(body, change) {
     const key = String((body && body.key) || '');
     if (names().indexOf(key) === -1 || !rowOf(key)) return { ok: false, status: 404, code: 'not-found', error: 'no app ' + key };
-    const state = stateOf(key);
-    state.active = !!(body && body.active === true);
+    const state = Object.assign(stateOf(key), change);
     fs.mkdirSync(path.dirname(stateFile(key)), { recursive: true });
     fs.writeFileSync(stateFile(key), JSON.stringify(state, null, 2) + '\n');
     publish();
     return { ok: true, status: 200 };
   }
+  function active(body) { return write(body, { active: !!(body && body.active === true) }); }
+  function label(body) { return write(body, { label: String((body && body.label) || '') }); }
+  function shell(body) { return write(body, { shell: !!(body && body.shell === true) }); }
   if (o.jobs) {
     const job = o.jobs.createJob('permanent', 'apps', { apps: table() });
     publish = function () { o.jobs.updateJob(job.id, { data: { apps: table() } }); };
@@ -95,7 +101,7 @@ function createApp(opts) {
     });
   }
 
-  return { search: search, active: active };
+  return { search: search, active: active, label: label, shell: shell };
 }
 
 module.exports = { createApp: createApp };

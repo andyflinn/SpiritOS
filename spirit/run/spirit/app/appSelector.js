@@ -14,8 +14,8 @@
 //
 // ONE appSelector, THREE FACES (goal/G43.9; Andy, box: "One appSelector, with three faces: dropdown, pane and tiles."): "tiles
 // shows active only, pane shows all", "and the picks differ: tiles launches, pane shows the detail with its button." Both open on
-// top, here alone (Andy: "the detail panel needs to open on top of the whole container"), with the icon and label on the bar's
-// left edge and a close icon on its right, which brings the list back. spirit.elements holds server, spirit.app the rest.
+// top, here alone (Andy: "the detail panel needs to open on top of the whole container"), under one title bar, whose close
+// button brings the list back. spirit.elements holds server, spirit.app the rest.
 (function () {
   function createAppSelector(options) {
     var o = options || {};
@@ -42,12 +42,15 @@
       var S = window.spirit;
       var shell = document.createElement('div');
       shell.className = 'app-container fill';
-      shell.innerHTML = '<div class="app-container-bar" style="display:flex;align-items:center;justify-content:space-between;flex:none;padding:0.25em 0">' +
-        '<span class="app-container-head" style="display:flex;align-items:center;gap:0.5em"><span class="icon"></span><span class="label"></span></span>' +
-        '<button type="button" class="app-container-close" title="Close">✕</button></div>' +
-        '<div class="app-container-pane fill"></div>';
-      S.element.icon.create(shell.querySelector('.icon'), { glyph: row.icon });
-      shell.querySelector('.label').textContent = row.label;
+      // THE TITLE BAR OF ALL PANELS IS ONE rowForm (Andy: "rowForm: [app-icon] "<app-label> [x]"). It follows the row's label.
+      var bar = S.element.rowForm.create(shell, { icon: row.icon, button: '✕' });
+      bar.button.className = 'app-container-close';
+      bar.button.title = 'Close';
+      bar.span.textContent = row.label;
+      var offRow = S.data.app.data.watchApp(String(row.key), function (now) { if (now) bar.span.textContent = now.label; });
+      var pane = document.createElement('div');
+      pane.className = 'app-container-pane fill';
+      shell.appendChild(pane);
       // Not hidden: a list's box is a flex box, and its display would win.
       listBox.style.display = 'none';
       root.appendChild(shell);
@@ -56,12 +59,13 @@
       closeOpen = function () {
         closed = true;
         closeOpen = null;
+        offRow();
         if (made2) made2.destroy();
         root.removeChild(shell);
         listBox.style.display = '';
       };
-      shell.querySelector('.app-container-close').addEventListener('click', function () { closeOpen(); });
-      Promise.resolve(fill(shell.querySelector('.app-container-pane'), function () { return closed; })).then(function (m) {
+      bar.button.addEventListener('click', function () { closeOpen(); });
+      Promise.resolve(fill(pane, function () { return closed; })).then(function (m) {
         if (closed) { if (m) m.destroy(); return; }
         made2 = m;
       });
@@ -95,7 +99,7 @@
       if (closeOpen) closeOpen();
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.all([window.spirit.require('spirit/app/appSelector/listElement.js'), window.spirit.require('spirit/app/appSelector/detailElement.js'), window.spirit.require('spirit/element/icon.js')]).then(function () {
+    Promise.all([window.spirit.require('spirit/app/appSelector/listElement.js'), window.spirit.require('spirit/app/appSelector/detailElement.js'), window.spirit.require('spirit/element/icon.js'), window.spirit.require('spirit/element/rowForm.js')]).then(function () {
       if (gone) return;
       made = window.spirit.elements.appList.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
