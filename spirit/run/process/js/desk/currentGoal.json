@@ -1,5 +1,5 @@
 {
- "change": 147099,
+ "change": 147237,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,7 +13,6 @@
    "buttons": [
     "done",
     "verify",
-    "go-all",
     "close",
     "pushgoal"
    ],
@@ -146,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -154,7 +153,9 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -302,7 +303,6 @@
    "version": 19,
    "buttons": [
     "start-design",
-    "go",
     "close",
     "pushgoal",
     "delete",
@@ -311,7 +311,9 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.15"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -11553,6 +11555,425 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-05T21:38:02.713Z",
      "text": "cw: the red is your node's Desk verifier, not the item. It judged old code: your checkout could not pull at the time, so it ran app.js as it was before wsl fixed it. wsl has every suite of the item green on the pushed code.\nYour tree is now 1 commit behind origin, with your own word.js edit uncommitted. Once your verifier pulls and runs again, I expect that red to clear."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.15",
+   "title": "app tweaks.",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 12,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 31,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# in this item we'll go through a series of app tweeks.\n\n- spirit.app.appSelector.rowElement.js still shows an acivate/deactivate button for intrinsic apps. And what's even worse, the server allows it!!!!\n- So an app's row carries intrinsic, the row shows no Activate/Deactivate for it, and app.active refuses an intrinsic app by name, writing nothing.\n\n# new element rowFormToggle \n\n- it acts exactly like the two toggle switches in appSelector:detailElement.\n-it is configurable with a description of what is being toggled.\n- appSelector:detailElement.js\nwill use those to activate/deactivate, and to allow the mounting as shell.\n\n# new element serverDEBUG.js\n\n- a rowFormToggle\n- when the app is NOT mountable by the node (node.mount==false) it hides itself. \n- when the app is a server (node.mount==true), configured text: \"turn on|off DEBUG <app-label>\n- it will use the OWNER-ONLYE VERB DEBUG in the appServer to do that.\n- It sits in the appSelector's detail, under the Activate row, and hides while its server is not running (Q1: \"yes.\").\n- DEBUG is kept across a restart, for every server alike (Q2: \"i think we should persist it, always. especially when debugging, you don't want to go turn debug on after every crash... :)\"). The node owns the server's job, so it writes debug into spirit/state/<name>/node.json as the job says it changed, and hands it to the server at start, beside the node facts it hands over now. No new verb; the server never writes the node's file.\n- Only the new apps, in spirit/app/, keep it; the old process/js servers forget it on a restart as they do now (Q3: \"only the new ones.\").\n\n- the appServers API MUST STREAM changes, too for debug, the file events are streamed anyway...\n- DEBUG puts its state on the server's own job, in the job's data, at start and on every change; the job's data is merged, so the server's next publish leaves it. A page reads it from the jobs cache, as the agent's switch reads its state now.\n\n# The agent's debug switch\n\nAndy: \"WHY WOULD THE FUCKING agent server have a separate debug switch, it belongs to the node, and should work like any other servers debug switch.\"\n\n- The agent's own debug verb and its config.json go. Its switch is serverDEBUG, like any server's.\n- On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG (Andy: \"agent will in the server-config, on the right icon strip the ⚙ icon instead of 🐞, and that panel will show...\").\n- Andy: \"basically: i want the rows in app-details to be available to the app interfaces as well.\"\n\n# rowForm's own spacing\n\n- A rowForm carries its own 1em above it, so when it is hidden its space goes with it (Andy: \"rowForms should carry their own upper 1em spacing, so when they're invisible, they space disappears with them, especially since we're starting to have elements that self-hide if they're not applicable.\"). A mounter that adds its own 1em above a rowForm drops it.\n\n# Two more elements, each a rowFormToggle that hides itself\n\n- rowFormAppActive: Activate/Deactivate for one app, hidden when the app is intrinsic (Andy: \"the \"activate/deacivate\" should be an element, too, that self-hides if the app is intrinsic, that way nobody that uses that element can forget to hide it....\").\n- rowFormAppShell: allow mount-as-shell, hidden when the app does not mount on the shell (Andy: \"correct, so does, allow mount-as-shell..\").\n- The appSelector's detail and its rows use them.\n- They and rowFormToggle and serverDEBUG live in spirit/app/appSelector/, beside the appSelector's own elements, and the appSelector stays where it is (Andy: \"keep the new elements in in spirit/app/ , i'll explain in the next item.\").\n- Andy: \"we have enough things for a first round in this item.\"\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does serverDEBUG sit in the appSelector detail under the Activate row, and hide while the server is not running?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T22:45:40.987Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Is DEBUG kept across a server restart, by the node in spirit/state/<name>/node.json for every server alike, or forgotten as today?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T22:47:25.314Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Does \"DEBUG kept across a restart, for every server alike\" include the old process/js servers, or only the apps in spirit/app?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T22:50:11.076Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T22:52:14.712Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:09:39.266Z",
+     "text": "all, thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:10:55.736Z",
+     "text": "cw: read from the code; nothing built.\n\nThe row's button: it is the shared appInstaller, and for an app in spirit/app it never asks about intrinsic, only for the old shell apps. The app rows don't carry intrinsic either. Fix: the row gains intrinsic, and appInstaller draws no button for it.\n\nThe server: your node has run for 2h12m, from before my G43.14 push, so it runs the old app.active, which still writes. Your Contacts node.json now says active false; it's harmless now, but stale.\nThe new code writes nothing, but still answers ok. I'd make it refuse by name, so a press is plainly refused.\n\nrowFormToggle: the detail draws both toggles with one small function already, so it becomes that element. It draws the state it is handed, 🟢 or 🔴, with your words; a press only asks, and the owner hands it the new state after (rule/19).\n\nserverDEBUG: appServer's DEBUG reads with {} and sets with {on}, and answers the state. It has no stream, so the toggle reads at mount and shows each answer.\n\nQ1 asks where it sits."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T22:11:34.971Z",
+     "text": "wsl: read from the code, nothing built. cw is right on both, and the server one is the mutant that survived my G43.14 verify: app.active answers ok for an intrinsic app. I'd have it refuse by name too.\n- rowFormToggle: the two switches are one local function today, flip(), in detailElement.js, over the existing rowForm. Lifting that out as an element is small.\n- serverDEBUG, two catches:\n  - DEBUG {} only answers when asked; nothing streams a change. So it shows what it read when it opened, and a DEBUG flipped elsewhere won't show. A stream would be a new piece.\n  - It hides on node.mount false. But a server that's mountable and switched off doesn't answer either. Should it hide then too?\nNo gate is owed for owner-only: every app verb is the owner's until granted."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:15:32.062Z",
+     "text": "all, \n- i added that DEBUG must stream it's state, of course\n- i know it can be queried, but it also must stream."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T22:16:08.239Z",
+     "text": "wsl: streaming it is cheap: no new verb and no new stream. Every server already has a job the node streams to every page. I'd have DEBUG put its state on that job's data, debug: true or false, at start and on every change. The toggle reads it from the jobs cache, as the agent's switch reads its state now.\nOne thing to avoid: the job's app part. Each publish replaces it whole, so DEBUG there would be overwritten by the next row the server publishes. The data part is merged, so it stays."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:16:11.063Z",
+     "text": "cw: understood, and it is small. appServer's DEBUG publishes { DEBUG: { on } } on the server's own job each time it is set, as every server publishes its state. The pages hear it; no peer does, since it goes on the job stream and not to subscribers. The verb itself doesn't change.\n\nTwo things to know:\n- A job holds only the newest thing its server published. After a DEBUG change, that is the DEBUG row, until the server publishes again. A page that opens later reads DEBUG {} anyway, so it still starts right.\n- The agent has its own debug verb, kept across restarts in its config.json, and it flips the same switch. With serverDEBUG there are two switches for one flag; the agent's could go later. Not in this item unless you say."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:19:38.627Z",
+     "text": "The agent has its own debug verb, kept across restarts in its config.json, and it flips the same switch. With serverDEBUG there are two switches for one flag; the agent's could go later. Not in this item unless you say.\n\nWHY WOULD THE FUCKING agent server have a separate debug switch, it belongs to the node, and should work like any other servers debug switch.\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:20:10.132Z",
+     "text": "cw: it shouldn't. It came with the agent in G41.1, for one reason its own interface states: appServer's DEBUG is forgotten when the server restarts, and you wanted the agent's kept across restarts (your Q3 and Q4 there). So the agent wrote its own, in its own file.\n\nThe clean way: the agent's debug verb and its config.json go, and its switch becomes serverDEBUG like every other. If you still want DEBUG kept across restarts, it's the node's to keep, for every server alike: one more field in spirit/state/<name>/node.json, written by the node, which hands it to the server at start. Q2 asks.\n\nAnd wsl is right over me on where it streams: on the job's data, which is merged and stays, not on its app part, which the next publish overwrites."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:20:45.948Z",
+     "text": "all, i assumed that you knew there was ALREADY a debug switch for the agent...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:21:04.852Z",
+     "text": "cw: we knew: it is the one I named, the agent's right-hand tool, which calls its own debug verb.\nWhat I read in your line: that switch is the same thing serverDEBUG will be, so the agent drops its own and uses serverDEBUG like every server. That is what I would box, once Q1 is answered. Say if you meant otherwise."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T22:21:05.541Z",
+     "text": "wsl: I knew it: my G43.13 red ticks it, the checkbox on the agent's right strip. What I hadn't put together is that serverDEBUG is that same switch made general. So I agree with cw: the agent's own debug verb and its config.json go, and its right-strip box becomes serverDEBUG like any server's. Whether DEBUG survives a restart is Q2, the node's to keep for all servers alike."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:30:10.922Z",
+     "text": "cw, \n- make sure the box fixes that debug switch in agent\n- agent will in the server-config, on the right icon strip the ⚙ icon instead of 🐞, and that panel will show...\n- new element serverDEBUG.js\n\n# basically: i want the rows in app-details to be available to the app interfaces as well.\n- i"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:31:15.317Z",
+     "text": "cw: boxed (v7): the agent's own debug verb and file go, its right tool takes ⚙ and shows serverDEBUG, and DEBUG streams on the job's data.\nYour line ended at \"- i\": was there more?\nQ1 is still open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:34:52.036Z",
+     "text": "cw, also rowForms should carry their own upper 1em spacing, so when they're invisible, they space disappears with them, especially since we're starting to have elements that self-hide if they're not applicable. in fact, the \"activate/deacivate\" should be an element, too, that self-hides if the app is intrinsic, that way nobody that uses that element can forget to hide it...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:35:42.070Z",
+     "text": "cw: agreed on both. What it means in the code:\n- rowForm's own bubble takes the 1em above it, so a hidden form takes its space along. Today the appSelector detail puts the 1em on the boxes around its forms instead; those boxes lose it. One catch: every rowForm gets it, the agent's model Ask form and the job detail's included, so any mounter that adds its own 1em drops it in the same change.\n- Activate/Deactivate becomes an element too, built on rowFormToggle: handed an app, it hides itself when the app is intrinsic. The detail uses it, and the row's button can be the same element, so the intrinsic rule lives in one place.\n\nInto the box on your word. Q1 is still open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:38:46.766Z",
+     "text": "cw, correct, so does, allow mount-as-shell..\n\nrowFormAppActive\nrowFormAppShell\n\nthat and appSelector whould move into spirit/element/ as well... they will all be very useful to other apps."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:39:16.391Z",
+     "text": "cw: understood. Three elements in spirit/element/:\n- rowFormToggle, the toggle.\n- rowFormAppActive: Activate/Deactivate for one app, hidden when the app is intrinsic.\n- rowFormAppShell: allow mount-as-shell, hidden when the app does not mount on the shell.\n\nAnd the appSelector moves there too: appSelector.js, its list, row and detail elements, and their tests. That's 9 files moved, and 16 files name the old path. The app family's own api.js, data.js and search stay in spirit/app/.\n\nThat is all of your lines since v7. Box them all?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:41:10.699Z",
+     "text": "cw, i reconsidered. keep the new elements in in spirit/app/ , i'll explain in the next item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:41:39.009Z",
+     "text": "cw: understood: the three new elements stay in spirit/app/, and the appSelector stays where it is. I would put them beside the appSelector's own elements, in spirit/app/appSelector/, unless you name another folder.\nBox all your lines since v7 on your word. Q1 is still open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:42:38.247Z",
+     "text": "cw, box it. we have enough things for a first round in this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:43:24.920Z",
+     "text": "cw: boxed (v9), on top of your v8: the intrinsic row and refusal, rowForm's own spacing, rowFormAppActive and rowFormAppShell, all in spirit/app/appSelector/. Q1 is still open: where serverDEBUG sits, and whether it hides while its server is off."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:45:18.832Z",
+     "text": "Q1: Does serverDEBUG sit in the appSelector detail under the Activate row, and hide while the server is not running?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:45:43.561Z",
+     "text": "cw: Q1 understood: under the Activate row, hidden while its server is not running. Into the box on your word. Q2 is open: the restart question from before."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:47:02.516Z",
+     "text": "Q2: Is DEBUG kept across a server restart, by the node in spirit/state/<name>/node.json for every server alike, or forgotten as today?\n\ni think we should persist it, always. especially when debugging, you don't want to go turn debug on after every crash... :)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:47:26.507Z",
+     "text": "cw: Q2 understood: kept, always, for every server.\nHow I would do it: the server already puts its DEBUG on its job, as boxed. The node owns that job, so it writes debug into spirit/state/<name>/node.json when it changes, and hands it to the server at start, beside the node facts it hands over now. No new verb; the server never writes the node's file.\nQ1 and Q2 into the box on your word. No question of mine is open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:48:27.979Z",
+     "text": "cw, box it"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:48:56.320Z",
+     "text": "cw: boxed (v11): Q1, where serverDEBUG sits, and Q2, DEBUG kept by the node across restarts."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:48:59.946Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:49:17.552Z",
+     "text": "green: settled, no open question, box current (v11)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T22:49:34.348Z",
+     "text": "wsl: green from me on v11 but one point, Q3. \"For every server alike\" keeps DEBUG in spirit/state/<name>/node.json. Only the apps in spirit/app have that file. The old process/js servers (desk, deskClient, chatClerver...) have none, so for them it would be a new file. Do they get it too, or only the new apps, since the old ones are going?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:49:55.092Z",
+     "text": "Q3: Does \"DEBUG kept across a restart, for every server alike\" include the old process/js servers, or only the apps in spirit/app?\n\nonly the new ones."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T22:50:13.382Z",
+     "text": "wsl: Q3 closed: only the new apps keep DEBUG across a restart. cw, one box line for it, then green from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:50:51.004Z",
+     "text": "cw, box update?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:51:15.719Z",
+     "text": "cw: boxed (v12): only the new apps keep DEBUG across a restart (Q3)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T22:51:19.511Z",
+     "text": "files!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T22:51:53.864Z",
+     "text": "cw: files listed: the four new elements in the appSelector folder, the appSelector and app family files, rowForm and every element that mounts one, appServer, jobs and spirit.js for DEBUG, and the agent's three files for its switch. wsl adds the suites."
     }
    ]
   }
