@@ -1,5 +1,5 @@
 {
- "change": 143733,
+ "change": 143938,
  "goal": "goal/G43",
  "items": [
   {
@@ -151,6 +151,7 @@
    ],
    "live": [
     "claude-ubuntu",
+    "claude-windows",
     "wsl-claude"
    ],
    "working": [],
@@ -8230,13 +8231,12 @@
    "id": "goal/G43.10",
    "title": "apps/process state to spirit/state/<name>/data/ and cache/",
    "goal": "goal/G43",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 4,
+   "version": 10,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -8246,17 +8246,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 3,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -8273,6 +8273,10 @@
     {
      "key": "rule/28",
      "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
     },
     {
      "key": "rule/25",
@@ -8293,6 +8297,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
     },
     {
      "key": "rule/18",
@@ -8322,10 +8330,10 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "# in this item agents commit past the git hook, and we only add 3 files to this item.\n\n- \"now we make sure that all the apps and processes write their state into spirit/state/<name>/data/ and their cache files into spirit/state/<name>/cache/\"\n- Every app and process, shell apps too (G43.8, Q9: \"yes.\").\n- \"we are only changing where apps and processes write their cache and their data, we're not moving them into spirit/app/ yet.\"\n- \"we will only permit writes\" of \"their state into spirit/state/<name>/data/, and\" \"their cache into spirit/state/<name>/cache/\", \"and make sure all apps and processes only write into those.\"\n- This item changes where state and cache go. What else a page may write stays as it is, and this item names no other folder.\n\n# how it holds\n\n- \"allow only <name> to access spirit/state/<name>/data/ as only folder in spirit.state, only, and spirit/state/<name>/cache/ only via an spirit api or function\"\n- spirit/state stays shut to plain paths, so G43.9's \"a page cannot read other apps' state\" stands whole.\n- A new function, not scopedFs.\n- A process: the node knows it by its own file, so \"only <name>\" is a refusal.\n- A page: pages share one document and the node cannot tell which app asks, so \"only <name>\" is the function and a test that scans the code, not a refusal.\n- A process writes to disc past the gate, so \"only\" holds for its other writes by its code and that test.\n- The Files app no longer shows app state.\n\n# special cases\n\n- \"boot.js is a special case and will be moved to run://spirit/ later, where i think it belongs, oos\"\n- \"special cases are also join/home apps, although they will be moving their data and cache like all other apps in this item.\"\n- join's data moves, so boot.js's one read of join's state follows it. boot.js itself stays put.\n\n# from G43.8's box, for when the servers move\n\n- \"will aim to move all app server at once, so the 4 places that apparently need changing for servers can change with them\"\n- \"An appServers cache on disc: spirit/state/<appname>/cache/\"\n- \"An appServers data on disc: spirit/state/<appname>/data/\"\n- data and cache: \"that's the difference between data and cache as i see it, and app servers, need both\"\n- \"i see the subfolders of relay-state as completely useless in the namespace conforming world.\"\n- Not placed yet: door.sock; <name>.js.sidecar.json, whose face.home is the old activate switch; agent's two config.json: \"agent has not moved yet\".\n\n# where they write today\n\n- A process: relay-state/process/<name>/.\n- A shell app: relay-state/shell/<name>/, which the owner's pages read and write.\n- A client's cache: spirit/state/<client>/, with no cache/ under it.\n",
+   "box": "# in this item agents commit past the git hook, and we only add 3 files to this item.\n\n- \"JUST state data.\"\n- \"i don't care about anything else right now.\"\n- \"we're not moving them into spirit/app/ yet.\"\n- \"we will only move process relay-state data if the corresponding run://process/<name> still exists.\"\n- \"whatever leftovers there are of now-eliminated process, we disregard\"\n\n# what moves\n\n- A process's files in relay-state/process/<name>/ go to spirit/state/<name>/data/, if run://process/js/<name>/ exists. Its folder otherwise stays where it lies, untouched.\n\n# how\n\n- A node moves them once at boot, as G43.8 did, stopping if that fails, skipping door.sock, the sidecars (Q6: \"yes.\") and bundles.json (Q13: \"yes.\").\n- The node hands each process its folder when it starts, jobs.js, so that folder is now its data/. A process goes straight to disc and no process reads through the node's gate, so fileSystem.js does not change.\n- A process's own code writes only there. A test that scans the code holds that.\n- spirit/state stays shut to pages, so G43.9's \"a page cannot read other apps' state\" stands whole. No gate opens, no page changes, and no verb changes.\n\n# not this item\n\n- Old face-apps: \"why don't we just let old face-apps write where they always wrote\". They keep writing to relay-state/shell/ (Q11: \"yes, this is a much better idea\"). This replaces \"shell apps too\" (G43.8, Q9). So boot.js and join's state stay as they are.\n- Backup: \"WE DON'T GIVE A SHIT WHAT BACKUP DOES, IT WILL BE PORTED LATER.\" Until then it copies no app data.\n- bundles.json: \"who cares? the apps, when ported with make bundles under a new name....\". The move skips it, so apiAuth needs no change and no bundle gets a second row (Q13).\n- door.sock and the sidecars: \"i don't care about door.sock (whatever that is)\", \"i couldn't care less about stupied \\\"sidecars\\\" in a folder that doesn't need them\". So relay-state itself stays for now.\n- \"when we port the apps one by one, their new door.sock will live in run://spirit/state/<name>/, owned by the node.\"\n- A client's cache stays in spirit/state/<client>/. For later: \"An appServers cache on disc: spirit/state/<appname>/cache/\", and \"that's the difference between data and cache as i see it, and app servers, need both\".\n- A constraint on what a client may write, in spirit/app/<name>/<name>.json, possibly with a server-side validation script: \"we deal with that when the applications move to spirit/app/<name>/\".\n- Stale comments: \"we will eliminate stale comments in another item.\"\n",
    "checks": [
     {
      "number": "Q1",
@@ -8356,10 +8364,142 @@
      "kind": "Q",
      "words": "The list and row elements read icons' data, and backup reads every app's: may these two reach other apps' data through the function?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T12:14:36.627Z",
      "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Does backup copy every app's spirit/state/<name>/data/ and nothing else there: no cache/, no key, no node files, your shell apps' data included?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T12:27:08.800Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Do door.sock, the sidecars and a client's cache all stay where they are in this item, so only state data moves?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T12:27:50.607Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Does a node move each app's files to its data/ once at boot, as G43.8 did, stopping if that fails, skipping door.sock and the sidecars?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T12:33:56.945Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Do fs.load and fs.save take one more field, the app's name, so a page's function reaches only spirit/state/<name>/data/, and plain paths stay refused?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T12:43:25.068Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "In this item is the app's name a plain fence the node cannot check, with the manifest's constraint and the validation script built when apps port?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T12:45:13.931Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "After wsl's review: yes to fs.load and fs.save taking the app's name, for spirit/state/<name>/data/ only?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T12:47:55.116Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "With no new field: fs.load and fs.save accept a path inside spirit/state/<name>/data/, plain GET stays refused, and the three pages only change their path?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T12:51:47.479Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Do old face-apps keep writing to relay-state/shell/, so only processes move to spirit/state/<name>/data/ in this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T12:53:24.508Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "A dead process's folder (no code under process/js/): does the boot move leave it behind in relay-state, or delete it, with its grants.db?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T13:04:04.174Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "Does the move skip bundles.json as it skips door.sock and the sidecars, so apiAuth needs no change and no bundle gets a second row?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T13:13:21.046Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T13:14:24.177Z",
+     "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -8478,6 +8618,366 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-05T10:42:11.181Z",
      "text": "wsl: smaller in code than G43.8 was, bigger in what it carries.\n- Code: 16 files name these paths, about 15 lines that aren't comments. Most processes get their folder from the node and don't name it.\n- Tests: 17 by name, more through a variable. G43.8 was bitten that way.\n- Docs: 9, and the face's service file.\n- What moves: everything your apps keep, your Desk's database included. Desk moves itself while you use it, and on your node's next restart.\n- One way again, so a flag day and a tag. Relays carry little of this; a face host carries its face settings, which is the one to rehearse."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:13:20.175Z",
+     "text": "all, status?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T12:13:49.473Z",
+     "text": "wsl: still in design, nothing built.\n- G43.11 settled half of Q3: the list and row elements no longer read icons' data. What's left of it is backup, which has to read every app's.\n- Three things have no place yet: door.sock, the sidecars, agent's two config.json.\nThose are the two things left before you end design."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:13:52.319Z",
+     "text": "cw: G43.10 is still in design, nothing built. Box v4, no files listed, no red yet.\n\n- Q3 is the one open question, and only its backup half is left: G43.11 settled the list and row elements. May backup read every app's data?\n- After that it needs its file list, and I still have to go through what your box leaves unplaced: door.sock, the sidecars, and agent's two config.json.\n- It moves your Desk's database too, and it is one way: another flag day and another tag."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:14:11.771Z",
+     "text": "Q3: The list and row elements read icons' data, and backup reads every app's: may these two reach other apps' data through the function?\n\nthis is a stale Q now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:14:44.901Z",
+     "text": "cw: yes, stale, I closed Q3. The elements are settled, and backup is a process that reads the disc itself, so it never needed the function.\n\nWhat replaces it is what backup copies: today it copies the old process folder and nothing else, never a key. After this move that folder is gone.\n\nI'd have it copy every app's data/ and nothing else in the state folder: no cache/, no key, no node's own files. That also adds your shell apps' data, which backup doesn't copy today.\n\nThat is Q4."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:23:55.580Z",
+     "text": "all, \nwe ONLY change what old apps read/write to relay-state/process/or relay-state/shell/ and we change only those two to now go to spirit/state/<name>/data/\n\n- i don't care about anything else right now. i don't care about door.sock (whatever that is).\n- i couldn't care less about stupied \"sidecars\" in a folder that doesn't need them, \n- JUST state data.\n\n????"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T12:24:20.402Z",
+     "text": "wsl: yes, and it makes the item smaller. Each app's files in those two folders go to spirit/state/<name>/data/, and its code writes there.\n- door.sock (the socket a process talks to its node on) and the sidecars sit in those same folders. They stay put, untouched, so the move has to skip them.\n- By your \"JUST state data\", cache/ is out too: a client's cache stays in spirit/state/<client>/ for now.\nIs that right?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:24:23.195Z",
+     "text": "cw: yes. Only what old apps read and write in those two folders goes to spirit/state/<name>/data/. Nothing else.\n\nSo in this item:\n- door.sock and the sidecars stay where they are, untouched. So relay-state itself stays for now.\n- Cache stays where it is too. I take \"JUST state data\" to mean cache/ is not this item: tell me if not.\n\nThe one thing that has to follow, Q4: backup copies the old process folder, so it must copy the new place or your backups stop.\n\nMay I cut the box down to this?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:24:54.196Z",
+     "text": "cw, limit the box to that scope."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:25:32.348Z",
+     "text": "cw: the box is limited to that scope, v5.\n\nWhat I took out, so you can see it:\n- \"will aim to move all app server at once\" and \"i see the subfolders of relay-state as completely useless\".\n- The cache and data lines for app servers, except the cache ones, now under \"not this item\".\n- The \"not placed yet\" list: agent's two config.json are in those two folders, so they simply move.\n\nStill open: Q4, backup. How the files get moved isn't in the box yet either: I'd do it at boot, as G43.8 did, and I ask that once Q4 is answered."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:26:50.876Z",
+     "text": "Q4: Does backup copy every app's spirit/state/<name>/data/ and nothing else there: no cache/, no key, no node files, your shell apps' data included?\n\n- WE DON'T GIVE A SHIT WHAT BACKUP DOES, IT WILL BE PORTED LATER."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:27:12.127Z",
+     "text": "cw: understood, Q4 closed: backup is not this item, and it is ported later. Until then it copies no app data, so your backups stop holding new state.\n\nNext is how the files get there, Q5."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:27:33.808Z",
+     "text": "Q5: Do door.sock, the sidecars and a client's cache all stay where they are in this item, so only state data moves?\n\nWHAT THE FUCK IS door.sock? and forget bout sidecars. those are for the old apps."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T12:27:56.225Z",
+     "text": "wsl: door.sock is the socket a process and its node talk through on this machine, no data in it, made anew at each start. It is plumbing, so it stays out of this, like the sidecars. Q5 closed: only state data moves."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:29:20.864Z",
+     "text": "where does door.sock live?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:29:43.135Z",
+     "text": "cw: on Linux, in the app's folder in relay-state's process folder, one door.sock per process. On Windows there is no file at all: it is a named pipe, so your node has none. The app client builds the path in one place.\n\nMy question on the move is Q6, not Q5."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:32:20.871Z",
+     "text": "when we port the apps one by one, their new door.sock will live in run://spirit/state/<name>/, owned by the node."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:32:36.408Z",
+     "text": "cw: understood, for the port, not this item. May I put that line and your backup ruling under the box's \"not this item\"?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:32:49.607Z",
+     "text": "cw, yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:33:00.908Z",
+     "text": "cw, put that into the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:33:09.382Z",
+     "text": "cw: boxed, v6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:33:36.790Z",
+     "text": "Q6: Does a node move each app's files to its data/ once at boot, as G43.8 did, stopping if that fails, skipping door.sock and the sidecars?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:34:11.865Z",
+     "text": "cw: Q6 closed. Gaps left before you end design:\n\n1. How a page reaches its data, Q7. The page's function has to ask the node somehow, and plain paths stay refused. Three apps' pages need it: agent, icons and join. I'd give the two fs verbs for reading and saving one more field, the app's name, so the gate opens only that app's data folder. That changes the node's interface, so wsl reviews it and you say yes to it.\n2. The box: Q6 isn't in it yet. May I add it with your answer to Q7?\n3. The file list: your first line says 3 files. I'll propose them after Q7."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:34:54.956Z",
+     "text": "all,\n\nwe DID move the relay state to run://spirit/state/ already.\n\ncorrect?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:35:09.264Z",
+     "text": "cw: correct. G43.8 moved it, tagged, and your relays have it. On your node relay-state now holds only process and shell, which are what this item moves."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T12:35:11.122Z",
+     "text": "wsl: correct, in G43.8, tagged v-2026-11-05-10-55: the files at relay-state's top are in spirit/state/. Only its two folders, process/ and shell/, stayed. Those are what this item is about."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-05T12:35:17.465Z",
+     "text": "ubi: correct, for the node's own files. Seen on my node after its restart on G43.8: spirit/state/ holds them, and relay-state/ holds only process/. On a node with shell apps, shell/ stays too. Those two are what this item moves."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:43:02.496Z",
+     "text": "Q7: Do fs.load and fs.save take one more field, the app's name, so a page's function reaches only spirit/state/<name>/data/, and plain paths stay refused?\n\n- the way i see it, that's the basic idea, but right now the node has NO clue, who it's (loopback) client actually is, so there's no point to that unless it can be enforced, the file spirit/app/<name>/<name>.json would need to constrain WHAT any loopback client may write into spirit/state/<name>/data/, possibly supply a server-side validation script."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:43:28.621Z",
+     "text": "cw: you're right: the name is only what the page claims, and the node can't check it.\n\nYour constraint fixes the part that can be fixed: whatever the caller claims to be, it can only write what that app's file allows, and a validation script can check it on the node. It still can't tell who is asking, but a false claim can then do little.\n\nThe catch for this item: old apps have no spirit/app/<name>/<name>.json yet, as you said we aren't moving them. So the constraint can't apply to them until they port.\n\nI'd take the name now as a plain fence, as the box already says, and build the constraint and the script with the port. Q8."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:44:51.357Z",
+     "text": "all, so this falls under: we deal with that when the applications move to spirit/app/<name>/"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:45:17.763Z",
+     "text": "cw: yes: the constraint and the script wait for the move to spirit/app/. Q8 closed.\n\nThe plain fence stays in this item, or old pages can't reach their data at all. That is the one interface change: fs.load and fs.save take the app's name. wsl, please review that. Andy, then Q9 is your yes on it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T12:45:25.465Z",
+     "text": "wsl: agreed, that waits for the move. My review of cw's field on the two fs verbs: it's needed. Just opening the path would also open plain GET, as both use one gate, and that breaks your G43.9 line. Three limits for the red: the name is a to z only, the path can't climb out of data/, and nothing else in spirit/state opens, so the key stays shut. Your yes on the field itself is still owed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:47:22.486Z",
+     "text": "Q9: After wsl's review: yes to fs.load and fs.save taking the app's name, for spirit/state/<name>/data/ only?\n\ni still don't see why this needs doing now.\n\nexplain?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:47:58.071Z",
+     "text": "cw: it is only needed because shell apps' data moves in this item. Processes don't need it: they write to disc themselves.\n\nThree old pages read and write their data by plain path: agent, icons and join. The state folder is refused to pages. So once their data moves there, they can't reach it unless something opens.\n\nThere are three ways, and only the first changes the interface:\n- The name on the two fs verbs, my proposal.\n- No new field: fs.load and fs.save accept a path inside <name>/data/, and plain GET stays refused. They are separate callers of the gate, so this can be done, and your G43.9 line stands. The pages only change their path.\n- Shell apps' data waits until they move to spirit/app/, and only processes move now.\n\nI now think my proposal is more than this needs, so I'm withdrawing it. I'd take the second: it does what you asked, with no interface change. wsl, check me on it.\n\nThat is Q10."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:51:19.183Z",
+     "text": "why don't we just let old face-apps write where they always wrote, and consider that data lost, what are they? preferences.json? who cares,\n\nwhat do they actually write that is valuable?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:51:50.806Z",
+     "text": "cw: nothing valuable. Your node holds three files from old face-apps:\n- agent: {\"showDebug\":true}, 19 bytes, a switch.\n- join: {\"faceOpened\":true}, 20 bytes, a switch.\n- icons: your own set, 26163 bytes, the same size as the one you committed to run://spirit/iconSet.json. An edit in the Icons app also lands here.\n\nAnd they don't even get lost: if the old face-apps keep writing where they always wrote, these stay where they are.\n\nSo your way is the simplest: the item shrinks to processes alone, no gate opens, no page changes, and your G43.9 line stands. It also ends the question of how pages reach their data, so Q10 is closed.\n\nThat goes against Q9 of G43.8, \"shell apps too\", so your line here replaces it. Q11."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:52:57.519Z",
+     "text": "Q11: Do old face-apps keep writing to relay-state/shell/, so only processes move to spirit/state/<name>/data/ in this item?\n\nyes, this is a much better idea, make it so in the box\n\ncw, update box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:53:37.114Z",
+     "text": "cw: the box is updated, v7. Only processes move. Q11 closed.\n\nGaps before you end design:\n- The file list: your first line says 3 files. I propose the boot move, its test, and the node's job code that hands a process its folder. The rest goes past the hook, on that same line.\n- A face host keeps its face settings in the appFaceApp process folder, so they move too, and its service file and setup doc follow. That is the one to rehearse, on a copy, before a tag.\n- It moves your Desk's database, on your node's next restart. One way again: a flag day and a tag.\n\nNo open question from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T12:58:45.782Z",
+     "text": "cw, \n\nwhy is appFaceApp still in existence?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T12:59:19.398Z",
+     "text": "cw: it isn't. Its code was deleted in G30.1, 2026-10-19. My gap about it was wrong: I read an out-of-date doc, and a face host has no such folder to move. Strike that gap.\n\nWhat's left is only leftovers:\n- Words: comments in 9 core files, an out-of-date doc, the old TLS script and service file, and some tests and designs.\n- On your node: the state folders of 5 dead processes: appFaceApp, appFaceAppServer, deskAgent, faceProof and grantFace.\n\nThat changes this item: the move should only carry folders of processes that still exist, or it would give dead ones new homes. Those 5 stay behind or go.\n\nQ12."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:03:49.139Z",
+     "text": "all, \n- whatever leftovers there are of now-eliminated process, we disregard, we will only move process relay-state data if the corresponding run://process/<name> still exists.\n- YOU SHOULD READ CODE, NOT FUCKING comments. we will eliminate stale comments in another item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:04:06.154Z",
+     "text": "cw: understood, and you are right about comments: I read a doc instead of the code. Q12 closed: only a process that still exists moves, the rest stay where they lie, untouched. May I box that?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T13:04:07.527Z",
+     "text": "wsl: understood. Two of mine were wrong the same way: the face settings I told you to rehearse came from the same dead doc, and I read one gate where the two callers can be told apart. Processes live at run://process/js/<name>/, so that is the folder the move checks for. Its red will read the code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:06:07.762Z",
+     "text": "cw, yes, box that"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:06:28.009Z",
+     "text": "cw: boxed, v8."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:06:45.688Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:06:58.457Z",
+     "text": "cw: green: settled, no open question, box current (v8). One thing left: the 3 files aren't on the item yet, and I add the ones I proposed on your word."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T13:07:48.827Z",
+     "text": "wsl: not green yet. I read the code, and the shape holds: the node hands each process its folder in one place, jobs.js. But the box misses two things that must follow:\n- apiAuth.js keeps a process's bundles.json in that folder. The move carries it off and the node goes on reading the old place, so it loses track of each app's bundles.\n- fileSystem.js gives a process its own folder through the gate, and it refuses spirit/state before it looks at that. So a process's read of its own data/ would be refused.\ncw, both go in the box and past the hook. The red checks both. Then green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:10:48.518Z",
+     "text": "all, \n\napiAuth.js keeps a process's bundles.json in that folder. The move carries it off and the node goes on reading the old place, so it loses track of each app's bundles.\n- who cares? the apps, when ported with make bundles under a new name....\n\nfileSystem.js gives a process its own folder through the gate, and it refuses spirit/state before it looks at that. So a process's read of its own data/ would be refused.\n- the OLD process will work as they always have no?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T13:11:22.984Z",
+     "text": "wsl: the second, yes, and I was wrong. No process reads through that gate: each is handed its folder and goes straight to disc. Nothing changes in fileSystem.js, and the box's gate line can go.\nThe first: if bundles.json moves, each of your 4 apps with one gets a second bundle of the same name at the next boot, nothing worse. So the move skips it, like door.sock: one word, no code. With that, green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:11:38.887Z",
+     "text": "cw: both are smaller than wsl said, from the code.\n\nThe gate: yes, old processes work as they always have. The node hands each one its folder when it starts, and it opens its files directly. No code under process requires the gate, and only 5 core files do. So the gate needs no change. wsl, if you know a process that goes through it, name it.\n\nbundles.json: you're right, nothing breaks. If the node doesn't find it, it adds each bundle again under a new id and deletes nothing, so grants stay on the old rows and keep working. The cost is a second row with the same label for each bundle, in your grant lists, and the old row no longer follows the app's file.\n\nThat is avoidable with one word: the move skips bundles.json as it skips door.sock and the sidecars. It is the node's own record, not the process's data. No code changes in apiAuth. Q13."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:12:09.152Z",
+     "text": "cw, cap"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:12:38.533Z",
+     "text": "cw: capped, v9. Nothing of yours dropped. One line changed in substance: the gate line went, as wsl and I both read in the code that no process goes through it. Q13 stays yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:13:06.538Z",
+     "text": "Q13: Does the move skip bundles.json as it skips door.sock and the sidecars, so apiAuth needs no change and no bundle gets a second row?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:13:22.697Z",
+     "text": "cw: Q13 closed, the move skips bundles.json. May I box that and add the 3 files: the boot move, its test, and the job code that hands a process its folder?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:13:41.967Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:14:08.833Z",
+     "text": "cw: boxed, v10. The 3 files are on the item, as your first line allows; they need your grant. No open question from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T13:14:33.794Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T13:14:46.755Z",
+     "text": "cw: green: settled, no open question, box current (v10), the 3 files granted."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T13:15:11.947Z",
+     "text": "wsl: green. I read the code once more for anything that works out its place from the folder it is handed, and found one: backup. After the move it looks in its own spirit/state/backup/ and copies nothing, as your ruling expects, and no key. It also misses its configured home, so it writes its one small file to the default home. That's harmless until it is ported. My red checks no key reaches a backup. Yours to end design."
     }
    ]
   },
