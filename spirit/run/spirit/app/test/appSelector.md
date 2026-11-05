@@ -22,7 +22,9 @@
 - *"in :pane mode (list) i want to see a list of all rows, activated AND deactivated, with the (de)activate buttons at the end of each row."* Both apps are listed, and each row ends in its one button, which says Activate or Deactivate. The row still shows nothing else but icon and label.
 - A press writes `spirit/state/<key>/node.json`; the stream brings `active` to the row and the button follows, no search asked. A search seated over the row does not lose `active`.
 - The panel, Andy: *"the detail panel needs to open on top of the whole container"*. A pick in the pane opens it over the whole container, with the list out of sight, and its close icon brings the list back. It launches nothing.
-- *"# info the detail panel, displayed based on spirit/app/<name>/<name>.json"*: *"titlebar: icon, label"*, *"mounts a face?"* (`shell.mount`), *"mounts a server?"* (`node.mount`), *"can mount as shell?"* (`shell."true"`), each answered yes or no. It says what the file says: change the file and open it again.
-- The box: *"pane shows the detail with its button."* One (de)activate button beside the close icon.
+- The title bar of all panels, a launched app's too, is one rowForm: *"[app-icon] "<app-label> [x]"*. Its close button keeps the class `.app-container-close`.
+- *"row 1: rowForm: [✏️] "Label" [label input box] [Change]"*. Change writes `label` to `spirit/state/<name>/node.json`, not to `<name>.json` (Q4), and the row and the panel follow.
+- Row 2: *"if inactive: [🔴] "Activate <app-label> "face" "and" "server" [🟢]"*, *"if active: [🟢] "Deactivate <app-label> "face" "and" "server" [🔴]"*. *"face"* only if `shell.mount`, *"server"* only if `node.mount`, *"and"* only if both.
+- Row 3, *"shown only if shell-mount==true"*: *"[🔴] "Allow <app-label> as shell" [🟢]"* or *"[🟢] "Don't allow <app-label> as shell" [🔴]"*. A press writes `shell` to `node.json`, not to `<name>.json`.
 - *"in :tiles mode, only activated apps will appear."* Reached by the toggle or from the start; an app made active appears and one made inactive leaves, no search asked.
 - *"in :tiles mode, appSelector icons will 'launch'"*: Andy left "(or mount?)" open and raised no objection to today's behaviour, so a tile opens its app inside through `spirit.app.<name>.createApp`, and the close icon brings the tiles back.

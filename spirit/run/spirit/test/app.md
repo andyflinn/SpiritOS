@@ -24,3 +24,11 @@ Andy, box: *"spirit.app gains a verb: "active"."* Peer review: wsl, yes.
 - *"A key not in spirit/app is refused, so no path can be written through it."* Unknown keys, `..`, a path, `appSelector`, `test` and empty are refused, and write nothing.
 - *"spirit/state/ is not servable."* A plain GET does not hand the file over.
 - *"app.search stays "just a search string"."* Its only argument is `q`.
+
+## app.label and app.shell (goal/G43.9)
+
+Q4, *"Do a label change and allow-as-shell go in spirit/state/<name>/node.json, through two new verbs app.label and app.shell?"*, Andy: *"yes."*
+
+- Each names its arguments, has its file, writes `node.json` keeping what else it holds, and never writes `<name>.json`.
+- `node.json` overrides `<name>.json`: a search answers the new label.
+- A face with no star is refused both, and both refuse a key that is no app.

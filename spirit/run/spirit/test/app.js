@@ -40,7 +40,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   let api = null;
   try { api = require(path.join(FOLDER, 'api.js')); } catch (e) { api = null; }
   const verbs = api && api.verbs;
-  ok(!!verbs && Object.keys(verbs).sort().join() === 'active,search', 'search and active are the family\'s verbs', 'the family\'s verbs are ' + short(verbs ? Object.keys(verbs) : 'not there'));
+  ok(!!verbs && Object.keys(verbs).sort().join() === 'active,label,search,shell', 'search, active, label and shell are the family\'s verbs', 'the family\'s verbs are ' + short(verbs ? Object.keys(verbs) : 'not there'));
   ok(!!verbs && !!verbs.search && Object.keys(verbs.search).join() === 'q' && verbs.search.q === 'text?', 'search takes one optional search string, q, and no filters', 'search takes ' + short(verbs && verbs.search));
 
   // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
@@ -128,6 +128,26 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
       ok(r.status !== 200, 'refused: ' + JSON.stringify(bad), 'not refused: ' + JSON.stringify(bad) + ' ' + short(r.text));
     }
     ok(!fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'state', 'nosuchapp')) && !fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'evil')) && !fs.existsSync(path.join(node.root, 'spirit', 'run', 'evil')), 'and none of them wrote anything', 'a refused key left a file');
+    test.subHeading('Q4: "Do a label change and allow-as-shell go in spirit/state/<name>/node.json, through two new verbs app.label and app.shell?", Andy: "yes."');
+    ok(!!verbs.label && 'key' in verbs.label && 'label' in verbs.label && fs.existsSync(path.join(RUN, 'spirit', 'app', 'label.json')), 'app.label names key and label, and has its file', 'app.label: ' + short(verbs.label));
+    ok(!!verbs.shell && 'key' in verbs.shell && 'shell' in verbs.shell && fs.existsSync(path.join(RUN, 'spirit', 'app', 'shell.json')), 'app.shell names key and shell, and has its file', 'app.shell: ' + short(verbs.shell));
+    const sidecar = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'monitor', 'monitor.json');
+    const sidecarBefore = fs.readFileSync(sidecar, 'utf8');
+    const stateRead = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')); } catch (e) { return {}; } };
+    const named = await ask(node.base, 'app.label', { key: 'monitor', label: 'Renamed Here' });
+    ok(named.status === 200 && stateRead('monitor').label === 'Renamed Here', 'app.label writes node.json', 'after app.label: ' + short({ s: named.status, t: named.text, f: stateRead('monitor') }));
+    ok(stateRead('monitor').active === true, 'and keeps what else it holds', 'node.json lost active: ' + short(stateRead('monitor')));
+    ok(holds(rows(await ask(node.base, 'app.search', { q: 'Renamed Here' })), 'Renamed Here'), 'node.json overrides <name>.json: a search answers the new label', 'a search does not answer the new label');
+    const allowed = await ask(node.base, 'app.shell', { key: 'monitor', shell: true });
+    ok(allowed.status === 200 && stateRead('monitor').shell === true, 'app.shell writes node.json', 'after app.shell: ' + short({ s: allowed.status, t: allowed.text, f: stateRead('monitor') }));
+    ok(fs.readFileSync(sidecar, 'utf8') === sidecarBefore, 'neither writes <name>.json', 'monitor.json was written');
+    for (const verb of ['app.label', 'app.shell']) {
+      ok(faceRefuses({ call: verb, args: { key: 'monitor' } }, { url: 'http://r.example/', key: '', owned: false }) !== '', 'a face with no star is refused ' + verb, 'a face with no star may call ' + verb);
+      for (const bad of ['nosuchapp', '../evil', '']) {
+        const r = await ask(node.base, verb, { key: bad, label: 'x', shell: true });
+        ok(r.status !== 200, verb + ' refuses ' + JSON.stringify(bad), verb + ' took ' + JSON.stringify(bad) + ': ' + short(r.text));
+      }
+    }
     test.subHeading('the box: "spirit/state/ is not servable, so a page cannot read other apps\' state through a plain GET."');
     ok(activeIn('monitor') === true, 'the file to ask for is there', 'no file to ask for');
     const got = await fetch(node.base + '/spirit/state/monitor/node.json');
