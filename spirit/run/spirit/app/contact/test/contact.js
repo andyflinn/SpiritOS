@@ -106,8 +106,9 @@ test.startTest('contact.js: Contacts in spirit/app/contact/, as Andy sees it (go
     if (!where) { test.fail('no Chrome here: the page was not judged'); return; }
     c = await chromePage(where);
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
-    await c.send('Page.navigate', { url: N.base + '/' });
-    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000), 'the world: the page has its spirit', 'the page has no spirit: nothing judged');
+    // The shell Andy uses, /face.html, where appMigration runs the appSelector (boot.js loads what an app's pages open with).
+    await c.send('Page.navigate', { url: N.base + '/face.html' });
+    ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
     const selector = function (face) {
       return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.elements.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };

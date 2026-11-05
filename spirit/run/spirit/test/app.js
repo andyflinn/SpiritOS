@@ -83,9 +83,11 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
 
     // ONLY A FOLDER WITH ITS OWN <name>/<name>.json IS A PLUGIN (Andy, G43.1 box: "the new \"default\" pattern in that module
     // is: /<name>/<name>.json"), and it comes from the disk, not from a list naming server.
-    // The plugins are exactly monitor and server (spirit/app/app, a test object, was killed), and appSelector and test are not taken for apps.
+    // The plugins are exactly the folders of spirit/app/ holding their own <name>.json, read from the disk here too, as apps move
+    // in one by one (goal/G43.13, G43.14); appSelector and test are not taken for apps.
+    const onDisc = fs.readdirSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app'), { withFileTypes: true }).filter(function (d) { return d.isDirectory() && fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', d.name, d.name + '.json')); }).map(function (d) { return d.name; }).sort().join();
     const keys = (items || []).map(function (i) { return i.key; }).sort().join();
-    ok(keys === 'monitor,server', 'the plugins are monitor and server: appSelector and test are not taken for apps', 'an empty search found ' + short(keys));
+    ok(keys === onDisc && keys.split(',').indexOf('appSelector') === -1 && keys.split(',').indexOf('test') === -1, 'the plugins are the folders with their own json (' + onDisc + '): appSelector and test are not taken for apps', 'an empty search found ' + short(keys) + ', the disc holds ' + short(onDisc));
     // goal/G43.6; Andy, box: "spirit.app also holds the family's verb, search, so no app may take the name of a verb."
     const verbNamed = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'search');
     fs.mkdirSync(verbNamed, { recursive: true });
