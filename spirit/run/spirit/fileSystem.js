@@ -169,6 +169,8 @@ function canonicalPath(filePath) {
 // space"): Windows reaches the same file by those spellings, so a segment holding one is no path of the tree, on every
 // disc. No file of the tree is named so.
 const ALIAS_SEGMENT = /~\d|:|[. ]$/;
+// A node's own state, at any depth (goal/G43.8): a nested node keeps its key in its own spirit/state/, as it did in relay-state/.
+const NODE_STATE = /(^|\/)spirit\/state(\/|$)/;
 function gatePath(filePath) {
   const canonical = canonicalPath(filePath);
   if (canonical === null) return null;
@@ -181,7 +183,7 @@ function fileWritable(filePath) {
   if (canonical === null) return false;
   if (isOwnState(canonical)) return true;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFace touches a sidecar's own path
-  if (canonical.toLowerCase().indexOf('spirit/state/') === 0) return false; // the node's alone
+  if (NODE_STATE.test(canonical)) return false; // the node's alone
   if (isShellState(canonical)) return true;
   if (canonical.split('/').indexOf('relay-state') !== -1) return false;
   if (canonical.indexOf('/') === -1) return WRITABLE_ROOT_FILES.indexOf(canonical) !== -1;
@@ -208,7 +210,7 @@ function fileServable(filePath) {
   // key to any shell app and to the static route (wsl-claude found it,
   // 2026-09-27; Andy's "go." on the fix).
   if (isOwnState(canonical) || isShellState(canonical) || isShellFolder(canonical)) return true;
-  if (canonical.split('/').indexOf('relay-state') !== -1) return false;
+  if (canonical.split('/').indexOf('relay-state') !== -1 || NODE_STATE.test(canonical)) return false;
   return true;
 }
 
@@ -279,7 +281,8 @@ function sidecarPathFor(filePath) {
   const p = canonicalPath(filePath) || String(filePath || '');
   const proc = /^process\/js\/([^/]+)\/(.+)$/.exec(p);
   if (proc) return 'relay-state/process/' + proc[1] + '/' + proc[2] + SIDECAR_SUFFIX;
-  return 'relay-state/' + p + SIDECAR_SUFFIX;
+  if (p.indexOf('shell/') === 0) return 'relay-state/' + p + SIDECAR_SUFFIX;
+  return 'spirit/state/' + p + SIDECAR_SUFFIX;
 }
 
 function readSidecar(filePath) {

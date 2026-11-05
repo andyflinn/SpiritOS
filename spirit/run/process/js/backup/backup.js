@@ -86,7 +86,8 @@ function sourceFiles() {
       // face keeps its own node identity in a relay-state/ of its own inside
       // its state folder (slim/G1.4, wsl-claude's finding): no nested
       // relay-state/ is walked, and no identity.json is copied wherever it is.
-      if (e.isDirectory()) { if (e.name !== 'relay-state') walk(path.join(dir, e.name), r); }
+      // The same for a nested spirit/state/, where those files live since goal/G43.8.
+      if (e.isDirectory()) { if (e.name !== 'relay-state' && !(e.name === 'state' && path.basename(dir) === 'spirit')) walk(path.join(dir, e.name), r); }
       else if (e.isFile() && !COMPANION.test(e.name) && e.name !== 'identity.json') out.push(r);
     });
   })(SOURCE, '');

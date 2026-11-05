@@ -21,6 +21,7 @@ test.startTest('fileSystem.js: its gates refuse a path in any case');
 const CLOSED_READ = [
   ['spirit/state/identity.json', 'the node\'s private key'],
   ['process/js/desk/spirit/state/identity.json', 'an app server\'s private key, at depth'],
+  ['process/js/desk/relay-state/identity.json', 'a private key under an old relay-state, at depth'],
   ['spirit/server.js', 'a server script'],
   ['spirit/DEBUG/garbageArguments.js', 'the DEBUG folder'],
   ['shell/info/info.js.sidecar.json', 'a sidecar\'s own path'],
@@ -63,7 +64,7 @@ test.subHeading('Windows spellings of a closed path are refused, for reading and
   ['RELAY-~1/IDENTI~1.JSO', 'an 8.3 short name of spirit/state/identity.json'],
   ['SPIRIT~1/SERVER~1.JS', 'an 8.3 short name of spirit/server.js'],
   ['relay-state./identity.json', 'a folder name ending in a dot'],
-  ['relay-state /identity.json', 'a folder name ending in a space'],
+  ['relay-state /new.json', 'a folder name ending in a space'],
   ['spirit./server.js', 'a core folder ending in a dot'],
   ['spirit/server.js.', 'a file name ending in a dot'],
   ['spirit/element/icon.js ', 'a file name ending in a space'],

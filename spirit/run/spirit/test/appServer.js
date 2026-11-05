@@ -114,7 +114,7 @@ const row = function (f) { return { verb: 'goal.whole', goal: 9, item: f }; };
 const SENDER = Buffer.from(PUBLISHER, 'base64');
 const namesSender = function (n) { return /^[A-Za-z0-9_-]+=*$/.test(n) && Buffer.from(n, 'base64url').equals(SENDER); };
 const cacheFile = function (name) {
-  const dir = path.join(RUN, 'relay-state', name);
+  const dir = path.join(RUN, 'spirit', 'state', name);
   let found = '';
   try { found = fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f) && namesSender(f.slice(0, -5)); })[0] || ''; } catch (e) { found = ''; }
   return found ? path.join(dir, found) : path.join(dir, SENDER.toString('base64url') + '.json');
@@ -231,7 +231,7 @@ function runChild(mode, name, fam) {
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('RESULT ') === 0; })[0];
   try { return JSON.parse(line.slice(7)); } catch (e) { return { failed: short(r.stderr || r.stdout || r.error) }; }
 }
-function clearCache(name) { [path.join(RUN, 'relay-state', 'process', name), path.join(RUN, 'relay-state', name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
+function clearCache(name) { [path.join(RUN, 'relay-state', 'process', name), path.join(RUN, 'spirit', 'state', name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
 
 // ── the tree: one family path, a folder per server (box v15, Family folders) ─────────────────────────────────────────────
 function jsonFiles(dir, out) {
@@ -250,7 +250,7 @@ function codeFiles(dir, out) {
   names.forEach(function (d) {
     const p = path.join(dir, d.name);
     if (d.isDirectory()) {
-      if (d.name === 'node_modules' || d.name === '.git' || p === path.join(RUN, 'brains') || p === path.join(RUN, 'relay-state')) return;
+      if (d.name === 'node_modules' || d.name === '.git' || p === path.join(RUN, 'brains') || p === path.join(RUN, 'relay-state') || p === path.join(RUN, 'spirit', 'state')) return;
       codeFiles(p, out);
     } else if (/\.(js|html)$/.test(d.name)) out.push(p);
   });

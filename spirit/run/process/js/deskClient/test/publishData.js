@@ -64,7 +64,7 @@ function publish(cwd, args, name) {
 
 // The node's traffic log, as the node writes it: the rows publishData counts, and the rows it must not.
 function trafficLog(clone, rows) {
-  const dir = path.join(clone, 'spirit', 'run', 'relay-state');
+  const dir = path.join(clone, 'spirit', 'run', 'spirit', 'state');
   fs.mkdirSync(dir, { recursive: true });
   const db = new DatabaseSync(path.join(dir, 'node.db'));
   db.exec('CREATE TABLE traffic (at TEXT, dir TEXT, kind TEXT, outcome TEXT, code TEXT, ms INTEGER, extra TEXT)');
@@ -94,7 +94,7 @@ function setup() {
     git(c, ['config', 'user.name', 'publishData test']); git(c, ['config', 'user.email', 'publishdata@test.invalid']); git(c, ['config', 'commit.gpgsign', 'false']);
   });
   fs.writeFileSync(path.join(CLONE, 'README.md'), 'scratch\n');
-  fs.writeFileSync(path.join(CLONE, '.gitignore'), 'spirit/run/relay-state/\n');
+  fs.writeFileSync(path.join(CLONE, '.gitignore'), 'spirit/run/relay-state/\nspirit/run/spirit/state/\n');
   git(CLONE, ['add', 'README.md', '.gitignore']);
   git(CLONE, ['commit', '-q', '-m', 'the first']);
   git(CLONE, ['push', '-q', '-u', 'origin', 'master']);
@@ -156,7 +156,7 @@ test.startTest('publishData.js: one measurement run per agent');
 
   test.subHeading('the whole run: harness in a worktree, then its one folder committed, pushed and said');
   // A traffic log that counts nothing this time: zero posts is published too.
-  fs.rmSync(path.join(CLONE, 'spirit', 'run', 'relay-state'), { recursive: true, force: true });
+  fs.rmSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true, force: true });
   trafficLog(CLONE, [ROWS[6]]);
   fs.mkdirSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state', 'relays.json'), '[]\n');

@@ -28,7 +28,7 @@ ok(!/FROM\s+(relays|peers)\b/i.test(code) && !/has\(\s*['"`](relays|peers)['"`]\
 
 test.subHeading('an old address book beside it is left as it is, unread');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-nodestore-'));
-const state = path.join(home, 'relay-state');
+const state = path.join(home, 'spirit', 'state');
 fs.mkdirSync(state, { recursive: true });
 const KEY = 'MCowBQYDK2VwAyEAOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLDOLD=';
 const book = JSON.stringify([{ publicKey: KEY, label: 'old friend' }]);

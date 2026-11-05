@@ -47,7 +47,7 @@ const FILES = ['AGENT.md', 'CLAUDE.md', 'ANDYS_RULES_FOR_AGENTS.md', 'DICTIONARY
 // `grok`: design/reviews/grok/ holds Grok's replies VERBATIM — an outside
 // voice's words are quoted, never corrected, so its citations are not ours
 // to fix (2026-09-22, the first API review).
-const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'spirit', 'state', 'visual', 'grok'];
+const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'state', 'visual', 'grok'];
 // THE DESK'S OWN GOAL FILE IS NEVER JUDGED (goal/G16.2). The desk writes it
 // itself from everybody's words and commits it on every change, so nobody can
 // cite in it by hand. Andy: "the test never considers that file. it's commits

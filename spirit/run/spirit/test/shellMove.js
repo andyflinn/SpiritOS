@@ -31,6 +31,8 @@ function scratch() {
 }
 // The old layout, as a node of the previous tag left it: its files at relay-state's top, and the two folders that stay.
 function oldLayout(run, extra) {
+  // keyOf loaded relayAuth in this copy, which mints a key where none stands: a node of the old layout has none here.
+  fs.rmSync(path.join(run, 'spirit', 'state'), { recursive: true, force: true });
   const old = path.join(run, 'relay-state');
   fs.mkdirSync(path.join(old, 'process', 'keepme'), { recursive: true });
   fs.mkdirSync(path.join(old, 'shell', 'keepme'), { recursive: true });
@@ -147,6 +149,8 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/ at 
     test.subHeading('the box: "stopping if that fails", "a failed move cannot bring the node up as someone else"');
     const b = scratch();
     oldLayout(b.run, { 'identity.json': '{"publicKey":"broken","privateKey":"not a key"}' });
+    execSync(process.execPath + ' -e "require(\'./spirit/relayAuth.js\')"', { cwd: b.run, stdio: 'ignore' });
+    ok(!fs.existsSync(path.join(b.run, 'spirit', 'state', 'identity.json')), 'a process loading relayAuth before the boot mints no second key', 'relayAuth minted a key while the old one waits to move');
     const port = await freePort();
     const bad = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: b.run, stdio: 'ignore' }); live.push(bad);
     await until(function () { return Promise.resolve(bad.exitCode !== null); }, 20000);

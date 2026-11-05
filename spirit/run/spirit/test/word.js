@@ -49,7 +49,7 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-word-'));
   const run = path.join(scratch, 'run');
   try {
-    const SKIP = ['spirit', 'state', 'node_modules', 'app-state', 'media', 'published', 'brains', 'test'];
+    const SKIP = ['relay-state', 'node_modules', 'app-state', 'media', 'published', 'brains', 'test'];
     fs.cpSync(RUN, run, { recursive: true, filter: function (src) {
       const rel = path.relative(RUN, src).split(path.sep);
       return !(rel.length === 1 && SKIP.indexOf(rel[0]) !== -1) && rel.indexOf('node_modules') === -1 && rel.indexOf('state') === -1;
