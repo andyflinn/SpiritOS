@@ -1,7 +1,8 @@
 {
   "identity": {
     "icon": "🤖",
-    "label": "Agent"
+    "label": "Agent",
+    "intrinsic": false
   },
   "mount": {
     "agent.js":true

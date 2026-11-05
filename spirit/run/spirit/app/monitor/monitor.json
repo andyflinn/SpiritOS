@@ -1,8 +1,9 @@
 {
   "identity": {
     "icon": "🦻",
-    "label": "Monitor"
-  },
+    "label": "Monitor",
+    "intrinsic": true
+ },
   "mount": {
     "monitor.js":true
   },
