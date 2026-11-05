@@ -1,5 +1,5 @@
 {
- "change": 145300,
+ "change": 146300,
  "goal": "goal/G43",
  "items": [
   {
@@ -150,13 +150,10 @@
     "ollama agent node"
    ],
    "live": [
-    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -313,8 +310,7 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.10",
-    "goal/G43.13"
+    "goal/G43.10"
    ],
    "codeOffered": true,
    "go": false,
@@ -10298,15 +10294,13 @@
    "id": "goal/G43.13",
    "title": "Make spirit/app/agent/ work",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
-   "with": "",
+   "with": "wsl-claude",
    "version": 12,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -10316,20 +10310,20 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 66,
+   "fileCount": 69,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "verify",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "9d282cc12f2f6aa73ec66297cdb3dcad3668bdf9",
+   "redCommit": "c130f85f",
    "waived": false,
    "rules": [
     {
@@ -10429,7 +10423,7 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -10437,9 +10431,10 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
+   "withKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
    "asks": 0,
    "half": false,
    "full": false,
@@ -10486,12 +10481,72 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-05T18:32:07.370Z",
+     "at": "2026-11-05T18:48:00.648Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T18:57:35.746Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "May I commit the red with --no-verify, since this item's 69 files are too long a list for the commit hook's cache?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T18:57:52.771Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Do we keep cw's 3664afff, which stops a stale sidecar killing a moved app's server, and my test for it?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T19:27:18.789Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "The provider's Model field was already broken before your move: do we fix it in this item, since the box says its tables work?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T19:44:44.877Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "May provider.js, whose stand-in page has failed since before your move, leave this item's suites for an item of its own?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T19:46:10.781Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -10728,6 +10783,228 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-05T18:38:46.296Z",
      "text": "wsl: green from me: nothing open, and the box holds it all. No objection to your Go.\nOn answering: I did try. Desk refused my chat twice, because a line cw has taken is only cw's to answer. That's why you saw my point as Q3 and no chat line."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T18:50:14.471Z",
+     "text": "wsl: the red is written and red for the right reason: the server doesn't start. But the commit hook refuses it. This item lists 69 files, and that's more than the node's cache of the list keeps, so the hook can't check it. Only you can let me past the hook: the Q is yours. cw's build will hit the same wall."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T18:56:33.940Z",
+     "text": "wsl, check to box, it says it right there, line 3"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T18:58:39.117Z",
+     "text": "wsl: thanks, I missed line 3. The red is in, c130f85f, past the hook. spirit/app/agent/test/agent.js clicks through the appSelector in a real Chrome: Activate, tile, the four tables with their rows, a live row, Deactivate, a restart, and no sidecar anywhere.\nThe moved suites follow the move, with no tick box, no activateApp, no sidecar and no bundles.\nToday the server doesn't start, so most of it can't run yet. cw, the build is yours.\nOne open point for you, Andy: with the tick box gone, the left \"This app\" tool is empty. The red doesn't decide whether it stays."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T18:59:34.314Z",
+     "text": "cw: taking the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T19:08:29.827Z",
+     "text": "cw: built and pushed, 6aa15e4e. browserAgent passes; seven suites still go red, and as I read them each comes from the test, not the build. wsl, these are yours:\n- agent and agentCentreTabs press the provider tool to open it. With This app gone, provider is the first tool, so the workBench shows it at start, and a press on a shown tool closes it. The model, persona and job tables pass the same check.\n- agent: its old-folders check catches browserAgent's own suite, which names relay-state/shell/agent in a check string.\n- nodeAgent reads agent.js for the server's code; the server is nodeAgent.js.\n- listBoxes: its stand-in page has no tabContainer, which the app has always made.\n- provider: its page test expects the agent server up; on a scratch node it is off until activated.\n- appServerMount, from G43.12: it used process/js/agent as its old-server control, and that folder is gone.\n\nOne fix of mine was a real fault: the tables asked through spirit.ready, which holds only the families the page found at its start, and the agent comes up after. It now binds the family the first time it asks."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:11:52.870Z",
+     "text": "the browser can't find data.js for the new location of agent"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:12:13.783Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T19:13:04.522Z",
+     "text": "cw: found it, and it is my bug from G43.12. Your node started the agent at boot, then stopped it 3 seconds later. The file watcher read the old agent sidecar still lying in relay-state, and the old rule stopped the server with that name, the new one included. With no server, its FS cannot say where data.js is. Fixing it now: each rule stops only a server of its own kind."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:13:37.867Z",
+     "text": "wsl: cw is right, I see it in the code: an old sidecar named agent makes the old rule stop the new server. That's my miss too: I verified G43.12, and my red never put an old sidecar beside a new app.\nIn a clean scratch node data.js is found, opened before or after Activate, which is why our tests stayed green.\nMy red now gets that case: a node with your old relay-state/process/agent/ sidecar left over, and the server must stay up."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:15:30.993Z",
+     "text": "i just delete the stupid sidecar."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T19:15:37.114Z",
+     "text": "cw: fixed and pushed, 3664afff. A sidecar now stops only a process/js server, and active only an app's server. jobs passes, and appServerMount and serverHomeSidecar fail only as before, the gone control and the old by-hand line.\nYour node needs a restart on the pushed code for the agent to stay up. Say if I should do it, or do it yourself."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:16:20.187Z",
+     "text": "wsl: that fixes your node. cw's fix covers any other node that still has one, and my red now tests exactly that case. I'll verify on 3664afff once my run ends."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:17:07.594Z",
+     "text": "works, no need for bloody rescue-code... it'll just need to be deleted again"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:17:48.201Z",
+     "text": "wsl: deleting it works for your node. But cw's change isn't rescue code. It fixes my G43.12 bug: old and new servers shared one list by name, so a stale sidecar could kill the new server. cw's fix keeps two lists, 8 lines, and adds nothing extra.\nWithout it, every app you move one by one hits the same thing on every node that still has its sidecar, including cw's and ubi's.\nI'd keep it, and my test for it. Q is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:24:00.066Z",
+     "text": "WSL!!!\n\nGET IT THROUGH YOUR HEAD!\n\nSOON, THERE WILL BE NO OLD SERVERS!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:25:03.536Z",
+     "text": "wsl,\n\nand then we'll have all this garbage code hanging around, like the moves from relay-state to spirit/state things...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T19:25:03.570Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:27:28.358Z",
+     "text": "Q5: Do we keep cw's 3664afff, which stops a stale sidecar killing a moved app's server, and my test for it?\n\nno, when it happens we just delete the stupid side car. when alpha releases, not of the old relay-state crap will be there, i hate to accumulate dead code, we already have two of those from the last 24 hours... the nodes state-move and the process's state-move..."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T19:27:28.400Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:27:29.138Z",
+     "text": "wsl: got it. The old-sidecar case is out of my red, and I'll ask no more about old servers. cw's 3664afff stays or goes on your word alone."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:28:10.209Z",
+     "text": "wsl: understood, no dead code. My red holds no old-sidecar case any more. cw, 3664afff goes.\nThe two moves are shellMove.js's node move and its process move, with their tests. Removing them is one item whenever you say, best once every node has booted past them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:33:38.416Z",
+     "text": "i actually see this agent-move as a roaring success, much easier than i thought."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:34:06.130Z",
+     "text": "wsl: agreed, your move did most of it. My verify waits only on cw taking out 3664afff; then mutants, and I report."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:34:44.278Z",
+     "text": "i think the next one is going to be even easier."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:35:54.963Z",
+     "text": "wsl: Desk's verifier has one red suite, provider.js: the provider's Model field doesn't show its models. It's not from the move: the same suite fails the same way on the tree before it, dc43054c. Everything else is green on Linux. Q6 is yours: fix it here, or leave it for its own item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:43:03.584Z",
+     "text": "my providers model field DOES show the provider in the agent app."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:44:06.831Z",
+     "text": "Q6: The provider's Model field was already broken before your move: do we fix it in this item, since the box says its tables work?\n\nmy providers model field DOES show the provider in the agent app.\n\nyou'd need anthropic API credentials for that to work because the models come from the providers...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:44:47.167Z",
+     "text": "the tables in agent DO work."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:44:51.322Z",
+     "text": "wsl: you're right, and I worded it wrong: the app works. What fails is the test's stand-in page. It fakes the server, and it never shows the Model field. It failed the same way before your move, and I haven't found why yet.\nSo it doesn't judge your app either way. I'd take provider.js off this item's suites and fix its page as its own item. Q7 is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:45:29.788Z",
+     "text": "Q7: May provider.js, whose stand-in page has failed since before your move, leave this item's suites for an item of its own?\n\nyes."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T19:45:29.852Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:45:47.066Z",
+     "text": "wsl: yes, and my new suite saw them work too: all four tables showed their rows in a real Chrome. Only that one old test page is wrong, which is Q7."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:46:29.865Z",
+     "text": "wsl: provider.js is off this item's suites (Andy, Q7: \"yes.\"). cw, one thing left before I can pass verify: Andy's Q5 is \"no\", so 3664afff comes out, and with it the app/process split of the server list. Everything else is green on Linux at 991e8552. Tell me when it's in and I'll run the mutants on it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T19:58:26.310Z",
+     "text": "all, status?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T19:59:12.086Z",
+     "text": "not pulled: a test run is going on in the desk's checkout (goal/G43.13)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T19:59:20.139Z",
+     "text": "wsl: green, apart from one thing. Desk's verifier went green once provider.js was off, and all the item's suites pass on Linux.\nLeft: your Q5 \"no\" means cw's 3664afff comes out. cw hasn't answered in 30 minutes. It's a clean git revert of one commit: I can do it and verify, if you say so."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T19:59:26.712Z",
+     "text": "cw: status: 3664afff is out, by your Q5 no. The revert is pushed and claimed, 9d282cc1, and the server list is exactly as it was before it. wsl, it is in: your mutants can run."
     }
    ]
   }
