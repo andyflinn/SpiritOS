@@ -1,5 +1,5 @@
 {
- "change": 136582,
+ "change": 136722,
  "goal": "goal/G43",
  "items": [
   {
@@ -151,8 +151,13 @@
    "excluded": [
     "ollama agent node"
    ],
-   "live": [],
-   "working": [],
+   "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -6811,13 +6816,12 @@
    "id": "goal/G43.8",
    "title": "move relay-state to spirit/state",
    "goal": "goal/G43",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
-   "version": 1,
+   "version": 5,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -6827,17 +6831,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 3,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -6854,6 +6858,10 @@
     {
      "key": "rule/28",
      "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
     },
     {
      "key": "rule/25",
@@ -6874,6 +6882,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
     },
     {
      "key": "rule/18",
@@ -6899,13 +6911,354 @@
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# move relay-state to spirit/state\n\n- \"move relay-state to spirit/state\" (for when we're ready), \"with the decisions made here in the box, even if incomplete.\"\n\n- Not yet: \"we won't move relay state here yet, because all apps except \"monitor\" (the old stats) are still outside of the new namespace.\"\n\n- \"will aim to move all app server at once, so the 4 places that apparently need changing for servers can change with them\"\n\n# decided, goal/G43.7\n\n- \"2. A cache in memory: spirit.data.<name>.cache, a copy.\"\n- \"An appServers cache on disc: spirit/state/<appname>/cache/\"\n- \"An appServers data on disc: spirit/state/<appname>/data/\"\n- data and cache: \"that's the difference between data and cache as i see it, and app servers, need both\"\n- spirit/state/<name>/node.json, active and running, beside cache/ and data/: \"agreed.\"\n- \"i see the subfolders of relay-state as completely useless in the namespace conforming world.\"\n- the node's own files: \"spirit/state/node/ is dismissed as bad idea, and we just move to files, no name change necessary for them since they won't collide with <appname> anyway.\"\n- \"no capitals needed, they won't collide.\"\n\n# not placed yet\n\n- door.sock, a server's socket file on Linux.\n- <name>.js.sidecar.json, whose face.home is the old activate switch.\n- agent's two config.json, shell and server: \"agent has not moved yet\".\n",
-   "checks": [],
-   "chat": []
+   "box": "# move relay-state's own files to spirit/state\n\n# in this item: WE PUSH PAST THE GIT-HOOK, and post only 3 files to this item. (Andy).\n\n- \"remove proxy.json (no longer needed) and we move just the remaining files to spirit/state/\"\n- \"this is all we're doing in this item.\"\n\n# what moves\n\n- Every file at the top of relay-state moves to spirit/state/, by what is there and not by a list, garbage too (Q3), each with its companion files (a database's journal, traffic.jsonl). A relay's owner.json, members and keys move with them. Folders too, like peerStats and a client's cache folder relay-state/<client>/ (appServer.js cacheDir follows). Only process/ and shell/ stay.\n- \"no name change necessary for them since they won't collide with <appname> anyway.\"\n- \"no capitals needed, they won't collide.\"\n\n# what goes\n\n- proxy.json: no code reads it. Removed from Andy's node already. On a node that still has it, it moves with the rest (Q3).\n\n# how\n\n- A node moves its own files to spirit/state/ once at boot, before anything opens them, stopping if that fails (Q2: \"yes.\").\n- The move runs first: before server.js requires spirit.js, which reads environment.json at once. The first boot after the move still has its port.\n- identity.json: copy it, read the copy back, check it gives the same public key, then remove the old one. No second private key stays on disc, and a failed move cannot bring the node up as someone else.\n- spirit/state/ is kept mode 700, as relay-state/ is. bash/install-units, which writes relay-state/owner.json, follows.\n- It is one way: an older tag cannot read the moved files. So the move is tried on a copy of a relay's files before this item is tagged.\n- \"flag day.\"\n- Every place that builds one of these paths follows, tests too: about 51 test files write them, as scratch nodes do. relay-state/process/ and relay-state/shell/ stay where they are, so relay-state itself stays.\n\n# not this item, for when the servers move\n\n- \"will aim to move all app server at once, so the 4 places that apparently need changing for servers can change with them\"\n- \"An appServers cache on disc: spirit/state/<appname>/cache/\"\n- \"An appServers data on disc: spirit/state/<appname>/data/\"\n- data and cache: \"that's the difference between data and cache as i see it, and app servers, need both\"\n- \"i see the subfolders of relay-state as completely useless in the namespace conforming world.\"\n- Not placed yet: door.sock; <name>.js.sidecar.json, whose face.home is the old activate switch; agent's two config.json: \"agent has not moved yet\".\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do relay.db and peerStats move too, and traffic.jsonl.imported go?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T03:48:43.745Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Does a node move its own files to spirit/state/ once at boot, stopping if that fails?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T03:51:31.510Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Does a node move every file at relay-state top, not only the ones named?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T03:59:52.206Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Tag now, without a lab relay rehearsal?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T04:10:25.650Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "What does the face show after you log in: blank, the login again, no tiles, or an error, and on which relay?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-05T04:20:21.911Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T04:29:43.191Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T03:40:42.943Z",
+     "text": "all?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T03:41:10.256Z",
+     "text": "cw: by your own box, not yet: it waits until the apps are in the new namespace, and today spirit/app holds only monitor and server.\n\nOne line has moved since it was written. spirit/state/<name>/node.json is built for those two (G43.9): active, label, icon, shell. running, which your goal box also puts there, is not built.\n\nStill to place before this can start: door.sock, the sidecars, and the rest of what relay-state holds. 47 code files name it. I'd do the node's keys last and alone, with a copy kept first.\n\nI'd leave it parked, and move the next app first. Which one is yours to pick."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T03:41:13.096Z",
+     "text": "wsl: not ready, by your own line: it waits until the app servers are in the new namespace. Today spirit/app holds only monitor and server. process/js still holds 11 folders, shell/ about 20 apps, and 47 code files name relay-state.\n\nTwo things in this box are out of date since G43.9, which I'd fix now:\n- spirit/state already exists for spirit/app's apps. So the move has begun, for those two.\n- node.json's fields: your Q7 says active, icon, label, shell. The box line says active and running. I'd keep your Q7 and ask where running goes when a server moves.\n\nAnd one from the talk, not yet boxed: identity.json holds the node's keys, so it moves last and alone, with a copy kept first.\n\nI'd park it until then. Say the word and I update the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T03:44:35.150Z",
+     "text": "all, \n\nconfig.json\nenvironment.json\nidentity.json\nnode.db\nproxy.json\ntraffic.json\n\nhow many places actually read and write these files?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T03:45:05.170Z",
+     "text": "wsl: few. Code that opens each, tests left out:\n- identity.json: 1 file, relayAuth.js. backup.js only skips it.\n- node.db: 1, nodeStore.js. publishData.js reads a clone's copy.\n- traffic.json: 1, trafficLog.js.\n- environment.json: 3, spirit.js, kernel.js, serveCommon.js.\n- config.json: 2, relayServer.js and backup.js. relay.js and spiritErrors.js only say its name. agent's two config.json are other files.\n- proxy.json: 0. No code names it. It's a leftover: delete, not move. Check your node's before you do.\n\nSo these six are about 8 files: a small item of its own, one path in each. It doesn't need the apps moved first, which your line assumed for the servers. identity.json still last and alone, with a copy.\n\nThe bulk of the 45 files naming relay-state is the servers' part. I searched by these file names; a path built another way would hide from this."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T03:45:15.827Z",
+     "text": "cw: few. Places in code that build the path, tests left out:\n\n- identity.json: 2, both in relayAuth.js. Every other reader and writer goes through it.\n- node.db: 2, nodeStore.js for the node, and publishData.js, which copies it.\n- environment.json: 3, spirit.js, kernel.js, serveCommon.js.\n- config.json: 4, relayServer.js 3 times, backup.js once.\n- traffic.json: 1, trafficLog.js.\n- proxy.json: 0. No code reads it; two comments say it is gone with the proxy verbs (2026-10-18). Yours is left over from 2026-09-22, and it names an API key entry, so it is yours to delete.\n\nThat is 12 places in 9 files. So the node's own files are one small move, each through a path built once. The 47 files are mostly the servers' folders and comments. backup.js also skips identity.json by name, which still works after a move only if it looks in the new place."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T03:47:24.200Z",
+     "text": "cw, remove proxy.json (no longer needed) and we move just the remaining files to spirit/state/\n\nthis is all we're doing in this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T03:48:01.662Z",
+     "text": "cw: proxy.json is gone from your node: it held key names and hosts only, no secret. No code changed, and nothing moves until your end-design and Go.\n\nWhat remains at relay-state's top on your node: config.json, environment.json, identity.json, node.db, traffic.json, and also relay.db, peerStats and traffic.jsonl.imported, which your list did not name. relay.db is a live store; I'd move it too and delete the .imported file, a leftover.\n\nTwo things for the design, the second as a question later:\n- 9 test files name these paths and follow.\n- Moving the files on an existing node, yours, mine, spirit-3: I'd have the node do it once at boot, before anything opens them, identity.json with a copy kept. If it fails the node stops, so it cannot come up as someone else.\n\nQ1: Do relay.db and peerStats move too, and traffic.jsonl.imported go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T03:48:24.557Z",
+     "text": "Q1: Do relay.db and peerStats move too, and traffic.jsonl.imported go?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T03:48:45.317Z",
+     "text": "cw: noted. Next question.\n\nQ2: Does a node move its own files to spirit/state/ once at boot, stopping if that fails?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T03:51:13.082Z",
+     "text": "Q2: Does a node move its own files to spirit/state/ once at boot, stopping if that fails?\n\nyes.\n\nflag day. \n\nthen we can wipe out relay-state?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T03:51:33.500Z",
+     "text": "cw: no, not yet. After this item relay-state still holds process/ and shell/, every server's and app's own state, and desk.db is in there: the whole of Desk. Wiping it would lose those. It can go once the servers have moved, which you said is not this item.\n\nThe top level of relay-state empties here. On a flag day, a node that finds the old files moves them, and a node on old code cannot read them afterward.\n\nNo question left from me. The file list and the grant come next, after your box and end-design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T03:52:42.235Z",
+     "text": "cw, can you change the box, to only move those files?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T03:53:13.167Z",
+     "text": "cw: done, box v2: it moves only those files. Your server decisions stay at the bottom, under \"not this item\".\n\nTwo lines are mine, tell me if they are wrong: companion files move with their file (a database's journal, traffic.jsonl), and identity.json keeps a copy."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T03:55:22.596Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T03:55:57.986Z",
+     "text": "cw: not green, one thing. The box names what your node has. Code also names other files at relay-state's top that other nodes hold, a relay most of all: owner.json, node.json, mail.json, relays.json, face.json, servers.json, relayKeys.json, invites.json, pendingArrivals.json, pending-owner.json. My node also has device.json and include.json. Leave them behind and relay-state's top is not emptied, and a relay moves half its state.\n\nI'd move every file at the top, by what is there, not by a list, so process/ and shell/ alone stay.\n\nAnd a correction: I said 9 test files. A wider search says 51 write these paths, as scratch nodes do. It is a scripted change, but it is not small.\n\nThe file list is still empty; I add it once you answer.\n\nQ3: Does a node move every file at relay-state's top, not only the ones named?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T03:56:09.082Z",
+     "text": "wsl: green but for one line, and one trap for the red.\n\nThe line: \"identity.json keeps a copy\" doesn't say for how long, and a copy that stays is a second private key on disc. I'd say: copy it, read the copy back, check it gives the same public key, then remove the old one. No copy stays once the node is up. Your call.\n\nThe trap: \"before anything opens them\" is earlier than it looks. server.js:14 requires spirit.js, which reads environment.json at once (spirit.js:157), and today's file moves run at server.js:91. So the move goes first, and the red checks that the first boot after it still has its port.\n\nChecked and fine: the backup copies only relay-state/process, so these files were never in it. spirit/state is already not servable, and git-ignored."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T03:59:32.907Z",
+     "text": "Q3: Does a node move every file at relay-state top, not only the ones named?\n\nyes. include the garbage files. this is just about the move."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T03:59:53.864Z",
+     "text": "cw: noted, every file at the top moves, garbage too. So traffic.jsonl.imported moves rather than goes, and I leave proxy.json on nodes that still have it to move as well.\n\nwsl is right on both points, and I withdraw my copy line: no second private key stays on disc. Copy identity.json, read it back, check it gives the same public key, then remove the old one. And the move runs first, before spirit.js reads environment.json.\n\nThree box lines change with that: what moves, what goes, and the copy. Say the word and I write them. The file list follows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:02:47.534Z",
+     "text": "all, and our plan to tag the relays?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:03:23.391Z",
+     "text": "cw: I find no plan written for this goal, so here is what I'd plan: one tag at the end of this item, not before, with your are-you-sure.\n\nWhat that tag does: the last was v-2026-11-03-04-54, so it carries 139 commits, all of G43. A relay takes it by itself within about 10 minutes and moves its files at boot.\n\nWhat it means for a relay, beyond your node:\n- It is one way. An older tag cannot read the moved files, so a bad tag cannot just be rolled back.\n- identity.json and owner.json are the relay's identity. A bad move strands it, and I cannot reach the hosts; you can.\n- bash/install-units writes relay-state/owner.json, and relay-state/ is kept mode 700. Both must follow: spirit/state/ needs 700, or the key sits open. So bash/ joins the file list.\n\nI'd test the move on a copy of a relay's files before tagging. The red can hold that. No question from me: the tag is your word, when the item is done."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:03:25.897Z",
+     "text": "wsl: this item touches it, since a tag carries the flag day to the relays, spirit-3 included. The last tag is v-2026-11-03-04-54, before all of goal/G43.\n\nI'd tag twice, not once:\n1. Now, before this item: the relays get G43's work with no files moving. Whether a relay carries it well I haven't checked.\n2. This item alone in its own tag, rehearsed first on a lab relay at the previous tag, as AGENT.md says.\n\nOne gap: AGENT.md says an update keeps a way back, relay data copied aside first, \"not built yet\". Here a relay's keys move, so I'd want that way back before spirit-3 takes it. I didn't check whether a later item built it.\n\nThe tag is cw's, on your word. Did you mean something else by the plan? I only found goal/G41.29, closed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:06:28.288Z",
+     "text": "i agree, \n\ncw, tag now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:07:12.155Z",
+     "text": "cw: are-you-sure, as you asked for on every tag.\n\nIt releases 432 files since v-2026-11-03-04-54: all of G43, G41.31 and G41.32. spirit/element moved, spirit.data is rebuilt, relay/data.js, relayKeys.js, hub.js, server.js and faceHome.js changed. Public once pushed; both relays take it within about 10 minutes and restart.\n\nNo relay files move in this tag, so a relay keeps its identity, and a fix is one more tag.\n\nNot seen: any of it on a relay. It ran on your node and our nodes, not a relay, and a face served through one. Not rehearsed on a lab relay, as AGENT.md asks. Known red: word, provider, listBoxes, apiFamilySelector, appServerSelector, generalRules on three pages, and appSelector's timing flake.\n\nMy call: go, knowing a face through a relay may break until a fix tag. A rehearsal first would cost about an hour.\n\nA correction: spirit/state/ is git-ignored; I said otherwise in my summary.\n\nQ4: Tag now, without a lab relay rehearsal?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:07:40.628Z",
+     "text": "yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:10:07.575Z",
+     "text": "Q4: Tag now, without a lab relay rehearsal?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:11:20.635Z",
+     "text": "cw: tagged, v-2026-11-05-05-10, at 65a9352e, pushed and on the remote. Both relays should take it and restart within about 10 minutes; I cannot see them. Your node is on c6545152, which differs only by the desk's currentGoal.json.\n\nPlease watch a face through a relay first: that is the part nothing has tested. Tell me what you see, and a fix is one more tag."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:14:22.456Z",
+     "text": "relays seems to be working, face not."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:15:48.255Z",
+     "text": "wsl: I'm on it. So far: every file a relay serves to a face still exists after the moves, so it isn't a missing file at that step. I can't reach your face myself: spirit.andyflinn.com answers \"Not found\" at its root. I'm running our face-through-a-real-relay tests now.\n\nWhat do you see? A blank page, the login, no apps, or an error? And your face's address, if I may open it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:16:04.198Z",
+     "text": "cw: what I can see so far, from outside:\n- andy.spirit.andyflinn.com is on the tag, and its login page draws.\n- Your node's own face at 127.0.0.1:65432/face.html draws its tiles, with spirit.data holding fs and jobs.\n\nSo the break is after login, through the relay, which I cannot reach without your login. In code I found nothing that refuses the moved files, but that proves little.\n\nQ5: What does the face show after you log in: a blank page, the login again, no tiles, or an error, and on which relay?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:17:46.881Z",
+     "text": "wsl: faceStar 57 and faceStarApps 20 both pass on master: a face through a real local relay works there, with a starred home node. So what breaks is something those tests don't have: your real relay, your real home node, or a face with no star. I need what you see, and from your browser's console if you can: any red line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:18:53.100Z",
+     "text": "i was forced to log in, when i got the token in the email, and entered it, nothing happened.\n\nBUT when i did a hard-refresh after that it seemed to work."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:20:06.098Z",
+     "text": "Q5: What does the face show after you log in: blank, the login again, no tiles, or an error, and on which relay?\n\nIt's just the login that was dead, and remained on screen, it seemed to either have gone through or my old login worked again, hard to say."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:20:40.779Z",
+     "text": "cw: my best reading, not proven: the tab was open when the relay restarted. A relay sends its files no-store, so a refresh always gets the new ones, but an open page keeps running the old code. That old code asks for shell/js/armingButton.js and the like, which are gone since G43.5, so the login stayed dead until your hard refresh.\n\nThat would be one time only, at each tag that moves files, and no code fix is owed.\n\nOne check tells: log out, reload, and log in with a fresh token. If it goes through with no hard refresh, the tag is good. If it stays dead, it is a real bug and I trace it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:21:32.301Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:22:52.231Z",
+     "text": "wsl: the tag is fine, and I found your login bug. It's not cw's reading: it's real, and old.\n\nI ran your steps on a real local relay, a fresh page, typing email and token into the form. The login succeeds, the page just stays on the login screen. A reload shows all 11 apps. The previous tag, v-2026-11-03-04-54, does exactly the same, so this tag didn't cause it.\n\nThe cause: after a good token boot.js refreshes its state, but nothing closes the login screen. One line in refresh(). Tried in a scratch copy: the same steps go straight to the 11 apps, no reload.\n\nThe gap: faceStarApps sets the cookie by hand, so no test ever typed a token.\n\nNot green for G43.8: its box still owes cw's three lines. This fix needs your Go, as its own small item with a red. Yes? I can't explain why you were forced to log in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:26:00.667Z",
+     "text": "all, what's missing in the box? FIX IT."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:26:32.950Z",
+     "text": "wsl: fixed, box written. What was missing:\n- Every file at the top moves, not a list (Q3).\n- identity.json: copy, read back, same public key, old one removed. No second key stays.\n- The move runs before server.js requires spirit.js.\n- spirit/state/ mode 700, and bash/install-units follows.\n- One way, so tried on a copy of a relay's files first.\n- About 51 test files follow.\n\nThe login fix is not in it, by your \"this is all we're doing in this item\". It's still waiting for your word as its own item. The file list is cw's next."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:26:35.799Z",
+     "text": "cw: fixed, box v3. Every file at the top moves, garbage too; proxy.json is gone on your node only; identity.json is copied, checked and the old one removed, no second key stays; the move runs first; spirit/state/ is mode 700; its own tag, rehearsed on a copy of a relay's files, one way.\n\nThe last two groups are mine from the talk, so say if you want them out.\n\nGreen after this: nothing open from me. The file list comes at end-design.\n\nAnd wsl is right about the login: I read it as an old open tab, and I was wrong. wsl reproduced it on a fresh page."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T04:26:47.332Z",
+     "text": "cw: correction: my last line is wrong. I wrote no box. wsl had already fixed it, v4, and my write stopped when it saw that; my post went out anyway. Go by wsl's box, not my \"v3\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:27:09.747Z",
+     "text": "wsl, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:27:34.904Z",
+     "text": "wsl: green. One line added while checking: folders at the top move too, peerStats and a client's cache folder, since appServer.js builds relay-state/<client>/ itself and it has to follow. Nothing open from me. End design and Go, and I write the red, on a copy of a relay's files."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T04:28:45.191Z",
+     "text": "3 files"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T04:29:33.483Z",
+     "text": "wsl: done, 3 files on the list: spirit/shellMove.js, which already moves leftovers at boot, so the move lives there; spirit/server.js, which runs it first; and spirit/test/shellMove.js, my red. The rest, the paths and the tests that follow, go past the hook on your box line. If a grant opens, it's for those."
+    }
+   ]
   },
   {
    "id": "goal/G43.9",
