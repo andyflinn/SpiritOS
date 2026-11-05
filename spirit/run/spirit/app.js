@@ -54,7 +54,7 @@ function createApp(opts) {
     const s = stateOf(name);
     const asShell = typeof s.shell === 'boolean' ? s.shell : !!(own && own.shell && own.shell.true === true);
     // AN INTRINSIC APP IS ALWAYS ACTIVE (goal/G43.14; Andy, Q1: "intrinsic apps will be always on."), whatever node.json says.
-    return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, shell: asShell };
+    return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, shell: asShell, intrinsic: i.intrinsic === true };
   }
   function names() {
     try {
@@ -98,8 +98,11 @@ function createApp(opts) {
   function active(body) {
     const on = !!(body && body.active === true);
     const key = String((body && body.key) || '');
-    // Its development team made it intrinsic, so no press switches it, and nothing is written for it (goal/G43.14).
-    if (require('./coreFiles').appIntrinsic(path.resolve(o.rootDir, '..', '..'), key) === true && names().indexOf(key) !== -1) return { ok: true, status: 200 };
+    // Its development team made it intrinsic, so no press switches it, and nothing is written for it (goal/G43.14). Refused by
+    // name (goal/G43.15; Andy: "And what's even worse, the server allows it!!!!").
+    if (require('./coreFiles').appIntrinsic(path.resolve(o.rootDir, '..', '..'), key) === true && names().indexOf(key) !== -1) {
+      return { ok: false, status: 409, code: 'app-intrinsic', error: 'app ' + key + ' is intrinsic: it is always active' };
+    }
     const row = on && names().indexOf(key) !== -1 ? rowOf(key) : null;
     return write(body, row ? { active: true, label: row.label, icon: row.icon, shell: row.shell } : { active: on });
   }

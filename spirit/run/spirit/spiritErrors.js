@@ -686,6 +686,12 @@ define('answer-too-large', {
 //
 // public-app-server/G17. Each names the link that failed, so a visitor at the
 // far end of the face reads which one, never a hang.
+define('app-intrinsic', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['the app is intrinsic: it is always active'],
+  note: 'goal/G43.15: app.active on an app whose <name>.json says identity.intrinsic true. Its development team keeps it on; ' +
+    'nothing is written.',
+});
 define('app-not-served', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no app by that name runs a server here'],

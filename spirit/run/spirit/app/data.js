@@ -4,7 +4,7 @@
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the app row and list) asks spirit.data.app.data
 // (below), never a branch by name.
-//   apps   key -> { key, label, icon, active, shell }, what app.search answered (seated by the list that is a view of it), and the
+//   apps   key -> { key, label, icon, active, shell, intrinsic }, what app.search answered (seated by the list that is a view of it), and the
 //          whole table the node's permanent job 'apps' holds (spirit/app.js): a key it no longer names is gone.
 // Every event ends in set or del; it asks nothing.
 (function () {
@@ -20,7 +20,7 @@
         Object.keys(V.branch(APPS)).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(all, k)) V.del(APPS + '/' + k); });
         Object.keys(all).forEach(function (k) {
           var r = all[k] || {};
-          V.set(APPS + '/' + k, { key: k, label: String(r.label || ''), icon: String(r.icon || ''), active: r.active === true, shell: r.shell === true });
+          V.set(APPS + '/' + k, { key: k, label: String(r.label || ''), icon: String(r.icon || ''), active: r.active === true, shell: r.shell === true, intrinsic: r.intrinsic === true });
         });
       },
     });

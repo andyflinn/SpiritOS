@@ -8,7 +8,10 @@
 // (de)activate button (goal/G43.9, Q2: "in the detail as well.").
 (function () {
   window.spirit.require('spirit/app/appSelector/rowElement.js');
-  window.spirit.require('spirit/element/appInstaller.js');
+  // goal/G43.15: the switches are elements of their own, each hiding itself where it does not apply.
+  window.spirit.require('spirit/app/appSelector/rowFormAppActive.js');
+  window.spirit.require('spirit/app/appSelector/rowFormAppShell.js');
+  window.spirit.require('spirit/app/appSelector/serverDEBUG.js');
   window.spirit.require('spirit/element/rowForm.js');
   window.spirit.require('spirit/element/fieldInput.js');
   window.spirit.require('spirit/element/icons/listElement.js');
@@ -20,18 +23,18 @@
     var E = S.element;
     var key = String(row.key || '');
     var gone = false;
-    var mounts = { face: false, server: false, intrinsic: false };
     var box = document.createElement('div');
     box.className = 'app-detail';
     var iconBox = document.createElement('div');
     var labelBox = document.createElement('div');
     var activeBox = document.createElement('div');
+    var debugBox = document.createElement('div');
     var shellBox = document.createElement('div');
-    // rule/2: every block carries a leading 1em. A bubble has none of its own here.
-    [iconBox, labelBox, activeBox, shellBox].forEach(function (b) { b.style.marginTop = '1em'; });
+    // rule/2: every block carries a leading 1em: a rowForm carries its own since goal/G43.15, so a hidden one takes it along.
     box.appendChild(iconBox);
     box.appendChild(labelBox);
     box.appendChild(activeBox);
+    box.appendChild(debugBox);
     box.appendChild(shellBox);
     host.appendChild(box);
     function app() { return S.ready; }
@@ -58,42 +61,20 @@
     labelForm.button.addEventListener('click', function () {
       app().then(function (s) { return s.app.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
     });
-    // One form redrawn whole, as a form's icon is fixed when it is made. on is the state it shows.
-    function flip(into, on, words, press) {
-      into.innerHTML = '';
-      var f = E.rowForm.create(into, { icon: on ? '🟢' : '🔴', button: on ? '🔴' : '🟢' });
-      f.span.textContent = words;
-      f.button.addEventListener('click', press);
-    }
     function paint() {
       if (gone) return;
       var r = current();
       iconShown.innerHTML = '';
       E.icon.create(iconShown, { glyph: r.icon });
       if (document.activeElement !== input) input.value = String(r.label || '');
-      var on = r.active === true;
-      var parts = (mounts.face ? ['face'] : []).concat(mounts.server ? ['server'] : []);
-      // AN INTRINSIC APP HAS NO SUCH ROW (goal/G43.14; Andy, Q1: "in appSelector:detail the rowForm allowing to
-      // activate/de-activate will not be shown for intrinsic apps.").
-      if (mounts.intrinsic) activeBox.innerHTML = '';
-      else flip(activeBox, on, [(on ? 'Deactivate' : 'Activate'), r.label].concat(parts.length ? [parts.join(' and ')] : []).join(' '), function () {
-        app().then(function (s) { return s.app.activeApp({ key: key, active: !on }); }).then(null, function () { /* the row stays */ });
-      });
-      shellBox.innerHTML = '';
-      if (!mounts.face) return;
-      var may = r.shell === true;
-      flip(shellBox, may, (may ? "Don't allow " : 'Allow ') + r.label + ' as shell', function () {
-        app().then(function (s) { return s.app.shellApp({ key: key, shell: !may }); }).then(null, function () { /* the row stays */ });
-      });
     }
     var off = S.data.app.data.watchApp(key, paint);
     paint();
-    app().then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
-      var j = JSON.parse(String(text));
-      mounts = { face: !!(j.shell && j.shell.mount === true), server: !!(j.node && j.node.mount === true), intrinsic: !!(j.identity && j.identity.intrinsic === true) };
-      paint();
-    }).then(null, function () { /* a face that may not read the file: the form says nothing of what it mounts */ });
-    return { destroy: function () { gone = true; off(); iconList.destroy(); host.innerHTML = ''; } };
+    // THE SWITCHES (goal/G43.15): Activate/Deactivate, DEBUG right after it (Q1), then allow as shell; each hides itself.
+    var active = S.elements.rowFormAppActive.create(activeBox, { key: key });
+    var debug = S.elements.serverDEBUG.create(debugBox, { key: key });
+    var asShell = S.elements.rowFormAppShell.create(shellBox, { key: key });
+    return { destroy: function () { gone = true; off(); active.destroy(); debug.destroy(); asShell.destroy(); iconList.destroy(); host.innerHTML = ''; } };
   }
 
   function create(host, opts) {
@@ -115,7 +96,7 @@
     var button = document.createElement('span');
     button.style.marginLeft = '0.5em';
     box.appendChild(button);
-    var installer = window.spirit.element.appInstaller.create(button, { path: 'spirit/app/' + key + '/' + key + '.js' });
+    var installer = window.spirit.elements.rowFormAppActive.create(button, { key: key });
     host.appendChild(box);
     return {
       destroy: function () { installer.destroy(); row.destroy(); host.innerHTML = ''; },

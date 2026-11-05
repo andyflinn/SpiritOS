@@ -11,10 +11,7 @@
 // NO AGENTS TALK TO EACH OTHER THROUGH IT (goal/G41.1, Q1; the ruling of 2026-10-02, goal/G3.1, stands): each agent
 // sees itself as the only agent and user of the node.
 //
-//   The right tool sets the server's DEBUG state: it requires the server's interface through spirit and calls its
-//   debug {on} (Andy, Q5: "the app is supposed to require it's components, then use them."), and draws only what the
-//   server's stream says (rule/19: "the ui must propose all state changes to the server and only draw changes contained
-//   in the servers update/change stream"), the state arriving as { agent: { debug } } on the server's job.
+//   The right tool, ⚙, is serverDEBUG (goal/G43.15): the DEBUG switch every server has, which the node keeps.
 //   THE DATA SET'S TABLES (goal/G41.4; Andy, box v22: "every one of these tables will come with a left-edge icon that
 //   puts up a panel in the left-side tool-display of the workBench UI used in this app"): one left tool per table of
 //   agent.db, each mounting that table's own element, spirit/app/agent/table/<name>/elementTable.js. A row opened from
@@ -23,7 +20,6 @@
 //   in the left strip. A job's grant is its bundle"). THE BUNDLE EDITOR IN THE RIGHT STRIP ("The right strip gets its
 //   first real tool: the bundle editor"): spirit/element/bundleEditor.js, beside the agent server's DEBUG box.
 (function () {
-  var AGENT = spirit.familyPath('agent');
   // one: the table's name as a detail pane's title row says it ("[Table-Icon] \"Add | Change\" [Table-name]").
   var TABLES = [
     { name: 'provider', icon: '🏢', title: 'Model providers', one: 'Provider' },
@@ -53,13 +49,7 @@
   function create(container) {
       var E = (window.spirit && window.spirit.element) || {};
       var gone = false;
-      var debug = false;
-      var serverBox = null;
-      var offJobs = null;
-      function drawServer() {
-        var box = serverBox && serverBox.querySelector('input');
-        if (box) box.checked = debug;
-      }
+      var serverDebug = null;
 
       // Its whole app area is one workBench, in a box of a stated size (rule/16). THE APP BOOTSTRAPS ITS OWN COMPONENTS
       // (goal/G41.1; Andy: "the shell should not know that. every app needs to bootstrap its own components."): the
@@ -158,15 +148,12 @@
             } });
           }, function () { box.textContent = 'The persona table could not be loaded.'; });
         } }]),
-        right: [{ name: 'server', icon: '🐞', title: 'The agent server', mount: function (box) {
-          serverBox = box;
-          box.innerHTML = '<label><input type="checkbox"' + (debug ? ' checked' : '') + '> DEBUG on the agent server</label>';
-          box.addEventListener('change', function (e) {
-            var on = !!(e && e.target && e.target.checked);
-            // Proposed to the server through its interface; the box shows what the stream then says, not this click.
-            drawServer();
-            Promise.resolve(spirit.require(AGENT)).then(function (agent) { return agent.debug({ on: on }); }).then(drawServer, drawServer);
-          });
+        // THE SERVER'S TOOL IS serverDEBUG (goal/G43.15; Andy: "agent will in the server-config, on the right icon strip the ⚙ icon
+        // instead of 🐞, and that panel will show..."): the one DEBUG switch every server has, kept by the node.
+        right: [{ name: 'server', icon: '⚙', title: 'The agent server', mount: function (box) {
+          Promise.resolve(spirit.require('spirit/app/appSelector/serverDEBUG.js')).then(function () {
+            if (!gone) serverDebug = window.spirit.elements.serverDEBUG.create(box, { key: 'agent' });
+          }, function () { box.textContent = 'The DEBUG switch could not be loaded.'; });
         } }, { name: 'bundles', icon: '📦', title: 'Bundles', mount: function (box) {
           // goal/G41.21: the shell's bundle editor, loaded when its tool is first shown (rule/26), with the app's api. Its rows
           // open in this centre's tabs (goal/G41.31; Andy: "agent: <bundle-name>."; "if the bundle is not node-owned:
@@ -183,26 +170,10 @@
       tabs = E.tabContainer.create(bench.center, { tabs: [] });
       }
 
-      // THE SERVER'S STATE, from its job as spirit.data keeps it (goal/G41.28): its job's app, { agent: { debug } }, in
-      // the jobs family's cache (spirit.data.jobs.data), read as the app opens and again each time that job changes.
-      function stateOf(job) { var app = job && job.app; return app && app.agent && typeof app.agent.debug === 'boolean' ? app.agent.debug : null; }
-      function heard(job) {
-        var now = stateOf(job);
-        if (now === null) return;
-        debug = now;
-        drawServer();
-      }
-      Promise.resolve(spirit.cacheManager('jobs')).then(function () {
-        var J = ((window.spirit.data || {}).jobs || {}).data;
-        if (!J) return;
-        heard(J.find(function (j) { return stateOf(j) !== null; }));
-        offJobs = J.watch(function (id, job) { heard(job); });
-        if (gone && typeof offJobs === 'function') offJobs();
-      }, function () { /* the debug switch shows what it last knew */ });
       return {
         destroy: function () {
           gone = true;
-          if (typeof offJobs === 'function') offJobs();
+          if (serverDebug) serverDebug.destroy();
           if (bench && typeof bench.destroy === 'function') bench.destroy();
           container.innerHTML = '';
         },

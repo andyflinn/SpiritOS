@@ -504,7 +504,10 @@ mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
    "the last element is always a button that is positioned at the (bottom-) right", "between the icon and the button is
    a span, into which the form elements can be dropped."): a block the container's width; the span takes what is left
    and wraps its elements onto more rows, none wider than it; the icon held at the top, the button at the bottom right. */
-.shell-row-form { display: flex; align-items: center; gap: 1em; width: 100%; }
+.shell-row-form { display: flex; align-items: center; gap: 1em; width: 100%; margin-top: 1em; }
+/* ITS OWN 1em ABOVE IT, AND HIDDEN IS HIDDEN (goal/G43.15; Andy: "rowForms should carry their own upper 1em spacing, so when they're
+   invisible, they space disappears with them"): the display above would otherwise win over hidden. */
+.shell-row-form[hidden] { display: none; }
 .shell-row-form > .shell-icon { align-self: flex-start; }
 .shell-row-form > .shell-row-form-span { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 1em; }
 .shell-row-form > .shell-row-form-span > * { max-width: 100%; box-sizing: border-box; }

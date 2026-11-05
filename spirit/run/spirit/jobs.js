@@ -86,6 +86,7 @@ module.exports = function installJobs(port) {
 
     if (patch.data) {
       Object.assign(job.data, patch.data);
+      if (typeof patch.data.debug === 'boolean') keepDebug(job, patch.data.debug);
     }
 
     if (typeof patch.logMessage === 'string') {
@@ -561,7 +562,11 @@ module.exports = function installJobs(port) {
     if (process.platform !== 'win32') {
       try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
     }
-    const job = startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir)), { type: type, operated: 'node' });
+    const args = [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir));
+    // AN APP'S DEBUG, KEPT BY THE NODE (goal/G43.15, Q2, Q3: "only the new ones."): handed over at every start, a restart after a
+    // crash included, since the job starts again from this same list.
+    if (kind === 'app') { args.push('--debug', String(appDebug(rootDir, name))); appArgs.set(name, args); }
+    const job = startServerJob('node', args, { type: type, operated: 'node' });
     nodeServers.set(name, job);
     if (client && typeof client.register === 'function') client.register(name, pipe);
     return job;
@@ -630,6 +635,25 @@ module.exports = function installJobs(port) {
   }
   // active WRITTEN STARTS OR STOPS ITS SERVER (goal/G43.12, Q4: "exactly.", "that's why sidecars will go out-of style."): told
   // by the app family as it writes node.json. Its name stays in the table, as a stopped process/js server's does.
+  // DEBUG KEPT FOR AN APP OF spirit/app/ (goal/G43.15): what its server reports on its job is written into its node.json, and
+  // handed back at its next start. The server never writes the node's file; an old process/js server keeps nothing (Q3).
+  const appArgs = new Map();     // name -> the argument list its server job starts from
+  function appDebug(root, name) {
+    try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).debug === true; } catch (e) { return false; }
+  }
+  function keepDebug(job, on) {
+    const m = /^spirit\.app\.([^/]+)$/.exec(String(job.module || ''));
+    if (!m || job.kind !== 'server' || !serverHost) return;
+    const file = path.join(serverHost.rootDir, 'spirit', 'state', m[1], 'node.json');
+    let state = {};
+    try { state = JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch (e) { state = {}; }
+    if (state.debug === on) return;
+    state.debug = on;
+    try { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(state, null, 2) + '\n'); } catch (e) { /* kept next time */ }
+    const args = appArgs.get(m[1]);
+    const at = args ? args.indexOf('--debug') : -1;
+    if (at !== -1) args[at + 1] = String(on);
+  }
   function followApp(rootDir, name) {
     if (!serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;
     const job = nodeServers.get(name);

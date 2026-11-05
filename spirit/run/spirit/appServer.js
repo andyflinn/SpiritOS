@@ -342,9 +342,20 @@ function withDebug(verbs) {
   all.DEBUG = {
     request: { on: false }, reply: { debug: false },
     accepts: function (a) { return isPlain(a) && (Object.keys(a).length === 0 || (Object.keys(a).length === 1 && typeof a.on === 'boolean')); },
-    handler: function (a) { return { debug: spirit.debug(typeof a.on === 'boolean' ? a.on : undefined) }; },
+    handler: function (a) {
+      const was = spirit.debug();
+      const now = spirit.debug(typeof a.on === 'boolean' ? a.on : undefined);
+      if (now !== was) reportDebug();
+      return { debug: now };
+    },
   };
   return all;
+}
+// DEBUG STREAMS (goal/G43.15; Andy: "the appServers API MUST STREAM changes, too for debug"): its state on this server's own job,
+// in the job's data, which the node merges, so the server's next publish leaves it; every page hears it, no peer does. The node
+// keeps it from there for an app of spirit/app/ (spirit/jobs.js, Q2, Q3).
+function reportDebug() {
+  Promise.resolve(spirit.jobs.report({ data: { debug: spirit.debug() === true } })).catch(function () { /* not started by a node */ });
 }
 
 // ── THE STREAM: ONE PROTOCOL FOR EVERY SERVER (goal/G41.12, box v15) ──────
@@ -790,6 +801,9 @@ function serve(verbs, opts) {
   // THE NAME FIRST, because this server's own codes wear it (goal/G16.11), and its cache folder is named by it
   // (goal/G41.12); the declaration lands before anything listens so a malformed one stops the start.
   const name = path.basename(String(argv[1] || 'server'), '.js');
+  // THE DEBUG IT HAD (goal/G43.15, Q2: "i think we should persist it, always."): the node hands it over as --debug.
+  const debugAt = argv.indexOf('--debug');
+  if (debugAt !== -1) spirit.debug(argv[debugAt + 1] === 'true');
   try {
     // goal/G33.8: both halves, the stream it publishes (withPublisher) and the streams it listens to (withStreamListener).
     verbs = withDebug(withAgents(withPublisher(withStreamListener(verbs, opts && opts.stream, followed, name), opts && opts.publisher), argv[1]));
@@ -812,6 +826,7 @@ function serve(verbs, opts) {
       return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };
     }) } });
     subscribersFromGrants(name);
+    reportDebug();
   });
   srv.on('error', function (e) {
     console.error('appServer: could not listen on ' + pipe + ': ' + ((e && e.code) || e));
