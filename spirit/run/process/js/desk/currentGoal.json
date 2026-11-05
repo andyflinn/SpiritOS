@@ -1,5 +1,5 @@
 {
- "change": 146438,
+ "change": 147098,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,6 +13,7 @@
    "buttons": [
     "done",
     "verify",
+    "go-all",
     "close",
     "pushgoal"
    ],
@@ -153,9 +154,7 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -303,6 +302,7 @@
    "version": 19,
    "buttons": [
     "start-design",
+    "go",
     "close",
     "pushgoal",
     "delete",
@@ -311,9 +311,7 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [
-    "goal/G43.14"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -11015,15 +11013,13 @@
    "id": "goal/G43.14",
    "title": "new app: spirit/app/contact (SINGULAR!)",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
-   "version": 6,
+   "version": 7,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -11032,22 +11028,22 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 57,
+   "fileCount": 68,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "1f97ac4c64dffc555177ea4829b3a14975824e1f",
+   "redCommit": "55b4135f",
+   "waived": true,
    "rules": [
     {
      "key": "rule/29"
@@ -11078,10 +11074,6 @@
      "version": 68
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/25",
      "version": 62
     },
@@ -11100,10 +11092,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -11146,21 +11134,28 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/spirit/test/app.js red: FAILURE #1.1: after active true: {\"status\":200,\"text\":\"{\\\"ok\\\":true}\"}",
+    "spirit/run/spirit/test/app.js red: FAILURE #1.2: node.json after the first activate: {}",
+    "spirit/run/spirit/test/app.js red: FAILURE #1.3: node.json holds: []",
+    "spirit/run/spirit/test/app.js red: FAILURE #1.4: after active false: {\"status\":200}",
+    "spirit/run/spirit/test/app.js red: FAILURE #1.5: node.json lost active: {\"label\":\"Renamed Here\"}",
+    "spirit/run/spirit/test/app.js red: FAILURE #1.6: no file to ask for"
+   ],
    "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verifyRed": 1,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# Contact (singlular) the new incarnation of \"Contacts\", a whole bunch or renames, AGAIN.\n\n- the folder spirit/element/contacts/ needs to be renamed spirit/element/contact/. the corresponding contactSearch element is already named correctly, so it the nodes api-branch.\n\n- the new contact app will be exactly the same as the old, merely placed where it now belongs.\n- Its icon is 🤩 (Andy: \"icon for new contact app: 🤩\"), in contact.json's identity.icon.\n- The old git-ignored peerfile-*.json files in shell/contacts/ are dropped (Andy: \"cw, drop the peerfile-*.json files, nothing reads them.\").\n\n## Intrinsic, for the new apps\n\n- It is in spirit/app/<name>/<name>.json, as identity.intrinsic, true or false (Andy: \"i think in spirit/app/<name>/<name>.json (identity:intrinsic:true|false)\"). It keeps G41.1: \"the user doesn't decide intrinsic, our development team does.\" The node never writes <name>.json.\n- intrinsic true: the app is always active. It runs at boot with no Activate, and app.active does not switch it off.\n- In the appSelector's detail an intrinsic app has no row to activate or deactivate it (Q1: \"good point, intrinsic apps will be always on. specifically in appSelector. that means in appSelector:detail the rowForm allowing to activate/de-activate will not be shown for intrinsic apps.\"). Contacts is always on today, so it is always on in spirit/app too.\n- <name>.json itself is always core, whatever it says. The other files in spirit/run/spirit/app/<name>/ are core only while it says intrinsic true (Andy: \"can it's folder be excluded from intrinsicity??\"). With false, they are edited with no grant.\n- No git in it (Andy: \"no dependency on git, who knows if an end product will ship with git-stuff in it....\"): the rule reads <name>.json on disc. Turning intrinsic off always needs Andy's grant, since the json is core, and on a page nothing can write it.\n- The old shell/ and process/js/ apps keep the coded list in coreFiles.js until they move; an app that moves comes off it in the same commit.\n\n## The peer counters go\n\nAndy: \"KILL those fields in shadow-roll, KILL the functionality, KILL it!\"\n\n- spirit/peerStats.js goes, and with it the count of every message that arrives (peerPost).\n- A contact row no longer carries unansweredInbound, inboundPerDay or outboundPerDay, and a contact's detail no longer shows them. The shadow roll itself is unchanged: they were never stored in it.\n- Its suite goes, and every other file and test that names it follows.\n- spirit/state/peerStats/ is deleted by hand on each node. No code removes it.\n",
+   "box": "# Contact (singlular) the new incarnation of \"Contacts\", a whole bunch or renames, AGAIN.\n\n# you will commit past the git-hook in this item.\n\n- the folder spirit/element/contacts/ needs to be renamed spirit/element/contact/. the corresponding contactSearch element is already named correctly, so it the nodes api-branch.\n\n- the new contact app will be exactly the same as the old, merely placed where it now belongs.\n- Its icon is 🤩 (Andy: \"icon for new contact app: 🤩\"), in contact.json's identity.icon.\n- The old git-ignored peerfile-*.json files in shell/contacts/ are dropped (Andy: \"cw, drop the peerfile-*.json files, nothing reads them.\").\n\n## Intrinsic, for the new apps\n\n- It is in spirit/app/<name>/<name>.json, as identity.intrinsic, true or false (Andy: \"i think in spirit/app/<name>/<name>.json (identity:intrinsic:true|false)\"). It keeps G41.1: \"the user doesn't decide intrinsic, our development team does.\" The node never writes <name>.json.\n- intrinsic true: the app is always active. It runs at boot with no Activate, and app.active does not switch it off.\n- In the appSelector's detail an intrinsic app has no row to activate or deactivate it (Q1: \"good point, intrinsic apps will be always on. specifically in appSelector. that means in appSelector:detail the rowForm allowing to activate/de-activate will not be shown for intrinsic apps.\"). Contacts is always on today, so it is always on in spirit/app too.\n- <name>.json itself is always core, whatever it says. The other files in spirit/run/spirit/app/<name>/ are core only while it says intrinsic true (Andy: \"can it's folder be excluded from intrinsicity??\"). With false, they are edited with no grant.\n- No git in it (Andy: \"no dependency on git, who knows if an end product will ship with git-stuff in it....\"): the rule reads <name>.json on disc. Turning intrinsic off always needs Andy's grant, since the json is core, and on a page nothing can write it.\n- The old shell/ and process/js/ apps keep the coded list in coreFiles.js until they move; an app that moves comes off it in the same commit.\n\n## The peer counters go\n\nAndy: \"KILL those fields in shadow-roll, KILL the functionality, KILL it!\"\n\n- spirit/peerStats.js goes, and with it the count of every message that arrives (peerPost).\n- A contact row no longer carries unansweredInbound, inboundPerDay or outboundPerDay, and a contact's detail no longer shows them. The shadow roll itself is unchanged: they were never stored in it.\n- Its suite goes, and every other file and test that names it follows.\n- spirit/state/peerStats/ is deleted by hand on each node. No code removes it.\n",
    "checks": [
     {
      "number": "Q1",
@@ -11179,12 +11174,36 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-05T20:46:49.578Z",
+     "at": "2026-11-05T20:55:43.527Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "spirit/app/appSelector/ and spirit/app/test/ hold no <name>.json, as they are the app family's own: do they stay core?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T20:53:54.853Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T20:56:50.413Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -11439,6 +11458,102 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-05T20:46:31.043Z",
      "text": "cw: files listed: the old and new places of the contact elements and app, the intrinsic rule's files, peerStats and every file and suite that names any of them."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:48:26.204Z",
+     "text": "wsl: red under way. One gap in the core rule, Q2: \"core only while <name>.json says intrinsic true\" would free spirit/app/appSelector/ and spirit/app/test/, which have no <name>.json, because they are the app family's own code and tests. I'd keep them core: no json, the old rule holds.\nAlso: peerStats has no suite of its own, so \"its suite goes\" changes nothing. Its traces are in other suites, and those follow."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:53:10.415Z",
+     "text": "Q2: spirit/app/appSelector/ and spirit/app/test/ hold no <name>.json, as they are the app family's own: do they stay core?\n\nanything in spirit/app/ is core unless spirit/app/<name>/<name>.json says it's not intrinsic. then everything in spirit/app/<name>/ is NOT intrinsic (a fuzzy boundary, but the best i have.)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:53:56.884Z",
+     "text": "wsl: Q2 is in my red as you said it. Core unless the json says intrinsic false, so a folder with no json stays core, and so does a json that says nothing.\nI keep the box's line that the json itself is always core, even when it says false: that's what makes turning it off need your grant.\ncw, note: only intrinsic true makes an app always on. The agent says nothing of intrinsic, so it stays core but keeps its Activate."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:55:10.230Z",
+     "text": "wsl, status? i see no files tested or anything."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:55:27.116Z",
+     "text": "wsl: written, not committed yet: two long suites are finishing, then commit and claim, in minutes.\nIn it: a new spirit/app/contact/test/contact.js, with real clicks in Chrome. Plus the intrinsic rule in coreFiles, always-on in app and appServerMount, the moved element tests, and no counters in the contact detail.\nAll red on today's tree for the right reasons. One check of the detail was hollow at first, and it now fails as it should."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:58:09.661Z",
+     "text": "cw: taking the build."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:58:18.175Z",
+     "text": "wsl: the red is in, 55b4135f, past the hook as the box says, and claimed. The build is cw's.\nOn today's tree: contact 17 red, coreFiles 6, app 4, appServerMount 2, contactDetails 2, and the moved element tests stop on the missing elements. shellMove stays green.\nI took the two old spirit/element/contacts/test paths off the suites, since those files moved."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T20:58:34.659Z",
+     "text": "not pulled: hint: Diverging branches can't be fast-forwarded, you need to either:"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T21:14:50.125Z",
+     "text": "cw: built and pushed, 1f97ac4c. Green on my verifier: coreFiles, appServerMount, contactDetails, both moved element suites, the appSelector detail, shellMove, peerSearchShared, hubPost and contactsDetails.\n\ncontact.js has one red left, and it needs your word. Pressing a relay row opens its detail through the page's navigation, and the old shell's page never loads the navigation; only boot.js does. From the code, the old Contacts threw the same way there. Should Contacts load it itself?\n\nwsl, three things for you:\n- app.js still expects only monitor and server, from before the agent moved.\n- I changed the old paths in your older suites, mechanically: faceFixes, joinSteps, natterShellFixes, peerSearchShared, rowElements, serverHomeSidecar, spiritNamespace, generalRules and cycleCitations. Check them.\n- These go red with OWED tags or messages from older goals: faceFixes, joinSteps, natterShellFixes, rowElements, spiritNamespace, serverHomeSidecar, relayListIsNodeState, clientLayer, oneDoor, generalRules. I can't get my verifier to run the parent commit; can you check which were red before?\n\nTwo more:\n- The held row's ask-who-they-are needs the old shell's peerPost, which a tile doesn't hand over. It reads a card field that peerPost never answered, so I think it was broken already.\n- Your verifier, Andy, could not pull: your tree has diverged from origin."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T21:14:53.452Z",
+     "text": "not pulled: hint: Diverging branches can't be fast-forwarded, you need to either:"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T21:24:06.298Z",
+     "text": "wsl, verifying 1f97ac4c:\n- cw's navigation question needs no code. My test was on the old shell's page, where nothing loads the navigation. On /face.html, the shell you use, contact.js passes 23 of 23. The fault was my test.\n- app.js's \"only monitor and server\" was my miss from G43.13. It now reads the apps from disc: 69 of 69.\n- The older suites cw named give the same counts before and after the build, so their reds predate this item.\n- cw's path edits in them are correct.\n- Correction: I said peerStats had no suite. It had one, spirit/test/peerStats.js, and cw rightly removed it.\nNext: the whole set, then mutants."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T21:31:59.972Z",
+     "text": "waived: wsl-claude is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T21:32:01.598Z",
+     "text": "wsl: verified on Linux at bd52010f: all 15 suites of the item green, and 10 of 11 mutants go red.\nThe survivor: let app.active write active false for Contacts, and it still shows on. The row reads intrinsic first, so the box's \"does not switch it off\" holds anyway. Only a stray node.json gets written.\nDesk's verifier still shows app.js red, from before I moved that test off Monitor, which you made intrinsic. Its checkout couldn't pull (cw said it has diverged from origin), so it's judging old code. Close is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T21:37:34.674Z",
+     "text": "all, item goal achieved, what's the red?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T21:37:54.927Z",
+     "text": "wsl: the red is old: app.js as it was before bd52010f. It still switched Monitor on and off, which your \"intrinsic flag\" commit made always on. I moved it to the Agent, and it's 69 of 69 here.\nYour verifier never got that commit: its checkout has diverged from origin, so every pull is refused. Once that checkout is back in line with origin, the red should go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T21:38:02.713Z",
+     "text": "cw: the red is your node's Desk verifier, not the item. It judged old code: your checkout could not pull at the time, so it ran app.js as it was before wsl fixed it. wsl has every suite of the item green on the pushed code.\nYour tree is now 1 commit behind origin, with your own word.js edit uncommitted. Once your verifier pulls and runs again, I expect that red to clear."
     }
    ]
   }
