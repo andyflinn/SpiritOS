@@ -143,14 +143,19 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     const onPage = function () { return c.evaluate('(function () { var r = spirit.data.agent && spirit.data.agent.data && spirit.data.agent.data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
     ok(!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000), 'it reaches the page\'s spirit.data.agent with no reload', 'on the page: ' + short(await onPage()));
 
-    test.subHeading('the box: "The server\'s debug switch stays, in its own config.json in spirit/state/agent/data/"');
+    // goal/G43.15: the agent's own switch went; its server tool shows serverDEBUG, which switches appServer's DEBUG, kept by the node.
+    test.subHeading('goal/G43.15, the box: "On the agent\'s right icon strip, the server\'s tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG"');
+    const serverIcon = await c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=server]"); return b ? String(b.textContent || "").trim() : null; }())');
+    ok(/⚙/.test(String(serverIcon)) && !/🐞/.test(String(serverIcon)), 'the server\'s tool shows ⚙', 'its icon: ' + short(serverIcon));
     await tool('server');
-    const boxTicked = function () { return c.evaluate('(function () { var i = document.querySelector("#zzBox input[type=checkbox]"); return i ? i.checked : null; }())'); };
-    ok(await until(function () { return boxTicked().then(function (v) { return v === false; }); }, 8000), 'its checkbox is there, off', 'the checkbox: ' + short(await boxTicked()));
-    await c.evaluate('document.querySelector("#zzBox input[type=checkbox]").click(); 1');
-    const config = path.join(s.run, 'spirit', 'state', 'agent', 'data', 'config.json');
-    ok(await until(function () { return Promise.resolve((readJson(config) || {}).debug === true); }, 8000), 'ticked, the server\'s config.json says debug true', 'config.json: ' + short(readJson(config)));
-    ok(await until(function () { return boxTicked().then(function (v) { return v === true; }); }, 8000), 'and the checkbox follows the server', 'the checkbox: ' + short(await boxTicked()));
+    const debugRow = function () { return c.evaluate('(function () { var rows = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")).filter(function (r) { return /DEBUG/.test(String(r.innerText || "")) && r.getBoundingClientRect().height > 0; }); return rows.length ? String(rows[0].innerText || "").replace(/\\s+/g, " ").trim() : ""; }())'); };
+    ok(await until(function () { return debugRow().then(function (t) { return /turn on DEBUG/i.test(t) && /Agent/.test(t); }); }, 10000), 'its panel shows serverDEBUG: turn on DEBUG Agent', 'its panel: ' + short(await debugRow()));
+    await c.evaluate('(function () { var rows = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")).filter(function (r) { return /DEBUG/.test(String(r.innerText || "")); }); if (rows[0]) rows[0].querySelector("button").click(); return 1; }())');
+    ok(await until(function () { return call(N.base, 'agent.DEBUG', {}).then(function (r) { return !!r.body && r.body.debug === true; }); }, 8000), 'pressed, the agent\'s DEBUG is on', 'agent.DEBUG {}: ' + short((await call(N.base, 'agent.DEBUG', {})).text));
+    const kept = path.join(s.run, 'spirit', 'state', 'agent', 'node.json');
+    ok(await until(function () { return Promise.resolve((readJson(kept) || {}).debug === true); }, 8000), 'and the node keeps it in spirit/state/agent/node.json', 'node.json: ' + short(readJson(kept)));
+    ok(!fs.existsSync(path.join(s.run, 'spirit', 'state', 'agent', 'data', 'config.json')), 'no config.json of the agent\'s own is written', 'spirit/state/agent/data/config.json is there');
+    ok(await until(function () { return debugRow().then(function (t) { return /turn off DEBUG/i.test(t); }); }, 8000), 'and its panel says turn off DEBUG', 'its panel: ' + short(await debugRow()));
 
     test.subHeading('the box: "The tick box showDebug goes, with its use of relay-state/shell/agent/config.json"');
     const page = await c.evaluate('document.getElementById("zzBox").innerText').then(String);

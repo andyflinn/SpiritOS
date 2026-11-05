@@ -258,32 +258,20 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!/activateApp/.test(source), 'and no activateApp', 'browserAgent.js still names activateApp');
   ok(!w.saves.length, 'opening the app saves no file', 'saved: ' + short(w.saves));
 
-  test.subHeading('the right tool sets the server\'s DEBUG state, and follows its job in the jobs family\'s cache');
+  // goal/G43.15, Andy: "WHY WOULD THE FUCKING agent server have a separate debug switch, it belongs to the node, and should work like
+  // any other servers debug switch.", and "on the right icon strip the ⚙ icon instead of 🐞, and that panel will show...".
+  test.subHeading('the box: "On the agent\'s right icon strip, the server\'s tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG"');
+  ok(!!SERVER_TOOL && /⚙/.test(String(SERVER_TOOL.icon)) && !/🐞/.test(String(SERVER_TOOL.icon)), 'the server\'s tool on the right strip takes ⚙', 'its icon: ' + short(SERVER_TOOL && SERVER_TOOL.icon));
+  const debugs = [];
+  global.window.spirit.elements.serverDEBUG = { create: function (into, o) { debugs.push({ into: into, o: o || {} }); return { destroy: function () {} }; } };
+  const callsBefore = w.calls.length;
   const rb = box('right'); SERVER_TOOL.mount(rb); await settle();
-  ok(rb.inputs.length === 1 && /type="checkbox"/.test(rb.inputs[0].tag), 'it draws one checkbox', 'inputs: ' + rb.inputs.length);
-  change(rb, true); await settle();
-  const asked = w.calls[w.calls.length - 1];
-  ok(w.required.indexOf(AGENT_FAMILY) !== -1 && asked && asked.on === true, 'ticking it requires the agent server\'s interface through spirit and calls its debug {on: true}',
-    'required ' + short(w.required) + ', debug calls ' + short(w.calls));
-  ok(!isOn(rb), 'until the stream says so, the checkbox shows the state last streamed, not the click', 'after the tick, with nothing streamed: checked');
-  change(rb, false); await settle();
-  const asked2 = w.calls[w.calls.length - 1];
-  ok(asked2 && asked2.on === false, 'unticking it calls debug {on: false}', 'debug calls: ' + short(w.calls));
-  ok((w.managers || []).indexOf('jobs') !== -1 && !!((w.win.spirit.data || {}).jobs || {}).data, 'it loads the jobs family\'s cache manager (((spirit.data || {}).jobs || {}).data)', 'managers: ' + short(w.managers));
-  w.stream(true); await settle();
-  ok(isOn(rb), 'the checkbox follows the server\'s state, its job in ((spirit.data || {}).jobs || {}).data: on', 'after its job said on: unchecked');
-  w.stream(false); await settle();
-  ok(!isOn(rb), 'and off', 'after its job said off: checked');
-
-  test.subHeading('the state kept before it opened is there at once');
-  const w4 = world();
-  const def4 = load(w4);
-  w4.stream(true);
-  def4.create(box('app4')); await settle();
-  const R4 = ((w4.created[0] || {}).opts || {}).right || [];
-  const rb4 = box('right4'); if (R4[0]) R4[0].mount(rb4);
-  await settle();
-  ok(isOn(rb4), 'its job kept in the cache before it opened, the right checkbox shows the server on', 'right checkbox: ' + (rb4.inputs[0] ? rb4.inputs[0].checked : 'none'));
+  ok(w.required.indexOf('spirit/app/appSelector/serverDEBUG.js') !== -1, 'its mount loads spirit/app/appSelector/serverDEBUG.js through spirit.require', 'required: ' + short(w.required));
+  ok(debugs.length === 1 && debugs[0].into === rb && debugs[0].o.key === 'agent', 'and makes serverDEBUG for the agent in the box it is handed', 'serverDEBUGs: ' + short(debugs.map(function (d) { return { here: d.into === rb, key: d.o.key }; })));
+  ok(rb.inputs.length === 0, 'it draws no checkbox of its own', 'inputs: ' + rb.inputs.length);
+  ok(w.calls.length === callsBefore, 'and calls no debug verb of the agent\'s', 'debug calls: ' + short(w.calls.slice(callsBefore)));
+  ok(!/\.debug\(/.test(source), 'the app\'s code calls no agent debug verb', 'browserAgent.js still calls .debug(');
+  delete global.window.spirit.elements.serverDEBUG;
 
   test.subHeading('it bootstraps its own components');
   const w3 = world();

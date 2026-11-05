@@ -68,3 +68,8 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
 - Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.
 - A grant table or verb left, or an old grant table kept at start.
 - A description column left on an agent table; a model name column.
+
+## No debug of its own (goal/G43.15)
+
+- Its interface declares no `debug` verb, and `api/debug.json` is gone. A `debug {on}` is refused.
+- appServer's `DEBUG` switches it, as for any server, and no `config.json` is written in its `--state` folder.

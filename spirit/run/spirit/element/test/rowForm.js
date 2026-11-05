@@ -98,6 +98,14 @@ test.startTest('rowForm.js: the one-row form, in a bubble');
     test.subHeading('the press is the mounter\'s');
     // "The mounter drops its form elements into span and wires the button itself (a busyButton or a click)."
     ok(one.pressQuiet && wr.pressQuiet, 'a press of the button, unwired, changes nothing in the form', 'changed: ' + short([one.pressQuiet, wr.pressQuiet]));
+
+    // goal/G43.15, Andy: "rowForms should carry their own upper 1em spacing, so when they're invisible, they space disappears with
+    // them, especially since we're starting to have elements that self-hide if they're not applicable."
+    test.subHeading('the box: "A rowForm carries its own 1em above it, so when it is hidden its space goes with it"');
+    const sp = await page.evaluate('(function () { var c = document.createElement("div"); c.style.cssText = "width:400px;padding:0;border:0"; document.body.appendChild(c); var top = document.createElement("div"); top.style.height = "10px"; c.appendChild(top); var a = window.spirit.element.rowForm.create(c, { icon: "", button: "a" }); var b = window.spirit.element.rowForm.create(c, { icon: "", button: "b" }); var em = parseFloat(getComputedStyle(c).fontSize); var gap = function () { return b.root.getBoundingClientRect().top - a.root.getBoundingClientRect().bottom; }; var shown = { margin: parseFloat(getComputedStyle(a.root).marginTop), gap: gap(), height: c.getBoundingClientRect().height }; a.root.hidden = true; var gone = { height: c.getBoundingClientRect().height, bTop: b.root.getBoundingClientRect().top - top.getBoundingClientRect().bottom }; return JSON.stringify({ em: em, shown: shown, gone: gone, aHeight: shown.height }); }())').then(JSON.parse).catch(function () { return null; });
+    ok(!!sp && near(sp.shown.margin, sp.em), 'its root carries 1em above it, its own margin', 'margin-top ' + short(sp && sp.shown.margin) + ', 1em ' + short(sp && sp.em));
+    ok(!!sp && near(sp.shown.gap, sp.em), 'so two forms one under the other stand 1em apart', 'the gap ' + short(sp && sp.shown.gap) + ', 1em ' + short(sp && sp.em));
+    ok(!!sp && near(sp.gone.bTop, sp.em) && sp.gone.height < sp.shown.height - sp.em, 'hidden, a form takes its 1em with it: the next one stands 1em below what is above', 'with the first hidden: ' + short(sp && sp.gone));
   } finally {
     if (page && page.kid) page.kid.kill();
     if (node.child) node.child.kill();

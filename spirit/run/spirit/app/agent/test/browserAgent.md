@@ -25,16 +25,10 @@ No agents talk to each other through it: each agent sees itself as the only agen
   used in this app").
 - A table's tool mounts that table's own element: it requires `spirit/app/agent/table/<name>/elementTable.js` into a
   box of the shell's `fill` class.
-- The right tool sets the agent server's DEBUG state (Andy, Q5: "the app is supposed to require it's components, then use
-  them."):
-  - It draws one checkbox. Changing it requires the agent server's interface through spirit
-    (`spirit.require(spirit.familyPath('agent'))`), then calls its `debug({ on })` with the checkbox's
-    state.
-  - The checkbox shows only what the server's job says (rule/19), never the click itself: after the call it shows the
-    state last kept.
-  - It follows the server's state in the jobs family's cache (goal/G41.28; `spirit.cacheManager('jobs')`, then
-    `spirit.data.jobs.data`): a job whose app is `{ agent: { debug } }`, read from the jobs kept as the app opens and again
-    each time that job changes, so a state kept before the app opened is there at once.
+- The server's tool on the right strip takes ⚙, not 🐞, and its panel shows serverDEBUG for the agent (goal/G43.15; Andy:
+  *"agent will in the server-config, on the right icon strip the ⚙ icon instead of 🐞"*): its mount loads
+  `spirit/app/appSelector/serverDEBUG.js` and makes it in its box. It draws no checkbox and calls no debug verb of the agent's.
+
 ## Requirements (goal/G41.21, box v17)
 
 - **The right strip gets its first real tool: the bundle editor.** Two right tools: the agent server's DEBUG box

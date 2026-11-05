@@ -40,3 +40,10 @@ containers of 600px and 260px, and a probabilitySearch beside them.
 - A form that does not wrap, or is only as wide as its content.
 - An icon not first, or not the icon element; a button not last, or at the top when the form wraps.
 - A bubble of its own style instead of the shared class, or probabilitySearch keeping its own copy.
+
+## Its own spacing (goal/G43.15)
+
+Andy: *"rowForms should carry their own upper 1em spacing, so when they're invisible, they space disappears with them"*.
+
+- Its root carries 1em above it, its own margin, so two forms one under the other stand 1em apart.
+- Hidden, a form takes that 1em with it: the next one stands 1em below what is above.
