@@ -58,13 +58,23 @@
     // itself and hides itself for an intrinsic app. A cell is painted again at each draw, so it is made anew.
     var key = String(r.key || '');
     var installer = null;
-    function dropInstaller() { if (installer) installer.destroy(); installer = null; }
+    function dropInstaller() { if (installer && typeof installer.destroy === 'function') installer.destroy(); installer = null; }
     var mount = el.mount;
     var destroy = el.destroy;
     el.mount = function (hosts) {
       mount(hosts);
       dropInstaller();
-      if (hosts && hosts.active) installer = window.spirit.elements.rowFormAppActive.create(hosts.active, { key: key });
+      var cell = hosts && hosts.active;
+      if (cell) {
+        // A press on the switch is the switch's, never the row's pick (as the installer it replaced stopped it).
+        cell.addEventListener('click', function (e) { e.stopPropagation(); });
+        // It may still be loading: made once it is in, unless the row was drawn again meanwhile.
+        var made = Promise.resolve(window.spirit.require('spirit/app/appSelector/rowFormAppActive.js')).then(function () {
+          if (installer !== made) return;
+          installer = window.spirit.elements.rowFormAppActive.create(cell, { key: key });
+        });
+        installer = made;
+      }
       return el;
     };
     el.destroy = function () { dropInstaller(); return destroy(); };
