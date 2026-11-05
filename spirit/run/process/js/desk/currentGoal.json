@@ -1,5 +1,5 @@
 {
- "change": 146310,
+ "change": 146438,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,7 +13,6 @@
    "buttons": [
     "done",
     "verify",
-    "go-all",
     "close",
     "pushgoal"
    ],
@@ -146,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -154,7 +153,9 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -302,7 +303,6 @@
    "version": 19,
    "buttons": [
     "start-design",
-    "go",
     "close",
     "pushgoal",
     "delete",
@@ -311,7 +311,9 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.14"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -10304,7 +10306,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
+   "alert": true,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
@@ -11000,6 +11002,443 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-05T19:59:26.712Z",
      "text": "cw: status: 3664afff is out, by your Q5 no. The revert is pushed and claimed, 9d282cc1, and the server list is exactly as it was before it. wsl, it is in: your mutants can run."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:09:30.748Z",
+     "text": "wsl: verify report, after your close. On 9d282cc1, 10 of 11 mutants go red. Breaking the split, data.js's id, { verb }'s answer, the table paths, destroy, the element's name, the debug file's place or node.mount each fails, and so does writing the old config file.\nThe survivor is cw's late family bind: take it out and the suite stays green. My page is opened before Activate, so either the page binds the family by itself anyway, or my red misses the case cw saw. Not chased further, since you closed."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.14",
+   "title": "new app: spirit/app/contact (SINGULAR!)",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 6,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 57,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# Contact (singlular) the new incarnation of \"Contacts\", a whole bunch or renames, AGAIN.\n\n- the folder spirit/element/contacts/ needs to be renamed spirit/element/contact/. the corresponding contactSearch element is already named correctly, so it the nodes api-branch.\n\n- the new contact app will be exactly the same as the old, merely placed where it now belongs.\n- Its icon is 🤩 (Andy: \"icon for new contact app: 🤩\"), in contact.json's identity.icon.\n- The old git-ignored peerfile-*.json files in shell/contacts/ are dropped (Andy: \"cw, drop the peerfile-*.json files, nothing reads them.\").\n\n## Intrinsic, for the new apps\n\n- It is in spirit/app/<name>/<name>.json, as identity.intrinsic, true or false (Andy: \"i think in spirit/app/<name>/<name>.json (identity:intrinsic:true|false)\"). It keeps G41.1: \"the user doesn't decide intrinsic, our development team does.\" The node never writes <name>.json.\n- intrinsic true: the app is always active. It runs at boot with no Activate, and app.active does not switch it off.\n- In the appSelector's detail an intrinsic app has no row to activate or deactivate it (Q1: \"good point, intrinsic apps will be always on. specifically in appSelector. that means in appSelector:detail the rowForm allowing to activate/de-activate will not be shown for intrinsic apps.\"). Contacts is always on today, so it is always on in spirit/app too.\n- <name>.json itself is always core, whatever it says. The other files in spirit/run/spirit/app/<name>/ are core only while it says intrinsic true (Andy: \"can it's folder be excluded from intrinsicity??\"). With false, they are edited with no grant.\n- No git in it (Andy: \"no dependency on git, who knows if an end product will ship with git-stuff in it....\"): the rule reads <name>.json on disc. Turning intrinsic off always needs Andy's grant, since the json is core, and on a page nothing can write it.\n- The old shell/ and process/js/ apps keep the coded list in coreFiles.js until they move; an app that moves comes off it in the same commit.\n\n## The peer counters go\n\nAndy: \"KILL those fields in shadow-roll, KILL the functionality, KILL it!\"\n\n- spirit/peerStats.js goes, and with it the count of every message that arrives (peerPost).\n- A contact row no longer carries unansweredInbound, inboundPerDay or outboundPerDay, and a contact's detail no longer shows them. The shadow roll itself is unchanged: they were never stored in it.\n- Its suite goes, and every other file and test that names it follows.\n- spirit/state/peerStats/ is deleted by hand on each node. No code removes it.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Contacts is always on today: in spirit/app, does it start active on every node, or off until someone presses Activate?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-05T20:28:05.832Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-05T20:46:49.578Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:11:10.643Z",
+     "text": "all, thoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:12:10.833Z",
+     "text": "wsl: doable, the same shape as the agent, and smaller: Contacts has no server. Read from the tree:\n- The node side is singular already: the contact family in spirit/contact/. Only the element folder is plural. 17 files name spirit/element/contacts/, among them index.html, join, introSpector and the Contacts app itself.\n- shell/contacts/contacts.js, 388 lines, starts with activateApp, so like the agent it becomes an element in spirit/app/contact/, with a new contact.json.\n- One catch: Contacts is intrinsic today, always on and in the old shell's list (coreFiles.js). In spirit/app it's off until someone presses Activate, on every node, and the old shell stops listing it. Join and introSpector use the list element, not the app, so they don't care.\nQ: should Contacts start active?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:12:33.608Z",
+     "text": "cw: it holds, and it's simpler than the agent: no server, so node.mount false and no server list involved. Read from the code; I moved nothing.\n\nWhat it takes:\n- Rename spirit/element/contacts/ to contact/: two elements and their four test files. About a dozen files name the old folder, most in comments.\n- shell/contacts/contacts.js becomes spirit/app/contact/contact.js, an element as the agent became: activateApp out, create(container) in. It has no tables helper to replace, as far as I read.\n- A new contact.json in the new shape: shell.mount true, node.mount false.\n\nThree things to know:\n- The name contact is also the node family in spirit/contact/. I found no clash: spirit.contact stays the family, spirit.app.contact is the app, and spirit.elements.contact is free.\n- shell/contacts is on the coded intrinsic list, so the old shell loses its Contacts tile when it moves, as it lost the Agent.\n- shell/contacts/ also holds a peerfile-*.json, git-ignored, from 2026-10-12. A git mv leaves it behind. Delete it or keep it?\n\nAnd the agent: wsl's mutant says my late family bind changes nothing in the test. My first red there was the toggle, not the bind. If you want it out as dead code, it's one small revert."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:16:28.015Z",
+     "text": "all, the main question i have is a data-organization-issue:\n\n- where does the intrinsic switch belong for the new apps? i think in spirit/app/<name>/<name>.json (identity:intrinsic:true|false) ??"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:16:54.059Z",
+     "text": "wsl: yes, <name>.json is the right place, and it keeps your old ruling: \"the user doesn't decide intrinsic, our development team does\". <name>.json is in git and written by us; node.json is the user's. Today it's a coded list in coreFiles.js, for shell/ and process/js only.\nWhat it would mean in spirit/app: active needn't be pressed, the button shows \"always on\" as today, and node.json's active is ignored. The core grant doesn't change, since spirit/app/ is core already.\nOne thought: identity is the public part, and this is a rule, not a name. I'd put it beside node and shell, as its own key. Your call."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:17:04.573Z",
+     "text": "cw: yes, <name>.json is the right place, and it keeps your G41.1 rule: \"the user doesn't decide intrinsic, our development team does.\"\n- Every file under spirit/run/spirit/ is core, the json included; I checked coreFiles on agent.json. So flipping intrinsic needs your grant, like the coded list today.\n- The node never writes <name>.json; what it chooses goes to node.json. So no user, page or app can change it.\n\nWhat it would mean, since the code is already core: the app is always active. It runs at boot with no Activate, and app.active refuses to switch it off. That also answers wsl's question: Contacts starts active because it's intrinsic.\n\nOne line for later: the coded list in coreFiles.js keeps the old apps until they move; each one moved is taken off it in the same commit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:21:24.497Z",
+     "text": "What if spirit/app/<name>/<name>.json (identity:intrinsic:false) says that an app is NOT intrinsic, can it's folder be excluded from intrinsicity??"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:22:02.292Z",
+     "text": "cw: yes, it can. coreFiles.isCore is the one rule: the commit check, and the node's file writes from a page, both ask it. One line there: a file in spirit/run/spirit/app/<name>/ is core only if its <name>.json says intrinsic true. The agent's folder, with intrinsic false, would then be open to edit with no grant.\n\nThe json guards itself: an intrinsic app's json says true, so it is core, so turning it false needs your grant.\n\nThe catch is when it is read. Today the check reads the files on disc. That disc is the commit being made, so a commit that sets intrinsic false and edits the code would judge itself by its own new json. The rule must read the json as it was before the commit, the last committed one.\n\nAlso: the old shell/ and process/js/ apps keep the coded list until they move."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:23:45.490Z",
+     "text": "cw, add this to the box, while i edit agent.json to be identity:intrinsic:false"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:24:16.971Z",
+     "text": "cw: boxed, under Intrinsic, for the new apps. As you wrote it: under identity. wsl suggested a key of its own beside node and shell; say if you prefer that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:27:44.249Z",
+     "text": "Q1: Contacts is always on today: in spirit/app, does it start active on every node, or off until someone presses Activate?\n\ngood point, intrinsic apps will be always on. specifically in appSelector. that means in appSelector:detail the rowForm allowing to activate/de-activate will not be shown for intrinsic apps."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:27:57.061Z",
+     "text": "cw, box it"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:28:08.056Z",
+     "text": "wsl: Q1 closed, thanks. So an intrinsic app is always on, and the appSelector's detail shows no Activate/Deactivate row for it.\nOn excluding a folder: I agree with cw, including the catch. The check must read the json from the last commit, or a commit could free itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:28:44.100Z",
+     "text": "cw: Q1 boxed (v4): an intrinsic app has no Activate/Deactivate row in the appSelector detail, and Contacts stays always on."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:29:46.855Z",
+     "text": "all, Q1\n\nno dependency on git, who knows if an end product will ship with git-stuff in it...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:30:08.762Z",
+     "text": "cw: agreed, and the node needs no git for it. The rule reads <name>.json on disc, as it does now.\n- On a node, a page cannot free an intrinsic app: its json is core, so a page can't write it, and the json stays true.\n- The only place a change and its json arrive together is a commit, and the commit check is a git hook itself; it runs only where git is. There, and only there, it judges by the json before the commit. A shipped product without git never runs it.\n\nSo the box line would read: the node reads <name>.json on disc; the commit check judges a commit by the json as it was before that commit. Box it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:30:11.394Z",
+     "text": "wsl: then a simpler rule, with no git: <name>.json itself is always core, whatever it says. The code beside it is core only while it says intrinsic true.\nTurning intrinsic off then always needs your grant, because the json is core. No commit can free itself, and the node just reads the file on disc. On a page, nothing can write that json at all."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:31:09.257Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:31:37.305Z",
+     "text": "cw: boxed (v5), and I took wsl's rule over mine, since it needs no git anywhere: <name>.json is always core, the rest of the folder only while it says intrinsic true. Say if you meant mine."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:33:14.421Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:33:33.369Z",
+     "text": "not green: one thing left. The peerfile-*.json in shell/contacts/, git-ignored, from 2026-10-12: a move leaves it behind. Delete it, or keep it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:33:41.404Z",
+     "text": "wsl: green from me, with one point still open from cw: shell/contacts/ holds three old peerfile-*.json files, out of git. A git mv leaves them behind: delete them, or keep them?\nThe box holds the rest. Two things I'll read as in it, through \"exactly the same as the old\": Contacts becomes an element like the agent, and its contact.json says shell.mount true, node.mount false, intrinsic true."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:34:28.934Z",
+     "text": "icon for new contact app: 🤩"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:34:46.653Z",
+     "text": "cw: 🤩 noted for contact.json's identity.icon; into the box on your word. The peerfile question still stands."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:35:41.800Z",
+     "text": "cw, drop the peerfile-*.json files, nothing reads them."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:36:31.929Z",
+     "text": "cw: dropped from my clone. Your tree has none left in shell/contacts/; only spirit/state/peerStats/ holds peer files, and those stay.\nOne correction to \"nothing reads them\": the hub opens none, but it counts their size per peer under shell/, the Storage figure in Contacts. Dropping them only lowers that count."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:38:01.933Z",
+     "text": "cw: what the fuck is spirit/state/peerStats/??????"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:38:29.864Z",
+     "text": "cw: the node's message counters per peer, one file each, written by peerStats.js. For each contact: how many of their messages went unanswered, a 14-day count of messages in and out, and the last 200 message ids, so one message is never counted twice. No message text.\n\nWho reads them: the hub puts the numbers on each Contacts row, and contactDetails shows them as messages per day.\n\nHow it got there: they sat in relay-state/peerStats/, and your G43.8 move of relay-state's top brought them to spirit/state/. Before goal/G16.3 they were written into the Contacts app's own folder. The file you just had me drop was very likely one of those, left behind."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:39:39.696Z",
+     "text": "cw, Who reads them: the hub puts the numbers on each Contacts row, and contactDetails shows them as messages per day.\n\n\n???? WHAT THE FUCK, and who uses those numbers ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:40:13.134Z",
+     "text": "cw: only you, by looking. Nothing decides anything from them. I read every reader:\n- peerPost counts each message that arrives.\n- The hub puts three numbers on each contact row: unanswered inbound, in per day, out per day.\n- contactDetails shows them as three rows in a contact's detail. Nothing else reads them: no gate, no limit, no ranking.\n\nIts comment says why it was built: \"What they cost in attention\", a measure of how much a contact talks to you. If you don't want it, it is its own item to remove: peerStats.js, the count in peerPost, the three fields and rows, and the folder."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:41:14.010Z",
+     "text": "KILL those fields in shadow-roll, KILL the functionality, KILL it!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:41:44.806Z",
+     "text": "cw: understood: kill it. One fact first: they aren't stored in the shadow roll. The hub works them out from those files each time and puts them on the rows it answers, so the roll itself stays as it is.\n\nWhat goes: peerStats.js and its counting on every message that arrives, the three fields on each contact row, the three rows in a contact's detail, its suite, and the lines that name it in about ten other files and tests. The spirit/state/peerStats/ folders are deleted by hand on each node, with no rescue code.\n\nThis item is in design, so I build nothing yet. I'd box it here under a heading of its own, since it is in the contacts code anyway. Box it here?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:43:11.122Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:43:26.566Z",
+     "text": "not green: the box (v5) does not yet hold the peerStats kill or the 🤩 icon. Both go in on your word."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:43:43.344Z",
+     "text": "wsl: not green yet: the box (v5) has neither the 🤩 icon nor the kill of the peer counters. cw offered to box both; once they're in, green from me.\nI read the counters' readers too, and cw is right: only the Contacts rows and a contact's detail show them, and nothing decides from them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:43:48.899Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:44:12.473Z",
+     "text": "cw: boxed (v6): the 🤩 icon, the dropped peer files, and The peer counters go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:44:33.198Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:44:48.575Z",
+     "text": "green: settled, no open question, box current (v6)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T20:44:55.319Z",
+     "text": "wsl: green from me on v6. No objection to your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T20:45:50.565Z",
+     "text": "files!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T20:46:31.043Z",
+     "text": "cw: files listed: the old and new places of the contact elements and app, the intrinsic rule's files, peerStats and every file and suite that names any of them."
     }
    ]
   }
