@@ -31,7 +31,7 @@ const SEEN_CAP = 200;
 const DIR = ['spirit', 'state', 'peerStats'];
 
 function statsDir(rootDir) {
-  return path.join(rootDir, DIR[0], DIR[1]);
+  return path.join.apply(path, [rootDir].concat(DIR));
 }
 
 function statsPath(rootDir, publicKey) {

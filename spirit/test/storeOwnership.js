@@ -88,7 +88,7 @@ const RETIRED = [
 function filesIn(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
     if (e.isDirectory()) {
-      if (e.name === 'node_modules' || e.name === 'test') return;
+      if (e.name === 'node_modules') return;
       filesIn(path.join(dir, e.name), out);
       return;
     }
@@ -97,7 +97,8 @@ function filesIn(dir, out) {
   return out;
 }
 
-const files = filesIn(RUN_JS, []);
+// shellMove's suite lays out an old node: it names the stores as its fixture, and opens none (goal/G43.8).
+const files = filesIn(RUN_JS, []).filter(function (f) { return path.basename(f) !== 'shellMove.js' || path.basename(path.dirname(f)) !== 'test'; });
 
 // Comments may name a store — several explain why a rule exists by
 // pointing at the file it protects. Only code counts.
