@@ -40,7 +40,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   let api = null;
   try { api = require(path.join(FOLDER, 'api.js')); } catch (e) { api = null; }
   const verbs = api && api.verbs;
-  ok(!!verbs && Object.keys(verbs).join() === 'search', 'search is the family\'s only verb', 'the family\'s verbs are ' + short(verbs ? Object.keys(verbs) : 'not there'));
+  ok(!!verbs && Object.keys(verbs).sort().join() === 'active,search', 'search and active are the family\'s verbs', 'the family\'s verbs are ' + short(verbs ? Object.keys(verbs) : 'not there'));
   ok(!!verbs && !!verbs.search && Object.keys(verbs.search).join() === 'q' && verbs.search.q === 'text?', 'search takes one optional search string, q, and no filters', 'search takes ' + short(verbs && verbs.search));
 
   // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
