@@ -15,3 +15,12 @@
 - A row pressed sets `value` and `row` and says `change`, and shows that app's detail.
 - **Who paints, listens** (Andy, G41.32): `server.json` changed on the disk changes the row on the page, with no reload and no second search asked by hand.
 - Destroy leaves its container empty.
+
+## One appSelector, three faces (goal/G43.9)
+
+- *"spirit/app/appTiles.js will be removed."* *"spirit.app.appTiles() will be removed."*
+- *"in :pane mode (list) i want to see a list of all rows, activated AND deactivated, with the (de)activate buttons at the end of each row."* Both apps are listed, and each row ends in its one button, which says Activate or Deactivate. The row still shows nothing else but icon and label.
+- A press writes `spirit/state/<key>/node.json`; the stream brings `active` to the row and the button follows, no search asked. A search seated over the row does not lose `active`.
+- A pick in the pane launches nothing.
+- *"in :tiles mode, only activated apps will appear."* Reached by the toggle or from the start; an app made active appears and one made inactive leaves, no search asked.
+- *"in :tiles mode, appSelector icons will 'launch'"*: Andy left "(or mount?)" open and raised no objection to today's behaviour, so a tile opens its app inside through `spirit.app.<name>.createApp`, and the close icon brings the tiles back.

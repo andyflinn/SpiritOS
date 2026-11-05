@@ -12,3 +12,7 @@ Andy, box: *"when all apps and processes are migrated, andy will simply delete t
 - No shell notices (*"NO INTERFERENCE FROM ANY FUCKING SHELL"*): the shell's title and its own button stay as they were.
 - Nothing outside its folder names it, so his delete breaks nothing.
 - Since goal/G43.6 it wraps `spirit/app/appTiles.js`, `spirit.app.appTiles`: Andy's words above named the file that held it then.
+
+## It wraps appSelector (goal/G43.9)
+
+*"appMigration wraps appSelector in face tiles."* Opened, it mounts `spirit/app/appSelector.js`, and its script names no `appTiles`. Only active apps appear, so the test first makes `server` active.

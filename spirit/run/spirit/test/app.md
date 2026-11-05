@@ -13,3 +13,14 @@ Andy, box: *"we build a skeleton core-api-family, not a separate server, precise
 - It answers as other searches do, key and label rows. It finds `server` on an empty search and on its label, and not on words that fit nothing. The row carries the icon.
 - A folder counts only with its own `<name>/<name>.json`, read from the disk: a second one is found, and one without its file, `appSelector/` and `test/` are not.
 - A face with no star may call it: *"and yes, a face with no star can call appSearch"*. The hidden filter that comes with that is out of scope.
+
+## app.active (goal/G43.9)
+
+Andy, box: *"spirit.app gains a verb: "active"."* Peer review: wsl, yes.
+
+- *"app.active { key, active } sets it; only the owner may."* `api.js` names it with both arguments, it has `active.json`, and a face with no star is refused.
+- *"The user sets active, so Monitor and server start off."* Neither is active before a press.
+- *"The node writes spirit/state/<key>/node.json."* True and false both land there.
+- *"A key not in spirit/app is refused, so no path can be written through it."* Unknown keys, `..`, a path, `appSelector`, `test` and empty are refused, and write nothing.
+- *"spirit/state/ is not servable."* A plain GET does not hand the file over.
+- *"app.search stays "just a search string"."* Its only argument is `q`.

@@ -101,6 +101,35 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     fs.mkdirSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'zzbare'), { recursive: true });
     const bare = await ask(node.base, 'app.search', { q: 'zzbare' });
     ok(!!rows(bare) && !holds(rows(bare), 'zzbare'), 'a folder without its own .json is not one', 'a folder without its .json was found: ' + short(bare.text));
+
+    // ── app.active (goal/G43.9) ──
+    test.subHeading('the box: "spirit.app gains a verb: "active"", "app.active { key, active } sets it; only the owner may."');
+    const verbs = require(path.join(RUN, 'spirit', 'app', 'api.js')).verbs || {};
+    ok(!!verbs.active && 'key' in verbs.active && 'active' in verbs.active, 'api.js names the verb with key and active', 'api.js verbs: ' + short(verbs));
+    ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'active.json')), 'the verb has its file, active.json', 'no spirit/app/active.json');
+    ok(faceRefuses({ call: 'app.active', args: { key: 'monitor', active: true } }, { url: 'http://r.example/', key: '', owned: false }) !== '', 'a face with no star is refused it', 'a face with no star may set active');
+    ok(Object.keys(verbs.search || {}).join() === 'q', 'the box: app.search stays "just a search string"', 'app.search takes: ' + short(verbs.search));
+    const stateFile = function (k) { return path.join(node.root, 'spirit', 'run', 'spirit', 'state', k, 'node.json'); };
+    const activeIn = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')).active; } catch (e) { return undefined; } };
+    test.subHeading('the box: "The user sets active, so Monitor and server start off"');
+    ok(activeIn('monitor') !== true && activeIn('server') !== true, 'neither is active before a press', 'active before a press: ' + short([activeIn('monitor'), activeIn('server')]));
+    test.subHeading('the box: "The node writes spirit/state/<key>/node.json"');
+    const on = await ask(node.base, 'app.active', { key: 'monitor', active: true });
+    ok(on.status === 200 && activeIn('monitor') === true, 'active true lands in spirit/state/monitor/node.json', 'after active true: ' + short({ status: on.status, text: on.text, file: activeIn('monitor') }));
+    const off = await ask(node.base, 'app.active', { key: 'monitor', active: false });
+    ok(off.status === 200 && activeIn('monitor') === false, 'active false lands there too', 'after active false: ' + short({ status: off.status, file: activeIn('monitor') }));
+    await ask(node.base, 'app.active', { key: 'monitor', active: true });
+    test.subHeading('the box: "A key not in spirit/app is refused, so no path can be written through it."');
+    for (const bad of ['nosuchapp', '../evil', '..', 'appSelector', 'test', 'monitor/../../evil', '']) {
+      const r = await ask(node.base, 'app.active', { key: bad, active: true });
+      ok(r.status !== 200, 'refused: ' + JSON.stringify(bad), 'not refused: ' + JSON.stringify(bad) + ' ' + short(r.text));
+    }
+    ok(!fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'state', 'nosuchapp')) && !fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'evil')) && !fs.existsSync(path.join(node.root, 'spirit', 'run', 'evil')), 'and none of them wrote anything', 'a refused key left a file');
+    test.subHeading('the box: "spirit/state/ is not servable, so a page cannot read other apps\' state through a plain GET."');
+    ok(activeIn('monitor') === true, 'the file to ask for is there', 'no file to ask for');
+    const got = await fetch(node.base + '/spirit/state/monitor/node.json');
+    const gotText = await got.text();
+    ok(got.status !== 200 && gotText.indexOf('active') === -1, 'a plain GET does not hand it over', 'a plain GET answered ' + got.status + ': ' + short(gotText));
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
