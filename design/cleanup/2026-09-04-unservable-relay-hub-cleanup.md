@@ -221,7 +221,7 @@ shared predicate rather than from this cleanup:
 
 `setupRelayFakes.js` and `labMaster.js`'s `copyTrackedSpirit` build node homes under the
 same `FAKES_ROOT` (`<tmp>/spiritos-relay-fakes`), keyed by name/slug — so a lab node
-named `relay`, `andy` or `bert` silently shares a home, `relay-state/mailbox.json`
+named `relay`, `andy` or `bert` silently shares a home, `spirit/state/mailbox.json`
 included, with the `startTest*.js` launchers' nodes.
 
 ---

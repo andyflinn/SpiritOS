@@ -47,7 +47,7 @@ const homes = [];
 function relayWith(ramLimitMB) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-seats-'));
   homes.push(home);
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('andy');
@@ -169,12 +169,12 @@ test.subHeading('An expired invite gives its seat back');
   // Age every invite past its expiry without touching the relay — which
   // is what the clock does. IN THE STORE, not in a file: invites moved
   // into relay.db in cycle 3, and a first draft of this suite rewrote
-  // `relay-state/invites.json`, a path nothing has read since. The relay
+  // `spirit/state/invites.json`, a path nothing has read since. The relay
   // went on reporting fifteen live invites and the assertion caught it.
   const before = invites.load(w.home).length;
   relayStore.closeAll();
   const { DatabaseSync } = require('node:sqlite');
-  const db = new DatabaseSync(path.join(w.home, 'relay-state', 'relay.db'));
+  const db = new DatabaseSync(path.join(w.home, 'spirit', 'state', 'relay.db'));
   db.prepare('UPDATE invites SET expiresAt = ?')
     .run(new Date(Date.now() - 60000).toISOString());
   db.close();
@@ -219,7 +219,7 @@ test.subHeading('A relay with no configuration has no seat bound');
   // is aimed at.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-seats-none-'));
   homes.push(home);
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('andy');
   auth.writeOwner(home, owner.publicKey);

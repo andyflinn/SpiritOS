@@ -240,15 +240,15 @@ async function deskAndVerify() {
   });
 
   const deskRoot = path.join(scratch, 'desk');
-  fs.mkdirSync(path.join(deskRoot, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(deskRoot, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.mkdirSync(path.join(deskRoot, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(deskRoot, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   d = server(DESK, 'desk', {}, deskRoot, { SPIRIT_JOB_ID: 'driven-desk', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' });
 
   const pullProbe = path.join(scratch, 'pullProbe.js');
   fs.writeFileSync(pullProbe, '// a pull that changes nothing\n');
   const run = path.join(scratch, 'verify');
-  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(run, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(run, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   const dbPath = path.join(run, 'verify.db');
   seedRuns(dbPath);
   v = server(VERIFY, 'verify', { db: dbPath, repo: repo, suiteMs: 120000, idleCheckMs: 600000,

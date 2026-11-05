@@ -30,10 +30,10 @@ test.startTest('contacts.js: a card sets no star; contact.own does (goal/G41.30)
 
 (async function () {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-contacts-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   // This node, as its identity file holds it (relayAuth.loadIdentity reads it from here).
   const me = auth.generateIdentity('me');
-  fs.writeFileSync(path.join(home, 'relay-state', 'identity.json'), JSON.stringify(me));
+  fs.writeFileSync(path.join(home, 'spirit', 'state', 'identity.json'), JSON.stringify(me));
   const seen = nodeStore.open(home).seen;
 
   test.subHeading('a signed card naming this node as its owner');

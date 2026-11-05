@@ -946,7 +946,7 @@ supersedes PUPPETS.md §10's flat namespace (see there).
   node.
 - **The boot route.** Andy: *"so the owner.node.ID is the boot-route, for
   every other name segment"*. The puppet knows one route from the start,
-  its owner (`relay-state/puppet.json`). A host it has no route for is
+  its owner (`spirit/state/puppet.json`). A host it has no route for is
   asked there, and the owner answers one of three, as a reply signed by its
   key and carrying the question's hash:
   - **mine**: the owner serves the request itself (join on its own box);
@@ -1022,7 +1022,7 @@ from node to appserver"*, then *"Go. and two verbs approved."*
   from 1 s to 60 s. Its heap is capped (128 MB). It is today's `faceServer.js`
   (`node js/server.js --app <name> --pipe <path>`). It is started over an IPC
   channel, so it exits when its node dies and no orphan keeps the pipe.
-  **None on a puppet** (`relay-state/puppet.json`): app servers live on the
+  **None on a puppet** (`spirit/state/puppet.json`): app servers live on the
   owner's box, so the VPS face node never runs one.
 - **The node's loopback door gains nothing.** `jobs.create` is untouched,
   because the node starts servers itself. The one new surface is
@@ -1442,7 +1442,7 @@ lowest-level shell function is called?"* The page's lowest layer calls
 name, so both ends of the one wire read as one thing. It is his mirroring
 rule applied to a single call.
 
-What slice 1 is, as built and reviewed by wsl-claude: `relay-state/face.json`,
+What slice 1 is, as built and reviewed by wsl-claude: `spirit/state/face.json`,
 `{ "port": n }`, switches it on, so every other node has no face. It listens
 on loopback only. The one node app that claims it (`api.face(handler)`,
 handed only on a node with a face) gets `{ host, method, path, body }` and

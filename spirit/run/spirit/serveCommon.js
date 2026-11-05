@@ -474,7 +474,7 @@ function ensureFirstRun(rootDir, opts) {
 // process, so each finds it; the folder first, since a fresh tree has no relay-state (goal/G16.2).
 function writeEnvironment(rootDir, port) {
   const fs = require('fs');
-  const file = path.join(rootDir, 'relay-state', 'environment.json');
+  const file = path.join(rootDir, 'spirit', 'state', 'environment.json');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify({ PORT: Number(port) }, null, 2), 'utf8');
 }

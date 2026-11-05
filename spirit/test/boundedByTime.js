@@ -90,7 +90,7 @@ function sink(bag) {
 // A relay with `n` members, all enrolled the real way.
 function relayOf(n) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-bound-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('owner');

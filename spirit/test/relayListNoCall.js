@@ -39,7 +39,7 @@ const auth = require('../run/spirit/relayAuth.js');
 const roots = [];
 function freshRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaylistnocall-'));
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(root, auth.generateIdentity('relaylistnocall'));
   roots.push(root);
   return root;

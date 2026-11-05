@@ -48,7 +48,7 @@ function sinkFor(into) {
 // One in-process relay with one member, the plainest box that holds a stream.
 function relayWithMember(tag, member) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-streamhdr-' + tag + '-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay-' + tag));
   const owner = auth.generateIdentity('owner-' + tag);
   auth.writeOwner(home, owner.publicKey);

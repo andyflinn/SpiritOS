@@ -18,7 +18,7 @@ with utmost care.
 
 ### R1 — one store, three tables
 
-`js/relayStore.js`: `node:sqlite` at `relay-state/relay.db`. `members` (by
+`js/relayStore.js`: `node:sqlite` at `spirit/state/relay.db`. `members` (by
 key, label indexed for search and display), `invites`, `partners` in the §5
 shape (by relay key, with a status; today's partnerships are `partnered`,
 cycle 5 adds the rest). Rollback journal, not WAL, with `synchronous=FULL`:

@@ -69,7 +69,7 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   await new Promise(function (r) { bait.listen(0, '127.0.0.1', r); });
   const baitPort = bait.address().port;
   const root = setupRelayFakes('netFence').andy;
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   const port = await freePort();
   const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const post = function (body) {

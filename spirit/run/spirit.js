@@ -154,10 +154,10 @@
   // No port, no node: never a default.
   var PORT = 0;
   if (isNode()) {
-    try { PORT = Number(JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'relay-state', 'environment.json'), 'utf8')).PORT) || 0; } catch (e) { PORT = 0; }
+    try { PORT = Number(JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'spirit', 'state', 'environment.json'), 'utf8')).PORT) || 0; } catch (e) { PORT = 0; }
   }
   function parse(text) { try { return JSON.parse(text); } catch (e) { return null; } }
-  function noNode() { return refusal('no-node', 'this VM has no node: relay-state/environment.json names no port'); }
+  function noNode() { return refusal('no-node', 'this VM has no node: spirit/state/environment.json names no port'); }
   function door() { return isNode() ? 'http://127.0.0.1:' + PORT : ''; }
   // The face's link to its home node (window.spirit.transport), on a page only.
   function link() { return isBrowser() && self.transport && typeof self.transport === 'object' ? self.transport : null; }
@@ -676,7 +676,7 @@
     self.peerPost = function (peer, app, body, how) {
       var o = how && typeof how === 'object' ? how : {};
       var waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : 30000;
-      if (!PORT) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: relay-state/environment.json names no port' });
+      if (!PORT) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: spirit/state/environment.json names no port' });
       var made = packet.encode(app, body);
       if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
       return post('events.subscribe', {}, { stream: true, headers: { 'X-Spirit-Reader': 'server' } }).then(function (r) {

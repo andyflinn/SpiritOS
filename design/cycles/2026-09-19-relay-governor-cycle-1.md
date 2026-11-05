@@ -25,7 +25,7 @@ own startup module, so what is measured here is a relay carrying no node code.
   streams first — never the owner, never a stream with a post in flight.
 - **heapUsed governs**, because it can be seen to fall after a shed; rss is
   reported beside it. **The process backstop is deferred.**
-- **Configuration:** `relay-state/config.json`, `{ "ramLimitMB": 256 }`,
+- **Configuration:** `spirit/state/config.json`, `{ "ramLimitMB": 256 }`,
   default 256, bounded by the box.
 - **No new word on the wire.** No new route, verb, stream event or owner-event
   kind: the allowance refuses with a status, eviction is the ordinary
@@ -36,7 +36,7 @@ own startup module, so what is measured here is a relay carrying no node code.
 
 ### R1 — the relay's first configuration, bounded by the box
 
-`relayServer.js` reads `relay-state/config.json` once at boot, through the
+`relayServer.js` reads `spirit/state/config.json` once at boot, through the
 pure `js/relayConfig.js`. Missing → 256 MB. Not a positive number, not JSON,
 or larger than the machine → the relay refuses to start and says why. Never
 re-read.

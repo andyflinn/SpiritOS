@@ -7,7 +7,7 @@
 // longer answers that to anybody (0012 widened: no member list served, by
 // request or by broadcast), and putting it back for tests would leave the
 // forbidden read standing in the product as a temptation. So a suite reads
-// the relay's disc directly — the members table in relay-state/relay.db —
+// the relay's disc directly — the members table in spirit/state/relay.db —
 // exactly as suites used to read routingTable.json.
 //
 // Same shape `who()` answered, sorted by label.

@@ -105,7 +105,7 @@ function inbound(home, fromKey) {
 // checks is that a REAL node wrote a row, not that a function returns one.
 function contactsOf(home) {
   try {
-    return JSON.parse(fs.readFileSync(path.join(home, 'relay-state', 'contacts.json'), 'utf8'));
+    return JSON.parse(fs.readFileSync(path.join(home, 'spirit', 'state', 'contacts.json'), 'utf8'));
   } catch (e) {
     return [];
   }
@@ -124,7 +124,7 @@ function portOf(peer) { return peer && peer.node && peer.node.port; }
 function keyOf(peer) {
   try {
     return JSON.parse(fs.readFileSync(
-      path.join(homeOf(peer), 'relay-state', 'identity.json'), 'utf8'
+      path.join(homeOf(peer), 'spirit', 'state', 'identity.json'), 'utf8'
     )).publicKey;
   } catch (e) {
     return '';
@@ -180,7 +180,7 @@ async function run() {
       let id = null;
       try {
         id = JSON.parse(fs.readFileSync(
-          path.join(homeOf(peer), 'relay-state', 'identity.json'), 'utf8'));
+          path.join(homeOf(peer), 'spirit', 'state', 'identity.json'), 'utf8'));
       } catch (e) { id = null; }
       return String((id && id.description) || '');
     });

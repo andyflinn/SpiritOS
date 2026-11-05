@@ -10,7 +10,7 @@
 // APP_ENTRY_SCRIPT_PATTERN, MANIFEST_PATTERN, the SIDECAR_SUFFIX endsWith)
 // while fsPath resolves that string separately — so any spelling that
 // resolves to the same file but doesn't match the literal pattern gets
-// through. 'relay-state/identity.json' is denied; './relay-state/identity.json'
+// through. 'spirit/state/identity.json' is denied; './spirit/state/identity.json'
 // is not, and on a real relay that file holds an Ed25519 PRIVATE KEY.
 //
 // EXPECTED TO FAIL until the gates canonicalize first. The fix is one
@@ -90,20 +90,20 @@ function expectEverySpellingUnwritable(label, canonical) {
 // The highest-value case: on a relay, identity.json holds the private key
 // the whole signed-claim scheme rests on.
 test.subHeading('relay-state/ is unreadable in every spelling');
-expectEverySpellingUnservable('relay-state/identity.json', 'relay-state/identity.json');
-expectEverySpellingUnservable('relay-state/routingTable.json', 'relay-state/routingTable.json');
+expectEverySpellingUnservable('spirit/state/identity.json', 'spirit/state/identity.json');
+expectEverySpellingUnservable('spirit/state/routingTable.json', 'spirit/state/routingTable.json');
 // BOTH NAMES. A relay that has been through the rename holds the new file
 // and still has the old one beside it — nothing deletes it, so a rollback
 // finds the state it expects. Two files on disk are two files that must
 // stay unreadable.
-expectEverySpellingUnservable('relay-state/mailbox.json', 'relay-state/mailbox.json');
-expectEverySpellingUnservable('relay-state/allow.json', 'relay-state/allow.json');
+expectEverySpellingUnservable('spirit/state/mailbox.json', 'spirit/state/mailbox.json');
+expectEverySpellingUnservable('spirit/state/allow.json', 'spirit/state/allow.json');
 // NESTED, TOO. An app server's identity lives at
-// app-state/<name>/relay-state/identity.json (faceServer.js:614), and the
+// app-state/<name>/spirit/state/identity.json (faceServer.js:614), and the
 // first version of the gate refused only the top-level folder, so this
 // private key was served to anyone who could ask the node for a file.
-expectEverySpellingUnservable('app-state/<name>/relay-state/identity.json', 'app-state/someApp/relay-state/identity.json');
-expectEverySpellingUnservable('a relay-state folder anywhere', 'shell/someApp/relay-state/anything.json');
+expectEverySpellingUnservable('app-state/<name>/spirit/state/identity.json', 'app-state/someApp/spirit/state/identity.json');
+expectEverySpellingUnservable('a relay-state folder anywhere', 'shell/someApp/spirit/state/anything.json');
 
 // ---- Node-only modules stay invisible however they are spelled ----
 test.subHeading('Node-only js/ modules are unreadable in every spelling');

@@ -8,7 +8,7 @@ dammit!"*
 
 - **A relay of its own** (`test/headLessChrome.js`, `scratchRelay`): a scratch copy of the tracked files of
   `spirit/run`, a relay identity planted and an owner written as a relay is installed, a face domain
-  (`relay-state/face.json`), `relayServer.js` on a free port with DEBUG on. Never a live relay.
+  (`spirit/state/face.json`), `relayServer.js` on a free port with DEBUG on. Never a live relay.
 - **Introspect, then throw garbage** (the box: *"1) introspect ... 2) then throw garbage"*): the relay's own api, as its
   garbage list (`/DEBUG/spirit/relay/garbageArguments.json`), each entry an ask's body `{ body: { <verb>: args } }`.
 - **Every relay verb takes bad arguments** (the box: *"all servers (node and relay, or serveCommon) are tested by throwing

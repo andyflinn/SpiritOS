@@ -20,6 +20,8 @@
 'use strict';
 
 // The spirit object first, as the global spirit (goal/G40.1).
+// relay-state's own files first (goal/G43.8): a relay may be started here directly.
+require('./shellMove').moveRelayState(require('path').join(__dirname, '..'));
 require('../spirit.js');
 const http = require('http');
 const fs = require('fs');
@@ -98,7 +100,7 @@ function refuseToStart(why) {
 
 // ── THE RELAY'S DATA IS ON DISC, OR THERE IS NO RELAY (cycle 3) ──────
 //
-// Members and invites live in relay-state/relay.db
+// Members and invites live in spirit/state/relay.db
 // through node:sqlite (relayStore.js), and RAM is its client — there is
 // no in-memory copy to fall back on. A Node too old to load the driver
 // (floor 22.13) cannot be a relay, and says so now rather than on the
@@ -148,14 +150,14 @@ catch (e) {
 // was never installed: bash/install-units writes owner.json first.
 if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
     relayStore.open(ROOT_DIR).members.count() > 0) {
-  refuseToStart('relay-state/relay.db holds ' + relayStore.open(ROOT_DIR).members.count() +
-    ' member(s) but relay-state/owner.json names no owner. Restore owner.json over SSH ' +
+  refuseToStart('spirit/state/relay.db holds ' + relayStore.open(ROOT_DIR).members.count() +
+    ' member(s) but spirit/state/owner.json names no owner. Restore owner.json over SSH ' +
     '({ "owner": "<key>" }); the wire cannot prove ownership.');
 }
 
 // ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
 //
-// relay-state/config.json, beside allow.json. Bounded by the box: a
+// spirit/state/config.json, beside allow.json. Bounded by the box: a
 // ceiling larger than this machine can GIVE refuses to start rather than
 // being honoured (relayConfig.js, relayLimits.js). Never re-read — the
 // configuration is not a real-time tool (NODE-AND-RELAY §5, scope).
@@ -178,7 +180,7 @@ if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
 // the same machine.
 const MEASURED = relayLimits.measure(ROOT_DIR);
 const CONFIG = (function () {
-  const file = path.join(ROOT_DIR, 'relay-state', 'config.json');
+  const file = path.join(ROOT_DIR, 'spirit', 'state', 'config.json');
   let text = null;
   try { text = fs.readFileSync(file, 'utf8'); }
   catch (e) { text = null; }
@@ -225,21 +227,21 @@ const CONFIG = (function () {
     // fatal: a relay that cannot write its own config can still run on
     // what it measured, and the owner has a bigger problem to find.
     try {
-      fs.mkdirSync(path.join(ROOT_DIR, 'relay-state'), { recursive: true });
+      fs.mkdirSync(path.join(ROOT_DIR, 'spirit', 'state'), { recursive: true });
       // What was ASKED for, never a boot-time clamp: a busy afternoon
       // must not shrink a relay's configuration permanently.
       fs.writeFileSync(file, relayConfig.fileText(relayConfig.asked(read.config)));
-      console.log('    wrote relay-state/config.json (' + (fromArgs ? 'from --ram/--disc' : 'measured') + ': ' +
+      console.log('    wrote spirit/state/config.json (' + (fromArgs ? 'from --ram/--disc' : 'measured') + ': ' +
         read.config.ramLimitMB + ' MB RAM, ' + read.config.discLimitMB + ' MB disc)');
     } catch (e) {
-      console.error('    could not write relay-state/config.json: ' + e.message);
+      console.error('    could not write spirit/state/config.json: ' + e.message);
     }
   } else if (text !== null && read.config.source === 'file') {
     try {
       const had = JSON.parse(text);
       if (had && had.discLimitMB === undefined) {
         fs.writeFileSync(file, relayConfig.fileText(relayConfig.asked(read.config)));
-        console.log('    added discLimitMB ' + read.config.discLimitMB + ' MB to relay-state/config.json');
+        console.log('    added discLimitMB ' + read.config.discLimitMB + ' MB to spirit/state/config.json');
       }
     } catch (e) { /* an unreadable file already refused above */ }
   }
@@ -265,10 +267,10 @@ function argMB(flag) {
 // STOOD HERE; partnering as a permission is gone (Andy's decision,
 // goal/G22.6), and a relay makes no outbound request at all.
 // THE RELAY SENDS MAIL THROUGH A DRIVER (goal/G30.2): the join link goes to the user's email. Only when the owner has
-// placed relay-state/mail.json naming its driver (sendMail.js); without it the relay takes no join, and its card says
+// placed spirit/state/mail.json naming its driver (sendMail.js); without it the relay takes no join, and its card says
 // services.sendMail false.
 const mailSender = require('./sendMail').createSender(ROOT_DIR);
-console.log(mailSender ? 'mail: sent through the ' + mailSender.driver + ' driver' : 'mail: none (no relay-state/mail.json naming a driver), so no join by email');
+console.log(mailSender ? 'mail: sent through the ' + mailSender.driver + ' driver' : 'mail: none (no spirit/state/mail.json naming a driver), so no join by email');
 
 const relay = createRelay.createRelay(undefined, {
   config: CONFIG,
@@ -286,11 +288,11 @@ const relay = createRelay.createRelay(undefined, {
 
   writeConfig: function (next) {
     try {
-      fs.writeFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), relayConfig.fileText(next));
+      fs.writeFileSync(path.join(ROOT_DIR, 'spirit', 'state', 'config.json'), relayConfig.fileText(next));
       console.log(`    owner reconfigured: ${next.ramLimitMB} MB RAM, ${next.discLimitMB} MB disc (a raise applies now, a cut at next start)`);
       return true;
     } catch (e) {
-      console.error('    could not write relay-state/config.json: ' + e.message);
+      console.error('    could not write spirit/state/config.json: ' + e.message);
       return false;
     }
   },
@@ -298,7 +300,7 @@ const relay = createRelay.createRelay(undefined, {
   // THE FILE AS IT STANDS (goal/G30.15), so the owner's read shows a Save at once rather than what this process
   // booted with. null when there is none or it does not parse.
   readConfig: function () {
-    try { return JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), 'utf8')); }
+    try { return JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'spirit', 'state', 'config.json'), 'utf8')); }
     catch (e) { return null; }
   },
 
@@ -981,7 +983,7 @@ server.listen(port, BIND_HOST, () => {
   // boot is what tells an operator why nobody can get in.
   if (!require('./relayAuth').loadOwner(ROOT_DIR)) {
     console.warn(
-      '    UNOWNED — no owner in relay-state/owner.json, so this relay refuses every claim.\n' +
+      '    UNOWNED — no owner in spirit/state/owner.json, so this relay refuses every claim.\n' +
       '    The owner is written at install: OWNER_KEY=<your node\'s public key> ./bash/install-units'
     );
   }
@@ -1013,7 +1015,7 @@ server.listen(port, BIND_HOST, () => {
   // here and in the owner's report, takes no new claims — and evicts
   // nobody. Andy: "the owner must evict before shrinkage."
   const usedMB = Math.round((relayStore.open(ROOT_DIR).bytes() / (1024 * 1024)) * 100) / 100;
-  console.log(`    disc limit ${CONFIG.discLimitMB} MB; ${usedMB} MB used by relay-state/relay.db`);
+  console.log(`    disc limit ${CONFIG.discLimitMB} MB; ${usedMB} MB used by spirit/state/relay.db`);
   if (CONFIG.overflow) {
     const o = CONFIG.overflow;
     if (o.ramAsked) {

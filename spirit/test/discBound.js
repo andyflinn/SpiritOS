@@ -11,7 +11,7 @@
 // serving the members it has, and evicts nobody — Andy: "the owner must
 // evict before shrinkage."
 //
-// The figure is measured off relay-state/relay.db, so these cases work by
+// The figure is measured off spirit/state/relay.db, so these cases work by
 // setting a limit the file is already past rather than by writing a
 // thousand members.
 

@@ -19,8 +19,8 @@ test.startTest('fileSystem.js: its gates refuse a path in any case');
 
 // Each closed path, as the gate refuses it today, and the same path in other cases.
 const CLOSED_READ = [
-  ['relay-state/identity.json', 'the node\'s private key'],
-  ['process/js/desk/relay-state/identity.json', 'an app server\'s private key, at depth'],
+  ['spirit/state/identity.json', 'the node\'s private key'],
+  ['process/js/desk/spirit/state/identity.json', 'an app server\'s private key, at depth'],
   ['spirit/server.js', 'a server script'],
   ['spirit/DEBUG/garbageArguments.js', 'the DEBUG folder'],
   ['shell/info/info.js.sidecar.json', 'a sidecar\'s own path'],
@@ -41,8 +41,8 @@ CLOSED_READ.forEach(function (c) {
 
 test.subHeading('fileWritable: what it refuses, it refuses in every case');
 const CLOSED_WRITE = [
-  ['relay-state/identity.json', 'the node\'s private key'],
-  ['relay-state/new.json', 'anything under relay-state'],
+  ['spirit/state/identity.json', 'the node\'s private key'],
+  ['spirit/state/new.json', 'anything under relay-state'],
   ['spirit/server.js', 'a core file'],
   ['spirit/element/icon.js', 'a core file under spirit/element'],
   ['shell/info/info.js.sidecar.json', 'a sidecar\'s own path'],
@@ -60,7 +60,7 @@ CLOSED_WRITE.forEach(function (c) {
 // space."). Windows opens the same file under each; so each is refused by both gates.
 test.subHeading('Windows spellings of a closed path are refused, for reading and for writing');
 [
-  ['RELAY-~1/IDENTI~1.JSO', 'an 8.3 short name of relay-state/identity.json'],
+  ['RELAY-~1/IDENTI~1.JSO', 'an 8.3 short name of spirit/state/identity.json'],
   ['SPIRIT~1/SERVER~1.JS', 'an 8.3 short name of spirit/server.js'],
   ['relay-state./identity.json', 'a folder name ending in a dot'],
   ['relay-state /identity.json', 'a folder name ending in a space'],
@@ -68,7 +68,7 @@ test.subHeading('Windows spellings of a closed path are refused, for reading and
   ['spirit/server.js.', 'a file name ending in a dot'],
   ['spirit/element/icon.js ', 'a file name ending in a space'],
   ['spirit/server.js::$DATA', 'the file\'s data stream, ::$DATA'],
-  ['relay-state/identity.json:secret', 'a named stream, a : in the name'],
+  ['spirit/state/identity.json:secret', 'a named stream, a : in the name'],
 ].forEach(function (c) {
   ok(ask('fileServable', c[0]) === false, 'not servable: ' + JSON.stringify(c[0]) + ' (' + c[1] + ')', JSON.stringify(c[0]) + ' (' + c[1] + ') is servable: on Windows it opens the closed file');
   ok(ask('fileWritable', c[0]) === false, 'not writable: ' + JSON.stringify(c[0]) + ' (' + c[1] + ')', JSON.stringify(c[0]) + ' (' + c[1] + ') is writable: on Windows it writes the closed file');

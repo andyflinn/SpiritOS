@@ -71,7 +71,7 @@ test.startTest('A suite never writes into the real home');
   const run = path.join(scratch, 'spirit', 'run');
   plantRun.plantRunTree(run);
   fs.rmSync(path.join(run, 'relay-state'), { recursive: true, force: true });
-  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
   const name = 'homeprobe-' + crypto.randomBytes(3).toString('hex');
   const id = auth.generateIdentity(name);
   auth.saveIdentity(run, id);

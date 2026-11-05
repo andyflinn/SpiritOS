@@ -301,7 +301,7 @@ function measure(rootDir, deps) {
   // config live, and on a box with a mounted data volume that is a
   // different disc from the checkout.
   try {
-    var st = statfs(path.join(rootDir || '.', 'relay-state'));
+    var st = statfs(path.join(rootDir || '.', 'spirit', 'state'));
     if (st && st.bsize > 0) {
       out.discTotalMB = mbOf(st.bsize * st.blocks);
       out.discFreeMB = mbOf(st.bsize * (st.bavail === undefined ? st.bfree : st.bavail));

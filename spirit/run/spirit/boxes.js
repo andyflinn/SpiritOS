@@ -20,7 +20,7 @@
 // ONLY HIS SERVERS ARE BELIEVED (wsl-claude): a box report is a system
 // packet, which any key can send, so an unchecked view could be given
 // invented boxes or have an over-committed one hidden. A report is kept
-// only from a key in relay-state/servers.json { "keys": [...] }, which the
+// only from a key in spirit/state/servers.json { "keys": [...] }, which the
 // owner edits, read on every report, where absent means nobody. Any other
 // sender is ignored silently.
 //
@@ -39,7 +39,7 @@ function createBoxes(opts) {
 
   function mine(key) {
     let raw = null;
-    try { raw = fs.readFileSync(path.join(String(o.rootDir || ''), 'relay-state', SERVERS), 'utf8'); }
+    try { raw = fs.readFileSync(path.join(String(o.rootDir || ''), 'spirit', 'state', SERVERS), 'utf8'); }
     catch (e) { return false; }
     let keys = null;
     try { keys = JSON.parse(raw).keys; } catch (e) { keys = null; }

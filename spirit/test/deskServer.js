@@ -149,7 +149,7 @@ function freePort() {
   (function walk(d) {
     fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) {
       const p = path.join(d, e.name);
-      if (e.isDirectory()) { if (['brains', 'relay-state', 'node_modules', 'app-state'].indexOf(e.name) === -1 && p !== DIR) walk(p); return; }
+      if (e.isDirectory()) { if (['brains', 'spirit', 'state', 'node_modules', 'app-state'].indexOf(e.name) === -1 && p !== DIR) walk(p); return; }
       if (!/\.js$/.test(e.name)) return;
       const code = fs.readFileSync(p, 'utf8').split('\n').filter(function (l) { return !/^\s*(\/\/|\*)/.test(l); }).join('\n');
       if (/desk\.db/.test(code)) namers.push(path.relative(RUN, p));

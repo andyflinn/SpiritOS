@@ -178,7 +178,7 @@ test.startTest('relayGarbage.js: the attacker\'s garbage at the relay\'s door (g
     RAWS.push({ why: 'a header line with no colon', run: function () { return raw(base, 'POST /api/relay/post HTTP/1.1\r\nHost 127.0.0.1\r\nContent-Length: 2\r\n\r\n', '{}'); } });
     // 3) MALFORMED PATHS, GET AND POST, at the relay's host and at a face's (the box, rule 2: "malformed paths").
     const PATHS = ['/..', '/../../../../etc/passwd', '/%2e%2e/%2e%2e/etc/passwd', '/shell/%2f%2f..%2f..%2fetc', '/' + 'a'.repeat(9000), '/%', '/%zz',
-      '/%E0%A4%A', '/api/%2e%2e/relay/post', '//api//relay//post', '/DEBUG/../../relay-state/identity.json', '/shell/../../relay-state/relay.db',
+      '/%E0%A4%A', '/api/%2e%2e/relay/post', '//api//relay//post', '/DEBUG/../../spirit/state/identity.json', '/shell/../../spirit/state/relay.db',
       '/\\..\\..\\relay-state', '/?%', '*',
       // A null byte last: it may kill the relay, and every path before it is still thrown.
       '/%00', '/face.html%00.js', '/shell/boot.js%00'];

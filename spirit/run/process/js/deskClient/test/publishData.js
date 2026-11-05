@@ -3,7 +3,7 @@
 // spirit/run/process/js/deskClient/test/publishData.js
 // The tests of process/js/deskClient/publishData.js, and of no other module (spec: ./publishData.md; goal/G41.11). The
 // script runs as an agent runs it, its own process, in a scratch clone of the test's own with a bare origin beside it
-// and a traffic log (relay-state/node.db) the test writes. A preload of the test's own stands in for the spirit object:
+// and a traffic log (spirit/state/node.db) the test writes. A preload of the test's own stands in for the spirit object:
 // its deskClient family answers profile.get with the agent's name and logs every ask. The harness step finds no
 // measurePlatform in the scratch clone's worktree and so runs nothing. No node, no port, no real remote.
 
@@ -116,7 +116,7 @@ test.startTest('publishData.js: one measurement run per agent');
   const noname = publish(CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')], '');
   ok(noname.status === 1 && /^publishData: this agent has no name at the desk yet/.test(noname.err), 'an agent with no name at the desk: exit 1, saying so', 'exit ' + noname.status + ' err ' + short(noname.err));
   const nolog = publish(BARE_CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'y'), '--asks', '1']);
-  ok(nolog.status === 1 && nolog.err.indexOf('publishData: no traffic log at ' + path.join(BARE_CLONE, 'spirit', 'run', 'relay-state', 'node.db')) === 0, 'a clone with no traffic log: exit 1, naming where it looked', 'exit ' + nolog.status + ' err ' + short(nolog.err));
+  ok(nolog.status === 1 && nolog.err.indexOf('publishData: no traffic log at ' + path.join(BARE_CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db')) === 0, 'a clone with no traffic log: exit 1, naming where it looked', 'exit ' + nolog.status + ' err ' + short(nolog.err));
 
   test.subHeading('--only packets --out: N read-only desk asks, timed by the node\'s own traffic log');
   const OUT = path.join(TMP, 'look');
@@ -149,7 +149,7 @@ test.startTest('publishData.js: one measurement run per agent');
   ok(readme.indexOf('# ' + AGENT + '\n') === 0 && readme.indexOf('## Measurements') !== -1, 'the README is written beside them (agentReadme)', 'README ' + short(readme));
   ok(r.out.indexOf('measurePlatform') === -1 && r.out.indexOf('harness and capacity') === -1, '--only packets runs no harness', 'out ' + short(r.out));
   ok(git(CLONE, ['rev-parse', 'HEAD']).out === headBefore && r.asks.every(function (a) { return a.args.name !== 'chat.add'; }), 'and with --out nothing is committed and nothing posted', 'HEAD ' + git(CLONE, ['rev-parse', 'HEAD']).out);
-  const origDb = new DatabaseSync(path.join(CLONE, 'spirit', 'run', 'relay-state', 'node.db'), { readOnly: true });
+  const origDb = new DatabaseSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state', 'node.db'), { readOnly: true });
   const rowsNow = origDb.prepare('SELECT COUNT(*) AS n FROM traffic').get().n;
   origDb.close();
   ok(rowsNow === ROWS.length, 'the node\'s own traffic log is read from a copy, untouched', 'rows now ' + rowsNow);
@@ -158,8 +158,8 @@ test.startTest('publishData.js: one measurement run per agent');
   // A traffic log that counts nothing this time: zero posts is published too.
   fs.rmSync(path.join(CLONE, 'spirit', 'run', 'relay-state'), { recursive: true, force: true });
   trafficLog(CLONE, [ROWS[6]]);
-  fs.mkdirSync(path.join(CLONE, 'spirit', 'run', 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(CLONE, 'spirit', 'run', 'relay-state', 'relays.json'), '[]\n');
+  fs.mkdirSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state', 'relays.json'), '[]\n');
   fs.writeFileSync(path.join(CLONE, 'his-staged.txt'), 'his work in progress\n');
   git(CLONE, ['add', 'his-staged.txt']);
   const before = git(CLONE, ['rev-parse', 'HEAD']).out;

@@ -12,7 +12,7 @@ The relay carries one request per target at a time. A second one is refused "tar
 
 ## What is here
 
-One file per node: the timing columns of that node's own traffic log (the `traffic` table in its `relay-state/node.db`), for 12:00 to 12:45 UTC on 2026-10-02. All three nodes run on one machine, so one clock.
+One file per node: the timing columns of that node's own traffic log (the `traffic` table in its `spirit/state/node.db`), for 12:00 to 12:45 UTC on 2026-10-02. All three nodes run on one machine, so one clock.
 
 | file | node |
 |---|---|

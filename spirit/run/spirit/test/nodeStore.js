@@ -21,7 +21,7 @@ test.startTest('nodeStore.js: no rescue of old stores is left (goal/G41.30)');
 
 test.subHeading('its code holds no move of an old store');
 // The move of goal/G40.11 read four old stores into the seen table on a node's first start: the old seen rows, the
-// relays list, apiAuth's peer names and relay-state/contacts.json, then deleted them.
+// relays list, apiAuth's peer names and spirit/state/contacts.json, then deleted them.
 ok(!/contacts\.json/.test(code), 'it names no contacts.json', 'nodeStore.js still names contacts.json');
 ok(!/\bmoveIn\b/.test(code), 'it has no moveIn', 'nodeStore.js still has its moveIn');
 ok(!/FROM\s+(relays|peers)\b/i.test(code) && !/has\(\s*['"`](relays|peers)['"`]\s*\)/.test(code), 'it reads no old relays or peers table', 'nodeStore.js still reads an old relays or peers table');

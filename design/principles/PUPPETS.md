@@ -238,7 +238,7 @@ would have been read the wrong way round: **`proxy` already names one
 thing here**, the outbound web fetcher —
 `spirit/run/js/server.js:1563` `'net.fetch': handleGenericProxy` marked
 `{ wire: true }` with *"it reaches the internet, so being offline fails
-it"*, and `relay-state/proxy.json` for *which key may go to which
+it"*, and `spirit/state/proxy.json` for *which key may go to which
 website*. That proxy points at the internet; this one points at a
 puppet. `peerOwnerPost` also names by family rather than by novelty: it
 is `peerPost`, from the owner.
@@ -744,7 +744,7 @@ go."* So G7 and G4 are DECIDED as shapes and are not yet started.
    pupped verb group is the entire node server surface accessible by its
    owner, as if it was a loopback client"*; *"the known owner is the main
    thing that makes a puppet a puppet"*; and on the `carries` list in
-   `relay-state/puppet.json`: *"i still think pupped.json is a poor answer
+   `spirit/state/puppet.json`: *"i still think pupped.json is a poor answer
    to such a "requirement", in hindsight, no blame."* Found in the close of
    slim/G1: the owner could not reach `jobs.search` on spirit-3's puppet
    (`not-carried-here`), while anyone with that box's login could edit the

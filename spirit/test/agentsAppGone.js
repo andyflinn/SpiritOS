@@ -25,7 +25,7 @@ const OWED = 'OWED by goal/G3.2: ';
 const SPIRIT = path.join(__dirname, '..');
 const APP = path.join(SPIRIT, 'run', 'process', 'js', 'agents');
 // Not walked: installed packages, Andy's vault, and the node's own state.
-const SKIP = ['node_modules', 'brains', 'relay-state', 'app-state', '.git'];
+const SKIP = ['node_modules', 'brains', 'spirit', 'state', 'app-state', '.git'];
 const NAMES = [
   /process[\\/]+js[\\/]+agents\b/,
   /agents[\\/]+agents\.js/,

@@ -116,14 +116,14 @@ test.subHeading('A row written by older code is read, not reconciled');
   // so this writes an old-style routingTable.json into a relay home that
   // has never opened its store, and lets the import find it.
   const oldHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-oldrows-'));
-  fs.mkdirSync(path.join(oldHome, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(oldHome, 'spirit', 'state'), { recursive: true });
   const olds = { andy: auth.generateIdentity('andy'), bert: auth.generateIdentity('bert') };
   const doc = { peers: {} };
   Object.keys(olds).forEach(function (label) {
     const k = olds[label].publicKey;
     doc.peers[k] = { publicKey: k, name: label, claimedAt: new Date().toISOString(), owner: label === 'andy' };
   });
-  fs.writeFileSync(path.join(oldHome, 'relay-state', 'routingTable.json'), JSON.stringify(doc));
+  fs.writeFileSync(path.join(oldHome, 'spirit', 'state', 'routingTable.json'), JSON.stringify(doc));
 
   const reopened = require('../run/spirit/relay').createRelay(oldHome);
   const seen = rollOf(reopened).map(function (p) { return p.publicLabel; }).sort();
@@ -244,7 +244,7 @@ test.subHeading('What a rename must not break');
     token: 'dead', label: 'ghosted', invitedBy: 'andy',
     expiresAt: new Date(Date.now() - 60000).toISOString(),
   });
-  fs.writeFileSync(path.join(L.home, 'relay-state', 'invites.json'), JSON.stringify(rows));
+  fs.writeFileSync(path.join(L.home, 'spirit', 'state', 'invites.json'), JSON.stringify(rows));
   const overDead = world.ask(L.box, johnA, { rename: { label: 'ghosted' } });
   if (overDead.answer && overDead.answer.ok) {
     test.check('and an expired one is swept rather than obeyed');

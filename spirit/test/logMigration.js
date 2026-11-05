@@ -34,7 +34,7 @@ const PEER = 'MCowBQYDK2VwAyEAlogMigrationPeer00000000000000000000=';
 
 function makeHome(tag) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-logmig-' + tag + '-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   const t0 = Date.parse('2026-09-20T00:00:00.000Z');
   const lines = [];
   for (let i = 0; i < 40; i++) {
@@ -45,7 +45,7 @@ function makeHome(tag) {
     else lines.push({ at: at, dir: 'out', kind: 'request', peer: PEER, outcome: 'sent', hash: 'old-' + i });
   }
   lines.push({ at: new Date(t0 + 41 * 60000).toISOString(), mark: 'taken', hash: 'old-2' });
-  const file = path.join(home, 'relay-state', 'traffic.jsonl');
+  const file = path.join(home, 'spirit', 'state', 'traffic.jsonl');
   fs.writeFileSync(file, lines.map(function (l) { return JSON.stringify(l); }).join('\n') + '\n');
   const newer = [
     { at: '2026-09-28T08:00:00.000Z', dir: 'in', kind: 'request', peer: PEER, outcome: 'received', admitted: true, hash: 'new-1' },
@@ -181,7 +181,7 @@ const fTable = tableRows(f.home).length;
 nodeStore.open(f.home).close();
 {
   const { DatabaseSync } = require('node:sqlite');
-  const db = new DatabaseSync(path.join(f.home, 'relay-state', 'node.db'));
+  const db = new DatabaseSync(path.join(f.home, 'spirit', 'state', 'node.db'));
   db.exec('CREATE TRIGGER fail_halfway BEFORE INSERT ON traffic WHEN (SELECT COUNT(*) FROM traffic) >= ' + (fTable + 20) +
     " BEGIN SELECT RAISE(ABORT, 'forced half-way failure'); END;");
   db.close();
@@ -195,7 +195,7 @@ const fileInCharge = fs.existsSync(f.file) && fs.readFileSync(f.file).equals(fBy
 // what shows there was a migration to fail.
 {
   const { DatabaseSync } = require('node:sqlite');
-  const db = new DatabaseSync(path.join(f.home, 'relay-state', 'node.db'));
+  const db = new DatabaseSync(path.join(f.home, 'spirit', 'state', 'node.db'));
   db.exec('DROP TRIGGER fail_halfway');
   db.close();
 }

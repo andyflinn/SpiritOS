@@ -197,7 +197,7 @@ function itemWith(text) {
 
 // ONE STORE, AND IT IS THE LOG.
 //
-// These drove a private relay-state/pendingArrivals.json until the fold.
+// These drove a private spirit/state/pendingArrivals.json until the fold.
 // Keeping a second copy of "what is still waiting" beside the traffic log
 // was two facts that could drift, and the traffic log could not be used
 // only because it could not be READ back safely — it records arrival, not
@@ -392,8 +392,8 @@ function landed(log, hash, text, admitted) {
 
 (function abrokenLogIsNotACrash() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlogjunk-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'traffic.json'), '{ not json at all');
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'spirit', 'state', 'traffic.json'), '{ not json at all');
 
   let threw = false;
   const got = [];

@@ -20,7 +20,7 @@ const world = require('./world');
 // from cycle 3 the first claim presenting an owner invite install.js minted
 // did. goal/G16.8 removed that too. Andy: "the invite path to ownership
 // MUST be gone. it is a security gap, from the time of install until the
-// time of first claim." bash/install-units now writes relay-state/owner.json
+// time of first claim." bash/install-units now writes spirit/state/owner.json
 // from the OWNER_KEY it is given, and a relay with no owner file takes no
 // claim at all. This file asserted the owner-invite path; it now asserts the
 // rule that replaced it, and everything after the owner is on the box is
@@ -153,7 +153,7 @@ test.startTest('The owner is written at install; no claim makes an owner');
   // a relay built in process refuses every claim, and says why, so the
   // operator is pointed at SSH (Andy) — and an invite still live on the
   // box cannot take it.
-  fs.unlinkSync(path.join(home, 'relay-state', 'owner.json'));
+  fs.unlinkSync(path.join(home, 'spirit', 'state', 'owner.json'));
   const box3 = createRelay(home);
   const thief = auth.generateIdentity('thief');
   const stolen = invites.add(home, { label: 'thief', invitedBy: 'andy', days: 1 });

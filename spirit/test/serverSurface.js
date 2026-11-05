@@ -25,7 +25,7 @@
 //      net.fetch, write files, start jobs, or post to peers as him. The
 //      Host check stops DNS rebinding, not this.
 //   6. THE OWNER'S PROXY LIST (2026-09-22, design/proxy/THE-PROXY.md):
-//      relay-state/proxy.json is neither served nor writable through fs;
+//      spirit/state/proxy.json is neither served nor writable through fs;
 //      closing the gate, or one key, stops net.fetch on the next call; and
 //      the proxy imposes no wait of its own — a far end slower than the old
 //      10-second default is still answered.
@@ -36,7 +36,7 @@
 // Runs against an isolated fake node under the OS temp dir
 // (setupRelayFakes, the same copies the relay lab uses) and NEVER against
 // the live checkout — case 3 deliberately attempts a real write of a real
-// app's entry script, and case 2 needs a relay-state/identity.json to try
+// app's entry script, and case 2 needs a spirit/state/identity.json to try
 // to steal. Both would otherwise land in the working tree.
 const fs = require('fs');
 const net = require('net');
@@ -146,9 +146,9 @@ const ENTRY_SCRIPT = path.join(nodeRoot, 'shell', 'textEditor', 'textEditor.js')
 
 // A relay identity for case 2 to try to steal. relay-state/ is gitignored
 // and this node lives in the temp dir, so this never touches the repo.
-fs.mkdirSync(path.join(nodeRoot, 'relay-state'), { recursive: true });
+fs.mkdirSync(path.join(nodeRoot, 'spirit', 'state'), { recursive: true });
 fs.writeFileSync(
-  path.join(nodeRoot, 'relay-state', 'identity.json'),
+  path.join(nodeRoot, 'spirit', 'state', 'identity.json'),
   JSON.stringify({ name: 'sentinel', publicKey: 'PUB', privateKey: KEY_SENTINEL }),
   'utf8'
 );
@@ -180,10 +180,10 @@ fs.writeFileSync(
 //
 // 127.0.0.1:1 is refused by the kernel with no name lookup. The list is
 // non-empty on purpose, so the relay verbs below have a row to answer about.
-// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-fs.mkdirSync(path.join(nodeRoot, 'relay-state'), { recursive: true });
+// goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+fs.mkdirSync(path.join(nodeRoot, 'spirit', 'state'), { recursive: true });
 fs.writeFileSync(
-  path.join(nodeRoot, 'relay-state', 'relays.json'),
+  path.join(nodeRoot, 'spirit', 'state', 'relays.json'),
   JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]),
   'utf8'
 );
@@ -232,7 +232,7 @@ freePort()
       if (r.text.indexOf(KEY_SENTINEL) !== -1) {
         test.fail('encoded traversal SERVED the private key (HTTP ' + r.status + ')');
       } else if (r.status === 404 || r.status === 403) {
-        test.check('encoded traversal to relay-state/identity.json refused (HTTP ' + r.status + ')');
+        test.check('encoded traversal to spirit/state/identity.json refused (HTTP ' + r.status + ')');
       } else {
         test.fail('encoded traversal returned HTTP ' + r.status + ' — expected 404/403');
       }
@@ -402,7 +402,7 @@ freePort()
   })
 
   // ---- 6. net.fetch carries any size; the packet bound stands for the rest ----
-  // THE OWNER'S PROXY LIST AND ITS VERBS STOOD HERE (proxy.search, get, close, open; relay-state/proxy.json): they went
+  // THE OWNER'S PROXY LIST AND ITS VERBS STOOD HERE (proxy.search, get, close, open; spirit/state/proxy.json): they went
   // with goal/G29.20 ("remove all the env logic and allow-list crap"). What stands is net.fetch's own door.
   .then(function (port) {
     test.subHeading('net.fetch carries any size; every other verb keeps the packet bound');

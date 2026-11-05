@@ -136,7 +136,7 @@ test.subHeading('Delivery: the owner\'s sink, and no other');
 
 (function onlyTheOwner() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaystatus-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('andy');

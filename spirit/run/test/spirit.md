@@ -39,7 +39,7 @@ home node once the face is linked. No other line of spirit.js asks where it runs
 ## Its node
 
 - **On a page**: the page's own origin, or the face's link to its home node when one is set (`window.spirit.transport`).
-- **In node**: `127.0.0.1` and the `PORT` of `relay-state/environment.json` in the run root spirit.js sits in, read
+- **In node**: `127.0.0.1` and the `PORT` of `spirit/state/environment.json` in the run root spirit.js sits in, read
   when spirit.js is required. The node's server writes that file through `serveCommon.writeEnvironment` before it
   starts any server process. No port, no node: calls refuse `no-node`, and no default port is guessed.
 

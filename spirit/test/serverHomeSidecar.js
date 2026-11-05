@@ -12,7 +12,7 @@
 // THE CONTRACT:
 //   H1 at boot a server runs when its sidecar's face part says home: true, and not otherwise; its manifest's runs counts
 //      for nothing; an intrinsic server runs as before
-//   H2 relay-state/node.json's servers section counts for nothing: neither its runs nor its argument values
+//   H2 spirit/state/node.json's servers section counts for nothing: neither its runs nor its argument values
 //   H3 a server started by hand follows its sidecar too
 //   H4 the node starts a server when its sidecar is written home: true, and stops it when written home: false
 //   H5 the central list is gone: nodeSettings serves no server settings, jobs.js reads none, the G33.9 suite is gone
@@ -71,7 +71,7 @@ function plantNode(settings) {
   fs.writeFileSync(path.join(run, 'process', 'js', 'quiet', 'quiet.js.sidecar.json'), JSON.stringify({ face: { home: true, intrinsic: true } }));
   sidecar(run, 'teller', true);
   auth.saveIdentity(run, auth.generateIdentity('serverhome' + homes));
-  if (settings) fs.writeFileSync(path.join(run, 'relay-state', 'node.json'), JSON.stringify(settings));
+  if (settings) fs.writeFileSync(path.join(run, 'spirit', 'state', 'node.json'), JSON.stringify(settings));
   return run;
 }
 function boot(run) {

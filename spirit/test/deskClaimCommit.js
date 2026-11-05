@@ -84,8 +84,8 @@ async function deskHalf() {
   test.subHeading('1. the desk: claim {id, phase, commit}, its acceptances and its refusals with their whys');
   const node = await apiNode();
   const root = path.join(scratch, 'desk');
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   const d = server(DESK, 'desk', {}, root);
   const get = async function (id) { return parse(((await d.call('item.get', { id: id }, ANDY)).body || {}).item) || {}; };
   const whyOf = function (r) { return String((r.body && r.body.extra && r.body.extra.why) || ''); };

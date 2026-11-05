@@ -2746,7 +2746,7 @@ function hasDeskVerify() { return VERIFY_SEEN.there === true; }
 // Done and two suites went red there while passing here. So the probe happens only when this node named a port.
 function nodeNamedPort() {
   try {
-    // This VM's node's port, as spirit.js read it from relay-state/environment.json (goal/G40.6).
+    // This VM's node's port, as spirit.js read it from spirit/state/environment.json (goal/G40.6).
     const p = Number(spirit.node && spirit.node.port);
     return Number.isInteger(p) && p > 0 ? p : 0;
   } catch (e) { return 0; }

@@ -63,7 +63,7 @@ async function scratchNode(o) {
 // A SCRATCH RELAY (goal/G41.30; Andy: "The relay's door is not tested yet: there is no scratch relay helper. - close
 // this gap, dammit!"): a scratch copy of the tracked files of spirit/run, a relay identity planted and an owner written
 // as a relay is installed (o.owner, an identity of relayAuth's; one is made when none is given), its face domain
-// (o.faceDomain, relay-state/face.json), and relayServer.js started on a free port with its spirit object's DEBUG on
+// (o.faceDomain, spirit/state/face.json), and relayServer.js started on a free port with its spirit object's DEBUG on
 // when o.debug, until it answers. Never a live relay.
 async function scratchRelay(o) {
   const opts = o || {};
@@ -76,8 +76,8 @@ async function scratchRelay(o) {
   auth.nameIdentity(run, 'relay');
   const owner = opts.owner || auth.generateIdentity('owner');
   auth.writeOwner(run, owner.publicKey);
-  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
-  if (opts.faceDomain) fs.writeFileSync(path.join(run, 'relay-state', 'face.json'), JSON.stringify({ domain: opts.faceDomain }));
+  fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
+  if (opts.faceDomain) fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: opts.faceDomain }));
   const port = await freePort();
   const code = 'require("./spirit.js").debug(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
@@ -104,8 +104,8 @@ async function scratchFaceRelay(o) {
   auth.nameIdentity(run, 'relay');
   // Its owner: o.ownerKey, a real node's key that this relay then calls its owner, or a stranger made here.
   auth.writeOwner(run, opts.ownerKey || auth.generateIdentity('owner').publicKey);
-  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(run, 'relay-state', 'face.json'), JSON.stringify({ domain: domain }));
+  fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: domain }));
   const port = await freePort();
   // The child: relay.js's own createRelay, its mailer a stand-in that keeps the mail; then the real relayServer.js.
   const code = 'const path = require("path"); const R = require(path.resolve("spirit/relay.js")); const made = R.createRelay; const mails = []; let box = null;' +

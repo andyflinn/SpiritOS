@@ -104,7 +104,7 @@ try {
   relayKeys.list(nodeHome, 'https://relay.example', 'relay', 'RELAYKEY-R');
   relayKeys.seat(nodeHome, 'https://relay.example');
   held = { api: ['keepEmail', 'emailOf'].filter(function (n) { return typeof relayKeys[n] === 'function'; }),
-    cols: new (require('node:sqlite').DatabaseSync)(path.join(nodeHome, 'relay-state', 'node.db'), { readOnly: true })
+    cols: new (require('node:sqlite').DatabaseSync)(path.join(nodeHome, 'spirit', 'state', 'node.db'), { readOnly: true })
       .prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; }).filter(function (n) { return /email/i.test(n); }) };
 } catch (e) { held = { threw: e.message }; }
 if (held && Array.isArray(held.api) && !held.api.length && Array.isArray(held.cols) && !held.cols.length) test.check('relayKeys keeps no email and the one table has no email column');

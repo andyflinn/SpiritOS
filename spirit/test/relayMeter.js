@@ -72,7 +72,7 @@ function sinkFor(bag) {
 // arrangement a post travels through.
 function relayWithTwo() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-meter-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('owner');

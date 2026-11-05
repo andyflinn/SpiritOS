@@ -5,7 +5,7 @@ Andy's *"come on! ... that's the same trust i mentionned before."* The shell
 half is deferred.
 
 **Built:** `spirit/run/js/proxyList.js` — the owner's list in
-`relay-state/proxy.json`, written from the old code list on first use, read
+`spirit/state/proxy.json`, written from the old code list on first use, read
 on every call, and a broken file closes the gate. `proxy.list`, `proxy.allow`,
 `proxy.remove`, `proxy.close`, `proxy.open` (server.js) are the only way to
 change it. `net.fetch` asks the gate first, fills keys only from open

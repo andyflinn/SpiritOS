@@ -2,8 +2,8 @@
 
 // Shared by relay.js (verify) and hub.js (sign). Node crypto only.
 // Files live on that process's spirit/run home, never in git:
-//   relay-state/owner.json     { "owner" }, or absent = no owner
-//   relay-state/identity.json  { "name", "publicKey", "privateKey" }
+//   spirit/state/owner.json     { "owner" }, or absent = no owner
+//   spirit/state/identity.json  { "name", "publicKey", "privateKey" }
 
 const fs = require('fs');
 const path = require('path');
@@ -429,14 +429,14 @@ function verify(publicKeyB64, message, sigB64) {
 }
 
 // PENDING-OWNER STOOD HERE — loadPendingOwner, writePendingOwner,
-// clearPendingOwner and relay-state/pending-owner.json, written by
+// clearPendingOwner and spirit/state/pending-owner.json, written by
 // install-public-relay.js to reserve the first claim for a NAME. A name
 // with no secret behind it: anybody who guessed it took the box. Replaced
 // in cycle 3 (Part B) by a token install.js minted, and that in turn by
 // goal/G16.8: the owner is written into owner.json at install time
 // (bash/install-units, OWNER_KEY), and nothing over the wire makes one.
 
-// Every owned server keeps its owner's key in relay-state/owner.json, as
+// Every owned server keeps its owner's key in spirit/state/owner.json, as
 // { owner } (Andy, cleanup/G1.7). No file, or no key in it: no owner.
 // Only an Ed25519 public key counts: a torn or hand-mangled file means no
 // owner, never a claimed relay nobody can enter.
@@ -444,7 +444,7 @@ const OWNER_KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
 // onBroken(raw), if given, hears a file that exists but names no key.
 function loadOwner(rootDir, onBroken) {
   let raw = null;
-  try { raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'owner.json'), 'utf8'); } catch (e) { return ''; }
+  try { raw = fs.readFileSync(path.join(rootDir, 'spirit', 'state', 'owner.json'), 'utf8'); } catch (e) { return ''; }
   let doc = null;
   try { doc = JSON.parse(raw); } catch (e) { doc = null; }
   const key = doc && typeof doc.owner === 'string' ? doc.owner.trim() : '';
@@ -454,7 +454,7 @@ function loadOwner(rootDir, onBroken) {
 }
 
 function writeOwner(rootDir, key) {
-  const dir = path.join(rootDir, 'relay-state');
+  const dir = path.join(rootDir, 'spirit', 'state');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'owner.json'), JSON.stringify({ owner: String(key) }, null, 2));
 }
@@ -484,7 +484,7 @@ function writeOwner(rootDir, key) {
 // time, so proving it once at load proves it for the process.
 function loadIdentity(rootDir) {
   try {
-    const raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8');
+    const raw = fs.readFileSync(path.join(rootDir, 'spirit', 'state', 'identity.json'), 'utf8');
     const parsed = JSON.parse(raw);
     if (!parsed || !parsed.privateKey) return null;
     // Not a format check — an actual parse by the thing that will use it.
@@ -565,7 +565,7 @@ function protectDir(dir) {
 }
 
 function saveIdentity(rootDir, id) {
-  const dir = path.join(rootDir, 'relay-state');
+  const dir = path.join(rootDir, 'spirit', 'state');
   fs.mkdirSync(dir, { recursive: true });
   protectDir(dir);
   const file = path.join(dir, 'identity.json');

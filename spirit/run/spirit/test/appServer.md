@@ -50,7 +50,7 @@ stream"); Desk and deskClient move onto it.
   with a limit in bytes (4 MB per sender when not given). Without it no cache file is kept.
 - **Per sender, under the run root** (where spirit.js sits; goal/G41.28, box v19: *"this way an appServer in
   client-mode can derive the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"*):
-  `relay-state/<client server>/<sender key>.json`, saved as it changes and read back into the data set at start,
+  `spirit/state/<client server>/<sender key>.json`, saved as it changes and read back into the data set at start,
   before any subscribe. The key is written in base64url (Andy, on G41.28: *"Shall the server key in spirit.data and in the
   cache file name be base64url (- for +, _ for /), since a plain base64 / splits both?"* *"yes"*): no `+`, no `/`,
   and it reads back to the sender's key.

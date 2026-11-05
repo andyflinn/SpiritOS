@@ -179,7 +179,7 @@ also get rows on the live relay, because that is the slow part to redo by hand.
 ### Two rules it must never break
 
 **Your identity is read, never written.** The key in
-`spirit/run/relay-state/identity.json` owns spirit.andyflinn.com. Generating a
+`spirit/run/spirit/state/identity.json` owns spirit.andyflinn.com. Generating a
 new one here would silently cost you that relay, and you would not find out
 until the next census. Nothing in `labPopulate` calls `saveIdentity` on the work
 node, ever.

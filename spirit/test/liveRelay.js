@@ -136,7 +136,7 @@ async function run() {
 
   test.subHeading('A held stream, through whatever is in front of it');
 
-  const subject = fs.existsSync(path.join(SUBJECT, 'relay-state', 'identity.json'))
+  const subject = fs.existsSync(path.join(SUBJECT, 'spirit', 'state', 'identity.json'))
     ? auth.loadIdentity(SUBJECT) : null;
   if (!subject) {
     test.fail('no lab subject at ' + SUBJECT + ' — run labPopulate first');
@@ -192,7 +192,7 @@ async function run() {
     // pinning is about a node meeting a relay, and reusing a home that has
     // already met it would test the cache rather than the pin.
     const meeting = path.join(FAKES, 'lw-pin-' + Date.now(), 'spirit', 'run');
-    fs.mkdirSync(path.join(meeting, 'relay-state'), { recursive: true });
+    fs.mkdirSync(path.join(meeting, 'spirit', 'state'), { recursive: true });
     auth.saveIdentity(meeting, auth.generateIdentity('pin-probe'));
 
     const realCard = await door.relayKeyOf(RELAY);

@@ -101,7 +101,7 @@ The app's own manifest says so, and the node reads its own manifests at boot:
   --pipe <path>`, i.e. `faceServer.js`). It hands out the app's page and files
   and runs no app code. Example: faceProof.
 
-**A puppet runs none.** *(stale: puppet.json is now owner.json naming another key, cleanup/G1.7)* A node with `relay-state/puppet.json` serves its owner,
+**A puppet runs none.** *(stale: puppet.json is now owner.json naming another key, cleanup/G1.7)* A node with `spirit/state/puppet.json` serves its owner,
 and app servers live on the owner's box.
 
 Stopping one is `jobs.cancel` (the jobs app's Cancel, which now offers it

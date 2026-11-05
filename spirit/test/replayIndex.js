@@ -47,7 +47,7 @@ const homes = [];
 function home() {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-replay-'));
   homes.push(d);
-  fs.mkdirSync(path.join(d, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'spirit', 'state'), { recursive: true });
   return d;
 }
 

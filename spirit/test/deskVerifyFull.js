@@ -86,8 +86,8 @@ async function deskHalf() {
   test.subHeading('1. the desk: one goal.emptied when the last item goes, and the goal Done waits for deskVerify');
   const node = await apiNode({ desk: {}, deskVerify: {} });
   const root = path.join(scratch, 'desk');
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; both
   // goals are seeded before the desk starts, and his make-current brings each up in its turn (goal/G100 first).
   test.seedDesk(path.join(root, 'state'), [

@@ -71,7 +71,7 @@ To add a world, write another `.visual.json`. You do not touch
 `labPopulate.js`.
 
 **The one rule this tool must never break:** your identity is *read* and
-never written. The key in `spirit/run/relay-state/identity.json` is the
+never written. The key in `spirit/run/spirit/state/identity.json` is the
 key that owns `spirit.andyflinn.com`. Generating a new one there would
 silently cost you that relay, and you would not find out until the next
 time you asked it for a census.

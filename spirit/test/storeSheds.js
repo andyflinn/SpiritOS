@@ -26,7 +26,7 @@ test.startTest('goal/G30.19: the node store sheds, and never grows past 16 MB');
 
 const nodeStore = require('../run/spirit/nodeStore');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g3019-sheds-'));
-fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
 const store = nodeStore.open(home);
 function fileBytes() { return typeof store.fileBytes === "function" ? store.fileBytes() : store.seen.fileBytes(); }
 

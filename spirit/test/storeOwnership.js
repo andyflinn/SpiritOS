@@ -21,7 +21,7 @@
 // ── WHAT THIS CAUGHT ─────────────────────────────────────────────────
 //
 // It was written after `arrivals.js` grew its own
-// `relay-state/pendingArrivals.json` beside the traffic log — two copies
+// `spirit/state/pendingArrivals.json` beside the traffic log — two copies
 // of "what is still waiting", able to drift, and a commit message that
 // claimed the fold had already happened when it had not. A claim in prose
 // is not a check.

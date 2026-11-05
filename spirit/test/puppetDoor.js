@@ -10,7 +10,7 @@
 //
 // Built by claude-windows at 3feddc5. Driven here through
 // puppetMode.puppetDoor with the node's real packet codec and relayAuth, a
-// real relay-state/owner.json on disc, and fake handlers standing in for
+// real spirit/state/owner.json on disc, and fake handlers standing in for
 // loopbackVerbs. The tester read the shim once, to learn the calling
 // convention a fake handler must follow (handler(req, res), req a readable
 // holding the body, res catching status and body) — said here because the
@@ -44,10 +44,10 @@ function command(verb, body, signer, opts) {
 
 function world(puppetJson) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-puppet-door-'));
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   // Since goal/G22.5: a node's root always holds its identity, and puppetIn reads it.
   auth.saveIdentity(root, self);
-  const file = path.join(root, 'relay-state', 'owner.json');
+  const file = path.join(root, 'spirit', 'state', 'owner.json');
   if (puppetJson) fs.writeFileSync(file, JSON.stringify(puppetJson));
   const ran = [];
   const sent = [];

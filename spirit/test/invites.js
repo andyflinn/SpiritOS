@@ -324,7 +324,7 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
     // Written straight into the store: the mint verb never makes an
     // expired row, which is correct and makes one unmakeable through the
     // door. (It was a hand-written invites.json until cycle 3 moved the
-    // waiting room into relay-state/relay.db.)
+    // waiting room into spirit/state/relay.db.)
     require('../run/spirit/relayStore').open(home).invites.add({
       token: token, label: label, invitedBy: 'andy',
       expiresAt: new Date(Date.now() - 60000).toISOString(),
@@ -487,10 +487,10 @@ test.subHeading('A box upgrading in place does not resurrect spent tokens');
 // spirit-3-shaped row, which is where the hazard was found.
 {
   const home = tmpHome();
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   const soon = new Date(Date.now() + 86400000).toISOString();
   const stale = new Date(Date.now() - 86400000).toISOString();
-  fs.writeFileSync(path.join(home, 'relay-state', 'invites.json'), JSON.stringify([
+  fs.writeFileSync(path.join(home, 'spirit', 'state', 'invites.json'), JSON.stringify([
     // Spent under the old rules, and not yet expired: the dangerous one.
     { token: 'spent', label: 'saint', expiresAt: soon, invitedBy: 'andy', consumedAt: stale },
     // Never claimed, still good. Must survive all of this untouched.

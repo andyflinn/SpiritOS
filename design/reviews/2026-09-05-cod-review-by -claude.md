@@ -15,8 +15,8 @@ The systemd unit has Restart=on-failure / RestartSec=3, so it self-heals — but
 fileServable and fileWritable (kernel.js:196-224) pattern-match the raw request string, while fsPath resolves it separately. The two disagree:
 
 input	gate says	resolves to
-relay-state/identity.json	blocked	—
-./relay-state/identity.json	servable	the private key
+spirit/state/identity.json	blocked	—
+./spirit/state/identity.json	servable	the private key
 x/../js/relayAuth.js	servable	the auth module
 app/natter/natter.js	not writable	—
 app/./natter/natter.js	writable	the protected entry script

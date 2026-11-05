@@ -3,7 +3,7 @@
 // spirit/test/keyPermissions.js
 // THE PRIVATE HALF IS NOT A WORLD-READABLE FILE.
 //
-// `relay-state/identity.json` holds the signing key and, since cycle 10,
+// `spirit/state/identity.json` holds the signing key and, since cycle 10,
 // the cipher key. It was written at whatever the umask gave — 644 on a
 // typical box — so every account on the machine could read both.
 //
@@ -72,7 +72,7 @@ test.subHeading('The file and its directory are written tight at creation');
   const dir = home();
   auth.saveIdentity(dir, auth.generateIdentity('guarded'));
 
-  const file = path.join(dir, 'relay-state', 'identity.json');
+  const file = path.join(dir, 'spirit', 'state', 'identity.json');
   const fileMode = fs.statSync(file).mode & 0o777;
   const dirMode = fs.statSync(path.join(dir, 'relay-state')).mode & 0o777;
 
@@ -130,7 +130,7 @@ test.subHeading('THE RESIDUAL, asserted so it is not mistaken for a guarantee');
   // with a known residual.
   const dir = home();
   auth.saveIdentity(dir, auth.generateIdentity('widened'));
-  const file = path.join(dir, 'relay-state', 'identity.json');
+  const file = path.join(dir, 'spirit', 'state', 'identity.json');
 
   let widened = false;
   try { fs.chmodSync(file, 0o644); widened = true; } catch (e) { widened = false; }

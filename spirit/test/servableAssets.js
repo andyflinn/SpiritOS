@@ -131,7 +131,7 @@ expectWritable('shell/info/info.json (manifest, goal/G14.8)', 'shell/info/info.j
 // must stay both readable and writable — locking it in a "protect
 // everything the relay work added" sweep would break Natter. It was
 // relays.json until goal/G16.3 moved the node's relay list into node state
-// (relay-state/relays.json, refused to every app); captions.json, what
+// (spirit/state/relays.json, refused to every app); captions.json, what
 // this browser calls each relay, is the part that stayed the app's.
 //
 // SERVABLE, NOT LOADED: the gate is what this asserts, and it is a
@@ -168,19 +168,19 @@ expectNotWritable('a media sidecar (only annotateFile writes one)', 'media/001.j
 // relay-state/ holds the mailbox and, on a real relay, identity.json with
 // a private key — never reachable through a file read, whatever else it
 // may come to contain later.
-expectUnservable('relay-state/routingTable.json', 'relay-state/routingTable.json');
+expectUnservable('spirit/state/routingTable.json', 'spirit/state/routingTable.json');
 // Both names: a migrated relay keeps the old file beside the new one, so
 // there are two to keep unreadable rather than one.
-expectUnservable('relay-state/mailbox.json', 'relay-state/mailbox.json');
-expectUnservable('relay-state/identity.json', 'relay-state/identity.json');
-expectUnservable('relay-state/allow.json', 'relay-state/allow.json');
+expectUnservable('spirit/state/mailbox.json', 'spirit/state/mailbox.json');
+expectUnservable('spirit/state/identity.json', 'spirit/state/identity.json');
+expectUnservable('spirit/state/allow.json', 'spirit/state/allow.json');
 if (fileServable('relay-state') === false) {
   test.check('relay-state (the folder itself) — fileServable false');
 } else {
   test.fail('relay-state (the folder itself) — fileServable should be false');
 }
-expectNotWritable('relay-state/routingTable.json', 'relay-state/routingTable.json');
-expectNotWritable('relay-state/mailbox.json', 'relay-state/mailbox.json');
+expectNotWritable('spirit/state/routingTable.json', 'spirit/state/routingTable.json');
+expectNotWritable('spirit/state/mailbox.json', 'spirit/state/mailbox.json');
 
 // ---- the listing path, not just the read path ----
 // scanFolder is what the Files app and the fs-watcher job actually walk.

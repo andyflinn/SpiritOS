@@ -400,7 +400,7 @@ each bounded by the one above:
   — no new route. Refused for a lever not declared live.
 - **Its first job is a proof:** switch max connections from `"dynamic"` to a
   fixed number while the relay runs, and watch the Governor respect it.
-- **Live settings persist to `relay-state/levers.json`**, never to
+- **Live settings persist to `spirit/state/levers.json`**, never to
   `config.json` — the file holding the protections is only ever written by a
   person with a shell.
 - **Grants stay live** as before: injecting a partner, minting an invite.
@@ -716,7 +716,7 @@ Under the allow-list the owner writes a URL. That is the whole of it.
 **And PARTNERS.md already specified this shape:**
 
 ```
-relay-state/partners.json
+spirit/state/partners.json
   "<relayKey>": { url, ownerKey, since, … }
 ```
 

@@ -37,7 +37,7 @@ Worth keeping, because none of it is the kind of thing a person finds by
 reading:
 
 **`liveFrontDoor` was reading a file the product stopped writing.** It
-read `relay-state/traffic.json` — the read-once legacy shape, whose own
+read `spirit/state/traffic.json` — the read-once legacy shape, whose own
 comment says *"Never written again"* — while the live log is
 `traffic.jsonl`. Every read returned `[]`, and **an empty array is not an
 error, it is an answer.** Seven checks were asserting things about a log

@@ -228,7 +228,7 @@ define('shrink-would-strand', {
 });
 define('config-not-written', {
   status: 500, presence: NONE, retry: 'no', fault: 'target',
-  texts: ['could not write relay-state/config.json'],
+  texts: ['could not write spirit/state/config.json'],
   note: 'The figures were valid and the file would not take them — a disc ' +
     'that is full or read-only. The running relay is unchanged; this is an ' +
     'SSH problem.',

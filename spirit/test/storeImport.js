@@ -104,8 +104,8 @@ test.subHeading('A torn file stops the relay rather than emptying it');
 // where the owner will look for it (relayServer.js refuses to start).
 relayStore.closeAll();
 const T = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-import-torn-'));
-fs.mkdirSync(path.join(T, 'relay-state'), { recursive: true });
-fs.writeFileSync(path.join(T, 'relay-state', 'routingTable.json'), '{"peers": {"half');
+fs.mkdirSync(path.join(T, 'spirit', 'state'), { recursive: true });
+fs.writeFileSync(path.join(T, 'spirit', 'state', 'routingTable.json'), '{"peers": {"half');
 let refusal = null;
 try { relayStore.open(T); } catch (e) { refusal = e.message; }
 if (refusal && /routingTable\.json cannot be read/.test(refusal)) {
@@ -113,8 +113,8 @@ if (refusal && /routingTable\.json cannot be read/.test(refusal)) {
 } else {
   test.fail('torn import opened: ' + refusal);
 }
-if (fs.existsSync(path.join(T, 'relay-state', 'routingTable.json')) &&
-    !fs.existsSync(path.join(T, 'relay-state', 'routingTable.json.imported'))) {
+if (fs.existsSync(path.join(T, 'spirit', 'state', 'routingTable.json')) &&
+    !fs.existsSync(path.join(T, 'spirit', 'state', 'routingTable.json.imported'))) {
   test.check('and the file is left exactly where it was');
 } else {
   test.fail('the torn file was moved');

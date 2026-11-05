@@ -50,7 +50,7 @@ const homes = [];
 function relayWith(ramLimitMB) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-guarantee-'));
   homes.push(home);
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('andy');
   auth.writeOwner(home, owner.publicKey);
@@ -310,7 +310,7 @@ test.subHeading('GUARANTEE: no relay can read what one node says to another');
 
   // NOW TRY TO READ IT, from every surface the relay has.
   relayStore.closeAll();
-  const onDisc = fs.readFileSync(path.join(w.home, 'relay-state', 'relay.db'));
+  const onDisc = fs.readFileSync(path.join(w.home, 'spirit', 'state', 'relay.db'));
   const report = JSON.stringify(w.box.snapshot());
   const routed = sealed;
 
@@ -391,7 +391,7 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
   const card2 = require('../run/spirit/nodeCard');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-precycle10-'));
   homes.push(home);
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
 
   // AN IDENTITY AS IT LOOKED BEFORE CYCLE 10: a signing pair, a name, a
   // description, and no cipher key. Built by stripping a fresh one rather

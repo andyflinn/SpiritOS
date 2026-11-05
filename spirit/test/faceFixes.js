@@ -54,8 +54,8 @@ function relayWith(config) {
   homes.push(home);
   plant.ensureAt(home, 'relay');
   auth.writeOwner(home, auth.generateIdentity('andy').publicKey);
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
   const mails = [];
   const box = createRelay(home, { config: config, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
   return { home: home, box: box, mails: mails };
@@ -214,8 +214,8 @@ const done = (async function () {
     homes.push(home6);
     plant.ensureAt(home6, 'relay');
     auth.writeOwner(home6, auth.generateIdentity('andy').publicKey);
-    fs.mkdirSync(path.join(home6, 'relay-state'), { recursive: true });
-    fs.writeFileSync(path.join(home6, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
+    fs.mkdirSync(path.join(home6, 'spirit', 'state'), { recursive: true });
+    fs.writeFileSync(path.join(home6, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
     const mails6 = [];
     const mk = function () { return createRelay(home6, { now: clock, sendMail: function (m) { mails6.push(m); return Promise.resolve({ ok: true }); } }); };
     let box6 = mk();

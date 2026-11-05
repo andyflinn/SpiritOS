@@ -5,7 +5,7 @@
 //
 //   Andy: "the node owner must be able to cap the shadow-roll by disc
 //   space" — and, on where the number lives, "your suggestion fits now":
-//   relay-state/node.json.
+//   spirit/state/node.json.
 //
 // ── READ ONCE, AT STARTUP, AND NEVER WRITTEN BY THE NODE ─────────────
 //
@@ -48,7 +48,7 @@ const MIN_CACHE_MAX_MB = 1;
 // node.json that still names it is read as before, the field unread.
 
 function filePath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'node.json');
+  return path.join(rootDir, 'spirit', 'state', 'node.json');
 }
 
 // One read per home per process. Keyed like nodeStore's handles, so a

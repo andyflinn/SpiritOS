@@ -33,7 +33,7 @@
 // travels, and a claim only ever adds a MEMBER's relay to this list. Section 6 asserts that reading.
 //
 // WHAT IS ASSERTED
-//   1. THE LIST IS NODE STATE: the node reads and seeds relay-state/relays.json with the TWO relays he named,
+//   1. THE LIST IS NODE STATE: the node reads and seeds spirit/state/relays.json with the TWO relays he named,
 //      and a list planted in the app's folder is not read. The app's file is gone from the tree. Since
 //      goal/G19.15 the node's state is node.db's relays table, keyed by relay key, not relays.json, and the seed
 //      is noderoutes.net alone.
@@ -41,7 +41,7 @@
 //      claims no relay.add.
 //   3. NO NODE FILE REACHES INTO THE APP'S FOLDER for this any more.
 //   4. THE TWO WIRE TEXTS LOSE THE PATH, in the register both sides load.
-//   5. NO APP OR PAGE CAN REDIRECT THE NODE: the write gate refuses relay-state/relays.json.
+//   5. NO APP OR PAGE CAN REDIRECT THE NODE: the write gate refuses spirit/state/relays.json.
 //   6. A CLAIM IS WHAT ADDS A RELAY, and ownership is not: nothing in the claim path writes an owner, and the
 //      list is written by the node when a claim succeeds.
 //   7. THE PEER COUNTERS COME HOME TOO (A4, folded by his "place all you can into existing items"): node
@@ -63,8 +63,8 @@ const OWED = 'OWED by goal/G16.3: ';
 const RUN = path.join(__dirname, '..', 'run');
 const JS = path.join(RUN, 'spirit');
 const APP_FILE = path.join('shell', 'natter', 'relays.json');
-const STATE_FILE = path.join('relay-state', 'relays.json');
-const DB_FILE = path.join('relay-state', 'node.db');
+const STATE_FILE = path.join('spirit', 'state', 'relays.json');
+const DB_FILE = path.join('spirit', 'state', 'node.db');
 const relayKeys = require('../run/spirit/relayKeys.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
@@ -75,7 +75,7 @@ function there(p) { try { fs.statSync(p); return true; } catch (e) { return fals
 function freshRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaylist-'));
   fs.mkdirSync(path.join(root, 'shell', 'natter'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   return root;
 }
 
@@ -91,15 +91,15 @@ function nodeFiles(into) {
 test.startTest('The relay list is the node\'s own state, not an app\'s file (goal/G16.3)');
 
 // ── 1. THE LIST IS NODE STATE ───────────────────────────────────────────
-test.subHeading('1. the node seeds and reads relay-state/relays.json, not the app\'s folder');
+test.subHeading('1. the node seeds and reads spirit/state/relays.json, not the app\'s folder');
 {
   const root = freshRoot();
   const seeded = ownerBadge.ensureRelays(root);
 
   // Since goal/G19.15 the node's own state is node.db's relays table, keyed by relay key, and relays.json is
   // never written: it is read once, moved in and deleted.
-  if (there(path.join(root, DB_FILE)) && !there(path.join(root, STATE_FILE))) test.check('a fresh node seeds its relays table in relay-state/node.db');
-  else test.fail(OWED + 'a fresh node has no relay-state/node.db, or wrote relay-state/relays.json');
+  if (there(path.join(root, DB_FILE)) && !there(path.join(root, STATE_FILE))) test.check('a fresh node seeds its relays table in spirit/state/node.db');
+  else test.fail(OWED + 'a fresh node has no spirit/state/node.db, or wrote spirit/state/relays.json');
 
   if (!there(path.join(root, APP_FILE))) test.check('and writes nothing into the Natter app\'s folder');
   else test.fail(OWED + 'a fresh node still wrote ' + APP_FILE + ': the app\'s folder decides where this node talks');
@@ -215,7 +215,7 @@ test.subHeading('4. the refusals name no app path');
 test.subHeading('5. the write gate refuses the node\'s relay list');
 {
   const writable = spirit.core.fs.fileWritable;
-  ['relay-state/relays.json', './relay-state/relays.json'].forEach(function (p) {
+  ['spirit/state/relays.json', './spirit/state/relays.json'].forEach(function (p) {
     if (writable(p) === false) test.check('fs refuses to write ' + p);
     else test.fail(OWED + 'fs would write ' + p + ': an app could point this node anywhere');
   });

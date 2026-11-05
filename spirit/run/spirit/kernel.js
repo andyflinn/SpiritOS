@@ -16,7 +16,7 @@ const AUTHOR = 'Andy Flinn, from AndyFlinn.com';
 const COPYRIGHT = 'Copyright (c) 2024 Andy Flinn, from AndyFlinn.com';
 const VERSION = '0.0.1';
 const SPIRIT_NAME = 'SpiritOS';
-const SPIRIT_ENVIRONMENT_FILE = './relay-state/environment.json';
+const SPIRIT_ENVIRONMENT_FILE = './spirit/state/environment.json';
 
 // constants
 // DEBUG (desk/G2.5): one switch per process, off at start, never persisted. Andy: "DEBUG is

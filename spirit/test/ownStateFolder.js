@@ -25,8 +25,8 @@ const PROBE = path.join(DIR, NAME + '.js');
 const PATHS = {
   own: 'relay-state/process/' + NAME + '/state.db',
   other: 'relay-state/process/desk/desk.db',
-  identity: 'relay-state/identity.json',
-  nodeDb: 'relay-state/node.db',
+  identity: 'spirit/state/identity.json',
+  nodeDb: 'spirit/state/node.db',
 };
 
 test.startTest('desk/G2.4: a process reaches its own state folder, and nothing else in relay-state');

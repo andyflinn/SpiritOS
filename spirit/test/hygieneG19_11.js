@@ -153,7 +153,7 @@ async function deadVerbs() {
 
 function staleWords() {
   test.subHeading('6. the stale words');
-  // whoBook became contacts.js / relay-state/contacts.json on 2026-09-18 (contacts.js header). A line may still name
+  // whoBook became contacts.js / spirit/state/contacts.json on 2026-09-18 (contacts.js header). A line may still name
   // it as history: it then says so on the same line, with the date of the rename or the word historical.
   const BOX = ['DICTIONARY.md', 'AGENT.md', 'CLAUDE.md', 'spirit/run/spirit/relay.js', '.gitignore', 'UI_DESIGN_STYLE.md',
     'spirit/test/labMaster/BONES.md', 'spirit/test/peerPostWiring.js'];

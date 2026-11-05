@@ -457,8 +457,8 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   test.subHeading('9. a node.db with a relays table made before the refusal columns moves into the one table, seat kept');
   {
     const h3 = tmpHome();
-    fs.mkdirSync(path.join(h3, 'relay-state'), { recursive: true });
-    const raw = new (require('node:sqlite').DatabaseSync)(path.join(h3, 'relay-state', 'node.db'));
+    fs.mkdirSync(path.join(h3, 'spirit', 'state'), { recursive: true });
+    const raw = new (require('node:sqlite').DatabaseSync)(path.join(h3, 'spirit', 'state', 'node.db'));
     raw.exec(`CREATE TABLE relays (key TEXT PRIMARY KEY, url TEXT NOT NULL, label TEXT NOT NULL DEFAULT '',
       listed INTEGER NOT NULL DEFAULT 0, pos INTEGER NOT NULL DEFAULT 0, firstSeen TEXT NOT NULL DEFAULT '',
       acceptedAt TEXT NOT NULL DEFAULT '', replaced TEXT NOT NULL DEFAULT '', seatLabel TEXT NOT NULL DEFAULT '',

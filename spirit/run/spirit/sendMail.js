@@ -5,7 +5,7 @@
 // js/sendMail.js with a folder sendMail/ to go with it" — no app- or site-specific code in core. The vendors live in
 // js/sendMail/<driver>.js, each exporting create(settings, fetch) answering { send } or null.
 //
-//   relay-state/mail.json   { "driver": "<name>", ...that driver's settings }
+//   spirit/state/mail.json   { "driver": "<name>", ...that driver's settings }
 //
 // Placed by the owner by hand on the relay box, never in git, a box or a chat. The driver is named in the file and
 // nowhere else: a file without one sends no mail, with no fallback in core (decided by Andy). The name must be a
@@ -20,7 +20,7 @@ const DRIVERS = path.join(__dirname, 'sendMail');
 // or settings that driver will not take).
 function createSender(rootDir, options) {
   let v = null;
-  try { v = JSON.parse(fs.readFileSync(path.join(String(rootDir || ''), 'relay-state', 'mail.json'), 'utf8')); } catch (e) { return null; }
+  try { v = JSON.parse(fs.readFileSync(path.join(String(rootDir || ''), 'spirit', 'state', 'mail.json'), 'utf8')); } catch (e) { return null; }
   if (!v || typeof v !== 'object') return null;
   const name = String(v.driver || '').trim();
   if (!/^[a-z][a-zA-Z0-9]*$/.test(name) || !fs.existsSync(path.join(DRIVERS, name + '.js'))) return null;

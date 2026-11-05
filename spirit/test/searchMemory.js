@@ -193,7 +193,7 @@ async function run() {
       test.fail('found: ' + keys.join(','));
     }
     // ON AN INDEX, asserted rather than assumed: a partial index is used only while the query repeats its condition.
-    const db = new (require('node:sqlite').DatabaseSync)(path.join(C, 'relay-state', 'node.db'));
+    const db = new (require('node:sqlite').DatabaseSync)(path.join(C, 'spirit', 'state', 'node.db'));
     const plan = function (sql) { return db.prepare('EXPLAIN QUERY PLAN ' + sql).all().map(function (r) { return r.detail; }).join(' | '); };
     const listed = plan('SELECT * FROM seen WHERE keep = 1 UNION SELECT * FROM seen WHERE mine = 1 UNION SELECT * FROM seen WHERE held = 1');
     db.close();

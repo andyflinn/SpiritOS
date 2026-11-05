@@ -127,9 +127,9 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   // ── THE NODE ────────────────────────────────────────────────────────
   test.subHeading('the node answers node.debug, off after a restart');
   const root = setupRelayFakes('debugSwitch').andy;
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
+  // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   // Mounted since goal/G30.4: the node family's block declares its verbs bare ('debug'), the table names it node.debug.
   const nodeBlock = /loopbackVerbs\.mount\('node',[\s\S]*?\n {2}\}, \{ wire:/.exec(fs.readFileSync(path.join(root, 'spirit', 'server.js'), 'utf8'));
   const claimed = !!nodeBlock && new RegExp("^ {4}'debug':", 'm').test(nodeBlock[0]);

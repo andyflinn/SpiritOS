@@ -4,7 +4,7 @@
 // Personal node only. Per-peer packet counters. Never uploaded. Never on the relay.
 //
 // A contactBook row is a human decision. These numbers are not.
-// One file per peer, named by peerFile.js, in relay-state/peerStats/.
+// One file per peer, named by peerFile.js, in spirit/state/peerStats/.
 //
 // NODE STATE, NOT AN APP'S (goal/G16.3, folded in from A4 of the review of
 // 2026-10-10): they were written into the Contacts app's own folder, where
@@ -28,7 +28,7 @@ const peerFile = require('./peerFile');
 
 const WINDOW_DAYS = 14;
 const SEEN_CAP = 200;
-const DIR = ['relay-state', 'peerStats'];
+const DIR = ['spirit', 'state', 'peerStats'];
 
 function statsDir(rootDir) {
   return path.join(rootDir, DIR[0], DIR[1]);

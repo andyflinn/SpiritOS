@@ -42,8 +42,8 @@
 //
 // Runs relay.js out of an isolated fake node under the OS temp dir, never
 // the live checkout: createRelay() persists to
-// relay-state/routingTable.json on every claim, and loadAllow reads
-// relay-state/allow.json — this test writes both.
+// spirit/state/routingTable.json on every claim, and loadAllow reads
+// spirit/state/allow.json — this test writes both.
 const fs = require('fs');
 const net = require('net');
 const http = require('http');

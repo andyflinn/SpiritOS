@@ -4,7 +4,7 @@
 // AN OWNED RELAY, THE WAY A RELAY NOW GETS ITS OWNER — for suites only.
 //
 // goal/G16.8: a relay is owned at install time and in no other way. On a
-// real box bash/install-units writes relay-state/owner.json from the
+// real box bash/install-units writes spirit/state/owner.json from the
 // OWNER_KEY it is given, before the relay ever serves; no claim, token or
 // invite makes an owner over the wire. Andy: "the relays should do
 // first-claim, it should happen at install time. that's the only \"safe\"

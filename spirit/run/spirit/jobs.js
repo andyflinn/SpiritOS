@@ -443,7 +443,7 @@ module.exports = function installJobs(port) {
   // (process/js/<name>/<name>.js.sidecar.json), the only place". A script under <root>/process/js/<name>/ belongs to the
   // process <name>, and runs only if the face part of its sidecar says home: true (or its manifest says intrinsic): a
   // process that does not never runs, so Jobs never shows it. Refused by name, process-not-included, before anything is
-  // spawned. No central list says it: relay-state/node.json's servers section, and the manifest's runs, are gone.
+  // spawned. No central list says it: spirit/state/node.json's servers section, and the manifest's runs, are gone.
   function runsHome(root, name) {
     try {
       JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.json'), 'utf8'));

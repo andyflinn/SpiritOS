@@ -48,7 +48,7 @@ const { createTrafficLog } = require('../run/spirit/trafficLog.js');
 const nodeStore = require('../run/spirit/nodeStore.js');
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-logindexes-'));
-const dbFile = path.join(root, 'relay-state', 'node.db');
+const dbFile = path.join(root, 'spirit', 'state', 'node.db');
 const PEER = 'MCowBQYDK2VwAyEAlogIndexesPeer0000000000000000000000=';
 const log = createTrafficLog({ rootDir: root });
 

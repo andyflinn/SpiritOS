@@ -31,7 +31,7 @@ const shadows = new Map();
 function shadow(rootDir) {
   const key = require('path').resolve(rootDir);
   if (!shadows.has(key)) {
-    // THE OWNER'S CAP, read once (R31). relay-state/node.json when the
+    // THE OWNER'S CAP, read once (R31). spirit/state/node.json when the
     // owner has written one, the 20 MB default when not — and never
     // written by this code, because an owner's bound is obeyed rather
     // than moved (0015).
@@ -1981,7 +1981,7 @@ function createHub(rootDir) {
   // NAMED FOR WHAT IT IS, NOT FOR WHAT IT DOES. `proxy` already means one
   // thing here — the outbound web fetcher, `net.fetch` at
   // `server.js:1563`, marked `{ wire: true }` with "it reaches the
-  // internet, so being offline fails it", and `relay-state/proxy.json`
+  // internet, so being offline fails it", and `spirit/state/proxy.json`
   // for which key may go to which website. That proxy points AT the
   // internet; this one points at a puppet. `peerOwnerPost` names by
   // family instead: it is `peerPost`, from the owner.

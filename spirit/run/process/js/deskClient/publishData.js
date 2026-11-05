@@ -21,7 +21,7 @@
 //   4  unless --only packets or --out: commits agents/<agent>/ (the commit check's standing grant takes a commit whose
 //      files all lie there) and posts one summary line to Desk
 // The agent is the name Andy set in its profile (profile.get). The traffic log is read from a copy of
-// <clone>/spirit/run/relay-state/node.db, read only: the node holds the file open, and no verb reads that log.
+// <clone>/spirit/run/spirit/state/node.db, read only: the node holds the file open, and no verb reads that log.
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
 
 // The spirit object first, as the global spirit (goal/G40.1).
@@ -64,7 +64,7 @@ function max(a) { return a.length ? Math.max.apply(null, a) : 0; }
 
 // The node's traffic rows since `sinceIso`, closing rows only, from a read-only copy of its node.db.
 function closingRows(clone, sinceIso) {
-  const src = path.join(clone, 'spirit', 'run', 'relay-state', 'node.db');
+  const src = path.join(clone, 'spirit', 'run', 'spirit', 'state', 'node.db');
   if (!fs.existsSync(src)) end(1, 'publishData: no traffic log at ' + src + ' (is the node run from this clone?)');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publishdata-'));
   const copy = path.join(tmp, 'node.db');
@@ -149,7 +149,7 @@ async function main() {
   // node, and a suite disturbed the node's own sockets (wsl-claude's lost its deskClient, 0 packet posts). So the
   // harness runs in a temporary git worktree of the commit being published; its files come back into agents/<agent>/,
   // and the worktree is removed. The node's relay list is not in git, so it is carried over when the clone has one;
-  // it is relay-state/relays.json since goal/G16.3, node state rather than the Natter app's file.
+  // it is spirit/state/relays.json since goal/G16.3, node state rather than the Natter app's file.
   if (!packetsOnly) {
     say('harness and capacity in a worktree of ' + commit + ' (minutes)');
     const tree = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publish-tree-'));
@@ -157,7 +157,7 @@ async function main() {
     const added = git(['worktree', 'add', '-q', '--detach', tree, 'HEAD'], clone);
     if (added.status !== 0) end(1, 'publishData: no worktree: ' + (added.stderr || added.stdout).trim());
     try {
-      const relays = path.join('spirit', 'run', 'relay-state', 'relays.json');
+      const relays = path.join('spirit', 'run', 'spirit', 'state', 'relays.json');
       if (fs.existsSync(path.join(clone, relays))) { fs.mkdirSync(path.dirname(path.join(tree, relays)), { recursive: true }); fs.copyFileSync(path.join(clone, relays), path.join(tree, relays)); }
       const m = spawnSync(process.execPath, [path.join(tree, 'spirit', 'test', 'measurePlatform.js'), '--agent', agent], { cwd: tree, stdio: 'inherit', windowsHide: true });
       if (m.status !== 0) say('measurePlatform exited ' + m.status + '; its files say what it found');

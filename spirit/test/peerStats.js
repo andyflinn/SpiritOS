@@ -4,7 +4,7 @@
 //
 // A contactBook row is what a human decided about a key. These numbers are
 // not a decision, so they do not live on the row: they are a sidecar per
-// peer, named by peerFile, in the node's own state (relay-state/peerStats/
+// peer, named by peerFile, in the node's own state (spirit/state/peerStats/
 // since goal/G16.3 — node bookkeeping, not the Contacts app's data).
 //
 // What is under test here is the counting itself, and the three things
@@ -209,11 +209,11 @@ test.subHeading('One file per peer, named by peerFile, in the node\'s own state'
   const bertPath = peerStats.statsPath(home, BERT);
   const rel = path.relative(home, bertPath).split(path.sep);
 
-  // goal/G16.3: under relay-state/peerStats/, node state the fs gate keeps
+  // goal/G16.3: under spirit/state/peerStats/, node state the fs gate keeps
   // from every app, and still named by peerFile so the name says whose.
   if (rel.length === 3 && rel[0] === 'relay-state' && rel[1] === 'peerStats' &&
       rel[2] === peerFile.fileName(BERT)) {
-    test.check('a sidecar is relay-state/peerStats/ plus the name peerFile gives it');
+    test.check('a sidecar is spirit/state/peerStats/ plus the name peerFile gives it');
   } else {
     test.fail('path: ' + rel.join('/'));
   }
@@ -254,7 +254,7 @@ test.subHeading('Nothing counted is nothing, not an error');
   // A file somebody edited by hand, or half-written by a crash. It must
   // read as "nothing counted" rather than throw, because the caller is
   // the inbox path and an exception there would stop mail arriving.
-  // goal/G16.3: the counters' folder is relay-state/peerStats now.
+  // goal/G16.3: the counters' folder is spirit/state/peerStats now.
   fs.mkdirSync(path.dirname(peerStats.statsPath(home, BERT)), { recursive: true });
   fs.writeFileSync(peerStats.statsPath(home, BERT), '{ not json');
   const salvaged = peerStats.readSummary(home, BERT, NOON);

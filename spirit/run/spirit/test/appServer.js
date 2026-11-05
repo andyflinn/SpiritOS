@@ -107,7 +107,7 @@ const GOAL = { id: 'goal/G9', goal: '', title: 'the goal', version: 1 };
 const item = function (n, extra) { return Object.assign({ id: 'goal/G9.' + n, goal: 'goal/G9', title: 'item ' + n, version: 1 }, extra || {}); };
 const row = function (f) { return { verb: 'goal.whole', goal: 9, item: f }; };
 // The client's cache file for the publisher (goal/G41.28, box v19; Andy: "this way an appServer in client-mode can derive
-// the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"): in relay-state/<client server>/,
+// the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"): in spirit/state/<client server>/,
 // named by the sender's key in base64url (Andy, Q9 of Desk: "Shall the server key in spirit.data and in the cache file
 // name be base64url (- for +, _ for /), since a plain base64 / splits both?" "yes"): no + and no /, and it reads back
 // to the sender's key.
@@ -576,7 +576,7 @@ if (CHILD) {
     let text = '';
     try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
     ok(one.subscribed === true && one.one && one.two, 'a client with the cache switch on takes the push', short(one));
-    ok(text.indexOf('item 2') !== -1, 'it saves the cache as relay-state/<client>/<sender key>.json (goal/G41.28, box v19)', path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file'));
+    ok(text.indexOf('item 2') !== -1, 'it saves the cache as spirit/state/<client>/<sender key>.json (goal/G41.28, box v19)', path.relative(RUN, file) + ': ' + (text ? short(text) : 'no file'));
     ok(one.byNode && one.byNode.length === 1 && one.top.length === 1, 'its spirit.data holds the cache under the sender\'s key, and nothing beside it at the top (box v19)', 'at the top of spirit.data: ' + short(one.top));
     ok(Array.isArray(one.family) && one.family.indexOf('desk') !== -1, 'and under the sender\'s key, the family: <key>.desk', 'under the key: ' + short(one.family));
     const two = runChild('restart', 'cacheProbe');

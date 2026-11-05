@@ -119,7 +119,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   ok((await keysOf({ family: '', verb: '' })).length === 4, 'an empty family or verb filter narrows nothing', 'empty filters narrowed');
 
   test.subHeading('the two tables in node.db, and the old ones gone');
-  const db = new DatabaseSync(path.join(root, 'relay-state', 'node.db'));
+  const db = new DatabaseSync(path.join(root, 'spirit', 'state', 'node.db'));
   const colsOf = function (t) { try { return db.prepare('PRAGMA table_info(' + JSON.stringify(t) + ')').all(); } catch (e) { return []; } };
   const names = function (cols) { return cols.map(function (x) { return x.name + (x.pk ? '*' : ''); }).sort(); };
   ok(JSON.stringify(names(colsOf('bundle'))) === '["id*","label","owner"]' && /INT/i.test((colsOf('bundle').filter(function (c) { return c.name === 'id'; })[0] || {}).type || ''),
@@ -211,7 +211,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   const asked = await call(auth, 'bundle', { op: 'add', label: 'For the agent', owner: 'agent' });
   ok(!!asked.refusal && !isNum(asked.id), 'a user\'s add naming an app server as owner is refused', 'an add naming an app server answered ' + short(asked));
   const mine = await call(auth, 'bundle', { op: 'add', label: 'For the agent, in the table' });
-  const mdb = new DatabaseSync(path.join(root, 'relay-state', 'node.db'));
+  const mdb = new DatabaseSync(path.join(root, 'spirit', 'state', 'node.db'));
   mdb.prepare('UPDATE bundle SET owner = ? WHERE id = ?').run('agent', mine.id);
   mdb.close();
   await call(auth, 'bundle', { op: 'set', id: mine.id, owner: 'desk' });
@@ -227,12 +227,12 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
   }
   ok(badIn.every(function (x) { return x[1] === 'node'; }), 'an add whose owner is not valid (empty, not a text, not a name) is owned by "node"', 'owners: ' + short(badIn));
   // Incoming means kept: the table itself holds "node" for each, not the invalid owner read out as "node".
-  const kdb = new DatabaseSync(path.join(root, 'relay-state', 'node.db'), { readOnly: true });
+  const kdb = new DatabaseSync(path.join(root, 'spirit', 'state', 'node.db'), { readOnly: true });
   const kept2 = badIn.map(function (x) { try { const r = kdb.prepare('SELECT owner FROM bundle WHERE id = ?').get(x[2]); return r && r.owner; } catch (e) { return null; } });
   kdb.close();
   ok(kept2.length === badIn.length && kept2.every(function (v) { return v === 'node'; }), 'and the table keeps "node" for it, never the owner it was given', 'kept: ' + short(kept2));
   // Outgoing: a row the table holds with an owner that is not valid is answered "node", by get, search and the stream.
-  const odb = new DatabaseSync(path.join(root, 'relay-state', 'node.db'));
+  const odb = new DatabaseSync(path.join(root, 'spirit', 'state', 'node.db'));
   let wrote = true;
   try { odb.prepare('UPDATE bundle SET owner = ? WHERE id = ?').run('not a name!', plain.id); } catch (e) { wrote = false; }
   odb.close();
@@ -320,7 +320,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
 
   // The appServer's bundle gone from the table (a user cannot delete it since goal/G41.32): the next boot makes it again
   // under the same key.
-  const gdb = new DatabaseSync(path.join(bootRoot, 'relay-state', 'node.db'));
+  const gdb = new DatabaseSync(path.join(bootRoot, 'spirit', 'state', 'node.db'));
   gdb.prepare('DELETE FROM branch WHERE bundle = ?').run(AID);
   gdb.prepare('DELETE FROM bundle WHERE id = ?').run(AID);
   gdb.close();

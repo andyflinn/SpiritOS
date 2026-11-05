@@ -125,7 +125,7 @@ const ROWS = [
     const os = require('os');
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaysearch-'));
     fs.mkdirSync(path.join(root, 'shell', 'natter'), { recursive: true });
-    fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
     // Since goal/G22.5: a node's root always holds its identity.
     const auth = require('../run/spirit/relayAuth.js');
     auth.saveIdentity(root, auth.generateIdentity('relaysearch'));

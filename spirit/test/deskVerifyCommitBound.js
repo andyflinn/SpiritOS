@@ -80,8 +80,8 @@ async function verifyHalf() {
   // A pull that changes nothing, and leaves a mark each time it is called.
   fs.writeFileSync(probe, "require('fs').appendFileSync(" + JSON.stringify(pulled) + ", 'pulled\\n');\n");
   const run = path.join(scratch, 'verify');
-  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(run, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(run, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   const v = server(VERIFY, 'verify', { db: path.join(run, 'verify.db'), suiteMs: 20000, pull: JSON.stringify(process.execPath) + ' ' + JSON.stringify(probe) }, run);
   const rel = 'spirit/test/' + GREEN;
   // One run, handed and waited for; its outcome for the probe, read back through search.

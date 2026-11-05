@@ -8,7 +8,7 @@
 //   the shadow roll. That's a decision."
 //
 // Decision 0018, cycle R26. The shadow roll lives in
-// relay-state/node.db through node:sqlite, and RAM is its client. This
+// spirit/state/node.db through node:sqlite, and RAM is its client. This
 // suite asserts the store's contract directly — what seenPeers.js builds
 // on — the way relayStore.js's suite does for the relay.
 //
@@ -58,7 +58,7 @@ test.subHeading('A row survives the process, which is the whole point');
     test.fail('after reopen: ' + JSON.stringify(got) + ' route ' + JSON.stringify(route));
   }
 
-  if (fs.existsSync(path.join(H, 'relay-state', 'node.db'))) {
+  if (fs.existsSync(path.join(H, 'spirit', 'state', 'node.db'))) {
     test.check('and it is node.db under relay-state — the node\'s own file, not the relay\'s');
   } else {
     test.fail('no node.db at ' + nodeStore.dbPath(H));
@@ -67,7 +67,7 @@ test.subHeading('A row survives the process, which is the whole point');
   // NOT relay.db. A node and a relay are never the same process —
   // server.js hands off on --relay and loads no node code — so sharing a
   // file would be two schemas somewhere nothing can open both.
-  if (!fs.existsSync(path.join(H, 'relay-state', 'relay.db'))) {
+  if (!fs.existsSync(path.join(H, 'spirit', 'state', 'relay.db'))) {
     test.check('and opening a node store creates no relay store beside it');
   } else {
     test.fail('a relay.db appeared');
@@ -405,9 +405,9 @@ test.subHeading('A node.db from this morning still opens (R29 migration)');
   // on the peer row: one route, no via, no rank. Any node that has run
   // since has one, so this is a real migration and not a hypothetical.
   const oldHome = home();
-  fs.mkdirSync(path.join(oldHome, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(oldHome, 'spirit', 'state'), { recursive: true });
   const { DatabaseSync } = require('node:sqlite');
-  const raw = new DatabaseSync(path.join(oldHome, 'relay-state', 'node.db'));
+  const raw = new DatabaseSync(path.join(oldHome, 'spirit', 'state', 'node.db'));
   raw.exec('CREATE TABLE seen (' +
     'publicKey TEXT PRIMARY KEY,' +
     "at TEXT NOT NULL DEFAULT ''," +

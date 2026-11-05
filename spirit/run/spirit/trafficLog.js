@@ -105,14 +105,14 @@ const path = require('path');
 // One JSON object per line. The extension says so, which matters for a
 // file somebody is meant to be able to open and read.
 function logPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'traffic.jsonl');
+  return path.join(rootDir, 'spirit', 'state', 'traffic.jsonl');
 }
 
 // WHAT A LIVE NODE ALREADY HAS. The same courtesy routingTable.json paid
 // mailbox.json: read the old shape once on the way in, so a node that has
 // been running does not silently start from nothing. Never written again.
 function legacyPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'traffic.json');
+  return path.join(rootDir, 'spirit', 'state', 'traffic.json');
 }
 
 // Unreadable, missing or malformed all read as no history. A log that can

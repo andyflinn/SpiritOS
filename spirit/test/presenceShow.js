@@ -36,7 +36,7 @@ const path = require('path');
 const readline = require('readline');
 const scenarioGrammar = require('./scenario');
 // READ ONLY, and the same rule labPopulate carries at the top of itself:
-// the key in spirit/run/relay-state/identity.json owns
+// the key in spirit/run/spirit/state/identity.json owns
 // spirit.andyflinn.com. This file signs with it and never writes it.
 const auth = require('../run/spirit/relayAuth');
 

@@ -160,7 +160,7 @@ says, next to the floor and ceiling it already declares with reasons.
 
 ## Persistence, which was decided and is unchanged by this
 
-`relay-state/levers.json`, specified at `NODE-AND-RELAY.md:318` — *"Live
+`spirit/state/levers.json`, specified at `NODE-AND-RELAY.md:318` — *"Live
 settings persist to `relay-state/levers.json`, **never** to
 `config.json` — the file holding the protections is only ever written by
 a person with a shell"* — and required by `0013` (*"persist levers, not

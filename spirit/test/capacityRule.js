@@ -74,7 +74,7 @@ const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-caprule-'));
 let perRow = NaN;
 try {
   const store = relayStore.open(home);
-  const file = path.join(home, 'relay-state', 'relay.db');
+  const file = path.join(home, 'spirit', 'state', 'relay.db');
   const name = '"'.repeat(rules.MAX_BYTES);
   const id = auth.generateIdentity(name);
   id.name = name;

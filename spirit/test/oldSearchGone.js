@@ -45,8 +45,8 @@ else test.fail(OWED + 'jobs.search with no words answered ' + short(jall));
 
 test.subHeading('2. the box search ranks every box, the best match first');
 const boxes = load('boxes.js');
-fs.mkdirSync(path.join(scratch, 'relay-state'), { recursive: true });
-fs.writeFileSync(path.join(scratch, 'relay-state', 'servers.json'), JSON.stringify({ keys: ['K1', 'K2', 'K3'] }));
+fs.mkdirSync(path.join(scratch, 'spirit', 'state'), { recursive: true });
+fs.writeFileSync(path.join(scratch, 'spirit', 'state', 'servers.json'), JSON.stringify({ keys: ['K1', 'K2', 'K3'] }));
 const bx = boxes && boxes.createBoxes({ rootDir: scratch });
 const report = function (key, label, fp) { bx.onArrival({ fromKey: key, envelope: { body: { box: { boxLabel: label, fingerprint: fp, allottedMB: 1, boxTotalMB: 10 } } } }); };
 if (bx) { report('K1', 'Attic', 'fpA'); report('K2', 'Harbour box', 'fpH'); report('K3', 'Cellar', 'fpC'); }

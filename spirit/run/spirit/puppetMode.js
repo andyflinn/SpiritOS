@@ -14,9 +14,9 @@
 //   puppetDoor(opts)             the owner door: a signed command runs through the node's verbs (puppets/G7)
 //
 // A puppet is a node OWNED by another node's ID (Andy: "pupped is the fate of having an owner
-// that is not the self"). The owner's key is relay-state/owner.json, which no app can reach.
+// that is not the self"). The owner's key is spirit/state/owner.json, which no app can reach.
 
-// A node is a puppet when relay-state/owner.json names a key that is not its
+// A node is a puppet when spirit/state/owner.json names a key that is not its
 // own (Andy: "pupped is the fate of having an owner that is not the self").
 // Read on every call, so an owner edit is seen at once.
 function puppetIn(rootDir, log) {

@@ -4,7 +4,7 @@
 // THE RELAY'S DATA ON DISC — the store itself, and the tool that reads it.
 //
 // Cycle 3 (design/cycles/2026-09-19-disc-and-owner-token-cycle-3.md): the
-// roll and the invites live in relay-state/relay.db and RAM is their
+// roll and the invites live in spirit/state/relay.db and RAM is their
 // client. (The partner roll lived there too until partnering went, Andy's
 // decision goal/G22.6; an old database that still holds the table opens
 // and keeps working.) This suite asserts the store's contract directly —
@@ -99,9 +99,9 @@ test.subHeading('A relay.db that still holds a partner roll (goal/G22.6)');
   // The schema a relay shipped with, built by hand rather than mocked, with
   // a member and a partner row in it, then opened by today's code.
   const oldHome = home();
-  fs.mkdirSync(path.join(oldHome, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(oldHome, 'spirit', 'state'), { recursive: true });
   const { DatabaseSync } = require('node:sqlite');
-  const raw = new DatabaseSync(path.join(oldHome, 'relay-state', 'relay.db'));
+  const raw = new DatabaseSync(path.join(oldHome, 'spirit', 'state', 'relay.db'));
   raw.exec(`
     CREATE TABLE partners (
       relayKey TEXT PRIMARY KEY,
@@ -117,7 +117,7 @@ test.subHeading('A relay.db that still holds a partner roll (goal/G22.6)');
 
   const opened = relayStore.open(oldHome);
   opened.members.put({ publicKey: 'OLD-K', publicLabel: 'old', claimedAt: '2026-09-01' });
-  const kept = new DatabaseSync(path.join(oldHome, 'relay-state', 'relay.db'), { readOnly: true });
+  const kept = new DatabaseSync(path.join(oldHome, 'spirit', 'state', 'relay.db'), { readOnly: true });
   const left = kept.prepare('SELECT COUNT(*) AS n FROM partners').get().n;
   kept.close();
   if (opened.members.get('OLD-K') && opened.partners === undefined && left === 1) {
@@ -131,7 +131,7 @@ test.subHeading('A relay.db that still holds a partner roll (goal/G22.6)');
   // A FRESH relay.db has no partners table at all.
   const fresh = home();
   relayStore.open(fresh).close();
-  const f = new DatabaseSync(path.join(fresh, 'relay-state', 'relay.db'), { readOnly: true });
+  const f = new DatabaseSync(path.join(fresh, 'spirit', 'state', 'relay.db'), { readOnly: true });
   const tables = f.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all()
     .map(function (r) { return r.name; });
   f.close();
@@ -159,7 +159,7 @@ test.subHeading('Deleted means gone from the file');
 // secure_delete: a removed row's bytes are zeroed, not left in a free page.
 s.members.put({ publicKey: 'K9', publicLabel: '+15550199', claimedAt: '' });
 s.members.remove('K9');
-const bytes = fs.readFileSync(path.join(H, 'relay-state', 'relay.db')).toString('latin1');
+const bytes = fs.readFileSync(path.join(H, 'spirit', 'state', 'relay.db')).toString('latin1');
 if (bytes.indexOf('+15550199') === -1) {
   test.check('a removed member\'s label is not readable in relay.db');
 } else {
@@ -240,9 +240,9 @@ test.subHeading('A relay.db from cycle 3 loses the owner column, once');
 // owner is. Ownership is only determined by one identified key."
 {
   const old = home();
-  fs.mkdirSync(path.join(old, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(old, 'spirit', 'state'), { recursive: true });
   const sqlite = require('node:sqlite');
-  const file = path.join(old, 'relay-state', 'relay.db');
+  const file = path.join(old, 'spirit', 'state', 'relay.db');
   const raw = new sqlite.DatabaseSync(file);
   raw.exec(`CREATE TABLE members (publicKey TEXT PRIMARY KEY, publicLabel TEXT NOT NULL DEFAULT '',
     labelNorm TEXT NOT NULL DEFAULT '', claimedAt TEXT NOT NULL DEFAULT '', owner INTEGER NOT NULL DEFAULT 0)`);

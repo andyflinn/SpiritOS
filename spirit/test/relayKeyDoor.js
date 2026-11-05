@@ -50,7 +50,7 @@ const { createRelay } = require('../run/spirit/relay');
 
 function boxWith(count) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-keydoor-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('owner');
@@ -76,7 +76,7 @@ function nodeAgainst(box, opts) {
   // spelled here: a fresh answerer (so the RAM cache is cold) reading a
   // relay-state that already holds a pin.
   const home = opts.home || fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-keynode-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   if (!opts.home) auth.saveIdentity(home, auth.generateIdentity('node'));
 
   const asked = [];

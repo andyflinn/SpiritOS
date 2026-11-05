@@ -488,7 +488,7 @@ human makes. Replaying from the traffic log would hand an unaccepted
 stranger's packet straight to an app and walk the front door back.
 `arrivals` is the only thing that sees both *admitted* and *delivered to
 a page*, so the backlog lives there —
-`relay-state/pendingArrivals.json`, gitignored, unservable, unwritable,
+`spirit/state/pendingArrivals.json`, gitignored, unservable, unwritable,
 temp-file-then-rename.
 
 **AND NO CLOCK — corrected the same day.** It shipped with a 24-hour
@@ -662,7 +662,7 @@ really landed is doing its job; that is the difference between checking a
 claim and depending on a shape.
 
 **It was written because it had already been broken.** `arrivals.js` grew
-its own `relay-state/pendingArrivals.json` beside the traffic log — two
+its own `spirit/state/pendingArrivals.json` beside the traffic log — two
 copies of *what is still waiting*, able to drift — and the commit message
 for R13 claimed the fold had happened when it had not. A claim in prose
 is not a check. `arrivals.js` now keeps nothing on disk and reaches the
@@ -808,7 +808,7 @@ must be red before wsl pulls the implementation, and green after"*).
 
 **The direction, Andy's, 2026-09-27:** the traffic log *"belongs into the
 database, which also allows log access to be optimized"*. Today it is
-`relay-state/traffic.jsonl`, one append-only file that every read scans
+`spirit/state/traffic.jsonl`, one append-only file that every read scans
 whole (`spirit/run/js/trafficLog.js:108`), beside `node.db`.
 
 **Decided (2026-09-28, Andy):**

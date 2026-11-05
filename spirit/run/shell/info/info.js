@@ -4,7 +4,7 @@
 //   Andy: "i want an intrinsic app info, in which, for now the user can
 //   maintain both fields in this file, more to come."
 //
-// The two fields are `name` and `description` in relay-state/identity.json,
+// The two fields are `name` and `description` in spirit/state/identity.json,
 // and they are the ONLY two things this node answers to a stranger who
 // asks (js/nodeCard.js). That is what makes them one screen rather than a
 // row in a settings list: a person editing them is deciding what somebody

@@ -71,8 +71,8 @@ async function dataset() {
       .listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
   });
   const runRoot = path.join(scratch, 'run');
-  fs.mkdirSync(path.join(runRoot, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(runRoot, 'relay-state', 'environment.json'), JSON.stringify({ PORT: deskNode.port }));
+  fs.mkdirSync(path.join(runRoot, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(runRoot, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: deskNode.port }));
   const kid = spawn(process.execPath, [SERVER, JSON.stringify({ db: db }), '--pipe', pipe, '--state', state], { cwd: runRoot, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   kid.once('exit', function () { deskNode.close(); });
   let up = false;

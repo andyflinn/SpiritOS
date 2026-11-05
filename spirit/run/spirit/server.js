@@ -10,6 +10,8 @@
 // `node spirit/server.js --relay`. Changing that is a deploy decision (Andy's),
 // not part of the split. (The Procfile and install-public-relay.js did too,
 // until both went in cycle 3.)
+// relay-state's own files first (goal/G43.8): spirit.js reads environment.json as it loads.
+require('./shellMove').moveRelayState(require('path').join(__dirname, '..'));
 // The spirit object first, as the global spirit (goal/G40.1): the relay loads it too, so it comes before the branch.
 require('../spirit.js');
 if (process.argv.slice(2).includes('--relay')) {
@@ -46,7 +48,7 @@ const contactBook = require('./contacts');
 // a packet arrived on into the relay KEY a route is made of.
 const relayKeys = require('./relayKeys');
 // Where this node keeps its mail. Required here for one call at boot:
-// a node with no relay list (relay-state/relays.json) is given one.
+// a node with no relay list (spirit/state/relays.json) is given one.
 const ownerBadge = require('./ownerBadge');
 // Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
 // again later would report whatever is on disk now, which is the lie
@@ -95,7 +97,7 @@ require('./shellMove').moveAppState(ROOT_DIR);
 const hub =require('./hub').createHub(ROOT_DIR);
 
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.DEFAULT_SPIRIT_PORT;
-// This node's port into relay-state/environment.json, before any server process starts (goal/G40.6: serveCommon writes
+// This node's port into spirit/state/environment.json, before any server process starts (goal/G40.6: serveCommon writes
 // it, nothing else).
 common.writeEnvironment(ROOT_DIR, port);
 
@@ -509,7 +511,7 @@ function handleFsAnnotate(req, res) {
 }
 
 // NO SECRETS AND NO ALLOW LIST HERE (goal/G29.20). envSecrets.js (the env-variable key fill) and proxyList.js (the
-// owner's list and its gate, relay-state/proxy.json) are gone with the proxy verbs. Andy, 2026-10-18: "remove all the
+// owner's list and its gate, spirit/state/proxy.json) are gone with the proxy verbs. Andy, 2026-10-18: "remove all the
 // env logic and allow-list crap from it at well"; secrets will live in a later module that manages API keys and
 // secrets in a general fashion, the node being the owner.
 // net.fetch never reaches this machine (goal/G29.20).
@@ -1050,7 +1052,7 @@ common.refuseListenError(server, port, 'spirit/server.js');
 //   Andy: "we need no peer review for allowing a database to be used for
 //   the shadow roll. That's a decision."
 //
-// The shadow roll lives in relay-state/node.db through node:sqlite
+// The shadow roll lives in spirit/state/node.db through node:sqlite
 // (nodeStore.js), and there is no in-memory copy to fall back on — a
 // second implementation would be a code path the product never runs and
 // every suite would silently test instead.
@@ -1082,7 +1084,7 @@ catch (e) {
 // size.
 (function () {
   const settings = require('./nodeSettings').load(ROOT_DIR);
-  settings.problems.forEach(function (why) { console.warn('relay-state/node.json: ' + why); });
+  settings.problems.forEach(function (why) { console.warn('spirit/state/node.json: ' + why); });
 }());
 
 // THE BOOK'S ROUTES AND MARKS WERE MOVED HERE AT BOOT (cycle R1, 0021) until goal/G40.11: contacts.json is a set of
@@ -1318,7 +1320,7 @@ catch (e) {
   // Two branches stood here until then: nodeApps.mountAll, which loaded a shell app with
   // "boots": true into the node with seams of its own, and appClient.startAll, which spawned
   // spirit/server.js --app for a manifest with "serves": true; and puppetPost.js, the node's own
-  // listener for Caddy, switched on by relay-state/face.json. All three are gone.
+  // listener for Caddy, switched on by spirit/state/face.json. All three are gone.
   const appClient = require('./appClient').createAppClient({
     rootDir: ROOT_DIR,
     log: function (line) { console.log(line); },
@@ -1347,7 +1349,7 @@ catch (e) {
 
   // ── THE OWNER DOOR (puppets/G7, slice 1) ───────────────────────────
   //
-  // Silent on a node that is not a puppet (no relay-state/owner.json naming
+  // Silent on a node that is not a puppet (no spirit/state/owner.json naming
   // another key), which is every node but a puppet. On a puppet, a command
   // its owner signed runs through the same handlers the loopback door uses.
   // puppetMode.puppetDoor says the rest.

@@ -221,7 +221,7 @@ var RATE_KEY_SWEEP_AT = 1000;
 //
 // routingTable.json STOOD HERE — read whole at boot into a map, rewritten
 // whole on every claim, rename and removal. The roll and the invites are
-// tables in relay-state/relay.db now (relayStore.js), and
+// tables in spirit/state/relay.db now (relayStore.js), and
 // every question about them is a query. A relay that still holds the old
 // file imports it once and keeps it as routingTable.json.imported (D8, see
 // design/DEPRECATIONS.md); its legacy handling (D1) went with the reader.
@@ -496,7 +496,7 @@ function createRelay(rootDir, deps) {
   //
   // ONE REQUEST MAY BE AIMED AT A MEMBER AT A TIME, and that number is
   // router.js's, not this file's and not the owner's. It was briefly read
-  // from relay-state/config.json; a limit an owner can widen is not a
+  // from spirit/state/config.json; a limit an owner can widen is not a
   // limit (2026-09-21), and it bounds what a STRANGER may aim at a member,
   // so it protects parties other than the owner. Counted per sender
   // (goal/G22.6, M5 of the review of 2026-10-10): one sender holding a
@@ -525,7 +525,7 @@ function createRelay(rootDir, deps) {
   // can grow back from it.
   //
   // Present only when the startup module handed this relay a
-  // configuration (relayServer.js reads relay-state/config.json); a relay
+  // configuration (relayServer.js reads spirit/state/config.json); a relay
   // built without one — every in-process suite — has no allowance.
   var config = deps.config || null;
   var atRestMB = 0;
@@ -819,7 +819,7 @@ function createRelay(rootDir, deps) {
 
     var wrote = writeConfig(checked.config);
     if (!wrote) {
-      return { ok: false, status: 500, error: 'could not write relay-state/config.json' };
+      return { ok: false, status: 500, error: 'could not write spirit/state/config.json' };
     }
 
     // THE RELAY MOVES ITS OWN SERVICE CAP (goal/G40.4), to twice the limit it runs on. Andy, 2026-10-24: "the relay
@@ -1193,7 +1193,7 @@ function createRelay(rootDir, deps) {
     };
   }
 
-  // THE RELAY'S OWNER WRITER STOOD HERE: relay-state/owner.json written on
+  // THE RELAY'S OWNER WRITER STOOD HERE: spirit/state/owner.json written on
   // the strength of a claim. goal/G16.8 removed it, and nothing in the
   // relay writes the owner file any more — bash/install-units does, before
   // the relay ever serves. Andy, 2026-10-10: "the relays should do
@@ -1348,7 +1348,7 @@ function createRelay(rootDir, deps) {
     // ── AN UNOWNED RELAY TAKES NO CLAIM AT ALL (goal/G16.8) ─────────────
     //
     // A relay gets its owner at install time and in no other way: the
-    // install writes relay-state/owner.json from the OWNER_KEY it is given
+    // install writes spirit/state/owner.json from the OWNER_KEY it is given
     // (bash/install-units). There is no claim, token or invite that makes an
     // owner over the wire. Andy: "the invite path to ownership MUST be gone.
     // it is a security gap, from the time of install until the time of first
@@ -4199,13 +4199,13 @@ function createRelay(rootDir, deps) {
   // relay's memory, valid until 7 days after the last interaction ("the login expires after it is idle for 7 days");
   // Log out ends it. NOT ON DISC: a stored shape would be new, so a relay restart logs faces out.
   //
-  // THE DOMAIN is the owner's to say, in relay-state/face.json {domain}, placed as mail.json is (bash/face-setup
+  // THE DOMAIN is the owner's to say, in spirit/state/face.json {domain}, placed as mail.json is (bash/face-setup
   // writes it). Without it the relay serves no face.
   var FACE_TOKEN_MS = 10 * 60 * 1000;
   var FACE_IDLE_MS = 7 * 24 * 60 * 60 * 1000;
   var faceDomain = (function () {
     try {
-      var f = JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'face.json'), 'utf8'));
+      var f = JSON.parse(fs.readFileSync(path.join(rootDir, 'spirit', 'state', 'face.json'), 'utf8'));
       return String((f && f.domain) || '').trim().toLowerCase().replace(/\.$/, '');
     } catch (e) { return ''; }
   }());

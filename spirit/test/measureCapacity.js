@@ -179,7 +179,7 @@ function discPerRow() {
 
   const rh = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cap-relay-'));
   const rstore = relayStore.open(rh);
-  const rfile = path.join(rh, 'relay-state', 'relay.db');
+  const rfile = path.join(rh, 'spirit', 'state', 'relay.db');
   out.emptyRelayDb = fs.statSync(rfile).size;
   const M = 5000;
   rstore.transaction(function () {
@@ -245,7 +245,7 @@ function discPerRow() {
 
   const nh = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cap-node-'));
   const nstore = nodeStore.open(nh);
-  const nfile = path.join(nh, 'relay-state', 'node.db');
+  const nfile = path.join(nh, 'spirit', 'state', 'node.db');
   out.emptyNodeDb = fs.statSync(nfile).size;
   // ── TWO ROWS, BECAUSE THERE ARE TWO STATES ───────────────────
   //
@@ -293,7 +293,7 @@ function discPerRow() {
   // Written through the real logger rather than by composing a line here,
   // so the measurement includes whatever the logger actually writes.
   const th = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cap-log-'));
-  fs.mkdirSync(path.join(th, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(th, 'spirit', 'state'), { recursive: true });
   const traffic = require('../run/spirit/trafficLog').createTrafficLog({ rootDir: th });
   // A FLOOR, NOT THE FIGURE. These entries are composed here, so they
   // carry a short relay URL and no label; a working node's log measured

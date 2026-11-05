@@ -386,7 +386,7 @@ const RUN_ROOT = path.resolve(__dirname, '..');
 // THE CACHE (box v15). "Only a client caches. Auto-cache is one switch on the client's serve(), with a limit the client
 // sets, 4 MB per sender by default." opts.stream.cache: true, or { limit } in bytes. "The cache keeps everything the
 // server sends, every goal, no filtering on the client side", per sender, in
-// relay-state/<client server>/<sender key in base64url>.json under the run root (goal/G41.28), saved as it changes and read
+// spirit/state/<client server>/<sender key in base64url>.json under the run root (goal/G41.28), saved as it changes and read
 // back into the data set at the start, before any subscribe. The rows are kept as the sender sent them.
 // THE SENDER'S OWN api.js DOES THE CACHE'S WORK (box v15: "That api.js is the client's own: its appServer takes it from
 // the client's node ... never from the working folder and never the text a peer sends. No peer's code runs in the
@@ -410,7 +410,7 @@ const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
 // THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28; Andy, the box: "this way an appServer in client-mode can derive the
 // name of it's ./relay-state/<appServerName>/<server-public-key-in-base64url>.json"): the key as spirit.data names the node.
-function cacheDir() { return path.join(RUN_ROOT, 'relay-state', following.name); }
+function cacheDir() { return path.join(RUN_ROOT, 'spirit', 'state', following.name); }
 function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '.json'); }
 // The sender's cache rules on this node, or null: none there, no cache. They are its family folder's
 // data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
@@ -897,7 +897,7 @@ function saveCaches() {
 }
 
 // THE NODE'S FACTS ON THE SPIRIT OBJECT (goal/G19.10, goal/G40.6): its port, name, key and owner are spirit.node, which
-// spirit.js reads itself as it is required: the port from relay-state/environment.json, the rest from --node.
+// spirit.js reads itself as it is required: the port from spirit/state/environment.json, the rest from --node.
 
 module.exports = {
   // goal/G33.4: the data set a following server keeps (spirit/data.js), filled by its stream's translator.

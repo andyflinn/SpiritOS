@@ -93,7 +93,7 @@ This is the part worth keeping. Every one of these was a suite passing for the
 wrong reason, which is the only kind of bug a test suite can have.
 
 **1. The relay wore its owner's key.** `world.js` saved the owner's identity into
-the relay's home. But `relay-state/identity.json` in a relay home is the
+the relay's home. But `spirit/state/identity.json` in a relay home is the
 **mailbox's own** key — [`server.js`](../../spirit/run/js/server.js) makes it
 with `ensureIdentity(ROOT_DIR, 'relay')` on the first `--relay` boot, and
 `relay.js` says so at `mailboxPublicKey()`: *"the owner is a peer who claimed,

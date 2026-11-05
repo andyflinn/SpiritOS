@@ -51,7 +51,7 @@ function ask(what, a) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer from the node in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
   // Through the one spirit object (goal/G32.3, goal/G40.6): the deskClient verb by its name, as {status, body}, on this
-  // checkout's own node (spirit.js: the port of its relay-state/environment.json).
+  // checkout's own node (spirit.js: the port of its spirit/state/environment.json).
   const asked = spirit.outcome(spirit.require(spirit.familyPath('deskClient')).then(function (c) {
     if (typeof c[what] !== 'function') throw Object.assign(new Error('deskClient has no verb ' + what), { code: 'no-such-verb' });
     return c[what](a);

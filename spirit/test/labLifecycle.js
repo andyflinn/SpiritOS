@@ -183,7 +183,7 @@ async function run() {
     const fs2 = require('fs');
     const path2 = require('path');
     const cfgPath = path2.join(require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME,
-      'spirit', 'run', 'relay-state', 'config.json');
+      'spirit', 'run', 'spirit', 'state', 'config.json');
     let cfg = null;
     try { cfg = JSON.parse(fs2.readFileSync(cfgPath, 'utf8')); } catch (e) { cfg = null; }
     if (cfg && cfg.ramLimitMB === 1 && cfg.discLimitMB === 1) {
@@ -276,10 +276,10 @@ async function run() {
     // the file is written the way labWorld writes one.
     //
     // No restart needed: ownerBadge.loadRelays reads the file per call.
-    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-    fs.mkdirSync(path.join(avatarHome, 'relay-state'), { recursive: true });
+    // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+    fs.mkdirSync(path.join(avatarHome, 'spirit', 'state'), { recursive: true });
     fs.writeFileSync(
-      path.join(avatarHome, 'relay-state', 'relays.json'),
+      path.join(avatarHome, 'spirit', 'state', 'relays.json'),
       JSON.stringify([{ label: 'ping', url: 'http://127.0.0.1:' + RELAY_PORT }], null, 2)
     );
 

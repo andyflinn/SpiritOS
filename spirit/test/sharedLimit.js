@@ -119,9 +119,9 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
   // ── 3. the node's jobs.update door ───────────────────────────────────
   test.subHeading('3. the node\'s jobs.update door refuses an oversized body by name');
   const root = setupRelayFakes('sharedLimit').andy;
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
+  // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   const port = await freePort();
   const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const post = function (body) {

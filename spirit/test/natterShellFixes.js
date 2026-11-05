@@ -12,7 +12,7 @@
 //   - First-run defaults live in serveCommon, called at boot by the node and the relay alike: an identity with no
 //     description gets the first description (moved from nodeCard ensureDescription, worded for a node or a relay),
 //     and a relay with no public label gets a first one.
-//   - On boot, if the owner (relay-state/owner.json) has no seat, the relay creates one: label owner.
+//   - On boot, if the owner (spirit/state/owner.json) has no seat, the relay creates one: label owner.
 //   - Relays are peers: a relay is a peer in the shadow (seenPeers) with its key, its label and its own URL as route;
 //     each row carries kind, node or relay. peer.search finds both; the Contacts app's list of peers seen gains a
 //     relay filter, and a click on a relay opens natterDetails. The seeded relay (noderoutes.net) enters the shadow at

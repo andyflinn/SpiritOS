@@ -19,7 +19,7 @@
 //   objection): identity.json holds the private keys, so the backup never
 //   opens it. jobs.startNodeServers hands every server it starts
 //   --node '{"name","publicKey"}', and nothing private.
-//   Home: relay-state/config.json spiritHome, else os.homedir(). The copy of
+//   Home: spirit/state/config.json spiritHome, else os.homedir(). The copy of
 //   relay-state/process/<x> lands in <home>/backups/<node>/relay-state/
 //   process/<x>, <node> the first 12 hex of sha256(identity.publicKey), with
 //   <home>/backups/<node>/node.json {name, publicKey}.
@@ -131,7 +131,7 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   other.exec('CREATE TABLE t (v TEXT); INSERT INTO t VALUES (\'good\');');
   other.close();
   // A PROCESS'S OWN KEY, where a process may keep one: relay-state/
-  // process/<name>/relay-state/identity.json (wsl-claude, reviewing
+  // process/<name>/spirit/state/identity.json (wsl-claude, reviewing
   // 17140917: the first restart copied a face's into the backup). Private
   // keys stay out of any backup, so T2 must never find it.
   const faceKeys = path.join(A.rs, 'process', 'someServer', 'relay-state');
@@ -265,7 +265,7 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   test.subHeading('The node hands every server it starts --node, its name and public key, nothing private');
   const probeRun = path.join(scratch, 'probe', 'spirit', 'run');
   fs.mkdirSync(path.join(probeRun, 'process', 'js', 'probe'), { recursive: true });
-  fs.mkdirSync(path.join(probeRun, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(probeRun, 'spirit', 'state'), { recursive: true });
   const auth = require('../run/spirit/relayAuth.js');
   const probeId = auth.generateIdentity('probe-node');
   auth.saveIdentity(probeRun, probeId);
@@ -314,7 +314,7 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
     test.check('a node nobody named hands its server --node with the machine name and its public key, and no private key');
   } else test.fail(OWED + 'a node nobody named started its server with ' + JSON.stringify(bare && bare.map(function (a) { return String(a).slice(0, 50); })));
 
-  test.subHeading('T10: spiritHome in relay-state/config.json moves the whole .SpiritOS folder');
+  test.subHeading('T10: spiritHome in spirit/state/config.json moves the whole .SpiritOS folder');
   const elsewhere = path.join(scratch, 'elsewhere');
   const C = plantNode('gamma', { spiritHome: elsewhere });
   const srvC = start(C);

@@ -23,7 +23,7 @@ const world = require('./world');
 // is a row of node.db's one table, seen, flagged relay, and its url a direct route in seen_routes (via empty, at the
 // relay's own key): the route is the pin.
 function disc(home) {
-  const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'relay-state', 'node.db'), { readOnly: true });
+  const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'spirit', 'state', 'node.db'), { readOnly: true });
   try {
     const out = {};
     db.prepare("SELECT r.url AS url, s.publicKey AS key, s.firstSeen AS firstSeen, s.relay AS relay FROM seen_routes r JOIN seen s ON s.publicKey = r.publicKey WHERE r.via = '' AND r.at = r.publicKey AND r.url <> ''").all().forEach(function (r) {
@@ -33,7 +33,7 @@ function disc(home) {
   } finally { db.close(); }
 }
 function row(home, key) {
-  const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'relay-state', 'node.db'), { readOnly: true });
+  const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'spirit', 'state', 'node.db'), { readOnly: true });
   try { return db.prepare('SELECT * FROM seen WHERE publicKey = ?').get(key) || null; } finally { db.close(); }
 }
 
@@ -177,8 +177,8 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
   // new and has to be accepted again. The other direction — reading as a match — would trust a stranger because a file
   // went bad. Since goal/G40.11 relayKeys.json is not read at all.
   const broken = world.tmpHome('relaykeys-broken');
-  fs.mkdirSync(path.join(broken, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(broken, 'relay-state', 'relayKeys.json'), '{ not json');
+  fs.mkdirSync(path.join(broken, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(broken, 'spirit', 'state', 'relayKeys.json'), '{ not json');
   if (relayKeys.check(broken, URL_A, KEY_1) === 'new' &&
       Object.keys(relayKeys.acceptedKeys(broken)).length === 0) {
     test.check('an unreadable file reads as nothing pinned, never as a match');
@@ -189,8 +189,8 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
   // A JSON array is valid JSON and is not a book. Shape is checked, not
   // just parseability.
   const wrong = world.tmpHome('relaykeys-wrong');
-  fs.mkdirSync(path.join(wrong, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(wrong, 'relay-state', 'relayKeys.json'), '["a","b"]');
+  fs.mkdirSync(path.join(wrong, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(wrong, 'spirit', 'state', 'relayKeys.json'), '["a","b"]');
   if (relayKeys.check(wrong, URL_A, KEY_1) === 'new') {
     test.check('and so does a file that parses but is the wrong shape');
   } else {

@@ -5,7 +5,7 @@
 // rule, where it runs, the one instance, every member of it, its node, the one loader, and that a module not loading
 // spirit.js first goes red. Everything is asked of the one instance, in node and on a page: there is nothing else.
 //   - In node, the instance itself for what needs no node; and, for what talks to a node, the instance of a scratch
-//     copy of the run root whose relay-state/environment.json names a fake node this suite runs (and one that names
+//     copy of the run root whose spirit/state/environment.json names a fake node this suite runs (and one that names
 //     none), since "the port is fetched from \relay-state\environment.json" of the run root spirit.js sits in.
 //   - On a page: spirit.js's own source run as face.html runs it, in a window of its own, with no module, no process and
 //     no require, its node the page's own origin.
@@ -98,8 +98,8 @@ function scratchRoot(port) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-root-'));
   fs.copyFileSync(path.join(RUN, 'spirit.js'), path.join(root, 'spirit.js'));
   fs.cpSync(path.join(RUN, 'spirit'), path.join(root, 'spirit'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'relay-state'));
-  if (port) fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: port }));
+  fs.mkdirSync(path.join(root, 'spirit', 'state'));
+  if (port) fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: port }));
   return root;
 }
 // What a node process sees through the instance of that root: run in a process of its own, its observations as JSON.

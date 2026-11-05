@@ -155,7 +155,7 @@ Does not change anything. First command after SSH.
 OWNER_KEY=<the owner node's public key, MCow...> ./bash/install-units
 ```
 
-Writes `relay-state/owner.json` from `OWNER_KEY`, then copies
+Writes `spirit/state/owner.json` from `OWNER_KEY`, then copies
 `bash/systemd/spirit-relay.service` to
 `/etc/systemd/system/spirit-relay.service`, rewriting `/root/SpiritOS`
 to this clone’s path, then `daemon-reload`. Does not start the process.

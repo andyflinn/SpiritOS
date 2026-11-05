@@ -19,7 +19,7 @@
 //
 // ── WHAT LIVES HERE, AND WHAT MUST NOT ───────────────────────────────
 //
-//   relay-state/node.db     the shadow roll (this cycle). The post queue
+//   spirit/state/node.db     the shadow roll (this cycle). The post queue
 //                           (R16) and the owner's cache cap (R31) join it.
 //
 // CONTACTS ARE HERE SINCE goal/G40.11 (Andy's box, v24: "contacts.json, the relays table and the peers table move
@@ -102,7 +102,7 @@ function driver() {
 const open_ = new Map();
 
 function dbPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'node.db');
+  return path.join(rootDir, 'spirit', 'state', 'node.db');
 }
 
 // The node log's fields, in the order trafficLog.js writes them, each with
@@ -210,7 +210,7 @@ function open(rootDir, opts) {
   if (open_.has(key)) return open_.get(key);
   const maxRoutes = (opts && opts.maxRoutes) || MAX_ROUTES;
 
-  fs.mkdirSync(path.join(rootDir, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'spirit', 'state'), { recursive: true });
   const db = new (driver().DatabaseSync)(dbPath(rootDir));
   db.exec('PRAGMA journal_mode = DELETE');
   db.exec('PRAGMA synchronous = FULL');

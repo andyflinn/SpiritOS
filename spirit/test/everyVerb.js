@@ -37,15 +37,15 @@ const BOOT_TIMEOUT_MS = 10000;
 const root = setupRelayFakes('everyVerb').andy;
 // No real relay: relays.json is tracked, so the fakes carry the production
 // list (serverSurface.js explains the cost of forgetting this).
-// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'),
+// goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'),
   JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 
 // For fs.search's gate: a private file the search must never name, and a
 // link inside a servable folder pointing at it, which the walk must not follow.
-fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-fs.writeFileSync(path.join(root, 'relay-state', 'secret-probe.json'), '{}');
+fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+fs.writeFileSync(path.join(root, 'spirit', 'state', 'secret-probe.json'), '{}');
 let linked = true;
 // The fakes' folder is reused between runs, so an old link is removed first.
 try { fs.unlinkSync(path.join(root, 'shell', 'desk', 'linkout')); } catch (e) { /* none yet */ }

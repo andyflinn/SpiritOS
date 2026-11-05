@@ -252,7 +252,7 @@ test.subHeading('6. the relay\'s identity is written whole or not at all');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-idwrite-'));
   const id = auth.generateIdentity('relay');
   auth.saveIdentity(home, id);
-  const file = path.join(home, 'relay-state', 'identity.json');
+  const file = path.join(home, 'spirit', 'state', 'identity.json');
 
   // It still works, whatever the write becomes.
   const back = auth.loadIdentity(home);

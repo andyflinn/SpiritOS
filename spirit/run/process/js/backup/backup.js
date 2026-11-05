@@ -14,7 +14,7 @@
 //     private keys, so this process never opens it.
 //   - the copy lands in <spiritHome>/backups/<12 hex of sha256(publicKey)>/,
 //     mirroring the checkout's paths, with node.json naming the node.
-//     spiritHome is relay-state/config.json's, else <home>/.SpiritOS.
+//     spiritHome is spirit/state/config.json's, else <home>/.SpiritOS.
 //   - it runs once at start, then after each change under relay-state/
 //     process/ once quiet for quietMs. Its own state folder is neither
 //     watched nor copied, or it would start itself.
@@ -57,7 +57,7 @@ const OWN = path.basename(STATE);
 fs.mkdirSync(STATE, { recursive: true });
 
 function spiritHome() {
-  const cfg = parsed(readText(path.join(RELAY_STATE, 'config.json')), {}) || {};
+  const cfg = parsed(readText(path.join(path.dirname(RELAY_STATE), 'spirit', 'state', 'config.json')), {}) || {};
   return cfg.spiritHome ? String(cfg.spiritHome) : path.join(os.homedir(), '.SpiritOS');
 }
 function readText(file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } }

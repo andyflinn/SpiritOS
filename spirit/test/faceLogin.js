@@ -15,7 +15,7 @@
 //     is no longer waiting for plumbing". The second step is the link to the home node, checked below as that.)
 //   - Certificates, DNS and Caddy on the relay box come from scripts in ./bash.
 // NAMED HERE where the box names none:
-//   - relay-state/face.json { "domain": "<relay host>" }, placed by the owner as mail.json is (bash/face-setup writes
+//   - spirit/state/face.json { "domain": "<relay host>" }, placed by the owner as mail.json is (bash/face-setup writes
 //     it). Without it the relay serves no face.
 //   - createRelay(...) answers faceAt(host) -> { ok, name } when that host is a face the relay serves now;
 //     faceLogin(name, text) -> { ok: true, loggedIn, session? } (a token logs in; the member's email gets a mail; the
@@ -51,8 +51,8 @@ plant.ensureAt(home, 'relay');
 const owner = auth.generateIdentity('andy');
 const bert = auth.generateIdentity('bert');
 auth.writeOwner(home, owner.publicKey);
-fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-fs.writeFileSync(path.join(home, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
+fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
+fs.writeFileSync(path.join(home, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
 const mails = [];
 let now = Date.now();
 let box = null;

@@ -3,7 +3,7 @@
 // spirit/run/spirit/relayDump.js
 // WHAT A RELAY HOLDS, ASKED OVER SSH — read-only, until cycle 4's monitor.
 //
-// Cycle 3 moved the relay's data into relay-state/relay.db (relayStore.js),
+// Cycle 3 moved the relay's data into spirit/state/relay.db (relayStore.js),
 // so `cat routingTable.json` no longer answers anything. This is what an
 // owner types instead:
 //
@@ -38,7 +38,7 @@ function run(rootDir, args, out) {
   }
   const store = relayStore.openReadOnly(rootDir);
   if (!store) {
-    out('no relay.db under ' + path.join(rootDir, 'relay-state'));
+    out('no relay.db under ' + path.join(rootDir, 'spirit', 'state'));
     return 1;
   }
   try {

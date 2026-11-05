@@ -65,7 +65,7 @@ function sinkFor(bag) {
 // which is exactly the state every live box is in today.
 function worldBeforeTheFlagDay() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-membercard-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('andy');

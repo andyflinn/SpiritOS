@@ -83,7 +83,7 @@ const node = http.createServer(function (req, res) {
 
 const root = path.join(scratch, 'verify');
 const state = path.join(root, 'state');
-fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
 fs.mkdirSync(state, { recursive: true });
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'deskVerify', 'win32', 'process') : path.join(root, 'door.sock');
 const client = appClient.createAppClient({ rootDir: root });
@@ -105,7 +105,7 @@ const answerBytes = function (r) { return Buffer.byteLength(JSON.stringify(r.bod
 async function main() {
   const seeded = seed();
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
-  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.address().port }));
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.address().port }));
   kid = spawn(process.execPath, [VERIFY, JSON.stringify({ db: dbPath, repo: repo, suiteMs: 120000, idleCheckMs: 600000, pull: '"' + process.execPath + '" "' + pullProbe + '"' }),
     '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'runs-search-verify', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.address().port + '/api/spirit' }) });

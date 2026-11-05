@@ -90,7 +90,7 @@ test.startTest('A fixture node the labMaster starts never writes into the real h
   let tag = '';
   for (let i = 0; i < 80 && !tag; i++) {
     await sleep(250);
-    try { tag = crypto.createHash('sha256').update(JSON.parse(fs.readFileSync(path.join(home, 'relay-state', 'identity.json'), 'utf8')).publicKey).digest('hex').slice(0, 12); } catch (e) { tag = ''; }
+    try { tag = crypto.createHash('sha256').update(JSON.parse(fs.readFileSync(path.join(home, 'spirit', 'state', 'identity.json'), 'utf8')).publicKey).digest('hex').slice(0, 12); } catch (e) { tag = ''; }
   }
   const realCopy = path.join(REAL, '.SpiritOS', 'backups', tag || 'none');
   let inFixture = [];

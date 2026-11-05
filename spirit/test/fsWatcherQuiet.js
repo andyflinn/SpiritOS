@@ -8,7 +8,7 @@
 //
 // It watches rootDir recursively, and rootDir is where the running node
 // keeps its own state: Relay Chat polls its inbox every two seconds and
-// every poll rewrites relay-state/who.json. Each of those woke the
+// every poll rewrites spirit/state/who.json. Each of those woke the
 // watcher, which rescanned and emitted a job-updated carrying a file
 // list byte-identical to the one before it — the payload holds name,
 // parentPath, fullPath, relativePath and kind, no mtime and no size, so

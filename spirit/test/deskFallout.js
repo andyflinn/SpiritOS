@@ -77,9 +77,9 @@ async function serverHalf() {
   else { test.fail(OWED + 'no process/js/desk/plugins/js/fallout/ with its .js and .json'); return; }
   await startNode();
   const root = path.join(scratch, 'desk');
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   fs.mkdirSync(path.join(root, 'state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'desk', 'win32', 'process') : path.join(root, 'door.sock');
   client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
@@ -149,13 +149,13 @@ async function currentHalf() {
   test.subHeading('deskVerify answers what is red now, and how many');
   const VERIFY = path.join(RUN, 'process', 'js', 'deskVerify', 'deskVerify.js');
   const dir = path.join(scratch, 'verify');
-  fs.mkdirSync(path.join(dir, 'run', 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'run', 'spirit', 'state'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'state'), { recursive: true });
   const deskNode = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) { req.resume(); req.on('end', function () { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"desk":{}}'); }); })
       .listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
   });
-  fs.writeFileSync(path.join(dir, 'run', 'relay-state', 'environment.json'), JSON.stringify({ PORT: deskNode.port }));
+  fs.writeFileSync(path.join(dir, 'run', 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: deskNode.port }));
   const vpipe = process.platform === 'win32' ? appClient.pipePathFor(dir, 'deskVerify', 'win32', 'process') : path.join(dir, 'door.sock');
   const vc = appClient.createAppClient({ rootDir: dir });
   vc.register('deskVerify', vpipe);

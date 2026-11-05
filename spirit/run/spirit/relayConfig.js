@@ -21,7 +21,7 @@
 // (injecting a partner, minting an invite); the configuration is not
 // changed while the relay runs (NODE-AND-RELAY §5, scope).
 //
-//   relay-state/config.json   { "ramLimitMB": 256, "discLimitMB": 64 }
+//   spirit/state/config.json   { "ramLimitMB": 256, "discLimitMB": 64 }
 //
 // Pure: text in, config or error out. Reading the file and measuring the
 // box are the caller's, so this is testable without either.
@@ -74,10 +74,10 @@ function parse(text, measured, opts) {
   var raw;
   try { raw = JSON.parse(String(text)); }
   catch (e) {
-    return { ok: false, error: 'relay-state/config.json is not valid JSON: ' + e.message };
+    return { ok: false, error: 'spirit/state/config.json is not valid JSON: ' + e.message };
   }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    return { ok: false, error: 'relay-state/config.json must be an object, e.g. { "ramLimitMB": 256, "discLimitMB": 64 }' };
+    return { ok: false, error: 'spirit/state/config.json must be an object, e.g. { "ramLimitMB": 256, "discLimitMB": 64 }' };
   }
   // `maxPerTarget` STOOD HERE and is gone (2026-09-21). It was put in this
   // file on 2026-09-20 arguing that the file "is only ever written by a

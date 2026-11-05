@@ -52,7 +52,7 @@ function driver() {
 const open_ = new Map();
 
 function dbPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'relay.db');
+  return path.join(rootDir, 'spirit', 'state', 'relay.db');
 }
 
 // Labels are stored as the relay normalised them at claim (fieldRules), and
@@ -169,7 +169,7 @@ function open(rootDir) {
   const key = path.resolve(rootDir);
   if (open_.has(key)) return open_.get(key);
 
-  fs.mkdirSync(path.join(rootDir, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'spirit', 'state'), { recursive: true });
   const db = new (driver().DatabaseSync)(dbPath(rootDir));
   db.exec('PRAGMA journal_mode = DELETE');
   db.exec('PRAGMA synchronous = FULL');
@@ -458,7 +458,7 @@ function build(rootDir, db, key) {
 // became a row in the partner roll until goal/G22.6 removed the roll; it is
 // not carried now.
 function importLegacy(rootDir, store) {
-  const state = path.join(rootDir, 'relay-state');
+  const state = path.join(rootDir, 'spirit', 'state');
   const roll = path.join(state, 'routingTable.json');
   const inv = path.join(state, 'invites.json');
   const hasRoll = fs.existsSync(roll);

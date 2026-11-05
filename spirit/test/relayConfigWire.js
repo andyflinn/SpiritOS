@@ -56,7 +56,7 @@ function buildHome() {
   return { home: home, runDir: runDir, owner: owner, box: box };
 }
 
-function configPath(w) { return path.join(w.runDir, 'relay-state', 'config.json'); }
+function configPath(w) { return path.join(w.runDir, 'spirit', 'state', 'config.json'); }
 
 function readConfig(w) {
   try { return JSON.parse(fs.readFileSync(configPath(w), 'utf8')); }
@@ -147,7 +147,7 @@ async function run() {
   test.subHeading('A relay started with no configuration writes the one it measured');
   const written = readConfig(w);
   if (written && typeof written.ramLimitMB === 'number' && typeof written.discLimitMB === 'number') {
-    test.check('relay-state/config.json now names both figures: ' +
+    test.check('spirit/state/config.json now names both figures: ' +
       written.ramLimitMB + ' MB RAM, ' + written.discLimitMB + ' MB disc');
   } else {
     test.fail('no config.json was written: ' + JSON.stringify(written));
@@ -182,7 +182,7 @@ async function run() {
   const set = await askOwner(w, { config: { ramLimitMB: 192, discLimitMB: 16 } });
   const after = readConfig(w);
   if (set && set.ok && set.applies === 'next start' && after.ramLimitMB === 192 && after.discLimitMB === 16) {
-    test.check('the owner\'s packet rewrote relay-state/config.json without anybody touching the box');
+    test.check('the owner\'s packet rewrote spirit/state/config.json without anybody touching the box');
   } else {
     test.fail('the set did not land: ' + JSON.stringify(set).slice(0, 200) + ' file=' + JSON.stringify(after));
   }

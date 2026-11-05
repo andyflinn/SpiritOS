@@ -61,7 +61,7 @@ const ASKBOX = String(process.env.SPIRIT_ASKBOX || '').trim() ||
   fromBoxFile('askbox') ||
   (fromBoxFile('outbox') || '').replace(/outbox\.txt$/, 'askbox.txt');
 
-const SKIP = new Set(['.git', 'node_modules', 'relay-state', 'app-state', 'lab', 'media']);
+const SKIP = new Set(['.git', 'node_modules', 'spirit', 'state', 'app-state', 'lab', 'media']);
 
 function walk(dir, out) {
   let entries = [];

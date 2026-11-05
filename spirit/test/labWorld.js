@@ -106,7 +106,7 @@ function homeOf(id) {
 // because a node created under a name that had been used before booted
 // owned by the previous run's key and could not be claimed by the suite
 // that had just asked for it.
-// `config` — a relay-state/config.json to give the node before it runs.
+// `config` — a spirit/state/config.json to give the node before it runs.
 // A relay has a Governor ONLY when it is handed one (relay.js:422), so
 // without this a lab relay reports no levers at all and cycle 4's own
 // verification step — "open the Relay Monitor, set a lever, watch the

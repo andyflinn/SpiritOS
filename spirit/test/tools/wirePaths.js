@@ -157,7 +157,7 @@ const BOTTOMS = {
   // patcher here cannot name, since a watch entry is `{ mod, fn }` and
   // `mod` is require()d whole. Building that is a change to the
   // patcher, not a row in this table, and nobody has asked for it.
-  // Until then every fs reading is missing `relay-state/relay.db`, and
+  // Until then every fs reading is missing `spirit/state/relay.db`, and
   // a reading that does not say so is lying by omission.
   crypto: {
     watch: [

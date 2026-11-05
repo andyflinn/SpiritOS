@@ -18,7 +18,7 @@
 // apart, and the deskClient is what marks an agent: a node running one is an agent node whatever else it runs.
 //   deskClient on the node -> 'agent'; else desk on the node -> 'desk'; neither -> 'none' (out of scope, his word).
 // The node is asked with the verb every app server already has for its own node's port (appServer.js sets
-// spirit.core.node.const.SPIRIT_PORT from relay-state/environment.json), so nothing is configured and nothing passed.
+// spirit.core.node.const.SPIRIT_PORT from spirit/state/environment.json), so nothing is configured and nothing passed.
 //
 // THE SHAPE ASSERTED, names mine for the builder to argue:
 //   mode {} -> {mode, apps}: what it read, and the app names it read it from. (A verb until goal/G19.11; now only
@@ -74,12 +74,12 @@ async function start(name, apps) {
   const root = path.join(scratch, name);
   const state = path.join(root, 'relay-state', 'process', 'deskVerify');
   fs.mkdirSync(state, { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   const db = path.join(root, 'verify.db');
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'deskVerify', 'win32', 'process') : path.join(root, 'door.sock');
   const client = appClient.createAppClient({ rootDir: root });
   client.register('deskVerify', pipe);
-  // In `root`, as a node starts its servers in its own run folder: the kernel reads ./relay-state/environment.json from
+  // In `root`, as a node starts its servers in its own run folder: the kernel reads ./spirit/state/environment.json from
   // the working folder (kernel.js SPIRIT_ENVIRONMENT_FILE), not from any variable, so the folder is what hands the port.
   const kid = spawn(process.execPath, [SERVER, JSON.stringify({ db: db }), '--pipe', pipe, '--state', state], {
     cwd: root,

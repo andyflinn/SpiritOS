@@ -96,7 +96,7 @@ function plant(w, config) {
   fs.cpSync(path.join(w.home, 'relay-state'), path.join(runDir, 'relay-state'),
     { recursive: true });
   if (config) {
-    fs.writeFileSync(path.join(runDir, 'relay-state', 'config.json'), JSON.stringify(config));
+    fs.writeFileSync(path.join(runDir, 'spirit', 'state', 'config.json'), JSON.stringify(config));
   }
   const mine = buildStamp.fromGit(path.join(__dirname, '..', '..'));
   if (mine) buildStamp.write(runDir, mine);

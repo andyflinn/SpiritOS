@@ -43,7 +43,7 @@
    that same name.
 
 4. That name + that laptop’s key become owner. The installer file
-   `relay-state/pending-owner.json` is deleted. `allow.json` becomes
+   `spirit/state/pending-owner.json` is deleted. `allow.json` becomes
    `{ "keys": [{ "name": "andy", "publicKey": "…" }] }`.
    Later names need that owner. A stranger cannot take `andy` without
    the key, and cannot take `eve` because it was never the pending name.

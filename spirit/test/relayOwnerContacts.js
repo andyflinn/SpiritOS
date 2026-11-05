@@ -181,11 +181,11 @@ function staleFieldsFallAway() {
   contactBook.acquire(home, { publicKey: 'K-JAZZ', publicLabel: 'jazz', relay: MINE });
   contactBook.setMyLabel(home, 'K-JAZZ', 'Jazzmin');
   const row = contactBook.byPublicKey(home, 'K-JAZZ');
-  if (!fs.existsSync(path.join(home, 'relay-state', 'contacts.json')) && row && row.myLabel === 'Jazzmin' &&
+  if (!fs.existsSync(path.join(home, 'spirit', 'state', 'contacts.json')) && row && row.myLabel === 'Jazzmin' &&
       !('memberOf' in row) && !('missingSince' in row)) {
     test.check('writes through the book land in the table, with no memberOf or missingSince to carry');
   } else {
-    test.fail('the book: ' + JSON.stringify({ file: fs.existsSync(path.join(home, 'relay-state', 'contacts.json')), row: row }));
+    test.fail('the book: ' + JSON.stringify({ file: fs.existsSync(path.join(home, 'spirit', 'state', 'contacts.json')), row: row }));
   }
 
   // Tolerant: node.db may still be open, and testSupport reclaims whatever is left at exit.

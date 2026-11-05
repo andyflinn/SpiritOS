@@ -57,7 +57,7 @@ function member(R, name) {
 
 function sealDisc(R) {
   relayStore.closeAll();
-  const db = path.join(R.home, 'relay-state', 'relay.db');
+  const db = path.join(R.home, 'spirit', 'state', 'relay.db');
   fs.chmodSync(db, 0o444);
   // Proof the mode took: on a filesystem that ignores it, this suite has
   // nothing to say and says so rather than passing vacuously.
@@ -187,7 +187,7 @@ function run() {
   }
 
   // Put the mode back so the temp home can be swept with the others.
-  try { fs.chmodSync(path.join(R.home, 'relay-state', 'relay.db'), 0o644); } catch (e) { /* best effort */ }
+  try { fs.chmodSync(path.join(R.home, 'spirit', 'state', 'relay.db'), 0o644); } catch (e) { /* best effort */ }
   relayStore.closeAll();
 
   test.reportSuccessFailureCount();

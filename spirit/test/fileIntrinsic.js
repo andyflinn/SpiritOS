@@ -41,7 +41,7 @@ const run = path.join(scratch, 'n', 'spirit', 'run');
   fs.writeFileSync(path.join(dir, s[0] + '.js'),
     'require("fs").writeFileSync(' + JSON.stringify(path.join(marks, s[0])) + ', "ran");\nsetInterval(function () {}, 1000);\n');
 });
-fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
+fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
 // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
 require('../run/spirit/relayAuth.js').saveIdentity(run, require('../run/spirit/relayAuth.js').generateIdentity('n'));
 

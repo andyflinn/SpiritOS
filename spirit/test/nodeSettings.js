@@ -16,9 +16,9 @@ const hub = require('../run/spirit/hub');
 
 function home(json) {
   const h = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-nodesettings-'));
-  fs.mkdirSync(path.join(h, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(h, 'spirit', 'state'), { recursive: true });
   if (json !== undefined) {
-    fs.writeFileSync(path.join(h, 'relay-state', 'node.json'),
+    fs.writeFileSync(path.join(h, 'spirit', 'state', 'node.json'),
       typeof json === 'string' ? json : JSON.stringify(json));
   }
   return h;

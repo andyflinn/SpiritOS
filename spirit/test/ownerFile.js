@@ -1,11 +1,11 @@
 'use strict';
 
-// cleanup/G1.7: an owned server keeps its owner's key in relay-state/owner.json, { owner } only.
+// cleanup/G1.7: an owned server keeps its owner's key in spirit/state/owner.json, { owner } only.
 // Andy: "every server keeps its identity in a file of the same name. every owned server keeps its owners key in a file of the same name."
 // The contract the builder follows:
 //   relayAuth.loadOwner(rootDir) -> the key, '' when there is none; relayAuth.writeOwner(rootDir, key)
 //   the relay knows its owner by key only; its name comes from its member row
-//   a node is a puppet when relay-state/owner.json names a key; carries is gone
+//   a node is a puppet when spirit/state/owner.json names a key; carries is gone
 
 const fs = require('fs');
 const os = require('os');
@@ -23,11 +23,11 @@ const OWED = 'OWED by cleanup/G1.7: ';
 const HAS = typeof auth.loadOwner === 'function' && typeof auth.writeOwner === 'function';
 
 function ownerFileOf(root) {
-  try { return JSON.parse(fs.readFileSync(path.join(root, 'relay-state', 'owner.json'), 'utf8')); } catch (e) { return null; }
+  try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', 'owner.json'), 'utf8')); } catch (e) { return null; }
 }
 function plantOwner(root, key) {
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'owner.json'), JSON.stringify({ owner: key }));
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'owner.json'), JSON.stringify({ owner: key }));
 }
 
 test.startTest('cleanup/G1.7: an owned server keeps its owner in owner.json');
@@ -43,7 +43,7 @@ test.subHeading('one reader and one writer, in relayAuth');
     else test.fail(OWED + 'loadOwner on an empty home: ' + JSON.stringify(auth.loadOwner(root)));
     auth.writeOwner(root, key);
     const doc = ownerFileOf(root);
-    if (doc && Object.keys(doc).join() === 'owner' && doc.owner === key) test.check('writeOwner writes relay-state/owner.json as { owner } and nothing else');
+    if (doc && Object.keys(doc).join() === 'owner' && doc.owner === key) test.check('writeOwner writes spirit/state/owner.json as { owner } and nothing else');
     else test.fail(OWED + 'owner.json after writeOwner: ' + JSON.stringify(doc));
     if (auth.loadOwner(root) === key) test.check('loadOwner reads the key back');
     else test.fail(OWED + 'loadOwner after writeOwner: ' + JSON.stringify(auth.loadOwner(root)));
@@ -70,7 +70,7 @@ test.subHeading('the relay: no claim writes owner.json, the owner it names claim
   const doc = ownerFileOf(home);
   if (first.ok && first.owner === true && doc && doc.owner === id.publicKey && Object.keys(doc).join() === 'owner') test.check('the key the install wrote claims with no invite, and owner.json stays { owner: <its key> }');
   else test.fail(OWED + 'after the owner claim: ' + JSON.stringify({ claim: first, ownerJson: doc }).slice(0, 200));
-  if (!fs.existsSync(path.join(home, 'relay-state', 'allow.json'))) test.check('and no allow.json');
+  if (!fs.existsSync(path.join(home, 'spirit', 'state', 'allow.json'))) test.check('and no allow.json');
   else test.fail(OWED + 'the relay still wrote allow.json');
   const named = createRelay(home).ownerPublic();
   if (named.ownerKey === id.publicKey && named.ownerLabel === 'andy') test.check('ownerPublic names the key, and the name from its member row');
@@ -111,16 +111,16 @@ test.subHeading('a junk owner.json is no owner, on the relay too');
 test.subHeading('a node is a puppet when owner.json names a key');
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-node-'));
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   // Since goal/G22.5: a node's own root always holds its identity, and
   // puppetIn reads it to tell itself from its owner.
   auth.saveIdentity(root, auth.generateIdentity('node'));
   const puppet = puppetMode.puppetIn(root, function () {});
   const key = auth.generateIdentity('owner').publicKey;
-  fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'), JSON.stringify({ owner: key, carries: [] }));
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'puppet.json'), JSON.stringify({ owner: key, carries: [] }));
   if (puppet().owner === '' && puppet().puppet === false) test.check('a puppet.json alone makes no owner');
   else test.fail(OWED + 'puppet.json is still read: puppetIn says ' + JSON.stringify(puppet()));
-  fs.unlinkSync(path.join(root, 'relay-state', 'puppet.json'));
+  fs.unlinkSync(path.join(root, 'spirit', 'state', 'puppet.json'));
   plantOwner(root, key);
   if (puppet().owner === key && puppet().puppet === true) test.check('owner.json { owner } makes the node a puppet of that key, read on every call');
   else test.fail(OWED + 'with owner.json, puppetIn says ' + JSON.stringify(puppet()));
@@ -131,7 +131,7 @@ test.subHeading('a node may own itself: owner.json naming its own ID is not a pu
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-self-'));
   require('./plantIdentity.js').ensureAt(root, 'self'); // since goal/G22.5, the way a node makes its own
-  const self = JSON.parse(fs.readFileSync(path.join(root, 'relay-state', 'identity.json'), 'utf8')).publicKey;
+  const self = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', 'identity.json'), 'utf8')).publicKey;
   const puppet = puppetMode.puppetIn(root, function () {});
   plantOwner(root, self);
   if (puppet().puppet === false && puppet().owner === '') test.check('owner.json with the node\'s own key: not a puppet');

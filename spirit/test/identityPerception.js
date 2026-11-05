@@ -308,8 +308,8 @@ test.subHeading('A key that cannot sign is not an identity');
 
   const loaded = wrong.filter(function (row) {
     const home = world.tmpHome();
-    fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-    fs.writeFileSync(path.join(home, 'relay-state', 'identity.json'),
+    fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
+    fs.writeFileSync(path.join(home, 'spirit', 'state', 'identity.json'),
       JSON.stringify({ name: 'andy', publicKey: good.publicKey, privateKey: row[1] }), 'utf8');
     // The claim is BOTH halves: null, and no throw getting there.
     let answered;
@@ -328,8 +328,8 @@ test.subHeading('A key that cannot sign is not an identity');
   // AND THE POINT OF ANSWERING null RATHER THAN THROWING: null is a state
   // every caller already handles, and handles by saying so.
   const broken = world.tmpHome();
-  fs.mkdirSync(path.join(broken, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(broken, 'relay-state', 'identity.json'),
+  fs.mkdirSync(path.join(broken, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(broken, 'spirit', 'state', 'identity.json'),
     JSON.stringify({ name: 'andy', publicKey: good.publicKey, privateKey: 'rubbish' }), 'utf8');
 
   let threw = false;

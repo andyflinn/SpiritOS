@@ -154,9 +154,9 @@ test.startTest('Cycle A — owner badge, mailbox picker, mint goes where it was 
   }
 
   const broken = tmpHome('broken');
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(broken, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(broken, 'relay-state', 'relays.json'), '{ not json');
+  // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+  fs.mkdirSync(path.join(broken, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(broken, 'spirit', 'state', 'relays.json'), '{ not json');
   if (ownerBadge.loadRelays(broken).length === 0 && ownerBadge.loadRelays(tmpHome('none')).length === 0) {
     test.check('a broken or missing relays.json is no mailboxes, not a throw');
   } else {

@@ -3,7 +3,7 @@
 # to the relay's port, which answers a face for a member with a verified email, a face name and his home node
 # present. This writes the two things that takes:
 #
-#   1. relay-state/face.json { "domain": "<domain>" }, which tells the relay which host is a face. Without it the
+#   1. spirit/state/face.json { "domain": "<domain>" }, which tells the relay which host is a face. Without it the
 #      relay serves no face.
 #   2. a Caddy site for *.<domain> with a certificate per face fetched ON DEMAND, after Caddy has asked the relay
 #      whether the name is a face it serves now: GET /face/allowed?domain=<name>, 200 or 404. So only real faces get
@@ -25,11 +25,11 @@ FACE_DOMAIN="${SPIRIT_FACE_DOMAIN:-$DOMAIN}"
 SITES_DIR=/etc/caddy/sites
 SITE_FILE="$SITES_DIR/faces.$FACE_DOMAIN.caddy"
 ASK_URL="http://127.0.0.1:$NODE_PORT/face/allowed"
-FACE_JSON="$RUN_DIR/relay-state/face.json"
+FACE_JSON="$RUN_DIR/spirit/state/face.json"
 
 # ── 1. THE RELAY'S FACE DOMAIN ────────────────────────────────────────
 say "write $FACE_JSON: faces are <name>.$FACE_DOMAIN"
-mkdir -p "$RUN_DIR/relay-state"
+mkdir -p "$RUN_DIR/spirit/state"
 printf '{ "domain": "%s" }\n' "$FACE_DOMAIN" > "$FACE_JSON"
 chmod 644 "$FACE_JSON"
 

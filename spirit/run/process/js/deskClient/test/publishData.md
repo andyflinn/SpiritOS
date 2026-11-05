@@ -10,7 +10,7 @@ deskClient"). Run by the agent in its own clone, with its own node up.
 
 - Without a positive whole port it exits 2 with its usage. Outside a git clone (from the working folder): exit 1, `not
   in a git clone`. An agent with no name at the desk (`profile.get {agent: ''}`, through deskClient.desk on the spirit
-  object): exit 1. A clone with no `spirit/run/relay-state/node.db`: exit 1, naming where it looked.
+  object): exit 1. A clone with no `spirit/run/spirit/state/node.db`: exit 1, naming where it looked.
 - The output folder is `--out`, else `<clone>/agents/<agent>/`; the commit is the short HEAD of the tree the script
   runs from.
 - **1, unless --only packets**: the harness runs in a temporary git worktree of HEAD (the clone's relays.json carried

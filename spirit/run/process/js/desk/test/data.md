@@ -11,7 +11,7 @@ that subscribes, which reads it from its own disc.
 - Required in node, as the subscribing appServer requires it from its own disc, it answers `cache { keep, shed, answer }`:
   the cache rules the desk family's `api.js` held, which now holds its verbs alone.
 - deskClient's stream names it as its translator. The page loads it from the node that served it, with `spirit.require`.
-- The cache file it fills stays appServer's: `relay-state/<client appServerName>/<the sender's key in base64url>.json`,
+- The cache file it fills stays appServer's: `spirit/state/<client appServerName>/<the sender's key in base64url>.json`,
   one per server followed (appServer.js, goal/G41.28).
 
 ## API

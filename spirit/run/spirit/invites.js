@@ -1,7 +1,7 @@
 'use strict';
 
-// The relay's invites — the `invites` table in relay-state/relay.db since
-// cycle 3 (relayStore.js). It was relay-state/invites.json until then; a
+// The relay's invites — the `invites` table in spirit/state/relay.db since
+// cycle 3 (relayStore.js). It was spirit/state/invites.json until then; a
 // relay that still has that file imports it once (D8). A row:
 //
 //   { "token": "hex", "label": "saint",
@@ -98,7 +98,7 @@ function add(rootDir, opts) {
 // first claim on an unowned relay into its owner. Andy, 2026-10-11: "the
 // invite path to ownership MUST be gone. it is a security gap, from the
 // time of install until the time of first claim." Every invite is a
-// member invite now; the owner is written into relay-state/owner.json by
+// member invite now; the owner is written into spirit/state/owner.json by
 // bash/install-units, before the relay serves. Do not bring an owner kind
 // back.
 

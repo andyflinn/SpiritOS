@@ -24,7 +24,7 @@
 //
 // ── THE ONE RULE THIS FILE MUST NEVER BREAK ───────────────────────────
 // Your identity is READ and never written. The key in
-// spirit/run/relay-state/identity.json is the key that owns
+// spirit/run/spirit/state/identity.json is the key that owns
 // spirit.andyflinn.com; generating a new one here would silently cost you
 // the relay you already have, and you would not find out until the next
 // time you asked it for a roll. Every call below takes the key it
@@ -45,9 +45,9 @@ const WORK_RUN = path.join(__dirname, '..', 'run');
 const WORK_PORT = 65432;
 const WORK_URL = 'http://127.0.0.1:' + WORK_PORT;
 const MASTER = require('./labMaster/labPaths').MASTER;
-// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-const RELAYS = path.join(WORK_RUN, 'relay-state', 'relays.json');
-const BACKUP = path.join(WORK_RUN, 'relay-state', 'relays.json.before-lab');
+// goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+const RELAYS = path.join(WORK_RUN, 'spirit', 'state', 'relays.json');
+const BACKUP = path.join(WORK_RUN, 'spirit', 'state', 'relays.json.before-lab');
 
 // THE FILE THAT SAYS THIS NODE KNOWS WHO IT IS, and it is the one that
 // mattered most while being the one nothing protected.
@@ -344,7 +344,7 @@ async function clearLive(me, known) {
 // relay's address instead, which is deleting rows by inference from an
 // address book, and nobody has asked for that.
 function forgetLabContacts() {
-  const file = path.join(WORK_RUN, 'relay-state', 'contacts.json');
+  const file = path.join(WORK_RUN, 'spirit', 'state', 'contacts.json');
   let rows;
   try { rows = JSON.parse(fs.readFileSync(file, 'utf8')); }
   catch (e) { return 0; }
@@ -590,8 +590,8 @@ async function up(scenarioName) {
 
     // And their node learns about it, so it holds a stream there too and
     // shows up in everyone's presence rather than only in a roster.
-    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-    const theirRelays = path.join(peer.node.home, 'relay-state', 'relays.json');
+    // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+    const theirRelays = path.join(peer.node.home, 'spirit', 'state', 'relays.json');
     let rows = [];
     try { rows = JSON.parse(fs.readFileSync(theirRelays, 'utf8')); } catch (e) { rows = []; }
     if (!rows.some(function (r) { return r && r.url === LIVE_RELAY; })) {

@@ -194,8 +194,8 @@ test.subHeading('Under Acquire, a full memory adds nobody');
 
 {
   const H = home('acquire');
-  fs.mkdirSync(path.join(H, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(H, 'relay-state', 'node.json'), JSON.stringify({ cacheMaxMB: 1 }));
+  fs.mkdirSync(path.join(H, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(H, 'spirit', 'state', 'node.json'), JSON.stringify({ cacheMaxMB: 1 }));
   const S = hub.shadow(H);
   const store = nodeStore.open(H);
   // IN BULK, a thousand to a transaction, asking for room only between

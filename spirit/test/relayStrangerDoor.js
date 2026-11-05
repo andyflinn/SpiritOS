@@ -246,7 +246,7 @@ async function inProcess() {
   let oldOpens = false;
   try {
     const { DatabaseSync } = require('node:sqlite');
-    const db = new DatabaseSync(path.join(home, 'relay-state', 'relay.db'));
+    const db = new DatabaseSync(path.join(home, 'spirit', 'state', 'relay.db'));
     db.exec('CREATE TABLE IF NOT EXISTS partners (relayKey TEXT PRIMARY KEY, url TEXT, ownerKey TEXT, status TEXT, since TEXT, last TEXT)');
     db.prepare('INSERT OR REPLACE INTO partners (relayKey, url, ownerKey, status, since, last) VALUES (?, ?, ?, ?, ?, ?)')
       .run('k-old', 'https://old.example', owner.publicKey, 'partnered', '2026-09-20', '');
@@ -264,7 +264,7 @@ async function inProcess() {
 
 function buildRelayHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-stranger-relay-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   const relayId = auth.generateIdentity('relay');
   auth.saveIdentity(home, relayId);
   const owner = auth.generateIdentity('andy');
@@ -390,7 +390,7 @@ async function overTheWire() {
 
   const { createPeerPost } = require('../run/spirit/peerPost');
   const nodeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-stranger-node-'));
-  fs.mkdirSync(path.join(nodeHome, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(nodeHome, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(nodeHome, auth.generateIdentity('dave'));
   const pp = createPeerPost({ rootDir: nodeHome, request: require('../run/spirit/relayRequest').relayRequest });
   if (typeof pp.relayKey === 'function') test.check('peerPost exposes relayKey(url)');

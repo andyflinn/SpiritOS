@@ -149,7 +149,7 @@ Bugs (detail for the table rows)
 • Nit: seat() and unseat() return undefined on success where accept() returns true (relayKeys.js:121,164). js/apiAuth.js:18 and three tests bind the module as contacts, against the contactBook rule.
 • Checked and fine: URL normalisation matches across seat, pin, probe and claim; seat is written synchronously before presence.start.
 Leftover references
-• whoBook / who.json (low): DICTIONARY.md:55,77 still defines whoBook as relay-state/who.json; AGENT.md:46,60,83; CLAUDE.md:21,129 and CLINE.md:21,129 ("whoBook never uploads"); js/relay.js:1783 was written after the rename. Nits in .gitignore:127, UI_DESIGN_STYLE.md:402, spirit/test/labMaster/BONES.md:16,48, test/peerPostWiring.js:54.
+• whoBook / who.json (low): DICTIONARY.md:55,77 still defines whoBook as spirit/state/who.json; AGENT.md:46,60,83; CLAUDE.md:21,129 and CLINE.md:21,129 ("whoBook never uploads"); js/relay.js:1783 was written after the rename. Nits in .gitignore:127, UI_DESIGN_STYLE.md:402, spirit/test/labMaster/BONES.md:16,48, test/peerPostWiring.js:54.
 • Security comments that lean on the deleted route (low-medium). These say a key is safe to expose because it is "already public at /api/relay/who": js/deviceAuth.js:39-41, device.html:170-171, natterDetails.js:1452, hub.js:2036-2037, relay.js:2620, 4444, 5051. Each needs re-arguing now the route is gone.
 • Comments describing removed behaviour (low): server.js:2043-2045 (probe fetches /api/relay/who), server.js:2136-2139 (peer.acquire asks the relay), hub.js:612-616 and 831-834 (the roll captions strangers, contradicting "strangers arrive UNNAMED"), hub.js:1801-1817, hub.js:2103-2147 (orphaned handleRoster block), ownerBadge.js:200-218, 255-275, natter.js:713-718, 746-749, info.js:76-82, 177, relay.js:1080, 3293, 3688, DICTIONARY.md:87.
 Dead code
@@ -209,7 +209,7 @@ The move of the face machinery out of the node left one red suite, a setup doc t
 Detail for the table rows
 • appApi.js. 013dc827 removed appClient.startAll, and spirit/test/appApi.js:108 was not rewritten with the other suites.
 • FACE.md. appFaceApp now reads only relay-state/process/appFaceApp/face-domain.json, and the node's fs.save refuses to write under relay-state. The doc also never says to list process/js/appFaceApp and appFaceAppServer on the owner's node or to grant appFaceApp to the face node's key; appFaceApp declares dependencies: [], so nothing prompts it. bash/FACE.md:9,23, bash/face-tls:3,35 and bash/systemd/spirit-face.service:13-15 still name puppetPost.
-• Private key. ownerKey() calls auth.loadIdentity(ROOT), which loads relay-state/identity.json with its private key, against the rule at spirit/run/js/jobs.js:458-463 and desk/G2.4. On a nameless node it returns null, so a self-owned node posts to itself.
+• Private key. ownerKey() calls auth.loadIdentity(ROOT), which loads spirit/state/identity.json with its private key, against the rule at spirit/run/js/jobs.js:458-463 and desk/G2.4. On a nameless node it returns null, so a self-owned node posts to itself.
   Since goal/G22.5 (2026-10-13) a node's identity exists from its first boot, before it listens; this no longer holds.
 Low
 • spiritErrors.define throws on duplicates, but both callers wrap it in if (!byCode(...)), so a future clash is silently adopted (spirit/run/js/spiritErrors.js:89-95).

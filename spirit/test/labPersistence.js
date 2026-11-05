@@ -80,7 +80,7 @@ async function waitServing(timeoutMs) {
 // The owner's key as owner.json has it: the one place ownership lives.
 function ownerKeyOnDisk() {
   try {
-    const doc = JSON.parse(fs.readFileSync(path.join(relayHome, 'relay-state', 'owner.json'), 'utf8'));
+    const doc = JSON.parse(fs.readFileSync(path.join(relayHome, 'spirit', 'state', 'owner.json'), 'utf8'));
     return (doc && doc.owner) || '';
   } catch (e) { return ''; }
 }
@@ -89,7 +89,7 @@ function routingTable() {
   let db = null;
   try {
     const { DatabaseSync } = require('node:sqlite');
-    db = new DatabaseSync(path.join(relayHome, 'relay-state', 'relay.db'), { readOnly: true });
+    db = new DatabaseSync(path.join(relayHome, 'spirit', 'state', 'relay.db'), { readOnly: true });
     const peers = {};
     db.prepare('SELECT publicKey, publicLabel FROM members').all().forEach(function (r) {
       peers[r.publicKey] = { publicLabel: r.publicLabel };

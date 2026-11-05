@@ -74,7 +74,7 @@ const appServerStub = {
     return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
   },
   publish: function () {},
-  // goal/G41.12: the cache is appServer's (relay-state/<server>/<sender key in base64url>.json, goal/G41.28); deskClient's
+  // goal/G41.12: the cache is appServer's (spirit/state/<server>/<sender key in base64url>.json, goal/G41.28); deskClient's
   // cache.dump asks it to save now.
   saveCaches: function () { cacheSaves += 1; return cacheAnswer.slice(); },
 };
@@ -216,7 +216,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   const working = await waitAsk(function () { return asksOf('agent.state').slice(stateFrom).some(function (a) { return a.args && a.args.word === 'working'; }); }, 3000);
   ok(working && statusesOf(fromIdle).length === 0, 'a run with no held item: the agent shows as working, and no item gets a status', 'agent.state asked ' + short(asksOf('agent.state').slice(stateFrom)) + ', statuses ' + short(statusesOf(fromIdle)));
 
-  // goal/G41.12: the cache is appServer's, saved as relay-state/deskClient/<desk key in base64url>.json (goal/G41.28); deskClient
+  // goal/G41.12: the cache is appServer's, saved as spirit/state/deskClient/<desk key in base64url>.json (goal/G41.28); deskClient
   // keeps no cache file of its own, and its cache.dump asks appServer to save now (Andy, goal/G41.15: "the 3 cache.json
   // checks look for the cache in appServer's own file, as G41.12 put it").
   test.subHeading('the cache dump: one owner-only verb, appServer\'s own file');

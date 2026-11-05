@@ -37,17 +37,17 @@ function freePort() {
 test.startTest('apiAuth/G1.3: the allow-table is two tables in node.db, and no peer ever sees them');
 
 const root = setupRelayFakes('authTables').andy;
-const DB = path.join(root, 'relay-state', 'node.db');
-// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
-fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+const DB = path.join(root, 'spirit', 'state', 'node.db');
+// goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
+fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
 // The fake's node.db survives between runs; this suite plants exact rows.
 ['node.db', 'node.db-wal', 'node.db-shm'].forEach(function (f) {
   try { fs.unlinkSync(path.join(root, 'relay-state', f)); } catch (e) { /* first run */ }
 });
 // The desk server runs: the copied tree's manifest says home (goal/G30.20).
-fs.writeFileSync(path.join(root, 'relay-state', 'contacts.json'), JSON.stringify([{ publicKey: KEYA, myLabel: 'alice' }]), 'utf8');
+fs.writeFileSync(path.join(root, 'spirit', 'state', 'contacts.json'), JSON.stringify([{ publicKey: KEYA, myLabel: 'alice' }]), 'utf8');
 
 let child = null;
 let port = 0;

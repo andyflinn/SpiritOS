@@ -45,7 +45,7 @@ const homes = [];
 function world() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ceiling-'));
   homes.push(home);
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('andy');
   auth.writeOwner(home, owner.publicKey);

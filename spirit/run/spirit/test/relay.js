@@ -25,8 +25,8 @@ function scratchRelay() {
   planted.nameIdentity(home, 'relay');
   // Its owner, written at install as a relay's is: a relay with none seats nobody.
   planted.writeOwner(home, planted.generateIdentity('owner').publicKey);
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: 'relay.example' }));
   const mails = [];
   let now = Date.now();
   const relay = require(path.join(RUN, 'spirit', 'relay.js')).createRelay(home, {
@@ -122,7 +122,7 @@ async function longSearch() {
   const limits = require(path.join(RUN, 'spirit', 'limits.js'));
   const seal = require(path.join(RUN, 'spirit', 'seal.js'));
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relay-search-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
   auth.writeOwner(home, owner.publicKey);

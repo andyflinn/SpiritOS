@@ -37,7 +37,7 @@ test.startTest('goal/G2.3: the listener tells Desk listening or working');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-earstate-'));
 const state = path.join(scratch, 'state');
 fs.mkdirSync(state, { recursive: true });
-fs.mkdirSync(path.join(scratch, 'relay-state'), { recursive: true });
+fs.mkdirSync(path.join(scratch, 'spirit', 'state'), { recursive: true });
 const kids = [];
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });

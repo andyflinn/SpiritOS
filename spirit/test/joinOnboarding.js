@@ -15,7 +15,7 @@
 //     only as a hash. The relay's login and join pages built earlier in this item go.
 //   - Node: relay.join {url, email, code}, owner only, beside relay.add (confirmed by Andy). The shell calls it with
 //     the email on first start, and with the code when opened at http://127.0.0.1:<port>?join=<code>.
-//   - Mail: Mailgun, configured by relay-state/mail.json, as built in the first round.
+//   - Mail: Mailgun, configured by spirit/state/mail.json, as built in the first round.
 // NAMED HERE where the box names none:
 //   - relay.js: createRelay(rootDir, { sendMail }) takes the mailer; relay.join(publicKey, email, port) and
 //     relay.joinConfirm(publicKey, code) are what the two door posts call, as relay.claim is for a claim. join answers
@@ -247,7 +247,7 @@ async function main() {
   else test.fail(OWED + 'the README does not give node spirit/server.js --email');
 
   // ── 8. NO VENDOR IN CORE, AND THE CARD SAYS WHAT THE RELAY OFFERS (the box, v28) ─────────────────────
-  // js/sendMail.js reads relay-state/mail.json and loads its driver from js/sendMail/<driver>.js, the name checked
+  // js/sendMail.js reads spirit/state/mail.json and loads its driver from js/sendMail/<driver>.js, the name checked
   // against that folder; mailgun.js is the first driver there and Mailgun is named nowhere else in core. mail.json
   // names its driver by hand; without one the relay sends no mail, no fallback. The relay card carries
   // services: { sendMail, face }; Natter shows the email field only when the card says sendMail; the --email start
@@ -267,8 +267,8 @@ async function main() {
   let sendMailMod = null;
   try { sendMailMod = require('../run/spirit/sendMail'); } catch (e) { sendMailMod = null; }
   const mailHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-sendmail-'));
-  fs.mkdirSync(path.join(mailHome, 'relay-state'), { recursive: true });
-  function withMailJson(v) { fs.writeFileSync(path.join(mailHome, 'relay-state', 'mail.json'), JSON.stringify(v)); }
+  fs.mkdirSync(path.join(mailHome, 'spirit', 'state'), { recursive: true });
+  function withMailJson(v) { fs.writeFileSync(path.join(mailHome, 'spirit', 'state', 'mail.json'), JSON.stringify(v)); }
   function sender(v, fetchImpl) {
     withMailJson(v);
     if (!sendMailMod || typeof sendMailMod.createSender !== 'function') return { missing: true };

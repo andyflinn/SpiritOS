@@ -27,7 +27,7 @@ not the route.)
 - **the face node:** `/root/face/SpiritOS`, `spirit-face`:
   - its door on 127.0.0.1:65433;
   - its face, the appFaceApp process, on 127.0.0.1:65434 (the port in its `face.json`);
-  - owned by your node through `relay-state/owner.json`;
+  - owned by your node through `spirit/state/owner.json`;
 - **Caddy:** `/etc/caddy/sites/face.spirit.andyflinn.com.caddy`, plus one global block you add by hand.
 
 Nothing else. `status` in each clone reports its own unit.

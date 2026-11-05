@@ -11,7 +11,7 @@
 //   immediately go stale on disc".
 //
 // Built by claude-windows at 39bce45: boxes.js, fed by arrivals, answered
-// as owner.boxes. Who counts as "his server" is relay-state/servers.json,
+// as owner.boxes. Who counts as "his server" is spirit/state/servers.json,
 // owner-edited, read per report, absent means nobody -- agreed between the
 // agents so that nobody else can invent a box in his view or hide one.
 
@@ -27,7 +27,7 @@ test.startTest('His boxes add up from his own servers, and over-committed is onl
 
 function world(serverKeys) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-boxes-'));
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   const file = path.join(root, 'relay-state', boxes.SERVERS);
   if (serverKeys) fs.writeFileSync(file, JSON.stringify({ keys: serverKeys }));
   const b = boxes.createBoxes({ rootDir: root });

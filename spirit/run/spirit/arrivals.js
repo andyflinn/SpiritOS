@@ -39,7 +39,7 @@
 // In the traffic log, with everything else. This file keeps NOTHING on
 // disk.
 //
-// It had its own store for a few hours — relay-state/pendingArrivals.json
+// It had its own store for a few hours — spirit/state/pendingArrivals.json
 // — because the traffic log could not be read back safely: it records
 // ARRIVAL, not ADMISSION, and a packet the front door HELD is in it with
 // its payload, deliberately never handed to an app. Replaying from it

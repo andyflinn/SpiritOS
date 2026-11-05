@@ -195,7 +195,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // file keeps saying what is owed and does not become a second copy.
   // puppetOwner.js was retired at 013dc827 (goal/G13.2); since goal/G19.10
   // this credits the suite that asserts the lock now, ownerFile.js.
-  // relay-state/owner.json, { owner } (cleanup/G1.7)
+  // spirit/state/owner.json, { owner } (cleanup/G1.7)
   // -- after Andy ruled "a node OWNED by another node's ID is a puppet".
   if (typeof require('../run/spirit/puppetMode').puppetIn === 'function' && /owner\.json/.test(puppetMode)) {
     test.check('the owner lock exists as a unit — puppetMode.puppetIn and the node\'s owner.json, asserted '

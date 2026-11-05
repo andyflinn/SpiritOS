@@ -87,7 +87,7 @@ test.startTest('Cycle 10 — what is declared and not built yet');
 
 function tmp() {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-c10-pending-'));
-  fs.mkdirSync(path.join(d, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(d, 'spirit', 'state'), { recursive: true });
   return d;
 }
 

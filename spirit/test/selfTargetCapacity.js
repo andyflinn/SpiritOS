@@ -46,7 +46,7 @@ function sinkFor(into) {
 // relayMeter.js's fixture, which is the plainest one that can refuse busy.
 function relayWith(names) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-selftarget-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
   auth.writeOwner(home, owner.publicKey);

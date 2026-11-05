@@ -29,7 +29,7 @@ const PEER = 'MCowBQYDK2VwAyEAlogTablePeer000000000000000000000000=';
 const RELAY = 'https://relay.example';
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-logtable-'));
-const dbFile = path.join(root, 'relay-state', 'node.db');
+const dbFile = path.join(root, 'spirit', 'state', 'node.db');
 const log = createTrafficLog({ rootDir: root });
 log.note({ dir: 'out', kind: 'request', peer: PEER, relay: RELAY, outcome: 'sent', hash: 'h-1' });
 log.note({ dir: 'in', kind: 'reply', peer: PEER, relay: RELAY, outcome: 'receipted', hash: 'h-1' });
@@ -95,7 +95,7 @@ if (table && next > dropped) {
 // ── T4 ────────────────────────────────────────────────────────────────
 test.subHeading('T4: read() answers from the table: the same rows, in the same order, with the file gone');
 const expected = JSON.stringify(log.read());
-try { fs.unlinkSync(path.join(root, 'relay-state', 'traffic.jsonl')); } catch (e) { /* not there: fine */ }
+try { fs.unlinkSync(path.join(root, 'spirit', 'state', 'traffic.jsonl')); } catch (e) { /* not there: fine */ }
 const fresh = createTrafficLog({ rootDir: root });
 const got = JSON.stringify(fresh.read());
 if (expected !== '[]' && got === expected) {

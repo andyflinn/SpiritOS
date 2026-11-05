@@ -686,7 +686,7 @@ prerequisite for anything, and R7 is unblocked.
 
 ### R6 — `maxPerTarget` out of config, into code
 
-Put in `relay-state/config.json` on 2026-09-20 arguing *"only ever written
+Put in `spirit/state/config.json` on 2026-09-20 arguing *"only ever written
 by a person with a shell"* — the argument revoked hours later. **By the
 three-tier rule it is a limit, so it is the code's.** It stays only
 because `targetBusy.js` spawns a real relay and has no other way to switch
@@ -697,7 +697,7 @@ configuration at all.
 it; and `spirit/test/targetBusy.js`, which now plants **no configuration
 at all** and observes the relay a person would actually run.
 
-**Status:** DONE — `maxPerTarget` is out of `relay-state/config.json` and
+**Status:** DONE — `maxPerTarget` is out of `spirit/state/config.json` and
 is a constant in `router.js`. By the three-tier rule it is a *limit*, and
 a limit an owner can widen is not a limit.
 
@@ -952,7 +952,7 @@ to keep:
 
 | | the node's | the relay's |
 |---|---|---|
-| file | `relay-state/relayKeys.json` | the `partners` roll (`relayStore.js`) |
+| file | `spirit/state/relayKeys.json` | the `partners` roll (`relayStore.js`) |
 | keyed by | **the URL** | **the relay key** |
 | holds | pinned key, seat, first seen | url, owner key, `status`, `since` |
 | keyed status | **implicit** — `pinned()` returns `''` | **explicit** — a `status` field |
@@ -1395,7 +1395,7 @@ every intent it was holding.
 A new persist shape, which `CLAUDE.md` makes a team review rather than a
 patch. **Ruled by Andy instead, 2026-09-22:** *"make the queue a database"* —
 asked because his earlier waiver named the shadow roll only (found by
-wsl-claude while preparing the review). Out of the review pile. `relay-state/relay.db` is the precedent for a node-side store a
+wsl-claude while preparing the review). Out of the review pile. `spirit/state/relay.db` is the precedent for a node-side store a
 cycle opened deliberately.
 
 **Two things it must get right**, both of which fall out of R5's rule
@@ -1526,7 +1526,7 @@ broken needs nobody to police it"*, 0012).
 
 **And the first version was not enough, which had to be found by
 measuring.** It worked on a probe and a full run still left ~120 behind.
-Every survivor held `relay-state/relay.db`: a world that starts a real
+Every survivor held `spirit/state/relay.db`: a world that starts a real
 relay has SQLite open when its own exit handler runs, and a locked file on
 Windows defeats `rmSync` — `force` suppresses *"not found"*, not *"in
 use"*. So each child now reports what it could not remove and `runAll.js`
@@ -2012,7 +2012,7 @@ shadow list keyed by peer would outgrow that shape, which is what
 
 **It is a new persist shape, and `CLAUDE.md` makes that a team review
 rather than a patch.** The last time that line moved it was Andy's
-decision in cycle 3 (`relay-state/relay.db`, owned by `relayStore.js`).
+decision in cycle 3 (`spirit/state/relay.db`, owned by `relayStore.js`).
 
 **Worth deciding with R16, not separately.** Two things now want node-side
 persistence — this, and the scheduler queue surviving a restart, which a
@@ -2056,7 +2056,7 @@ half, R16, R29, R30 and R31 all move.
 
 ### Built 2026-09-21 — cycle 2
 
-**`nodeStore.js`**, the node's own `relay-state/node.db`, with the same
+**`nodeStore.js`**, the node's own `spirit/state/node.db`, with the same
 durability choices `relayStore` makes and the same reasons: rollback
 journal rather than WAL (one process, and a file copy cannot catch it
 half-written), `synchronous = FULL`, and **`secure_delete = ON`** — which
@@ -2502,7 +2502,7 @@ shadow.
 
 ### The setting built 2026-09-21, cycle 4
 
-**`relay-state/node.json`** — Andy: *"your suggestion fits now."* One field,
+**`spirit/state/node.json`** — Andy: *"your suggestion fits now."* One field,
 in megabytes, the unit he asked for:
 
 ```
@@ -2969,7 +2969,7 @@ chosen as strangers, or keeping the absent, fails four of its checks.
 
 **Capped, newest first, and the chosen read apart.** Strangers are read
 `ORDER BY seen DESC LIMIT n` on `seen_when`, `n` being `searchMemoryRows`
-in `relay-state/node.json` (default 1000; 0 means no strangers from
+in `spirit/state/node.json` (default 1000; 0 means no strangers from
 memory). The owner's own people are read through `seen_chosen` and never
 count against it, so an old friend is still found. Both reads are asserted
 to use their index; the chosen one only does while it repeats the partial
@@ -3008,7 +3008,7 @@ message gets one attempt, and the queue R3, R5, R16 and R19 built and
 proved is unreachable in a running node. *"Retrying is built and inert"*,
 as the head of this file has said since it was written.
 
-**The shape is R31's:** a number in `relay-state/node.json`, read once at
+**The shape is R31's:** a number in `spirit/state/node.json`, read once at
 boot, never written by the node, with a default and a floor. It carries
 R16's open nuance with it: the traffic log says "sent" at enqueue, which is
 harmless at one attempt and misleading once a message can wait days.

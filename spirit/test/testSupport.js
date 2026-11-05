@@ -99,7 +99,7 @@ function settleRecords() {
 // worked — proved on a probe — and a full run still left about a hundred
 // and twenty behind. Every survivor held the same file:
 //
-//     spirit-world-lab-XXXXXX/relay-state/relay.db
+//     spirit-world-lab-XXXXXX/spirit/state/relay.db
 //
 // A world that starts a real relay opens SQLite, and at `process.on('exit')`
 // that handle is still open: on Windows a locked file defeats `rmSync`, and

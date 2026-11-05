@@ -89,9 +89,9 @@ async function main() {
   gitIn(work, ['push', '-q', 'origin', 'master:master']);
   const root = path.join(scratch, 'desk');
   const state = path.join(root, 'state');
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   fs.mkdirSync(state, { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'desk', 'win32', 'process') : path.join(root, 'desk.sock');
   client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);

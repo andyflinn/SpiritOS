@@ -112,7 +112,7 @@ What follows is what both agreed. Any of it changes when Andy asks.
      returns what it sent as its dialog result. A save re-reads the file
      and merges by key first, so two Desk tabs keep each other's lines.
    - **Each agent** logs its own sends and arrivals in
-     `relay-state/agents-log.jsonl` and reads nothing of the node's
+     `spirit/state/agents-log.jsonl` and reads nothing of the node's
      (wsl-claude, 2a3c493).
    - **The price, accepted:** nothing from before a log existed.
    - **Desk mounts at page load** (Andy, 2026-09-27: *"lets do it all"*).

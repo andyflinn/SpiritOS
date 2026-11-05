@@ -33,7 +33,7 @@ function fresh() {
 }
 
 function identityFile(dir) {
-  return path.join(dir, 'relay-state', 'identity.json');
+  return path.join(dir, 'spirit', 'state', 'identity.json');
 }
 
 const dirs = [];

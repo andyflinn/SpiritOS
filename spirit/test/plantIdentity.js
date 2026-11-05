@@ -9,7 +9,7 @@
 // scratch root with an identity in it plants the code that makes one:
 // relayAuth.js and the one module it requires are copied into
 // <root>/js/, and requiring that copy runs its first load, which ensures
-// <root>/relay-state/identity.json (keys, seal key, the machine name) and
+// <root>/spirit/state/identity.json (keys, seal key, the machine name) and
 // keeps whatever whole identity is already there. A name, if given, is then
 // set through the one public naming call, relayAuth.nameIdentity, which
 // never touches a key.

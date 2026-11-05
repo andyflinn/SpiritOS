@@ -177,8 +177,8 @@ test.subHeading('An old contacts.json moves into the table, and no route goes on
   // 2026-09-21, so any node that ran since holds them in the shadow. Since goal/G40.11 contacts.json itself moves into
   // the table on the first start and is deleted; its `routes` field moves nowhere, and no contact row has one.
   const root = freshRoot();
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  const file = path.join(root, 'relay-state', 'contacts.json');
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
+  const file = path.join(root, 'spirit', 'state', 'contacts.json');
   fs.writeFileSync(file, JSON.stringify([{ publicKey: KNOWN, publicLabel: 'kim', myLabel: 'kim', acquiredVia: 'handle', routes: [AT, AT2] }], null, 2));
   const row = contactBook.byPublicKey(root, KNOWN);
   if (row && row.keep === true && row.myLabel === 'kim' && !fs.existsSync(file)) {

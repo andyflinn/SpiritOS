@@ -72,7 +72,7 @@ H7
 High
 A fresh clone cannot start
 js/server.js:90-108
-npm start writes relay-state/environment.json before the folder exists: ENOENT. The read above it is dead code too (env.PORT on an undefined env, swallowed)
+npm start writes spirit/state/environment.json before the folder exists: ENOENT. The read above it is dead code too (env.PORT on an undefined env, swallowed)
 mkdirSync(dirname, {recursive:true}) before the write; fix or delete the read
 Reproduced by me
 H8

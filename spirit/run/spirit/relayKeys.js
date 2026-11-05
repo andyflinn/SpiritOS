@@ -89,8 +89,8 @@ function seen(rootDir) { importOld(rootDir); return nodeStore.open(rootDir).seen
 // file found later (an older tool, a restored backup, the lab) is moved too and never read as the truth beside the
 // table; the rows first, the files only after.
 function importOld(rootDir) {
-  const listFile = path.join(rootDir, 'relay-state', 'relays.json');
-  const keyFile = path.join(rootDir, 'relay-state', 'relayKeys.json');
+  const listFile = path.join(rootDir, 'spirit', 'state', 'relays.json');
+  const keyFile = path.join(rootDir, 'spirit', 'state', 'relayKeys.json');
   const haveList = fs.existsSync(listFile);
   const haveKeys = fs.existsSync(keyFile);
   if (!haveList && !haveKeys) return false;

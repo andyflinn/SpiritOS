@@ -2011,7 +2011,7 @@ each bounded by the relay, until one lands or the patience runs out.
 
 - **The queue must survive a restart.** Left open above as *"node-local
   state with no persistence designed for it"*. Days means restarts, so
-  the answer is yes and the queue needs a store. `relay-state/relay.db`
+  the answer is yes and the queue needs a store. `spirit/state/relay.db`
   is the precedent for a node-side persist shape that a cycle opened
   deliberately.
 - **Backoff must grow.** Also left open. Retrying every 15 s for three
@@ -2629,7 +2629,7 @@ behaviour whose cost lands entirely on the box choosing it.
 
 ### Which settles the `maxPerTarget` loose end
 
-`maxPerTarget` went into `relay-state/config.json` on 2026-09-20, argued
+`maxPerTarget` went into `spirit/state/config.json` on 2026-09-20, argued
 as *"only ever written by a person with a shell"* — the same argument
 revoked hours later. **By the rule above it is a limit and belongs in
 code**, since it bounds what a partner can aim at a member and therefore

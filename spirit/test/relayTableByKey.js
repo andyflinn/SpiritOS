@@ -55,7 +55,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function there(p) { try { fs.statSync(p); return true; } catch (e) { return false; } }
 function freshRoot(tag) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaytable-' + tag + '-'));
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   // A node's root holds its identity (goal/G22.5): what a relay calls it is its name (relayKeys.seatLabel).
   const auth = require('../run/spirit/relayAuth.js');
   auth.saveIdentity(root, auth.generateIdentity('relaytable-' + tag));
@@ -63,8 +63,8 @@ function freshRoot(tag) {
 }
 function oldFiles(root) {
   return {
-    relays: there(path.join(root, 'relay-state', 'relays.json')),
-    keys: there(path.join(root, 'relay-state', 'relayKeys.json')),
+    relays: there(path.join(root, 'spirit', 'state', 'relays.json')),
+    keys: there(path.join(root, 'spirit', 'state', 'relayKeys.json')),
   };
 }
 

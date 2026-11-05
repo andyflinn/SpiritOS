@@ -369,7 +369,7 @@ function wipeHome(id, kind) {
   const target = homeRootFor(id, kind);
   if (!target) return false;
   // A KILLED NODE IS NOT YET A DEAD ONE. stopNode's kill is asynchronous,
-  // and on Windows the dying process still holds relay-state/node.db open
+  // and on Windows the dying process still holds spirit/state/node.db open
   // (SQLite since transport/R19), so a single rmSync failed on it and the "new" node
   // booted on the last run's log: liveFrontDoor read yesterday's arrivals,
   // every run, 2026-09-29. rmSync retries EBUSY/EPERM itself; a home that
@@ -541,8 +541,9 @@ function updateNode(id) {
 // stated as paths because this has to MOVE them rather than merely not
 // overwrite them. Everything else in a home is code and comes from git.
 const NODE_STATE = [
-  // The relay list is in here since goal/G16.3 (relay-state/relays.json).
+  // The relay list is in here since goal/G16.3 (spirit/state/relays.json).
   path.join('spirit', 'run', 'relay-state'),
+  path.join('spirit', 'run', 'spirit', 'state'),
   path.join('spirit', 'run', 'shell', 'natter', 'session.json'),
   path.join('spirit', 'run', 'shell', 'natter', 'minted.json'),
   // relayChat's entry stood here until 2026-09-25, when the app left for
@@ -645,9 +646,9 @@ function startNode(node) {
     // Written only when the home has no config.json, so a figure someone
     // set by hand — or over the wire — is never overwritten by a start.
     try {
-      const cfg = path.join(home, 'relay-state', 'config.json');
+      const cfg = path.join(home, 'spirit', 'state', 'config.json');
       if (!fs.existsSync(cfg)) {
-        fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+        fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
         fs.writeFileSync(cfg, JSON.stringify({ ramLimitMB: 1, discLimitMB: 1 }, null, 2) + '\n');
       }
     } catch (e) { /* a relay that cannot be given one measures for itself */ }
@@ -970,9 +971,9 @@ const LIVE_LABEL = 'spirit';
 function liveWorldPaths() {
   const run = path.join(WORK_HOME);
   return {
-    identity: path.join(run, 'relay-state', 'identity.json'),
-    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-    relays: path.join(run, 'relay-state', 'relays.json'),
+    identity: path.join(run, 'spirit', 'state', 'identity.json'),
+    // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+    relays: path.join(run, 'spirit', 'state', 'relays.json'),
     session: path.join(run, 'shell', 'natter', 'session.json'),
     // The home itself, for the seat record — see liveWorldReport.
     home: run,
@@ -1155,7 +1156,7 @@ async function liveWorldReport(peerNode, peerName) {
   const up = !!(await require('../relayDoor').relayKeyOf(LIVE_RELAY).catch(function () { return null; }));
 
   function seatedAt(home, url) {
-    const book = readJson(path.join(home, 'relay-state', 'relayKeys.json'), {});
+    const book = readJson(path.join(home, 'spirit', 'state', 'relayKeys.json'), {});
     const row = book && book[String(url).replace(/\/+$/, '')];
     // A pin with no seat counts, for a node claimed before the record
     // existed — same backfill relayKeys.seatedUrls uses.
@@ -1270,7 +1271,7 @@ async function buildLiveWorld(body) {
   // 3. The peer gets a row on spirit-3, the real way: the owner mints an
   //    invite, the peer consumes it. A hand-written allow entry would
   //    prove nothing about whether joining works.
-  const peerIdFile = path.join(peer.home, 'relay-state', 'identity.json');
+  const peerIdFile = path.join(peer.home, 'spirit', 'state', 'identity.json');
   // Since goal/G22.5 a node's identity exists from its first boot, before it listens, so there is nothing
   // to poke into existence: no identity.json here means the peer never started.
   const peerId = readJson(peerIdFile, null);
@@ -1287,7 +1288,7 @@ async function buildLiveWorld(body) {
   if (!liveKey) return { status: 502, error: 'spirit-3 did not answer a card ask' };
 
   const peerBook = readJson(
-    path.join(peerNode.home, 'relay-state', 'relayKeys.json'), {});
+    path.join(peerNode.home, 'spirit', 'state', 'relayKeys.json'), {});
   const peerRow = peerBook && peerBook[String(LIVE_RELAY).replace(/\/+$/, '')];
   const already = !!(peerRow && (peerRow.seat || peerRow.publicKey));
   if (already) {
@@ -1348,8 +1349,8 @@ async function buildLiveWorld(body) {
   //
   // A row on spirit-3 and a stream to spirit-3 are different things, and
   // neither is "properly bound" on its own. This is the second.
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  const theirRelays = path.join(peer.home, 'relay-state', 'relays.json');
+  // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+  const theirRelays = path.join(peer.home, 'spirit', 'state', 'relays.json');
   const theirRows = readJson(theirRelays, []).filter(function (r) { return r && r.url; });
   const theirOthers = theirRows.filter(function (r) { return r.url !== LIVE_RELAY; });
   const theirFirst = theirRows.length > 0 && theirRows[0].url === LIVE_RELAY;

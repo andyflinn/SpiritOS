@@ -88,8 +88,8 @@ async function verifyHalf() {
   const probe = path.join(scratch, 'pullProbe.js');
   fs.writeFileSync(probe, '// a pull that changes nothing\n');
   const run = path.join(scratch, 'verify');
-  fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(run, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(run, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: node.port }));
   const v = server(VERIFY, 'verify', { db: path.join(run, 'verify.db'), suiteMs: 6000, pull: process.execPath + ' ' + probe }, run);
   const waitFor = async function (fn, ms) { const t = Date.now() + ms; while (Date.now() < t) { if (await fn()) return true; await sleep(200); } return fn(); };
   const serverPid = function () { try { return Number(fs.readFileSync(pidFile, 'utf8')) || 0; } catch (e) { return 0; } };

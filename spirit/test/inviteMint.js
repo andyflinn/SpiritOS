@@ -351,9 +351,9 @@ test.subHeading('A mailbox with no owner key cannot mint');
 
 {
   const home = world.tmpHome();
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(
-    path.join(home, 'relay-state', 'allow.json'),
+    path.join(home, 'spirit', 'state', 'allow.json'),
     JSON.stringify({ names: ['andy'] })
   );
   const box = createRelay(home);

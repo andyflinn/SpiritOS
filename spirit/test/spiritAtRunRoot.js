@@ -122,8 +122,8 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
   else test.fail(OWED + 'index.html loads ' + short((index.match(/<script[^>]*spirit\.js[^>]*>/g) || []).join(' ')));
 
   const home = setupRelayFakes('spiritAtRunRoot').andy;
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   // The fakes keep files from earlier runs; a file the move took away must not be served from an old copy.
   if (!fs.existsSync(NEW)) { try { fs.rmSync(path.join(home, 'spirit.js'), { force: true }); } catch (e) { /* none */ } }
   if (fs.existsSync(NEW)) { try { fs.rmSync(path.join(home, 'face', 'spirit.js'), { force: true }); } catch (e) { /* none */ } }

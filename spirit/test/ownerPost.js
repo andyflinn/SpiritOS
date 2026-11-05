@@ -9,7 +9,7 @@
 //   supported in every context/environment".
 //
 // Built by claude-windows at 8c8347c. The far end is a REAL
-// puppetMode.puppetDoor with its own relay-state/owner.json, so a command
+// puppetMode.puppetDoor with its own spirit/state/owner.json, so a command
 // is signed by ownerPost, checked by G5's rule and run by G7's shim --
 // the whole owner door, end to end, over an in-process relay.
 //
@@ -38,10 +38,10 @@ const other = auth.generateIdentity('other-puppet');
 // A puppet node: its owner.json, a real door, and a handler per verb.
 function puppetNode(id) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ownerpost-'));
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   // Since goal/G22.5: a node's root always holds its identity, and puppetIn reads it.
   auth.saveIdentity(root, id);
-  fs.writeFileSync(path.join(root, 'relay-state', 'owner.json'),
+  fs.writeFileSync(path.join(root, 'spirit', 'state', 'owner.json'),
     JSON.stringify({ owner: owner.publicKey }));
   const ran = [];
   const node = {

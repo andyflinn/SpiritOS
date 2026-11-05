@@ -37,7 +37,7 @@
 //      relay.js has no becomeOwner, so nothing in the running code can write an owner from the wire.
 //   3. install.js IS GONE from the tree, because it exists only to mint that token.
 //   4. THE INSTALL WRITES THE OWNER: bash/install-units takes the owner's public key the way bash/face-install
-//      already does, writes relay-state/owner.json from it, and refuses to install a relay without one.
+//      already does, writes spirit/state/owner.json from it, and refuses to install a relay without one.
 //   5. AN ORDINARY MEMBER CLAIM STILL WORKS on an owned relay, with a member invite. The item takes nothing
 //      away from a person.
 //   6. THE REFUSAL TEXTS THAT NAME THE DEAD PATH ARE GONE: no 'owner invite required' anywhere under spirit/run.
@@ -79,11 +79,11 @@ function runFiles(rel, into) {
 }
 
 // A RELAY THAT IS OWNED BEFORE IT SERVES — which is the shape this item asks for, built here with no invite at
-// all. The owner's key is written into relay-state/owner.json, exactly as bash/face-install does it for a face,
+// all. The owner's key is written into spirit/state/owner.json, exactly as bash/face-install does it for a face,
 // and the relay is owned from its first breath.
 function ownedRelay() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ownerinstall-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
   auth.writeOwner(home, owner.publicKey);
@@ -93,12 +93,12 @@ function ownedRelay() {
 // A relay with NO owner file: the state this item says must never serve, and must never become owned by a claim.
 function unownedRelay() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-noowner-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   return { home: home, box: createRelay(home) };
 }
 
-function ownerFileOf(home) { return path.join(home, 'relay-state', 'owner.json'); }
+function ownerFileOf(home) { return path.join(home, 'spirit', 'state', 'owner.json'); }
 
 // ── 1. NOTHING BECOMES AN OWNER OVER THE WIRE ───────────────────────────
 test.startTest('Ownership never by invite: the first-claim path goes (goal/G16.8)');
@@ -120,7 +120,7 @@ test.subHeading('1. a claim on a relay with no owner is refused, and makes no ow
   }
 
   if (!there(ownerFileOf(w.home))) test.check('and it wrote no owner file, so nothing was handed the box');
-  else test.fail(OWED + 'the claim wrote relay-state/owner.json: ' + short(read(ownerFileOf(w.home))));
+  else test.fail(OWED + 'the claim wrote spirit/state/owner.json: ' + short(read(ownerFileOf(w.home))));
 }
 
 // The same attempt, now with a token in hand. This is the gap Andy named: today a minted owner invite turns this
@@ -144,7 +144,7 @@ test.subHeading('1. a claim on a relay with no owner is refused, and makes no ow
   if (got && got.ok === false) test.check('a claim presenting an owner token is refused too: ' + short(got.error));
   else test.fail(OWED + 'a token made an owner over the wire: ' + short(got) + ' — this is the gap, from install until first claim');
   if (!there(ownerFileOf(w.home))) test.check('and still no owner file');
-  else test.fail(OWED + 'a token wrote relay-state/owner.json over the wire — the box changed hands on the strength of a printed string');
+  else test.fail(OWED + 'a token wrote spirit/state/owner.json over the wire — the box changed hands on the strength of a printed string');
 }
 
 // ── 2. THE MINT AND THE WRITER ARE GONE FROM THE RUNNING CODE ───────────
@@ -157,7 +157,7 @@ test.subHeading('2. the owner kind of invite, and the relay\'s owner writer, are
 
   const relayText = read(path.join(RUN, 'spirit', 'relay.js'));
   if (!/function becomeOwner\b/.test(relayText)) test.check('relay.js has no becomeOwner, so no claim can write an owner');
-  else test.fail(OWED + 'relay.js still defines becomeOwner — the wire can still write relay-state/owner.json');
+  else test.fail(OWED + 'relay.js still defines becomeOwner — the wire can still write spirit/state/owner.json');
   if (!/firstOwner/.test(relayText)) test.check('and no firstOwner branch is left to take');
   else test.fail(OWED + 'relay.js still carries a firstOwner branch');
 }
@@ -183,7 +183,7 @@ test.subHeading('4. bash/install-units takes the owner key and writes the owner 
     if (/\bOWNER_KEY\b/.test(units)) test.check('install-units takes an OWNER_KEY, as face-install does');
     else test.fail(OWED + 'install-units names no OWNER_KEY: an operator still writes owner.json by hand');
 
-    if (/owner\.json/.test(units)) test.check('and writes relay-state/owner.json from it');
+    if (/owner\.json/.test(units)) test.check('and writes spirit/state/owner.json from it');
     else test.fail(OWED + 'install-units never writes owner.json, so a relay still starts unowned');
 
     // A relay that starts with no owner is the window this item closes, so the script must refuse rather than

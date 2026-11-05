@@ -175,7 +175,7 @@ is yours to worry about. Measured on a working node, 2026-09-21:
 |---|---|---|
 | **the program** | `spirit/run/js` + `app` | **~2 MB** — fixed, arrives with the clone |
 | **the node's own bookkeeping** | `relay-state/` | **~340 KB**, and 90% of it is one file |
-| **the auto-memory** | `relay-state/node.db` | **tens of KB** empty, the cache **capped at 20 MB** by default |
+| **the auto-memory** | `spirit/state/node.db` | **tens of KB** empty, the cache **capped at 20 MB** by default |
 | **your space** | `media/`, `published/`, `app/` | **92 MB** on this node, and unbounded by design |
 
 ### What the node needs

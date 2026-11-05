@@ -43,7 +43,7 @@ function listening(port) {
   });
 }
 function readIdentity(run) {
-  try { return JSON.parse(fs.readFileSync(path.join(run, 'relay-state', 'identity.json'), 'utf8')); }
+  try { return JSON.parse(fs.readFileSync(path.join(run, 'spirit', 'state', 'identity.json'), 'utf8')); }
   catch (e) { return null; }
 }
 function post(port, body) {
@@ -121,7 +121,7 @@ function plantedModule() {
 
   const nowhere = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-idboot-none-'));
   const none = typeof auth.nameIdentity === 'function' ? auth.nameIdentity(nowhere, 'Carol') : 'missing';
-  if (none === null && !fs.existsSync(path.join(nowhere, 'relay-state', 'identity.json'))) {
+  if (none === null && !fs.existsSync(path.join(nowhere, 'spirit', 'state', 'identity.json'))) {
     test.check('nameIdentity over a root with no identity makes none and writes nothing');
   } else {
     test.fail('nameIdentity made an identity, or is missing');

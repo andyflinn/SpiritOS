@@ -245,7 +245,7 @@ function run() {
   // is the quiet one: a box with only the old file must open EMPTY rather
   // than appear to work and lose a roster later.
   const legacyHome = world.tmpHome();
-  fs.mkdirSync(path.join(legacyHome, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(legacyHome, 'spirit', 'state'), { recursive: true });
   const carried = {
     nextId: 7,
     peers: {},
@@ -256,7 +256,7 @@ function run() {
     claimedAt: new Date().toISOString(), owner: true,
   };
   fs.writeFileSync(
-    path.join(legacyHome, 'relay-state', 'mailbox.json'),
+    path.join(legacyHome, 'spirit', 'state', 'mailbox.json'),
     JSON.stringify(carried)
   );
   auth.writeOwner(legacyHome, L.owner.publicKey);
@@ -272,7 +272,7 @@ function run() {
   // AND THE FILE IS NOT TOUCHED. Removing somebody's data on their box is
   // their call, not a side effect of a boot — and a stale roster left on
   // disk is exactly why servableAssets.js still asserts it unservable.
-  const legacyRaw = fs.readFileSync(path.join(legacyHome, 'relay-state', 'mailbox.json'), 'utf8');
+  const legacyRaw = fs.readFileSync(path.join(legacyHome, 'spirit', 'state', 'mailbox.json'), 'utf8');
   if (legacyRaw === JSON.stringify(carried)) {
     test.check('and the file is left exactly where it was, unread and unwritten');
   } else {

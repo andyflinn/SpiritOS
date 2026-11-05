@@ -140,8 +140,8 @@ const UNSERVABLE_FOLDERS = ['spirit/DEBUG/', 'spirit/state/'].map(function (p) {
 // This exists because both gates used to pattern-match the raw string the
 // caller handed in, while fsPath resolved that same string separately —
 // so the two could disagree, and the filesystem always obeyed the second
-// one. 'relay-state/identity.json' was denied while
-// './relay-state/identity.json' was not, and both name the same file: on
+// one. 'spirit/state/identity.json' was denied while
+// './spirit/state/identity.json' was not, and both name the same file: on
 // a relay, the Ed25519 PRIVATE KEY. The same gap let
 // 'shell/./natter/natter.js' through a guard that refused
 // 'shell/natter/natter.js'. Every pattern below now runs against this
@@ -203,7 +203,7 @@ function fileServable(filePath) {
   if (UNSERVABLE_FOLDERS.some(function (f) { return canonical.indexOf(f) === 0; })) return false;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false;
   // AT ANY DEPTH, not only the node's own: every app server keeps its
-  // identity at app-state/<name>/relay-state/identity.json
+  // identity at app-state/<name>/spirit/state/identity.json
   // (faceServer.js:614), and a top-level-only check served that private
   // key to any shell app and to the static route (wsl-claude found it,
   // 2026-09-27; Andy's "go." on the fix).
@@ -273,7 +273,7 @@ function deleteFile(filePath) {
 // A NODE'S SIDECARS ARE ITS STATE (box v16 and v17; Andy: "because of desk we MUST run different configurations", "why
 // would we track app sidecars?"): the sidecar lives at the mirror of its file's path in the node's state, out of git,
 // this node's alone: shell/<app>/<app>.js -> relay-state/shell/<app>/<app>.js.sidecar.json, process/js/<name>/<file> ->
-// relay-state/process/<name>/<file>.sidecar.json (the server's own state folder), anything else -> relay-state/<path>.
+// relay-state/process/<name>/<file>.sidecar.json (the server's own state folder), anything else -> spirit/state/<path>.
 // None beside the code counts.
 function sidecarPathFor(filePath) {
   const p = canonicalPath(filePath) || String(filePath || '');

@@ -52,7 +52,7 @@ function heap() {
 // the way an import or a long-lived relay leaves it — plus a real owner.
 function homeWith(tag, n) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-disc-' + tag + '-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
   auth.writeOwner(home, owner.publicKey);
