@@ -84,9 +84,9 @@ function scratch() {
     "require('../../appServer.js').serve({}, { stream: { translator: path.join(__dirname, 'followerRows.js'), cache: true, module: 'a.test' } });",
   ].join('\n') + '\n');
   // The old way of a server that runs at home: its sidecar (Andy: "process/js servers start and run as they do now" is the box's).
-  const agent = path.join(run, 'relay-state', 'process', 'agent');
-  fs.mkdirSync(agent, { recursive: true });
-  fs.writeFileSync(path.join(agent, 'agent.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
+  const old = path.join(run, 'relay-state', 'process', 'chatClerver');
+  fs.mkdirSync(old, { recursive: true });
+  fs.writeFileSync(path.join(old, 'chatClerver.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
   return { root: root, run: run };
 }
 async function call(base, verb, args) {
@@ -184,23 +184,23 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     test.subHeading('the box: "process/js servers start and run as they do now."');
     const fileServer = await liveJob(N.base, 'process/js/fileServer');
     ok(!!fileServer, 'the intrinsic fileServer runs, under its old module id', 'no job for process/js/fileServer');
-    const agent = await liveJob(N.base, 'process/js/agent');
-    ok(!!agent, 'a server with home true in its sidecar runs, under its old module id', 'no job for process/js/agent: ' + short((await jobsOf(N.base)).filter(function (j) { return j.kind === 'server'; }).map(function (j) { return j.module; })));
-    const debug = await call(N.base, 'agent.debug', { on: false });
-    ok(debug.status === 200 && !!debug.body && debug.body.debug === false, 'its verb answers', 'agent.debug: ' + short(debug.text));
-    const oldFace = (await call(N.base, 'api', { family: 'agent' })).body || {};
-    ok(String(oldFace.interface || '').indexOf('provider') !== -1, 'its interface is still the api.js in its family folder', 'api {family: agent}: ' + short(oldFace));
-    const oldAt = (await call(N.base, 'agent.FS.path', { path: 'api.js' })).body || {};
-    ok(oldAt.path === familyPath('agent'), 'FS.path still names what the family path function names', 'FS.path: ' + short(oldAt));
-    if (POSIX) ok(fs.existsSync(path.join(s.run, 'relay-state', 'process', 'agent', 'door.sock')), 'its door stays in relay-state/process', 'no door in relay-state/process/agent');
-    ok(fs.existsSync(path.join(s.run, 'spirit', 'state', 'agent', 'data', 'agent.db')), 'its state stays in its data/', 'no agent.db in spirit/state/agent/data');
+    const oldOne = await liveJob(N.base, 'process/js/chatClerver');
+    ok(!!oldOne, 'a server with home true in its sidecar runs, under its old module id', 'no job for process/js/chatClerver: ' + short((await jobsOf(N.base)).filter(function (j) { return j.kind === 'server'; }).map(function (j) { return j.module; })));
+    const chats = await call(N.base, 'chatClerver.chats.search', {});
+    ok(chats.status === 200 && !!chats.body && chats.body.ok !== false, 'its verb answers', 'chatClerver.chats.search: ' + short(chats.text));
+    const oldFace = (await call(N.base, 'api', { family: 'chatClerver' })).body || {};
+    ok(String(oldFace.interface || '').indexOf('chat.read') !== -1, 'its interface is still the api.js in its family folder', 'api {family: chatClerver}: ' + short(oldFace));
+    const oldAt = (await call(N.base, 'chatClerver.FS.path', { path: 'api.js' })).body || {};
+    ok(oldAt.path === familyPath('chatClerver'), 'FS.path still names what the family path function names', 'FS.path: ' + short(oldAt));
+    if (POSIX) ok(fs.existsSync(path.join(s.run, 'relay-state', 'process', 'chatClerver', 'door.sock')), 'its door stays in relay-state/process', 'no door in relay-state/process/chatClerver');
+    ok(fs.existsSync(path.join(s.run, 'spirit', 'state', 'chatClerver', 'data', 'memory.db')), 'its state stays in its data/', 'no memory.db in spirit/state/chatClerver/data');
     const notHome = await call(N.base, 'jobs.create', { command: 'node', args: ['process/js/counterServer/counterServer.js'], type: 'the red' });
     ok(notHome.status >= 400 && !!notHome.body && notHome.body.code === 'process-not-included', 'a process without its home switch is refused as ever', 'jobs.create on counterServer: ' + short(notHome.text));
     const otherPlace = await call(N.base, 'jobs.create', { command: 'node', args: ['shell/planted.js'], type: 'the red' });
     ok(otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process', 'a script outside the two places is refused by name', 'jobs.create on shell/planted.js: ' + short(otherPlace.text));
-    const sidecarOff = await call(N.base, 'fs.annotate', { path: 'process/js/agent/agent.js', payload: { home: false } });
+    const sidecarOff = await call(N.base, 'fs.annotate', { path: 'process/js/chatClerver/chatClerver.js', payload: { home: false } });
     ok(sidecarOff.status >= 200 && sidecarOff.status < 300, 'the world: its home switch is turned off', 'fs.annotate: ' + sidecarOff.status + ' ' + short(sidecarOff.text));
-    ok(await until(function () { return liveJob(N.base, 'process/js/agent').then(function (j) { return !j; }); }, 15000), 'its sidecar still stops it while the node runs', 'its sidecar did not stop it');
+    ok(await until(function () { return liveJob(N.base, 'process/js/chatClerver').then(function (j) { return !j; }); }, 15000), 'its sidecar still stops it while the node runs', 'its sidecar did not stop it');
 
     test.subHeading('the box: "No gate changes for a caller: once a server is registered, the door and the grants go by its name."');
     const reached = [];
@@ -230,8 +230,8 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
       await stop(kid);
       return readJson(seen);
     };
-    const keptOld = await kept('agent');
-    ok(!!keptOld && keptOld.kept === 'agent', 'the world: a client gets back what it kept of an old family', 'kept of agent: ' + short(keptOld));
+    const keptOld = await kept('chatClerver');
+    ok(!!keptOld && keptOld.kept === 'chatClerver', 'the world: a client gets back what it kept of an old family', 'kept of chatClerver: ' + short(keptOld));
     const keptNone = await kept('noSuchFamily');
     ok(!keptNone, 'the world: and nothing of a family with no data.js here', 'kept of noSuchFamily: ' + short(keptNone));
     const keptNew = await kept(NAME);

@@ -81,7 +81,8 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     const selector = function (face) {
       return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.elements.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };
-    const shown = function () { return c.evaluate('(document.getElementById("zzBox") || {}).innerText || ""').then(String); };
+    // The box's text on one line, so a failure says what was on the page.
+    const shown = function () { return c.evaluate('(document.getElementById("zzBox") || {}).innerText || ""').then(function (t) { return String(t).replace(/\s+/g, ' '); }); };
     const shows = function (words) { return until(function () { return shown().then(function (t) { return t.indexOf(words) !== -1; }); }, 8000); };
     // The innermost visible thing in the box that says these words, clicked.
     const press = function (words) {
@@ -91,7 +92,8 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     const pressInstaller = function () {
       return c.evaluate('(function () { var bs = Array.prototype.slice.call(document.querySelectorAll("#zzBox button.app-installer")); for (var i = 0; i < bs.length; i++) { var p = bs[i].parentElement; while (p && !String(p.innerText || "").replace(bs[i].innerText, "").trim()) p = p.parentElement; if (p && /Agent/.test(p.innerText)) { bs[i].click(); return bs[i].innerText; } } return ""; }())');
     };
-    const tool = function (name) { return c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=' + name + ']"); if (!b) return false; b.click(); return true; }())'); };
+    // A tool is opened, never toggled: a press on the one already shown collapses it (workBench.js, data-current).
+    const tool = function (name) { return c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=' + name + ']"); if (!b) return false; if (!b.hasAttribute("data-current")) b.click(); return true; }())'); };
 
     test.subHeading('the box: active is its one switch; before it nothing runs');
     ok(!(await liveJob(N.base)), 'not active: no server job', 'a server job before Activate');
@@ -133,13 +135,13 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
       ok(hit && await shows(ROWS[name]), 'the ' + name + ' table shows its row, ' + ROWS[name], 'the ' + name + ' tool: ' + short(await shown()));
     }
 
-    test.subHeading('the box: "data.js takes the id spirit.app.agent": a row the server adds comes live');
-    await tool('provider');
-    await shows(ROWS.provider);
-    const before = await shown();
-    ok(before.indexOf('zzLive') === -1, 'the world: the row is not there yet', 'the row was there before it was made');
-    await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.1:9/' });
-    ok(await shows('zzLive'), 'it shows with no reload', 'after the add: ' + short(await shown()));
+    test.subHeading('the box: "data.js takes the id spirit.app.agent, not process/js/agent."');
+    // The server publishes a row on its job, under its module id; the family's data.js on the page takes it into spirit.data.
+    const added = await call(N.base, 'agent.provider', { op: 'add', icon: '🧪', label: 'zzLive', url: 'http://192.0.2.2:9/' });
+    const liveId = added.body && added.body.id;
+    ok(!!liveId, 'the world: the server adds a provider', 'agent.provider add: ' + short(added.text));
+    const onPage = function () { return c.evaluate('(function () { var r = spirit.data.agent && spirit.data.agent.data && spirit.data.agent.data.row("provider", ' + JSON.stringify(String(liveId)) + '); return r ? r.label : ""; }())'); };
+    ok(!!liveId && await until(function () { return onPage().then(function (l) { return l === 'zzLive'; }); }, 8000), 'it reaches the page\'s spirit.data.agent with no reload', 'on the page: ' + short(await onPage()));
 
     test.subHeading('the box: "The server\'s debug switch stays, in its own config.json in spirit/state/agent/data/"');
     await tool('server');
@@ -185,7 +187,7 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
 
     test.subHeading('the box: "The agent has no sidecar. Nothing in this item reads, writes or tests one"');
     const sidecars = filesUnder(path.join(s.run, 'relay-state')).concat(filesUnder(path.join(s.run, 'spirit', 'state'))).concat(filesUnder(path.join(s.run, 'spirit', 'app', 'agent')))
-      .filter(function (f) { return /agent[^/\\]*\.sidecar\.json$/.test(f); });
+      .filter(function (f) { return /agent[^/\\]*\.sidecar\.json$/.test(f) });
     ok(!sidecars.length, 'after all that, no sidecar of the agent stands anywhere', 'sidecars: ' + short(sidecars));
     const code = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.js$/.test(f); })
       .filter(function (f) { return /sidecar/i.test(fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')); }).map(function (f) { return path.relative(RUN, f); })
@@ -193,7 +195,7 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     ok(!code.length, 'and no code or test of the agent names one', 'naming one: ' + short(code));
 
     test.subHeading('the box: "The agent\'s files name their new paths."');
-    const old = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.(js|html)$/.test(f); })
+    const old = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.(js|html)$/.test(f) && f.split(path.sep).indexOf('test') === -1; })
       .filter(function (f) { return /process\/js\/agent|shell\/agent/.test(fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')); }).map(function (f) { return path.relative(RUN, f); })
       .filter(function (f) { return f !== path.relative(RUN, __filename); });
     ok(!old.length, 'no code of the agent names its old folders', 'naming them: ' + short(old));

@@ -15,6 +15,8 @@ const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 
 const DIR = path.join(__dirname, '..');
 const SERVER = path.join(DIR, 'agent.js');
+// The server's own code: agent.js only loads it in a node (goal/G43.13).
+const CODE = path.join(DIR, 'nodeAgent.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -204,7 +206,7 @@ test.startTest('agent.js: the agent server');
     look2.close();
     // What the server publishes carries no secret: read in its code, since a test server's stream reaches no node.
     const srvCode = TABLES.map(function (t) { try { return fs.readFileSync(path.join(RUN, 'spirit', 'app', 'agent', 'table', t, 'server.js'), 'utf8'); } catch (e) { return ''; } }).filter(Boolean).join('\n');
-    ok(srvCode.length > 0 && /publish\(/.test(srvCode + fs.readFileSync(SERVER, 'utf8')), 'the table servers publish their rows to the stream', 'no publish in the table servers');
+    ok(srvCode.length > 0 && /publish\(/.test(srvCode + fs.readFileSync(CODE, 'utf8')), 'the table servers publish their rows to the stream', 'no publish in the table servers');
 
     test.subHeading('the state persists across restarts');
     await ask('debug', { on: true });
@@ -215,7 +217,7 @@ test.startTest('agent.js: the agent server');
   } finally { await stop(); }
 
   test.subHeading('it streams its state');
-  const code = fs.readFileSync(SERVER, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const code = fs.readFileSync(CODE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
   ok(/serve\([^]*publisher\s*:/.test(code) && /bootstrap/.test(code), 'it serves with a publisher whose bootstrap hands a subscriber its state',
     'no publisher with a bootstrap in agent.js');
   const debugAt = code.search(/\bdebug\s*:\s*\{/);

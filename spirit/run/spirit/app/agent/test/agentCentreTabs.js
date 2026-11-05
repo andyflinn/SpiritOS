@@ -62,7 +62,8 @@ test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (go
     const CENTRE = '[id$="center"]';
     const tabs = function () { return c.evaluate('JSON.stringify(Array.prototype.slice.call(document.querySelectorAll(' + JSON.stringify(CENTRE + ' .tab-button') + ')).map(function (b) { return { text: b.textContent.replace(/✕/g, "").replace(/\\s+/g, " ").trim(), on: b.getAttribute("aria-selected") === "true", close: !!b.querySelector("[data-tab-close]") }; }))').then(function (t) { return parsed(t) || []; }); };
     const tabOf = async function (words) { return (await tabs()).filter(function (t) { return t.text === words; }); };
-    const tool = function (name) { return c.evaluate('(function () { var b = document.querySelector("[data-tool=' + name + ']"); if (!b) return false; b.click(); return true; }())'); };
+    // A tool is opened, never toggled: a press on the one already shown collapses it (workBench.js, data-current).
+    const tool = function (name) { return c.evaluate('(function () { var b = document.querySelector("[data-tool=' + name + ']"); if (!b) return false; if (!b.hasAttribute("data-current")) b.click(); return true; }())'); };
     // A row of a tool's list, by its label, outside the centre.
     const pressRow = function (label) { return c.evaluate('(function () { var all = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && !e.closest(' + JSON.stringify(CENTRE) + ') && e.textContent.trim() === ' + JSON.stringify(label) + ' && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === ' + JSON.stringify(label) + '; }); }); if (!all[0]) return false; all[0].click(); return true; }())'); };
     const waitTab = function (words) { return until(function () { return tabOf(words).then(function (t) { return t.length > 0; }); }, 6000); };

@@ -17,7 +17,7 @@ The Agent in `spirit/app/agent/`, as Andy sees it (goal/G43.13). Its test is `./
 
 - Its tile opens the app, and closes and opens again.
 - The provider, model, persona and job tables each show their row.
-- A row the server adds shows with no reload, through `data.js` and the id `spirit.app.agent`.
+- A row the server adds reaches the page's `spirit.data.agent` with no reload: `data.js` takes the id `spirit.app.agent`.
 - The server's debug switch works: ticked, `spirit/state/agent/data/config.json` says debug true, and the checkbox follows the server.
 - Nothing throws on the page.
 
