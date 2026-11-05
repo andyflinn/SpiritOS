@@ -1,5 +1,5 @@
 {
- "change": 143732,
+ "change": 143733,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 6,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -8485,12 +8485,11 @@
    "id": "goal/G43.11",
    "title": "iconSet.json moves to run://spirit/",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 7,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
