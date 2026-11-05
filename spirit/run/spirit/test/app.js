@@ -114,28 +114,29 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     const stateFile = function (k) { return path.join(node.root, 'spirit', 'run', 'spirit', 'state', k, 'node.json'); };
     const activeIn = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')).active; } catch (e) { return undefined; } };
     test.subHeading('the box: "The user sets active, so Monitor and server start off"');
-    ok(activeIn('monitor') !== true && activeIn('server') !== true, 'neither is active before a press', 'active before a press: ' + short([activeIn('monitor'), activeIn('server')]));
+    // Monitor is intrinsic since Andy's 7f6ebbbe ("intrinsic flag"), so always on: the Agent, intrinsic false, is the app switched here.
+    ok(activeIn('agent') !== true && activeIn('server') !== true, 'neither is active before a press', 'active before a press: ' + short([activeIn('agent'), activeIn('server')]));
     const before = rows(await ask(node.base, 'app.search', {})) || [];
     // An intrinsic app is always active (goal/G43.14), so it is no app the user set.
     const intrinsicApp = function (k) { try { return JSON.parse(fs.readFileSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', k, k + '.json'), 'utf8')).identity.intrinsic === true; } catch (e) { return false; } };
     const lit = before.filter(function (i) { return (parsed(i.label) || {}).active === true && !intrinsicApp(i.key); }).map(function (i) { return i.key; });
     ok(before.length > 0 && !lit.length, 'and no row but an intrinsic app\'s says active', before.length ? 'rows that say active before a press: ' + short(lit) : 'app.search answered no rows');
     test.subHeading('the box: "The node writes spirit/state/<key>/node.json"');
-    const on = await ask(node.base, 'app.active', { key: 'monitor', active: true });
-    ok(on.status === 200 && activeIn('monitor') === true, 'active true lands in spirit/state/monitor/node.json', 'after active true: ' + short({ status: on.status, text: on.text, file: activeIn('monitor') }));
+    const on = await ask(node.base, 'app.active', { key: 'agent', active: true });
+    ok(on.status === 200 && activeIn('agent') === true, 'active true lands in spirit/state/agent/node.json', 'after active true: ' + short({ status: on.status, text: on.text, file: activeIn('agent') }));
     // Andy: "on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json", and on Q7: "it just holds active (boolean), icon (glyph), label(string) and shell (boolean),"
-    const firstState = (function () { try { return JSON.parse(fs.readFileSync(stateFile('monitor'), 'utf8')); } catch (e) { return {}; } }());
-    const monitorJson = JSON.parse(fs.readFileSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'monitor', 'monitor.json'), 'utf8'));
-    ok(firstState.label === monitorJson.identity.label && firstState.icon === monitorJson.identity.icon && firstState.shell === (monitorJson.shell || {}).true, 'the first activate copies label, icon and shell from <name>.json', 'node.json after the first activate: ' + short(firstState));
+    const firstState = (function () { try { return JSON.parse(fs.readFileSync(stateFile('agent'), 'utf8')); } catch (e) { return {}; } }());
+    const agentJson = JSON.parse(fs.readFileSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'agent', 'agent.json'), 'utf8'));
+    ok(firstState.label === agentJson.identity.label && firstState.icon === agentJson.identity.icon && firstState.shell === (agentJson.shell || {}).true, 'the first activate copies label, icon and shell from <name>.json', 'node.json after the first activate: ' + short(firstState));
     ok(Object.keys(firstState).sort().join() === 'active,icon,label,shell', 'and it holds those and active, nothing else', 'node.json holds: ' + short(Object.keys(firstState)));
     await ask(node.base, 'app.label', { key: 'server', label: 'Chosen First' });
     await ask(node.base, 'app.active', { key: 'server', active: true });
     const chosen = (function () { try { return JSON.parse(fs.readFileSync(stateFile('server'), 'utf8')); } catch (e) { return {}; } }());
     ok(chosen.label === 'Chosen First' && typeof chosen.icon === 'string' && chosen.icon !== '' && chosen.active === true, 'a label the node chose first stays, and the rest is copied', 'server\'s node.json: ' + short(chosen));
     await ask(node.base, 'app.active', { key: 'server', active: false });
-    const off = await ask(node.base, 'app.active', { key: 'monitor', active: false });
-    ok(off.status === 200 && activeIn('monitor') === false, 'active false lands there too', 'after active false: ' + short({ status: off.status, file: activeIn('monitor') }));
-    await ask(node.base, 'app.active', { key: 'monitor', active: true });
+    const off = await ask(node.base, 'app.active', { key: 'agent', active: false });
+    ok(off.status === 200 && activeIn('agent') === false, 'active false lands there too', 'after active false: ' + short({ status: off.status, file: activeIn('agent') }));
+    await ask(node.base, 'app.active', { key: 'agent', active: true });
     // ── intrinsic (goal/G43.14) ──
     test.subHeading('the box: "intrinsic true: the app is always active", "app.active does not switch it off"');
     const rowFor = async function (k) { const got = rows(await ask(node.base, 'app.search', { q: '' })) || []; const r = got.filter(function (i) { return i.key === k; })[0]; return r ? parsed(r.label) : null; };
@@ -155,29 +156,29 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     test.subHeading('Q4: "Do a label change and allow-as-shell go in spirit/state/<name>/node.json, through two new verbs app.label and app.shell?", Andy: "yes."');
     ok(!!verbs.label && 'key' in verbs.label && 'label' in verbs.label && fs.existsSync(path.join(RUN, 'spirit', 'app', 'label.json')), 'app.label names key and label, and has its file', 'app.label: ' + short(verbs.label));
     ok(!!verbs.shell && 'key' in verbs.shell && 'shell' in verbs.shell && fs.existsSync(path.join(RUN, 'spirit', 'app', 'shell.json')), 'app.shell names key and shell, and has its file', 'app.shell: ' + short(verbs.shell));
-    const sidecar = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'monitor', 'monitor.json');
+    const sidecar = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'agent', 'agent.json');
     const sidecarBefore = fs.readFileSync(sidecar, 'utf8');
     const stateRead = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')); } catch (e) { return {}; } };
-    const named = await ask(node.base, 'app.label', { key: 'monitor', label: 'Renamed Here' });
-    ok(named.status === 200 && stateRead('monitor').label === 'Renamed Here', 'app.label writes node.json', 'after app.label: ' + short({ s: named.status, t: named.text, f: stateRead('monitor') }));
-    ok(stateRead('monitor').active === true, 'and keeps what else it holds', 'node.json lost active: ' + short(stateRead('monitor')));
+    const named = await ask(node.base, 'app.label', { key: 'agent', label: 'Renamed Here' });
+    ok(named.status === 200 && stateRead('agent').label === 'Renamed Here', 'app.label writes node.json', 'after app.label: ' + short({ s: named.status, t: named.text, f: stateRead('agent') }));
+    ok(stateRead('agent').active === true, 'and keeps what else it holds', 'node.json lost active: ' + short(stateRead('agent')));
     ok(holds(rows(await ask(node.base, 'app.search', { q: 'Renamed Here' })), 'Renamed Here'), 'node.json overrides <name>.json: a search answers the new label', 'a search does not answer the new label');
     ok(!!verbs.icon && 'key' in verbs.icon && 'icon' in verbs.icon && fs.existsSync(path.join(RUN, 'spirit', 'app', 'icon.json')), 'app.icon names key and icon, and has its file', 'app.icon: ' + short(verbs.icon));
-    const iconed = await ask(node.base, 'app.icon', { key: 'monitor', icon: '🧪' });
-    ok(iconed.status === 200 && stateRead('monitor').icon === '🧪', 'app.icon writes node.json', 'after app.icon: ' + short({ s: iconed.status, t: iconed.text, f: stateRead('monitor') }));
-    const allowed = await ask(node.base, 'app.shell', { key: 'monitor', shell: true });
-    ok(allowed.status === 200 && stateRead('monitor').shell === true, 'app.shell writes node.json', 'after app.shell: ' + short({ s: allowed.status, t: allowed.text, f: stateRead('monitor') }));
-    ok(fs.readFileSync(sidecar, 'utf8') === sidecarBefore, 'neither writes <name>.json', 'monitor.json was written');
+    const iconed = await ask(node.base, 'app.icon', { key: 'agent', icon: '🧪' });
+    ok(iconed.status === 200 && stateRead('agent').icon === '🧪', 'app.icon writes node.json', 'after app.icon: ' + short({ s: iconed.status, t: iconed.text, f: stateRead('agent') }));
+    const allowed = await ask(node.base, 'app.shell', { key: 'agent', shell: true });
+    ok(allowed.status === 200 && stateRead('agent').shell === true, 'app.shell writes node.json', 'after app.shell: ' + short({ s: allowed.status, t: allowed.text, f: stateRead('agent') }));
+    ok(fs.readFileSync(sidecar, 'utf8') === sidecarBefore, 'neither writes <name>.json', 'agent.json was written');
     for (const verb of ['app.icon', 'app.label', 'app.shell']) {
-      ok(faceRefuses({ call: verb, args: { key: 'monitor' } }, { url: 'http://r.example/', key: '', owned: false }) !== '', 'a face with no star is refused ' + verb, 'a face with no star may call ' + verb);
+      ok(faceRefuses({ call: verb, args: { key: 'agent' } }, { url: 'http://r.example/', key: '', owned: false }) !== '', 'a face with no star is refused ' + verb, 'a face with no star may call ' + verb);
       for (const bad of ['nosuchapp', '../evil', '']) {
         const r = await ask(node.base, verb, { key: bad, icon: '🧪', label: 'x', shell: true });
         ok(r.status !== 200, verb + ' refuses ' + JSON.stringify(bad), verb + ' took ' + JSON.stringify(bad) + ': ' + short(r.text));
       }
     }
     test.subHeading('the box: "spirit/state/ is not servable, so a page cannot read other apps\' state through a plain GET."');
-    ok(activeIn('monitor') === true, 'the file to ask for is there', 'no file to ask for');
-    const got = await fetch(node.base + '/spirit/state/monitor/node.json');
+    ok(activeIn('agent') === true, 'the file to ask for is there', 'no file to ask for');
+    const got = await fetch(node.base + '/spirit/state/agent/node.json');
     const gotText = await got.text();
     ok(got.status !== 200 && gotText.indexOf('active') === -1, 'a plain GET does not hand it over', 'a plain GET answered ' + got.status + ': ' + short(gotText));
   } finally {
