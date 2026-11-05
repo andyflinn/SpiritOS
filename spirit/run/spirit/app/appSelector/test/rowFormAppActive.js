@@ -51,11 +51,13 @@ test.startTest('rowFormAppActive.js: Activate/Deactivate for one app, hidden whe
     const listed = await chrome.evaluate('spirit.require("spirit/app/appSelector.js").then(function () { var b = document.createElement("div"); b.id = "pane"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); window.__sel = spirit.elements.appSelector.create(b, { face: "pane" }); return true; })');
     ok(listed === true, 'the world: the appSelector\'s pane is made', 'no pane: ' + short(listed));
     // Each row of the pane, its text and the button it holds.
-    const rows = function () { return chrome.evaluate('(function () { var out = {}; Array.prototype.slice.call(document.querySelectorAll("#pane tr, #pane [data-key]")).forEach(function (r) { var t = String(r.innerText || "").replace(/\\s+/g, " ").trim(); ["Contacts", "Agent"].forEach(function (n) { if (t.indexOf(n) !== -1 && !out[n]) out[n] = { text: t, buttons: Array.prototype.map.call(r.querySelectorAll("button"), function (x) { return String(x.textContent || "").trim(); }) }; }); }); return out; }())'); };
+    const rows = function () { return chrome.evaluate('(function () { var out = {}; Array.prototype.slice.call(document.querySelectorAll("#pane tr, #pane [data-key]")).forEach(function (r) { var t = String(r.innerText || "").replace(/\\s+/g, " ").trim(); ["Contacts", "Agent"].forEach(function (n) { if (t.indexOf(n) !== -1 && !out[n]) out[n] = { text: t, forms: r.querySelectorAll(".shell-row-form").length, installers: r.querySelectorAll("button.app-installer").length, buttons: Array.prototype.map.call(r.querySelectorAll("button"), function (x) { return String(x.textContent || "").trim(); }) }; }); }); return out; }())'); };
     ok(await until(function () { return rows().then(function (r) { return !!r.Contacts && !!r.Agent; }); }, 10000), 'the world: the pane lists Contacts and the Agent', 'the pane: ' + short(await rows()));
     const r = await rows();
     ok(!!r.Agent && /Activate|Deactivate/.test(r.Agent.text) && r.Agent.buttons.length > 0, 'the Agent\'s row has its Activate or Deactivate, with a button', 'the Agent\'s row: ' + short(r.Agent));
     ok(!!r.Contacts && !/Activate|Deactivate/.test(r.Contacts.text), 'Contacts\' row says neither Activate nor Deactivate', 'Contacts\' row: ' + short(r.Contacts));
+    // The box: "The appSelector's detail and its rows use them." A row's switch is rowFormAppActive, a rowForm, not the old installer's button.
+    ok(!!r.Agent && r.Agent.forms > 0 && r.Agent.installers === 0, 'the Agent\'s row switches through rowFormAppActive, a rowForm, not the old installer', 'the Agent\'s row: ' + short(r.Agent));
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     try { if (chrome && chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }

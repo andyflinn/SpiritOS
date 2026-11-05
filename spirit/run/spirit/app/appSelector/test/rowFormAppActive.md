@@ -9,4 +9,4 @@ Andy: *"the "activate/deacivate" should be an element, too, that self-hides if t
 - `spirit.elements.rowFormAppActive.create(host, { key })`, loaded through `spirit.require`, answers `{ destroy }`.
 - For an intrinsic app (Contacts) it shows nothing and takes no space.
 - For an app that is not intrinsic (the Agent), off, it says Activate and the app's label. A press makes the app active, and it says Deactivate. A second press makes it inactive.
-- In the appSelector's pane, the Agent's row has its Activate, and Contacts' row has neither Activate nor Deactivate.
+- In the appSelector's pane (the box: *"The appSelector's detail and its rows use them."*), the Agent's row has its Activate or Deactivate, drawn by rowFormAppActive, a rowForm, and no button of the old installer. Contacts' row says neither.
