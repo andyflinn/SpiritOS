@@ -11,3 +11,4 @@ Andy: *"ignore or hold are enough, and safer that automatically adding a contact
 - On the node both are no verb, and the node writes no `preferences.json`.
 
 - Andy: *"so NO, we don't need a "held" "status""*: a refused id stays in the traffic log, *"for as long as there is space"*, and nowhere else waits for a yes: `contact.search` has no `held` filter, the remembered row (`nodeStore.js` SEEN_FLAGS) no `held` flag, and `spirit/contacts.js` no `hold`.
+- Andy: *"FIX the handling of "forget" and "held", removing data base fields to end the life of "held"."*: a `node.db` from before, its `seen` table holding a `held` column, opened by the node's own store (`nodeStore.open`), has no `held` column any more.

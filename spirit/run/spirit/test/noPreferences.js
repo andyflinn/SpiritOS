@@ -49,6 +49,26 @@ test.startTest('noPreferences.js: preferences.json and every line that reads or 
   const book = require(path.join(RUN, 'spirit', 'contacts.js'));
   ok(typeof book.hold !== 'function', 'the contact book holds nobody: no hold', 'spirit/contacts.js still exports hold');
 
+  // Andy: "FIX the handling of "forget" and "held", removing data base fields to end the life of "held".": a node.db from before,
+  // its seen table still holding a held column with a held row, opened by the node's own store, loses the column.
+  test.subHeading('Andy: "removing data base fields to end the life of "held"": a node.db from before loses its held column');
+  const NS = require(path.join(RUN, 'spirit', 'nodeStore.js'));
+  const old = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-noheld-'));
+  try {
+    NS.open(old).close();
+    const D = require('node:sqlite').DatabaseSync;
+    let db = new D(NS.dbPath(old));
+    const cols = function () { return db.prepare('PRAGMA table_info(seen)').all().map(function (c) { return c.name; }); };
+    if (cols().indexOf('held') === -1) db.exec('ALTER TABLE seen ADD COLUMN held INTEGER NOT NULL DEFAULT 0');
+    ok(cols().indexOf('held') !== -1, 'the world: a node.db whose seen table holds a held column', 'no held column could be made: nothing judged');
+    db.close();
+    NS.open(old).close();
+    db = new D(NS.dbPath(old));
+    const after = cols();
+    db.close();
+    ok(after.length > 0 && after.indexOf('held') === -1, 'opened by the node, its seen table has no held column any more', 'the seen table after the node opened it: ' + short(after));
+  } finally { try { fs.rmSync(old, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+
   const N = await scratchNode();
   try {
     ok(N.up, 'the world: a scratch node comes up', 'the scratch node did not come up: nothing judged');
