@@ -1,5 +1,5 @@
 {
- "change": 148786,
+ "change": 148787,
  "goal": "goal/G43",
  "items": [
   {
@@ -146,7 +146,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -11557,12 +11557,11 @@
    "id": "goal/G43.15",
    "title": "app tweaks.",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 13,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
