@@ -223,7 +223,10 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     await T('filter("in", "contents")');
     await T('type("zzquokka")');
     await T('search()');
-    ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1', 15000), 'in contents both files holding the word are found', 'rows: ' + short(await T('rows()')) + ', the list: ' + JSON.stringify(await T('state()')));
+    // Nothing is cut (probabilitySearch, G43.6), so both files are in the list before the node answers: found means ranked above
+    // every file the word misses, which only the contents answer does.
+    const hits = 'rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/notes.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/inner/deep.txt") !== -1';
+    ok(await waitFor(hits, 15000), 'in contents both files holding the word are found, ranked above the files it misses', 'rows: ' + short(await T('rows()')) + ', the list: ' + JSON.stringify(await T('state()')));
     const ranked = await T('rows()');
     const rankedAt = await T('state()');
     ok(ranked.indexOf('zzFiles/notes.txt') !== -1 && ranked.indexOf('zzFiles/notes.txt') < ranked.indexOf('zzFiles/inner/deep.txt'), 'the file with two matches ranks above the one with one', 'rows: ' + short(ranked) + ', the list: ' + JSON.stringify(rankedAt));
