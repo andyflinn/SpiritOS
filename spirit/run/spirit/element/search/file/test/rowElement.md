@@ -41,9 +41,11 @@ a subject needs), loaded with it.
 
 Andy, box: *"display folders and path elements in a bright green if their names match a reserved word AND the browsers spirit object contains the corresponding javascript Object at that path."*, *"display folders and path elements in a bright red if folders and the browser spirit object disagree."*, *"the colors will follow word.json changes live."*, and *"in files it is always displayed green"* of `spirit`.
 
+goal/G43.18, Andy: *"file app: please change the green colored paths/files in light blue instead."* So where the words above say green, a path element is light blue (a bright blue with red and green in it, as lightskyblue), and none is green.
+
 `./rowElement-words.html` shows real rows on a scratch node. Each path element is its own element, so its colour is its own:
 
-- `spirit` is green. `spirit/app` and `spirit/element` are green, as a folder row and in the path of a file inside. `spirit/contact` has no colour: it is no word since Andy's commit d278c3e6.
+- `spirit` is light blue. `spirit/app` and `spirit/element` are light blue, as a folder row and in the path of a file inside. `spirit/contact` has no colour: it is no word since Andy's commit d278c3e6.
 - `spirit/job` (reserved, a folder, no `spirit.job`) is red.
 - A name not reserved has no colour (`spirit/jobs`, `spirit/hub.js`), and outside `spirit/` no word holds (`shell/app`).
-- A `word.json` gaining a word turns the open row red with no reload, an object at that path makes it green, and `word.json` gone takes the colour away.
+- A `word.json` gaining a word turns the open row red with no reload, an object at that path makes it light blue, and `word.json` gone takes the colour away.

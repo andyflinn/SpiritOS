@@ -20,6 +20,13 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 
+// The code of the tree, its comments out, its tests out: what runs.
+function codeNaming(re) {
+  const out = [];
+  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents' || e.name === 'test') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(RUN));
+  return out.filter(function (f) { return /\.(js|html)$/.test(f) && re.test(code(f).replace(/<!--[\s\S]*?-->/g, '')); }).map(function (f) { return path.relative(RUN, f); });
+}
+
 const PANEL = path.join(RUN, 'spirit', 'element', 'panel.js');
 const USERS = { appSelector: path.join(RUN, 'spirit', 'app', 'appSelector.js'), file: path.join(RUN, 'spirit', 'app', 'file', 'file.js') };
 const PLANT = { 'zzFiles/notes.txt': 'alpha\nbeta\n' };
@@ -65,6 +72,9 @@ const HANDS = '(function () {' +
   '  bars: function () { return closers().map(function (b) { return String(b.parentElement.innerText || "").replace("✕", "").replace(/\\s+/g, " ").trim(); }); },' +
   '  close: function (label) { var b = closers().filter(function (b) { return String(b.parentElement.innerText || "").indexOf(label) !== -1; }); if (!b.length) return false; b[0].click(); return true; },' +
   '  count: function (sel) { return all(sel).length; },' +
+  // A row's own cell pressed, not an action of it: what a press on the row opens.
+  '  openRow: function (k) { var r = all("tr[data-key]").filter(function (t) { return t.getAttribute("data-key") === k; })[0]; if (!r) return false; (r.querySelector("td") || r).click(); return true; },' +
+  '  depth: function () { var n = window.spirit.elements && window.spirit.elements.navigation; return n && typeof n.depth === "function" ? n.depth() : 0; },' +
   // A mark on what shows now, but not on what showed before: the layer just opened.
   '  markBefore: function () { all("*").forEach(function (e) { e.setAttribute("data-zz-before", "1"); }); return true; },' +
   '  markLayer: function (name) { var n = 0; all("*").forEach(function (e) { if (!e.hasAttribute("data-zz-before")) { e.setAttribute("data-zz-" + name, "1"); n++; } }); return n; },' +
@@ -84,6 +94,16 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     ok(/spirit\/element\/panel\.js/.test(own), u + ' loads spirit/element/panel.js', u + ' does not load spirit/element/panel.js');
     ok(!!own && !/✕|app-container/.test(own), u + ' draws no title bar or close of its own', u + ' still draws a ✕ or an app-container');
   });
+
+  // goal/G43.18, Andy: "contact details and relay details should be proper panels in the newest shell style.", and "add it to a
+  // general test that panels must be panels....": what opens over its mounter opens as a layer of this element, so no code pushes
+  // a page on the navigation for it.
+  // The shell itself (shell/) opens an app as a page on the navigation: that is the shell's top container (navigationWrapper.js,
+  // Andy 2026-10-25: "an app is only a mountable icon in shell, conceptually, and it simply uses the navigation wrapper as it's
+  // top container"), not an element over its mounter. The apps and elements are spirit/.
+  test.subHeading('Andy: "panels must be panels": no app or element opens a page on the navigation, what it opens over itself is a panel');
+  const pushing = codeNaming(/navigation\.push\s*\(/).filter(function (f) { return f.split(path.sep)[0] === 'spirit'; });
+  ok(!pushing.length, 'no app or element under spirit/ calls navigation.push', pushing.length + ' still do: ' + short(pushing));
 
   const s = scratch();
   const live = [];
@@ -194,6 +214,34 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     await sleep(2000);
     const loaded = await c.evaluate('performance.getEntriesByType("resource").map(function (e) { return e.name.replace(/^https?:\\/\\/[^/]+/, ""); }).filter(function (n) { return /\\/spirit\\/app\\/agent\\//.test(n); })');
     ok(Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent) && !(window.spirit.elements && window.spirit.elements.agent)')), 'after the shell boots again none of it is loaded', 'loaded: ' + short(loaded));
+
+    // goal/G43.18, Andy: "contact details and relay details should be proper panels in the newest shell style."
+    test.subHeading('Andy: "contact details and relay details should be proper panels in the newest shell style."');
+    // A person in the book beside the relay the node starts with: a key of our own, blocked, so the book holds it.
+    const zzKey = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+    const planted = await call(N.base, 'contact.block', { publicKey: zzKey, publicLabel: 'zzPerson' });
+    ok(planted.status === 200, 'the world: a person is in the book', 'contact.block: ' + short(planted.text));
+    const found = await call(N.base, 'contact.search', { q: '' });
+    const people = ((found.body && found.body.items) || []).map(function (i) { return Object.assign({ key: i.key }, parsed(i.label) || {}); });
+    const kinds = [['relay', people.filter(function (p) { return p.relay === true; })[0]], ['contact', people.filter(function (p) { return p.relay !== true; })[0]]];
+    for (const k of kinds) {
+      const who = k[1];
+      ok(!!who, 'the world: the node knows a ' + k[0], 'the world: no ' + k[0] + ' on the scratch node: ' + short(people));
+      if (!who) continue;
+      await selector('tiles');
+      await waitFor('tiles().indexOf("contact") !== -1', 10000);
+      await T('press("contact")');
+      ok(await waitFor('bars().length === 1 && rows().indexOf(' + JSON.stringify(who.key) + ') !== -1', 10000), 'the world: Contacts opens and lists the ' + k[0], 'bars: ' + short(await T('bars()')) + ', rows: ' + short(await T('rows()')));
+      const contacts = (await T('bars()'))[0];
+      const depth = await T('depth()');
+      await T('openRow(' + JSON.stringify(who.key) + ')');
+      ok(await waitFor('bars().length === 1 && bars()[0] !== ' + JSON.stringify(contacts), 10000), 'the ' + k[0] + '\'s details open over Contacts under one bar of their own', 'bars: ' + short(await T('bars()')));
+      ok((await T('rows()')).indexOf(who.key) === -1, 'the list is out of view under them', 'rows: ' + short(await T('rows()')));
+      ok((await T('depth()')) === depth, 'no page is pushed on the navigation', 'the navigation went from ' + depth + ' to ' + (await T('depth()')));
+      const own = (await T('bars()'))[0];
+      await T('close(' + JSON.stringify(String(own || '').slice(-12)) + ')');
+      ok(await waitFor('bars().length === 1 && bars()[0] === ' + JSON.stringify(contacts) + ' && rows().indexOf(' + JSON.stringify(who.key) + ') !== -1', 10000), 'their ✕ shows Contacts again, one step back', 'bars: ' + short(await T('bars()')) + ', rows: ' + short(await T('rows()')));
+    }
 
     test.subHeading('nothing threw on the page');
     // The Agent is the world here, opened with no agent server on the scratch node; what its own table throws is the Agent's, not

@@ -135,7 +135,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   // ── goal/G43.4: THE RESERVED WORDS IN COLOUR, IN A REAL BROWSER ───────────────────────────────────
   // Real rows on a scratch node (./rowElement-words.html), spirit/word.js and the node's own file stream under them.
-  test.subHeading('goal/G43.4: a path element is green where word and spirit object agree, red where they disagree');
+  // goal/G43.18, Andy: "file app: please change the green colored paths/files in light blue instead." Where G43.4 said green, light blue.
+  test.subHeading('goal/G43.4 and G43.18: a path element is light blue where word and spirit object agree, red where they disagree');
   const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
   const chrome = H.findChrome();
   if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); return; }
@@ -152,15 +153,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     await page.evaluate('window.ready()');
     const row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return { threw: String(e) }; } };
     const app = await row('spirit/app');
-    ok(app.app === 'green', 'spirit/app: reserved, and the spirit object holds spirit.app: green', 'spirit/app: ' + short(app));
-    ok(app.spirit === 'green', 'its path element spirit: "in files it is always displayed green"', 'spirit/app: ' + short(app));
+    ok(app.app === 'lightblue', 'spirit/app: reserved, and the spirit object holds spirit.app: light blue', 'spirit/app: ' + short(app));
+    ok(app.spirit === 'lightblue', 'its path element spirit: always the colour of a word that holds, light blue', 'spirit/app: ' + short(app));
     const element = await row('spirit/element');
-    ok(element.element === 'green', 'spirit/element: green', 'spirit/element: ' + short(element));
+    ok(element.element === 'lightblue', 'spirit/element: light blue', 'spirit/element: ' + short(element));
     // Andy's commit d278c3e6, "identity": contact is no hard-coded word now.
     const contact = await row('spirit/contact');
     ok(contact.contact === 'none', 'spirit/contact: no colour, it is no word now', 'spirit/contact: ' + short(contact));
     const inside = await row('spirit/app/api.js', 'file');
-    ok(inside.app === 'green' && inside.spirit === 'green', 'a file inside: its path elements carry the colours too', 'spirit/app/api.js: ' + short(inside));
+    ok(inside.app === 'lightblue' && inside.spirit === 'lightblue', 'a file inside: its path elements carry the colours too', 'spirit/app/api.js: ' + short(inside));
     const plain = await row('spirit/jobs');
     ok(plain.jobs === 'none', 'spirit/jobs: not reserved: no colour', 'spirit/jobs: ' + short(plain));
     const hub = await row('spirit/hub.js', 'file');
@@ -180,8 +181,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const red = await row('spirit/app/thing');
     ok(red.thing === 'red', 'word.json gains the word: the same row goes red, with no reload: no spirit.app.thing', 'spirit/app/thing: ' + short(red));
     await page.evaluate('window.setObject(true); window.fresh("spirit/app/thing")');
-    const green = await row('spirit/app/thing');
-    ok(green.thing === 'green', 'with spirit.app.thing on the object: green', 'spirit/app/thing: ' + short(green));
+    const blue = await row('spirit/app/thing');
+    ok(blue.thing === 'lightblue', 'with spirit.app.thing on the object: light blue', 'spirit/app/thing: ' + short(blue));
     await page.evaluate('window.setObject(false)');
     del('spirit/app/word.json');
     const gone = await row('spirit/app/thing');

@@ -19,7 +19,9 @@ function colourOf(el) {
   var m = /rgba?\((\d+), (\d+), (\d+)/.exec(getComputedStyle(el).color);
   if (!m) return 'none';
   var r = +m[1], g = +m[2], b = +m[3];
-  return g >= 180 && r <= 120 && b <= 120 ? 'green' : r >= 200 && g <= 90 && b <= 90 ? 'red' : 'none';
+  // goal/G43.18, Andy: "file app: please change the green colored paths/files in light blue instead.": light blue is a bright blue with red and green
+  // in it, as lightskyblue or lightblue; green stays named, so a row still green is seen.
+  return b >= 200 && g >= 150 && r >= 100 && b - r >= 30 ? 'lightblue' : g >= 180 && r <= 120 && b <= 120 ? 'green' : r >= 200 && g <= 90 && b <= 90 ? 'red' : 'none';
 }
 // Each path element of a row: the innermost element whose text is that element, its slash aside.
 function read(host, parts) {
