@@ -12,12 +12,13 @@
 //   create(host, opts) -> the list (value, row, words(), refresh(), redraw(), sort(), destroy())
 //     opts.api          the app's shell api (verb)
 //     opts.face         'pane' or 'dropdown'
+//     opts.toggle       true: a pane flips to tiles and back (goal/G43.17)
 //     opts.accept, opts.placeholder, opts.all, opts.empty
 //     opts.pick(row, key)   a file chosen; row.line is the first matched line of a file found by its contents
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) ['spirit/element/files/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/fileViewer.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.require) ['spirit/element/files/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
   // The tree it is a view of is the fs family's cache (goal/G41.28), its manager loaded with it.
   window.spirit.cacheManager('fs');
   function fsReads() { return (window.spirit && ((window.spirit.data || {}).fs || {}).data) || null; }
@@ -26,7 +27,7 @@
     if (row.kind === 'folder' || accept == null) return true;
     if (typeof accept === 'function') return !!accept(row);
     var name = String(row.path || '').toLowerCase();
-    var mime = E.fileViewer ? String(E.fileViewer.mimeOf(name)) : '';
+    var mime = E.fstat ? String(E.fstat.mimeOf(name)) : '';
     return (Array.isArray(accept) ? accept : [accept]).some(function (a) {
       a = String(a).toLowerCase();
       return a.charAt(0) === '.' ? name.slice(-a.length) === a : mime.indexOf(a) === 0;
@@ -65,6 +66,7 @@
     var o = opts || {};
     var opened = Object.create(null);   // the folders open in the tree, by path
     var scores = Object.create(null);   // path -> the node's contents score, from the last contents search
+    var made = Object.create(null);     // path -> its row element, so a folder's press can say it is open (goal/G43.17: 📂)
     var list = null;
     host.innerHTML = '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}.files-tree .path-dir{display:none}</style>' +
       // The list search's box takes all of this one (goal/G40.8: space granted top-down).
@@ -77,6 +79,8 @@
       server: 'fs',
       verb: 'search',
       face: o.face,
+      // A PANE OR ITS TILES (goal/G43.17: "It gains a tiles mode, with the toggle between pane and tiles").
+      toggle: o.toggle === true,
       placeholder: o.placeholder || 'choose a file…',
       all: o.all,
       name: function (row) { return String(row.path || row.key || ''); },
@@ -86,7 +90,7 @@
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
       ],
-      element: function (row, key) { return E.fileElement.create(Object.assign({ path: key }, row)); },
+      element: function (row, key) { var el = E.fileElement.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
       score: function (row, values) { return values.in === 'contents' ? (scores[row.path] || 0) : null; },
       filters: [
         { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },
@@ -103,6 +107,7 @@
       fold: function (row, key) {
         if (row.kind !== 'folder') return false;
         if (!list.words()) { if (opened[key]) delete opened[key]; else opened[key] = true; }
+        if (made[key]) made[key].apply({ open: !!opened[key] });
         return true;
       },
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },

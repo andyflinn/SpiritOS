@@ -1,18 +1,18 @@
-// spirit/run/spirit/element/fileViewer.js
-// ONE FILE, SHOWN (goal/G30.16). The viewers left the old shell (index.html drew them inline, with js/client/shell.js's
-// helpers, all reading synchronously) and are shell elements now, so the face has them too. This is what both share:
+// spirit/run/spirit/element/fstat.js
+// A FILE'S INFO, THE VIEWER TEXT AND MEDIA BUILD ON (goal/G43.17; Andy: "fstat is a file-info viewer, it show 1) file name,
+// 2) hidden pane 3) annotations. text and media then build on that but insert codeMirror (text) or media into the hidden pane
+// 2)"). It replaced the old file viewer, renamed and trimmed into it (Q7). Its contract and its test: ./test/fstat.md and
+// ./test/fstat.js.
 //
-//   fileViewer.read(path, onPiece) -> Promise<{ status, type, bytes }>
+//   fstat.create(host, { path }) -> { path, slot(name) }
+//     Top down: the file's name, the hidden pane (slot 'body', shown once a viewer asks for it), the facts (MIME type at once,
+//     then size, changed and created when fs.stat answers), the annotations ("More Information", fs.annotations' face part).
+//     It asks nothing of the old shell (Q9: "the new stuff MUST NOT require old stuff.").
+//   fstat.read(path, onPiece) -> Promise<{ status, type, bytes }>
 //     A file of the home node. On a face it comes through the sealed link, window.spirit.transport.file, each piece
 //     handed to onPiece as it opens; at home by the node's own GET, each chunk as it arrives. Asynchronous only.
-//   fileViewer.fStatViewer(host, path)       the path in its own tile and the facts bubble: MIME type at once, then
-//                                             size, changed and created when fs.stat answers (absent if it fails)
-//   fileViewer.annotationManager(host, path)  "More Information": the file's annotations (fs.annotations, its client
-//                                             part), each tool's payload drawn generically; nothing when there is none
-//   fileViewer.create(host, { path, launcherId }) -> { path, slot(name) }
-//     The frame both viewers fill: the stat bubble, the app this file is (old shell only), Open with (old shell only),
-//     a body slot for the viewer, the annotations.
-//   fileViewer.mimeOf(path), fileViewer.kindOf(mime)   'image' | 'audio' | 'video' | 'code' | null
+//   fstat.mimeOf(path), fstat.kindOf(mime)   'image' | 'audio' | 'video' | 'code' | null
+//   fstat.iconOf(path)   the icon of its kind, the box: "text 📜, video 📹, image 🌇, audio 🔊", any other ❔
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
 
@@ -88,9 +88,14 @@
       return '<div class="fact"><span class="fact-label">' + esc(String(p[0])) + '</span><span class="fact-value">' + esc(String(p[1])) + '</span></div>';
     }).join('') + '</div>';
   }
-  function fStatViewer(host, path) {
+  // A FILE'S ICON BY ITS KIND (goal/G43.17), in a list's rows and tiles alike.
+  var ICONS = { code: '📜', video: '📹', image: '🌇', audio: '🔊' };
+  function iconOf(path) { return ICONS[kindOf(mimeOf(path))] || '❔'; }
+
+  function nameView(host, path) { host.innerHTML = '<div class="stat-tile wide file-path">' + pathValue(path) + '</div>'; }
+  function factsView(host, path) {
     var facts = [['MIME type', mimeOf(path)]];
-    function draw() { host.innerHTML = '<div class="stat-tile wide file-path">' + pathValue(path) + '</div>' + factRow(facts); }
+    function draw() { host.innerHTML = factRow(facts); }
     draw();
     return ask('fs.stat', { path: path }).then(function (s) {
       if (!s || typeof s.size !== 'number') return;
@@ -125,20 +130,20 @@
   function create(host, opts) {
     var o = opts || {};
     var path = String(o.path || '');
-    // SPACE GRANTED TOP-DOWN (rule/16, goal/G41.7): the frame is a fill column and its body slot a fill box, so a viewer's
-    // text or media takes what the stat bubble and the notes leave it and scrolls inside itself.
+    // SPACE GRANTED TOP-DOWN (rule/16, goal/G41.7): the frame is a fill column and its pane a fill box, so a viewer's text or
+    // media takes what the name, the facts and the notes leave it and scrolls inside itself.
     host.innerHTML = '<div class="stack fill">' +
-      '<div data-part="stat"></div><div data-part="owner-app"></div><div data-part="open-with" class="open-with"></div>' +
-      '<div data-part="body" class="fill"></div><div data-part="notes"></div></div>';
-    function slot(name) { return host.querySelector('[data-part="' + name + '"]'); }
-    fStatViewer(slot('stat'), path);
-    annotationManager(slot('notes'), path);
-    // The old shell's registry of apps and handlers: at home only (the face has no Open with yet).
-    var shell = window.spirit && window.spirit.shell;
-    if (shell && typeof shell.renderAppOfFile === 'function') shell.renderAppOfFile(slot('owner-app'), path);
-    if (shell && typeof shell.renderOpenWith === 'function' && o.launcherId) shell.renderOpenWith(slot('open-with'), o.launcherId, path);
+      '<div data-part="name"></div><div data-part="body" class="fill"></div><div data-part="facts"></div><div data-part="notes"></div></div>';
+    function part(name) { return host.querySelector('[data-part="' + name + '"]'); }
+    // THE PANE STAYS INVISIBLE UNTIL FILLED (the box): a viewer that asks for it shows it.
+    var body = part('body');
+    if (body) body.hidden = true;
+    function slot(name) { var s = part(name); if (s && name === 'body') s.hidden = false; return s; }
+    nameView(part('name'), path);
+    factsView(part('facts'), path);
+    annotationManager(part('notes'), path);
     return { path: path, slot: slot };
   }
 
-  E.fileViewer = { create: create, read: read, mimeOf: mimeOf, kindOf: kindOf, fStatViewer: fStatViewer, annotationManager: annotationManager };
+  E.fstat = { create: create, read: read, mimeOf: mimeOf, kindOf: kindOf, iconOf: iconOf };
 }());

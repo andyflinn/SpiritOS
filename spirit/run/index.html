@@ -109,10 +109,11 @@
     <script src="/spirit/data.js"></script>
     <script src="/spirit/element/rowElement.js"></script>
     <script src="/spirit/element/probabilitySearch.js"></script>
-    <!-- The viewers as shell elements (goal/G30.16): the frame both share, then text and media. -->
-    <script src="/spirit/element/fileViewer.js"></script>
+    <!-- The viewers (goal/G30.16): the frame both share, fstat since goal/G43.17, then text, and media from its new app (old may
+         require new, never the reverse). -->
+    <script src="/spirit/element/fstat.js"></script>
     <script src="/spirit/element/textViewer.js"></script>
-    <script src="/spirit/element/mediaViewer.js"></script>
+    <script src="/spirit/app/media/media.js"></script>
     <!-- One folder per object type (goal/G30.20): its row, which takes its type's stream (goal/G41.16), and its drop-in list. -->
     <script src="/spirit/element/files/rowElement.js"></script>
     <script src="/spirit/element/files/listElement.js"></script>
@@ -148,9 +149,9 @@
         // stay here, and Files opens them through api.launchApp.
 
         // ---- The two launchers: the viewer elements (goal/G30.16) ----
-        // The viewers are shell elements now (spirit/element/fileViewer.js, textViewer.js, mediaViewer.js), so the face has
-        // them too; their inline bodies and the job form stood here. Only reachable via launchApp(id, { path }) from
-        // Files, Open with or the Processes app — no desktop icon (hidden: true). A launcher, not a dialog: every one of
+        // The viewers are elements now (spirit/element/fstat.js, textViewer.js, and the media app's spirit/app/media/media.js,
+        // goal/G43.17), so the face has them too; their inline bodies and the job form stood here. Only reachable via
+        // launchApp(id, { path }) from Open with or the Processes app — no desktop icon (hidden: true). A launcher, not a dialog: every one of
         // its launches replaces its own stack entry (assertOneHiddenApp, shell.js). mount runs once; loadFile shows each
         // later file.
         var mediaShown = null;
@@ -166,7 +167,7 @@
           },
           loadFile: function (path, params) {
             setViewerTitle(path);
-            window.spirit.element.textViewer.create(this._host, { path: path, words: params && params.words, line: params && params.line, launcherId: 'text-file-launcher' });
+            window.spirit.element.textViewer.create(this._host, { path: path, words: params && params.words, line: params && params.line });
           },
           render: function () {},
         });
@@ -183,7 +184,7 @@
           loadFile: function (path) {
             setViewerTitle(path);
             if (mediaShown) mediaShown.destroy();
-            mediaShown = window.spirit.element.mediaViewer.create(this._host, { path: path, launcherId: 'media-launcher' });
+            mediaShown = window.spirit.elements.media.create(this._host, { path: path });
           },
           render: function () {},
         });
@@ -215,7 +216,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps', 'shell/files']
+            renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });

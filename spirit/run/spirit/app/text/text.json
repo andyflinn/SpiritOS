@@ -1,0 +1,18 @@
+{
+  "identity": {
+    "icon": "✏️",
+    "label": "Text Editor",
+    "intrinsic": false
+  },
+  "mount": {
+    "text.js":true
+  },
+  "shell": {
+    "true":false,
+    "mount":true,
+    "tile":true
+  },
+  "node": {
+    "mount":false
+  }
+}

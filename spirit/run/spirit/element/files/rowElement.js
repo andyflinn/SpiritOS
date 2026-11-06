@@ -14,7 +14,8 @@
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
   // goal/G41.23: a file's icon is the icon element (spirit/element/icon.js), loaded here too.
-  if (window.spirit.require) ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/word.js'].forEach(function (p) { window.spirit.require(p); });
+  // goal/G43.17: a file's icon is its kind's, which fstat says.
+  if (window.spirit.require) ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/word.js', 'spirit/element/fstat.js'].forEach(function (p) { window.spirit.require(p); });
   var files = null;
 
   // THE NODE'S FILE TREE IS THE fs FAMILY'S CACHE (goal/G41.28): its translator and its branch are the family's own
@@ -39,6 +40,7 @@
     I.create(hold, { glyph: glyph });
     return hold.innerHTML;
   }
+  function iconOf(p) { return E.fstat && typeof E.fstat.iconOf === 'function' ? E.fstat.iconOf(p) : '❔'; }
   function bytes(n) {
     var f = window.spirit && spirit.formatBytes;
     return typeof n !== 'number' ? '' : (f ? f(n) : n + ' B');
@@ -112,14 +114,16 @@
       key: p,
       index: index(),
       row: { path: p, name: p.slice(p.lastIndexOf('/') + 1), kind: r.kind || k.kind || 'file',
-        size: r.size !== undefined ? r.size : k.size, modified: r.modified || k.modified, core: (r.core !== undefined ? r.core : k.core) === true, gone: false },
+        size: r.size !== undefined ? r.size : k.size, modified: r.modified || k.modified, core: (r.core !== undefined ? r.core : k.core) === true, gone: false, open: r.open === true },
       fields: [
         // ONE CELL: the indent, the icon, then where it lives and what it is (goal/G30.16). The depth rides along (one per
         // slash) for a tree view to indent; the folders dimmed, the name at full strength (a list of bare names read as if
         // every file sat at the top). A tree view hides the folders, the indent saying them.
         // A CORE FILE'S NAME IN YELLOW (goal/G30.21), the node's word on the fs-watcher's command.
-        { name: 'name', from: ['path', 'kind', 'gone', 'core', 'words'], paint: function (v) {
-          var glyph = v.gone ? '❌' : v.kind === 'folder' ? '📁' : '📄';
+        { name: 'name', from: ['path', 'kind', 'gone', 'core', 'words', 'open'], paint: function (v) {
+          // BY ITS KIND (goal/G43.17; the box: "text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of
+          // unknown kind, ❔"). A folder's open or shut is the list's to say, as it draws the tree.
+          var glyph = v.gone ? '❌' : v.kind === 'folder' ? (v.open ? '📂' : '📁') : iconOf(v.path);
           var p = String(v.path || '');
           var cut = p.lastIndexOf('/');
           return '<span class="file-depth" style="--depth:' + (p.split('/').length - 1) + '">' + iconHtml(glyph) + '</span> ' +

@@ -16,6 +16,10 @@
 // shows active only, pane shows all", "and the picks differ: tiles launches, pane shows the detail with its button." Both open on
 // top, here alone (Andy: "the detail panel needs to open on top of the whole container"), under one title bar, whose close
 // button brings the list back. spirit.elements holds server, spirit.app the rest.
+//
+// THROUGH panel (goal/G43.17, spirit/element/panel.js): a closed app or detail is hidden, not destroyed, so pressing it again
+// shows it as it was left (Q3: "yes."). A launched app switched off leaves the view and stays loaded until the shell boots
+// again (Q11: "it only must disappear from view. it won't be loaded on the next shell-boot.").
 (function () {
   function createAppSelector(options) {
     var o = options || {};
@@ -35,52 +39,30 @@
     var made = null;
     var detail = null;
     var gone = false;
-    var closeOpen = null;
+    var stack = null;
+    var watches = [];
 
-    // THE BAR AND ITS PANE, OVER THE WHOLE CONTAINER. fill(pane) answers what to destroy on close, or a promise of it.
-    function open(row, fill) {
+    // OVER THE WHOLE CONTAINER, ONE LAYER PER APP AND PER DETAIL (panel.js): its bar follows the row's label and icon.
+    function open(kind, row, fill) {
       var S = window.spirit;
-      var shell = document.createElement('div');
-      shell.className = 'app-container fill';
-      // THE TITLE BAR OF ALL PANELS IS ONE rowForm (Andy: "rowForm: [app-icon] "<app-label> [x]"). It follows the row's label.
-      var bar = S.element.rowForm.create(shell, { icon: row.icon, button: '✕' });
-      bar.button.className = 'app-container-close';
-      bar.button.title = 'Close';
-      bar.span.textContent = row.label;
-      var offRow = S.data.app.data.watchApp(String(row.key), function (now) {
-        if (!now) return;
-        bar.span.textContent = now.label;
-        var hold = document.createElement('span');
-        S.element.icon.create(hold, { glyph: now.icon });
-        bar.root.replaceChild(hold.firstChild, bar.root.firstChild);
-      });
-      var pane = document.createElement('div');
-      pane.className = 'app-container-pane fill';
-      pane.style.marginTop = '1em';
-      shell.appendChild(pane);
-      // Not hidden: a list's box is a flex box, and its display would win.
-      listBox.style.display = 'none';
-      root.appendChild(shell);
-      var made2 = null;
-      var closed = false;
-      closeOpen = function () {
-        closed = true;
-        closeOpen = null;
-        offRow();
-        if (made2) made2.destroy();
-        root.removeChild(shell);
-        listBox.style.display = '';
-      };
-      bar.button.addEventListener('click', function () { closeOpen(); });
-      Promise.resolve(fill(pane, function () { return closed; })).then(function (m) {
-        if (closed) { if (m) m.destroy(); return; }
-        made2 = m;
+      var key = String(row.key);
+      if (!stack) return;
+      var known = stack.layer(kind + '/' + key);
+      if (known) { known.show(); return; }
+      Promise.resolve(stack.open(kind + '/' + key, { icon: row.icon, label: row.label, fill: fill })).then(function (layer) {
+        if (!layer || gone) return;
+        watches.push(S.data.app.data.watchApp(key, function (now) {
+          if (!now) return;
+          layer.set({ label: now.label, icon: now.icon });
+          // Q11: a launched app switched off leaves the view; it stays loaded.
+          if (kind === 'app' && now.active !== true && layer.shown()) layer.hide();
+        }));
       });
     }
     function launch(row) {
       var S = window.spirit;
       var name = String(row.key);
-      open(row, function (pane, closed) {
+      open('app', row, function (pane, closed) {
         return S.require('spirit/app/' + name + '/' + name + '.js').then(function () {
           if (closed()) return null;
           return S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane);
@@ -88,7 +70,7 @@
       });
     }
     function panel(row) {
-      open(row, function (pane) { return window.spirit.elements.appDetail.create(pane, { row: row, panel: true }); });
+      open('detail', row, function (pane) { return window.spirit.elements.appDetail.create(pane, { row: row, panel: true }); });
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
     function pick(row) {
@@ -103,11 +85,13 @@
     function onFace(now) {
       face = now;
       clearDetail();
-      if (closeOpen) closeOpen();
+      if (stack) stack.close();
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.all([window.spirit.require('spirit/app/appSelector/listElement.js'), window.spirit.require('spirit/app/appSelector/detailElement.js'), window.spirit.require('spirit/element/icon.js'), window.spirit.require('spirit/element/rowForm.js')]).then(function () {
+    Promise.all([window.spirit.require('spirit/app/appSelector/listElement.js'), window.spirit.require('spirit/app/appSelector/detailElement.js'), window.spirit.require('spirit/element/panel.js')]).then(function () {
       if (gone) return;
+      // A list's box is a flex box, so the panel covers it by its display.
+      stack = window.spirit.elements.panel.create(root, listBox);
       made = window.spirit.elements.appList.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
         visible: function (row) { return face !== 'tiles' || (!!row && row.active === true); } });
@@ -117,7 +101,10 @@
     // Destroy lets its parts go, their watches with them, and takes itself out of its container, which it leaves empty.
     root.destroy = function () {
       gone = true;
-      if (closeOpen) closeOpen();
+      watches.forEach(function (off) { off(); });
+      watches = [];
+      if (stack) stack.destroy();
+      stack = null;
       clearDetail();
       if (made) made.destroy();
       made = null;

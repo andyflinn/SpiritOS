@@ -111,10 +111,9 @@ function statsRender() {
     html += statsTileHtml(d.eventLoop.meanMs.toFixed(2) + ' ms', 'Event loop mean');
     html += statsTileHtml(d.eventLoop.maxMs.toFixed(2) + ' ms', 'Event loop max');
     html += statsTileHtml(d.eventLoop.p99Ms.toFixed(2) + ' ms', 'Event loop p99');
-    // 'shell/files' since Files left index.html: an id that moved and a
-    // tile that still names the old one is a tile that opens nothing.
-    html += statsTileHtml(d.filesystem.files, 'Files', false, 'shell/files');
-    html += statsTileHtml(d.filesystem.folders, 'Folders', false, 'shell/files');
+    // No launch since Files moved to spirit/app/file/ (goal/G43.17), which the old shell does not open.
+    html += statsTileHtml(d.filesystem.files, 'Files');
+    html += statsTileHtml(d.filesystem.folders, 'Folders');
     html += statsTileHtml(d.sseConnections, 'SSE connections');
     html += statsTileHtml(d.requests.total, 'Requests total');
 
@@ -124,7 +123,7 @@ function statsRender() {
     });
     html += statsTileHtml(activeJobs, 'Active jobs', false, 'shell/jobs');
 
-    html += '<div class="stat-tile wide clickable" data-launch-app="shell/files"><div class="label">Files by MIME type</div>' +
+    html += '<div class="stat-tile wide"><div class="label">Files by MIME type</div>' +
       statsCountsHtml(d.filesystem.byMimeType) + '</div>';
     html += '<div class="stat-tile wide"><div class="label">Requests by method</div>' +
       statsCountsHtml(d.requests.byMethod) + '</div>';

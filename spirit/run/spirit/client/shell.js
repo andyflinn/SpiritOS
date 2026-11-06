@@ -172,7 +172,6 @@
     stats: 'shell/stats',
     jobs: 'shell/jobs',
     'app-manager': 'shell/apps',
-    files: 'shell/files',
   };
 
   // Runs at load, which is before any snapshot and therefore before
@@ -2621,7 +2620,7 @@
   }
 
   // THE FILE INFO BUBBLE AND THE ANNOTATIONS (renderFileInfoBubble, pathValue, renderAnnotationsSection and its
-  // helpers) STOOD HERE: they are the viewer elements' now (spirit/element/fileViewer.js, goal/G30.16), asking asynchronously.
+  // helpers) STOOD HERE: they are the viewer elements' now (spirit/element/fstat.js since goal/G43.17), asking asynchronously.
 
   // Dynamically-loaded apps: discovery reads only each app's manifest
   // (app/<name>/<name>.json — same folder/basename convention process/
@@ -2735,7 +2734,8 @@
   // its move, alongside its APP_ID_RENAMES entry.
   // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
   // introSpector (goal/G30.5; Andy, 2026-10-20: "I want an intrinsic app: introSpector").
-  var INTRINSIC_APP_FOLDERS = ['stats', 'jobs', 'apps', 'files', 'contacts', 'info', 'introSpector', 'join', 'icons'];
+  // Files moved to spirit/app/file/ (goal/G43.17).
+  var INTRINSIC_APP_FOLDERS = ['stats', 'jobs', 'apps', 'contacts', 'info', 'introSpector', 'join', 'icons'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {

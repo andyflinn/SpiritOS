@@ -1,15 +1,15 @@
 // spirit/run/spirit/element/textViewer.js
-// A TEXT FILE, SHOWN (goal/G30.16), on fileViewer: in the codeMirror element's read mode (spirit/element/codeMirror.js,
-// goal/G41.7), the search words marked and the first in view. Editing stays the handler's (the textEditor app, through Open with). A process
-// script with a manifest also gets its job form: Start Job, and the switch to include or exclude it on this node.
+// A TEXT FILE, SHOWN (goal/G30.16), on fstat (goal/G43.17): in the codeMirror element's read mode (spirit/element/codeMirror.js,
+// goal/G41.7), the search words marked and the first in view. A process script with a manifest also gets its job form:
+// Start Job, and the switch to include or exclude it on this node.
 //
-//   textViewer.create(host, { path, words, line, launcherId })
+//   textViewer.create(host, { path, words, line })
 //
 // CODEMIRROR IS THE ELEMENT'S TO LOAD (goal/G41.7): this viewer reads nothing of index.html and loads no library itself.
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
-  if (window.spirit.require) ['spirit/element/fileViewer.js', 'spirit/element/codeMirror.js'].forEach(function (p) { window.spirit.require(p); });
+  if (window.spirit.require) ['spirit/element/fstat.js', 'spirit/element/codeMirror.js'].forEach(function (p) { window.spirit.require(p); });
 
   function sp() { return window.spirit || {}; }
   function esc(s) {
@@ -24,7 +24,7 @@
     var match = String(path).match(/^process\/([^/]+)\/([^/]+)\/(.+)\.js$/);
     if (!match) return;
     var lang = match[1];
-    E.fileViewer.read(path.replace(/\.js$/, '.json')).then(function (r) {
+    E.fstat.read(path.replace(/\.js$/, '.json')).then(function (r) {
       if (r.status !== 200) return;
       var manifest = null;
       try { manifest = JSON.parse(text(r)); } catch (e) { return; }
@@ -62,14 +62,14 @@
   function create(host, opts) {
     var o = opts || {};
     var path = String(o.path || '');
-    var frame = E.fileViewer.create(host, { path: path, launcherId: o.launcherId });
+    var frame = E.fstat.create(host, { path: path });
     var body = frame.slot('body');
     // THE TEXT IN A FILL BOX (rule/16; Andy, on G41.7: the text viewer "same problem"): it takes what the frame's body
     // leaves it and scrolls inside itself, never growing the page past its bottom.
     body.innerHTML = '<div data-part="job"></div><div class="text-view fill"></div>';
     jobForm(body.querySelector('[data-part="job"]'), path);
     var view = body.querySelector('.text-view');
-    return E.fileViewer.read(path).then(function (r) {
+    return E.fstat.read(path).then(function (r) {
       return E.codeMirror.create(view, { mode: 'read', text: r.status === 200 ? text(r) : '(could not load file)', words: o.words || '', line: o.line || 0, path: path });
     }).then(function () { return frame; }, function (e) { view.textContent = '(could not load file: ' + ((e && e.message) || e) + ')'; return frame; });
   }
