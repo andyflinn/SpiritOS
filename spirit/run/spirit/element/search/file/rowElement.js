@@ -57,7 +57,9 @@
   // live."). Each element of a path under spirit/: its name up to the first dot against the word system, its object on
   // the spirit object at that path. spirit itself always holds; a name that is no reserved word has no colour.
   // A word that holds is light blue (goal/G43.18; Andy: "file app: please change the green colored paths/files in light blue instead.").
-  var WORD_COLOUR = { holds: '#87cefa', red: '#ff3030' };
+  // Where the folders and the spirit object disagree it is light purple, not red (goal/G43.18; Andy: "ONLY REPLACE RED WITH
+  // LIGHT PURPLE, KEEP THE BLUE"; red is kept for the next part of the mission).
+  var WORD_COLOUR = { holds: '#87cefa', red: '#d8b4fe' };
   function wordColours(p) {
     var parts = String(p || '').split('/');
     if (parts[0] !== 'spirit' || !window.spirit.word) return Promise.resolve({});
