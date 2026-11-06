@@ -117,6 +117,9 @@ const HANDS = '(function () {' +
   '  unsized: function () { var b = box(); b.style.width = "100%"; b.style.height = "100%"; return true; },' +
   // A row in a narrow pane: true when nothing of the bubble holding word goes past its edge or the pane's.
   '  folds: function (word, w) { var b = box(); b.style.width = w + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var k = all("button").filter(function (x) { return String(x.textContent).indexOf(word) !== -1; })[0]; var row = k && k.closest(".shell-bubble"); var out = !row ? "no row" : (row.scrollWidth > row.clientWidth + 1 || row.getBoundingClientRect().right > b.getBoundingClientRect().right + 1) ? "past its edge" : "ok"; b.style.width = "100%"; return out; }); },' +
+  // What the list stands at, for a failure line: its words, which "in" is chosen (drawn bold, spirit/element/probabilitySearch.js),
+  // and its first rows as they read.
+  '  state: function () { var i = all("input[id$=text]")[0]; var on = all("button[data-filter=\\"in\\"]").filter(function (b) { return getComputedStyle(b).fontWeight >= 600; }).map(function (b) { return b.getAttribute("data-value"); }); return { words: i ? i.value : null, in: on, first: all("tr[data-key]").slice(0, 4).map(function (t) { return t.getAttribute("data-key") + " | " + String(t.innerText).replace(/\\s+/g, " ").slice(0, 60); }) }; },' +
   '  order: function (words) { var t = window.__t.text(); return words.map(function (w) { return t.indexOf(w); }); },' +
   '}; return "hands"; }())';
 
@@ -220,9 +223,10 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     await T('filter("in", "contents")');
     await T('type("zzquokka")');
     await T('search()');
-    ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1', 15000), 'in contents both files holding the word are found', 'rows: ' + short(await T('rows()')));
+    ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1', 15000), 'in contents both files holding the word are found', 'rows: ' + short(await T('rows()')) + ', the list: ' + JSON.stringify(await T('state()')));
     const ranked = await T('rows()');
-    ok(ranked.indexOf('zzFiles/notes.txt') < ranked.indexOf('zzFiles/inner/deep.txt'), 'the file with two matches ranks above the one with one', 'rows: ' + short(ranked));
+    const rankedAt = await T('state()');
+    ok(ranked.indexOf('zzFiles/notes.txt') !== -1 && ranked.indexOf('zzFiles/notes.txt') < ranked.indexOf('zzFiles/inner/deep.txt'), 'the file with two matches ranks above the one with one', 'rows: ' + short(ranked) + ', the list: ' + JSON.stringify(rankedAt));
 
     test.subHeading('the box: "A contents match opens text at its line, the words marked"');
     await T('press("zzFiles/notes.txt")');
