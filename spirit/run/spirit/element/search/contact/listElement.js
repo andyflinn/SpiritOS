@@ -149,5 +149,5 @@
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'contact', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: create, filters: FILTERS });
+  Object.assign(['search', 'contact', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: create, filters: FILTERS });
 }());

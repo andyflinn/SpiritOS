@@ -44,8 +44,8 @@ function world() {
   const STANDS = {
     'spirit/element/search.js': function (win) { win.spirit.element.search = Object.assign(win.spirit.element.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
       redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); },
-    'spirit/element/search/api.js': real('appServerSelector.js'),
-    'spirit/element/search/api/verb.js': real('apiVerbSelector.js'),
+    // The app-server half is in the file under test since goal/G43.18; its verb half is search/api/verb.js.
+    'spirit/element/search/api/verb.js': real('search/api/verb.js'),
   };
   const win = {
     spirit: { element: {}, escapeHtml: function (s) { return String(s); },

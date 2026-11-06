@@ -124,7 +124,7 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'api', 'server'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: function (container, options) { var root = createAppServerSelector(options); container.appendChild(root); return root; } });
+  Object.assign(['search', 'api', 'server'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: function (container, options) { var root = createAppServerSelector(options); container.appendChild(root); return root; } });
 })();
 
 // spirit/run/spirit/element/search/api.js
@@ -225,5 +225,5 @@
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'api'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: function (container, options) { var root = createApiFamilySelector(options); container.appendChild(root); return root; } });
+  Object.assign(['search', 'api'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: function (container, options) { var root = createApiFamilySelector(options); container.appendChild(root); return root; } });
 })();

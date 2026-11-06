@@ -94,5 +94,5 @@
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // Its parts are loaded first, so a caller that requires this file and waits finds them all on the page.
   // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
-  Object.assign(['search', 'branch', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: create, ready: parts });
+  Object.assign(['search', 'branch', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), { create: create, ready: parts });
 }());
