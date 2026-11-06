@@ -12,7 +12,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/files/listElement.js'), S.require('spirit/element/fstat.js'), S.require('spirit/element/panel.js')]);
+  var parts = Promise.all([S.require('spirit/element/files/listElement.js'), S.require('spirit/element/fstat.js'), S.require('spirit/element/panel.js'), S.cacheManager('app')]);
   var OPENERS = { code: 'text', image: 'media', audio: 'media', video: 'media' };
 
   function create(container) {
@@ -27,17 +27,29 @@
     box.appendChild(listBox);
     container.appendChild(box);
 
+    // THE BAR OF AN OPENED FILE (Andy: "title row: [✏️] "Text Editor:" + file-name", and for media "the medias own icon"): the
+    // opener app's icon, its label, a colon and the file's name, from what the node says of that app; a ❔ file, which only
+    // fstat shows, its icon and its name.
+    function barOf(opener, name, t) {
+      var app = (S.data && S.data.app && S.data.app.data ? S.data.app.data.rows()[opener] : null) || {};
+      return { icon: (t && t.icon) || app.icon || '', label: (app.label ? app.label + ': ' : '') + name };
+    }
     function open(key, words, line) {
       var FS = S.element.fstat;
       var name = String(key).split('/').pop();
       var opener = OPENERS[FS.kindOf(FS.mimeOf(key))];
-      stack.open(key, { icon: FS.iconOf(key), label: name, fill: function (pane, closed) {
+      var layer = null;
+      var told = null;
+      function title(t) { told = t; if (layer) layer.set(barOf(opener, name, told)); }
+      var look = opener ? barOf(opener, name, null) : { icon: FS.iconOf(key), label: name };
+      Promise.resolve(stack.open(key, { icon: look.icon, label: look.label, fill: function (pane, closed) {
+        // fstat only for a file neither opener takes (Andy: "let fstat pop up for unknows file types (❔) only").
         if (!opener) { FS.create(pane, { path: key }); return { destroy: function () { pane.innerHTML = ''; } }; }
         return S.require('spirit/app/' + opener + '/' + opener + '.js').then(function () {
           if (closed()) return null;
-          return S.elements[opener].create(pane, { path: key, words: words, line: line });
+          return S.elements[opener].create(pane, { path: key, words: words, line: line, title: title });
         });
-      } });
+      } })).then(function (l) { layer = l; if (layer && opener) layer.set(barOf(opener, name, told)); });
     }
 
     parts.then(function () {

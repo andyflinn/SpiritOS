@@ -1,12 +1,12 @@
 // spirit/run/spirit/element/fstat.js
-// A FILE'S INFO, THE VIEWER TEXT AND MEDIA BUILD ON (goal/G43.17; Andy: "fstat is a file-info viewer, it show 1) file name,
-// 2) hidden pane 3) annotations. text and media then build on that but insert codeMirror (text) or media into the hidden pane
-// 2)"). It replaced the old file viewer, renamed and trimmed into it (Q7). Its contract and its test: ./test/fstat.md and
-// ./test/fstat.js.
+// A FILE'S INFO (goal/G43.17; Andy: "fstat is a file-info viewer"). It replaced the old file viewer, renamed and trimmed into
+// it (Q7). Since Andy's "separate fstat from file and text, in file, let fstat pop up for unknows file types (❔) only", text
+// and media no longer build on it, and file opens it for a ❔ file alone; and "drop the title in fstat, the name of the file is
+// already in the "shells" titlebar". Its contract and its test: ./test/fstat.md and ./test/fstat.js.
 //
 //   fstat.create(host, { path }) -> { path, slot(name) }
-//     Top down: the file's name, the hidden pane (slot 'body', shown once a viewer asks for it), the facts (MIME type at once,
-//     then size, changed and created when fs.stat answers), the annotations ("More Information", fs.annotations' face part).
+//     Top down: the hidden pane (slot 'body', shown once a viewer asks for it), the facts (MIME type at once, then size,
+//     changed and created when fs.stat answers), the annotations ("More Information", fs.annotations' face part).
 //     It asks nothing of the old shell (Q9: "the new stuff MUST NOT require old stuff.").
 //   fstat.read(path, onPiece) -> Promise<{ status, type, bytes }>
 //     A file of the home node. On a face it comes through the sealed link, window.spirit.transport.file, each piece
@@ -75,14 +75,7 @@
     });
   }
 
-  // The path that always fits (one span a directory, a break after each slash), and a facts bubble: the old shell's
-  // pathValue and factRow, the same markup and classes.
-  function pathValue(path) {
-    var parts = String(path == null ? '' : path).split('/');
-    var file = parts.pop();
-    return parts.map(function (dir) { return '<span class="path-dir">' + esc(dir) + '/</span><wbr>'; }).join('') +
-      '<span class="path-file">' + esc(file) + '</span>';
-  }
+  // A facts bubble: the old shell's factRow, the same markup and classes.
   function factRow(pairs) {
     return '<div class="fact-row">' + pairs.map(function (p) {
       return '<div class="fact"><span class="fact-label">' + esc(String(p[0])) + '</span><span class="fact-value">' + esc(String(p[1])) + '</span></div>';
@@ -92,7 +85,6 @@
   var ICONS = { code: '📜', video: '📹', image: '🌇', audio: '🔊' };
   function iconOf(path) { return ICONS[kindOf(mimeOf(path))] || '❔'; }
 
-  function nameView(host, path) { host.innerHTML = '<div class="stat-tile wide file-path">' + pathValue(path) + '</div>'; }
   function factsView(host, path) {
     var facts = [['MIME type', mimeOf(path)]];
     function draw() { host.innerHTML = factRow(facts); }
@@ -130,16 +122,15 @@
   function create(host, opts) {
     var o = opts || {};
     var path = String(o.path || '');
-    // SPACE GRANTED TOP-DOWN (rule/16, goal/G41.7): the frame is a fill column and its pane a fill box, so a viewer's text or
-    // media takes what the name, the facts and the notes leave it and scrolls inside itself.
+    // SPACE GRANTED TOP-DOWN (rule/16, goal/G41.7): the frame is a fill column and its pane a fill box, so what fills it takes
+    // what the facts and the notes leave it and scrolls inside itself.
     host.innerHTML = '<div class="stack fill">' +
-      '<div data-part="name"></div><div data-part="body" class="fill"></div><div data-part="facts"></div><div data-part="notes"></div></div>';
+      '<div data-part="body" class="fill"></div><div data-part="facts"></div><div data-part="notes"></div></div>';
     function part(name) { return host.querySelector('[data-part="' + name + '"]'); }
     // THE PANE STAYS INVISIBLE UNTIL FILLED (the box): a viewer that asks for it shows it.
     var body = part('body');
     if (body) body.hidden = true;
     function slot(name) { var s = part(name); if (s && name === 'body') s.hidden = false; return s; }
-    nameView(part('name'), path);
     factsView(part('facts'), path);
     annotationManager(part('notes'), path);
     return { path: path, slot: slot };

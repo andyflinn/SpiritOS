@@ -42,8 +42,13 @@
     var stack = null;
     var watches = [];
 
-    // OVER THE WHOLE CONTAINER, ONE LAYER PER APP AND PER DETAIL (panel.js): its bar follows the row's label and icon.
-    function open(kind, row, fill) {
+    // OVER THE WHOLE CONTAINER, ONE LAYER PER APP AND PER DETAIL (panel.js): its bar follows the row's label and icon, and
+    // the file an app says it shows (Andy: "title row: [✏️] "Text Editor:" + file-name"; a file's own icon where the app hands
+    // one, "the medias own icon or the media viewer's icon if no file is selcted yet").
+    function barOf(now, look) {
+      return { label: String(now.label || '') + (look && look.file ? ': ' + look.file : ''), icon: (look && look.icon) || now.icon };
+    }
+    function open(kind, row, fill, look) {
       var S = window.spirit;
       var key = String(row.key);
       if (!stack) return;
@@ -51,9 +56,13 @@
       if (known) { known.show(); return; }
       Promise.resolve(stack.open(kind + '/' + key, { icon: row.icon, label: row.label, fill: fill })).then(function (layer) {
         if (!layer || gone) return;
+        if (look) {
+          look.set = function () { layer.set(barOf(S.data.app.data.rows()[key] || row, look)); };
+          if (look.file) look.set();
+        }
         watches.push(S.data.app.data.watchApp(key, function (now) {
           if (!now) return;
-          layer.set({ label: now.label, icon: now.icon });
+          layer.set(barOf(now, look));
           // Q11: a launched app switched off leaves the view; it stays loaded.
           if (kind === 'app' && now.active !== true && layer.shown()) layer.hide();
         }));
@@ -62,12 +71,14 @@
     function launch(row) {
       var S = window.spirit;
       var name = String(row.key);
+      var look = {};
+      function title(t) { look.file = t && t.file; look.icon = t && t.icon; if (look.set) look.set(); }
       open('app', row, function (pane, closed) {
         return S.require('spirit/app/' + name + '/' + name + '.js').then(function () {
           if (closed()) return null;
-          return S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane);
+          return S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane, { title: title });
         });
-      });
+      }, look);
     }
     function panel(row) {
       open('detail', row, function (pane) { return window.spirit.elements.appDetail.create(pane, { row: row, panel: true }); });

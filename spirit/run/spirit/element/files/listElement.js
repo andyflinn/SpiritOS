@@ -83,7 +83,8 @@
       toggle: o.toggle === true,
       placeholder: o.placeholder || 'choose a file…',
       all: o.all,
-      name: function (row) { return String(row.path || row.key || ''); },
+      // What the dropdown's field says once a file is picked: its path, or the mounter's words (text names it in its title bar).
+      name: typeof o.name === 'function' ? o.name : function (row) { return String(row.path || row.key || ''); },
       args: function (text, values) { return { q: text, contents: values.in === 'contents' ? 'yes' : '' }; },
       columns: [
         { field: 'name', from: 'path', label: 'Name', sort: 'path' },
