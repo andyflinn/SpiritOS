@@ -86,6 +86,10 @@ test.startTest('shell.js: the shell app, and a shell that replaces itself (goal/
     ok(first.some(function (n) { return /^\/spirit\/app\/shell\/shell\.js(\?|$)/.test(n); }), 'with no shell chosen the page loads spirit/app/shell/shell.js', 'it loaded: ' + short(first.filter(function (n) { return /\/app\//.test(n); })));
     ok(first.some(function (n) { return /^\/spirit\/element\/search\/app\.js(\?|$)/.test(n); }) && /\bContacts\b/.test(await text()), '"an app that wraps the app search": the app search is on the page, Contacts listed', 'the app search: ' + short(first.filter(function (n) { return /search/.test(n); })) + ', page: ' + short(await text()));
 
+    // goal/G43.18, Andy: "the shell should exclude itself completely from the app-list, haha..."
+    const keys = await c.evaluate('Array.prototype.slice.call(document.querySelectorAll("[data-key]")).filter(function (e) { return e.offsetParent !== null; }).map(function (e) { return e.getAttribute("data-key"); })');
+    ok(keys.indexOf('contact') !== -1 && keys.indexOf('shell') === -1 && !new RegExp('(^|\\n)\\s*' + SHELL_LABEL + '\\s*(\\n|$)').test(await text()), 'Andy: "the shell should exclude itself completely from the app-list": Contacts listed, the shell not', 'the list shows: ' + short(keys));
+
     test.subHeading('the box: "RULE: a shell must be able to replace itself", "boot.js ... then loads the shell the node names"');
     const set = await call(N.base, 'node.shell', { at: 'home', name: 'zzshell' });
     ok(set.status === 200, 'the world: node.shell names zzshell at home', 'node.shell: ' + set.status + ' ' + short(set.text));

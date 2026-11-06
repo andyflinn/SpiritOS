@@ -5,6 +5,7 @@ goal/G43.18, box v29, *The shell* and *Join*. Its test is `./shell.js`: a real n
 ## Requirements
 
 - Q12, with no shell chosen: the page loads `spirit/app/shell/shell.js`, and the app search is on it, Contacts listed.
+- Andy: *"the shell should exclude itself completely from the app-list, haha..."*: the shell app's list shows Contacts, and no `shell` row or tile.
 - *"RULE: a shell must be able to replace itself"*, *"boot.js does the link home and the face stream only, then loads the shell the node names"*: with `zzshell` named at home, the page loads and draws it, and shows nothing of the other shell nor a desktop of boot.js's own.
 - Q18, *"Join shows a new user its steps on its own ... neither boot.js nor any shell decides it"*: on the new scratch node, under `zzshell`, Join shows itself.
 - The app detail's two rows, *"shown only for an app whose <name>.json says shell:true:true"*: none in Contacts' detail; a Home shell and a Face shell row in zzshell's. The Home shell dropdown first shows the configured home shell, the shell app's label.
