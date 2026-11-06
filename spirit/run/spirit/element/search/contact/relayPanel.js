@@ -1,8 +1,8 @@
-// spirit/run/spirit/element/relayPanel.js
+// spirit/run/spirit/element/search/contact/relayPanel.js
 // ONE RELAY, A SHELL ELEMENT (goal/G41.32; Andy: "natterDetails will become an shell element: relayPanel.js, it is configured
 // with it's own contact row, and follows only that."). Its contract and its test: ./test/relayPanel.md and ./test/relayPanel.js.
 //
-//   spirit.element.relayPanel.create(container, { key, api? }) -> { destroy() }   open({ key }) pushes it as a page
+//   spirit.element.search.contact.relayPanel.create(container, { key, api? }) -> { destroy() }   open({ key }) pushes it as a page
 //
 // WHO PAINTS, LISTENS (Andy: "every row's data, wherever it's visible OR invisible must update instantly, and when visible,
 // paint immediately."; "BEING INVISIBLE doesn't change a elements fucking duty to listen to fucking changes"): what it shows it
@@ -1939,7 +1939,9 @@ return {
 // frame's, and nothing is handed back (what it changes reaches every view on the stream).
 // AND THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
 // create(container, { key, api? }) draws it into the container.
-(window.spirit.element = window.spirit.element || {}).relayPanel = {
+// ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "spirit/run/spirit/element/relayPanel.js really should be
+// spirit/run/spirit/element/search/contact/relayPanel.js"): merged into, so the parts of search/contact/ load in any order.
+Object.assign(['search', 'contact', 'relayPanel'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), {
   create: function (container, options) {
     var o = options || {};
     // UNCONFIGURED, IT SAYS SO and throws nothing (box v23: "no throw even unconfigured").
@@ -1957,5 +1959,5 @@ return {
       return panel(box, Object.assign({}, params || {}, { api: page.api }));
     } });
   },
-};
+});
 }());

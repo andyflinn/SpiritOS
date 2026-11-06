@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/test/relayPanel.js
-// The tests of spirit/element/relayPanel.js, and of no other module (spec: ./relayPanel.md; goal/G41.9).
+// spirit/run/spirit/element/search/contact/test/relayPanel.js
+// The tests of spirit/element/search/contact/relayPanel.js, and of no other module (spec: ./relayPanel.md; goal/G41.9).
 // The browser file runs in node on a window of its own, on a small DOM (markup parsed into a tree, selectors, clicks
 // that bubble); the navigation, the node behind the page's api, the relay family and the armingButton element are
 // recorders.
@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'relayPanel.js');
 const SRC = fs.readFileSync(FILE, 'utf8');
@@ -229,8 +229,8 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   const w = world(OWNED, OWNED_SAID);
   test.subHeading('it loads armingButton itself (goal/G41.3)');
   ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
-  const E = w.win.spirit.element.relayPanel;
-  ok(!!E && typeof E.open === 'function', 'it is window.spirit.element.relayPanel, with open', 'no relayPanel.open');
+  const E = w.win.spirit.element.search.contact.relayPanel;
+  ok(!!E && typeof E.open === 'function', 'it is window.spirit.element.search.contact.relayPanel, with open', 'no relayPanel.open');
   if (!E) return;
   E.open({ key: 'RK' });
   await settle();
@@ -282,7 +282,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
 
   test.subHeading('a press on the drawn button asks nothing by itself');
   const w2 = world(OWNED, OWNED_SAID);
-  w2.win.spirit.element.relayPanel.open({ key: 'RK' });
+  w2.win.spirit.element.search.contact.relayPanel.open({ key: 'RK' });
   await settle();
   await press(w2, '[data-fold="remove"]');
   const before2 = w2.calls.length;
@@ -292,7 +292,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
 
   test.subHeading('Leave, on a relay this node holds a seat on, is an arming button with the reset it lacked');
   const w3 = world(SEATED, {});
-  w3.win.spirit.element.relayPanel.open({ key: 'RK2' });
+  w3.win.spirit.element.search.contact.relayPanel.open({ key: 'RK2' });
   await settle();
   await press(w3, '[data-fold="leave"]');
   const leave = armingFor(w3, 'Leave this relay');
@@ -307,7 +307,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
     ok(asked && asked.body.key === SEAT_URL, 'its run asks relay.leave for this relay', 'asked: ' + short(w3.calls.slice(before)));
   }
   const w4 = world(SEATED, {});
-  w4.win.spirit.element.relayPanel.open({ key: 'RK2' });
+  w4.win.spirit.element.search.contact.relayPanel.open({ key: 'RK2' });
   await settle();
   await press(w4, '[data-fold="leave"]');
   const before4 = w4.calls.length;
@@ -324,7 +324,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   const starOf = function (x) { const b = x.document.querySelector('.nd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
   const MEMBER = [{ key: 'RK2', url: SEAT_URL, label: 'seat', status: 200, owned: false, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'Olga', roll: { relayKey: 'RK2', relayLabel: 'Seat' } }];
   const w5 = world(MEMBER, {});
-  w5.win.spirit.element.relayPanel.open({ key: 'RK2' });
+  w5.win.spirit.element.search.contact.relayPanel.open({ key: 'RK2' });
   await settle();
   await press(w5, '[data-fold="star"]');
   const s5 = starOf(w5);
@@ -341,7 +341,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   ok(!!sent5 && sent5.body.key === 'RK2' && sent5.body.own === true, 'its second press sends contact.own {key: the relay\'s key, own: true}', 'sent: ' + short(sent5));
   const CLAIMS = [{ key: 'RK', url: OWNED_URL, label: 'mine', status: 200, owned: true, claimed: true, claimedLabel: 'andy', mine: false, ownerLabel: 'andy', roll: { relayKey: 'RK', relayLabel: 'Mine' } }];
   const w6 = world(CLAIMS, OWNED_SAID);
-  w6.win.spirit.element.relayPanel.open({ key: 'RK' });
+  w6.win.spirit.element.search.contact.relayPanel.open({ key: 'RK' });
   await settle();
   await press(w6, '[data-fold="star"]');
   ok(/If you DID install this relay on a VPS and you DID set its DNS records/.test(page(w6)), 'a relay claiming this node says: "If you DID install this relay on a VPS and you DID set its DNS records"', 'the page says: ' + short(page(w6)));
@@ -349,7 +349,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   ok(!!starOf(w6), 'with the same button', 'armings: ' + short(w6.armings.map(function (a) { return a.label; })));
   const STARRED = [Object.assign({}, CLAIMS[0], { mine: true })];
   const w7 = world(STARRED, OWNED_SAID);
-  w7.win.spirit.element.relayPanel.open({ key: 'RK' });
+  w7.win.spirit.element.search.contact.relayPanel.open({ key: 'RK' });
   await settle();
   await press(w7, '[data-fold="star"]');
   const s7 = starOf(w7);
@@ -358,7 +358,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   ok(!!sent7 && sent7.body.key === 'RK' && sent7.body.own === false, 'on a starred relay the same button takes the star away', 'sent: ' + short(sent7));
   const w8 = world(MEMBER, {});
   w8.win.spirit.transport = { ask: function () {} };
-  w8.win.spirit.element.relayPanel.open({ key: 'RK2' });
+  w8.win.spirit.element.search.contact.relayPanel.open({ key: 'RK2' });
   await settle();
   ok(!!w8.box && !w8.document.querySelector('.nd-own') && !starOf(w8), 'on a face (window.spirit.transport) no button is drawn', 'on a face: .nd-own ' + !!w8.document.querySelector('.nd-own'));
 }()).then(function () { test.reportSuccessFailureCount(); },

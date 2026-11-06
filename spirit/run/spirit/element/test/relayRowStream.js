@@ -105,7 +105,7 @@ test.startTest('relayRowStream.js: who paints, listens: a relay\'s row and relay
     ok(((last(key) || {}).roll || {}).relayLabel === LABEL, 'the row says the new label', 'the last row: ' + short(last(key)));
 
     test.subHeading('relayPanel: an element, configured with its row');
-    ok(fs.existsSync(path.join(RUN, 'spirit/element/relayPanel.js')), 'spirit/element/relayPanel.js is there', 'no spirit/element/relayPanel.js');
+    ok(fs.existsSync(path.join(RUN, 'spirit/element/search/contact/relayPanel.js')), 'spirit/element/search/contact/relayPanel.js is there', 'no spirit/element/search/contact/relayPanel.js');
     ok(!fs.existsSync(path.join(RUN, 'spirit/element/natterDetails')), 'and natterDetails is gone', 'spirit/element/natterDetails is still there');
     const where = findChrome();
     if (!where) { test.fail('no Chrome here: the panel is not judged'); return; }
@@ -116,7 +116,7 @@ test.startTest('relayRowStream.js: who paints, listens: a relay\'s row and relay
     await chrome.send('Page.navigate', { url: N.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);
     await sleep(3000);
-    const mounted = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/relayPanel.js")).then(function () { var E = window.spirit.element.relayPanel; if (!E || typeof E.create !== "function") return "no create"; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(key) + ' }); return "ok"; }, function (e) { return "refused: " + e.message; })');
+    const mounted = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/relayPanel.js")).then(function () { var E = window.spirit.element.search.contact.relayPanel; if (!E || typeof E.create !== "function") return "no create"; var h = document.createElement("div"); h.id = "zzPanel"; document.body.appendChild(h); window.__panel = E.create(h, { key: ' + JSON.stringify(key) + ' }); return "ok"; }, function (e) { return "refused: " + e.message; })');
     ok(mounted === 'ok', 'relayPanel.create(host, { key }) draws it', 'the panel: ' + short(mounted));
     if (mounted !== 'ok') return;
     const text = function () { return chrome.evaluate('document.getElementById("zzPanel").textContent').then(String); };
@@ -255,7 +255,7 @@ test.startTest('relayRowStream.js: who paints, listens: a relay\'s row and relay
     test.comment('a node that is no relay, contact.own answers ' + personAns.status + ': this rule is about relays alone');
 
     test.subHeading('its panel offers no star there');
-    const farPanel = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/relayPanel.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.element.relayPanel.create(h, { key: ' + JSON.stringify(Far.relayKey) + ' }); return "ok"; })');
+    const farPanel = await chrome.evaluate('Promise.resolve(window.spirit.require("spirit/element/search/contact/relayPanel.js")).then(function () { var h = document.createElement("div"); h.id = "zzFar"; document.body.appendChild(h); window.spirit.element.search.contact.relayPanel.create(h, { key: ' + JSON.stringify(Far.relayKey) + ' }); return "ok"; })');
     await until(function () { return chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0'); }, 8000);
     const farStar = await chrome.evaluate('Array.prototype.slice.call(document.querySelectorAll("#zzFar .nd-fold")).filter(function (h) { return h.textContent.indexOf("Star this relay") !== -1; }).length');
     ok(farPanel === 'ok' && await chrome.evaluate('document.querySelectorAll("#zzFar .nd-fold").length > 0'), 'the panel draws for it', 'no panel for a relay with no seat');

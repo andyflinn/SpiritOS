@@ -104,7 +104,7 @@
       // Its page on the navigation (goal/G40.8): the relay's details, an element, no app.
       // The page loads when it is first opened (goal/G41.3), through spirit.require.
       { name: 'open', label: 'Open', run: function (el) {
-        return window.spirit.require('spirit/element/relayPanel.js').then(function () { return window.spirit.element.relayPanel.open({ key: el.key }); });
+        return window.spirit.require('spirit/element/search/contact/relayPanel.js').then(function () { return window.spirit.element.search.contact.relayPanel.open({ key: el.key }); });
       } },
     ];
     var bookActions = [
