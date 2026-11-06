@@ -263,15 +263,21 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
       return up ? T('markLayer(' + JSON.stringify(mark) + ')') : 0;
     };
     const closeOne = async function () { const b = (await T('bars()'))[0]; await T('close(' + JSON.stringify(String(b || '').slice(-12)) + ')'); return waitFor('bars()[0] === ' + JSON.stringify(listBar), 10000); };
+    // Andy: "the first detail shows the right data, the second row i open always shows nothing.... THAT's the problem.": each
+    // panel shows its own row, read from what is in view: its Public Handle fact (detailElement.js) and, blocked, Unblock.
+    const inView = function () { return c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")'); };
+    const showsOwn = function (handle) { return inView().then(function (t) { return /Public Handle/.test(t) && /Unblock/.test(t) && new RegExp('Public Handle\\s*' + handle + '(?![A-Za-z])').test(t); }); };
     const a = await openOne(zzKey, 'rowA');
     ok(a > 0, 'the world: the first person\'s details open', 'nothing drew for the first person');
+    ok(await until(function () { return showsOwn('zzPerson'); }, 8000), 'the first person\'s panel shows their data: Public Handle zzPerson, Unblock', 'the first panel shows: ' + short(await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")')));
     await closeOne();
     const b = await openOne(zzKey2, 'rowB');
+    ok(await until(function () { return showsOwn('zzPersonTwo'); }, 8000), 'the second person\'s panel shows their own data: Public Handle zzPersonTwo, Unblock', 'the second panel shows: ' + short(await c.evaluate('String((document.getElementById("zzBox") || {}).innerText || "")')));
     ok(b > 0 && (await T('markedShown("rowA")')) === 0, 'the second person\'s details are a panel of their own: new, and the first\'s out of view', 'drawn for the second ' + b + ', the first\'s shown ' + (await T('markedShown("rowA")')));
     ok((await T('marked("rowA")')) > 0, 'and the first person\'s panel is kept, not drawn over', 'the first person\'s panel is gone: marked ' + (await T('marked("rowA")')));
     await closeOne();
     await T('openRow(' + JSON.stringify(zzKey) + ')');
-    ok(await waitFor('markedShown("rowA") > 0 && markedShown("rowB") === 0', 10000), 'the first person pressed again: their own panel shows, as it was left', 'shown: first ' + (await T('markedShown("rowA")')) + ', second ' + (await T('markedShown("rowB")')));
+    ok(await waitFor('markedShown("rowA") > 0 && markedShown("rowB") === 0', 10000) && await showsOwn('zzPerson'), 'the first person pressed again: their own panel shows, as it was left, with their data', 'shown: first ' + (await T('markedShown("rowA")')) + ', second ' + (await T('markedShown("rowB")')));
     await closeOne();
 
     test.subHeading('nothing threw on the page');
