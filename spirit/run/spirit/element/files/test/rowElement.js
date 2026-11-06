@@ -30,9 +30,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     stat: function (a) { asked.push({ verb: 'fs.stat', args: a }); return Promise.resolve({ size: 9 }); },
     annotations: function (a) { asked.push({ verb: 'fs.annotations', args: a }); return Promise.resolve({ note: 'n' }); },
   };
-  const STANDS = { 'spirit/element/rowElement.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'rowElement.js'), 'utf8'), { filename: 'rowElement.js' }); } };
+  const STANDS = { 'spirit/element/rowElement.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'rowElement.js'), 'utf8'), { filename: 'rowElement.js' }); },
+    // What says a file's kind (goal/G43.17), the real one, should the row ask it.
+    'spirit/element/fstat.js': function () { const f = path.join(RUN, 'spirit', 'element', 'fstat.js'); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8'), { filename: 'fstat.js' }); } };
   global.window = { spirit: { escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }, formatBytes: function (n) { return n + ' Bytes'; },
-    ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };
+    ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {},
+    // The page's table of types, as spirit.js puts it on the spirit object.
+    MIME_TYPES: { '.html': 'text/html; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' } } };
   global.spirit = global.window.spirit;
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   const D = global.window.spirit.data;
@@ -92,11 +96,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(el.kind === 'file' && el.key === 'web/page<1>.html' && el.row.size === 2048 && el.row.name === 'page<1>.html', 'a row element of kind file, keyed by its path, its facts from data.files', 'el: ' + short({ kind: el.kind, key: el.key, row: el.row }));
   const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
   ok(JSON.stringify(Object.keys(cells)) === '["name","size","changed"]', 'its fields are name, size and changed', 'fields: ' + short(Object.keys(cells)));
-  ok(/📄/.test(cells.name) && /page&lt;1>\.html/.test(cells.name) && /web\//.test(cells.name) && !/<1>/.test(cells.name), 'the name cell: a file\'s icon, where it lives, and its name, escaped', 'name: ' + short(cells.name));
+  ok(/📜/.test(cells.name) && /page&lt;1>\.html/.test(cells.name) && /web\//.test(cells.name) && !/<1>/.test(cells.name), 'the name cell: a text file\'s icon 📜 (goal/G43.17), where it lives, and its name, escaped', 'name: ' + short(cells.name));
   ok(cells.size === '2048 Bytes' && cells.changed === '2030-01-02 03:04', 'its size through formatBytes, its time to the minute', 'cells: ' + short(cells));
   const folder = E.fileElement.create({ path: 'web', kind: 'folder' });
   const fc = {}; folder.cells().forEach(function (c) { fc[c.name] = c.html; });
   ok(/📁/.test(fc.name) && fc.size === '', 'a folder: its icon, and no size', 'folder: ' + short(fc));
+  // goal/G43.17, the box: "text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of unknown kind, ❔, in
+  // place of today's 📄; a file gone stays ❌".
+  await settle();
+  const KINDS = { 'web/a.txt': '📜', 'web/a.png': '🌇', 'web/a.mp4': '📹', 'web/a.mp3': '🔊', 'web/a.zzq': '❔' };
+  const wrong = Object.keys(KINDS).filter(function (p) { const k = {}; E.fileElement.create({ path: p }).cells().forEach(function (c) { k[c.name] = c.html; }); return k.name.indexOf(KINDS[p]) === -1 || /📄/.test(k.name); });
+  ok(!wrong.length, 'a file\'s icon by its kind: text 📜, image 🌇, video 📹, audio 🔊, any other ❔, none 📄', 'wrong: ' + short(wrong));
   const core = E.fileElement.create({ path: 'spirit/kernel.js', core: true });
   const cc = {}; core.cells().forEach(function (c) { cc[c.name] = c.html; });
   ok(/spirit-core/.test(cc.name) && /core: write-protected/.test(cc.name), 'a core file\'s name in yellow, said core: write-protected', 'core: ' + short(cc.name));

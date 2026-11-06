@@ -42,7 +42,9 @@ node_modules
 # nothing at all.
 /CYCLE-*.md
 sandbox
-media
+# The node's uploads (the media type, ae7e545c), anchored: as a bare `media` it also swallowed spirit/run/spirit/app/media/,
+# the media app (goal/G43.17).
+/spirit/run/media/
 published
 release
 preferences.json

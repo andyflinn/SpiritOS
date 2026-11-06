@@ -535,7 +535,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // OUTSIDE goal/G41.28, AND STILL RED (Andy, G41.28: "WSL will drop Q23 from this item, and mark those two related reds as
     // outside it"): login fetches its steps file before the page has a link to its node, and the file viewer fetches a
     // file at home piece by piece. Each red names that it is outside the item; it is not met, so it is not green.
-    const OUTSIDE = own.some(function (c) { return /^(shell\/login\/login|spirit\/element\/fileViewer)\.js$/.test(String(c.file || '')); }) ? ' (outside goal/G41.28, Andy: "WSL will drop Q23 from this item, and mark those two related reds as outside it")' : '';
+    const OUTSIDE = own.some(function (c) { return /^(shell\/login\/login|spirit\/element\/fstat)\.js$/.test(String(c.file || '')); }) ? ' (outside goal/G41.28, Andy: "WSL will drop Q23 from this item, and mark those two related reds as outside it")' : '';
     ok(!own.length, 'every call it puts on the wire goes through spirit (' + W.net.length + ' made)', own.length + ' made by itself: ' + short(own.map(function (c) { return c.kind + ' ' + c.url.replace(node.base, '') + ' from ' + (c.file || 'an unnamed script'); })) + OUTSIDE);
 
     // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27; Andy: "elements that change things, also subscribe to the changes

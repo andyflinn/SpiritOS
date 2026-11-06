@@ -43,7 +43,7 @@ if (!left.length) test.check('no file under spirit/run names a spiritX global; t
 else test.fail(OWED + left.length + ' files still name one: ' + left.slice(0, 10).join(', '));
 
 test.subHeading('2. the face code reaches the node only through the spirit object');
-const FACE = walk('spirit/element', []).concat(walk('shell/files', []), walk('spirit/app/contact', []), walk('shell/join', []), walk('shell/mediaViewer', []), walk('shell/apps', []), walk('shell/icons', []));
+const FACE = walk('spirit/element', []).concat(walk('spirit/app/file', []), walk('spirit/app/contact', []), walk('shell/join', []), walk('shell/mediaViewer', []), walk('shell/apps', []), walk('shell/icons', []));
 const NODE_VERB = /\b(api\.verb|core\(\)\.ask|spirit\.core\.ask|\.ask)\(\s*'(auth|config|contact|fs|jobs|net|node|owner|peer|relay)\.[a-zA-Z.]+'/;
 const hand = FACE.filter(function (f) { return NODE_VERB.test(code(raw(f))); });
 if (FACE.length > 15 && !hand.length) test.check('no hand-made node call is left in the ' + FACE.length + ' files of the face code');

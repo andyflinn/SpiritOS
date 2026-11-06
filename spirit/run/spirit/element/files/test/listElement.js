@@ -43,7 +43,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       lists.push(l); return l;
     } }; },
     'spirit/element/files/rowElement.js': function (E) { E.fileElement = { create: function (row) { return { kind: 'file', row: row }; } }; },
-    'spirit/element/fileViewer.js': function (E) { E.fileViewer = { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
+    'spirit/element/fstat.js': function (E) { E.fstat = { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };
   global.spirit = global.window.spirit;
@@ -67,7 +67,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const F = ((global.window.spirit.data || {}).fs || {}).data;
 
   test.subHeading('it loads what it uses itself (rule/26), and no data script');
-  ok(['spirit/element/files/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/fileViewer.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires its row element, the search element and the file viewer', 'required: ' + short(required));
+  ok(['spirit/element/files/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/fstat.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires its row element, the search element and the file viewer', 'required: ' + short(required));
   // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the row element's.
   ok(!required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script: the file tree\'s stream is its row element\'s', 'required: ' + short(required));
   ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 'managers: ' + short(managers));

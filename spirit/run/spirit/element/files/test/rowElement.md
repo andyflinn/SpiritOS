@@ -23,7 +23,7 @@ a subject needs), loaded with it.
   - `deleteFile` takes that file out; `deleteDirectory` the folder and everything under it;
   - another job's command, or a command with no path, writes nothing.
 - **A row**: kind `file`, keyed by its path, its facts from the file tree. Its fields are `name`, `size` and `changed`:
-  - the name cell: an icon (📄, 📁 for a folder, ❌ once gone), where it lives and its name, escaped; a core file's name
+  - the name cell: an icon by its kind (goal/G43.17: text 📜, video 📹, image 🌇, audio 🔊, any other ❔; 📁 for a folder, ❌ once gone), where it lives and its name, escaped; a core file's name
     in yellow, titled `core: write-protected`;
   - the size through `formatBytes`, none for a folder; the time to the minute.
 - **It repaints from the file tree**: its path changed there, its cells repaint; its path gone, it is marked gone.

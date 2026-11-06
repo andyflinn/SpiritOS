@@ -42,8 +42,8 @@ test.startTest('goal/G41.1: the face part is the one part, and it is streamed');
   eq(door, 'annotateFace', 'the door\'s fs.annotate writes the face part', OWED + 'the door writes with ' + (door || 'nothing found'));
   // introSpector's verb keeps its name (a verb renamed needs review and his yes); what it writes is the face part.
   eq(/'annotateFile'|fileSystem\.annotateFile/.test(read('spirit/kernel.js') + read('spirit/introSpector.js')), false, 'neither the kernel nor introSpector writes through annotateFile', OWED + 'annotateFile is still called');
-  const viewer = read('spirit/element/fileViewer.js');
-  eq(/a && a\.client/.test(viewer), false, 'the file viewer reads no client part', OWED + 'fileViewer.js still reads the client part');
+  const viewer = read('spirit/element/fstat.js');
+  eq(!!viewer && !/a && a\.client/.test(viewer), true, 'the file viewer, fstat since goal/G43.17, is there and reads no client part', OWED + 'fstat.js is missing or still reads the client part');
 
   // box v16 and v17: a node's sidecars are its own state, at the mirror of its app's path; none beside the code counts,
   // and intrinsic comes from the coded list (coreFiles.js INTRINSIC), never from a sidecar.

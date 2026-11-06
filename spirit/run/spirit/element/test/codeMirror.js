@@ -3,7 +3,7 @@
 // spirit/run/spirit/element/test/codeMirror.js
 // The tests of spirit/element/codeMirror.js, and of no other module (spec: ./codeMirror.md; goal/G41.7). The browser file
 // runs in node on a window of its own: CodeMirror is a recorder standing in for the library, handed over when the
-// element requires the library's path; every loader the page offers (spirit.require, the file viewer's read, a link
+// element requires the library's path; every loader the page offers (spirit.require, fstat's read, a link
 // tag) writes down what it was asked for.
 
 const fs = require('fs');
@@ -57,7 +57,7 @@ function world() {
   win.window = win;
   win.spirit = {
     elements: {
-      fileViewer: { read: function (p) { w.read.push(String(p)); return Promise.resolve({ status: 200, type: 'text/css', bytes: new TextEncoder().encode('/* ' + p + ' */') }); } },
+      fstat: { read: function (p) { w.read.push(String(p)); return Promise.resolve({ status: 200, type: 'text/css', bytes: new TextEncoder().encode('/* ' + p + ' */') }); } },
     },
     // The one marking rule, as the list has it: every place a word stands, case ignored.
     matchRanges: function (text, words) {

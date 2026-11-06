@@ -66,7 +66,7 @@ function world(opts) {
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     ready: Promise.resolve({ fs: { getAnnotations: function (p) { w.annotations.push(p); return Promise.resolve(o.sidecar || null); } } }),
     get element() { return this.elements; }, elements: {
-      fileViewer: {
+      fstat: {
         create: function (host, args) {
           const slots = { body: box('body') };
           const f = { host: host, args: args, path: args && args.path, slot: function (n) { return slots[n]; }, slots: slots };
@@ -95,7 +95,7 @@ test.startTest('textViewer.js: a text file, shown with the codeMirror element');
   const a = world();
   const E = a.win.spirit.element.textViewer;
   ok(!!E && typeof E.create === 'function', 'it puts itself on window.spirit.element as textViewer, with create', 'no textViewer.create');
-  ['spirit/element/fileViewer.js', 'spirit/element/codeMirror.js'].forEach(function (p) {
+  ['spirit/element/fstat.js', 'spirit/element/codeMirror.js'].forEach(function (p) {
     ok(a.w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(a.w.required));
   });
   ok(a.w.required.indexOf('spirit/element/textView.js') === -1 && !/textView\.js|createTextView/.test(SRC), 'it neither loads textView.js nor calls createTextView', 'textViewer.js still names textView.js or createTextView');
@@ -107,7 +107,7 @@ test.startTest('textViewer.js: a text file, shown with the codeMirror element');
   const frame = await E.create(host, { path: 'notes.md', words: 'beta', line: 0, launcherId: 'shell/textFileLauncher' });
   await settle();
   const f = a.w.frames[0];
-  ok(!!f && f.host === host && f.args.path === 'notes.md' && f.args.launcherId === 'shell/textFileLauncher', 'the frame is fileViewer.create(host, { path, launcherId })', 'frames: ' + short(a.w.frames.map(function (x) { return x.args; })));
+  ok(!!f && f.host === host && f.args.path === 'notes.md' && !('launcherId' in f.args), 'the frame is fstat.create(host, { path }), no launcher: fstat asks nothing of the old shell (goal/G43.17, Q9)', 'frames: ' + short(a.w.frames.map(function (x) { return x.args; })));
   ok(frame === f, 'the Promise answers the frame', 'answered ' + short(frame && frame.args));
   const v = a.w.views[0];
   ok(!!v && v.args.mode === 'read', 'the text is drawn by codeMirror.create in read mode', 'views: ' + short(a.w.views.map(function (x) { return x.args; })));
