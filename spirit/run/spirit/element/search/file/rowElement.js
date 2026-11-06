@@ -55,12 +55,13 @@
   // names match a reserved word AND the browsers spirit object contains the corresponding javascript Object at that path.",
   // and "in a bright red if folders and the browser spirit object disagree."; "the colors will follow word.json changes
   // live."). Each element of a path under spirit/: its name up to the first dot against the word system, its object on
-  // the spirit object at that path. spirit itself is always green; a name that is no reserved word has no colour.
-  var WORD_COLOUR = { green: '#22e022', red: '#ff3030' };
+  // the spirit object at that path. spirit itself always holds; a name that is no reserved word has no colour.
+  // A word that holds is light blue (goal/G43.18; Andy: "file app: please change the green colored paths/files in light blue instead.").
+  var WORD_COLOUR = { holds: '#87cefa', red: '#ff3030' };
   function wordColours(p) {
     var parts = String(p || '').split('/');
     if (parts[0] !== 'spirit' || !window.spirit.word) return Promise.resolve({});
-    var out = { spirit: WORD_COLOUR.green };
+    var out = { spirit: WORD_COLOUR.holds };
     return Promise.all(parts.slice(1).map(function (part, i) {
       var stem = part.split('.')[0];
       return window.spirit.word.check(parts.slice(0, i + 1).join('.'), stem).then(function (word) {
@@ -68,7 +69,7 @@
         var at = window.spirit;
         parts.slice(1, i + 1).forEach(function (up) { at = at ? at[up.split('.')[0]] : undefined; });
         var held = at ? at[word] : undefined;
-        out[part] = held && (typeof held === 'object' || typeof held === 'function') ? WORD_COLOUR.green : WORD_COLOUR.red;
+        out[part] = held && (typeof held === 'object' || typeof held === 'function') ? WORD_COLOUR.holds : WORD_COLOUR.red;
       });
     })).then(function () { return out; });
   }
