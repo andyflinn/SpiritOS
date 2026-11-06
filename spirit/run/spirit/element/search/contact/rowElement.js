@@ -109,7 +109,7 @@
     ];
     var bookActions = [
       { name: 'open', label: 'Open', run: function (el) {
-        return window.spirit.require('spirit/element/contactDetails/contactDetails.js').then(function () { return window.spirit.element.contactDetails.open({ key: el.key }); });
+        return window.spirit.require('spirit/element/search/contact/detailElement.js').then(function () { return window.spirit.element.search.contact.detailElement.open({ key: el.key }); });
       } },
       // Through the spirit object (goal/G32.2): each a checked call answering the reply's body, refusing otherwise.
       { name: 'block', label: 'Block', run: function (el) { return spirit.ready.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },

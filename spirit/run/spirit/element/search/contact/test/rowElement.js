@@ -22,7 +22,7 @@ window.spirit.ready = Promise.resolve({ contact: { block: verb('contact.block'),
   forget: verb('contact.forget'), label: verb('contact.label'), get: verb('contact.get') }, peer: { acquire: verb('peer.acquire') } });
 window.spirit.fieldRules = { normalize: function (t) { return String(t || '').trim(); },
   problem: function (t) { return t ? '' : 'a name is needed'; }, MAX_BYTES: 64 };
-window.spirit.element = { contactDetails: { open: function (o) { asked.push({ verb: 'contactDetails', body: o }); } },
+window.spirit.element = { search: { contact: { detailElement: { open: function (o) { asked.push({ verb: 'contactDetails', body: o }); } } } },
   relayPanel: { open: function (o) { asked.push({ verb: 'relayPanel', body: o }); } } };
 // The one loader, a recorder: what the row requires, answered at once (the pages above stand in for what it loads).
 const required = [];
@@ -88,7 +88,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   if (opens[0].verb === 'contactDetails' && opens[0].body.key === 'K1' && opens[1].verb === 'relayPanel' && opens[1].body.key === 'R1') test.check('open: a contact\'s details by key, a relay\'s by its url');
   else test.fail('opens: ' + JSON.stringify(opens));
   const pages = required.slice(-2).join(',');
-  if (pages === 'spirit/element/contactDetails/contactDetails.js,spirit/element/relayPanel.js') test.check('open loads the page it opens first, through spirit.require');
+  if (pages === 'spirit/element/search/contact/detailElement.js,spirit/element/relayPanel.js') test.check('open loads the page it opens first, through spirit.require');
   else test.fail('open required: ' + pages);
   if (required[0] === 'spirit/element/rowElement.js') test.check('the row loads the shared row element it is built on itself, through spirit.require');
   else test.fail('as it loaded, the row required: ' + JSON.stringify(required.slice(0, 1)));

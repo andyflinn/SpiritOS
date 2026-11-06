@@ -29,7 +29,7 @@ window.spirit.element = nestSearch({
     made = { host: host, opts: o, refreshes: 0, destroyed: false };
     return { refresh: function () { made.refreshes += 1; }, destroy: function () { made.destroyed = true; } };
   } },
-  contactDetails: { open: function (o) { asked.push({ verb: 'contactDetails', body: o }); } },
+  'search.contact.detailElement': { open: function (o) { asked.push({ verb: 'contactDetails', body: o }); } },
   natterDetails: { open: function (o) { asked.push({ verb: 'natterDetails', body: o }); } },
 });
 // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).

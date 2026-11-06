@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/spirit/element/contactDetails/test/contactDetails.js
-// The tests of spirit/element/contactDetails/contactDetails.js, and of no other module (spec: ./contactDetails.md;
+// spirit/run/spirit/element/search/contact/test/detailElement.js
+// The tests of spirit/element/search/contact/detailElement.js, and of no other module (spec: ./contactDetails.md;
 // goal/G41.9). The browser file runs in node on a window of its own, on a small DOM (markup parsed into a tree,
 // selectors, clicks that bubble); the navigation, the node behind the page's api, the relay family and the armingButton
 // element are recorders.
@@ -9,9 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../../../..');
+const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const FILE = path.join(__dirname, '..', 'contactDetails.js');
+const FILE = path.join(__dirname, '..', 'detailElement.js');
 const SRC = fs.readFileSync(FILE, 'utf8');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -197,7 +197,7 @@ function world(person, relayRows) {
 function armingFor(w, label) { return w.armings.filter(function (a) { return a.label === label; }).pop() || null; }
 function inPage(w, button) { let e = button; while (e) { if (e === w.box) return true; e = e.parentNode; } return false; }
 
-test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (goal/G41.9)');
+test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (goal/G41.9)');
 
 (async function () {
   test.subHeading('nothing hand-rolled is left');
@@ -216,8 +216,8 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
   test.subHeading('it loads armingButton itself (goal/G41.3)');
   ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
 
-  const E = w.win.spirit.element.contactDetails;
-  ok(!!E && typeof E.open === 'function', 'it is window.spirit.element.contactDetails, with open', 'no contactDetails.open');
+  const E = w.win.spirit.element.search.contact.detailElement;
+  ok(!!E && typeof E.open === 'function', 'it is window.spirit.element.search.contact.detailElement, with open', 'no contactDetails.open');
   if (!E) return;
   E.open({ key: KEY });
   await settle();
@@ -257,7 +257,7 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
 
   test.subHeading('a press on the drawn button asks nothing by itself');
   const w2 = world({ key: 'K2', publicLabel: 'carl', blocked: false, held: false }, []);
-  w2.win.spirit.element.contactDetails.open({ key: 'K2' });
+  w2.win.spirit.element.search.contact.detailElement.open({ key: 'K2' });
   await settle();
   const drawn = w2.document.getElementById('cd-block') || (armingFor(w2, 'Block') || {}).button;
   const before2 = w2.calls.length;
@@ -266,7 +266,7 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
 
   test.subHeading('a blocked row offers Unblock, and Forget still arms');
   const w3 = world({ key: 'K3', publicLabel: 'dora', blocked: true }, []);
-  w3.win.spirit.element.contactDetails.open({ key: 'K3' });
+  w3.win.spirit.element.search.contact.detailElement.open({ key: 'K3' });
   await settle();
   ok(!armingFor(w3, 'Block') && !!w3.document.getElementById('cd-unblock'), 'no Block, but Unblock, a plain button', 'armings: ' + short(w3.armings.map(function (a) { return a.label; })));
   ok(!!armingFor(w3, 'Forget'), 'Forget is an arming button here too', 'armings: ' + short(w3.armings.map(function (a) { return a.label; })));
@@ -278,7 +278,7 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
   test.subHeading('the box: "a contact\'s detail no longer shows them"');
   {
     const wc = world({ key: 'KC', publicLabel: 'carol', myLabel: '', blocked: false, held: false, unansweredInbound: 7, inboundPerDay: 3.5, outboundPerDay: 1.25 }, []);
-    wc.win.spirit.element.contactDetails.open({ key: 'KC' });
+    wc.win.spirit.element.search.contact.detailElement.open({ key: 'KC' });
     await settle();
     const shown = wc.box ? String(wc.box.textContent || '') : '';
     ok(/carol/.test(shown) && /Public Handle/.test(shown), 'the world: the detail of carol is drawn, with its facts', 'the detail: ' + short(shown));
@@ -290,7 +290,7 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
   const page = function (x) { return x.box ? String(x.box.textContent || '') : ''; };
   const starOf = function (x) { const b = x.document.getElementById('cd-own'); return b ? x.armings.filter(function (a) { return a.button === b; }).pop() || null : null; };
   const w5 = world({ key: 'K5', publicLabel: 'a node', mine: false }, []);
-  w5.win.spirit.element.contactDetails.open({ key: 'K5' });
+  w5.win.spirit.element.search.contact.detailElement.open({ key: 'K5' });
   await settle();
   const s5 = starOf(w5);
   ok(!!s5, 'a node\'s panel draws #cd-own, an arming button', 'armings: ' + short(w5.armings.map(function (a) { return a.label; })));
@@ -303,7 +303,7 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
   const sent5 = w5.calls.filter(function (c) { return c.name === 'contact.own'; }).pop();
   ok(!!sent5 && sent5.body.key === 'K5' && sent5.body.own === true, 'its second press sends contact.own {key, own: true}', 'sent: ' + short(sent5));
   const w6 = world({ key: 'K6', publicLabel: 'a puppet', mine: true }, []);
-  w6.win.spirit.element.contactDetails.open({ key: 'K6' });
+  w6.win.spirit.element.search.contact.detailElement.open({ key: 'K6' });
   await settle();
   const s6 = starOf(w6);
   if (s6) { await s6.opts.run(); await settle(); }
@@ -311,7 +311,7 @@ test.startTest('contactDetails.js: its are-you-sure buttons are armingButtons (g
   ok(!!sent6 && sent6.body.key === 'K6' && sent6.body.own === false, 'on a starred row the same button takes the star away: contact.own {key, own: false}', 'sent: ' + short(sent6));
   const w7 = world({ key: 'K7', publicLabel: 'a node', mine: false }, []);
   w7.win.spirit.transport = { ask: function () {} };
-  w7.win.spirit.element.contactDetails.open({ key: 'K7' });
+  w7.win.spirit.element.search.contact.detailElement.open({ key: 'K7' });
   await settle();
   ok(!!w7.box && !w7.document.getElementById('cd-own') && !starOf(w7), 'on a face (window.spirit.transport) no button is drawn', 'on a face: #cd-own ' + !!w7.document.getElementById('cd-own'));
 }()).then(function () { test.reportSuccessFailureCount(); },

@@ -433,7 +433,9 @@ if (window.spirit && window.spirit.require) window.spirit.require('spirit/elemen
 // title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).
 // AND THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
 // create(container, options) draws the same screen into the container, options { api, key }.
-(window.spirit.element = window.spirit.element || {}).contactDetails = {
+// ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "contactDetails.js should really be
+// spirit/run/spirit/element/search/contact/detailElement.js"): merged into, so the parts of search/contact/ load in any order.
+Object.assign(['search', 'contact', 'detailElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), {
   create: function (container, options) {
     var o = options || {};
     var done = { destroy: function () { container.innerHTML = ''; } };
@@ -455,4 +457,4 @@ if (window.spirit && window.spirit.require) window.spirit.require('spirit/elemen
       cdPage.open(params || {});
     } });
   },
-};
+});
