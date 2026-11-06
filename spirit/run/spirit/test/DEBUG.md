@@ -102,8 +102,8 @@ Each is not answered by DEBUG.js, so it answers as an address of no route does (
 
 ### Node and relay alike
 
-The same answers and refusals on a relay with DEBUG on: its login app's page
-(`/DEBUG/shell/login/login/headLessBrowser.html`), its own api's garbage (`/DEBUG/spirit/relay/garbageArguments.json`,
+The same answers and refusals on a relay with DEBUG on, judged on its own api's garbage, since a relay serves no app
+(goal/G43.18, box v29): its own api's garbage (`/DEBUG/spirit/relay/garbageArguments.json`,
 a JSON list), the forwarded-from header and a non-loopback request refused. With DEBUG off the relay answers the
 address as no route.
 

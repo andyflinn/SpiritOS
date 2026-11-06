@@ -73,7 +73,8 @@ function isCore(repoPath, repoRoot) {
   // face mode respectively", boot "makes hard-coded assumptions" about them, and no page may change them. Their .json
   // files are no manifests but code, their UI text (Q9: "if they're code, just keep them, they are obviously NOT
   // manifests."), so they are asked here, before the manifest rule below.
-  if (p.indexOf('spirit/run/shell/login/') === 0 || p.indexOf('spirit/run/shell/join/') === 0) return true;
+  // The login app went (goal/G43.18, box v29: "The login is spirit.login, in spirit.js, no app"); Join stays core whole.
+  if (p.indexOf('spirit/run/shell/join/') === 0) return true;
   // A MANIFEST IS NEVER CORE (goal/G30.21; Andy: "manifests are no longer core"), an intrinsic app's included.
   if (/^spirit\/run\/(shell|process\/js)\/([^/]+)\/\2\.json$/.test(p)) return false;
   // shell/json/ too (goal/G40.8; Andy: "the folder spirit/run/shell/json/ is a core folder as well. this way i can update

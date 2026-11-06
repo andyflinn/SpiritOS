@@ -788,12 +788,242 @@
     return started;
   };
 
-  // ON A FACE, spirit.js LOADS THE FACE (goal/G40.6). Andy: "face.html loads spirit.js FIRST, in it's spirit.js that
-  // fetches that fetches all other scripts". face.html says what it is (data-spirit="face" on its html element) and
-  // holds spirit.js alone; spirit.js gets the face shell once the page's body is there, and spirit.booted answers when it
-  // runs. The seal is not loaded here: a face needs it only once it is logged in and links to its home node, and the
-  // home node itself never does.
+  // ── THE RELAY LOGIN, spirit.login (goal/G43.18, box v29, "The relay login") ───────────────────────────────────────
+  // Andy: "the login app should belong to the relay only, and not really be an "app"", and "spirit.login": no app, no shell.
+  // The relay's own three calls on /face/api, { call, args } as every call (goal/G41.15), each answering the relay's body:
+  //   state() -> { ok, face, loggedIn }   login(text) -> { ok, loggedIn }   logout() -> { ok, loggedIn: false }
+  // text is the member's verified email, or the token the relay mailed to it (goal/G41.29: no link in the mail).
+  function relayCall(verb, args) {
+    return fetch('/face/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ call: String(verb), args: args || {} }) })
+      .then(function (r) {
+        if (!r.ok) throw refusal('relay-refused', '/face/api ' + verb + ' answered ' + r.status, { status: r.status });
+        return r.json();
+      });
+  }
+  if (isBrowser()) {
+    self.login = {
+      state: function () { return relayCall('state'); },
+      login: function (text) { return relayCall('login', { text: String(text == null ? '' : text) }); },
+      logout: function () { return relayCall('logout'); },
+    };
+  }
+
+  // ── THE LINK HOME, spirit.link (goal/G43.18, Q22, Andy: "ok." to "the link home moves into spirit.js, and boot.js keeps
+  // only the stream and loading the shell") ─────────────────────────────────────────────────────────────────────────
+  // On a face, once logged in: the home node's keys (faceHome answers { keys: 1 }), one key of this page's own, kept in
+  // memory and lost with the session (goal/G30.11), and every request to the home node through the relay's /face/call,
+  // sealed when this browser can seal (shell/seal.js, the node's own seal in WebCrypto). It is spirit.transport's ask and
+  // file, so every call of the spirit object goes through it; boot.js reads its key for the face stream.
+  //   spirit.link: { sealed, key, node, ask(verb, args), file(path, onPiece), call(request), onDown(fn) }
+  // Moved from boot.js as it was (goal/G30.11, G30.16, G33.1, G33.10).
+  var faceLink = { sealed: false, key: null, node: null, downs: [] };
+  function linkText(bytes) { return new TextDecoder().decode(bytes); }
+  function linkLines(t) { return String(t || '').split('\n').filter(Boolean); }
+  function randomId() {
+    var idBytes = new Uint8Array(12);
+    root.crypto.getRandomValues(idBytes);
+    return Array.prototype.map.call(idBytes, function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
+  }
+  // A REQUEST TOO LARGE FOR ONE TRIP GOES IN PIECES (goal/G33.1): the relay takes one request up to BODY_MAX; a larger one
+  // goes as { piece: { id, n, of, text } }, text a run of base64 of its bytes, each piece its own call; the home node
+  // (faceHome.js) answers 202 to each but the last, whose answer is this call's. The relay reads none of them.
+  function postCall(t) {
+    var once = function (x) { return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: x }); };
+    var BODY_MAX = (self.limits && self.limits.BODY_MAX) || 23552;
+    var bytes = new TextEncoder().encode(t);
+    if (bytes.length <= BODY_MAX - 1024) return once(t);
+    var b64 = self.seal.toB64(bytes);
+    var size = BODY_MAX - 1024;
+    var of = Math.ceil(b64.length / size);
+    var id = randomId();
+    function next(n) {
+      return once(JSON.stringify({ piece: { id: id, n: n, of: of, text: b64.slice(n * size, (n + 1) * size) } })).then(function (r) {
+        if (n === of - 1 || r.status !== 202) return r;
+        return next(n + 1);
+      });
+    }
+    return next(0);
+  }
+  function linkDown() { faceLink.downs.slice().forEach(function (fn) { try { fn(); } catch (e) { /* one reader's fault */ } }); }
+  function openAll(lines) {
+    var head = null;
+    var parts = [];
+    return lines.reduce(function (chain, l) {
+      return chain.then(function () {
+        return self.seal.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
+      }).then(function (got) {
+        if (!got) throw new Error('an answer did not open');
+        if (!head) head = JSON.parse(got.text);
+        else parts.push(self.seal.fromB64(got.text));
+      });
+    }, Promise.resolve()).then(function () { return { head: head, parts: parts }; });
+  }
+  function joined(parts) {
+    var size = parts.reduce(function (n, p) { return n + p.length; }, 0);
+    var all = new Uint8Array(size);
+    var at = 0;
+    parts.forEach(function (p) { all.set(p, at); at += p.length; });
+    return all;
+  }
+  // One request to the home node through the relay: { status, type, bytes }. Sealed when this page can seal.
+  function linkCall(request) {
+    var sending = faceLink.sealed
+      ? self.seal.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) { s.k = faceLink.key.publicKey; return s; })
+      : Promise.resolve(request);
+    return sending.then(function (body) { return postCall(JSON.stringify(body)); }).then(function (r) {
+      if (r.status === 503 || r.status === 504) linkDown();
+      if (!faceLink.sealed || r.status !== 200) {
+        return r.arrayBuffer().then(function (b) { return { status: r.status, type: r.headers.get('Content-Type') || '', bytes: new Uint8Array(b) }; });
+      }
+      return r.text().then(function (t) { return openAll(linkLines(t)); }).then(function (o) {
+        return { status: (o.head && o.head.status) || 502, type: (o.head && o.head.type) || '', bytes: joined(o.parts) };
+      });
+    });
+  }
+  // A FILE OF THE HOME NODE, PIECE BY PIECE (goal/G30.16): each line opened as it arrives and its bytes handed to onPiece,
+  // so a viewer can show it before the last piece is in. -> { status, type, bytes }
+  function linkFile(p, onPiece) {
+    var each = typeof onPiece === 'function' ? onPiece : function () {};
+    var request = { get: String(p || '').replace(/^\/+/, '') };
+    if (!faceLink.sealed) return linkCall(request).then(function (r) { if (r.status === 200) each(r.bytes); return r; });
+    return self.seal.seal(faceLink.node.sealKey, faceLink.key.publicKey, faceLink.node.publicKey, JSON.stringify(request)).then(function (s) {
+      s.k = faceLink.key.publicKey;
+      return fetch('/face/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(s) });
+    }).then(function (r) {
+      if (r.status !== 200 || !r.body || typeof r.body.getReader !== 'function') {
+        return linkCall(request).then(function (whole) { if (whole.status === 200) each(whole.bytes); return whole; });
+      }
+      var reader = r.body.getReader();
+      var decoder = new TextDecoder();
+      var held = '';
+      var head = null;
+      var parts = [];
+      var chain = Promise.resolve();
+      function open(l) {
+        chain = chain.then(function () {
+          return self.seal.open(faceLink.key.privateKey, faceLink.key.publicKey, faceLink.node.publicKey, faceLink.key.publicKey, l);
+        }).then(function (got) {
+          if (!got) throw new Error('an answer did not open');
+          if (!head) { head = JSON.parse(got.text); return; }
+          var piece = self.seal.fromB64(got.text);
+          parts.push(piece);
+          if ((head.status || 0) === 200) each(piece);
+        });
+      }
+      function pump() {
+        return reader.read().then(function (step) {
+          if (step.done) { if (held) open(held); return chain; }
+          held += decoder.decode(step.value, { stream: true });
+          var cut = held.split('\n');
+          held = cut.pop();
+          cut.filter(Boolean).forEach(open);
+          return pump();
+        });
+      }
+      return pump().then(function () { return { status: (head && head.status) || 502, type: (head && head.type) || '', bytes: joined(parts) }; });
+    });
+  }
+  // A SAVE LARGER THAN ONE TRIP GOES IN PARTS (goal/G33.10): { upload: { id, n, of, size, path, bytes } }, each part sealed on
+  // its own and sent as its own call; the home node appends each and answers 202 to each but the last.
+  var UPLOAD_PART = 8192;
+  function uploadSave(args) {
+    var bytes = new TextEncoder().encode(String(args.content));
+    var of = Math.max(1, Math.ceil(bytes.length / UPLOAD_PART));
+    var id = randomId();
+    function next(n) {
+      var part = { id: id, n: n, of: of, size: bytes.length, path: String(args.path), bytes: self.seal.toB64(bytes.subarray(n * UPLOAD_PART, (n + 1) * UPLOAD_PART)) };
+      return linkCall({ upload: part }).then(function (r) {
+        if (n === of - 1 || r.status !== 202) return r;
+        return next(n + 1);
+      });
+    }
+    return next(0);
+  }
+  function asAnswer(r) {
+    var t = linkText(r.bytes);
+    var body = null;
+    try { body = JSON.parse(t); } catch (e) { body = null; }
+    return { status: r.status, text: t, body: body };
+  }
+  // A verb of the home node: { status, text, body }. The name and the arguments apart (goal/G41.15).
+  function linkAsk(verb, args) {
+    if (String(verb) === 'fs.save' && args && typeof args.content === 'string' && new TextEncoder().encode(args.content).length > UPLOAD_PART) {
+      return uploadSave(args).then(asAnswer);
+    }
+    return linkCall({ call: String(verb), args: args || {} }).then(asAnswer);
+  }
+  // Made once, logged in: the home node's keys, then this page's own key when the browser can seal.
+  function makeLink() {
+    return requireOne('shell/seal.js').then(function () { return linkCall({ keys: 1 }); }).then(function (r) {
+      var keys = null;
+      try { keys = JSON.parse(linkText(r.bytes)); } catch (e) { keys = null; }
+      if (r.status !== 200 || !keys || !keys.publicKey) throw refusal('no-home', 'the home node did not answer', { status: r.status });
+      faceLink.node = { publicKey: keys.publicKey, sealKey: keys.sealKey || '' };
+      // The tab says whose face this is (goal/G30.15).
+      if (keys.name && root.document) root.document.title = String(keys.name);
+      return self.seal && faceLink.node.sealKey ? self.seal.supported() : false;
+    }).then(function (can) {
+      if (!can) return null;
+      return self.seal.newKey().then(function (key) { faceLink.key = key; faceLink.sealed = true; });
+    }).then(function () {
+      self.link = {
+        get sealed() { return faceLink.sealed; }, get key() { return faceLink.key; }, get node() { return faceLink.node; },
+        ask: linkAsk, file: linkFile, call: linkCall,
+        onDown: function (fn) { if (typeof fn === 'function') faceLink.downs.push(fn); },
+      };
+      self.transport = { ask: linkAsk, file: linkFile };
+      return self.link;
+    });
+  }
+
+  // ── THE FACE PAGE (goal/G40.6; goal/G43.18, box v29) ─────────────────────────────────────────────────────────────
+  // Andy: "face.html loads spirit.js FIRST, in it's spirit.js that fetches that fetches all other scripts". face.html says
+  // what it is (data-spirit="face") and holds spirit.js alone. On loopback it is the home node's own page: boot.js comes
+  // from the node. On a relay, logged out, spirit.login draws the one field and nothing else is loaded; logged in, the link
+  // home is made, and boot.js, the sheets and every other part of the shell come from the home node over it (box v29: "The
+  // relay serves a logged-out face one plain page ... with spirit.js and seal.js only"). spirit.face says where the page
+  // stands, { home, loggedIn, name }; spirit.booted answers once boot.js runs.
   var FACE = ['shell/boot.js'];
+  // THE ONE FIELD (box v29: "draws the one field when logged out"; Andy: "i don't care if the face-login is totally plain, it
+  // only serves one single-field form...."): the email or the mailed token, Log in, and a line for what the relay said.
+  function drawLogin(said) {
+    var d = root.document;
+    d.body.innerHTML = '';
+    var form = d.createElement('form');
+    var input = d.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'your email, or the token from the mail';
+    input.autocomplete = 'off';
+    var button = d.createElement('button');
+    button.type = 'submit';
+    button.textContent = 'Log in';
+    var line = d.createElement('div');
+    line.textContent = said || '';
+    form.appendChild(input);
+    form.appendChild(button);
+    d.body.appendChild(form);
+    d.body.appendChild(line);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var typed = input.value;
+      line.textContent = '…';
+      self.login.login(typed).then(function (s) {
+        if (s && s.loggedIn) { root.location.reload(); return; }
+        input.value = '';
+        line.textContent = /@/.test(typed) ? 'If that address is this face\'s, a mail with a token is on its way: paste the token here.' : 'That token did not log you in.';
+      }, function (err) { line.textContent = 'Not logged in: ' + ((err && err.message) || err); });
+    });
+    input.focus();
+  }
+  function startFace() {
+    if (isLoopback()) { self.face = { home: true, loggedIn: true, name: '' }; return boot(FACE); }
+    return self.login.state().then(function (s) {
+      self.face = { home: false, loggedIn: !!(s && s.loggedIn), name: String((s && s.face) || '') };
+      if (s && s.face && root.document) root.document.title = String(s.face);
+      if (!self.face.loggedIn) { drawLogin(''); return null; }
+      return makeLink().then(function () { return boot(FACE); });
+    }, function (e) { drawLogin('The relay did not answer: ' + ((e && e.message) || e)); return null; });
+  }
   function inject(p, src) {
     if (/\.css$/.test(p)) {
       var style = root.document.createElement('style');
@@ -817,7 +1047,7 @@
   }
   var doc = root.document;
   if (doc && doc.documentElement && doc.documentElement.getAttribute('data-spirit') === 'face') {
-    var go = function () { self.booted = boot(FACE); };
+    var go = function () { self.booted = startFace(); };
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', go); else go();
   }
 }(globalThis));

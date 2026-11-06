@@ -2,7 +2,8 @@
 // THE APP LIST, A DROP-IN ELEMENT (goal/G43.2), as spirit/element/search/bundle/listElement.js is the bundle list: the
 // probabilitySearch the selector draws. Its contract and its test: ./test/listElement.md and ./test/listElement.js.
 //
-//   create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers (the server filter shown)
+//   create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers (the server filter shown),
+//     opts.shells (only the apps that may be a shell, goal/G43.18)
 //
 // A VIEW OF THE app FAMILY'S CACHE (spirit.data.app.data): app.search seats its rows there, and the node's stream keeps them
 // current through the family's manager and the row element.
@@ -35,8 +36,15 @@
       // THE SERVER FILTER (goal/G43.18; Andy, box: "The app search gains a server filter, node.mount true and active: new code, and
       // it never names api, this filter is hidden by default."; Q4: the caller of the app search makes it visible): opts.servers.
       // Pressed, it leaves only the active apps that run on the node.
-      filters: o.servers === true ? [{ name: 'servers', word: 'servers', toggle: true,
-        test: function (row, on) { return !on || (row && row.active === true && row.nodeMount === true) ? 1 : 0; } }] : [],
+      filters: (o.servers === true ? [{ name: 'servers', word: 'servers', toggle: true,
+        test: function (row, on) { return !on || (row && row.active === true && row.nodeMount === true) ? 1 : 0; } }] : [])
+        // THE SHELLS ALONE (goal/G43.18, box v29: "Both dropdowns list only the apps whose <name>.json says shell:true:true"):
+        // opts.shells, a filter with no button (when: never), for the Home shell and Face shell rows.
+        // The row as the family's cache holds it: a row's element keeps only its key, label and icon.
+        .concat(o.shells === true ? [{ name: 'shells', when: function () { return false; }, test: function (row) {
+          var held = row && window.spirit.data.app.data.rows()[row.key];
+          return held && held.shell === true ? 1 : 0;
+        } }] : []),
       // Andy, box: "the appSelector will only show icon and label in the list."
       // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
       columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),

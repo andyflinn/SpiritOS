@@ -12,6 +12,7 @@
   // goal/G43.15: the switches are elements of their own, each hiding itself where it does not apply.
   window.spirit.require('spirit/app/appSelector/rowFormAppActive.js');
   window.spirit.require('spirit/app/appSelector/serverDEBUG.js');
+  window.spirit.require('spirit/app/appSelector/rowFormSetShell.js');
   window.spirit.require('spirit/app/appSelector/changeAppIcon.js');
   window.spirit.require('spirit/app/appSelector/changeAppLabel.js');
 
@@ -26,11 +27,15 @@
     var labelBox = document.createElement('div');
     var activeBox = document.createElement('div');
     var debugBox = document.createElement('div');
+    var homeShellBox = document.createElement('div');
+    var faceShellBox = document.createElement('div');
     // rule/2: every block carries a leading 1em: a rowForm carries its own since goal/G43.15, so a hidden one takes it along.
     box.appendChild(iconBox);
     box.appendChild(labelBox);
     box.appendChild(activeBox);
     box.appendChild(debugBox);
+    box.appendChild(homeShellBox);
+    box.appendChild(faceShellBox);
     host.appendChild(box);
     // THE ICON AND THE LABEL (goal/G43.15, Q4): elements of their own, so an app's own face can show them too.
     var icon = S.elements.changeAppIcon.create(iconBox, { key: key });
@@ -39,7 +44,11 @@
     // (goal/G43.18, box v29: its element is deleted, <name>.json alone says whether an app may be a shell).
     var active = S.elements.rowFormAppActive.create(activeBox, { key: key });
     var debug = S.elements.serverDEBUG.create(debugBox, { key: key });
-    return { destroy: function () { icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); host.innerHTML = ''; } };
+    // THE HOME SHELL AND THE FACE SHELL (goal/G43.18, box v29): two rows of their own, each showing only for an app whose
+    // <name>.json says shell:true:true; the RULE: a shell must be able to replace itself.
+    var homeShell = S.elements.rowFormSetShell.create(homeShellBox, { key: key, at: 'home' });
+    var faceShell = S.elements.rowFormSetShell.create(faceShellBox, { key: key, at: 'face' });
+    return { destroy: function () { icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); homeShell.destroy(); faceShell.destroy(); host.innerHTML = ''; } };
   }
 
   function create(host, opts) {

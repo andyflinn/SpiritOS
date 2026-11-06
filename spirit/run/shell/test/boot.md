@@ -1,49 +1,43 @@
 # shell/boot.js
 
 The face's boot (goal/G41.3): face/shell.js moved into shell/ as shell/boot.js, and the rest of face/ with it, under the
-same names. spirit.js loads it on a face page. It boots only itself and the home and Join components it needs; every face
-app loads its own components, as a tree, through spirit.require.
+same names. spirit.js loads it on a face page. It boots only itself, the stream, its parts and the shell the node names
+(goal/G43.18); every face app loads its own components, as a tree, through spirit.require.
 
 ## Where it lives, and what moved with it
 
 - `shell/boot.js` is there; `face/shell.js` is gone, and so is every other file of face/: `shell/seal.js`,
-  `shell/face.css`, `shell/favicon.svg`, `shell/login/login.js` and `shell/login/login.json` are there instead.
-- spirit.js loads `shell/boot.js` on a face page (its FACE list).
-- face.html, which stays at the run root, links `/shell/face.css` and `/shell/favicon.svg`.
-- boot names its parts by their new paths: the seal as `shell/seal.js`, the login app under `shell/login/`; no old
-  `face/` path is left in its code. (The relay's routes `/face/allowed`, `/face/call`, `/face/file`, `/face/stream` and
-  `/face/api` are routes, not files, and stay.)
+  `shell/face.css` and `shell/favicon.svg` are there instead.
+- `shell/login/` is gone (goal/G43.18, box v29: *"The login is spirit.login, in spirit.js, no app ... shell/login/ and its
+  login.json go."*).
+- spirit.js loads `shell/boot.js` on a face page (its FACE list): at home from the node; on a face, logged in, over the
+  link spirit.js made.
+- face.html, which stays at the run root, links `/shell/favicon.svg` and no sheet (box v29: *"boot.js, shell.css, face.css
+  and every other part of the shell come from the home node over that link"*).
+- boot names no old `face/` path and no login app. (The relay's routes `/face/allowed`, `/face/call`, `/face/file`,
+  `/face/stream` and `/face/api` are routes, not files, and stay.)
 
 ## What it loads
 
-- Only what it runs itself (Andy: "shell boot.js will ONLY boot itself and the neccessary home and join components as
-  the stand. that's the only pre-load allowed."): the paths of components in its code are spirit.js's own libraries, the
-  shell's sheet, the seal, the login app, the Join app and the navigation it draws apps in. No other spirit/element element,
-  and no other app's file. (This reads "the home and join components" as the login app, the navigation, and Join with
-  its steps; and, since spirit.js loads no element, the file tree's row element, which the home lists its apps from,
-  goal/G41.19.)
-- Login and Join are its two mandatory components, hard-coded by path; boot disregards their sidecars.
-- Both are core whole, as are boot, the seal, the sheet and the icon, so no page can change them. (A sidecar is a node's
-  own state since goal/G41.1, box v16-v17, beside no code.)
+- Only what it runs itself: the paths of components in its code are spirit.js's own libraries, the sheets (`shell.css`,
+  `shell/face.css` last), Join, the navigation, and the file tree's row element (goal/G41.19). No other spirit/element element.
+- Join is hard-coded by path; boot reads no sidecar of it.
+- boot, the seal, the sheet, the icon and the Join app whole are core.
 
-## An app shows only while its server runs (goal/G27.16; goal/G41.1, box v14)
+## The shell the node names, and no desktop of its own (goal/G43.18, box v29)
 
-- boot reads the `server` a face app's manifest names, beside its face mark.
-- An intrinsic app shows on every face (box v17, "minimal == intrinsic"), its face mark or not: with no face part of the
-  node's, it takes its name and icon from its manifest (the icon a key into the icon table). Join and the login app stay
-  boot's own: never app icons.
-- The app's icon is on the desktop while its face mark is on and, if it names a server, while a server job of that
-  module (`process/js/<server>`) is running or pending on the stream.
-- When the server stops, or the face mark goes, the icon goes and every page of the app that is open is closed.
-- A face part streamed (an `app-face` job, box v15) has boot read that shell app again, so it comes or goes at once.
+- Andy: *"boot should solve transport issues only, then load whichever shell the node has configured"*. boot asks
+  `node.shell({ at })` (home or face) and loads `spirit/app/<name>/<name>.js`, the RULE being that a shell must be able
+  to replace itself.
+- No desktop of its own (Q23, Andy: *"yes."* to the old shell apps missing from the green shell for now): no drawDesktop,
+  readFace, listApps, openApp, loadApp or serverUp.
+- No link and no relay login of its own (Q22): `spirit.link` and `spirit.login` are spirit.js's.
+- Join decides where it stands itself (Q18, Andy: *"join. not the shells job."*): boot works out no join step.
 
 ## No icon table on the face (goal/G41.1, box v19-v20)
 
 - `spirit/client/iconIndex.js` (kernel's ICON table under another name) and `spirit/client/chatLog.js` are gone.
 - boot loads neither and names no icon table: a step's icon and a manifest's icon are drawn as the glyph they are.
-- Its parts, the only components it loads (goal/G41.23): spirit's libraries, the sheet, the seal, the login app, Join,
-  the navigation, the file tree's row element, and the icon element (`spirit/element/icon.js`), through which the home paints
-  its app tiles' icons (Andy, goal/G41.21: *"this element will replace icons painting all shell elements and apps."*).
 - Every app manifest names its icon as the glyph itself, never a key.
 
 ## Every face app loads alone
@@ -57,5 +51,5 @@ app loads its own components, as a tree, through spirit.require.
 ## What its test must try to break
 
 - A component an app uses without asking for it.
-- An app whose server stopped left on the desktop, or its page left open.
+- A desktop, a link or a join step of boot's own.
 - An old face/ path left in boot, spirit.js or face.html.

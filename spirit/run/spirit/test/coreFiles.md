@@ -15,7 +15,7 @@ grant on the item. It needs nothing of the desk's.
 ### What was core before goal/G41.29
 
 - The face's boot: `face.html`, `shell/boot.js`, `shell/seal.js`, `shell/face.css`, `shell/favicon.svg`.
-- Login and join, whole: every file under `shell/login/` and `shell/join/`, their `.json` included.
+- Join, whole: every file under `shell/join/`, its `.json` included. The login app went (goal/G43.18, box v29: the login is spirit.login).
 - Never a manifest: `shell/<name>/<name>.json` and `process/js/<name>/<name>.json`, an intrinsic app's included.
 - Everything under `spirit/run/spirit/`, `spirit/run/spirit/element/`, `spirit/run/shell/json/` and `spirit/run/test/`.
 - CodeMirror in `spirit/run/spirit/element/codeMirror/`, which `index.html` loads on every boot (goal/G41.30,

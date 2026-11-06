@@ -141,7 +141,7 @@ function joinForm(step, box) {
   }
 }
 
-spirit.shell.activateApp({
+var joinBehavior = {
   mount: function (container, api) {
     joinApi = api;
     container.innerHTML =
@@ -162,4 +162,98 @@ spirit.shell.activateApp({
   },
   // The shell's messages are not this app's news: it draws what onSteps hands it alone.
   render: function () {},
-});
+};
+// THE OLD SHELL HANDS JOIN ITS STEPS (js/client/shell.js, goal/G30.1, box v42); in the green shell JOIN SHOWS ITSELF.
+if (window.spirit.shell && typeof window.spirit.shell.activateApp === 'function') window.spirit.shell.activateApp(joinBehavior);
+else joinShowsItself(joinBehavior);
+
+// JOIN SHOWS ITSELF (goal/G43.18, box v29, Q18; Andy: "join. not the shells job."): "Join shows a new user its steps on its
+// own, deciding by itself where and when; neither boot.js nor any shell decides it." It hears the node's join-steps job in the
+// jobs family's cache, works out the open step with joinSteps.js as the shell did (box v42: decided once, now here), and
+// while a step is open it stands as one button at the page's corner, named and marked by that step. Pressed, it opens over
+// the page in a pane of its own, its ✕ closing it. Its one fact, face opened, is its own state, read again as it changes.
+// The mailed join link (?app=join, spirit.shell.joinOpen) opens it at once.
+function joinShowsItself(behavior) {
+  var JOIN_STATE = 'relay-state/shell/join/state.json';
+  var job = null;
+  var faceOpened = false;
+  var badge = null;
+  var pane = null;
+  var mounted = false;
+  // What a page of Join asks through: the family's verb by its name, answered { status, body }, as a list reads it.
+  var api = {
+    escapeHtml: spirit.escapeHtml,
+    verb: function (name, args) {
+      var n = String(name || '');
+      var dot = n.indexOf('.');
+      return Promise.resolve(spirit.ready).then(function (s) { return s[n.slice(0, dot)][n.slice(dot + 1)](args || {}); }).then(function (body) {
+        return { status: 200, body: body };
+      }, function (e) { return { status: (e && e.status) || 500, body: (e && e.body) || { ok: false, error: String((e && e.message) || e) } }; });
+    },
+  };
+  function now() {
+    var S = window.spirit.element && window.spirit.element.joinSteps;
+    var steps = joinStepList;
+    if (!S || !job || !steps) return null;
+    var facts = S.fromJob(job, faceOpened);
+    var open = S.current(steps, facts);
+    return { facts: facts, open: open ? open.until : null, done: steps.map(function (st) { return S.done(st, facts); }) };
+  }
+  function openPane() {
+    if (!pane) {
+      pane = document.createElement('div');
+      pane.className = 'app-container fill join-pane';
+      pane.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;overflow:auto;background:var(--bg, #111)';
+      var close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'app-container-close';
+      close.textContent = '✕';
+      close.addEventListener('click', function () { pane.hidden = true; });
+      var box = document.createElement('div');
+      pane.appendChild(close);
+      pane.appendChild(box);
+      document.body.appendChild(pane);
+      behavior.mount(box, api);
+      mounted = true;
+    }
+    pane.hidden = false;
+    var n = now();
+    if (n) behavior.onSteps(n);
+  }
+  function draw() {
+    var n = now();
+    var step = n && n.open ? joinStepList.filter(function (s) { return s.until === n.open; })[0] : null;
+    if (mounted && n) behavior.onSteps(n);
+    if (!step) { if (badge) badge.hidden = true; return; }
+    if (!badge) {
+      badge = document.createElement('button');
+      badge.type = 'button';
+      badge.className = 'join-badge';
+      badge.style.cssText = 'position:fixed;right:1em;bottom:1em;z-index:50';
+      badge.addEventListener('click', openPane);
+      document.body.appendChild(badge);
+    }
+    badge.hidden = false;
+    badge.textContent = String(step.icon || '') + ' ' + String(step.name || 'Join');
+    if (window.spirit.shell && window.spirit.shell.joinOpen) { window.spirit.shell.joinOpen = false; openPane(); }
+  }
+  function readFact() {
+    return Promise.resolve(spirit.fs.loadFile(JOIN_STATE)).then(function (text) {
+      var st = {};
+      try { st = JSON.parse(text || '{}') || {}; } catch (e) { st = {}; }
+      faceOpened = st.faceOpened === true;
+    }, function () { faceOpened = false; });
+  }
+  readFact().then(draw);
+  Promise.all([spirit.require('spirit/element/joinSteps.js'), spirit.cacheManager('jobs')]).then(function () {
+    var J = ((window.spirit.data || {}).jobs || {}).data;
+    if (!J) return;
+    var take = function (j) { if (j && j.type === 'join-steps') { job = j.data || {}; draw(); } };
+    take(J.find(function (j) { return !!j && j.type === 'join-steps'; }));
+    J.watch(function (id, j) { take(j); });
+    var F = ((window.spirit.data || {}).fs || {}).data;
+    if (F && typeof F.watchFile === 'function') F.watchFile(JOIN_STATE, function () { readFact().then(draw); });
+  }, function () { /* without the jobs cache Join does not know where you stand */ });
+  // The steps' names, read as the file loads (joinStepList, above): drawn again once they are in.
+  var wait = setInterval(function () { if (joinStepList) { clearInterval(wait); draw(); } }, 200);
+}

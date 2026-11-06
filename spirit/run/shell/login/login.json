@@ -1,8 +1,0 @@
-{
-  "name": "Log in",
-  "description": "Log in on your face: the counterpart of the node's Join app.",
-  "steps": [
-    { "until": "login", "name": "Log in", "icon": "🔑", "text": "Your email, or the token from the mail. This page comes from the relay: a relay owner who swaps face.html or this login app could read what your face shows." },
-    { "until": "link", "name": "Your home node", "icon": "🔗", "text": "Reaching your home node; everything after this page comes from it." }
-  ]
-}

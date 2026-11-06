@@ -4,7 +4,7 @@
 // mount for armingButton.js". Its first user is the shell's general rules (test/spirit-sibling-generalRules.md).
 //
 // The page loads /spirit.js, then the module through spirit.require, alone (rule/26). An app (it calls
-// spirit.shell.activateApp, or activateLogin, the face's login app) is mounted into the box with an api as the face
+// spirit.shell.activateApp) is mounted into the box with an api as the face
 // gives one (shell/boot.js apiFor). An element
 // is created with the box alone, no options (box v23: "no manifests at this point, because special cases can be handled
 // by the elements own test script"): the one element with a create that the file's own code put on spirit.element, or
@@ -49,7 +49,6 @@ function mountScript(file) {
     '};\n' +
     'var app = null;\n' +
     '(spirit.shell = spirit.shell || {}).activateApp = function (behavior) { app = behavior; };\n' +
-    'spirit.shell.activateLogin = function (behavior) { app = behavior; };\n' +
     'Promise.resolve(spirit.start()).then(function () { return spirit.require(file); }).then(function () {\n' +
     '  if (app && typeof app.mount === "function") {\n' +
     '    app.mount(box, api);\n' +

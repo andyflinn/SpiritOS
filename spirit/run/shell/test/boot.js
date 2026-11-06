@@ -2,7 +2,7 @@
 
 // spirit/run/shell/test/boot.js
 // The tests of shell/boot.js, and of no other module (spec: ./boot.md; goal/G41.3): where the face's boot lives and
-// what moved with it, what it loads, and every face app loading alone. An app is loaded in a vm of its own, with nothing
+// what moved with it, what it loads, the shell it loads (goal/G43.18), and every face app loading alone. An app is loaded in a vm of its own, with nothing
 // but a spirit.require that serves the run tree's files, each once, a page stub that answers anything, and an empty set
 // of elements: an app that uses a component it did not ask for fails, by name.
 
@@ -120,70 +120,48 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
   ok(!!boot, 'shell/boot.js is there', 'shell/boot.js is not there');
   const left = ['face/shell.js', 'face/seal.js', 'face/face.css', 'face/favicon.svg', 'face/login/login.js', 'face/login/login.json'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); });
   ok(!left.length, 'nothing of face/ is left: its files moved into shell/', 'still in face/: ' + left.join(', '));
-  const moved = ['shell/seal.js', 'shell/face.css', 'shell/favicon.svg', 'shell/login/login.js', 'shell/login/login.json'].filter(function (p) { return !fs.existsSync(path.join(RUN, p)); });
-  ok(!moved.length, 'the seal, the sheet, the icon and the login app are in shell/ under the same names', 'not in shell/: ' + moved.join(', '));
+  const moved = ['shell/seal.js', 'shell/face.css', 'shell/favicon.svg'].filter(function (p) { return !fs.existsSync(path.join(RUN, p)); });
+  ok(!moved.length, 'the seal, the sheet and the icon are in shell/ under the same names', 'not in shell/: ' + moved.join(', '));
+  // goal/G43.18, box v29: "The login is spirit.login, in spirit.js, no app ... shell/login/ and its login.json go."
+  ok(!fs.existsSync(path.join(RUN, 'shell', 'login')), 'shell/login/ is gone: the login is spirit.login (goal/G43.18)', 'shell/login/ is still there');
   const loader = code('spirit.js') || '';
   ok(/var FACE = \['shell\/boot\.js'\]/.test(loader) && !/face\/shell\.js/.test(loader), 'spirit.js loads shell/boot.js on a face page', 'spirit.js still names face/shell.js, or not shell/boot.js');
   const page = read('face.html') || '';
-  ok(/\/shell\/face\.css/.test(page) && /\/shell\/favicon\.svg/.test(page) && !/\/face\/(face\.css|favicon\.svg)/.test(page), 'face.html links /shell/face.css and /shell/favicon.svg', 'face.html still links the old face/ files');
+  // Box v29: "boot.js, shell.css, face.css and every other part of the shell come from the home node over that link".
+  ok(/\/shell\/favicon\.svg/.test(page) && !/rel="stylesheet"/.test(page) && !/\/face\/(face\.css|favicon\.svg)/.test(page), 'face.html links /shell/favicon.svg and no sheet', 'face.html still links a sheet or the old face/ files');
   if (boot) {
     const oldPaths = (boot.match(/face\/(shell\.js|seal\.js|face\.css|favicon\.svg|login\/[\w.]+)/g) || []);
-    ok(!oldPaths.length && /shell\/seal\.js/.test(boot) && /shell\/login\//.test(boot), 'boot names its parts by their new paths: shell/seal.js and shell/login/', 'old paths in boot: ' + short(oldPaths));
+    ok(!oldPaths.length && !/shell\/login\//.test(boot), 'boot names no old face/ path, and no login app', 'old paths in boot: ' + short(oldPaths));
   }
 
   test.subHeading('what it loads: only what it runs itself');
   if (boot) {
     const paths = (boot.match(/['"](?:spirit|shell)\/[\w/.-]+\.(?:js|css|json)['"]|['"]shell\.css['"]/g) || []).map(function (s) { return s.slice(1, -1); });
     const allowed = function (p) {
-      return p === 'shell.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) || p === 'shell/seal.js' || p === 'shell/boot.js' ||
-        /^shell\/login\//.test(p) || /^shell\/join\//.test(p) || p === 'shell/navigationWrapper.js' || p === 'spirit/element/joinSteps.js' ||
-        // goal/G41.19: the home lists its apps from the file tree, so boot loads the tree's row element; spirit.js no longer does.
-        p === 'spirit/element/search/file/rowElement.js' ||
-        // goal/G41.23 (Andy, goal/G41.21: "this element will replace icons painting all shell elements and apps."): the
-        // home paints its app tiles' icons through the icon element.
-        p === 'spirit/element/icon.js';
+      return p === 'shell.css' || p === 'shell/face.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) ||
+        p === 'shell/join/join.js' || p === 'shell/navigationWrapper.js' || p === 'spirit/element/joinSteps.js' ||
+        // goal/G41.19: the file tree's row element, which spirit.js does not load.
+        p === 'spirit/element/search/file/rowElement.js';
     };
     const extra = paths.filter(function (p) { return !allowed(p); }).filter(function (p, i, all) { return all.indexOf(p) === i; });
-    ok(!extra.length, 'boot names no component but its own: spirit\'s libraries, the sheet, the seal, the login app, Join, the navigation, the tree\'s row and the icon (' + paths.length + ' paths read)',
+    ok(!extra.length, 'boot names no component but its own: spirit\'s libraries, the sheets, Join, the navigation and the tree\'s row (' + paths.length + ' paths read)',
       'boot loads components that are no part of it: ' + short(extra));
-    ok(/shell\/login\/login\.js/.test(boot) && /shell\/join\b/.test(boot), 'login and Join are hard-coded in boot by their paths', 'boot does not name shell/login/login.js and shell/join');
-    ok(!/(login|join)[\w.]*\.sidecar\.json/.test(boot), 'boot reads no sidecar of login or Join', 'boot reads the sidecar of login or Join');
+    ok(/shell\/join\/join\.js/.test(boot), 'Join is hard-coded in boot by its path', 'boot does not name shell/join/join.js');
+    ok(!/join[\w.]*\.sidecar\.json/.test(boot), 'boot reads no sidecar of Join', 'boot reads the sidecar of Join');
   }
   const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
-  const mustCore = ['shell/boot.js', 'shell/seal.js', 'shell/face.css', 'shell/favicon.svg', 'shell/login/login.js', 'shell/login/login.json',
-    'shell/join/join.js', 'shell/join/join.json'];
+  const mustCore = ['shell/boot.js', 'shell/seal.js', 'shell/face.css', 'shell/favicon.svg', 'shell/join/join.js', 'shell/join/join.json'];
   const notCore = mustCore.filter(function (p) { return core.isCore('spirit/run/' + p, REPO) !== true; });
-  ok(!notCore.length, 'boot, the seal, the sheet, the icon, and the login and Join apps whole are core', 'not core: ' + notCore.join(', '));
+  ok(!notCore.length, 'boot, the seal, the sheet, the icon and the Join app whole are core', 'not core: ' + notCore.join(', '));
 
-  // AN APP SHOWS ONLY WHILE ITS SERVER RUNS, ON THE FACE TOO (goal/G27.16; goal/G41.1, box v14): boot reads the server a
-  // face app's manifest names, shows the app only while a server job of that module runs or is pending, and when the
-  // server stops, or the app's face mark goes, takes its icon down and closes a page of it that is open.
-  test.subHeading('an app shows only while its server runs (G27.16)');
+  // GOAL/G43.18, BOX V29, "The shell": "boot.js does the link home and the face stream only, then loads the shell the node
+  // names, spirit/app/<name>"; Q22: the link is spirit.js's; Q23: no desktop of boot's own; Q18: Join shows itself.
+  test.subHeading('the shell the node names, and no desktop of its own (goal/G43.18)');
   if (boot) {
-    const readFaceAt = (/function readFace\(id\) \{([\s\S]*?)\n  \}/.exec(boot) || [])[1] || '';
-    ok(/\.json'/.test(readFaceAt) && /\.server\b/.test(readFaceAt), 'a face app\'s manifest is read for the server it names', 'readFace reads no manifest server');
-    ok(/function serverUp\(/.test(boot) && /'process\/js\/' \+/.test(boot) && /'running'/.test(boot) && /'pending'/.test(boot),
-      'a server is up while a server job of its module runs or is pending', 'boot has no serverUp over its server jobs');
-    const drawAt = (/function drawDesktop\(\) \{([\s\S]*?)\n  \}/.exec(boot) || [])[1] || '';
-    ok(/serverUp\(/.test(drawAt), 'the desktop draws an app only while its server is up', 'drawDesktop does not ask serverUp');
-    ok(/function closePages\(/.test(boot) && /\.close\(\)/.test(boot) && /closePages\(/.test(readFaceAt), 'an app whose server stops or whose face mark goes has its open pages closed',
-      'boot keeps no pages to close, or readFace does not close them');
-    // box v17: a node shows its intrinsic apps (Andy: "minimal == intrinsic"; found on his face: "the face shall does not
-    // let me see even the intrinsic apps."): one with no face part of the node's is named and iconed from its manifest;
-    // Join stays boot's own, drawn by its open step.
-    // An app naming a server rides with that server (box v14: its button "activates and deactivates every shell app that
-    // depends on it"); it has no row in Apps and no face mark of its own, so it shows while its server runs. Found on his
-    // face: "the agent app-face doesn't show up in my Apps app, and i don't see it anymore".
-    ok(/mf\.server/.test(readFaceAt) && /face\.app === true \|\| face\.intrinsic === true \|\| /.test(readFaceAt),
-      'an app that names a server shows with its server, no face mark needed', 'readFace shows an app naming a server only with a face mark nothing can set');
-    // Andy: "the login-app should not show in face-loopback mode": login and Join are boot's own, never app icons.
-    ok(/'shell\/login'/.test(readFaceAt), 'the login app is never an app icon: readFace skips it as it skips Join', 'readFace does not skip the login app');
-    ok(/face\.intrinsic === true/.test(readFaceAt) && /mf\.icon/.test(readFaceAt) && /JOIN/.test(readFaceAt),
-      'an intrinsic app shows on the face, named and iconed from its manifest when the node has no face part for it; Join stays boot\'s',
-      'readFace shows only apps whose face part says app, so the intrinsic ones hide');
-    // box v15: the node streams an app's face part when its sidecar changes, and the face follows it.
-    ok(/'app-face'/.test(boot) && /function followFace\(/.test(boot) && /readFace\(/.test((/function followFace\(job\) \{([\s\S]*?)\n  \}/.exec(boot) || [])[1] || ''),
-      'a face part streamed (an app-face job) has the face read that app again, so it comes or goes at once', 'boot does not follow app-face jobs');
+    ok(/node\.shell\(\{ at: at \}\)/.test(boot) && /'spirit\/app\/' \+ name \+ '\/' \+ name \+ '\.js'/.test(boot), 'boot asks node.shell and loads spirit/app/<name>/<name>.js', 'boot does not load the shell the node names');
+    ok(!/function (drawDesktop|readFace|listApps|openApp|loadApp|serverUp)\(/.test(boot), 'no desktop of its own: no drawDesktop, readFace, listApps, openApp, loadApp or serverUp', 'boot still draws a desktop: ' + short((boot.match(/function (drawDesktop|readFace|listApps|openApp|loadApp|serverUp)\(/g) || [])));
+    ok(!/function (postCall|uploadSave)\(/.test(boot) && !/'\/face\/api'/.test(boot), 'no link and no relay login of its own: spirit.link and spirit.login are spirit.js\'s', 'boot still holds the link or the login');
+    ok(!/joinNow|joinOpenStep|handJoin/.test(boot), 'Join decides where it stands itself: boot works out no join step', 'boot still works out Join\'s steps');
   }
 
   // THE ICON SET IS THE ONLY SOURCE OF ICONS ON THE FACE (goal/G41.1, box v19-v20; Andy: iconIndex.js "MUST BE DELETED,

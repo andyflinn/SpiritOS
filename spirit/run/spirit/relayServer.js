@@ -429,9 +429,11 @@ function isRelayPublicPath(method, pathname) {
 const FACE_DIR = path.join(__dirname, '..', 'shell');
 // /shell.css is the shell's one sheet, served at the path the node serves it too, so face.html works on both
 // (goal/G30.9, box v16); face.css turns its colours green.
-// face.html's own parts and the login app, nothing else (goal/G30.11): everything after login comes from the home node.
+// THE PLAIN PAGE ONLY (goal/G43.18, box v29: "The relay serves a logged-out face one plain page, the one-field form, with
+// spirit.js and seal.js only"): face.html, spirit.js (which holds spirit.login and the link), the seal and the tab's icon.
+// boot.js, the sheets and every other part of the shell come from the home node over the link.
 // /spirit.js is face.html's script tag, at the run root as on the node (goal/G41.19).
-const FACE_FILES = { '/spirit.js': '../spirit.js', '/shell.css': '../shell.css', '/shell/face.css': 'face.css', '/shell/boot.js': 'boot.js', '/shell/seal.js': 'seal.js', '/shell/favicon.svg': 'favicon.svg', '/shell/login/login.js': 'login/login.js', '/shell/login/login.json': 'login/login.json' };
+const FACE_FILES = { '/spirit.js': '../spirit.js', '/shell/seal.js': 'seal.js', '/shell/favicon.svg': 'favicon.svg' };
 const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
 function faceCookie(req) {
   const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));

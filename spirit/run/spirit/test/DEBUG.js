@@ -292,20 +292,20 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     }
     await stop(node); node = null;
 
-    test.subHeading('/shell/login/login/headLessBrowser.html, a relay, DEBUG off');
+    // A RELAY SERVES NO APP (goal/G43.18, box v29: the login is spirit.login, no app, and a relay serves a face spirit.js and the
+    // seal alone), so its DEBUG answers are judged on its own api's garbage.
+    test.subHeading('/spirit/relay/garbageArguments.json, a relay, DEBUG off');
     relay = await startRelay(copy.run, false);
     if (!relay.up) { test.fail('the scratch relay did not come up'); return; }
-    const rOff = await ask('127.0.0.1', relay.port, '/DEBUG/shell/login/login/headLessBrowser.html');
-    const rNone = await ask('127.0.0.1', relay.port, '/NODEBUG/shell/login/login/headLessBrowser.html');
+    const rOff = await ask('127.0.0.1', relay.port, '/DEBUG/spirit/relay/garbageArguments.json');
+    const rNone = await ask('127.0.0.1', relay.port, '/NODEBUG/spirit/relay/garbageArguments.json');
     ok(rOff.status === rNone.status && rOff.text === rNone.text, 'its DEBUG address answers as an address of no route (' + rNone.status + ')', 'DEBUG off the relay answered ' + rOff.status + ' ' + short(rOff.text));
     await stop(relay); relay = null;
 
-    test.subHeading('/shell/login/login/headLessBrowser.html, a relay, DEBUG on');
     relay = await startRelay(copy.run, true);
     if (!relay.up) { test.fail('the scratch relay did not come up'); return; }
     const R = relay.port;
-    const loginPage = '/DEBUG/shell/login/login/headLessBrowser.html';
-    judgePage(await ask('127.0.0.1', R, loginPage), 'shell/login/login', 'the relay');
+    const loginPage = '/DEBUG/spirit/relay/garbageArguments.json';
     test.subHeading('/spirit/relay/garbageArguments.json, a relay, DEBUG on');
     const rg = await ask('127.0.0.1', R, '/DEBUG/spirit/relay/garbageArguments.json');
     const rlist = json(rg);
