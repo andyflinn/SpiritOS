@@ -135,9 +135,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   // ── goal/G43.4: THE RESERVED WORDS IN COLOUR, IN A REAL BROWSER ───────────────────────────────────
   // Real rows on a scratch node (./rowElement-words.html), spirit/word.js and the node's own file stream under them.
-  // goal/G43.18, Andy: "i think it should be green as long as there is either a folder or file that matches (changed my mind). make
-  // it only a light purple, instead. I need red for the next part"; Q30, "yes!": a reserved word that is a folder or file is light
-  // purple, whatever the spirit object holds, and no red is left.
+  // goal/G43.18, Andy: "file app: please change the green colored paths/files in light blue instead.", and then "ALL, ONLY
+  // REPLACE RED WITH LIGHT PURPLE, KEEP THE BLUE!!!!!!!!!!!!!!!!": a word that holds is light blue, one that does not is light
+  // purple, and no red is left.
   test.subHeading('goal/G43.4 and G43.18: a path element is light blue where word and spirit object agree, red where they disagree');
   const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
   const chrome = H.findChrome();
@@ -155,15 +155,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     await page.evaluate('window.ready()');
     const row = async function (p, kind) { try { return JSON.parse(await page.evaluate('window.row(' + JSON.stringify(p) + ', ' + JSON.stringify(kind || 'folder') + ')')); } catch (e) { return { threw: String(e) }; } };
     const app = await row('spirit/app');
-    ok(app.app === 'lightpurple', 'spirit/app: reserved, a folder: light purple', 'spirit/app: ' + short(app));
-    ok(app.spirit === 'lightpurple', 'its path element spirit: light purple', 'spirit/app: ' + short(app));
+    ok(app.app === 'lightblue', 'spirit/app: reserved, and the spirit object holds spirit.app: light blue', 'spirit/app: ' + short(app));
+    ok(app.spirit === 'lightblue', 'its path element spirit: always the colour of a word that holds, light blue', 'spirit/app: ' + short(app));
     const element = await row('spirit/element');
-    ok(element.element === 'lightpurple', 'spirit/element: light purple', 'spirit/element: ' + short(element));
+    ok(element.element === 'lightblue', 'spirit/element: light blue', 'spirit/element: ' + short(element));
     // Andy's commit d278c3e6, "identity": contact is no hard-coded word now.
     const contact = await row('spirit/contact');
-    ok(contact.contact === 'lightpurple', 'spirit/contact: a word (word.js), a folder: light purple', 'spirit/contact: ' + short(contact));
+    ok(contact.contact === 'lightblue', 'spirit/contact: a word (word.js), and the page holds spirit.contact: light blue', 'spirit/contact: ' + short(contact));
     const inside = await row('spirit/app/api.js', 'file');
-    ok(inside.app === 'lightpurple' && inside.spirit === 'lightpurple' && inside['api.js'] === 'lightpurple', 'a file inside: its path elements carry the colour, and the file api.js, a word, is light purple too', 'spirit/app/api.js: ' + short(inside));
+    ok(inside.app === 'lightblue' && inside.spirit === 'lightblue' && inside['api.js'] === 'lightpurple', 'a file inside: its path elements carry the colours too, the file api.js, a word with no spirit.app.api, light purple', 'spirit/app/api.js: ' + short(inside));
     const plain = await row('spirit/jobs');
     ok(plain.jobs === 'none', 'spirit/jobs: not reserved: no colour', 'spirit/jobs: ' + short(plain));
     const hub = await row('spirit/hub.js', 'file');
@@ -172,7 +172,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(elsewhere.app === 'none', 'outside spirit/ no word holds: shell/app has no colour', 'shell/app: ' + short(elsewhere));
     put('spirit/job/keep.txt', 'a folder for the word job');
     const job = await row('spirit/job');
-    ok(job.job === 'lightpurple', 'spirit/job: reserved, a folder, and no spirit.job: light purple all the same, no red left', 'spirit/job: ' + short(job));
+    ok(job.job === 'lightpurple', 'spirit/job: reserved, a folder, and no spirit.job: light purple, where red was', 'spirit/job: ' + short(job));
     del('spirit/job/keep.txt');
 
     test.subHeading('goal/G43.4: "the colors will follow word.json changes live."');
@@ -181,10 +181,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(before.thing === 'none', 'the folder spirit/app/thing, no word: no colour', 'spirit/app/thing: ' + short(before));
     put('spirit/app/word.json', JSON.stringify({ thing: true }));
     const red = await row('spirit/app/thing');
-    ok(red.thing === 'lightpurple', 'word.json gains the word: the same row goes light purple, with no reload, with no spirit.app.thing', 'spirit/app/thing: ' + short(red));
+    ok(red.thing === 'lightpurple', 'word.json gains the word: the same row goes light purple, with no reload: no spirit.app.thing', 'spirit/app/thing: ' + short(red));
     await page.evaluate('window.setObject(true); window.fresh("spirit/app/thing")');
     const blue = await row('spirit/app/thing');
-    ok(blue.thing === 'lightpurple', 'with spirit.app.thing on the object: the same light purple, no change for what the object holds', 'spirit/app/thing: ' + short(blue));
+    ok(blue.thing === 'lightblue', 'with spirit.app.thing on the object: light blue', 'spirit/app/thing: ' + short(blue));
     await page.evaluate('window.setObject(false)');
     del('spirit/app/word.json');
     const gone = await row('spirit/app/thing');

@@ -39,11 +39,11 @@ a subject needs), loaded with it.
 
 ## goal/G43.4: the reserved words in colour
 
-goal/G43.18, Andy: *"i think it should be green as long as there is either a folder or file that matches (changed my mind). make it only a light purple, instead. I need red for the next part of our mission"*; Q30, *"yes!"* to *"For a reserved word that is a folder or file, is it light purple, with no colour change for what the spirit object holds and no red left"*. It replaces G43.4's green and red and G43.18's light blue.
+goal/G43.18, Andy: *"file app: please change the green colored paths/files in light blue instead."*, then *"ALL, ONLY REPLACE RED WITH LIGHT PURPLE, KEEP THE BLUE!!!!!!!!!!!!!!!!"*: G43.4's green is light blue, its red light purple, and no red is left.
 
 `./rowElement-words.html` shows real rows on a scratch node. Each path element is its own element, so its colour is its own:
 
-- `spirit`, `spirit/app`, `spirit/element` and `spirit/contact` (a word in `word.js`) are light purple, as a folder row and in the path of a file inside.
-- `spirit/job`, reserved and a folder with no `spirit.job`, is light purple all the same: no red is left.
+- `spirit` is light blue. `spirit/app`, `spirit/element` and `spirit/contact` are light blue, as a folder row and in the path of a file inside.
+- Light purple, where red was: the file `api.js` in `spirit/app` (no `spirit.app.api`), and `spirit/job` (a folder, no `spirit.job`).
 - A name not reserved has no colour (`spirit/jobs`, `spirit/hub.js`), and outside `spirit/` no word holds (`shell/app`).
-- A `word.json` gaining a word turns the open row light purple with no reload, an object at that path changes nothing, and `word.json` gone takes the colour away.
+- A `word.json` gaining a word turns the open row light purple with no reload, an object at that path makes it light blue, and `word.json` gone takes the colour away.
