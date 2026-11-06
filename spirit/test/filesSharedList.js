@@ -202,7 +202,7 @@ function bootShell() {
       const: { ICON: ICON, MIME: {} },
       util: { escapeHtml: function (s) { return String(s); }, formatBytes: function () { return ''; } },
       fs: {
-        loadFile: function (rel) { return rel === 'preferences.json' ? JSON.stringify({ apps: {}, groups: {} }) : null; },
+        loadFile: function () { return null; },
         saveFile: function () { return Promise.resolve(); }, statFile: function () { return null; },
         getAnnotations: function () { return {}; }, createScopedFs: function () { return {}; },
       },

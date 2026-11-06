@@ -70,9 +70,9 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
 
   test.subHeading('the show filter: all, then each kind the list holds');
   const values = function (rows) { return F.show.choices(rows).map(function (c) { return c.value; }).join(','); };
-  if (values([{ keep: true }]) === 'all' && values([{ mine: true }, { blocked: true }, { held: true }, { relay: true }]) === 'all,mine,blocked,held,relay')
-    test.check('only all over plain kept rows; mine, blocked, held, relays in that order when there are any');
-  else test.fail('choices: ' + values([{ mine: true }, { blocked: true }, { held: true }, { relay: true }]));
+  if (values([{ keep: true }]) === 'all' && values([{ mine: true }, { blocked: true }, { relay: true }]) === 'all,mine,blocked,relay')
+    test.check('only all over plain kept rows; mine, blocked, relays in that order when there are any, and no held (goal/G43.17)');
+  else test.fail('choices: ' + values([{ mine: true }, { blocked: true }, { relay: true }]));
   if (F.show.when([{ keep: true }]) === false && F.show.when([{ relay: true }]) === true) test.check('its buttons show only when there is a kind to choose');
   else test.fail('show.when');
   if (F.show.test({ keep: true }, 'all') === 1 && F.show.test({ keep: true }, '') === 1 && F.show.test({ mine: true }, 'mine') === 1
@@ -80,11 +80,11 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   else test.fail('show.test');
 
   test.subHeading('the network toggle and the named rule');
-  const stranger = { held: true }; const keptHeld = { held: true, keep: true }; const heldRelay = { held: true, relay: true };
-  if (F.network.toggle === true && F.network.test(stranger, false) === 0 && F.network.test(stranger, true) === 1) test.check('a held row nobody decided about shows only with network on');
+  const stranger = {}; const keptRow = { keep: true }; const relayRow = { relay: true };
+  if (F.network.toggle === true && F.network.test(stranger, false) === 0 && F.network.test(stranger, true) === 1) test.check('a row nobody decided about, a network find, shows only with network on');
   else test.fail('network on a stranger');
-  if (F.network.test(keptHeld, false) === 1 && F.network.test(heldRelay, false) === 1 && F.network.test({ blocked: true, held: true }, false) === 1)
-    test.check('a held row that is also kept, a relay or blocked shows with network off');
+  if (F.network.test(keptRow, false) === 1 && F.network.test(relayRow, false) === 1 && F.network.test({ blocked: true }, false) === 1)
+    test.check('a row that is kept, a relay or blocked shows with network off');
   else test.fail('network on decided rows');
   if (F.named.when() === false && F.named.test({ name: 'a' }) === 1 && F.named.test({ relay: true }) === 1 && F.named.test({ present: true }) === 0 && F.named.test(null) === 0)
     test.check('named, never a button: a row with a name or a relay, never a bare presence');
@@ -130,18 +130,18 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   const open = asked.pop();
   if (open.verb === 'contactDetails' && open.body.key === 'K1') test.check('a kept row opens its Contact');
   else test.fail('pressing a kept row: ' + JSON.stringify(open));
-  o.details({ held: true, name: 'z' }, 'KZ', null);
+  o.details({ name: 'z' }, 'KZ', null);
   await tick();
   const card = asked.pop();
-  if (card.verb === 'peerPost' && card.key === 'KZ' && card.body.card === true && said[said.length - 1] === 'zed: hi') test.check('a held row asks that node who it is, and says its card');
-  else test.fail('pressing a held row: ' + JSON.stringify({ card: card, said: said }));
-  o.details({ held: true }, 'KW', null);
+  if (card.verb === 'peerPost' && card.key === 'KZ' && card.body.card === true && said[said.length - 1] === 'zed: hi') test.check('a row nobody decided about asks that node who it is, and says its card');
+  else test.fail('pressing an undecided row: ' + JSON.stringify({ card: card, said: said }));
+  o.details({}, 'KW', null);
   await tick();
   if (/answered by a different key/.test(said[said.length - 1])) test.check('a card from a different key is said as such');
   else test.fail('a wrong key said: ' + said[said.length - 1]);
 
   test.subHeading('a row\'s Add button');
-  o.element({ held: true, publicLabel: 'bob' }, 'K2');
+  o.element({ publicLabel: 'bob' }, 'K2');
   function target(action, key) {
     const b = { getAttribute: function (n) { return n === 'data-action' ? action : null; },
       closest: function (sel) { return sel === '[data-action]' ? (action ? b : null) : tr; } };

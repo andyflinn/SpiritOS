@@ -187,7 +187,6 @@ async function thePage() {
     ask: test.browserAsk(fakeFetch), const: { ICON: kernel.core.const.ICON, MIME: {} },
     util: { escapeHtml: function (s) { return String(s); }, formatBytes: function () { return ''; } },
     fs: { loadFile: function (rel) {
-      if (rel === 'preferences.json') return JSON.stringify({ apps: {}, groups: {} });
       return null; }, saveFile: function () { return Promise.resolve(); }, statFile: function () { return null; },
       getAnnotations: function () { return {}; }, createScopedFs: function () { return {}; } },
     jobs: { subscribe: function (h) { handlers = h; } } } };

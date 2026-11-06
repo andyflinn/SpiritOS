@@ -6,7 +6,7 @@
 //
 // File list comes from `git ls-files`, not a raw directory walk — that
 // gets test/ exclusion AND every gitignored runtime file (media/,
-// preferences.json, aiStatus.json, logs...) excluded for free, with no
+// aiStatus.json, logs...) excluded for free, with no
 // duplicated exclusion list to maintain. As a side effect the zip ends
 // up containing exactly what a fresh `git clone` would give you, plus
 // one install-specific file (README.txt) injected from this same

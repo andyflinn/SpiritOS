@@ -6,7 +6,7 @@
 // ── WHY ──────────────────────────────────────────────────────────────
 //
 // Decision 0008 deleted App Builder and Type Designer. Four places named
-// them: two blocks in preferences.json, and two api.addTitlebarLink
+// them: two blocks in the old shell's settings, and two api.addTitlebarLink
 // calls in AI Manager.
 //
 // None of those four would have failed anything. addTitlebarLink returns
@@ -70,10 +70,6 @@ test.subHeading(folders.length + ' app folder(s) on disk');
 // "somewhere".
 const SOURCES = [
   {
-    label: 'preferences.json (per-app settings and group membership)',
-    file: path.join(RUN_DIR, 'preferences.json'),
-  },
-  {
     label: 'index.html (the Spirit group\'s fixed member list)',
     file: path.join(RUN_DIR, 'spirit', 'shell', 'index.html'),
   },
@@ -114,7 +110,7 @@ SOURCES.forEach(function (source) {
 });
 
 if (!dangling.length) {
-  test.check('every app named in preferences, the shell, index.html or an app script exists on disk');
+  test.check('every app named in the shell, index.html or an app script exists on disk');
 } else {
   dangling.forEach(function (d) { test.fail(d); });
 }

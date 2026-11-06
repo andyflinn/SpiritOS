@@ -243,7 +243,7 @@ function open(rootDir, opts) {
   // myLabel, card, present, firstSeen, lastSeen, and seven booleans:
   //
   //   keep     a chosen contact, never shed       mine     owned (puppets, owned relays), never shed
-  //   relay    the ID is a relay                  held     waits for the owner's yes
+  //   relay    the ID is a relay
   //   ignored  politely refused, never shown      blocked  refused, a relay as well as a node
   //   seated   that ID holds this node: a relay its seat, a node its chosen contacts
   //
@@ -254,7 +254,7 @@ function open(rootDir, opts) {
   // NO OLD STORE IS MOVED IN (goal/G41.30; Andy: "let's get rid of those \"rescue operations\""): the one-time move of
   // goal/G40.11 (the old seen, the relays and peers tables, contacts.json) is gone. Pre-alpha, a node made before it
   // starts with this table new.
-  const SEEN_FLAGS = ['keep', 'mine', 'relay', 'held', 'ignored', 'blocked', 'seated'];
+  const SEEN_FLAGS = ['keep', 'mine', 'relay', 'ignored', 'blocked', 'seated'];
   const GRANT_NAME = "COALESCE(NULLIF(s.myLabel, ''), s.label, '')";
   db.exec(`
     CREATE TABLE IF NOT EXISTS seen (
@@ -277,6 +277,11 @@ function open(rootDir, opts) {
   // A PARTIAL INDEX PER FLAG, holding only the rows where it is true, and one over the rows with neither keep nor mine,
   // by lastSeen: the line shedding takes. A query uses a partial index only when it repeats its WHERE, which is why
   // the statements below spell those conditions out again.
+  // THE HELD FIELD IS KILLED, in a table made before too (goal/G43.17, Q25; Andy, asked whether G41.30's "no rescue
+  // operations" keeps it: "KILL THE FIELD COMPLETELY."). Its index first, since a column under an index cannot be dropped.
+  if (db.prepare('PRAGMA table_info(seen)').all().some(function (c) { return c.name === 'held'; })) {
+    db.exec('DROP INDEX IF EXISTS seen_held;\nALTER TABLE seen DROP COLUMN held;');
+  }
   db.exec(SEEN_FLAGS.map(function (f) {
     return 'CREATE INDEX IF NOT EXISTS seen_' + f + ' ON seen (lastSeen) WHERE ' + f + ' = 1;';
   }).join('\n') + '\nCREATE INDEX IF NOT EXISTS seen_shed ON seen (lastSeen) WHERE keep = 0 AND mine = 0;');
@@ -674,23 +679,21 @@ function open(rootDir, opts) {
     //
     //   Andy: "it's the chosen-mark that gives protection from eviction,
     //   if the memory overflows. the shedded rows will first be ignored,
-    //   then held, once the memory is full with 'added' statuses no more
+    //   [...] once the memory is full with 'added' statuses no more
     //   can be chosen/added until eviction by blocking or ignoring...."
     //
     // The box (v24): "lastSeen is the staleness: it orders shedding once the cap is reached, never age alone. Shedding
-    // takes unflagged rows first, then ignored or blocked, then held, oldest first in each; keep and mine never." A
+    // takes unflagged rows first, then ignored or blocked, oldest first in each; keep and mine never." (Held went with goal/G43.17.) A
     // kept or owned row is not in the line at all — that is the protection, and it is a WHERE (seen_shed's own), not
     // a weight, so no amount of pressure reaches it.
     shedCount: db.prepare('SELECT COUNT(*) AS n FROM seen WHERE keep = 0 AND mine = 0'),
     overflow: db.prepare(`DELETE FROM seen WHERE publicKey IN (
       SELECT publicKey FROM seen WHERE keep = 0 AND mine = 0
-      ORDER BY CASE WHEN ignored = 1 OR blocked = 1 THEN 1 WHEN held = 1 THEN 2 ELSE 0 END ASC, lastSeen ASC
+      ORDER BY CASE WHEN ignored = 1 OR blocked = 1 THEN 1 ELSE 0 END ASC, lastSeen ASC
       LIMIT ?)`),
-    // WHO A SEARCH READS (R39, goal/G40.11): the kept, the owned and the held, all of them ("the search lists kept and
-    // held rows only"), each flag through its own partial index. Nobody else is listed: a stranger is shown only once
-    // the network search has made it held.
-    listed: db.prepare('SELECT * FROM seen WHERE keep = 1 UNION SELECT * FROM seen WHERE mine = 1 ' +
-      'UNION SELECT * FROM seen WHERE held = 1'),
+    // WHO A SEARCH READS (R39, goal/G40.11): the kept and the owned, each flag through its own partial index. Nobody else
+    // is listed: a person the network search finds is streamed to the page and stored as nothing (goal/G43.17).
+    listed: db.prepare('SELECT * FROM seen WHERE keep = 1 UNION SELECT * FROM seen WHERE mine = 1'),
     clear: db.prepare('DELETE FROM seen'),
     pages: db.prepare('PRAGMA page_count'),
     pageSize: db.prepare('PRAGMA page_size'),
@@ -894,7 +897,7 @@ function open(rootDir, opts) {
       flagged: function (flag) {
         return byFlag[flag] ? byFlag[flag].all().map(row) : [];
       },
-      // The rows a search lists: kept, owned and held (see q.listed).
+      // The rows a search lists: kept and owned (see q.listed).
       listed: function () { return q.listed.all().map(row); },
       // ── ROUTES ───────────────────────────────────────
       //

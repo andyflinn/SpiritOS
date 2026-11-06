@@ -7,14 +7,13 @@
 //   Andy's box, v24: "seen, the shadow in node.db, is the one table. contacts.json, the relays table and the peers
 //   table move into it and go."
 //
-// A contact is a row of seen flagged `keep`: "a chosen contact, never shed". Somebody waiting for the owner's yes is
-// `held`, somebody refused is `blocked`, a node whose signed card names this one its owner is `mine`. The file is
+// A contact is a row of seen flagged `keep`: "a chosen contact, never shed". Somebody refused is `blocked`, a node whose signed card names this one its owner is `mine`. The file is
 // gone (nodeStore moved it in on the first start); this module keeps the rules the book had, as acts on those flags.
 // Perception only. Lives on a personal node, never on a --relay.
 //
 // A contact row, as every reader here gets it:
 //
-//   { publicKey, publicLabel, myLabel, card, keep, mine, held, blocked, relay, seated, ignored, present, lastSeen }
+//   { publicKey, publicLabel, myLabel, card, keep, mine, blocked, relay, seated, ignored, present, lastSeen }
 //
 // Identity = publicKey. publicLabel = their caption on a relay (may collide, may change). myLabel = your caption
 // (never uploaded). acquiredVia, the ladder of how a key arrived, went with the box ("Gone: acquiredVia"): kept is
@@ -35,7 +34,7 @@ function shaped(r) {
   if (!r) return null;
   return {
     publicKey: r.publicKey, publicLabel: r.label || '', myLabel: r.myLabel || '', card: r.card || '',
-    keep: r.keep, mine: r.mine, held: r.held, blocked: r.blocked, relay: r.relay, seated: r.seated, ignored: r.ignored,
+    keep: r.keep, mine: r.mine, blocked: r.blocked, relay: r.relay, seated: r.seated, ignored: r.ignored,
     present: r.present, lastSeen: r.lastSeen,
   };
 }
@@ -51,7 +50,7 @@ function listens(row) {
   return !!(row && (row.keep || row.mine) && !row.blocked);
 }
 
-// Everyone the owner's list shows: the kept and owned it listens to, the held waiting to be accepted, and the
+// Everyone the owner's list shows: the kept and owned it listens to, and the
 // blocked, who have to stay visible to be unblocked. A row you cannot see is a decision you cannot reverse.
 function load(rootDir) {
   const S = seen(rootDir);
@@ -103,23 +102,12 @@ function noteRelay(rootDir, publicKey, relayUrl) {
 }
 
 // Coming to know somebody: they wrote to you, they consumed an invite of yours, a human confirmed the key, or they
-// took a seat on a relay you own. Kept, and no longer held. One row per key: identity is the key.
+// took a seat on a relay you own. Kept. One row per key: identity is the key.
 function acquire(rootDir, peer) {
   if (!peer || !peer.publicKey) throw new Error('acquire needs publicKey');
   noteLabel(rootDir, peer.publicKey, peer.publicLabel);
   noteRelay(rootDir, peer.publicKey, peer.relay);
-  return shaped(seen(rootDir).set(peer.publicKey, { keep: true, held: false }));
-}
-
-// Somebody wrote and this node is holding them: a row so a human can see there is somebody there, and nothing more.
-// Never a downgrade — a contact who writes again is still a contact.
-function hold(rootDir, peer) {
-  if (!peer || !peer.publicKey) throw new Error('hold needs publicKey');
-  noteLabel(rootDir, peer.publicKey, peer.publicLabel);
-  noteRelay(rootDir, peer.publicKey, peer.relay);
-  const was = seen(rootDir).get(peer.publicKey);
-  if (was && (was.keep || was.mine)) return shaped(was);
-  return shaped(seen(rootDir).set(peer.publicKey, { held: true }));
+  return shaped(seen(rootDir).set(peer.publicKey, { keep: true }));
 }
 
 // Block silences a row without forgetting it. Unblock is the same call, which is why this takes the value rather than
@@ -130,12 +118,12 @@ function setBlocked(rootDir, publicKey, blocked) {
   return shaped(seen(rootDir).set(publicKey, { blocked: !!blocked }));
 }
 
-// Saying yes to somebody who was waiting: kept, unblocked. An already-kept row keeps its place and only loses the
+// Saying yes to somebody: kept, unblocked. An already-kept row keeps its place and only loses the
 // block.
 function accept(rootDir, publicKey) {
   const was = seen(rootDir).get(publicKey);
   if (!was) return null;
-  return shaped(seen(rootDir).set(publicKey, { keep: true, held: false, blocked: false }));
+  return shaped(seen(rootDir).set(publicKey, { keep: true, blocked: false }));
 }
 
 function setMyLabel(rootDir, publicKey, myLabel) {
@@ -159,7 +147,7 @@ function labelForKey(rootDir, publicKey, fallbackPublicLabel) {
 //   Andy: "i also have no method of removing sonny from my contacts so i
 //   could re-test easily."
 //
-// Forget takes YOUR side of a relationship: not kept, not held, no name of yours. The row stays in the table, routes
+// Forget takes YOUR side of a relationship: not kept, no name of yours. The row stays in the table, routes
 // and card with it — Andy: "a shadow route must not be dropped when a contact is deleted" — so re-adding somebody
 // gets their route back without a search.
 //
@@ -167,8 +155,8 @@ function labelForKey(rootDir, publicKey, fallbackPublicLabel) {
 // refusal: clearing it would readmit the person the moment they wrote.
 function forget(rootDir, publicKey) {
   const was = seen(rootDir).get(publicKey);
-  if (!was || !(was.keep || was.held || was.blocked || was.myLabel)) return null;
-  const row = seen(rootDir).set(publicKey, { keep: false, held: false, myLabel: '' });
+  if (!was || !(was.keep || was.blocked || was.myLabel)) return null;
+  const row = seen(rootDir).set(publicKey, { keep: false, myLabel: '' });
   if (row.blocked) return shaped(row);
   return { publicKey: publicKey, forgotten: true };
 }
@@ -237,7 +225,6 @@ module.exports = {
   addressBook: addressBook,
   listens: listens,
   isBlocked: isBlocked,
-  hold: hold,
   setBlocked: setBlocked,
   accept: accept,
   acquire: acquire,

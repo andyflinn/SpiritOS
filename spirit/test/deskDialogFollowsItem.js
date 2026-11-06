@@ -133,7 +133,6 @@ function bootPage(desk) {
       util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: function () { return ''; } },
       fs: {
         loadFile: function (rel) {
-          if (rel === 'preferences.json') return JSON.stringify({ apps: {}, groups: {} });
           if (rel === 'shell/natter/session.json') return JSON.stringify({ label: 'me', boundAt: '2026-09-13T00:00:00.000Z' });
           if (rel === 'shell/desk/desk.json') return DESK_MANIFEST;
           if (rel === 'shell/deskDetails/deskDetails.json') return DETAILS_MANIFEST;

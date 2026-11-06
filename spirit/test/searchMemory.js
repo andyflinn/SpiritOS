@@ -2,8 +2,8 @@
 
 // spirit/test/searchMemory.js
 // A SEARCH ASKS MEMORY TOO, BESIDE EVERY BOUND RELAY (R39, 0021). Since goal/G40.11 the memory it asks is the one
-// table's listed rows: the kept, the owned and the held; a stranger the network finds is held, one the shadow only
-// heard of is not listed.
+// table's listed rows: the kept and the owned; a stranger the network finds is streamed and stored as nothing
+// (goal/G43.17), and one the shadow only heard of is not listed.
 //
 //   Andy: "thing is. if the userbox is offline, search can revert to
 //   memory....." — "in fact if search fans out to all bound relays first,
@@ -109,14 +109,14 @@ async function run() {
   } else {
     test.fail('live row: ' + JSON.stringify(liveNet) + ', in memory\'s answer ' + m.filter(function (r) { return r.publicKey === 'K-LIVE'; }).length);
   }
-  // WHAT THE NETWORK FINDS IS HELD (goal/G40.11, box v24: "what the network search finds is held"): the next search
-  // lists it, under the name the relay gave, waiting for the owner's yes.
+  // WHAT THE NETWORK FINDS IS NOT STORED (goal/G43.17; Andy: "the search results will be streamed to the UI, so those
+  // contacts CAN be added, it doesn't mean we have to store then in the contact list."): the next search does not list it.
   const after = rowsOf((await search(H, 'bella live', null)).body);
   const liveAfter = byKey(after, 'K-LIVE');
-  if (liveAfter && liveAfter.name === 'bella live' && liveAfter.held === true && liveAfter.keep === false) test.check('and the next search lists it held, under the name the relay gave');
+  if (!liveAfter) test.check('and the next search does not list it: a find is streamed to the page and stored as nothing (goal/G43.17), under the name the relay gave');
   else test.fail('after the walk, the search holds K-LIVE as ' + JSON.stringify(liveAfter));
 
-  // NO STRANGERS FROM THE SHADOW (goal/G40.11: "the search lists kept and held rows only"; fromMemory went): somebody
+  // NO STRANGERS FROM THE SHADOW (goal/G40.11; fromMemory went): somebody
   // the node has only heard of is not listed, absent or present.
   if (!byKey(m, 'K-MEM') && !byKey(m, 'K-GONE')) {
     test.check('somebody only the shadow knows, present or absent, is not listed');
@@ -138,7 +138,7 @@ async function run() {
     test.fail(friends.length + ' friends of ' + (SLOTS + 5) + ', friend 0: ' + JSON.stringify(byKey(friends, 'K-FRIEND-0')));
   }
 
-  if (friends.every(function (r) { return r.keep === true && r.held === false; })) {
+  if (friends.every(function (r) { return r.keep === true && !('held' in r); })) {
     test.check('and each row says it is kept, a flag on its row (the book field went with goal/G40.11)');
   } else {
     test.fail('flags: ' + JSON.stringify(friends.slice(0, 3)));
@@ -179,7 +179,7 @@ async function run() {
 
   {
     // THE NEWEST-FIRST CAP ON STRANGERS STOOD HERE (R39: "cap at 1000 rows compared"): no stranger is read since
-    // goal/G40.11. What is read is the kept, the owned and the held, each through its own partial index.
+    // goal/G40.11. What is read is the kept and the owned, each through its own partial index.
     const C = makeHome();
     contactBook.acquire(C, { publicKey: 'K-OLD-FRIEND', publicLabel: 'carl friend' });
     const T = hubModule.shadow(C);
@@ -195,10 +195,10 @@ async function run() {
     // ON AN INDEX, asserted rather than assumed: a partial index is used only while the query repeats its condition.
     const db = new (require('node:sqlite').DatabaseSync)(path.join(C, 'spirit', 'state', 'node.db'));
     const plan = function (sql) { return db.prepare('EXPLAIN QUERY PLAN ' + sql).all().map(function (r) { return r.detail; }).join(' | '); };
-    const listed = plan('SELECT * FROM seen WHERE keep = 1 UNION SELECT * FROM seen WHERE mine = 1 UNION SELECT * FROM seen WHERE held = 1');
+    const listed = plan('SELECT * FROM seen WHERE keep = 1 UNION SELECT * FROM seen WHERE mine = 1');
     db.close();
-    if (/seen_keep/.test(listed) && /seen_mine/.test(listed) && /seen_held/.test(listed) && !/SCAN seen(?! USING)/.test(listed)) {
-      test.check('the list walks seen_keep, seen_mine and seen_held — none scans the table');
+    if (/seen_keep/.test(listed) && /seen_mine/.test(listed) && !/SCAN seen(?! USING)/.test(listed)) {
+      test.check('the list walks seen_keep and seen_mine — none scans the table');
     } else {
       test.fail('plan: ' + listed);
     }

@@ -266,7 +266,7 @@ function bytesHeldByPeer(rootDir) {
 // what the node would, not a copy of it.
 //
 // THE LABEL IS JSON (goal/G29.6, contact.search changed by Andy's grant: "the changed verb is granted."). Since
-// goal/G40.11 it is one row of the one table: {name, keep, mine, relay, held, blocked, seated, publicLabel, present,
+// goal/G40.11 it is one row of the one table: {name, keep, mine, relay, blocked, seated, publicLabel, present,
 // url}. The name is the one the Contacts table always showed: the name I gave them or theirs. The flags are fields,
 // never words in the name (Andy: "no, just a star in the one column, that says it all."; box v24: "each boolean a mark
 // on its row in Contacts"). url is a relay's own address, its direct route; present is last-known, null when nobody
@@ -278,7 +278,7 @@ function contactLabel(p) {
   // No key's tail is shown anywhere (Andy, 2026-10-24, goal/G40.1): a row with no name says so.
   return JSON.stringify({
     name: name || '(no name)',
-    keep: p.keep === true, mine: p.mine === true, relay: p.relay === true, held: p.held === true,
+    keep: p.keep === true, mine: p.mine === true, relay: p.relay === true,
     blocked: p.blocked === true, seated: p.seated === true,
     // Their own name beside mine, for a caller matching what they call themselves (the desk onboarding).
     publicLabel: String(p.publicLabel || ''),
@@ -288,10 +288,10 @@ function contactLabel(p) {
 }
 // RANKED WITH THE PROBABILITY MODULES (goal/G29.6; Andy: "so hub and relay will use probability search from now on."):
 // every row scored by probabilityStringObjectMatch against the words, over the names I wrote and they did; no words
-// (or '*') is everybody, in the list's order. THE YES-FILTERS (goal/G40.11, box v24): keep, mine, relay, seated, held,
+// (or '*') is everybody, in the list's order. THE YES-FILTERS (goal/G40.11, box v24): keep, mine, relay, seated,
 // blocked, each beside q; a row passes only with every flag asked for. The answer is a probabilityBucket, cut in bytes
 // to one plaintext.
-var SEARCH_FLAGS = ['keep', 'mine', 'relay', 'seated', 'held', 'blocked'];
+var SEARCH_FLAGS = ['keep', 'mine', 'relay', 'seated', 'blocked'];
 var CONTACT_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 function searchPeople(people, q, filters) {
   var words = String(q == null ? '' : q).trim();
@@ -319,8 +319,7 @@ function buildPeople(rootDir) {
 
   var myKey = auth.loadIdentity(rootDir).publicKey;
 
-  // THE OWNER'S LIST, not just the people this node listens to: the kept and owned, somebody held waiting to be
-  // accepted, and somebody blocked, who has to stay visible to be unblocked. A row you cannot see is a decision you
+  // THE OWNER'S LIST, not just the people this node listens to: the kept and owned, and somebody blocked, who has to stay visible to be unblocked. A row you cannot see is a decision you
   // cannot reverse. Relays are rows of it like people (goal/G40.11), each with its own address.
   var bytesHeld = bytesHeldByPeer(rootDir);
 
@@ -338,7 +337,7 @@ function buildPeople(rootDir) {
         // would look like clearing the name.
         myLabel: row.myLabel || '',
         // The row's flags, as the table holds them (goal/G40.11).
-        keep: row.keep, mine: row.mine, relay: row.relay, held: row.held, blocked: row.blocked, seated: row.seated,
+        keep: row.keep, mine: row.mine, relay: row.relay, blocked: row.blocked, seated: row.seated,
         present: row.present,
         url: row.relay ? (relayKeys.byKey(rootDir, row.publicKey) || {}).url || '' : '',
         // Bytes this node is carrying for them, across every app that
@@ -375,11 +374,8 @@ function buildPeople(rootDir) {
 // someone you could answer. Deleted with the ring (R8, 2026-09-15).
 //
 // `remember()` below is the same act on the router's path, and it was
-// already there: peerPost calls it with the verdict frontDoor gave, so a
-// stranger who writes is still acquired under `acquire` and still held
-// under `hold`. The rule was always deliberately weak — anyone who can
-// write proves a key exists and is reachable, not that it belongs to the
-// person you think — and that has not changed.
+// already there: peerPost calls it with the verdict frontDoor gave, and
+// since goal/G43.17 a stranger who writes is only marked ignored.
 //
 // ONE DIFFERENCE, NAMED RATHER THAN QUIETLY DROPPED: this captured the
 // sender's `publicLabel` off `m.from`, because the relay stored a line
@@ -390,115 +386,11 @@ function buildPeople(rootDir) {
 // acquired by being written to is unlabelled until then, where it used to
 // be named on arrival.
 
-// What this node does with mail from somebody it has not added.
-//
-//   silent  — it never happened. Not acquired, and not passed on either,
-//             so the app writes no peerfile-*, marks no row and counts
-//             nothing. The factory setting.
-//   hold    — the same, except the count comes back, so the app can say
-//             "N from people you have not added" without saying who.
-//   acquire — the old behaviour: writing to this node makes you someone
-//             it can answer (contactBook 'message').
-//
-// This node's policy about its own book, so the hub reads it here rather
-// than taking it from whoever asked (packet 5).
-//
-// It used to arrive as a ?unknown= query parameter, on the argument that
-// there should be one copy of the setting owned by the app that draws
-// the control. That held while one app both drew it and polled. It does
-// not now: Contacts draws the radios and Relay Chat polls the inbox, so
-// the policy was travelling through an app that has no say in it, and a
-// second poller — or a stale tab — would have been a second answer.
-//
-// ONE FILE, AND IT IS THE NODE'S. It was app/contacts/prefs.json, which
-// was wrong twice over (Andy, of that file: "... is the wrong place for
-// that file, it's a node-global").
-//
-// Wrong as a LOCATION: who this node will hear from is a fact about its
-// front door, not about one app. Contacts draws the radios; it does not
-// own the door, any more than Relay Chat owns it by polling.
-//
-// Wrong as a LAYER: api.fs is scoped to app/<name>/, so Contacts can
-// write its own prefs — right for a preference and exactly why nothing
-// load-bearing may live there. preferences.json is node-global and sits
-// in kernel.js's WRITABLE_ROOT_FILES, so a write to it passes the kernel.
-//
-// The SAFETY FLOOR is not here at all and must not be: it is not a
-// setting, so it has no file. See peerPost, where an unknown sender is
-// bounded whatever this answers.
-//
-// Read per request rather than cached: it is one small file, an inbox
-// poll is already a network round trip, and a cache would mean a change
-// not taking effect until something invalidated it.
-var UNKNOWN_POLICIES = ['silent', 'hold', 'acquire'];
-var UNKNOWN_PREFS_FILE = ['preferences.json'];
-// Where it used to live. Read when the new home says nothing, so a node
-// that had chosen `acquire` does not silently fall back to `silent` on
-// the day this moved — the same courtesy routingTable.json paid
-// mailbox.json. Nothing writes this name again.
-// DEPRECATED(D3, expires: alpha) — the policy's old home,
-// app/contacts/prefs.json field `unknown`. See design/DEPRECATIONS.md (decision 0014).
-var LEGACY_UNKNOWN_PREFS_FILE = ['app', 'contacts', 'prefs.json'];
-
-// SETTING IT IS THE NODE'S JOB, not an app's. Contacts draws the radios
-// and posts here; it cannot write the file itself, and that is the point
-// — api.fs is scoped to app/<name>/, so a node-global setting written by
-// an app would be a setting living inside one of its readers.
-//
-// The write PRESERVES everything else in the file. preferences.json is
-// shared with the shell (defaultHandlers, appOverrides, groups), which
-// parses it whole and writes it back whole; a setter that rebuilt the
-// object would take the operator's groups with it.
-//
-// Temp-file and rename, so a crash leaves the old file or the new one and
-// never half of either — the same discipline routingTable.json and
-// traffic.json use.
-function writeUnknownPolicy(rootDir, wanted) {
-  if (UNKNOWN_POLICIES.indexOf(wanted) === -1) return false;
-  var file = path.join(rootDir, 'preferences.json');
-  var doc = {};
-  try {
-    var parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) doc = parsed;
-  } catch (e) {
-    // A missing or broken preferences.json is not a reason to refuse a
-    // security setting. Starting from {} loses the shell's own keys,
-    // which is bad — but it is what the shell itself does with a file it
-    // cannot parse, and refusing here would leave the node stuck on
-    // `silent` with no way out.
-    doc = {};
-  }
-  doc.unknownSenders = wanted;
-  var tmp = file + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(doc, null, 2));
-  fs.renameSync(tmp, file);
-  return true;
-}
-
-function readUnknown(rootDir, where, field) {
-  var raw = null;
-  try { raw = fs.readFileSync(path.join.apply(path, [rootDir].concat(where)), 'utf8'); }
-  catch (e) { return null; }
-  var parsed = null;
-  try { parsed = JSON.parse(raw); }
-  catch (e) { return null; }
-  var wanted = parsed && parsed[field];
-  return UNKNOWN_POLICIES.indexOf(wanted) === -1 ? null : wanted;
-}
-
-// Missing, empty, unreadable, not JSON, or not one of the three all read
-// as `silent` — the tightest setting that still lets two people who
-// added each other talk. The safe answer is also the default, so a
-// broken file cannot quietly open a node up.
-//
-// `unknownSenders` rather than `unknown`: at node-global scope a key
-// called `unknown` says nothing about what is unknown.
-function unknownPolicy(rootDir) {
-  var here = readUnknown(rootDir, UNKNOWN_PREFS_FILE, 'unknownSenders');
-  if (here) return here;
-  var legacy = readUnknown(rootDir, LEGACY_UNKNOWN_PREFS_FILE, 'unknown');
-  return legacy || 'silent';
-}
+// WHAT THIS NODE DOES WITH MAIL FROM SOMEBODY IT HAS NOT ADDED: it ignores it, always; no file and no setting (goal/G43.17).
+// Andy: "ignore or hold are enough, and safer that automatically adding a contact", then "[...] because
+// we know we still have id's in the log" and "so NO, we don't need a "held" "status"". The traffic log keeps the refused
+// id and its relay, without the words, for as long as there is room.
+var STRANGERS = 'drop';
 
 // Who this node will listen to: everyone it has actually acquired, plus
 // itself — a note to yourself is sent and received, and both halves
@@ -535,13 +427,11 @@ function listenSet(rootDir) {
 // without trusting whatever claims to be a relay, because it holds the
 // keys this node has actually accepted.
 //
-// Answers one of four, and the split between the first and the rest is
+// Answers one of two, and the split between the first and the rest is
 // what makes the floor work:
 //
 //   'known'  already in the book — not a stranger, not rationed
-//   'admit'  a stranger this node's policy welcomes
-//   'hold'   a stranger to file for a human to decide about
-//   'drop'   a stranger to ignore
+//   'drop'   a stranger, ignored
 //
 // PURE. It writes nothing, and that is a correction of the first version
 // of this function, which acquired the row here and returned 'known'. The
@@ -590,10 +480,7 @@ function frontDoor(rootDir, from) {
   // could only be answered by asking the thing that wants in.
   if (relayKeys.acceptedKeys(rootDir)[key]) return 'known';
 
-  var policy = unknownPolicy(rootDir);
-  if (policy === 'acquire') return 'admit';
-  if (policy === 'hold') return 'hold';
-  return 'drop';
+  return STRANGERS;
 }
 
 // WHAT TO WRITE DOWN ABOUT A STRANGER WHO GOT THROUGH THE FLOOR. Called
@@ -660,30 +547,17 @@ function remember(rootDir, from, verdict, relayUrl) {
         });
       } catch (e) { /* a cache that will not take a row is not a reason to refuse somebody */ }
     }
-    if (verdict === 'admit') {
-      // A FULL MEMORY ADDS NOBODY, and a stranger least of all (0021):
-      // "once the memory is full with 'added' statuses no more can be
-      // chosen/added". The packet is still heard — the verdict stands —
-      // they simply are not added; the owner makes room, or does not.
-      if (!shadow(rootDir).roomToAdd(key)) return false;
-      contactBook.acquire(rootDir, row);
-      return true;
-    }
-    if (verdict === 'hold') {
-      contactBook.hold(rootDir, row);
-      return true;
-    }
     // ── IGNORED IS A MARK, NOT A FORGETTING (0021) ────────────────────
     //
     //   Andy: "ignoring means only: mark this row as "ignored"."
     //
     // The row was already remembered (noteSeen, before the floor); this
     // only says what the door did with it: ignored, "politely refused, no reason given, never shown" (box v24).
-    // Never over somebody the owner has decided about: a held or blocked person also gets 'drop' from the door, and
+    // Never over somebody the owner has decided about: a blocked person also gets 'drop' from the door, and
     // what the owner decided outranks what the door did.
     if (verdict === 'drop') {
       var was = shadow(rootDir).get(key);
-      if (!was || !(was.keep || was.mine || was.held || was.blocked)) shadow(rootDir).set(key, { ignored: true });
+      if (!was || !(was.keep || was.mine || was.blocked)) shadow(rootDir).set(key, { ignored: true });
       return true;
     }
   } catch (e) {
@@ -699,10 +573,9 @@ function remember(rootDir, from, verdict, relayUrl) {
 // stranger got under `hold`. Deleted with the ring (R8, 2026-09-15).
 //
 // Both are answered per packet now, before anything is filed, which is
-// the better place for them: frontDoor() above returns known / admit /
-// hold / drop from the sender's KEY, and peerPost acts on that verdict
-// at the moment of arrival rather than sorting a batch afterwards. A
-// held sender still gets a row and nothing else — see `remember`.
+// the better place for them: frontDoor() above returns known or drop from
+// the sender's KEY, and peerPost acts on that verdict at the moment of
+// arrival rather than sorting a batch afterwards.
 //
 // One rule of partitionInbox's is worth not losing to the deletion:
 // A MESSAGE WITH NO KEY CANNOT BE MATCHED AGAINST AN ADDRESS BOOK. The
@@ -734,12 +607,9 @@ function remember(rootDir, from, verdict, relayUrl) {
 // traffic is not somebody else's, a silent stranger gets no row and so no
 // count, and a blocked row's numbers freeze where they are.
 //
-// WHAT WAS LOST ON PURPOSE: the `hold` count. applyInboxBatch answered
-// `{ unknown: N }` so an app could say "N from people you have not added"
-// without saying who. Nothing asks that question of the router yet. It is
-// not gone from the node — trafficLog keeps held rows, admitted:false —
-// only unexposed, and re-exposing it is a read surface to design rather
-// than a line to restore.
+// WHAT WAS LOST ON PURPOSE: the count of strangers. It is not gone from
+// the node: the traffic log keeps each refused id and its relay, without
+// the words, for as long as there is room (goal/G43.17).
 
 function createHub(rootDir) {
   // A kept rename of a contact, on its way to every open page (server.js
@@ -1254,52 +1124,6 @@ function createHub(rootDir) {
   // A node may own several; minting on the first one listed would put the
   // token on a mailbox the friend was never being invited to, and the
   // owner would not find out until the claim failed somewhere else.
-  // What this node will do about somebody it has never heard of.
-  //
-  // GET answers what is set; POST changes it. Both are about the
-  // PREFERENCE and neither can reach the floor — an unknown sender is
-  // bounded, and reaches no app before a decision, whatever this says.
-  // That is in code, in peerPost, and there is deliberately no route to
-  // it.
-  // ── READ AND WRITE ARE TWO FUNCTIONS NOW ────────────────────────────
-  //
-  // This was one handler that branched on `req.method`, because one path
-  // served GET and POST. Under the one loopback door every call is a
-  // POST, so the method carries nothing and that branch had become a
-  // silent coin-toss: a caller that forgot to say POST would have READ
-  // the policy and been answered 200 with the old value, which looks
-  // exactly like a write that did nothing.
-  //
-  // Two verbs, two functions. `contact.senders` asks, `contact.setSenders`
-  // decides, and neither can be mistaken for the other.
-  function handleSendersRead(req, res) {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ ok: true, policy: unknownPolicy(rootDir) }));
-  }
-
-  function handleUnknownSenders(req, res, readJsonBody) {
-    readJsonBody(req).then(function (body) {
-      var wanted = body && body.policy;
-      if (UNKNOWN_POLICIES.indexOf(wanted) === -1) {
-        // Named, unlike most refusals on this box: the caller is this
-        // node's own browser, it is ours to fix, and a typo in a radio
-        // value should say which values exist.
-        fail(res, 400, 'policy must be one of: ' + UNKNOWN_POLICIES.join(', '));
-        return;
-      }
-      if (!writeUnknownPolicy(rootDir, wanted)) {
-        fail(res, 500, 'could not write preferences.json');
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      // Answered from a fresh READ rather than from what was asked for,
-      // so the caller is told what the node will actually do rather than
-      // what it requested.
-      res.end(JSON.stringify({ ok: true, policy: unknownPolicy(rootDir) }));
-    }).catch(function () {
-      fail(res, 400, 'bad body');
-    });
-  }
 
 
 
@@ -1351,16 +1175,15 @@ function createHub(rootDir) {
   // peer.list answered the whole book at once. contact.search walks the
   // same book (buildPeople, sorted by caption, which is the scan order)
   // and answers key/label pairs; it never asks a relay. Since goal/G29.6
-  // the label is json {name, owned, blocked, held} (contactLabel), the
-  // words are ranked by the probability modules, and owned, blocked and
-  // held are yes-filters beside q (searchPeople).
+  // the label is json {name, owned, blocked} (contactLabel), the
+  // words are ranked by the probability modules, and owned and blocked
+  // are yes-filters beside q (searchPeople).
   //
   // ONE SEARCH OVER THE ONE TABLE (goal/G40.11; Andy: "yes. those names." to contact.search covering relays too). Tier
-  // one, at once: the rows the owner's list holds (kept, owned, held, and blocked to be undone), people and relays
-  // alike, ranked by the words, with the yes-filters keep, mine, relay, seated, held, blocked (searchPeople). Nobody
-  // else: "the search lists kept and held rows only", and ignored never shows. Tier two: the same call starts the
-  // network search (walkRelays), whose rows stream as the 'peer-search' job and land in the table held — "what the
-  // network search finds is held" — so the next search lists them for the owner's yes.
+  // one, at once: the rows the owner's list holds (kept, owned, and blocked to be undone), people and relays alike,
+  // ranked by the words, with the yes-filters keep, mine, relay, seated, blocked (searchPeople). Nobody else, and
+  // ignored never shows. Tier two: the same call starts the network search (walkRelays), whose rows stream as the
+  // 'peer-search' job to the page, which can add them; nothing stores them as listed (goal/G43.17).
   // ONE NETWORK SEARCH AT A TIME (Andy: "the node also only triggers a peer search if none is in flight."): a search
   // while one is out is answered from the table and starts nothing; nothing waits for it to return.
   var networkOut = false;
@@ -1375,8 +1198,9 @@ function createHub(rootDir) {
     return { ok: true, status: 200, items: r.items, more: r.more };
   }
 
-  // TIER TWO: the walk, each row noted in the table and held unless the owner already keeps it, and sent as one
-  // update of the 'peer-search' job, as the row the next search lists. d.walk stands in for the relays in a suite;
+  // TIER TWO: the walk, each row noted in the table and sent as one update of the 'peer-search' job, so the page shows it
+  // and can add it (goal/G43.17; Andy: "the search results will be streamed to the UI, so those contacts CAN be added, it
+  // doesn't mean we have to store then in the contact list."). Nothing marks it. d.walk stands in for the relays in a suite;
   // d.router is the live one.
   function networkSearch(q, d) {
     networkOut = true;
@@ -1388,11 +1212,10 @@ function createHub(rootDir) {
         present: true,
         rank: row.viaPartner ? ranks.HEARSAY : ranks.HOST,
       });
-      var was = shadow(rootDir).get(row.publicKey);
-      if (!(was && (was.keep || was.mine))) shadow(rootDir).set(row.publicKey, { held: true });
-      var listed = buildPeople(rootDir).filter(function (p) { return p.publicKey === row.publicKey; })[0];
-      if (!listed) return;
-      d.jobs.updateJob(networkJob.id, { data: { q: q, item: { key: row.publicKey, label: contactLabel(Object.assign({}, listed, { present: true })) } } });
+      var found = contactBook.byPublicKey(rootDir, row.publicKey);
+      if (!found || found.blocked) return;
+      var url = found.relay ? (relayKeys.byKey(rootDir, row.publicKey) || {}).url || '' : '';
+      d.jobs.updateJob(networkJob.id, { data: { q: q, item: { key: row.publicKey, label: contactLabel(Object.assign({}, found, { url: url, present: true })) } } });
     };
     var walk = typeof d.walk === 'function' ? d.walk : function (words, each) { return walkRelays(d.router, words, each); };
     var going = null;
@@ -1557,7 +1380,6 @@ function createHub(rootDir) {
         publicKey: row.publicKey,
         keep: row.keep,
         blocked: contactBook.isBlocked(row),
-        held: !contactBook.listens(row),
       }));
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -2082,7 +1904,7 @@ function createHub(rootDir) {
   }
 
   // fromMemory STOOD HERE (R39, 0021): the shadow's strangers, ranked beside the book. Gone with goal/G40.11: the
-  // search lists the kept and held rows of the one table, and a stranger the network finds is held.
+  // search lists the kept and owned rows of the one table.
 
   // THE NETWORK SEARCH (goal/G30.19: tier two of contact.search; it was the verb peer.search, deleted with Andy's
   // approval of the interface reduction). Every configured relay asked once; onRow(row) for each peer found, as it
@@ -2703,8 +2525,6 @@ function createHub(rootDir) {
     // handleInvite, handleRemovePeer, handleRename and handleRevoke were
     // exported here. Every one of them is a peerPost the browser makes
     // for itself now — see the note where they stood.
-    handleUnknownSenders: handleUnknownSenders,
-    handleSendersRead: handleSendersRead,
     handleNodeCard: handleNodeCard,
     adoptClaim: adoptClaim,
     handleNodeName: handleNodeName,
@@ -2744,5 +2564,4 @@ module.exports = {
   // the other in the same object literal — which is what an export block
   // that grew by accretion does. Spotted while deleting the six ring
   // exports that surrounded it (R8).
-  unknownPolicy: unknownPolicy,
 };

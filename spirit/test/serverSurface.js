@@ -174,7 +174,7 @@ fs.writeFileSync(
 // every full harness run on this laptop.
 //
 // setupRelayFakes' own header says local state "(relays.json,
-// preferences.json, ...) is never touched", which was true when
+// ...) is never touched", which was true when
 // relays.json was untracked. It is tracked now, so that sentence is
 // wrong and this is the consequence landing somewhere else.
 //

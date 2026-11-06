@@ -255,8 +255,7 @@ async function run() {
     // two people who happen to share a relay, and exactly the case the
     // door exists for.
     //
-    // A fresh node has no preferences.json, so unknownPolicy answers
-    // `silent`: the tightest setting, and the default for the same reason.
+    // A stranger is ignored, always (hub.frontDoor, goal/G43.17).
     // ── THE CARD COMES FIRST, BECAUSE IT HAS TO (cycle 10, R5) ──────
     //
     //   Andy: "if you can't get the card, you can't post anyways."

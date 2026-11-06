@@ -6,7 +6,7 @@
 module.exports = {
   verbs: {
     // The one table, people and relays (goal/G40.11): a yes-filter per flag.
-    search: { q: 'text?', keep: 'flag?', mine: 'flag?', relay: 'flag?', seated: 'flag?', held: 'flag?', blocked: 'flag?' },
+    search: { q: 'text?', keep: 'flag?', mine: 'flag?', relay: 'flag?', seated: 'flag?', blocked: 'flag?' },
     get: { key: 'key' },
     block: { publicKey: 'key', publicLabel: 'name?' },
     unblock: { publicKey: 'key' },
@@ -16,7 +16,5 @@ module.exports = {
     // goal/G41.30: the star, on or off, on a relay or a node; only this sets it. Andy: "this button will put the star on
     // relays and puppets. AND take it away." "this is a yes." Never from a face, never from a peer.
     own: { key: 'key', own: 'bool' },
-    senders: {},
-    setSenders: { policy: 'id' },
   },
 };

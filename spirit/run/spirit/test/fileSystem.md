@@ -16,7 +16,7 @@ and `fileWritable` (can it be written). This test holds one part of it (goal/G41
   RELAY-~1/IDENTI~1.JSO ... folder names ending in a dot or space; and ::$DATA"*): an 8.3 short name, a folder or file
   name ending in a dot or a space, the ::$DATA stream and a named stream (a : in a name), each on relay-state, a server
   script or a core file.
-- **What is open stays open**: index.html and spirit/element/icon.js servable, preferences.json writable.
+- **What is open stays open**: index.html and spirit/element/icon.js servable.
 - Nothing is read or written: the gates are asked only.
 
 ## What its test must try to break

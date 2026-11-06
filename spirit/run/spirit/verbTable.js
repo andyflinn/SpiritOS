@@ -33,7 +33,7 @@
 // that turns two mistakes into loud ones:
 //
 //   COLLISION — two modules claiming `fs.save` is a crash at boot, not
-//     last-wins. Silent shadowing is real here: `unknownPolicy` appeared
+//     last-wins. Silent shadowing is real here: one export appeared
 //     twice in one object literal in hub.js and nothing said a word.
 //
 //   OUT OF NAMESPACE — a module that claims `fs` may not answer

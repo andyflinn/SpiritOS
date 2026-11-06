@@ -74,7 +74,7 @@ test.subHeading('Two modules cannot answer the same thing');
 
 {
   // SILENT SHADOWING IS REAL HERE, which is why this is a crash and not a
-  // last-one-wins: `unknownPolicy` appeared twice in one object literal
+  // last-one-wins: one export appeared twice in one object literal
   // in hub.js and nothing said a word about it for however long.
   const table = createVerbTable();
   table.claim('fs', 'fsVerbs', { 'fs.save': function () {} }, { wire: false });

@@ -4,7 +4,7 @@
 // lives under OneDrive\repo\SpiritOS), so the nodes here are genuinely
 // separate disks, not secretly shared by cloud sync. Only ever writes
 // tracked paths, so a target's own accumulated local state (relays.json,
-// preferences.json, ...) is never touched on rerun — each call refreshes
+// ...) is never touched on rerun — each call refreshes
 // the product code, nothing else.
 'use strict';
 

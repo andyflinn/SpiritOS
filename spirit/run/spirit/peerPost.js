@@ -69,10 +69,8 @@ var DEFAULT_WAIT_MS = 8000;
 //   "let strangers reach me"        — a preference, and the user's
 //   "let strangers spend anything"  — not a question anybody was asked
 //
-// So the PREFERENCE decides who you talk to (hub.js, unknownPolicy:
-// silent / hold / acquire) and the FLOOR decides what a stranger can
-// spend. `acquire` still acquires. What is bounded is the cost, never the
-// contact.
+// So the DOOR decides who you talk to (hub.js, frontDoor: a stranger is
+// ignored, goal/G43.17) and the FLOOR decides what a stranger can spend.
 //
 // It lives here rather than in a file because a floor in a file is a
 // floor somebody can lower. AGENT.md: the server is the only jail —

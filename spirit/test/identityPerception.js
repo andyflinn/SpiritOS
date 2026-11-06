@@ -207,33 +207,32 @@ test.subHeading('Knowing somebody, and merely seeing them');
 }
 
 
-test.subHeading('Waiting to be let in, and shut out again');
+test.subHeading('Seen, let in, and shut out again');
 
 {
-  const home = tmpHome('hold');
+  const home = tmpHome('seen');
 
-  // Held: a row exists so somebody can be seen waiting, and that is all
-  // it is. Not somebody this node listens to.
-  contactBook.hold(home, { publicKey: 'KEY-CAROL', publicLabel: 'carol', relay: 'https://spirit.example' });
+  // SEEN, NOT KEPT (goal/G43.17: no held status): a person a search found is remembered and in no list.
+  contactBook.noteLabel(home, 'KEY-CAROL', 'carol');
   const carol = contactBook.byPublicKey(home, 'KEY-CAROL');
-  if (carol.held === true && carol.keep === false && contactBook.listens(carol) === false) {
-    test.check('a held row is a name, not a correspondent');
+  if (carol && carol.keep === false && !('held' in carol) && contactBook.listens(carol) === false) {
+    test.check('a person seen and not kept is a name, not a correspondent, and has no held mark');
   } else {
-    test.fail('held row: ' + JSON.stringify(carol));
+    test.fail('seen row: ' + JSON.stringify(carol));
   }
 
-  // Visible in the address book, absent from the people this node hears.
-  if (contactBook.addressBook(home).length === 1 && contactBook.contacts(home).length === 0) {
-    test.check('and it is in the list you can see, not the list you can write to');
+  // In neither the address book nor the people this node hears.
+  if (contactBook.addressBook(home).length === 0 && contactBook.contacts(home).length === 0) {
+    test.check('and it is in neither the list you can see nor the list you can write to');
   } else {
     test.fail('book ' + contactBook.addressBook(home).length + ', contacts ' + contactBook.contacts(home).length);
   }
 
-  // Accepting is saying yes to somebody who wrote: kept, no longer held.
+  // Accepting is saying yes to somebody: kept.
   contactBook.accept(home, 'KEY-CAROL');
   const accepted = contactBook.byPublicKey(home, 'KEY-CAROL');
-  if (accepted.keep === true && accepted.held === false && contactBook.listens(accepted)) {
-    test.check('accepting makes them somebody you hear: kept, no longer held');
+  if (accepted.keep === true && contactBook.listens(accepted)) {
+    test.check('accepting makes them somebody you hear: kept');
   } else {
     test.fail('after accept: ' + JSON.stringify(accepted));
   }

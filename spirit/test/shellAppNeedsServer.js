@@ -61,7 +61,6 @@ function bootShell(appScripts) {
       util: { escapeHtml: spirit.core.util.escapeHtml, formatBytes: function () { return ''; } },
       fs: {
         loadFile: function (rel) {
-          if (rel === 'preferences.json') return JSON.stringify({ defaultHandlers: {}, appOverrides: {}, groups: {} });
           try { return readRun(rel); } catch (e) { return null; }
         },
         saveFile: function () { return Promise.resolve(); },

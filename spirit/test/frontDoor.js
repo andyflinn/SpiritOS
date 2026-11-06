@@ -20,11 +20,8 @@
 //
 // Two things are tested here and they are not the same thing:
 //
-//   the PREFERENCE  — silent / hold / acquire, the operator's to set
+//   the DOOR        — a stranger is ignored, always (goal/G43.17: no setting)
 //   the FLOOR       — what a stranger may spend, nobody's to set
-//
-// A user can consent to hearing from strangers. Nobody is asked to
-// consent to unbounded strangers, so the floor is in code.
 
 const fs = require('fs');
 const path = require('path');
@@ -179,76 +176,11 @@ async function theRelayIsKnownIfAccepted() {
   }
 }
 
-async function thePreference() {
-  test.subHeading('The preference decides who you talk to');
-
-  const stranger = auth.generateIdentity('nobody');
-
-  // `acquire` — writing is enough. The row is written BEFORE the packet
-  // is delivered, which is what keeps "apps see admitted senders only"
-  // true rather than nearly true.
-  const A = nodeWith({});
-  fs.writeFileSync(path.join(A.home, 'preferences.json'),
-    JSON.stringify({ unknownSenders: 'acquire' }));
-  await A.router.onRequest(RELAY, arriving(stranger, A.me, 'hello'));
-  const row = contactBook.byPublicKey(A.home, stranger.publicKey);
-  if (A.arrived.length === 1 && row) {
-    test.check('under `acquire` a stranger gets a row and is delivered');
-  } else {
-    test.fail('acquire: arrived=' + A.arrived.length + ' row=' + !!row);
-  }
-
-  // `hold` — a waiting row, and NO app delivery. The line is filed so a
-  // human can decide; an app is not handed it and asked afterwards.
-  const H = nodeWith({});
-  fs.writeFileSync(path.join(H.home, 'preferences.json'),
-    JSON.stringify({ unknownSenders: 'hold' }));
-  await H.router.onRequest(RELAY, arriving(stranger, H.me, 'hello'));
-  const held = contactBook.byPublicKey(H.home, stranger.publicKey);
-  if (held && H.arrived.length === 0) {
-    test.check('under `hold` they get a waiting row and reach no app');
-  } else {
-    test.fail('hold: row=' + !!held + ' arrived=' + H.arrived.length);
-  }
-
-  // AND WHAT THEY SENT IS NOT KEPT (goal/G16.7, reversing what stood here).
-  // This asserted the opposite — that a held packet is filed WITH its payload,
-  // because the operator asked to be told somebody is there. Andy ruled the
-  // other way, 2026-10-10: "words should be only in the traffic log, if they
-  // will reasonably be seen, the held peers should be receiving an error:
-  // request ignored, and the words not entered in the traffic log." A held
-  // line was sitting in the log in full for a person who had not yet agreed to
-  // hear from its sender; the hold keeps the COUNT, which is the waiting row
-  // above.
-  const kept = H.logged.filter(function (e) { return e.dir === 'in' && e.kind === 'request'; });
-  if (kept.length === 1 && kept[0].outcome === 'held' && !('payload' in kept[0])) {
-    test.check('and what they sent is NOT kept: the row says held and carries no payload');
-  } else {
-    test.fail('hold log: ' + JSON.stringify(H.logged));
-  }
-
-  // A broken preferences.json is not an open door. The safe answer is
-  // also the default.
-  const B = nodeWith({});
-  fs.writeFileSync(path.join(B.home, 'preferences.json'), '{ not json');
-  await B.router.onRequest(RELAY, arriving(stranger, B.me, 'hello'));
-  if (B.arrived.length === 0) {
-    test.check('and a broken preferences.json reads as silent, never as acquire');
-  } else {
-    test.fail('broken prefs admitted a stranger');
-  }
-}
-
 async function theFloor() {
   test.subHeading('The floor decides what a stranger can spend');
 
-  // NOBODY'S TO SET. Under `acquire` the operator has said "let
-  // strangers reach me" — which is a social choice, and not a choice to
-  // let unbounded strangers write to this node's disk at line speed.
-  // What is bounded is the cost, never the contact.
+  // NOBODY'S TO SET: an ignored stranger still costs this node the bytes it reads, so what a stranger may spend is bounded.
   const N = nodeWith({});
-  fs.writeFileSync(path.join(N.home, 'preferences.json'),
-    JSON.stringify({ unknownSenders: 'acquire' }));
 
   // A fresh key each time, so the per-sender bucket is not what bites —
   // this is the aggregate byte budget, which is the one an attacker with
@@ -263,7 +195,7 @@ async function theFloor() {
   }
   if (refusedAt > 1 && refusedAt <= 9) {
     test.check('a stranger flood is cut off by the byte budget — at request ' + refusedAt +
-      ' of 9KB each, under `acquire`');
+      ' of 9KB each');
   } else {
     test.fail('byte budget did not bite: first refusal at ' + refusedAt);
   }
@@ -280,17 +212,7 @@ async function theFloor() {
 
   // PER SENDER TOO, so one key cannot spend a budget in small pieces and
   // stay under the byte cap.
-  //
-  // Tested under `silent`, and the reason is a property worth naming: a
-  // sender only stays a stranger while the policy leaves them one. Under
-  // `acquire` the first message makes them a contact, so they have
-  // exactly ONE rationed request in them and the per-minute bucket can
-  // never bite — which is correct, because rationing a contact is not
-  // what the floor is for. A first draft of this check used `acquire`
-  // and found nothing, for that reason.
   const M = nodeWith({});
-  fs.writeFileSync(path.join(M.home, 'preferences.json'),
-    JSON.stringify({ unknownSenders: 'silent' }));
   const one = auth.generateIdentity('persistent');
   let stopped = 0;
   for (let n = 1; n <= 10; n += 1) {
@@ -302,23 +224,6 @@ async function theFloor() {
     test.check('one key that stays a stranger gets six a minute, whatever the size');
   } else {
     test.fail('per-sender bucket stopped at ' + stopped + ', expected 7');
-  }
-
-  // AND THE OTHER HALF OF THAT PROPERTY, said out loud so it is a
-  // decision rather than a side effect: under `acquire`, one key is
-  // rationed exactly once and is a contact from then on.
-  const K = nodeWith({});
-  fs.writeFileSync(path.join(K.home, 'preferences.json'),
-    JSON.stringify({ unknownSenders: 'acquire' }));
-  const newcomer = auth.generateIdentity('newcomer');
-  for (let n = 0; n < 10; n += 1) {
-    /* eslint-disable no-await-in-loop */
-    await K.router.onRequest(RELAY, arriving(newcomer, K.me, 'hello'));
-  }
-  if (K.arrived.length === 10 && contactBook.listens(contactBook.byPublicKey(K.home, newcomer.publicKey))) {
-    test.check('while under `acquire` one message makes them a contact, and a contact is not rationed');
-  } else {
-    test.fail('acquire newcomer: arrived=' + K.arrived.length);
   }
 
   // THE FLOOR DOES NOT BIND A FRIEND. It is about strangers, and a
@@ -368,7 +273,6 @@ async function run() {
   await theDefaultIsUnchanged();
   await knownAndStranger();
   await theRelayIsKnownIfAccepted();
-  await thePreference();
   await theFloor();
   await theAnswerIsGatedToo();
   test.reportSuccessFailureCount();

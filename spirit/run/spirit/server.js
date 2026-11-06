@@ -875,7 +875,6 @@ const server = http.createServer((req, res) => {
     //   contact            peer.acquire
     //   post               peer.post
     //   peer  {action}     contact.block / .unblock / .accept / .label
-    //   unknown-senders    contact.senders (GET) / contact.setSenders
     //   device             removed by goal/G16.2
     //   rotate-password    removed by goal/G16.2
     //
@@ -2017,11 +2016,11 @@ catch (e) {
   // and hub.js dispatched it by hand beside a dispatch the door already
   // does. The if-chain is gone: an unknown verb is now refused by a
   // table that knows every verb this node answers.
-  const STANDING = { publicKey: '', keep: false, blocked: false, held: false };
+  const STANDING = { publicKey: '', keep: false, blocked: false };
   loopbackVerbs.mount('contact', path.join(__dirname, 'contact'), {
     // The one table, searched (goal/G40.11): people and relays, with a yes-filter per flag. peer.list is gone
     // (puppets/G2); the network search it starts asks the relays.
-    'search': { request: { q: '', keep: '', mine: '', relay: '', seated: '', held: '', blocked: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
+    'search': { request: { q: '', keep: '', mine: '', relay: '', seated: '', blocked: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', person: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b); }) },
     'block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
     'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },
@@ -2031,8 +2030,6 @@ catch (e) {
     'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget'); } },
     // Read and write, told apart by name rather than by an HTTP method
     // that no longer varies. See handleSendersRead.
-    'senders': { request: {}, reply: { ok: true, policy: '' }, handler: function (rq, rs) { hub.handleSendersRead(rq, rs); } },
-    'setSenders': { request: { policy: '' }, reply: { ok: true, policy: '' }, handler: function (rq, rs) { hub.handleUnknownSenders(rq, rs, readJsonBody); } },
   }, { wire: false, by: 'hub.js' });
 
   // ── STAGE 4d — peer (2026-09-15), and the fold is done ─────────────

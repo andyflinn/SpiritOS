@@ -127,9 +127,7 @@ function cdLoad() {
 // refused should say so where you are already looking.
 function cdTitle() {
   if (!cdPerson) return 'Contact';
-  var mark = cdPerson.blocked ? '❌' + ' '
-    : cdPerson.held ? '⌛' + ' '
-    : '';
+  var mark = cdPerson.blocked ? '❌' + ' ' : '';
   var name = cdPerson.publicLabel || '';
   var mine = cdPerson.myLabel || '';
   if (mine && name && mine !== name) return mark + name + ' (' + mine + ')';
@@ -173,14 +171,12 @@ function cdBlock() {
 // the person; this one removed them, so there is nobody left to
 // paint and staying would be a screen about a contact that is not
 // one. Back to the book, which is where the change is visible.
-// Off every relay this node owns first, and the forget only if
-// each of them answered — removed, or "no such peer".
+// ONLY THE ROW (goal/G43.17; Andy: ""forget" a contact means only: delete that row from my contacts. it does NOT mean:
+// "eject them from relays i own", not at all. not the same scope of decision."). A seat on a relay you own is the
+// relay's, and is not touched here.
 function cdForget() {
-  return cdReleaseSeats().then(function (released) {
-    if (!released) { cdRender(); return; }
-    return cdPeerAction('forget').then(function (ok) {
-      if (ok) { cdChanged = true; cdApi.closeDialog(); }
-    });
+  return cdPeerAction('forget').then(function (ok) {
+    if (ok) { cdChanged = true; cdApi.closeDialog(); }
   });
 }
 
@@ -224,7 +220,8 @@ function cdRender() {
   if (cdPerson.blocked) {
     buttons = '<button type="button" class="cancel-btn" id="cd-unblock">Unblock</button>';
   } else {
-    if (cdPerson.held) {
+    // Somebody not kept, a person a search found, can be added (goal/G43.17; Andy: "those contacts CAN be added").
+    if (!cdPerson.keep && !cdPerson.mine) {
       buttons += '<button type="button" class="cancel-btn" id="cd-accept">Accept</button>';
     }
     buttons += '<button type="button" class="cancel-btn" id="cd-block">Block</button>';
@@ -248,10 +245,6 @@ function cdRender() {
   // Two presses, for the same reason Block has two: it is at the end of a
   // row somebody may have been tabbing along, and it throws away what they
   // wrote — myLabel is theirs and is not on any relay to be recovered from.
-  // WHAT IT COSTS, SAID BEFORE THE SECOND PRESS. Forget also removes the
-  // key from every relay this node owns — it no longer knows in advance
-  // whether they hold a seat (the seats were a roster's, and no relay
-  // returns one), so it acts, and "no such peer" is simply the answer.
   buttons += '<button type="button" class="cancel-btn" id="cd-forget">Forget</button>';
 
   var handle = cdPerson.publicLabel || '';
@@ -277,7 +270,7 @@ function cdRender() {
       cdEscapeHtml(cdMessage) + '</div>';
 
   cdArming('cd-block', 'Block', 'Block — press again', cdBlock);
-  cdArming('cd-forget', 'Forget', 'Forget, and remove any seat on relays you own — press again', cdForget);
+  cdArming('cd-forget', 'Forget', 'Forget — press again', cdForget);
   cdArming('cd-own', cdPerson.mine ? 'Take the star away' : 'Give it the star', cdPerson.mine ? 'Take the star away — press again' : 'Give it the star: I accept this risk — press again', cdStar);
 }
 
@@ -291,80 +284,6 @@ function cdRender() {
 // cdSeats, cdSeatTitle AND cdSeatNames STOOD HERE, reading `memberOf` off
 // the row — gone with it (2026-09-19).
 
-// ── GIVING UP THE SEATS, WHICH MUST HAPPEN FIRST ─────────────────────
-//
-// Evict, then forget. The other order strands a row: a forget that
-// succeeded followed by an eviction that failed would leave somebody
-// seated on the relay with no record of them here, and the next sweep
-// would put the contact straight back — so the screen would have appeared
-// to do something it had not.
-//
-// ONE AT A TIME rather than in parallel, because a failure has to stop
-// the rest: if the second relay refuses, the first eviction has already
-// happened and is true, but nothing is forgotten and the person can see
-// exactly where it got to.
-//
-// WHICH RELAYS: EVERY ONE THIS NODE OWNS (2026-09-19). This read the
-// seats off `memberOf`, a roster's word; now it asks nothing in advance
-// and acts on what it finds: relay.status names the relays this node owns
-// and their keys, each is told to remove this key, and "no such peer" is
-// an answer, not a failure. A node that owns no relay removes nothing.
-// A relay is addressed by key like any other peer (removePeer rides the
-// ordinary post, natterDetails does the same) — no new verb.
-function cdReleaseSeats() {
-// relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
-  // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
-  return spirit.relay.status('').then(function (r) {
-    var rows = (r.body && r.body.rows) || [];
-    var keyFor = Object.create(null);
-    var seats = [];
-    rows.forEach(function (row) {
-      if (row && row.owned && row.url && row.roll && row.roll.relayKey) {
-        keyFor[row.url] = row.roll.relayKey;
-        seats.push(row.url);
-      }
-    });
-    if (!seats.length) return true;
-    cdStatus('removing them from your relays\u2026');
-    return seats.reduce(function (chain, url) {
-      return chain.then(function (carryOn) {
-        if (!carryOn) return false;
-        var relayKey = keyFor[url];
-        if (!relayKey) {
-          cdStatus(url + ' has not answered yet, so the seat cannot be removed');
-          return false;
-        }
-        return cdApi.peerPost('relay', relayKey, { removePeer: { key: cdKey } })
-          .then(function (out) {
-            var said = out && out.body;
-            if (out && out.ok && (!said || said.ok !== false)) return true;
-
-            // ── ALREADY GONE IS NOT A FAILURE ────────────────────────
-            //
-            // `no such peer` means the relay holds no row for this key —
-            // which is the state this was trying to reach. Treating it as
-            // a refusal left the contact permanently unforgettable
-            // whenever the seat had been removed some other way, and the
-            // node's own `memberOf` had not caught up.
-            //
-            // The catching-up is fixed too (hub.statusFor reconciles on
-            // every probe now), but this has to be right on its own: the
-            // two screens race, and the one holding the button should not
-            // depend on winning.
-            var why = String((said && said.error) || (out && out.error) || '');
-            if (/no such peer/i.test(why) || (said && said.status === 404)) return true;
-
-            cdStatus('could not remove their seat on ' + url + ': ' +
-              (why || 'no answer'));
-            return false;
-          });
-      });
-    }, Promise.resolve(true));
-  }).catch(function (e) {
-    cdStatus('could not reach your relays: ' + String((e && e.message) || e));
-    return false;
-  });
-}
 
 function cdPeerAction(action, extra) {
   var body = { publicKey: cdKey };

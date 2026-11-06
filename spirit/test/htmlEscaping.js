@@ -16,8 +16,7 @@
 // A filename or a custom app name containing a double quote closed the
 // attribute early and everything after it was parsed as markup. The two
 // reachable inputs were filenames (which arrive from the filesystem, not
-// from the operator) and the app name/icon overrides, which persist to
-// preferences.json.
+// from the operator) and the app name/icon overrides.
 //
 // Being a DOM round-trip also made it untestable — no DOM in node, so no
 // test could reach it at all. Moving it into the kernel's isomorphic half

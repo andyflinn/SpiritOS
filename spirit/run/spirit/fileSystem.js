@@ -66,12 +66,7 @@ function statFile(filePath) {
 // longer core", "any non-core file is fair game", and "the notion that we dictate to a user how to organize his file
 // is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (js/coreFiles.js,
 // the commit check's own rule), relay-state/ at any depth, a sidecar's own path, and the node's root-level files,
-// all but the ones named here.
-// preferences.json (user-configurable app preferences, e.g. default file
-// handlers; deliberately root-level rather than app-scoped since these
-// choices are meant to be part of the personal dataset this project is
-// building toward, not ordinary per-app config).
-const WRITABLE_ROOT_FILES = ['preferences.json'];
+// every one of them: no root-level file is writable (goal/G43.17, the last one it named gone).
 
 // A PROCESS'S OWN STATE FOLDER (desk/G2.4). Andy: "an easier fix would be in
 // the exclusion rules for fileServable() and fileWritable() to give processes
@@ -186,7 +181,7 @@ function fileWritable(filePath) {
   if (NODE_STATE.test(canonical)) return false; // the node's alone
   if (isShellState(canonical)) return true;
   if (canonical.split('/').indexOf('relay-state') !== -1) return false;
-  if (canonical.indexOf('/') === -1) return WRITABLE_ROOT_FILES.indexOf(canonical) !== -1;
+  if (canonical.indexOf('/') === -1) return false;
   return !isCoreFile(canonical);
 }
 

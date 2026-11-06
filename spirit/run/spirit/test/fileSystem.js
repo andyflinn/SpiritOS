@@ -76,7 +76,7 @@ test.subHeading('Windows spellings of a closed path are refused, for reading and
 });
 
 test.subHeading('what is open stays open');
-[['index.html', 'fileServable'], ['spirit/element/icon.js', 'fileServable'], ['preferences.json', 'fileWritable']].forEach(function (c) {
+[['index.html', 'fileServable'], ['spirit/element/icon.js', 'fileServable']].forEach(function (c) {
   ok(ask(c[1], c[0]) === true, c[1] + ' keeps ' + c[0] + ' open', c[1] + ' closed ' + c[0] + ': the fix went too wide');
 });
 

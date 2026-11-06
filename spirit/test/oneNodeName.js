@@ -5,7 +5,7 @@
 //
 // ANDY'S RULINGS (goal/G28.3, 2026-10-16):
 //   "there should be only 1 name/label for a node."
-//   "The window title should be the nodes damn name, not some stale shit in preferences.json or something"
+//   "The window title should be the nodes damn name, not some stale shit [...]"
 //   The name is set in Info and propagated from there to every relay the node knows.
 //
 // WHAT THE TREE DOES TODAY (read at 4a655fef): the node holds two labels. nodeCard.setName writes the node NAME into

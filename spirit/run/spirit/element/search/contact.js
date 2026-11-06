@@ -16,10 +16,10 @@
 // this node its owner, goal/G19.8; "just a star in the one column, that says it all", and "if you want more info, put a
 // tooltip on the star"), presence (green or white), the name; then the configurable status column, its icons from
 // options.statuses [{status, glyph}], the first the default (goal/G4.14); the glyph itself (goal/G41.1, no icon table).
-// THE FILTER: one row, mutually exclusive (goal/G30.7): all, then mine (★), blocked, held and relays, each shown only
+// THE FILTER: one row, mutually exclusive (goal/G30.7): all, then mine (★), blocked and relays, each shown only
 // when the list holds any, each sent to contact.search as a yes-filter (mine since goal/G40.11).
 //
-// Rows come from the node's contact.search {q, mine, blocked, held, ...}, its label json {name, mine, blocked, held, ...},
+// Rows come from the node's contact.search {q, mine, blocked, ...}, its label json {name, mine, blocked, ...},
 // a view of the contacts the contact family's cache keeps; options.filters narrows them, hidden filters of the caller's. A row's name is the row's: a rename is published by the node (contact.rename,
 // shell.js) and the list asks again.
 //
@@ -27,7 +27,7 @@
 // present(key, state, title) and mark(key, status) repaint that row's cell from what the list holds, never asking the
 // node. options.face 'pane' is the list itself; the default face is the dropdown: the chosen name in a closed field, the
 // list dropping down under it. options.status(row), when given, names a row's status from the row itself (Contacts:
-// blocked, held). options.details(row, key, el) is the list's details, as before.
+// blocked). options.details(row, key, el) is the list's details, as before.
 //
 // THE CONFIGURABLE ID SELECTOR (goal/G41.13, Andy, Q2: "the loopback-api-location of the ID table, which must be formed
 // like the shadow roll : key:ID (ID-field-rules, label (label-field rules)", "table:\"loopback://api/contact/search\"",
@@ -209,12 +209,11 @@
             var out = [{ value: 'all', word: 'all' }];
             if (any('mine')(all)) out.push({ value: 'mine', icon: '⭐', word: 'my puppets' });
             if (any('blocked')(all)) out.push({ value: 'blocked', icon: '❌', word: 'blocked' });
-            if (any('held')(all)) out.push({ value: 'held', icon: '⌛', word: 'held' });
             if (any('relay')(all)) out.push({ value: 'relay', word: 'relays' });
             return out;
           },
           test: function (row, value) { return !value || value === 'all' || (row && row[value] === true) ? 1 : 0; },
-          when: function (all) { return ['mine', 'blocked', 'held', 'relay'].some(function (n) { return any(n)(all); }); },
+          when: function (all) { return ['mine', 'blocked', 'relay'].some(function (n) { return any(n)(all); }); },
         // A CALLER'S HIDDEN FILTERS (goal/G41.28; Andy: "Why can't chatter insert a hidden filter when it draws contacts?"):
         // options.filters [{ name, when, test(row) }], after its own, as probabilitySearch takes them.
         }]).concat(Array.isArray(options.filters) ? options.filters : []),

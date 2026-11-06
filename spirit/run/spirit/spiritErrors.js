@@ -347,8 +347,7 @@ define('request-failed', {
 });
 define('write-failed', {
   status: 500, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['could not write identity.json', 'could not write preferences.json',
-    'could not move the owner record'],
+  texts: ['could not write identity.json', 'could not move the owner record'],
 });
 define('internal', {
   status: 500, presence: NONE, retry: 'no', fault: 'relay',

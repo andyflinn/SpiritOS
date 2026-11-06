@@ -5,9 +5,7 @@
 // spirit.core.fs.saveFile/deleteFile API. Every negative case here is
 // verified to never touch disk (isWithinWritableRoot / the entry-script
 // and manifest checks all run before any fs write), so this is safe to run
-// against a live checkout — the one exception is preferences.json, which is
-// a real file the running server reads/writes, so it's backed up and
-// restored rather than left holding this test's probe value.
+// against a live checkout. No root-level file is writable (goal/G43.17).
 const fs = require('fs');
 const path = require('path');
 const spirit = require('../run/spirit/kernel.js');
@@ -71,35 +69,6 @@ function cleanUpDirectly(label, filePath) {
 expectWritable('shell/ (top-level file)', 'shell/__writableRootsProbe__.json');
 expectWritable('media/ (top-level file)', 'media/__writableRootsProbe__.json');
 expectWritable('published/ (top-level file)', 'published/__writableRootsProbe__.json');
-
-// ---- the one root-level file exception ----
-const preferencesBackup = spirit.core.fs.loadFile('preferences.json');
-expectWritable('preferences.json (root-level exception)', 'preferences.json');
-if (preferencesBackup !== null) {
-  const restored = spirit.core.fs.saveFile('preferences.json', preferencesBackup);
-  if (restored.ok) {
-    test.check('preferences.json restored to its original content after the probe');
-  } else {
-    test.fail('COULD NOT RESTORE preferences.json after the probe — original content: ' + preferencesBackup);
-  }
-} else {
-  // Nothing existed before the probe — deleteFile is idempotent, so this
-  // just removes the probe value rather than leaving a file the real app
-  // never created.
-  //
-  // ── AND IT REPORTS, SO THE COUNT DOES NOT MOVE ────────────────
-  //
-  // This branch was silent until 2026-09-21, so a box where the node has
-  // never run gave 12 checks and one where it has gave 13. Found by
-  // comparing a Windows run against an Ubuntu one: `preferences.json` is
-  // untracked, so a fresh clone simply does not have it.
-  //
-  // The suite was right and the COUNT was misleading — which matters now
-  // that two machines compare their harness output, because a silent
-  // difference reads as a platform difference and this one is not.
-  spirit.core.fs.deleteFile('preferences.json');
-  test.check('preferences.json did not exist before the probe, and the probe was removed');
-}
 
 // ---- a root-level file and core are NOT writable; process/ is, since goal/G30.21 (only core is protected) ----
 expectForbidden('a random root-level file', '__writableRootsProbe__.txt');

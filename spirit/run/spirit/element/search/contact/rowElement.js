@@ -1,6 +1,6 @@
 // spirit/run/spirit/element/search/contact/rowElement.js
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
-// (mine, blocked, held: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
+// (mine, blocked: the row's flags in the one table, goal/G40.11), label (the name, editable in a details dialog)
 // and add (a button on a row the owner does not keep). It reads the node's contacts as the contact family's cache
 // manager keeps them (spirit.data.contact.data, goal/G41.28), which presence, renames, the network search and every contact
 // search keep, so a peer arriving repaints that peer's dot and a rename that peer's label, and nothing else.
@@ -10,7 +10,7 @@
 // registers on create and leaves on destroy. A row found on the network joins every list through the tree.
 //
 // What a row offers depends on what it is (goal/G30.19): a kept or blocked row open (Contact), block, unblock and
-// remove (contact.forget); a held row add (peer.acquire); a relay open (Relay Details). An action asks and paints
+// remove (contact.forget); a row not decided about add (peer.acquire); a relay open (Relay Details). An action asks and paints
 // nothing: the node's confirmed change on the stream repaints. The label's editor
 // checks js/fieldRules.js (the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
 // once.
@@ -77,7 +77,7 @@
         var changes = {};
         // relay and url too (goal/G41.32; Andy: "where the fuck did the contents of the relayPanel disappear to"): the presence
         // stream can put a row on the page before the search says what it is, so a relay is known as its row says so.
-        ['present', 'name', 'keep', 'mine', 'blocked', 'held', 'relay', 'url'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
+        ['present', 'name', 'keep', 'mine', 'blocked', 'relay', 'url'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
         idx.forKey(key).forEach(function (el) { el.apply(changes); });
       });
     }
@@ -122,8 +122,8 @@
     var was = known(key) || {};
     // What it is, from the row as the page holds it, whichever came first: the search's answer or the stream.
     var relay = r.relay === true || was.relay === true;
-    // Kept, owned or blocked: the owner has decided about them, and a block has to stay undoable. A held row waits for
-    // the yes, which is Add.
+    // Kept, owned or blocked: the owner has decided about them, and a block has to stay undoable. Any other row waits
+    // for the yes, which is Add.
     function bookOf(v) { return v.keep === true || v.mine === true || v.blocked === true; }
     var relayActions = [
       // The relay's details, an element, no app (goal/G40.8), as a panel (goal/G43.18).
@@ -154,7 +154,7 @@
       key: key,
       index: index(),
       row: { key: key, name: r.name || '', keep: r.keep === true, mine: r.mine === true, blocked: r.blocked === true,
-        held: r.held === true, seated: r.seated === true, relay: relay,
+        seated: r.seated === true, relay: relay,
         present: was.present !== undefined ? was.present : r.present, url: r.url || '', publicLabel: r.publicLabel || '' },
       fields: [
         // The dot, and what it means on its title, where the question is asked (Contacts' wording, goal/G2.9).
@@ -165,9 +165,9 @@
             : 'not known — no relay you are connected to mentions this key';
           return iconPlace(dot, title);
         } },
-        { name: 'status', from: ['mine', 'blocked', 'held'], paint: function (v) {
+        { name: 'status', from: ['mine', 'blocked'], paint: function (v) {
           // The cell is the mark alone, so the cell itself is its place (iconsIn).
-          return v.blocked ? '❌' : v.held ? '⌛' : v.mine ? '⭐' : '';
+          return v.blocked ? '❌' : v.mine ? '⭐' : '';
         } },
         // A RELAY'S LABEL IS MARKED (goal/G41.32; Andy: "the contact list should do something to mark a relay, like print its label in bold-italic.").
         { name: 'label', from: ['name', 'relay'], rule: nameRules(), paint: function (v) { return v.relay === true ? '<b><i>' + esc(v.name) + '</i></b>' : esc(v.name); },

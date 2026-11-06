@@ -2,11 +2,11 @@
 
 // spirit/test/chosenMarks.js
 // CHOOSING IS A MARK ON WHAT THE MACHINE REMEMBERS (0021, R38). Since goal/G40.11 the marks are the one table's flags:
-// keep (was "added"), held, ignored, blocked; the book IS the table, so there is no separate save to mark from.
+// keep (was "added"), ignored, blocked (held went with goal/G43.17); the book IS the table, so there is no separate save to mark from.
 //
 //   Andy: "ignoring means only: mark this row as "ignored"." — "it's the
 //   chosen-mark that gives protection from eviction, if the memory
-//   overflows. the shedded rows will first be ignored, then held, once the
+//   overflows. the shedded rows will first be ignored, [...] once the
 //   memory is full with 'added' statuses no more can be chosen/added until
 //   eviction by blocking or ignoring...." — "it's just reality."
 //
@@ -47,9 +47,9 @@ test.subHeading('The sweep sheds in order, and never reaches a kept row');
 
   // ADDED ARE THE OLDEST, on purpose: if age alone ordered the sweep they
   // would be the first to go. The mark has to beat the clock.
-  // BLOCKED rows are held as well: a block outranks the hold, so they go with the ignored, before the held.
-  const tiers = [['ADDED', { keep: true }], ['HELD', { held: true }],
-    ['IGNORED', { ignored: true }], ['BLOCKED', { held: true, blocked: true }], ['STRANGER', null]];
+  // BLOCKED rows go with the ignored.
+  const tiers = [['ADDED', { keep: true }],
+    ['IGNORED', { ignored: true }], ['BLOCKED', { blocked: true }], ['STRANGER', null]];
   tiers.forEach(function (t) {
     for (let n = 0; n < 60; n += 1) {
       c.tick(10);
@@ -74,22 +74,21 @@ test.subHeading('The sweep sheds in order, and never reaches a kept row');
     steps += 1;
     const s = left('STRANGER');
     const i = left('IGNORED') + left('BLOCKED');
-    const h = left('HELD');
     // A later tier may only lose rows once every earlier tier is empty.
-    if ((i < 120 && s > 0) || (h < 60 && (s > 0 || i > 0))) orderKept = false;
+    if (i < 120 && s > 0) orderKept = false;
     if (left('ADDED') !== 60) addedKept = false;
   }
 
   if (orderKept && steps > 3) {
-    test.check('squeezed ' + steps + ' times: strangers went first, then ignored and blocked, then held — never out of turn');
+    test.check('squeezed ' + steps + ' times: strangers went first, then ignored and blocked — never out of turn');
   } else {
     test.fail('order broken: strangers ' + left('STRANGER') + ', ignored+blocked ' +
-      (left('IGNORED') + left('BLOCKED')) + ', held ' + left('HELD'));
+      (left('IGNORED') + left('BLOCKED')));
   }
-  if (addedKept && left('HELD') === 0) {
+  if (addedKept && left('IGNORED') + left('BLOCKED') === 0) {
     test.check('and all 60 kept people survived a squeeze that took everyone else, though they were the oldest');
   } else {
-    test.fail('kept left: ' + left('ADDED') + ', held left: ' + left('HELD'));
+    test.fail('kept left: ' + left('ADDED') + ', ignored and blocked left: ' + (left('IGNORED') + left('BLOCKED')));
   }
 }
 
@@ -137,17 +136,15 @@ test.subHeading('The owner\'s acts are flags on the row');
   const H = home('book');
   const store = nodeStore.open(H);
   contactBook.acquire(H, { publicKey: 'KEY-ANN', publicLabel: 'ann' });
-  contactBook.hold(H, { publicKey: 'KEY-BOB', publicLabel: 'bob' });
   contactBook.acquire(H, { publicKey: 'KEY-CAT', publicLabel: 'cat' });
   contactBook.setBlocked(H, 'KEY-CAT', true);
 
   const ann = store.seen.get('KEY-ANN');
-  const bob = store.seen.get('KEY-BOB');
   const cat = store.seen.get('KEY-CAT');
-  if (ann && ann.keep && !ann.held && bob && bob.held && !bob.keep && cat && cat.blocked && cat.keep) {
-    test.check('acquired is kept, held is held, and a block sits beside keep without erasing it');
+  if (ann && ann.keep && !('held' in ann) && cat && cat.blocked && cat.keep) {
+    test.check('acquired is kept, a row has no held mark, and a block sits beside keep without erasing it');
   } else {
-    test.fail('marks: ' + JSON.stringify({ ann: ann, bob: bob, cat: cat }));
+    test.fail('marks: ' + JSON.stringify({ ann: ann, cat: cat }));
   }
   // Marked without ever being seen: a pasted key has no date and no
   // presence, and the row says so rather than guessing.
@@ -159,7 +156,7 @@ test.subHeading('The owner\'s acts are flags on the row');
 
   contactBook.forget(H, 'KEY-ANN');
   const after = store.seen.get('KEY-ANN');
-  if (after && !after.keep && !after.held && !after.blocked) {
+  if (after && !after.keep && !after.blocked) {
     test.check('forgetting somebody takes the mark off and leaves the memory — they are a stranger again, not erased');
   } else {
     test.fail('after forget: ' + JSON.stringify(after));
@@ -172,51 +169,20 @@ test.subHeading('The door marks a stranger it turned away, and nobody the owner 
   const H = home('door');
   hub.remember(H, 'KEY-STRANGER', 'drop', '');
   const s = hub.shadow(H).get('KEY-STRANGER');
-  if (s && s.ignored === true && !s.keep && !s.held) {
-    test.check('a stranger dropped under Ignore is remembered as ignored, not forgotten');
+  if (s && s.ignored === true && !s.keep) {
+    test.check('a stranger the door drops is remembered as ignored, not forgotten');
   } else {
     test.fail('stranger: ' + JSON.stringify(s));
   }
 
-  // A held person also gets 'drop' from the door — not listened to yet —
-  // and what the owner decided must outrank what the door did.
-  contactBook.hold(H, { publicKey: 'KEY-WAITING', publicLabel: 'w' });
+  // A blocked person also gets 'drop' from the door, and what the owner decided must outrank what the door did.
+  contactBook.setBlocked(H, 'KEY-WAITING', true);
   hub.remember(H, 'KEY-WAITING', 'drop', '');
   const w = hub.shadow(H).get('KEY-WAITING');
-  if (w && w.held === true && w.ignored === false) {
-    test.check('and somebody the owner is holding stays held when the door turns them away');
+  if (w && w.blocked === true && w.ignored === false) {
+    test.check('and somebody the owner blocked stays blocked, not ignored, when the door turns them away');
   } else {
     test.fail('waiting: ' + JSON.stringify(w));
-  }
-}
-
-test.subHeading('Under Acquire, a full memory adds nobody');
-
-{
-  const H = home('acquire');
-  fs.mkdirSync(path.join(H, 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(H, 'spirit', 'state', 'node.json'), JSON.stringify({ cacheMaxMB: 1 }));
-  const S = hub.shadow(H);
-  const store = nodeStore.open(H);
-  // IN BULK, a thousand to a transaction, asking for room only between
-  // batches: a megabyte is thousands of people, and one measured add at a
-  // time is longer than the harness will wait.
-  let n = 0;
-  while (S.roomToAdd('KEY-NOBODY-YET') && n < 20000) {
-    store.transaction(function () {
-      for (let k = 0; k < 1000; k += 1, n += 1) {
-        store.seen.put(key('OWN', n), { label: 'own' + n, seen: n + 1 });
-        store.seen.putRoute(key('OWN', n), { at: 'R', url: 'https://relay.example', told: n + 1 });
-        store.seen.set(key('OWN', n), { keep: true });
-      }
-    });
-  }
-  const added = hub.remember(H, 'KEY-WRITER', 'admit', '');
-  const writer = contactBook.byPublicKey(H, 'KEY-WRITER');
-  if (!added && !(writer && writer.keep) && n < 20000) {
-    test.check('with 1 MB spent on ' + n + ' kept people, a stranger who writes is heard and not added');
-  } else {
-    test.fail('added=' + added + ' after ' + n);
   }
 }
 

@@ -22,11 +22,6 @@
   // could open this file" registry behind "Open with".
   var extensionHandlers = {};
 
-  // Default-handler choices persist here rather than in any app's own
-  // data, because they're explicitly meant to be part of the personal
-  // dataset this project is building toward (see preferences.json in
-  // .gitignore), not ordinary app config — hence root-level, not
-  // app-scoped.
   // ---- First run ---- STOOD HERE: the gate that showed an unbound node Natter alone and opened it. Gone with Natter
   // (goal/G30.7; Andy, 2026-10-20: "i found that to be untrue, because now the node generates it's own pubKey before it
   // even listens for the first time"): a node is named at its first start, so the gate never closed.
@@ -124,29 +119,11 @@
     renderActive();
   }
 
-  var preferencesRaw = spirit.core.fs.loadFile('preferences.json');
+  // THE OLD SHELL'S PREFERENCES LIVE IN MEMORY ONLY (goal/G43.17; Andy: "i want to remove that information and all the code
+  // that references it, gone."): a reload starts from these empty defaults. Its per-app overrides ({name?, icon?, group?},
+  // keyed by app id), its handler choices (file extension -> app) and its groups ({name, icon}, keyed by a shell id).
   var preferences = { defaultHandlers: {}, appOverrides: {}, groups: {} };
-  if (preferencesRaw != null) {
-    try {
-      preferences = JSON.parse(preferencesRaw);
-      preferences.defaultHandlers = preferences.defaultHandlers || {};
-      // Sparse, per-app user overrides — {name?, icon?, group?} — keyed by
-      // app id. A key's absence means "use the app's own default for that
-      // property," so nothing changes for anyone until a property is
-      // actually customized. Named distinctly from defaultHandlers, which
-      // is a different kind of preference (file extension -> handler app).
-      preferences.appOverrides = preferences.appOverrides || {};
-      // User-created group definitions ({name, icon}), keyed by a
-      // shell-generated id (never the group's own name — see createGroup).
-      // Membership lives in appOverrides[appId].group, not here — this is
-      // just the group's own identity.
-      preferences.groups = preferences.groups || {};
-    } catch (e) { /* malformed — fall back to empty defaults */ }
-  }
-
-  function savePreferences() {
-    spirit.core.fs.saveFile('preferences.json', JSON.stringify(preferences, null, 2));
-  }
+  function savePreferences() { /* nothing is kept past the page */ }
 
   // An app's id is its folder once it is a dynamic app: 'jobs' becomes
   // 'shell/jobs' the day Jobs moves into app/jobs/. Everything the operator
@@ -163,8 +140,7 @@
   // to 5.4); Files and Groups keep their index.html ids until they
   // follow.
   //
-  // Entries stay forever. The operator whose preferences.json still says
-  // 'stats' may be opening this shell for the first time in a year.
+  // Entries stay forever.
   // DEPRECATED(D7, expires: alpha) — preferences naming apps by their old
   // bare ids, rewritten to app/… at load.
   // See design/DEPRECATIONS.md (decision 0014).
@@ -447,8 +423,7 @@
   //
   // An intrinsic app reads its shipped name, override or not — the same
   // both-sides lock effectiveGroup uses: refusing the write alone would
-  // still leave a preferences.json written before the app was pinned (or
-  // edited by hand) renaming it on every load.
+  // still leave an override set before the app was pinned renaming it.
   function effectiveName(app) {
     if (app.intrinsic || !app._scriptPath) return app.name;
     var override = preferences.appOverrides[app.id];
@@ -476,8 +451,7 @@
   // in setAppOverride) so this is only ever meaningful for _scriptPath apps.
   //
   // An intrinsic app is in the Spirit group and the override is not
-  // consulted at all: a stored "none" from before it was pinned, or a
-  // hand-edited preferences.json, must not be able to strand it. This is
+  // consulted at all: a "none" from before it was pinned must not be able to strand it. This is
   // the read side of the same lock setAppOverride enforces on the write
   // side — both, because either alone leaves a way in.
   function effectiveGroup(app) {

@@ -2,17 +2,17 @@
 // THE CONTACTS LIST, A DROP-IN SHELL ELEMENT (goal/G30.19, G30.20). Contacts draws it as a pane, and Join as its contact
 // step; grants and introSpector draw it as a dropdown (opts.face, placeholder, all, pick(row, key)). The box:
 //   - One search in two tiers. contact.search answers at once from the one table (goal/G40.11): the people and relays
-//     the owner keeps, owns, holds or blocked; and starts a network search on the node, whose finds land in the table
-//     held, each streaming in as one row. All of it lands in
+//     the owner keeps, owns or blocked; and starts a network search on the node, whose finds stream in, one row each,
+//     stored as nothing (goal/G43.17). All of it lands in
 //     data.contacts, the faceless layer (spirit/data.js, goal/G30.16), and this list is a view of it: every list
 //     of contacts on the page shows the same rows.
 //   - One list, cached by key: one row per ID, a relay as well as a person. One row of filters instead of two folds:
-//     all, my puppets, blocked, held, relays, and at its end a network toggle, off at first (box v8): on, the held rows
-//     the owner has not decided about show as well. Columns: presence, status, label (sorts as text), and Add on a row
+//     all, my puppets, blocked, relays, and at its end a network toggle, off at first (box v8): on, the rows the owner
+//     has not decided about show as well. Columns: presence, status, label (sorts as text), and Add on a row
 //     the owner does not keep.
 //   - Each row is a contactElement and keeps itself current; this paints no presence.
-//   - Pressing a row opens it: Contact for a person kept, Relay Details for a relay. A held row asks that node who it
-//     is and says so.
+//   - Pressing a row opens it: Contact for a person kept, Relay Details for a relay. A row not decided about asks that
+//     node who it is and says so.
 //   - It fills as soon as it is drawn; an empty search answers like any other.
 // This node's relays are rows of the same search (goal/G40.11: relay.search went), each keyed by its ID, its url on it.
 //
@@ -29,12 +29,12 @@
   // The contacts it is a view of are the contact family's cache (goal/G41.28), its manager loaded with it.
   window.spirit.cacheManager('contact');
   // ICONS AS THEMSELVES (goal/G30.21): the glyph is written, never a key into a table.
-  // A row with that flag: mine, blocked, held, or relay.
+  // A row with that flag: mine, blocked, or relay.
   function is(kind) {
     return function (row) { return !!row && row[kind] === true; };
   }
-  // Held and nothing else: somebody the owner has not decided about (the network's finds, a stranger who wrote).
-  function undecided(row) { return !!row && row.held === true && row.keep !== true && row.mine !== true && row.blocked !== true && row.relay !== true; }
+  // Somebody the owner has not decided about: the network's finds, streamed in and stored as nothing (goal/G43.17).
+  function undecided(row) { return !!row && row.keep !== true && row.mine !== true && row.blocked !== true && row.relay !== true; }
 
   // ONE ROW OF FILTERS (box v8; Andy: "KILL that [all] AND KILL [book], put [network] at the very and as a toggle, when
   // its on then it shows peers from the network ALSO").
@@ -46,13 +46,12 @@
         var out = [{ value: 'all', word: 'all' }];
         if (all.some(is('mine'))) out.push({ value: 'mine', icon: '⭐', word: 'my puppets' });
         if (all.some(is('blocked'))) out.push({ value: 'blocked', icon: '❌', word: 'blocked' });
-        if (all.some(is('held'))) out.push({ value: 'held', icon: '⌛', word: 'held' });
         if (all.some(is('relay'))) out.push({ value: 'relay', word: 'relays' });
         return out;
       },
       test: function (row, v) { return !v || v === 'all' || is(v)(row) ? 1 : 0; },
-      when: function (all) { return ['mine', 'blocked', 'held', 'relay'].some(function (n) { return all.some(is(n)); }); } },
-    // At its very end. Off, the rows the owner has decided about and this node's relays; on, the held ones as well.
+      when: function (all) { return ['mine', 'blocked', 'relay'].some(function (n) { return all.some(is(n)); }); } },
+    // At its very end. Off, the rows the owner has decided about and this node's relays; on, the network's finds as well.
     { name: 'network', word: 'network', toggle: true,
       test: function (row, on) { return undecided(row) ? (on ? 1 : 0) : 1; } },
     // NO NAMELESS ROWS (goal/G40.10, box v15): the presence data marks every key a relay reports present, the relay's own
@@ -79,7 +78,7 @@
       });
     }
 
-    // A held row: that node is asked who it is (its card, checked against the key it was addressed to).
+    // A row not decided about: that node is asked who it is (its card, checked against the key it was addressed to).
     function askCard(row, key) {
       say('asking them…');
       Promise.resolve(api.peerPost('', key, { card: true })).then(function (r) {
