@@ -11,6 +11,7 @@
 //     one bubbling `change` on a pick, which shows that app's detail under the list; refresh() asks again
 //     options.face 'pane' is the list itself, 'tiles' the apps as tiles; the default is the dropdown
 //     options.toggle true: a pane or tiles flips between the two (goal/G43.9)
+//     options.hide   the app keys left out of every face (goal/G43.18: the shell leaves itself out)
 //
 // ONE appSelector, THREE FACES (goal/G43.9; Andy, box: "One appSelector, with three faces: dropdown, pane and tiles."): "tiles
 // shows active only, pane shows all", "and the picks differ: tiles launches, pane shows the detail with its button." Both open on
@@ -107,7 +108,12 @@
       stack = window.spirit.elements.panel.create(root, listBox);
       made = window.spirit.element.search.app.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
-        visible: function (row) { return face !== 'tiles' || (!!row && row.active === true); } });
+        // o.hide, the keys left out of every face (goal/G43.18; Andy: "the shell should exclude itself completely from the
+        // app-list"): the shell app hands its own.
+        visible: function (row) {
+          if (row && Array.isArray(o.hide) && o.hide.indexOf(String(row.key || '')) !== -1) return false;
+          return face !== 'tiles' || (!!row && row.active === true);
+        } });
     });
 
     root.refresh = function () { if (made) made.refresh(); };
