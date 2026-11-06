@@ -25,6 +25,7 @@ A server's DEBUG, as a rowFormToggle (goal/G43.15). Its test is `./serverDEBUG.j
 
 ### In the appSelector's detail
 
+- The detail loads `changeAppIcon.js` and `changeAppLabel.js`, as it uses them.
 - The DEBUG row comes right after the Deactivate row.
 - Every row of the detail carries its own 1em above it, and the gap between two rows is that 1em.
 

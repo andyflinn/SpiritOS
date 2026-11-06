@@ -263,15 +263,22 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('the box: "On the agent\'s right icon strip, the server\'s tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG"');
   ok(!!SERVER_TOOL && /⚙/.test(String(SERVER_TOOL.icon)) && !/🐞/.test(String(SERVER_TOOL.icon)), 'the server\'s tool on the right strip takes ⚙', 'its icon: ' + short(SERVER_TOOL && SERVER_TOOL.icon));
   const debugs = [];
-  global.window.spirit.elements.serverDEBUG = { create: function (into, o) { debugs.push({ into: into, o: o || {} }); return { destroy: function () {} }; } };
+  const made = [];
+  global.window.spirit.elements.serverDEBUG = { create: function (into, o) { debugs.push({ into: into, o: o || {} }); made.push('serverDEBUG'); return { destroy: function () {} }; } };
+  // goal/G43.15, the box: "the agent's ⚙ panel shows both above serverDEBUG".
+  ['changeAppIcon', 'changeAppLabel'].forEach(function (n) { global.window.spirit.elements[n] = { create: function (into, o) { made.push(n + ':' + ((o || {}).key || '')); return { destroy: function () {} }; } }; });
   const callsBefore = w.calls.length;
-  const rb = box('right'); SERVER_TOOL.mount(rb); await settle();
+  var rb = box('right'); SERVER_TOOL.mount(rb); await settle();
   ok(w.required.indexOf('spirit/app/appSelector/serverDEBUG.js') !== -1, 'its mount loads spirit/app/appSelector/serverDEBUG.js through spirit.require', 'required: ' + short(w.required));
-  ok(debugs.length === 1 && debugs[0].into === rb && debugs[0].o.key === 'agent', 'and makes serverDEBUG for the agent in the box it is handed', 'serverDEBUGs: ' + short(debugs.map(function (d) { return { here: d.into === rb, key: d.o.key }; })));
+  ok(debugs.length === 1 && debugs[0].o.key === 'agent', 'and makes serverDEBUG for the agent', 'serverDEBUGs: ' + short(debugs.map(function (d) { return { here: d.into === rb, key: d.o.key }; })));
   ok(rb.inputs.length === 0, 'it draws no checkbox of its own', 'inputs: ' + rb.inputs.length);
   ok(w.calls.length === callsBefore, 'and calls no debug verb of the agent\'s', 'debug calls: ' + short(w.calls.slice(callsBefore)));
   ok(!/\.debug\(/.test(source), 'the app\'s code calls no agent debug verb', 'browserAgent.js still calls .debug(');
+  ok(['spirit/app/appSelector/changeAppIcon.js', 'spirit/app/appSelector/changeAppLabel.js'].every(function (p) { return w.required.indexOf(p) !== -1; }), 'its mount loads changeAppIcon.js and changeAppLabel.js', 'required: ' + short(w.required));
+  ok(JSON.stringify(made) === JSON.stringify(['changeAppIcon:agent', 'changeAppLabel:agent', 'serverDEBUG']), 'and makes the icon, then the label, for the agent, above serverDEBUG', 'made, in order: ' + short(made));
   delete global.window.spirit.elements.serverDEBUG;
+  delete global.window.spirit.elements.changeAppIcon;
+  delete global.window.spirit.elements.changeAppLabel;
 
   test.subHeading('it bootstraps its own components');
   const w3 = world();

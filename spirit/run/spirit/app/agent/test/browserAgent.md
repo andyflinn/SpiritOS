@@ -28,6 +28,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 - The server's tool on the right strip takes ⚙, not 🐞, and its panel shows serverDEBUG for the agent (goal/G43.15; Andy:
   *"agent will in the server-config, on the right icon strip the ⚙ icon instead of 🐞"*): its mount loads
   `spirit/app/appSelector/serverDEBUG.js` and makes it in its box. It draws no checkbox and calls no debug verb of the agent's.
+  Above serverDEBUG it shows the agent's icon and label, through changeAppIcon and changeAppLabel (goal/G43.15).
 
 ## Requirements (goal/G41.21, box v17)
 
