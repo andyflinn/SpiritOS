@@ -51,9 +51,9 @@ window.spirit.cacheManager = function (name) {
   return Promise.resolve(true);
 };
 load(path.join(JS, 'rowElement.js'));
-load(path.join(JS, 'contact', 'rowElement.js'));
+load(path.join(JS, 'search', 'contact', 'rowElement.js'));
 const dataSubscribed = subscribers.length;
-load(path.join(JS, 'contact', 'listElement.js'));
+load(path.join(JS, 'search', 'contact', 'listElement.js'));
 const L = window.spirit.element.search.contact.listElement;
 const F = {}; L.filters.forEach(function (f) { F[f.name] = f; });
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
