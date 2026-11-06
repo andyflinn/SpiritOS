@@ -1,5 +1,5 @@
 {
- "change": 152804,
+ "change": 152806,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,16 +145,14 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -13753,12 +13751,11 @@
    "id": "goal/G43.18",
    "title": "search elements renamed into spirit/element/search/",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 29,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
