@@ -231,7 +231,7 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     ok(barIs(await T('bars()'), '✏️ Text Editor: notes.txt'), 'it covers all of Files: one bar in view, ✏️ Text Editor: notes.txt', 'bars: ' + short(await T('bars()')));
     const overList = barIs(await T('bars()'), /notes\.txt$/);
     ok(overList && (await T('rows()')).length === 0, 'the list is out of view while the file is over it', 'rows: ' + short(await T('rows()')));
-    ok(overList && (await T('pickers()')) === 0, 'the box: "They take a file when mounted: with one they show no file picker"', 'pickers: ' + (await T('pickers()')));
+    ok(overList && (await T('pickers()')) === 1, 'the box: "show their whole selves with it, the file picker too, also when launched from file"', 'pickers: ' + (await T('pickers()')));
     await T('close("notes.txt")');
     ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1'), 'its ✕ shows the list again', 'the app: ' + short(await T('text()')));
     ok((await T('rows()')).indexOf('zzFiles/notes.txt') !== -1 && (await T('words()')) === 'zzquokka', 'the list is as it was left, its words kept', 'words: ' + short(await T('words()')));
@@ -247,7 +247,7 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
       const shown = await waitFor('count(' + JSON.stringify(o[1]) + ') > 0', 10000);
       ok(shown, name + ' opens in media, as ' + o[1], name + ': ' + o[1] + ' ' + (await T('count(' + JSON.stringify(o[1]) + ')')) + ', ' + short(await T('text()')));
       ok(shown && barIs(await T('bars()'), o[2] + ' Media Viewer: ' + name), 'its one bar: ' + o[2] + ' Media Viewer: ' + name + ', the file\'s own icon (Q15)', name + ': bars ' + short(await T('bars()')));
-      ok(shown && (await T('pickers()')) === 0 && (await T('count(".CodeMirror")')) === 0, name + ': no file picker, and no text', name + ': pickers ' + (await T('pickers()')));
+      ok(shown && (await T('pickers()')) === 1 && (await T('count(".CodeMirror")')) === 0, name + ': its whole self, the file picker too, and no text', name + ': pickers ' + (await T('pickers()')));
       const own = String(await T('text()'));
       ok(shown && times(own, new RegExp(name.replace('.', '\\.'), 'g')) === 1 && own.indexOf('MIME type') === -1, name + ': separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
       await T('close(' + JSON.stringify(name) + ')');
