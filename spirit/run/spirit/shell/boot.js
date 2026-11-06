@@ -288,6 +288,9 @@
       return spirit.require('spirit/app/' + name + '/' + name + '.js').then(function () {
         var E = window.spirit.elements && window.spirit.elements[name];
         desktop.innerHTML = '';
+        // THE SHELL'S AREA IS NO DESKTOP GRID (Andy, of his face.html: "all icons of the app.search are in a thin strip in the left
+        // of my browser window"): a fill column the shell lays itself out in (face.css, #desktop.shell-area).
+        desktop.classList.add('shell-area');
         desktop.hidden = false;
         if (E && typeof E.create === 'function') E.create(desktop);
       });
