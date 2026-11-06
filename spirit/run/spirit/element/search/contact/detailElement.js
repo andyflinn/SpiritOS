@@ -25,6 +25,11 @@
 // a hub verb, and the one file Contacts keeps (prefs.json, the stranger
 // policy) belongs to the list rather than to any row.
 
+// ONE PANEL PER ROW (goal/G43.18; Andy: "now you need to give each contact row its own detail panel, similar to the concept
+// where tabs in "agent" can hold the same ui for different rows"): everything below is one panel's own, made per create, its
+// parts found inside its own box, so two people open side by side never share a screen.
+function cdInstance(cdRoot) {
+function cdById(id) { return cdRoot.querySelector('[id="' + id + '"]'); }
 var cdEscapeHtml = spirit.escapeHtml;
 var cdApi = null;
 
@@ -55,7 +60,7 @@ var cdMessage = '';
 
 function cdStatus(text) {
   cdMessage = String(text || '');
-  var el = document.getElementById('cd-status');
+  var el = cdById('cd-status');
   if (el) el.textContent = cdMessage;
 }
 
@@ -151,7 +156,7 @@ function cdTitle() {
 // the button must reset, back to its original state, and the whole are-you-sure procedure must be done from scratch"),
 // and keeps one armed at a time; this screen says only what each says and what its second press does.
 function cdArming(id, label, armedLabel, run) {
-  var button = document.getElementById(id);
+  var button = cdById(id);
   var E = window.spirit && window.spirit.element && window.spirit.element.armingButton;
   if (!button || !E) return;
   E.attach(button, { label: label, armedLabel: armedLabel, run: run, api: cdApi });
@@ -180,7 +185,7 @@ function cdForget() {
 }
 
 function cdRender() {
-  var body = document.getElementById('cd-body');
+  var body = cdById('cd-body');
   if (!body) return;
 
   if (cdApi) cdApi.setScreenTitle(cdTitle());
@@ -387,14 +392,14 @@ var cdPage = ({
 
     // Delegated, because the panel is repainted after every decision and
     // a handler bound to a button would go with it.
-    document.getElementById('cd-body').addEventListener('click', function (event) {
+    cdById('cd-body').addEventListener('click', function (event) {
       var id = event.target && event.target.id;
       // Block and Forget are not here: each is an armingButton (cdArming).
       if (id === 'cd-accept') { cdPeerAction('accept'); return; }
       if (id === 'cd-unblock') { cdPeerAction('unblock'); return; }
     });
 
-    document.getElementById('cd-body').addEventListener('change', function (event) {
+    cdById('cd-body').addEventListener('change', function (event) {
       if (!event.target || event.target.id !== 'cd-label-input') return;
       var typed = event.target.value.trim();
       // Checked here before anything is asked, by the same rule the node
@@ -426,6 +431,8 @@ var cdPage = ({
   },
 
 });
+return cdPage;
+}
 // The armingButton it draws Block and Forget with, it loads itself (goal/G41.3), through spirit.require.
 if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/armingButton.js');
 // A PANEL, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic shell elements"; since
@@ -448,8 +455,9 @@ Object.assign(['search', 'contact', 'detailElement'].reduce(function (o, k) { re
       container.appendChild(note);
       return done;
     }
-    cdPage.mount(container, o.api);
-    cdPage.open(o);
+    var page = cdInstance(container);
+    page.mount(container, o.api);
+    page.open(o);
     return done;
   },
   // NO open OF ITS OWN (goal/G43.18): it opens as a panel over what mounted its list (search/contact/rowElement.js, openDetails),

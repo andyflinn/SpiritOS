@@ -229,7 +229,8 @@ function ndAsk(verb, body) {
   });
 }
 
-function ndBody() { return document.getElementById('nd-body'); }
+// Inside this panel's own box (goal/G43.18: one panel per row, two relays side by side never share a screen).
+function ndBody() { return ndContainer.querySelector('[id="nd-body"]'); }
 
 // ---- what this mailbox says about itself -----------------------------
 
@@ -462,7 +463,7 @@ function ndLeave(button) {
   if (!ndApi) return;
   return ndApi.verb('relay.leave', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
-    var out = document.querySelector('.nd-leave-out');
+    var out = ndContainer.querySelector('.nd-leave-out');
     if (said.ok) { if (out) out.textContent = 'You left this relay.'; return; }
     button.disabled = false;
     if (out) out.textContent = 'not left: ' + (said.error || 'no answer');
@@ -477,7 +478,7 @@ function ndRemove() {
   return ndApi.verb('relay.remove', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
     if (said.ok) { ndApi.closeDialog(); return; }
-    var out = document.querySelector('.nd-remove-out');
+    var out = ndContainer.querySelector('.nd-remove-out');
     if (out) out.textContent = 'not removed: ' + (said.error || 'no answer');
   });
 }
