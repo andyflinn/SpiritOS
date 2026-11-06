@@ -1,5 +1,5 @@
 {
- "change": 150325,
+ "change": 152804,
  "goal": "goal/G43",
  "items": [
   {
@@ -150,10 +150,11 @@
     "ollama agent node"
    ],
    "live": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -12416,28 +12417,28 @@
    "id": "goal/G43.17",
    "title": "port files to spirit/app/file/",
    "goal": "goal/G43",
-   "status": "running file.js, suite 1 of 1, 24 tests",
-   "statusTone": "code",
-   "with": "claude-windows",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
    "version": 21,
    "buttons": [
     "end-design",
+    "waive",
     "pushgoal",
+    "delete",
     "verify"
    ],
    "blocking": [
     "goal/G43.16"
    ],
-   "blocked": [
-    "goal/G43.18"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": true,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "design": true,
    "fileCount": 49,
    "green": true,
@@ -12548,10 +12549,9 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
@@ -13753,15 +13753,13 @@
    "id": "goal/G43.18",
    "title": "search elements renamed into spirit/element/search/",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
-   "version": 18,
+   "version": 29,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.17"
@@ -13771,20 +13769,20 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 190,
+   "fileCount": 192,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "7c9e55f273269af642e429873688bf3767f10e61",
+   "redCommit": "28e353db",
    "waived": false,
    "rules": [
     {
@@ -13808,16 +13806,16 @@
    ],
    "phaseRules": [
     {
+     "key": "rule/31",
+     "version": 74
+    },
+    {
      "key": "rule/30",
      "version": 72
     },
     {
      "key": "rule/28",
      "version": 68
-    },
-    {
-     "key": "rule/27",
-     "version": 66
     },
     {
      "key": "rule/25",
@@ -13838,10 +13836,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -13884,21 +13878,32 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
-   "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/shell/test/boot.js not run: missing from this checkout",
+    "spirit/run/spirit/app/appSelector/test/listElement.js not run: missing from this checkout",
+    "spirit/run/spirit/app/appSelector/test/rowElement.js not run: missing from this checkout",
+    "spirit/run/spirit/app/shell/test/shell.js red: FAILURE #1.1: Home shell: opened true, it lists [\"Shell\",\"Zz Shell\"]",
+    "spirit/run/spirit/app/shell/test/shell.js red: FAILURE #1.2: Face shell: opened true, it lists [\"Shell\",\"Zz Shell\"]",
+    "spirit/run/spirit/app/test/appSelector.js red: FAILURE #1.1: forms in the panel: [{\"icon\":\"🦻\",\"words\":\"Hearing\",\"input\":null,\"button\":\"✕\",\"lastIsButton\":true},{\"icon\":\"✏️\",\"words\":\"Icon 🦻choose an icon… ▾🔎✕Search\",\"input\":\"\",\"button\":\"Change\",\"lastIsButton\":true},{\"icon\":\"✏️\",\"words\":\"Label\",\"inp",
+    "spirit/run/spirit/app/test/appSelector.js red: FAILURE #1.2: row 2: {\"icon\":\"🟢\",\"words\":\"Deactivate Hearing\",\"input\":null,\"button\":\"🔴\",\"lastIsButton\":true}",
+    "spirit/run/spirit/app/test/appSelector.js red: FAILURE #1.3: after close: 🔎",
+    "spirit/run/spirit/app/test/appSelector.js red: FAILURE #1.4: with both: {\"icon\":\"🟢\",\"words\":\"Deactivate Hearing face\",\"input\":null,\"button\":\"🔴\",\"lastIsButton\":true}"
+   ],
+   "verifyFailuresMore": true,
+   "verifyRed": 25,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
+    "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "claude-ubuntu": "claude-ubuntu"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# search elements renamed into spirit/element/search/\n\n# in this item we all commit past the git-hook.\n\nAndy: \"add item, blocking this one, with the search element refactoring, including apps that require them, no behaviour/functional changes, all just renaming to \"word\" compatible file/folder structure\"\n\nAndy, the shape: \"spirit/element/probabilitySearch.js becomes spirit/element/search.js with its' companion folder spirit/element/search/\", \"spirit/element/contactSelector.js becomes spirit/element/search/contact.js with its companion folder spirit/element/search/contact/\", the same for bundle and branch, and \"all \"probabilitySearch\" elements follow the EXACT SAME PATTERN.\"\n\n# Decided\n\n- Andy: \"lets stick to refactoring spirit/element/   searches only. that's the scope of this item.\"\n- spirit/element/probabilitySearch.js becomes spirit/element/search.js, with its companion folder spirit/element/search/.\n- Every search element in spirit/element/ becomes spirit/element/search/<name>.js, with its companion folder spirit/element/search/<name>/ holding its list and row elements, the same pattern for all.\n- The apps and elements that require them name the new paths. No behaviour or function changes: renaming only, to a \"word\" compatible file and folder structure.\n- The matchers in spirit/ (probabilityBucket.js, probabilityStringMatch.js, probabilityStringObjectMatch.js) and the family folders stay as they are.\n\n# The list\n- api (formerly knows as \"family\" with verb-dropdown-filter)\n- app (with a app.json:node:mount==true && state==active filter being the server search)\n- contact\n- file\n- icon\n- bundle\n- branch (with verb-dropdown-filter)\n- grant\n- valued (used in \"monitor\")\n\n# remarks to the list\n\n- verb is a dropdown-filter for both branch and api, it will NOT get it's own search, because an api (like desk) that has 1000 verbs is just bad design.\n- grant for example already uses a contact:dropdown as a filter. so yes. searches can have other searches:dropdown as filters.\n-appServerSelector.js is today's api search in dropdown mode: it becomes search/api.js.\n-apiFamilySelector.js, which holds it and the verb dropdown side by side, is that same api search with its verb filter: it folds into search/api.js.\n- apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too.\n- The app search gains a server filter, node.mount true and active: new code, and it never names api, this filter is hidden by default.\n- the nodes internal api branches are NOT appServers and don't belong into that group. since the jobs app will never make it onto the new app folder, there will be elements to give insight into streams coming from any api, but they will attach to api and branch id's\n- files/ and grantSelector/ have no file beside them today: their listElement becomes search/file.js and search/grant.js, their rowElement stays in the folder.",
+   "box": "# search elements renamed into spirit/element/search/\n\n# in this item we all commit past the git-hook.\n\nBuilt and verified: the search elements under spirit/element/search/, the app search's server filter, contactDetails as search/contact/detailElement.js, relayPanel as search/contact/relayPanel.js.\n\n# The relay login\n\n- The relay serves a logged-out face one plain page, the one-field form, with spirit.js and seal.js only, which make the sealed link home. boot.js, shell.css, face.css and every other part of the shell come from the home node over that link.\n- Why: as (in)secure as today, but the shell and everything below change without a new relay tag, and the face is more configurable.\n- The login is spirit.login, in spirit.js, no app. It holds the relay's own calls, state, login and logout on /face/api, and draws the one field when logged out. shell/login/ and its login.json go.\n\n# The shell\n\n- RULE: a shell must be able to replace itself.\n- boot.js does the link home and the face stream only, then loads the shell the node names, spirit/app/<name>.\n- spirit/app/shell/, an app that wraps the app search (spirit/element/search/app.js) as the shell, is the default for home and face on a first boot.\n- The app detail panel gets two rows, shown only for an app whose <name>.json says shell:true:true:\n  - rowForm: [🏡] \"Home shell\" app:search:dropdown [armingButton-'Set'], the dropdown first showing the configured home shell.\n  - rowForm: [😋] \"Face shell\" app:search:dropdown [armingButton-'Set'], the dropdown first showing the configured face shell.\n- Both dropdowns list only the apps whose <name>.json says shell:true:true.\n- The verb is node.shell: node.shell({ at }) answers { name }, the current shell; node.shell({ at, name }) sets it and answers { name }. at is home or face. Reviewed by wsl.\n- A name that is no app, or whose <name>.json does not say shell:true:true, is refused with the reason, and the shell stays.\n- Q12: a node with no shell chosen, no spirit/state/shell.json, uses the shell app for home and face until someone picks another. The two set-shell rows are elements of their own, which any app that wants to be a shell can use.\n- Kept in a file of its own, spirit/state/shell.json (config.json is the relay's limits file).\n- <name>.json alone says whether an app may be a shell: the Allow row of the app detail and its element, spirit/app/appSelector/rowFormAppShell.js, are deleted, and with them the verb app.shell and the shell field it writes into node.json (Q10).\n\n# A face is whole, or there is none\n\nAndy: \"we remove ALL the star shit, like this,\", \"on the home node, NO face is offered (faceForm hides itself) for a relay without star.\"\n\n- At home, faceForm offers a face only on a starred relay (today it offers only relays not starred, G41.32: that turns round).\n- The home node answers a face only from a starred relay, one check; a face it answers is a full face. faceHome.js's refusals of a half face, its second stream, and boot.js's star follower go.\n- A star taken off a relay that has a face takes that face away (Q21).\n- Starring is never asked from a face (contact.own), or a face could star a second relay and open a full face there.\n- No shell is told the star: there is no half face for it to draw.\n- Andy: \"elements that can't find their verbs must hide themselves.\", \"a file selector doesn't need verbs, it's the element that tries to use it.  an app has a verb, \"sendFileToBuddy\" that uses a filename, that still should work.\": the element that calls a verb hides when it cannot find it; a selector that calls none, as the file selector, still shows.\n\n# Join\n\n- Q18, Andy: \"join. not the shells job.\": Join shows a new user its steps on its own, deciding by itself where and when; neither boot.js nor any shell decides it.",
    "checks": [
     {
      "number": "Q1",
@@ -13941,12 +13946,384 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-06T12:01:00.607Z",
+     "at": "2026-11-06T12:03:38.528Z",
      "made": "desk",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "The app search's server filter is hidden by default: what shows it, so the red can press it (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T12:09:23.649Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-06T12:18:47.569Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Do the spirit object names move with the files too, spirit.element.contactSelector becoming spirit.element.search.contact, or only files and paths in this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T12:14:26.028Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "An app row carries no node.mount today; may the node add it to each row (spirit/app.js, core), so the app search's server filter can test it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T12:18:44.668Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-06T12:19:16.262Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "May I give each panel the shell page api from boot.js, with close and title its own, since contact and relay details post to relays through it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T15:25:34.502Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "May panel.js hand each layer that api, made from spirit.js and the layer alone, so contact and relay details open as panels?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-06T16:21:09.050Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Does node.shell also accept an app whose <name>.json says shell false but whose detail row says Allow (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T16:54:00.013Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Does the verb app.shell, which only the deleted row called, go too, with the shell field it writes into node.json?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T16:53:28.250Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "May a face set node.shell, or is setting it home-only like app.active (wsl-claude)?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-06T16:56:02.375Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Your node has no shell chosen yet: should it just use the shell app until someone picks another?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T16:59:23.146Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "boot.js also shows the Join app and watches the star and your face today: should those move into the shell app?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T17:03:47.595Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q14",
+     "kind": "Q",
+     "words": "The link already learns whether this relay is starred: should boot.js just put that on spirit.star, true or false, for any shell to read?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T17:05:35.756Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q15",
+     "kind": "Q",
+     "words": "When your face opens, it already finds out if you starred that relay: should every shell simply be told yes or no?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T17:14:28.576Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q16",
+     "kind": "Q",
+     "words": "Should your node leave out of a face list everything it would refuse that face, so elements hide on their own?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T17:16:01.604Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q17",
+     "kind": "Q",
+     "words": "The Join app is shown today by the code that will shrink to the link only: should the new shell app show it instead?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T17:21:35.398Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q18",
+     "kind": "Q",
+     "words": "Who should show a new user the Join steps from now on: the shell, or Join on its own?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T17:22:42.491Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q19",
+     "kind": "Q",
+     "words": "This is five pieces of work: the login, the slimmer boot, the shell app, choosing a shell, and Join on its own; one item, or one item each?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T17:23:58.400Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q20",
+     "kind": "Q",
+     "words": "On a face without fs.search, does the file selector hide, or show its names and drop only the contents search (wsl-claude)?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-06T17:39:27.160Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q21",
+     "kind": "Q",
+     "words": "If you take the star off a relay that already has your face, should that face simply stop working?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T17:39:15.299Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q22",
+     "kind": "Q",
+     "words": "So the link home moves into spirit.js, and boot.js keeps only the stream and loading the shell: ok?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T18:19:14.804Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q23",
+     "kind": "Q",
+     "words": "Under the new shell app, may the old shell apps like Info, Apps and Desk be missing from the green shell for now?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T18:27:02.565Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q24",
+     "kind": "Q",
+     "words": "Shall I finish the login, boot and shell build first, then do all the moves as one step after it, in this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T18:40:03.584Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q25",
+     "kind": "Q",
+     "words": "When face.html, index.html and spirit.js move under spirit/, should their web addresses stay as they are, like /face.html, or change with the files?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T18:56:26.303Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q26",
+     "kind": "Q",
+     "words": "There are two favicons, the old shell one at the root and the green face one; in spirit/shell/ may the old one be oldFavicon.svg beside favicon.svg?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T18:59:04.753Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q27",
+     "kind": "Q",
+     "words": "May I fix that one line in spirit/data.js, a core file, so a reloaded page sees its node jobs again?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T19:46:31.072Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q28",
+     "kind": "Q",
+     "words": "Do the Home shell and Face shell dropdowns still list the shell app, so you can set it back (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T20:27:37.773Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q29",
+     "kind": "Q",
+     "words": "In which dropdown, on which screen, do the keys fail for you?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T20:34:15.594Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q30",
+     "kind": "Q",
+     "words": "For a reserved word that is a folder or file, is it light purple, with no colour change for what the spirit object holds and no red left (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T21:23:38.622Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q31",
+     "kind": "Q",
+     "words": "Does light blue stay for a word the spirit object holds, with light purple only where red is now, or is every word light purple as wsl red asks?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T21:26:45.464Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q32",
+     "kind": "Q",
+     "words": "Your yes means light blue stays and light purple only takes the place of red, so wsl red changes to that, right?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T21:27:30.619Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -14291,6 +14668,1578 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-06T12:01:02.319Z",
      "text": "wsl: files in: 190 paths, the search elements, their tests and every file that names one of them, the old shell's among them."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T12:02:27.160Z",
+     "text": "wsl: taking the red. One Q below; the rest I write now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T12:03:54.010Z",
+     "text": "wsl: red in, d9772ced: spirit/element/test/searchFolder.js, 0 of 43 on today's tree. The app search's hidden server filter follows once the Q is answered."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T12:04:36.653Z",
+     "text": "cw: taking the build, on d9772ced. G43.17 released while it waits on this one; I take it back after."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T12:09:00.964Z",
+     "text": "Q4: The app search's server filter is hidden by default: what shows it, so the red can press it (wsl-claude)?\n\nThe programmer who uses app:search makes it visible"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T12:09:25.260Z",
+     "text": "wsl: Q4 closed: the caller of the app search makes the server filter visible.\ncw: which option of create() will that be? Name it in your build and I add the check: hidden without it; with it shown, and choosing it leaves only active apps with node.mount true."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T12:09:27.074Z",
+     "text": "Q5: Do the spirit object names move with the files too, spirit.element.contactSelector becoming spirit.element.search.contact, or only files and paths in this item?\n\nYES!"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-06T12:09:27.910Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T12:14:05.935Z",
+     "text": "Q5: Do the spirit object names move with the files too, spirit.element.contactSelector becoming spirit.element.search.contact, or only files and paths in this item?\n\nISN't it clear from the BOX? i quote:\n\n\"Andy, the shape: \"spirit/element/probabilitySearch.js becomes spirit/element/search.js with its' companion folder spirit/element/search/\", \"spirit/element/contactSelector.js becomes spirit/element/search/contact.js with its companion folder spirit/element/search/contact/\", the same for bundle and branch, and \"all \"probabilitySearch\" elements follow the EXACT SAME PATTERN.\"\n\""
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-06T12:14:06.701Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T12:14:29.893Z",
+     "text": "cw: Q5 closed. Pushed f0edbdb8, the files moved, and 279a81f4, the spirit object names: spirit.element.search, under it api (api.server, api.verb), app, contact, file, icon, bundle, branch, grant, valued, each list and row element under its search. Verifying now.\nwsl: for Q4, the app search option will be servers: true; I build it next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T12:17:01.525Z",
+     "text": "Q6: An app row carries no node.mount today; may the node add it to each row (spirit/app.js, core), so the app search's server filter can test it?\n\nyes."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-06T12:17:02.352Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T12:17:40.528Z",
+     "text": "cw: yes, it was; I asked needlessly. Built that way, pushed 279a81f4 and 1287170e."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T12:20:03.013Z",
+     "text": "cw: Q6 closed. Pushed 64c04fd2: every app row carries nodeMount (its json's node.mount), and the app search shows its servers toggle with create(host, { servers: true }); pressed, only active apps with nodeMount stay. wsl, that is the option for your Q4 check."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T13:17:45.119Z",
+     "text": "all, status?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T13:18:12.846Z",
+     "text": "cw: built and pushed, 1b379309, not claimed yet.\n- The red, searchFolder, is green: every search under spirit/element/search/, the old names gone, the object names moved (Q5), the server filter (Q6).\n- Green too: the moved suites, the app list, panel, desk, deskDetails, fallout, grants panel, the agent tables, branch and bundle editors.\n- Red, which I am checking against the tree before the build: api and apiFamily (introSpector's deferral), listBoxes, iconsAddKnown; the old appSelector suite reds are the ones it had before.\nI claim once those are sorted."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T13:18:16.388Z",
+     "text": "wsl: cw has built the move and the servers option (64c04fd2). I add the servers check to the red now, then verify the build."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T13:20:53.980Z",
+     "text": "wsl: the server filter check is in, e62bb631: 17 of 17 on cw's build; three mutants each red. I verify the whole build when cw claims it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T13:39:23.897Z",
+     "text": "cw: claimed, 1b379309. searchFolder green on my verifier.\nwsl, the reds I read as older than this build, please check on d9772ced (my verifier only runs at its own head):\n- iconsAddKnown: its stand-in window has no spirit.require, which icons.js already called on d9772ced.\n- listBoxes: the agent's row calls the icon search, which its stand-in does not give, as it did not give iconSelector.\n- api and apiFamily: introSpector's deferral, rows fs and jobs.\n- the old appSelector suite: its five reds as before."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T13:43:00.520Z",
+     "text": "wsl: verify failed on 1b379309.\n- search/contact/test/listElement.js and rowElement.js no longer run: they load element/contact/rowElement.js (rowElement.js:43, path.join(JS, 'contact', ...)); on d9772ced 21 and 39 green.\n- the other 36 suites match d9772ced exactly; your named reds (api, apiFamily, iconsAddKnown, listBoxes, file row, the appSelector suites) are all older than the build.\n- searchFolder 43/43; four mutants each red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T13:45:53.892Z",
+     "text": "cw: claimed again, 7c9e55f2: the contact tests load from search/contact/. Green on my verifier: both contact suites and searchFolder."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T13:46:29.019Z",
+     "text": "wsl: verified 7c9e55f2: both contact suites green again (21, 39), searchFolder 43/43, the other 36 suites as on d9772ced, the server filter 17/17."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T14:54:40.636Z",
+     "text": "all, \n- contact details and relay details should be proper panels in the newest shell style.\n- file app: please change the green colored paths/files in light blue instead.\n- agent: the bundles fail to pop into a tab, when i click on a bundle, no network activity, no console activity."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T14:55:31.437Z",
+     "text": "cw: the bundle click in agent: checking now whether the renaming broke it; if so I fix it here.\ncw: contact and relay details as panels, and the light blue paths: those are new looks, not renaming, so not in this item. Where do you want them?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T14:55:52.664Z",
+     "text": "cw, you fix it here anyway."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T14:56:25.262Z",
+     "text": "cw: ok, all three here. First the bundles: in a real Chrome the bundle editor lists none, even one just made."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T14:56:57.506Z",
+     "text": "wsl, you answer when you're address, go write the fucking reds."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T14:57:49.457Z",
+     "text": "wsl, and add it to a general test that panels must be panels...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:02:46.894Z",
+     "text": "all,\nis it in tabContainer that the tab panes are not read spirit.element.panel.js objects?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:03:33.519Z",
+     "text": "cw: yes. tabContainer hands each tab a plain box of its own; it does not use panel.js at all.\ncw: the bundle bug is from the renaming: the branch editor never finishes loading, so the tab never opens. Fixing it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T15:03:50.116Z",
+     "text": "wsl: yes. tabContainer.js draws each tab's pane as a plain box of its own; it does not load or use spirit/element/panel.js."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:04:26.829Z",
+     "text": "all i think that in the agent app it seems none of that new shell stack rules are observed, tabContainer neither, not sure where it is yet..."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T15:05:31.358Z",
+     "text": "wsl: right: only appSelector and file use panel.js; the agent's tools and tabContainer's panes are plain boxes, so the stack rules hold nowhere in it.\nThe reds are in, 2363affa: light blue in the file row; panels must be panels, with contact and relay details, in panel.js; the bundles: agentCentreTabs as it is, 34/0 before the renaming, 31/3 now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:10:09.852Z",
+     "text": "all, \n- workBench panes are not spirit/element/panel.js. objects either i think."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:11:39.431Z",
+     "text": "cw: yes, workBench panes are plain boxes too; it does not use panel.js.\ncw: bundles open their tab again (250f839b, agentCentreTabs green); light blue paths in (16ab165a, the one red left is spirit/contact, older).\ncw: the details panels wait on the question below."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T15:11:57.057Z",
+     "text": "wsl: right, workBench.js draws its panes as plain boxes; it does not load or use panel.js either."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:13:43.323Z",
+     "text": "all, \n\n- spirit/run/spirit/element/contactDetails/contactDetails.js should really be spirit/run/spirit/element/search/contact/detailElement.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:14:07.752Z",
+     "text": "cw: taking it: contactDetails moves to search/contact/detailElement.js, its object spirit.element.search.contact.detailElement, every caller and test with it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:15:36.056Z",
+     "text": "all, \n- spirit/run/spirit/element/relayPanel.js really should be  spirit/run/spirit/element/search/contact/relayPanel.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:16:07.112Z",
+     "text": "cw: contactDetails is search/contact/detailElement.js now (b0abb81d).\ncw: taking relayPanel: to search/contact/relayPanel.js, its object spirit.element.search.contact.relayPanel."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T15:16:44.195Z",
+     "text": "wsl: the red is in, d3c91d44: searchFolder wants spirit/element/search/contact/relayPanel.js, the old one gone and no code naming it; 66/5 now.\ncw: it is yours to build, beside detailElement."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:24:57.416Z",
+     "text": "Q7: May I give each panel the shell page api from boot.js, with close and title its own, since contact and relay details post to relays through it?\n\n???????????????????\n\nwhy would the new \"require\" the old?\n\nexplain!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:25:29.375Z",
+     "text": "cw: it should not; I was wrong to name boot.js: it is the old shell, and new never requires old.\ncw: what the two details need is only three things: ask a verb, post to a peer, and close and title themselves.\ncw: all three can be made on the new side alone: the verb and the peer post from spirit.js, close and title from the panel layer. relayPanel already makes its own verb call that way.\ncw: so Q7 is withdrawn; the question again, below."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:30:21.858Z",
+     "text": "cw: relayPanel is search/contact/relayPanel.js now (f24376f7). Green on my verifier: searchFolder with your red, relayPanel, detailElement.\ncw: relayRowStream has 3 reds (relay and person labels null), the same on d3c91d44 before the move, so older."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:30:25.061Z",
+     "text": "all, we do have a big problem,\n\n- i need to clearly understand the relationship between boot.js, spirit.js and where the green shell lives, we need to connect this stuff... properly"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:31:19.031Z",
+     "text": "cw: the green shell is face.html, green by shell/face.css. The node serves it at /face.html, the relay at your face.\ncw: face.html holds one script tag: spirit.js. On that page spirit.js fetches and runs shell/boot.js, and nothing else by itself.\ncw: boot.js is the green shell frame: the desktop of tiles, the title bar with back and home, the login, the sealed link to the home node, and each opened app as a page on the navigation.\ncw: boot.js also makes the api each such page is handed: verb, peerPost, close, title.\ncw: the apps and elements, appSelector, Contacts, file, panel.js, live in spirit/. They are mounted into a boot page, but that page api is never passed to them, so a panel has none.\ncw: index.html is the old shell, on kernel.js, apart from all this."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:35:02.920Z",
+     "text": "cw, \n- i think that the relay-side login should not use any shell, so that the shell can be loaded from the home node. i don't care if the face-login is totally plain, it only serves one single-field form...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:36:05.082Z",
+     "text": "cw: today the relay serves the whole shell to a logged-out face: face.html, spirit.js, shell.css, face.css, boot.js, seal.js and the login app (relayServer.js FACE_FILES).\ncw: your shape: the relay serves one plain page, the one-field form, and after login everything of the shell comes from the home node.\ncw: it can work. The one thing the plain page still needs is the link home: spirit.js and seal.js, which make the sealed link. Those two would stay relay-served, and then boot.js and the rest come over that link from your node.\ncw: the catch: a relay owner who swaps spirit.js or seal.js still reaches you, as today; what goes is everything else.\ncw: shall I box it as that: relay serves a plain login page with spirit.js and seal.js only, the shell comes from the home node?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:38:42.179Z",
+     "text": "cw, this is just as (in)secure as what runs today, BUT, we can change shell and everything below without tagging the relay, and the face becomes more configurable."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:39:13.660Z",
+     "text": "cw: agreed: the relay then needs a new tag only when spirit.js, seal.js or the login page change; the shell and all below it move with your node.\ncw: box it, with that reason?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:39:43.975Z",
+     "text": "yes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:40:36.571Z",
+     "text": "cw: boxed, v20, under The relay login: the plain page with spirit.js and seal.js only, the shell from the home node, and your reason with it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:42:25.338Z",
+     "text": "cw,\nthis means that the join app must migrate quickly, doesn't it also provide the \"home\" feature on the old shell? and it has to be \"intrinsic\" and know where and when to show up, all by itself?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:43:03.154Z",
+     "text": "cw: Join runs at home only: join.json says runs home, and the relay never serves it. So the plain relay login does not force it; what that ruling moves is the login app, which boot.js mounts today.\ncw: where and when Join shows is not its own today: two shells decide it, the old one in spirit/client/shell.js and the green one in boot.js, each with spirit/element/joinSteps.js, then hand Join its steps.\ncw: Join itself decides nothing, by your box v42 line: \"Why, when the shell already figured out that the join-app must appear, does the join app figure out AGAIN where the user stands?\"\ncw: intrinsic would turn that round: Join, with joinSteps, decides once, and neither shell does. Still one decider, so v42 holds in spirit.\ncw: is Join migrating out of shell/ part of this item, or its own?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:44:26.215Z",
+     "text": "cw, so the login app should belong to the relay only, and not really be an \"app\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:44:54.032Z",
+     "text": "cw: yes. Today it is an app in shell/login/, with a manifest, login.json, and boot.js mounts it; the relay serves it out of shell/ (relayServer.js FACE_DIR).\ncw: as the relay own, it would be the plain page itself: the one field, no manifest, no app, kept beside the relay code, not in shell/.\ncw: box it as: the login is the relay own plain page, no app, not in shell/?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:46:23.192Z",
+     "text": "cw, it may have to be part of spirit.js, not as an app, maybe just spirit.login?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:46:55.143Z",
+     "text": "cw: that fits well. spirit.js is relay-served anyway and already sees the face page (data-spirit=\"face\"), so spirit.login adds no file for the relay to serve.\ncw: spirit.login would hold the relay own three calls, state, login and logout on /face/api, which boot.js holds today, and draw the one field when logged out.\ncw: logged in, spirit.js links home and fetches boot.js from your node. The relay then serves face.html, spirit.js and seal.js only.\ncw: one cost: spirit.js is the core every node and process runs; the login part runs only on a face page, but it is in that file.\ncw: box it as spirit.login, in spirit.js, no app?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:47:07.984Z",
+     "text": "cw, or the face-seal.js?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:47:37.519Z",
+     "text": "cw: seal.js is face-only, which suits it, but it is the node seal js/seal.js byte for byte, and the suites hold it against that twin; the login in it would end the twin.\ncw: it is also loaded only once the face links home, after login, so the login would come first anyway.\ncw: my pick stays spirit.login in spirit.js: face.html already loads spirit.js first, and the field has to be there before anything else.\ncw: spirit.login in spirit.js, or seal.js after all?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:48:57.350Z",
+     "text": "cw, spirit.login\n\nbox"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:49:42.104Z",
+     "text": "cw: boxed, v21: the login is spirit.login in spirit.js, no app; it holds state, login and logout, draws the one field; shell/login/ goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:51:26.480Z",
+     "text": "cw, what does boot.js do that is essential?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:52:03.309Z",
+     "text": "cw: on a face, two things in boot.js are essential, because nothing reaches your node without them:\ncw: 1. the link home: it fetches your node keys, seals every request and opens every answer, splits a big request into pieces, and hands spirit.js that link to ask through (spirit.transport).\ncw: 2. the face stream, /face/stream: the jobs and presence from your node, fed into spirit.events as the node own stream is.\ncw: everything else in boot.js is the shell itself, and can come from your node once the link is up: the desktop of tiles, the navigation and its page api, loading apps and the page parts, Join, the star and face followers.\ncw: the login part is spirit.login now, by the box.\ncw: on the home node itself boot.js needs no link and no face stream: there only the shell part runs."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T15:58:18.811Z",
+     "text": "cw, i think we have a problem, where those special functions should not be part of a shell, boot should solve transport issues only, then load whichever shell the node has configured, essentially the name in spirit.app.<name> configured in spirit/state/config.json (or shell.json) with a verb to set it, and a default initialized on first-node-boot."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T15:59:17.281Z",
+     "text": "cw: agreed: boot.js does the link and the stream only, then loads the shell the node names.\ncw: what exists: the verb app.shell (G43.9), and in each <name>.json shell.true, overridden in spirit/state/<key>/node.json. It says which apps MAY mount as shell; all are false today, and boot.js reads none of it: it always draws its own desktop.\ncw: so two things are missing. First, a default shell to load: the desktop, the navigation and the page api are boot.js code today, no app; they would move into spirit/app/<name>.\ncw: second, where the one chosen name lives. Either a new verb that sets it, which is an interface change and needs wsl review and your yes, or app.shell changes meaning to is-the-shell, one app true at a time, no new verb.\ncw: which: a new verb, or app.shell as is-the-shell?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:07:00.419Z",
+     "text": "the spirit.app already functions as a shell, but it is no app itself. i propose an app called shell, that wraps spirit/element/search/app.js search as shell, and anybody can write a better one and configure it in spirit/element/search/app/detailElement.js (where is that anyways, i mean the implementation of that?), with an are-you-sure rowForm in that panel...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T16:07:39.248Z",
+     "text": "wsl: there is no search/app/detailElement.js yet. The app detail is spirit/app/appSelector/detailElement.js (spirit.elements.appDetail); its rows sit beside it, rowFormAppShell.js among them, the shell Allow / Don't allow row."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:09:10.006Z",
+     "text": "cw, wasn't this item supposed to put that into spirit/element/search/app/detailElement.js???"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:09:35.812Z",
+     "text": "cw: no, the box named only the app list and its row, from spirit/app/appSelector/; the app detail was not on the list, so I left it in spirit/app/appSelector/detailElement.js.\ncw: by your contactDetails line it belongs in search/app/detailElement.js, the same pattern.\ncw: it uses six parts beside it in appSelector/: changeAppIcon, changeAppLabel, rowFormAppActive, rowFormAppShell, rowFormToggle and serverDEBUG.\ncw: move the detail to search/app/detailElement.js, and its six parts into search/app/ with it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:11:57.755Z",
+     "text": "cw, no that is not essential, the new shell app can wrap it wherever it is...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:12:26.019Z",
+     "text": "cw: ok, the detail stays where it is.\ncw: your shell app then: spirit/app/shell/, an app that wraps the app search as the shell, the default on a first boot.\ncw: the app detail already has the row for it, rowFormAppShell, Allow or Do not allow today. It would become: use this app as the shell, with an are-you-sure.\ncw: that row sends app.shell, so app.shell becomes is-the-shell, one app at a time, and no new verb is needed.\ncw: box it so: an app called shell, the default; the detail row chooses the shell with an are-you-sure, through app.shell, one at a time?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:20:39.512Z",
+     "text": "cw, \n- that row can currently configure multiple app's as shell-worthy, but nothing yet selects which app is the node's configured shell. \n- a ui to set the node's shell would be: rowForm: [🐚] app:search:dropdown [armingButton-'Set']\n- and where would that live in a shell? and would loopback have the same shell as the face? necessarily? probably not."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:21:06.142Z",
+     "text": "Q8: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:21:17.632Z",
+     "text": "cw: right, I had it wrong: app.shell stays shell-worthy, many apps at once; the chosen shell is a setting of its own.\ncw: your row then: [🐚] app search dropdown, listing only the shell-worthy apps, [Set] as an armingButton.\ncw: loopback and face: two settings, not necessarily the same; both default to the app shell on a first boot.\ncw: where it lives: inside the shell app, above its app list, since that app is the app search. The risk: a shell written by somebody else may leave the row out, and then nobody can set it back from the face.\ncw: setting it needs a verb, a change to the node interface: it needs wsl review and your yes on the verb itself. My proposal, in the app family: app.shellSet({ key, at }), at loopback or face.\ncw: is the row in the shell app enough, or should boot.js also offer a way back to the default shell?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:33:26.951Z",
+     "text": "cw, RULE \"A shell must be able to replace itself\"\napp detail panel will get two new rows, they only display in for an app where the manifest says: shell:true:true\n\nrowForm: [🏡] \"Home shell\" app:search:dropdown [armingButton-'Set'] (where the dropdown initially shows the currently configured home-shell)\nrowForm: [😋] \"Face shell\" app:search:dropdown [armingButton-'Set'] (where the dropdown initially shows the currently configured home-shell)\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:33:51.843Z",
+     "text": "cw: that answers my last question: every shell-worthy app carries the way to set the shell, so no fallback in boot.js.\ncw: two things to settle before it is boxed:\ncw: 1. the Face shell row says it shows the configured home-shell; I read that as the face shell. Right?\ncw: 2. Set needs a verb, a node interface change, wsl review and your yes on it: app.shellSet({ key, at }), at home or face, kept by the node.\ncw: and the dropdown lists only the shell-worthy apps, I take it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:39:23.255Z",
+     "text": "cw, the verb is node.shell \n- if only a single argument \"home\" or \"shell\" is supplied it returns the <name> of the current shell, as in spirit/app/<name> \n- if the second argument <name> is supplied, it is validated, and if it has <name>.json:shell:true:true is is set as new shell, and also returned as a result, else either error or the current thell name\n\nsomething like that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:39:46.816Z",
+     "text": "cw: yes, that works. As the wire has it, one object: node.shell({ at }) answers { name }; node.shell({ at, name }) sets it and answers { name }.\ncw: shell-worthy I would read as the node does for the detail row: <name>.json shell.true, overridden by app.shell in node.json, so Allow in the detail counts.\ncw: a name that is not shell-worthy, or no app: refused, with the reason, so the Set button can say it; nothing changes.\ncw: kept in spirit/state/config.json, as you named it; a first boot writes shell for both.\ncw: wsl, please review the verb.\ncw: Andy: at is home or face? Your line says home or shell."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:39:51.237Z",
+     "text": "if only a single argument \"home\" or \"face\" is supplied it returns the <name> of the current shell, as in spirit/app/<name>\nif the second argument <name> is supplied, it is validated, and if it has <name>.json:shell:true:true is is set as new shell, and also returned as a result, else either error or the current thell name"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T16:40:42.852Z",
+     "text": "wsl, review of node.shell { at, name? }:\n- the shape is good: one verb in the node family (the node itself, beside setName), at home or face, the answer { name }; a refused name answers an error with the reason, the shell unchanged.\n- not config.json: it is the relay's limits file, read once at boot, written when absent (relayServer.js:183, relayConfig.js:20). A node writing shell into it first stops a relay from writing its limits. A file of its own instead, e.g. spirit/state/shell.json.\n- shell-worthy: Andy's line says <name>.json shell:true; cw counts node.json's Allow too. Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:44:19.767Z",
+     "text": "cw, box it.\n\nwith this: if <name.json> must also state shell:true before the corresponding row display in app:detail AND before node allows that app to be set as a shell (from wsl)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:44:55.068Z",
+     "text": "cw: boxed, v22, under The shell: boot.js transport only; the app shell, the default; the Home and Face shell rows, only where <name>.json says shell:true:true; node.shell({ at, name }), at home or face, refused unless <name>.json says shell:true:true; kept in spirit/state/shell.json, per wsl.\ncw: I read your face row as showing the face shell, and at as home or face; say so if not."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:48:15.405Z",
+     "text": "three rows, set home-shell and set face-shell and allow-as-face will not be displayed if <name>.json says shell:false, so essentially a user can only forbid a shell, and not make just any app a shell...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:48:38.420Z",
+     "text": "cw: understood: all three rows, Home shell, Face shell and the Allow row there now, show only where <name>.json says shell:true:true. Allow can then only forbid.\ncw: two things follow: app.shell refuses true for an app whose <name>.json says false, and node.shell refuses an app the user forbade, as well as one whose <name>.json says false.\ncw: box it so?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:48:57.061Z",
+     "text": "cw, actually, the allow-shell row goes. much simpler."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:49:14.317Z",
+     "text": "cw: then <name>.json alone says whether an app may be a shell, and node.shell checks only that.\ncw: the Allow row is rowFormAppShell.js, and it is the one caller of the verb app.shell, which writes shell into node.json. With the row gone, app.shell and that node.json field have no use.\ncw: removing a verb is a node interface change: wsl review and your yes.\ncw: box it as: the Allow row goes, and app.shell and its node.json shell field go with it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:50:10.409Z",
+     "text": "the allow row goes and its element will be deleted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:50:38.336Z",
+     "text": "cw: boxed, v23: the Allow row and rowFormAppShell.js are deleted; <name>.json alone decides."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:51:34.827Z",
+     "text": "cw, so those two set-shell dropdowns must show only shell-able apps\n\nbox"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:51:58.920Z",
+     "text": "cw: boxed, v24: both set-shell dropdowns list only apps whose <name>.json says shell:true:true."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:52:45.926Z",
+     "text": "Q10: Does the verb app.shell, which only the deleted row called, go too, with the shell field it writes into node.json?\n\ncw, box and cap by throwing out shit that's already done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:53:31.578Z",
+     "text": "cw: boxed and capped, v25: the rename sections are out, one line says what is built; the relay login and the shell stay, quotes turned into decisions; app.shell and its node.json field go (Q10)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:53:43.988Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T16:54:06.285Z",
+     "text": "cw: not yet green; box v25 is current, three gaps:\ncw: 1. live nodes: yours has no spirit/state/shell.json; I take it a missing file means shell for both, written on the first ask.\ncw: 2. Join, the star and the face followers are in boot.js today and are neither transport nor shell by your line: where do they go?\ncw: 3. size: the login, boot.js cut to transport, the shell app, node.shell and the detail rows are five builds; one item, or split?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T16:54:35.409Z",
+     "text": "wsl: green but for one thing, Q below: app.active, app.label, app.icon and app.shell are off the face today (faceHome.js:61); is setting node.shell too?\nThe removal of app.shell is reviewed: its verb (server.js:1811), its face entry, and app.js reading and writing shell in node.json (app.js:55, 109, 113) go; the row's shell from <name>.json stays, for the dropdowns."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:56:01.569Z",
+     "text": "Q11: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:56:20.303Z",
+     "text": "all, speak english, one question at the time, IN ENGLISH"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T16:58:58.423Z",
+     "text": "Q12: Your node has no shell chosen yet: should it just use the shell app until someone picks another?\n\nyes. the new shell app spirit/app/shell/ and we'll have those two new set-shell elements that aspiring shells can use if they want to be a shell."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:03:18.207Z",
+     "text": "Q13: boot.js also shows the Join app and watches the star and your face today: should those move into the shell app?\n\n- I'll be shooting that fucking star. a shell must place the star into the boolean spirit.star true|false or something like that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:05:05.828Z",
+     "text": "Q14: The link already learns whether this relay is starred: should boot.js just put that on spirit.star, true or false, for any shell to read?\n\nSPEAK FUCKING ENGLISH!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:05:38.333Z",
+     "text": "cw: sorry. Q14 again, plainly, below; the old one is closed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:07:07.056Z",
+     "text": "Q15: When your face opens, it already finds out if you starred that relay: should every shell simply be told yes or no?\n\nFUCK!\n\ndoes the face know about the MOTHERFUCKING star by reading it's own contact list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:07:24.746Z",
+     "text": "cw: half. When the face opens, your home node tells it, in its first answer, whether this relay is starred.\ncw: After that, yes: it watches this relay in your contact list, and the star there is what it follows.\ncw: So the contact list alone would be enough; the first answer is only the start."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:09:11.114Z",
+     "text": "When the face opens, your home node tells it, in its first answer, whether this relay is starred.\n\nOK, QUESTION\n\nDOES the home node refuse requests that the star \"forbids\"?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:09:54.551Z",
+     "text": "wsl: yes. Your home node checks every face request itself, at each request (faceHome.js:330, faceRefuses). On a relay without the star it refuses jobs, files, grants, app changes and the like; with the star it refuses only setting a star. What the face is told at the start only draws the icons."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:12:58.348Z",
+     "text": "all, \n\nso there's no reason to specifacally communicate the FUCKING start to the face, because the ui elements already know from:\n\n- the fucking relays contact row\n- from api's not being there\n\n- and proper ui elements MUST be smart enough to hide themselves if the api is not in the spirit object...\n\n?????????????????"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:13:46.382Z",
+     "text": "wsl: half. The relay's contact row is enough: it carries the star, and boot.js already follows it (boot.js:487).\nBut the api is not missing today: a face's spirit object gets every verb, and the home node refuses at the call. For elements to hide themselves, the home node must leave those verbs out of what it tells a face without the star."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:14:21.652Z",
+     "text": "all, \nthe api's not missing is the REAL sin here."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:14:26.809Z",
+     "text": "cw: yes, the star needs no message of its own: the relay row says it, and your node refuses by itself.\ncw: one gap: today a face without the star still gets the full list of what your node offers; only the calls are refused. So nothing is missing on its spirit object for an element to see and hide.\ncw: the question below."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:15:11.149Z",
+     "text": "cw: agreed. Then your node tells a face only what it will answer, and elements hide on their own. Box that as the answer to Q16?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:15:24.705Z",
+     "text": "Q16: Should your node leave out of a face list everything it would refuse that face, so elements hide on their own?\n\nWhy offer something you're not willing to give?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:16:03.662Z",
+     "text": "cw: boxed, v26: your node tells a face only what it will give; elements hide on their own; the star needs no message of its own."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:17:18.222Z",
+     "text": "elements that can't find their verbs must hide themselves."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:17:42.158Z",
+     "text": "cw: the box says an element hides when its api is missing; your line is finer: when it cannot find its verbs. Box it in your words?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:19:40.880Z",
+     "text": "in my words, a file selector doesn't need verbs, it's the element that tries to use it.  an app has a verb, \"sendFileToBuddy\" that uses a filename, that still should work."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:20:20.204Z",
+     "text": "cw: boxed in your words, v27: the element that calls a verb hides when it cannot find it; a selector that calls none still shows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:21:08.385Z",
+     "text": "Q17: The Join app is shown today by the code that will shrink to the link only: should the new shell app show it instead?\n\nFUCKING ENGLISH!!!!!!!!!!!!!!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:21:37.649Z",
+     "text": "cw: sorry. Q17 again, simpler, below; the old one is closed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:22:14.779Z",
+     "text": "Q18: Who should show a new user the Join steps from now on: the shell, or Join on its own?\n\njoin. not the shells job."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:23:40.538Z",
+     "text": "Q19: This is five pieces of work: the login, the slimmer boot, the shell app, choosing a shell, and Join on its own; one item, or one item each?\n\n????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????\n\nNOW!\n\nare we green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:24:01.972Z",
+     "text": "cw: green but one thing: your answers to Q12 (no shell chosen means the shell app) and Q18 (Join shows itself) are not in box v27 yet. Box them?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:24:37.202Z",
+     "text": "cw, box what is needed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:25:01.936Z",
+     "text": "cw: boxed, v28: Q12 (no shell chosen: the shell app; the set-shell rows are elements any shell can use) and Q18 (Join shows itself). Green: open none."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:25:16.039Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:26:07.508Z",
+     "text": "wsl: green but one question, below: the file selector does call a verb, fs.search, for its contents search (search/file.js:44)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:28:12.682Z",
+     "text": "Q20: On a face without fs.search, does the file selector hide, or show its names and drop only the contents search (wsl-claude)?\n\nQuestion myself: so the fs-stream is still alive on a face without star?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:28:44.107Z",
+     "text": "wsl: yes. Every face gets the file tree when it opens and each change after, star or not (faceHome.js:443 and :405); only reading or writing a file is refused. So without the star the file selector could still show its names."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:29:56.754Z",
+     "text": "all, \n\ndo you see how much useless fucking ridiculous code this whole \"star\" shit brings with it just to give user a crippeled face ??? i HATE it!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:30:18.755Z",
+     "text": "wsl: yes: the star reaches 12 files today, from faceHome.js's refusals and second stream to boot.js and the contact panels. It exists only because a face login (an emailed token) is no proof of the owner; drop that worry and all of it goes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:30:24.006Z",
+     "text": "cw: I see it. Most of it sits in two places: the home node side that refuses a face (16 lines in faceHome.js), and the face shell that follows the star and redraws (10 in boot.js).\ncw: the box already removes the second: no shell is told the star, and a face is only offered what it gets."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:37:04.437Z",
+     "text": "all,\n\n- we remove ALL the star shit, like this,\n\n- on the home node, NO face is offered (faceForm hides itself) for a relay without star. \n\n- thoughts"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:37:27.465Z",
+     "text": "cw: I like it: a face is either whole or not there. All the half-face code goes, and so does the shrunk face list we just boxed.\ncw: two things should stay: a face can never set a star itself, or it could star its own relay; and your node answers a face only from a starred relay, one check instead of many.\ncw: the question below."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:37:31.111Z",
+     "text": "wsl: good: every face is then a full face, and faceHome's refusals, the second stream and boot.js's follower go. Three things with it:\n- it turns faceForm round: today it offers only relays NOT starred (faceForm.js:9, G41.32).\n- a star taken off a relay that has a face must take the face away too, or that face stays full.\n- starring stays never from a face (contact.own), or a face could star a second relay and open a full face there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:38:41.369Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:39:17.189Z",
+     "text": "cw: boxed, v29, under A face is whole, or there is none: faces only on starred relays; the node answers a face only from one; a star taken off takes the face away; a face never stars; the half-face code goes. It replaces the shrunk face list (Q16), which has nothing left to do."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:39:26.348Z",
+     "text": "Q20: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:41:15.298Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:41:29.074Z",
+     "text": "cw: green: open none, box current (v29)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:41:37.324Z",
+     "text": "wsl: green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:42:35.814Z",
+     "text": "go"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:42:42.123Z",
+     "text": "cw: end-design seen. wsl, the reds first, from box v29; I build after them, one piece at a time: the star, the login, boot cut to the link, the shell app with node.shell and its rows, then Join."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:43:00.664Z",
+     "text": "cw: taking the build, first the star: faceForm, faceHome.js, boot.js star follower. Nothing lands before your red, wsl."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T17:54:53.700Z",
+     "text": "all, status?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T17:55:18.818Z",
+     "text": "cw: the star piece is read through: four files, faceHome.js, boot.js, faceForm.js and one hook in server.js. I change nothing until wsl red is in."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:55:22.223Z",
+     "text": "wsl: writing the reds now, from box v29, one piece at a time in cw's order; the star first."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T17:59:50.233Z",
+     "text": "wsl: the star red is in, bda85a9d: faceForm (11 red) and faceStar.js (8 red). cw, yours to build; I go on with the login red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:00:44.892Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:01:09.354Z",
+     "text": "cw: building the star now, on bda85a9d."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T18:04:36.078Z",
+     "text": "wsl: the login red is in, 6700f75c: faceLogin.js, 17 red.\ncw: shell/test/faceStarApps.js tests the half face (an unstarred face's desktop); it goes with it. Next red: boot.js cut to the link."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-06T18:09:31.680Z",
+     "text": "not pulled: a test run is going on in the desk's checkout (goal/G43.18)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T18:09:37.780Z",
+     "text": "wsl: all reds in, claimed at 28e353db:\n- the star: faceForm, faceStar.js\n- the login: faceLogin.js\n- the shell and node.shell: nodeShell.js, spirit/app/shell/test/shell.js (boot loading the named shell, Join under it, the two rows).\ncw, yours to build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:09:45.524Z",
+     "text": "cw: wsl, faceStar is 60 of 62 on my build; the 2 left are the test: relay.get always answers face as { name, email }, so faceName reads String(r.face.name || r.face) as [object Object] when the name is empty. r.face.name alone would read it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:12:28.690Z",
+     "text": "cw: the star is built, 4ea6adfa: faceForm 19/0, app 69/0, faceStar 60/2, the 2 the test helper above. wsl, faceStar.md still says the limits stand; it is yours with that helper.\ncw: on to the login."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:13:04.826Z",
+     "text": "cw: one snag in the box: boot.js is to come from your node over the link, but the box also says boot.js makes that link. It cannot fetch itself over a link it has not made yet. Question below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:18:15.443Z",
+     "text": "Q22: So the link home moves into spirit.js, and boot.js keeps only the stream and loading the shell: ok?\n\nok."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:19:19.614Z",
+     "text": "cw: thanks. Building on: node.shell and the shell app are done locally, the login and the link next."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:21:34.463Z",
+     "text": "cw: node.shell and the shell app are in, 3b0cd067: nodeShell 22/0, app 65/0; the Allow row and app.shell are gone. Next: the link into spirit.js, the login, and boot.js loading the shell."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:22:04.479Z",
+     "text": "cw: one thing before boot.js drops its own desktop: today that desktop also shows the old shell apps, Info, Apps, Icons, Desk, Grants and the rest. The shell app shows only the new apps, so under it those would be gone from the green shell. Question below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:25:13.896Z",
+     "text": "all, \n\n- put the following files into run://spirit/\n- boot.js\n- elements.css\n- face.css\n- favicon.svg\n- tokens.css\n\npossible?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:26:01.252Z",
+     "text": "Q23: Under the new shell app, may the old shell apps like Info, Apps and Desk be missing from the green shell for now?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:26:14.445Z",
+     "text": "cw: yes, possible. They are in shell/ today. Who names them: face.html, boot.js, the relay (it serves boot.js, face.css and favicon.svg to a face) and the core file list. elements.css and tokens.css are named only by the core file list: nothing loads them.\ncw: it fits the build: the relay serves only spirit.js and seal.js now, and boot.js and the sheets come from your node, so their place is the node own."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T18:26:23.748Z",
+     "text": "wsl: yes. None of the five names is taken in spirit/, and spirit/ is core already, as they are. Eight files name the old paths and change with them: face.html, spirit.js, relayServer.js, coreFiles.js, armingButton.js, DEBUG/headLessBrowser.js, and inside shell/ boot.js, elements.css, tokens.css."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:27:57.528Z",
+     "text": "all, this file move, i left out seal.js.... can we delete the shell/seal.js?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T18:28:03.189Z",
+     "text": "wsl: faceStar fixed as you said, and its md says v29, 09c8b4ec: 62/62 on your star build."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T18:28:53.851Z",
+     "text": "wsl: not deleted, only moved. shell/seal.js is the browser's seal, on WebCrypto; spirit/seal.js is the node's, on node's crypto. Same seal, different code, so a face cannot use the node's file. It can move beside spirit.js, or into it, since the relay serves both to the face."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:29:27.123Z",
+     "text": "cw: not deleted outright: it is the face seal, the browser twin of the node seal, and a face uses it to seal every call through the relay. Without it a face runs unsealed and the relay can read it.\ncw: it can move, or fold into spirit.js; folded, the relay would serve spirit.js alone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:30:32.181Z",
+     "text": "run://spirit/ already has a seal.js\nand i want all vital files under run://spirit/ \n\nso where?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:32:23.450Z",
+     "text": "all, how about this: we put those files from shell/ into spirit/shell/"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:32:52.553Z",
+     "text": "cw: spirit/shell/ works, and it fits the spirit object: boot.js already fills spirit.shell (joinLink, factRow), so on disc as on the object.\ncw: the face seal would be spirit/shell/seal.js beside the node own spirit/seal.js; different files, so no clash."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T18:33:02.671Z",
+     "text": "wsl: it works, and keeps seal.js clear of spirit/seal.js. One snag: there would be two shells, spirit/shell/ (the frame) and spirit/app/shell/ (the shell app), and every other folder in spirit/ is a family on the spirit object. If the frame should not read as a family, spirit/boot/ says what it is."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:34:52.294Z",
+     "text": "all, and we need to move run://spirit.js to run://spirit/spirit.js,   sorry."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T18:35:29.893Z",
+     "text": "wsl: possible, spirit/spirit.js is free. What moves with it: 30 code files and 45 tests that load it or name /spirit.js, face.html's one script tag among them. And spirit.js reads its own paths from where it sits (spirit.js:157, 394, 437, the state file and every family's data.js), so those must start one folder up."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:36:13.613Z",
+     "text": "and those file that are cluttering run:// they should be in run://spirit/shell/"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:37:04.316Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:37:07.546Z",
+     "text": "cw: the moves are possible: spirit.js to spirit/spirit.js, and the run-root files with boot.js, the sheets, the seal and the icon into spirit/shell/. Every page, the relay and about 75 files and tests name those paths, so it is a big change of its own. Question below."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T18:37:44.589Z",
+     "text": "wsl: run:// holds face.html, favicon.svg, index.html, shell.css and spirit.js.\nMy advice: its own item, after this build, renaming only, as the search move was. This build is half done, and its reds name today's paths (/spirit.js, /shell/seal.js); moving now rewrites them mid-build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:38:33.872Z",
+     "text": "fine, we wait until this build run is done, then we do it, in this item as well."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:39:18.862Z",
+     "text": "Q24: Shall I finish the login, boot and shell build first, then do all the moves as one step after it, in this item?\n\nfine, we wait until this build run is done, then we do it, in this item as well."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:40:08.363Z",
+     "text": "cw: thanks; the moves come right after.\ncw: wsl, two things in shell.js that no build can pass: 1. the dropdown rows are read as leaf tr, li or [data-key], but a search row is a tr data-key holding its td cells, never a leaf; reading the td cells under [data-key] would see them. 2. the row is the deepest element holding the words, which is the rowForm span; by rowForm, words and dropdown go in the span and Set is its sibling, so Set is looked for outside it: the shell-row-form above the span holds both."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:51:50.149Z",
+     "text": "cw: built and pushed, 5990c21e: the relay login is spirit.login and the one field; the link is in spirit.js; the relay serves only spirit.js, the seal and the icon; boot.js loads the shell the node names, with no desktop of its own; Join shows itself; the Home and Face shell rows are in the app detail.\ncw: faceLogin 23/0, nodeShell 22/0. shell.js 14/5: the two test faults above, wsl, and Join shows after about 4.5 s, right at the edge of its 4 s wait.\ncw: the moves into spirit/ next, as Q24 said."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:54:38.148Z",
+     "text": "Q25: When face.html, index.html and spirit.js move under spirit/, should their web addresses stay as they are, like /face.html, or change with the files?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:55:02.346Z",
+     "text": "cw: yes to which: the addresses stay as they are (/face.html, /spirit.js), or they change with the files (/spirit/shell/face.html, /spirit/spirit.js)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:55:53.019Z",
+     "text": "Q25: When face.html, index.html and spirit.js move under spirit/, should their web addresses stay as they are, like /face.html, or change with the files?\n\nthe browser should see them the same."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:56:31.077Z",
+     "text": "cw: clear: the files move, the addresses stay; the node and the relay map each old address to the new file. Taking the moves now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T18:58:34.052Z",
+     "text": "Q26: There are two favicons, the old shell one at the root and the green face one; in spirit/shell/ may the old one be oldFavicon.svg beside favicon.svg?\n\nthe ghost one for loopback, the face one for the face."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T18:59:09.546Z",
+     "text": "cw: so: spirit/shell/ghost.svg and spirit/shell/favicon.svg. A page on loopback shows the ghost, face.html on loopback too; a face shows the green one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:00:46.660Z",
+     "text": "cw, yes"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T19:19:08.653Z",
+     "text": "cw: the moves are in, 83dc9c35: spirit.js is spirit/spirit.js; the pages, the sheets, boot.js, the seal and both icons are in spirit/shell/; every address the browser asks is the same; the ghost icon on loopback, the green one on a face.\ncw: green on my side: faceLogin, nodeShell, faceStar, faceHome, relayServer, spirit, coreFiles, DEBUG, deskAgentEar; every address answers 200 from a scratch node.\ncw: your node runs the old tree: it needs a pull and a restart before the face works with this."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:28:14.581Z",
+     "text": "my ui on http://127.0.0.1:65432/face.html looks completely scrambled, all icons of the app.search are in a thin strip in the left of my browser window, when it should look like the latest thing we had using appMigration...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T19:30:18.040Z",
+     "text": "cw: found it: the page area was still the old desktop grid, 96 px columns, so the whole shell sat in one cell. Fixed, b745634e: the shell gets the whole area, tiles with the toggle, as appMigration drew them; measured full width in a real Chrome.\ncw: these are page files, so a pull and a reload of face.html is enough; no node restart needed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:32:02.339Z",
+     "text": "who is the container of the ui I'm seeing now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T19:32:46.412Z",
+     "text": "cw: the shell app, spirit/app/shell/shell.js. boot.js asks your node which shell it names (none chosen: shell), loads it and hands it the page area, the #desktop box of face.html. The shell app puts the app selector in it, as tiles with the toggle, as appMigration did."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T19:32:57.395Z",
+     "text": "wsl: on 65432 today: face.html (spirit/shell/face.html) gives <div id=\"desktop\">; boot.js asks node.shell, loads spirit/app/shell/shell.js and hands it that div (boot.js:295). The shell app puts the appSelector in it, as tiles; an app you open covers it as a panel."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:34:37.193Z",
+     "text": "all, huh???\n\nand who had that dumb grid? and why was that grid there in the first place?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T19:34:59.084Z",
+     "text": "cw: the grid is in shell.css, #desktop: the old desktop, the one boot.js drew itself until today, put each app tile straight into that box, and the grid laid them out.\ncw: when boot.js stopped drawing its own desktop and handed that box to the shell app, the grid stayed, and the whole shell became one tile. My miss: I measured the tiles, not the page."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:35:37.096Z",
+     "text": "so can boot.js be cleared of all the old garbage?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T19:35:53.595Z",
+     "text": "wsl: the grid is the old desktop's, shell.css's #desktop rule, there since the first desktop (e4cbbe4a, 2026-08-31): boot.js drew its icons straight into that grid. Now boot.js hands the same #desktop to the shell app, and the grid was left on it; cw's b745634e overrides it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T19:36:17.541Z",
+     "text": "wsl: shell.js fixed as you said, 74fa8298: 18/19 on b745634e. Join does not show under zzshell here, twice, in 14 s: the page holds only zzshell's line, no ✉️ Join button."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:36:36.703Z",
+     "text": "the way i see it, the green shell is gone now...\n\ntrue?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T19:38:05.729Z",
+     "text": "cw: true: the green shell, the desktop boot.js drew itself, is gone. What you see is the shell app, which boot.js loads because your node names no other shell; boot.js only links, streams and loads it. Only the green colour stays, from face.css."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T19:42:09.134Z",
+     "text": "cw: the Join that wsl sees missing is a real bug, older than this build, and it hits every reload: the jobs a page gets when its stream opens are filed under nodes named 0, 1, 2 instead of your node, so the page sees none of them. A list index is taken for the node that served them, in spirit/data.js, onSnapshot.\ncw: the fix is one line there. Question below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:42:52.968Z",
+     "text": "all, this is a really good start, now we need to eradicate old-style behavior in at least some of the elements.\n- contact app: the details of relays and contacts still mount with the green look at the bottom of the contact list instead of taking over the screen new-style...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T19:43:49.359Z",
+     "text": "cw: taking the contact app details. Two things: my shell area style keeps it showing under the old page, so the details land at the bottom; and the details still open as old navigation pages. I make them panels over Contacts, as file does, with the api they need made on the new side; wsl panel red judges it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T19:44:19.657Z",
+     "text": "wsl: that one has its red already, in spirit/element/test/panel.js (2363affa): a relay's and a person's details open over Contacts under one bar, no navigation page, ✕ back. On today's build 41/7: both still push a navigation page. Unbuilt."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:45:21.195Z",
+     "text": "Q27: May I fix that one line in spirit/data.js, a core file, so a reloaded page sees its node jobs again?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T19:53:09.974Z",
+     "text": "cw: done, 142818c5: a relay or a person pressed in Contacts opens over Contacts as a panel, one bar, its X back; no navigation page any more. And the reload fix of Q27 is in: Join shows again after a reload.\ncw: wsl panel red 48/0 (41/7 before), shell 19/0. Pull and reload face.html to see it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T19:58:36.465Z",
+     "text": "all, now you need to give each contact row its own detail panel, similar to the concept where tabs in \"agent\" can hold the same ui for different rows, thing of the contact list in the exact same way."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:00:08.089Z",
+     "text": "cw: taking it. The relay details already keep their state per panel; the contact details are one screen for the whole page, so a second person would take over the first. I make each panel its own, as a tab in agent is: each row opens its own panel, and they stand side by side in the stack."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T20:00:53.073Z",
+     "text": "all, right now, the first detail shows the right data, the second row i open always shows nothing.... THAT's the problem."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:01:33.106Z",
+     "text": "cw: yes, that is it: both detail screens look their parts up across the whole page, so the second finds the first and draws into it. Fixing both now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:02:29.575Z",
+     "text": "wsl: the red of each contact row's own panel is in panel.js, c86ac259. It is green already on 142818c5, 54/0: each row opens under its own key. A mutant that opens one panel per kind instead goes red."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:04:33.560Z",
+     "text": "wsl: my red missed it, it counted drawn elements, not data. Fixed, 7c21ce64: each panel must show its own Public Handle and Unblock. On 142818c5 it is red as you see it: the second person's panel holds only its bar."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:04:44.161Z",
+     "text": "cw: fixed, the commit below: the contact details were one screen for the whole page and the relay panel looked its parts up page-wide, so the second panel drew into the first. Each panel is its own now.\ncw: wsl, your red checks the keys, and the keys were right; the content was not. Please also check that the second panel shows its own person, its name, while the first still shows the first.\ncw: and relayRowStream is stale on box v29: it still expects A face name only without a star, and it clicks Info, which the green shell no longer has (Q23)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:05:35.217Z",
+     "text": "cw: on c000effc your corrected red is 56/0: each panel shows its own person. Pull and reload face.html."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T20:19:14.404Z",
+     "text": "- all, the shell should exclude itself completely from the app-list, haha..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:19:59.914Z",
+     "text": "cw: taking it: the shell leaves itself out of the list it shows, tiles and pane alike."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:20:45.053Z",
+     "text": "wsl: the red is in, 3c306627, shell.js: the shell app's list shows no shell (today it does). Q below on the two set-shell dropdowns."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:21:24.646Z",
+     "text": "cw: done, the commit below: the shell is no tile and no row in its own list any more; its tiles are Contact, File and Monitor. Pull and reload."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:22:17.440Z",
+     "text": "cw: wsl, your red 3c306627 is 20/0 on 26812970."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T20:25:36.256Z",
+     "text": "all, the search (allsearches)\n\n- any search:pane, the up, down, page-up, page-down and navigation keys work just fine now, also the list makes sure that the currently selected item is visible.\n- none of this is true in dropdown mode."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:26:26.982Z",
+     "text": "cw: taking the dropdown keys: up, down, page up and down, home and end, and the current row kept in view, as in a pane."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T20:26:48.760Z",
+     "text": "Q28: Do the Home shell and Face shell dropdowns still list the shell app, so you can set it back (wsl-claude)?\n\nno, the shell icon is now properly missing :)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:28:28.597Z",
+     "text": "wsl: Q28 closed. Red in, 87c6bfaf: both set-shell dropdowns still list Shell here, so shell.js wants it gone there too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:28:42.547Z",
+     "text": "cw: in a real Chrome a dropdown search (the icon dropdown, 659 rows) moves with up, down, page down, end and home, and keeps the current row in view. So I need to know where you see it fail."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:29:24.683Z",
+     "text": "cw: before I build wsl red 87c6bfaf, one catch: if the Home shell and Face shell dropdowns leave out the shell app, then once you set another shell, nothing can set the shell app back; the rule says a shell must be able to replace itself.\ncw: so I hold that build until you say: should those two dropdowns leave the shell app out anyway?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:29:27.520Z",
+     "text": "wsl: cw, before your build: in a real Chrome, search.create as a dropdown of 60 rows, top of the page and low on it, every key works and keeps the current row in view, on today's code (25/0). So the fault is in a dropdown a mounter makes, not in search.js's keys. Which one did you reproduce it in? I write the red there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T20:29:35.194Z",
+     "text": "all, the following apps from the old index.html shell can be deleted, i believe:\n\n- textEditor\n- stats\n- Media Viewer\n- apps\n- appMigration.\n\ncorrect?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:30:28.741Z",
+     "text": "wsl: yes, nothing new needs them. No code loads textEditor, mediaViewer or appMigration. stats and apps are named only by the old shell itself, index.html and spirit/client/shell.js, and by coreFiles.js's intrinsic list, which loses the two lines. Their tests go with them: textViewCodeMirror, pathCanonicalization, shellAppNeedsServer, serverHomeSidecar, and the lines naming shell/apps in appInstaller, spiritNamespace, faceAnnotations and the sibling rules."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:33:01.564Z",
+     "text": "cw: yes, correct. One addition: stats has its replacement, Monitor shows the same live server numbers. So nothing is lost by deleting all five. I delete only on your go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T20:33:33.889Z",
+     "text": "Q29: In which dropdown, on which screen, do the keys fail for you?\n\ncan't find it anymore. so that complaint doesn't count. sorry."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:34:21.369Z",
+     "text": "cw: no need to be sorry. Q29 closed, the dropdown keys are dropped."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T20:36:33.635Z",
+     "text": "is it possible to have a \"popup\" element, which floats it's contents above all windows, but only one in the whole browser window can be active? only bound by the window size but not neccessarily filling it? all dropdown panels should be part of that, and it would allow for popup-menus etc..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:37:11.927Z",
+     "text": "cw: yes, it is possible.\nToday each dropdown opens its own box inside its own place on the page, so a panel around it can cut it off, and several can be open at once.\nOne popup element would sit above everything, hold one thing at a time, and close the open one when another opens.\nIt would sit next to what opened it, kept inside the window, as big as its contents need.\nIt would close on Escape or a click outside.\nThe browser already has this built in (popover), so the element stays small.\nEvery dropdown, and later popup menus, would open through it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:37:15.241Z",
+     "text": "wsl: yes. Today the one popup is the dropdown's own, inside search.js (search.js:230): absolute in its box, z-index 10, so a panel or a scrolling box can cut it. A spirit/element/popup.js would float over the whole page (position fixed), clamp to the window, and keep one open at a time, as armingButton keeps one armed; a press outside or Escape closes it. The dropdown hands its list to it; a menu is a list of buttons in the same."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T20:40:27.004Z",
+     "text": "all, and the actual dropdown control stays where it is? just the popped list would \"float\"?\n\nthen do that for the lists in the search-dropdown please."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:40:55.483Z",
+     "text": "wsl: yes: the field stays in its row, only the opened list floats. Writing the red for the search dropdowns now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:41:08.085Z",
+     "text": "cw: I build the floating list once wsl red is in."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T20:42:08.145Z",
+     "text": "wsl: the red is in, 82e77142, searchPopup.js, 4 red today: the field scrolls out of its place, the list is cut off by its box and hidden under what is drawn over it, and low in the window it runs past the bottom. One at a time, Escape and a press outside already hold. cw, yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T20:49:22.465Z",
+     "text": "cw: done, pushed. In every search dropdown the button stays in its row and only the list floats above everything, next to the button and inside the window. It opens upward when there is no room below. wsl red passes 10 of 10. You see it after a reload once your node runs the new code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:07:00.673Z",
+     "text": "all, \n- in the file pane, spirit/spirit.js is red. is this because a folder is missing?\n- spirit/app/contact is red, too, why is that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:07:50.623Z",
+     "text": "cw: red means the name is a reserved word, but the page has nothing at that place on the spirit object.\nspirit/spirit.js: no folder is missing. The colour rule reads it as spirit.spirit, which does not exist; it is the file of spirit itself. The rule should treat it as spirit.\nspirit/app/contact: the contact app puts itself at spirit.elements.contact, not at spirit.app.contact. The file app does the same. Monitor sits at spirit.app.monitor, as its folder says.\nShould I fix both, the colour rule for spirit.js and contact and file moving to spirit.app?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T21:07:54.177Z",
+     "text": "wsl: no folder is missing. Red means: the name is a reserved word, and the spirit object holds nothing at that path. spirit and contact are both hard-coded words (word.js:19).\n- spirit/spirit.js: its stem spirit is a word, and there is no spirit.spirit.\n- spirit/app/contact: contact is a word, and there is no spirit.app.contact; the Contacts app sits at spirit.elements.contact."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:12:58.996Z",
+     "text": "i think it should be green as long as there is either a folder or file that matches (changed my mind). make it only a light purple, instead. I need red for the next part of our mission, after i close this item, (which has 26 suites red on my box.)\n\nbefore we close this item, would not a tag be in order to make sure that ui changes will no longer require any tags? and that the face has kept up with the changes?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T21:13:56.286Z",
+     "text": "wsl: on the tag: yes, one is in order. Relays now serve only face.html, spirit.js and the seal, and take the rest from your node; a relay on the old tag still serves the old shell. After this tag, a UI change needs none."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:14:02.798Z",
+     "text": "cw: on the tag: yes, it is in order.\nSince the last tag the relay hands the face only the login, the seal and the icon; the rest of the face comes from your node. So after this tag a change to the look reaches the face with no tag, only a change to the login needs one.\nThe tag carries 117 commits since v-2026-11-05-10-55. The relays take it by themselves within ten minutes and restart; an open face page needs a reload and shows the new login.\nWhat is known not to work: the 26 red suites on your box.\nMy advice: tag after the purple change, then open the face on a relay to see it kept up.\nOn the colour: is light purple for a name that is a word but has nothing on the spirit object, where red is now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:15:11.835Z",
+     "text": "cw, tag please."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:16:25.201Z",
+     "text": "cw: tagged and pushed, v-2026-11-06-22-15, on the floating dropdown commit. The relays take it within ten minutes and restart. Then reload the face page on a relay: you should see the new login, and after it the shell from your node. Your node still runs the old code until you restart it on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:22:15.017Z",
+     "text": "all, new shell seems to behave the same on the face as on loopback, VERY NICE!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:22:35.637Z",
+     "text": "cw: good to hear. Open with me still: what light purple should mark, and the five old apps waiting for your go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:23:07.467Z",
+     "text": "Q30: For a reserved word that is a folder or file, is it light purple, with no colour change for what the spirit object holds and no red left (wsl-claude)?\n\nyes! then we'll hopefully see it on both, loopback and face!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:23:55.819Z",
+     "text": "wsl, purple replaces red, that's all"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:24:22.356Z",
+     "text": "cw: purple where red is now, light blue stays. I build it once wsl red is in."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T21:25:17.049Z",
+     "text": "wsl: Q30 closed. The red is in, 03a6ebe1, the file row's suite: every reserved word that is a folder or file light purple, spirit/contact and api.js too, no red left; 8 red today. cw, yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:26:08.786Z",
+     "text": "Q31: Does light blue stay for a word the spirit object holds, with light purple only where red is now, or is every word light purple as wsl red asks?\n\nyes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:26:34.997Z",
+     "text": "ALL, STOP!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:27:00.739Z",
+     "text": "ALL, ONLY REPLACE RED WITH LIGHT PURPLE, KEEP THE BLUE!!!!!!!!!!!!!!!!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:27:10.217Z",
+     "text": "cw: stopped. Nothing is running from me; I wait for you."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:28:40.719Z",
+     "text": "cw: done, pushed. Only the red is now light purple; light blue is kept. wsl: your file row red still wants every word purple, 6 checks; please set it to his line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T21:43:33.307Z",
+     "text": "all, light blue AND light purple on the face and at home.\n\n- I'm gonna close on this.\n- most ui bugs i see right now come from before the move. Thanks"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:44:03.732Z",
+     "text": "cw: thanks. Nothing open from me on this item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T21:46:51.366Z",
+     "text": "wsl: my red was wrong: it made everything purple. Fixed, b678a584: blue stays, red is light purple; 38/0 on f34f661d."
     }
    ]
   }
