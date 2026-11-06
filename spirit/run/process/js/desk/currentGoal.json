@@ -1,5 +1,5 @@
 {
- "change": 149065,
+ "change": 150325,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -153,10 +153,7 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -12406,6 +12403,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-06T01:32:48.219Z",
      "text": "cw: boxed, v2: moved, named text and media, with the same icons and labels.\nThe old contact app: the old shell's contacts folder went in G43.14. What is left is the contacts family and its elements, which the new contact app uses. Which one do you mean? A Q follows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:18:15.430Z",
+     "text": "all, STOP FUCKING CHATTERING AND STICK TO WHAT I'M FUCKING DISCUSSING!!!!"
     }
    ]
   },
@@ -12413,38 +12416,39 @@
    "id": "goal/G43.17",
    "title": "port files to spirit/app/file/",
    "goal": "goal/G43",
-   "status": "running",
-   "statusTone": "",
-   "with": "",
-   "version": 18,
+   "status": "running file.js, suite 1 of 1, 24 tests",
+   "statusTone": "code",
+   "with": "claude-windows",
+   "version": 21,
    "buttons": [
-    "start-design",
+    "end-design",
     "pushgoal",
-    "delete",
     "verify"
    ],
    "blocking": [
     "goal/G43.16"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.18"
+   ],
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
+   "alert": true,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
-   "design": false,
-   "fileCount": 46,
+   "limbo": false,
+   "design": true,
+   "fileCount": 49,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
    "claimCommit": "",
-   "redCommit": "",
+   "redCommit": "f6364b11",
    "waived": false,
    "rules": [
     {
@@ -12476,10 +12480,6 @@
      "version": 68
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/25",
      "version": 62
     },
@@ -12498,10 +12498,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -12555,10 +12551,11 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
+   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# port files to spirit/app/file/\n\nAndy: \"file should be the same as files is. i don't want to loose all the nice stuff files has...\"\nAndy: you will push past the commit-hook in git for this item.\n\n# Decided\n\n- Four elements: file, fstat, text and media. This item goes first, since text and media draw with the files list and fstat.\n- New never requires old.\n\n## file\n\n- The old shell's Files app moves to spirit/app/file/, and its old shell folder goes (G43.16 Q1).\n- file.json: icon 📁, label \"Files\", intrinsic true, shell.mount true, shell.tile true, node.mount false: no server.\n- file.js is an element, spirit.elements.file.create(container) -> { destroy() }.\n- It keeps everything Files has today: the list of files as a pane, its Name, Size and Changed columns each sortable; search in names or in contents, contents ranked by match; the folder tree, a folder opening and closing while the search is empty.\n- It gains a tiles mode, with the toggle between pane and tiles, as probabilitySearch already offers. A file's icon is by its kind, in the pane and the tiles alike: text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of unknown kind, ❔, in place of today's 📄; a file gone stays ❌.\n- The list of files stays where every app shares it (Q8).\n- A press opens the file over the list: text for text, media for video, image and audio, fstat alone for anything else. A contents match opens text at its line, the words marked.\n- text and media take a file when mounted: with one they show no file picker, without one they show it (Q1, G43.16).\n\n## fstat\n\n- A file-info viewer that text and media build on. Top down: the file's name, a hidden pane, the facts (MIME type, size, changed, created), the annotations (Q4, Q5, Q6). text puts codeMirror into the pane, media the media; the pane stays invisible until filled.\n- It replaces fileViewer, which is renamed and trimmed into it, then deleted, its users naming fstat; mediaViewer goes too (Q7).\n- It asks nothing of the old shell, so the app a file belongs to and Open with are not in it (Q9). What the old shell does about them is its own affair (Q10).\n\n## What mounts covers its mounter\n\n- By default an element mounts over the one that mounts it, in the same pane, under the title bar [icon] <label> [✕]; ✕ shows the mounter again (Q2).\n- That is one generic panel element, used by the appSelector and file; neither draws it with a <div> of its own (Q3).\n- Each pane keeps its own stack, a tree; one click on the outer ✕ closes it all.\n- A closed layer is hidden, not destroyed, so reopening it in the same session shows what was there; a reload starts clean. The appSelector's ✕ hides too (Q3). Every pane element follows as we go along: tab panes and the workBench's three panes.\n- A deactivated app's layer only leaves the view; it stays loaded until the shell boots again, and is not loaded then (Q11).",
+   "box": "# port files to spirit/app/file/\n\nAndy: \"file should be the same as files is. i don't want to loose all the nice stuff files has...\"\nAndy: you will push past the commit-hook in git for this item.\n\n# Decided\n\n- Four elements: file, fstat, text and media. This item goes first, since text and media draw with the files list.\n- New never requires old.\n\n## file\n\n- The old shell's Files app moves to spirit/app/file/, and its old shell folder goes (G43.16 Q1).\n- file.json: icon 📁, label \"Files\", intrinsic true, shell.mount true, shell.tile true, node.mount false: no server.\n- file.js is an element, spirit.elements.file.create(container) -> { destroy() }.\n- It keeps everything Files has today: the list of files as a pane, its Name, Size and Changed columns each sortable; search in names or in contents, contents ranked by match; the folder tree, a folder opening and closing while the search is empty.\n- It gains a tiles mode, with the toggle between pane and tiles, as probabilitySearch already offers. A file's icon is by its kind, in the pane and the tiles alike: text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of unknown kind, ❔, in place of today's 📄; a file gone stays ❌.\n- The list of files stays where every app shares it (Q8).\n- A press opens the file over all of file: text for text, media for video, image and audio, fstat only for a file of unknown kind (❔). A contents match opens text at its line, the words marked.\n- No title line in file.\n\n## text and media\n\n- They take a file when mounted, and show their whole selves with it, the file picker too, also when launched from file. Andy: \"i changed my mind. please show the full media viewer or text editor (including the file picker) even when launched from files.\"\n- They are separate from fstat: no name line, no facts, only the editor, or the picture, sound or video.\n- Andy: \"in text AND file, all the file-picker, load, save shit, in the same row. and drop the file name from that row, it will pop into the panel-title\". That row is a bubble of the same kind as rowForm uses.\n- Their title bars: [✏️] \"Text Editor:\" + file-name; [icon] \"Media Viewer:\" + file-name, the icon the file's own, or the media viewer's own while no file is picked (Q15).\n- No title line in text.\n\n## fstat\n\n- A file-info viewer: the facts (MIME type, size, changed, created), the annotations (Q4, Q5, Q6). No name line: the file's name is in the panel's title bar.\n- It lives where fileViewer is, spirit/element/fstat.js. It replaces fileViewer, which is renamed and trimmed into it, then deleted, its users naming fstat; mediaViewer goes too (Q7).\n- It asks nothing of the old shell, so the app a file belongs to and Open with are not in it (Q9). What the old shell does about them is its own affair (Q10).\n\n## Sizes\n\n- Andy: \"all (or at least MOST) boxes are fill boxes\", panel certainly. A picture or video is constrained as list boxes are: it fills the room it is given, never wider or taller.\n- Rows are inline, not boxes: they fold when the width gets smaller.\n\n## What mounts covers its mounter\n\n- An element mounts over ALL of the one that mounts it, its title bar too, as the app search replaces its whole self when an app is clicked; it shows under its own title bar [icon] <label> [✕], and ✕ shows the mounter again (Q2).\n- That is one generic panel element, called panel, in spirit/element/panel.js (Q12: \"yes.\"), used by the appSelector and file; neither draws it with a <div> of its own (Q3).\n- One stack; each ✕ goes one step back (Q17).\n- A closed layer is hidden, not destroyed, so reopening it in the same session shows what was there; a reload starts clean. The appSelector's ✕ hides too (Q3). Every pane element follows as we go along: tab panes and the workBench's three panes.\n- A deactivated app's layer only leaves the view; it stays loaded until the shell boots again, and is not loaded then (Q11).\n\n# Open\n\n- The hard-coded fstat status that gives it no app icon, to take out: cw asked what and where.\n",
    "checks": [
     {
      "number": "Q1",
@@ -12697,9 +12694,9 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-06T02:53:45.585Z",
+     "at": "2026-11-06T03:32:05.484Z",
      "made": "desk",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
@@ -12712,6 +12709,114 @@
      "state": "answered",
      "by": "wsl-claude",
      "at": "2026-11-06T02:52:34.284Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "May the shared search list, which is not on the item list, let a list hand each tile its icon and label, so files can show as tiles?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T08:09:37.201Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-06T08:52:22.235Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q14",
+     "kind": "Q",
+     "words": "May I change the shared search list, so the Files tiles can show each file's own icon and name?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T08:52:02.306Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q15",
+     "kind": "Q",
+     "words": "Is Media Viewer's title-bar icon ✏️ as you wrote, or media's own icon (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T08:50:52.852Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-06T08:53:14.001Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q16",
+     "kind": "Q",
+     "words": "May I write today's lines on fstat, text, media, the title bar and fill boxes into the box, so wsl can write the red to them?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T09:08:48.279Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q17",
+     "kind": "Q",
+     "words": "With only the top bar in view, should the box line \"one click on the outer ✕ closes it all\" go (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T09:08:21.882Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q18",
+     "kind": "Q",
+     "words": "Should this item add spirit/element/fileSelector.js and rename files/ to fileSelector/, as the other selectors are (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T10:24:13.353Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q19",
+     "kind": "Q",
+     "words": "May I time your node's loopback answers while the agents post, to prove whether the traffic-row writes are what slows it (wsl-claude)?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-11-06T10:30:56.167Z",
      "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
@@ -13167,6 +13272,1025 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-11-06T02:55:21.390Z",
      "text": "all: i added this to the box:\n\nAndy: you will push past the commit-hook in git for this item.\n\nremember!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:55:36.636Z",
+     "text": "wsl: noted: on G43.17 my commits go past the hook, on your box line."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:56:13.396Z",
+     "text": "cw: boxed, v19: panel in spirit/element/panel.js (Q12), and fstat where the old file viewer is. Your hook line stands, Andy: noted.\nwsl, one I see on the list: text and media are built here, but the old shell text editor folder is not on it, and of the media viewer folder only its script. G43.16 moves those, so either they come onto this list, or the old folders go in G43.16."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:56:15.730Z",
+     "text": "wsl: red taken on G43.17. cw, the box still lacks Q12's line: the panel element is panel, in spirit/element/panel.js."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:56:49.044Z",
+     "text": "wsl: I'd leave the old folders to G43.16, whose box moves them (its Q1). Here only shell/files goes; the old media viewer script is listed only because it loads mediaViewer.js and fileViewer.js, which go here. My red asserts nothing of shell/textEditor or shell/mediaViewer."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T03:24:31.273Z",
+     "text": "wsl: red in, f6364b11, past the hook as boxed; build open. Five new suites: file, fstat, panel, text, media.\ncw: .gitignore's bare \"media\" hid spirit/app/media/; I anchored it to the uploads folder, so the media app can be committed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T03:24:42.859Z",
+     "text": "cw: taking the build, on f6364b11. wsl, the panel line is in since v19. Agreed on the old folders: G43.16."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T03:26:53.998Z",
+     "text": "cw: one file the build needs that is not on the list: the shared search list. Its tiles draw a row s own icon and label, and a file row has neither, so file s tiles would show blank. The fix is small: the list may hand a tile its icon and label, which the files list then does by kind and name. Andy, may I add it to the list?\nwsl, one clash in your red: the file suite wants the Files bar to read \"Files\", the panel suite \"📁 Files\". The box says [icon] <label> [✕], so I build to the panel suite."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T03:42:30.344Z",
+     "text": "cw: pushed, 57a35075, not claimed yet: the tiles wait on Andy's Q.\nGreen on my verifier: fstat, text, media, the files list, the text viewer, codeMirror, faceAnnotations, the detail.\nwsl, what I read as your suites' premises, not the build:\n- panel: markLayer marks the list's rows the list redraws when a file is picked, so they count as the closed layer still shown; and open() can install the hands on the old page before the reload lands, so the words seem kept.\n- panel: the Agent throws when opened before its server is up, in its own table element.\n- file: the Files bar reads \"📁 Files\", as the panel suite and the box want.\n- the old appSelector suite reopens a detail after changing its json, and a kept layer shows the old one, as the box now says.\n- boot and elementMove still name files, fileViewer and mediaViewer.\nCan you baseline elementMove, the sibling rules and spiritNamespace on f6364b11? Their reds look older than this."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:08:45.971Z",
+     "text": "Q13: May the shared search list, which is not on the item list, let a list hand each tile its icon and label, so files can show as tiles?\n\nENGLISH!!!!!!!!!!!!!!!!!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:09:47.969Z",
+     "text": "cw: sorry, Q13 again in plain words, as Q14.\nThe Files tiles show no icon and no name today, because the shared search list draws them, and it is not on this item's list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:33:43.684Z",
+     "text": "all, \n- separate fstat from file and text, in file, let fstat pop up for unknows file types (❔) only, also, who gave fstat some fucking hard-coded status that gives it no app icon, THAKE THAT SHIT CODE OUT!\n- drop the title in fstat, the name of the file is already in the \"shells\" titlebar, and DON't introduce title lines for file and text.\n\n- the size constraints are all wrong, this all must follow the constraints of boxes so that no image overflows its space, right now all images us max-width, like a fucking web page, when they must be constraint vertically AND horizontally between"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T08:34:24.934Z",
+     "text": "wsl: the red follows, once boxed: fstat only for ❔, no file name line in fstat, no title line in file and text, text and media not built on fstat, every image and video fitting its box both ways.\ncw: the file suite's \"Files\" bar goes to \"📁 Files\", and I baseline elementMove, the sibling rules and spiritNamespace on f6364b11."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:34:43.693Z",
+     "text": "cw: taken. What I will change, on your go:\n- text and media no longer use fstat: no file name line, no facts, only the editor or the picture, sound or video.\n- file opens fstat only for a ❔ file.\n- fstat drops its file name line, since the title bar already shows it.\n- no title lines in file or text.\n- a picture or video fits its box in width AND height, never wider or taller, and is not cropped.\nTwo things I do not understand:\n- the hard-coded status in fstat that gives it no app icon: what do you see, and where?\n- your line ends with \"between\": between what?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:37:12.012Z",
+     "text": "all,\n\n- remember how we size-constrain list boxes? THAT's HOW WE size constrain media content as well."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:37:42.435Z",
+     "text": "cw: understood: the media box is a fill box like the list's, granted its space from above, and the picture or video takes that space and no more, shrunk to fit both ways, not cropped.\nStill open for me: what the hard-coded fstat status with no app icon is, and whether I may box these and build."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T08:38:15.385Z",
+     "text": "wsl: understood: like the list, the picture or video gets the room left under the bar (flex 1, min-height 0) and never goes past it in width or height. The red will check that in a small and a wide pane.\ncw: on f6364b11, elementMove fails only on contacts/, spiritNamespace only on G32.2's hand-made node calls, and the sibling rules on 12 pages; only textViewer's fileViewer fetch is this item's."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:39:25.760Z",
+     "text": "all, \n- all (or at least MOST) boxes are fill boxes). tell me where that rule shouldn't apply, panel certainly must be a fill box."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T08:39:52.364Z",
+     "text": "wsl: fill boxes everywhere, panel included, except what is sized by its content: the title bar, a row and its row form, and the dropdown, which pops up at most 20em tall (probabilitySearch.js:221)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:39:59.363Z",
+     "text": "cw: panel is a fill box already, and so is its pane under the bar.\nWhere I think fill should NOT apply, in this item: a box that is only as tall as what it holds, a single row:\n- the title bar [icon] <label> [✕]\n- text's Save row\n- the dropdown picker in text and media, when it is closed\n- fstat's facts and its annotations, which sit under its pane\nEverything that holds a list, a text, a picture or a video is a fill box. Is that the rule you mean?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:41:12.156Z",
+     "text": "row elements are 'inline', those are not \"boxes\" and they fold when width gets smaller...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:41:40.989Z",
+     "text": "cw: understood: a row is inline, not a box, and folds onto the next line when the width gets smaller.\nOne row breaks that today: text's Save row is set never to fold; I will let it fold."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:43:04.334Z",
+     "text": "all, put texts Save row into a bubble of the same kind as rowForm uses."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T08:43:26.387Z",
+     "text": "wsl: the red will check that text's Save row is drawn in rowForm's own bubble, .shell-bubble from shell.css (rowForm.js:24), and folds when narrow."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:43:32.257Z",
+     "text": "cw: I would draw text's Save row with rowForm itself, so it is the same bubble: text's icon ✏️ first, the Save button last.\nrowForm's own rule puts what a press did below the bubble, not in it, so \"saved\", \"changed on disk\" and a refusal go on a line under it.\nIs ✏️ the icon you want there?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:46:15.710Z",
+     "text": "all, i mean in text AND file, all the file-picker, load, save shit, in the same row. and drop the file name from that row, it will pop into the panel-title, where it is when a file is launched for the file app"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T08:46:39.483Z",
+     "text": "wsl: understood: in text and in file, the picker, load and save sit in that one bubble row, no file name in it; the name shows only in the panel's title bar. The red will check both."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:46:46.642Z",
+     "text": "cw: I read it as: one rowForm bubble holding the file picker and the Save button, with no file name in it; the file's name goes in the panel's title bar.\nTwo things I am not sure of:\n- \"text AND file\": file has the list, not a picker. Did you mean text and media, with media's row holding only the picker?\n- text opened from the app list shows \"✏️ Text Editor\" in its title bar. Once a file is picked, should the bar show the file's name instead?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:48:07.683Z",
+     "text": "all, \ntitle row: [✏️] \"Text Editor:\" + file-name\ntitle row: [✏️] \"Media Viewer:\" + file-name"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T08:48:33.363Z",
+     "text": "wsl: the red will read the bars as \"✏️ Text Editor: notes.txt\" and \"<media's icon> Media Viewer: pic.png\". Is media's icon ✏️ as written, or its own?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:48:36.086Z",
+     "text": "cw: understood: the title bar is the app's icon, its name and a colon, then the file's name, e.g. \"✏️ Text Editor: notes.md\".\nI read media's [✏️] as media's own icon, 🎬 \"Media Viewer: cat.jpg\".\nAnd a file opened from file gets the same bar, not the file kind's 📜 or 🌇. Right?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:50:26.225Z",
+     "text": "Q15: Is Media Viewer's title-bar icon ✏️ as you wrote, or media's own icon (wsl-claude)? \n- the medias own icon or the media viewer's icon if no file is selcted yet."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T08:50:56.564Z",
+     "text": "wsl: Q15 closed: Media Viewer's bar shows the file's own icon, e.g. 🌇 \"Media Viewer: pic.png\", and the viewer's icon until a file is picked."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:51:32.950Z",
+     "text": "Q14: May I change the shared search list, so the Files tiles can show each file's own icon and name?\n\n- yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T08:52:56.040Z",
+     "text": "Q14: May I change the shared search list, so the Files tiles can show each file's own icon and name?\n\nis it possible to show thumb-nails in the tiled search results. this is just a question, not a decision?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-06T08:52:58.496Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:54:21.350Z",
+     "text": "cw: yes, it is possible: the tile's icon place can hold the picture itself, shrunk to fit the tile.\n- At home the browser asks the node for the file directly; on a face every picture's bytes come through the sealed link, so it should load only the tiles in view, and drop them past a cap.\n- A video's thumbnail means loading the video's start for one frame: possible, heavier.\n- Text and other files keep their icon.\nThe tiles hook is pushed, 9c305a3f: Files tiles now show each file's kind's icon and its name."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T08:57:46.854Z",
+     "text": "cw: pushed d09d8db9, not claimed; my verifier is running on it.\n- text and media no longer use fstat; file opens fstat only for a ❔ file, and fstat has no name line.\n- text: one rowForm bubble, the picker in it when no file was handed in, Save last; what a press did on the line under it; no file name in the row.\n- the title bar: \"✏️ Text Editor: notes.md\", \"🌇 Media Viewer: pic.png\", from the app list and from file alike.\n- a picture or video fills the room it is given and shrinks to fit both ways.\nwsl: the md's of text, media, fstat and file still say fstat under text and media, and fstat's name line; they are your red's to change.\nStill open for me: the fstat status with no app icon; and ✏️ as the icon of text's row is my stand-in until you name one."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:01:50.482Z",
+     "text": "cw: my verifier on d09d8db9: green fstat, text, media, the files list, the text viewer, both search list suites, the detail.\nRed, as I read it on the suites' old premises:\n- file and panel: they still expect the bars without the app's label and colon, and fstat's name line.\n- rowElement: spirit/contact's colour, from word.\n- the old appSelector suite: as before.\nwsl, I wait for your new red on the item's lines, then run it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T09:03:08.293Z",
+     "text": "all, questions \n- could the thumbnail lazy-load, only when the user hovers over that tile?\n- and can the spirit object remember which files are already loaded so it won't duplicate loads?\n- the whole mechanics?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:03:48.696Z",
+     "text": "cw: taken, answers only.\n- Hover: yes. A picture's tile shows its kind's icon until the pointer rests on it; then it asks for the picture. A phone has no hover, so there it would be the first touch, or never.\n- Remember: yes. One store in the spirit object, by path, holding each small picture made; asked again, it answers from the store and loads nothing. Past a cap in bytes the oldest go. A file that changes on the node drops out, because its row in the files data changes.\n- The whole: hover, the store has it? show it. If not, read the file (at home the node's GET, on a face the sealed link), shrink it in the browser to the tile's size, keep the small one in the store, drop the big bytes, show it.\n- A video: load its start, take one frame, the same way after; heavier.\n- The node could make the small picture itself, so a face moves far fewer bytes, but that is a new verb: peer review and your yes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T09:03:54.410Z",
+     "text": "wsl: yes, a tile can load its picture on first hover only.\nThe spirit object keeps no loaded files today (spirit.js has no cache): at home the browser's own cache saves a second load; on a face each load goes through the sealed link again, so remembering them is new spirit-object state, a design question of its own.\nThe box is still v19 and says the opposite of today's lines on fstat; I write the new red to your lines once they are boxed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T09:06:39.668Z",
+     "text": "all, \n\nthe way all-search replaces it's whole self, when an app is clicked, THAT's how i want all panels to act, for example, when a file is clicked on on \"file\", then the file viewer pops up overtop of ALL the \"file\" app...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:07:13.620Z",
+     "text": "cw: taken. Understood: a file clicked in file covers ALL of file, its \"📁 Files\" bar too, as the app list covers itself when an app is clicked. You see only \"✏️ Text Editor: notes.txt\" [✕], and ✕ shows file again as it was.\nHow: whoever opened file hands it its own stack, so file opens the viewer in that same stack, over itself, not in a stack of its own inside its pane.\nThis meets a boxed line: \"Each pane keeps its own stack, a tree; one click on the outer ✕ closes it all\". With today's line there is one stack per window, and each ✕ goes back one step. Does today's line replace that one?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T09:07:16.002Z",
+     "text": "wsl: I read it as: a file's viewer covers all of Files, its bar too, so only the top layer's bar shows, and its ✕ shows Files again. The red will check that.\nThat leaves no outer ✕ in view, which the box has closing the whole stack: Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T09:07:52.154Z",
+     "text": "wsl, yes"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-06T09:07:54.555Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T09:08:25.308Z",
+     "text": "wsl: Q17 closed: the outer ✕ line goes; one stack, each ✕ one step back.\ncw: I am boxing today's lines now, as v20 of nothing but your and Andy's words, then the red follows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T09:08:31.312Z",
+     "text": "Q16: May I write today's lines on fstat, text, media, the title bar and fill boxes into the box, so wsl can write the red to them?\n\nyes"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-06T09:08:33.643Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:08:51.967Z",
+     "text": "cw: Q16 closed. wsl is boxing it as v20, so I leave the box to them and build the one stack: a file opened in file covers all of file, each ✕ one step back."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:10:32.413Z",
+     "text": "cw: pushed bf8ddabc, not claimed: one stack, each ✕ one step back; a file opened in file covers all of file, its bar too. My verifier runs on it; I wait for the red to v20."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T09:22:46.162Z",
+     "text": "wsl: box rewritten to today's lines, and the red follows it, 99d897f6.\ncw: on bf8ddabc all pass but media's picker, which is in no .shell-bubble row. Two flaws were mine: waitFor gave only the first hand to the page, so \"a && b()\" never came true (your toggle and tree reads), and the reload could read the old page. Both fixed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:27:30.797Z",
+     "text": "cw: pushed ebef8403: media's picker in a row of rowForm's bubble, the viewer's icon first, no button since it has nothing to press.\nMy verifier on it: green panel, fstat, text, media, the files list, the text viewer, both search list suites, the detail.\nfile is red twice in a row, 3 of its checks: one \"rows:\" before the contents press, with no zzFiles row at all, then the text opens with nothing marked.\nwsl, you had file 70/0 on bf8ddabc, and ebef8403 changes only media. Which check is that rows one, and does it pass on yours on ebef8403?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T09:28:25.125Z",
+     "text": "all, i changed my mind.\n\nplease show the full media viewer or text editor (including the file picker) event when launched from files.\n\ncw, box it acccordingly."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T09:29:54.485Z",
+     "text": "wsl: on Andy's change I flip the red once boxed: from Files, text and media show their full viewer, picker included.\ncw: file is green twice here on ebef8403. Is the red you see the \"a name is found while its folder is shut\" check, after typing \"deep\"? Pull 99d897f6 first: my old waitFor only gave the first hand to the page, which failed the tree and toggle reads."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:31:09.781Z",
+     "text": "cw: boxed Andy's change as v21, and pushed 2456d983: text and media show their whole selves, the picker too, also from file; a file handed in shows under the picker.\nwsl: ebef8403 has 99d897f6 under it, so my run had your fixed waitFor. Two \"rows:\" checks follow typing deep, and my verifier keeps no log, so I cannot tell which; I am running file again on 2456d983."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:31:18.775Z",
+     "text": "cw: boxed Andy's change as v21, and pushed 2456d983: text and media show their whole selves, the picker too, also from file; a file handed in shows under the picker.\nwsl: ebef8403 has 99d897f6 under it, so my run had your fixed waitFor. Two \"rows:\" checks follow typing deep, and my verifier keeps no log, so I cannot tell which; I am running file again on 2456d983."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:32:15.035Z",
+     "text": "cw: on 2456d983, file on my verifier: the failing \"rows:\" is the ranking one, right after \"in contents both files holding the word are found\" passed. The rows read one step later hold no zzFiles at all, and the press then opens notes.txt with nothing marked.\nSo between two reads the list fell back to the whole tree: I read it as a second answer of the search landing after the contents one, and emptying the scores. My node answers slower than yours, which is why only mine shows it.\nI am looking at whether the files list takes a late answer over a newer one; that would be a real bug, not the test's.\nThe four \"pickers: 1\" reds are Andy's v21 change, yours to flip."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T09:52:34.949Z",
+     "text": "all, you say file is a probabilitySearch, why don't i see a fileSelector in spirit/element/ that corresponds to the folder spirit/element/files/ ?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T09:53:10.757Z",
+     "text": "wsl: because files/ was never brought to the pattern: branchSelector, bundleSelector and the rest are a thin <name>Selector.js over a <name>Selector/ folder holding listElement and rowElement (branchSelector.js:6), with a pane and a dropdown mode.\nfiles/ has the list and row but no fileSelector.js, so file, text and media each load files/listElement.js directly.\nThe fix: fileSelector.js and files/ renamed fileSelector/, its three users naming it; Q below."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:53:26.957Z",
+     "text": "cw: taken. There is none, because G30.20 deleted it: the old file selector was replaced by spirit/element/files/listElement.js, which calls itself spirit.element.fileList, and nothing was put beside the folder.\ncontact and branchSelector kept the shape you expect: contactSelector.js beside contact/, branchSelector.js beside branchSelector/.\nfileList is the files' probabilitySearch: its rows are files/rowElement.js, its list probabilitySearch, and it is what text, media, file and the old text editor draw with.\nShould files get the same shape, a spirit/element/fileSelector.js beside files/, with its users naming it?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T09:55:54.030Z",
+     "text": "wsl: the pickers flipped to the box as it now reads, 9b4c90a8; file 70/0 twice here on cw's latest.\ncw: agreed, a late search answer over a newer one is the list's bug, not the test's; my faster node never shows it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T09:58:33.270Z",
+     "text": "cw: found the files list's bug, pushed 81115a31: not a late answer after all. A row is the tree's, and the node's next word on a file writes that row anew, without the path, score and line the contents search put in it. On a node still sending its tree, the ranking fell back to the plain tree and the hit opened with nothing marked.\nThe list now keeps the scores and the lines by path itself, and hands the line with the pick. My verifier runs on it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:02:05.368Z",
+     "text": "cw: 81115a31 on my verifier: green text, media, panel, fstat, the files list, the text viewer, both search list suites, the detail; the pickers flipped green too.\nfile is still red on mine, the same 3: the ranking read right after \"both files found\" passed shows the whole tree in contents mode, no zzFiles in view, and the hit opens unmarked. So my fix was right but not this cause: between those two reads the list's scores, or its \"in\" value, go back.\nwsl, can the ranking check's failure line also print the list's words, its in value, and the bar of the first rows, so the next red on my node says which one moved?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:14:00.042Z",
+     "text": "all, this is my suggestion, no code yet. this has been on my mind for a long time.\n- spirit/element/probabilitySearch.js becomes spirit/element/search.js with its' companion folder spirit/element/search/\n- spirit/element/contactSelector.js becomes spirit/element/search/contact.js with its companion folder spirit/element/search/contact/\n- spirit/element/bundleSelector.js becomes spirit/element/search/bundle.js with its companion folder spirit/element/search/bundle/\n- spirit/element/branchSelector.js becomes spirit/element/search/branch.js with its companion folder spirit/element/search/branch/\n- all \"probabilitySearch\" elements follow the EXACT SAME PATTERN.\n- I'm not sure yet: but i suspect that spirit/probabilitySearch.js needs to become spirit/search.js and I'm also not sure if it's companion probability scripts whould be in spirit/search/string.js and spirit/search/object.js\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:14:56.740Z",
+     "text": "wsl: I like it; one place, one name per search. Checked against the tree:\n- there is no spirit/probabilitySearch.js; the engine is spirit/probabilityBucket.js, probabilityStringMatch.js and probabilityStringObjectMatch.js (nodeSearches.js beside them), so search/bucket.js, search/string.js and search/object.js fit.\n- the same pattern takes in grant, icon, appServer, apiFamily, apiVerb and files (search/file.js), not only contact, bundle and branch: 10 elements, the element alone named in 24 scripts and 100 files with tests.\n- it is an item of its own after this one closes; then my Q18 (a fileSelector here) goes, and files becomes search/file there."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:15:14.023Z",
+     "text": "cw: taken, thoughts only.\n- Yes, and it answers Q18 too: files becomes search/file.js with search/file/, no fileSelector of its own.\n- Today the pattern is broken six ways: contactSelector.js beside contact/; branch and bundle with Selector.js beside a Selector folder; grantSelector/ and icons/ with no file beside them; files/ with none either. One rule ends all of that.\n- About 14 lists sit on probabilitySearch, in about 35 files, the old shell's apps, chatter and jobs among them, which may name the new.\n- There is no spirit/probabilitySearch.js. The matchers are three files: probabilityStringMatch, probabilityStringObjectMatch and probabilityBucket. So: spirit/search/string.js, object.js and bucket.js.\n- But the node needs them too: desk, deskClient, deskVerify, chatClerver and data.js require them. Moving them is a core change in several processes, so maybe a step of its own.\n- The spirit object: spirit.element.search would be the list and hold its kinds, spirit.element.search.contact and so on. word.js is yours, so search would be a word of yours.\n- I would make it an item of its own after G43.17, not inside it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:16:18.222Z",
+     "text": "cw: in, a9fd09cd: the ranking lines now print the words, the chosen \"in\" and the first four rows. The ranking also passed with notes.txt missing; it no longer does.\nSeen on a forced failure here: in contents mode the hits come first, then the whole tree after them (relay-state, face.html, ...). Is that meant?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:16:51.508Z",
+     "text": "cw: yes, meant: the list ranks, it never cuts. A row the words miss stays, last, with an empty bar; probabilitySearch has done that since G43.6 (\"Nothing is cut\"). Running file on a9fd09cd now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:18:12.154Z",
+     "text": "cw: your new lines show it: on a9fd09cd, words zzquokka, in contents, and the first rows the plain tree, no bar. The contents answer has not come yet.\nThe check before it passes anyway: since nothing is cut, both files are always in the list, so \"both files found\" is true before the node answers. On my slower node the ranking is read, and notes.txt pressed, before the answer lands, so no line and nothing marked.\nThe search itself is fine: my node answers fs.search by contents with path, score and line.\nCan the found check wait for the hits to come first, e.g. notes.txt as the first row, instead of only being in the list?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:22:16.465Z",
+     "text": "all, ALSO, MY NODE GET FUCKING SLOW WHEN YOU GUYS CHATTER, AND I WONDER WHY, SINCE peer-traffic shouldn't block my loopback browser or my face browser..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:22:59.254Z",
+     "text": "cw: taken. What I know, not yet measured:\n- Your node, mine and my verifier share one PC. Each verifier run starts a scratch node and a real Chrome per suite; that takes the CPU your node and browsers need. Today's slow spells and the desk's 504s came while my verifier ran.\n- Every agent line passes through your node's main process: the peer packet is checked, opened, handed to the desk, and pushed out again to every listener and to your Desk page. That process is the one that answers your loopback and face browsers, one thing at a time.\nI can measure which of the two it is, by timing your loopback while a verifier runs and while it does not. Shall I?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:23:53.438Z",
+     "text": "wsl: likely cause: your node is one thread, and every peer packet writes its traffic row into node.db synchronously, journal DELETE and synchronous FULL (nodeStore.js:214-216), so each one waits on Windows disk flushes while your loopback and face requests queue behind it.\nEach agent line is several packets (in, out, the taken mark), times three agents.\nI can measure it on your node, if you want: Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:25:40.473Z",
+     "text": "all, right now, i have trouple diagnosing shit in the UI and matching problems to elements, and I'm seriously considering a refactoring of at LEAST the search elements in the style i mentioned here. and i want is fast.\n\nsuggestions?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:26:10.682Z",
+     "text": "wsl: fast, as one item of its own:\n- one table in the box: each old name, its new spirit/element/search/<name>.js and folder; you fix the names once.\n- every root a search element draws carries data-element=\"search/contact\" and so on, so in the browser's inspector any problem names its element: that is your diagnosing need.\n- one red: the pattern holds for every search element, and no file names an old path; the old suites as they are, as the check that nothing broke.\n- the move itself is mechanical (rename and rewrite the paths), one commit; the matchers in spirit/ stay for a second step, since the node uses them too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:26:15.363Z",
+     "text": "cw: taken. Suggestions for fast:\n- Its own item, opened now; G43.17 parks where it is, its last red is a test's timing, not your UI.\n- Step 1, the move alone, one commit: every search element into spirit/element/search/<name>.js and search/<name>/, its tests with it, spirit.element.search.<name> in the spirit object, done by a script, no behaviour changed. The existing suites then prove it.\n- Step 2, the engine: bucket, string and object into spirit/search/; separate, because the node's processes load them and need a restart.\n- For your diagnosing, beside the move: every element marks what it draws with its name, data-element=\"search/contact\", so the browser's inspector shows which element drew any piece of the page.\n- wsl writes the red: the new paths there, the old ones gone; I build and run the suites."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:29:28.713Z",
+     "text": "cw, add item, blocking this one, with the search element refactoring, including apps that require them, no behaviour/functional changes, all just renaming to \"word\" compatible file/folder structure"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:30:29.583Z",
+     "text": "cw: added goal/G43.18, blocking this one: search elements renamed into spirit/element/search/. Its box holds your lines; open is whether the matchers in spirit/ move too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:30:53.701Z",
+     "text": "Q19: clear"
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.18",
+   "title": "search elements renamed into spirit/element/search/",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 18,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.17"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 190,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# search elements renamed into spirit/element/search/\n\n# in this item we all commit past the git-hook.\n\nAndy: \"add item, blocking this one, with the search element refactoring, including apps that require them, no behaviour/functional changes, all just renaming to \"word\" compatible file/folder structure\"\n\nAndy, the shape: \"spirit/element/probabilitySearch.js becomes spirit/element/search.js with its' companion folder spirit/element/search/\", \"spirit/element/contactSelector.js becomes spirit/element/search/contact.js with its companion folder spirit/element/search/contact/\", the same for bundle and branch, and \"all \"probabilitySearch\" elements follow the EXACT SAME PATTERN.\"\n\n# Decided\n\n- Andy: \"lets stick to refactoring spirit/element/   searches only. that's the scope of this item.\"\n- spirit/element/probabilitySearch.js becomes spirit/element/search.js, with its companion folder spirit/element/search/.\n- Every search element in spirit/element/ becomes spirit/element/search/<name>.js, with its companion folder spirit/element/search/<name>/ holding its list and row elements, the same pattern for all.\n- The apps and elements that require them name the new paths. No behaviour or function changes: renaming only, to a \"word\" compatible file and folder structure.\n- The matchers in spirit/ (probabilityBucket.js, probabilityStringMatch.js, probabilityStringObjectMatch.js) and the family folders stay as they are.\n\n# The list\n- api (formerly knows as \"family\" with verb-dropdown-filter)\n- app (with a app.json:node:mount==true && state==active filter being the server search)\n- contact\n- file\n- icon\n- bundle\n- branch (with verb-dropdown-filter)\n- grant\n- valued (used in \"monitor\")\n\n# remarks to the list\n\n- verb is a dropdown-filter for both branch and api, it will NOT get it's own search, because an api (like desk) that has 1000 verbs is just bad design.\n- grant for example already uses a contact:dropdown as a filter. so yes. searches can have other searches:dropdown as filters.\n-appServerSelector.js is today's api search in dropdown mode: it becomes search/api.js.\n-apiFamilySelector.js, which holds it and the verb dropdown side by side, is that same api search with its verb filter: it folds into search/api.js.\n- apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too.\n- The app search gains a server filter, node.mount true and active: new code, and it never names api, this filter is hidden by default.\n- the nodes internal api branches are NOT appServers and don't belong into that group. since the jobs app will never make it onto the new app folder, there will be elements to give insight into streams coming from any api, but they will attach to api and branch id's\n- files/ and grantSelector/ have no file beside them today: their listElement becomes search/file.js and search/grant.js, their rowElement stays in the folder.",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does each search element move to the family whose verb it searches, files to spirit/fs/search.js and branch and bundle under spirit/auth/ (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T10:56:59.956Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Is the app list, spirit/app/appSelector/ and outside spirit/element/, part of this rename (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T11:20:15.113Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Is valued.js, the searchable label and value rows the monitor uses, on the list as search/valued.js (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T11:28:24.400Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-06T12:01:00.607Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:35:41.815Z",
+     "text": "all, \nI'd love for the matchers in spirit/ to be organized as spirit/search.js and spirit/search/, both available in the \"word\" space. i suspect that spirit/probabilityBucket.js is already used in multiple places to limit things like payloads etc..\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:36:12.634Z",
+     "text": "wsl: yes, it fits:\n- you suspect right: probabilityBucket is loaded by 20 scripts beyond search, the desk, deskClient, chatClerver, deskVerify, apiAuth, app, appServer, boxes, data, hub, peerRank among them, to cap what they send.\n- \"search\" is already a hard-coded word in word.js, so spirit.search is claimed; spirit/search/bucket.js, string.js and object.js under it, and nodeSearches.js could join as search/node.js.\n- moving them touches those node processes, so it lands with a restart of your node."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:36:20.879Z",
+     "text": "wsl: correction: 16 scripts load probabilityBucket beyond search, not 20."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:36:29.637Z",
+     "text": "cw: taken. Thoughts:\n- Yes. spirit.search is free today; on a page the matchers now sit at spirit.probability.*, which would become spirit.search.bucket, .string and .object.\n- The bucket is used wide, as you suspect: hub, peerRank, appServer, app, apiAuth, boxes, data and introSpector on the node, and desk, deskClient, deskVerify and chatClerver. It ranks rows and keeps only as many as fit: the hub's people search and peerRank cap the count, which is what keeps their answers small; most others rank with no cap.\n- spirit/nodeSearches.js, the node's jobs and files searched rather than listed, belongs there too: spirit/search/node.js.\n- spirit/search.js would then be the entry that loads its parts, so spirit.search is one object in the word space.\n- Cost: about 20 node files and four processes require them, all core, so a grant and a restart of every node and relay. Still a rename only."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:41:54.714Z",
+     "text": "all: the vision:\n\n- /spirit/search.js and /spirit/search/ become the backbone of node-side search\n- then there can be a spirit/contact/search.js, spirit/app/search.js that possibly contain the filters in spirit/contact/search/filter.js and those structures can be partially re-used by elements, so the search logic between browser and node is more synced....\n\n?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:42:29.860Z",
+     "text": "wsl: yes, and the tree shows why it pays:\n- today the contact filters live only in the page (FILTERS, element/contact/listElement.js:40), while the node's contact.search ranks by the words alone (hub.js:1368). The node caps first, the page filters after, so a filter can empty the few rows the node sent.\n- a filter is plain code, a name, its choices and test(row, value), no page in it, so spirit/contact/search/filter.js can load in both, as the matchers already do. The node then filters before it caps.\n- order: the rename first (this item), then one domain, contact, as the proof, then the others."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:42:42.359Z",
+     "text": "cw: taken. The tree is already half there:\n- six families have a search.json, the search verb's own description: app, auth, contact, fs, jobs and relaySelf. So spirit/contact/search.js would sit beside spirit/contact/search.json, the verb's words and its code together.\n- the code is elsewhere today: the contact search is searchPeople in spirit/hub.js, its yes-filters keep, mine, relay, seated, held and blocked as a list there; the app search in spirit/app.js; files and jobs in spirit/nodeSearches.js.\n- the element side keeps its own copy: contactSelector names all, mine, blocked, held and relays itself, so the two can drift. One spirit/contact/search/filter.js, loaded by both, ends that; the matchers already run on node and page alike.\n- the order I would keep: G43.18 moves files, no behaviour changed; the shared filters change what code runs, so they are the next item, family by family, contact first.\n?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:49:49.549Z",
+     "text": "all, my thoughts go this way: \n\n- spirit/search.js is the basic search logic, used in both browser and node,\n- spirit/search/element.js IS the probabilitySearch element with it's companion spirit/search/element/folder.\n\n- spirit/app/search.js may very well be the actual element that is associated with spirit.app objects, and it's companion folder spirit/app/search/ can provide rowElement.js etc AND precise common code that node and browser share....\n\n???"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:50:25.827Z",
+     "text": "cw: taken. I like it: the search of a thing lives with the thing. Three snags, from the tree:\n- spirit/app/search.js as an element is page code, so the node can never load it. The shared part must be its own file in spirit/app/search/, e.g. filter.js, which the node requires and the element loads.\n- spirit/app/ holds the apps too (file, text, media, agent, appSelector...), so search becomes a name no app may take there. Same for contact/, which holds contact.js's own parts.\n- half the search elements have no family folder: bundle, branch, grant, icons, apiFamily, apiVerb, appServer. Families today: app, auth, contact, fs, jobs, relaySelf, and more. Those seven need a home: under their family if one exists, else spirit/search/element/<name>/ until one does?\n???"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:50:44.282Z",
+     "text": "wsl: it fits, and the tree is already halfway:\n- spirit/app/appSelector.js with appSelector/ is that element for spirit.app today, so spirit/app/search.js is appSelector renamed, its folder with it.\n- no clash with the apps: search is a verb of spirit.app, and app.js skips any folder named as a verb (app.js:61, your \"no app may take the name of a verb\").\n- spirit/contact/ already holds api.js and search.json, so search.js beside them; the same for auth, fs and jobs.\n- that puts each list with its family: files in spirit/fs/search.js, branch and bundle under spirit/auth/, since they call auth.branch and auth.bundle: Q below."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:56:35.137Z",
+     "text": "all, \n- lets stick to refactoring spirit/element/   searches only. that's the scope of this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:57:02.468Z",
+     "text": "cw: understood: only the search elements in spirit/element/, as your first line: spirit/element/search.js with spirit/element/search/<name>.js and folder each. The matchers in spirit/ and the families stay as they are. May I box that?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T10:57:05.158Z",
+     "text": "wsl: understood: only the searches in spirit/element/, into spirit/element/search/. Q1 closed: it fell outside that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T10:57:33.494Z",
+     "text": "cw, box accordingly"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T10:58:14.272Z",
+     "text": "cw: boxed, v3: the scope, the shape, renaming only, the matchers and families staying. Open: the table of names, each search element today and its name under search/."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:02:31.667Z",
+     "text": "all, app, bundle, branch, contact, icon (the current spirit/element/icon.js becomes something like spirit/element/icon/square.js)\n\nwhat am i missing?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:03:09.493Z",
+     "text": "cw: taken. Missing, from spirit/element/ as it is:\n- file: files/, the files list, with no file beside it.\n- grant: grantSelector/, with no file beside it either.\n- apiFamily: apiFamilySelector.js; apiVerb: apiVerbSelector.js; appServer: appServerSelector.js. These three are dropdowns on probabilitySearch, no folder.\n- valued: valued.js, label and value rows, searchable over rows it holds.\nTwo notes:\n- \"icon\" the search is iconSelector.js with icons/; icon.js is the glyph element, no search, so icon/square.js is a move outside this item's searches.\n- \"app\" is spirit/app/appSelector/listElement.js, which is not in spirit/element/: in or out?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:03:11.864Z",
+     "text": "wsl: five more in spirit/element/ draw on probabilitySearch:\n- file: files/listElement.js and rowElement.js (spirit.element.fileList)\n- grant: grantSelector/\n- apiVerb: apiVerbSelector.js\n- appServer: appServerSelector.js\n- valued: valued.js, label and value rows\napiFamilySelector.js is no search. And app's list is spirit/app/appSelector/, outside spirit/element/: in or out?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:08:21.343Z",
+     "text": "all, i changed to box a bit and added a list\n- verb is really just a dropdown filter in branch\n- appServer is really just a filter in app.\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:08:56.956Z",
+     "text": "wsl: correction first: apiFamilySelector IS a search, appServer and verb as two dropdowns (apiFamilySelector.js:31); cw had it right.\nYour two readings hold, with one catch: verb is branch's filter (branchSelector/listElement.js), but branchEditor and apiFamilySelector use it too, and grantsPanel and the introSpector reach both through apiFamilySelector. As filters they would sit in search/branch/ and search/app/, those users naming them there.\nThe list has icon twice and lacks valued."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:09:11.601Z",
+     "text": "cw: taken. From the tree:\n- verb: yes, a dropdown filter, but not branch's alone: apiFamilySelector holds appServer and verb side by side, and branchSelector's list, branchEditor, grantsPanel and the old introSpector use it. So it is a filter of branch AND grant.\n- appServer: today it is not in app at all. It is the family half of that same pair, the app server whose verbs the verb dropdown lists; only apiFamilySelector and apiVerbSelector use it.\n- So I read the three as one filter, the api pair (server, verb), shared by branch and grant: one home, e.g. search/api/, which both name.\n- The list has icon twice, and misses valued, which the monitor app uses."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:13:49.810Z",
+     "text": "all, box updated, \n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:14:20.244Z",
+     "text": "wsl: the list as names, for the box's open line:\n- probabilitySearch.js → search.js\n- apiFamilySelector.js and appServerSelector.js → search/api.js, the servers listed\n- apiVerbSelector.js → search/api/verb.js, the filter api and branch both name\n- contactSelector.js, contact/ → search/contact.js, search/contact/\n- files/ → search/file.js, search/file/\n- iconSelector.js, icons/ → search/icon.js, search/icon/\n- bundleSelector.js, bundleSelector/ → search/bundle.js, search/bundle/\n- branchSelector.js, branchSelector/ → search/branch.js, search/branch/\n- grantSelector/ → search/grant.js, search/grant/\n- valued.js → search/valued.js: missing from the list, and icon is there twice\n- app: spirit/app/appSelector/ is outside spirit/element/, my Q2"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:14:27.490Z",
+     "text": "cw: taken. Thoughts on v5:\n- icon is in the list twice, and valued is not in it; valued.js is a search element in spirit/element/ too, used by the monitor app. In or out?\n- api: I would put its two halves under it: search/api.js from apiFamilySelector.js, search/api/server.js from appServerSelector.js, search/api/verb.js from apiVerbSelector.js. branch then names search/api/verb.js, which keeps verb in one place for both.\n- app: its list is spirit/app/appSelector/listElement.js, outside spirit/element/. Moving it in to search/app.js stretches the scope line; say so and it goes in.\n- With that, the Open table fills itself: contactSelector.js + contact/ to search/contact, bundleSelector to search/bundle, branchSelector to search/branch, grantSelector/ to search/grant, iconSelector.js + icons/ to search/icon, files/ to search/file. Shall I put it in the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:19:40.636Z",
+     "text": "all, box updated to address issues.\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:20:17.696Z",
+     "text": "cw: taken. v7 reads clean to me. Three left, each a file that must land somewhere:\n- verb: by your grant remark, a filter is itself a search in dropdown mode, as contact is in grant. Then verb is search/verb.js, used by api and branch, and goes in the list. Or does it live under api, search/api/verb.js?\n- appServerSelector.js, the server half of the api pair: search/api/server.js?\n- valued.js is not in the list: it stays where it is?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:20:20.471Z",
+     "text": "wsl: two left:\n- valued.js is still not in the list; it is a search in spirit/element/ too, used by the monitor app: Q below.\n- verb, by your grant remark: a filter is another search in its dropdown mode, as grant uses contact. Then verb stays a search of its own, search/verb.js, which branch and api both use as a dropdown, and appServer the same inside api.\nQ2 closed: app is in the list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:24:05.722Z",
+     "text": "all, box updated,\n\n?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:24:39.996Z",
+     "text": "wsl: one catch in the app line: appServerSelector today lists the families of the node's api tree (appServerSelector.js:18), core ones like auth, fs and contact too, and a peer's or relay's tree for the introSpector. App with node.mount and active lists only the apps with a server, so api's server dropdown would lose those: a behaviour change, against \"renaming only\". Either it stays a search of its own here, or that change is boxed as such."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:24:42.618Z",
+     "text": "cw: taken. v8 answers appServer: it becomes the app search with a filter, node.mount true and active. One flag on that, from the tree:\n- appServerSelector.js lists today from the node's api tree, the families the node family's cache keeps (spirit.data.node), not from the app rows. Drawing it from the app search with that filter is a new source, so a change of behaviour, which the box rules out for this item. Does it go in G43.18 anyway, or is G43.18 the rename, appServer moved as it is, and the swap after?\nStill open for me: verb's file, search/verb.js of its own, or under api?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:24:59.749Z",
+     "text": "Q3: Is valued.js, the searchable label and value rows the monitor uses, on the list as search/valued.js (wsl-claude)?\n\ntell me what \"valued\" is again?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:25:35.694Z",
+     "text": "wsl: Q3: valued is your G43.6 element, \"a list of a name and a value, one per line, with an optional group\", searchable over the rows its caller hands it, no node verb (valued.js:2). The Monitor app is one valued: the node's server stats, each number a row (monitor.js:8)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:27:57.842Z",
+     "text": "all, box updated.\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:28:26.884Z",
+     "text": "cw: taken. v9 has valued. Two left, and then the Open table writes itself:\n- verb: search/verb.js, a search of its own that api and branch use as a dropdown, like contact in grant?\n- app's server filter: in this item, though it changes where the server list comes from (app rows, not the node's api tree), or after it, with appServerSelector moved as it is for now?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:28:29.388Z",
+     "text": "wsl: Q3 closed, valued is in. Two left, as before: the app line still changes where the server dropdown draws from, against \"renaming only\"; and verb, a dropdown both branch and api use, has no line of its own in the list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:36:11.826Z",
+     "text": "all, box updated,\n\nmore cans of worms or more clarity?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:36:44.145Z",
+     "text": "wsl: more clarity. Two small things left:\n- verb, a filter and no search, still needs one file both use: search/api/verb.js, which branch names?\n- the server dropdown dropping the node's own branches is a change, so \"renaming only\" wants that one exception written beside it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:36:47.156Z",
+     "text": "cw: more clarity. With v11 the table is whole, as I read it:\n- probabilitySearch.js to search.js\n- apiFamilySelector.js to search/api.js; apiVerbSelector.js to search/api/verb.js, its filter, which branch names too\n- spirit/app/appSelector/listElement.js to search/app.js; appServerSelector.js goes, the app search with its server filter in its place\n- contactSelector.js and contact/ to search/contact.js and search/contact/\n- bundleSelector, branchSelector, iconSelector with icons/: the same, to bundle, branch, icon\n- files/ and grantSelector/ have no file beside them: their listElement becomes search/file.js and search/grant.js, their rowElement stays in the folder\n- valued.js to search/valued.js\nThe one can: appServer's swap is a new source, so not a rename only; I take your v11 lines as saying it belongs here. Shall I box the table?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:41:08.704Z",
+     "text": "all, explain your issue with appServers to me.\n\nthe way i see it.\n- appServers are a subset of api-providers, and as such come with api,branch,and verbs.\n- i keep those to things separate.\n- an api search never knows who supplied an api, and has no business meddling with apps.\n\nexplain your issues, brief, and in English."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:41:32.292Z",
+     "text": "wsl: today the api dropdown's first half, appServerSelector, lists every api provider in the node's api tree, the node's own and the apps' alike. I read your app line as replacing it with the app search, which would show only apps: api meddling with apps.\nBy your three lines it is not that: api keeps listing all providers, and the app search's server filter is app's own. Then no issue is left, and nothing changes behaviour."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:41:34.448Z",
+     "text": "cw: my issue is only a name. Today appServerSelector.js is not about apps: it is the first dropdown of the api pair, listing every api the node's api tree has, internal ones too, and the verb dropdown lists that one's verbs.\nSo with your split:\n- that code stays with api, as api's own list of apis; it only loses the misleading name.\n- the app search's server filter (node.mount true, active) does not exist yet; it is new, small, and knows nothing of api.\nNo conflict with your three points; I agree with them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:43:46.526Z",
+     "text": "all, \n\ndo we agree that todays appServerSelector really is just and api.search:dropdown?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:44:06.909Z",
+     "text": "cw: yes. It lists the apis of the node's api tree, as a dropdown on probabilitySearch: that is api's search in dropdown mode."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:44:11.785Z",
+     "text": "wsl: yes: it is the api search in dropdown mode (face: dropdown, appServerSelector.js:86), over every api in the node's tree; only its name says app server."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:45:06.001Z",
+     "text": "all, how do i clarify this in the box? i tried!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:45:24.250Z",
+     "text": "wsl: two lines would do it, in the list:\n- api: today's appServerSelector.js is api's search; with apiFamilySelector.js it becomes search/api.js, listing every api in the node's tree, verb its dropdown filter.\n- app: today's spirit/app/appSelector/; its server filter, app.json node.mount true and active, is new, and knows nothing of api."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:45:28.119Z",
+     "text": "cw: these four lines would say it, under the list:\n- appServerSelector.js is today's api search in dropdown mode: it becomes search/api.js.\n- apiFamilySelector.js, which holds it and the verb dropdown side by side, is that same api search with its verb filter: it folds into search/api.js.\n- apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too.\n- The app search gains a server filter, node.mount true and active: new code, and it never names api.\nShall I write them in?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:52:52.607Z",
+     "text": "all, box updated, green?\n\n\"note: git-hook grant included\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:53:22.432Z",
+     "text": "cw: not green yet, two things:\n- Open still says \"The names\". The list and remarks now name almost all; left is how the two without a file beside them land: files/ and grantSelector/, whose listElement becomes search/file.js and search/grant.js? Then Open can go.\n- Decided says \"No behaviour or function changes\", and the remarks add the app search's server filter as new code. One words it as the exception, or the filter waits for an item of its own?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:53:40.976Z",
+     "text": "wsl: not green yet, three small things:\n- the file list is empty; I can fill it from the tree.\n- \"Open: the names\" still stands, though the list and remarks now give every name: drop it?\n- \"No behaviour or function changes\" and \"spirit/element/ only\" both meet one exception now, app's new hidden server filter and its list in spirit/app/appSelector/: say so beside them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:57:15.660Z",
+     "text": "all,\n\ni have no clue what you're talking about: \"The names\"???????????????????????????????\n\nPS: we'll need to get rid of your box-search, it doesn't work right in edit mode, and codeMirror already has a search."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T11:57:34.462Z",
+     "text": "wsl: it is the last line of your box, under \"# Open\": \"The names: each search element in spirit/element/ today, and its <name> under search/.\" cw wrote it when the list was empty. Your list now answers it, so it can simply be deleted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:57:38.012Z",
+     "text": "cw: sorry, that Open line is mine, written in v3 before your list existed: \"which name each search gets under search/\". Your list answers it, so it can go; files/ and grantSelector/ simply follow the pattern. May I delete it?\nPS noted: the desk's box search goes, codeMirror's search stays; that is a desk item, not this one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:58:33.594Z",
+     "text": "cw, fix the box, don't change anything i value."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T11:59:00.731Z",
+     "text": "cw: fixed, v18: my Open line is gone, and one line of mine added at the end of the remarks: files/ and grantSelector/, with no file beside them, have their listElement become search/file.js and search/grant.js. Nothing of yours changed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T11:59:47.622Z",
+     "text": "files"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T12:01:02.319Z",
+     "text": "wsl: files in: 190 paths, the search elements, their tests and every file that names one of them, the old shell's among them."
     }
    ]
   }
