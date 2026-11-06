@@ -4,7 +4,7 @@
 // The tests of goal/G43.18, the search elements of spirit/element/ renamed into spirit/element/search/ (spec: ./searchFolder.md).
 // Andy, the box: "Every search element in spirit/element/ becomes spirit/element/search/<name>.js, with its companion folder
 // spirit/element/search/<name>/ holding its list and row elements, the same pattern for all", and "renaming only". The tree read
-// as it is: what is there, what is gone, and what the code names. That nothing else changed is the moved elements' own suites.
+// as it is: what is there, what is gone, and what the code names; and each one loaded on a page. That nothing else changed is the moved elements' own suites.
 
 const fs = require('fs');
 const path = require('path');
@@ -86,4 +86,27 @@ const verbUsers = ['spirit/element/search/api.js', 'spirit/element/search/branch
   .filter(function (p) { return /spirit\/element\/search\/api\/verb\.js/.test(code(path.join(RUN, p))); });
 ok(verbUsers.indexOf('spirit/element/search/api.js') !== -1 && verbUsers.some(function (p) { return /branch/.test(p); }), 'api and branch both load the one verb filter, search/api/verb.js', 'loading it: ' + short(verbUsers));
 
-test.reportSuccessFailureCount();
+// "renaming only": what loaded before still loads. A real Chrome on a scratch node's face.html, each file required through
+// spirit.require and answered within its time. Folding apiFamilySelector into search/api.js made it and search/api/verb.js
+// require each other, and neither ever loaded: the agent's bundle opened no tab (Andy: "the bundles fail to pop into a tab,
+// when i click on a bundle, no network activity, no console activity.").
+(async function () {
+  test.subHeading('the box: "renaming only": every one of them loads on a page');
+  const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const node = await scratchNode();
+  const chrome = await chromePage(findChrome());
+  try {
+    await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+    await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+    for (const p of THERE) {
+      const got = await chrome.evaluate('window.spirit.ready.then(function () { return Promise.race([window.spirit.require(' + JSON.stringify(p) + ').then(function () { return "loaded"; }, function (e) { return "refused: " + e; }), new Promise(function (r) { setTimeout(function () { r("never answered"); }, 8000); })]); })');
+      ok(got === 'loaded', p + ' loads', p + ': ' + short(got));
+    }
+  } finally {
+    if (chrome && chrome.kid) chrome.kid.kill();
+    if (node.child) node.child.kill();
+    try { if (chrome && chrome.profile) fs.rmSync(chrome.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+    try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+  }
+}()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
+  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });

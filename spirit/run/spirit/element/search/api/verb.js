@@ -14,9 +14,12 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
   // The app-server selector too, the reader of the api tree, and with it the node family's cache manager, the keeper of
   // the verbs it draws from (goal/G41.28).
-  var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/api.js'].map(function (p) {
-    return window.spirit.require ? window.spirit.require(p) : null;
-  }).concat([window.spirit.cacheManager('node')]));
+  // search/api.js, its app-server half, is asked one tick later (goal/G43.18): that file requires this one, and a require
+  // made while this file runs joins this file's own load, so each would wait for the other and neither would ever load.
+  // Asked outside it, this file's load does not wait for api.js; what it draws waits on parts, which still does.
+  var parts = Promise.all([window.spirit.require ? window.spirit.require('spirit/element/search.js') : null,
+    Promise.resolve().then(function () { return window.spirit.require ? window.spirit.require('spirit/element/search/api.js') : null; }),
+    window.spirit.cacheManager('node')]);
 
   function createApiVerbSelector(options) {
     options = options || {};
