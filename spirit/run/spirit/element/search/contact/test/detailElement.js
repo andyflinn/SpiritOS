@@ -236,11 +236,14 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
     ok(asked && asked.body.publicKey === KEY, 'its run asks contact.block for the row on screen', 'asked: ' + short(w.calls.slice(before)));
   }
 
-  test.subHeading('Forget is an arming button, giving up the seats first');
+  // goal/G43.17, Andy: ""forget" a contact means only: delete that row from my contacts. it does NOT mean: "eject them from relays
+  // i own", not at all. not the same scope of decision." The world still has a relay this node owns (RK1), so a seat it would
+  // give up is there to be given up, and is not.
+  test.subHeading('Forget is an arming button, and only deletes the row: Andy, "it does NOT mean: "eject them from relays i own""');
   const forget = armingFor(w, 'Forget');
   ok(!!forget, 'Forget is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
   if (forget) {
-    ok(forget.opts.armedLabel === 'Forget, and remove any seat on relays you own — press again', 'armed, it says what it costs', 'armedLabel: ' + short(forget.opts.armedLabel));
+    ok(!/seat|relay/i.test(String(forget.opts.armedLabel || '')), 'armed, it says nothing of seats or relays', 'armedLabel: ' + short(forget.opts.armedLabel));
     ok(forget.opts.api === w.api && inPage(w, forget.button), 'handed the page\'s api, and in the page', 'api ' + (forget.opts.api === w.api) + ', in page ' + inPage(w, forget.button));
     const before = w.calls.length;
     const postsBefore = w.posts.length;
@@ -248,9 +251,8 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
     await settle();
     const posts = w.posts.slice(postsBefore);
     const forgot = w.calls.slice(before).filter(function (c) { return c.name === 'contact.forget'; })[0];
-    ok(posts.length === 1 && posts[0].key === 'RK1' && posts[0].body.removePeer && posts[0].body.removePeer.key === KEY, 'its run removes the seat on every relay this node owns, and only those', 'posts: ' + short(posts));
-    ok(forgot && forgot.body.publicKey === KEY, 'then asks contact.forget for the row', 'asked: ' + short(w.calls.slice(before).map(function (c) { return c.name; })));
-    ok(posts.length && forgot && posts[0].at <= w.calls.indexOf(forgot), 'the seats are given up before the forget', 'order: post at ' + (posts[0] && posts[0].at) + ', forget at ' + w.calls.indexOf(forgot));
+    ok(!posts.length, 'its run posts nothing to any relay, the one this node owns included: no seat is removed', 'posts: ' + short(posts));
+    ok(forgot && forgot.body.publicKey === KEY, 'it asks contact.forget for the row', 'asked: ' + short(w.calls.slice(before).map(function (c) { return c.name; })));
     ok(w.closed === 1, 'and the page closes', 'closed ' + w.closed + ' times');
   }
 
