@@ -243,6 +243,37 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
       ok(await waitFor('bars().length === 1 && bars()[0] === ' + JSON.stringify(contacts) + ' && rows().indexOf(' + JSON.stringify(who.key) + ') !== -1', 10000), 'their ✕ shows Contacts again, one step back', 'bars: ' + short(await T('bars()')) + ', rows: ' + short(await T('rows()')));
     }
 
+    // goal/G43.18, Andy: "now you need to give each contact row its own detail panel, similar to the concept where tabs in
+    // "agent" can hold the same ui for different rows, thing of the contact list in the exact same way."
+    test.subHeading('Andy: "give each contact row its own detail panel", as the agent\'s tabs hold the same ui for different rows');
+    const zzKey2 = require('crypto').generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+    const planted2 = await call(N.base, 'contact.block', { publicKey: zzKey2, publicLabel: 'zzPersonTwo' });
+    ok(planted2.status === 200, 'the world: a second person is in the book', 'contact.block: ' + short(planted2.text));
+    await selector('tiles');
+    await waitFor('tiles().indexOf("contact") !== -1', 10000);
+    await T('press("contact")');
+    ok(await waitFor('rows().indexOf(' + JSON.stringify(zzKey) + ') !== -1 && rows().indexOf(' + JSON.stringify(zzKey2) + ') !== -1', 10000), 'the world: Contacts lists both', 'rows: ' + short(await T('rows()')));
+    const listBar = (await T('bars()'))[0];
+    // One row's details: what it draws is marked, then closed.
+    const openOne = async function (key, mark) {
+      await T('markBefore()');
+      await T('openRow(' + JSON.stringify(key) + ')');
+      const up = await waitFor('bars().length === 1 && bars()[0] !== ' + JSON.stringify(listBar), 10000);
+      await sleep(1000);
+      return up ? T('markLayer(' + JSON.stringify(mark) + ')') : 0;
+    };
+    const closeOne = async function () { const b = (await T('bars()'))[0]; await T('close(' + JSON.stringify(String(b || '').slice(-12)) + ')'); return waitFor('bars()[0] === ' + JSON.stringify(listBar), 10000); };
+    const a = await openOne(zzKey, 'rowA');
+    ok(a > 0, 'the world: the first person\'s details open', 'nothing drew for the first person');
+    await closeOne();
+    const b = await openOne(zzKey2, 'rowB');
+    ok(b > 0 && (await T('markedShown("rowA")')) === 0, 'the second person\'s details are a panel of their own: new, and the first\'s out of view', 'drawn for the second ' + b + ', the first\'s shown ' + (await T('markedShown("rowA")')));
+    ok((await T('marked("rowA")')) > 0, 'and the first person\'s panel is kept, not drawn over', 'the first person\'s panel is gone: marked ' + (await T('marked("rowA")')));
+    await closeOne();
+    await T('openRow(' + JSON.stringify(zzKey) + ')');
+    ok(await waitFor('markedShown("rowA") > 0 && markedShown("rowB") === 0', 10000), 'the first person pressed again: their own panel shows, as it was left', 'shown: first ' + (await T('markedShown("rowA")')) + ', second ' + (await T('markedShown("rowB")')));
+    await closeOne();
+
     test.subHeading('nothing threw on the page');
     // The Agent is the world here, opened with no agent server on the scratch node; what its own table throws is the Agent's, not
     // the panel's (its stack in spirit/app/agent/).
