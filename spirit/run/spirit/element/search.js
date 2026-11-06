@@ -224,10 +224,14 @@
       '</div>';
     // THE DROPDOWN IS JUST A POP-UP PANE (goal/G29.9): inline like any input, a field; the very
     // same pane pops up under it, solid, as wide as its rows up to the page.
+    // THE FIELD STAYS, THE LIST FLOATS (goal/G43.18; Andy: "and the actual dropdown control stays where it is? just the popped
+    // list would "float"? then do that for the lists in the search-dropdown please."): the pane is a manual popover, shown in
+    // the page's top layer, so no box cuts it off and nothing drawn over it hides it; place() puts it at its field, inside the
+    // window. A press outside closes it (outside, below), so one is open at a time.
     container.innerHTML = dropdown
       ? '<span style="position:relative;display:inline-block">' +
           '<button id="' + pre + 'field" type="button" style="text-align:left"></button>' +
-          '<div id="' + pre + 'popup" class="stat-tile wide" style="position:absolute;left:0;min-width:24em;width:max-content;max-width:calc(100vw - 32px);z-index:10;' +
+          '<div id="' + pre + 'popup" popover="manual" class="stat-tile wide" style="position:fixed;inset:auto;margin:0;color:inherit;overflow:auto;box-sizing:border-box;min-width:min(24em,calc(100vw - 16px));width:max-content;max-width:calc(100vw - 16px);z-index:10;' +
             'background:linear-gradient(rgba(255,255,255,0.06),rgba(255,255,255,0.06)),#1a1a2e;box-shadow:0 6px 24px rgba(0,0,0,0.5)" hidden>' + paneHtml + '</div>' +
         '</span>'
       : paneHtml;
@@ -432,9 +436,45 @@
       open = want;
       var pop = el('popup');
       if (pop) pop.hidden = !open;
-      if (open) { draw(); var box = el('text'); if (box && typeof box.focus === 'function') box.focus(); }
+      if (pop && typeof pop.showPopover === 'function') {
+        try { if (open) pop.showPopover(); else pop.hidePopover(); } catch (e) { /* already so */ }
+      }
+      floating(open);
+      if (open) { draw(); place(); var box = el('text'); if (box && typeof box.focus === 'function') box.focus({ preventScroll: true }); }
       else paintField();
     }
+    // AT ITS FIELD, INSIDE THE WINDOW: under the field where it fits, else above it where there is more room, at most as tall
+    // as that room; never wider than the window, slid back in from its right edge.
+    var EDGE = 8;
+    function place() {
+      var pop = el('popup');
+      var f = el('field');
+      if (!open || !pop || !f || typeof f.getBoundingClientRect !== 'function' || typeof window.innerHeight !== 'number') return;
+      var r = f.getBoundingClientRect();
+      pop.style.maxHeight = '';
+      var h = pop.offsetHeight;
+      var w = pop.offsetWidth;
+      var below = window.innerHeight - r.bottom - EDGE;
+      var above = r.top - EDGE;
+      var top;
+      if (h <= below || below >= above) { top = r.bottom; if (h > below) pop.style.maxHeight = Math.max(0, below) + 'px'; }
+      else { if (h > above) pop.style.maxHeight = Math.max(0, above) + 'px'; top = r.top - Math.min(h, above); }
+      pop.style.top = Math.round(top) + 'px';
+      pop.style.left = Math.round(Math.max(EDGE, Math.min(r.left, window.innerWidth - w - EDGE))) + 'px';
+    }
+    // While open it follows its field through a scroll of any box and a resize of the window.
+    var placing = false;
+    function floating(on) {
+      if (typeof window.addEventListener !== 'function' || placing === on) return;
+      placing = on;
+      if (on) { window.addEventListener('scroll', onScroll, true); window.addEventListener('resize', place); }
+      else { window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', place); }
+    }
+    // Rows arriving or a search narrowing them change its size: it is placed again.
+    var sized = dropdown && typeof ResizeObserver === 'function' && el('popup') ? new ResizeObserver(function () { if (open) place(); }) : null;
+    if (sized) sized.observe(el('popup'));
+    // Its own list scrolling is not its field moving.
+    function onScroll(e) { var pop = el('popup'); if (pop && e && e.target && typeof pop.contains === 'function' && pop.contains(e.target)) return; place(); }
     // A PICK: the list's value and row are the chosen one's; a dropdown shuts and says it.
     function choose(row, key) {
       self.value = key == null ? '' : String(key);
@@ -594,6 +634,8 @@
       if (typeof off === 'function') off();
       if (typeof unwatch === 'function') unwatch();
       if (dropdown && typeof document !== 'undefined' && typeof document.removeEventListener === 'function') document.removeEventListener('click', outside);
+      floating(false);
+      if (sized) sized.disconnect();
       off = null;
       Object.keys(byKey).forEach(function (k) { if (byKey[k].el) byKey[k].el.destroy(); });
       // DESTROY LEAVES THE CONTAINER EMPTY (goal/G41.19, box v23: "destroy empties it").
