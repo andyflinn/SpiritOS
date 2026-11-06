@@ -12,9 +12,8 @@ module.exports = {
     // Q4, Andy: "yes.": the node's choices, over what <name>.json says.
     label: { key: 'text', label: 'text' },
     icon: { key: 'text', icon: 'text' },
-    shell: { key: 'text', shell: 'bool' },
   },
   // THE PAGE'S FUNCTION IS NOT THE VERB (goal/G43.7; Andy: "spirit.app.searchApp() which IMPLEMENTS the verb search, but isn't the
   // verb itself."): the verb stays a word on the wire, and spirit.app holds no word of its own.
-  functions: { search: 'searchApp', active: 'activeApp', label: 'labelApp', icon: 'iconApp', shell: 'shellApp' },
+  functions: { search: 'searchApp', active: 'activeApp', label: 'labelApp', icon: 'iconApp' },
 };

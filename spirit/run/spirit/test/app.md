@@ -26,17 +26,18 @@ Andy, box: *"spirit.app gains a verb: "active"."* Peer review: wsl, yes.
 - *"spirit/state/ is not servable."* A plain GET does not hand the file over.
 - *"app.search stays "just a search string"."* Its only argument is `q`.
 
-## app.label and app.shell (goal/G43.9)
+## app.label (goal/G43.9)
 
 Q4, *"Do a label change and allow-as-shell go in spirit/state/<name>/node.json, through two new verbs app.label and app.shell?"*, Andy: *"yes."*
 
 - Each names its arguments, has its file, writes `node.json` keeping what else it holds, and never writes `<name>.json`.
 - `node.json` overrides `<name>.json`: a search answers the new label.
 - Both refuse a key that is no app.
+- app.shell went with the Allow row (goal/G43.18, Q10): whether an app may be a shell is its `<name>.json`'s alone, and node.json holds no shell.
 
 Q6, *"Does a changed icon go in spirit/state/<name>/node.json through a third new verb, app.icon?"*, Andy: *"yes."* `app.icon` is held the same way.
 
-The first activate, Andy: *"on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json"*, and on Q7: *"it just holds active (boolean), icon (glyph), label(string) and shell (boolean),"*. It copies those three, holds nothing else, and keeps what the node already chose.
+The first activate, Andy: *"on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json"*, and on Q7: *"it just holds active (boolean), icon (glyph), label(string) and shell (boolean),"*. It copies label and icon (shell no more since goal/G43.18), holds nothing else, and keeps what the node already chose.
 
 ## Intrinsic (goal/G43.14)
 

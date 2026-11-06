@@ -11,9 +11,9 @@
 //     active({ key, active })  sets a plugin's active in spirit/state/<key>/node.json, publishes the rows, and the node starts or
 //                     stops its server, if it has one (goal/G43.12).
 //                     A key that is no plugin is refused, so no path can be written through it (goal/G43.9).
-//     label({ key, label }), icon({ key, icon }), shell({ key, shell })  the same, for its label, its icon and whether it may
-//                     mount as shell. <name>.json gives the default, node.json overrides it, and none writes <name>.json
-//                     (Q4: "yes.", Q6: "that would apply to all changes").
+//     label({ key, label }), icon({ key, icon })  the same, for its label and its icon. <name>.json gives the default,
+//                     node.json overrides it, and none writes <name>.json (Q4: "yes.", Q6: "that would apply to all changes").
+//                     Whether it may mount as shell is its <name>.json's alone (goal/G43.18, Q10: app.shell went).
 //
 // A PLUGIN IS A FOLDER WITH ITS OWN <name>/<name>.json (Andy, G43.1's box: "the new "default" pattern in that module is:
 // /<name>/<name>.json"), read from the disk at each search, so no list names one. appSelector/ and test/ are no plugins.
@@ -52,7 +52,9 @@ function createApp(opts) {
     try { own = JSON.parse(fs.readFileSync(path.join(folder, name, name + '.json'), 'utf8')); } catch (e) { return null; }
     const i = own && own.identity && typeof own.identity === 'object' ? own.identity : {};
     const s = stateOf(name);
-    const asShell = typeof s.shell === 'boolean' ? s.shell : !!(own && own.shell && own.shell.true === true);
+    // A SHELL BY ITS OWN <name>.json ALONE (goal/G43.18, box v29, Q10: the Allow row and app.shell went, "and the shell field it
+    // writes into node.json"): no choice of the node's stands over it.
+    const asShell = !!(own && own.shell && own.shell.true === true);
     // AN INTRINSIC APP IS ALWAYS ACTIVE (goal/G43.14; Andy, Q1: "intrinsic apps will be always on."), whatever node.json says.
     return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, shell: asShell, intrinsic: i.intrinsic === true,
       // WHETHER IT RUNS ON THE NODE (goal/G43.18, Q6, Andy: "yes."): its <name>.json's node.mount, for the app search's server filter.
@@ -106,11 +108,10 @@ function createApp(opts) {
       return { ok: false, status: 409, code: 'app-intrinsic', error: 'app ' + key + ' is intrinsic: it is always active' };
     }
     const row = on && names().indexOf(key) !== -1 ? rowOf(key) : null;
-    return write(body, row ? { active: true, label: row.label, icon: row.icon, shell: row.shell } : { active: on });
+    return write(body, row ? { active: true, label: row.label, icon: row.icon } : { active: on });
   }
   function label(body) { return write(body, { label: String((body && body.label) || '') }); }
   function icon(body) { return write(body, { icon: String((body && body.icon) || '') }); }
-  function shell(body) { return write(body, { shell: !!(body && body.shell === true) }); }
   if (o.jobs) {
     const job = o.jobs.createJob('permanent', 'apps', { apps: table() });
     publish = function () { o.jobs.updateJob(job.id, { data: { apps: table() } }); };
@@ -121,7 +122,7 @@ function createApp(opts) {
     });
   }
 
-  return { search: search, active: active, label: label, icon: icon, shell: shell };
+  return { search: search, active: active, label: label, icon: icon };
 }
 
 module.exports = { createApp: createApp };

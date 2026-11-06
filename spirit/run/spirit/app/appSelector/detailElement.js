@@ -11,7 +11,6 @@
   window.spirit.require('spirit/element/appInstaller.js');
   // goal/G43.15: the switches are elements of their own, each hiding itself where it does not apply.
   window.spirit.require('spirit/app/appSelector/rowFormAppActive.js');
-  window.spirit.require('spirit/app/appSelector/rowFormAppShell.js');
   window.spirit.require('spirit/app/appSelector/serverDEBUG.js');
   window.spirit.require('spirit/app/appSelector/changeAppIcon.js');
   window.spirit.require('spirit/app/appSelector/changeAppLabel.js');
@@ -27,22 +26,20 @@
     var labelBox = document.createElement('div');
     var activeBox = document.createElement('div');
     var debugBox = document.createElement('div');
-    var shellBox = document.createElement('div');
     // rule/2: every block carries a leading 1em: a rowForm carries its own since goal/G43.15, so a hidden one takes it along.
     box.appendChild(iconBox);
     box.appendChild(labelBox);
     box.appendChild(activeBox);
     box.appendChild(debugBox);
-    box.appendChild(shellBox);
     host.appendChild(box);
     // THE ICON AND THE LABEL (goal/G43.15, Q4): elements of their own, so an app's own face can show them too.
     var icon = S.elements.changeAppIcon.create(iconBox, { key: key });
     var label = S.elements.changeAppLabel.create(labelBox, { key: key });
-    // THE SWITCHES (goal/G43.15): Activate/Deactivate, DEBUG right after it (Q1), then allow as shell; each hides itself.
+    // THE SWITCHES (goal/G43.15): Activate/Deactivate, DEBUG right after it (Q1); each hides itself. The allow-as-shell row went
+    // (goal/G43.18, box v29: its element is deleted, <name>.json alone says whether an app may be a shell).
     var active = S.elements.rowFormAppActive.create(activeBox, { key: key });
     var debug = S.elements.serverDEBUG.create(debugBox, { key: key });
-    var asShell = S.elements.rowFormAppShell.create(shellBox, { key: key });
-    return { destroy: function () { icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); asShell.destroy(); host.innerHTML = ''; } };
+    return { destroy: function () { icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); host.innerHTML = ''; } };
   }
 
   function create(host, opts) {

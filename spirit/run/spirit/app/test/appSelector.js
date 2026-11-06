@@ -166,16 +166,9 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const wentOn = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' face'; });
     ok(wentOn && stateOf().active === true, 'a press back turns it on', 'after a press back: ' + short((await forms())[3]));
 
-    test.subHeading('row 3: "if shell.true==false: [🔴] "Allow <app-label> as shell" [🟢]", "if shell.true==true: [🟢] "Don\'t allow <app-label> as shell" [🔴]"');
-    const r3 = l[4] || none;
-    ok(r3.icon.indexOf('🔴') !== -1 && r3.words === 'Allow ' + monitorLabel + ' as shell' && r3.button === '🟢', '[🔴] Allow Hearing as shell [🟢]', 'row 3: ' + short(r3));
-    await press(4);
-    const allowed = await waitForm(4, function (x) { return x.icon.indexOf('🟢') !== -1 && x.words === 'Don\'t allow ' + monitorLabel + ' as shell' && x.button === '🔴'; });
-    ok(allowed, 'a press: [🟢] Don\'t allow Hearing as shell [🔴]', 'after a press: ' + short((await forms())[4]));
-    ok(stateOf().shell === true, 'it lands in spirit/state/hearing/node.json', 'node.json: ' + short(stateOf()));
-    ok(fs.readFileSync(disk, 'utf8') === fileBefore, 'and not in hearing.json', 'hearing.json was written');
-    await press(4);
-    await waitForm(4, function (x) { return x.words === 'Allow ' + monitorLabel + ' as shell'; });
+    // Row 3, the Allow row, went (goal/G43.18, box v29: "the Allow row of the app detail and its element ... are deleted").
+    test.subHeading('goal/G43.18: no Allow row: "<name>.json alone says whether an app may be a shell"');
+    ok(!l.slice(1).some(function (x) { return /allow .* as shell/i.test(x.words || ''); }), 'no row says Allow or Don\'t allow as shell', 'a row still does: ' + short(l));
 
     test.subHeading('Q4: a changed label goes in node.json, and every row follows');
     await chrome.evaluate('(function () { var f = [].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = "Renamed"; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
@@ -185,7 +178,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(fs.readFileSync(disk, 'utf8') === fileBefore, 'and not to hearing.json', 'hearing.json was written');
     const inRow = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.label === "Renamed"; }())'); }, 5000);
     ok(inRow, 'the stream brings it to the row', 'the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().hearing)')));
-    const follows = await until(function () { return forms().then(function (x) { return !!x[0] && !!x[3] && !!x[4] && x[0].words === 'Renamed' && x[3].words === 'Deactivate Renamed face' && x[4].words === 'Allow Renamed as shell'; }); }, 5000);
+    const follows = await until(function () { return forms().then(function (x) { return !!x[0] && !!x[3] && x[0].words === 'Renamed' && x[3].words === 'Deactivate Renamed face'; }); }, 5000);
     ok(follows, 'the bar and the rows of the panel say it', 'the panel: ' + short(await forms()));
     await chrome.evaluate('(function () { var f = [].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
     await press(2);
@@ -196,19 +189,19 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const backAgain = shut && await until(function () { return chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; return !!r && r.offsetParent !== null; }())'); }, 4000);
     ok(backAgain, 'its x brings the list back', 'after close: ' + short(await inFaces()));
 
-    test.subHeading('""face" only displays if shell.mount==true", ""server" only displays if node.mount==true", ""and" is only displayed of both are true", row 3 "shown only if shell-mount==true"');
+    test.subHeading('""face" only displays if shell.mount==true", ""server" only displays if node.mount==true", ""and" is only displayed of both are true"');
     const rewrite = function (shellMount, nodeMount) { const j = JSON.parse(fileBefore); j.shell = Object.assign({}, j.shell, { mount: shellMount }); j.node = Object.assign({}, j.node, { mount: nodeMount }); fs.writeFileSync(disk, JSON.stringify(j)); };
     rewrite(true, true);
     await openPanel();
     const bothWords = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' face and server'; });
     ok(bothWords, 'both: Deactivate Hearing face and server', 'with both: ' + short((await forms())[3]));
-    ok((await forms()).length === 5, 'and row 3 shows', 'with both, forms: ' + short(await forms()));
+    ok((await forms()).length === 4, 'and no Allow row (goal/G43.18)', 'with both, forms: ' + short(await forms()));
     await closePanel();
     rewrite(false, true);
     await openPanel();
     const serverWords = await waitForm(3, function (x) { return x.words === 'Deactivate ' + monitorLabel + ' server'; });
     ok(serverWords, 'node.mount alone: Deactivate Hearing server', 'with node.mount alone: ' + short((await forms())[3]));
-    ok((await forms()).length === 4, 'and row 3 does not show', 'with shell.mount false, forms: ' + short(await forms()));
+    ok((await forms()).length === 4, 'and no Allow row (goal/G43.18)', 'with shell.mount false, forms: ' + short(await forms()));
     await closePanel();
     fs.writeFileSync(disk, fileBefore);
     

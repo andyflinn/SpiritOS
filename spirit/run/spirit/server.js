@@ -1807,7 +1807,6 @@ catch (e) {
     'active': { request: { key: '', active: false }, reply: {}, handler: proxyVerb(function (b) { return appFamily.active(b); }) },
     'label': { request: { key: '', label: '' }, reply: {}, handler: proxyVerb(function (b) { return appFamily.label(b); }) },
     'icon': { request: { key: '', icon: '' }, reply: {}, handler: proxyVerb(function (b) { return appFamily.icon(b); }) },
-    'shell': { request: { key: '', shell: false }, reply: {}, handler: proxyVerb(function (b) { return appFamily.shell(b); }) },
   }, { wire: false, by: 'server.js' });
 
   // THE GATE IS NOT IN HERE, and that is the point of this namespace.
@@ -1886,6 +1885,8 @@ catch (e) {
         rs.end(JSON.stringify(Object.assign({ relays: relays }, said)));
       }).catch(function (e) { bodyRefused(rq, rs, e, true); });
     } },
+    // THE SHELL THE NODE NAMES (goal/G43.18, box v29; the verb reviewed by wsl, Andy: "the verb is node.shell"): spirit/nodeShell.js.
+    'shell': { request: { at: 'home', name: '' }, reply: { name: '' }, handler: proxyVerb(function (b) { return require('./nodeShell').shell(ROOT_DIR, b); }) },
   }, { wire: false, by: 'hub.js' });
 
   // ── owner.command: A COMMAND FOR ONE OF THIS NODE'S PUPPETS (puppets/G4)

@@ -40,7 +40,7 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   let api = null;
   try { api = require(path.join(FOLDER, 'api.js')); } catch (e) { api = null; }
   const verbs = api && api.verbs;
-  ok(!!verbs && Object.keys(verbs).sort().join() === 'active,icon,label,search,shell', 'search, active, icon, label and shell are the family\'s verbs', 'the family\'s verbs are ' + short(verbs ? Object.keys(verbs) : 'not there'));
+  ok(!!verbs && Object.keys(verbs).sort().join() === 'active,icon,label,search', 'search, active, icon and label are the family\'s verbs (app.shell went, goal/G43.18, Q10)', 'the family\'s verbs are ' + short(verbs ? Object.keys(verbs) : 'not there'));
   ok(!!verbs && !!verbs.search && Object.keys(verbs.search).join() === 'q' && verbs.search.q === 'text?', 'search takes one optional search string, q, and no filters', 'search takes ' + short(verbs && verbs.search));
 
   // A PLUGIN'S DESCRIPTION (Andy, box: "containing identity:icon and identity:label").
@@ -127,8 +127,8 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     // Andy: "on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json", and on Q7: "it just holds active (boolean), icon (glyph), label(string) and shell (boolean),"
     const firstState = (function () { try { return JSON.parse(fs.readFileSync(stateFile('agent'), 'utf8')); } catch (e) { return {}; } }());
     const agentJson = JSON.parse(fs.readFileSync(path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'agent', 'agent.json'), 'utf8'));
-    ok(firstState.label === agentJson.identity.label && firstState.icon === agentJson.identity.icon && firstState.shell === (agentJson.shell || {}).true, 'the first activate copies label, icon and shell from <name>.json', 'node.json after the first activate: ' + short(firstState));
-    ok(Object.keys(firstState).sort().join() === 'active,icon,label,shell', 'and it holds those and active, nothing else', 'node.json holds: ' + short(Object.keys(firstState)));
+    ok(firstState.label === agentJson.identity.label && firstState.icon === agentJson.identity.icon, 'the first activate copies label and icon from <name>.json (shell no more, goal/G43.18)', 'node.json after the first activate: ' + short(firstState));
+    ok(Object.keys(firstState).sort().join() === 'active,icon,label', 'and it holds those and active, nothing else', 'node.json holds: ' + short(Object.keys(firstState)));
     await ask(node.base, 'app.label', { key: 'server', label: 'Chosen First' });
     await ask(node.base, 'app.active', { key: 'server', active: true });
     const chosen = (function () { try { return JSON.parse(fs.readFileSync(stateFile('server'), 'utf8')); } catch (e) { return {}; } }());
@@ -162,7 +162,6 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     ok(!fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'state', 'nosuchapp')) && !fs.existsSync(path.join(node.root, 'spirit', 'run', 'spirit', 'evil')) && !fs.existsSync(path.join(node.root, 'spirit', 'run', 'evil')), 'and none of them wrote anything', 'a refused key left a file');
     test.subHeading('Q4: "Do a label change and allow-as-shell go in spirit/state/<name>/node.json, through two new verbs app.label and app.shell?", Andy: "yes."');
     ok(!!verbs.label && 'key' in verbs.label && 'label' in verbs.label && fs.existsSync(path.join(RUN, 'spirit', 'app', 'label.json')), 'app.label names key and label, and has its file', 'app.label: ' + short(verbs.label));
-    ok(!!verbs.shell && 'key' in verbs.shell && 'shell' in verbs.shell && fs.existsSync(path.join(RUN, 'spirit', 'app', 'shell.json')), 'app.shell names key and shell, and has its file', 'app.shell: ' + short(verbs.shell));
     const sidecar = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'agent', 'agent.json');
     const sidecarBefore = fs.readFileSync(sidecar, 'utf8');
     const stateRead = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')); } catch (e) { return {}; } };
@@ -173,12 +172,12 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     ok(!!verbs.icon && 'key' in verbs.icon && 'icon' in verbs.icon && fs.existsSync(path.join(RUN, 'spirit', 'app', 'icon.json')), 'app.icon names key and icon, and has its file', 'app.icon: ' + short(verbs.icon));
     const iconed = await ask(node.base, 'app.icon', { key: 'agent', icon: '🧪' });
     ok(iconed.status === 200 && stateRead('agent').icon === '🧪', 'app.icon writes node.json', 'after app.icon: ' + short({ s: iconed.status, t: iconed.text, f: stateRead('agent') }));
-    const allowed = await ask(node.base, 'app.shell', { key: 'agent', shell: true });
-    ok(allowed.status === 200 && stateRead('agent').shell === true, 'app.shell writes node.json', 'after app.shell: ' + short({ s: allowed.status, t: allowed.text, f: stateRead('agent') }));
+    // app.shell went (goal/G43.18, Q10): whether an app may be a shell is its <name>.json's alone; spirit/test/nodeShell.js.
+    ok(!verbs.shell, 'the app family has no verb shell (goal/G43.18, Q10)', 'app.shell is still a verb: ' + short(verbs.shell));
     ok(fs.readFileSync(sidecar, 'utf8') === sidecarBefore, 'neither writes <name>.json', 'agent.json was written');
-    for (const verb of ['app.icon', 'app.label', 'app.shell']) {
+    for (const verb of ['app.icon', 'app.label']) {
       for (const bad of ['nosuchapp', '../evil', '']) {
-        const r = await ask(node.base, verb, { key: bad, icon: '🧪', label: 'x', shell: true });
+        const r = await ask(node.base, verb, { key: bad, icon: '🧪', label: 'x' });
         ok(r.status !== 200, verb + ' refuses ' + JSON.stringify(bad), verb + ' took ' + JSON.stringify(bad) + ': ' + short(r.text));
       }
     }
