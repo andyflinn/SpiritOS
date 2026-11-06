@@ -39,7 +39,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const lists = [];
   const required = [];
   const STANDS = {
-    'spirit/element/search/bundle/listElement.js': function (E) { E.search.bundle.listElement = { create: function (host, o) {
+    'spirit/element/search/bundle/listElement.js': function (E) { ((E.search = E.search || {}).bundle = E.search.bundle || {}).listElement = { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, refresh: function () { l.refreshed += 1; }, destroy: function () {} };
       lists.push(l); return { list: l, refresh: l.refresh, destroy: l.destroy };
     } }; },

@@ -39,8 +39,8 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
 
   // A BARE WINDOW (rule/26): probabilitySearch is on the page only once the selector requires it.
   const w = { lists: [], required: [] };
-  const STAND = function (E) { E.search = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
-    redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }; };
+  const STAND = function (E) { E.search = Object.assign(E.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
+    redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); };
   const win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
       require: function (p) { w.required.push(String(p)); if (p === 'spirit/element/search.js' && !w.stood) { w.stood = true; STAND(win.spirit.element); } return Promise.resolve(true); },

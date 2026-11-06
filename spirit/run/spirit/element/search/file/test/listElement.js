@@ -37,12 +37,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const asked = [];
   const fsFamily = { search: function (a) { asked.push(a); return Promise.resolve({ items: [{ key: 'docs/a.md', label: JSON.stringify({ path: 'docs/a.md', score: 0.9, line: 3 }) }, { key: 'docs/', label: JSON.stringify({ path: 'docs/', score: 0.2 }) }], more: false }); } };
   const STANDS = {
-    'spirit/element/search.js': function (E) { E.search = { create: function (host, o) {
+    'spirit/element/search.js': function (E) { E.search = Object.assign(E.search || {}, { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, sorted: null, typed: '', refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () {},
         sort: function (f, d) { l.sorted = [f, d]; }, words: function () { return l.typed; } };
       lists.push(l); return l;
-    } }; },
-    'spirit/element/search/file/rowElement.js': function (E) { E.search.file.rowElement = { create: function (row) { return { kind: 'file', row: row }; } }; },
+    } }); },
+    'spirit/element/search/file/rowElement.js': function (E) { ((E.search = E.search || {}).file = E.search.file || {}).rowElement = { create: function (row) { return { kind: 'file', row: row }; } }; },
     'spirit/element/fstat.js': function (E) { E.fstat = { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };

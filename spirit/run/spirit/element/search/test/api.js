@@ -32,11 +32,11 @@ const OTHER = { relay: { card: {} } };
 
 function world() {
   const w = { lists: [], required: [] };
-  const E = {
-    probabilitySearch: { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
+  const E = nestSearch({
+    'search': { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
       redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } },
     shellCreateListSearch: function (host, opts) { w.old = true; return { redraw: function () {}, refresh: function () {} }; },
-  };
+  });
   const win = {
     spirit: { element: E, escapeHtml: function (s) { return String(s); },
       ready: Promise.resolve({ tree: function () { return Promise.resolve(TREE); } }),
@@ -109,3 +109,6 @@ test.startTest('appServerSelector.js: the app-server selector');
 
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

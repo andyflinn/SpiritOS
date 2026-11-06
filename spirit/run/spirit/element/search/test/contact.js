@@ -47,10 +47,10 @@ test.startTest('contactSelector.js: the configurable ID selector');
   };
   const families = { contact: { search: answer('contact', 'search') }, agent: { job: answer('agent', 'job') } };
   const STANDS = {
-    'spirit/element/search.js': function (E) { E.search = { create: function (host, o) {
+    'spirit/element/search.js': function (E) { E.search = Object.assign(E.search || {}, { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, redrawn: 0, value: '', row: null, refresh: function () { l.refreshed += 1; }, redraw: function () { l.redrawn += 1; }, destroy: function () {} };
       lists.push(l); return l;
-    } }; },
+    } }); },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: element, addEventListener: function () {}, removeEventListener: function () {} };

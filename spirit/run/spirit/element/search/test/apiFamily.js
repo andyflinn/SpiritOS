@@ -42,8 +42,8 @@ function world() {
   const w = { lists: [], required: [] };
   const real = function (file) { return function (win) { vm.runInContext(fs.readFileSync(path.join(JS, file), 'utf8'), win, { filename: file }); }; };
   const STANDS = {
-    'spirit/element/search.js': function (win) { win.spirit.element.search = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
-      redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }; },
+    'spirit/element/search.js': function (win) { win.spirit.element.search = Object.assign(win.spirit.element.search || {}, { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
+      redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }); },
     'spirit/element/search/api.js': real('appServerSelector.js'),
     'spirit/element/search/api/verb.js': real('apiVerbSelector.js'),
   };

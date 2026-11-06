@@ -20,7 +20,7 @@ test.startTest('valued.js: rows of name and value, searchable, with no node verb
   const code = fs.existsSync(path.join(__dirname, '..', 'valued.js')) ? fs.readFileSync(path.join(__dirname, '..', 'valued.js'), 'utf8').replace(/\/\/[^\n]*/g, '') : '';
   ok(!!code, 'spirit/element/search/valued.js is there', 'spirit/element/search/valued.js is not there: nothing below can pass');
   ok(code && !/\.elements\b|spirit\.shell/.test(code), 'it reaches no old code', 'valued.js names spirit.elements or spirit.shell');
-  ok(code && /probabilitySearch/.test(code), 'it is a probabilitySearch', 'valued.js does not use probabilitySearch');
+  ok(code && /spirit\/element\/search\.js|element\.search\.create/.test(code), 'it is a probabilitySearch (spirit/element/search.js since goal/G43.18)', 'valued.js does not use probabilitySearch');
   const node = await scratchNode();
   const chrome = await chromePage(findChrome());
   try {
@@ -29,7 +29,7 @@ test.startTest('valued.js: rows of name and value, searchable, with no node verb
     const js = function (s) { return chrome.evaluate(s); };
     const loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/valued.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
     ok(loaded === 'loaded', 'it loads on a page', 'loading it: ' + short(loaded));
-    const homes = await js('JSON.stringify({ now: typeof ((window.spirit.element || {}).search.valued || {}).create, old: typeof (window.spirit.elements || {}).search.valued })');
+    const homes = await js('JSON.stringify({ now: typeof (((window.spirit.element || {}).search || {}).valued || {}).create, old: typeof (window.spirit.elements || {}).valued })');
     let h = {}; try { h = JSON.parse(homes); } catch (e) { h = {}; }
     ok(h.now === 'function' && h.old === 'undefined', 'spirit.element.search.valued.create, and nothing on spirit.elements', 'homes: ' + short(h));
     if (h.now !== 'function') return;

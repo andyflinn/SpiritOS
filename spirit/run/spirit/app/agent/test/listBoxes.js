@@ -158,11 +158,11 @@ function world() {
     familyPath: familyPath, isBrowser: function () { return true; },
     fs: { loadFile: function () { return Promise.reject(new Error('none')); }, saveFile: function () { return Promise.resolve(); } },
     tree: function () { return Promise.resolve({}); },
-    get element() { return this.elements; }, elements: {
+    get element() { return this.elements; }, elements: nestSearch({
       // The recorder: the box each list is made in, and whether it is a dropdown.
-      probabilitySearch: { create: function (host, o) { panes.push({ host: host, o: o || {} }); return { refresh: function () {}, redraw: function () {}, destroy: function () {}, value: '' }; } },
-      contactSelector: selector, bundleSelector: selector, apiFamilySelector: selector,
-    },
+      'search': { create: function (host, o) { panes.push({ host: host, o: o || {} }); return { refresh: function () {}, redraw: function () {}, destroy: function () {}, value: '' }; } },
+      'search.contact': selector, 'search.bundle': selector, 'search.api': selector,
+    }),
     require: function (p) {
       const rel = String(p).replace(/^\/+/, '');
       if (rel === familyPath('agent')) return Promise.resolve(family);
@@ -262,3 +262,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!AD && all.length >= 4 && !off.length, 'every list pane is handed its table\'s branch, spirit.data.agent.data.branch(table)', 'agentReads ' + !!AD + ', not its branch: ' + short(off));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

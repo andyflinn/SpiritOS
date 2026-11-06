@@ -236,8 +236,8 @@ function ddWorld(facts, checks, o) {
       if (o && o.real && (q === VERIFY_CCM || q === 'shell/shared/js/deskRunStatus.js')) vm.runInContext(fs.readFileSync(path.join(RUN, q), 'utf8'), win, { filename: q });
       return Promise.resolve({});
     },
-    get element() { return this.elements; }, elements: { armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
-      probabilitySearch: { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } },
+    get element() { return this.elements; }, elements: nestSearch({ armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
+      'search': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }),
     shell: { activateApp: function (d) { win.def = d; } } };
   vm.createContext(win);
   // THE PAGE'S ONE DATA SET, ITS NODE KNOWN (goal/G41.28, Q10), as spirit.start leaves it before any app runs, and the
@@ -661,3 +661,6 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   }
   test.reportSuccessFailureCount();
 }()).catch(function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

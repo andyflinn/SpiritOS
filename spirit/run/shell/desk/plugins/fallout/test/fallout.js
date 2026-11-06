@@ -158,7 +158,7 @@ function world(withList, totals) {
   const win = { document: document, setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String, Number: Number, Math: Math };
   win.window = win;
   const list = listStub(totals || { red: 3, green: 7 });
-  win.spirit = { get element() { return this.elements; }, elements: withList ? { probabilitySearch: { create: list.create } } : {} };
+  win.spirit = { get element() { return this.elements; }, elements: withList ? nestSearch({ 'search': { create: list.create } }) : {} };
   // The one loader (spirit.require): what it was asked, each held until the test lets it answer.
   win.required = [];
   win.spirit.require = function (p) { return new Promise(function (resolve) { win.required.push({ path: String(p), resolve: resolve }); }); };
@@ -325,7 +325,7 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(wl.list.made.length === 0, 'and no list is made before it loads', 'made: ' + wl.list.made.length);
   const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/data.js'; });
   ok(askedV.length === 1, 'it asks spirit.require for the verifier\'s cache manager, its own family\'s (goal/G41.28)', 'required ' + short(wl.win.required.map(function (r) { return r.path; })));
-  wl.win.spirit.element.search = { create: wl.list.create };
+  wl.win.spirit.element.search = Object.assign(wl.win.spirit.element.search || {}, { create: wl.list.create });
   if (asked[0]) asked[0].resolve({}); if (askedV[0]) askedV[0].resolve({}); await settle();
   ok(wl.list.made.length === 1 && wl.list.made[0].host === wl.$('fallout-list') && wl.$('fallout-summary').textContent === '❌ 3 red of 10 tests now (30%).',
     'once it loads, the list is made and the summary counted', 'made ' + wl.list.made.length + ', summary ' + wl.$('fallout-summary').textContent);
@@ -407,3 +407,6 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   }
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

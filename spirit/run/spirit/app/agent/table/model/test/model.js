@@ -122,10 +122,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     if (table === 'then') return undefined;
     return function (args) { made.calls.push({ table: table, args: args }); const a = made.answer ? made.answer(table, args) : {}; return a instanceof Error ? Promise.reject(a) : Promise.resolve(a); };
   } });
-  global.window = { spirit: { familyPath: familyPath, get element() { return this.elements; }, elements: {
+  global.window = { spirit: { familyPath: familyPath, get element() { return this.elements; }, elements: nestSearch({
     // The providerSelector:dropdown and the busyButton, each tested in its own folder: stand-ins that keep what they were
     // handed, as the Update model list pane's test had them.
-    probabilitySearch: { create: function (host, o) { const s2 = { host: host, o: o, value: '', row: null, refresh: function () {}, destroy: function () { s2.destroyed = true; } }; made.searches.push(s2); return s2; } },
+    'search': { create: function (host, o) { const s2 = { host: host, o: o, value: '', row: null, refresh: function () {}, destroy: function () { s2.destroyed = true; } }; made.searches.push(s2); return s2; } },
     // The one-row form (goal/G41.27), tested in its own folder: a stand-in answering { root, span, button } as the real
     // one does, its root appended to the container it is given.
     rowForm: { create: function (c, o) {
@@ -141,7 +141,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ api: o2.api, server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
-  } } };
+  }) } };
   global.spirit = global.window.spirit;
   global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(p === AGENT ? made.family : true); };
   // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
@@ -269,3 +269,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

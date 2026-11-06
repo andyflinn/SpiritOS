@@ -28,11 +28,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const lists = [];
   const rows = [];
   const STANDS = {
-    'spirit/element/search.js': function (E) { E.search = { create: function (host, o) {
+    'spirit/element/search.js': function (E) { E.search = Object.assign(E.search || {}, { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
-    } }; },
-    'spirit/element/search/grant/rowElement.js': function (E) { E.search.grant.rowElement = { create: function (row, opts) { const r = { kind: 'grant', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
+    } }); },
+    'spirit/element/search/grant/rowElement.js': function (E) { ((E.search = E.search || {}).grant = E.search.grant || {}).rowElement = { create: function (row, opts) { const r = { kind: 'grant', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({}), element: {} } };
   global.spirit = global.window.spirit;

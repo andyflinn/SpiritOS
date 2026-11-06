@@ -49,14 +49,14 @@ function world(opts) {
     loadFile: function (p) { w.loaded.push(p); if (o.refuseLoad) { const e = new Error(o.refuseLoad); e.code = 'not-from-the-face'; e.status = 403; return Promise.reject(e); } return Promise.resolve(p in FILES ? FILES[p] : null); },
     saveFile: function (p, c) { w.saved.push({ path: p, content: c }); return Promise.resolve(o.refuse ? { ok: false, reason: o.refuse } : { ok: true }); },
   };
-  const E = {
-    fileList: { create: function (host, args) { const p = { host: host, opts: args, said: 'peerPost', words: function () { return p.said; } }; w.pickers.push(p); return p; } },
+  const E = nestSearch({
+    'search.file': { create: function (host, args) { const p = { host: host, opts: args, said: 'peerPost', words: function () { return p.said; } }; w.pickers.push(p); return p; } },
     codeMirror: { create: function (host, args) {
       let value = String(args && args.text != null ? args.text : '');
       const v = { host: host, args: args, mode: args && args.mode, value: function () { return value; }, type: function (t) { value = t; } };
       w.views.push(v); return Promise.resolve(v);
     } },
-  };
+  });
   const trap = new Proxy({}, { get: function (t, k) { w.reached.push(String(k)); return function () { return { value: function () { return ''; } }; }; } });
   const api = { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); }, ui: { elements: trap } };
   const win = {
@@ -198,3 +198,6 @@ test.startTest('textEditor.js: the TextEditor app, face-able');
   ok(!/not found|you can still Save/.test(status()), 'and never says not found, or that Save would create it', 'status: "' + status() + '"');
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

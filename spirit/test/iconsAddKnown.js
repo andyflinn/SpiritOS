@@ -47,10 +47,10 @@ function mount(set) {
     },
   };
   const spirit = { ready: Promise.resolve(s), shell: { activateApp: function (b) { behavior = b; } } };
-  const window = { spirit: { elements: {
-    iconList: { create: function () { return { reload: function () {} }; } },
+  const window = { spirit: { elements: nestSearch({
+    'search.icon.listElement': { create: function () { return { reload: function () {} }; } },
     fieldInput: { attach: function () {}, fits: function () { return true; } },
-  } } };
+  }) } };
   new Function('spirit', 'window', 'document', fs.readFileSync(APP, 'utf8'))(spirit, window, {});
   const container = fakeElement();
   behavior.mount(container, {});
@@ -104,3 +104,6 @@ test.startTest('goal/G40.5: Add on an icon already in the set opens its edit vie
   }
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the suite threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

@@ -57,7 +57,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     } }; },
     'spirit/element/fieldInput.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'fieldInput.js'), 'utf8'), { filename: 'fieldInput.js' }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
-    'spirit/element/search/bundle.js': function (E) { E.search.bundle = { create: function (c, o) { const s = node('bundles'); s.o = o || {}; s.container = c; s.refreshed = 0; s.destroyed = 0; s.refresh = function () { s.refreshed += 1; }; s.destroy = function () { s.destroyed += 1; }; sels.push(s); c.appendChild(s); return s; } }; },
+    'spirit/element/search/bundle.js': function (E) { (E.search = E.search || {}).bundle = { create: function (c, o) { const s = node('bundles'); s.o = o || {}; s.container = c; s.refreshed = 0; s.destroyed = 0; s.refresh = function () { s.refreshed += 1; }; s.destroy = function () { s.destroyed += 1; }; sels.push(s); c.appendChild(s); return s; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };

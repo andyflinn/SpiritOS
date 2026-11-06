@@ -24,14 +24,14 @@ window.spirit.ready = Promise.resolve({
   peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); } },
 });
 let made = null;
-window.spirit.element = {
-  probabilitySearch: { create: function (host, o) {
+window.spirit.element = nestSearch({
+  'search': { create: function (host, o) {
     made = { host: host, opts: o, refreshes: 0, destroyed: false };
     return { refresh: function () { made.refreshes += 1; }, destroy: function () { made.destroyed = true; } };
   } },
   contactDetails: { open: function (o) { asked.push({ verb: 'contactDetails', body: o }); } },
   natterDetails: { open: function (o) { asked.push({ verb: 'natterDetails', body: o }); } },
-};
+});
 // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
 const required = [];
 window.spirit.require = function (p) { required.push(p); return Promise.resolve({}); };
@@ -177,3 +177,6 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
 
   test.reportSuccessFailureCount();
 }());
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

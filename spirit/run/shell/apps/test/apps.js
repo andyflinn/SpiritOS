@@ -74,15 +74,15 @@ function world() {
     loadFile: function (p) { return Promise.resolve(MANIFESTS[p] ? JSON.stringify(MANIFESTS[p]) : null); },
     annotate: function (a) { w.writes.push(JSON.parse(JSON.stringify(a))); return Promise.resolve({ ok: true }); },
   };
-  const E = {
-    probabilitySearch: { create: function (host, opts) { w.made = { host: host, opts: opts }; return { sort: function () {}, refresh: function () {}, destroy: function () {} }; } },
-    fileElement: { create: function (row) { const el = { key: row.path, row: row, fields: ['name', 'changed'], mounted: null, destroyed: false,
+  const E = nestSearch({
+    'search': { create: function (host, opts) { w.made = { host: host, opts: opts }; return { sort: function () {}, refresh: function () {}, destroy: function () {} }; } },
+    'search.file.rowElement': { create: function (row) { const el = { key: row.path, row: row, fields: ['name', 'changed'], mounted: null, destroyed: false,
       mount: function (h) { el.mounted = h; return el; }, cells: function () { return []; }, apply: function () {}, destroy: function () { el.destroyed = true; } }; w.rows.push(el); return el; } },
     appInstaller: { create: function (host, o) { const i = { host: host, path: o && o.path, destroyed: false, destroy: function () { i.destroyed = true; } }; w.installers.push(i); return i; } },
     navigation: { push: function (p) { const box = node('page'); w.pushed.push({ page: p, box: box }); p.mount(box, { api: {} }); return { close: function () {} }; } },
     fieldInput: { attach: function () {} },
-    iconList: { create: function () { return { destroy: function () {} }; } },
-  };
+    'search.icon.listElement': { create: function () { return { destroy: function () {} }; } },
+  });
   const win = { spirit: { get element() { return this.elements; }, elements: E, fs: fsApi, ready: Promise.resolve({ fs: fsApi }),
     require: function (p) { w.required.push(String(p)); return Promise.resolve(true); },
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
@@ -188,3 +188,6 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(ws && ws.path === 'process/js/agent/agent.js' && ws.payload.home === true && ws.payload.intrinsic === true, 'a server\'s save keeps its home and its intrinsic mark', 'wrote ' + short(ws));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });
+
+// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }
