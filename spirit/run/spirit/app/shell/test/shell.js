@@ -133,7 +133,8 @@ test.startTest('shell.js: the shell app, and a shell that replaces itself (goal/
       // What the dropdown lists: the labels inside that row, its own field and title aside.
       const seen = parsed(await c.evaluate('JSON.stringify((function () { var want = ' + JSON.stringify(LABELS) + '; var out = []; var d = document.getElementById("zzDetail"); var all = Array.prototype.slice.call(d.querySelectorAll("*")); var r = all.filter(function (e) { return e.children.length && String(e.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }).pop(); r = r && (r.closest(".shell-row-form") || r); Array.prototype.slice.call(r ? r.querySelectorAll("[data-key] td, li") : []).forEach(function (e) { var t = String(e.innerText || "").trim(); if ( e.offsetParent !== null && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); }); return out.sort(); }()))')) || [];
       const others = seen.filter(function (l) { return l !== SHELL_LABEL && l !== ZZ.identity.label; });
-      ok(opened && seen.indexOf(ZZ.identity.label) !== -1 && seen.indexOf(SHELL_LABEL) !== -1 && !others.length, words + ': open, it lists ' + SHELL_LABEL + ' and ' + ZZ.identity.label + ', and no app that is no shell', words + ': opened ' + opened + ', it lists ' + short(seen));
+      // Q28, Andy: "no, the shell icon is now properly missing :)": the shell app leaves itself out here too.
+      ok(opened && seen.indexOf(ZZ.identity.label) !== -1 && seen.indexOf(SHELL_LABEL) === -1 && !others.length, words + ': open, it lists ' + ZZ.identity.label + ', not ' + SHELL_LABEL + ' (Q28), and no app that is no shell', words + ': opened ' + opened + ', it lists ' + short(seen));
       await c.evaluate('document.body.click(); true');
     }
 
