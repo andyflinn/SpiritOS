@@ -26,7 +26,7 @@ Andy: *"file should be the same as files is. i don't want to loose all the nice 
 
 - A tiles mode, with the toggle between pane and tiles.
 - A file's icon by its kind, in the pane and the tiles alike: text 📜, video 📹, image 🌇, audio 🔊, a folder 📁, any other ❔, never 📄.
-- A press opens the file over all of file, one bar in view, the list out of view: text for text, media as `img`, `video` or `audio`, fstat only for a file of unknown kind. Text and media handed a file show no file picker.
+- A press opens the file over all of file, one bar in view, the list out of view: text for text, media as `img`, `video` or `audio`, fstat only for a file of unknown kind. Text and media handed a file show their whole selves, the file picker too (Andy: *"i changed my mind"*).
 - The bars: `✏️ Text Editor: notes.txt`; `🌇 Media Viewer: pic.png`, `📹 Media Viewer: clip.mp4`, `🔊 Media Viewer: song.mp3`, the file's own icon (Q15); fstat's ends in the file's name.
 - A contents match opens text with the words marked; its ✕ shows the list as it was left, its words kept.
 - Text and media are separate from fstat: the file's name only in the bar, no facts. Text's Save sits in a bubble of the kind rowForm uses, `.shell-bubble`, and in a pane 120px wide nothing of that row goes past its edge.

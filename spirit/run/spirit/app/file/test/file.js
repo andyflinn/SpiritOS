@@ -117,6 +117,9 @@ const HANDS = '(function () {' +
   '  unsized: function () { var b = box(); b.style.width = "100%"; b.style.height = "100%"; return true; },' +
   // A row in a narrow pane: true when nothing of the bubble holding word goes past its edge or the pane's.
   '  folds: function (word, w) { var b = box(); b.style.width = w + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var k = all("button").filter(function (x) { return String(x.textContent).indexOf(word) !== -1; })[0]; var row = k && k.closest(".shell-bubble"); var out = !row ? "no row" : (row.scrollWidth > row.clientWidth + 1 || row.getBoundingClientRect().right > b.getBoundingClientRect().right + 1) ? "past its edge" : "ok"; b.style.width = "100%"; return out; }); },' +
+  // What the list stands at, for a failure line: its words, which "in" is chosen (drawn bold, spirit/element/probabilitySearch.js),
+  // and its first rows as they read.
+  '  state: function () { var i = all("input[id$=text]")[0]; var on = all("button[data-filter=\\"in\\"]").filter(function (b) { return getComputedStyle(b).fontWeight >= 600; }).map(function (b) { return b.getAttribute("data-value"); }); return { words: i ? i.value : null, in: on, first: all("tr[data-key]").slice(0, 4).map(function (t) { return t.getAttribute("data-key") + " | " + String(t.innerText).replace(/\\s+/g, " ").slice(0, 60); }) }; },' +
   '  order: function (words) { var t = window.__t.text(); return words.map(function (w) { return t.indexOf(w); }); },' +
   '}; return "hands"; }())';
 
@@ -220,9 +223,13 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     await T('filter("in", "contents")');
     await T('type("zzquokka")');
     await T('search()');
-    ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1', 15000), 'in contents both files holding the word are found', 'rows: ' + short(await T('rows()')));
+    // Nothing is cut (probabilitySearch, G43.6), so both files are in the list before the node answers: found means ranked above
+    // every file the word misses, which only the contents answer does.
+    const hits = 'rows().indexOf("zzFiles/notes.txt") !== -1 && rows().indexOf("zzFiles/inner/deep.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/notes.txt") !== -1 && rows().slice(0, 3).indexOf("zzFiles/inner/deep.txt") !== -1';
+    ok(await waitFor(hits, 15000), 'in contents both files holding the word are found, ranked above the files it misses', 'rows: ' + short(await T('rows()')) + ', the list: ' + JSON.stringify(await T('state()')));
     const ranked = await T('rows()');
-    ok(ranked.indexOf('zzFiles/notes.txt') < ranked.indexOf('zzFiles/inner/deep.txt'), 'the file with two matches ranks above the one with one', 'rows: ' + short(ranked));
+    const rankedAt = await T('state()');
+    ok(ranked.indexOf('zzFiles/notes.txt') !== -1 && ranked.indexOf('zzFiles/notes.txt') < ranked.indexOf('zzFiles/inner/deep.txt'), 'the file with two matches ranks above the one with one', 'rows: ' + short(ranked) + ', the list: ' + JSON.stringify(rankedAt));
 
     test.subHeading('the box: "A contents match opens text at its line, the words marked"');
     await T('press("zzFiles/notes.txt")');
@@ -231,7 +238,7 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     ok(barIs(await T('bars()'), '✏️ Text Editor: notes.txt'), 'it covers all of Files: one bar in view, ✏️ Text Editor: notes.txt', 'bars: ' + short(await T('bars()')));
     const overList = barIs(await T('bars()'), /notes\.txt$/);
     ok(overList && (await T('rows()')).length === 0, 'the list is out of view while the file is over it', 'rows: ' + short(await T('rows()')));
-    ok(overList && (await T('pickers()')) === 0, 'the box: "They take a file when mounted: with one they show no file picker"', 'pickers: ' + (await T('pickers()')));
+    ok(overList && (await T('pickers()')) === 1, 'the box: "show their whole selves with it, the file picker too, also when launched from file"', 'pickers: ' + (await T('pickers()')));
     await T('close("notes.txt")');
     ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1'), 'its ✕ shows the list again', 'the app: ' + short(await T('text()')));
     ok((await T('rows()')).indexOf('zzFiles/notes.txt') !== -1 && (await T('words()')) === 'zzquokka', 'the list is as it was left, its words kept', 'words: ' + short(await T('words()')));
@@ -247,7 +254,7 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
       const shown = await waitFor('count(' + JSON.stringify(o[1]) + ') > 0', 10000);
       ok(shown, name + ' opens in media, as ' + o[1], name + ': ' + o[1] + ' ' + (await T('count(' + JSON.stringify(o[1]) + ')')) + ', ' + short(await T('text()')));
       ok(shown && barIs(await T('bars()'), o[2] + ' Media Viewer: ' + name), 'its one bar: ' + o[2] + ' Media Viewer: ' + name + ', the file\'s own icon (Q15)', name + ': bars ' + short(await T('bars()')));
-      ok(shown && (await T('pickers()')) === 0 && (await T('count(".CodeMirror")')) === 0, name + ': no file picker, and no text', name + ': pickers ' + (await T('pickers()')));
+      ok(shown && (await T('pickers()')) === 1 && (await T('count(".CodeMirror")')) === 0, name + ': its whole self, the file picker too, and no text', name + ': pickers ' + (await T('pickers()')));
       const own = String(await T('text()'));
       ok(shown && times(own, new RegExp(name.replace('.', '\\.'), 'g')) === 1 && own.indexOf('MIME type') === -1, name + ': separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
       await T('close(' + JSON.stringify(name) + ')');

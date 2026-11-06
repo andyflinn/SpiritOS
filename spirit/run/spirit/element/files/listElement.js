@@ -40,15 +40,17 @@
   // Through the spirit object (goal/G32.2): spirit.fs.search answers the reply's body.
   function search(args, found) {
     var a = args || {};
-    if (!a.contents || !a.q) { found(Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
+    if (!a.contents || !a.q) { found(Object.create(null), Object.create(null)); return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); }
     return spirit.ready.then(function (s) { return s.fs.search({ q: a.q || '', contents: a.contents || '' }); }).then(function (body) {
       body = body || {};
       var F = fsReads();
       var next = Object.create(null);
+      var lines = Object.create(null);
       var items = (body.items || []).map(function (i) {
         var row = null;
         try { row = JSON.parse(i.label); } catch (e) { row = null; }
         if (row && row.path) next[String(row.path).replace(/\/+$/, '')] = Number(row.score) || 0;
+        if (row && row.path && row.line > 0) lines[String(row.path).replace(/\/+$/, '')] = Number(row.line);
         // A folder comes with a trailing slash; the watcher and the row know it without one.
         var raw = String((row && row.path) || i.key);
         var folder = /\/$/.test(raw);
@@ -57,7 +59,7 @@
         return { key: path, label: JSON.stringify({ path: path, name: path.slice(path.lastIndexOf('/') + 1), kind: folder ? 'folder' : (k.kind || 'file'),
           size: k.size, modified: k.modified, line: (row && row.line) || 0 }) };
       });
-      found(next);
+      found(next, lines);
       return { status: 200, body: { ok: true, items: items, more: !!body.more } };
     });
   }
@@ -66,6 +68,10 @@
     var o = opts || {};
     var opened = Object.create(null);   // the folders open in the tree, by path
     var scores = Object.create(null);   // path -> the node's contents score, from the last contents search
+    // path -> the line of the first match, from the same search. BOTH KEPT HERE, BY PATH: a row is the tree's, and the node's
+    // next word on that file (fs-watcher's set, spirit/fs/data.js) writes it anew without what the search said, so a list that
+    // read the score or the line off the row lost both while the tree was still arriving (goal/G43.17).
+    var lines = Object.create(null);
     var made = Object.create(null);     // path -> its row element, so a folder's press can say it is open (goal/G43.17: 📂)
     var list = null;
     host.innerHTML = '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}.files-tree .path-dir{display:none}</style>' +
@@ -73,7 +79,7 @@
       '<div class="files-tree fill"></div>';
     var inner = host.lastChild;
     list = E.probabilitySearch.create(inner, {
-      api: { verb: function (name, args) { return search(args, function (next) { scores = next; }); } },
+      api: { verb: function (name, args) { return search(args, function (next, at) { scores = next; lines = at; }); } },
       // A view of the node's file tree, the branch the fs family's manager keeps (spirit.data.fs.data.branch).
       data: fsReads().branch,
       server: 'fs',
@@ -98,7 +104,7 @@
         return { icon: icon, label: p.slice(p.lastIndexOf('/') + 1) };
       },
       element: function (row, key) { var el = E.fileElement.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
-      score: function (row, values) { return values.in === 'contents' ? (scores[row.path] || 0) : null; },
+      score: function (row, values) { return values.in === 'contents' ? (scores[row.key || row.path] || 0) : null; },
       filters: [
         { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },
         // THE TREE and THE APP'S TYPES, not drawn: while the field is empty a row shows only when every folder above it
@@ -117,7 +123,8 @@
         if (made[key]) made[key].apply({ open: !!opened[key] });
         return true;
       },
-      pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
+      // A contents match is picked with its line, from what the search said (lines above), whatever the row holds now.
+      pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row ? Object.assign({}, row, { line: lines[key] || 0 }) : row, key); },
       empty: o.empty || 'No file matches.',
     });
     // The tree is in path order until a header is pressed; the indent only while the list is the tree.

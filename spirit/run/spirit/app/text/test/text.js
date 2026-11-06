@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/text/test/text.js
 // The tests of spirit/app/text/text.js for goal/G43.17, whose box built it first: "Four elements: file, fstat, text and media",
-// and "text and media take a file when mounted: with one they show no file picker, without one they show it (Q1, G43.16)". With
+// and "text and media take a file when mounted, and show their whole selves with it, the file picker too, also when launched from file". With
 // one is judged where Files hands it one (../../file/test/file.js); here it is mounted with none. A real node on a scratch copy of
 // the tracked files and a real Chrome on /face.html; neither Andy's node nor an agent's is touched.
 
