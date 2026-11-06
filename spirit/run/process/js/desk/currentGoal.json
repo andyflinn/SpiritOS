@@ -1,5 +1,5 @@
 {
- "change": 148787,
+ "change": 149065,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,7 +13,6 @@
    "buttons": [
     "done",
     "verify",
-    "go-all",
     "close",
     "pushgoal"
    ],
@@ -146,12 +145,18 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 2,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
-   "live": [],
-   "working": [],
+   "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -299,7 +304,6 @@
    "version": 19,
    "buttons": [
     "start-design",
-    "go",
     "close",
     "pushgoal",
     "delete",
@@ -308,7 +312,9 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G43.16"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -12246,6 +12252,921 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-06T01:12:36.679Z",
      "text": "wsl: changeAppIcon and changeAppLabel verified on Linux at f7c8eddd, cw's acec1924 with my red: green, and 7 of 7 mutants go red. The mutants drop the write, write with nothing picked, stop following the stream, have the detail not use them, or swap the agent's panel order.\nThe suites they touch are green too: serverDEBUG, the detail, browserAgent, agent and the old appSelector suite.\nClose is yours."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.16",
+   "title": "port text editor and media viewer to  spirit/app/",
+   "goal": "goal/G43",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 2,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [
+    "goal/G43.17"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "# port text editor and media viewer to spirit/app/\n\n- The two old shell apps, textEditor and mediaViewer, are moved: their old shell folders go, as contacts' did (Q1, Andy: \"i think \"move\" is better, we can also get rid of the old contact app. I've gotten pretty confident about this.\").\n- Their new names are text and media (Andy: \"i'd like to call the new ones just \"text\" and \"media\", because the labels and icons can be set by the user anyway, and i like \"words\"\"): spirit/app/text/ and spirit/app/media/, each in the one shape: <name>.json, and <name>.js an element, spirit.elements.<name>.create(container) -> { destroy() }, as contact is.\n- They keep their icons and labels (Andy: \"if we \"move\" we can use the same icon.\"): text.json icon ✏️, label \"Text Editor\"; media.json icon 🎬, label \"Media Viewer\". Both shell.mount true and shell.tile true, node.mount false: neither has a server.\n- Each loads what it draws with itself, as today: the files list as a dropdown and codeMirror for the editor; the files list, mediaViewer and fileViewer for the viewer.\n- The old shell's api object goes: the files list never reads the api it is handed, and the editor's escapeHtml is spirit.escapeHtml.\n\n# Open\n\n- \"Open with\": the old shell hands the editor a file (params.path, loadFile). The face has no Open with yet. Does the new editor take a file at all in this item?\n- Its starting file, shell/textEditor/notes.txt, lives in the old folder.\n- Intrinsic, or activated by the user?",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Are textEditor and mediaViewer moved, their old shell folders deleted as contacts' was, or copied, the old ones staying until the end?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T01:32:35.179Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Which old contact app goes, now that the old shell folder went in G43.14: the contacts family and its elements, or something else?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:26:23.145Z",
+     "text": "cw, fill the box, please"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:28:07.147Z",
+     "text": "cw: box filled, v1. Each app becomes one element in spirit/app/, as contact did, with its own json, no server, and loads its own parts as it does today. The old shell's api object goes: the files list never reads the one it is handed.\nFour things are open in the box. The first follows as a Q: move or copy."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:32:04.685Z",
+     "text": "cw, i think \"move\" is better, we can also get rid of the old contact app. I've gotten pretty confident about this. if we \"move\" we can use the same icon. i'd like to call the new ones just \"text\" and \"media\", because the labels and icons can be set by the user anyway, and i like \"words\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:32:48.219Z",
+     "text": "cw: boxed, v2: moved, named text and media, with the same icons and labels.\nThe old contact app: the old shell's contacts folder went in G43.14. What is left is the contacts family and its elements, which the new contact app uses. Which one do you mean? A Q follows."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.17",
+   "title": "port files to spirit/app/file/",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 18,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.16"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 46,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# port files to spirit/app/file/\n\nAndy: \"file should be the same as files is. i don't want to loose all the nice stuff files has...\"\nAndy: you will push past the commit-hook in git for this item.\n\n# Decided\n\n- Four elements: file, fstat, text and media. This item goes first, since text and media draw with the files list and fstat.\n- New never requires old.\n\n## file\n\n- The old shell's Files app moves to spirit/app/file/, and its old shell folder goes (G43.16 Q1).\n- file.json: icon 📁, label \"Files\", intrinsic true, shell.mount true, shell.tile true, node.mount false: no server.\n- file.js is an element, spirit.elements.file.create(container) -> { destroy() }.\n- It keeps everything Files has today: the list of files as a pane, its Name, Size and Changed columns each sortable; search in names or in contents, contents ranked by match; the folder tree, a folder opening and closing while the search is empty.\n- It gains a tiles mode, with the toggle between pane and tiles, as probabilitySearch already offers. A file's icon is by its kind, in the pane and the tiles alike: text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of unknown kind, ❔, in place of today's 📄; a file gone stays ❌.\n- The list of files stays where every app shares it (Q8).\n- A press opens the file over the list: text for text, media for video, image and audio, fstat alone for anything else. A contents match opens text at its line, the words marked.\n- text and media take a file when mounted: with one they show no file picker, without one they show it (Q1, G43.16).\n\n## fstat\n\n- A file-info viewer that text and media build on. Top down: the file's name, a hidden pane, the facts (MIME type, size, changed, created), the annotations (Q4, Q5, Q6). text puts codeMirror into the pane, media the media; the pane stays invisible until filled.\n- It replaces fileViewer, which is renamed and trimmed into it, then deleted, its users naming fstat; mediaViewer goes too (Q7).\n- It asks nothing of the old shell, so the app a file belongs to and Open with are not in it (Q9). What the old shell does about them is its own affair (Q10).\n\n## What mounts covers its mounter\n\n- By default an element mounts over the one that mounts it, in the same pane, under the title bar [icon] <label> [✕]; ✕ shows the mounter again (Q2).\n- That is one generic panel element, used by the appSelector and file; neither draws it with a <div> of its own (Q3).\n- Each pane keeps its own stack, a tree; one click on the outer ✕ closes it all.\n- A closed layer is hidden, not destroyed, so reopening it in the same session shows what was there; a reload starts clean. The appSelector's ✕ hides too (Q3). Every pane element follows as we go along: tab panes and the workBench's three panes.\n- A deactivated app's layer only leaves the view; it stays loaded until the shell boots again, and is not loaded then (Q11).",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Where does a file opened in the new Files show, and how does one get back to the list, now that the old navigation is not on the face?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T01:40:09.603Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Where in Files does text or media mount with the file pressed, and how does one get back to the list?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T01:54:17.159Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Does the appSelector, whose ✕ destroys the app today, change to hiding it in this item too?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T01:56:09.165Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "What does a press in Files do on a file that is neither text nor media, which fileViewer shows today?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T01:59:53.518Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Is the sidecar the stub shows the file annotations, as fileViewer shows them under More Information today?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T02:04:05.429Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Does fstat keep the facts fileViewer shows today, MIME type, size, changed and created, or only the name, the pane and the annotations?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T02:06:09.454Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Is fstat fileViewer renamed and trimmed, fileViewer then deleted and its users naming fstat, as wsl says?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T02:08:13.349Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Does the list of files, which text and media also pick from, stay where every app shares it, or move into the file app?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T02:09:51.394Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Does fstat keep the two parts the old file viewer shows only at home, the app a file is and Open with, or do they go?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T02:15:32.848Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "When the old file viewer is deleted, does the old shell draw its app-of-file row and Open with itself, or do they go?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T02:19:39.312Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "When an app is deactivated, does its hidden kept layer go too, so it can't be reopened from there?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T02:41:35.391Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-06T02:53:45.585Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "The generic panel element (title bar, ✕, its stack) has no name yet; call it panel, in spirit/element/panel.js?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T02:52:34.284Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:34:23.113Z",
+     "text": "cw, i think we need to do this first. can you box this?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:35:23.570Z",
+     "text": "cw: boxed, v1. Files moves to spirit/app/file/ as one element, intrinsic as today, list as a pane, a press opening the file in its viewer.\nThree are open in the box. The first, as a Q: an opened file is a page on the old shell navigation today, and the face has none."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:37:14.643Z",
+     "text": "Q1: Where does a file opened in the new Files show, and how does one get back to the list, now that the old navigation is not on the face?\n\ndamn, do we have to make this a bundle? \"file\" \"text\" and \"media\" ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:37:30.715Z",
+     "text": "cw: no, I think not. The three share only the files list and the viewers, and those stay where every app reaches them. text and media each pick their file with their own dropdown, and never open a page.\nOnly Files opens a file as a page, so Q1 is Files alone.\nThey would tie together only through Open with: Files handing a file to text. The face has none today, so that can be its own item later.\nSo my take: three items, Files first, Q1 still open here."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:39:38.597Z",
+     "text": "file really just has two \"openers\", text and media, if those two are mounted with a file, then they won't show the file-picker, if they're mounted without a file, they show a file picker, and we won't need anything else...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:40:10.766Z",
+     "text": "cw: boxed, v2: a press in Files mounts text or media with that file, and with a file they show no picker. That ties the three together after all, so text and media take a file in G43.16.\nNext, as a Q: where in Files the opener mounts, and the way back to the list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:45:55.737Z",
+     "text": "cw, by default elements should mount overtop if the element that mounts them, occupying the same pane as the \"mounter\", covering that mounter up, like in appMigration?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:46:25.492Z",
+     "text": "cw: yes, and it exists already. appMigration is only the appSelector in tiles, and the appSelector does exactly that: a tile pressed hides the list and mounts the app in the same pane, under a title bar of [app-icon] <app-label> [✕]. The ✕ destroys the app and shows the list again.\nToday that piece lives inside the appSelector alone. For Files to cover itself the same way, it would become an element of its own that both use, rather than a second copy.\nIf that is your rule, it answers Q2: text or media covers Files under that bar, and ✕ brings the list back."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:48:31.182Z",
+     "text": "cw, what this would do: it creates a stack-tree by default.... and if someone in a workbench mounts an app into a tab, then that app acts like a whole independent shell..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:48:48.789Z",
+     "text": "cw: yes, that is what it does. Each pane keeps its own stack: whatever covers it sits on top until its ✕, and what it mounts can cover itself again. So a tile, a tab or a workbench panel each behave as a small shell, and nothing global has to know.\nThe one cost: there is no single back for the whole page any more. Each layer closes by its own ✕, the top one first.\nSay box it, and it goes in as the rule for Files and its openers, which answers Q2."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:50:35.042Z",
+     "text": "cw, yes, there is a single back: think of the workBench, each pane can be \"stacked\" and still \"agent\" can exit with one click."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:50:50.627Z",
+     "text": "cw: right, I had that wrong. Closing a layer destroys everything stacked inside it, so the outer ✕ is the one click out: the agent closes with every pane it stacked, and Files closes with the text or media covering it.\nSo no cost. Q2 waits on your box it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:52:02.263Z",
+     "text": "the trick is, we don't destroy the inner stacks, they can keep living invisible, so re-opening agent during the same session, will precisely restore what was seen before closing. i consider that a good thing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:53:45.253Z",
+     "text": "Q2: Where in Files does text or media mount with the file pressed, and how does one get back to the list?\n\ndidn't we just discuss this?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T01:54:07.243Z",
+     "text": "wsl: agreed, a good thing. Today the ✕ destroys the app (appSelector.js, open's close), so this is a change to make. Two catches:\n- A kept app keeps its watches and streams running while hidden: cheap for a few, but it still listens.\n- When its app is deactivated, a kept layer must go with it, or reopening shows an app that should be off.\nA reload starts clean, as you said: \"same session\"."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:54:18.614Z",
+     "text": "cw: yes, we did; boxed now, v3, with your lines on the stack-tree, the single back, and hidden, not destroyed.\nOne thing that rule changes: the appSelector ✕ destroys the app today, so under it the appSelector hides instead. A Q follows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:55:44.017Z",
+     "text": "Q3: Does the appSelector, whose ✕ destroys the app today, change to hiding it in this item too? yes. it must, we just make a generic panel element and not use <div> directly anymore."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:56:10.543Z",
+     "text": "cw: boxed, v4: one generic panel element, used by the appSelector and Files, and the appSelector ✕ hides its app too. wsl s two catches are listed as open.\nNext, as a Q: a file that is neither text nor media."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:57:44.085Z",
+     "text": "Q3: Does the appSelector, whose ✕ destroys the app today, change to hiding it in this item too?\n\nwe will make this true for all pane elements as we go along, tab-panes, automatically the same, all three workBench panes same...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:58:07.207Z",
+     "text": "cw: boxed beside Q3, v5: every pane element hides rather than destroys, as we go along, tab panes and the workBench three alike. In this item: the panel element, the appSelector and Files. Q4 stays open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:59:22.322Z",
+     "text": "Q4: What does a press in Files do on a file that is neither text nor media, which fileViewer shows today?\n- we make a common stub, that shows name, fstat, sidecar, with an invisible pane, and then text and media use that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:59:54.875Z",
+     "text": "cw: boxed, v6. That stub exists nearly whole: fileViewer is the frame text and media fill today, the path, the fStat bubble, a body slot and the annotations. Its two old-shell parts, the app the file is and Open with, show only at home. So the stub extends fileViewer.\nOne word to pin, as a Q: sidecar."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:59:55.208Z",
+     "text": "that one is an element we call fstat"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:00:13.336Z",
+     "text": "cw: which one is fstat, so I box the right thing:\n- the whole stub, name, fstat, sidecar and its invisible pane, is one element called fstat; or\n- only the facts part inside it, the fStat bubble fileViewer draws today, becomes its own element fstat?\nQ5, sidecar, stays open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:02:54.830Z",
+     "text": "fstat is a file-info viewer, it show 1) file name, 2) hidden pane 3) annotations.  text and media then build on that but insert codeMirror (text) or media into the hidden pane 2)\n\nso four elements: file, fstat, text, and media"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:03:23.506Z",
+     "text": "wsl: that frame exists: spirit/element/fileViewer.js, which textViewer and mediaViewer already build on. So fstat is fileViewer renamed and trimmed to your three parts, not a second frame beside it. Then fileViewer goes, and its five users name fstat."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:03:35.265Z",
+     "text": "Q5: Is the sidecar the stub shows the file annotations, as fileViewer shows them under More Information today?\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:04:06.995Z",
+     "text": "cw: boxed, v7: fstat shows the name, a hidden pane and the annotations; text and media put codeMirror or media into that pane; four elements, file, fstat, text and media. wsl s line, fstat being fileViewer renamed, is listed as open.\nYour three parts leave out the facts fileViewer shows today, size and dates. A Q follows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:05:45.943Z",
+     "text": "Q6: Does fstat keep the facts fileViewer shows today, MIME type, size, changed and created, or only the name, the pane and the annotations?\n\nthat's after the hidden pane, before annotations."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:06:11.011Z",
+     "text": "cw: boxed, v8: fstat top down is the name, the hidden pane, the facts, the annotations.\nNext, as a Q: wsl s line on fileViewer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:07:48.883Z",
+     "text": "Q7: Is fstat fileViewer renamed and trimmed, fileViewer then deleted and its users naming fstat, as wsl says?\n\nyes. fileViewer is deprecated.\n\nspeak english, because fileViewer and mediaViewer will be gone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:08:14.816Z",
+     "text": "cw: boxed, v9: fstat replaces the old file viewer, which is deleted, and the old media viewer goes too. From here I name only the four: file, fstat, text and media.\nNext, as a Q: where the list of files lives."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:09:27.501Z",
+     "text": "Q8: Does the list of files, which text and media also pick from, stay where every app shares it, or move into the file app?\n\nit stays in the same place. why duplicate information?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:10:01.633Z",
+     "text": "cw: boxed, v10: the list of files stays where it is.\nNext, as a Q: at home the old file viewer also shows which app a file is, and Open with. With it deleted, fstat either keeps those two at home, or the old shell loses them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:11:47.680Z",
+     "text": "Q9: Does fstat keep the two parts the old file viewer shows only at home, the app a file is and Open with, or do they go?\n\nWhat parts do file viewer only show at home ? wTF?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:12:08.332Z",
+     "text": "cw: \"at home\" was my bad word: I meant the old shell, index.html. The old file viewer draws two rows there that come from the old shell, not from itself:\n- the app a file belongs to, when the file is some app s own script;\n- an Open with dropdown, listing the old apps that open that kind of file.\nOn the face both rows stay empty, because the face has no old shell. The code asks the old shell for them only if it is there.\nSo Q9 is: does fstat ask the old shell for those two rows, or does it drop them, and the old shell loses Open with?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:13:31.756Z",
+     "text": "the new stuff MUST NOT require old stuff."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:14:57.583Z",
+     "text": "Q9: Does fstat keep the two parts the old file viewer shows only at home, the app a file is and Open with, or do they go?\n\nthe new stuff MUST NOT require old stuff."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:15:34.128Z",
+     "text": "cw: boxed, v11: fstat asks nothing of the old shell, so those two rows are not in it.\nWhat that leaves: the old shell s own viewers lose them when the old file viewer is deleted, unless the old shell draws them itself, which old may. A Q follows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:16:25.810Z",
+     "text": "Q10: When the old file viewer is deleted, does the old shell draw its app-of-file row and Open with itself, or do they go?\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:16:47.982Z",
+     "text": "cw: plainer: in the old shell, index.html, when you open a file today you see an Open with dropdown under it. The old file viewer draws it. When we delete the old file viewer, that dropdown is gone from the old shell too.\nTwo ways:\n- it just goes. The new Files, opening a file in text or media, is what replaces it. My pick.\n- the old shell gets its own copy of those two rows, so it keeps Open with until the old shell is deleted."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:17:20.552Z",
+     "text": "the old shell can do whatever it wants."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:18:52.651Z",
+     "text": "cw. box what we decided"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:19:40.843Z",
+     "text": "cw: boxed, v12, sorted under file, fstat, and what mounts covers its mounter. Q10 is in: the old shell is its own affair.\nOne line stays open, wsl s: a hidden layer keeps listening, and must go when its app is deactivated."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:24:30.760Z",
+     "text": "file should be the same as files is. i don't want to loose all the nice stuff files has..."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:25:24.064Z",
+     "text": "wsl: what Files has today, read from the code, so file keeps all of it and my red can judge each one:\n- the files list as a pane: Name, Size and Changed columns, each sortable;\n- search in names or in contents, the contents ranked by match;\n- the folder tree: a folder opens and closes while the search is empty;\n- a contents match opens the text at its line, the words marked;\n- code opens in text, images and the like in media, anything else as the bare viewer.\nThe list is spirit/element/files/listElement.js, which stays, so most of it comes along. The opening part is what file rebuilds."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:26:16.946Z",
+     "text": "you can add a tiles mode to files, that'd be cool."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:26:51.769Z",
+     "text": "wsl: cheap, it's already there: probabilitySearch has a tiles face since G43.6, each row's icon above its name, with the toggle between pane and tiles since G43.9. The files list is a probabilitySearch, so file passes face: 'tiles' and toggle: true. A file row then needs an icon, by its kind: folder, code, image..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:33:37.794Z",
+     "text": "video: 📹 , image: 🌇 audio 🔊"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:33:58.768Z",
+     "text": "cw, cap"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:34:23.385Z",
+     "text": "wsl: noted. Today a file row draws 📁 for a folder, 📄 for any file and ❌ for one gone (files/rowElement.js). Your three come by the kind the viewer already reads from the type: 📹 video, 🌇 image, 🔊 audio, and code and the rest stay 📄. The pane shows them too, not only the tiles."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:34:49.744Z",
+     "text": "cw: capped, v13: file keeps everything Files has, as wsl listed it, and gains tiles with the toggle, video 📹, image 🌇, audio 🔊.\nOpen: the tile icons for a folder, code and any other file; and wsl s line on hidden layers."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:35:33.347Z",
+     "text": "text: 📜"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:36:58.022Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:37:37.016Z",
+     "text": "cw: not green: wsl s line is still open, a hidden layer keeps listening and must go when its app is deactivated. The rest is settled; text 📜 is boxed, v14."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:37:43.124Z",
+     "text": "wsl: not yet green; the box still lists two open:\n- the tile icons: your 📜 for text isn't in yet, and a folder and \"any other file\" have none. Today a row draws 📁 and 📄; keep those?\n- my hidden-layer line: a hidden layer goes when its app is deactivated. Box it as a rule, or drop it.\nThe rest checks out against the code, \"created\" included: the node's stat already gives it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:37:57.046Z",
+     "text": "folder: 📁 open folder: 📂"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:38:30.586Z",
+     "text": "cw: boxed, v15: a folder is 📁 shut and 📂 open. wsl, the icons were in since v14: 📜 text, 📄 any other file.\nStill open, yours: the hidden-layer line, a rule or dropped."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:39:14.861Z",
+     "text": "unknown: ❔"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:39:47.154Z",
+     "text": "wsl: ❔ for unknown, so I read it as replacing 📄 for \"any other file\". cw, one box line.\nThe hidden-layer line is a rule only you can make, so it's Q11. I'd make it one: otherwise a deactivated app can still be reopened from the layer kept of it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:41:15.897Z",
+     "text": "Q11: When an app is deactivated, does its hidden kept layer go too, so it can't be reopened from there?\n\nit only must disappear from view. it won't be loaded on the next shell-boot."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:41:41.743Z",
+     "text": "wsl: Q11 closed: deactivated, an app's layer only leaves the view; it stays loaded until the shell boots again. My point is settled, nothing more from me. cw, one box line for it, then green from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:43:28.814Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:43:49.287Z",
+     "text": "wsl: green from me once the box takes your last two lines; it doesn't yet:\n- unknown ❔: the box still says \"any other file 📄\".\n- Q11: the Open line still says the layer must go. Your answer: it only leaves the view, and isn't loaded on the next shell boot."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:44:06.140Z",
+     "text": "cw: green: settled, no open question, box current (v16). In since v15: ❔ for a file of unknown kind, and Q11, a deactivated app s layer only leaves the view and is not loaded at the next shell boot."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:44:45.845Z",
+     "text": "cw, unknown, any other file: ❔\n\nbox"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:45:16.985Z",
+     "text": "cw: boxed, v17: any other file, of unknown kind, is ❔.\nwsl, you read an older box: since v16 Q11 is in as your answer, the layer only leaves the view and is not loaded at the next shell boot, and the Open section is gone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:47:06.574Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:47:28.340Z",
+     "text": "wsl: green. The box has ❔ for unknown and Q11 as you said it, and no open question left."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T02:47:30.735Z",
+     "text": "cw: green: settled, no open question, box current (v17)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:48:59.600Z",
+     "text": "files"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:51:11.853Z",
+     "text": "wsl: listed, 43 files; my green was early, the list was empty. fstat sits where fileViewer is, spirit/element/fstat.js. fileViewer has six users, not five, plus its tests.\nThe panel element has no name yet: Q12. cw, add or drop what I misread."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:52:10.518Z",
+     "text": "Q12: The generic panel element (title bar, ✕, its stack) has no name yet; call it panel, in spirit/element/panel.js?\n\nyes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T02:52:46.766Z",
+     "text": "wsl: Q12 closed: panel, in spirit/element/panel.js; it and its test are on the list. cw, one box line. Green from me once the box has it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T02:55:21.390Z",
+     "text": "all: i added this to the box:\n\nAndy: you will push past the commit-hook in git for this item.\n\nremember!"
     }
    ]
   }
