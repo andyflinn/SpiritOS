@@ -36,7 +36,7 @@
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.element.probabilitySearch.create(host, {
+    var list = window.spirit.element.search.create(host, {
       api: { verb: function (name, args) { return search(args); } },
       data: String(g.branch),
       server: 'table',
@@ -48,7 +48,7 @@
         { field: 'path', label: 'Path', sort: 'text' },
         { field: 'revoke', label: '' },
       ],
-      element: function (row) { return window.spirit.element.grantElement.create(row, { grants: g, api: o.api, serves: o.serves }); },
+      element: function (row) { return window.spirit.element.search.grant.rowElement.create(row, { grants: g, api: o.api, serves: o.serves }); },
       filters: o.filters,
       selectors: o.selectors,
       empty: o.empty || 'No grant matches.',
@@ -62,5 +62,6 @@
   }
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
-  window.spirit.element.grantList = { create: create };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'grant'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: create });
 }());

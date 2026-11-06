@@ -134,7 +134,7 @@
   }
 
   function mountList() {
-    var P = win.spirit.element && win.spirit.element.probabilitySearch;
+    var P = win.spirit.element && win.spirit.element.search && win.spirit.element.search.create ? win.spirit.element.search : null;
     var el = document.getElementById('fallout-list');
     var V = ((win.spirit.data || {}).deskVerify || {}).data;
     if (!P || typeof P.create !== 'function' || !el || !ctx || !V) return;
@@ -161,7 +161,7 @@
   // THE PROBABILITY SEARCH, LOADED ON DEMAND through the one loader (goal/G41.11; rule/21): spirit.require, once per page;
   // and the verifier's cache manager, its own family's (goal/G41.28).
   function withList(done) {
-    if (win.spirit.element && win.spirit.element.probabilitySearch && ((win.spirit.data || {}).deskVerify || {}).data) { done(); return; }
+    if (win.spirit.element && win.spirit.element.search && win.spirit.element.search.create && ((win.spirit.data || {}).deskVerify || {}).data) { done(); return; }
     Promise.all([String(LIST_SCRIPT), 'process/js/deskVerify/data.js'].map(function (p) {
       return Promise.resolve(win.spirit.require(String(p).replace(/^\/+/, '')));
     })).then(function () { done(); }, function () { /* no list */ });

@@ -78,7 +78,7 @@
       // The list search's box takes all of this one (goal/G40.8: space granted top-down).
       '<div class="files-tree fill"></div>';
     var inner = host.lastChild;
-    list = E.probabilitySearch.create(inner, {
+    list = E.search.create(inner, {
       api: { verb: function (name, args) { return search(args, function (next, at) { scores = next; lines = at; }); } },
       // A view of the node's file tree, the branch the fs family's manager keeps (spirit.data.fs.data.branch).
       data: fsReads().branch,
@@ -103,7 +103,7 @@
         var icon = row.kind === 'folder' ? (opened[p] ? '📂' : '📁') : (E.fstat ? E.fstat.iconOf(p) : '❔');
         return { icon: icon, label: p.slice(p.lastIndexOf('/') + 1) };
       },
-      element: function (row, key) { var el = E.fileElement.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
+      element: function (row, key) { var el = E.search.file.rowElement.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
       score: function (row, values) { return values.in === 'contents' ? (scores[row.key || row.path] || 0) : null; },
       filters: [
         { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },
@@ -139,5 +139,6 @@
     return list;
   }
 
-  E.fileList = { create: create };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'file'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
 }());

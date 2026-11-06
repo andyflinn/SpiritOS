@@ -19,7 +19,7 @@
 //     cells only. destroy drops every listener.
 //   - Apps not yet ported keep using listSearch until none does.
 // NAMED HERE where the box names none:
-//   - window.spirit.element.probabilitySearch = { create(container, options), order(entries, state) }. order is the pure
+//   - window.spirit.element.search = { create(container, options), order(entries, state) }. order is the pure
 //     heart of the list: entries [{ key, row, at, gone }], state { words, values, filters, sort: { field, direction },
 //     columns, matched, score } -> [{ key, row, rank }] in the order drawn. It is what the list draws from, so it is
 //     what this suite holds to the box.
@@ -44,7 +44,7 @@ const loaded = {};
   try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
   catch (e) { loaded[rel] = e.message; }
 });
-const PS = window.spirit.element.probabilitySearch;
+const PS = window.spirit.element.search;
 
 // Five files, in the order they came.
 const entries = [

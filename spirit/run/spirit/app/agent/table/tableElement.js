@@ -116,7 +116,7 @@
   }
   function search(host, o, more) {
     var columns = o.columns || columnsOf(o.table);
-    var s = window.spirit.element.probabilitySearch.create(host, Object.assign({
+    var s = window.spirit.element.search.create(host, Object.assign({
       api: o.api, server: 'agent', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },
       columns: columns,

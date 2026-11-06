@@ -24,7 +24,7 @@ global.window = { spirit: { probability: {
   createProbabilityBucket: require(path.join(RUN, 'spirit', 'probabilityBucket.js')).createProbabilityBucket,
 } } };
 vm.runInThisContext(fs.readFileSync(FILE, 'utf8'), { filename: FILE });
-const PS = window.spirit.element.probabilitySearch;
+const PS = window.spirit.element.search;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -567,7 +567,7 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
     await new Promise(function (r) { setTimeout(r, 300); });
     const NEED = ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js'];
     ok(NEED.every(function (n) { return asked.indexOf(n) !== -1; }), 'it requires probabilityStringMatch.js, probabilityStringObjectMatch.js and probabilityBucket.js', 'asked: ' + JSON.stringify(asked));
-    const P2 = window.spirit.element.probabilitySearch;
+    const P2 = window.spirit.element.search;
     let made = null; let threw = null;
     const c10 = container();
     try {

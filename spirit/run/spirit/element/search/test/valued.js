@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/element/search/test/valued.js
 // The tests of spirit/element/search/valued.js, and of no other module (spec: ./valued.md; goal/G43.6). Andy, box: "It will be
-// spirit.element.valued, on disc and in spirit", "It is searchable (probabilitySearch), over rows it already holds, with no node
+// spirit.element.search.valued, on disc and in spirit", "It is searchable (probabilitySearch), over rows it already holds, with no node
 // verb." A real Chrome on a scratch node's page, the element mounted by itself, rows of the test's own.
 
 const fs = require('fs');
@@ -29,12 +29,12 @@ test.startTest('valued.js: rows of name and value, searchable, with no node verb
     const js = function (s) { return chrome.evaluate(s); };
     const loaded = await js('window.spirit.ready.then(function () { return window.spirit.require("spirit/element/search/valued.js"); }).then(function () { return "loaded"; }, function (e) { return "ERR " + e; })');
     ok(loaded === 'loaded', 'it loads on a page', 'loading it: ' + short(loaded));
-    const homes = await js('JSON.stringify({ now: typeof ((window.spirit.element || {}).valued || {}).create, old: typeof (window.spirit.elements || {}).valued })');
+    const homes = await js('JSON.stringify({ now: typeof ((window.spirit.element || {}).search.valued || {}).create, old: typeof (window.spirit.elements || {}).search.valued })');
     let h = {}; try { h = JSON.parse(homes); } catch (e) { h = {}; }
-    ok(h.now === 'function' && h.old === 'undefined', 'spirit.element.valued.create, and nothing on spirit.elements', 'homes: ' + short(h));
+    ok(h.now === 'function' && h.old === 'undefined', 'spirit.element.search.valued.create, and nothing on spirit.elements', 'homes: ' + short(h));
     if (h.now !== 'function') return;
     // Every call to the node, from here on, written down, but the face's own file reads (fs, and jobs.FS.path, shell/boot.js): it asks none for its rows.
-    await js('(function () { window.__asks = []; var f = window.fetch; window.fetch = function (u, o) { var b = o && o.body ? String(o.body) : ""; if (/\\/api\\//.test(String(u)) && !/events\\.subscribe|\"call\":\"fs\\.|\"call\":\"jobs\\.FS\\./.test(b)) window.__asks.push(b.slice(0, 120)); return f.apply(this, arguments); }; window.__rows = []; for (var i = 0; i < 60; i++) window.__rows.push({ group: i % 2 ? "Odd" : "Even", name: "row" + i, value: String(i) }); var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:700px;height:220px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.element.valued.create(d, { rows: function () { return window.__rows; }, columns: [{ field: "group", label: "group" }, { field: "name", label: "name" }, { field: "value", label: "value" }] }); return true; })()');
+    await js('(function () { window.__asks = []; var f = window.fetch; window.fetch = function (u, o) { var b = o && o.body ? String(o.body) : ""; if (/\\/api\\//.test(String(u)) && !/events\\.subscribe|\"call\":\"fs\\.|\"call\":\"jobs\\.FS\\./.test(b)) window.__asks.push(b.slice(0, 120)); return f.apply(this, arguments); }; window.__rows = []; for (var i = 0; i < 60; i++) window.__rows.push({ group: i % 2 ? "Odd" : "Even", name: "row" + i, value: String(i) }); var d = document.body.appendChild(document.createElement("div")); d.className = "fill"; d.style.cssText = "position:fixed;left:0;top:0;width:700px;height:220px;display:flex;flex-direction:column"; window.__box = d; window.__made = window.spirit.element.search.valued.create(d, { rows: function () { return window.__rows; }, columns: [{ field: "group", label: "group" }, { field: "name", label: "name" }, { field: "value", label: "value" }] }); return true; })()');
     const read = async function () {
       try {
         return JSON.parse(await js('(function () { var c = window.__box; var inputs = [].filter.call(c.querySelectorAll("input"), function (i) { return i.getClientRects().length && i.type !== "checkbox"; }); var rows = [].map.call(c.querySelectorAll("tr, [data-row], .row"), function (r) { return r.innerText.replace(/\\s+/g, " ").trim(); }).filter(function (t) { return /row\\d+/.test(t); }); var best = null; c.querySelectorAll("*").forEach(function (e) { if (e.scrollHeight - e.clientHeight > 1 && /auto|scroll/.test(getComputedStyle(e).overflowY) && (!best || e.scrollHeight > best.scrollHeight)) best = e; }); return JSON.stringify({ text: c.innerText, inputs: inputs.length, word: inputs[0] ? inputs[0].value : "", rows: rows, scroll: best ? best.scrollTop : -1, canScroll: !!best, asks: window.__asks }); })()'));

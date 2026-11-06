@@ -12,7 +12,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const JS = path.join(RUN, 'spirit', 'element');
-const FILE = path.join(JS, 'bundleSelector', 'rowElement.js');
+const FILE = path.join(JS, 'search', 'bundle', 'rowElement.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -103,20 +103,20 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'it requires the shared row element through spirit.require, and no arming button: Delete is the branchEditor\'s (goal/G41.32)', 'required: ' + short(required));
   ok(managers.indexOf('auth') !== -1 && A && A.bundles && typeof A.bundles.row === 'function', 'it loads the auth family\'s cache manager, which puts ((spirit.data || {}).auth || {}).data on the page', 'managers: ' + short(managers));
   if (!A || !A.bundles || typeof A.bundles.row !== 'function') return;
-  ok(E.bundleElement && typeof E.bundleElement.create === 'function', 'it registers spirit.element.bundleElement.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.bundleElement || typeof E.bundleElement.create !== 'function') return;
+  ok(E.search.bundle.rowElement && typeof E.search.bundle.rowElement.create === 'function', 'it registers spirit.element.search.bundle.rowElement.create', 'elements: ' + short(Object.keys(E)));
+  if (!E.search.bundle.rowElement || typeof E.search.bundle.rowElement.create !== 'function') return;
 
   test.subHeading('a bundle row: its label and owner');
-  const el = E.bundleElement.create({ id: 7, label: 'Read <files>' });
+  const el = E.search.bundle.rowElement.create({ id: 7, label: 'Read <files>' });
   ok(el.kind === 'bundle' && el.key === '7' && el.row.label === 'Read <files>', 'it is a row element of kind bundle, keyed by the bundle\'s id', 'el: ' + short({ kind: el.kind, key: el.key, row: el.row }));
   const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
   // goal/G41.32: "the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button."
   ok(JSON.stringify(Object.keys(cells)) === '["label","owner"]', 'its fields are label and owner, in that order', 'fields: ' + short(Object.keys(cells)));
-  const ow = E.bundleElement.create({ id: 9, label: 'Agent tools', owner: 'agent' });
+  const ow = E.search.bundle.rowElement.create({ id: 9, label: 'Agent tools', owner: 'agent' });
   const owCells = {}; (ow.cells() || []).forEach(function (c) { owCells[c.name] = c.html; });
   ok(/\bagent\b/.test(owCells.owner || '') && !/<input/.test(owCells.owner || ''), 'the owner is shown as the bundle names it, never an input: it never changes after the add', 'owner: ' + short(owCells.owner));
-  const odd = E.bundleElement.create({ id: 10, label: 'x', owner: 'a<b' });
+  const odd = E.search.bundle.rowElement.create({ id: 10, label: 'x', owner: 'a<b' });
   const oddCells = {}; (odd.cells() || []).forEach(function (c) { oddCells[c.name] = c.html; });
   ok(/a&lt;b/.test(oddCells.owner || '') && !/a<b/.test(oddCells.owner || ''), 'and drawn escaped', 'owner: ' + short(oddCells.owner));
   ok(/Read &lt;files>/.test(cells.label || '') && !/<files>/.test(cells.label || ''), 'the label is drawn escaped', 'label: ' + short(cells.label));
@@ -125,7 +125,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy, box: "bundleSelector:pane mode the Label should now just be an output, field: A bundles label is determined
   // when it's added, and cannot be modified. This will protect family owned bundles from having their label mutilated."
   // Mounted, with the old editable option or without it, the label cell shows the label and holds no input.
-  const ed = E.bundleElement.create({ id: 7, label: 'Read <files>' }, { editable: true });
+  const ed = E.search.bundle.rowElement.create({ id: 7, label: 'Read <files>' }, { editable: true });
   const hosts = { label: cell(), owner: cell() };
   ed.mount(hosts);
   await settle();

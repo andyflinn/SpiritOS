@@ -157,7 +157,7 @@ const WATCH = String.raw`(function () {
   function searches(els) {
     if (!els || typeof els !== 'object' || els.__searched) return;
     try { Object.defineProperty(els, '__searched', { value: true }); } catch (e) { return; }
-    var cur = window.spirit.element.probabilitySearch;
+    var cur = window.spirit.element.search;
     function wrap(v) { if (v && typeof v.create === 'function' && !v.create.__kept) { var c = v.create; v.create = function (host, o) { var x = o || {}; W.searches.push({ data: typeof x.data === 'string' ? x.data : '', rows: typeof x.rows === 'function', verb: String(x.verb || ''), face: String(x.face || 'pane') }); (window.spiritSearchHosts = window.spiritSearchHosts || []).push(host); return c.apply(this, arguments); }; v.create.__kept = true; } }
   // WHAT IT WATCHES, IT DRAWS FROM: a marked row written into each spirit.data path the module watches, and whether its
   // box changed for it within a second. A watch path is by server node first (goal/G41.28): '<node>/<family>/<branch>',
@@ -211,7 +211,8 @@ const WATCH = String.raw`(function () {
       return { verb: x.verb, data: x.data, drawn: keys.length, outside: keys.filter(function (k) { return !held[k]; }).slice(0, 5) };
     });
   };
-    Object.defineProperty(els, 'probabilitySearch', { configurable: true, enumerable: true, get: function () { return cur; }, set: function (v) { cur = v; wrap(v); } });
+    // spirit.element.search since goal/G43.18: its create is assigned into it after it is made, so it is wrapped when read.
+    Object.defineProperty(els, 'search', { configurable: true, enumerable: true, get: function () { wrap(cur); return cur; }, set: function (v) { cur = v; wrap(v); } });
     wrap(cur);
   }
   function hook(o) {

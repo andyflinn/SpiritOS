@@ -96,18 +96,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(['spirit/element/rowElement.js', 'spirit/element/armingButton.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
     'it requires the shared row element and the arming button, and no data script', 'required: ' + short(required));
   ok(!/auth\.|agent\.grant|'bundles'|"bundles"|job_id/.test(SRC), 'it names no table: no auth verb, no agent grant, no stream job of its own (goal/G41.16)', 'rowElement.js names a table of its own');
-  ok(E.grantElement && typeof E.grantElement.create === 'function', 'it registers spirit.element.grantElement.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.grantElement || typeof E.grantElement.create !== 'function') return;
+  ok(E.search.grant.rowElement && typeof E.search.grant.rowElement.create === 'function', 'it registers spirit.element.search.grant.rowElement.create', 'elements: ' + short(Object.keys(E)));
+  if (!E.search.grant.rowElement || typeof E.search.grant.rowElement.create !== 'function') return;
   // UNCONFIGURED, IT THROWS NOTHING (goal/G41.19, box v23: "throws nothing even when unconfigured"): made with no grants
   // table it is a row of nothing, and never falls back to one.
   let thrown = null; let bare = null;
-  try { bare = E.grantElement.create({ key: 'K1', path: 'fs.search' }); } catch (e) { thrown = e && e.message; }
+  try { bare = E.search.grant.rowElement.create({ key: 'K1', path: 'fs.search' }); } catch (e) { thrown = e && e.message; }
   ok(thrown === null && !!bare, 'made with no grants table, it throws nothing and is a row all the same', 'made with none: ' + (thrown ? 'it threw ' + thrown : 'nothing made'));
 
   for (const t of [{ name: 'the node\'s grants', g: NODE, id: 'K1', label: 'Bob <b>', row: function (x) { return { key: x.id, path: x.path, label: x.label }; } },
     { name: 'the agent\'s grants by job', g: AGENT, id: 'J1', label: 'Night <b>', row: function (x) { return { job_id: x.id, path: x.path, job: x.label }; } }]) {
     test.subHeading('a grant of ' + t.name + ': whose, the path, Revoke');
-    const el = E.grantElement.create(t.row({ id: t.id, path: 'desk.chat<add>', label: t.label }), { grants: t.g });
+    const el = E.search.grant.rowElement.create(t.row({ id: t.id, path: 'desk.chat<add>', label: t.label }), { grants: t.g });
     ok(el.kind === 'grant' && el.key === t.id + '\ndesk.chat<add>', 'it is a row element of kind grant, keyed <id>\\n<path>, the id read from the table\'s key field (' + t.g.key + ')', 'el: ' + short({ kind: el.kind, key: el.key }));
     const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
     ok(JSON.stringify(Object.keys(cells)) === '["name","path","revoke"]', 'its fields are name, path and revoke: Revoke the rightmost', 'fields: ' + short(Object.keys(cells)));
@@ -126,12 +126,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // item. no exceptions."
   ok(!/\.translate\s*\(|onJob|\bstream\b|events\.subscribe/.test(SRC), 'its code registers no translator and takes no stream', 'rowElement.js still translates or takes a stream');
   const unwatched = grantsTable({ branch: NODE.branch, key: 'key', label: 'label' });
-  const nw = E.grantElement.create({ key: 'K5', path: 'fs.search', label: 'Eve' }, { grants: unwatched });
+  const nw = E.search.grant.rowElement.create({ key: 'K5', path: 'fs.search', label: 'Eve' }, { grants: unwatched });
   const nwCells = {}; (nw.cells() || []).forEach(function (c) { nwCells[c.name] = c.html; });
   ok(!('revoke' in nwCells) || !/Revoke/.test(nwCells.revoke || ''), 'a table with no watch is no table: the row has no Revoke', 'cells: ' + short(nwCells));
 
   test.subHeading('it repaints from its table\'s watch');
-  const live = E.grantElement.create({ key: 'K2', path: 'fs.search', label: 'Ann' }, { grants: NODE });
+  const live = E.search.grant.rowElement.create({ key: 'K2', path: 'fs.search', label: 'Ann' }, { grants: NODE });
   const lh = { name: cell(), path: cell(), revoke: cell() };
   live.mount(lh);
   V.set('grants/K2\nfs.search', { key: 'K2', path: 'fs.search', label: 'Ann, renamed' });

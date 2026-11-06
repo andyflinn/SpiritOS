@@ -39,7 +39,7 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
 
   // A BARE WINDOW (rule/26): probabilitySearch is on the page only once the selector requires it.
   const w = { lists: [], required: [] };
-  const STAND = function (E) { E.probabilitySearch = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
+  const STAND = function (E) { E.search = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0,
     redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }; };
   const win = {
     spirit: { escapeHtml: function (s) { return String(s); }, element: {},
@@ -66,7 +66,7 @@ test.startTest('apiVerbSelector.js: the verb dropdown');
   const E = win.spirit.element;
 
   test.subHeading('a shell element of its own, on probabilitySearch');
-  const made = E.apiVerbSelector;
+  const made = E.search.api.verb;
   ok(made && typeof made.create === 'function' && !('createApiVerbSelector' in E), 'it adds apiVerbSelector with a create to window.spirit.element, and createApiVerbSelector no more', 'elements: ' + short(Object.keys(E)));
   if (!made || typeof made.create !== 'function') return;
   ok(w.required.indexOf('spirit/element/search.js') !== -1, 'it loads probabilitySearch itself (goal/G41.3)', 'required: ' + short(w.required));

@@ -103,8 +103,8 @@ function world() {
       return Promise.resolve({ status: 200, body: {} });
     },
   };
-  const FILES = { 'spirit/element/search/bundle.js': ['bundleSelector'], 'spirit/element/search/contact.js': ['contactSelector'],
-    'spirit/element/search/api.js': ['apiFamilySelector'], 'spirit/element/search/grant.js': ['grantList'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'] };
+  const FILES = { 'spirit/element/search/bundle.js': ['search'], 'spirit/element/search/contact.js': ['search'],
+    'spirit/element/search/api.js': ['search'], 'spirit/element/search/grant.js': ['search'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'] };
   const page = {};
   const win = {
     // The page knows its node: spirit.data files nothing before it does (goal/G41.28, Q10).

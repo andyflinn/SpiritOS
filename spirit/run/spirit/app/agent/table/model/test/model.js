@@ -138,7 +138,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
     // family's cache manager names it (spirit.data.agent.data.branch, goal/G41.28).
-    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.probabilitySearch.create(host, Object.assign({ api: o2.api, server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
+    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ api: o2.api, server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   } } };

@@ -61,7 +61,7 @@
     var off = null;
     parts.then(function () {
       if (gone) return;
-      list = S.element.valued.create(container, { rows: rows, columns: COLUMNS });
+      list = S.element.search.valued.create(container, { rows: rows, columns: COLUMNS });
       // WHO PAINTS, LISTENS (Andy, G41.32): each new reading repaints. A forgotten set or a job gone may be the reading's.
       off = S.data.jobs.data.watch(function (id, job) { if (!id || !job || job.type === 'server-stats') list.redraw(); });
     });

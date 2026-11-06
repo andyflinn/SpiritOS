@@ -27,7 +27,7 @@
       if (String(key) === String(o.bundle) && !v) o.gone();
     }) : null;
     if ((o.owner || 'node') !== 'node') {
-      var shown = E.branchSelector.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb'], api: o.api });
+      var shown = E.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb'], api: o.api });
       shown.className += ' fill';
       return { destroy: function () { if (typeof offBundle === 'function') offBundle(); shown.destroy(); } };
     }
@@ -37,13 +37,13 @@
     var form = E.rowForm.create(box, { icon: '➕', button: 'Add' });
     form.root.className += ' branch-editor-add';
     // A branch is a grant's part: only what may be granted is offered (goal/G41.28, the FS group never).
-    var family = E.apiFamilySelector.create(form.span, { all: 'choose a family…', grantable: true });
+    var family = E.search.api.create(form.span, { all: 'choose a family…', grantable: true });
     var add = form.button;
     var said = document.createElement('div');
     said.className = 'job-manifest-note';
     box.appendChild(said);
     // THE BUNDLE'S BRANCHES, filling the rest (shell.css fill).
-    var branches = E.branchSelector.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'], api: o.api });
+    var branches = E.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'], api: o.api });
     branches.className += ' fill';
 
     function say(text) { said.textContent = String(text || ''); }

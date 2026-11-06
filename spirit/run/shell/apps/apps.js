@@ -128,7 +128,7 @@ function appsPanelDraw(host, api, path) {
       if (!e || !e.target || !e.target.getAttribute || !e.target.getAttribute('data-face')) return;
       save();
     });
-    window.spirit.element.iconList.create(panel.querySelector('[data-apps="icon-pick"]'), {
+    window.spirit.element.search.icon.listElement.create(panel.querySelector('[data-apps="icon-pick"]'), {
       api: api,
       face: 'dropdown',
       placeholder: 'choose an icon…',
@@ -161,7 +161,7 @@ spirit.shell.activateApp({
 
 function appsDraw(listHost, api) {
     var E = window.spirit.element;
-    appsList = E.probabilitySearch.create(listHost, {
+    appsList = E.search.create(listHost, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
       data: window.spirit.data.fs.data.branch,
       server: 'fs',
@@ -192,7 +192,7 @@ function appsDraw(listHost, api) {
 
 // THE FILE ROW, WITH THE APP INSTALLER IN ITS OWN CELL: mounted with the row, destroyed with it.
 function appsRowElement(E, row, key) {
-  var el = E.fileElement.create(Object.assign({ path: key }, row));
+  var el = E.search.file.rowElement.create(Object.assign({ path: key }, row));
   var installer = null;
   var mount = el.mount;
   var destroy = el.destroy;

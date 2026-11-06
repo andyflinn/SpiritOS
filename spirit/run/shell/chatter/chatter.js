@@ -533,7 +533,7 @@ function chMount(container, api) {
     var left = document.createElement('div');
     left.className = 'fill';
     chEl('ch-left').appendChild(left);
-    chPane = window.spirit.element.contactSelector.create(left, {
+    chPane = window.spirit.element.search.contact.create(left, {
       face: 'pane', filters: [CH_OFFERED],
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
       statuses: [{ status: 'none' }, { status: 'unanswered', glyph: '⌛' }],
@@ -569,7 +569,7 @@ function chMount(container, api) {
     Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowElement.js'), spirit.cacheManager('chatClerver')]).then(function () {
       var C = chData();
       if (!C) return;
-      chSearch = window.spirit.element.probabilitySearch.create(chEl('ch-search'), {
+      chSearch = window.spirit.element.search.create(chEl('ch-search'), {
         data: C.branch,
         api: {
           verb: function (name, body) {

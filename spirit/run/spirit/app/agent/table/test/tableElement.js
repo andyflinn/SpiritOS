@@ -118,20 +118,20 @@ test.startTest('tableElement.js: what the tables\' elements share');
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
     } };
-    if (p === 'spirit/element/search/bundle.js') global.window.spirit.element.bundleSelector = { create: function (c, opts) {
+    if (p === 'spirit/element/search/bundle.js') global.window.spirit.element.search.bundle = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;
     } };
     return Promise.resolve(p === AGENT ? w.family : true);
   };
-  global.window.spirit.element.probabilitySearch = { create: function (host, o) {
+  global.window.spirit.element.search = { create: function (host, o) {
     const s = { host: host, o: o, refreshed: 0, destroyed: false, value: '', row: null,
       refresh: function () { s.refreshed += 1; }, destroy: function () { s.destroyed = true; } };
     w.searches.push(s); return s;
   } };
   // The shell's element shape (goal/G41.19): create(container, options) appends the dropdown and answers it.
-  global.window.spirit.element.iconSelector = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
+  global.window.spirit.element.search.icon = { create: function (c, opts) { const sel = { value: (opts && opts.value) || '', opts: opts, container: c }; w.icons.push(sel); c.appendChild(sel); return sel; } };
   load(FILE);
   // The element asks for the agent family's cache manager as it runs; the page has it once the element's tree has loaded.
   await settle();

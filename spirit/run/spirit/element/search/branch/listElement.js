@@ -32,7 +32,7 @@
     var E = window.spirit.element;
     var list = null;
     // THE FILTER: the family selector, made here and mounted by the search in its 🪣 row.
-    var family = E.apiFamilySelector.create(document.createElement('span'), { all: 'every family' });
+    var family = E.search.api.create(document.createElement('span'), { all: 'every family' });
     var box = document.createElement('div');
     box.className = 'fill';
     host.appendChild(box);
@@ -48,7 +48,7 @@
       });
     }
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['family', 'verb'];
-    list = E.probabilitySearch.create(box, {
+    list = E.search.create(box, {
       api: { verb: function (name, args) { return search(args); } },
       // A view of the node's branches, the branch the auth family's manager keeps (spirit.data.auth.data.branches.branch).
       data: window.spirit.data.auth.data.branches.branch,
@@ -60,7 +60,7 @@
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       args: function (text) { return { text: text }; },
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
-      element: function (row) { return E.branchElement.create(row, { api: o.api }); },
+      element: function (row) { return E.search.branch.rowElement.create(row, { api: o.api }); },
       // A pick shows the branch as family.verb, the family alone for (ALL), never its numbers.
       name: function (row) { return row ? (row.verb ? row.family + '.' + row.verb : row.family + ' (ALL)') : ''; },
       // THE VIEW HOLDS EVERY BRANCH THE PAGE KNOWS: this list shows its own bundle's, narrowed by the family selector, as
@@ -92,5 +92,6 @@
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // Its parts are loaded first, so a caller that requires this file and waits finds them all on the page.
-  window.spirit.element.branchList = { create: create, ready: parts };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'branch', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: create, ready: parts });
 }());

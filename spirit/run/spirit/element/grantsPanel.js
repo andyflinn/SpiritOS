@@ -244,10 +244,10 @@
       var idTable = { table: ids.table, key: ids.key, label: ids.label };
       // Each made in a slot of its own; paint moves it into the line it stands in, each time it draws the form.
       var slot = function () { return document.createElement('span'); };
-      idSel = P.contactSelector.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
-      bundleSel = P.bundleSelector.create(slot(), { placeholder: 'choose a bundle…' });
-      filterId = P.contactSelector.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
-      filterFamily = P.apiFamilySelector.create(slot(), { all: 'every family' });
+      idSel = P.search.contact.create(slot(), Object.assign({ placeholder: 'choose an ID…' }, idTable));
+      bundleSel = P.search.bundle.create(slot(), { placeholder: 'choose a bundle…' });
+      filterId = P.search.contact.create(slot(), Object.assign({ placeholder: 'every ID', all: 'every ID' }, idTable));
+      filterFamily = P.search.api.create(slot(), { all: 'every family' });
       // THE GRANT FORM IS A ROWFORM (goal/G41.27; Andy: "grantsPanel:\n\n➕ [choose an ID… ▾][choose a bundle… ▾][Grant]"):
       // ➕, the ID and the bundle selector in its span, Grant its button; made once, paint putting it back. What a press
       // did is said below it, not in it.
@@ -264,7 +264,7 @@
       followServers();
       return loadTree().then(function () {
         if (gone) return;
-        list = P.grantList.create(listHost, { grants: g, filters: filters, selectors: selectors(), serves: serves, api: api });
+        list = P.search.grant.create(listHost, { grants: g, filters: filters, selectors: selectors(), serves: serves, api: api });
       });
     });
 

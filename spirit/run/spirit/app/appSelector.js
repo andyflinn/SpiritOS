@@ -105,7 +105,7 @@
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
       stack = window.spirit.elements.panel.create(root, listBox);
-      made = window.spirit.elements.appList.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
+      made = window.spirit.element.search.app.create(listBox, { face: face, toggle: o.toggle === true, onFace: onFace, pick: pick,
         // The filter is on the page, on the row's active (the box): app.search stays "just a search string".
         visible: function (row) { return face !== 'tiles' || (!!row && row.active === true); } });
     });

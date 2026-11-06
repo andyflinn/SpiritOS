@@ -66,7 +66,7 @@
     parts.then(function () {
       if (gone) return;
       stack = S.elements.panel.create(box, listBox);
-      list = S.element.fileList.create(listBox, {
+      list = S.element.search.file.create(listBox, {
         face: 'pane',
         toggle: true,
         pick: function (row, key) {

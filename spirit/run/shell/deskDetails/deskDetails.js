@@ -842,7 +842,7 @@ function ddMountRulePick() {
   ddRulePick = null;
   ddRulePickHost = el;
   var make = function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.probabilitySearch;
+    var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
     if (!P || typeof P.create !== 'function' || ddRulePickHost !== el || ddRulePick) return;
     ddRulePick = P.create(el, {
       api: ddApi, server: 'desk', verb: 'rules.search',
@@ -869,7 +869,7 @@ function ddMountRulePick() {
     });
     ddRulePick.refresh();
   };
-  if (window.spirit && window.spirit.element && window.spirit.element.probabilitySearch) { make(); return; }
+  if (window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create) { make(); return; }
   ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 function ddSuitesHtml() {
@@ -896,7 +896,7 @@ function ddMountChatFind() {
   ddChatFind = null;
   ddChatFindHost = el;
   var make = function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.probabilitySearch;
+    var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
     if (!P || typeof P.create !== 'function' || ddChatFindHost !== el || ddChatFind) return;
     ddChatFind = P.create(el, {
       api: ddApi, server: 'desk', verb: 'chat.search',
@@ -908,7 +908,7 @@ function ddMountChatFind() {
     });
     ddChatFind.refresh();
   };
-  if (window.spirit && window.spirit.element && window.spirit.element.probabilitySearch) { make(); return; }
+  if (window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create) { make(); return; }
   ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 

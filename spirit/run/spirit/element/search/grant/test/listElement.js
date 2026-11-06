@@ -28,11 +28,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const lists = [];
   const rows = [];
   const STANDS = {
-    'spirit/element/search.js': function (E) { E.probabilitySearch = { create: function (host, o) {
+    'spirit/element/search.js': function (E) { E.search = { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }; },
-    'spirit/element/search/grant/rowElement.js': function (E) { E.grantElement = { create: function (row, opts) { const r = { kind: 'grant', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
+    'spirit/element/search/grant/rowElement.js': function (E) { E.search.grant.rowElement = { create: function (row, opts) { const r = { kind: 'grant', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({}), element: {} } };
   global.spirit = global.window.spirit;
@@ -46,10 +46,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(['spirit/element/search.js', 'spirit/element/search/grant/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
     'it requires the search element and its row element, and no data script', 'required: ' + short(required));
   ok(!/auth\.|agent\.grant|job_id|'grants'|"grants"/.test(SRC), 'it names no table and no branch of its own: no auth verb, no agent grant, no data.grants (goal/G41.16)', 'listElement.js names a table or branch of its own');
-  ok(E.grantList && typeof E.grantList.create === 'function', 'it registers spirit.element.grantList.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.grantList || typeof E.grantList.create !== 'function') return;
+  ok(E.search.grant && typeof E.search.grant.create === 'function', 'it registers spirit.element.search.grant.create', 'elements: ' + short(Object.keys(E)));
+  if (!E.search.grant || typeof E.search.grant.create !== 'function') return;
   let refused = null;
-  try { E.grantList.create({}, {}); } catch (e) { refused = e && e.message; }
+  try { E.search.grant.create({}, {}); } catch (e) { refused = e && e.message; }
   ok(refused !== null && lists.length === 0, 'made with no grants table, it is refused, and draws nothing', 'made with none: ' + short(refused) + ', lists ' + lists.length);
 
   test.subHeading('a pane of the table it is handed, a view of that table\'s branch');
@@ -64,7 +64,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // goal/G41.26: the page's selectors, for the search's 🪣 row (Andy: "any searchSelector in our system must go into the
   // probabilitySearch's selectorRow").
   const selectors = [{ name: 'id', element: { addEventListener: function () {} }, test: function () { return 1; } }];
-  const made = E.grantList.create(host, { grants: AGENT, filters: filters, selectors: selectors, serves: serves });
+  const made = E.search.grant.create(host, { grants: AGENT, filters: filters, selectors: selectors, serves: serves });
   await settle();
   const l = lists[0];
   ok(!!l && l.host === host && l.refreshes === 1, 'it draws one probabilitySearch into its host, and fills it as soon as it is drawn', 'lists: ' + lists.length + ', refreshes ' + (l && l.refreshes));
@@ -98,7 +98,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const GRANTS = { get branch() { return A.grants.branch; }, key: 'key', label: 'label', search: function () { return Promise.resolve({ items: [], more: false }); },
       revoke: function () { return Promise.resolve({}); }, watch: function (fn) { return A.grants.watch(fn); } };
     const n = lists.length;
-    E.grantList.create({}, { grants: GRANTS });
+    E.search.grant.create({}, { grants: GRANTS });
     await settle();
     DATA.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K7', path: 'jobs.list', label: 'First' } } });
     await settle();

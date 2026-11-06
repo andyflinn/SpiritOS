@@ -61,8 +61,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(required.indexOf('spirit/element/rowElement.js') !== -1 && !required.some(function (p) { return /data\.js$/.test(p); }), 'it requires the shared row element, and no data script', 'required: ' + short(required));
   ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 'managers: ' + short(managers));
   if (!F || typeof F.file !== 'function') return;
-  ok(E.fileElement && typeof E.fileElement.create === 'function', 'it registers spirit.element.fileElement.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.fileElement || typeof E.fileElement.create !== 'function') return;
+  ok(E.search.file.rowElement && typeof E.search.file.rowElement.create === 'function', 'it registers spirit.element.search.file.rowElement.create', 'elements: ' + short(Object.keys(E)));
+  if (!E.search.file.rowElement || typeof E.search.file.rowElement.create !== 'function') return;
 
   test.subHeading('what the fs-watcher\'s stream means for data.files, in the type\'s own element (goal/G41.16)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": the file tree's
@@ -92,22 +92,22 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('one file or folder as a row');
   D.takeJob(cmd({ op: 'createFile', path: 'web/page<1>.html', size: 2048, modified: '2030-01-02T03:04:00Z', core: false }));
-  const el = E.fileElement.create({ path: 'web/page<1>.html' });
+  const el = E.search.file.rowElement.create({ path: 'web/page<1>.html' });
   ok(el.kind === 'file' && el.key === 'web/page<1>.html' && el.row.size === 2048 && el.row.name === 'page<1>.html', 'a row element of kind file, keyed by its path, its facts from data.files', 'el: ' + short({ kind: el.kind, key: el.key, row: el.row }));
   const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
   ok(JSON.stringify(Object.keys(cells)) === '["name","size","changed"]', 'its fields are name, size and changed', 'fields: ' + short(Object.keys(cells)));
   ok(/📜/.test(cells.name) && /page&lt;1>\.html/.test(cells.name) && /web\//.test(cells.name) && !/<1>/.test(cells.name), 'the name cell: a text file\'s icon 📜 (goal/G43.17), where it lives, and its name, escaped', 'name: ' + short(cells.name));
   ok(cells.size === '2048 Bytes' && cells.changed === '2030-01-02 03:04', 'its size through formatBytes, its time to the minute', 'cells: ' + short(cells));
-  const folder = E.fileElement.create({ path: 'web', kind: 'folder' });
+  const folder = E.search.file.rowElement.create({ path: 'web', kind: 'folder' });
   const fc = {}; folder.cells().forEach(function (c) { fc[c.name] = c.html; });
   ok(/📁/.test(fc.name) && fc.size === '', 'a folder: its icon, and no size', 'folder: ' + short(fc));
   // goal/G43.17, the box: "text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of unknown kind, ❔, in
   // place of today's 📄; a file gone stays ❌".
   await settle();
   const KINDS = { 'web/a.txt': '📜', 'web/a.png': '🌇', 'web/a.mp4': '📹', 'web/a.mp3': '🔊', 'web/a.zzq': '❔' };
-  const wrong = Object.keys(KINDS).filter(function (p) { const k = {}; E.fileElement.create({ path: p }).cells().forEach(function (c) { k[c.name] = c.html; }); return k.name.indexOf(KINDS[p]) === -1 || /📄/.test(k.name); });
+  const wrong = Object.keys(KINDS).filter(function (p) { const k = {}; E.search.file.rowElement.create({ path: p }).cells().forEach(function (c) { k[c.name] = c.html; }); return k.name.indexOf(KINDS[p]) === -1 || /📄/.test(k.name); });
   ok(!wrong.length, 'a file\'s icon by its kind: text 📜, image 🌇, video 📹, audio 🔊, any other ❔, none 📄', 'wrong: ' + short(wrong));
-  const core = E.fileElement.create({ path: 'spirit/kernel.js', core: true });
+  const core = E.search.file.rowElement.create({ path: 'spirit/kernel.js', core: true });
   const cc = {}; core.cells().forEach(function (c) { cc[c.name] = c.html; });
   ok(/spirit-core/.test(cc.name) && /core: write-protected/.test(cc.name), 'a core file\'s name in yellow, said core: write-protected', 'core: ' + short(cc.name));
 

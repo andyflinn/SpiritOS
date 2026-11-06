@@ -86,7 +86,7 @@ test.startTest('appServerSelector.js: the app-server selector');
 
   test.subHeading('the server half: a probabilitySearch dropdown of the node\'s families');
   const changes = [];
-  const made = w.E.appServerSelector;
+  const made = w.E.search.api.server;
   ok(made && typeof made.create === 'function' && !('createAppServerSelector' in w.E), 'it registers appServerSelector with a create, and createAppServerSelector no more', 'elements: ' + short(Object.keys(w.E)));
   if (!made || typeof made.create !== 'function') return;
   // Box v23: "every element gets a container and appends itself".

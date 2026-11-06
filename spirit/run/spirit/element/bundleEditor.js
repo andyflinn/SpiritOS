@@ -47,7 +47,7 @@
       said.className = 'job-manifest-note';
       box.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are shown only.
-      bundles = E.bundleSelector.create(box, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel, api: o.api });
+      bundles = E.search.bundle.create(box, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel, api: o.api });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }

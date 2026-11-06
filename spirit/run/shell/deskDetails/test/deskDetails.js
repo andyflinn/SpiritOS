@@ -380,9 +380,9 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     const r = ddWorld(RULED, []);
     r.searches = [];
     const make = { create: function (host, o) { r.searches.push({ host: host, o: o || {} }); return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } };
-    delete r.win.spirit.element.probabilitySearch;
+    delete r.win.spirit.element.search;
     const req = r.win.spirit.require;
-    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.element.probabilitySearch = make; return req(p); };
+    r.win.spirit.require = function (p) { const q = String(p).replace(/^\/+/, ''); if (q === 'spirit/element/search.js') r.win.spirit.element.search = make; return req(p); };
     return r;
   };
   const rulePick = function (r) { return r.searches.filter(function (x) { return x.o.verb === 'rules.search' && x.o.face === 'dropdown'; }).pop() || null; };

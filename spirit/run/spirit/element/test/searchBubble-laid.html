@@ -14,7 +14,7 @@
 // ./probabilitySearchBubble.js at /DEBUG/spirit/element/test/searchBubble-laid.html.
 window.laid = function () {
   return Promise.resolve().then(function () { return spirit.require('spirit/element/search.js'); }).catch(function () { return null; }).then(function () {
-    var P = (spirit.element || {}).probabilitySearch;
+    var P = (spirit.element || {}).search;
     var out = { made: !!P && typeof P.create === 'function' };
     if (!out.made) return JSON.stringify(out);
     function rect(el) { if (!el) return null; var r = el.getBoundingClientRect(); return { left: Math.round(r.left * 10) / 10, w: Math.round(r.width * 10) / 10 }; }

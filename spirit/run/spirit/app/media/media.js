@@ -112,7 +112,7 @@
       area.style.marginTop = '1em';
       box.appendChild(row);
       box.appendChild(area);
-      picker = S.element.fileList.create(pick, {
+      picker = S.element.search.file.create(pick, {
         face: 'dropdown',
         placeholder: 'choose a picture, song or video…',
         // Its field names no file: the title bar does.

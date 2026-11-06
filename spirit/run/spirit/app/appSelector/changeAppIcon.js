@@ -26,7 +26,7 @@
     form.span.appendChild(shown);
     var listHost = document.createElement('span');
     form.span.appendChild(listHost);
-    var list = E.iconList.create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
+    var list = E.search.icon.listElement.create(listHost, { face: 'dropdown', pick: function (r, glyph) { picked = glyph || ''; } });
     form.button.addEventListener('click', function () {
       if (!picked) return;
       S.ready.then(function (s) { return s.app.iconApp({ key: key, icon: picked }); }).then(null, function () { /* the row stays */ });

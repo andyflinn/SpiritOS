@@ -75,17 +75,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'it requires the shared row element and the arming button through spirit.require', 'required: ' + short(required));
   ok(managers.indexOf('auth') !== -1 && A && A.branches && typeof A.branches.row === 'function', 'it loads the auth family\'s cache manager, which puts ((spirit.data || {}).auth || {}).data on the page', 'managers: ' + short(managers));
   if (!A || !A.branches || typeof A.branches.row !== 'function') return;
-  ok(E.branchElement && typeof E.branchElement.create === 'function', 'it registers spirit.element.branchElement.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.branchElement || typeof E.branchElement.create !== 'function') return;
+  ok(E.search.branch.rowElement && typeof E.search.branch.rowElement.create === 'function', 'it registers spirit.element.search.branch.rowElement.create', 'elements: ' + short(Object.keys(E)));
+  if (!E.search.branch.rowElement || typeof E.search.branch.rowElement.create !== 'function') return;
 
   test.subHeading('a branch row: Family, Verb, Delete');
   // Andy, box: "branchSelector:pane, with table columns as follows: 1. Family (duh?) 2. Verb 3. armingButton 'Delete'".
-  const el = E.branchElement.create({ id: 3, bundle: 7, family: 'de<sk>', verb: 'chat<add>' });
+  const el = E.search.branch.rowElement.create({ id: 3, bundle: 7, family: 'de<sk>', verb: 'chat<add>' });
   ok(el.kind === 'branch' && el.key === '3' && el.row.bundle === 7 && el.row.family === 'de<sk>', 'it is a row element of kind branch, keyed by the branch\'s id, its bundle with it', 'el: ' + short({ kind: el.kind, key: el.key, row: el.row }));
   const cells = {}; (el.cells() || []).forEach(function (c) { cells[c.name] = c.html; });
   ok(JSON.stringify(Object.keys(cells)) === '["family","verb","delete"]', 'its fields are family, verb and delete, in that order', 'fields: ' + short(Object.keys(cells)));
   ok(cells.family === 'de&lt;sk>' && /chat&lt;add>/.test(cells.verb || '') && !/<add>/.test(cells.verb || ''), 'family and verb are drawn escaped', 'cells: ' + short(cells));
-  const all = E.branchElement.create({ id: 4, bundle: 7, family: 'files', verb: '' });
+  const all = E.search.branch.rowElement.create({ id: 4, bundle: 7, family: 'files', verb: '' });
   const allCells = {}; all.cells().forEach(function (c) { allCells[c.name] = c.html; });
   // Andy, box: "A branch row with an empty verb shows as \"(ALL)\", as the filter does."
   ok(allCells.verb === '(ALL)', 'an empty verb shows as (ALL)', 'verb: ' + short(allCells.verb));
@@ -101,7 +101,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('it repaints from the auth family\'s branches (goal/G41.14, G41.28)');
   // Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their data set".
-  const live = E.branchElement.create({ id: 5, bundle: 7, family: 'files', verb: 'read' });
+  const live = E.search.branch.rowElement.create({ id: 5, bundle: 7, family: 'files', verb: 'read' });
   const lh = { family: cell(), verb: cell(), delete: cell() };
   live.mount(lh);
   V.set('branches/5', { id: 5, bundle: 7, family: 'files', verb: '' });

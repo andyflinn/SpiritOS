@@ -20,9 +20,9 @@
 //     mount(hosts by field name), apply(changes), act(name, ctx), expandInfo(), destroy() }.
 //   - window.spirit.element.rowElement.index(subscribe) -> { add(key, el), remove(key, el), forKey(key) }: subscribe(index)
 //     is called once, on the first add.
-//   - window.spirit.element.fileElement.create(row): row { path, kind, size, modified }; key path; fields icon, name,
+//   - window.spirit.element.search.file.rowElement.create(row): row { path, kind, size, modified }; key path; fields icon, name,
 //     size, changed; fed by fs-watcher job-updated commands for its path. Actions open and remove.
-//   - window.spirit.element.contactElement.create(row): row { key, name, owned, blocked, held }; fields presence, status,
+//   - window.spirit.element.search.contact.rowElement.create(row): row { key, name, owned, blocked, held }; fields presence, status,
 //     label; fed by the relay-presence job and contact renames. Actions open, block, unblock, remove.
 // The elements are browser scripts; this runs them in a sandbox with a stand-in window and spirit.core, and checks what
 // they paint and ask. rule/11: through testSupport only.
@@ -95,8 +95,8 @@ const done = (async function () {
   let files = null;
   try {
     const before = subscribers.length;
-    const a = E.fileElement.create({ path: 'shell/a.js', kind: 'file', size: 10, modified: '2026-10-21T00:00:00Z' });
-    const b = E.fileElement.create({ path: 'shell/b.js', kind: 'file', size: 20, modified: '2026-10-21T00:00:00Z' });
+    const a = E.search.file.rowElement.create({ path: 'shell/a.js', kind: 'file', size: 10, modified: '2026-10-21T00:00:00Z' });
+    const b = E.search.file.rowElement.create({ path: 'shell/b.js', kind: 'file', size: 20, modified: '2026-10-21T00:00:00Z' });
     const ha = { icon: counted(), name: counted(), size: counted(), changed: counted() };
     const hb = { icon: counted(), name: counted(), size: counted(), changed: counted() };
     a.mount(ha); b.mount(hb);
@@ -125,8 +125,8 @@ const done = (async function () {
   let people = null;
   try {
     const before = subscribers.length;
-    const p = E.contactElement.create({ key: 'KEY-P', name: 'Pia', owned: false, blocked: false, held: false });
-    const q = E.contactElement.create({ key: 'KEY-Q', name: 'Quin', owned: false, blocked: false, held: false });
+    const p = E.search.contact.rowElement.create({ key: 'KEY-P', name: 'Pia', owned: false, blocked: false, held: false });
+    const q = E.search.contact.rowElement.create({ key: 'KEY-Q', name: 'Quin', owned: false, blocked: false, held: false });
     const hp = { presence: counted(), status: counted(), label: counted() };
     const hq = { presence: counted(), status: counted(), label: counted() };
     p.mount(hp); q.mount(hq);

@@ -36,7 +36,7 @@ test.startTest('monitor.js: an app that reads and displays a stream (goal/G43.6)
   ok(code && !/spirit\.shell|launchApp|data-launch-app/.test(code), 'it names no spirit.shell and launches nothing', 'monitor.js reaches the old shell or launches an app');
   ok(code && !/['"]\/?shell\//.test(code), 'it requires nothing under shell/', 'monitor.js names a path under shell/');
   ok(code && !/\.elements\b/.test(code), 'it reaches nothing through spirit.elements', 'monitor.js names spirit.elements');
-  ok(code && /spirit\.element\.valued|element\.valued/.test(code) && /spirit\/element\/valued\.js/.test(code), 'it loads and uses the valued element', 'monitor.js does not load spirit/element/search/valued.js and use it');
+  ok(code && /spirit\.element\.search.valued|element\.search.valued/.test(code) && /spirit\/element\/valued\.js/.test(code), 'it loads and uses the valued element', 'monitor.js does not load spirit/element/search/valued.js and use it');
 
   const node = await scratchNode();
   const chrome = await chromePage(findChrome());

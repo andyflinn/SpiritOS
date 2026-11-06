@@ -20,7 +20,7 @@
         return { status: 200, body: { ok: true, items: (got && got.items) || [], more: !!(got && got.more) } };
       });
     }
-    var list = window.spirit.element.probabilitySearch.create(host, {
+    var list = window.spirit.element.search.create(host, {
       api: { verb: function (name, args) { return search(args); } },
       data: window.spirit.data.app.data.branch,
       server: 'app',
@@ -35,7 +35,7 @@
       // Andy, box: "the appSelector will only show icon and label in the list."
       // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
       columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),
-      element: function (row) { return window.spirit.elements.appElement.create(row); },
+      element: function (row) { return window.spirit.elements.search.app.rowElement.create(row); },
       name: function (row) { return String((row && row.label) || ''); },
       empty: 'No app matches.',
     });
@@ -52,5 +52,6 @@
   }
 
   (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
-  window.spirit.elements.appList = { create: create };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'app'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: create });
 }());

@@ -63,7 +63,7 @@ const contactsList = code('spirit/app/contact/contact.js');
 // The list of peers seen was the shell element peerFind (goal/G30.1, box v39); since goal/G30.19 it is Contacts' one
 // list, contactSearch, on the standard list-tool.
 const finder = code('spirit/element/search/contact/listElement.js');
-if (/spirit\.element.contactList\.create\(/.test(contactsList) && /spirit\.element\.probabilitySearch\.create\(/.test(finder) && !natterApp())
+if (/spirit\.element.search.contact.listElement\.create\(/.test(contactsList) && /spirit\.element\.search\.create\(/.test(finder) && !natterApp())
   test.check('relays are searched in Contacts\' one list, on the standard list-tool');
 else test.fail(OWED + 'relays are not searched through the shared list');
 // Since goal/G40.11 relay.search is gone: contact.search answers relays too, each row's label JSON (contactLabel).

@@ -25,7 +25,7 @@
   }
 
   // A dropdown for choosing one icon out of the ICON pool, offered to
-  // apps as api.ui.element.iconSelector.create(container, options).
+  // apps as api.ui.element.search.icon.create(container, options).
   //
   // `excludeGlyphs` is an array of GLYPHS already spoken for. Glyphs, not
   // keys: what makes two apps collide is the picture they paint, and
@@ -66,7 +66,7 @@
     var choices = [];
     var excludedGlyph = Object.create(null);
     (excludeGlyphs || []).forEach(function (g) { if (g) excludedGlyph[g] = true; });
-    Promise.resolve().then(function () { return spirit.require('spirit/element/search/icon/listElement.js'); }).then(function () { return window.spirit.element.iconList.set(); }).then(function (set) {
+    Promise.resolve().then(function () { return spirit.require('spirit/element/search/icon/listElement.js'); }).then(function () { return window.spirit.element.search.icon.listElement.set(); }).then(function (set) {
       choices = Object.keys(set).filter(function (g) { return g && !excludedGlyph[g]; }).map(function (g) {
         var keys = Array.isArray(set[g]) ? set[g].map(String) : [];
         return { glyph: g, key: keys[0] || '', keys: keys, label: keys.join(', ') };
@@ -216,5 +216,6 @@
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
   // create(container, options) appends the dropdown and answers it; options.exclude the glyphs spoken for.
-  window.spirit.element.iconSelector = { create: function (container, options) { var o = options || {}; var root = createIconSelector(o.exclude || null, o); container.appendChild(root); return root; } };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'icon'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: function (container, options) { var o = options || {}; var root = createIconSelector(o.exclude || null, o); container.appendChild(root); return root; } });
 })();

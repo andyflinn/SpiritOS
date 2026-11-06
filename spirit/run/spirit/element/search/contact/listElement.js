@@ -88,7 +88,7 @@
       }, function (e) { say('could not reach them — ' + ((e && e.message) || e)); });
     }
 
-    list = window.spirit.element.probabilitySearch.create(host, {
+    list = window.spirit.element.search.create(host, {
       api: { verb: function (name, args) { return search(args); } },
       // A view of the node's contacts, the branch the contact family's manager keeps (spirit.data.contact.data.branch).
       data: window.spirit.data.contact.data.branch,
@@ -105,7 +105,7 @@
         { field: 'label', from: 'name', label: 'Name', sort: 'text' },
         { field: 'add', label: '' },
       ],
-      element: function (row, key) { var el = window.spirit.element.contactElement.create(Object.assign({ key: key }, row)); els[key] = el; return el; },
+      element: function (row, key) { var el = window.spirit.element.search.contact.rowElement.create(Object.assign({ key: key }, row)); els[key] = el; return el; },
       filters: FILTERS,
       details: function (row, key, el) {
         if (undecided(row)) { askCard(row, key); return; }
@@ -148,5 +148,6 @@
   }
 
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
-  window.spirit.element.contactList = { create: create, filters: FILTERS };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'contact', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: create, filters: FILTERS });
 }());

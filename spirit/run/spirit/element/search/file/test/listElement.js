@@ -37,12 +37,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const asked = [];
   const fsFamily = { search: function (a) { asked.push(a); return Promise.resolve({ items: [{ key: 'docs/a.md', label: JSON.stringify({ path: 'docs/a.md', score: 0.9, line: 3 }) }, { key: 'docs/', label: JSON.stringify({ path: 'docs/', score: 0.2 }) }], more: false }); } };
   const STANDS = {
-    'spirit/element/search.js': function (E) { E.probabilitySearch = { create: function (host, o) {
+    'spirit/element/search.js': function (E) { E.search = { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, sorted: null, typed: '', refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () {},
         sort: function (f, d) { l.sorted = [f, d]; }, words: function () { return l.typed; } };
       lists.push(l); return l;
     } }; },
-    'spirit/element/search/file/rowElement.js': function (E) { E.fileElement = { create: function (row) { return { kind: 'file', row: row }; } }; },
+    'spirit/element/search/file/rowElement.js': function (E) { E.search.file.rowElement = { create: function (row) { return { kind: 'file', row: row }; } }; },
     'spirit/element/fstat.js': function (E) { E.fstat = { mimeOf: function (n) { return /\.png$/.test(n) ? 'image/png' : 'text/plain'; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ fs: fsFamily }), fs: fsFamily, element: {} } };
@@ -72,13 +72,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script: the file tree\'s stream is its row element\'s', 'required: ' + short(required));
   ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 'managers: ' + short(managers));
   if (!F || typeof F.file !== 'function') return;
-  ok(E.fileList && typeof E.fileList.create === 'function', 'it registers spirit.element.fileList.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.fileList || typeof E.fileList.create !== 'function') return;
+  ok(E.search.file && typeof E.search.file.create === 'function', 'it registers spirit.element.search.file.create', 'elements: ' + short(Object.keys(E)));
+  if (!E.search.file || typeof E.search.file.create !== 'function') return;
 
   test.subHeading('a view of the node\'s file tree');
   const picked = [];
   const host = hostNode();
-  const list = E.fileList.create(host, { face: 'pane', accept: '.md', pick: function (row, key) { picked.push(key); } });
+  const list = E.search.file.create(host, { face: 'pane', accept: '.md', pick: function (row, key) { picked.push(key); } });
   await settle();
   const l = lists[0];
   ok(!!l && l.host === host.inner && /files-tree/.test(host.innerHTML) && /fill/.test(host.innerHTML), 'it draws one probabilitySearch into a fill box of its host', 'host: ' + short(host.innerHTML.slice(0, 120)));

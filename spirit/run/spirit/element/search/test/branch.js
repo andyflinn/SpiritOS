@@ -39,7 +39,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const lists = [];
   const required = [];
   const STANDS = {
-    'spirit/element/search/branch/listElement.js': function (E) { E.branchList = { create: function (host, o) {
+    'spirit/element/search/branch/listElement.js': function (E) { E.search.branch.listElement = { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, refresh: function () { l.refreshed += 1; }, destroy: function () {} };
       lists.push(l); return { list: l, refresh: l.refresh, destroy: l.destroy };
     } }; },
@@ -55,8 +55,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   };
   vm.runInThisContext(SRC, { filename: FILE });
   const E = global.window.spirit.element;
-  const made = E.branchSelector;
-  ok(made && typeof made.create === 'function' && !('createBranchSelector' in E), 'it registers spirit.element.branchSelector with a create, beside the shell\'s other selectors, and createBranchSelector no more', 'elements: ' + short(Object.keys(E)));
+  const made = E.search.branch;
+  ok(made && typeof made.create === 'function' && !('createBranchSelector' in E), 'it registers spirit.element.search.branch with a create, beside the shell\'s other selectors, and createBranchSelector no more', 'elements: ' + short(Object.keys(E)));
   if (!made || typeof made.create !== 'function') return;
 
   test.subHeading('a thin selector over its own list (rule/26; the contactSelector\'s pattern)');

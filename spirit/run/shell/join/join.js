@@ -30,7 +30,7 @@ var joinParts = Promise.all(['spirit/element/joinForm.js', 'spirit/element/faceF
 joinParts.then(function () { joinShown = ''; joinShow(); }, function () { /* a form missing leaves its step without one */ });
 function joinEl() {
   var w = window.spirit.elements || {};
-  return { joinForm: w && window.spirit.element.joinForm, contactList: w && window.spirit.element.contactList, faceForm: w && window.spirit.element.faceForm };
+  return { joinForm: w && window.spirit.element.joinForm, contactList: w && window.spirit.element.search.contact.listElement, faceForm: w && window.spirit.element.faceForm };
 }
 // ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
 var JOIN_DONE = '☑️';
@@ -110,9 +110,9 @@ function joinForm(step, box) {
     return;
   }
   // FIND SOMEONE: the same one list Contacts draws (goal/G30.19), the book, the shadow and the network.
-  if (step.until === 'contact' && el.contactList) {
+  if (step.until === 'contact' && el.search.contact.listElement) {
     box.innerHTML = '<div class="join-find-list"></div><div class="job-manifest-note join-find-said"></div>';
-    el.contactList.create(box.querySelector('.join-find-list'), {
+    el.search.contact.listElement.create(box.querySelector('.join-find-list'), {
       api: joinApi,
       // The node republishes join-steps once the contact is in the book; nothing to ask here.
       say: function (text) { var s = box.querySelector('.join-find-said'); if (s) s.textContent = text; },

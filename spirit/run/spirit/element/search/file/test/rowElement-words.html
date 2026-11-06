@@ -38,7 +38,7 @@ window.row = function (p, kind) {
   var host = made[p];
   if (!host) {
     host = made[p] = document.getElementById('rows').appendChild(document.createElement('div'));
-    window.spirit.element.fileElement.create({ path: p, kind: kind || 'folder' }).mount({ name: host });
+    window.spirit.element.search.file.rowElement.create({ path: p, kind: kind || 'folder' }).mount({ name: host });
   }
   return wait(1500).then(function () { return JSON.stringify(read(host, p.split('/'))); });
 };

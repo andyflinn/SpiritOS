@@ -107,7 +107,7 @@ spirit.shell.activateApp({
     return textEditorParts.then(function () {
       // Its text types only (goal/G29.8: "A file dropdown takes a hidden type filter the app configures").
       // The files list as a dropdown (goal/G30.20, spirit/element/search/file.js).
-      var picker = window.spirit.element.fileList.create(document.getElementById('editor-picker'), {
+      var picker = window.spirit.element.search.file.create(document.getElementById('editor-picker'), {
         api: api,
         face: 'dropdown',
         accept: ['text/', 'application/json', 'application/javascript', '.md'],

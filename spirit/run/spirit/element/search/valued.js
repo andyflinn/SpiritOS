@@ -1,9 +1,9 @@
 // spirit/run/spirit/element/search/valued.js
-// LABEL AND VALUE ROWS, SEARCHABLE (goal/G43.6). Andy, box: "It will be spirit.element.valued, on disc and in spirit", "a list of
+// LABEL AND VALUE ROWS, SEARCHABLE (goal/G43.6). Andy, box: "It will be spirit.element.search.valued, on disc and in spirit", "a list of
 // a name and a value, one per line, with an optional group", "It is searchable (probabilitySearch), over rows it already holds,
 // with no node verb." Its contract and its test: ./test/valued.md and ./test/valued.js.
 //
-//   spirit.element.valued.create(container, { rows(), columns }) -> { redraw(), destroy() }
+//   spirit.element.search.valued.create(container, { rows(), columns }) -> { redraw(), destroy() }
 //     rows()     the rows as they stand now, each { group, name, value }; a row with no key is known by its group and name
 //     columns    the columns, as probabilitySearch takes them; the caller names them
 //     redraw()   what rows() says now; the search words and the scroll stay
@@ -27,7 +27,7 @@
     container.appendChild(root);
     parts.then(function () {
       if (gone) return;
-      list = E.probabilitySearch.create(root, {
+      list = E.search.create(root, {
         columns: o.columns,
         rows: function () { return (typeof o.rows === 'function' ? o.rows() : []).map(keyed); },
       });
@@ -50,5 +50,6 @@
     };
   }
 
-  E.valued = { create: create };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'valued'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create });
 }());

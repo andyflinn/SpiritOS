@@ -115,7 +115,7 @@ spirit.shell.activateApp({
       // "icon text follows description rules.", "glyph field rule: max 1 char/glyph, 8-bytes maximum.").
       E.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'description');
       E.fieldInput.attach(container.querySelector('[data-icons="new-glyph"]'), 'glyph');
-      iconsList = E.iconList.create(container.querySelector('[data-icons="pane"]'), {
+      iconsList = E.search.icon.listElement.create(container.querySelector('[data-icons="pane"]'), {
         api: api,
         face: 'pane',
         details: function (row, glyph) { iconsPanel(api, row, glyph); },

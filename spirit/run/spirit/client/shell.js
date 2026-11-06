@@ -1300,11 +1300,11 @@
       // element, and what lives here is only the painting.
       ui: {
         elements: {
-          iconSelector: shellElements.iconSelector,
-          contactSelector: shellElements.contactSelector,
+          iconSelector: shellElements.search.icon,
+          contactSelector: shellElements.search.contact,
           contactLabel: shellElements.contactLabel,
-          appServerSelector: shellElements.appServerSelector,
-          apiFamilySelector: shellElements.apiFamilySelector,
+          appServerSelector: shellElements.search.api.server,
+          apiFamilySelector: shellElements.search.api,
           // One bar drawn from (done, total, text); the app hooks it to its job (goal/G29.14, spirit/element/progressBar.js).
           progressBar: shellElements.progressBar,
           // The header area an app fills, sticky under the titlebar (goal/G6.1, spirit/element/appHeader/appHeader.js).

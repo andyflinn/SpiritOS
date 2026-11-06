@@ -923,7 +923,7 @@ function deskMountList() {
   deskLoadSearch(function () {
     // The List is drawn once the cache manager is there, its branch the List's (goal/G41.28).
     deskNeed(DESK_DATA).then(function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.probabilitySearch;
+    var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskList || !K) return;
     deskList = P.create(el, {
@@ -1247,7 +1247,7 @@ function deskRulesSearch() {
   var el = document.getElementById('desk-rule-list');
   if (!el) return;
   var make = function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.probabilitySearch;
+    var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
     var K = deskKept();
     if (!P || typeof P.create !== 'function' || deskRulesList || !K) return;
     // THE TOGGLES OF THE RULES LIST, as they always were (goal/G6.5): a button per type and per status, each on until he

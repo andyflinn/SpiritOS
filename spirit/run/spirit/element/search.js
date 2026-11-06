@@ -621,6 +621,7 @@
     return out;
   }
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
-  window.spirit.element.probabilitySearch = { create: create, order: order };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: create, order: order });
   window.spirit.matchRanges = matchRanges;
 }());

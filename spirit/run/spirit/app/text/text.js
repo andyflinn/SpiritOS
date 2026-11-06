@@ -90,7 +90,7 @@
       // ALWAYS WHOLE (Andy: "i changed my mind. please show the full media viewer or text editor (including the file picker) even when
       // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var placeholder = 'open a file…';
-      picker = S.element.fileList.create(row.span, {
+      picker = S.element.search.file.create(row.span, {
         face: 'dropdown',
         placeholder: placeholder,
         name: function () { return placeholder; },

@@ -42,7 +42,7 @@ function world() {
   const w = { lists: [], required: [] };
   const real = function (file) { return function (win) { vm.runInContext(fs.readFileSync(path.join(JS, file), 'utf8'), win, { filename: file }); }; };
   const STANDS = {
-    'spirit/element/search.js': function (win) { win.spirit.element.probabilitySearch = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
+    'spirit/element/search.js': function (win) { win.spirit.element.search = { create: function (host, opts) { const l = { host: host, opts: opts, redrawn: 0, value: '', row: null,
       redraw: function () { l.redrawn += 1; }, refresh: function () {}, destroy: function () {} }; w.lists.push(l); return l; } }; },
     'spirit/element/search/api.js': real('appServerSelector.js'),
     'spirit/element/search/api/verb.js': real('apiVerbSelector.js'),
@@ -98,7 +98,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!/shellCreateListSearch/.test(fs.readFileSync(FILE, 'utf8').replace(/\/\/.*$/gm, '')), 'it names no shellCreateListSearch (goal/G40.8)', 'it names shellCreateListSearch');
   const w = world();
   await settle();
-  const made = w.E.apiFamilySelector;
+  const made = w.E.search.api;
   ok(made && typeof made.create === 'function' && !('createApiFamilySelector' in w.E) && !('createApiBranchSelector' in w.E),
     'it registers apiFamilySelector with a create, and createApiFamilySelector and createApiBranchSelector no more', 'elements: ' + short(Object.keys(w.E)));
   if (!made || typeof made.create !== 'function') return;

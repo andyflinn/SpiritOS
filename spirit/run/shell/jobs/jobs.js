@@ -103,7 +103,7 @@ spirit.shell.activateApp({
     container.innerHTML = '';
     return jobsParts.then(function () {
       var J = ((window.spirit.data || {}).jobs || {}).data;
-      jobsList = window.spirit.element.probabilitySearch.create(container, {
+      jobsList = window.spirit.element.search.create(container, {
         data: J.branch,
         columns: [
           { field: 'latest', label: '' },

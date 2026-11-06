@@ -59,7 +59,7 @@
         return set;
       });
     }
-    list = E.probabilitySearch.create(host, {
+    list = E.search.create(host, {
       api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
       server: 'fs',
       verb: 'search',
@@ -72,7 +72,7 @@
         { field: 'glyph', label: '' },
         { field: 'keywords', label: 'Keywords' },
       ],
-      element: function (row, key) { return E.iconElement.create(Object.assign({ glyph: key }, row)); },
+      element: function (row, key) { return E.search.icon.rowElement.create(Object.assign({ glyph: key }, row)); },
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       details: typeof o.details === 'function' ? function (row, key) { o.details(row, key); } : undefined,
       empty: o.empty || 'No icon matches.',
@@ -82,5 +82,6 @@
     return list;
   }
 
-  E.iconList = { create: create, set: readSet, SET: SET };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'icon', 'listElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, E), { create: create, set: readSet, SET: SET });
 }());

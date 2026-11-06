@@ -43,14 +43,14 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const families = [];
     const auth = { branch: function (a) { asked.push(a); return Promise.resolve({ items: [{ key: '3', label: JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: '' }) }], more: false }); } };
   const STANDS = {
-    'spirit/element/search.js': function (E) { E.probabilitySearch = { create: function (host, o) {
+    'spirit/element/search.js': function (E) { E.search = { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }; },
     // The real row element loads the auth family's cache manager as it runs (goal/G41.28); its stand-in does the same.
-    'spirit/element/search/branch/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); E.branchElement = { create: function (row) { return { kind: 'branch', row: row }; } }; },
+    'spirit/element/search/branch/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); E.search.branch.rowElement = { create: function (row) { return { kind: 'branch', row: row }; } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
-    'spirit/element/search/api.js': function (E) { E.apiFamilySelector = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
+    'spirit/element/search/api.js': function (E) { E.search.api = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; families.push(f); c.appendChild(f); return f; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); } };
@@ -78,12 +78,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
     'it requires the search element, its row element and the family selector through spirit.require, and no data script (Andy: "NO FUCKING DATA SCRIPT")', 'required: ' + short(required));
-  ok(E.branchList && typeof E.branchList.create === 'function', 'it registers spirit.element.branchList.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.branchList || typeof E.branchList.create !== 'function') return;
+  ok(E.search.branch.listElement && typeof E.search.branch.listElement.create === 'function', 'it registers spirit.element.search.branch.listElement.create', 'elements: ' + short(Object.keys(E)));
+  if (!E.search.branch.listElement || typeof E.search.branch.listElement.create !== 'function') return;
 
   test.subHeading('one bundle\'s branches, searched at auth.branch');
   const host = node('host');
-  const made = E.branchList.create(host, { bundle: 7, face: 'pane', columns: ['family', 'verb', 'delete'] });
+  const made = E.search.branch.listElement.create(host, { bundle: 7, face: 'pane', columns: ['family', 'verb', 'delete'] });
   await settle();
   const l = lists[0];
   ok(!!l && within(host, l.host), 'it draws one probabilitySearch inside the host it is given', 'lists: ' + lists.length);

@@ -384,8 +384,8 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   // drawn as a dropdown stands inline, as every dropdown in the tree does (Grants, Icons), and is not asked here.
   const wf = deskWorld(goal, [item]);
   const panes = [];
-  const realCreate = wf.win.spirit.element.probabilitySearch.create;
-  wf.win.spirit.element.probabilitySearch.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
+  const realCreate = wf.win.spirit.element.search.create;
+  wf.win.spirit.element.search.create = function (host, o) { if (!o || o.face !== 'dropdown') panes.push({ host: host, o: o || {} }); return realCreate(host, o); };
   await wf.mount();
   const mountBox = wf.document.body.children[wf.document.body.children.length - 1];
   const rulesTab = wf.document.querySelector('[data-tab="rules"]');

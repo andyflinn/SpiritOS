@@ -216,7 +216,7 @@ const listHtml = function (p, m) {
   // picker; the rule this section kept stands: no state words read off a label.
   test.subHeading('10. Contacts lists its book with the one list');
   const contacts = strip(fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8'));
-  if (/spirit\.element\.contactList\.create\(/.test(contacts) && !/CONTACTS_STATE_BLOCKED|CONTACTS_STATE_WAITING|contactsLabelHtml/.test(contacts)) test.check('Contacts\' book is its one list (contactSearch); it reads no state words off a label');
+  if (/spirit\.element\.search.contact.listElement\.create\(/.test(contacts) && !/CONTACTS_STATE_BLOCKED|CONTACTS_STATE_WAITING|contactsLabelHtml/.test(contacts)) test.check('Contacts\' book is its one list (contactSearch); it reads no state words off a label');
   else test.fail(OWED + 'Contacts still draws its own book table from label words');
   const sel = strip(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact.js'), 'utf8'));
   if (!/contact-selector-rows|contact-selector-search/.test(sel) && !/createContactLabel/.test(sel)) test.check('the selector draws no list or search box of its own any more');

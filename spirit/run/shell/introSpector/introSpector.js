@@ -146,10 +146,10 @@ function isMount(api) {
     var line = document.getElementById('is-line');
     var party = document.createElement('span');
     line.appendChild(party);
-    var branch = window.spirit.element.apiFamilySelector.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
+    var branch = window.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
     // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/listElement.js), the book and this
     // node's relays; None is self.
-    window.spirit.element.contactList.create(party, {
+    window.spirit.element.search.contact.listElement.create(party, {
       api: api,
       face: 'dropdown',
       placeholder: 'self (this node)',

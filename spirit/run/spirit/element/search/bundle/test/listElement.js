@@ -31,12 +31,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   let answer = { items: [{ key: '7', label: JSON.stringify({ id: 7, label: 'Reader' }) }], more: true };
   const auth = { bundle: function (a) { asked.push(a); return answer ? Promise.resolve(answer) : Promise.resolve(null); } };
   const STANDS = {
-    'spirit/element/search.js': function (E) { E.probabilitySearch = { create: function (host, o) {
+    'spirit/element/search.js': function (E) { E.search = { create: function (host, o) {
       const l = { host: host, o: o, refreshes: 0, destroyed: false, refresh: function () { l.refreshes += 1; }, redraw: function () {}, destroy: function () { l.destroyed = true; } };
       lists.push(l); return l;
     } }; },
     // The real row element loads the auth family's cache manager as it runs (goal/G41.28); its stand-in does the same.
-    'spirit/element/search/bundle/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); E.bundleElement = { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
+    'spirit/element/search/bundle/rowElement.js': function (E) { global.window.spirit.cacheManager('auth'); E.search.bundle.rowElement = { create: function (row, opts) { const r = { kind: 'bundle', row: row, opts: opts || {} }; rows.push(r); return r; } }; },
   };
   global.window = { spirit: { escapeHtml: function (s) { return String(s); }, ready: Promise.resolve({ auth: auth }), auth: auth, element: {} } };
   global.spirit = global.window.spirit;
@@ -65,13 +65,13 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('it loads what it uses itself (rule/26)');
   ok(['spirit/element/search.js', 'spirit/element/search/bundle/rowElement.js'].every(function (p) { return required.indexOf(p) !== -1; }) && !required.some(function (p) { return /data\.js$/.test(p); }),
     'it requires the search element and its row element through spirit.require, and no data script (Andy: "NO FUCKING DATA SCRIPT")', 'required: ' + short(required));
-  ok(E.bundleList && typeof E.bundleList.create === 'function', 'it registers spirit.element.bundleList.create', 'elements: ' + short(Object.keys(E)));
-  if (!E.bundleList || typeof E.bundleList.create !== 'function') return;
+  ok(E.search.bundle.listElement && typeof E.search.bundle.listElement.create === 'function', 'it registers spirit.element.search.bundle.listElement.create', 'elements: ' + short(Object.keys(E)));
+  if (!E.search.bundle.listElement || typeof E.search.bundle.listElement.create !== 'function') return;
 
   test.subHeading('create hands the search element the node\'s bundles');
   const picked = [];
   const host = {};
-  const made = E.bundleList.create(host, { face: 'dropdown', placeholder: 'choose a bundle…', all: 'no bundle', pick: function (row, key) { picked.push(key); } });
+  const made = E.search.bundle.listElement.create(host, { face: 'dropdown', placeholder: 'choose a bundle…', all: 'no bundle', pick: function (row, key) { picked.push(key); } });
   await settle();
   const l = lists[0];
   ok(!!l && l.host === host, 'it draws one probabilitySearch into the host it is given', 'lists: ' + lists.length);
@@ -114,7 +114,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('a pane of the editor: its columns, its labels shown only (goal/G41.26)');
   // Andy, box: "the bundleSelector in pane-mode, with the following columns: 1. [fieldInput ... Label] 2. an edit button
   // ... 3. a delete armingButton.js".
-  E.bundleList.create({}, { face: 'pane', columns: ['owner', 'label'], editable: true });
+  E.search.bundle.listElement.create({}, { face: 'pane', columns: ['owner', 'label'], editable: true });
   await settle();
   const p = lists[1] && lists[1].o;
   ok(p && JSON.stringify((p.columns || []).map(function (c) { return c.field; })) === '["owner","label"]', 'opts.columns names the row\'s fields it shows, in order', 'columns: ' + short(p && p.columns));
@@ -127,7 +127,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy, box: "if the bundleSelector is not configured for an appServer, the bundleSelector will show/search ALL/ANY
   // bundles", and "if the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that
   // Appserver".
-  E.bundleList.create({}, { face: 'dropdown', family: 'agent' });
+  E.search.bundle.listElement.create({}, { face: 'dropdown', family: 'agent' });
   await settle();
   const fo = lists[2] && lists[2].o;
   const nA = asked.length;
@@ -143,7 +143,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/search.js'].forEach(function (rel) {
       vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
     });
-    return win.spirit.element.probabilitySearch;
+    return win.spirit.element.search;
   }());
   V.set('bundles/21', { id: 21, label: 'Agent tools', owner: 'agent' });
   V.set('bundles/22', { id: 22, label: 'Node files', owner: 'node' });

@@ -383,7 +383,7 @@ function contactCreate(container) {
     var book = document.getElementById('contacts-book');
     contactsParts.then(function () {
       if (gone) return;
-      contactsList = window.spirit.element.contactList.create(book, {
+      contactsList = window.spirit.element.search.contact.listElement.create(book, {
         api: contactsApi,
         say: contactsStatus,
         empty: 'Nobody matches: the network is searched as you type.',

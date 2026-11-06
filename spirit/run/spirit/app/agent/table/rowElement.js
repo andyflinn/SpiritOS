@@ -139,7 +139,7 @@
         if (f.kind === 'icon') {
           needs(['spirit/element/search/icon.js']).then(function () {
             if (gone || !el.isConnected) return;
-            icons[f.field] = window.spirit.element.iconSelector.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
+            icons[f.field] = window.spirit.element.search.icon.create(el, { value: row[f.field] || (o.look && o.look.icon) || '' });
             if (icons[f.field] && typeof icons[f.field].addEventListener === 'function') icons[f.field].addEventListener('change', save);
           });
         }
@@ -191,11 +191,11 @@
         // selector, loaded here (rule/26); only a new pick is saved, as for a pick field.
         if (f.kind === 'bundle') {
           needs(['spirit/element/search/bundle.js']).then(function () {
-            if (gone || !window.spirit.element.bundleSelector) return;
+            if (gone || !(window.spirit.element.search && window.spirit.element.search.bundle && window.spirit.element.search.bundle.create)) return;
             // The bundle by its label, as the node has it (Andy: "why would the bundle picker show \"bundle 2\" for it's
             // selection instead of the fucking label?"); its number only once the node has no such bundle.
             var says = !row[f.field] ? 'Pick a bundle' : bundleLabel[row[f.field]] !== undefined ? bundleLabel[row[f.field]] : bundleHeld[row[f.field]] === false ? 'bundle ' + row[f.field] : '…';
-            bundles[f.field] = window.spirit.element.bundleSelector.create(el, { api: o.api, placeholder: says });
+            bundles[f.field] = window.spirit.element.search.bundle.create(el, { api: o.api, placeholder: says });
             if (bundles[f.field] && typeof bundles[f.field].addEventListener === 'function') bundles[f.field].addEventListener('change', save);
           });
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {

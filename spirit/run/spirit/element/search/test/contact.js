@@ -47,7 +47,7 @@ test.startTest('contactSelector.js: the configurable ID selector');
   };
   const families = { contact: { search: answer('contact', 'search') }, agent: { job: answer('agent', 'job') } };
   const STANDS = {
-    'spirit/element/search.js': function (E) { E.probabilitySearch = { create: function (host, o) {
+    'spirit/element/search.js': function (E) { E.search = { create: function (host, o) {
       const l = { host: host, o: o, refreshed: 0, redrawn: 0, value: '', row: null, refresh: function () { l.refreshed += 1; }, redraw: function () { l.redrawn += 1; }, destroy: function () {} };
       lists.push(l); return l;
     } }; },
@@ -69,8 +69,8 @@ test.startTest('contactSelector.js: the configurable ID selector');
   };
   vm.runInThisContext(SRC, { filename: FILE });
   const E = global.window.spirit.element;
-  const made = E.contactSelector;
-  ok(made && typeof made.create === 'function' && !('createContactSelector' in E), 'it registers spirit.element.contactSelector with a create, and createContactSelector no more', 'elements: ' + short(Object.keys(E)));
+  const made = E.search.contact;
+  ok(made && typeof made.create === 'function' && !('createContactSelector' in E), 'it registers spirit.element.search.contact with a create, and createContactSelector no more', 'elements: ' + short(Object.keys(E)));
   if (!made || typeof made.create !== 'function') return;
   // Box v23: "every element gets a container and appends itself".
   const make = function (o) { return made.create(element('div'), o); };

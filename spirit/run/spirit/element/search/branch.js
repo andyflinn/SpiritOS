@@ -8,7 +8,7 @@
 // the family selector as its filter, the bundle's branches (auth.branch search) and each row
 // (branchSelector/rowElement.js).
 //
-//   spirit.element.branchSelector.create(container, options) -> root
+//   spirit.element.search.branch.create(container, options) -> root
 //     root.value   the chosen branch's id, a number, '' while none is
 //     root.row     the chosen branch, { id, bundle, family, verb }, null while none is
 //     one bubbling `change` on a pick; refresh() asks again
@@ -36,7 +36,7 @@
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
     Promise.resolve(window.spirit.require ? window.spirit.require('spirit/element/search/branch/listElement.js') : null).then(function () {
       if (gone) return;
-      made = window.spirit.element.branchList.create(root, {
+      made = window.spirit.element.search.branch.listElement.create(root, {
         bundle: options.bundle,
         face: isPane ? 'pane' : 'dropdown',
         placeholder: isPane ? '' : (options.placeholder || 'choose a branch…'),
@@ -57,5 +57,6 @@
   (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"): create(container,
   // options) appends the control to the container and answers it.
-  window.spirit.element.branchSelector = { create: function (container, options) { var root = createBranchSelector(options); container.appendChild(root); return root; } };
+  // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18, Q5): merged into, so a search and the parts in its folder load in any order.
+  Object.assign(['search', 'branch'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, window.spirit.element), { create: function (container, options) { var root = createBranchSelector(options); container.appendChild(root); return root; } });
 })();

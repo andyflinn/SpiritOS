@@ -41,7 +41,7 @@ window.spirit.cacheManager = function (name) {
 };
 load(path.join(JS, 'rowElement.js'));
 load(path.join(JS, 'contact', 'rowElement.js'));
-const C = window.spirit.element.contactElement;
+const C = window.spirit.element.search.contact.rowElement;
 const D = window.spirit.data;
 const CD = ((window.spirit.data || {}).contact || {}).data;
 // The direct writes below are the contact family's own view of the home node, as its manager files them.

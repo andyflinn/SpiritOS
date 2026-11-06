@@ -325,7 +325,7 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   ok(wl.list.made.length === 0, 'and no list is made before it loads', 'made: ' + wl.list.made.length);
   const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/data.js'; });
   ok(askedV.length === 1, 'it asks spirit.require for the verifier\'s cache manager, its own family\'s (goal/G41.28)', 'required ' + short(wl.win.required.map(function (r) { return r.path; })));
-  wl.win.spirit.element.probabilitySearch = { create: wl.list.create };
+  wl.win.spirit.element.search = { create: wl.list.create };
   if (asked[0]) asked[0].resolve({}); if (askedV[0]) askedV[0].resolve({}); await settle();
   ok(wl.list.made.length === 1 && wl.list.made[0].host === wl.$('fallout-list') && wl.$('fallout-summary').textContent === '❌ 3 red of 10 tests now (30%).',
     'once it loads, the list is made and the summary counted', 'made ' + wl.list.made.length + ', summary ' + wl.$('fallout-summary').textContent);
