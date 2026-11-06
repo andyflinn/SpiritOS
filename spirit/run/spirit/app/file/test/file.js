@@ -20,6 +20,21 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function parsed(t) { try { return JSON.parse(t); } catch (e) { return null; } }
 function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
+// The box: "An element mounts over ALL of the one that mounts it, its title bar too", so one bar is in view, and it reads what it
+// is told: "[✏️] "Text Editor:" + file-name; [icon] "Media Viewer:" + file-name, the icon the file's own".
+function barIs(b, want) { return Array.isArray(b) && b.length === 1 && (want instanceof RegExp ? want.test(b[0]) : b[0] === want); }
+// How often a word shows in a text: the box, "No name line: the file's name is in the panel's title bar", and "No title line".
+function times(text, re) { return (String(text).match(re) || []).length; }
+// A real picture, far bigger than any pane: 2400 by 1600, one colour, so the box has to shrink it both ways.
+function png(w, h) {
+  const zlib = require('zlib');
+  const crc = function (buf) { let c, k = -1; for (let n = 0; n < buf.length; n++) { c = (k ^ buf[n]) & 0xff; for (let i = 0; i < 8; i++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; k = (k >>> 8) ^ c; } return (k ^ -1) >>> 0; };
+  const chunk = function (type, data) { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const sum = Buffer.alloc(4); sum.writeUInt32BE(crc(td)); return Buffer.concat([len, td, sum]); };
+  const head = Buffer.alloc(13); head.writeUInt32BE(w, 0); head.writeUInt32BE(h, 4); head[8] = 8; head[9] = 2;
+  const row = Buffer.alloc(1 + w * 3, 0x80); row[0] = 0;
+  const raw = Buffer.concat(Array.from({ length: h }, function () { return row; }));
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', head), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
 // Every file under a folder.
 function filesUnder(dir) {
   const out = [];
@@ -37,7 +52,7 @@ const APP = path.join(RUN, 'spirit', 'app', 'file');
 // The planted folder: one file of each kind, a folder inside, and a word in the contents of two files, twice in one.
 const PLANT = {
   'zzFiles/notes.txt': 'alpha\nbeta\nzzquokka and zzquokka\n',
-  'zzFiles/pic.png': 'not really a png',
+  'zzFiles/pic.png': png(2400, 1600),
   'zzFiles/clip.mp4': 'not really a video',
   'zzFiles/song.mp3': 'not really a sound',
   'zzFiles/blob.zzq': 'of no kind',
@@ -95,6 +110,13 @@ const HANDS = '(function () {' +
   // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/probabilitySearch.js).
   '  pickers: function () { return all("button[id$=field]").length; },' +
   '  marked: function () { return all(".text-view-match").map(function (m) { return String(m.textContent); }); },' +
+  // The box: "That row is a bubble of the same kind as rowForm uses": rowForm's root is .shell-bubble (spirit/element/rowForm.js).
+  '  inBubble: function (word) { var b = all("button").filter(function (x) { return String(x.textContent).indexOf(word) !== -1; })[0]; return b ? !!b.closest(".shell-bubble") : null; },' +
+  // The pane made w by h; then what sel draws, its rect against the pane's, and the one bar still in view inside it.
+  '  sized: function (sel, w, h) { var b = box(); b.style.width = w + "px"; b.style.height = h + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var e = all(sel)[0], o = b.getBoundingClientRect(); if (!e) return { none: true }; var r = e.getBoundingClientRect(), x = all("button").filter(function (k) { return String(k.textContent).trim() === "✕" && !/clear$/.test(k.id || ""); })[0]; var xr = x ? x.getBoundingClientRect() : null; return { left: r.left - o.left, top: r.top - o.top, right: o.right - r.right, bottom: o.bottom - r.bottom, w: r.width, h: r.height, fit: getComputedStyle(e).objectFit, bar: !!xr && xr.top >= o.top - 1 && xr.bottom <= o.bottom + 1 }; }); },' +
+  '  unsized: function () { var b = box(); b.style.width = "100%"; b.style.height = "100%"; return true; },' +
+  // A row in a narrow pane: true when nothing of the bubble holding word goes past its edge or the pane's.
+  '  folds: function (word, w) { var b = box(); b.style.width = w + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var k = all("button").filter(function (x) { return String(x.textContent).indexOf(word) !== -1; })[0]; var row = k && k.closest(".shell-bubble"); var out = !row ? "no row" : (row.scrollWidth > row.clientWidth + 1 || row.getBoundingClientRect().right > b.getBoundingClientRect().right + 1) ? "past its edge" : "ok"; b.style.width = "100%"; return out; }); },' +
   '  order: function (words) { var t = window.__t.text(); return words.map(function (w) { return t.indexOf(w); }); },' +
   '}; return "hands"; }())';
 
@@ -138,7 +160,8 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
     await c.evaluate(HANDS);
     const T = function (expr) { return c.evaluate('window.__t.' + expr); };
-    const waitFor = function (expr, ms) { return until(function () { return c.evaluate('!!(' + 'window.__t.' + expr + ')'); }, ms || 8000); };
+    // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
+    const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
     const selector = function (face) {
       return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.elements.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };
@@ -152,6 +175,8 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     ok(await until(function () { return c.evaluate('(document.getElementById("zzBox").innerText || "").indexOf("Files") !== -1'); }, 8000), 'the tiles show Files, with nothing pressed', 'tiles: ' + short(await T('text()')));
     await c.evaluate('(function () { var t = Array.prototype.slice.call(document.querySelectorAll("#zzBox .app-icon")).filter(function (e) { return String(e.innerText).indexOf("Files") !== -1; })[0]; if (t) t.click(); return !!t; }())');
     ok(await waitFor('rows().indexOf("zzFiles") !== -1', 10000), 'its tile opens the list of files, the planted folder in it', 'the app: ' + short(await T('text()')));
+    ok(barIs(await T('bars()'), '📁 Files'), 'it covers all of the tiles: one bar in view, 📁 Files', 'bars: ' + short(await T('bars()')));
+    ok(times(await T('text()'), /\bFiles\b/g) === 1, 'the box: "No title line in file": Files is named once, in its bar', 'Files named ' + times(await T('text()'), /\bFiles\b/g) + ' times: ' + short(await T('text()')));
 
     test.subHeading('the box: "the list of files as a pane, its Name, Size and Changed columns each sortable"');
     const heads = await T('heads()');
@@ -170,7 +195,7 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     await T('press("zzFiles")');
     ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1'), 'a press opens it, and its files show', 'rows: ' + short(await T('rows()')));
     ok(String(await T('rowText("zzFiles")')).indexOf('📂') !== -1, 'an open folder is 📂', 'the folder row: ' + short(await T('rowText("zzFiles")')));
-    ok(short(await T('bars()')) === short(['Files']), 'a folder\'s press opens nothing over the list', 'bars: ' + short(await T('bars()')));
+    ok(barIs(await T('bars()'), '📁 Files'), 'a folder\'s press opens nothing over the list', 'bars: ' + short(await T('bars()')));
 
     test.subHeading('the box: "A file\'s icon is by its kind, in the pane and the tiles alike"');
     const paneIcons = {};
@@ -203,49 +228,69 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     await T('press("zzFiles/notes.txt")');
     ok(await waitFor('marked().length > 0', 15000), 'the text opens with the words marked', 'the layer: ' + short(await T('text()')));
     ok((await T('marked()')).length > 0 && (await T('marked()')).every(function (m) { return /zzquokka/i.test(m); }), 'what is marked is the word searched', 'marked: ' + short(await T('marked()')));
-    ok(short(await T('bars()')) === short(['Files', 'notes.txt']), 'it opens over the list, under its own title bar, notes.txt, below the Files bar', 'bars: ' + short(await T('bars()')));
-    const overList = (await T('bars()')).length === 2;
+    ok(barIs(await T('bars()'), '✏️ Text Editor: notes.txt'), 'it covers all of Files: one bar in view, ✏️ Text Editor: notes.txt', 'bars: ' + short(await T('bars()')));
+    const overList = barIs(await T('bars()'), /notes\.txt$/);
     ok(overList && (await T('rows()')).length === 0, 'the list is out of view while the file is over it', 'rows: ' + short(await T('rows()')));
-    ok(overList && (await T('pickers()')) === 0, 'the box: "text and media take a file when mounted: with one they show no file picker"', 'pickers: ' + (await T('pickers()')));
+    ok(overList && (await T('pickers()')) === 0, 'the box: "They take a file when mounted: with one they show no file picker"', 'pickers: ' + (await T('pickers()')));
     await T('close("notes.txt")');
     ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1'), 'its ✕ shows the list again', 'the app: ' + short(await T('text()')));
     ok((await T('rows()')).indexOf('zzFiles/notes.txt') !== -1 && (await T('words()')) === 'zzquokka', 'the list is as it was left, its words kept', 'words: ' + short(await T('words()')));
 
-    test.subHeading('the box: "A press opens the file over the list: text for text, media for video, image and audio, fstat alone for anything else"');
+    test.subHeading('the box: "A press opens the file over all of file: text for text, media for video, image and audio, fstat only for a file of unknown kind (❔)"');
     await T('type("")');
     await T('filter("in", "names")');
     await waitFor('rows().indexOf("zzFiles/pic.png") !== -1');
-    const opens = [['zzFiles/pic.png', 'img'], ['zzFiles/clip.mp4', 'video'], ['zzFiles/song.mp3', 'audio']];
+    const opens = [['zzFiles/pic.png', 'img', '🌇'], ['zzFiles/clip.mp4', 'video', '📹'], ['zzFiles/song.mp3', 'audio', '🔊']];
     for (const o of opens) {
       const name = o[0].split('/').pop();
       await T('press(' + JSON.stringify(o[0]) + ')');
       const shown = await waitFor('count(' + JSON.stringify(o[1]) + ') > 0', 10000);
-      ok(shown && short(await T('bars()')) === short(['Files', name]), name + ' opens over the list in media, as ' + o[1], name + ': bars ' + short(await T('bars()')) + ', ' + o[1] + ' ' + (await T('count(' + JSON.stringify(o[1]) + ')')));
+      ok(shown, name + ' opens in media, as ' + o[1], name + ': ' + o[1] + ' ' + (await T('count(' + JSON.stringify(o[1]) + ')')) + ', ' + short(await T('text()')));
+      ok(shown && barIs(await T('bars()'), o[2] + ' Media Viewer: ' + name), 'its one bar: ' + o[2] + ' Media Viewer: ' + name + ', the file\'s own icon (Q15)', name + ': bars ' + short(await T('bars()')));
       ok(shown && (await T('pickers()')) === 0 && (await T('count(".CodeMirror")')) === 0, name + ': no file picker, and no text', name + ': pickers ' + (await T('pickers()')));
+      const own = String(await T('text()'));
+      ok(shown && times(own, new RegExp(name.replace('.', '\\.'), 'g')) === 1 && own.indexOf('MIME type') === -1, name + ': separate from fstat: its name only in the bar, no facts', name + ': ' + short(own));
       await T('close(' + JSON.stringify(name) + ')');
       await waitFor('rows().length > 0');
     }
+
+    test.subHeading('the box: "A picture or video is constrained as list boxes are: it fills the room it is given, never wider or taller"');
+    await T('press("zzFiles/pic.png")');
+    const drawn = await until(function () { return c.evaluate('(function () { var i = document.querySelector("#zzBox img"); return !!i && i.complete && i.naturalWidth === 2400; }())'); }, 10000);
+    ok(drawn, 'the world: the 2400 by 1600 picture is drawn', 'the picture did not load: ' + short(await T('text()')));
+    for (const size of [[300, 200], [1200, 300], [300, 900]]) {
+      const m = drawn ? await T('sized("img", ' + size[0] + ', ' + size[1] + ')') : { none: true };
+      const inside = !m.none && m.left >= -1 && m.top >= -1 && m.right >= -1 && m.bottom >= -1 && m.w > 0 && m.h > 0;
+      ok(inside && m.bar, 'in a pane ' + size[0] + ' by ' + size[1] + ' the picture stays inside it both ways, under its bar, still in view', size.join('x') + ': ' + short(m));
+      ok(!m.none && m.fit !== 'cover', 'in a pane ' + size[0] + ' by ' + size[1] + ' it is shrunk, not cropped', size.join('x') + ': object-fit ' + short(m.fit));
+    }
+    await T('unsized()');
+    await T('close("pic.png")');
+    await waitFor('rows().length > 0');
+
+    test.subHeading('the box: text "separate from fstat", "No title line in text", and its row "a bubble of the same kind as rowForm uses"');
     await T('press("zzFiles/notes.txt")');
     ok(await waitFor('count(".CodeMirror") > 0', 10000) && (await T('count("img, video, audio")')) === 0, 'notes.txt opens in text, no media', 'notes.txt: ' + short(await T('text()')));
-    // fstat, the box: "Top down: the file's name, a hidden pane, the facts (MIME type, size, changed, created), the annotations".
-    // Every file has annotations to show: the node's face part always says intrinsic (spirit/fileSystem.js, getAnnotations).
-    await waitFor('text().indexOf("More Information") !== -1', 10000);
-    const layer = String(await T('text()'));
-    const at = ['alpha', 'MIME type', 'Size', 'Changed', 'Created', 'More Information'].map(function (w) { return layer.lastIndexOf(w); });
-    const nameAt = layer.lastIndexOf('notes.txt', at[0]);
-    ok(nameAt !== -1 && at.every(function (n, i) { return n > (i ? at[i - 1] : nameAt); }), 'fstat, top down: the name, the text in its pane, MIME type, size, changed, created, the annotations', 'order ' + short([nameAt].concat(at)) + ' in ' + short(layer.slice(-300)));
+    const textLayer = String(await T('text()'));
+    ok(times(textLayer, /notes\.txt/g) === 1 && textLayer.indexOf('MIME type') === -1, 'its name only in the bar, no title line, no facts', 'notes.txt: ' + short(textLayer));
+    ok((await T('inBubble("Save")')) === true, 'Save sits in a bubble of the kind rowForm uses', 'Save: ' + short(await T('inBubble("Save")')));
+    ok((await T('folds("Save", 120)')) === 'ok', 'the box: "Rows are inline, not boxes: they fold": in a pane 120px wide nothing of that row goes past its edge', 'narrow: ' + short(await T('folds("Save", 120)')));
     await T('close("notes.txt")');
     await waitFor('rows().length > 0');
+
+    test.subHeading('the box: fstat, "the facts (MIME type, size, changed, created), the annotations. No name line"');
+    // Every file has annotations to show: the node's face part always says intrinsic (spirit/fileSystem.js, getAnnotations).
     await T('press("zzFiles/blob.zzq")');
     const facts = await waitFor('text().indexOf("MIME type") !== -1', 10000);
     ok(facts, 'blob.zzq opens in fstat, its facts shown', 'blob.zzq: ' + short(await T('text()')));
+    ok(facts && barIs(await T('bars()'), /blob\.zzq$/), 'under one bar in view, ending in its name', 'bars: ' + short(await T('bars()')));
     ok(facts && (await T('count(".CodeMirror, img, video, audio")')) === 0, 'fstat alone: no text and no media', 'blob.zzq: ' + short(await T('text()')));
-    const bare = String(await T('text()'));
-    const factsAt = bare.indexOf('MIME type');
-    const between = bare.slice(bare.lastIndexOf('blob.zzq', factsAt) + 'blob.zzq'.length, factsAt).trim();
-    ok(factsAt !== -1 && between === '', 'the box: "the pane stays invisible until filled": nothing shows between the name and the facts', 'between: ' + short(between));
-    ok(await waitFor('text().indexOf("More Information") > text().indexOf("Created")', 10000), 'its annotations under the facts', 'blob.zzq: ' + short(await T('text()')));
-    ok(facts && !/Open with/i.test(String(await T('text()'))), 'the box (Q9): no Open with in it', 'blob.zzq: ' + short(await T('text()')));
+    ok(facts && times(await T('text()'), /blob\.zzq/g) === 1, 'no name line: blob.zzq is named once, in the bar', 'blob.zzq: ' + short(await T('text()')));
+    await waitFor('text().indexOf("More Information") !== -1', 10000);
+    const fstatText = String(await T('text()'));
+    const order = ['MIME type', 'Size', 'Changed', 'Created', 'More Information'].map(function (w) { return fstatText.indexOf(w); });
+    ok(order.every(function (n, i) { return n !== -1 && (!i || n > order[i - 1]); }), 'top down: MIME type, size, changed, created, then the annotations', 'order ' + short(order) + ' in ' + short(fstatText));
+    ok(facts && !/Open with/i.test(fstatText), 'the box (Q9): no Open with in it', 'blob.zzq: ' + short(fstatText));
     await T('close("blob.zzq")');
 
     test.subHeading('nothing threw on the page');

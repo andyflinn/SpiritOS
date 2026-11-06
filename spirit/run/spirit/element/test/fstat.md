@@ -1,6 +1,6 @@
 # spirit/element/fstat.js
 
-A file's info, the viewer text and media build on (goal/G43.17). Its test is `./fstat.js`: the tree read as it is, then the browser file run in node on a window of its own, the link, the page's fetch, the spirit object's fs and an old shell as stubs. What it draws, top down, is judged in a real Chrome by `spirit/app/file/test/file.js`.
+A file's info, for a file of unknown kind (goal/G43.17); its name is in the panel's title bar, not in it. Its test is `./fstat.js`: the tree read as it is, then the browser file run in node on a window of its own, the link, the page's fetch, the spirit object's fs and an old shell as stubs. What it draws, top down, is judged in a real Chrome by `spirit/app/file/test/file.js`.
 
 Andy's box: *"It replaces fileViewer, which is renamed and trimmed into it, then deleted, its users naming fstat; mediaViewer goes too (Q7)."*
 

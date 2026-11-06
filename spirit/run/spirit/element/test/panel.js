@@ -68,6 +68,8 @@ const HANDS = '(function () {' +
   // A mark on what shows now, but not on what showed before: the layer just opened.
   '  markBefore: function () { all("*").forEach(function (e) { e.setAttribute("data-zz-before", "1"); }); return true; },' +
   '  markLayer: function (name) { var n = 0; all("*").forEach(function (e) { if (!e.hasAttribute("data-zz-before")) { e.setAttribute("data-zz-" + name, "1"); n++; } }); return n; },' +
+  // A mark on what one selector draws, and all inside it: the layer's own, never the list it covers, which redraws its rows.
+  '  markSel: function (name, sel) { var n = 0; all(sel).forEach(function (e) { [e].concat(Array.prototype.slice.call(e.querySelectorAll("*"))).forEach(function (k) { k.setAttribute("data-zz-" + name, "1"); n++; }); }); return n; },' +
   '  marked: function (name) { return document.querySelectorAll("[data-zz-" + name + "]").length; },' +
   '  markedShown: function (name) { return all("[data-zz-" + name + "]").length; },' +
   '}; return "hands"; }())';
@@ -95,20 +97,23 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     if (!where) { test.fail('no Chrome here: the page was not judged'); return; }
     c = await chromePage(where);
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
+    // A new page, not the old one before the reload lands: the old one carries a mark the new one has not.
     const open = async function () {
+      await c.evaluate('window.__zzOld = true').catch(function () {});
       await c.send('Page.navigate', { url: N.base + '/face.html' });
-      const up = await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000);
+      const up = await until(function () { return c.evaluate('!window.__zzOld && !!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000);
       await c.evaluate(HANDS);
       return up;
     };
     ok(await open(), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
     const T = function (expr) { return c.evaluate('window.__t.' + expr); };
-    const waitFor = function (expr, ms) { return until(function () { return c.evaluate('!!(' + 'window.__t.' + expr + ')'); }, ms || 8000); };
+    // Every hand in expr is the page's, not only the first: "rows() ... && tiles()" asks both.
+    const waitFor = function (expr, ms) { return until(function () { return c.evaluate('(function () { with (window.__t) { return !!(' + expr + '); } }())'); }, ms || 8000); };
     const selector = function (face) {
       return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.elements.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };
 
-    test.subHeading('the box: "an element mounts over the one that mounts it, in the same pane, under the title bar [icon] <label> [✕]"');
+    test.subHeading('the box: "An element mounts over ALL of the one that mounts it, its title bar too", under "its own title bar [icon] <label> [✕]"');
     await selector('tiles');
     ok(await waitFor('tiles().indexOf("file") !== -1', 10000), 'the world: the tiles show Files', 'tiles: ' + short(await T('tiles()')));
     await T('press("file")');
@@ -119,12 +124,12 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1');
     await T('markBefore()');
     await T('press("zzFiles/notes.txt")');
-    ok(await waitFor('bars().length === 2', 10000), 'a file opens over Files, in the same pane', 'bars: ' + short(await T('bars()')));
+    ok(await waitFor('bars().length === 1 && /notes\\.txt$/.test(bars()[0])', 10000), 'a file opens over Files, in the same pane', 'bars: ' + short(await T('bars()')));
     const bars = await T('bars()');
-    ok(bars[0] === '📁 Files' && /notes\.txt$/.test(bars[1]) && /^\S+ notes\.txt$/.test(bars[1]), 'under its own bar, an icon and notes.txt, below the Files bar', 'bars: ' + short(bars));
-    ok((await T('bars()')).length === 2 && (await T('rows()')).length === 0, 'the list is out of view under it', 'rows: ' + short(await T('rows()')));
+    ok(bars.length === 1 && /^\S+ .*notes\.txt$/.test(bars[0]), 'the box: "over ALL of the one that mounts it, its title bar too": one bar in view, an icon, ending in notes.txt', 'bars: ' + short(bars));
+    ok((await T('bars()')).length === 1 && (await T('rows()')).length === 0, 'the list is out of view under it', 'rows: ' + short(await T('rows()')));
     await waitFor('count(".CodeMirror") > 0', 10000);
-    const marks = await T('markLayer("notes")');
+    const marks = await T('markSel("notes", ".CodeMirror")');
 
     test.subHeading('the box: "✕ shows the mounter again", and "A closed layer is hidden, not destroyed"');
     await T('close("notes.txt")');
@@ -133,13 +138,13 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     await T('press("zzFiles/notes.txt")');
     ok(await waitFor('markedShown("notes") > 0', 10000), 'reopening it shows what was there: the same layer, not a new one', 'shown ' + (await T('markedShown("notes")')) + ' of ' + marks);
 
-    test.subHeading('the box: "Each pane keeps its own stack, a tree; one click on the outer ✕ closes it all"');
+    test.subHeading('the box: "One stack; each ✕ goes one step back (Q17)"');
+    await T('close("notes.txt")');
+    ok(await waitFor('rows().indexOf("zzFiles/notes.txt") !== -1') && short(await T('bars()')) === short(['📁 Files']), 'the file\'s ✕ goes one step back, to Files', 'bars: ' + short(await T('bars()')));
     await T('close("Files")');
-    ok(await waitFor('bars().length === 0 && tiles().indexOf("file") !== -1'), 'the outer ✕ closes the file and Files, and the tiles show again', 'bars: ' + short(await T('bars()')) + ', tiles ' + short(await T('tiles()')));
+    ok(await waitFor('bars().length === 0 && tiles().indexOf("file") !== -1'), 'Files\' ✕ goes one more, to the tiles', 'bars: ' + short(await T('bars()')) + ', tiles ' + short(await T('tiles()')));
     await T('press("file")');
-    ok(await waitFor('rows().indexOf("zzFiles") !== -1 || markedShown("notes") > 0', 10000), 'the Files tile opens it again', 'the app: ' + short(await T('text()')));
-    if ((await T('bars()')).length === 2) await T('close("notes.txt")');
-    await waitFor('rows().indexOf("zzFiles") !== -1');
+    ok(await waitFor('rows().indexOf("zzFiles") !== -1', 10000), 'the Files tile opens it again', 'the app: ' + short(await T('text()')));
     await T('type("notes")');
     await sleep(500);
     await T('close("Files")');
@@ -191,8 +196,11 @@ test.startTest('panel.js: what mounts covers its mounter (goal/G43.17)');
     ok(Array.isArray(loaded) && !loaded.length && (await c.evaluate('!(window.spirit.app && window.spirit.app.agent) && !(window.spirit.elements && window.spirit.elements.agent)')), 'after the shell boots again none of it is loaded', 'loaded: ' + short(loaded));
 
     test.subHeading('nothing threw on the page');
-    const thrown = c.heard.slice(0, heardBefore).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; });
-    ok(!thrown.length, 'no uncaught error on the page, up to the Agent switched off', 'thrown: ' + short(thrown));
+    // The Agent is the world here, opened with no agent server on the scratch node; what its own table throws is the Agent's, not
+    // the panel's (its stack in spirit/app/agent/).
+    const thrown = c.heard.slice(0, heardBefore).filter(function (m) { return m.method === 'Runtime.exceptionThrown'; }).map(function (m) { return (m.params.exceptionDetails.exception && m.params.exceptionDetails.exception.description) || m.params.exceptionDetails.text; })
+      .filter(function (t) { return !/^\s+at .*spirit\/app\/agent\//m.test(String(t)); });
+    ok(!thrown.length, 'no uncaught error on the page outside the Agent, up to the Agent switched off', 'thrown: ' + short(thrown));
     await stop(N.child);
   } finally {
     live.forEach(function (x) { try { x.kill(); } catch (e) { /* gone */ } });

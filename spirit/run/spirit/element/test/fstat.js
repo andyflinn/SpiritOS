@@ -84,7 +84,7 @@ function world(o) {
   return w;
 }
 
-test.startTest('fstat.js: a file\'s info, the viewer text and media build on (goal/G43.17)');
+test.startTest('fstat.js: a file\'s info (goal/G43.17)');
 
 (async function () {
   test.subHeading('the box: "It replaces fileViewer, which is renamed and trimmed into it, then deleted, its users naming fstat; mediaViewer goes too (Q7)"');
