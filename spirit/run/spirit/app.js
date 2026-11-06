@@ -54,7 +54,9 @@ function createApp(opts) {
     const s = stateOf(name);
     const asShell = typeof s.shell === 'boolean' ? s.shell : !!(own && own.shell && own.shell.true === true);
     // AN INTRINSIC APP IS ALWAYS ACTIVE (goal/G43.14; Andy, Q1: "intrinsic apps will be always on."), whatever node.json says.
-    return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, shell: asShell, intrinsic: i.intrinsic === true };
+    return { key: name, label: String(s.label || i.label || name), icon: String(s.icon || i.icon || ''), active: i.intrinsic === true || s.active === true, shell: asShell, intrinsic: i.intrinsic === true,
+      // WHETHER IT RUNS ON THE NODE (goal/G43.18, Q6, Andy: "yes."): its <name>.json's node.mount, for the app search's server filter.
+      nodeMount: !!(own && own.node && own.node.mount === true) };
   }
   function names() {
     try {
