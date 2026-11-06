@@ -11,7 +11,7 @@
 // NO AGENTS TALK TO EACH OTHER THROUGH IT (goal/G41.1, Q1; the ruling of 2026-10-02, goal/G3.1, stands): each agent
 // sees itself as the only agent and user of the node.
 //
-//   The right tool, ⚙, is serverDEBUG (goal/G43.15): the DEBUG switch every server has, which the node keeps.
+//   The right tool, ⚙, shows the app's icon and label, then serverDEBUG (goal/G43.15): the DEBUG switch every server has.
 //   THE DATA SET'S TABLES (goal/G41.4; Andy, box v22: "every one of these tables will come with a left-edge icon that
 //   puts up a panel in the left-side tool-display of the workBench UI used in this app"): one left tool per table of
 //   agent.db, each mounting that table's own element, spirit/app/agent/table/<name>/elementTable.js. A row opened from
@@ -49,7 +49,7 @@
   function create(container) {
       var E = (window.spirit && window.spirit.element) || {};
       var gone = false;
-      var serverDebug = null;
+      var serverPanel = null;
 
       // Its whole app area is one workBench, in a box of a stated size (rule/16). THE APP BOOTSTRAPS ITS OWN COMPONENTS
       // (goal/G41.1; Andy: "the shell should not know that. every app needs to bootstrap its own components."): the
@@ -149,11 +149,20 @@
           }, function () { box.textContent = 'The persona table could not be loaded.'; });
         } }]),
         // THE SERVER'S TOOL IS serverDEBUG (goal/G43.15; Andy: "agent will in the server-config, on the right icon strip the ⚙ icon
-        // instead of 🐞, and that panel will show..."): the one DEBUG switch every server has, kept by the node.
+        // instead of 🐞, and that panel will show..."): the one DEBUG switch every server has, kept by the node. Above it the app's
+        // icon and label, as the appSelector's detail shows them (Q4; Andy: "both above the debug thinggie...").
         right: [{ name: 'server', icon: '⚙', title: 'The agent server', mount: function (box) {
-          Promise.resolve(spirit.require('spirit/app/appSelector/serverDEBUG.js')).then(function () {
-            if (!gone) serverDebug = window.spirit.elements.serverDEBUG.create(box, { key: 'agent' });
-          }, function () { box.textContent = 'The DEBUG switch could not be loaded.'; });
+          var A = 'spirit/app/appSelector/';
+          Promise.all([spirit.require(A + 'changeAppIcon.js'), spirit.require(A + 'changeAppLabel.js'), spirit.require(A + 'serverDEBUG.js')]).then(function () {
+            if (gone) return;
+            var hosts = [0, 1, 2].map(function () { var d = document.createElement('div'); box.appendChild(d); return d; });
+            var made = [
+              window.spirit.elements.changeAppIcon.create(hosts[0], { key: 'agent' }),
+              window.spirit.elements.changeAppLabel.create(hosts[1], { key: 'agent' }),
+              window.spirit.elements.serverDEBUG.create(hosts[2], { key: 'agent' }),
+            ];
+            serverPanel = { destroy: function () { made.forEach(function (m) { m.destroy(); }); } };
+          }, function () { box.textContent = 'The server panel could not be loaded.'; });
         } }, { name: 'bundles', icon: '📦', title: 'Bundles', mount: function (box) {
           // goal/G41.21: the shell's bundle editor, loaded when its tool is first shown (rule/26), with the app's api. Its rows
           // open in this centre's tabs (goal/G41.31; Andy: "agent: <bundle-name>."; "if the bundle is not node-owned:
@@ -173,7 +182,7 @@
       return {
         destroy: function () {
           gone = true;
-          if (serverDebug) serverDebug.destroy();
+          if (serverPanel) serverPanel.destroy();
           if (bench && typeof bench.destroy === 'function') bench.destroy();
           container.innerHTML = '';
         },

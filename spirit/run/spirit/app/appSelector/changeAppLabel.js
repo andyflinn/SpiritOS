@@ -1,0 +1,48 @@
+// spirit/run/spirit/app/appSelector/changeAppLabel.js
+// ONE APP'S LABEL, ONE rowForm (goal/G43.15; Andy: "i thought you'd make the changeAppLabel and changeAppIcon form elements as
+// well, in spirit/app/ then i can re-use them as is in the config right side panel of agent", Q4: "yes.").
+//
+//   spirit.elements.changeAppLabel.create(host, { key }) -> { destroy() }
+//
+// Its input holds the row's label in spirit.data.app and follows it while it is not being typed in; Change asks the node,
+// spirit.app.labelApp, and the row the stream then brings redraws it.
+(function () {
+  window.spirit.require('spirit/element/rowForm.js');
+  window.spirit.require('spirit/element/fieldInput.js');
+  window.spirit.cacheManager('app');
+
+  function create(host, options) {
+    var S = window.spirit;
+    var E = S.element;
+    var key = String((options && options.key) || '');
+    var gone = false;
+    function row() { var A = S.data.app && S.data.app.data; return A ? A.rows()[key] || null : null; }
+    var form = E.rowForm.create(host, { icon: '✏️', button: 'Change' });
+    var input = document.createElement('input');
+    input.type = 'text';
+    form.span.appendChild(document.createTextNode('Label '));
+    form.span.appendChild(input);
+    if (E.fieldInput) E.fieldInput.attach(input, 'name');
+    form.button.addEventListener('click', function () {
+      S.ready.then(function (s) { return s.app.labelApp({ key: key, label: input.value }); }).then(null, function () { /* not written: the row stays as the node last said */ });
+    });
+    function paint() {
+      if (gone) return;
+      var r = row();
+      if (r && document.activeElement !== input) input.value = String(r.label || '');
+    }
+    function ask() {
+      S.ready.then(function (s) { return s.app.searchApp({ q: '' }); }).then(function (got) {
+        if (!gone) S.data.seatRows(S.data.app.data.branch, got.items);
+      }, function () { /* the row comes with the stream */ });
+    }
+    var offRow = S.data.app.data.watchApp(key, paint);
+    var offAll = S.data.app.data.watch(function (k) { if (!k) ask(); });
+    if (!row()) ask();
+    paint();
+    return { destroy: function () { gone = true; offRow(); offAll(); host.innerHTML = ''; } };
+  }
+
+  (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  window.spirit.elements.changeAppLabel = { create: create };
+}());
