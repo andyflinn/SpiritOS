@@ -1,4 +1,4 @@
 {
-  "description": "The one table of the IDs this node knows (goal/G40.11): the people and relays its owner keeps, owns, holds or blocked, searched by text (q; empty means everything), as a bounded list of {key: publicKey, label}; a label is the row as JSON, its flags keep, mine, relay, held, blocked and seated, and a relay's url. keep, mine, relay, seated, held and blocked are yes-filters. It also starts one network search across the relays if none is in flight; what it finds lands in the table held, so asking again lists it.",
+  "description": "The one table of the IDs this node knows (goal/G40.11): the people and relays its owner keeps, owns or blocked, searched by text (q; empty means everything), as a bounded list of {key: publicKey, label}; a label is the row as JSON, its flags keep, mine, relay, blocked and seated, and a relay's url. keep, mine, relay, seated and blocked are yes-filters. It also starts one network search across the relays if none is in flight; what it finds streams to the page as the peer-search job and is not stored as listed (goal/G43.17).",
   "parameters": "q is optional; each filter is optional and takes yes."
 }
