@@ -32,6 +32,8 @@
 //                              the relevance above row.label, the row itself in the tooltip; no headers, no sorting
 //   toggle                     true: a button after Search flips pane and tiles, the words kept (goal/G43.9); never on a dropdown
 //   onFace(face)               told the new face, 'pane' or 'tiles', before the list draws
+//   tile(row, key)             optional: { icon, label } of a tile, where the row's own icon and label are not (goal/G43.17,
+//                              Q14: a file's tile shows its kind's icon and its name); either left out is the row's
 //   visible(row)               false holds a row back; asked at every draw
 //   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch; the words
 //                              are matched against the whole row (goal/G41.28), so a list hands no matched()
@@ -330,6 +332,11 @@
           return (!r.isKey || r.flag) && r.path !== 'icon';
         }).map(function (r) { return r.path + ': ' + (r.isKey ? 'true' : r.objectString); }).join('\n');
       }
+      // What a tile shows: what the list hands for it, else the row's own (goal/G43.17, Q14).
+      function tileOf(w) {
+        var t = (typeof o.tile === 'function' ? o.tile(w.row || {}, w.key) : null) || {};
+        return { icon: t.icon != null ? t.icon : w.row && w.row.icon, label: t.label != null ? t.label : w.row && w.row.label };
+      }
       var list = el('list');
       if (!list) return;
       if (snap) list.scrollTop = 0;
@@ -337,8 +344,9 @@
         list.innerHTML = rows.length
           ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:16px;align-content:start">' + rows.map(function (w) {
             var cur = w.key === currentKey;
+            var t = tileOf(w);
             return '<div class="app-icon' + (cur ? ' current' : '') + '" data-key="' + esc(w.key) + '" title="' + esc(tileTip(w.row)) + '"' + (cur ? ' style="background:rgba(255,255,255,0.12)"' : '') + '>' +
-              '<span class="icon">' + iconHtml(w.row && w.row.icon) + '</span>' + tileBar(w) + '<span class="label">' + mark(w.row && w.row.label) + '</span></div>';
+              '<span class="icon">' + iconHtml(t.icon) + '</span>' + tileBar(w) + '<span class="label">' + mark(t.label) + '</span></div>';
           }).join('') + '</div>'
           : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>';
         return;

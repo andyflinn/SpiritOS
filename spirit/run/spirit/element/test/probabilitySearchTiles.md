@@ -23,3 +23,10 @@ Andy, box: *"probabilitySearch gets a third face, 'tiles', beside 'pane' and 'dr
 - *"It tells its owner the new face."*
 
 The box names neither, so the test names them for the builder: the toggle is `.list-toggle`, and the owner hears through the option `onFace(face)`. If the build names them otherwise, the verifier corrects the test.
+
+## What a list hands its tiles (goal/G43.17, Q14)
+
+Andy, on Q14 *"May I change the shared search list, so the Files tiles can show each file's own icon and name?"*: *"yes."*
+
+- The option `tile(row, key)` answers `{ icon, label }` for a tile. Either one left out is the row's own `row.icon` or `row.label`; without the option nothing changes for any other list.
+- The files list hands a file its kind's icon (fstat's `iconOf`), a folder 📁 shut and 📂 open, and the file's name.

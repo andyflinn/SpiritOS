@@ -90,6 +90,12 @@
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
       ],
+      // A FILE'S TILE (goal/G43.17, Q14): its kind's icon, a folder 📁 shut and 📂 open, and its name.
+      tile: function (row, key) {
+        var p = String(key || row.path || '');
+        var icon = row.kind === 'folder' ? (opened[p] ? '📂' : '📁') : (E.fstat ? E.fstat.iconOf(p) : '❔');
+        return { icon: icon, label: p.slice(p.lastIndexOf('/') + 1) };
+      },
       element: function (row, key) { var el = E.fileElement.create(Object.assign({ path: key }, row, { open: !!opened[key] })); made[key] = el; return el; },
       score: function (row, values) { return values.in === 'contents' ? (scores[row.path] || 0) : null; },
       filters: [
