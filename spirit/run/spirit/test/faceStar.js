@@ -167,7 +167,7 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
 
     test.subHeading('box v29: "A star taken off a relay that has a face takes that face away (Q21)"');
     fs.rmSync(savedAt, { force: true }); fs.rmSync(mark, { force: true });
-    const faceName = async function (base) { const g = await home(N.base, 'relay.get', { key: base }); const r = g.body && g.body.relay; return r && r.face ? String(r.face.name || r.face) : ''; };
+    const faceName = async function (base) { const g = await home(N.base, 'relay.get', { key: base }); const r = g.body && g.body.relay; return r && r.face && typeof r.face === 'object' ? String(r.face.name || '') : String((r && r.face) || ''); };
     const before = await faceName(R.base);
     ok(!!before, 'the world: the node holds a face on the relay, ' + before, 'the node holds no face on the relay before the star comes off: nothing judged');
     const off = await home(N.base, 'contact.own', { key: R.relayKey, own: false });
