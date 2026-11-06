@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/contactSelectorPane.js
-// goal/G4.14: the peer pane, and the dropdown that is the same pane, in one shell element, spirit/element/contactSelector.js.
+// goal/G4.14: the peer pane, and the dropdown that is the same pane, in one shell element, spirit/element/search/contact.js.
 // RED on today's tree: contactSelector.js is the browser's own select, text only, with no search box, no status
 // column, no pane face and no current row.
 //
@@ -52,13 +52,13 @@ const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.14: ';
 const OWED10 = 'owed by goal/G4.10: ';
 const OWED29 = 'owed by goal/G29.6: ';
-const FILE = path.join(RUN, 'spirit', 'element', 'contactSelector.js');
+const FILE = path.join(RUN, 'spirit', 'element', 'search', 'contact.js');
 const LIST = path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js');
 const ICON = kernel.core.const.ICON;
 
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
 
-test.startTest('goal/G4.14: the peer pane and its dropdown, one element, spirit/element/contactSelector.js');
+test.startTest('goal/G4.14: the peer pane and its dropdown, one element, spirit/element/search/contact.js');
 
 // A small DOM: built by createElement and appendChild, events that bubble along parentNode, closest() for an
 // attribute or a class. What the shared list writes as html is read back as html (goal/G29.6).

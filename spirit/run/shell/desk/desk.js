@@ -863,7 +863,7 @@ function deskAddGoal() {
 }
 // ── THE LIST, ON THE PROBABILITY SEARCH (goal/G40.12) ─────────────────
 //
-// The element in its pane face (spirit/element/probabilitySearch.js): the search box, the filters in the row above it, its
+// The element in its pane face (spirit/element/search.js): the search box, the filters in the row above it, its
 // one call on the wire. IT IS A VIEW OF THE DESK'S BRANCH OF spirit.data (goal/G41.28), the cache manager's (its data
 // option, deskKept().branch), which every publish keeps current; items.search's answers to the words are seated in it. Each row is a row element
 // (spirit/element/rowElement.js) painting the List's cells (deskRowCellParts); a publish redraws the list, and a row's element
@@ -1233,7 +1233,7 @@ function deskDraw() {
 //   (goal/G6.4)."
 //
 // THE PROBABILITY SEARCH (goal/G40.12, box v7, first set 3: "all searches in desk are of the new probability variety"):
-// the list is spirit/element/probabilitySearch.js over rules.search, ranking as he types with the matched words marked, a type
+// the list is spirit/element/search.js over rules.search, ranking as he types with the matched words marked, a type
 // filter and a status filter beside the words; a row opens ruleDetails. A rule's publish asks it again.
 // The test type since goal/G40.12 (box v7, first set 4), as the desk server's RULE_TYPES.
 var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
@@ -1241,7 +1241,7 @@ var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
 var DESK_RULE_ICON = { proposed: '✏️', active: '🔒', deleted: '💀' };
 var deskRulesNote = '';
 var deskRulesList = null;
-var DESK_SEARCH = '/spirit/element/probabilitySearch.js';
+var DESK_SEARCH = '/spirit/element/search.js';
 function deskRulesSearch() {
   if (deskRulesList) { deskRulesList.refresh(); return; }
   var el = document.getElementById('desk-rule-list');
@@ -1730,7 +1730,7 @@ spirit.shell.activateApp({
             '<input type="text" id="desk-goal-title" placeholder="title"></label>' +
             '<button type="button" id="desk-goal-add">Add</button></div>' +
           // THE LIST IS THE PROBABILITY SEARCH (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
-          // same. That is part of the whole probability search frame work"): spirit/element/probabilitySearch.js in its pane
+          // same. That is part of the whole probability search frame work"): spirit/element/search.js in its pane
           // face over items.search, its toggles the element's filters in the row above the box, each row a row element
           // (deskMountList). The error line above it.
           '<div id="desk-top" class="fill"><div id="desk-list-error"></div><div id="desk-list" class="fill"></div></div></div>' +

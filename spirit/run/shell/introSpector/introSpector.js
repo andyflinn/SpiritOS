@@ -14,7 +14,7 @@
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26: "every shell element loads its own elements dynamically through the
 // fucking apirit.require functionality"): the family selector, the contacts list as its party, and the reply's codeMirror.
-var isParts = Promise.all(['spirit/element/apiFamilySelector.js', 'spirit/element/contact/listElement.js', 'spirit/element/codeMirror.js'].map(function (p) {
+var isParts = Promise.all(['spirit/element/search/api.js', 'spirit/element/search/contact/listElement.js', 'spirit/element/codeMirror.js'].map(function (p) {
   return spirit.require(p);
 }));
 var isApi = null;
@@ -147,7 +147,7 @@ function isMount(api) {
     var party = document.createElement('span');
     line.appendChild(party);
     var branch = window.spirit.element.apiFamilySelector.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
-    // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/contact/listElement.js), the book and this
+    // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/listElement.js), the book and this
     // node's relays; None is self.
     window.spirit.element.contactList.create(party, {
       api: api,

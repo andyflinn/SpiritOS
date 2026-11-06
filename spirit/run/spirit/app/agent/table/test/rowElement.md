@@ -48,7 +48,7 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   `{ op: 'search', text, <field>: <this row's id> }`, and it asks the table the same narrowed search. While that search
   answers no row, the field is hidden (*"The Model field is hidden while the model table holds no model of this
   provider"*); with one, it is shown.
-- **A bundle field: kind `bundle`.** The editor loads `spirit/element/bundleSelector.js` itself and makes a bundle selector in
+- **A bundle field: kind `bundle`.** The editor loads `spirit/element/search/bundle.js` itself and makes a bundle selector in
   the field, in dropdown mode; the bundle picked is saved as the field (`{ op: 'set', id, bundle }`). It lists every
   bundle, whoever owns it (goal/G41.25, Andy: *"so the bundle pickers in the persona and job details will always list ALL
   bundles"*): the selector is mounted for no app server.

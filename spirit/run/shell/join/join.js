@@ -26,7 +26,7 @@ var joinWaiting = false;  // handed something new while he was typing
 // components, "lazy-load, is a tree...."): through spirit.require, and the steps are drawn again once they are in.
 // Its step marks are the icon element (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell
 // elements and apps."), loaded here too.
-var joinParts = Promise.all(['spirit/element/joinForm.js', 'spirit/element/faceForm.js', 'spirit/element/contact/listElement.js', 'spirit/element/icon.js'].map(function (p) { return spirit.require(p); }));
+var joinParts = Promise.all(['spirit/element/joinForm.js', 'spirit/element/faceForm.js', 'spirit/element/search/contact/listElement.js', 'spirit/element/icon.js'].map(function (p) { return spirit.require(p); }));
 joinParts.then(function () { joinShown = ''; joinShow(); }, function () { /* a form missing leaves its step without one */ });
 function joinEl() {
   var w = window.spirit.elements || {};

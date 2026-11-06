@@ -107,7 +107,7 @@ const HANDS = '(function () {' +
   '  bars: function () { return all("button").filter(function (b) { return String(b.textContent).trim() === "✕" && !/clear$/.test(b.id || ""); }).map(function (b) { return String(b.parentElement.innerText || "").replace("✕", "").replace(/\\s+/g, " ").trim(); }); },' +
   '  close: function (label) { var b = all("button").filter(function (b) { return String(b.textContent).trim() === "✕" && !/clear$/.test(b.id || "") && String(b.parentElement.innerText || "").indexOf(label) !== -1; }); if (!b.length) return false; b[b.length - 1].click(); return true; },' +
   '  count: function (sel) { return all(sel).length; },' +
-  // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/probabilitySearch.js).
+  // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search.js).
   '  pickers: function () { return all("button[id$=field]").length; },' +
   '  marked: function () { return all(".text-view-match").map(function (m) { return String(m.textContent); }); },' +
   // The box: "That row is a bubble of the same kind as rowForm uses": rowForm's root is .shell-bubble (spirit/element/rowForm.js).
@@ -117,7 +117,7 @@ const HANDS = '(function () {' +
   '  unsized: function () { var b = box(); b.style.width = "100%"; b.style.height = "100%"; return true; },' +
   // A row in a narrow pane: true when nothing of the bubble holding word goes past its edge or the pane's.
   '  folds: function (word, w) { var b = box(); b.style.width = w + "px"; return new Promise(function (r) { setTimeout(r, 500); }).then(function () { var k = all("button").filter(function (x) { return String(x.textContent).indexOf(word) !== -1; })[0]; var row = k && k.closest(".shell-bubble"); var out = !row ? "no row" : (row.scrollWidth > row.clientWidth + 1 || row.getBoundingClientRect().right > b.getBoundingClientRect().right + 1) ? "past its edge" : "ok"; b.style.width = "100%"; return out; }); },' +
-  // What the list stands at, for a failure line: its words, which "in" is chosen (drawn bold, spirit/element/probabilitySearch.js),
+  // What the list stands at, for a failure line: its words, which "in" is chosen (drawn bold, spirit/element/search.js),
   // and its first rows as they read.
   '  state: function () { var i = all("input[id$=text]")[0]; var on = all("button[data-filter=\\"in\\"]").filter(function (b) { return getComputedStyle(b).fontWeight >= 600; }).map(function (b) { return b.getAttribute("data-value"); }); return { words: i ? i.value : null, in: on, first: all("tr[data-key]").slice(0, 4).map(function (t) { return t.getAttribute("data-key") + " | " + String(t.innerText).replace(/\\s+/g, " ").slice(0, 60); }) }; },' +
   '  order: function (words) { var t = window.__t.text(); return words.map(function (w) { return t.indexOf(w); }); },' +
@@ -145,8 +145,8 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
   const mine = filesUnder(APP).filter(function (f) { return /\.js$/.test(f) && f.split(path.sep).indexOf('test') === -1; });
   const old = mine.filter(function (f) { return /shell\/|spirit\.shell\b|\.shell\./.test(code(f)); }).map(function (f) { return path.relative(RUN, f); });
   ok(mine.length > 0 && !old.length, 'no script of spirit/app/file/ names the old shell or a shell/ path', 'naming it: ' + short(old));
-  ok(/spirit\/element\/files\/listElement\.js/.test(code(path.join(APP, 'file.js'))) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'files', 'listElement.js')),
-    'file.js draws with the shared list, spirit/element/files/listElement.js, which stays where it is', 'file.js does not load spirit/element/files/listElement.js');
+  ok(/spirit\/element\/files\/listElement\.js/.test(code(path.join(APP, 'file.js'))) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'file.js')),
+    'file.js draws with the shared list, spirit/element/search/file.js, which stays where it is', 'file.js does not load spirit/element/search/file.js');
 
   const s = scratch();
   const live = [];

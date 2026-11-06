@@ -6,7 +6,7 @@
 // don't fill the second tab yet". So two inner tabs: Reds, and Items, empty for now, saying so.
 //
 // FALLOUT TALKS TO DESKVERIFY ONLY (goal/G29.5; Andy, 2026-10-17: "correct. fallout talks to deskVerify only."). Its
-// Reds list is the probability search (spirit/element/probabilitySearch.js; goal/G40.12: "all searches in desk are of the new
+// Reds list is the probability search (spirit/element/search.js; goal/G40.12: "all searches in desk are of the new
 // probability variety"), over deskVerify's own search verb and stream; the pane keeps no cache, no wire slot, no timer and no ranking of its
 // own: the list does all of that the same way everywhere. Desk hands the pane its own call (ctx.verb) and stream
 // (ctx.onPublished); they are the list's api. THE SUMMARY GOES THROUGH THE LIST'S ONE SLOT (list.ask): Andy, on
@@ -18,7 +18,7 @@
 (function () {
   var win = typeof window !== 'undefined' ? window : {};
   var held = (win.spirit = win.spirit || {}).deskPlugins = win.spirit.deskPlugins || {};
-  var LIST_SCRIPT = '/spirit/element/probabilitySearch.js';
+  var LIST_SCRIPT = '/spirit/element/search.js';
   var ctx = null;
   var inner = 'reds';
   var list = null;

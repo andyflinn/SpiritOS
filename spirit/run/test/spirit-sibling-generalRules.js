@@ -276,8 +276,8 @@ const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(
 // left out, holds a pictograph (Unicode Extended_Pictographic) alone in a string or alone between two tags, or that
 // paints icons it is handed (named below, read by hand), loads spirit/element/icon.js. A glyph among words is text. Each is
 // its own check, named by its path.
-const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/contact.js', 'spirit/element/icons/listElement.js',
-  'spirit/element/icons/rowElement.js', 'spirit/element/iconSelector.js', 'spirit/element/workBench.js'];
+const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/contact.js', 'spirit/element/search/icon/listElement.js',
+  'spirit/element/search/icon/rowElement.js', 'spirit/element/search/icon.js', 'spirit/element/workBench.js'];
 // A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
 const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]*)+\s*(['"`]|<)/u;
 // A glyph alone in a string that is drawn only among words, read by hand: a status or a mark put before a name
@@ -285,7 +285,7 @@ const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u
 const TEXT_ONLY = {
   'shell/jobsDetails/jobsDetails.js': 'its status glyph is drawn before the job\'s type and its status word',
   'spirit/element/contactDetails/contactDetails.js': 'its blocked and held marks are drawn before the person\'s name',
-  'spirit/element/contact/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
+  'spirit/element/search/contact/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
 };
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
@@ -351,7 +351,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
   // THE WHOLE ROW, NEVER A FEW FIELDS (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and
   // search the whole row, as cached in spirit.data."): no app or element hands a search a matched(row) of its own; the
   // search element itself matches the whole row.
-  if (rel !== 'spirit/element/probabilitySearch.js') {
+  if (rel !== 'spirit/element/search.js') {
     test.subHeading(NAMED + ': ' + 'its searches match the whole row');
     const src = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
     ok(!/\bmatched\s*:/.test(src), 'it hands no search a matched() of its own', 'it hands a search matched(), a few fields in place of the whole row');
@@ -552,7 +552,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"): a marked row written into each spirit.data path it watches must change
     // its box. A watch that redraws nothing is not listening.
     let probed = JSON.parse(await page.evaluate('Promise.resolve(window.spiritWatch && window.spiritWatch.probe ? window.spiritWatch.probe() : []).then(function (x) { return JSON.stringify(x); })'));
-    // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (spirit/element/probabilitySearch.js, setOpen: "opened, ... draw()"): while
+    // A CLOSED DROPDOWN DRAWS ITS LIST WHEN IT OPENS (spirit/element/search.js, setOpen: "opened, ... draw()"): while
     // nothing it watches has redrawn, each closed dropdown on the page is opened in turn, what it watches written again,
     // and shut. A path that redrew in any of them redrew.
     const DROPDOWNS = 'Array.prototype.filter.call(window.spiritMount.box.querySelectorAll("button[id$=field]"), function (b) { var p = document.getElementById(b.id.replace(/field$/, "popup")); return p && p.hidden && b.getClientRects().length; })';
@@ -597,7 +597,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // ONE EXCEPTION, DEFERRED, AND STILL RED (Andy, the box: "the only exception is introspector, deferred for network-scope
     // design reasons."): the probability search keeps rows of its own for introSpector's selectors over another node, so
     // its own page, mounted bare, still makes one. The red names the deferral; it is not met, so it is not green.
-    const DEFERRED = rel === 'spirit/element/probabilitySearch.js' || rel === 'shell/introSpector/introSpector.js' ? ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
+    const DEFERRED = rel === 'spirit/element/search.js' || rel === 'shell/introSpector/introSpector.js' ? ' (introSpector\'s deferral, the box: "the only exception is introspector, deferred for network-scope design reasons.")' : '';
     if (!made.length) unjudged('it makes no search');
     else ok(!off.length, 'its ' + made.length + ' searches are each made with a spirit.data branch, no rows of their own', off.length + ' not from spirit.data: ' + short(off.map(function (x) { return (x.verb || 'a search') + (x.data ? '' : ' with no data branch') + (x.rows ? ' fed by its own rows()' : ''); })) + DEFERRED);
     // "and draws only rows that branch holds": every row a search shows, after its tools and buttons are pressed, is a

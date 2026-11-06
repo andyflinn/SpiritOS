@@ -1,6 +1,6 @@
 // spirit/run/spirit/app/appSelector.js
 // ONE ELEMENT: the app selector (goal/G43.2; Andy, box: "the face part of this api will be an probabilitySearch
-// derivative"), following spirit/element/bundleSelector.js. Its contract and its test: ./test/appSelector.md and
+// derivative"), following spirit/element/search/bundle.js. Its contract and its test: ./test/appSelector.md and
 // ./test/appSelector.js.
 //
 // A THIN SELECTOR OVER ITS OWN LIST, ./appSelector/listElement.js, WHICH IT LOADS ITSELF (rule/26).
@@ -101,7 +101,7 @@
       if (stack) stack.close();
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.all([window.spirit.require('spirit/app/appSelector/listElement.js'), window.spirit.require('spirit/app/appSelector/detailElement.js'), window.spirit.require('spirit/element/panel.js')]).then(function () {
+    Promise.all([window.spirit.require('spirit/element/search/app.js'), window.spirit.require('spirit/app/appSelector/detailElement.js'), window.spirit.require('spirit/element/panel.js')]).then(function () {
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
       stack = window.spirit.elements.panel.create(root, listBox);

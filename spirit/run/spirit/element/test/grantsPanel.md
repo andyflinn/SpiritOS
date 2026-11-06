@@ -24,8 +24,8 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 
 ## Requirements
 
-- It loads what it uses itself (rule/26): `spirit/element/contactSelector.js`, `spirit/element/bundleSelector.js`,
-  `spirit/element/apiFamilySelector.js` and `spirit/element/grantSelector/listElement.js`; no data script.
+- It loads what it uses itself (rule/26): `spirit/element/search/contact.js`, `spirit/element/search/bundle.js`,
+  `spirit/element/search/api.js` and `spirit/element/search/grant.js`; no data script.
 - It names no grants table and no ID table: no auth grant verb, no agent verb, no loopback location, no branch. The
   node's bundles are the one dictionary both kinds of grant are made from, so reading a bundle's branches
   (`auth.branch`) is its own.

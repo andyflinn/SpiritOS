@@ -120,7 +120,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
     } };
-    if (p === 'spirit/element/bundleSelector.js') global.window.spirit.element.bundleSelector = { create: function (c, opts) {
+    if (p === 'spirit/element/search/bundle.js') global.window.spirit.element.bundleSelector = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;
@@ -298,7 +298,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
     const win = { window: null, spirit: { get element() { return this.elements; }, elements: {} }, console: console };
     win.window = win;
     vm.createContext(win);
-    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/probabilitySearch.js'].forEach(function (rel) {
+    ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/search.js'].forEach(function (rel) {
       vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), win, { filename: rel });
     });
     return win.spirit.element.probabilitySearch;
@@ -444,14 +444,14 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   const r4 = E.agentRow.create(ed4, { api: {}, table: 'job', id: 'KJ', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
   await settle(); await settle();
   const bsel = w.bundles[w.bundles.length - 1];
-  ok(w.required.indexOf('spirit/element/bundleSelector.js') !== -1, 'it loads the bundle selector itself (rule/26)', 'required: ' + short(w.required));
+  ok(w.required.indexOf('spirit/element/search/bundle.js') !== -1, 'it loads the bundle selector itself (rule/26)', 'required: ' + short(w.required));
   // Andy: "why would the bundle picker show "bundle 2" for it's selection instead of the fucking label?": the field says
   // the bundle by its label, as the node has it (auth.bundle get: 7 is Reader).
   const bundleSays = bsel ? String((bsel.row && bsel.row.label) || bsel.opts.placeholder || '') : '';
   ok(/Reader/.test(bundleSays) && !/bundle\s*7/i.test(bundleSays), 'the bundle field shows the job\'s bundle by its label: ' + bundleSays, 'the bundle field shows ' + JSON.stringify(bundleSays) + ' for bundle 7, Reader');
   ok(!!bsel && bsel.container === the(ed4, 'bundle') && bsel.opts.face !== 'pane', 'a bundle selector is made in the bundle field, in dropdown mode', 'bundle selectors: ' + short(w.bundles.map(function (b) { return { face: b.opts.face, here: b.container === the(ed4, 'bundle') }; })));
   // goal/G41.25, Andy, box: "so the bundle pickers in the persona and job details will always list ALL bundles": the
-  // selector is mounted for no app server (spirit/element/bundleSelector.js, options.family).
+  // selector is mounted for no app server (spirit/element/search/bundle.js, options.family).
   ok(!!bsel && (bsel.opts.family === undefined || bsel.opts.family === ''), 'the bundle field lists every bundle: its selector is mounted for no app server', 'opts: ' + short(bsel && bsel.opts));
   if (bsel) {
     w.calls.length = 0;

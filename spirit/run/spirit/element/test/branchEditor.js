@@ -55,8 +55,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     } }; },
     'spirit/element/armingButton.js': function (E) { E.armingButton = { attach: function (b, o) { armed.push({ button: b, o: o }); return b; } }; },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
-    'spirit/element/apiFamilySelector.js': function (E) { E.apiFamilySelector = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; f.value = ''; families.push(f); c.appendChild(f); return f; } }; },
-    'spirit/element/branchSelector.js': function (E) { E.branchSelector = { create: function (c, o) { const b = node('branches'); b.o = o || {}; b.container = c; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); c.appendChild(b); return b; } }; },
+    'spirit/element/search/api.js': function (E) { E.apiFamilySelector = { create: function (c, o) { const f = node('family'); f.o = o || {}; f.container = c; f.family = ''; f.verb = ''; f.value = ''; families.push(f); c.appendChild(f); return f; } }; },
+    'spirit/element/search/branch.js': function (E) { E.branchSelector = { create: function (c, o) { const b = node('branches'); b.o = o || {}; b.container = c; b.refreshed = 0; b.refresh = function () { b.refreshed += 1; }; branchSels.push(b); c.appendChild(b); return b; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
@@ -71,7 +71,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const E = global.window.spirit.element;
 
   test.subHeading('it loads what it uses itself (rule/26)');
-  ok(['spirit/element/apiFamilySelector.js', 'spirit/element/branchSelector.js'].every(function (p) { return required.indexOf(p) !== -1; }),
+  ok(['spirit/element/search/api.js', 'spirit/element/search/branch.js'].every(function (p) { return required.indexOf(p) !== -1; }),
     'it requires the family selector and the branch selector through spirit.require', 'required: ' + short(required));
   ok(E.branchEditor && typeof E.branchEditor.create === 'function' && E.branchEditor.open === undefined, 'it registers spirit.element.branchEditor.create, and no page of its own (goal/G41.32)', 'elements: ' + short(Object.keys(E.branchEditor || {})));
   if (!E.branchEditor || typeof E.branchEditor.create !== 'function') return;

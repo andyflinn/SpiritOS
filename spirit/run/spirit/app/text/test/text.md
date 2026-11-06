@@ -4,7 +4,7 @@ For goal/G43.17, whose box builds it first: *"Four elements: file, fstat, text a
 
 ## Requirements
 
-- `spirit/app/text/text.js` is there, names neither the old shell nor a `shell/` path, and loads `spirit/element/files/listElement.js`.
+- `spirit/app/text/text.js` is there, names neither the old shell nor a `shell/` path, and loads `spirit/element/search/file.js`.
 - `spirit.elements.text.create(container)` answers `{ destroy }`; mounted with no file it shows the file picker, the files list as a dropdown; destroy leaves its container empty.
 - The picker sits in a bubble of the kind rowForm uses, `.shell-bubble`; in a pane 120px wide that row folds, nothing past its edge (*"Rows are inline, not boxes: they fold when the width gets smaller"*).
 - Its title bar, opened from its tile with no file picked, is the one bar in view and reads ✏️, then "Text Editor" (Q15).

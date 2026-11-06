@@ -178,7 +178,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!((o && o.buttons) || []).some(function (b2) { return b2 && b2.label === 'provider models'; }), 'the list is handed no provider models button', 'buttons: ' + short(o && o.buttons));
   ok(!fs.existsSync(path.join(DIR, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.js')) && !fs.existsSync(path.join(__dirname, 'updatePanel.md')), 'the Update model list pane is gone: model/updatePanel.js and its test', 'still there: ' + short(['updatePanel.js', 'test/updatePanel.js', 'test/updatePanel.md'].filter(function (f) { return fs.existsSync(path.join(DIR, f)); })));
   ok(made.required.indexOf('spirit/app/agent/table/model/updatePanel.js') === -1 && !E.modelUpdate, 'and nothing loads it', 'required: ' + short(made.required));
-  ok(made.required.indexOf('spirit/element/probabilitySearch.js') !== -1 && made.required.indexOf('spirit/element/busyButton.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1,
+  ok(made.required.indexOf('spirit/element/search.js') !== -1 && made.required.indexOf('spirit/element/busyButton.js') !== -1 && made.required.indexOf('spirit/element/rowForm.js') !== -1,
     'it loads what the form uses itself (rule/26): the search element, the busyButton and the rowForm', 'required: ' + short(made.required));
   // goal/G41.27, Andy: "agent: left panel. \n\n[❓] [Pick a provider ▾] [Ask]": the form is a rowForm, ❓, the
   // providerSelector:dropdown in its span, Ask its button; the word from at its start goes, as new and grant did.

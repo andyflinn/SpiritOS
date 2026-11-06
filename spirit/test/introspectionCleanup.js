@@ -206,7 +206,7 @@ async function main() {
     const idx = (global.window && global.window.spirit && global.window.spirit.apiTreeIndex) || require('../run/spirit/client/apiTreeIndex.js');
     listed = idx.servers({ fs: { stat: {} }, jobs: { authGrant: {} }, desk: { items: {} } });
   } catch (e) { listed = { threw: e.message }; }
-  const picker = code('spirit/element/appServerSelector.js');
+  const picker = code('spirit/element/search/api.js');
   if (Array.isArray(listed) && listed.join(',') === 'desk,fs,jobs' && /\.tree\(\)/.test(picker))
     test.check('the picker lists every family of the flat table, the node\'s (fs, jobs) beside the apps\' (desk)');
   else test.fail(OWED + 'the picker lists ' + short(listed));

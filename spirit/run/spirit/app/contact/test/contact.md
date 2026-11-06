@@ -8,7 +8,7 @@ Andy: *"the new contact app will be exactly the same as the old, merely placed w
 
 ### The renames
 
-- `spirit/element/contacts/` is gone, and `spirit/element/contact/` holds `listElement.js` and `rowElement.js`. No code names the old folder.
+- `spirit/element/contacts/` is gone, and `spirit/element/search/contact/` holds `listElement.js` and `rowElement.js`. No code names the old folder.
 - `shell/contacts/` is gone, and `spirit/app/contact/contact.js` is there. No code names `shell/contacts`.
 - `contact.json`: icon 🤩, label Contacts, intrinsic true, `shell.mount` true, `node.mount` false.
 

@@ -530,7 +530,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   else test.fail('on a page spirit.js does not load the cache: spirit.data is ' + short(cq.spirit.data && Object.keys(cq.spirit.data)));
   // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the file tree's meaning is the files row element's, which
   // loads with a files element (rule/26); spirit.js loads the cache and no data script.
-  if (!/data\.js/.test(JSON.stringify(cq.fetched).replace(/data\.js/g, ''))) test.check('on a page spirit.js loads no data script with the cache: no spirit/element/files/data.js (goal/G41.16)');
+  if (!/data\.js/.test(JSON.stringify(cq.fetched).replace(/data\.js/g, ''))) test.check('on a page spirit.js loads no data script with the cache: no spirit/element/search/file/data.js (goal/G41.16)');
   else test.fail('on a page spirit.js still loads a data script: ' + short(cq.fetched.map(function (f) { return f.url; }).filter(function (u) { return /data\.js/.test(u) && !/data/.test(u); })));
   // goal/G41.19, Andy: no preloading elements: the cache alone; an element comes with whoever draws with it.
   const preloaded = cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/data\.js/.test(u) && /shell\//.test(u); });

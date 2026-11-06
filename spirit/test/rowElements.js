@@ -52,7 +52,7 @@ const spirit = { core: {
 window.spirit = spirit;
 const ctx = vm.createContext({ window: window, spirit: spirit, console: console, Promise: Promise, document: { addEventListener: function () {} } });
 const loaded = {};
-['spirit/fieldRules.js', 'spirit/element/rowElement.js', 'spirit/element/files/rowElement.js', 'spirit/element/contact/rowElement.js'].forEach(function (rel) {
+['spirit/fieldRules.js', 'spirit/element/rowElement.js', 'spirit/element/search/file/rowElement.js', 'spirit/element/search/contact/rowElement.js'].forEach(function (rel) {
   try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
   catch (e) { loaded[rel] = e.message; }
 });

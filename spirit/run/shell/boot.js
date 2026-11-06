@@ -790,7 +790,7 @@
       // element, which the home's app list reads.
       // And the jobs family's cache manager, the jobs boot reads (goal/G41.28).
       var parts = function () {
-        return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/files/rowElement.js'), window.spirit.cacheManager('jobs')]); })
+        return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.cacheManager('jobs')]); })
           .then(null, function () { /* without them the home lists no apps; the files app says why */ });
       };
       return Promise.resolve(window.spirit.start()).then(parts, parts);

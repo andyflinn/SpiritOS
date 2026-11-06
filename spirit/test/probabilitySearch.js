@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/probabilitySearch.js
-// goal/G30.17: spirit/element/probabilitySearch.js, the standard shell list-tool. Red on today's tree; claude-windows writes it
+// goal/G30.17: spirit/element/search.js, the standard shell list-tool. Red on today's tree; claude-windows writes it
 // and builds it (one agent). The box, in short:
 //   - Taken from shell/shared/js/listSearch.js: rows kept by key in one unbounded probability bucket, a later answer
 //     replacing a row with the same key; ranking as you type (probabilityStringObjectMatch times every filter's test),
@@ -40,7 +40,7 @@ test.startTest('goal/G30.17: probabilitySearch, the standard shell list-tool');
 const window = test.withSpirit({ 'spirit.elements': {} });
 const ctx = vm.createContext({ window: window, console: console, document: { addEventListener: function () {} } });
 const loaded = {};
-['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/probabilitySearch.js'].forEach(function (rel) {
+['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/search.js'].forEach(function (rel) {
   try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
   catch (e) { loaded[rel] = e.message; }
 });
@@ -79,7 +79,7 @@ if (keys(plain) === 'abcde' && keys(bySizeUp) === 'dbeac' && keys(bySizeDown) ==
 else test.fail(OWED + 'plain ' + keys(plain) + ', size up ' + keys(bySizeUp) + ', size down ' + keys(bySizeDown) + ', name ' + keys(byName) + ', changed ' + keys(byDate) + ', files only ' + keys(filesOnly));
 
 test.subHeading('3. the element, by its code');
-const ps = code('spirit/element/probabilitySearch.js');
+const ps = code('spirit/element/search.js');
 const checks = {
   ownFile: !!ps,
   bucket: /createProbabilityBucket\(Infinity\)/.test(ps),

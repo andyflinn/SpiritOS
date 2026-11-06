@@ -165,7 +165,7 @@ function run(handler, body) {
   const missing = Object.keys(uses).filter(function (k) { return !uses[k]; });
   if (app && !missing.length) test.check('the app: self through the apiDoor, peers and relays by peerPost, the existing selectors, a CodeMirror reply, no jobs');
   else test.fail(OWED + 'the app lacks ' + short(missing));
-  if (/options\.tree/.test(code('spirit/element/appServerSelector.js'))) test.check('appServerSelector takes options.tree, so it lists the chosen party\'s tree');
+  if (/options\.tree/.test(code('spirit/element/search/api.js'))) test.check('appServerSelector takes options.tree, so it lists the chosen party\'s tree');
   else test.fail(OWED + 'appServerSelector reads only this node\'s tree');
   if (/probabilityBucket|createProbabilityBucket/.test(code('shell/shared/js/listSearch.js'))) test.check('the dropdowns cache search results in the list search\'s probability bucket');
   else test.fail(OWED + 'the list search keeps no probability bucket');

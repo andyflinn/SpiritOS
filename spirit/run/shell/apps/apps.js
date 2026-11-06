@@ -1,5 +1,5 @@
 // Apps (goal/G30.21): every app of this node, a mountable wrapper over the standard list-tool
-// (spirit/element/probabilitySearch.js) as a view of data.files, the Files cache: nothing of its own is kept or asked for the
+// (spirit/element/search.js) as a view of data.files, the Files cache: nothing of its own is kept or asked for the
 // list. An app is a <name>/<name>.js under shell/ or process/js/ with its <name>/<name>.json beside it, two types,
 // shell and process; only the .js is a row. A press opens the app's detail panel, the editor of its face annotation
 // space: the face part of the .js sidecar (app, intrinsic, name, icon, description), read with fs.annotations. Its
@@ -98,7 +98,7 @@ function appsPanelDraw(host, api, path) {
         ' · intrinsic: ' + (face.intrinsic === true ? 'yes, its code is core' : 'no') + '</div>' +
       '<div data-apps="installer"></div>' +
       '<label class="field-label">Name <input type="text" data-face="name" value="' + appsEsc(face.name || manifest.name || '') + '"' + dis + '></label>' +
-      // THE ICON IS THE GLYPH ITSELF (goal/G30.21), picked from the icons list (spirit/element/icons/listElement.js).
+      // THE ICON IS THE GLYPH ITSELF (goal/G30.21), picked from the icons list (spirit/element/search/icon/listElement.js).
       '<label class="field-label">Icon <span data-apps="icon-shown" style="font-size:1.3em"></span> <span data-apps="icon-pick"></span>' +
         '<input type="hidden" data-face="icon" value="' + appsEsc(face.icon || '') + '"></label>' +
       '<label class="field-label">Description <input type="text" data-face="description" value="' + appsEsc(face.description || manifest.description || '') + '"' + dis + '></label>' +
@@ -144,8 +144,8 @@ function appsPanelDraw(host, api, path) {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var appsParts = Promise.all(['spirit/element/files/rowElement.js', 'spirit/element/probabilitySearch.js', 'spirit/element/fieldInput.js',
-  'spirit/element/icons/listElement.js', 'spirit/element/appInstaller.js', 'spirit/element/icon.js'].map(function (p) { return spirit.require(p); })
+var appsParts = Promise.all(['spirit/element/search/file/rowElement.js', 'spirit/element/search.js', 'spirit/element/fieldInput.js',
+  'spirit/element/search/icon/listElement.js', 'spirit/element/appInstaller.js', 'spirit/element/icon.js'].map(function (p) { return spirit.require(p); })
   .concat([spirit.cacheManager('fs')]));
 
 spirit.shell.activateApp({

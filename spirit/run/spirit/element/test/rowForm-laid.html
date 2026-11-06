@@ -16,7 +16,7 @@
 // stated widths, and a probabilitySearch beside them, and what the browser makes of them, measured. Opened by
 // ./rowForm.js at /DEBUG/spirit/element/test/rowForm-laid.html.
 window.laid = function () {
-  return Promise.all([spirit.require('spirit/element/rowForm.js').catch(function () { return null; }), spirit.require('spirit/element/probabilitySearch.js').catch(function () { return null; })]).then(function () {
+  return Promise.all([spirit.require('spirit/element/rowForm.js').catch(function () { return null; }), spirit.require('spirit/element/search.js').catch(function () { return null; })]).then(function () {
     var R = (spirit.element || {}).rowForm;
     var out = { made: !!R && typeof R.create === 'function' };
     if (!out.made) return JSON.stringify(out);

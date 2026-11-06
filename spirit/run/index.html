@@ -93,7 +93,7 @@
          element (goal/G2.14). Each adds itself to window.spirit.elements; the
          shell hands them to apps as api.ui.elements. Before the shell, and
          the app-server selector before the api-branch one built from it. -->
-    <script src="/spirit/element/iconSelector.js"></script>
+    <script src="/spirit/element/search/icon.js"></script>
     <script src="/spirit/element/appHeader/appHeader.js"></script>
     <script src="/spirit/element/contactLabel.js"></script>
     <script src="/spirit/element/joinForm.js"></script>
@@ -101,27 +101,27 @@
     <script src="/spirit/element/joinSteps.js"></script>
     <!-- The shared progress bar (goal/G29.14), handed to apps as api.ui.element.progressBar. -->
     <script src="/spirit/element/progressBar.js"></script>
-    <script src="/spirit/element/contactSelector.js"></script>
-    <script src="/spirit/element/appServerSelector.js"></script>
-    <script src="/spirit/element/apiFamilySelector.js"></script>
+    <script src="/spirit/element/search/contact.js"></script>
+    <script src="/spirit/element/search/api.js"></script>
+    <script src="/spirit/element/search/api.js"></script>
     <!-- The faceless layer (goal/G30.16): one data tree mirroring the node, before every element that reads it; the
          shared row base and the standard list-tool (goal/G30.17, G30.18). -->
     <script src="/spirit/data.js"></script>
     <script src="/spirit/element/rowElement.js"></script>
-    <script src="/spirit/element/probabilitySearch.js"></script>
+    <script src="/spirit/element/search.js"></script>
     <!-- The viewers (goal/G30.16): the frame both share, fstat since goal/G43.17, then text, and media from its new app (old may
          require new, never the reverse). -->
     <script src="/spirit/element/fstat.js"></script>
     <script src="/spirit/element/textViewer.js"></script>
     <script src="/spirit/app/media/media.js"></script>
     <!-- One folder per object type (goal/G30.20): its row, which takes its type's stream (goal/G41.16), and its drop-in list. -->
-    <script src="/spirit/element/files/rowElement.js"></script>
-    <script src="/spirit/element/files/listElement.js"></script>
-    <script src="/spirit/element/contact/rowElement.js"></script>
-    <script src="/spirit/element/contact/listElement.js"></script>
+    <script src="/spirit/element/search/file/rowElement.js"></script>
+    <script src="/spirit/element/search/file.js"></script>
+    <script src="/spirit/element/search/contact/rowElement.js"></script>
+    <script src="/spirit/element/search/contact/listElement.js"></script>
     <!-- Icons (goal/G30.21): a row and a list, no translator: the set is one file. -->
-    <script src="/spirit/element/icons/rowElement.js"></script>
-    <script src="/spirit/element/icons/listElement.js"></script>
+    <script src="/spirit/element/search/icon/rowElement.js"></script>
+    <script src="/spirit/element/search/icon/listElement.js"></script>
     <!-- An input stops at its field rule's limit as it is typed (goal/G32.2). -->
     <script src="/spirit/element/fieldInput.js"></script>
     <script src="/spirit/client/shell.js"></script>

@@ -7,7 +7,7 @@ with Load and written with Save. It writes the same files on a face as in the ol
 ## Requirements
 
 - It mounts through `spirit.shell.activateApp({ mount(container, api, params), loadFile(path) })`.
-- **It loads what it uses itself** (goal/G41.3), through `spirit.require`: `spirit/element/files/listElement.js` and
+- **It loads what it uses itself** (goal/G41.3), through `spirit.require`: `spirit/element/search/file.js` and
   `spirit/element/codeMirror.js`, and takes them from `window.spirit.elements`. Never the old shell's `api.ui.elements`, never
   `createTextView` (`textView.js` is gone).
 - **Its comments speak of today's shells**: nothing of it names `index.html` or `discoverDynamicApps`.

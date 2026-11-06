@@ -21,7 +21,7 @@
 //     but this node and its relays), face (the face name kept on that relay's row), faceUrl. refresh publishes the job
 //     when the facts changed, and answers whether it did. server.js refreshes it after a relay, contact or peer verb.
 //   - spirit.element.joinSteps = { fromJob(data, opened), current(steps, facts), done(step, facts) }.
-//   - spirit.element.contactList (spirit/element/contact/listElement.js; peerFind until goal/G30.19) and spirit.element.faceForm
+//   - spirit.element.contactList (spirit/element/search/contact/listElement.js; peerFind until goal/G30.19) and spirit.element.faceForm
 //     (spirit/element/faceForm.js).
 //   - The Join app keeps the opened link as its own override: setAppOverride('shell/join', { faceOpened: true }).
 // rule/11: through testSupport only; its own scratch folders.
@@ -142,9 +142,9 @@ const info = code('shell/info/info.js');
 const joinApp = code('shell/join/join.js');
 // SINCE goal/G30.19 Find someone is Contacts' one list, contactSearch: contact.search (the book, the shadow, the
 // network), Add by peer.acquire on its contactElement rows.
-const contactSearch = element('spirit/element/contact/listElement.js', 'contactList');
+const contactSearch = element('spirit/element/search/contact/listElement.js', 'contactList');
 const faceForm = element('spirit/element/faceForm.js', 'faceForm');
-if (contactSearch && typeof contactSearch.create === 'function' && /\.contact\.search\(/.test(code('spirit/element/contact/listElement.js')) && /\.peer\.acquire\(/.test(code('spirit/element/contact/rowElement.js'))
+if (contactSearch && typeof contactSearch.create === 'function' && /\.contact\.search\(/.test(code('spirit/element/search/contact/listElement.js')) && /\.peer\.acquire\(/.test(code('spirit/element/search/contact/rowElement.js'))
     && /spirit\.element\.contactList/.test(contacts) && /spirit\.element\.contactList/.test(joinApp)
     && !/function contactsSeenSource|function contactsSeenCells|function contactsAskCard|function contactsSeenAdd/.test(contacts))
   test.check('Find someone is the one list, contactSearch (contact.search, Add by peer.acquire); Contacts and the Join app draw it, Contacts keeps no copy');

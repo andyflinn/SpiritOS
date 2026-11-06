@@ -188,7 +188,7 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   const src = fs.readFileSync(FILE, 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   if (!/o\.press\b/.test(src)) test.check('the list takes details and pick; the old press is gone');
   else test.fail(OWED + 'listSearch.js still calls o.press');
-  const sel = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'contactSelector.js'), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
+  const sel = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact.js'), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   if (/mode:/.test(sel) && !/contact-selector-field/.test(sel) && !/font-weight:bold/.test(sel)) test.check('contactSelector passes the mode; its own dropdown button and bold name are gone');
   else test.fail(OWED + 'contactSelector still holds its own dropdown or bold name');
   const fallout = fs.readFileSync(path.join(RUN, 'shell', 'desk', 'plugins', 'fallout', 'fallout.js'), 'utf8');

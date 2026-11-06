@@ -68,7 +68,7 @@ test.startTest(NAME + '.js: with no file it shows the file picker (goal/G43.17)'
     test.subHeading('the box: "without one they show it"');
     const made = await c.evaluate('(function () { var b = document.createElement("div"); b.id = "zzBox"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;flex-direction:column"; document.body.appendChild(b); return spirit.require("spirit/app/' + NAME + '/' + NAME + '.js").then(function () { var E = (spirit.elements || {})[' + JSON.stringify(NAME) + ']; if (!E || typeof E.create !== "function") return "no spirit.elements.' + NAME + '.create"; window.__m = E.create(b); return window.__m && typeof window.__m.destroy === "function" ? "ok" : "create answered " + typeof window.__m; }, function (e) { return "load: " + e; }); }())');
     ok(made === 'ok', 'spirit.elements.' + NAME + '.create(container) answers { destroy }', NAME + ': ' + short(made));
-    // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/probabilitySearch.js).
+    // A file picker is the files list as a dropdown (G43.16's box): its field, a button (spirit/element/search.js).
     const picker = await until(function () { return c.evaluate('Array.prototype.some.call(document.querySelectorAll("#zzBox button[id$=field]"), function (b) { return b.getClientRects().length > 0; })'); }, 10000);
     ok(!!picker, 'mounted with no file, it shows the file picker', 'the box: ' + short(await c.evaluate('(document.getElementById("zzBox") || {}).innerText || ""')));
     // The box: "That row is a bubble of the same kind as rowForm uses": rowForm's root is .shell-bubble (spirit/element/rowForm.js).

@@ -36,7 +36,7 @@ var jobsRowIndex = null;
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the list, the shared row and icon elements, the progress bar, and the
 // jobs family's cache manager.
-var jobsParts = Promise.all(['spirit/element/probabilitySearch.js', 'spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/progressBar.js']
+var jobsParts = Promise.all(['spirit/element/search.js', 'spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/progressBar.js']
   .map(function (p) { return spirit.require(p); }).concat([spirit.cacheManager('jobs')]));
 
 function jobsName(job) { return String(job.module || job.type || job.kind || job.id); }

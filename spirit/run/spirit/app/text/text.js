@@ -18,7 +18,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26). fstat for reading a file only.
-  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/rowForm.js'), S.require('spirit/element/files/listElement.js'),
+  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/rowForm.js'), S.require('spirit/element/search/file.js'),
     S.require('spirit/element/codeMirror.js'), S.cacheManager('fs')]);
 
   function create(container, opts) {

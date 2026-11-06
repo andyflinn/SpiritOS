@@ -6,7 +6,7 @@
 //   THE STREAM: the watcher's updates each carry the stat, size and modified, for every create and change; a delete
 //   carries none. The first load is the same commands. The shell holds every path, its kind and its stat.
 //   FILES ON THE SHARED LIST: the file selector this suite drove was deleted by goal/G30.20; the files list element
-//   (spirit/element/files/listElement.js) took its place, asserted by listElements.js.
+//   (spirit/element/search/file.js) took its place, asserted by listElements.js.
 //   THE DROPDOWN: its field stands inline like any input control; only the pane pops up under it.
 //   THE NODE'S fs.search: stays, on the node's own tree; words ranked by the probability modules, best first; the
 //   patterns (* and ?) go.

@@ -7,7 +7,7 @@
 // Its icon and label, the same row element a list row is, so nothing has to keep the two in sync (G30.18), and its
 // (de)activate button (goal/G43.9, Q2: "in the detail as well.").
 (function () {
-  window.spirit.require('spirit/app/appSelector/rowElement.js');
+  window.spirit.require('spirit/element/search/app/rowElement.js');
   window.spirit.require('spirit/element/appInstaller.js');
   // goal/G43.15: the switches are elements of their own, each hiding itself where it does not apply.
   window.spirit.require('spirit/app/appSelector/rowFormAppActive.js');

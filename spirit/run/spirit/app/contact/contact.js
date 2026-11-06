@@ -88,7 +88,7 @@ var CONTACTS_UNKNOWN_LABELS = {
   },
 };
 
-// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, spirit/element/contact/listElement.js,
+// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, spirit/element/search/contact/listElement.js,
 // which Join draws too. Its rows are contactElements and keep themselves current; this app paints no presence. The
 // book's contactSelector pane and the Find someone on the network fold (peerFind) stood here and are deleted.
 var contactsList = null;
@@ -260,7 +260,7 @@ function contactsPaintUnknown() {
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, the list bringing its own. goal/G41.23: its rows' marks are icons (Andy: "this element will
 // replace icons painting all shell elements and apps."), so the icon element comes with the list.
-var contactsParts = Promise.all([spirit.require('spirit/element/contact/listElement.js'), spirit.require('spirit/element/icon.js')]);
+var contactsParts = Promise.all([spirit.require('spirit/element/search/contact/listElement.js'), spirit.require('spirit/element/icon.js')]);
 
 function contactCreate(container) {
     var gone = false;

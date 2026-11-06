@@ -10,7 +10,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/valued.js'), S.cacheManager('jobs')]);
+  var parts = Promise.all([S.require('spirit/element/search/valued.js'), S.cacheManager('jobs')]);
   var COLUMNS = [
     { field: 'group', label: 'Group', sort: 'text' },
     { field: 'name', label: 'Name', sort: 'text' },

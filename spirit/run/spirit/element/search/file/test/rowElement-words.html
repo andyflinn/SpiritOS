@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+</head>
+<body>
+<div id="rows"></div>
+<script src="/spirit.js"></script>
+<script>
+// goal/G43.4 (Andy: "display folders and path elements in a bright green if their names match a reserved word AND the browsers
+// spirit object contains the corresponding javascript Object at that path.", "display folders and path elements in a bright red
+// if folders and the browser spirit object disagree.", "the colors will follow word.json changes live."): real file rows on a
+// scratch node, and the colour of each path element as the browser computes it. Opened by ./rowElement.js at
+// /DEBUG/spirit/element/search/file/test/rowElement-words.html.
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+var made = {};
+function colourOf(el) {
+  var m = /rgba?\((\d+), (\d+), (\d+)/.exec(getComputedStyle(el).color);
+  if (!m) return 'none';
+  var r = +m[1], g = +m[2], b = +m[3];
+  return g >= 180 && r <= 120 && b <= 120 ? 'green' : r >= 200 && g <= 90 && b <= 90 ? 'red' : 'none';
+}
+// Each path element of a row: the innermost element whose text is that element, its slash aside.
+function read(host, parts) {
+  var out = {};
+  var leaves = Array.prototype.filter.call(host.querySelectorAll('*'), function (e) { return !e.children.length; });
+  parts.forEach(function (part) {
+    var hit = leaves.filter(function (e) { return e.textContent.replace(/\//g, '').trim() === part; })[0];
+    out[part] = hit ? colourOf(hit) : 'no element';
+  });
+  return out;
+}
+window.ready = function () {
+  return Promise.resolve(spirit.start()).then(function () { return spirit.require('spirit/element/search/file/rowElement.js'); }).then(function () { return wait(800); }).then(function () { return 'ready'; });
+};
+window.row = function (p, kind) {
+  var host = made[p];
+  if (!host) {
+    host = made[p] = document.getElementById('rows').appendChild(document.createElement('div'));
+    window.spirit.element.fileElement.create({ path: p, kind: kind || 'folder' }).mount({ name: host });
+  }
+  return wait(1500).then(function () { return JSON.stringify(read(host, p.split('/'))); });
+};
+window.setObject = function (on) { if (on) window.spirit.app.thing = {}; else delete window.spirit.app.thing; };
+window.fresh = function (p) { var h = made[p]; if (h) { h.remove(); delete made[p]; } };
+</script>
+</body>
+</html>

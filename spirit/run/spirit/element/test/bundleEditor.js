@@ -57,7 +57,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     } }; },
     'spirit/element/fieldInput.js': function () { vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'fieldInput.js'), 'utf8'), { filename: 'fieldInput.js' }); },
     // The shell's element shape (goal/G41.19): create(container, options) appends the control and answers it.
-    'spirit/element/bundleSelector.js': function (E) { E.bundleSelector = { create: function (c, o) { const s = node('bundles'); s.o = o || {}; s.container = c; s.refreshed = 0; s.destroyed = 0; s.refresh = function () { s.refreshed += 1; }; s.destroy = function () { s.destroyed += 1; }; sels.push(s); c.appendChild(s); return s; } }; },
+    'spirit/element/search/bundle.js': function (E) { E.bundleSelector = { create: function (c, o) { const s = node('bundles'); s.o = o || {}; s.container = c; s.refreshed = 0; s.destroyed = 0; s.refresh = function () { s.refreshed += 1; }; s.destroy = function () { s.destroyed += 1; }; sels.push(s); c.appendChild(s); return s; } }; },
   };
   global.Event = function (type, o) { this.type = type; this.bubbles = !!(o && o.bubbles); };
   global.document = { createElement: function (t) { return node(t); }, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; } };
@@ -89,7 +89,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const E = global.window.spirit.element;
 
   test.subHeading('it loads what it uses itself (rule/26)');
-  ok(['spirit/element/fieldInput.js', 'spirit/element/bundleSelector.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires the field input and the bundle selector through spirit.require', 'required: ' + short(required));
+  ok(['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires the field input and the bundle selector through spirit.require', 'required: ' + short(required));
   ok(managers.indexOf('auth') !== -1, 'it loads the auth family\'s cache manager, whose bundles it adds to (goal/G41.28)', 'managers: ' + short(managers));
   ok(E.bundleEditor && typeof E.bundleEditor.create === 'function', 'it registers spirit.element.bundleEditor.create', 'elements: ' + short(Object.keys(E)));
   if (!E.bundleEditor || typeof E.bundleEditor.create !== 'function') return;

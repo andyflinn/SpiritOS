@@ -7,7 +7,7 @@
 // shows me a table of test items that match the search term."
 //
 // IT ADDS NO VERB TO THE DESK (goal/G29.5; Andy: "correct. fallout talks to deskVerify only."). Its tab asks this
-// node's deskVerify search itself, through the probability search (spirit/element/probabilitySearch.js); the wrapper verbs it held
+// node's deskVerify search itself, through the probability search (spirit/element/search.js); the wrapper verbs it held
 // here, fallout.reds, fallout.summary and fallout.history, are deleted. The plugin stays for its goal and its tab.
 
 module.exports = function () {

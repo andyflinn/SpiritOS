@@ -92,7 +92,7 @@ function walk(dir, out) {
   else test.fail(OWED + 'the owner door still calls the node verb table alone');
 
   test.subHeading('4. the shell asks the flat door');
-  if (/\.tree\(\)/.test(code('spirit/element/appServerSelector.js'))) test.check('appServerSelector reads the tree with the verb api, through the spirit object (spirit.tree, goal/G32.2)');
+  if (/\.tree\(\)/.test(code('spirit/element/search/api.js'))) test.check('appServerSelector reads the tree with the verb api, through the spirit object (spirit.tree, goal/G32.2)');
   else test.fail(OWED + 'appServerSelector does not ask api');
   const deskApp = code('shell/desk/desk.js');
   if (deskApp && /\.verb\(\s*'desk\.'\s*\+|verb\('desk\.'/.test(deskApp)) test.check('the desk app calls desk verbs by name (desk.<verb>)');

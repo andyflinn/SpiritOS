@@ -11,7 +11,7 @@ opens. So the editor names no description and no api-branch selector.
 - **It adds node-owned bundles alone** (goal/G41.32; Andy: *"A user can only create, change and delete node-owned bundles and
   branches, and sees the others read-only"*, which overturns mounting it for an app server, goal/G41.25).
 
-- It loads what it uses itself (rule/26): `spirit/element/fieldInput.js` and `spirit/element/bundleSelector.js`, and the auth
+- It loads what it uses itself (rule/26): `spirit/element/fieldInput.js` and `spirit/element/search/bundle.js`, and the auth
   family's cache manager (`spirit.cacheManager('auth')`, goal/G41.28), whose bundles it adds to.
 - It registers `spirit.element.bundleEditor.create(container, opts)`, which answers `{ destroy }`. Drawn, it asks the
   node nothing.
@@ -30,7 +30,7 @@ opens. So the editor names no description and no api-branch selector.
   - refused, the node's words are said in the panel and the label stays in the input.
 - Below it, filling the space left (a `fill` box, shell.css): `bundleSelector.create(its box, …)` (the shell's element
   shape, goal/G41.19), a pane, columns `label` and `owner` (goal/G41.25: the owner *"right after the bundles label"*), its labels shown only (goal/G41.26: *"the Label should now just be an output"*; no `editable`). What a row does is the row element's
-  (`spirit/element/bundleSelector/rowElement.js`).
+  (`spirit/element/search/bundle/rowElement.js`).
 - `destroy()` empties its box, lets its watch on `spirit.data.auth.data.bundles` go and lets its bundle pane go.
 
 ## What its test must try to break

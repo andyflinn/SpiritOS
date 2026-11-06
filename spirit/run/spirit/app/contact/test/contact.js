@@ -61,9 +61,9 @@ function stop(c) { return new Promise(function (r) { if (!c || c.exitCode !== nu
 test.startTest('contact.js: Contacts in spirit/app/contact/, as Andy sees it (goal/G43.14)');
 
 (async function () {
-  test.subHeading('the box: "the folder spirit/element/contacts/ needs to be renamed spirit/element/contact/"');
+  test.subHeading('the box: "the folder spirit/element/contacts/ needs to be renamed spirit/element/search/contact/"');
   ok(!fs.existsSync(path.join(RUN, 'spirit', 'element', 'contacts')), 'spirit/element/contacts/ is gone', 'spirit/element/contacts/ is still there');
-  ok(['listElement.js', 'rowElement.js'].every(function (f) { return fs.existsSync(path.join(RUN, 'spirit', 'element', 'contact', f)); }), 'spirit/element/contact/ holds listElement.js and rowElement.js', 'spirit/element/contact/ lacks one of them');
+  ok(['listElement.js', 'rowElement.js'].every(function (f) { return fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', f)); }), 'spirit/element/search/contact/ holds listElement.js and rowElement.js', 'spirit/element/search/contact/ lacks one of them');
   const oldElement = codeNaming(/spirit\/element\/contacts\//);
   ok(!oldElement.length, 'no code names spirit/element/contacts/', 'naming it: ' + short(oldElement));
 

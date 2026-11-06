@@ -11,7 +11,7 @@ Andy: *"file should be the same as files is. i don't want to loose all the nice 
 - `shell/files/` is gone and no code names `shell/files`; `spirit/app/file/file.js` is there.
 - `file.json`: icon 📁, label Files, intrinsic true, `shell.mount` and `shell.tile` true, `node.mount` false, no server.
 - New never requires old: no script of `spirit/app/file/` names the old shell or a `shell/` path.
-- The list of files stays where every app shares it (Q8): `file.js` draws with `spirit/element/files/listElement.js`.
+- The list of files stays where every app shares it (Q8): `file.js` draws with `spirit/element/search/file.js`.
 - `spirit.elements.file.create(container)` draws into it and answers `{ destroy }`; destroy leaves it empty.
 
 ### What Files has today

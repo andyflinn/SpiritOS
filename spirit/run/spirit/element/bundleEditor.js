@@ -13,7 +13,7 @@
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require; and the auth family's cache manager, whose
   // bundles it adds to (goal/G41.28).
-  var parts = Promise.all(['spirit/element/fieldInput.js', 'spirit/element/bundleSelector.js', 'spirit/element/rowForm.js'].map(function (p) {
+  var parts = Promise.all(['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js', 'spirit/element/rowForm.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
   }).concat([window.spirit.cacheManager('auth')]));
   // The label's rule, the one definition both sides use (js/fieldRules.js).

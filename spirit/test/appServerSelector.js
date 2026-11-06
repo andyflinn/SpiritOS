@@ -48,7 +48,7 @@ if (/<script src="\/spirit\/client\/apiTreeIndex\.js"><\/script>/.test(html)) te
 else test.fail(OWED + 'index.html does not load /spirit/client/apiTreeIndex.js');
 const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
 // The factories moved to spirit/element/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
-const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'spirit', 'element', 'appServerSelector.js'), 'utf8');
+const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'spirit', 'element', 'search', 'api.js'), 'utf8');
 const at = elements.indexOf('function createAppServerSelector');
 const handed = /elements:\s*\{[^}]*createAppServerSelector:\s*shellElements\.createAppServerSelector/.test(shell);
 let body = '';
@@ -59,7 +59,7 @@ if (at !== -1) {
     if (elements[i] === '}') { depth--; if (depth === 0) { body = elements.slice(at, i + 1); break; } }
   }
 }
-if (at !== -1 && handed) test.check('spirit/element/appServerSelector.js defines createAppServerSelector and shell.js hands it to apps under api.ui.elements');
+if (at !== -1 && handed) test.check('spirit/element/search/api.js defines createAppServerSelector and shell.js hands it to apps under api.ui.elements');
 else test.fail(OWED + 'appServerSelector.js: createAppServerSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
 if (body && /\.tree\(\)/.test(body) && /spirit\.apiTreeIndex\.servers/.test(body) && /\bvalue\b/.test(body) && /change/.test(body)) {
   test.check('it asks the verb api (the flat apiDoor), lists spirit.apiTreeIndex.servers, and carries value and a change event');

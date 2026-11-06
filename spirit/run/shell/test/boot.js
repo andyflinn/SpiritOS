@@ -138,7 +138,7 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
       return p === 'shell.css' || /^spirit\/[\w.-]+\.js$/.test(p) || /^spirit\/client\/[\w.-]+\.js$/.test(p) || p === 'shell/seal.js' || p === 'shell/boot.js' ||
         /^shell\/login\//.test(p) || /^shell\/join\//.test(p) || p === 'shell/navigationWrapper.js' || p === 'spirit/element/joinSteps.js' ||
         // goal/G41.19: the home lists its apps from the file tree, so boot loads the tree's row element; spirit.js no longer does.
-        p === 'spirit/element/files/rowElement.js' ||
+        p === 'spirit/element/search/file/rowElement.js' ||
         // goal/G41.23 (Andy, goal/G41.21: "this element will replace icons painting all shell elements and apps."): the
         // home paints its app tiles' icons through the icon element.
         p === 'spirit/element/icon.js';

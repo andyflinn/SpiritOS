@@ -1,6 +1,6 @@
 // Icons (goal/G30.21): this app's own icon set, relay-state/shell/icons/iconSet.json (below), each key a glyph (the icon itself,
 // never a key into a table) and its value the keywords it is found by. A mountable wrapper over the icons list
-// (spirit/element/icons/listElement.js) as a pane. A press opens the icon: its keywords edited, or the icon removed; a glyph
+// (spirit/element/search/icon/listElement.js) as a pane. A press opens the icon: its keywords edited, or the icon removed; a glyph
 // added at the top. Every change writes the whole set at once (fs.save), and every icons list on the page reads it
 // again from the Files cache's word that it changed.
 //
@@ -89,7 +89,7 @@ function iconsPanelDraw(host, page, api, row, glyph) {
 
 // WHAT IT USES, IT LOADS ITSELF (goal/G41.3; Andy: every app bootstraps its own components, "lazy-load, is a tree...."):
 // through spirit.require, each element bringing its own.
-var iconsParts = Promise.all(['spirit/element/icons/listElement.js', 'spirit/element/fieldInput.js', 'spirit/element/icon.js', 'spirit/element/rowForm.js'].map(function (p) { return spirit.require(p); }));
+var iconsParts = Promise.all(['spirit/element/search/icon/listElement.js', 'spirit/element/fieldInput.js', 'spirit/element/icon.js', 'spirit/element/rowForm.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {

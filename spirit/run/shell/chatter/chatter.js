@@ -375,7 +375,7 @@ function chApplyStyle() {
 
 // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the contact selector (its peer pane) and the contact label, before it
 // mounts, so no shell has to have put them on the page.
-var chElements = Promise.all(['spirit/element/contactSelector.js', 'spirit/element/contactLabel.js'].map(function (p) { return spirit.require(p); }));
+var chElements = Promise.all(['spirit/element/search/contact.js', 'spirit/element/contactLabel.js'].map(function (p) { return spirit.require(p); }));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
@@ -566,7 +566,7 @@ function chMount(container, api) {
         actions: [],
       });
     }
-    Promise.all([spirit.require('spirit/element/probabilitySearch.js'), spirit.require('spirit/element/rowElement.js'), spirit.cacheManager('chatClerver')]).then(function () {
+    Promise.all([spirit.require('spirit/element/search.js'), spirit.require('spirit/element/rowElement.js'), spirit.cacheManager('chatClerver')]).then(function () {
       var C = chData();
       if (!C) return;
       chSearch = window.spirit.element.probabilitySearch.create(chEl('ch-search'), {

@@ -16,7 +16,7 @@ Andy, on G41.18:
 
 rule/16: every probabilitySearch is mounted in a box of class `fill`, inside a pane that fills its app. The search
 element's own pane already holds the filters and the search row at their height and gives the list the rest
-(`spirit/element/probabilitySearch.js`). What it needs is that its box, and every box above it, states its size. This suite
+(`spirit/element/search.js`). What it needs is that its box, and every box above it, states its size. This suite
 asks that of the app as a whole, the way Desk's does (`shell/desk/test/desk.md`, goal/G41.11).
 
 ## Requirements
@@ -25,7 +25,7 @@ asks that of the app as a whole, the way Desk's does (`shell/desk/test/desk.md`,
 - Shown by its strip button, the list pane of each tool stands in a `fill` box, and so does every box from it up to the
   app:
   - provider, model, persona and job: the table's list (`spirit/app/agent/table/tableElement.js`);
-  - grant: the grants panel's grant list (`spirit/element/grantsPanel.js`, `spirit/element/grantSelector/listElement.js`).
+  - grant: the grants panel's grant list (`spirit/element/grantsPanel.js`, `spirit/element/search/grant.js`).
 - Every list pane the app drew, five at least, meets the same rule. A list drawn as a dropdown stands inline, as every
   picker in the tree does, and is not asked.
 

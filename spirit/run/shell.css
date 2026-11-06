@@ -673,7 +673,7 @@ select option { background: var(--shell-pane); color: #eee; }
 .icon-selector-row:hover,
 .icon-selector-row.is-active { background: var(--shell-accent); }
 
-/* The contact selector (spirit/element/contactSelector.js) draws through the
+/* The contact selector (spirit/element/search/contact.js) draws through the
    shared list (shell/shared/js/listSearch.js), which lays out its own
    field, pane and popup. A dropdown stands inline like any input control;
    only its pane pops up (goal/G29.8). */

@@ -62,7 +62,7 @@ test.subHeading('3. Natter searches');
 const contactsList = code('spirit/app/contact/contact.js');
 // The list of peers seen was the shell element peerFind (goal/G30.1, box v39); since goal/G30.19 it is Contacts' one
 // list, contactSearch, on the standard list-tool.
-const finder = code('spirit/element/contact/listElement.js');
+const finder = code('spirit/element/search/contact/listElement.js');
 if (/spirit\.element.contactList\.create\(/.test(contactsList) && /spirit\.element\.probabilitySearch\.create\(/.test(finder) && !natterApp())
   test.check('relays are searched in Contacts\' one list, on the standard list-tool');
 else test.fail(OWED + 'relays are not searched through the shared list');
@@ -152,7 +152,7 @@ else test.fail(OWED + 'an added relay in the shadow: ' + short(added));
 if (/relay: row\.relay/.test((/function buildPeople[\s\S]*?\n\}/.exec(hub) || [''])[0]) && !/function fromMemory\(|function strangerLabel\(/.test(hub))
   test.check('the search\'s rows carry relay in their label, one shape for every row');
 else test.fail(OWED + 'the search\'s rows carry no relay flag');
-const contactRow = code('spirit/element/contact/rowElement.js');
+const contactRow = code('spirit/element/search/contact/rowElement.js');
 if (/value: 'relay', word: 'relays'/.test(finder) && /callDialog\('shell\/natterDetails'/.test(contactRow)) test.check('Contacts\' one list has a relay filter, and a relay row opens natterDetails');
 else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to natterDetails');
 
@@ -164,7 +164,7 @@ else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to n
 // relay filter in the contacs search": the book's list (the contact selector) shows this node's relays beside the
 // book, with a relay filter, and a relay row opens natterDetails.
 test.subHeading('6b. relays in the contact list');
-const selector = code('spirit/element/contactSelector.js');
+const selector = code('spirit/element/search/contact.js');
 // Andy, 2026-10-20: "Gimme 3 Buttons: [all] [⭐ my puppets] [relays] where all 3 are mutually exclusive": one filter,
 // one row of choices, all first; a kind is offered when the list holds any.
 if (/name: 'show'/.test(selector) && /value: 'relay', word: 'relays'/.test(selector) && /value: 'owned'/.test(selector) && !/name: 'owned'|name: 'relay'/.test(selector))
@@ -172,7 +172,7 @@ if (/name: 'show'/.test(selector) && /value: 'relay', word: 'relays'/.test(selec
 else test.fail(OWED + 'the contact selector has no relay filter, or still two all buttons');
 // Since goal/G40.11 Contacts' one list asks contact.search alone, relays among its rows (relay.search went), and a
 // relay row's element opens natterDetails.
-const contactsCode = code('spirit/element/contact/listElement.js');
+const contactsCode = code('spirit/element/search/contact/listElement.js');
 if (/function search\(args\)[\s\S]{0,600}\.contact\.search\(/.test(contactsCode) && !/\.relay\.search\(/.test(contactsCode) && /relay \? \[[\s\S]{0,300}shell\/natterDetails/.test(contactRow))
   test.check('the contact list lists this node\'s relays (contact.search) and a relay row opens natterDetails');
 else test.fail(OWED + 'the contact list shows no relays, or a relay row opens no natterDetails');

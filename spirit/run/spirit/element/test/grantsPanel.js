@@ -103,8 +103,8 @@ function world() {
       return Promise.resolve({ status: 200, body: {} });
     },
   };
-  const FILES = { 'spirit/element/bundleSelector.js': ['bundleSelector'], 'spirit/element/contactSelector.js': ['contactSelector'],
-    'spirit/element/apiFamilySelector.js': ['apiFamilySelector'], 'spirit/element/grantSelector/listElement.js': ['grantList'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'] };
+  const FILES = { 'spirit/element/search/bundle.js': ['bundleSelector'], 'spirit/element/search/contact.js': ['contactSelector'],
+    'spirit/element/search/api.js': ['apiFamilySelector'], 'spirit/element/search/grant.js': ['grantList'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'] };
   const page = {};
   const win = {
     // The page knows its node: spirit.data files nothing before it does (goal/G41.28, Q10).
@@ -143,7 +143,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const E = w.page;
 
   test.subHeading('a shell element that loads what it uses itself (rule/26), and knows no table');
-  ['spirit/element/contactSelector.js', 'spirit/element/bundleSelector.js', 'spirit/element/apiFamilySelector.js', 'spirit/element/grantSelector/listElement.js'].forEach(function (p) {
+  ['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js', 'spirit/element/search/grant.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
   ok(!w.required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script', 'required: ' + short(w.required));

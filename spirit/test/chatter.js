@@ -299,7 +299,7 @@ function mount(opts) {
     new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
   load(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'));
-  load(path.join(RUN, 'spirit', 'element', 'contactSelector.js'));
+  load(path.join(RUN, 'spirit', 'element', 'search', 'contact.js'));
   load(path.join(RUN, 'spirit', 'element', 'contactLabel.js'));
   // Watched, not replaced: what chatter builds with is recorded, and the real element answers.
   const selectors = [];

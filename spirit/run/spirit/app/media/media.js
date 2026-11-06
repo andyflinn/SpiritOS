@@ -20,7 +20,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/files/listElement.js'), S.require('spirit/element/icon.js')]);
+  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/search/file.js'), S.require('spirit/element/icon.js')]);
 
   function tagFor(kind) { return kind === 'audio' ? 'audio' : kind === 'video' ? 'video' : 'img'; }
 

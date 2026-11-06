@@ -23,7 +23,7 @@ test.subHeading('what was core before goal/G41.29');
 each(['spirit/run/face.html', 'spirit/run/shell/boot.js', 'spirit/run/shell/seal.js', 'spirit/run/shell/face.css', 'spirit/run/shell/favicon.svg'], true, 'the face\'s boot');
 each(['spirit/run/shell/login/login.js', 'spirit/run/shell/login/login.json', 'spirit/run/shell/join/join.json'], true, 'login and join, whole');
 each(['spirit/run/shell/apps/apps.json', 'spirit/run/process/js/fileServer/fileServer.json', 'spirit/run/shell/desk/desk.json'], false, 'a manifest is never core');
-each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/contactSelector.js', 'spirit/run/shell/json/x.json', 'spirit/run/test/testReport.js'], true, 'the core folders');
+each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/search/contact.js', 'spirit/run/shell/json/x.json', 'spirit/run/test/testReport.js'], true, 'the core folders');
 // goal/G41.30, the review's H5: what index.html loads on every boot.
 each(['spirit/run/spirit/element/codeMirror/lib/codemirror.js', 'spirit/run/spirit/element/codeMirror/lib/codemirror.css', 'spirit/run/spirit/element/progressBar.js'], true, 'loaded by index.html on every boot');
 // Andy: "no \"core\" files should reside in shell/shared/ since that folder was meant to be a place where non-intrinsic

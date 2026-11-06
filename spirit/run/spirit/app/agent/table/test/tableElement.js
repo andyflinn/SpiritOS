@@ -118,7 +118,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
       button.addEventListener('click', function () { if (!a.armed) { a.armed = true; return; } a.armed = false; if (typeof a.opts.run === 'function') a.opts.run(); });
       return button;
     } };
-    if (p === 'spirit/element/bundleSelector.js') global.window.spirit.element.bundleSelector = { create: function (c, opts) {
+    if (p === 'spirit/element/search/bundle.js') global.window.spirit.element.bundleSelector = { create: function (c, opts) {
       const sel = { value: '', row: null, opts: opts || {}, container: c, heard: {}, addEventListener: function (type, fn) { (sel.heard[type] = sel.heard[type] || []).push(fn); },
         refresh: function () {}, destroy: function () { sel.destroyed = true; } };
       w.bundles.push(sel); c.appendChild(sel); return sel;

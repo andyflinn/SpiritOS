@@ -127,8 +127,8 @@ function page() {
   const load = function (rel, names) { new Function('spirit', 'document', 'window', 'Event', fs.readFileSync(path.join(RUN, rel), 'utf8'))(sp, p.doc, win, Event); };
   try {
     new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(p.doc, win);
-    load('spirit/element/contactSelector.js');
-    load('spirit/element/appServerSelector.js');
+    load('spirit/element/search/contact.js');
+    load('spirit/element/search/api.js');
     load('spirit/element/apiBranchSelector.js');
     load('shell/grants/grants.js');
   } catch (e) { test.fail(OWED + 'the page did not load: ' + (e && e.message || e)); }
@@ -229,7 +229,7 @@ function page() {
   else test.fail(OWED + 'the contact dropdown\'s None: ' + short(noneTr || cList.slice(0, 200)) + ' (cells before it ' + before + ')');
   if (cHost && cPre) cHost.dispatchEvent({ type: 'click', target: p.doc.getElementById(cPre + 'field') });
   await settle();
-  const selSrc = code(path.join(RUN, 'spirit', 'element', 'appServerSelector.js')) + code(path.join(RUN, 'spirit', 'element', 'contactSelector.js'));
+  const selSrc = code(path.join(RUN, 'spirit', 'element', 'search', 'api.js')) + code(path.join(RUN, 'spirit', 'element', 'search', 'contact.js'));
   if (!/unshift\(\s*\{\s*key:\s*''/.test(selSrc)) test.check('the selectors no longer smuggle the none-row in as a row of their own');
   else test.fail(OWED + 'a selector still unshifts its own all row');
   const contactRoot = line && line.children[0];

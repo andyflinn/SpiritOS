@@ -1,0 +1,220 @@
+// spirit/run/spirit/element/search/icon.js
+// ONE SHELL ELEMENT: the icon selector, a factory apps build their screens with.
+//
+//   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
+//   so one file per element, each adding itself to window.spirit.element,
+//   which the shell hands to apps at mount as api.ui.element.
+//
+// Loaded by index.html before the shell, on the globals every shell script
+// has (spirit, document, window.spirit.apiTreeIndex)
+// and nothing inside shell.js. Its root element is the control: it carries
+// .value and fires one bubbling `change` when the value is set.
+
+(function () {
+  var escapeHtml = spirit.escapeHtml;
+  // ITS GLYPHS ARE THE ICON ELEMENT (goal/G41.23; Andy, goal/G41.21: "this element will replace icons painting all shell
+  // elements and apps."): spirit/element/icon.js through the one loader, as this file runs. Each glyph that stands alone is made
+  // by icon.create and handed on as its markup, since the field and the rows are painted as text; plain text until then.
+  var iconReady = typeof spirit.require === 'function' ? Promise.resolve(spirit.require('spirit/element/icon.js')).then(null, function () {}) : Promise.resolve();
+  function iconHtml(glyph) {
+    var I = window.spirit.element && window.spirit.element.icon;
+    if (!I || typeof I.create !== 'function') return escapeHtml(glyph);
+    var hold = document.createElement('span');
+    I.create(hold, { glyph: glyph });
+    return hold.innerHTML;
+  }
+
+  // A dropdown for choosing one icon out of the ICON pool, offered to
+  // apps as api.ui.element.iconSelector.create(container, options).
+  //
+  // `excludeGlyphs` is an array of GLYPHS already spoken for. Glyphs, not
+  // keys: what makes two apps collide is the picture they paint, and
+  // aliases mean one picture answers to several names — Contacts and
+  // Groups both showed 👥 while holding different keys. Striking a name
+  // would leave its aliases to carry the collision back in.
+  //
+  // Every line is the glyph followed by every name it is keyed under
+  // ("❌  Delete, Error, No"), which is Andy's format and the reason this
+  // is not a native <select>: native type-ahead matches a prefix of the
+  // whole option text, and with the glyph in front, the only typeable
+  // prefix would have been the emoji. Owning the widget buys a filter
+  // that reads every name on every line instead — `del` finds ❌ through
+  // an alias that is not even at the head of its line. The cost is that
+  // arrow keys, Enter, Escape and click-outside are ours now.
+  //
+  // The value is the GLYPH, not the key, because the one consumer today
+  // is setAppOverride, which stores a literal glyph in
+  // preferences.appOverrides. A manifest names its icon as the glyph too
+  // (goal/G41.1: no icon table on the face).
+  //
+  // The root element is the control: it carries .value, it fires a
+  // bubbling `change` when a row is picked, and the caller may set an id
+  // and data-* on it. So a panel that used to delegate on an <input> keeps
+  // working with no change to its handler.
+  function createIconSelector(excludeGlyphs, options) {
+    options = options || {};
+    // A ROW ANSWERS A WORD when any of its keywords holds it, or the word is the glyph (goal/G41.1: its own match, the
+    // icon set's keywords; no icon table).
+    function matches(c, text) {
+      var w = String(text || '').trim().toLowerCase();
+      if (!w) return true;
+      return c.glyph === w || c.keys.some(function (k) { return String(k).toLowerCase().indexOf(w) !== -1; });
+    }
+    // WHAT IT OFFERS IS THE SYSTEM SET (goal/G43.11; Andy: "run://spirit/iconSet.json IS the system set now."): each glyph with
+    // the keywords it is found by, the constant the icons list holds (spirit/element/search/icon/listElement.js), so the page
+    // reads the file once. The rows drawn when it is there.
+    var choices = [];
+    var excludedGlyph = Object.create(null);
+    (excludeGlyphs || []).forEach(function (g) { if (g) excludedGlyph[g] = true; });
+    Promise.resolve().then(function () { return spirit.require('spirit/element/search/icon/listElement.js'); }).then(function () { return window.spirit.element.iconList.set(); }).then(function (set) {
+      choices = Object.keys(set).filter(function (g) { return g && !excludedGlyph[g]; }).map(function (g) {
+        var keys = Array.isArray(set[g]) ? set[g].map(String) : [];
+        return { glyph: g, key: keys[0] || '', keys: keys, label: keys.join(', ') };
+      });
+      visible = choices;
+      paintField();
+      if (!list.hidden) paintRows();
+    }, function () { /* no set: the field still shows its glyph */ });
+
+    var root = document.createElement('div');
+    root.className = 'icon-selector';
+
+    var value = options.value || '';
+    var activeIndex = -1;
+    var visible = choices;
+
+    // The current glyph is shown even when it is not on the list — a
+    // shipped default need not be an ICON member (Relay Chat's manifest
+    // carries a literal ☀️ that resolves to 📄), and a field that blanked
+    // itself rather than showing what is actually set would be lying.
+    function labelFor(glyph) {
+      var found = choices.filter(function (c) { return c.glyph === glyph; })[0];
+      return found ? found.label : '';
+    }
+
+    function paintField() {
+      field.innerHTML =
+        '<span class="icon-selector-glyph">' + iconHtml(value) + '</span>' +
+        '<span class="icon-selector-name">' + escapeHtml(labelFor(value)) + '</span>' +
+        '<span class="icon-selector-caret">' + iconHtml('🔽') + '</span>';
+    }
+
+    function paintRows() {
+      visible = choices.filter(function (c) { return matches(c, filter.value); });
+      rows.innerHTML = visible.map(function (c, i) {
+        return '<button type="button" class="icon-selector-row' +
+          (i === activeIndex ? ' is-active' : '') +
+          '" data-glyph="' + escapeHtml(c.glyph) + '">' +
+          '<span class="icon-selector-glyph">' + iconHtml(c.glyph) + '</span>' +
+          '<span class="icon-selector-name">' + escapeHtml(c.label) + '</span>' +
+          '</button>';
+      }).join('') || '<div class="job-log-empty">no icon answers to that</div>';
+    }
+
+    var field = document.createElement('button');
+    field.type = 'button';
+    field.className = 'icon-selector-field';
+
+    var list = document.createElement('div');
+    list.className = 'icon-selector-list';
+    list.hidden = true;
+
+    var filter = document.createElement('input');
+    filter.type = 'text';
+    filter.className = 'icon-selector-filter';
+    filter.placeholder = 'type a name — delete, folder, arrow';
+
+    var rows = document.createElement('div');
+    rows.className = 'icon-selector-rows';
+
+    list.appendChild(filter);
+    list.appendChild(rows);
+    root.appendChild(field);
+    root.appendChild(list);
+
+    // Closing on a click anywhere else is the one behaviour that cannot
+    // live on this element, so the listener goes on the document and is
+    // taken off again the moment the list shuts. A picker that left one
+    // behind would keep answering clicks after the panel that made it had
+    // been thrown away by the next render.
+    function onDocumentClick(event) {
+      if (!root.contains(event.target)) close();
+    }
+
+    function open() {
+      if (!list.hidden) return;
+      list.hidden = false;
+      root.setAttribute('data-open', '');
+      filter.value = '';
+      activeIndex = -1;
+      paintRows();
+      filter.focus();
+      document.addEventListener('click', onDocumentClick);
+    }
+
+    function close() {
+      if (list.hidden) return;
+      list.hidden = true;
+      root.removeAttribute('data-open');
+      document.removeEventListener('click', onDocumentClick);
+    }
+
+    function choose(glyph) {
+      value = glyph;
+      root.value = glyph;
+      paintField();
+      close();
+      // A real bubbling change, so a delegated handler listening on the
+      // table above sees exactly what it saw from the <input> this
+      // replaced: event.target with .value and the caller's data-*.
+      root.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function move(step) {
+      if (!visible.length) return;
+      activeIndex = (activeIndex + step + visible.length) % visible.length;
+      paintRows();
+    }
+
+    field.addEventListener('click', function (event) {
+      event.stopPropagation(); // or onDocumentClick would shut it in the same click
+      if (list.hidden) open(); else close();
+    });
+
+    filter.addEventListener('input', function () {
+      activeIndex = -1;
+      paintRows();
+    });
+
+    rows.addEventListener('click', function (event) {
+      var row = event.target.closest('[data-glyph]');
+      if (row) choose(row.getAttribute('data-glyph'));
+    });
+
+    root.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') { close(); field.focus(); return; }
+      if (event.key === 'ArrowDown') { event.preventDefault(); move(1); return; }
+      if (event.key === 'ArrowUp') { event.preventDefault(); move(-1); return; }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        // Enter with nothing highlighted takes the only line left, which
+        // is what filtering down to one and pressing Enter obviously
+        // means. With more than one still showing it means nothing, so it
+        // does nothing.
+        var pick = activeIndex >= 0 ? visible[activeIndex] : (visible.length === 1 ? visible[0] : null);
+        if (pick) choose(pick.glyph);
+      }
+    });
+
+    root.value = value;
+    paintField();
+    // Painted again through the icon element once it has loaded.
+    iconReady.then(function () { paintField(); if (!list.hidden) paintRows(); });
+    return root;
+  }
+
+  (window.spirit = window.spirit || {}).element = window.spirit.element || {};
+  // THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
+  // create(container, options) appends the dropdown and answers it; options.exclude the glyphs spoken for.
+  window.spirit.element.iconSelector = { create: function (container, options) { var o = options || {}; var root = createIconSelector(o.exclude || null, o); container.appendChild(root); return root; } };
+})();

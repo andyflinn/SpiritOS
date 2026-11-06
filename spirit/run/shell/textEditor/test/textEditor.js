@@ -110,7 +110,7 @@ test.startTest('textEditor.js: the TextEditor app, face-able');
   if (!w.def) return;
 
   test.subHeading('it loads what it uses itself (goal/G41.3)');
-  ['spirit/element/files/listElement.js', 'spirit/element/codeMirror.js'].forEach(function (p) {
+  ['spirit/element/search/file.js', 'spirit/element/codeMirror.js'].forEach(function (p) {
     ok(w.required.indexOf(p) !== -1, 'it requires ' + p, 'required: ' + short(w.required));
   });
 

@@ -24,8 +24,8 @@
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.require, each element bringing its own.
   // And the jobs family's cache manager, the servers' jobs it follows (goal/G41.28).
-  var parts = Promise.all(['spirit/element/contactSelector.js', 'spirit/element/bundleSelector.js', 'spirit/element/apiFamilySelector.js',
-    'spirit/element/grantSelector/listElement.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
+  var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
+    'spirit/element/search/grant.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
     .concat([window.spirit.cacheManager ? window.spirit.cacheManager('jobs') : null]));
 
   function create(host, config) {

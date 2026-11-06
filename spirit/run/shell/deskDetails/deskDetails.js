@@ -805,7 +805,7 @@ function ddLoadSuites(id) {
 // delete (item.rules.remove), read from the facts; their names from the rules search, asked when the icon is pressed. The
 // add is the dropdown in the frame (dd-rule-pick), a probability search of rules.search; a pick is item.rules.add.
 var ddRuleNames = Object.create(null);
-var DD_SEARCH = 'spirit/element/probabilitySearch.js';
+var DD_SEARCH = 'spirit/element/search.js';
 var ddRulePick = null;
 var ddRulePickHost = null;   // the box the dropdown was made in: a frame drawn again is a new box, so a new dropdown
 // The rule types, as the desk server's RULE_TYPES (goal/G40.12 added test).

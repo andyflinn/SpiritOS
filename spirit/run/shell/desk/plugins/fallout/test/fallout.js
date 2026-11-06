@@ -195,7 +195,7 @@ function realWorld(rows) {
   } };
   vm.createContext(win);
   verifierCache(win);
-  ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/probabilitySearch.js', null].forEach(function (rel) {
+  ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/search.js', null].forEach(function (rel) {
     const f = rel ? path.join(RUN, rel) : FILE;
     vm.runInContext(fs.readFileSync(f, 'utf8'), win, { filename: f });
   });
@@ -319,8 +319,8 @@ test.startTest('fallout.js: Desk\'s Fallout tab, the verifier\'s reds');
   const wl = world(false);
   wl.win.spirit.deskPlugins.fallout.open(wl.container, wl.ctx); await settle();
   const scripts = wl.document.body.children.filter(function (c) { return c.tagName === 'SCRIPT'; });
-  const asked = wl.win.required.filter(function (r) { return r.path === 'spirit/element/probabilitySearch.js'; });
-  ok(asked.length === 1 && scripts.length === 0, 'it asks spirit.require for spirit/element/probabilitySearch.js, and puts no script tag on the page',
+  const asked = wl.win.required.filter(function (r) { return r.path === 'spirit/element/search.js'; });
+  ok(asked.length === 1 && scripts.length === 0, 'it asks spirit.require for spirit/element/search.js, and puts no script tag on the page',
     'required ' + short(wl.win.required.map(function (r) { return r.path; })) + ', scripts ' + scripts.length);
   ok(wl.list.made.length === 0, 'and no list is made before it loads', 'made: ' + wl.list.made.length);
   const askedV = wl.win.required.filter(function (r) { return r.path === 'process/js/deskVerify/data.js'; });

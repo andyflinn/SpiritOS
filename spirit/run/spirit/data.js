@@ -243,7 +243,7 @@
   }
 
   // ── THE TRANSLATORS ARE THE TYPES' (goal/G30.20) ─────────────────────────────────────────────────────────────
-  // Each type's row element (spirit/element/files/rowElement.js, spirit/element/contact/rowElement.js; goal/G41.16) registers here what it
+  // Each type's row element (spirit/element/search/file/rowElement.js, spirit/element/search/contact/rowElement.js; goal/G41.16) registers here what it
   // makes of the stream's events: translate({ onJob(job, D), onRename(d, D) }). This file knows no type.
   // A TYPE LOADED LATE IS HANDED ITS DATA WHOLE (goal/G41.3, Q4: the translators are lazy, each loading with its app):
   // on a page every job as it now stands and every rename are kept as the stream hands them, and a translator registered

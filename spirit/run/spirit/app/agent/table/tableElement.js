@@ -164,7 +164,7 @@
       // it opens the detail in Add mode, an editor with no row of its own; the row is made there, whole.
       open('', true);
     });
-    needs(['spirit/element/probabilitySearch.js', 'spirit/element/icon.js']).then(function () {
+    needs(['spirit/element/search.js', 'spirit/element/icon.js']).then(function () {
       if (gone) return;
       // The title's icon, drawn before icon.js was there, through the icon element now (goal/G41.23).
       var title = container.querySelector('.agent-title');

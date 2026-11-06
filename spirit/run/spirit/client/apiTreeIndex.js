@@ -11,7 +11,7 @@
 //   that server will not be part of the apiTree").
 //
 // Nothing here touches the DOM: the widget built
-// on it (createAppServerSelector, spirit/element/appServerSelector.js) is a thin painter over these
+// on it (createAppServerSelector, spirit/element/search/api.js) is a thin painter over these
 // arrays, so the deciding can be asserted in node rather than only
 // looked at. apiAuth/G1.9 extends this file with the verb list of one
 // server; this half lists the servers.

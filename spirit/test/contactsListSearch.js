@@ -120,7 +120,7 @@ function page(asks) {
   const made = [];
   const real = win.spirit.elements.shellCreateListSearch;
   win.spirit.elements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
-  new Function('spirit', 'document', 'window', 'Event', fs.readFileSync(path.join(RUN, 'spirit', 'element', 'contactSelector.js'), 'utf8'))(spirit, doc, win, Event);
+  new Function('spirit', 'document', 'window', 'Event', fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact.js'), 'utf8'))(spirit, doc, win, Event);
   return { byId: byId, doc: doc, win: win, made: made, ICON: ICON };
 }
 const listHtml = function (p, m) {
@@ -218,7 +218,7 @@ const listHtml = function (p, m) {
   const contacts = strip(fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8'));
   if (/spirit\.element\.contactList\.create\(/.test(contacts) && !/CONTACTS_STATE_BLOCKED|CONTACTS_STATE_WAITING|contactsLabelHtml/.test(contacts)) test.check('Contacts\' book is its one list (contactSearch); it reads no state words off a label');
   else test.fail(OWED + 'Contacts still draws its own book table from label words');
-  const sel = strip(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'contactSelector.js'), 'utf8'));
+  const sel = strip(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact.js'), 'utf8'));
   if (!/contact-selector-rows|contact-selector-search/.test(sel) && !/createContactLabel/.test(sel)) test.check('the selector draws no list or search box of its own any more');
   else test.fail(OWED + 'contactSelector still builds its own list and search box');
 

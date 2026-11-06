@@ -12,7 +12,7 @@ of itself"*). The way back is the shell's (*"the shell provides a back-button fr
 
 ## Requirements
 
-- It loads what it uses itself (rule/26): `spirit/element/apiFamilySelector.js` and `spirit/element/branchSelector.js`. The
+- It loads what it uses itself (rule/26): `spirit/element/search/api.js` and `spirit/element/search/branch.js`. The
   navigation is the shell's own.
 - **Its Delete row** (goal/G41.32): a rowForm below the list, ❌, *"Delete <bundle-name> bundle and branches"*, an armingButton whose
   second press asks `auth.bundle { op: 'delete', id }`. Hearing that bundle's row gone in `spirit.data.auth.data.bundles`, from any screen,

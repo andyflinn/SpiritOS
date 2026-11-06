@@ -16,7 +16,7 @@ Desk's call and stream, `ctx.callDialog(app, params)` the shell's dialog. `ctx.c
   list (`#fallout-list`), and the Items pane. No goal chat since goal/G41.22, box v25 (below).
 - **Two inner tabs**, Reds and Items, Reds selected at first (`aria-selected`); Items says it holds nothing yet and is
   hidden. A press on a tab shows its pane and hides the other; the click is wired once per container.
-- **The Reds list is the probability search** (goal/G40.12), loaded on demand from `/spirit/element/probabilitySearch.js`
+- **The Reds list is the probability search** (goal/G40.12), loaded on demand from `/spirit/element/search.js`
   when not on the page, made once in `#fallout-list` and refreshed: server `deskVerify`, verb `search`, through the
   ctx's own call and stream.
   - `args(text, filters)`: `{over: 'tests', current: 'yes', slim: 'yes'}`, the outcome filter along, a suite's file

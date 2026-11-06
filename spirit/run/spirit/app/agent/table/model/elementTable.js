@@ -17,7 +17,7 @@
       var gone = false;
       // WHAT IT USES, IT LOADS ITSELF (rule/26): the shared element, its row, the search, the busyButton and the rowForm.
       Promise.all([spirit.require('spirit/app/agent/table/tableElement.js'), spirit.require('spirit/app/agent/table/model/elementRow.js'),
-        spirit.require('spirit/element/probabilitySearch.js'), spirit.require('spirit/element/busyButton.js'),
+        spirit.require('spirit/element/search.js'), spirit.require('spirit/element/busyButton.js'),
         spirit.require('spirit/element/rowForm.js')]).then(function () {
         if (gone) return;
         E = window.spirit.elements;
