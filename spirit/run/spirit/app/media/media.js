@@ -19,7 +19,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/files/listElement.js')]);
+  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/files/listElement.js'), S.require('spirit/element/icon.js')]);
 
   function tagFor(kind) { return kind === 'audio' ? 'audio' : kind === 'video' ? 'video' : 'img'; }
 
@@ -97,12 +97,19 @@
       var FS = S.element.fstat;
       if (o.path) { title({ file: String(o.path).split('/').pop(), icon: FS.iconOf(String(o.path)) }); shown = view(box, String(o.path)); return; }
       // NO FILE HANDED IN: the file picker, the files list as a dropdown showing only what it plays, and under it the file
-      // picked; a pick drops the one shown before.
-      var pick = document.createElement('div');
+      // picked; a pick drops the one shown before. The picker sits in a row of rowForm's bubble (the box: "That row is a bubble
+      // of the same kind as rowForm uses"), the viewer's icon first; it has nothing to press, so no button, and it folds as
+      // rowForm's row does.
+      var row = document.createElement('div');
+      row.className = 'shell-bubble shell-row-form';
+      S.element.icon.create(row, { glyph: '🎬' });
+      var pick = document.createElement('span');
+      pick.className = 'shell-row-form-span';
+      row.appendChild(pick);
       var area = document.createElement('div');
       area.className = 'fill';
       area.style.marginTop = '1em';
-      box.appendChild(pick);
+      box.appendChild(row);
       box.appendChild(area);
       picker = S.element.fileList.create(pick, {
         face: 'dropdown',
