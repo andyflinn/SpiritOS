@@ -17,8 +17,9 @@
 // in every list.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
-  // And the auth family's cache manager, whose branches branch the list is a view of (goal/G41.28).
-  var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js'].map(function (p) {
+  // And the auth family's cache manager, whose branches branch the list is a view of (goal/G41.28). And the verb filter
+  // (goal/G43.18, the box: "apiVerbSelector.js is the verb dropdown filter: search/api/verb.js, which branch names too").
+  var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/branch/rowElement.js', 'spirit/element/search/api.js', 'spirit/element/search/api/verb.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
   }).concat([window.spirit.cacheManager('auth')]));
   var COLUMNS = {

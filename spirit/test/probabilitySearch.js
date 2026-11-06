@@ -89,7 +89,7 @@ const checks = {
   elements: /\.mount\(/.test(ps) && /\.destroy\(\)/.test(ps) && /element/.test(ps),
   marksAndBar: /<mark>/.test(ps) && /spirit-match/.test(ps),
   oldStays: !!code('shell/shared/js/listSearch.js'),
-  loaded: /spirit\/element\/probabilitySearch\.js/.test(fs.readFileSync(path.join(RUN, 'index.html'), 'utf8')),
+  loaded: /spirit\/element\/search\.js/.test(fs.readFileSync(path.join(RUN, 'index.html'), 'utf8')),
 };
 const missing = Object.keys(checks).filter(function (k) { return !checks[k]; });
 if (!missing.length)

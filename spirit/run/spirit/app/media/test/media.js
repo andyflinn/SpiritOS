@@ -49,7 +49,7 @@ test.startTest(NAME + '.js: with no file it shows the file picker (goal/G43.17)'
   const own = code(path.join(APP, NAME + '.js'));
   ok(!!own, 'spirit/app/' + NAME + '/' + NAME + '.js is there', 'no spirit/app/' + NAME + '/' + NAME + '.js');
   ok(!!own && !/shell\/|spirit\.shell\b|\.shell\./.test(own), 'it names neither the old shell nor a shell/ path', NAME + '.js names the old shell');
-  ok(!!own && /spirit\/element\/files\/listElement\.js/.test(own), 'it loads the files list it draws its picker with', NAME + '.js does not load the files list');
+  ok(!!own && /spirit\/element\/search\/file\.js/.test(own), 'it loads the files list it draws its picker with', NAME + '.js does not load the files list');
 
   const s = scratch();
   let child = null;

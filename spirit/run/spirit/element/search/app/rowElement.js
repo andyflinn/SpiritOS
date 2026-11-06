@@ -7,7 +7,8 @@
 // WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.data.app.data for every app row on the page, each change to the rows
 // of that key. A row asks nothing of its own; what it shows is what the stream said.
 (function () {
-  var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
+  // On spirit.element since goal/G43.18, as its file is in spirit/element/search/app/.
+  var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   ['spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/app/appSelector/rowFormAppActive.js'].forEach(function (p) { window.spirit.require(p); });
   var appReady = Promise.resolve(window.spirit.cacheManager('app')).then(function () { return ((window.spirit.data || {}).app || {}).data; });

@@ -49,7 +49,7 @@
     // No app, no detail, and nothing to listen for.
     if (!opts || !opts.row) return { destroy: function () { host.innerHTML = ''; } };
     if (opts.panel) return createPanel(host, opts.row);
-    var row = window.spirit.elements.search.app.rowElement.create(opts.row);
+    var row = window.spirit.element.search.app.rowElement.create(opts.row);
     var box = document.createElement('div');
     box.className = 'app-detail';
     var hosts = {};

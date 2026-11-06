@@ -35,7 +35,7 @@
       // Andy, box: "the appSelector will only show icon and label in the list."
       // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
       columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),
-      element: function (row) { return window.spirit.elements.search.app.rowElement.create(row); },
+      element: function (row) { return window.spirit.element.search.app.rowElement.create(row); },
       name: function (row) { return String((row && row.label) || ''); },
       empty: 'No app matches.',
     });

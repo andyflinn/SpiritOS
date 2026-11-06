@@ -145,7 +145,7 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
   const mine = filesUnder(APP).filter(function (f) { return /\.js$/.test(f) && f.split(path.sep).indexOf('test') === -1; });
   const old = mine.filter(function (f) { return /shell\/|spirit\.shell\b|\.shell\./.test(code(f)); }).map(function (f) { return path.relative(RUN, f); });
   ok(mine.length > 0 && !old.length, 'no script of spirit/app/file/ names the old shell or a shell/ path', 'naming it: ' + short(old));
-  ok(/spirit\/element\/files\/listElement\.js/.test(code(path.join(APP, 'file.js'))) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'file.js')),
+  ok(/spirit\/element\/search\/file\.js/.test(code(path.join(APP, 'file.js'))) && fs.existsSync(path.join(RUN, 'spirit', 'element', 'search', 'file.js')),
     'file.js draws with the shared list, spirit/element/search/file.js, which stays where it is', 'file.js does not load spirit/element/search/file.js');
 
   const s = scratch();

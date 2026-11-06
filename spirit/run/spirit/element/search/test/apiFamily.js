@@ -17,7 +17,7 @@ const vm = require('vm');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const JS = path.join(__dirname, '..', '..');
-const FILE = path.join(JS, 'apiFamilySelector.js');
+const FILE = path.join(JS, 'search', 'api.js');
 const OLD = path.join(JS, 'apiBranchSelector.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
