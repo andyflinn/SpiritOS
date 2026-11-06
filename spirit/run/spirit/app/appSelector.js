@@ -76,7 +76,9 @@
       open('app', row, function (pane, closed) {
         return S.require('spirit/app/' + name + '/' + name + '.js').then(function () {
           if (closed()) return null;
-          return S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane, { title: title });
+          // What the app opens goes in this same stack, over all of it (panel.js: one stack, each ✕ one step back).
+          var over = function (k, spec) { return stack ? stack.open('app/' + name + '/' + k, spec) : Promise.resolve(null); };
+          return S.app[name] ? S.app[name].createApp(pane) : S.elements[name].create(pane, { title: title, open: over });
         });
       }, look);
     }

@@ -9,12 +9,15 @@
 //     Over `under`, in the same pane, under the title bar [icon] <label> [✕]. fill draws into the layer's pane once and answers
 //     what to destroy, or a promise of it. A key already open is shown again as it was left, not made anew.
 //   layer.show(), layer.hide(), layer.set({ icon, label }), layer.shown()
-//   stack.close()     hides the open layer and shows `under` again
+//   stack.close()     hides every layer and shows `under` again
 //   stack.destroy()   lets every layer go, what it drew with it
 //
-// The box: "By default an element mounts over the one that mounts it, in the same pane", "✕ shows the mounter again", "Each pane
-// keeps its own stack, a tree; one click on the outer ✕ closes it all", and "A closed layer is hidden, not destroyed, so
-// reopening it in the same session shows what was there; a reload starts clean" (Q2, Q3).
+// The box: "By default an element mounts over the one that mounts it, in the same pane", "✕ shows the mounter again", and "A
+// closed layer is hidden, not destroyed, so reopening it in the same session shows what was there; a reload starts clean" (Q2,
+// Q3). ONE STACK, EACH ✕ ONE STEP BACK (Andy: "the way all-search replaces it's whole self, when an app is clicked, THAT's how
+// i want all panels to act, for example, when a file is clicked on on "file", then the file viewer pops up overtop of ALL the
+// "file" app...."; Q17, the outer ✕ line goes): a layer opened while another shows covers it, bar and all, and its ✕ shows
+// that one again; an element opened in a layer opens what it opens in the same stack (file, its viewers).
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
@@ -28,6 +31,8 @@
 
     function make(key, spec) {
       var E = S.element;
+      // THE ONE IT COVERS, shown again by its ✕ while that one is still in the stack.
+      var back = open;
       var box = document.createElement('div');
       box.className = 'app-container fill';
       // THE TITLE BAR OF ALL PANELS IS ONE rowForm (Andy: "rowForm: [app-icon] "<app-label> [x]").
@@ -44,10 +49,11 @@
       var dropped = false;
       var layer = {
         key: key,
+        box: box,
         shown: function () { return open === layer; },
         show: function () {
           if (dropped) return;
-          if (open && open !== layer) open.hide();
+          if (open && open !== layer) open.box.style.display = 'none';
           open = layer;
           box.style.display = '';
           cover(true);
@@ -55,7 +61,10 @@
         // HIDDEN, NOT DESTROYED (the box): what it drew stays, out of view, until the stack goes.
         hide: function () {
           box.style.display = 'none';
-          if (open === layer) { open = null; cover(false); }
+          if (open !== layer) return;
+          open = null;
+          if (back && layers[back.key] === back) back.show();
+          else cover(false);
         },
         set: function (look) {
           if (!look) return;
@@ -93,7 +102,11 @@
         return parts.then(function () { if (gone) return null; return layers[k] ? (layers[k].show(), layers[k]) : make(k, spec || {}); });
       },
       layer: function (key) { return layers[String(key)] || null; },
-      close: function () { if (open) open.hide(); },
+      close: function () {
+        Object.keys(layers).forEach(function (k) { layers[k].box.style.display = 'none'; });
+        open = null;
+        cover(false);
+      },
       destroy: function () {
         gone = true;
         Object.keys(layers).forEach(function (k) { layers[k].destroy(); });

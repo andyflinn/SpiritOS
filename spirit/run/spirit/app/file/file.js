@@ -3,7 +3,10 @@
 // has..."). The old shell's Files app, moved: a tile hands it only its container. Its contract and its test: ./test/file.md and
 // ./test/file.js.
 //
-//   spirit.elements.file.create(container) -> { destroy() }
+//   spirit.elements.file.create(container, { open }) -> { destroy() }
+//     open(key, spec): the stack file was opened in, handed by its mounter, so a file covers ALL of file, its bar too (Andy:
+//     "when a file is clicked on on "file", then the file viewer pops up overtop of ALL the "file" app...."). Without one,
+//     file keeps a stack over its own list.
 //
 // The list of files as a pane, where every app shares it (Q8): its Name, Size and Changed columns, search in names or in
 // contents, the folder tree, and the toggle to tiles. A press opens the file over the list, through panel (Q2): text for text,
@@ -15,8 +18,10 @@
   var parts = Promise.all([S.require('spirit/element/files/listElement.js'), S.require('spirit/element/fstat.js'), S.require('spirit/element/panel.js'), S.cacheManager('app')]);
   var OPENERS = { code: 'text', image: 'media', audio: 'media', video: 'media' };
 
-  function create(container) {
+  function create(container, opts) {
+    var o = opts || {};
     var gone = false;
+    var mine = [];   // the layers file opened, let go with it
     var list = null;
     var stack = null;
     container.innerHTML = '';
@@ -42,14 +47,20 @@
       var told = null;
       function title(t) { told = t; if (layer) layer.set(barOf(opener, name, told)); }
       var look = opener ? barOf(opener, name, null) : { icon: FS.iconOf(key), label: name };
-      Promise.resolve(stack.open(key, { icon: look.icon, label: look.label, fill: function (pane, closed) {
+      var into = typeof o.open === 'function' ? o.open : function (k, spec) { return stack.open(k, spec); };
+      Promise.resolve(into(key, { icon: look.icon, label: look.label, fill: function (pane, closed) {
         // fstat only for a file neither opener takes (Andy: "let fstat pop up for unknows file types (❔) only").
         if (!opener) { FS.create(pane, { path: key }); return { destroy: function () { pane.innerHTML = ''; } }; }
         return S.require('spirit/app/' + opener + '/' + opener + '.js').then(function () {
           if (closed()) return null;
           return S.elements[opener].create(pane, { path: key, words: words, line: line, title: title });
         });
-      } })).then(function (l) { layer = l; if (layer && opener) layer.set(barOf(opener, name, told)); });
+      } })).then(function (l) {
+        layer = l;
+        if (!layer) return;
+        if (mine.indexOf(layer) === -1) mine.push(layer);
+        if (opener) layer.set(barOf(opener, name, told));
+      });
     }
 
     parts.then(function () {
@@ -69,6 +80,8 @@
     return {
       destroy: function () {
         gone = true;
+        mine.forEach(function (l) { l.destroy(); });
+        mine = [];
         if (stack) stack.destroy();
         if (list) list.destroy();
         stack = null;
