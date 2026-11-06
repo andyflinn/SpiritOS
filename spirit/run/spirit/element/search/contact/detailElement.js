@@ -428,9 +428,10 @@ var cdPage = ({
 });
 // The armingButton it draws Block and Forget with, it loads itself (goal/G41.3), through spirit.require.
 if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/armingButton.js');
-// A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
-// shell elements", "the shell does ALL the wrapping"): open(params) pushes this screen as a page, params { key }; its
-// title and back are the frame's, and nothing is handed back (what it changes reaches every view on the stream).
+// A PANEL, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic shell elements"; since
+// goal/G43.18 no page on the navigation: "the details of relays and contacts ... taking over the screen new-style"): the
+// contact row opens it over its list as a layer, its title and ✕ the layer's, its api the shell's (spirit.shell.pageApi);
+// nothing is handed back (what it changes reaches every view on the stream).
 // AND THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
 // create(container, options) draws the same screen into the container, options { api, key }.
 // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "contactDetails.js should really be
@@ -451,10 +452,6 @@ Object.assign(['search', 'contact', 'detailElement'].reduce(function (o, k) { re
     cdPage.open(o);
     return done;
   },
-  open: function (params) {
-    return window.spirit.elements.navigation.push({ title: 'Contact', mount: function (box, page) {
-      cdPage.mount(box, page.api);
-      cdPage.open(params || {});
-    } });
-  },
+  // NO open OF ITS OWN (goal/G43.18): it opens as a panel over what mounted its list (search/contact/rowElement.js, openDetails),
+  // never as a page on the navigation.
 });

@@ -18,6 +18,7 @@
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
 //     opts.api        the app's shell api: verb, peerPost
+//     opts.open       the mounter's panel stack's open(key, spec) (spirit/element/panel.js): a row's details open over it (goal/G43.18)
 //     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's; a pane opens a pressed row
 //     opts.say(text)  where it says what an Add or a card did
 //     opts.onAdded(row)   after an Add
@@ -105,7 +106,7 @@
         { field: 'label', from: 'name', label: 'Name', sort: 'text' },
         { field: 'add', label: '' },
       ],
-      element: function (row, key) { var el = window.spirit.element.search.contact.rowElement.create(Object.assign({ key: key }, row)); els[key] = el; return el; },
+      element: function (row, key) { var el = window.spirit.element.search.contact.rowElement.create(Object.assign({ key: key }, row), { open: o.open }); els[key] = el; return el; },
       filters: FILTERS,
       details: function (row, key, el) {
         if (undecided(row)) { askCard(row, key); return; }

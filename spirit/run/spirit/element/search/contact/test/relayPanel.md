@@ -1,7 +1,7 @@
 # spirit/element/search/contact/relayPanel.js
 
-One relay, a shell element (goal/G41.32): `spirit.element.search.contact.relayPanel.create(container, { key })`, and `open({ key })` pushes it
-as a page on the navigation (goal/G40.8). It reads that relay's row by `spirit.relay.status` as it is drawn, and listens after
+One relay, a shell element (goal/G41.32): `spirit.element.search.contact.relayPanel.create(container, { key })`, a panel with no `open`
+of its own (goal/G43.18; it was a page on the navigation, goal/G40.8). It reads that relay's row by `spirit.relay.status` as it is drawn, and listens after
 that: `spirit/element/test/relayRowStream.md`. Its panels fold; the owner's panels (Memory and disc, Invites)
 sit in one more fold, "Managing my relay".
 

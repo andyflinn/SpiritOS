@@ -27,6 +27,8 @@ body { display: flex; flex-direction: column; }
 /* THE SHELL THE NODE NAMES DRAWS HERE (goal/G43.18): one fill column, not the old desktop grid, so the shell gets the whole area. */
 #desktop.shell-area { display: flex; flex-direction: column; padding: 0; gap: 0; height: auto; overflow: hidden; }
 #desktop.shell-area > .fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* Hidden while a page of the navigation is up: the shell area's own display must not beat [hidden]. */
+#desktop.shell-area[hidden] { display: none; }
 #app-container:not([hidden]) { position: static; inset: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 #app-header { position: static; flex: 0 0 auto; }
 #app-content { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }

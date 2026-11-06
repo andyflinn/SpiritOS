@@ -1,6 +1,6 @@
 # spirit/element/search/contact/detailElement.js
 
-One contact, as a page on the navigation (goal/G40.8): `window.spirit.element.search.contact.detailElement.open({ key })` pushes it,
+One contact, as a panel (goal/G43.18; it was a page on the navigation, goal/G40.8): `window.spirit.element.search.contact.detailElement.create(box, { key, api })` draws it, with no `open` of its own,
 and it reads that row by `contact.get`. What it shows: the person's facts, My Label, and the buttons that decide about
 them, Accept for a held row, Unblock for a blocked one, Block otherwise, and Forget for everybody.
 

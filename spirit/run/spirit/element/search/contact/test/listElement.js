@@ -29,7 +29,8 @@ window.spirit.element = nestSearch({
     made = { host: host, opts: o, refreshes: 0, destroyed: false };
     return { refresh: function () { made.refreshes += 1; }, destroy: function () { made.destroyed = true; } };
   } },
-  'search.contact.detailElement': { open: function (o) { asked.push({ verb: 'contactDetails', body: o }); } },
+  // Made in a panel's pane (goal/G43.18), recording what it was made with.
+  'search.contact.detailElement': { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } },
   natterDetails: { open: function (o) { asked.push({ verb: 'natterDetails', body: o }); } },
 });
 // The one loader, a recorder: what the list requires, answered at once (the elements above stand in for what it loads).
@@ -95,7 +96,10 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   const said = []; const added = [];
   const api = { peerPost: function (to, key, b) { asked.push({ verb: 'peerPost', key: key, body: b });
     return Promise.resolve(key === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } }); } };
-  const pane = L.create(host, { api: api, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
+  // The mounter's panel stack's open (goal/G43.18), filling its pane at once; the shell's page api beside it.
+  window.spirit.shell = { pageApi: function (page) { return { page: page }; } };
+  const openLayer = function (key, spec) { return Promise.resolve(spec.fill({})).then(function () { return { hide: function () {}, set: function () {}, shown: function () { return true; } }; }); };
+  const pane = L.create(host, { api: api, open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   const o = made.opts;
   const CD = ((window.spirit.data || {}).contact || {}).data;
   if (managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && o.filters === L.filters && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add')

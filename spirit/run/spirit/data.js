@@ -300,7 +300,9 @@
   function onSnapshot(jobs) {
     forget();
     seenJobs.clear();
-    (jobs || []).forEach(onJob);
+    // Each job alone (goal/G43.18, Q27, Andy: "yes."): forEach hands its index as a second argument, which onJob took for the
+    // node that served the job, so a reloaded page filed every job under a node named 0, 1, 2 and saw none of them.
+    (jobs || []).forEach(function (job) { onJob(job); });
   }
   // A branch filled without telling (the file tree arriving), then one word to its watchers.
   function quietly(type, on) { quiet[type] = !!on; }

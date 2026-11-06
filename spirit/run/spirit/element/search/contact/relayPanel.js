@@ -2,7 +2,7 @@
 // ONE RELAY, A SHELL ELEMENT (goal/G41.32; Andy: "natterDetails will become an shell element: relayPanel.js, it is configured
 // with it's own contact row, and follows only that."). Its contract and its test: ./test/relayPanel.md and ./test/relayPanel.js.
 //
-//   spirit.element.search.contact.relayPanel.create(container, { key, api? }) -> { destroy() }   open({ key }) pushes it as a page
+//   spirit.element.search.contact.relayPanel.create(container, { key, api? }) -> { destroy() }; it opens as a panel (goal/G43.18)
 //
 // WHO PAINTS, LISTENS (Andy: "every row's data, wherever it's visible OR invisible must update instantly, and when visible,
 // paint immediately."; "BEING INVISIBLE doesn't change a elements fucking duty to listen to fucking changes"): what it shows it
@@ -1934,9 +1934,10 @@ return {
 };
 }
 
-// A PAGE ON THE NAVIGATION, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic
-// shell elements", "the shell does ALL the wrapping"): open({ key }) pushes this panel as a page; its title and back are the
-// frame's, and nothing is handed back (what it changes reaches every view on the stream).
+// A PANEL, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic shell elements"; since
+// goal/G43.18 no page on the navigation: "the details of relays and contacts ... taking over the screen new-style"): the
+// contact row opens it over its list as a layer, its title and ✕ the layer's; nothing is handed back (what it changes reaches
+// every view on the stream).
 // AND THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
 // create(container, { key, api? }) draws it into the container.
 // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "spirit/run/spirit/element/relayPanel.js really should be
@@ -1954,10 +1955,7 @@ Object.assign(['search', 'contact', 'relayPanel'].reduce(function (o, k) { retur
     }
     return panel(container, o);
   },
-  open: function (params) {
-    return window.spirit.elements.navigation.push({ title: 'Relay', mount: function (box, page) {
-      return panel(box, Object.assign({}, params || {}, { api: page.api }));
-    } });
-  },
+  // NO open OF ITS OWN (goal/G43.18): it opens as a panel over what mounted its list (search/contact/rowElement.js, openDetails),
+  // never as a page on the navigation.
 });
 }());

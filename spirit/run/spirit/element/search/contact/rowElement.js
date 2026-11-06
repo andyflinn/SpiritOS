@@ -91,8 +91,33 @@
     return contacts;
   }
 
-  function create(row) {
+  // THE DETAILS OPEN AS A PANEL OVER WHAT MOUNTED THE LIST (goal/G43.18; Andy: "the details of relays and contacts still
+  // mount with the green look at the bottom of the contact list instead of taking over the screen new-style...."; the red:
+  // spirit/element/test/panel.js, "a relay's and a person's details open over Contacts under one bar, no navigation page,
+  // their ✕ back"): opts.open(key, { icon, label, fill(pane, closed) }), the mounter's panel stack (spirit/element/panel.js),
+  // as file opens its viewers. The page api the details draw with is the shell's (spirit.shell.pageApi), its close, title and
+  // visibility the layer's. No open handed: no details to open. The page loads when it is first opened, through spirit.require.
+  function openDetails(open, kind, key) {
+    if (typeof open !== 'function') return Promise.resolve(null);
+    var file = kind === 'relay' ? 'spirit/element/search/contact/relayPanel.js' : 'spirit/element/search/contact/detailElement.js';
+    var layer = null;
+    return Promise.resolve(open('contact/' + kind + '/' + key, { icon: '', label: kind === 'relay' ? 'Relay' : 'Contact', fill: function (pane) {
+      return window.spirit.require(file).then(function () {
+        var S = window.spirit;
+        var api = S.shell && typeof S.shell.pageApi === 'function' ? S.shell.pageApi({
+          close: function () { if (layer) layer.hide(); },
+          setTitle: function (text) { if (layer) layer.set({ label: String(text || '') }); },
+          isTop: function () { return !!layer && typeof layer.shown === 'function' && layer.shown(); },
+        }) : null;
+        var E = S.element.search.contact;
+        return kind === 'relay' ? E.relayPanel.create(pane, { key: key, api: api || undefined }) : E.detailElement.create(pane, { key: key, api: api });
+      });
+    } })).then(function (l) { layer = l; return l; });
+  }
+
+  function create(row, options) {
     var r = row || {};
+    var co = options || {};
     var key = String(r.key || r.publicKey || '');
     var was = known(key) || {};
     // What it is, from the row as the page holds it, whichever came first: the search's answer or the stream.
@@ -101,16 +126,11 @@
     // the yes, which is Add.
     function bookOf(v) { return v.keep === true || v.mine === true || v.blocked === true; }
     var relayActions = [
-      // Its page on the navigation (goal/G40.8): the relay's details, an element, no app.
-      // The page loads when it is first opened (goal/G41.3), through spirit.require.
-      { name: 'open', label: 'Open', run: function (el) {
-        return window.spirit.require('spirit/element/search/contact/relayPanel.js').then(function () { return window.spirit.element.search.contact.relayPanel.open({ key: el.key }); });
-      } },
+      // The relay's details, an element, no app (goal/G40.8), as a panel (goal/G43.18).
+      { name: 'open', label: 'Open', run: function (el) { return openDetails(co.open, 'relay', el.key); } },
     ];
     var bookActions = [
-      { name: 'open', label: 'Open', run: function (el) {
-        return window.spirit.require('spirit/element/search/contact/detailElement.js').then(function () { return window.spirit.element.search.contact.detailElement.open({ key: el.key }); });
-      } },
+      { name: 'open', label: 'Open', run: function (el) { return openDetails(co.open, 'contact', el.key); } },
       // Through the spirit object (goal/G32.2): each a checked call answering the reply's body, refusing otherwise.
       { name: 'block', label: 'Block', run: function (el) { return spirit.ready.then(function (s) { return s.contact.block({ publicKey: el.key }); }); } },
       { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.ready.then(function (s) { return s.contact.unblock({ publicKey: el.key }); }); } },

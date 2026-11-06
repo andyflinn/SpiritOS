@@ -325,7 +325,10 @@
         delete window.spirit.transport;
         waiting.forEach(function (h) { spirit.events.subscribe(h); });
       }
-      Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow });
+      // THE PAGE API FOR A PANEL TOO (goal/G43.18; Andy: "the details of relays and contacts still mount with the green look at
+      // the bottom of the contact list instead of taking over the screen new-style...."): what a page is handed, for a layer
+      // that hands its own close, title and visibility, { close(), setTitle(text), isTop() }.
+      Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow, pageApi: apiFor });
       attachNavigation();
       link.loaded = true;
       openStream(false);
