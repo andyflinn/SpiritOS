@@ -12,6 +12,7 @@ Andy: *"all "probabilitySearch" elements follow the EXACT SAME PATTERN."*
   - `contact.js`, `contact/listElement.js`, `contact/rowElement.js`; the same for `icon`, `bundle` and `branch`.
   - `file.js` and `file/rowElement.js`, `grant.js` and `grant/rowElement.js`: *"their listElement becomes search/file.js and search/grant.js, their rowElement stays in the folder."*
   - `valued.js`.
+  - `contact/detailElement.js`, Andy: *"contactDetails.js should really be spirit/run/spirit/element/search/contact/detailElement.js"*; and `contact/relayPanel.js`, Andy: *"spirit/run/spirit/element/relayPanel.js really should be  spirit/run/spirit/element/search/contact/relayPanel.js"*. Gone: `contactDetails/` and `relayPanel.js`.
 - Gone: `probabilitySearch.js`, `appServerSelector.js`, `apiFamilySelector.js`, `apiVerbSelector.js`, `contactSelector.js` and `contact/`, `files/`, `iconSelector.js` and `icons/`, `bundleSelector.js` and its folder, `branchSelector.js` and its folder, `grantSelector/`, `valued.js`, and `spirit/app/appSelector/listElement.js` and `rowElement.js`.
 - The same pattern for all: every name under `search/` is a word, a to z, and every folder sits beside its `<name>.js`.
 - *"The apps and elements that require them name the new paths"*: no code, tests included, comments left out, names an old path.
