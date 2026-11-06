@@ -28,8 +28,12 @@ test.startTest('noPreferences.js: preferences.json and every line that reads or 
   test.subHeading('Andy: "i want to remove that information and all the code that references it, gone."');
   const tracked = require('child_process').execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(function (f) { return /(^|\/)preferences\.json$/.test(f); });
   ok(!tracked.length, 'no preferences.json is tracked', 'still tracked: ' + short(tracked));
-  const naming = filesUnder(RUN).filter(function (f) { return /\.(js|html)$/.test(f) && /preferences\.json|UNKNOWN_PREFS|unknownPolicy/.test(code(f)); }).map(function (f) { return path.relative(RUN, f); });
-  ok(!naming.length, 'no code names preferences.json or the policy it held', naming.length + ' still do: ' + short(naming));
+  // Andy: "MAKE SURE the code referencing preferences.json will be gone from the codebase.": every tracked code file, tests,
+  // install scripts and comments included; only this suite, which must name it, and Desk's own data (currentGoal.json) aside.
+  const naming = require('child_process').execSync('git ls-files -- "*.js" "*.html" "*.css" "*.json"', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+    .filter(function (f) { return !/noPreferences\.(js|md)$/.test(f) && !/currentGoal\.json$/.test(f) && fs.existsSync(path.join(REPO, f)); })
+    .filter(function (f) { return /preferences\.json|UNKNOWN_PREFS|unknownPolicy/.test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
+  ok(!naming.length, 'no tracked code, tests and comments included, names preferences.json or the policy it held', naming.length + ' still do: ' + short(naming));
   const api = require(path.join(RUN, 'spirit', 'contact', 'api.js'));
   ok(!('senders' in api.verbs) && !('setSenders' in api.verbs), 'the contact family has no senders or setSenders (wsl reviewed, Andy: "go do it!")', 'spirit/contact/api.js: ' + short(Object.keys(api.verbs)));
   const app = code(path.join(RUN, 'spirit', 'app', 'contact', 'contact.js'));

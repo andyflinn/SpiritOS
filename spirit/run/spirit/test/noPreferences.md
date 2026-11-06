@@ -6,7 +6,7 @@ Andy: *"ignore or hold are enough, and safer that automatically adding a contact
 
 ## Requirements
 
-- No `preferences.json` is tracked, and no code (tests aside, comments left out) names `preferences.json` or the policy it held (`UNKNOWN_PREFS`, `unknownPolicy`).
+- No `preferences.json` is tracked, and no tracked code file (`.js`, `.html`, `.css`, `.json`), tests, install scripts and comments included, names `preferences.json` or the policy it held (`UNKNOWN_PREFS`, `unknownPolicy`). Andy: *"MAKE SURE the code referencing preferences.json will be gone from the codebase."* Only this suite and Desk's own data, `currentGoal.json`, are aside.
 - The contact family has no `senders` or `setSenders` (removal reviewed by wsl); the Contacts app asks neither and draws no choice for strangers.
 - On the node both are no verb, and the node writes no `preferences.json`.
 
