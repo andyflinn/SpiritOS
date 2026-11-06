@@ -49,6 +49,17 @@ test.startTest('noPreferences.js: preferences.json and every line that reads or 
   const book = require(path.join(RUN, 'spirit', 'contacts.js'));
   ok(typeof book.hold !== 'function', 'the contact book holds nobody: no hold', 'spirit/contacts.js still exports hold');
 
+  // Andy: "Didn't i say remove ALL code referencing "admit" and "hold". it was a hair-brained scheme, and it HAS TO GO.": no tracked
+  // code, tests included, comments left out, says a stranger is admitted or held. Two that are not the scheme stay: the store's
+  // own drop of the held column (nodeStore.js, which must name it to drop it), and a demo error code named held in the spirit
+  // object's suite (run/test/spirit.js).
+  test.subHeading('Andy: "remove ALL code referencing "admit" and "hold"", tests included');
+  const SCHEME = /['"](admit|hold|held)['"]|acquiredVia\s*:\s*['"]hold/;
+  const ASIDE = ['spirit/run/spirit/nodeStore.js', 'spirit/run/test/spirit.js'];
+  const scheme = require('child_process').execSync('git ls-files -- "*.js" "*.html"', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
+    .filter(function (f) { return !/noPreferences\.js$/.test(f) && ASIDE.indexOf(f) === -1 && fs.existsSync(path.join(REPO, f)) && SCHEME.test(code(path.join(REPO, f))); });
+  ok(!scheme.length, 'no code says admit, hold or held of a stranger', scheme.length + ' still do: ' + short(scheme));
+
   // Andy: "FIX the handling of "forget" and "held", removing data base fields to end the life of "held".": a node.db from before,
   // its seen table still holding a held column with a held row, opened by the node's own store, loses the column.
   test.subHeading('Andy: "removing data base fields to end the life of "held"": a node.db from before loses its held column');
