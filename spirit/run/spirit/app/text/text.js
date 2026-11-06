@@ -1,7 +1,7 @@
 // spirit/run/spirit/app/text/text.js
 // TEXT, AN ELEMENT (goal/G43.17; the box: "Four elements: file, fstat, text and media", and "text and media take a file when
-// mounted: with one they show no file picker, without one they show it"). A text file, edited on the codeMirror element's edit
-// mode, and saved. Its contract and its test: ./test/text.md and ./test/text.js.
+// mounted"; Andy, since: "please show the full media viewer or text editor (including the file picker) even when launched from
+// files."). A text file, edited on the codeMirror element's edit mode, and saved. Its contract and its test: ./test/text.md and ./test/text.js.
 //
 //   spirit.elements.text.create(container, { path, words, line, title }) -> { destroy() }
 //     words, line: a file found by its contents opens with the words marked, at that line.
@@ -9,8 +9,8 @@
 //     file-name").
 //
 // NOT ON fstat (Andy: "separate fstat from file and text"): no name line and no facts. ONE ROW (Andy: "in text AND file, all the
-// file-picker, load, save shit, in the same row. and drop the file name from that row"): rowForm's bubble, the picker in it
-// when no file was handed in, Save last; what a press did on the line below it, as rowForm's own rule says. A row is inline
+// file-picker, load, save shit, in the same row. and drop the file name from that row"): rowForm's bubble, the picker in it,
+// Save last; what a press did on the line below it, as rowForm's own rule says. A row is inline
 // and folds when the width gets smaller (Andy: "row elements are 'inline', those are not "boxes""); the text under it is a
 // fill box, scrolling inside itself (rule/16).
 //
@@ -86,9 +86,9 @@
           function (e) { saving = false; status.textContent = 'save failed: ' + ((e && e.message) || e); });
       });
 
-      if (o.path) { edit(String(o.path), o.words, o.line); return; }
-      // NO FILE HANDED IN: the picker in the row, the files list as a dropdown showing only text. Its field names no file: the
-      // title bar does.
+      // THE PICKER in the row, the files list as a dropdown showing only text. Its field names no file: the title bar does.
+      // ALWAYS WHOLE (Andy: "i changed my mind. please show the full media viewer or text editor (including the file picker) even when
+      // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var placeholder = 'open a file…';
       picker = S.element.fileList.create(row.span, {
         face: 'dropdown',
@@ -102,6 +102,7 @@
           edit(key, hit ? picker.words() : '', hit ? r.line : 0);
         },
       });
+      if (o.path) edit(String(o.path), o.words, o.line);
     }, function () { box.textContent = 'Text could not be loaded.'; });
 
     return {

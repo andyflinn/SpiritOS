@@ -1,6 +1,7 @@
 // spirit/run/spirit/app/media/media.js
 // MEDIA, AN ELEMENT (goal/G43.17; the box: "Four elements: file, fstat, text and media", and "text and media take a file when
-// mounted: with one they show no file picker, without one they show it"). An image, a sound or a video, in fstat's pane. It took
+// mounted"; Andy, since: "please show the full media viewer or text editor (including the file picker) even when launched from
+// files."). An image, a sound or a video, filling its box. It took
 // over what the old media viewer element did, which is gone (Q7). Its contract and its test: ./test/media.md and ./test/media.js.
 //
 //   spirit.elements.media.create(container, { path, title }) -> { destroy() }
@@ -95,11 +96,11 @@
     parts.then(function () {
       if (gone) return;
       var FS = S.element.fstat;
-      if (o.path) { title({ file: String(o.path).split('/').pop(), icon: FS.iconOf(String(o.path)) }); shown = view(box, String(o.path)); return; }
-      // NO FILE HANDED IN: the file picker, the files list as a dropdown showing only what it plays, and under it the file
+      // THE FILE PICKER, the files list as a dropdown showing only what it plays, and under it the file
       // picked; a pick drops the one shown before. The picker sits in a row of rowForm's bubble (the box: "That row is a bubble
       // of the same kind as rowForm uses"), the viewer's icon first; it has nothing to press, so no button, and it folds as
-      // rowForm's row does.
+      // rowForm's row does. ALWAYS WHOLE (Andy: "i changed my mind. please show the full media viewer or text editor (including the file picker) even when
+      // launched from files."): the picker shows with a file handed in too, and that file is shown under it.
       var row = document.createElement('div');
       row.className = 'shell-bubble shell-row-form';
       S.element.icon.create(row, { glyph: '🎬' });
@@ -124,6 +125,7 @@
           shown = view(area, key);
         },
       });
+      if (o.path) { title({ file: String(o.path).split('/').pop(), icon: FS.iconOf(String(o.path)) }); shown = view(area, String(o.path)); }
     }, function () { box.textContent = 'Media could not be loaded.'; });
     return {
       destroy: function () {
