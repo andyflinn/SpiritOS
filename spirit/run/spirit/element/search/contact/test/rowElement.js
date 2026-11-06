@@ -110,9 +110,11 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   if (cell(kept, 'presence').indexOf('⚪') !== -1 && cell(C.create({ key: 'K4', keep: true, present: true }), 'presence').indexOf('🟢') !== -1
     && cell(C.create({ key: 'K5', keep: true, present: false }), 'presence').indexOf('🔴') !== -1) test.check('presence: 🟢 present, 🔴 absent, ⚪ not known');
   else test.fail('presence cells');
-  if (cell(blocked, 'status') === '❌' && cell(held, 'status') === '⌛' && cell(C.create({ key: 'K6', mine: true, held: true }), 'status') === '⌛'
-    && cell(C.create({ key: 'K7', mine: true }), 'status') === '⭐' && cell(kept, 'status') === '') test.check('status: blocked ❌ over held ⌛ over mine ⭐, a plain kept row blank');
-  else test.fail('status cells');
+  // goal/G43.17, Andy: "so NO, we don't need a "held" "status"", "also remove the "held" marker in the contact row.": a row that
+  // still says held shows no ⌛.
+  const statuses = { blocked: cell(blocked, 'status'), held: cell(held, 'status'), mineHeld: cell(C.create({ key: 'K6', mine: true, held: true }), 'status'), mine: cell(C.create({ key: 'K7', mine: true }), 'status'), kept: cell(kept, 'status') };
+  if (statuses.blocked === '❌' && statuses.held === '' && statuses.mineHeld === '⭐' && statuses.mine === '⭐' && statuses.kept === '') test.check('status: blocked ❌ over mine ⭐, a plain kept row blank, and no held ⌛, even on a row that says held');
+  else test.fail('status cells: ' + JSON.stringify(statuses));
   if (cell(C.create({ key: 'K8', keep: true, name: '<b>x</b>' }), 'label') === '&lt;b&gt;x&lt;/b&gt;') test.check('the label is the name, escaped');
   else test.fail('label cell: ' + cell(C.create({ key: 'K8', keep: true, name: '<b>x</b>' }), 'label'));
   if (cell(held, 'add').indexOf('data-action="add"') !== -1 && cell(kept, 'add') === '' && cell(C.create({ key: 'R2', relay: true }), 'add') === '') test.check('the Add button only on a row not in the book and not a relay');
