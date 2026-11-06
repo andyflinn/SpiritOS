@@ -10,6 +10,4 @@ Andy: *"ignore or hold are enough, and safer that automatically adding a contact
 - The contact family has no `senders` or `setSenders` (removal reviewed by wsl); the Contacts app asks neither and draws no choice for strangers.
 - On the node both are no verb, and the node writes no `preferences.json`.
 
-## Waiting
-
-- Q21, which one answer the node gives a stranger now, ignore or hold with a count: its check comes with the answer.
+- Andy: *"so NO, we don't need a "held" "status""*: a refused id stays in the traffic log, *"for as long as there is space"*, and nowhere else waits for a yes: `contact.search` has no `held` filter, the remembered row (`nodeStore.js` SEEN_FLAGS) no `held` flag, and `spirit/contacts.js` no `hold`.

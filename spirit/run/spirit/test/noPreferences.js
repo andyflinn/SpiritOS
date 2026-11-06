@@ -35,6 +35,16 @@ test.startTest('noPreferences.js: preferences.json and every line that reads or 
   const app = code(path.join(RUN, 'spirit', 'app', 'contact', 'contact.js'));
   ok(!!app && !/senders|setSenders|CONTACTS_UNKNOWN/.test(app), 'the Contacts app asks neither, and draws no choice for strangers', 'spirit/app/contact/contact.js still names senders, setSenders or its choices');
 
+  // Andy: "so NO, we don't need a "held" "status"": a refused id stays in the traffic log, as long as there is room, and nowhere
+  // else waits for a yes.
+  test.subHeading('Andy: "so NO, we don\'t need a "held" "status""');
+  ok(!('held' in api.verbs.search), 'contact.search has no held filter', 'contact.search: ' + short(api.verbs.search));
+  const store = code(path.join(RUN, 'spirit', 'nodeStore.js'));
+  const flags = (/SEEN_FLAGS\s*=\s*\[([^\]]*)\]/.exec(store) || [])[1];
+  ok(flags !== undefined && !/'held'/.test(flags), 'the remembered row has no held flag', 'nodeStore.js SEEN_FLAGS: ' + short(flags));
+  const book = require(path.join(RUN, 'spirit', 'contacts.js'));
+  ok(typeof book.hold !== 'function', 'the contact book holds nobody: no hold', 'spirit/contacts.js still exports hold');
+
   const N = await scratchNode();
   try {
     ok(N.up, 'the world: a scratch node comes up', 'the scratch node did not come up: nothing judged');
