@@ -290,7 +290,7 @@
       Object.keys(presence).forEach(function (k) { table[k] = presence[k]; });
       update({ id: 'face-presence', type: 'relay-presence', data: { presence: table } });
     } else if (ev.event === 'job-deleted' && ev.data) {
-      // A job gone (goal/G41.33, a starred face only): to the kernel's subscribers, as the loopback stream hands it.
+      // A job gone (goal/G41.33): to the kernel's subscribers, as the loopback stream hands it.
       delete linkJobs[ev.data];
       subscribers.slice().forEach(function (h) { if (h.onDelete) { try { h.onDelete(ev.data); } catch (e) { /* one app's fault */ } } });
     } else if (ev.event === 'relay-event' && ev.data) {
@@ -432,23 +432,14 @@
       var r = got[0];
       var face = (r && r.status === 200 && r.body && r.body.face) || null;
       var mf = got[1] || {};
-      // A STAR SHOWS EVERY APP (goal/G41.33, Q9; Andy, of "Should a star show every app on the face, Text Editor and Media
-      // Viewer too, or does each app's face mark stay yours to set?": "yes. for now."), its face mark or not, and as the star
-      // changes (followStar).
-      // ON LOOPBACK THE STAR IS DISREGARDED (goal/G43.2; Andy: "on loop-back you simply disregard if there is a fucking star or
-      // not, and the new shell knows damn well if it's on loopback or on the face"): every app shows at home.
-      var starred = !!(state && state.home) || link.starred === true;
-      // AN INTRINSIC APP SHOWS ON EVERY FACE (goal/G41.1, box v17: "minimal == intrinsic"), its face mark or not; what the
-      // node's face part does not name, its manifest does (its icon a key into the icon table).
-      // AN APP NAMING A SERVER RIDES WITH IT (box v14): no row in Apps, no face mark of its own; it shows while its server
-      // runs (serverUp, as the desktop draws).
-      if (starred || (face && (face.app === true || face.intrinsic === true || (typeof mf.server === 'string' && mf.server !== '')))) {
-        var part = face || {};
-        var m = { name: String(part.name || mf.name || name), icon: String(part.icon || mf.icon || ''), description: String(part.description || mf.description || ''),
-          server: typeof mf.server === 'string' ? mf.server : '', hidden: mf.hidden === true, type: String(mf.type || '') };
-        if (apps[id]) apps[id].manifest = m;
-        else apps[id] = { id: id, manifest: m, behavior: null };
-      } else if (apps[id]) { delete apps[id]; closePages(id); }
+      // EVERY APP SHOWS (goal/G41.33, Q9, a star showed every app; goal/G43.18, box v29: a face is whole, or there is none, so
+      // every face is a starred one, and at home every app shows, goal/G43.2). What the node's face part does not name, its
+      // manifest does (its icon a key into the icon table). An app naming a server shows while its server runs (serverUp).
+      var part = face || {};
+      var m = { name: String(part.name || mf.name || name), icon: String(part.icon || mf.icon || ''), description: String(part.description || mf.description || ''),
+        server: typeof mf.server === 'string' ? mf.server : '', hidden: mf.hidden === true, type: String(mf.type || '') };
+      if (apps[id]) apps[id].manifest = m;
+      else apps[id] = { id: id, manifest: m, behavior: null };
       hand();
     }, function () { /* no answer: the app is not shown */ });
   }
@@ -475,19 +466,6 @@
     var p = job && job.type === 'app-face' && job.data ? String(job.data.path || '') : '';
     var m = /^(shell\/([^/]+))\/\2\.js$/.exec(p);
     if (m) readFace(m[1]);
-  }
-  // THE STAR PRESSED AT HOME, THIS FACE OPEN (goal/G41.32; Andy: "does a star change at home stream to the face????"): this relay's
-  // row on the stream says so, on every face, and every app is read again, so it comes or goes at once. An app whose mark does
-  // not stand closes, as one whose mark went.
-  var SHELL_APP = /^(shell\/([^/]+))\/\2\.js$/;
-  function followStar(job) {
-    var row = job && job.type === 'shadow' && job.data ? job.data.row : null;
-    if (!row || !link.relayKey || row.publicKey !== link.relayKey || row.gone === true) return;
-    var now = row.mine === true;
-    if (now === link.starred) return;
-    link.starred = now;
-    var F = ((window.spirit.data || {}).fs || {}).data;
-    if (F) Object.keys(F.files()).forEach(function (k) { var m = SHELL_APP.exec(k); if (m) readFace(m[1]); });
   }
   // A SERVER STARTED OR STOPPED: the desktop drawn again, and the open pages of every app whose server went closed.
   var serversShown = '';
@@ -765,8 +743,6 @@
           try { keys = JSON.parse(bytesText(r.bytes)); } catch (e) { keys = null; }
           if (r.status !== 200 || !keys || !keys.publicKey) throw new Error('the home node did not answer');
           link.node = { publicKey: keys.publicKey, sealKey: keys.sealKey || '' };
-          link.starred = keys.starred === true;
-          link.relayKey = String(keys.relayKey || '');
           // The tab says whose face this is: the ID's label after the 🤓 (goal/G30.15).
           if (keys.name) document.title = String(keys.name);
           return spirit.seal && link.node.sealKey ? spirit.seal.supported() : false;
@@ -807,7 +783,7 @@
       openStream(false);
       listApps();
       // The servers' jobs as they change, in the jobs family's cache: an app comes or goes with its server (goal/G27.16).
-      if (((window.spirit.data || {}).jobs || {}).data) window.spirit.data.jobs.data.watch(function (id, job) { if (job) { followFace(job); followStar(job); } followServers(); });
+      if (((window.spirit.data || {}).jobs || {}).data) window.spirit.data.jobs.data.watch(function (id, job) { if (job) followFace(job); followServers(); });
       followServers();
       if (home) startJoin();
       // The mailed join link, at home and on a relay face alike, once logged in (goal/G40.10, box v25).

@@ -1578,6 +1578,9 @@ function createHub(rootDir) {
       var row = shadow(rootDir).get(key);
       if (body.own === true && row.relay === true && row.seated !== true) { res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: false, code: 'no-seat', error: 'this node holds no seat on that relay' })); return; }
       shadow(rootDir).set(key, { mine: body.own === true });
+      // A STAR TAKEN OFF TAKES THE FACE AWAY (goal/G43.18, box v29: "A star taken off a relay that has a face takes that face
+      // away (Q21)"): the face this node holds on that relay is forgotten, so putting the star back opens nothing.
+      if (body.own !== true && row.relay === true) { var faceAt = relayKeys.byKey(rootDir, key); if (faceAt && faceAt.url) relayKeys.keepFace(rootDir, faceAt.url, ''); }
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ key: key, own: body.own === true }));
     });

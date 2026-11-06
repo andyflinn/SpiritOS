@@ -6,10 +6,11 @@
 // ITS OWN RELAYS (Andy: "doesn't show up if the user has zero verified emails anywhere; only shows relay in the dropdown,
 // where the user has a confirmed email address. THAT's WHY THE FORMS HAVE SEPARATE RELAY DROPDOWNS."): since goal/G40.11
 // the node keeps no email, and a seat taken by email is a verified one, so the dropdown offers the relays this node is
-// seated on. AND NOT STARRED (goal/G41.32; Andy: "show only relays in the relay-dropdown that the node is a member of AND are
-// not starred.", "if there are no relays that satisfy the requirement, don't display the form at all.", "faceForm provides
-// that check as a function"): with none left its box is not shown, so a mounter's tile goes with it (Andy: "info-app: don't
-// show the faceForm, if the faceForm says it shouldn't be displayed").
+// seated on. AND STARRED (goal/G43.18, box v29: "At home, faceForm offers a face only on a starred relay", which turns round
+// goal/G41.32's not starred; Andy: "on the home node, NO face is offered (faceForm hides itself) for a relay without star."):
+// the home node answers a face only from a starred relay. With none left its box is not shown, so a mounter's tile goes with
+// it (Andy, G41.32: "if there are no relays that satisfy the requirement, don't display the form at all.", "faceForm provides
+// that check as a function", "info-app: don't show the faceForm, if the faceForm says it shouldn't be displayed").
 //
 //   offers(relays)     -> whether any relay row can be offered: the check, for whoever asks
 //   mount(box, opts)   -> draws the form and asks: opts.relays, relay rows (url, label, face, claimed or owned, mine), its box
@@ -30,7 +31,7 @@
   }
 
   function offered(relays, o) {
-    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && (r.claimed || r.owned) && r.mine !== true; });
+    var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && (r.claimed || r.owned) && r.mine === true; });
     return o && o.fixed ? list.filter(function (r) { return r.url === o.fixed; }) : list;
   }
 

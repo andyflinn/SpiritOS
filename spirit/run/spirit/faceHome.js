@@ -36,61 +36,21 @@ const seal = require('./seal');
 const FACE_PRIORITY = { fs: 2, presence: 3, app: 4, stats: 5 };
 const FACE_PIECE = 64 * 1024;
 
-// WHAT A FACE MAY NOT ASK ITS HOME NODE (goal/G40.10, box v26; Andy: "we only protect the face and its connection,
-// other than that the face uses the same door as a puppeteer would use on the home node", and "i can see the point of
-// refusing to change the face name for the face I'm calling from"). Only a face-name change on the relay this face is
-// called through: relay.face for that relay, or a post carrying { face } to that relay's key. relay.join, and a face
-// name on any other relay, go through. request: the face's call, { call, args } (goal/G41.15); here: { url, key } of
-// the relay the request came through. ON A STARRED RELAY THIS REFUSAL GOES TOO (goal/G41.33, the box: "for a face(relay) with
-// star, NO RESTRICTIONS AT ALL, except changing stars"), so a starred face can rename itself and lose the page it is on.
 // A call as the door takes it (goal/G41.15): exactly { call, args }, call a name, args a plain object.
 function isCall(x) {
   return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 2 &&
     typeof x.call === 'string' && x.call !== '' && !!x.args && typeof x.args === 'object' && !Array.isArray(x.args);
 }
-// OFF THE FACE UNTIL A FACE CAN PROVE IT IS THE OWNER (goal/G41.30, the review's RC1, RH1 and RH2; Andy, Q3: "taking jobs,
-// fs, fileServer and net.fetch off the face until faces can prove they are the owner?" "yes."; and "we fix the red from
-// goal/G41.30 AND all the review items here in this item."). A face login is an emailed token, and the relay carries the
-// request, so neither is proof of the owner: what runs code, reads or writes files, reaches the network as this node, or
-// changes grants or the node's keys is refused here, before the door. The step-up that gives them back is its own goal.
-// Andy, Q4: "every FS group off the face, fs.annotations stays for the icons" "yes.": the face's desktop reads its apps' icons
-// with it (boot.js), so that one read stays.
-// owner too (Andy: "gets everything back, jobs, files, grants, puppets"): its command is signed by this node and a puppet
-// obeys it, so on a relay that is not starred it would hand the face that puppet's jobs, files and grants.
-const OFF_THE_FACE_FAMILIES = ['jobs', 'fs', 'fileServer', 'owner'];
-const OFF_THE_FACE_VERBS = ['app.active', 'app.label', 'app.icon', 'app.shell', 'net.fetch', 'auth.grant', 'auth.revoke', 'auth.bundle', 'auth.branch', 'node.rotateCipher'];
-const STAYS_ON_THE_FACE = ['fs.annotations'];
-// ON A RELAY THIS NODE'S OWNER STARRED, THE LIMITS ARE GONE (goal/G41.30; Andy: "your face on a relay you own gets everything
-// back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the limits stay until
-// G42." "is a compromise i can live with"). So whoever holds that relay, or the login mail, can run programs on this
-// machine until G42. The star itself never comes from a face, or one face could star another relay.
+// A FACE IS WHOLE, OR THERE IS NONE (goal/G43.18, box v29; Andy: "we remove ALL the star shit, like this,", "on the home node,
+// NO face is offered (faceForm hides itself) for a relay without star."). The home node answers a face only from a starred
+// relay, one check (request and open, below), and a face it answers is a full face: what the loopback screen gets. So whoever
+// holds a starred relay, or the login mail, can run programs on this machine until G42 (goal/G41.30, Andy's compromise).
+// The one thing never asked from a face is the star itself (box v29: "Starring is never asked from a face (contact.own), or a
+// face could star a second relay and open a full face there").
 const NEVER_ON_THE_FACE = ['contact.own'];
-function offTheFace(verb) {
-  if (STAYS_ON_THE_FACE.indexOf(verb) !== -1) return false;
-  const parts = verb.split('.');
-  // EVERY FAMILY'S FS.path STAYS (Andy, of the face with no star: "none of the face-apps showed up"): spirit.cacheManager asks
-  // it to find a family's cache manager, and without the fs and jobs caches the face's desktop lists no apps. It answers the
-  // name of a file in the family's own folder, and reads and writes nothing.
-  if (parts.length === 3 && parts[1] === 'FS' && parts[2] === 'path') return false;
-  return OFF_THE_FACE_VERBS.indexOf(verb) !== -1 || OFF_THE_FACE_FAMILIES.indexOf(parts[0]) !== -1 || parts[1] === 'FS';
-}
-function faceRefuses(request, here) {
-  const q = request || {};
-  const r = q.args && typeof q.args === 'object' ? q.args : {};
-  const h = here || {};
-  const plain = function (u) { return String(u || '').trim().replace(/\/+$/, '').toLowerCase(); };
-  const verb = String(q.call || '');
-  if (NEVER_ON_THE_FACE.indexOf(verb) !== -1) return verb + ' is never asked from a face';
-  if (h.owned) return '';
-  if (offTheFace(verb)) return verb + ' is off the face until a face can prove it is the owner';
-  if (verb === 'relay.face' && plain(r.url) === plain(h.url)) return 'relay.face would change the face you are calling from';
-  if (verb === 'peer.post' && h.key && String(r.to || '') === String(h.key)) {
-    let packet = null;
-    try { packet = JSON.parse(String(r.text || '')); } catch (e) { packet = null; }
-    const body = packet && packet.body;
-    if (body && typeof body === 'object' && body.face) return 'a post carrying a face name would change the face you are calling from';
-  }
-  return '';
+function faceRefuses(request) {
+  const verb = String((request && request.call) || '');
+  return NEVER_ON_THE_FACE.indexOf(verb) !== -1 ? verb + ' is never asked from a face' : '';
 }
 
 // THE SERIALIZING QUEUE. One write at a time on the sink; an event pushed while the sink is free is written at once,
@@ -296,6 +256,9 @@ function createFaceHome(opts) {
     // relay where this node set a face"): any relay this node is connected to can send a face event. Refused before a
     // piece is kept or a seal is opened. No faceSet given is no face: closed, not open.
     if (!faceIsHere(url)) { json(res, 403, { ok: false, code: 'no-face-here', error: 'this node set no face on this relay' }); return; }
+    // AND ONLY FROM A STARRED RELAY (goal/G43.18, box v29: "The home node answers a face only from a starred relay, one
+    // check"): nothing at all, not its keys, not a file, not node.card.
+    if (!faceIsOwned(url)) { json(res, 403, { ok: false, code: 'no-star', error: 'this node answers a face only from a relay its owner starred' }); return; }
     if (r && r.piece) {
       r = piece(r.piece, res);
       if (!r) return;
@@ -314,20 +277,18 @@ function createFaceHome(opts) {
     // identity; node.card does not carry the seal key and is not changed for this.
     if (r.keys === 1) {
       const self = o.identity() || {};
-      // And its name, for the face's tab title (goal/G30.15: "the browser tab shows the ID's label"). And whether this relay
-      // is starred, for the desktop (goal/G41.33, Q9): it only draws icons, a page told wrongly opens nothing, the door decides.
-      // And which relay this is, whose row says when the star changes (goal/G41.32).
-      json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || ''), name: String(self.name || ''), starred: faceIsOwned(url), relayKey: String(o.relayKey(url) || '') });
+      // And its name, for the face's tab title (goal/G30.15: "the browser tab shows the ID's label"). No star, and no relay
+      // key to follow it by: a face answered at all is a starred one (goal/G43.18, box v29: "No shell is told the star").
+      json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || ''), name: String(self.name || '') });
       return;
     }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
-    // A save in parts writes a file, and fs is off the face on any relay but a starred one (OFF_THE_FACE above).
-    if (r.upload && typeof r.upload === 'object' && faceIsOwned(url)) { uploadPart(r.upload, res); return; }
-    if (r.upload && typeof r.upload === 'object') { json(res, 403, { ok: false, code: 'not-from-the-face', error: 'a save is off the face until a face can prove it is the owner' }); return; }
+    // A save in parts writes a file.
+    if (r.upload && typeof r.upload === 'object') { uploadPart(r.upload, res); return; }
     // A CALL IS { call, args } (goal/G41.15; the box: "ONE ENVELOPE for every call to a node's door"): the name and the
     // arguments apart, and nothing else beside them; the arguments go to the verb as they came.
     if (!isCall(r)) { json(res, 400, { ok: false, code: 'bad-request', error: 'a call is { call: "<family>.<verb>", args: { ... } }, nothing else beside them' }); return; }
-    const no = faceRefuses(r, { url: url, key: o.relayKey(url) || '', owned: faceIsOwned(url) });
+    const no = faceRefuses(r);
     if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     const verb = r.call;
     const args = r.args;
@@ -365,16 +326,14 @@ function createFaceHome(opts) {
     if (job.kind === 'server' && /^process\/js\/[^/]+$/.test(String(job.module || ''))) return FACE_PRIORITY.app;
     return 0;
   }
-  // What a face is sent of a job: a server publishing no app object goes as its status alone, never its log.
-  function faceView(job) {
-    if (job && job.kind === 'server' && !(job.app && typeof job.app === 'object')) {
-      return { id: job.id, kind: job.kind, module: job.module, type: job.type, status: job.status };
-    }
-    return job;
-  }
-
+  // EVERY OPEN FACE ON A STARRED RELAY (goal/G43.18, box v29: "The home node answers a face only from a starred relay"): a
+  // stream opened without the star carries nothing until the star comes, and nothing it missed. A face this node no longer
+  // holds is closed here at the next event: "A star taken off a relay that has a face takes that face away (Q21)".
   function toFaces(priority, event) {
-    Object.keys(faces).forEach(function (url) { faces[url].queue.push(priority, event); });
+    Object.keys(faces).forEach(function (url) {
+      if (!faceIsHere(url)) { close(url); say('face: ' + url + ' is no longer held, its stream is closed'); return; }
+      if (faceIsOwned(url)) faces[url].queue.push(priority, event);
+    });
   }
 
   // Peer by peer: only the keys whose { present, at } changed, a key gone from the table as not present.
@@ -396,17 +355,10 @@ function createFaceHome(opts) {
       presenceChanged(job.data && job.data.presence).forEach(function (p) { toFaces(FACE_PRIORITY.presence, { event: 'presence', data: p }); });
       return;
     }
-    // A STARRED FACE GETS WHAT THE LOOPBACK GETS (goal/G41.33, the box: "anything andy gets on his loopback screen, he can get
-    // on his face, if he "stars" any relay"): every job, whole, a job with no place at the app servers' priority; the queue
-    // does not change. The star counts at each event, here and in toStarred. A face with no star keeps today's stream.
-    const p = priorityOf(job);
-    Object.keys(faces).forEach(function (url) {
-      if (faceIsOwned(url)) faces[url].queue.push(p || FACE_PRIORITY.app, { event: 'job-updated', data: job });
-      else if (p) faces[url].queue.push(p, { event: 'job-updated', data: faceView(job) });
-    });
-  }
-  function toStarred(event) {
-    Object.keys(faces).forEach(function (url) { if (faceIsOwned(url)) faces[url].queue.push(FACE_PRIORITY.app, event); });
+    // A FACE GETS WHAT THE LOOPBACK GETS (goal/G41.33, the box: "anything andy gets on his loopback screen, he can get on his
+    // face, if he "stars" any relay"; every face is a starred one since goal/G43.18): every job, whole, a job with no place at
+    // the app servers' priority.
+    toFaces(priorityOf(job) || FACE_PRIORITY.app, { event: 'job-updated', data: job });
   }
   // ONE SUBSCRIBER OF THE NODE'S EVENTS (goal/G40.6): the face's home side hears the events family, as the loopback
   // shell does, and no packets (a face asks its home node, it is posted nothing). A job as it changes; a contact renamed
@@ -414,8 +366,8 @@ function createFaceHome(opts) {
   if (o.events && typeof o.events.subscribe === 'function') {
     o.events.subscribe(function (kind, data) {
       if (kind === 'job-updated') onJob(data);
-      // goal/G41.33: a job deleted, and every relay event, the monitor's too (the box: "This overrules goal/G30.13"), starred only.
-      else if (kind === 'job-deleted' || kind === 'relay-event') toStarred({ event: kind, data: data });
+      // goal/G41.33: a job deleted, and every relay event, the monitor's too (the box: "This overrules goal/G30.13").
+      else if (kind === 'job-deleted' || kind === 'relay-event') toFaces(FACE_PRIORITY.app, { event: kind, data: data });
       else if (kind === 'contact.rename' && data && data.key) toFaces(FACE_PRIORITY.presence, { event: 'contact.rename', data: data });
     }, { packets: 'none' });
   }
@@ -439,7 +391,10 @@ function createFaceHome(opts) {
       // The relay ending the upload while the face is still open (a refusal, a network drop): said, not retried.
       req.on('close', function () { if (faces[url] === face) { delete faces[url]; say('face: the stream to ' + url + ' ended'); } });
     }
-    const all = (jobs && typeof jobs.listJobs === 'function') ? jobs.listJobs() : [];
+    // A RELAY WITHOUT THE STAR (goal/G43.18, box v29): the stream stands and carries nothing, not even the file tree, until the
+    // star comes (toFaces); a star taken off takes the face itself away.
+    if (!faceIsOwned(url)) { say('face: ' + url + ' opened its stream, and that relay has no star: it carries nothing'); return; }
+    const all =(jobs && typeof jobs.listJobs === 'function') ? jobs.listJobs() : [];
     const fsJob = all.filter(function (j) { return j.type === 'fs-watcher'; })[0];
     if (fsJob && typeof jobs.fsTreeCommands === 'function') {
       jobs.fsTreeCommands().forEach(function (command) {
@@ -453,13 +408,9 @@ function createFaceHome(opts) {
     Object.keys(now).forEach(function (key) {
       face.queue.push(FACE_PRIORITY.presence, { event: 'presence', data: { key: key, present: now[key].present === true, at: now[key].at } });
     });
-    // A STARRED FACE THAT OPENS GETS THE JOBS A LOOPBACK PAGE GETS ON CONNECT (goal/G41.33, the box's line 1; events.js, the
-    // snapshot), the tree and presence as above. Pressing the star with the face open sends nothing: "no catch-up".
-    if (faceIsOwned(url)) {
-      all.forEach(function (j) { if (j.type !== 'fs-watcher' && j.type !== 'relay-presence') face.queue.push(priorityOf(j) || FACE_PRIORITY.app, { event: 'job-updated', data: j }); });
-    } else {
-      all.forEach(function (j) { if (priorityOf(j) === FACE_PRIORITY.app) face.queue.push(FACE_PRIORITY.app, { event: 'job-updated', data: faceView(j) }); });
-    }
+    // A FACE THAT OPENS GETS THE JOBS A LOOPBACK PAGE GETS ON CONNECT (goal/G41.33, the box's line 1; events.js, the
+    // snapshot), the tree and presence as above.
+    all.forEach(function (j) { if (j.type !== 'fs-watcher' && j.type !== 'relay-presence') face.queue.push(priorityOf(j) || FACE_PRIORITY.app, { event: 'job-updated', data: j }); });
     // NO SNAPSHOT OF THE SHADOW JOB: it holds the one row that changed last, not the table; a face opened reads its
     // relays and contacts as it draws, and hears every change after (goal/G40.11).
   }
@@ -471,16 +422,9 @@ function createFaceHome(opts) {
     try { face.req.end(); } catch (e) { /* gone */ }
   }
 
-  // WHAT A RELAY THIS NODE OWNS DID ABOUT ITS MEMBERSHIP (goal/G30.15): an invite minted, a claim, a rename, as the
-  // loopback shell gets it on its 'relay-event' line, so Relay Details on the face redraws at once. The relay monitor
-  // is not handed here. At the app servers' priority. A starred face hears this same event from the node's dispatcher
-  // with every other relay event (goal/G41.33), so it goes here only to a face with no star: one event, one line.
-  function ownerEvent(ev) {
-    if (!ev || typeof ev !== 'object') return;
-    Object.keys(faces).forEach(function (url) { if (!faceIsOwned(url)) faces[url].queue.push(FACE_PRIORITY.app, { event: 'relay-event', data: ev }); });
-  }
-
-  return { request: request, open: open, close: close, ownerEvent: ownerEvent, sweepUploads: sweepUploads };
+  // A RELAY'S MEMBERSHIP EVENTS (goal/G30.15) reach a face from the node's dispatcher with every other relay event
+  // (goal/G41.33): every face is a starred one now (goal/G43.18), so no second way here.
+  return { request: request, open: open, close: close, sweepUploads: sweepUploads };
 }
 
 module.exports = {

@@ -1643,9 +1643,8 @@ catch (e) {
       // event itself (hub.adoptClaim — it replaced a roster sweep that read
       // a list no relay may return, 2026-09-19).
       try { hub.adoptClaim(ev); } catch (e) { /* a contact list is not a reason to drop an event */ }
-      // And to the owner's face with no star, as to his loopback pages (goal/G30.15). A starred face hears it, and the
-      // monitor (onRelayEvent), from relayEvents below (goal/G41.33).
-      if (faceHome) { try { faceHome.ownerEvent(ev); } catch (e) { /* a witness */ } }
+      // A face hears it, and the monitor (onRelayEvent), from relayEvents below (goal/G41.33): every face is a starred one
+      // since goal/G43.18.
       return relayEvents.note(ev);
     },
     // WHO EACH RELAY IS, pinned as its stream opens. relayKey fetches the

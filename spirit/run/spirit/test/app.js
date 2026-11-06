@@ -52,10 +52,11 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
   ok(!!label, 'server.json names identity.label: ' + label, 'server.json has no identity.label: ' + short(identity));
   ok(!!icon, 'server.json names identity.icon: ' + icon, 'server.json has no identity.icon: ' + short(identity));
 
-  // A FACE WITH NO STAR CAN CALL IT (Andy, box: "and yes, a face with no star can call appSearch").
-  const said = faceRefuses({ call: 'app.search', args: {} }, { url: 'http://r.example/', key: '', owned: false });
-  ok(said === '', 'a face with no star may call app.search', 'a face with no star is refused app.search: ' + short(said));
-  ok(faceRefuses({ call: 'fs.save', args: {} }, { url: 'http://r.example/', key: '', owned: false }) !== '', 'the same question refuses fs.save, so it can refuse', 'fs.save is let through as well: the check above judged nothing');
+  // A FACE CAN CALL IT (Andy, box: "and yes, a face with no star can call appSearch"; since goal/G43.18, box v29, "A face is
+  // whole, or there is none": the node answers a face only from a starred relay, faceStar.js, and that face calls every verb).
+  const said = faceRefuses({ call: 'app.search', args: {} });
+  ok(said === '', 'a face may call app.search', 'a face is refused app.search: ' + short(said));
+  ok(faceRefuses({ call: 'contact.own', args: {} }) !== '', 'the same question refuses contact.own, so it can refuse', 'contact.own is let through as well: the check above judged nothing');
 
   const node = await scratchNode();
   try {
@@ -109,7 +110,6 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     const verbs = require(path.join(RUN, 'spirit', 'app', 'api.js')).verbs || {};
     ok(!!verbs.active && 'key' in verbs.active && 'active' in verbs.active, 'api.js names the verb with key and active', 'api.js verbs: ' + short(verbs));
     ok(fs.existsSync(path.join(RUN, 'spirit', 'app', 'active.json')), 'the verb has its file, active.json', 'no spirit/app/active.json');
-    ok(faceRefuses({ call: 'app.active', args: { key: 'monitor', active: true } }, { url: 'http://r.example/', key: '', owned: false }) !== '', 'a face with no star is refused it', 'a face with no star may set active');
     ok(Object.keys(verbs.search || {}).join() === 'q', 'the box: app.search stays "just a search string"', 'app.search takes: ' + short(verbs.search));
     const stateFile = function (k) { return path.join(node.root, 'spirit', 'run', 'spirit', 'state', k, 'node.json'); };
     const activeIn = function (k) { try { return JSON.parse(fs.readFileSync(stateFile(k), 'utf8')).active; } catch (e) { return undefined; } };
@@ -177,7 +177,6 @@ test.startTest('app.js: the app family, a core api beside the others (goal/G43.2
     ok(allowed.status === 200 && stateRead('agent').shell === true, 'app.shell writes node.json', 'after app.shell: ' + short({ s: allowed.status, t: allowed.text, f: stateRead('agent') }));
     ok(fs.readFileSync(sidecar, 'utf8') === sidecarBefore, 'neither writes <name>.json', 'agent.json was written');
     for (const verb of ['app.icon', 'app.label', 'app.shell']) {
-      ok(faceRefuses({ call: verb, args: { key: 'agent' } }, { url: 'http://r.example/', key: '', owned: false }) !== '', 'a face with no star is refused ' + verb, 'a face with no star may call ' + verb);
       for (const bad of ['nosuchapp', '../evil', '']) {
         const r = await ask(node.base, verb, { key: bad, icon: '🧪', label: 'x', shell: true });
         ok(r.status !== 200, verb + ' refuses ' + JSON.stringify(bad), verb + ' took ' + JSON.stringify(bad) + ': ' + short(r.text));

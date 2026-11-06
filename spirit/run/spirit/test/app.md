@@ -12,13 +12,13 @@ Andy, box: *"we build a skeleton core-api-family, not a separate server, precise
 - `spirit/app/server/server.json` has `identity.icon` and `identity.label`. The plugins are exactly the folders of `spirit/app/` that hold their own `<name>.json`, as apps move in one by one. No app may take the name of a verb of the family: a folder named `search` is no app (goal/G43.6).
 - It answers as other searches do, key and label rows. It finds `server` on an empty search and on its label, and not on words that fit nothing. The row carries the icon.
 - A folder counts only with its own `<name>/<name>.json`, read from the disk: a second one is found, and one without its file, `appSelector/` and `test/` are not.
-- A face with no star may call it: *"and yes, a face with no star can call appSearch"*. The hidden filter that comes with that is out of scope.
+- A face may call it: *"and yes, a face with no star can call appSearch"*; since goal/G43.18 (box v29) a face is whole or there is none, so the face rule refuses only contact.own. The hidden filter that comes with that is out of scope.
 
 ## app.active (goal/G43.9)
 
 Andy, box: *"spirit.app gains a verb: "active"."* Peer review: wsl, yes.
 
-- *"app.active { key, active } sets it; only the owner may."* `api.js` names it with both arguments, it has `active.json`, and a face with no star is refused.
+- *"app.active { key, active } sets it; only the owner may."* `api.js` names it with both arguments, and it has `active.json`.
 - *"The user sets active, so Monitor and server start off."* Neither is active before a press, in the file or in a row.
 - *"The node writes spirit/state/<key>/node.json."* True and false both land there.
 - Writing it also starts or stops the app's server, if it has one (goal/G43.12). Only this verb does that: a hand edit of the file counts at the next boot. Specified in `./appServerMount.md`.
@@ -32,7 +32,7 @@ Q4, *"Do a label change and allow-as-shell go in spirit/state/<name>/node.json, 
 
 - Each names its arguments, has its file, writes `node.json` keeping what else it holds, and never writes `<name>.json`.
 - `node.json` overrides `<name>.json`: a search answers the new label.
-- A face with no star is refused both, and both refuse a key that is no app.
+- Both refuse a key that is no app.
 
 Q6, *"Does a changed icon go in spirit/state/<name>/node.json through a third new verb, app.icon?"*, Andy: *"yes."* `app.icon` is held the same way.
 

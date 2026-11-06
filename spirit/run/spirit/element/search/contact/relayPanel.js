@@ -752,8 +752,8 @@ function ndEmailHtml() {
 // THE FACE FORM ON ITS RELAY (goal/G40.10, box v19): the same face form as Join and Info, its dropdown fixed to this relay;
 // it offers a relay where this node is seated (goal/G40.11: a seat taken by email is a verified one).
 function ndFaceHtml() {
-  // ONE RULE, THE FORM'S (goal/G41.32; Andy: "change: don't show it if the relay is starred..."; "faceForm provides that check as a
-  // function"). Drawn again once the form is on the page.
+  // ONE RULE, THE FORM'S (goal/G41.32; Andy: "faceForm provides that check as a function"): since goal/G43.18 it shows only on a
+  // starred relay. Drawn again once the form is on the page.
   var form = window.spirit && window.spirit.element && window.spirit.element.faceForm;
   if (!ndBadge || !form || !form.offers([ndBadge])) return '';
   return ndPanel('face', '🌐', 'A face name', '<div class="nd-face-form"></div>', 'natter-face');
