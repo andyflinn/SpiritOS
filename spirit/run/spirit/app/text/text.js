@@ -10,7 +10,7 @@
 (function () {
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/files/listElement.js'), S.require('spirit/element/codeMirror.js')]);
+  var parts = Promise.all([S.require('spirit/element/fstat.js'), S.require('spirit/element/files/listElement.js'), S.require('spirit/element/codeMirror.js'), S.cacheManager('fs')]);
 
   // ONE FILE, IN fstat'S PANE: Save and what it says above the text, the text below, scrolling inside itself (rule/16).
   function edit(host, path, words, line) {
@@ -24,6 +24,14 @@
     var place = body.querySelector('[data-text="view"]');
     var view = null;
     var live = true;
+    // WHAT IT SAVES, IT LISTENS FOR (goal/G41.27, as the old editor did): the file's row in the node's tree, as the fs family's
+    // cache keeps it. Its own save is "saved" once the tree has it; any other change of the file is "changed on disk".
+    var saving = false;
+    var off = S.data && S.data.fs && S.data.fs.data ? S.data.watchPath(S.data.fs.data.branch + '/' + path, function (whole, row) {
+      if (!row || !live) return;
+      status.textContent = saving ? 'saved' : 'changed on disk';
+      saving = false;
+    }) : function () {};
     FS.read(path).then(function (r) {
       if (!live) return null;
       if (r.status !== 200) { status.textContent = 'not loaded: ' + r.status; return null; }
@@ -34,10 +42,11 @@
     body.querySelector('[data-text="save"]').addEventListener('click', function () {
       if (!view) return;
       status.textContent = 'saving…';
-      Promise.resolve(S.fs.saveFile(path, view.value())).then(function (r) { status.textContent = r && r.ok === false ? 'save failed: ' + (r.reason || 'refused') : 'saved'; },
-        function (e) { status.textContent = 'save failed: ' + ((e && e.message) || e); });
+      saving = true;
+      Promise.resolve(S.fs.saveFile(path, view.value())).then(function (r) { if (r && r.ok === false) { saving = false; status.textContent = 'save failed: ' + (r.reason || 'refused'); } },
+        function (e) { saving = false; status.textContent = 'save failed: ' + ((e && e.message) || e); });
     });
-    return { destroy: function () { live = false; host.innerHTML = ''; } };
+    return { destroy: function () { live = false; off(); host.innerHTML = ''; } };
   }
 
   function create(container, opts) {
