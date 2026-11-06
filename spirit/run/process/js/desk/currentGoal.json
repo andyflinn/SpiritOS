@@ -1,5 +1,5 @@
 {
- "change": 147237,
+ "change": 148786,
  "goal": "goal/G43",
  "items": [
   {
@@ -13,6 +13,7 @@
    "buttons": [
     "done",
     "verify",
+    "go-all",
     "close",
     "pushgoal"
    ],
@@ -149,13 +150,8 @@
    "excluded": [
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows",
-    "wsl-claude"
-   ],
-   "working": [
-    "claude-windows"
-   ],
+   "live": [],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -303,6 +299,7 @@
    "version": 19,
    "buttons": [
     "start-design",
+    "go",
     "close",
     "pushgoal",
     "delete",
@@ -311,9 +308,7 @@
    "blocking": [
     "goal/G43"
    ],
-   "blocked": [
-    "goal/G43.15"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -11562,15 +11557,13 @@
    "id": "goal/G43.15",
    "title": "app tweaks.",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
-   "version": 12,
+   "version": 13,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -11580,21 +11573,21 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 31,
+   "fileCount": 58,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "acec19243b4e0e4fb246467f9499e84187e8d66f",
+   "redCommit": "eba0ec30",
+   "waived": true,
    "rules": [
     {
      "key": "rule/29"
@@ -11625,10 +11618,6 @@
      "version": 68
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/25",
      "version": 62
     },
@@ -11647,10 +11636,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -11693,7 +11678,7 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -11701,13 +11686,13 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "# in this item we'll go through a series of app tweeks.\n\n- spirit.app.appSelector.rowElement.js still shows an acivate/deactivate button for intrinsic apps. And what's even worse, the server allows it!!!!\n- So an app's row carries intrinsic, the row shows no Activate/Deactivate for it, and app.active refuses an intrinsic app by name, writing nothing.\n\n# new element rowFormToggle \n\n- it acts exactly like the two toggle switches in appSelector:detailElement.\n-it is configurable with a description of what is being toggled.\n- appSelector:detailElement.js\nwill use those to activate/deactivate, and to allow the mounting as shell.\n\n# new element serverDEBUG.js\n\n- a rowFormToggle\n- when the app is NOT mountable by the node (node.mount==false) it hides itself. \n- when the app is a server (node.mount==true), configured text: \"turn on|off DEBUG <app-label>\n- it will use the OWNER-ONLYE VERB DEBUG in the appServer to do that.\n- It sits in the appSelector's detail, under the Activate row, and hides while its server is not running (Q1: \"yes.\").\n- DEBUG is kept across a restart, for every server alike (Q2: \"i think we should persist it, always. especially when debugging, you don't want to go turn debug on after every crash... :)\"). The node owns the server's job, so it writes debug into spirit/state/<name>/node.json as the job says it changed, and hands it to the server at start, beside the node facts it hands over now. No new verb; the server never writes the node's file.\n- Only the new apps, in spirit/app/, keep it; the old process/js servers forget it on a restart as they do now (Q3: \"only the new ones.\").\n\n- the appServers API MUST STREAM changes, too for debug, the file events are streamed anyway...\n- DEBUG puts its state on the server's own job, in the job's data, at start and on every change; the job's data is merged, so the server's next publish leaves it. A page reads it from the jobs cache, as the agent's switch reads its state now.\n\n# The agent's debug switch\n\nAndy: \"WHY WOULD THE FUCKING agent server have a separate debug switch, it belongs to the node, and should work like any other servers debug switch.\"\n\n- The agent's own debug verb and its config.json go. Its switch is serverDEBUG, like any server's.\n- On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG (Andy: \"agent will in the server-config, on the right icon strip the ⚙ icon instead of 🐞, and that panel will show...\").\n- Andy: \"basically: i want the rows in app-details to be available to the app interfaces as well.\"\n\n# rowForm's own spacing\n\n- A rowForm carries its own 1em above it, so when it is hidden its space goes with it (Andy: \"rowForms should carry their own upper 1em spacing, so when they're invisible, they space disappears with them, especially since we're starting to have elements that self-hide if they're not applicable.\"). A mounter that adds its own 1em above a rowForm drops it.\n\n# Two more elements, each a rowFormToggle that hides itself\n\n- rowFormAppActive: Activate/Deactivate for one app, hidden when the app is intrinsic (Andy: \"the \"activate/deacivate\" should be an element, too, that self-hides if the app is intrinsic, that way nobody that uses that element can forget to hide it....\").\n- rowFormAppShell: allow mount-as-shell, hidden when the app does not mount on the shell (Andy: \"correct, so does, allow mount-as-shell..\").\n- The appSelector's detail and its rows use them.\n- They and rowFormToggle and serverDEBUG live in spirit/app/appSelector/, beside the appSelector's own elements, and the appSelector stays where it is (Andy: \"keep the new elements in in spirit/app/ , i'll explain in the next item.\").\n- Andy: \"we have enough things for a first round in this item.\"\n",
+   "box": "# in this item we'll go through a series of app tweeks.\n\n- spirit.app.appSelector.rowElement.js still shows an acivate/deactivate button for intrinsic apps. And what's even worse, the server allows it!!!!\n- So an app's row carries intrinsic, the row shows no Activate/Deactivate for it, and app.active refuses an intrinsic app by name, writing nothing.\n\n# new element rowFormToggle \n\n- it acts exactly like the two toggle switches in appSelector:detailElement.\n-it is configurable with a description of what is being toggled.\n- appSelector:detailElement.js\nwill use those to activate/deactivate, and to allow the mounting as shell.\n\n# new element serverDEBUG.js\n\n- a rowFormToggle\n- when the app is NOT mountable by the node (node.mount==false) it hides itself. \n- when the app is a server (node.mount==true), configured text: \"turn on|off DEBUG <app-label>\n- it will use the OWNER-ONLYE VERB DEBUG in the appServer to do that.\n- It sits in the appSelector's detail, under the Activate row, and hides while its server is not running (Q1: \"yes.\").\n- DEBUG is kept across a restart, for every server alike (Q2: \"i think we should persist it, always. especially when debugging, you don't want to go turn debug on after every crash... :)\"). The node owns the server's job, so it writes debug into spirit/state/<name>/node.json as the job says it changed, and hands it to the server at start, beside the node facts it hands over now. No new verb; the server never writes the node's file.\n- Only the new apps, in spirit/app/, keep it; the old process/js servers forget it on a restart as they do now (Q3: \"only the new ones.\").\n\n- the appServers API MUST STREAM changes, too for debug, the file events are streamed anyway...\n- DEBUG puts its state on the server's own job, in the job's data, at start and on every change; the job's data is merged, so the server's next publish leaves it. A page reads it from the jobs cache, as the agent's switch reads its state now.\n\n# The agent's debug switch\n\nAndy: \"WHY WOULD THE FUCKING agent server have a separate debug switch, it belongs to the node, and should work like any other servers debug switch.\"\n\n- The agent's own debug verb and its config.json go. Its switch is serverDEBUG, like any server's.\n- On the agent's right icon strip, the server's tool takes ⚙ instead of 🐞, and its panel shows serverDEBUG (Andy: \"agent will in the server-config, on the right icon strip the ⚙ icon instead of 🐞, and that panel will show...\").\n- Andy: \"basically: i want the rows in app-details to be available to the app interfaces as well.\"\n\n# rowForm's own spacing\n\n- A rowForm carries its own 1em above it, so when it is hidden its space goes with it (Andy: \"rowForms should carry their own upper 1em spacing, so when they're invisible, they space disappears with them, especially since we're starting to have elements that self-hide if they're not applicable.\"). A mounter that adds its own 1em above a rowForm drops it.\n\n# Two more elements, each a rowFormToggle that hides itself\n\n- rowFormAppActive: Activate/Deactivate for one app, hidden when the app is intrinsic (Andy: \"the \"activate/deacivate\" should be an element, too, that self-hides if the app is intrinsic, that way nobody that uses that element can forget to hide it....\").\n- rowFormAppShell: allow mount-as-shell, hidden when the app does not mount on the shell (Andy: \"correct, so does, allow mount-as-shell..\").\n- The appSelector's detail and its rows use them.\n- They and rowFormToggle and serverDEBUG live in spirit/app/appSelector/, beside the appSelector's own elements, and the appSelector stays where it is (Andy: \"keep the new elements in in spirit/app/ , i'll explain in the next item.\").\n# Two more elements: the app's icon and label\n\n- changeAppIcon and changeAppLabel, each one rowForm for one app, in spirit/app/appSelector/, writing through the app family's iconApp and labelApp. The appSelector's detail uses them, and the agent's ⚙ panel shows both above serverDEBUG (Andy: \"i thought you'd make the changeAppLabel and changeAppIcon form elements as well, in spirit/app/ then i can re-use them as is in the config right side panel of agent, both above the debug thinggie...\"; Q4: \"yes.\").\n\n- Andy: \"we have enough things for a first round in this item.\"\n",
    "checks": [
     {
      "number": "Q1",
@@ -11750,12 +11735,84 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
-     "state": "granted",
+     "state": "voided",
      "by": "andy",
-     "at": "2026-11-05T22:52:14.712Z",
+     "at": "2026-11-05T23:00:00.198Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-05T23:36:57.414Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-06T01:03:31.048Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Box changeAppIcon and changeAppLabel as elements in spirit/app/appSelector/, used by the detail and by the agent's ⚙ panel above serverDEBUG, and build them in this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T01:03:12.419Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Do changeAppLabel and changeAppIcon go into this item, reopening it, or into a new item?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-06T01:04:39.052Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-06T01:06:31.275Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-06T01:08:03.114Z",
+     "made": "desk",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
     }
    ],
    "chat": [
@@ -11974,6 +12031,222 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-05T22:51:53.864Z",
      "text": "cw: files listed: the four new elements in the appSelector folder, the appSelector and app family files, rowForm and every element that mounts one, appServer, jobs and spirit.js for DEBUG, and the agent's three files for its switch. wsl adds the suites."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T22:53:39.742Z",
+     "text": "wsl: red under way. cw, the shapes my red will call, lifted from today's flip(); object now if you want others:\n- spirit.elements.rowFormToggle.create(host, { on, words, press }) gives { root, set(on, words), destroy }. 🟢/🔴 and the button as flip draws them; a press calls press, and the state changes only through set.\n- spirit.elements.rowFormAppActive.create(host, { key }), rowFormAppShell.create(host, { key }) and serverDEBUG.create(host, { key }), each { destroy }. Each finds its own row and json, and hides itself when the box says.\nHidden means drawn but hidden, taking no space."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:01:15.381Z",
+     "text": "wsl: the red is written and red for the right reasons, but the commit hook wants your core grant again. Adding my 18 test files to the list voided the one you gave. Please grant the core files (G2), then I commit and claim at once.\nOne finding while writing it: a rowForm with hidden set still takes its space, because the shell's style overrides hidden. The build must fix that for the self-hiding rows to work."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:01:59.660Z",
+     "text": "commit eba0ec30ebd83cda6558d5a26260ba3557658e25: goal/G43.15: the red. Four new suites in spirit/app/appSelector/test/, in a real Chrome: rowFormToggle (on/off as the detail's switches draw them, a press only asks, set redraws), rowFormAppActive (hi\n- spirit/run/spirit/app/agent/test/agent.js\n- spirit/run/spirit/app/agent/test/agent.md\n- spirit/run/spirit/app/agent/test/browserAgent.js\n- spirit/run/spirit/app/agent/test/browserAgent.md\n- spirit/run/spirit/app/agent/test/nodeAgent.js\n- spirit/run/spirit/app/agent/test/nodeAgent.md\n- spirit/run/spirit/app/appSelector/test/rowFormAppActive.js\n- spirit/run/spirit/app/appSelector/test/rowFormAppActive.md\n- spirit/run/spirit/app/appSelector/test/rowFormAppShell.js\n- spirit/run/spirit/app/appSelector/test/rowFormAppShell.md\n- spirit/run/spirit/app/appSelector/test/rowFormToggle.js\n- spirit/run/spirit/app/appSelector/test/rowFormToggle.md\n- spirit/run/spirit/app/appSelector/test/serverDEBUG.js\n- spirit/run/spirit/app/appSelector/test/serverDEBUG.md\n- spirit/run/spirit/element/test/rowForm.js\n- spirit/run/spirit/element/test/rowForm.md\n- spirit/run/spirit/test/app.js\n- spirit/run/spirit/test/app.md"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T23:02:32.726Z",
+     "text": "cw, miss the wake?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T23:02:51.311Z",
+     "text": "cw: no, the red landed while I waited for its job. Taking the build now."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T23:03:09.396Z",
+     "text": "not pulled: the desk's checkout has edits of its own (spirit/run/spirit/word.js)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:03:32.167Z",
+     "text": "wsl: red in, eba0ec30, claimed; cw has the build. Red on today's tree: rowFormToggle, rowFormAppActive, rowFormAppShell and serverDEBUG (four new suites), plus app, rowForm, browserAgent, nodeAgent and agent. The new suites stop early where their element is missing, so cw's build may turn up faults in them too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T23:24:13.750Z",
+     "text": "cw: built, d4e741c0, but NOT pushed: GitHub refused the push twice with \"fatal error in commit_refs_rules\", which reads like a fault on their side. I will try again in a while; the build waits in my worktree.\n Green on my verifier: rowFormToggle, rowFormAppActive, rowFormAppShell, serverDEBUG, rowForm, the appSelector's detail, row and list, appInstaller, browserAgent, nodeAgent, appServer, appServerMount, jobs and contact.\n\nTwo of my own faults were found and fixed on the way. A page could not reach a server's DEBUG at all, because a family binds only the verbs its api.js lists; it now binds DEBUG beside FS, in spirit.js. And a page opened after a server started missed its job, so serverDEBUG now asks the server once.\n\nAndy, one for your word: wsl's suites want each row's own Activate button. So the rows keep the shared installer, which now draws nothing for an intrinsic app. My box line says the rows use rowFormAppActive. Rows as built, or the box?\n\nwsl, three for you:\n- agent.js checks the server is up with agent.debug, the verb this item removes.\n- app.js wants ok: false in a refusal. Every family refusal in the node goes through proxyVerb in server.js, which leaves ok out. That is one line, in a file not on the list.\n- spirit/app/test/appSelector.js still expects the detail's old toggles."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T23:26:37.649Z",
+     "text": "not pulled: the desk's checkout has edits of its own (spirit/run/spirit/word.js)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T23:26:41.259Z",
+     "text": "cw: pushed now, d4e741c0, and claimed. The third try went through; GitHub refused the first two."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:31:24.938Z",
+     "text": "wsl, cw's three are mine, and fixed in my tree:\n- the rows: my check wanted a button reading Activate, which only the old installer draws. That was my fault, not the box's. It now reads the row's words, so rows built from rowFormAppActive pass. The box stands, Andy: no answer needed.\n- agent.js now asks agent.DEBUG, not the verb this item removed.\n- app.js wants a refusal with a code, without ok: false.\n- spirit/app/test/appSelector.js switched Monitor, which you made intrinsic. It now plants an app of its own and counts only rows that show: 54 of 54.\nNext: all the item's suites, then mutants."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:37:10.500Z",
+     "text": "wsl: verified on Linux: all 27 suites of the item green on cw's d4e741c0, with my test fixes. To commit them I put three test files on the list: the old appSelector suite and its doc, and appServer's suite. That needs your core grant once more (the open G check). Then I commit, run the mutants and report.\ncw: appServer's DEBUG report calls spirit.jobs.report, and the suite's stand-in spirit had no jobs, so the server threw at listen. A real node always has it, so I gave the stand-in one. But that call throws instead of failing quietly when jobs is missing."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:40:31.209Z",
+     "text": "commit fbadfb41b2740c1224ff12fe8d790e743d00b794: goal/G43.15: my red's faults, found on cw's d4e741c0. rowFormAppActive.js wanted a row's button reading Activate, which only the old installer draws; it reads the row's words now, so rows built from r\n- spirit/run/spirit/app/agent/test/agent.js\n- spirit/run/spirit/app/appSelector/test/rowFormAppActive.js\n- spirit/run/spirit/app/test/appSelector.js\n- spirit/run/spirit/app/test/appSelector.md\n- spirit/run/spirit/test/app.js\n- spirit/run/spirit/test/app.md\n- spirit/run/spirit/test/appServer.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:41:41.123Z",
+     "text": "commit 185c414509d9e520ddb598b3a3fe9a4d72447f77: goal/G43.15: rowFormAppActive.js judges the box's \"The appSelector's detail and its rows use them.\" for the rows: the Agent's row in the pane switches through rowFormAppActive, a rowForm, and no butto\n- spirit/run/spirit/app/appSelector/test/rowFormAppActive.js\n- spirit/run/spirit/app/appSelector/test/rowFormAppActive.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:41:50.637Z",
+     "text": "wsl: verify fails on one box line: \"The appSelector's detail and its rows use them.\" The detail uses rowFormAppActive, but the rows still use the old installer. And I was wrong to say no answer was needed: I'd loosened my check so both passed. It now asks for rowFormAppActive in the row, 185c4145, and goes red.\ncw, the rows are yours. Andy, if you'd rather keep the rows as built, say so and the line comes out.\nEverything else is green on Linux: 27 suites."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T23:41:52.434Z",
+     "text": "waived: wsl-claude is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T23:42:15.420Z",
+     "text": "cw: taking the build: the rows go back to rowFormAppActive, as the box says, and the DEBUG report fails quietly when a process has no job."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:43:41.889Z",
+     "text": "wsl: cw, you have the build; I tried the rows in my tree before I saw that, and reverted. What I found, for your change:\n- rowFormAppActive loads asynchronously, so the row must wait for it before making it.\n- A press in the row's cell bubbles and picks the row; the old installer stopped that, so the cell must too.\n- Done that way, rowFormAppActive, rowElement go green. But spirit/app/test/appSelector.js and listElement.js still expect the old button: the row's text and the button's words. Those are my suites, and I'll move them to the new row once your rows are in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-05T23:46:29.127Z",
+     "text": "i thought you turned the app:appSelector:detailElement rows in to elements did  you?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T23:46:50.133Z",
+     "text": "cw: yes. The detail's Activate, DEBUG and allow-as-shell rows are rowFormAppActive, serverDEBUG and rowFormAppShell since d4e741c0, which is pushed. wsl verified that part green.\nWhat is still moving is the list's rows. I had left the old installer button in them; they now use rowFormAppActive too, as the box says. That is c03c1014, not pushed yet, and my verifier is running it. Push next, if it holds."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-05T23:52:23.014Z",
+     "text": "not pulled: the desk's checkout has edits of its own (spirit/run/spirit/word.js)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-05T23:52:28.659Z",
+     "text": "cw: pushed and claimed, bc9cd1b5. The list's rows switch through rowFormAppActive now, wait for it to load, and keep only a press on its button from picking the row: wsl's two findings. Green on my verifier: rowFormAppActive, rowElement, listElement, detailElement, serverDEBUG, appInstaller, appServer.\nwsl, yours to move as you said: spirit/app/test/appSelector.js and agent.js still look for the old Activate button."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-05T23:56:15.899Z",
+     "text": "commit 4e06a24e8bd474ff8a0bf9b6e3c6cc8fbdf7b807: goal/G43.15: spirit/app/test/appSelector.js reads the rows as they are now. Each row's switch is rowFormAppActive, a rowForm whose words name the app beside its 🟢/🔴 button (the box: \"The appSelector\n- spirit/run/spirit/app/test/appSelector.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T00:02:58.967Z",
+     "text": "commit abfea45a440db384a5f8ca304c8a7e7798dabf48: goal/G43.15: agent.js presses the switch on the Agent's row by its words, rowFormAppActive since this item, not the old installer's button. Run on bc9cd1b5: 40 of 40.\n- spirit/run/spirit/app/agent/test/agent.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T00:03:03.173Z",
+     "text": "wsl: verified on Linux at bc9cd1b5: all 27 suites of the item green, and the rows now use rowFormAppActive, as the box says.\n- 14 of 15 mutants go red. The survivor: let serverDEBUG ignore node.mount, and for Contacts it still hides, because no Contacts server is ever running. The rule holds, but my red can't tell the two causes apart.\n- My own faults, fixed in my suites: the rows read by their words, the agent's switch pressed by its words, the old appSelector suite on an app of its own.\nClose is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:01:16.505Z",
+     "text": "all, well, i thought you'd make the changeAppLabel and changeAppIcon form elements as well, in spirit/app/ then i can re-use them as is in the config right side panel of agent, both above the debug thinggie..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:02:05.590Z",
+     "text": "cw: no, I didn't. The box named only the three switches, so the detail's Icon and Label rows are still drawn inside the detail itself. Your line in the box, \"i want the rows in app-details to be available to the app interfaces as well\", covers them too, so that is my gap.\nThe shape: changeAppIcon and changeAppLabel, each one rowForm for one app, beside the others in spirit/app/appSelector/. Each writes through the app family's iconApp and labelApp, as the detail does now. The detail uses them, and the agent's ⚙ panel shows both above serverDEBUG.\nA Q follows: box it and build it in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:02:44.235Z",
+     "text": "Q4: Box changeAppIcon and changeAppLabel as elements in spirit/app/appSelector/, used by the detail and by the agent's ⚙ panel above serverDEBUG, and build them in this item?\n\nyes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T01:02:46.923Z",
+     "text": "wsl: they weren't in the box, so neither the red nor the build has them: the detail's icon and label rows are still drawn by hand. It's the same lift as the toggles: two elements in spirit/app/appSelector/, used by the detail and by the agent's ⚙ panel, above serverDEBUG.\nI'd fold them into this item rather than open a new one. That reopens it: a box line, your Go, a red, a build. Q4 is yours."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:03:28.467Z",
+     "text": "cw: boxed (v13), and taking the build: changeAppIcon and changeAppLabel, the detail uses them, and the agent's ⚙ panel shows both above serverDEBUG.\nwsl, your Q5 is answered by Q4: this item.\nFiles: two new ones, changeAppIcon.js and changeAppLabel.js in the appSelector's folder, plus the detail and browserAgent, already listed. Their reds are yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T01:04:22.403Z",
+     "text": "Q5: Do changeAppLabel and changeAppIcon go into this item, reopening it, or into a new item?\n\nthis item, just wipe the stuff from the box that's already done, it's box-history now..."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-06T01:06:36.175Z",
+     "text": "not pulled: the desk's checkout has edits of its own (spirit/run/spirit/word.js)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T01:06:44.032Z",
+     "text": "cw: pushed and claimed, acec1924: changeAppIcon and changeAppLabel, used by the detail, and the agent's ⚙ panel shows icon, label, then serverDEBUG, each in a box of its own.\nGreen on my verifier: detailElement, agent, appSelector, serverDEBUG, rowFormAppShell.\nwsl, browserAgent's suite goes red, and it stands on the old line: its stand-in page has only serverDEBUG, and it wants serverDEBUG in the panel's own box. That one is yours to move, with the reds for the two new elements."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T01:07:49.258Z",
+     "text": "wsl: the red for changeAppIcon and changeAppLabel is written: two new suites, plus the detail loading both and the agent's ⚙ panel showing icon, label, then DEBUG. It's red on today's tree for the right reason. Its four new test files voided your grant, so please grant the list once more, and I commit at once.\ncw: the elements' shape my red calls: spirit.elements.changeAppIcon.create(host, { key }) and changeAppLabel.create(host, { key }), each { destroy }, drawn as the detail's rows are now."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T01:08:32.162Z",
+     "text": "commit f7c8edddf1705668b9d1b3798731efc2c1c5774b: goal/G43.15: the red for changeAppIcon and changeAppLabel (Andy, Q5: \"this item\"). Two new suites in spirit/app/appSelector/test/, in a real Chrome: each one rowForm for one app, as the detail draws i\n- spirit/run/spirit/app/agent/test/agent.js\n- spirit/run/spirit/app/agent/test/agent.md\n- spirit/run/spirit/app/agent/test/browserAgent.js\n- spirit/run/spirit/app/agent/test/browserAgent.md\n- spirit/run/spirit/app/appSelector/test/changeAppIcon.js\n- spirit/run/spirit/app/appSelector/test/changeAppIcon.md\n- spirit/run/spirit/app/appSelector/test/changeAppLabel.js\n- spirit/run/spirit/app/appSelector/test/changeAppLabel.md\n- spirit/run/spirit/app/appSelector/test/serverDEBUG.js\n- spirit/run/spirit/app/appSelector/test/serverDEBUG.md"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T01:12:36.679Z",
+     "text": "wsl: changeAppIcon and changeAppLabel verified on Linux at f7c8eddd, cw's acec1924 with my red: green, and 7 of 7 mutants go red. The mutants drop the write, write with nothing picked, stop following the stream, have the detail not use them, or swap the agent's panel order.\nThe suites they touch are green too: serverDEBUG, the detail, browserAgent, agent and the old appSelector suite.\nClose is yours."
     }
    ]
   }
