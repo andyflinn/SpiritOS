@@ -6,3 +6,6 @@ The app list (goal/G43.2), as `spirit/element/search/bundle/listElement.js` is t
 
 - It draws what `app.search` finds, asking with a search string and nothing more.
 - A press hands the row to `pick`. `refresh` asks again. `destroy` empties its host.
+- goal/G43.18, Andy: *"The app search gains a server filter, node.mount true and active ... this filter is hidden by default."* Q4: *"The programmer who uses app:search makes it visible"*, as `create(host, { servers: true })`.
+  - Without `servers: true`, no filter; with it, one.
+  - Pressed, it draws exactly the apps whose `<name>.json` says `node.mount: true` and that are active; switched off, the app leaves it. Pressed again, every app is back.

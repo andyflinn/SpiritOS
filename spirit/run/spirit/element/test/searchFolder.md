@@ -17,6 +17,4 @@ Andy: *"all "probabilitySearch" elements follow the EXACT SAME PATTERN."*
 - *"The apps and elements that require them name the new paths"*: no code, tests included, comments left out, names an old path.
 - *"search/api/verb.js, which branch names too"*: `search/api.js` and branch both load it.
 
-## Owed
-
-- The app search's server filter, node.mount true and active, hidden by default: waits on Q of goal/G43.18, what shows it.
+The app search's server filter, node.mount true and active, hidden by default, is judged in a real Chrome by the app search's own suite, `spirit/element/search/app/test/listElement.js`.
