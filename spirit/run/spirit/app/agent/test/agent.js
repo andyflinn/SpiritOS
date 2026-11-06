@@ -89,11 +89,11 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     const press = function (words) {
       return c.evaluate('(function () { var box = document.getElementById("zzBox"); var all = Array.prototype.slice.call(box.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && String(e.innerText || "").trim().indexOf(' + JSON.stringify(words) + ') !== -1 && !Array.prototype.some.call(e.children, function (k) { return String(k.innerText || "").indexOf(' + JSON.stringify(words) + ') !== -1; }); }); if (!all.length) return false; all[0].click(); return true; }())');
     };
-    // The installer button on the row that names the Agent.
+    // The switch on the row that names the Agent: rowFormAppActive since goal/G43.15, its words beside its button. Pressed, it
+    // answers the word its words began with, Activate or Deactivate.
     const pressInstaller = function () {
-      return c.evaluate('(function () { var bs = Array.prototype.slice.call(document.querySelectorAll("#zzBox button.app-installer")); for (var i = 0; i < bs.length; i++) { var p = bs[i].parentElement; while (p && !String(p.innerText || "").replace(bs[i].innerText, "").trim()) p = p.parentElement; if (p && /Agent/.test(p.innerText)) { bs[i].click(); return bs[i].innerText; } } return ""; }())');
+      return c.evaluate('(function () { var fs = Array.prototype.slice.call(document.querySelectorAll("#zzBox .shell-row-form")); for (var i = 0; i < fs.length; i++) { var w = fs[i].querySelector(".shell-row-form-span"); var t = w ? String(w.textContent || "").trim() : ""; if (/^(Activate|Deactivate) Agent\\b/.test(t)) { fs[i].querySelector("button").click(); return t.split(" ")[0]; } } return ""; }())');
     };
-    // A tool is opened, never toggled: a press on the one already shown collapses it (workBench.js, data-current).
     const tool = function (name) { return c.evaluate('(function () { var b = document.querySelector("#zzBox [data-tool=' + name + ']"); if (!b) return false; if (!b.hasAttribute("data-current")) b.click(); return true; }())'); };
 
     test.subHeading('the box: active is its one switch; before it nothing runs');
