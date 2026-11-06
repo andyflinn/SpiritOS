@@ -156,7 +156,7 @@ const TREE = [
 
   // ── 6. what moves and what goes ──
   test.subHeading('6. Files, the text editor and Desk on the shell\'s tree; pathSelector gone');
-  const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+  const index = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8');
   const at = function (s) { return index.indexOf(s); };
   if (!fs.existsSync(path.join(RUN, 'spirit', 'element', 'pathSelector.js')) && at('pathSelector') === -1 && !/createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js')))) test.check('pathSelector is deleted: its file, its script tag, createPathSelector');
   else test.fail(OWED + 'pathSelector remains: file ' + fs.existsSync(path.join(RUN, 'spirit', 'element', 'pathSelector.js')) + ', in index.html ' + (at('pathSelector') !== -1) + ', in shell.js ' + /createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js'))));

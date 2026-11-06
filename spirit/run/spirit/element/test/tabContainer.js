@@ -159,8 +159,8 @@ const boxU = (mounted.filter(function (m) { return m.name === 'u'; })[0] || {}).
 ok(boxU && /\bfill\b/.test(String(boxU.className || '')), 'each tab\'s box takes fill, so what a tab holds gets the height left', 'box class: ' + (boxU && boxU.className));
 tc4.destroy();
 const RUN_DIR = require('path').resolve(__dirname, '../../..');
-const sheet = fs.readFileSync(require('path').join(RUN_DIR, 'shell.css'), 'utf8');
-const face = fs.readFileSync(require('path').join(RUN_DIR, 'shell', 'face.css'), 'utf8');
+const sheet = fs.readFileSync(require('path').join(RUN_DIR, 'spirit', 'shell', 'shell.css'), 'utf8');
+const face = fs.readFileSync(require('path').join(RUN_DIR, 'spirit', 'shell', 'face.css'), 'utf8');
 const rule = (/\.tab-content\s*\{([^}]*)\}/.exec(sheet) || [])[1] || '';
 ok(/padding:\s*0\.5em/.test(rule), 'shell.css pads .tab-content 0.5em, the standard', '.tab-content: ' + rule.trim());
 ok(/min-height:\s*0/.test(rule) && /overflow:\s*auto/.test(rule), 'and holds it to the height left: min-height 0, scrolling inside itself', '.tab-content: ' + rule.trim());

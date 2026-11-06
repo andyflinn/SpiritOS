@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));

@@ -76,7 +76,7 @@ const done = (async function () {
   else test.fail(OWED + 'a request sealed to the answered key got ' + short(sealedOk));
 
   test.subHeading('2. the face shell asks for the keys, and offers factRow');
-  const shell = code('shell/boot.js');
+  const shell = code('spirit/shell/boot.js');
   if (/call\(\{\s*keys:\s*1\s*\}\)/.test(shell) && !/r\.body\.sealKey/.test(shell) && /factRow/.test(shell) && /fact-row/.test(shell))
     test.check('the face shell takes the keys from { keys: 1 }, not node.card, and its spirit.shell has the old shell\'s factRow');
   else test.fail(OWED + 'the face shell still reads the seal key from node.card, or has no factRow');

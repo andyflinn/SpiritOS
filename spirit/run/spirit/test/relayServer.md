@@ -6,10 +6,11 @@ this code the same day as the nodes (no backward compatibility before alpha).
 
 ## Requirements
 
-- Its face files come from shell/ (FACE_DIR), not from face/.
-- Its map of addresses to files (FACE_FILES) serves exactly these, each from the moved file:
-  `/spirit.js` (face.html's one script tag, the run root's file, goal/G41.19), `/shell.css`, `/shell/boot.js`, `/shell/seal.js`, `/shell/face.css`, `/shell/favicon.svg`, `/shell/login/login.js`,
-  `/shell/login/login.json`.
+- Its face files are read from the run root (FACE_DIR), each from its file: the addresses stay, the files moved under
+  `spirit/` (goal/G43.18, Q25, Andy: *"the browser should see them the same."*), each served from `serveCommon.pageFile`.
+- Its map of addresses to files (FACE_FILES) serves exactly these (box v29: *"The relay serves a logged-out face one plain
+  page, the one-field form, with spirit.js and seal.js only"*): `/spirit.js` (face.html's one script tag, goal/G41.19),
+  `/shell/seal.js` and `/shell/favicon.svg`. No boot.js, sheet or login app.
 - No address under `/face/` serves a file any more. (The relay's own routes `/face/allowed`, `/face/call`, `/face/file`,
   `/face/stream` and `/face/api` are routes, not files, and stay.)
 - Every file the map names is there.

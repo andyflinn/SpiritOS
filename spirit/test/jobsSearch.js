@@ -90,7 +90,7 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   else test.fail(OWED + 'progressBar(1, 0) drew ' + short(unknown));
   if (/progressBar:\s*shellElements\.progressBar/.test(read('spirit/client/shell.js'))) test.check('apps get it as api.ui.element.progressBar');
   else test.fail(OWED + 'shell.js does not hand progressBar to apps');
-  if (/<script src="\/shell\/shared\/js\/progressBar\.js"><\/script>/.test(read('index.html'))) test.check('index.html loads it');
+  if (/<script src="\/shell\/shared\/js\/progressBar\.js"><\/script>/.test(read('spirit/shell/index.html'))) test.check('index.html loads it');
   else test.fail(OWED + 'index.html does not load progressBar.js');
 
   // ── 2. the shared list's toggle filter ────────────────────────────────

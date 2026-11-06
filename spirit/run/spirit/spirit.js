@@ -1,4 +1,4 @@
-// spirit/run/spirit.js
+// spirit/run/spirit/spirit.js (goal/G43.18: moved from the run root, served at /spirit.js as before)
 // THE SPIRIT OBJECT (goal/G32.1): the node api for face apps, one file. face.html loads it first, by a script tag, from
 // the relay or the home node (goal/G41.19); the home node's index.html loads it; a server process requires it.
 // AT THE RUN ROOT, THE ONE DOOR (goal/G40.1). Andy: spirit.js sits in "the run-root, the nodes root of its own fs
@@ -74,7 +74,7 @@
   // The field rules are js/fieldRules.js, the one definition both sides of the wire use.
   function fieldRules() {
     if ((root.spirit || {}).fieldRules) return (root.spirit || {}).fieldRules;
-    if (isNode()) { try { return require('./spirit/fieldRules.js'); } catch (e) { return null; } }
+    if (isNode()) { try { return require('./fieldRules.js'); } catch (e) { return null; } }
     return null;
   }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -152,9 +152,12 @@
   // requires(spirit) spirit itself fetches the port from environment.json"). On a page the page's own origin, or the
   // face's link to its home node when one is set; in node 127.0.0.1 and the PORT read below as this file is required.
   // No port, no node: never a default.
+  // THE RUN ROOT, the folder every run path starts at: one up from this file, since it moved into spirit/ (goal/G43.18; Andy:
+  // "we need to move run://spirit.js to run://spirit/spirit.js"). In node only.
+  var RUN_ROOT = isNode() ? require('path').join(__dirname, '..') : '';
   var PORT = 0;
   if (isNode()) {
-    try { PORT = Number(JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'spirit', 'state', 'environment.json'), 'utf8')).PORT) || 0; } catch (e) { PORT = 0; }
+    try { PORT = Number(JSON.parse(require('fs').readFileSync(require('path').join(RUN_ROOT, 'spirit', 'state', 'environment.json'), 'utf8')).PORT) || 0; } catch (e) { PORT = 0; }
   }
   function parse(text) { try { return JSON.parse(text); } catch (e) { return null; } }
   function noNode() { return refusal('no-node', 'this VM has no node: spirit/state/environment.json names no port'); }
@@ -391,7 +394,7 @@
     if (!/^[A-Za-z]\w*$/.test(n)) return Promise.reject(refusal('not-found', 'no family ' + name));
     if (!managers[n]) {
       if (isNode()) {
-        var at = managerPaths(n).filter(function (p) { return require('fs').existsSync(require('path').join(__dirname, p)); })[0];
+        var at = managerPaths(n).filter(function (p) { return require('fs').existsSync(require('path').join(RUN_ROOT, p)); })[0];
         managers[n] = at ? requireOne(at) : Promise.reject(refusal('not-found', 'the family ' + n + ' has no ' + MANAGER));
       } else {
         managers[n] = bindOwn(n).then(function (fam) {
@@ -434,7 +437,7 @@
     if (requiredOnce[p]) { if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
     // A script the page loaded by its own tag (the home shell's index.html) has run: it counts as required.
     if (!isNode() && loadedByTag(p)) { requiredOnce[p] = Promise.resolve({}); if (collecting) collecting.push(requiredOnce[p]); return requiredOnce[p]; }
-    var answer = isNode() ? new Promise(function (resolve) { resolve(require(require('path').join(__dirname, p))); }) : get(p).then(function (r) {
+    var answer = isNode() ? new Promise(function (resolve) { resolve(require(require('path').join(RUN_ROOT, p))); }) : get(p).then(function (r) {
       if (!r || r.status !== 200) throw refusal('not-found', p + ' answered ' + (r && r.status));
       var outer = collecting;
       var tree = collecting = [];
@@ -632,7 +635,7 @@
     //                  refuses job-open; each resolves once the node has it, so awaited calls arrive in order
     //   spirit.jobs.report(patch), log(text), complete(data), fail(error)   the job's own state, and its three common forms
     var JOB = String(process.env.SPIRIT_JOB_ID || '');
-    var PAYLOAD_MAX = require('./spirit/limits.js').PAYLOAD_MAX;
+    var PAYLOAD_MAX = require('./limits.js').PAYLOAD_MAX;
     var openJob = null;
     var jobs = self.jobs = self.jobs && typeof self.jobs === 'object' ? self.jobs : {};
     var bytesOf = function (o) { try { return new TextEncoder().encode(JSON.stringify(o)).length; } catch (e) { return -1; } };
@@ -685,7 +688,8 @@
     // matches that post's hash. The stream opens BEFORE the post, so an answer quicker than the post's own reply is kept.
     // how: waitMs (30 s by default), patienceMs, kind. Resolves the answer's body; {ok: false, code: 'not-posted'} for a
     // post the node refused, {ok: false, code: 'no-answer'} after waitMs of silence. It never rejects.
-    var packet = require('./spirit/client/packet.js');
+    // By its run-root path, as this file loads every other part (goal/G43.18: it sits in spirit/ now, beside client/).
+    var packet = require(require('path').join(RUN_ROOT, 'spirit', 'client', 'packet.js'));
     self.peerPost = function (peer, app, body, how) {
       var o = how && typeof how === 'object' ? how : {};
       var waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : 30000;
@@ -1016,7 +1020,13 @@
     input.focus();
   }
   function startFace() {
-    if (isLoopback()) { self.face = { home: true, loggedIn: true, name: '' }; return boot(FACE); }
+    if (isLoopback()) {
+      self.face = { home: true, loggedIn: true, name: '' };
+      // THE GHOST AT HOME (Q26, Andy: "the ghost one for loopback, the face one for the face."): the tab's icon, /favicon.svg.
+      var icon = root.document && root.document.querySelector('link[rel="icon"]');
+      if (icon) icon.setAttribute('href', '/favicon.svg');
+      return boot(FACE);
+    }
     return self.login.state().then(function (s) {
       self.face = { home: false, loggedIn: !!(s && s.loggedIn), name: String((s && s.face) || '') };
       if (s && s.face && root.document) root.document.title = String(s.face);

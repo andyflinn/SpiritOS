@@ -14,7 +14,7 @@ const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskClient.js');
 // The family paths, as the one function names them (goal/G41.12).
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 const API = path.join(RUN, familyPath('deskClient'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

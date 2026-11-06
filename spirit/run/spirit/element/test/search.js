@@ -12,7 +12,7 @@ const test = require(path.join(path.resolve(__dirname, '..', '..', '..'), 'test'
 
 const RUN = path.join(__dirname, '..', '..', '..');
 const FILE = path.join(__dirname, '..', 'search.js');
-const SHELL_CSS = fs.existsSync(path.join(RUN, 'shell.css')) ? fs.readFileSync(path.join(RUN, 'shell.css'), 'utf8') : '';
+const SHELL_CSS = fs.existsSync(path.join(RUN, 'spirit', 'shell', 'shell.css')) ? fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8') : '';
 const docHeard = [];
 let docRemoved = 0;
 global.document = {

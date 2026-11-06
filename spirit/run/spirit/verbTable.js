@@ -266,7 +266,7 @@ function createVerbTable() {
     var verbs = declared[family];
     var v = name.slice(dot + 1);
     if (!verbs || !Object.prototype.hasOwnProperty.call(verbs, v)) return null;
-    return require('../spirit.js').check(name, verbs[v], args);
+    return require('./spirit.js').check(name, verbs[v], args);
   }
 
   // ── ONE CALL, IN-PROCESS (goal/G30.4) ────────────────────────────────

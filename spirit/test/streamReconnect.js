@@ -21,7 +21,7 @@ const packet = require('../run/spirit/client/packet');
 const KERNEL = path.join(__dirname, '..', 'run', 'spirit', 'kernel.js');
 const SHELL = path.join(__dirname, '..', 'run', 'spirit', 'client', 'shell.js');
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
-const INDEX = path.join(__dirname, '..', 'run', 'index.html');
+const INDEX = path.join(__dirname, '..', 'run', 'spirit', 'shell', 'index.html');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }

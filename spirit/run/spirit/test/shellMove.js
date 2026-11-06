@@ -98,7 +98,8 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/, an
     test.subHeading('the box: "The move runs first: before server.js requires spirit.js, which reads environment.json at once."');
     const srv = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8').replace(/\/\/.*$/gm, '');
     const moveAt = srv.search(/require\(['"]\.\/shellMove/);
-    const spiritAt = srv.search(/require\(['"]\.\.\/spirit\.js/);
+    // spirit.js beside server.js since goal/G43.18.
+    const spiritAt = srv.search(/require\(['"]\.\/spirit\.js/);
     ok(moveAt !== -1 && spiritAt !== -1 && moveAt < spiritAt, 'server.js runs the move before it requires spirit.js', 'in server.js the move stands at ' + moveAt + ', spirit.js at ' + spiritAt);
 
     test.subHeading('a node of the old layout boots once, and everything at the top moves');
@@ -132,7 +133,7 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/, an
     const env = readJson(path.join(state, 'environment.json')) || {};
     ok(Number(env.PORT) === n.port, 'spirit/state/environment.json names this boot\'s port', 'environment.json: ' + short(env));
     const asked = await new Promise(function (resolve) {
-      const c = spawn(process.execPath, ['-e', 'const s = require("./spirit.js"); s.require("spirit/node/api.js").then(function () { return s.node.card(); }).then(function (c) { console.log("KEY" + (c && c.publicKey)); process.exit(0); }, function (e) { console.log("NO" + JSON.stringify(e)); process.exit(0); });'], { cwd: a.run, stdio: ['ignore', 'pipe', 'ignore'] });
+      const c = spawn(process.execPath, ['-e', 'const s = require("./spirit/spirit.js"); s.require("spirit/node/api.js").then(function () { return s.node.card(); }).then(function (c) { console.log("KEY" + (c && c.publicKey)); process.exit(0); }, function (e) { console.log("NO" + JSON.stringify(e)); process.exit(0); });'], { cwd: a.run, stdio: ['ignore', 'pipe', 'ignore'] });
       let out = ''; c.stdout.on('data', function (d) { out += d; }); c.on('exit', function () { resolve(out); }); setTimeout(function () { c.kill(); resolve(out); }, 15000);
     });
     ok(asked.indexOf('KEY' + id.publicKey) !== -1, 'a new process requiring spirit.js finds this node', 'a new process answered: ' + short(asked));

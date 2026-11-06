@@ -14,15 +14,15 @@ grant on the item. It needs nothing of the desk's.
 
 ### What was core before goal/G41.29
 
-- The face's boot: `face.html`, `shell/boot.js`, `shell/seal.js`, `shell/face.css`, `shell/favicon.svg`.
+- The face's boot: `spirit/shell/face.html`, `spirit/shell/boot.js`, `spirit/shell/seal.js`, `spirit/shell/face.css`, `spirit/shell/favicon.svg`.
 - Join, whole: every file under `shell/join/`, its `.json` included. The login app went (goal/G43.18, box v29: the login is spirit.login).
 - Never a manifest: `shell/<name>/<name>.json` and `process/js/<name>/<name>.json`, an intrinsic app's included.
 - Everything under `spirit/run/spirit/`, `spirit/run/spirit/element/`, `spirit/run/shell/json/` and `spirit/run/test/`.
-- CodeMirror in `spirit/run/spirit/element/codeMirror/`, which `index.html` loads on every boot (goal/G41.30,
+- CodeMirror in `spirit/run/spirit/element/codeMirror/`, which `spirit/shell/index.html` loads on every boot (goal/G41.30,
   the review's H5; Andy: *"shell/node_modules/codemirror/ MUST BE \"core\""*).
 - Never `spirit/run/shell/shared/`, where apps that are not intrinsic share modules (Andy: *"no \"core\" files should
   reside in shell/shared/"*); the progress bar it held lives in `spirit/element/`.
-- The frame: `index.html`, `spirit.js`, `shell/elements.css`, `shell/tokens.css`, and `shell/navigationWrapper.js`
+- The frame: `spirit/shell/index.html`, `spirit/spirit.js`, `spirit/shell/elements.css`, `spirit/shell/tokens.css`, and `shell/navigationWrapper.js`
   (goal/G41.30, Andy: *"make the nav wrapper \"core\""*), its companion tests with it.
 - An intrinsic app's or server's code only (`.js`, `.css`, `.html`); its data files stay writable.
 
@@ -32,7 +32,7 @@ Andy: "the red for a core file is a core file, too", and "change spirit/coreFile
 files in the test-folder core files as well."
 
 - A file in a `test/` folder beside a core file, named after it (`test/<name>.js`, `test/<name>.md`), is core:
-  `shell/test/boot.js` and `shell/test/boot.md` for `shell/boot.js`, `shell/apps/test/apps.md` for the intrinsic
+  `spirit/shell/test/boot.js` and `spirit/shell/test/boot.md` for `spirit/shell/boot.js`, `shell/apps/test/apps.md` for the intrinsic
   `shell/apps/apps.js`.
 - A test named after a file that is not core stays writable: `shell/desk/test/desk.js` for `shell/desk/desk.js`.
 

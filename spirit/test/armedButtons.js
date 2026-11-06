@@ -183,7 +183,7 @@ if (ghosts.length === 0) {
 test.subHeading('And an armed button is red without being read');
 
 // The shell's styles are shell.css since goal/G30.9 (they stood inline in index.html).
-const shellCss = fs.readFileSync(path.join(RUN_DIR, '..', 'run', 'shell.css'), 'utf8');
+const shellCss = fs.readFileSync(path.join(RUN_DIR, '..', 'run', 'spirit', 'shell', 'shell.css'), 'utf8');
 
 if (/button\[data-armed\][^{]*\{[^}]*background/.test(shellCss)) {
   test.check('the shell paints any armed button, rather than each app painting its own');

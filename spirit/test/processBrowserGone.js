@@ -56,7 +56,7 @@ if (!tests.length) test.check('fsWatcherCommands no longer reads the app');
 else test.fail(OWED + 'still reading the app: ' + tests.join(', '));
 
 test.subHeading('4. what stays');
-const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+const index = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8');
 if (/function maybeRenderJobForm/.test(index) && /maybeRenderJobForm\(document\.getElementById\('cv-body'\)/.test(index)) test.check('the file viewer still offers the start form for a script under process/');
 else test.fail(OWED + 'the file viewer\'s start form is gone');
 

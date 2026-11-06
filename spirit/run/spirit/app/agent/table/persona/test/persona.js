@@ -11,7 +11,7 @@ const os = require('os');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
-require(path.join(RUN, 'spirit.js'));
+require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { DatabaseSync } = require('node:sqlite');
 
@@ -118,7 +118,7 @@ test.startTest('persona/: the persona table');
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
+  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
   ok(E.personaTable && typeof E.personaTable.create === 'function' && E.personaRow && typeof E.personaRow.create === 'function',

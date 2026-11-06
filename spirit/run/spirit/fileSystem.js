@@ -9,7 +9,7 @@
 // Node only: never served to a page (UNSERVABLE_FILES below names it, as it names kernel.js).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../spirit.js');
+require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 

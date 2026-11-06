@@ -163,7 +163,7 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
   }
 
   test.subHeading('in a fill box it takes exactly the box (rule/16; Andy, on G41.7)');
-  const css = fs.readFileSync(path.join(RUN, 'shell.css'), 'utf8');
+  const css = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8');
   ok(/\.text-view\.fill\s*>\s*\.CodeMirror\s*\{[^}]*flex:\s*1 1 0[^}]*min-height:\s*0/.test(css), 'shell.css lets CodeMirror in a fill box take the box and scroll inside it', 'no .text-view.fill > .CodeMirror rule in shell.css');
 
   test.subHeading('it replaces textView.js, which goes');

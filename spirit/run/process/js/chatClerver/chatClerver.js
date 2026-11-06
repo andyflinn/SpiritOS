@@ -22,7 +22,7 @@
 // (peers.search, chats.search since goal/G29.18) and goal/G29.18 (chat.search).
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit.js');
+require('../../../spirit/spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');

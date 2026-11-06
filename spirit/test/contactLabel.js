@@ -254,7 +254,7 @@ async function theElement() {
   let m = null;
   try { m = mountElement(); } catch (e) { test.fail(OWED + 'spirit/element/contactLabel.js did not load: ' + e.message); return; }
   if (typeof m.make !== 'function') { test.fail(OWED + 'window.spirit.elements.createContactLabel is missing'); return; }
-  const indexHtml = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+  const indexHtml = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8');
   if (/<script src="\/spirit\/element\/contactLabel\.js"><\/script>/.test(indexHtml)) test.check('index.html loads /spirit/element/contactLabel.js with the other elements');
   else test.fail(OWED + 'index.html does not load /spirit/element/contactLabel.js');
   const shellSrc = fs.readFileSync(SHELL, 'utf8').replace(/\n/g, ' ');

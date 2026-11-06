@@ -144,7 +144,7 @@ const done = (async function () {
   let file = null;
   try { file = ask({ get: 'face.html' }); } catch (e) { file = { threw: e.message }; }
   await settle(); await settle();
-  const want = fs.readFileSync(path.join(RUN, 'face.html'), 'utf8');
+  const want = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'), 'utf8');
   if (made && file.head && file.head.status === 200 && file.text === want && /text\/html/.test(String(file.head.headers['Content-Type'] || '')))
     test.check('a file request { get } is answered with the file\'s own bytes and type, as the node\'s GET serves it');
   else test.fail(OWED + 'a file request got ' + short(file && { head: file.head, bytes: file.text.length }));

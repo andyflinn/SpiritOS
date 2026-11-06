@@ -36,7 +36,7 @@ const RUN = path.join(__dirname, '..', 'run');
 const DIR = path.join(RUN, 'spirit', 'element');
 const FILES = { createIconSelector: 'iconSelector.js', createContactSelector: 'contactSelector.js', createAppServerSelector: 'appServerSelector.js', createApiBranchSelector: 'apiBranchSelector.js' };
 const SHELL = path.join(RUN, 'spirit', 'client', 'shell.js');
-const INDEX = path.join(RUN, 'index.html');
+const INDEX = path.join(RUN, 'spirit', 'shell', 'index.html');
 const FOUR = ['createIconSelector', 'createContactSelector', 'createAppServerSelector', 'createApiBranchSelector'];
 
 function fakeElement(tag) {

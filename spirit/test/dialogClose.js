@@ -18,7 +18,7 @@ const packet = require('../run/spirit/client/packet');
 
 const OWED = 'OWED by desk/G3.5: ';
 const SHELL = path.join(__dirname, '..', 'run', 'spirit', 'client', 'shell.js');
-const INDEX = path.join(__dirname, '..', 'run', 'index.html');
+const INDEX = path.join(__dirname, '..', 'run', 'spirit', 'shell', 'index.html');
 
 function fakeElement(tag) {
   let html = '';

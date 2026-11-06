@@ -32,7 +32,7 @@ const PRELOAD = path.join(WORK, 'fakeDeskClient.js');
 fs.writeFileSync(PRELOAD, [
   "'use strict';",
   "const fs = require('fs');",
-  "require(" + JSON.stringify(path.join(RUN, 'spirit.js')) + ");",
+  "require(" + JSON.stringify(path.join(RUN, 'spirit', 'spirit.js')) + ");",
   "const S = JSON.parse(fs.readFileSync(process.env.FAKE_SCENARIO, 'utf8'));",
   "function log(x) { fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify(x) + '\\n'); }",
   "function keptAnswer(name, args) {",

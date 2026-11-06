@@ -21,7 +21,7 @@
 //   make({ module, file, ext, run, server }) -> Promise<{ type, body } | null>, null for not its own.
 'use strict';
 
-require('../spirit.js');
+require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 

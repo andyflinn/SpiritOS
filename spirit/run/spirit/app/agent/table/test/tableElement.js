@@ -11,7 +11,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 
 const FILE = path.join(__dirname, '..', 'tableElement.js');
 const AGENT = familyPath('agent');
@@ -93,7 +93,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
+  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
   const rowPath = function (table, id) { return global.window.spirit.data.agent.data.branch(table) + '/' + id; };
   const BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };

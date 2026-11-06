@@ -16,7 +16,7 @@ test files went by 8 names (six were `rowElement.js`), and a red in Fallout did 
   - `spirit/run/process/js/agent/table/model/test/rowElement.js` and
     `spirit/run/process/js/agent/table/provider/test/rowElement.js` are two names, each with its folder;
   - `spirit/run/spirit/test/DEBUG.js` is sent as `/spirit/DEBUG`;
-  - `spirit/run/test/spirit.js`, the test of `spirit/run/spirit.js`, is sent as `/spirit`.
+  - `spirit/run/test/spirit.js`, the test of `spirit/run/spirit/spirit.js`, is sent as `/spirit`.
 - **A general test is sent by the file it judges.** A `-child-` or `-sibling-` test runs once per file, the file its
   argument (`TEST_SYSTEM.md`), so the module tested is that file:
   `spirit/run/test/spirit-sibling-generalRules.js shell/agent/agent.js` is sent as `/shell/agent/agent`.

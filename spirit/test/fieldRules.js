@@ -81,7 +81,7 @@ function theName() {
   if (naming.length === 0) test.check('no file under spirit/run or spirit/test names labelRule or spiritLabelRule');
   else test.fail(OWED + naming.length + ' files still name labelRule: ' + naming.map(function (f) { return path.relative(path.join(RUN, '..'), f); }).join(', '));
 
-  const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+  const index = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8');
   if (/<script src="\/spirit\/fieldRules\.js"><\/script>/.test(index)) test.check('index.html loads /js/fieldRules.js');
   else test.fail(OWED + 'index.html does not load /js/fieldRules.js');
 

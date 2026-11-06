@@ -79,7 +79,7 @@ async function scratchRelay(o) {
   fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
   if (opts.faceDomain) fs.writeFileSync(path.join(run, 'spirit', 'state', 'face.json'), JSON.stringify({ domain: opts.faceDomain }));
   const port = await freePort();
-  const code = 'require("./spirit.js").debug(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
+  const code = 'require("./spirit/spirit.js").debug(' + (opts.debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   const base = 'http://127.0.0.1:' + port;
   const up = await until(function () { return fetch(base + '/').then(function (r) { return r.status > 0; }); }, 30000);

@@ -11,7 +11,7 @@ const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 const FILE = path.join(__dirname, '..', 'rowForm.js');
-const CSS = path.join(RUN, 'shell.css');
+const CSS = path.join(RUN, 'spirit', 'shell', 'shell.css');
 const SEARCH = path.join(__dirname, '..', 'probabilitySearch.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

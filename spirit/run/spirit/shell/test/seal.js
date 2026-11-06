@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const vm = require('vm');
-const RUN = path.resolve(__dirname, '../..');
+const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 
 const FILE = path.join(__dirname, '..', 'seal.js');
@@ -20,7 +20,7 @@ test.startTest('seal.js: the node\'s seal, in the browser');
 (async function () {
   test.subHeading('where it lives');
   ok(!fs.existsSync(path.join(RUN, 'face', 'seal.js')), 'face/seal.js is gone', 'face/seal.js is still there');
-  if (!fs.existsSync(FILE)) { test.fail('shell/seal.js is not there'); return; }
+  if (!fs.existsSync(FILE)) { test.fail('spirit/shell/seal.js is not there'); return; }
   const win = { crypto: globalThis.crypto, TextEncoder: TextEncoder, TextDecoder: TextDecoder, btoa: btoa, atob: atob, Uint8Array: Uint8Array, Promise: Promise, JSON: JSON, Buffer: Buffer };
   win.window = win;
   vm.runInContext(fs.readFileSync(FILE, 'utf8'), vm.createContext(win), { filename: FILE });

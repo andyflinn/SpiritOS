@@ -34,7 +34,7 @@
 
   if (typeof module === 'object' && module && module.exports) {
     // The spirit object first (goal/G40.1).
-    require('../spirit.js');
+    require('./spirit.js');
     var fs = require('fs');
     var path = require('path');
     var readOr = function (file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { return null; } };

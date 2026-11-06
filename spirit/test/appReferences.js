@@ -75,7 +75,7 @@ const SOURCES = [
   },
   {
     label: 'index.html (the Spirit group\'s fixed member list)',
-    file: path.join(RUN_DIR, 'index.html'),
+    file: path.join(RUN_DIR, 'spirit', 'shell', 'index.html'),
   },
   {
     label: 'shell.js (INTRINSIC_APP_FOLDERS and the app id renames)',

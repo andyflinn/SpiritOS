@@ -13,7 +13,7 @@
 // relay-state's own files first (goal/G43.8): spirit.js reads environment.json as it loads.
 require('./shellMove').moveRelayState(require('path').join(__dirname, '..'));
 // The spirit object first, as the global spirit (goal/G40.1): the relay loads it too, so it comes before the branch.
-require('../spirit.js');
+require('./spirit.js');
 if (process.argv.slice(2).includes('--relay')) {
   require('./relayServer');
   return;
@@ -294,10 +294,10 @@ const events = require('./events/events.js').createEvents({
 // goal/G30.13) passes the same gate as the browser on loopback.
 function serveGet(pathname, res) {
   const isHomeRequest = pathname === '/' || pathname === '/index.html';
-  const relativePath = isHomeRequest ? HOME_PAGE : pathname.replace(/^\/+/, '');
-  const filePath = isHomeRequest
-    ? path.join(ROOT_DIR, HOME_PAGE)
-    : fsPath(ROOT_DIR, pathname);
+  // THE ADDRESS STAYS, THE FILE MOVED (goal/G43.18, Q25, Andy: "the browser should see them the same."): serveCommon.pageFile.
+  const address = isHomeRequest ? HOME_PAGE : pathname.replace(/^\/+/, '');
+  const relativePath = common.pageFile(address);
+  const filePath = fsPath(ROOT_DIR, '/' + relativePath);
 
   if (!filePath) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -310,7 +310,7 @@ function serveGet(pathname, res) {
   // synchronous loadFile XHR hits directly. Boot assets bypass the
   // generic gate unconditionally; everything else goes through the same
   // fileServable check loadFile/scanFolder use.
-  if (BOOT_ASSETS.indexOf(relativePath) === -1 && !fileSystem.fileServable(relativePath)) {
+  if (BOOT_ASSETS.indexOf(address) === -1 && !fileSystem.fileServable(relativePath)) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found');
     return;

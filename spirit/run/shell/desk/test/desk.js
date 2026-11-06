@@ -288,7 +288,7 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   // which beats the shell's armed red (shell.css, #app-content button[data-armed]). Their colour moves to a class that
   // shell.css paints only while the button is not armed.
   test.subHeading('goal/G41.11: Start and End design mode turn the shell\'s red when armed');
-  const css = fs.readFileSync(path.join(RUN, 'shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const wd = deskWorld(Object.assign({}, goal, { design: true }), []);
   await wd.mount();
   [['desk-end-design', 'End design mode'], ['desk-start-design', 'Start design mode']].forEach(function (pair) {

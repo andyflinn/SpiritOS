@@ -4,7 +4,7 @@
 // split, and can implement the divergent modes in separate scriptFilese.js": on a page it loads ./browserAgent.js, the element
 // spirit.elements.agent; in a node ./nodeAgent.js, the agent server.
 (function () {
-  var S = typeof window !== 'undefined' && window.spirit ? window.spirit : require('../../../spirit.js');
+  var S = typeof window !== 'undefined' && window.spirit ? window.spirit : require('../../spirit.js');
   if (S.isBrowser()) S.require('spirit/app/agent/browserAgent.js');
   else require('./nodeAgent.js');
 }());

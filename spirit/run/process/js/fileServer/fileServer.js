@@ -1,6 +1,6 @@
 'use strict';
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit.js');
+require('../../../spirit/spirit.js');
 
 // spirit/run/process/js/fileServer/fileServer.js
 // THE FILESERVER: files kept by their hash, one folder each (fileTransfer goal/G1).

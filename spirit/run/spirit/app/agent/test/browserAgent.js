@@ -15,7 +15,7 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const DIR = path.join(__dirname, '..');
 const FILE = path.join(DIR, 'browserAgent.js');
 // The agent server's family, as the one family path function names it (goal/G41.12).
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 const AGENT_FAMILY = familyPath('agent');
 // The tables of agent.db, in the order of their left tools (goal/G41.4, box v22).
 // goal/G41.21 (box v17): "agent.grant is removed altogether: its table, its server, and the Grants tool in the left strip".

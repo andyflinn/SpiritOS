@@ -12,7 +12,7 @@
 'use strict';
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../spirit.js');
+require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 const limits = require('./limits.js');
@@ -479,7 +479,33 @@ function writeEnvironment(rootDir, port) {
   fs.writeFileSync(file, JSON.stringify({ PORT: Number(port) }, null, 2), 'utf8');
 }
 
+// THE PAGES' ADDRESSES, AND WHERE THEIR FILES LIVE NOW (goal/G43.18; Andy: "i want all vital files under run://spirit/",
+// "those file that are cluttering run:// they should be in run://spirit/shell/", and Q25: "the browser should see them the
+// same."). The browser asks the addresses it always asked; the node and the relay serve each from its file under spirit/.
+// address (run-relative, no leading slash) -> the file, run-relative.
+const PAGE_FILES = {
+  'index.html': 'spirit/shell/index.html',
+  'face.html': 'spirit/shell/face.html',
+  'spirit.js': 'spirit/spirit.js',
+  'shell.css': 'spirit/shell/shell.css',
+  // Q26, Andy: "the ghost one for loopback, the face one for the face."
+  'favicon.svg': 'spirit/shell/ghost.svg',
+  'shell/boot.js': 'spirit/shell/boot.js',
+  'shell/elements.css': 'spirit/shell/elements.css',
+  'shell/face.css': 'spirit/shell/face.css',
+  'shell/favicon.svg': 'spirit/shell/favicon.svg',
+  'shell/seal.js': 'spirit/shell/seal.js',
+  'shell/tokens.css': 'spirit/shell/tokens.css',
+};
+// The file an address is served from: its page file, or the address itself.
+function pageFile(address) {
+  const a = String(address || '').replace(/^\/+/, '');
+  return Object.prototype.hasOwnProperty.call(PAGE_FILES, a) ? PAGE_FILES[a] : a;
+}
+
 module.exports = {
+  PAGE_FILES: PAGE_FILES,
+  pageFile: pageFile,
   writeEnvironment: writeEnvironment,
   ensureFirstRun: ensureFirstRun,
   firstDescription: firstDescription,

@@ -183,7 +183,7 @@ const elementDone = sendIt().then(function (r) {
       && said && said.ok && /new@example\.org/.test(said.text) && /confirmation link/.test(said.text) && /value="held@example\.org"/.test(drawn) && typeof element.bind === 'function')
     test.check('joinForm draws the field prefilled, asks relay.join for its relay, and says the confirmation link is in the inbox');
   else test.fail(OWED + 'joinForm asked ' + short(asked) + ', said ' + short(said) + ', drew ' + short(drawn));
-  const index = (function () { try { return fs.readFileSync(path.join(RUN, 'index.html'), 'utf8'); } catch (e) { return ''; } }());
+  const index = (function () { try { return fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8'); } catch (e) { return ''; } }());
   const ndSrc = code('shell/natterDetails/natterDetails.js');
   const joinSrc = code('shell/join/join.js');
   if (/src="\/spirit\/element\/joinForm\.js"/.test(index) && /spirit\.element\.joinForm/.test(ndSrc) && /spirit\.element\.joinForm/.test(joinSrc)

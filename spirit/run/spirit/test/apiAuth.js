@@ -9,7 +9,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
-require(path.join(RUN, 'spirit.js'));
+require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { DatabaseSync } = require('node:sqlite');
 

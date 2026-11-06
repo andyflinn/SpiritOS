@@ -60,7 +60,7 @@ async function startNode(run) {
 // to send its DEBUG verb.
 async function startRelay(run, debug) {
   const port = await freePort();
-  const code = 'require("./spirit.js").debug(' + (debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
+  const code = 'require("./spirit/spirit.js").debug(' + (debug ? 'true' : 'false') + '); process.argv[1] = require("path").resolve("spirit/relayServer.js"); require("./spirit/relayServer.js");';
   const child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { PORT: String(port) }) });
   const up = await until(function () { return ask('127.0.0.1', port, '/').then(function (r) { return r.status > 0; }); }, 30000);
   return { port: port, child: child, up: up };

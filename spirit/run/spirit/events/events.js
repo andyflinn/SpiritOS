@@ -21,7 +21,7 @@
 // It holds nothing of its own: the jobs keep the jobs.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../spirit.js');
+require('../spirit.js');
 const limits = require('../limits');
 
 // o: { jobs, relayEvents, arrivals, renames, readJsonBody, bodyRefused, pageStreams }

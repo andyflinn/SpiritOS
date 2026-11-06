@@ -152,7 +152,7 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   if (/border-top:\s*0\.8em\s+solid\s+var\(--spirit-match/.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid border in the one match colour, var(--spirit-match), 0.8em tall');
   else test.fail(OWED + 'the bar is drawn ' + short(barTag));
   // The shell's styles are shell.css since goal/G30.9 (they stood inline in index.html).
-  const idx = fs.readFileSync(path.join(RUN, 'shell.css'), 'utf8');
+  const idx = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8');
   const token = (/--spirit-match:\s*([^;]+);/.exec(idx) || [])[1] || '';
   const rgb = (/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/.exec(token) || []).slice(1).map(Number);
   if (rgb.length === 3 && rgb[2] > rgb[0] && rgb[2] > rgb[1] && rgb[2] >= 200 && rgb[0] >= 100) test.check('--spirit-match is a pastel blue: ' + token.trim());
@@ -178,7 +178,7 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   const files = code(path.join(RUN, 'shell', 'files', 'files.js'));
   if (/launchApp\([^)]*\{[^}]*words\s*:[^}]*line\s*:/.test(files)) test.check('Files opens the viewer with {path, words, line}');
   else test.fail(OWED + 'files.js launches ' + short((/launchApp\([^\n]*/.exec(files) || [''])[0]));
-  const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+  const index = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8');
   if (/createTextView\([^)]*\{[\s\S]{0,200}?line\s*:/.test(index)) test.check('the viewer hands the line to its text view');
   else test.fail(OWED + 'the viewer passes no line to createTextView');
   const editor = code(path.join(RUN, 'shell', 'textEditor', 'textEditor.js'));

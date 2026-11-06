@@ -13,7 +13,7 @@ const os = require('os');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
-require(path.join(RUN, 'spirit.js'));
+require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { DatabaseSync } = require('node:sqlite');
 
@@ -252,7 +252,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
+  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
   ok(E.providerTable && typeof E.providerTable.create === 'function' && E.providerRow && typeof E.providerRow.create === 'function',
@@ -331,7 +331,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const pdir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-picker-'));
     // The servers check their arguments through the one spirit object's rules, as in the agent process; the page section
     // above put a stand-in in its place.
-    global.spirit.check = require(path.join(RUN, 'spirit.js')).check;
+    global.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;
     const pctx = { db: new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
     pctx.tables.provider = require(path.join(DIR, 'server.js'))(pctx);
     pctx.tables.model = require(path.join(DIR, '..', 'model', 'server.js'))(pctx);

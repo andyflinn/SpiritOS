@@ -209,7 +209,7 @@ const done = (async function () {
   else test.fail(OWED + 'relayServer reads no key on /face/stream, or does not serve shell/seal.js');
 
   test.subHeading('4. the face shell, by its code');
-  const shell = code('shell/boot.js');
+  const shell = code('spirit/shell/boot.js');
   const kernel = code('spirit/kernel.js');
   const html = raw('face.html');
   const login = raw('shell/login/login.js') + raw('shell/login/login.json');

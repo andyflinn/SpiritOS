@@ -23,7 +23,7 @@ const CLONE = path.join(TMP, 'clone');
 const BARE_CLONE = path.join(TMP, 'nolog');
 const AGENT = 'test-agent';
 // The deskClient's family as the one family path function names it (goal/G41.12).
-const SPIRIT = path.join(RUN, 'spirit.js');
+const SPIRIT = path.join(RUN, 'spirit', 'spirit.js');
 const FAMILY = require(SPIRIT).familyPath('deskClient');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

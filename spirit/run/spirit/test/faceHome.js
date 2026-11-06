@@ -108,8 +108,9 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   const none = await send(bare, MINE, CARD);
   ok(!none.reached.length && refused(none), 'a face home told of no face takes no call', 'with no faceSet, a call: ' + said(none));
 
-  test.subHeading('the relay where this node set a face works as before');
-  const m = world(onlyMine);
+  // Box v29: "The home node answers a face only from a starred relay, one check; a face it answers is a full face."
+  test.subHeading('the relay where this node set a face, and starred, works as before');
+  const m = world(onlyMine, onlyMine);
   const card = await send(m, MINE, CARD);
   ok(card.reached.indexOf('node.card') !== -1 && card.status === 200, 'node.card reaches the door', 'node.card from my face\'s relay: ' + said(card));
   const cardSealed = await send(m, MINE, sealed(CARD));
@@ -123,119 +124,34 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   ok(streaming, 'face-open starts the stream', 'face-open from my face\'s relay started no stream');
   try { m.home.close(MINE); } catch (e) { /* the stream is the stand-in's */ }
 
-  test.subHeading('even there, jobs, fs, fileServer and net.fetch are off the face');
-  // Andy, Q3: "taking jobs, fs, fileServer and net.fetch off the face until faces can prove they are the owner" "yes."
-  // Every verb the families declare, and each family's FS group, from their own declarations.
+  // Every verb the families declare, from their own declarations.
   const allFamilies = function () {
     const dirs = function (d) { return fs.readdirSync(path.join(RUN, d), { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); };
     return dirs('spirit').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); })
-      .concat(dirs('process/js').filter(function (n) { return fs.existsSync(path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath(n))); }));
+      .concat(dirs('process/js').filter(function (n) { return fs.existsSync(path.join(RUN, require(path.join(RUN, 'spirit', 'spirit.js')).familyPath(n))); }));
   };
   const verbsOf = function (file) { return Object.keys(require(path.join(RUN, file)).verbs); };
-  // The whole FS group, as spirit/introSpector.js declares it, but FS.path: it only names a file in the family's own folder, reading
-  // and writing nothing, and the face's lists find their files by it (Andy, of cw's "the red please: every family's FS.path answers
-  // from a face with no star, and no other FS verb does": "wsl? red this this?").
-  const FS_ALL = (fs.readFileSync(path.join(RUN, 'spirit', 'introSpector.js'), 'utf8').match(/prefix \+ 'FS\.[A-Za-z]+'/g) || []).map(function (x) { return x.replace(/^prefix \+ '|'$/g, ''); });
-  ok(FS_ALL.length > 3 && FS_ALL.indexOf('FS.path') !== -1 && FS_ALL.indexOf('FS.deleteFile') !== -1, 'it reads the FS group from its own declaration: ' + FS_ALL.join(', '), 'the FS group read as ' + short(FS_ALL));
-  const FS_GROUP = FS_ALL.filter(function (v) { return v !== 'FS.path'; });
-  const off = [].concat(
-    verbsOf('spirit/jobs/api.js').concat(FS_GROUP).map(function (v) { return 'jobs.' + v; }),
-    // fs.annotations stays (Andy, Q4: "fs.annotations stays for the icons" "yes."): the face desktop draws its apps by it.
-    verbsOf('spirit/fs/api.js').filter(function (v) { return v !== 'annotations'; }).concat(FS_GROUP).map(function (v) { return 'fs.' + v; }),
-    verbsOf(require(path.join(RUN, 'spirit.js')).familyPath('fileServer')).concat(FS_GROUP).map(function (v) { return 'fileServer.' + v; }),
-    ['net.fetch'],
-    // EVERY FAMILY'S FS GROUP (Andy, Q4: "every FS group off the face" "yes."), the node's own families and each app server's.
-    allFamilies().reduce(function (out, fam) { return out.concat(FS_GROUP.map(function (v) { return fam + '.' + v; })); }, []));
-  ok(off.length > 15, 'it asks ' + off.length + ' verbs', 'only ' + off.length + ' verbs to ask: it judges nothing');
-  const through = [];
-  for (const v of off) {
-    const c = { call: v, args: { path: 'x', key: 'x', id: 'x' } };
-    for (const form of [['unsealed', c], ['sealed', sealed(c)], ['in pieces', pieced(c)]]) {
-      const a = await send(m, MINE, form[1]);
-      if (a.reached.length || !refused(a)) through.push(v + ' ' + form[0] + ': ' + said(a));
-    }
-  }
-  ok(!through.length, 'all ' + off.length + ' are refused with a code and never reach the door, unsealed, sealed and in pieces', through.length + ' of ' + (off.length * 3) + ' got through; first: ' + through.slice(0, 3).join(' | '));
-  const icons = await send(m, MINE, { call: 'fs.annotations', args: { path: 'shell/info/info.js' } });
-  ok(icons.reached.indexOf('fs.annotations') !== -1, 'fs.annotations still reaches the door, for the face desktop\'s app icons (boot.js:427)', 'fs.annotations from the face: ' + said(icons));
-  const ann = await send(m, MINE, { call: 'fs.annotate', args: { path: 'x', payload: { app: true } } });
-  ok(!m.annotated.length && refused(ann), 'fs.annotate writes no sidecar by its side way', 'fs.annotate from the face: annotated ' + short(m.annotated) + ', ' + said(ann));
-  const up = await send(m, MINE, { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } });
-  ok(!m.saved.length && refused(up), 'a save in parts ({upload}) writes no file', 'a save in parts from the face: saved ' + short(m.saved) + ', ' + said(up));
 
-  // RH2 OF THE REVIEW (Andy: "we fix the red from goal/G41.30 AND all the review items here in this item."; the review:
-  // "anyone who reads the owner's mail once logs in on his face", "plus a step-up the node itself asks for before
-  // anything that runs code or changes grants."). No step-up exists yet, so what changes grants or the node's keys does
-  // not come through a face login at all.
-  test.subHeading('a face login alone changes no grant and no key of the node');
-  const STEP = ['auth.grant', 'auth.revoke', 'auth.bundle', 'auth.branch', 'node.rotateCipher'];
-  const stepped = [];
-  for (const v of STEP) {
-    const c = { call: v, args: { key: 'x', path: 'x', op: 'add' } };
-    for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
-      const a = await send(m, MINE, form[1]);
-      if (a.reached.length || !refused(a)) stepped.push(v + ' ' + form[0] + ': ' + said(a));
-    }
+  // GOAL/G43.18, BOX V29, "A face is whole, or there is none" (Andy: "we remove ALL the star shit, like this,", "on the home
+  // node, NO face is offered (faceForm hides itself) for a relay without star."): the half face of G41.30 and G41.33 is gone.
+  test.subHeading('box v29: a relay with my face and no star gets nothing at all');
+  const plain = world(onlyMine, function () { return false; });
+  const asks = [['node.card', CARD], ['node.card, sealed', sealed(CARD)], ['fs.FS.path', { call: 'fs.FS.path', args: { path: 'x' } }],
+    ['owner.command', { call: 'owner.command', args: { key: 'x' } }], ['jobs.create with a shell', SHELL], ['the same, in pieces', pieced(SHELL)],
+    ['a file', { get: 'index.html' }], ['the keys', { keys: 1 }], ['a save in parts', { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } }]];
+  for (const c of asks) {
+    const a = await send(plain, MINE, c[1]);
+    ok(!a.reached.length && refused(a), 'no star: ' + c[0] + ' is refused and never reaches the door', 'no star: ' + c[0] + ': ' + said(a));
   }
-  ok(!stepped.length, 'all ' + STEP.length + ' are refused with a code and never reach the door', stepped.length + ' of ' + (STEP.length * 2) + ' got through; first: ' + stepped.slice(0, 3).join(' | '));
+  ok(!plain.files.length && !plain.saved.length, 'no star: no file served and none written', 'no star: files ' + short(plain.files) + ', saved ' + short(plain.saved));
 
-  // YOUR FACE ON A RELAY YOU OWN GETS EVERYTHING BACK (Andy: "THIS: The option I recommend: your face on a relay you own
-  // gets everything back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the
-  // limits stay until G42." "is a compromise i can live with, AND justify to members of relay's I own."). faceOwned(url)
-  // says this node owns that relay, from something the node did itself, never the relay's own word.
-  test.subHeading('on a relay this node owns, the limits are gone');
-  const BACK = ['jobs.create', 'fs.save', 'fileServer.push', 'net.fetch', 'desk.FS.saveFile', 'auth.grant', 'auth.bundle', 'node.rotateCipher'];
-  const own = world(onlyMine, onlyMine);
-  const held = [];
-  for (const v of BACK) {
-    const c = { call: v, args: { path: 'x', key: 'x' } };
-    for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
-      const a = await send(own, MINE, form[1]);
-      if (a.reached.indexOf(v) === -1) held.push(v + ' ' + form[0] + ': ' + said(a));
-    }
-  }
-  ok(!held.length, 'all ' + BACK.length + ' reach the door, unsealed and sealed', held.length + ' of ' + (BACK.length * 2) + ' still refused; first: ' + held.slice(0, 3).join(' | '));
-  const upOwn = await send(own, MINE, { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } });
-  ok(!refused(upOwn) || own.saved.length > 0, 'a save in parts goes on there too', 'a save in parts on an owned relay: ' + said(upOwn));
-
-  // PUPPETS TOO (Andy, pasting the review: "owner.command still passes. A face on a relay that isn't starred can send any
-  // signed verb to your puppets, and they run it, file writes included. You listed puppets among the things only a starred
-  // relay gets back."): the owner family, off the face unless the relay is starred.
-  test.subHeading('every family\'s FS.path answers from a face with no star');
-  const noStar = world(onlyMine, function () { return false; });
-  const pathShut = [];
-  for (const fam of allFamilies()) {
-    const a = await send(noStar, MINE, { call: fam + '.FS.path', args: { path: 'x' } });
-    if (a.reached.indexOf(fam + '.FS.path') === -1) pathShut.push(fam + ': ' + said(a));
-  }
-  ok(allFamilies().length > 5 && !pathShut.length, 'all ' + allFamilies().length + ' families\' FS.path reach the door, the face\'s lists find their files by it', pathShut.length + ' refused; first: ' + pathShut.slice(0, 2).join(' | '));
-
-  test.subHeading('the owner family goes with the star');
-  const ownerVerbs = verbsOf('spirit/owner/api.js');
-  ok(ownerVerbs.indexOf('command') !== -1, 'owner.command is a verb to ask', 'the owner family declares: ' + short(ownerVerbs));
-  const plainFace = world(onlyMine, function () { return false; });
-  const passed = [];
-  for (const v of ownerVerbs) {
-    const c = { call: 'owner.' + v, args: { key: 'x' } };
-    for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
-      const a = await send(plainFace, MINE, form[1]);
-      if (a.reached.length || !refused(a)) passed.push('owner.' + v + ' ' + form[0] + ': ' + said(a));
-    }
-  }
-  ok(!passed.length, 'on a relay that is not starred, all ' + ownerVerbs.length + ' owner verbs are refused and never reach the door', passed.length + ' of ' + (ownerVerbs.length * 2) + ' got through; first: ' + passed.slice(0, 2).join(' | '));
-  const starred = await send(own, MINE, { call: 'owner.command', args: { key: 'x' } });
-  ok(starred.reached.indexOf('owner.command') !== -1, 'on a starred relay owner.command reaches the door', 'owner.command on a starred relay: ' + said(starred));
-
-  test.subHeading('owning takes the node\'s own word, and a face there');
-  const notOwned = world(onlyMine, function () { return false; });
-  const a1 = await send(notOwned, MINE, { call: 'jobs.create', args: { command: 'x' } });
-  ok(!a1.reached.length && refused(a1), 'a relay this node does not own keeps the limits', 'not owned: ' + said(a1));
+  test.subHeading('starring takes the node\'s own word, and a face there');
   const loose = world(onlyMine, function () { return 'yes'; });
-  const a2 = await send(loose, MINE, { call: 'jobs.create', args: { command: 'x' } });
-  ok(!a2.reached.length && refused(a2), 'only true is true: a truthy answer owns nothing', 'faceOwned answering "yes": ' + said(a2));
+  const a2 = await send(loose, MINE, CARD);
+  ok(!a2.reached.length && refused(a2), 'only true is a star: a truthy answer opens nothing', 'faceOwned answering "yes": ' + said(a2));
   const noFace = world(function () { return false; }, function () { return true; });
-  const a3 = await send(noFace, MINE, { call: 'jobs.create', args: { command: 'x' } });
-  ok(!a3.reached.length && refused(a3), 'an owned relay where this node set no face gets nothing', 'owned, no face: ' + said(a3));
+  const a3 = await send(noFace, MINE, CARD);
+  ok(!a3.reached.length && refused(a3), 'a starred relay where this node set no face gets nothing', 'starred, no face: ' + said(a3));
 
   // THE STAR IS SET AT HOME (Andy: "so this button will put the star on relays and puppets. AND take it away."; every
   // contact's panel has it "at home"). From a face, even on a relay this node owns, it would let whoever is in on one
@@ -278,7 +194,6 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     };
     s.home = createFaceHome(o);
     s.emit = function (kind, data) { s.subs.forEach(function (fn) { fn(kind, data); }); };
-    s.ownerEvent = function (ev) { s.home.ownerEvent(ev); s.emit('relay-event', ev); };
     s.lines = function (url) {
       const u = s.ups[url];
       return !u ? [] : u.chunks.join('').split('\n').filter(Boolean).map(function (l) { try { return JSON.parse(l); } catch (e) { return { unread: l }; } });
@@ -306,7 +221,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     ['a relay\'s status', 'relay-event', { kind: 'relay-status', relay: STARRED, report: { members: 1 } }],
   ];
 
-  test.subHeading('goal/G41.33: a starred face hears what the loopback hears, each once, and a face with no star does not');
+  test.subHeading('a starred face hears what the loopback hears, each once, and a face with no star hears nothing (box v29)');
   const sx = streams(starAt);
   sx.home.open(STARRED, '');
   sx.home.open(PLAIN, '');
@@ -319,29 +234,23 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     ok(on === 1, 'starred: ' + c[0] + ' arrives whole, once', 'starred: ' + c[0] + ' arrived ' + on + ' times, as ' + c[1] + ' ' + short(c[2]));
   });
   jobEvents.forEach(function (c) {
-    // A server with no app object still reaches a face with no star, its status alone: that is today's, and stays.
-    if (c[0] === 'a server\'s job as a whole') {
-      const seen = sx.lines(PLAIN).filter(function (l) { return l.data && l.data.id === 'job_s'; });
-      ok(seen.length === 1 && seen[0].data.log === undefined && seen[0].data.data === undefined, 'no star: a server still comes as its status alone, no log', 'no star: the server came as ' + short(seen));
-      return;
-    }
     ok(sx.got(PLAIN, c[1], c[2]) === 0, 'no star: ' + c[0] + ' stays home', 'no star: ' + c[0] + ' reached a face with no star');
   });
 
-  test.subHeading('goal/G41.33: what a face with no star gets today, it still gets');
+  test.subHeading('box v29: a face with no star gets nothing, not even the file tree');
   const today = [['the file tree', 'job-updated', { id: 'job_f', kind: 'permanent', type: 'fs-watcher', status: 'running', data: { command: { op: 'zz' } } }],
     ['a row of the one table', 'job-updated', { id: 'job_h', kind: 'permanent', type: 'shadow', status: 'running', data: { row: 1 } }],
     ['a contact renamed', 'contact.rename', { key: 'K', name: 'zz' }]];
   today.forEach(function (c) {
     sx.emit(c[1], c[2]);
-    ok(sx.got(PLAIN, c[1], c[2]) === 1, 'no star: ' + c[0] + ' arrives', 'no star: ' + c[0] + ' arrived ' + sx.got(PLAIN, c[1], c[2]) + ' times');
+    ok(sx.got(PLAIN, c[1], c[2]) === 0, 'no star: ' + c[0] + ' stays home', 'no star: ' + c[0] + ' arrived ' + sx.got(PLAIN, c[1], c[2]) + ' times');
     ok(sx.got(STARRED, c[1], c[2]) === 1, 'starred: ' + c[0] + ' arrives, once', 'starred: ' + c[0] + ' arrived ' + sx.got(STARRED, c[1], c[2]) + ' times');
   });
-  // An owner's event reaches a page by the dispatcher, and a face by ownerEvent as well: one event, one line.
+  // An owner's event reaches a face by the node's dispatcher alone (ownerEvent went with the half face, box v29): one line.
   const minted = { kind: 'invite-minted', relay: STARRED, invite: 'zz' };
-  sx.ownerEvent(minted);
-  ok(sx.got(STARRED, 'relay-event', minted) === 1, 'starred: an owner\'s relay event arrives once, not once per way in', 'starred: an owner\'s relay event arrived ' + sx.got(STARRED, 'relay-event', minted) + ' times');
-  ok(sx.got(PLAIN, 'relay-event', minted) === 1, 'no star: an owner\'s relay event still arrives, once', 'no star: an owner\'s relay event arrived ' + sx.got(PLAIN, 'relay-event', minted) + ' times');
+  sx.emit('relay-event', minted);
+  ok(sx.got(STARRED, 'relay-event', minted) === 1, 'starred: an owner\'s relay event arrives once', 'starred: an owner\'s relay event arrived ' + sx.got(STARRED, 'relay-event', minted) + ' times');
+  ok(sx.got(PLAIN, 'relay-event', minted) === 0, 'no star: an owner\'s relay event stays home', 'no star: an owner\'s relay event arrived ' + sx.got(PLAIN, 'relay-event', minted) + ' times');
 
   test.subHeading('goal/G41.33: only true is a star, the star counts at each event, and it sends no catch-up');
   const loose2 = streams(function () { return 'yes'; });
@@ -400,7 +309,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   const shut = [];
   for (const fam of allFamilies()) {
     const inSpirit = fs.existsSync(path.join(RUN, 'spirit', fam, 'api.js'));
-    for (const v of verbsOf(inSpirit ? 'spirit/' + fam + '/api.js' : require(path.join(RUN, 'spirit.js')).familyPath(fam))) {
+    for (const v of verbsOf(inSpirit ? 'spirit/' + fam + '/api.js' : require(path.join(RUN, 'spirit', 'spirit.js')).familyPath(fam))) {
       if (fam + '.' + v === 'contact.own') continue;
       // fs.annotate from a face writes the face's own part of a sidecar, in faceHome, and never goes to the door (goal/G30.21).
       if (fam + '.' + v === 'fs.annotate') continue;

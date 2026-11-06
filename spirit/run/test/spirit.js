@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/test/spirit.js
-// THE RED OF spirit/run/spirit.js (goal/G40.6), and of no other module. It asserts ./spirit.md, section by section: the
+// THE RED OF spirit/run/spirit/spirit.js (goal/G40.6; moved from the run root, goal/G43.18), and of no other module. It asserts ./spirit.md, section by section: the
 // rule, where it runs, the one instance, every member of it, its node, the one loader, and that a module not loading
 // spirit.js first goes red. Everything is asked of the one instance, in node and on a page: there is nothing else.
 //   - In node, the instance itself for what needs no node; and, for what talks to a node, the instance of a scratch
@@ -21,7 +21,7 @@ const { spawn, spawnSync } = require('child_process');
 const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..');
-const SOURCE = fs.readFileSync(path.join(RUN, 'spirit.js'), 'utf8');
+const SOURCE = fs.readFileSync(path.join(RUN, 'spirit', 'spirit.js'), 'utf8');
 const COMPONENT = 'spirit/relayUrl.js';
 const PAGE_COMPONENT = 'spirit/fieldRules.js';   // written for both node and a page, as the face's parts are
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
@@ -93,10 +93,9 @@ function fakeNode() {
     server.listen(0, '127.0.0.1', function () { resolve({ port: server.address().port, asked: asked, streams: streams, close: function () { streams.forEach(function (st) { try { st.res.end(); } catch (e) { /* gone */ } }); server.close(); } }); });
   });
 }
-// A scratch run root: spirit.js and its spirit/ folder, and an environment.json naming port (or none).
+// A scratch run root: its spirit/ folder, spirit.js in it (goal/G43.18), and an environment.json naming port (or none).
 function scratchRoot(port) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-root-'));
-  fs.copyFileSync(path.join(RUN, 'spirit.js'), path.join(root, 'spirit.js'));
   fs.cpSync(path.join(RUN, 'spirit'), path.join(root, 'spirit'), { recursive: true, filter: function (src) { return src !== path.join(RUN, 'spirit', 'state'); } });
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   if (port) fs.writeFileSync(path.join(root, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: port }));
@@ -104,14 +103,14 @@ function scratchRoot(port) {
 }
 // What a node process sees through the instance of that root: run in a process of its own, its observations as JSON.
 const OBSERVE = `
-const s = require(process.argv[2] + '/spirit.js');
+const s = require(process.argv[2] + '/spirit/spirit.js');
 const out = {};
 out.kernelLoaded = Object.keys(require.cache).some(function (k) { return /kernel\\.js$/.test(k); });
 out.facts = s.node;
 async function code(p) { try { await p; return 'answered'; } catch (e) { return e && e.code; } }
 (async function () {
   out.keys = Object.keys(s).sort();
-  out.same = require(process.argv[2] + '/spirit.js') === s && globalThis.spirit === s;
+  out.same = require(process.argv[2] + '/spirit/spirit.js') === s && globalThis.spirit === s;
   if (process.argv[3] === 'none') {
     out.require = await code(s.require(s.familyPath('demo')));
     out.tree = await code(s.tree());
@@ -196,7 +195,8 @@ function page() {
         const [status, out] = answer(b);
         return Promise.resolve({ status: status, text: function () { return Promise.resolve(typeof out === 'string' ? out : JSON.stringify(out)); } });
       }
-      const file = path.join(RUN, String(url).replace(/^\/+/, ''));
+      // The node's addresses, each served from its file (goal/G43.18, Q25: serveCommon.pageFile).
+      const file = path.join(RUN, require(path.join(RUN, 'spirit', 'serveCommon.js')).pageFile(String(url).replace(/^\/+/, '')));
       const there = fs.existsSync(file);
       return Promise.resolve({ status: there ? 200 : 404, headers: { get: function () { return ''; } }, arrayBuffer: function () { return Promise.resolve(there ? new Uint8Array(fs.readFileSync(file)).buffer : new ArrayBuffer(0)); } });
     },
@@ -225,12 +225,12 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
 (async function () {
   // ── 1. WHERE IT RUNS, THE ONE INSTANCE, THE GLOBAL FIRST ─────────────
   test.subHeading('1. spirit.js alone tells node from a page; one instance, the global first');
-  const s = require(path.join(RUN, 'spirit.js'));
+  const s = require(path.join(RUN, 'spirit', 'spirit.js'));
   if (s.isNode() === true && s.isBrowser() === false) test.check('in node: isNode() true, isBrowser() false');
   else test.fail('in node: isNode() ' + s.isNode() + ', isBrowser() ' + s.isBrowser());
-  if (globalThis.spirit === s && require(path.join(RUN, 'spirit.js')) === s) test.check('in node: require answers the one instance, the global spirit, every time');
+  if (globalThis.spirit === s && require(path.join(RUN, 'spirit', 'spirit.js')) === s) test.check('in node: require answers the one instance, the global spirit, every time');
   else test.fail('in node: the global and what require answered differ');
-  const kept = spawnSync(process.execPath, ['-e', 'globalThis.spirit = { mark: 1 }; const s = require(process.argv[1]); console.log(String(s === globalThis.spirit && s.mark === 1 && typeof s.require === "function"));', path.join(RUN, 'spirit.js')], { encoding: 'utf8' });
+  const kept = spawnSync(process.execPath, ['-e', 'globalThis.spirit = { mark: 1 }; const s = require(process.argv[1]); console.log(String(s === globalThis.spirit && s.mark === 1 && typeof s.require === "function"));', path.join(RUN, 'spirit', 'spirit.js')], { encoding: 'utf8' });
   if (String(kept.stdout).trim() === 'true') test.check('a global spirit already there is the one it fills, not replaced');
   else test.fail('a global spirit already there was replaced or not filled: ' + short(kept.stdout + kept.stderr));
   const w = page();
@@ -256,10 +256,13 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   if (!left.length) test.check('no factory, no transport and no second object handed out, in node or on a page');
   else test.fail('still handed out: ' + left.join(', '));
 
+  // THE NODE IN TWO PLACES, THE RELAY'S FACE ROUTES IN THREE (goal/G43.18, Q22: the link home moved into spirit.js; box v29: the
+  // login is spirit.login): post and get to the node; the login's /face/api, and the link's /face/call, whole and piece by piece.
   const fetches = (code.match(/\bfetch\(/g) || []).length;
-  if (fetches === 2 && /function post\(verb, args(, how)?\)/.test(code) && /function get\(path\)/.test(code))
-    test.check('one post and one get: spirit.js reaches the node in exactly two places, post(verb, args) and get(path)');
-  else test.fail('spirit.js reaches the network in ' + fetches + ' places, or has no post(verb, args) and get(path)');
+  const toFace = (code.match(/\bfetch\('\/face\/(api|call)'/g) || []).length;
+  if (fetches === 5 && toFace === 3 && /function post\(verb, args(, how)?\)/.test(code) && /function get\(path\)/.test(code))
+    test.check('one post and one get reach the node, post(verb, args) and get(path); the other three are the relay\'s face routes, the login and the link');
+  else test.fail('spirit.js reaches the network in ' + fetches + ' places, ' + toFace + ' of them the face routes, or has no post(verb, args) and get(path)');
 
   // ── 2. IN NODE: NO KERNEL, spirit.js's OWN ───────────────────────────
   test.subHeading('2. in node: no kernel; the node\'s facts, the job and the tables are spirit.js\'s own');
@@ -417,7 +420,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
 
   // ── 6b. ON A FACE, spirit.js LOADS THE FACE ──────────────────────────
   test.subHeading('6b. on a face: face.html holds spirit.js alone, and spirit.js loads the face shell');
-  const faceHtml = fs.readFileSync(path.join(RUN, 'face.html'), 'utf8');
+  const faceHtml = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html'), 'utf8');
   // goal/G41.19, Andy: "LOAD IT WITH A FUCKING SCRIPT TAG!": one tag, /spirit.js, and nothing pasted in by a server.
   const faceScripts = faceHtml.replace(/<!--[\s\S]*?-->/g, '').match(/<script\b[^>]*>[\s\S]*?<\/script>/g) || [];
   if (/<html[^>]*data-spirit="face"/.test(faceHtml) && faceScripts.length === 1 && /^<script src="\/spirit\.js"><\/script>$/.test(faceScripts[0]))
@@ -426,23 +429,27 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   const served = await new Promise(function (resolve) {
     const chunks = [];
     const res = { writeHead: function () {}, setHeader: function () {}, end: function (b) { if (b) chunks.push(Buffer.from(b)); resolve(Buffer.concat(chunks)); } };
-    try { require(path.join(RUN, 'spirit', 'serveCommon.js')).sendFile(res, path.join(RUN, 'face.html')); } catch (e) { resolve(Buffer.from('threw ' + e.message)); }
+    try { require(path.join(RUN, 'spirit', 'serveCommon.js')).sendFile(res, path.join(RUN, 'spirit', 'shell', 'face.html')); } catch (e) { resolve(Buffer.from('threw ' + e.message)); }
   });
-  if (served.equals(fs.readFileSync(path.join(RUN, 'face.html')))) test.check('the node serves face.html byte for byte as it is on disk');
-  else test.fail('the node serves face.html changed: ' + served.length + ' bytes against ' + fs.statSync(path.join(RUN, 'face.html')).size + ' on disk');
+  if (served.equals(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'face.html')))) test.check('the node serves face.html byte for byte as it is on disk');
+  else test.fail('the node serves face.html changed: ' + served.length + ' bytes against ' + fs.statSync(path.join(RUN, 'spirit', 'shell', 'face.html')).size + ' on disk');
   const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'serveCommon.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'spirit', 'relayServer.js'), 'utf8');
   if (!/inlineSpirit/.test(serverSrc)) test.check('no server pastes spirit.js into a page: serveCommon.inlineSpirit is gone, from the node and the relay');
   else test.fail('inlineSpirit is still in serveCommon.js or relayServer.js');
   const injected = [];
   const faceWindow = {
     fetch: function (url) {
-      const file = path.join(RUN, String(url).replace(/^\/+/, ''));
+      // The node's addresses, each served from its file (goal/G43.18, Q25: serveCommon.pageFile).
+      const file = path.join(RUN, require(path.join(RUN, 'spirit', 'serveCommon.js')).pageFile(String(url).replace(/^\/+/, '')));
       const there = fs.existsSync(file);
       return Promise.resolve({ status: there ? 200 : 404, headers: { get: function () { return ''; } }, arrayBuffer: function () { return Promise.resolve(there ? new Uint8Array(fs.readFileSync(file)).buffer : new ArrayBuffer(0)); } });
     },
     TextDecoder: TextDecoder, console: console, Promise: Promise, URL: URL, setTimeout: setTimeout,
+    // The home node's own page, on loopback (goal/G43.18: a face on a relay logs in first, with spirit.login).
+    location: { hostname: '127.0.0.1' },
     document: {
       readyState: 'complete',
+      querySelector: function () { return null; },
       documentElement: { getAttribute: function (n) { return n === 'data-spirit' ? 'face' : null; } },
       createElement: function () { return { textContent: '' }; },
       body: { appendChild: function (el) { injected.push(el.textContent); } },
@@ -453,12 +460,13 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   vm.runInContext(SOURCE, vm.createContext(faceWindow), { filename: 'spirit.js' });
   let booted = null;
   try { await faceWindow.spirit.booted; booted = true; } catch (e) { booted = e && e.code; }
-  // goal/G41.3: face/ moved into shell/, face/shell.js became shell/boot.js and face/seal.js shell/seal.js.
+  // goal/G41.3: face/ moved into shell/; goal/G43.18: the files under spirit/shell/, at the addresses they had; the link, which
+  // requires the seal, is spirit.js's own (Q22).
   const readRun = function (p) { try { return fs.readFileSync(path.join(RUN, p), 'utf8'); } catch (e) { return null; } };
-  const seal = readRun('shell/seal.js');
-  const shellSrc = readRun('shell/boot.js');
-  if (booted === true && shellSrc && seal && injected.length === 1 && injected[0].indexOf(shellSrc) === 0 && injected[0].indexOf(seal) === -1 && shellSrc.indexOf("spirit.require('shell/seal.js')") !== -1)
-    test.check('on a face page spirit.js gets shell/boot.js alone and runs it, spirit.booted answering; the seal waits for the link, which requires it');
+  const seal = readRun('spirit/shell/seal.js');
+  const shellSrc = readRun('spirit/shell/boot.js');
+  if (booted === true && shellSrc && seal && injected.length === 1 && injected[0].indexOf(shellSrc) === 0 && injected[0].indexOf(seal) === -1 && SOURCE.indexOf("requireOne('shell/seal.js')") !== -1)
+    test.check('on the home node\'s page spirit.js gets shell/boot.js alone and runs it, spirit.booted answering; the seal waits for a face\'s link, which requires it');
   else test.fail('the face boot: ' + short([booted, injected.length, shellSrc ? 'shell/boot.js there' : 'no shell/boot.js', seal ? 'shell/seal.js there' : 'no shell/seal.js']));
 
   // ── 7. THE ONE LOADER, THE SAME IN NODE AND ON A PAGE ────────────────
@@ -536,19 +544,19 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   const preloaded = cq.fetched.map(function (f) { return String(f.url) + ' ' + String(f.body || ''); }).filter(function (u) { return !/data\.js/.test(u) && /shell\//.test(u); });
   if (!preloaded.length) test.check('on a page spirit.js loads the cache and no element: no files row element with it (goal/G41.19)');
   else test.fail('on a page spirit.js still loads elements with the cache: ' + short(preloaded));
-  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'));", path.join(RUN, 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
+  const inProcess = spawnSync(process.execPath, ['-e', "const s = require(process.argv[1]); const d = s.data; process.stdout.write(String(!!d && typeof d.getPath === 'function' && typeof d.setPath === 'function' && typeof d.addTranslator === 'function'));", path.join(RUN, 'spirit', 'spirit.js')], { encoding: 'utf8', timeout: 20000 });
   if (inProcess.stdout === 'true') test.check('in a process: require(spirit.js) gives spirit.data, the cache');
   else test.fail('in a process spirit.js does not load the cache: ' + short(inProcess.stdout + inProcess.stderr));
 
   // ── 8. A MODULE THAT DOES NOT LOAD spirit.js FIRST GOES RED ──────────
   test.subHeading('8. a module that does not load spirit.js first goes red');
   const rule = path.join(__dirname, 'spirit-child-generalRules.js');
-  const onSpirit = spawnSync(process.execPath, [rule, 'spirit.js'], { cwd: RUN, encoding: 'utf8' });
+  const onSpirit = spawnSync(process.execPath, [rule, 'spirit/spirit.js'], { cwd: RUN, encoding: 'utf8' });
   if (/✅:2\b/.test(onSpirit.stdout) && !/❌/.test(onSpirit.stdout)) test.check('the general rules pass spirit.js itself');
   else test.fail('the general rules on spirit.js: ' + short(onSpirit.stdout.slice(-200)));
   const fx = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-first-'));
   try {
-    fs.writeFileSync(path.join(fx, 'late.js'), "const fs = require('fs');\nrequire(" + JSON.stringify(path.join(RUN, 'spirit.js')) + ");\n");
+    fs.writeFileSync(path.join(fx, 'late.js'), "const fs = require('fs');\nrequire(" + JSON.stringify(path.join(RUN, 'spirit', 'spirit.js')) + ");\n");
     const late = spawnSync(process.execPath, [rule, path.join(fx, 'late.js')], { cwd: RUN, encoding: 'utf8' });
     if (/does not require spirit\.js first/.test(late.stdout) && /❌/.test(late.stdout)) test.check('a module whose first require is not spirit.js goes red');
     else test.fail('a module requiring fs before spirit.js: ' + short(late.stdout.slice(-200)));

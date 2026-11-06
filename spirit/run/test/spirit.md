@@ -1,6 +1,6 @@
 # spirit.js
 
-`spirit/run/spirit.js`, the spirit object. Its red is `./spirit.js`, which asserts this document section by section.
+`spirit/run/spirit/spirit.js` (at the run root until goal/G43.18, served at /spirit.js as before), the spirit object. Its red is `./spirit.js`, which asserts this document section by section.
 
 ## The rule
 

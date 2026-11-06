@@ -27,7 +27,7 @@ const vm = require('vm');
 const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..');
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 // A family's manager, beside its interface: the app's beside spirit.familyPath(name), the node's own beside its api.js.
 const appFamilies = {};
 function managerOf(name) { return appFamilies[name] ? path.posix.join(path.posix.dirname(path.posix.dirname(familyPath(name))), 'data.js') : 'spirit/' + name + '/data.js'; }
@@ -59,7 +59,7 @@ families.forEach(function (api) {
 
 // ── 2. ONE CODE ─────────────────────────────────────────────────────────────────────────────────────────────────────
 test.subHeading('2. the browser and node load the same files, and nothing else keeps a family\'s cache');
-const spiritJs = code(path.join(RUN, 'spirit.js'));
+const spiritJs = code(path.join(RUN, 'spirit', 'spirit.js'));
 const appServer = code(path.join(RUN, 'spirit', 'appServer.js'));
 // Andy: "we needed it so node.js based clients could share the exact same client code. please move the file to
 // repo:/spirit/run/spirit/spiritData.js". Every client's file, so it sits with spirit's own, not the shell's.

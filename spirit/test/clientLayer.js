@@ -427,7 +427,7 @@ function aBrowserOnlyFileLivesWithTheShell() {
 
   const jsDir = path.join(__dirname, '..', 'run', 'spirit');
   const indexHtml = fs.readFileSync(
-    path.join(__dirname, '..', 'run', 'index.html'), 'utf8');
+    path.join(__dirname, '..', 'run', 'spirit', 'shell', 'index.html'), 'utf8');
 
   // Every .js directly in js/ — client/ is the answer, not the question.
   const inJs = fs.readdirSync(jsDir).filter(function (f) {

@@ -158,8 +158,8 @@ else test.fail(OWED + 'relayServer has no door for faces');
 let loginManifest = null;
 try { loginManifest = JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'login', 'login.json'), 'utf8')); } catch (e) { loginManifest = null; }
 const loginApp = code('shell/login/login.js');
-const faceHtml = code('face.html');
-const faceShell = code('shell/boot.js');
+const faceHtml = code('spirit/shell/face.html');
+const faceShell = code('spirit/shell/boot.js');
 if (loginManifest && Array.isArray(loginManifest.steps) && loginManifest.steps.map(function (s) { return s.until; }).join(',') === 'login,link'
     && /onSteps:/.test(loginApp) && /home node/i.test(loginApp) && /Log in/.test(loginApp) && (loginApp.match(/<input/g) || []).length === 1)
   test.check('the login app is a steps app (login, then the link to the home node): one field, Log in, and after login it says how the home node is reached');
@@ -198,7 +198,7 @@ if (/href="\/shell\.css"/.test(fh) && /href="\/shell\/face\.css"/.test(fh) && /i
     && /id="app-close"/.test(fh) && /id="app-home"/.test(fh) && /id="app-title"/.test(fh) && /id="app-content"/.test(fh) && !/<style/.test(fh))
   test.check('face.html is the shell\'s skeleton (desktop, title bar with Back and Home, app screen) on the shared sheets, with no style of its own');
 else test.fail(OWED + 'face.html is not the shell\'s skeleton on the shared sheets');
-const fs2 = code('shell/boot.js');
+const fs2 = code('spirit/shell/boot.js');
 const la = code('shell/login/login.js');
 if (/app-icon/.test(fs2) && /!state\.loggedIn|!\(state && state\.loggedIn\)|loggedIn === false/.test(fs2) && /openLogin\(\)/.test(fs2)
     && /join-steps/.test(la) && /stat-tile wide/.test(la) && /start-job-form card/.test(la) && /field-label/.test(la))

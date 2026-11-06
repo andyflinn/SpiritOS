@@ -12,7 +12,7 @@ const os = require('os');
 const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../../..');
-require(path.join(RUN, 'spirit.js'));
+require(path.join(RUN, 'spirit', 'spirit.js'));
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { DatabaseSync } = require('node:sqlite');
 
@@ -25,7 +25,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || 'threw', why: (e.extra && e.extra.why) || e.message }; } }
 const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
 const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 const AGENT = familyPath('agent');
 // A box: its markup makes a part per id, each with its own listeners; a new markup makes new parts.
 function box(name) {
@@ -150,7 +150,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
   global.window.spirit.node = { key: HOME_KEY };
   global.window.spirit.data.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
+  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
   const E = global.window.spirit.elements;
   ok(E.modelTable && typeof E.modelTable.create === 'function' && E.modelRow && typeof E.modelRow.create === 'function',

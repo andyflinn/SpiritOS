@@ -17,7 +17,7 @@ const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const FILE = path.join(__dirname, '..', 'appServer.js');
 const SELF_FILE = __filename;
-const TRANSLATOR = path.join(RUN, path.dirname(path.dirname(require(path.join(RUN, 'spirit.js')).familyPath('desk'))), 'data.js');
+const TRANSLATOR = path.join(RUN, path.dirname(path.dirname(require(path.join(RUN, 'spirit', 'spirit.js')).familyPath('desk'))), 'data.js');
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
 const test = CHILD ? null : require(path.join(RUN, 'test', 'testReport.js'));
 
@@ -66,7 +66,7 @@ const asked = [];
 // The one family path function (goal/G41.12), spirit.js's own, read before the stand-in takes spirit.js's place. spirit.js
 // loads the data set as it is required, onto the real spirit object; it is let go again, so appServer's own load of it
 // puts it on the stand-in, where the desk's translator finds it.
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 delete require.cache[require.resolve(path.join(RUN, 'spirit', 'data.js'))];
 const fake = {
   familyPath: familyPath,
@@ -384,7 +384,7 @@ if (CHILD) {
     // No file but appServer writes a family path: no <name>.family, no family/api.js, no join onto 'family'. This file
     // routes by the pattern and is left out; so are appServer.js and spirit.js: the browser cannot load appServer, so
     // spirit.js holds the function and appServer hands out the same one (cw, goal/G41.12 Q3).
-    const SPIRIT_JS = path.join(RUN, 'spirit.js');
+    const SPIRIT_JS = path.join(RUN, 'spirit', 'spirit.js');
     const writers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && f !== SPIRIT_JS; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
       // A join onto 'family' is a path; a bare 'family' is no path since goal/G41.14, where it names a column and a field

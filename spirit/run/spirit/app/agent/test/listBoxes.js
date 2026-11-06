@@ -11,7 +11,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 
 const FILE = path.join(__dirname, '..', 'browserAgent.js');
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

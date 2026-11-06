@@ -49,12 +49,14 @@ function appIntrinsic(root, name) {
 // lived in spirit/element/, it moved to shell/ in goal/G41.19 and no rule named it there.
 // The run root's shell.css and favicon.svg too (goal/G41.30; Andy: "those files that core files depend on, are core-files,
 // too"): index.html and face.html load them on every boot.
-const FRAME = ['spirit/run/index.html', 'spirit/run/spirit.js', 'spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css', 'spirit/run/shell/navigationWrapper.js',
-  'spirit/run/shell.css', 'spirit/run/favicon.svg'];
+const FRAME = ['spirit/run/spirit/shell/index.html', 'spirit/run/spirit/spirit.js', 'spirit/run/spirit/shell/elements.css', 'spirit/run/spirit/shell/tokens.css', 'spirit/run/shell/navigationWrapper.js',
+  'spirit/run/spirit/shell/shell.css', 'spirit/run/spirit/shell/ghost.svg'];
 
 // THE FACE'S BOOT IS CORE (goal/G41.3): face/ moved into shell/, and what was core there is core here, the page itself
 // at the run root as before.
-const BOOT = ['spirit/run/face.html', 'spirit/run/shell/boot.js', 'spirit/run/shell/seal.js', 'spirit/run/shell/face.css', 'spirit/run/shell/favicon.svg'];
+// goal/G43.18 (Andy: "i want all vital files under run://spirit/"): the page and the boot's files are in spirit/shell/ now, served at
+// the addresses they always had (serveCommon.pageFile).
+const BOOT = ['spirit/run/spirit/shell/face.html', 'spirit/run/spirit/shell/boot.js', 'spirit/run/spirit/shell/seal.js', 'spirit/run/spirit/shell/face.css', 'spirit/run/spirit/shell/favicon.svg'];
 const FRAME_LOWER = FRAME.map(function (p) { return p.toLowerCase(); });
 const BOOT_LOWER = BOOT.map(function (p) { return p.toLowerCase(); });
 

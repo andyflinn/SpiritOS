@@ -14,7 +14,7 @@ const RUN = path.resolve(__dirname, '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 // Up here, before the first result: under the verifier testReport.js loads spirit.js for its records with the global
 // put aside, and a server module required after that finds no global spirit.
-const { familyPath } = require(path.join(RUN, 'spirit.js'));
+const { familyPath } = require(path.join(RUN, 'spirit', 'spirit.js'));
 const { answer } = require(path.join(RUN, 'spirit', 'apiDoor.js'));
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'test', 'headLessChrome.js'));

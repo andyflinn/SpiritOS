@@ -12,7 +12,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const familyPath = require(path.join(RUN, 'spirit.js')).familyPath;
+const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 
 const FILE = path.join(__dirname, '..', 'rowElement.js');
 const SHARED = path.join(__dirname, '..', 'tableElement.js');
@@ -95,7 +95,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   // branches, <node>/agent/<table>, and answers them through spirit.data.agent.data.
   global.window.spirit.node = { key: HOME_KEY };
   D.homeNode(HOME_KEY);
-  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit.js')).cacheManager;
+  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
   // A row's whole path in its table's branch, as the agent family's cache manager names it.
   const rowPath = function (table, id) { return global.window.spirit.data.agent.data.branch(table) + '/' + id; };
   const BRANCH = function (table) { return D.nodeId(HOME_KEY) + '/agent/' + table; };
@@ -318,7 +318,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   const os = require('os');
   const scratchDb = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-tableElement-'));
   // The servers check their arguments through the one spirit object's rules (spirit.check), as in the agent process.
-  global.window.spirit.check = require(path.join(RUN, 'spirit.js')).check;
+  global.window.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;
   const sctx = { db: new DatabaseSync(path.join(scratchDb, 'agent.db')), dbFile: path.join(scratchDb, 'agent.db'), tables: {}, publish: function () {} };
   sctx.tables.provider = require(path.join(__dirname, '..', 'provider', 'server.js'))(sctx);
   sctx.tables.model = require(path.join(__dirname, '..', 'model', 'server.js'))(sctx);

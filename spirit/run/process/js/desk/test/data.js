@@ -54,7 +54,7 @@ const inNode = (function () { try { return require(FILE); } catch (e) { return {
 const CACHE = inNode && inNode.cache;
 ok(!!CACHE && ['keep', 'shed', 'answer'].every(function (f) { return typeof CACHE[f] === 'function'; }),
   'in node, as an appServer that subscribes requires it, it answers cache { keep, shed, answer }', 'required: ' + short(inNode && Object.keys(inNode)));
-const DESK_API = (function () { try { return require(path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath('desk'))); } catch (e) { return {}; } }());
+const DESK_API = (function () { try { return require(path.join(RUN, require(path.join(RUN, 'spirit', 'spirit.js')).familyPath('desk'))); } catch (e) { return {}; } }());
 ok(!('cache' in DESK_API), 'and the desk family\'s api.js holds its verbs alone, no cache', 'api.js exports ' + short(Object.keys(DESK_API)));
 // Its translator is tested below, run as the page and the subscribing appServer run it; without the file there is none.
 if (!fs.existsSync(FILE)) { test.fail('the translator\'s checks wait on the file'); test.reportSuccessFailureCount(); process.exit(0); }

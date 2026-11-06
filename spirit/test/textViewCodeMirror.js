@@ -83,7 +83,7 @@ function fakeElement() {
   if (kernel.core.fs.fileServable('spirit/element/codeMirror/lib/codemirror.js')) test.check('fileServable serves spirit/element/codeMirror/lib/codemirror.js');
   else test.fail(OWED + 'fileServable refuses spirit/element/codeMirror/lib/codemirror.js');
   // goal/G43.5; Andy: "only access to codeMirror library is through the element!"
-  const index = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+  const index = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8');
   const at = function (s) { return index.indexOf(s); };
   if (at('element/codeMirror/') === -1 && at('codemirror') === -1) test.check('index.html loads nothing of the library: the element does');
   else test.fail(OWED + 'index.html still names the library');

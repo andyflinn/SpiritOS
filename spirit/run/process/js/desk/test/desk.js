@@ -98,7 +98,7 @@ function gitWorld(dir) {
 function familyOf(body) {
   if (!body || !body.api || typeof body.api.family !== 'string' || !/^[A-Za-z]\w*$/.test(body.api.family)) return null;
   const f = body.api.family;
-  const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath(f))];
+  const tried = [path.join(RUN, 'spirit', f, 'api.js'), path.join(RUN, require(path.join(RUN, 'spirit', 'spirit.js')).familyPath(f))];
   for (const file of tried) if (fs.existsSync(file)) return { family: f, interface: fs.readFileSync(file, 'utf8') };
   return { ok: false, code: 'no-interface' };
 }
@@ -339,7 +339,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     // panel: "push Goal", the ver on the desk is: "pushgoal"") ──────────────────────────────────────────────────────────
     test.subHeading('pushgoal: a verb of the desk, Andy\'s alone');
     // The family's folder by spirit.js's one familyPath (goal/G41.12): no test spells a family path of its own.
-    const deskFamily = path.join(RUN, require(path.join(RUN, 'spirit.js')).familyPath('desk'));
+    const deskFamily = path.join(RUN, require(path.join(RUN, 'spirit', 'spirit.js')).familyPath('desk'));
     let pgFile = null;
     try { pgFile = JSON.parse(fs.readFileSync(path.join(path.dirname(deskFamily), 'pushgoal.json'), 'utf8')); } catch (e) { pgFile = null; }
     const pgRequest = pgFile && pgFile.request && typeof pgFile.request === 'object' && !Array.isArray(pgFile.request) ? pgFile.request : null;

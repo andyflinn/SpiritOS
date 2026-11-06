@@ -16,7 +16,7 @@
 // parses to an object with a string description. A verb file naming a verb nobody declared is said at boot.
 
 // The spirit object first, as the global spirit (goal/G40.1): app servers load this file too, so it takes from spirit what it took from kernel.js.
-require('../spirit.js');
+require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
 // The node's file system, for the annotations of a folder under spirit/run (goal/G40.6).

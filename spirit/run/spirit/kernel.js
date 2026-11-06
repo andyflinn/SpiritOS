@@ -183,7 +183,7 @@ if (isNode()) {
   const fileSystem = require('./fileSystem');
   // ONE DEBUG SWITCH PER PROCESS: in node, spirit.js's (goal/G40.6), so the kernel's print obeys what the node's and
   // the relay's debug verbs set.
-  spirit.core.util.debug = require('../spirit.js').debug;
+  spirit.core.util.debug = require('./spirit.js').debug;
   spirit.core.node.util.fsPath = fileSystem.fsPath;
   spirit.core.node.util.scanFolder = fileSystem.scanFolder;
   ['loadFile', 'statFile', 'fileWritable', 'fileServable', 'saveFile', 'loadJsonValue', 'saveJsonValue', 'deleteFile',

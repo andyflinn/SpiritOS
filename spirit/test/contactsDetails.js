@@ -862,7 +862,7 @@ function theMarkIsChromeSized() {
 
   // The shell's styles are shell.css since goal/G30.9 (they stood inline in index.html).
   const css = fs.readFileSync(
-    path.join(RUN_DIR, 'shell.css'), 'utf8'
+    path.join(RUN_DIR, 'spirit', 'shell', 'shell.css'), 'utf8'
   ).replace(/\s+/g, ' ');
 
   const chrome = /#app-close, #app-home, \.titlebar-link \{[^}]*?font-size: (\d+)px/.exec(css);

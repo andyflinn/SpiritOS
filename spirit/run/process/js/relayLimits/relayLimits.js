@@ -42,7 +42,7 @@
 
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit.js');
+require('../../../spirit/spirit.js');
 const RELAY_APP = 'relay';
 // Long enough for a relay across the Atlantic to answer, short enough
 // that a box which is not there says so while somebody is still looking.

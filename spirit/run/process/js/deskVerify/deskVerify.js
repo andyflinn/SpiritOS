@@ -31,7 +31,7 @@
 // verifier itself (goal/G33.3), to see its work green there before it claims.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit.js');
+require('../../../spirit/spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');

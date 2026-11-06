@@ -295,7 +295,7 @@ module.exports = function installJobs(port) {
       // ITS CONSOLE GOES TO NULL AT THE SOURCE (goal/G41.33, the box: "Console output goes to null by default, at the source,
       // for every process, except node and relay. Only DEBUG turns it on. A crash is no exception"). Read as it starts, so a
       // process started with DEBUG off stays silent until it is started again. Its published lines and exit code stay.
-      stdio: require('../spirit.js').debug() ? ['ignore', 'pipe', 'pipe', 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'],
+      stdio: require('./spirit.js').debug() ? ['ignore', 'pipe', 'pipe', 'ipc'] : ['ignore', 'ignore', 'ignore', 'ipc'],
     });
     [child.stdout, child.stderr].forEach(function (stream) {
       if (!stream) return;
@@ -700,7 +700,7 @@ module.exports = function installJobs(port) {
           } else {
             filesystem.files++;
             const ext = path.extname(entry.name).toLowerCase();
-            const mimeType = require('../spirit.js').MIME_TYPES[ext] || 'application/octet-stream';
+            const mimeType = require('./spirit.js').MIME_TYPES[ext] || 'application/octet-stream';
             filesystem.byMimeType[mimeType] = (filesystem.byMimeType[mimeType] || 0) + 1;
           }
         });
