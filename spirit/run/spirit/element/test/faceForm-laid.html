@@ -25,8 +25,10 @@ window.laid = function () {
     var F = (spirit.element || {}).faceForm;
     var out = { made: !!F && typeof F.mount === 'function' };
     if (!out.made) return JSON.stringify(out);
-    // The form offers the relays this node is seated on (goal/G40.11): Beta and Gamma; Alpha, with no seat, is not.
-    var RELAYS = [{ url: 'wss://a.example', label: 'Alpha' }, { url: 'wss://b.example', label: 'Beta', claimed: true, face: { name: 'andy' } }, { url: 'wss://c.example', label: 'Gamma', owned: true }];
+    // The form offers the relays this node is seated on (goal/G40.11) AND starred (goal/G43.18, box v29: "At home, faceForm
+    // offers a face only on a starred relay"): Beta and Gamma; Alpha, with no seat, is not, nor Delta, seated with no star.
+    var RELAYS = [{ url: 'wss://a.example', label: 'Alpha', mine: true }, { url: 'wss://b.example', label: 'Beta', claimed: true, mine: true, face: { name: 'andy' } }, { url: 'wss://c.example', label: 'Gamma', owned: true, mine: true }, { url: 'wss://d.example', label: 'Delta', claimed: true }];
+    out.offers = { starred: F.offers([RELAYS[1]]), unstarred: F.offers([RELAYS[3]]) };
     function box() { var b = document.createElement('div'); b.style.cssText = 'width:600px;margin:10px'; document.body.appendChild(b); return b; }
     function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     function seen(b) {
@@ -73,7 +75,7 @@ window.laid = function () {
         out.fixed = Object.assign({}, seen(b2), { f: undefined });
         // No relay with a seat: the form draws nothing (Andy: "doesn't show up if the user has zero verified emails anywhere").
         var b3 = box();
-        F.mount(b3, { relays: [RELAYS[0]] });
+        F.mount(b3, { relays: [RELAYS[0], RELAYS[3]] });
         return wait(200).then(function () { out.none = { forms: seen(b3).forms, text: b3.textContent.trim(), kids: b3.children.length }; return JSON.stringify(out); });
       });
     });

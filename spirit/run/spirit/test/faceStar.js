@@ -8,6 +8,11 @@
 // A real scratch node joins real scratch relays by their mail, sets a face and logs in, and every call is what a page
 // sends: POST /face/call with its cookie, its Origin and json. Only the relay's mailer keeps its mail. A step that could
 // not run is red, never skipped.
+// GOAL/G43.18, BOX V29, "A face is whole, or there is none" (Andy: "we remove ALL the star shit, like this,", "on the home
+// node, NO face is offered (faceForm hides itself) for a relay without star."): "The home node answers a face only from a
+// starred relay, one check; a face it answers is a full face.", "A star taken off a relay that has a face takes that face
+// away (Q21).", "Starring is never asked from a face (contact.own)". So the half face of G41.30 and G41.33 is gone here:
+// without the star the face gets no answer and no stream at all.
 
 const fs = require('fs');
 const os = require('os');
@@ -84,7 +89,8 @@ async function logIn(R, name) {
   const sid = ((/spirit_face=([^;]+)/.exec(done.cookie)) || [])[1];
   return sid ? { sid: sid } : { why: 'the token logged nobody in: ' + short(done.text) };
 }
-const refusedOff = function (a) { return a.status === 403 && a.body && a.body.code === 'not-from-the-face'; };
+// Refused: an answer that is no answer, whatever its code (box v29 names none).
+const refused = function (a) { return a.status >= 400 && a.status < 500; };
 
 test.startTest('faceStar.js: the star on a real node, a real relay and a real face (goal/G41.30)');
 
@@ -130,19 +136,12 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
     const face = function (req) { return page(R, 'harbour', '/face/call', req, L.sid); };
     const starOf = async function (key) { const a = await home(N.base, 'contact.search', { q: '', mine: 'yes' }); return !!(a.body && (a.body.items || []).some(function (i) { return i.key === key; })); };
 
-    test.subHeading('no star: the limits stand');
+    test.subHeading('box v29: no star, no face: "The home node answers a face only from a starred relay"');
     ok(!(await starOf(R.relayKey)), 'the relay has no star', 'the relay has a star nobody pressed');
-    const c0 = await face({ call: 'node.card', args: {} });
-    ok(c0.status === 200 && c0.body && c0.body.publicKey === me, 'node.card from the face answers, from this node', 'node.card from the face: ' + c0.status + ' ' + short(c0.text));
-    // WHAT THE FACE'S LISTS START WITH (Andy, of a face with no star: "none of the face-apps showed up"): each finds its family's
-    // cache manager by FS.path, here on the node's real door.
-    for (const fam of ['fs', 'jobs', 'contact']) {
-      const p = await face({ call: fam + '.FS.path', args: { path: 'data.js' } });
-      ok(p.status === 200 && p.body && typeof p.body.path === 'string' && p.body.path.indexOf(fam) !== -1, fam + '.FS.path from a face with no star names its cache manager', fam + '.FS.path from the face: ' + p.status + ' ' + short(p.text));
-    }
-    for (const q of [JOB, SAVE, OWNER]) {
+    // Not even the plainest read: there is no half face left to answer.
+    for (const q of [{ call: 'node.card', args: {} }, { call: 'fs.FS.path', args: { path: 'data.js' } }, { call: 'contact.search', args: { q: '' } }, JOB, SAVE, OWNER]) {
       const a = await face(q);
-      ok(refusedOff(a), q.call + ' from the face is refused, not-from-the-face', q.call + ' from the face on a relay with no star: ' + a.status + ' ' + short(a.text));
+      ok(refused(a), q.call + ' from the face is refused', q.call + ' from the face on a relay with no star: ' + a.status + ' ' + short(a.text));
     }
     await sleep(WAIT_MS);
     ok(!fs.existsSync(mark), 'the job did not run', 'jobs.create from the face RAN, with no star');
@@ -153,7 +152,7 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
     ok(on.status === 200 && (await starOf(R.relayKey)), 'contact.own at home puts the star on the relay\'s row', 'contact.own at home: ' + on.status + ' ' + short(on.text));
     const o1 = await face(OWNER);
     test.comment('owner.command, starred, answered ' + o1.status + ' ' + short(o1.text));
-    ok(o1.status !== 0 && !refusedOff(o1) && !/no-face-here/.test(o1.text), 'owner.command from the face reaches the door', 'owner.command on a starred relay: ' + o1.status + ' ' + short(o1.text));
+    ok(o1.status !== 0 && !/not-from-the-face|no-face-here/.test(o1.text), 'owner.command from the face reaches the door', 'owner.command on a starred relay: ' + o1.status + ' ' + short(o1.text));
     const s1 = await face(SAVE);
     ok(s1.status >= 200 && s1.status < 300 && fs.existsSync(savedAt), 'fs.save from the face writes the file', 'fs.save on a starred relay: ' + s1.status + ' ' + short(s1.text) + ', file ' + fs.existsSync(savedAt));
     const j1 = await face(JOB);
@@ -166,22 +165,29 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
     const self = await face({ call: 'contact.own', args: { key: R.relayKey, own: false } });
     ok(self.status >= 400 && self.status < 500 && (await starOf(R.relayKey)), 'contact.own from the face is refused even here: the star stays', 'contact.own from a starred face: ' + self.status + ' ' + short(self.text) + ', star ' + (await starOf(R.relayKey)));
 
-    test.subHeading('the star off again: the limits are back');
+    test.subHeading('box v29: "A star taken off a relay that has a face takes that face away (Q21)"');
     fs.rmSync(savedAt, { force: true }); fs.rmSync(mark, { force: true });
+    const faceName = async function (base) { const g = await home(N.base, 'relay.get', { key: base }); const r = g.body && g.body.relay; return r && r.face ? String(r.face.name || r.face) : ''; };
+    const before = await faceName(R.base);
+    ok(!!before, 'the world: the node holds a face on the relay, ' + before, 'the node holds no face on the relay before the star comes off: nothing judged');
     const off = await home(N.base, 'contact.own', { key: R.relayKey, own: false });
     ok(off.status === 200 && !(await starOf(R.relayKey)), 'contact.own at home takes the star away', 'contact.own false at home: ' + off.status + ' ' + short(off.text));
-    for (const q of [JOB, SAVE, OWNER]) {
+    ok(!!before && await until(function () { return faceName(R.base).then(function (n) { return n === ''; }); }, 8000), 'and the node holds no face on that relay any more', 'the star came off and the node still holds ' + short(await faceName(R.base)));
+    for (const q of [{ call: 'node.card', args: {} }, JOB, SAVE, OWNER]) {
       const a = await face(q);
-      ok(refusedOff(a), q.call + ' is refused again', q.call + ' after the star came off: ' + a.status + ' ' + short(a.text));
+      ok(refused(a), q.call + ' through it is refused', q.call + ' after the star came off: ' + a.status + ' ' + short(a.text));
     }
     await sleep(WAIT_MS);
     ok(!fs.existsSync(mark) && !fs.existsSync(savedAt), 'nothing ran, nothing was written', 'after the star came off: ran ' + fs.existsSync(mark) + ', saved ' + fs.existsSync(savedAt));
+    await home(N.base, 'contact.own', { key: R.relayKey, own: true });
+    const back = await face({ call: 'node.card', args: {} });
+    ok(refused(back), 'the star put back opens nothing: the face is gone, not hidden', 'the star back on, node.card through the old face: ' + back.status + ' ' + short(back.text));
 
     // ── GOAL/G41.33, ON THE REAL STREAM ──
     // "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay"; "for a face(relay)
     // without star, the restrictions today stay in place"; "NO RESTRICTIONS AT ALL, except changing stars"; "Pressing the
     // star sends no catch-up". What a page reads from /face/stream, with its cookie, unsealed as a page that cannot seal.
-    test.subHeading('goal/G41.33: the real stream, a job, a bundle and the join steps, with and without the star');
+    test.subHeading('the real stream: without the star it carries nothing; with it, a job, a bundle and the join steps');
     const S = await scratchFaceRelay({ members: [] });
     relays.push(S);
     const why4 = !S.up ? 'the relay did not come up' : (await join(N, S) || await setFace(N, S, 'stream'));
@@ -199,8 +205,9 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
       q.end();
       const hears = function (word) { return got.some(function (l) { return l.indexOf(word) !== -1; }); };
       const heardEvent = function (kind, id) { return got.some(function (l) { const v = parsed(l); return !!v && v.event === kind && (kind === 'job-deleted' ? v.data === id : !!v.data && v.data.id === id); }); };
-      await until(function () { return got.length > 0; }, 10000);
-      ok(got.length > 0, 'the stream is open and says things', 'the stream said nothing in 10 s: nothing judged');
+      await sleep(3000);
+      // Box v29: no star, the node answers the face nothing, so no file tree, no presence, no job.
+      ok(!hears('fs-watcher') && !hears('presence'), 'no star: the stream carries nothing of the node, not even its file tree', 'no star: the stream said ' + short(got.slice(0, 3)));
 
       // One failed job, to delete: a process that ends with an exit code of its own stays until it is deleted.
       const script2 = path.join(run, 'process/js/zzStream/zzStream.js');
@@ -250,26 +257,28 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
       await until(function () { return hears('join-steps'); }, 5000);
       ok(hears('join-steps'), 'starred: the join steps reach the face', 'starred: the join-steps job never reached the face');
 
-      test.subHeading('goal/G41.33: a starred face has no restrictions, except changing stars');
+      test.subHeading('a starred face has no restrictions, except changing stars');
       const sface = function (req) { return page(S, 'stream', '/face/call', req, LS.sid); };
-      const anotherStar = await sface({ call: 'contact.own', args: { key: R.relayKey, own: true } });
-      ok(refusedOff(anotherStar) && !(await starOf(R.relayKey)), 'starring another relay from it is refused, and no star lands', 'contact.own of another relay from a starred face: ' + anotherStar.status + ' ' + short(anotherStar.text) + ', star ' + (await starOf(R.relayKey)));
+      const rOff = await home(N.base, 'contact.own', { key: R.relayKey, own: false });
+      ok(rOff.status === 200, 'the world: the first relay\'s star off again', 'contact.own false at home: ' + rOff.status);
+      const anotherStar2 = await sface({ call: 'contact.own', args: { key: R.relayKey, own: true } });
+      ok(refused(anotherStar2) && !(await starOf(R.relayKey)), 'starring another relay from it is refused, and no star lands', 'contact.own of another relay from a starred face: ' + anotherStar2.status + ' ' + short(anotherStar2.text) + ', star ' + (await starOf(R.relayKey)));
       const ownOff = await sface({ call: 'contact.own', args: { key: S.relayKey, own: false } });
-      ok(refusedOff(ownOff) && (await starOf(S.relayKey)), 'taking its own star off from it is refused, and the star stays', 'contact.own false from a starred face: ' + ownOff.status + ' ' + short(ownOff.text) + ', star ' + (await starOf(S.relayKey)));
+      ok(refused(ownOff) && (await starOf(S.relayKey)), 'taking its own star off from it is refused, and the star stays', 'contact.own false from a starred face: ' + ownOff.status + ' ' + short(ownOff.text) + ', star ' + (await starOf(S.relayKey)));
 
-      // The star off with the stream open: the limits are back at the next event.
+      // Last, since it takes the page's address away: the face you call through, renamed through it, on a star.
+      const renamed = await sface({ call: 'relay.face', args: { url: S.base, name: 'renamed' } });
+      ok(!/not-from-the-face/.test(renamed.text) && renamed.status < 400, 'starred: relay.face on the relay it is called through is not refused by the face\'s rule', 'relay.face through a starred face: ' + renamed.status + ' ' + short(renamed.text));
+      const moved = await until(function () { return page(S, 'renamed', '/face/api', { call: 'state', args: {} }).then(function (a) { return a.status === 200; }); }, 8000);
+      ok(!!moved, 'and the face has its new name on the relay', 'after relay.face through a starred face, renamed.relay.example does not answer');
+      // The star off with the stream open: the face goes, so the next event stays home.
       const sOff = await home(N.base, 'contact.own', { key: S.relayKey, own: false });
       ok(sOff.status === 200, 'the star off, at home', 'contact.own false at home: ' + sOff.status + ' ' + short(sOff.text));
       const j2b = await runOne();
       await sleep(WAIT_MS);
       ok(!!j2b.id && !hears(j2b.id), 'the star off: the next job stays home', 'the star came off and job ' + j2b.id + ' still reached the face');
+      ok(await until(function () { return faceName(S.base).then(function (n) { return n === ''; }); }, 8000), 'and the node holds no face on that relay any more', 'the star came off and the node still holds ' + short(await faceName(S.base)));
 
-      // Last, since it takes the page's address away: the face you call through, renamed through it, on a star.
-      await home(N.base, 'contact.own', { key: S.relayKey, own: true });
-      const renamed = await sface({ call: 'relay.face', args: { url: S.base, name: 'renamed' } });
-      ok(!refusedOff(renamed), 'starred: relay.face on the relay it is called through is not refused by the face\'s rule', 'relay.face through a starred face: ' + renamed.status + ' ' + short(renamed.text));
-      const moved = await until(function () { return page(S, 'renamed', '/face/api', { call: 'state', args: {} }).then(function (a) { return a.status === 200; }); }, 8000);
-      ok(!!moved, 'and the face has its new name on the relay', 'after relay.face through a starred face, renamed.relay.example does not answer');
       try { q.destroy(); } catch (e) { /* gone */ }
     }
 
@@ -291,7 +300,7 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
       ok(!!L2.sid, 'the face logs in there', 'the login failed, nothing judged: ' + L2.why);
       if (L2.sid) {
         const a = await page(O, 'mine', '/face/call', OWNER, L2.sid);
-        ok(refusedOff(a), 'owner.command from that face is refused: the relay\'s word opens nothing', 'owner.command on a relay that only claims this node: ' + a.status + ' ' + short(a.text));
+        ok(refused(a), 'owner.command from that face is refused: the relay\'s word opens nothing', 'owner.command on a relay that only claims this node: ' + a.status + ' ' + short(a.text));
       }
     }
 

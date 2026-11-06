@@ -42,16 +42,22 @@ test.startTest('faceForm.js: the face form, a rowForm');
       ok(r.forms === 1 && r.icon === '❓' && r.button === 'Ask', 'one rowForm, its icon ❓ and its button Ask', 'forms ' + r.forms + ', icon ' + short(r.icon) + ', button ' + short(r.button));
       const sp = r.span || [];
       ok(sp.length === 2 && sp[0].tag === 'SELECT' && sp[1].tag === 'INPUT' && sp[1].type === 'text', 'its span holds the relay dropdown, then the face name input, and nothing else', 'span: ' + short(sp));
-      ok(!!sp[0] && JSON.stringify(sp[0].options) === JSON.stringify(x[2]) && sp[0].disabled === x[3], x[3] ? 'the dropdown holds its one relay, fixed' : 'the dropdown offers the relays this node is seated on, to pick', 'dropdown: ' + short(sp[0]));
+      ok(!!sp[0] && JSON.stringify(sp[0].options) === JSON.stringify(x[2]) && sp[0].disabled === x[3], x[3] ? 'the dropdown holds its one relay, fixed' : 'the dropdown offers the relays this node is seated on and starred, to pick, and not Delta, seated with no star', 'dropdown: ' + short(sp[0]));
       ok(r.forms === 1 && !/\bRelay\b|Face name/.test(r.bubbleWords || ''), 'the words Relay and Face name are gone from the bubble', 'bubble says: ' + short(r.bubbleWords));
       ok(r.titleAbove, 'its title, A face name on one relay, stands above the bubble', 'title ' + short(r.title) + ', above ' + r.titleAbove);
       ok(r.holdsBelow, 'what this node holds on the relay stands below the bubble, not in it', 'holds ' + short(r.holds) + ', below ' + r.holdsBelow);
       ok(r.forms === 1 && r.others === 0, 'its Ask is the rowForm\'s button, the only one', 'other Asks: ' + r.others);
     });
-    test.subHeading('no relay with a seat');
+    test.subHeading('goal/G43.18: a face only on a starred relay');
+    // Box v29: "At home, faceForm offers a face only on a starred relay (today it offers only relays not starred, G41.32: that
+    // turns round)."
+    const of = m.offers || {};
+    ok(of.starred === true, 'offers: a seated relay with the star can be offered', 'offers of a starred seated relay: ' + short(of.starred));
+    ok(of.unstarred === false, 'offers: a seated relay without the star cannot', 'offers of a seated relay with no star: ' + short(of.unstarred));
+    test.subHeading('no relay with a seat and a star');
     // Andy: "doesn't show up if the user has zero verified emails anywhere" (a seat taken by email is a verified one, goal/G40.11).
     const n = m.none || {};
-    ok(n.forms === 0 && n.text === '' && n.kids === 0, 'with no relay this node is seated on, it draws nothing', 'drew: ' + short(n));
+    ok(n.forms === 0 && n.text === '' && n.kids === 0, 'with no relay this node is seated on and starred, it draws nothing: Alpha starred with no seat, Delta seated with no star', 'drew: ' + short(n));
     test.subHeading('a press, and the line below the bubble');
     // The box: "a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it."
     ok(/a face name is needed/.test(m.said || '') && m.saidBelow, 'pressed with no face name, it says so on a line below the bubble, not in it', 'said ' + short(m.said) + ', below ' + m.saidBelow);
