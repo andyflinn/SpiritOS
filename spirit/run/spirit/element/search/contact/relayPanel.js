@@ -965,8 +965,7 @@ function ndOwnerGroupHtml(inner) {
 //   PARTNER put a key in the field below. The field is still there and
 //   still takes a pasted key; its placeholder no longer promises a row
 //   above to press.
-//   REMOVE evicted somebody. Contacts Details evicts too, as the first
-//   half of Forget — see cdReleaseSeats.
+//   REMOVE evicted somebody. Forget does not (goal/G43.17; Andy: "it does NOT mean: "eject them from relays i own"").
 //
 // WHAT IS GENUINELY GONE is evicting somebody while KEEPING them as a
 // contact. That is a real thing to want ("off my relay, still my friend")

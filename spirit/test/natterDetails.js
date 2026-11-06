@@ -1000,8 +1000,7 @@ function theOwnerGroupFolds() {
 //     nothing, and reported "added".
 //   PARTNER filled the key field below it. That field still takes a
 //     pasted key; its placeholder no longer promises a row above.
-//   REMOVE evicted somebody. Contacts Details evicts as the first half of
-//     Forget (cdReleaseSeats, asserted in contactsDetails.js).
+//   REMOVE evicted somebody. Forget does not (goal/G43.17; Andy: "it does NOT mean: "eject them from relays i own"").
 //
 // WHAT IS GENUINELY GONE is evicting while KEEPING the contact — "off my
 // relay, still my friend". It has no control anywhere now. Written down

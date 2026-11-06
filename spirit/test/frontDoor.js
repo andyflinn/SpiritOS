@@ -67,7 +67,7 @@ function nodeWith(opts) {
     traffic: { note: function (e) { logged.push(e); } },
     onArrival: function (item) { arrived.push(item); },
     answer: opts.answer || null,
-    admit: opts.noDoor ? null : function (from) { return hub.frontDoor(home, from); },
+    door: opts.noDoor ? null : function (from) { return hub.frontDoor(home, from); },
     remember: function (from, verdict) { return hub.remember(home, from, verdict); },
   });
   return { home: home, me: me, router: router, logged: logged, arrived: arrived, replies: replies };
@@ -77,7 +77,7 @@ async function theDefaultIsUnchanged() {
   test.subHeading('A router built without a door admits everybody');
 
   // EVERY EXISTING CALLER GETS THIS, which is why the harness stayed
-  // green when the door was added: `admit` is optional, and its absence
+  // green when the door was added: `door` is optional, and its absence
   // is what this file did unconditionally until 2026-09-12. Stated as a
   // check rather than assumed, because "the tests still pass" is exactly
   // what an unwired gate looks like.

@@ -8,8 +8,8 @@
 // Until 2026-09-13 the answer was: nothing. peerPost has had an
 // `onArrival` hook since the router landed, and its only caller in the
 // whole tree was a test — server.js built createPeerPost with `answer`,
-// `admit`, `remember` and `traffic`, and no `onArrival`. So a packet
-// posted by a peer was admitted at the front door, written to the
+// a front door, `remember` and `traffic`, and no `onArrival`. So a packet
+// posted by a peer was let in at the front door, written to the
 // traffic log, answered with a bare receipt, and dropped. Nothing above
 // the node boundary could ever see it.
 //

@@ -126,7 +126,7 @@ function fakeRelay() {
 }
 
 // `more` carries the seams a particular test needs — a front door
-// (`admit`), an app to deliver to (`onArrival`). Left off, a node admits
+// (`door`), an app to deliver to (`onArrival`). Left off, a node knows
 // everybody and hands packets to nobody, which is what every test here
 // wanted before the card arrived.
 function nodeFor(name, relay, answer, more) {
@@ -140,7 +140,7 @@ function nodeFor(name, relay, answer, more) {
   const P = peerPost.createPeerPost({
     rootDir: home, request: relay.request, waitMs: 800, traffic: traffic,
     answer: answer || null,
-    admit: (more && more.admit) || null,
+    door: (more && more.door) || null,
     onArrival: (more && more.onArrival) || null,
     remember: (more && more.remember) || null,
     // WHAT A NODE DOES WITH A CARD THAT VERIFIED (cycle 10, R3). Injected
@@ -495,12 +495,11 @@ async function aCardIsAnsweredToAnybody() {
     answered.push(item);
     return JSON.stringify({ ok: true, from: 'the app' });
   }, {
-    // THE WELCOMING DOOR, and that is the point of choosing it. Under
-    // `admit` a stranger's packet is filed, counted, remembered and handed
-    // to the app — every one of the things a card must not do. A node set
-    // to `drop` would do none of them anyway, so testing there would prove
-    // the setting rather than the change.
-    admit: function () { return 'admit'; },
+    // THE WELCOMING DOOR, and that is the point of choosing it. Through
+    // `known` a packet is filed and handed to the app — the things a card
+    // must not do. A door saying `drop` would do none of them anyway, so
+    // testing there would prove the door rather than the change.
+    door: function () { return 'known'; },
     onArrival: function (item) { delivered.push(item); },
     remember: function (from) { remembered.push(from); },
   });
@@ -636,7 +635,7 @@ async function aCardIsAnsweredToAnybody() {
   // card still goes back, because whoever is asking is usually a stranger
   // deciding whether to add you, and that is the whole reason for it.
   const shut = nodeFor('shut-card', relay, null, {
-    admit: function () { return 'drop'; },
+    door: function () { return 'drop'; },
   });
   auth.setDescription(shut.home, 'not hearing from anybody, thanks');
 

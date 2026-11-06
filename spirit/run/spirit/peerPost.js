@@ -125,7 +125,7 @@ function createPeerPost(opts) {
   // simply writes nothing, which is what every test that does not care
   // about the log gets.
   // WHERE A PEER WAS LAST SEEN, told to the node's own cache. Injected
-  // like `admit` and `remember`, for the same reason: the answer needs
+  // like `door` and `remember`, for the same reason: the answer needs
   // the node's relay keys and none of that belongs in the file that moves
   // packets. Given nothing, nothing is remembered — which is every suite
   // that does not care.
@@ -237,25 +237,18 @@ function createPeerPost(opts) {
   // WHO THIS NODE WILL HEAR, asked rather than decided here.
   //
   // Handed in for the same reason `traffic` is: the answer needs the
-  // node's own address book, its relays and its preference, and none of
-  // that belongs in the file that moves packets. Given nothing, every
-  // sender is admitted — which is what every existing test gets, and
-  // what this file did unconditionally until 2026-09-12.
+  // node's own address book and its relays, and none of that belongs in
+  // the file that moves packets. Given nothing, every sender is known —
+  // which is what every existing test gets.
   //
-  // It answers 'known' | 'admit' | 'hold' | 'drop'. A hook that throws is
-  // treated as 'drop': a front door whose judgement failed must not fall
-  // open.
-  //
-  // 'known' and 'admit' both end in delivery; only 'known' escapes the
-  // floor. That distinction is the whole reason there are four words and
-  // not three — a stranger the policy welcomes is still a stranger, and
-  // "let strangers reach me" was never consent to unbounded strangers.
-  var VERDICTS = ['known', 'admit', 'hold', 'drop'];
-  var admit = typeof opts.admit === 'function' ? opts.admit : null;
+  // It answers 'known' or 'drop' (goal/G43.17: a stranger is ignored, always). A hook that throws, or answers
+  // anything else, is treated as 'drop': a front door whose judgement failed must not fall open.
+  var VERDICTS = ['known', 'drop'];
+  var door = typeof opts.door === 'function' ? opts.door : null;
   function judge(from) {
-    if (!admit) return 'known';
+    if (!door) return 'known';
     try {
-      var said = admit(from);
+      var said = door(from);
       return VERDICTS.indexOf(said) === -1 ? 'drop' : said;
     } catch (e) {
       return 'drop';
@@ -430,7 +423,7 @@ function createPeerPost(opts) {
   // Verifying is pure: keys and bytes, no node-only state, correct in a
   // relay as in a node. Storing is the node's business, so it arrives the
   // way everything else node-only does — injected (`opts.keepCard`,
-  // beside `opts.store` and `opts.admit`). A relay passes none and simply
+  // beside `opts.store` and `opts.door`). A relay passes none and simply
   // gets the verdict.
   function keepCard(slot, answer) {
     if (!answer || !answer.ok || typeof answer.text !== 'string') return;
@@ -1253,12 +1246,8 @@ function createPeerPost(opts) {
     //
     //   NOT FILED. `arrived` is what was waiting while nobody was home.
     //   A card that was answered is not waiting for anybody.
-    //   NOT ACQUIRED. `remember` writes a stranger into the book under
-    //   the `acquire` policy. Asking somebody's name is not a greeting,
-    //   and a node whose book fills up with everyone who ever looked at
-    //   it has a worse book.
-    //   NOT COUNTED. The hourglass in Contacts is consideration — lines a
-    //   person had to weigh. This one cost them nothing.
+    //   NOT REMEMBERED. Asking somebody's name is not a greeting, and a node whose book fills up with everyone who ever
+    //   looked at it has a worse book.
     //   NOT STREAMED. No app is handed it, which is the ask.
     //
     // AND THE FLOOR IS SKIPPED, which is worth saying out loud because it
@@ -1423,9 +1412,8 @@ function createPeerPost(opts) {
     // send it and it really did arrive through `relayUrl`. That is a
     // route, and it is true whatever this node decides about the person.
     //
-    // It used to be learned only when somebody was ADDED — `remember` runs
-    // for admit and hold and not for drop — so a node that declined to
-    // talk to somebody also forgot where they were. Policy belongs to the
+    // It used to be learned only when somebody was ADDED, so a node that
+    // declined to talk to somebody also forgot where they were. Policy belongs to the
     // address book; the cache is a record of what this node was told.
     if (noteSeen) {
       try { noteSeen(body.from, relayUrl); }
@@ -1434,10 +1422,7 @@ function createPeerPost(opts) {
 
     var verdict = judge(body.from);
 
-    // THE FLOOR, and it binds before the preference is honoured. An
-    // unknown sender over budget is refused outright — including under
-    // `acquire`, because what the user consented to was hearing from
-    // strangers, not to unbounded strangers.
+    // THE FLOOR. An unknown sender over budget is refused outright: an ignored stranger still costs the bytes read.
     //
     // Refused BEFORE the log, and logged without the payload: the record
     // still says truthfully that something arrived and was refused, and a
@@ -1486,16 +1471,9 @@ function createPeerPost(opts) {
       at: new Date().toISOString(),
       relay: relayUrl,
     };
-    // A DROP KEEPS NOTHING. `silent` is the tightest setting and means
-    // what it says: no row, no line kept, and nothing for an app to be
-    // handed. The receipt still goes out, below — the bytes did arrive,
-    // and a sender who is being ignored is not owed the distinction
-    // between "ignored" and "unreachable".
-    // AND A HELD ONE KEEPS NOTHING EITHER (B2, goal/G16.7). A held sender is
-    // a row waiting for a person to accept or block it, so the hold keeps the
-    // COUNT and not the words: the item was pushed here for every verdict but
-    // drop, held ones included, and nothing ever trimmed the list.
-    if (verdict !== 'drop' && verdict !== 'hold') arrived.push(item);
+    // A DROP KEEPS NOTHING: no line kept, and nothing for an app to be handed. The receipt still goes out, below — the
+    // bytes did arrive, and a sender who is being ignored is not owed the distinction between "ignored" and "unreachable".
+    if (verdict !== 'drop') arrived.push(item);
 
     // SOMEBODY ELSE'S PACKET, ARRIVING. Logged after it is filed and
     // before the receipt goes out, for the same reason the receipt waits:
@@ -1505,27 +1483,12 @@ function createPeerPost(opts) {
     // A dropped packet is still logged, and WITHOUT its payload: that
     // something was ignored is this node's own business to know, and
     // keeping the text of a line the operator asked not to keep would be
-    // the log contradicting the setting.
-    // `admitted` is the field that separates "arrived and filed" from
-    // "may be handed to an app". A HELD sender's packet is logged with
-    // its payload and is deliberately not admitted: the person is a row
-    // waiting to be accepted or blocked, and that is a decision a human
-    // makes rather than an app being given the line first and asked
-    // after. Without this the log cannot be read back safely, because
-    // both look identical as `delivered`.
-    var admitted = verdict === 'known' || verdict === 'admit';
-    // A HELD ARRIVAL IS LOGGED LIKE AN IGNORED ONE: the fact, not the words
-    // (B2, goal/G16.7). Andy, 2026-10-10: "words should be only in the traffic
-    // log, if they will reasonably be seen, the held peers should be receiving
-    // an error: request ignored, and the words not entered in the traffic log."
-    // The comment below used to say a held packet is logged WITH its payload
-    // and merely not admitted; that is what this item changes, and it is why
-    // `admitted` alone was not enough — a held line sat in the log in full,
-    // readable, for a person who had not yet agreed to hear from its sender.
-    note(verdict === 'drop' || verdict === 'hold'
+    // the log contradicting the drop. A delivered row carries `admitted`, the mark the arrival readers take (arrivals.js):
+    // handed to an app.
+    note(verdict === 'drop'
       ? {
         dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
-        hash: hash, outcome: verdict === 'hold' ? 'held' : 'ignored',
+        hash: hash, outcome: 'ignored',
       }
       : {
         dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
@@ -1537,7 +1500,7 @@ function createPeerPost(opts) {
         // the silent weakening the condition names. No new disclosure:
         // the log already holds the plaintext (cycle 10's R14).
         sentAt: body.sentAt,
-        admitted: admitted,
+        admitted: true,
       });
 
     // AND THE PEER'S OWN NUMBERS MOVE, on this transport as on the other.
@@ -1557,47 +1520,9 @@ function createPeerPost(opts) {
     // of "chess packets from bert" would be this file doing the shell's
     // reading.
     //
-    // ── WHO MAY BE COUNTED, and it is not the same as who is ADMITTED ──
-    //
-    // These are Grok's rules, and they came from the ring's countInbound.
-    // R8 deleted that function on 2026-09-15 and `admitted` alone is the
-    // wrong predicate to inherit, in both directions:
-    //
-    //   A HELD SENDER IS COUNTED, and is not admitted. The hourglass is
-    //   consideration: a line you dropped unread was still a demand on
-    //   your attention, and the count is the only trace `hold` is allowed
-    //   to keep. The body is never written anywhere. Counting is not
-    //   delivering, and `admitted` is about delivering.
-    //
-    //   A BLOCKED KEY IS NOT COUNTED, and can be admitted — a blocked row
-    //   is not in listenSet, so under the `acquire` policy the front door
-    //   says `admit`. Its numbers FREEZE where they stood rather than
-    //   falling, and the sidecar stays, because bytesHeld is still
-    //   telling the truth about disk really in use.
-    //
-    //   A STRANGER WITH NO ROW IS NOT COUNTED. A file for somebody the
-    //   book does not list would be a hidden second book, which is the
-    //   exact thing `silent` is chosen to avoid.
-    //
-    // ASKED OF THE BOOK AND NOT OF THE VERDICT, which is the part that is
-    // easy to get wrong and was got wrong once here already. Gating this
-    // on the verdict looks tidier and is a different rule: a person this
-    // node is HOLDING, on a node set to `silent`, gets verdict `drop` —
-    // the setting is about strangers, and somebody already on the
-    // hourglass is not a stranger. Their numbers must keep moving while a
-    // human decides, or the row a person is looking at in order to decide
-    // says nothing is happening.
-    //
-    // The floor is the one thing that must skip this, and it does so by
-    // returning above: an over-budget stranger leaves no trace but a
-    // refusal in the log.
-    // APPS SEE ADMITTED SENDERS ONLY, and the order is the whole of it.
-    // onArrival is app delivery — code running on somebody else's input —
-    // so a stranger reaches it only once this node has decided to hear
-    // them. `hold` files the packet and tells no app: the person is a
-    // waiting row to accept or block, which is a decision a human makes
-    // rather than an app being handed the line first and asked after.
-    if ((verdict === 'known' || verdict === 'admit') && onArrival) {
+    // APPS SEE KNOWN SENDERS ONLY. onArrival is app delivery — code running on somebody else's input — so a stranger
+    // never reaches it.
+    if (verdict === 'known' && onArrival) {
       try { onArrival(item); } catch (e) { /* not ours */ }
     }
 
@@ -1626,31 +1551,13 @@ function createPeerPost(opts) {
     // would bind a text that never travelled. Only the SIZE is needed early,
     // and a signature is a fixed length whatever it signs, so the size check
     // below measures one signed over nothing.
-    // ── A HELD SENDER IS TOLD, AND NOT THROUGH THE ANSWER PATH (B1) ────
-    //
-    // It used to get the bare receipt a delivered post gets, so its own side
-    // settled the line as DELIVERED while the words were going nowhere. Andy,
-    // 2026-10-10: "the held peers should be receiving an error: request
-    // ignored" — which supersedes the design's open line that a hold must not
-    // be disclosed (NODE-AND-RELAY.md).
-    //
-    // It goes as the plain refusal above rather than as an answer, because an
-    // answer is SEALED to the sender and a held stranger is exactly whose
-    // cipher key this node does not hold: threading it through the answer path
-    // produced an empty reply, which is the delivered-looking receipt again.
-    // A dropped sender keeps today's silence: being ignored is not owed the
-    // distinction between ignored and unreachable.
-    if (verdict === 'hold') {
-      return refuse(relayUrl, id, body, hash, 403, 'this node ignored the request', 'request-ignored')
-        .then(function () { return item; });
-    }
     var sizingSig = auth.sign(id.privateKey, auth.receiptMessage(hash, ''));
     return Promise.resolve()
       .then(function () {
-        // NOT ANSWERED UNLESS ADMITTED. Composing an answer for a sender
+        // NOT ANSWERED UNLESS KNOWN. Composing an answer for a sender
         // this node would not hear from would put the front door's
         // judgement behind the one hook that acts on a request.
-        if (!answer || (verdict !== 'known' && verdict !== 'admit')) return '';
+        if (!answer || verdict !== 'known') return '';
         return answer(item);
       })
       .catch(function () { return ''; })

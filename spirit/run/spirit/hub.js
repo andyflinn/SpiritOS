@@ -435,10 +435,9 @@ function listenSet(rootDir) {
 //
 // PURE. It writes nothing, and that is a correction of the first version
 // of this function, which acquired the row here and returned 'known'. The
-// effect was that under `acquire` a stranger became known in the same
-// breath — so the floor, which only binds a non-'known' verdict, never
-// bound at all. "acquire still acquires, but the cost is bounded" was not
-// what the code did. The test found it.
+// effect was that a stranger became known in the same breath — so the
+// floor, which only binds a non-'known' verdict, never bound at all. The
+// test found it.
 //
 // So the book write moved behind the floor (peerPost calls `remember`
 // once a stranger is within budget), and an over-budget stranger now gets
@@ -454,9 +453,8 @@ function frontDoor(rootDir, from) {
 
   // ── BLOCKED IS TURNED AWAY FIRST, WHATEVER THE POLICY (S12) ─────────
   //
-  // This door never asked. Under `acquire` a blocked key therefore fell
-  // through to `admit` and its words reached apps and open pages — the one
-  // verdict the owner had explicitly refused. Blocking already outranks every
+  // This door once never asked, and a blocked key's words reached apps and
+  // open pages — the one verdict the owner had explicitly refused. Blocking already outranks every
   // way of arriving in the book (contacts.js: "it must outrank every way of
   // arriving, including a key confirmed by phone"); it has to outrank the
   // policy too, or the flag means nothing on the transport that matters.
@@ -569,8 +567,8 @@ function remember(rootDir, from, verdict, relayUrl) {
 }
 
 // partitionInbox AND holdFromInbox STOOD HERE — the split between what
-// this node asked to hear and what it did not, and the row a waiting
-// stranger got under `hold`. Deleted with the ring (R8, 2026-09-15).
+// this node asked to hear and what it did not. Deleted with the ring (R8,
+// 2026-09-15).
 //
 // Both are answered per packet now, before anything is filed, which is
 // the better place for them: frontDoor() above returns known or drop from

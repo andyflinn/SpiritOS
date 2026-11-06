@@ -32,8 +32,8 @@
 // The receiving node's own traffic log. `outcome` on an inbound request
 // IS the front door's verdict:
 //
-//   delivered  admitted — 'known' or 'admit'
-//   ignored    a stranger under `silent`, filed nowhere, no app told
+//   delivered  'known', handed to the apps
+//   ignored    a stranger, filed nowhere, no app told
 //   refused    over the floor — not filed at all, and not even receipted
 //
 // Read off disk rather than asked for over HTTP, because no route
@@ -316,16 +316,14 @@ async function run() {
       test.fail('a row appeared under silent: ' + JSON.stringify(rowFor(homeOf(bravo), alfaKey)));
     }
 
-    test.subHeading('And the same stranger, once bravo decides to hear strangers');
+    test.subHeading('And the same stranger, once bravo accepts him');
 
-    // THROUGH THE REAL VERB, not by writing a file. This is the route
-    // built the same day: the node holds the setting, validates it, and
-    // answers with what it will actually do.
-    const set = await hub(portOf(bravo), 'POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'acquire' });
-    if (set.status === 200 && set.body && set.body.policy === 'acquire') {
-      test.check('bravo sets its own policy to acquire, and the node confirms what it will do');
+    // THROUGH THE REAL VERB (goal/G43.17: no setting lets a stranger in; the owner accepts a person).
+    const set = await hub(portOf(bravo), 'POST', '/api/spirit', { verb: 'contact.accept', publicKey: alfaKey });
+    if (set.status === 200 && set.body && set.body.keep === true) {
+      test.check('bravo accepts alfa, and the node confirms alfa is kept');
     } else {
-      test.fail('unknown-senders: ' + set.status + ' ' + JSON.stringify(set.body));
+      test.fail('accept: ' + set.status + ' ' + JSON.stringify(set.body));
     }
 
     const second = await hub(portOf(alfa), 'POST', '/api/spirit', {
@@ -337,7 +335,7 @@ async function run() {
     if (second.status === 200 && delivered.length === 1) {
       test.check('the same key, the same post, now delivered — the door is the only thing that changed');
     } else {
-      test.fail('after acquire: ' + JSON.stringify(inbound(homeOf(bravo), alfaKey)));
+      test.fail('after accept: ' + JSON.stringify(inbound(homeOf(bravo), alfaKey)));
     }
 
     if (delivered.length && delivered[0].payload === 'hello again') {
@@ -346,13 +344,10 @@ async function run() {
       test.fail('delivered payload: ' + JSON.stringify(delivered[0] && delivered[0].payload));
     }
 
-    // THE ROW, and the route it was acquired BY. 'message' is in
-    // contactBook's ACQUIRED_LISTENING and 'roll' is not — so writing is
-    // what makes somebody heard next time, and being merely seen in a
-    // roll would not have.
+    // THE ROW: kept, which is what listening means.
     const row = rowFor(homeOf(bravo), alfaKey);
-    if (row && row.acquiredVia === 'message') {
-      test.check("and alfa now has a row acquired by 'message', which is what listening means");
+    if (row && row.keep === true) {
+      test.check('and alfa now has a kept row, which is what listening means');
     } else {
       test.fail('row: ' + JSON.stringify(row));
     }
@@ -434,10 +429,7 @@ async function run() {
       test.fail('contact posts: ' + grew + ' of 10 landed, ' + refusedFromAlfa + ' refused');
     }
 
-    // AND THE STRANGER. Back to silent, so charlie stays one — under
-    // acquire a stranger becomes a contact on their first message and has
-    // exactly one rationed request in them.
-    await hub(portOf(bravo), 'POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' });
+    // AND THE STRANGER: charlie, whom bravo never accepted.
     // Charlie fetches the card first, like any sender must (cycle 10,
     // cycle 10 R5) — and note what that does NOT buy: holding somebody's card is
     // not being introduced to them, so every knock below is still

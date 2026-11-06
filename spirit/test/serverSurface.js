@@ -599,8 +599,6 @@ freePort()
       // honest answer and the one this surface check wants: the verb
       // exists, it is reachable, and it refuses what it should.
       ['POST', '/api/spirit', { verb: 'contact.forget', publicKey: 'NOPE' }],
-      ['POST', '/api/spirit', { verb: 'contact.senders' }],
-      ['POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' }],
       // And the door's own refusal, which must be an answer rather than a
       // throw: a verb nobody claimed.
       // Never called anywhere in this file until 2026-09-27: the check

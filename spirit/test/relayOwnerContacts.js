@@ -28,9 +28,8 @@
 //   (passive)."
 //
 // So a new member is adopted from the claim event itself (a broadcast the
-// owner's node receives), and Forget acts rather than asks — see
-// contactsDetails.js for the screen that removes the key from every owned
-// relay first.
+// owner's node receives). Forget deletes the contact's row and touches no
+// relay (goal/G43.17).
 
 const os = require('os');
 const fs = require('fs');

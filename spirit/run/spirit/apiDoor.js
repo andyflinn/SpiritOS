@@ -14,10 +14,8 @@
 // (appClient.ask), and the answer goes back to the asker as a packet of app
 // 'api' that answers the ask's hash, flat, exactly as it came (D11).
 //
-// ONLY A KNOWN SENDER IS ANSWERED. The front door admits a stranger when
-// the node's policy is 'acquire' (hub.frontDoor), and that admission does
-// not reach here: Andy, "why not just an exemption for aquire?". So isKnown
-// is the front door's 'known' alone, and a stranger gets no reply at all.
+// ONLY A KNOWN SENDER IS ANSWERED: isKnown is the front door's 'known' (hub.frontDoor), and a stranger gets no reply at
+// all.
 //
 // THE GATE (apiAuth/G1.2) is the layer appPair D5 deferred, landed here.
 //   Andy: "apiAuth will enforce an active consent scheme: denial is the

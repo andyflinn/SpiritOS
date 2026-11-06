@@ -66,7 +66,7 @@ const DECLARED = {
   // was the relay's device offer, and device enrolment was removed, so the
   // node wires no answer hook any more.
   'server.js': [
-    'rootDir', 'request', 'store', 'checkTunnel', 'admit',
+    'rootDir', 'request', 'store', 'checkTunnel', 'door',
     'keepCard', 'sealKeyFor', 'noteSeen', 'remember', 'onArrival',
     'traffic', 'stats',
   ],

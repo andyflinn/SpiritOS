@@ -451,8 +451,7 @@ test.subHeading('Connected: peerPost actually notes into it');
   // Known, or the front door refuses before the seam is ever reached —
   // which is correct and is exactly why this has to be set up rather
   // than assumed. See frontDoor.js.
-  contactBook.hold(home, { publicKey: them.publicKey, publicLabel: 'them' });
-  contactBook.accept(home, them.publicKey);
+  contactBook.acquire(home, { publicKey: them.publicKey, publicLabel: 'them' });
 
   const arrivals = arrivalsModule.createArrivals();
   const seen = [];
@@ -461,7 +460,7 @@ test.subHeading('Connected: peerPost actually notes into it');
   const router = peerPost.createPeerPost({
     rootDir: home,
     request: function () { return Promise.resolve({ status: 200, text: '{}' }); },
-    admit: function (from) { return require('../run/spirit/hub').frontDoor(home, from); },
+    door: function (from) { return require('../run/spirit/hub').frontDoor(home, from); },
     remember: function () {},
     traffic: trafficLog.createTrafficLog({ rootDir: home, relayMode: false }),
     onArrival: arrivals.note,

@@ -1220,7 +1220,7 @@ catch (e) {
     // Read per request rather than captured: the address book changes
     // while the process runs, and a node that acquired somebody an hour
     // ago must hear them now.
-    admit: function (from) {
+    door: function (from) {
       return require('./hub').frontDoor(ROOT_DIR, from);
     },
     // WHERE A VERIFIED CARD IS KEPT (cycle 10, R3). peerPost checks the
@@ -1254,7 +1254,7 @@ catch (e) {
     //               learned when the relay's identity was pinned and
     //               never separately
     //
-    // Read per post rather than captured, for the same reason `admit`
+    // Read per post rather than captured, for the same reason `door`
     // is: a card can arrive, and a key can rotate, while the process
     // runs. Empty means the post is refused — never sent plain.
     sealKeyFor: function (toKey) {
@@ -1413,8 +1413,7 @@ catch (e) {
     //
     // appPair/G1.3, a node verb with Andy's yes on it ("yes to all of wsl
     // points"). apiDoor.js says the rest; appClient answers it. Only the
-    // front door's 'known' counts, never 'admit': Andy, "why not just an
-    // exemption for aquire?".
+    // front door's 'known' counts.
     arrivals.witness(require('./apiDoor').createApiDoor({
       servers: nodeDoor,
       // `how` carries a background answer's mark to the queue (fileTransfer goal/G1.3).
