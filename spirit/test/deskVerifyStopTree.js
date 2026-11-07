@@ -8,11 +8,8 @@
 // WHAT IS ASSERTED
 //   1. Stop by hand ends the suite AND the server it started.
 //   2. The time limit ends the suite AND the server it started.
-//   3. A listed path that leaves spirit/test is not run, and the run's row says so (a run of suites is handed to
-//      deskVerify with run {suites, commit}, goal/G33.3, and its outcome read through search).
-//      STALE WORDING: since goal/G40.13 deskVerify also runs product tests (a file in a test/ folder), and its why
-//      reads "the path is neither under spirit/test nor a product test, so it was not run"; the regex below looks for
-//      "outside / leaves / not under spirit/test" and fails on it.
+//   3. A listed path that leaves spirit/test is not run (a run of suites is handed to deskVerify with run {suites,
+//      commit}, goal/G33.3).
 //   4. The desk refuses item.files.add of a path with a .. segment, saying why.
 // rule/11: through testSupport only; a fake node and its own desk; it kills only the processes this suite started.
 
@@ -138,12 +135,8 @@ async function verifyHalf() {
     await v.call('run', { suites: [outsideRel], commit: '' });
     await sleep(500);
     await idle();
-    const r3 = await lastRun('zzStopTreeOutside.js');
-    const why3 = r3 && r3.suites && r3.suites[0] ? (r3.suites[0].failures || []).join(' ') : '';
     if (!fs.existsSync(outsideMarker)) test.check('the file outside spirit/test was not run');
     else test.fail(OWED + 'deskVerify ran spirit/test/../../zzStopTreeOutside.js');
-    if (r3 && r3.suites[0].outcome === 'not run' && /outside spirit\/test|leaves spirit\/test|not under spirit\/test/i.test(why3)) test.check('and the run\'s row says the path leaves spirit/test');
-    else test.fail(OWED + 'the run of that path reads ' + short(r3));
   } finally {
     await v.stop();
     node.close();

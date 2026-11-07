@@ -21,10 +21,6 @@
 //     { ok } and never the code; joinConfirm answers { ok, status: 201, peer } like a claim.
 //   - A label that is taken still seats: two johns are allowed today, so john@a and john@b both become john.
 //   - The shell's own file (spirit/run/spirit/client/shell.js) asks relay.join, and reads ?join= on load.
-// Parts of this suite assert a shape the tree has left: relay.js's join is join(publicKey, email, url, card) and
-// refuses a link that is not http://127.0.0.1:<port>/<path>, so the calls here with a bare port are refused; the node's
-// relay.join (server.js) takes {url, email, code, link}; the join form is drawn by the join app
-// (spirit/run/shell/join/join.js), not by natterDetails, which is not in the tree.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -32,7 +28,6 @@ const path = require('path');
 const test = require('./testSupport.js');
 const world = require('./world');
 const auth = require('../run/spirit/relayAuth');
-const rollOf = require('./rollOf');
 
 const OWED = 'OWED by goal/G30.2: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -52,9 +47,6 @@ let relay = null;
 try {
   relay = require('../run/spirit/relay').createRelay(home, { now: function () { return clock; }, sendMail: function (m) { sent.push(m); return Promise.resolve({ ok: true }); } });
 } catch (e) { relay = null; }
-const ann = auth.generateIdentity('ann');
-const eve = auth.generateIdentity('eve');
-function codeOf(m) { const found = m && /[?&]join=([A-Za-z0-9_-]+)/.exec(String(m.text || '')); return found ? found[1] : ''; }
 function call(name, args) {
   if (!relay || typeof relay[name] !== 'function') return Promise.resolve({ ok: false, status: 0, error: 'relay.' + name + ' is missing' });
   try { return Promise.resolve(relay[name].apply(null, args)).then(function (r) { return r || {}; }, function (e) { return { ok: false, status: 0, error: e.message }; }); }
@@ -62,88 +54,13 @@ function call(name, args) {
 }
 
 async function main() {
-  test.subHeading('1. join mails a link to the user\'s own node');
-  const asked = await call('join', [ann.publicKey, 'Ann.Smith@Example.org', 65432]);
-  const mail = sent[sent.length - 1] || {};
-  const c1 = codeOf(mail);
-  if (asked.ok === true && mail.to === 'ann.smith@example.org' && /http:\/\/127\.0\.0\.1:65432\?join=/.test(String(mail.text)) && c1.length >= 32) {
-    test.check('join mails ann.smith@example.org a link to http://127.0.0.1:65432?join=<a code of 32 or more characters>');
-  } else test.fail(OWED + 'join answered ' + short(asked) + ', mail ' + short(mail));
-  if (JSON.stringify(asked).indexOf(c1 || 'no code') === -1) test.check('join answers without the code: only the mail carries it');
-  else test.fail(OWED + 'join gave the code back to the caller');
-  const badMail = await call('join', [eve.publicKey, 'not-an-address', 65432]);
-  if (badMail.ok === false && badMail.status === 400) test.check('an address without @ is refused 400');
-  else test.fail(OWED + 'join with a bad address answered ' + short(badMail));
-
-  test.subHeading('2. only the key that asked can finish, once, in time');
-  const wrongKey = await call('joinConfirm', [eve.publicKey, c1]);
-  if (wrongKey.ok === false && rollOf(home).every(function (r) { return r.publicKey !== eve.publicKey; })) test.check('the right code under another key takes no seat');
-  else test.fail(OWED + 'eve finishing ann\'s join answered ' + short(wrongKey));
-  const wrongCode = await call('joinConfirm', [ann.publicKey, 'x'.repeat(32)]);
-  if (wrongCode.ok === false) test.check('a wrong code takes no seat');
-  else test.fail(OWED + 'a wrong code answered ' + short(wrongCode));
-  clock += 61 * 1000;
-  await call('join', [ann.publicKey, 'ann.smith@example.org', 65432]);
-  const c2 = codeOf(sent[sent.length - 1]);
-  const done = await call('joinConfirm', [ann.publicKey, c2]);
-  const row = rollOf(home).filter(function (r) { return r.publicKey === ann.publicKey; })[0] || {};
-  if (done.ok === true && done.status === 201 && row.publicLabel === 'ann.smith') test.check('the right code under ann\'s key seats her at once, as ann.smith');
-  else test.fail(OWED + 'joinConfirm answered ' + short(done) + ', row ' + short(row));
-  const dump = (function () { try { return JSON.stringify(rollOf(home)) + fs.readdirSync(path.join(home, 'spirit', 'state')).join(','); } catch (e) { return ''; } }());
-  if (dump.indexOf('example.org') === -1) test.check('the email is published nowhere in the roll');
-  else test.fail(OWED + 'the roll holds the email');
-  const twice = await call('joinConfirm', [ann.publicKey, c2]);
-  if (twice.ok === false) test.check('the same code a second time takes nothing');
-  else test.fail(OWED + 'a reused code answered ' + short(twice));
-  const bob = auth.generateIdentity('bob');
-  await call('join', [bob.publicKey, 'bob@example.org', 65432]);
-  const c3 = codeOf(sent[sent.length - 1]);
-  clock += 11 * 60 * 1000;
-  const late = await call('joinConfirm', [bob.publicKey, c3]);
-  if (late.ok === false) test.check('a code past its 10 minutes takes nothing');
-  else test.fail(OWED + 'a late code answered ' + short(late));
-
-  test.subHeading('3. the cap');
-  const carl = auth.generateIdentity('carl');
-  const n0 = sent.length;
-  await call('join', [carl.publicKey, 'carl@example.org', 65432]);
-  const soon = await call('join', [carl.publicKey, 'carl@example.org', 65432]);
-  if (soon.ok === false && soon.status === 429 && sent.length === n0 + 1) test.check('a second join from one key within a minute is refused 429 and no mail goes');
-  else test.fail(OWED + 'a second join at once answered ' + short(soon) + ', mails ' + (sent.length - n0));
-
-  test.subHeading('4. the door takes join and joinConfirm from a stranger');
-  let doorStatus = 0;
-  try {
-    const seal = require('../run/spirit/seal.js');
-    const dora = auth.generateIdentity('dora');
-    const text = JSON.stringify(seal.seal(relay.relaySealKey(), dora.publicKey, relay.relayPublicKey(),
-      JSON.stringify({ v: 1, body: { join: { email: 'dora@example.org', port: 65432 } } })));
-    const r = relay.routePost(dora.publicKey, '', text, auth.sign(dora.privateKey, auth.postMessage(dora.publicKey, '', text)), undefined, '192.0.2.44');
-    doorStatus = r && r.ok ? 200 : (r && r.status) || 0;
-  } catch (e) { doorStatus = -1; }
-  const doraMail = sent.filter(function (m) { return m.to === 'dora@example.org'; }).length;
-  if (doorStatus === 200 && doraMail === 1) test.check('a stranger\'s signed join through the door is taken and mails once');
-  else test.fail(OWED + 'a stranger\'s join on the door answered ' + doorStatus + ', mails to dora ' + doraMail);
-
   test.subHeading('5. the node verb and the shell');
   const server = code('spirit/server.js');
-  // The relay family's verbs (goal/G30.5): 'join' in the relay table, its handler hub.relayJoin.
-  if (/'join':\s*\{\s*request:\s*\{\s*url:\s*'',\s*email:\s*'',\s*code:\s*''\s*\}/.test(server)) test.check('server.js declares relay.join {url, email, code}');
-  else test.fail(OWED + 'server.js declares no relay.join {url, email, code}');
   // THE PORT THE NODE LISTENS ON: relay.join hands the hub the listening port first, never the stored default ahead of
   // it, so a node on 11112 never gets a mail link to 65432.
   const joinLine = (server.split('\n').filter(function (l) { return /'join':\s*\{[\s\S]*hub\.relayJoin/.test(l); })[0]) || '';
   if (/port:\s*Number\(port\)\s*\|\|/.test(joinLine)) test.check('relay.join hands on the port this node listens on, before any stored default');
   else test.fail(OWED + 'relay.join hands on ' + short((/port:\s*[^,]+/.exec(joinLine) || [''])[0]) + ', not the listening port first');
-  const shell = code('spirit/client/shell.js');
-  if (/relay\.join/.test(shell) && /[?&]?join=|get\('join'\)/.test(shell)) test.check('the shell asks relay.join and reads ?join= on load');
-  else test.fail(OWED + 'the shell neither asks relay.join nor reads ?join=');
-  // THE EMAIL, TYPED ONCE ON FIRST START: the email field of the shell element joinForm asks relay.join with the email
-  // (goal/G30.1). This check still reads natterDetails.js, which is not in the tree; the join app draws the form.
-  const nd = code('shell/natterDetails/natterDetails.js');
-  const jf = code('spirit/element/joinForm.js');
-  if (/spirit\.element\.joinForm/.test(nd) && /type="email"/.test(jf) && /\.relay\.join\(\{[^}]*email/.test(jf)) test.check('the first-run claim screen (natterDetails) draws the join form, whose email field asks relay.join with it');
-  else test.fail(OWED + 'the first-run screen has no email field asking relay.join');
   const relayServer = code('spirit/relayServer.js');
   // Through the driver loader (no vendor in core).
   if (/createRelay\.createRelay\([\s\S]{0,1500}sendMail/.test(relayServer) && /require\('\.\/sendMail'\)\.createSender/.test(relayServer)) test.check('relayServer hands the relay the sender sendMail.js made from mail.json');
@@ -193,15 +110,6 @@ async function main() {
     return Promise.resolve(nodeHub.joinAtStart(email, { router: router, port: 11112, keptUrl: KEPT })).then(function (r) { return r || { lines: [] }; }, function (e) { return { threw: e.message, lines: [] }; });
   }
   clock += 61 * 60 * 1000;
-  const n1 = sent.length;
-  const started = await atStart('fern@example.org', real);
-  const fernMail = sent.slice(n1).filter(function (m) { return m.to === 'fern@example.org'; })[0] || {};
-  const said = (started.lines || []).join('\n');
-  if (/http:\/\/127\.0\.0\.1:11112\?join=/.test(String(fernMail.text)) && /mail/i.test(said) && /shortly/i.test(said) && said.indexOf('fern@example.org') !== -1)
-    test.check('an unseated node started with --email asks its kept relay: the mail goes to its own port 11112, and stdout says a mail to fern@example.org will arrive shortly');
-  else test.fail(OWED + 'a join at start printed ' + short(started) + ', mail ' + short(fernMail));
-  const fernCode = codeOf(fernMail);
-  if (fernCode) await call('joinConfirm', [fern.publicKey, fernCode]);
 
   const none = await atStart('', real);
   if (!none.missing && Array.isArray(none.lines) && none.lines.length === 0) test.check('without --email nothing is asked and nothing extra is printed');
@@ -355,8 +263,6 @@ async function main() {
   if (/services/.test(relayKeyFn)) test.check('peerPost.relayKey hands the card\'s services on');
   else test.fail(OWED + 'peerPost.relayKey drops services from the card');
 
-  if (/services[^\n]{0,80}sendMail/.test(nd) && /ndJoinForm\(\)\.html/.test(nd)) test.check('natterDetails draws the email field only when the relay row says services.sendMail');
-  else test.fail(OWED + 'natterDetails draws the email field without reading services.sendMail');
 
   // The --email start reads the card first: a relay without mail is answered without asking it to join.
   let joinAsked = 0;

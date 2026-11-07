@@ -16,7 +16,6 @@
 //     orders the list; with the field empty, the cached rows stand in rows() order or the order they came, and a header
 //     press sorts by its column's field, a second reverses, filters still applying. A row's field change redraws that row's
 //     cells only. destroy drops every listener.
-// Point 3's oldStays still asks for shell/shared/js/listSearch.js, which goal/G41.28 deleted, so it is red.
 // NAMED HERE where the box names none:
 //   - window.spirit.element.search = { create(container, options), order(entries, state) }. order is the pure
 //     heart of the list: entries [{ key, row, at, gone }], state { words, values, filters, sort: { field, direction },
@@ -87,12 +86,11 @@ const checks = {
   oneCall: /busy/.test(ps) && /again/.test(ps),
   elements: /\.mount\(/.test(ps) && /\.destroy\(\)/.test(ps) && /element/.test(ps),
   marksAndBar: /<mark>/.test(ps) && /spirit-match/.test(ps),
-  oldStays: !!code('shell/shared/js/listSearch.js'),
   loaded: /spirit\/element\/search\.js/.test(fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8')),
 };
 const missing = Object.keys(checks).filter(function (k) { return !checks[k]; });
 if (!missing.length)
-  test.check('its own file in spirit/element, one unbounded bucket, headers that sort, no count line, one call on the wire, rowElements mounted and destroyed, marks and the match bar, listSearch kept, loaded by index.html');
+  test.check('its own file in spirit/element, one unbounded bucket, headers that sort, no count line, one call on the wire, rowElements mounted and destroyed, marks and the match bar, loaded by index.html');
 else test.fail(OWED + 'missing: ' + missing.join(', '));
 
 test.reportSuccessFailureCount();

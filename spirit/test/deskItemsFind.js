@@ -10,9 +10,8 @@
 //   the item result as 50% overall."
 //
 // WHAT IS ASSERTED
-//   1. items.find is refused no-such-verb, and no interface names it.
 //   2. items.search ranks items by text in a title or a line: the item titled Rails and the item with a RAILS line,
-//      whatever the case, ahead of the items with neither; with no text every item, goal too, each label its facts;
+//      whatever the case, ahead of the items with neither;
 //      a closed item is answered when includeClosed asks for it.
 //   3. A search is a read: it writes no record; an argument it does not name is refused no-such-argument.
 //   4. Cut: with 90 items matching by a line, the answer fits one answer and says more, a filler first.
@@ -79,12 +78,6 @@ async function main() {
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   const tree = await up() || {};
 
-  test.subHeading('1. items.find is gone');
-  const gone = await call('items.find', { text: '', by: '', since: '', before: '' }, CW);
-  const iface = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'api.js'), 'utf8');
-  if (!tree['items.find'] && gone.body && gone.body.code === 'no-such-verb' && iface.indexOf("'items.find'") === -1 && !fs.existsSync(path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'items.find.json'))) test.check('items.find is refused no-such-verb, and neither the interface nor a verb file names it');
-  else test.fail(OWED + 'items.find answered ' + JSON.stringify(gone.body) + '; in the tree ' + !!tree['items.find']);
-
   await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await say('goal/G100.1', 'first word, nothing special', ANDY);
   await say('goal/G100.3', 'the RAILS line sits here, by andy', ANDY);
@@ -103,9 +96,6 @@ async function main() {
   const at = function (id) { const i = rails.ids.indexOf(id); return i === -1 ? Infinity : i; };
   if (rails.status === 200 && Math.max(at('goal/G100.2'), at('goal/G100.3')) < Math.min(at('goal/G100.1'), at('goal/G100'))) test.check('text ranks: the item titled Rails and the item with a RAILS line, whatever the case, ahead of the items with neither');
   else test.fail(OWED + 'text rails answered ' + rails.status + ' ' + JSON.stringify(rails.ids) + ' ' + JSON.stringify(rails.body).slice(0, 160));
-  const all = await find({});
-  if (all.status === 200 && ['goal/G100', 'goal/G100.1', 'goal/G100.2', 'goal/G100.3'].every(function (id) { return all.ids.indexOf(id) !== -1; }) && all.facts.every(function (f) { return f && f.id && typeof f.status === 'string' && Array.isArray(f.buttons); })) test.check('nothing set: every open item, goal too, each label its facts');
-  else test.fail(OWED + 'nothing set answered ' + JSON.stringify(all.ids) + '; a label: ' + JSON.stringify(all.facts[0]).slice(0, 120));
   const hidden = await find({ text: 'rails' });
   const closed = await find({ text: 'rails', includeClosed: true });
   if (hidden.ids.indexOf('goal/G100.4') === -1 && closed.ids.indexOf('goal/G100.4') !== -1 && closed.ids.indexOf('goal/G100.4') < closed.ids.indexOf('goal/G100.1')) test.check('goal/G100.4, closed: left out by default, found by its rails line when includeClosed asks for it');

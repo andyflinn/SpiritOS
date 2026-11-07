@@ -16,19 +16,11 @@
 //      the refusal to the shell on the relay-presence job.
 //   3c. the same, for a refused STREAM (granted 2026-10-12).
 //   4. a start or restart opens no stream to a relay whose row holds a refusal.
-//   5. Natter: the row says the relay refused this node, since when, that the
-//      seat is gone and only a new invite brings it back, and offers Remove —
-//      never on the last relay; relay.remove refuses the last public relay, and
-//      a Remove gives up the seat (relayKeys.unseat). THE NATTER HALF READS
-//      spirit/run/shell/natterDetails/natterDetails.js, WHICH IS GONE (no Natter
-//      app in the tree), so section 5 trips on ENOENT; the node half
-//      (relay.remove) is after it and does not run either.
+//   5. relay.remove refuses the last public relay, and a Remove gives up the
+//      seat (relayKeys.unseat).
 //   6. an accepted rename writes the new label into that relay's seat row.
 //   7. the relay refuses an unknown sender as "your id is not a valid sender
 //      here", code not-a-sender, on the post, the reply and the stream.
-//   8. natterDetails reads no c.peers or roll.roster (the same missing file).
-//   9. the refusal and its time are two columns on node.db's relays row,
-//      keyed by relay key (goal/G19.15's table), added to an older node.db.
 
 const os = require('os');
 const fs = require('fs');
@@ -39,10 +31,8 @@ const relayKeys = require('../run/spirit/relayKeys');
 const ownerBadge = require('../run/spirit/ownerBadge');
 const peerPost = require('../run/spirit/peerPost');
 const spiritErrors = require('../run/spirit/spiritErrors');
-const spirit = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G19.1: ';
-const RUN = path.join(__dirname, '..', 'run');
 const WHY = 'your id is not a valid sender here';
 
 function tmpHome() { return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-seats-kept-')); }
@@ -64,9 +54,6 @@ function signedKeyAnswer(rid, label) {
     relayPublicKey: rid.publicKey, relaySealKey: rid.sealPublicKey, relayLabel: label,
     keySig: auth.sign(rid.privateKey, auth.relayKeyMessage(rid.publicKey, rid.sealPublicKey, label)),
   });
-}
-function stripComments(src) {
-  return src.split('\n').filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); }).join('\n');
 }
 
 test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told so in Natter');
@@ -368,44 +355,8 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   }
 
   // ── 5 ─────────────────────────────────────────────────────────────
-  // natterDetails was to ask the remove rule itself (ownerBadge.removalRefusal over the rows its probe brings) and
-  // perform a Remove through relay.remove (goal/G30.7); the file is gone, so mountDetails throws here.
   test.subHeading('5. natterDetails: the refused row, and Remove');
   {
-    const at = '2026-10-12T09:30:00.000Z';
-    const refusedRow = { url: A, label: 'a', status: 200, owned: false, claimed: false,
-      refused: { code: 'not-a-sender', why: WHY, at: at } };
-    const another = { url: 'https://other.example', label: 'other', status: 200, owned: false, claimed: false };
-    const shown = mountDetails(refusedRow, [refusedRow, another]);
-    await settled();
-    const html = shown.body().innerHTML;
-    const says = {
-      refused: /refused this node/.test(html),
-      since: html.indexOf(new Date(at).toLocaleString()) !== -1 || html.indexOf(at.slice(0, 10)) !== -1,
-      seatGone: /seat (here )?is gone/.test(html),
-      invite: /new invite/.test(html),
-      remove: /nd-remove/.test(html),
-    };
-    if (says.refused && says.since && says.seatGone && says.invite) {
-      test.check('natterDetails says the relay refused this node, since when, that the seat is gone and only a new invite brings it back');
-    } else test.fail(OWED + 'natterDetails on a refused row says ' + show(says));
-    if (says.remove) test.check('and offers Remove while another public relay stays listed');
-    else test.fail(OWED + 'no Remove offered on a refused row');
-    const last = mountDetails(refusedRow, [refusedRow]);
-    await settled();
-    if (!/nd-remove/.test(last.body().innerHTML) && /public relay/.test(last.body().innerHTML)) {
-      test.check('on the last relay there is no Remove, and the screen says why');
-    } else test.fail(OWED + 'last relay: Remove offered ' + /nd-remove/.test(last.body().innerHTML));
-    // Two presses, then relay.remove from the screen itself.
-    const btn = removeTarget();
-    shown.body().fire('click', { target: btn });
-    shown.body().fire('click', { target: btn });
-    await settled();
-    const asked = shown.asked.filter(function (v) { return v && v.verb === 'relay.remove'; })[0];
-    const closed = shown.answers.filter(function (x) { return x && x.removed; })[0];
-    if (asked && asked.key === A && closed && closed.url === A) test.check('two presses send relay.remove for that relay and close the screen');
-    else test.fail(OWED + 'Remove asked ' + show(shown.asked) + ', answered ' + show(shown.answers));
-
     // The node's half: relay.remove refuses the last public relay, and a Remove gives up the seat.
     const h2 = tmpHome();
     const ONLY = ownerBadge.KEPT_RELAY.url, OTHER = 'https://other.example';
@@ -456,99 +407,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     } else test.fail(OWED + 'catalogue: ' + c.code + ', no-such-identity still defined ' + !!spiritErrors.byCode('no-such-identity'));
   }
 
-  // ── 9 ─────────────────────────────────────────────────────────────
-  test.subHeading('9. a node.db with a relays table made before the refusal columns moves into the one table, seat kept');
-  {
-    const h3 = tmpHome();
-    fs.mkdirSync(path.join(h3, 'spirit', 'state'), { recursive: true });
-    const raw = new (require('node:sqlite').DatabaseSync)(path.join(h3, 'spirit', 'state', 'node.db'));
-    raw.exec(`CREATE TABLE relays (key TEXT PRIMARY KEY, url TEXT NOT NULL, label TEXT NOT NULL DEFAULT '',
-      listed INTEGER NOT NULL DEFAULT 0, pos INTEGER NOT NULL DEFAULT 0, firstSeen TEXT NOT NULL DEFAULT '',
-      acceptedAt TEXT NOT NULL DEFAULT '', replaced TEXT NOT NULL DEFAULT '', seatLabel TEXT NOT NULL DEFAULT '',
-      seatClaimedAt TEXT NOT NULL DEFAULT '')`);
-    raw.prepare("INSERT INTO relays (key, url, label, listed, seatLabel, seatClaimedAt) VALUES (?, ?, 'old', 1, 'jazz', '2026-10-12T08:00:00.000Z')")
-      .run('OLDKEY', 'https://old.example');
-    raw.close();
-    const back = keyRow(h3, 'https://old.example');
-    if (back && back.key === 'OLDKEY' && back.keep === true && back.seated === true && back.myLabel === 'old') {
-      test.check('the old row reads back as a kept, seated relay under its label (nodeStore\'s move)');
-    } else test.fail(OWED + 'old node.db: ' + show(back));
-  }
-
-  // ── 8 ─────────────────────────────────────────────────────────────
-  test.subHeading('8. natterDetails reads only what the probe sets');
-  {
-    const src = stripComments(fs.readFileSync(path.join(RUN, 'shell', 'natterDetails', 'natterDetails.js'), 'utf8'));
-    const reads = { 'c.peers': /\bc\.peers\b/.test(src), roster: /\.roster\b/.test(src) };
-    if (!reads['c.peers'] && !reads.roster) test.check('no c.peers and no roll.roster: neither is set by the probe');
-    else test.fail(OWED + 'natterDetails still reads ' + show(reads));
-  }
 })().catch(function (e) { test.fail(OWED + 'the suite itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(process.exitCode || 0); }, 20).unref();
 });
-
-// ── natterDetails, mounted on stubs (the way natterDetails.js mounts it) ──
-function fakeElement(id) {
-  let html = '';
-  const el = {
-    id: id, value: '', textContent: '', className: '', style: {}, dataset: {}, children: [], listeners: {},
-    addEventListener: function (event, fn) { (el.listeners[event] = el.listeners[event] || []).push(fn); },
-    fire: function (event, arg) { (el.listeners[event] || []).forEach(function (fn) { fn(arg || {}); }); },
-    getAttribute: function () { return null; }, setAttribute: function () {}, querySelector: function () { return null; },
-    appendChild: function (c) { el.children.push(c); return c; },
-  };
-  Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
-  return el;
-}
-function removeTarget() {
-  const attrs = {};
-  const node = {
-    textContent: 'Remove', disabled: false,
-    getAttribute: function (n) { return attrs[n] === undefined ? null : attrs[n]; },
-    setAttribute: function (n, v) { attrs[n] = v; },
-    removeAttribute: function (n) { delete attrs[n]; },
-  };
-  node.closest = function (sel) { return sel === '.nd-remove' ? node : null; };
-  return node;
-}
-function mountDetails(row, rows) {
-  const elements = Object.create(null);
-  const asked = [];
-  const doc = { getElementById: function (id) { return elements[id] || (elements[id] = fakeElement(id)); } };
-  const fakeFetch = function (url, init) {
-    let verb = '';
-    try { verb = JSON.parse(String((init && init.body) || '{}')).verb || ''; } catch (e) { verb = ''; }
-    asked.push(JSON.parse(String((init && init.body) || '{}')));
-    const text = verb === 'relay.status' ? JSON.stringify({ rows: rows || [row], relayStatus: {} })
-      : verb === 'relay.remove' ? JSON.stringify({ ok: true, key: row.url }) : '{}';
-    return Promise.resolve({ status: 200, text: function () { return Promise.resolve(text); }, json: function () { return Promise.resolve(JSON.parse(text)); } });
-  };
-  let behavior = null;
-  const shellSpirit = {
-    shell: { activateApp: function (b) { behavior = b; }, factRow: function () { return ''; } },
-    core: {
-      ask: test.browserAsk(fakeFetch), relays: test.browserRelays(test.browserAsk(fakeFetch)),
-      util: { escapeHtml: spirit.core.util.escapeHtml }, const: { ICON: spirit.core.const.ICON },
-    },
-  };
-  new Function('spirit', 'document', 'window', 'fetch', 'setInterval', 'clearInterval', 'navigator',
-    fs.readFileSync(path.join(RUN, 'shell', 'natterDetails', 'natterDetails.js'), 'utf8'))(
-    shellSpirit, doc, test.withSpirit({ 'spirit.ownerBadge': require('../run/spirit/ownerBadge') }), fakeFetch, function () { return 1; }, function () {}, {});
-  const answers = [];
-  const api = {
-    verb: function (name, args) {
-      const payload = Object.assign({ verb: String(name) }, args || {});
-      return fakeFetch('/api/spirit', { body: JSON.stringify(payload) }).then(function (r) {
-        return r.text().then(function (t) { return { status: r.status, text: t, body: JSON.parse(t) }; });
-      });
-    },
-    escapeHtml: spirit.core.util.escapeHtml, isVisible: function () { return true; },
-    peerPost: function () { return Promise.resolve({ ok: false }); },
-    setDialogResult: function (r) { answers.push(r); }, closeDialog: function (r) { answers.push(r); },
-    onRelayEvent: function () { return function () {}; }, setScreenTitle: function () {},
-  };
-  behavior.mount(fakeElement('container'), api);
-  behavior.open({ url: row.url, label: 'jazz', relayLabel: row.label });
-  return { body: function () { return doc.getElementById('nd-body'); }, answers: answers, asked: asked };
-}

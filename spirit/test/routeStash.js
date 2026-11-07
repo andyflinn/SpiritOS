@@ -161,27 +161,4 @@ test.subHeading('Deleting a contact does not reach into the shadow');
   }
 }
 
-test.subHeading('An old contacts.json moves into the table, and no route goes on a row (goal/G40.11)');
-
-{
-  // This asserts that an old spirit/state/contacts.json moves into the table and is deleted, its `routes` field
-  // moving nowhere. That move is gone (nodeStore.js, goal/G41.30: "NO OLD STORE IS MOVED IN"; Andy: "let's get rid
-  // of those "rescue operations""), so both checks fail (no row comes of the file); contacts.js has no everyRouteHeld.
-  const root = freshRoot();
-  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
-  const file = path.join(root, 'spirit', 'state', 'contacts.json');
-  fs.writeFileSync(file, JSON.stringify([{ publicKey: KNOWN, publicLabel: 'kim', myLabel: 'kim', acquiredVia: 'handle', routes: [AT, AT2] }], null, 2));
-  const row = contactBook.byPublicKey(root, KNOWN);
-  if (row && row.keep === true && row.myLabel === 'kim' && !fs.existsSync(file)) {
-    test.check('a row of an old book is a kept row of the table, and the file is gone');
-  } else {
-    test.fail('after the move: ' + JSON.stringify(row) + ', file ' + fs.existsSync(file));
-  }
-  if (row && !('routes' in row) && typeof contactBook.everyRouteHeld === 'undefined') {
-    test.check('and a contact row has no routes field, nor a reader for one');
-  } else {
-    test.fail('routes still on the row or read: ' + JSON.stringify(row));
-  }
-}
-
 test.reportSuccessFailureCount();

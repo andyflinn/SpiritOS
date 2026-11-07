@@ -22,8 +22,6 @@
 //   - seenPeers keeps the flag relay on the one table (goal/G40.11: note(key, {relay: true}), get(key).relay, false
 //     when never said), and a relay's own URL is its direct route.
 //   - contact.search rows carry relay in their label JSON; peerPost keeps the card label as labelOf(url).
-// STALE PATHS: spirit/run/shell/natterDetails/ and spirit/run/shell/contacts/contacts.js are not in the tree (Contacts
-// moved to spirit/run/spirit/app/contact/ in goal/G43.14), so the checks that read them fail.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -42,11 +40,6 @@ function natterApp() { return ['natter.js', 'natter.json'].some(function (f) { r
 function home(name) { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'g307-' + name + '-')); homes.push(d); return d; }
 
 test.startTest('goal/G30.7: Natter and Info show what is true; relays are peers; a relay seats its owner at boot');
-
-test.subHeading('1. natterDetails reads what the relay sends');
-const nd = code('shell/natterDetails/natterDetails.js');
-if (/lever\.value/.test(nd) && !/lever\.position|lever\.allowed/.test(nd)) test.check('the connections line reads lever.value, not position or allowed');
-else test.fail(OWED + 'natterDetails still reads lever.position or lever.allowed');
 
 test.subHeading('2. the public label is the relay\'s own');
 const peerPost = code('spirit/peerPost.js');
@@ -151,54 +144,17 @@ else test.fail(OWED + 'an added relay in the shadow: ' + short(added));
 if (/relay: row\.relay/.test((/function buildPeople[\s\S]*?\n\}/.exec(hub) || [''])[0]) && !/function fromMemory\(|function strangerLabel\(/.test(hub))
   test.check('the search\'s rows carry relay in their label, one shape for every row');
 else test.fail(OWED + 'the search\'s rows carry no relay flag');
-const contactRow = code('spirit/element/search/contact/rowElement.js');
-if (/value: 'relay', word: 'relays'/.test(finder) && /callDialog\('shell\/natterDetails'/.test(contactRow)) test.check('Contacts\' one list has a relay filter, and a relay row opens natterDetails');
-else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to natterDetails');
 
 // NATTER RETIRES (the box, v20; Andy, 2026-10-20: "i feel like killing natter now, and putting the add-relay into
 // contacts, in a folding-panel, right below \"Find someone on the network\", and before \"People who write and are not in
 // this book\""). Named here: the rule is ownerBadge.removalRefusal(rows, url), '' when a relay may come off the list,
 // else the sentence; rows carry owned and claimed. hub.relayRemove asks it with what the node knows.
-// Andy, 2026-10-20: "the relays don't appear in the contact list.... so i cannot reach natterDetails" and "there's no
-// relay filter in the contacs search": the book's list (the contact selector) shows this node's relays beside the
-// book, with a relay filter, and a relay row opens natterDetails.
-test.subHeading('6b. relays in the contact list');
-const selector = code('spirit/element/search/contact.js');
-// Andy, 2026-10-20: "Gimme 3 Buttons: [all] [⭐ my puppets] [relays] where all 3 are mutually exclusive": one filter,
-// one row of choices, all first; a kind is offered when the list holds any.
-if (/name: 'show'/.test(selector) && /value: 'relay', word: 'relays'/.test(selector) && /value: 'owned'/.test(selector) && !/name: 'owned'|name: 'relay'/.test(selector))
-  test.check('the contact selector has one row of mutually exclusive choices: all, my puppets, relays (and blocked, held when present)');
-else test.fail(OWED + 'the contact selector has no relay filter, or still two all buttons');
-// Contacts' one list asks contact.search alone, relays among its rows (goal/G40.11), and a relay row's element opens
-// natterDetails.
-const contactsCode = code('spirit/element/search/contact/listElement.js');
-if (/function search\(args\)[\s\S]{0,600}\.contact\.search\(/.test(contactsCode) && !/\.relay\.search\(/.test(contactsCode) && /relay \? \[[\s\S]{0,300}shell\/natterDetails/.test(contactRow))
-  test.check('the contact list lists this node\'s relays (contact.search) and a relay row opens natterDetails');
-else test.fail(OWED + 'the contact list shows no relays, or a relay row opens no natterDetails');
-
-// Andy, 2026-10-20: on noderoutes he got Block and Forget ("It also allows me to block or forget a relay that i have a
-// seat on..... not optimal...."): a relay is one row per ID (goal/G40.11), the relay's own (no second book row to
-// give way), its actions open its details, and it has no Add.
-if (!/relay\.search\(/.test(contactsCode) && /var actions = relay \? \[/.test(contactRow) && /v\.book === false && v\.relay !== true/.test(contactRow))
-  test.check('a relay is one row, its own, with no Block or Forget, and a relay has no Add');
-else test.fail(OWED + 'a relay can still show as a book contact, or be added to the book');
-
 test.subHeading('7. Natter retires');
 const shellJs = code('spirit/client/shell.js');
 const natterGone = !natterApp();
 if (natterGone && !/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*'natter'/.test(shellJs) && !/NATTER_ID|function firstRun/.test(shellJs))
   test.check('the Natter app is gone: its entry script and manifest, its intrinsic entry and the first-run branch');
 else test.fail(OWED + 'Natter is still there: its app files ' + !natterGone + ', or the shell still names it');
-const contactsSrc = fs.existsSync(path.join(RUN, 'shell', 'contacts', 'contacts.js')) ? fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8') : '';
-// The panels as the page draws them: each a <details> whose <summary> carries its title; the new one is named
-// contacts-relay-add-summary here.
-// Find someone on the network is the one list on top (contacts-book, goal/G30.19), with no fold.
-const iFind = contactsSrc.indexOf('<div id="contacts-book"');
-const iAdd = contactsSrc.indexOf('<summary id="contacts-relay-add-summary">Add a relay');
-const iWrite = contactsSrc.indexOf('<summary id="contacts-unknown-summary">People who write and are not in this book');
-if (iFind !== -1 && iAdd > iFind && iWrite > iAdd && /relay\.add/.test(code('spirit/app/contact/contact.js')))
-  test.check('Contacts has the Add a relay panel below the one list and before People who write, adding through relay.add');
-else test.fail(OWED + 'the Add a relay panel is not in Contacts where the box puts it (' + [iFind, iAdd, iWrite].join(', ') + ')');
 
 test.subHeading('8. a relay you own, or hold a seat on, stays on the list');
 const ownerBadge = require('../run/spirit/ownerBadge');
@@ -233,9 +189,6 @@ try {
 if (refused && refused.ok === false && refused.error === 'you must remove yourself from this relay before you can remove the relay from your contacts')
   test.check('the node refuses relay.remove for a relay it holds a seat on, with the sentence');
 else test.fail(OWED + 'removing a seated relay answered ' + short(refused));
-const nd2 = code('shell/natterDetails/natterDetails.js');
-if (/removalRefusal\(/.test(nd2) && !/params\.canRemove/.test(nd2)) test.check('natterDetails asks the rule itself and says why when Remove is refused');
-else test.fail(OWED + 'natterDetails still takes canRemove from Natter');
 
 homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
 test.reportSuccessFailureCount();

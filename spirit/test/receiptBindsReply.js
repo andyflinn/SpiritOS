@@ -11,14 +11,8 @@
 //      and the empty text (the bare receipt) has its own; receiptSignatureOk(publicKey, hash, text, sig, atMs) checks
 //      the text it is handed.
 //   2. A receipt signed for a text verifies with that text and fails with the text swapped (the review's repro).
-//   3. relay.js: deliverForwardedReply checks the reply's receipt against its own text before announceRoute, and a
-//      reply that fails is answered to the asker as the relay's error, with no route announced (S2).
-//   4. relay.js: the onward budget of a forward is the budget this relay granted, never more than the router's ceiling,
-//      and a forwarded reply that settles nothing deletes its carrying entry (S7).
 //   5. peerPost.js: a reply answered on the post itself settles under the hash the asker computed, not one the wire
 //      supplied (decision 0011).
-// 3 and 4 read relay.js's deliverForwardedReply and carryToPartner, which went with partnering (goal/G22.6: a relay
-// carries nothing onward), so both now find no function and fail.
 // rule/11: through testSupport only; no node, no ports.
 
 const fs = require('fs');
@@ -33,16 +27,6 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function code(file) {
   return fs.readFileSync(path.join(JS, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
     .split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
-}
-function fnBody(src, name) {
-  const at = src.indexOf('function ' + name + '(');
-  if (at === -1) return '';
-  let depth = 0, started = false;
-  for (let i = src.indexOf('{', at); i < src.length; i++) {
-    if (src[i] === '{') { depth++; started = true; }
-    else if (src[i] === '}') { depth--; if (started && depth === 0) return src.slice(at, i + 1); }
-  }
-  return '';
 }
 
 test.startTest('goal/G16.1: the receipt binds the reply text; a forwarded reply is verified');
@@ -72,33 +56,6 @@ test.subHeading('2. a receipt verifies with its own text and fails with the text
   else test.fail(OWED + 'receiptSignatureOk(pub, hash, text, sig, at) did not verify its own text');
   if (forged === false) test.check('and fails with the text swapped (the review\'s repro, closed)');
   else test.fail(OWED + 'a receipt still verifies with forged text: ' + forged);
-}
-
-// ── 3. S2 ───────────────────────────────────────────────────────────────
-test.subHeading('3. a forwarded reply is verified before its route is announced');
-{
-  const relay = code('relay.js');
-  const fwd = fnBody(relay, 'deliverForwardedReply');
-  const verifyAt = fwd.search(/receiptSignatureOk\(/);
-  const announceAt = fwd.indexOf('announceRoute(');
-  if (fwd && verifyAt !== -1 && announceAt !== -1 && verifyAt < announceAt && /reply\.text/.test(fwd.slice(verifyAt, announceAt))) test.check('deliverForwardedReply checks the receipt against the reply\'s own text before announceRoute');
-  else test.fail(OWED + 'deliverForwardedReply announces a route without checking the receipt against the reply text');
-  if (fwd && /relayErrorToAsker\(/.test(fwd.slice(verifyAt === -1 ? 0 : verifyAt, announceAt === -1 ? fwd.length : announceAt))) test.check('a reply that fails is answered to the asker as the relay\'s error');
-  else test.fail(OWED + 'a forwarded reply that fails its check is not answered to the asker as the relay\'s error');
-}
-
-// ── 4. S7 ───────────────────────────────────────────────────────────────
-test.subHeading('4. the onward budget is the granted one; a stray forwarded reply leaves no carrying entry');
-{
-  const relay = code('relay.js');
-  const carry = fnBody(relay, 'carryToPartner');
-  const onward = (carry.match(/var onward[\s\S]*?;/) || [''])[0];
-  if (/Math\.min\(/.test(onward) && /(DEFAULT_TTL_MS|ttlCeiling|routerTable\.\w*TTL\w*|routes\.ttlMs|ceiling)/i.test(onward)) test.check('the onward budget is the smaller of the asked budget and the router\'s ceiling');
-  else test.fail(OWED + 'the onward budget is still the asked budget: ' + short(onward.replace(/\s+/g, ' ')));
-  const fwd = fnBody(relay, 'deliverForwardedReply');
-  const noMatch = (fwd.match(/if\s*\(\s*!matched\.ok\s*\)\s*\{?[\s\S]*?return false;?/) || [''])[0];
-  if (/delete\s+carrying\[/.test(noMatch)) test.check('a forwarded reply that settles nothing deletes its carrying entry');
-  else test.fail(OWED + 'a late forwarded reply leaves carrying[innerHash] behind: ' + short(noMatch.replace(/\s+/g, ' ')));
 }
 
 // ── 5. 0011 ─────────────────────────────────────────────────────────────

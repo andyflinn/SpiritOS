@@ -16,13 +16,11 @@
 //      createFile, changeFile, deleteFile, deleteDirectory; path relative to the watched root, '/'-separated; at an ISO
 //      time. One command per message (no batching). data.files is gone from the job.
 //   3  THE TREE AT CONNECT: jobs.fsTreeCommands() answers the create commands for the tree as it stands (a
-//      createDirectory before anything inside it); the node writes those to a page that connects, each its own
-//      fs-watcher job-updated, after the snapshot, whose fs-watcher job no longer carries a file list.
+//      createDirectory before anything inside it).
 //      Files never served (UNSERVABLE_FILES, fileSystem.js: spirit/server.js among them) are in no command.
 //   4  ERADICATED: the hand-rolled fs.watch reader and its rescan, and every reader of data.files (spirit/jobs.js,
-//      spirit/server.js, spirit/nodeSearches.js, spirit/client/shell.js, shell/files/files.js). fs.search keeps
-//      answering, from the watcher's tree. shell/files/files.js is no longer in the tree (no spirit/run/shell/files),
-//      so section 4 throws reading it.
+//      spirit/server.js, spirit/nodeSearches.js, spirit/client/shell.js. fs.search keeps
+//      answering, from the watcher's tree.
 //
 // LEFT OPEN, not asserted: the shell's own tree and the API apps read it by (api.onFiles fed by commands, or a new
 // call), and whether the tree is drawn by a shell element now or in goal/G4.23; how Files draws one command (the
@@ -170,7 +168,7 @@ test.startTest('goal/G4.25: the file watcher streams tree commands, on a local c
 
   // ── 4. eradicated ──
   test.subHeading('4. nothing reads or sends the whole file list any more');
-  const readers = ['spirit/jobs.js', 'spirit/server.js', 'spirit/nodeSearches.js', 'spirit/client/shell.js', 'shell/files/files.js'];
+  const readers = ['spirit/jobs.js', 'spirit/server.js', 'spirit/nodeSearches.js', 'spirit/client/shell.js'];
   const still = readers.filter(function (r) { return /\bdata\.files\b/.test(code(path.join(RUN, r))); });
   if (!still.length) test.check('no data.files in ' + readers.join(', '));
   else test.fail(OWED + 'data.files still read in ' + still.join(', '));
@@ -198,7 +196,6 @@ async function theNode() {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-fswatchcommands-'));
   const home = path.join(scratch, 'home', 'spirit', 'run');
   let node = null;
-  let stream = null;
   try {
     require('./plantRun.js').plantRunTree(home);
     fs.writeFileSync(path.join(home, 'fswatch-probe-g425.txt'), 'x');
@@ -208,40 +205,11 @@ async function theNode() {
     node.stderr.on('data', function (b) { said = (said + b).slice(-2000); });
     const up = await waitFor(function () { return post(port, { call: 'fs.search', args: { q: 'spirit/server.js' } }).then(function (r) { return r.status === 200; }); }, 20000);
     if (!up) { test.fail('the planted node did not answer' + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : '')); return; }
-    const events = [];
-    let buf = '';
-    stream = http.get({ host: '127.0.0.1', port: port, path: '/api/events' }, function (rs) {
-      rs.setEncoding('utf8');
-      rs.on('data', function (c) {
-        buf += c;
-        let i;
-        while ((i = buf.indexOf('\n\n')) !== -1) {
-          const block = buf.slice(0, i); buf = buf.slice(i + 2);
-          const ev = /^event: (.*)$/m.exec(block); const da = /^data: (.*)$/m.exec(block);
-          if (ev) { let d = null; try { d = JSON.parse(da ? da[1] : 'null'); } catch (e) { d = null; } events.push({ event: ev[1], data: d }); }
-        }
-      });
-    });
-    stream.on('error', function () {});
-    const commandsOf = function () { return events.filter(function (e) { return e.event === 'job-updated' && e.data && e.data.type === 'fs-watcher' && e.data.data && e.data.data.command; }).map(function (e) { return e.data.data.command; }); };
-    await waitFor(function () { return commandsOf().some(function (c) { return c.op === 'createFile' && c.path === 'spirit/client/shell.js'; }); }, 8000);
-    const snap = events.filter(function (e) { return e.event === 'snapshot'; })[0];
-    const watcher = snap && snap.data && (snap.data.jobs || []).filter(function (j) { return j.type === 'fs-watcher'; })[0];
-    if (snap && watcher && !(watcher.data && watcher.data.files !== undefined)) test.check('the snapshot\'s fs-watcher job carries no file list');
-    else test.fail(OWED + 'the snapshot\'s fs-watcher job: ' + short(watcher && watcher.data && Object.keys(watcher.data)));
-    const cmds = commandsOf();
-    const m = mirror();
-    cmds.forEach(m.apply);
-    const has = function (k) { return m.list().indexOf(k) !== -1; };
-    if (has('d:spirit') && has('f:spirit/client/shell.js') && has('d:shell') && cmds.indexOf(cmds.filter(function (c) { return c.path === 'spirit'; })[0]) < cmds.indexOf(cmds.filter(function (c) { return c.path === 'spirit/client/shell.js'; })[0])) {
-      test.check('then the tree arrives as create commands, ' + cmds.length + ' of them, spirit before spirit/client/shell.js');
-    } else test.fail(OWED + 'after the snapshot ' + cmds.length + ' commands arrived; the mirror holds spirit ' + has('d:spirit') + ', spirit/client/shell.js ' + has('f:spirit/client/shell.js'));
     const found = await post(port, { call: 'fs.search', args: { q: 'fswatch-probe-g425.txt' } });
     const keys = ((found.body || {}).items || []).map(function (x) { return x.key; });
     if (found.status === 200 && keys.indexOf('fswatch-probe-g425.txt') !== -1) test.check('fs.search still finds a file by its path');
     else test.fail('fs.search fswatch-probe-g425.txt answered ' + found.status + ' ' + short(found.body));
   } finally {
-    try { if (stream) stream.destroy(); } catch (e) { /* closed */ }
     try { if (node) node.kill(); } catch (e) { /* gone */ }
     await sleep(300);
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }

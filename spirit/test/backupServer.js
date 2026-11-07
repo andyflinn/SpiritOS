@@ -20,8 +20,7 @@
 //   (tests: 300).
 //   THE NODE'S PUBLIC FACTS ARE HANDED OVER, NEVER READ: identity.json holds
 //   the private keys, so the backup never
-//   opens it. jobs.startNodeServers hands every server it starts
-//   --node '{"name","publicKey"}', and nothing private.
+//   opens it.
 //   Home: spirit/state/config.json spiritHome, else os.homedir(). The copy of
 //   relay-state/process/<x> lands in <home>/backups/<node>/relay-state/
 //   process/<x>, <node> the first 12 hex of sha256(identity.publicKey), with
@@ -265,59 +264,6 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   if (hex12(A.pub) !== hex12(B.pub) && fs.existsSync(path.join(destB, 'node.json')) && fs.existsSync(path.join(DEST, 'node.json'))) {
     test.check('alpha and beta each have their own folder under backups/');
   } else test.fail(OWED + 'beta\'s folder ' + destB + ' exists ' + fs.existsSync(destB));
-
-  test.subHeading('The node hands every server it starts --node, its name and public key, nothing private');
-  const probeRun = path.join(scratch, 'probe', 'spirit', 'run');
-  fs.mkdirSync(path.join(probeRun, 'process', 'js', 'probe'), { recursive: true });
-  fs.mkdirSync(path.join(probeRun, 'spirit', 'state'), { recursive: true });
-  const auth = require('../run/spirit/relayAuth.js');
-  const probeId = auth.generateIdentity('probe-node');
-  auth.saveIdentity(probeRun, probeId);
-  const argvFile = path.join(scratch, 'probe-argv.json');
-  fs.writeFileSync(path.join(probeRun, 'process', 'js', 'probe', 'probe.json'), JSON.stringify({ kind: 'server', operated: 'node', args: [] }));
-  fs.writeFileSync(path.join(probeRun, 'process', 'js', 'probe', 'probe.js'),
-    'require("fs").writeFileSync(' + JSON.stringify(argvFile) + ', JSON.stringify(process.argv.slice(2)));\n');
-  const jobs = require('../run/spirit/jobs.js')(require('../run/spirit/kernel.js'), 65432);
-  // tools/runsHome.js writes runs: ['home'] into the manifest (goal/G30.20). jobs.js no longer reads that: a server runs
-  // when it is intrinsic or its node sidecar, relay-state/process/<name>/<name>.js.sidecar.json, says face.home (goal/G41.1),
-  // so this does not make the node start it.
-  require('./tools/runsHome.js')(probeRun, 'process/js/probe');
-  const probeJobs = jobs.startNodeServers(probeRun) || [];
-  let probeArgv = null;
-  for (let i = 0; i < 60 && !probeArgv; i++) { await sleep(100); try { probeArgv = JSON.parse(fs.readFileSync(argvFile, 'utf8')); } catch (e) { probeArgv = null; } }
-  probeJobs.forEach(function (j) { try { jobs.cancelJob(j.id); } catch (e) { /* gone */ } });
-  const at = probeArgv ? probeArgv.indexOf('--node') : -1;
-  let handed = null;
-  try { handed = at !== -1 ? JSON.parse(probeArgv[at + 1]) : null; } catch (e) { handed = null; }
-  if (handed && handed.name === 'probe-node' && handed.publicKey === probeId.publicKey && !/private/i.test(JSON.stringify(Object.keys(handed))) &&
-      JSON.stringify(probeArgv).indexOf(probeId.privateKey) === -1) {
-    test.check('--node {"name","publicKey"} reached the server, and no private key is anywhere in its arguments');
-  } else test.fail(OWED + 'the server was started with ' + JSON.stringify(probeArgv && probeArgv.map(function (a) { return String(a).slice(0, 60); })));
-
-  // A NODE NOBODY HAS NAMED HANDS --node TOO. Since goal/G22.5 the identity
-  // relayAuth makes on its first load is named by the machine (os.hostname()),
-  // and that name and the public key are what its servers are handed: the
-  // identity exists, named, before the node listens. Made here the way a
-  // node makes it: relayAuth planted in the root (plantIdentity.js).
-  test.subHeading('A node nobody has named hands --node too: the machine name and its public key');
-  const bareRun = path.join(scratch, 'bare', 'spirit', 'run');
-  fs.mkdirSync(path.join(bareRun, 'process', 'js', 'probe'), { recursive: true });
-  const bareId = require('./plantIdentity.js').ensureAt(bareRun);
-  const bareArgv = path.join(scratch, 'bare-argv.json');
-  fs.writeFileSync(path.join(bareRun, 'process', 'js', 'probe', 'probe.json'), JSON.stringify({ kind: 'server', operated: 'node', args: [] }));
-  fs.writeFileSync(path.join(bareRun, 'process', 'js', 'probe', 'probe.js'),
-    'require("fs").writeFileSync(' + JSON.stringify(bareArgv) + ', JSON.stringify(process.argv.slice(2)));\n');
-  require('./tools/runsHome.js')(bareRun, 'process/js/probe');
-  const bareJobs = jobs.startNodeServers(bareRun) || [];
-  let bare = null;
-  for (let i = 0; i < 60 && !bare; i++) { await sleep(100); try { bare = JSON.parse(fs.readFileSync(bareArgv, 'utf8')); } catch (e) { bare = null; } }
-  bareJobs.forEach(function (j) { try { jobs.cancelJob(j.id); } catch (e) { /* gone */ } });
-  const bareAt = bare ? bare.indexOf('--node') : -1;
-  let bareNode = null;
-  try { bareNode = bareAt !== -1 ? JSON.parse(bare[bareAt + 1]) : null; } catch (e) { bareNode = null; }
-  if (bareNode && bareNode.publicKey === bareId.publicKey && bareNode.name === os.hostname() && JSON.stringify(bare).indexOf(bareId.privateKey) === -1) {
-    test.check('a node nobody named hands its server --node with the machine name and its public key, and no private key');
-  } else test.fail(OWED + 'a node nobody named started its server with ' + JSON.stringify(bare && bare.map(function (a) { return String(a).slice(0, 50); })));
 
   test.subHeading('T10: spiritHome in spirit/state/config.json moves the whole .SpiritOS folder');
   const elsewhere = path.join(scratch, 'elsewhere');

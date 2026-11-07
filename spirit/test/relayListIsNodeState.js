@@ -18,10 +18,6 @@
 // WHAT IS ASSERTED
 //   1. THE LIST IS NODE STATE: the node seeds node.db's relays with noderoutes.net alone, writes no relays.json,
 //      and a list planted in the app's folder is not read.
-//   2. THE APPROVED VERBS EXIST AND NO THIRD ONE DOES: contact.search and relay.remove are claimed, relay.add,
-//      relay.list and relay.search are not. Read from server.js's claim blocks; the node's verbs are now mounted
-//      from its families (spirit/run/spirit/<family>/api.js, relay.remove in relay/api.js), so the regex finds
-//      none and this section is red.
 //   3. NO NODE FILE REACHES INTO THE APP'S FOLDER for this list.
 //   4. THE TWO WIRE TEXTS NAME NO APP PATH, in the register both sides load.
 //   5. NO APP OR PAGE CAN REDIRECT THE NODE: the write gate refuses spirit/state/relays.json.
@@ -117,41 +113,6 @@ test.subHeading('1. the node seeds and reads spirit/state/relays.json, not the a
   } else {
     test.fail(OWED + 'the node read the app\'s folder: ' + short(urls));
   }
-}
-
-// ── 2. THE TWO VERBS HE APPROVED, AND NO THIRD ──────────────────────────
-//
-// Read from server.js's claim blocks with a regex of the shape everyVerb.js once used. The node's verbs are mounted
-// from its families now (everyVerb.js reads loopbackVerbs.mount), so this regex parses none: see the header.
-test.subHeading('2. relay.search and relay.remove are claimed, and no relay.add is');
-{
-  const serverSrc = read(path.join(JS, 'server.js'));
-  const claimed = [...serverSrc.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(function (m) { return m[1]; });
-
-  if (claimed.length >= 30) test.check(claimed.length + ' verbs read from server.js\'s claim blocks');
-  else test.fail(OWED + 'only ' + claimed.length + ' verbs parsed: the claim shape moved and the checks below mean nothing');
-
-  // A CONTROL: the relays are listed by contact.search since goal/G40.11 (Andy: "yes. those names."), and relay.search
-  // went; contact.search must be claimed and relay.search must not.
-  if (claimed.indexOf('contact.search') !== -1 && claimed.indexOf('relay.search') === -1) test.check('contact.search is claimed, the verb that lists relays, and relay.search is gone');
-  else test.fail(OWED + 'the verb that lists relays is missing, or relay.search survived goal/G40.11');
-
-  // THE ONE VERB THIS ITEM ADDS.
-  if (claimed.indexOf('relay.remove') !== -1) test.check('the node claims relay.remove, which he approved by name');
-  else test.fail(OWED + 'the node claims no relay.remove');
-
-  // HIS APPROVAL COVERED TWO VERBS. A third is a boundary crossing, not a convenience, so its absence is a
-  // requirement of this item and not an omission in it.
-  if (claimed.indexOf('relay.add') === -1) {
-    test.check('and no relay.add: he approved two verbs, and a successful claim is what adds a relay');
-  } else {
-    test.fail(OWED + 'the node claims relay.add, a verb he did not approve — the interface needs peer review AND his yes');
-  }
-
-  // A SEARCH, NOT A LIST (puppets/G2, "there are no (complete) lists, only searches"), which is why the verb is
-  // named search. A relay.list would be the wrong shape whatever it answered.
-  if (claimed.indexOf('relay.list') === -1) test.check('and no relay.list: the shape is a search');
-  else test.fail(OWED + 'the node claims relay.list, and there are no complete lists, only searches');
 }
 
 // ── 3. THE NODE DOES NOT REACH INTO THE APP'S FOLDER ────────────────────

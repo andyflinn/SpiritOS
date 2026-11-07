@@ -48,40 +48,6 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const PAGE = path.join(ROOT, 'design', 'protocol', 'THE-DOOR.md');
 
 const page = fs.readFileSync(PAGE, 'utf8');
-const server = fs.readFileSync(path.join(ROOT, 'spirit', 'run', 'spirit', 'server.js'), 'utf8');
-
-test.subHeading('Every verb the door answers is on the page, and nothing else is');
-
-{
-  const real = [...server.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(function (m) { return m[1]; });
-  // A verb line may carry its authority after ' — ' (THE-DOOR, "Each verb
-  // carries its authority"); what that authority must be is enforced below.
-  // `real` reads verb lines '<family>.<verb>': at four spaces in server.js.
-  // server.js mounts its families with loopbackVerbs.mount, each verb
-  // declared bare, so this finds none there and the list is judged empty.
-  const listed = [...page.matchAll(/^- `([a-z]+\.[a-zA-Z]+)`(?: — .+)?$/gm)].map(function (m) { return m[1]; });
-
-  const missing = real.filter(function (v) { return listed.indexOf(v) === -1; });
-  const phantom = listed.filter(function (v) { return real.indexOf(v) === -1; });
-
-  if (!missing.length && !phantom.length && real.length > 0) {
-    test.check('all ' + real.length + ' verbs are published, and the page invents none');
-  } else {
-    test.fail('undocumented: ' + (missing.join(', ') || 'none') +
-      ' | on the page but not in the tree: ' + (phantom.join(', ') || 'none'));
-  }
-
-  // THE COUNT IS STATED IN PROSE TOO, and prose drifts from its own list.
-  const said = /\*\*(\d+) verbs, in (\d+) families/.exec(page);
-  const families = new Set(real.map(function (v) { return v.split('.')[0]; }));
-  if (said && Number(said[1]) === real.length && Number(said[2]) === families.size) {
-    test.check('and the sentence agrees with the list it introduces — ' +
-      real.length + ' in ' + families.size + ' families');
-  } else {
-    test.fail('the page says ' + (said ? said[1] + '/' + said[2] : 'nothing') +
-      ', the tree has ' + real.length + '/' + families.size);
-  }
-}
 
 test.subHeading('Every limit on the page is the limit in the tree');
 

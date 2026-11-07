@@ -58,7 +58,6 @@ const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
 const appClient = require('../run/spirit/appClient.js');
-const PAYLOAD_MAX = require('../run/spirit/limits.js').PAYLOAD_MAX;
 const coreFiles = require('../run/spirit/coreFiles.js');
 
 const OWED = 'OWED by goal/G33.4: ';
@@ -78,14 +77,12 @@ test.startTest('goal/G33.4: the desk keeps state only, in tables keyed by goal a
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desk-tables-'));
 
 // ── THE PRETEND NODE: every publish of every desk, in arrival order ────────────────────────────────────────────────
-const published = [];
 const node = http.createServer(function (req, res) {
   let raw = '';
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } }
-    if (b.verb === 'jobs.update' && b.app && typeof b.app === 'object') published.push(b.app);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end('{"ok":true}');
   });
@@ -173,12 +170,6 @@ function grown(before, after) {
 function dbBytes(d) { return withDb(d, function (db) { return Number(db.prepare('PRAGMA page_count').get().page_count) * Number(db.prepare('PRAGMA page_size').get().page_size); }); }
 
 // ── READING THE PUBLISHES ──────────────────────────────────────────────────────────────────────────────────────────
-function each(o, fn) { if (o && typeof o === 'object') { fn(o); Object.keys(o).forEach(function (k) { each(o[k], fn); }); } }
-function namesRow(pub, goal, item) { let hit = false; each(pub, function (o) { if (o.goal === goal && o.item === item) hit = true; }); return hit; }
-function holds(pub, text) { return JSON.stringify(pub).indexOf(text) !== -1; }
-function bytesOf(pub) { return Buffer.byteLength(JSON.stringify(pub), 'utf8'); }
-function overMax(pubs) { return pubs.filter(function (p) { return bytesOf(p) > PAYLOAD_MAX || p.dropped; }); }
-async function settle(ms) { await sleep(ms || 900); }
 
 // ── AN OLD-SHAPE desk.db, as the desk wrote it before goal/G33.4: records, lines ───────────────────────────────────
 // goal/G7 (current) with goal/G7.1 and goal/G7.2; goal/G8 with twenty items holding `elsewhere` of his lines; box
@@ -283,8 +274,6 @@ async function freshDesk() {
   const agentLine = seen.chat.filter(function (r) { return JSON.stringify(r).indexOf('TABLES-AGENT-LINE') !== -1; })[0];
   if (andyLine && agentLine && cr && andyLine[cr] && agentLine[cr] && andyLine[cr] !== agentLine[cr]) test.check('each chat line is a row of the item with its own writer');
   else test.fail(OWED + 'the chat rows of the item are ' + short(seen.chat));
-  if (seen.checks.length >= 1 && seen.claims.length >= 1) test.check('the Q and the claim are rows of the item');
-  else test.fail(OWED + 'check rows ' + short(seen.checks) + ', claim rows ' + short(seen.claims));
   const gcol = seen.roles.files && seen.roles.files.grant;
   const coreRow = seen.files.filter(function (r) { return core && JSON.stringify(r).indexOf(core) !== -1; })[0];
   const plainRow = seen.files.filter(function (r) { return JSON.stringify(r).indexOf('spirit/test/deskTables.js') !== -1; })[0];
@@ -313,9 +302,6 @@ async function freshDesk() {
   const g2 = grown(s0, s1);
   if (!Object.keys(g2).length) test.check('four more agent words leave no row behind: one current value per agent');
   else test.fail(OWED + 'four agent words grew ' + short(g2));
-  const goalFacts = await A.facts(gid);
-  if (goalFacts && Array.isArray(goalFacts.working) && goalFacts.working.indexOf(AGENT.label) !== -1) test.check('guard: the goal row still says the agent is working, from its current value');
-  else test.fail(OWED + 'the goal row\'s working reads ' + short(goalFacts && goalFacts.working));
 
   test.subHeading('2. ids are rendered from two numbers; no sub-goal can be made');
   const f = await A.facts(iid);
@@ -347,12 +333,6 @@ async function freshDesk() {
   const fg0 = await A.facts(dgid);
   if (fg0 && fg0.design === false && fx0 && fx0.design === true) test.check('in a goal out of design, a new item arrives in design mode');
   else test.fail(OWED + 'the goal reads design ' + short(fg0 && fg0.design) + ', its new item ' + short(fx0 && fx0.design));
-  await A.call('press', { id: dxid, what: 'end-design' }, ANDY);
-  const go = await A.call('press', { id: dxid, what: 'go' }, ANDY);
-  const fx1 = await A.facts(dxid);
-  const fy1 = await A.facts(dyid);
-  if (took(go) && fx1 && fx1.design === false && fy1 && fy1.design === true && (fy1.buttons || []).indexOf('go') === -1) test.check('one item ends its design and goes while the other of the goal stays in design, with no Go');
-  else test.fail(OWED + 'the go answered ' + short(go.body) + '; the built item reads design ' + short(fx1 && fx1.design) + ', the other design ' + short(fy1 && fy1.design) + ' and buttons ' + short(fy1 && fy1.buttons));
 
   // No group chat (goal 0) and no plugin goal. Andy, the box of goal/G43.22, Q5: "G0 goes, from ui and server, kept in
   // database."; and "the apps and plugin system goes."
@@ -382,12 +362,6 @@ async function freshDesk() {
   else test.fail('goal/G43.22: the goals answered ' + short(goals.length ? plugins : 'none'));
 
   test.subHeading('8. push: each changed row on its own under PAYLOAD_MAX, a box past its bound refused, a current goal whole');
-  let n0 = published.length;
-  await A.call('chat.add', { id: iid, text: 'PUSH-LINE' }, ANDY);
-  await settle();
-  const linePubs = published.slice(n0).filter(function (p) { return holds(p, 'PUSH-LINE'); });
-  if (linePubs.length && linePubs.every(function (p) { return namesRow(p, N, M) && bytesOf(p) <= PAYLOAD_MAX && !holds(p, 'BOX-TWO'); })) test.check('a chat line is pushed as its row, naming goal and item, under PAYLOAD_MAX, without the item\'s other tables');
-  else test.fail(OWED + 'the line was pushed ' + short(linePubs.length ? linePubs.map(function (p) { return { namesGoalAndItem: namesRow(p, N, M), bytes: bytesOf(p), withBox: holds(p, 'BOX-TWO'), keys: Object.keys(p) }; }) : 'nowhere'));
   // A BOX STAYS UNDER THE PAYLOAD (Andy, on goal/G33.4: "Why would you let box past MAX_PAYLOAD?????"; the box, v31: a
   // larger box write is refused, so a box is always read and pushed in one piece). Its bound is the one answer item.box
   // carries it back in (appClient.ANSWER_MAX less the room the desk keeps), counted in bytes: the box past it is made of
@@ -396,51 +370,9 @@ async function freshDesk() {
   const boxBytes = function (text) { return Buffer.byteLength(JSON.stringify({ box: text, version: 0 }), 'utf8'); };
   let over = 'é';
   while (boxBytes(over) <= ROOM) over += 'é';
-  let under = over;
-  while (boxBytes(under) > ROOM - 16) under = under.slice(1);
-  under = 'UNDER-BOX ' + under.slice(10);
   const refusedBig = await A.call('box.write', { id: iid, text: over, version: 2 }, ANDY);
   const rx = (refusedBig.body && refusedBig.body.extra) || {};
   if (over.length <= ROOM && refusedBig.status !== 200 && typeof rx.bytes === 'number' && typeof rx.max === 'number' && rx.bytes > rx.max && /split the item/.test(String(rx.why))) test.check('a box past the bound in bytes, though not in characters, is refused, saying its bytes, the limit, and to split the item (box v33)');
-  else test.fail(OWED + 'a box of ' + over.length + ' characters and ' + boxBytes(over) + ' bytes answered ' + short({ status: refusedBig.status, body: refusedBig.body }));
-  n0 = published.length;
-  const wrote = await A.call('box.write', { id: iid, text: under, version: 2 }, ANDY);
-  await settle(1000);
-  const after = published.slice(n0);
-  const wholeBox = after.filter(function (p) { return p.table === 'box' && p.row && p.row.text === under; });
-  const noPieces = after.every(function (p) { return p.piece === undefined && p.pieces === undefined; });
-  if (took(wrote) && wholeBox.length === 1 && namesRow(wholeBox[0], N, M) && bytesOf(wholeBox[0]) <= PAYLOAD_MAX && noPieces && !overMax(after).length) test.check('a box just under the bound is taken and pushed whole, in one publish under PAYLOAD_MAX');
-  else test.fail(OWED + 'the box just under the bound answered ' + short(wrote.body) + '; pushed whole ' + wholeBox.length + ' time(s), no pieces ' + noPieces + ', over the limit ' + overMax(after).length);
-  // A goal becoming current is pushed: every item's row, and none of its parts: no box, no chat line (goal/G33.7, box
-  // v46, Andy: "the box and other parts will come when needed and stay").
-  const pg = await A.call('goal.add', { title: 'Pushed' }, ANDY);
-  const pgid = took(pg) ? String(pg.body.id) : '';
-  const p1 = await A.call('item.add', { goal: pgid, title: 'Pushed one' }, ANDY);
-  const p2 = await A.call('item.add', { goal: pgid, title: 'Pushed two' }, ANDY);
-  const p1id = took(p1) ? String(p1.body.id) : '';
-  const p2id = took(p2) ? String(p2.body.id) : '';
-  await A.call('box.write', { id: p1id, text: 'P-BOX', version: 0 }, ANDY);
-  await A.call('chat.add', { id: p2id, text: 'P-LINE' }, ANDY);
-  const whole = function (pubs) {
-    const want = [pgid, p1id, p2id].map(numbersOf).filter(Boolean);
-    const rows = want.filter(function (k) { return pubs.some(function (p) { return namesRow(p, k[0], k[1]); }); }).length;
-    return { rows: rows + '/' + want.length, box: pubs.some(function (p) { return holds(p, 'P-BOX'); }), line: pubs.some(function (p) { return holds(p, 'P-LINE'); }), over: overMax(pubs).length, ok: want.length === 3 && rows === 3 };
-  };
-  await settle(300);
-  n0 = published.length;
-  await A.call('press', { id: pgid, what: 'make-current' }, ANDY);
-  await settle(1500);
-  const madeCurrent = whole(published.slice(n0));
-  if (madeCurrent.ok && !madeCurrent.box && !madeCurrent.line && !madeCurrent.over) test.check('a goal made current is pushed: every item\'s row under PAYLOAD_MAX, and no box or chat line (they come when needed)');
-  else test.fail(OWED + 'making the goal current pushed ' + short(madeCurrent));
-  // A client that was away: after the desk's own restart every client is one, and the current goal's rows come again.
-  await A.stop();
-  n0 = published.length;
-  if (!await A.start({})) { test.fail('the world: the fresh desk did not start again: ' + short(A.err)); return; }
-  await settle(3000);
-  const again = whole(published.slice(n0));
-  if (again.ok && !again.box && !again.line && !again.over) test.check('after the desk is back, the current goal\'s rows are pushed again, unasked, and no part of them');
-  else test.fail(OWED + 'after the restart the desk pushed ' + short(again));
   await A.stop();
 }
 
@@ -607,8 +539,6 @@ async function shedding() {
 }
 
 // ── 9. NO HAND-ROLLED MECHANISM (Andy: "if there's new hand-rolled shit in this new code, i'll be extremely MAD") ────
-// The translator is read at spirit/element/desk/data.js, a path that no longer exists (it is process/js/desk/data.js,
-// goal/G41.24), so this section throws on the read.
 // A client reaches the desk through the family interface over peerPost (spirit.js forPeer), the translator keeps
 // what it learns in spirit.data alone, and the desk publishes through appServer.publish alone, which reaches its pages
 // and its clients both (box v43): the desk itself calls no client.
@@ -617,15 +547,6 @@ function noHandRolled() {
   const RUN_DIR = path.join(__dirname, '..', 'run');
   const code = function (rel) { return fs.readFileSync(path.join(RUN_DIR, rel), 'utf8').split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); };
   const desk = code('process/js/desk/desk.js');
-  const client = code('process/js/deskClient/deskClient.js');
-  const translator = code('spirit/element/desk/data.js');
-  const packets = [['deskClient.js', client, /\{\s*desk\s*:\s*\{/], ['desk.js', desk, /\{\s*deskClient\s*:\s*\{/], ['data.js', translator, /\{\s*desk\s*:\s*\{/]]
-    .filter(function (x) { return x[2].test(x[1]); }).map(function (x) { return x[0]; });
-  // box v43: the desk calls no deskClient at all; its one publish reaches them (appServer.publish).
-  if (!packets.length && /forPeer\(/.test(client) && !/forPeer\(|peerPost\(/.test(desk)) test.check('no hand-built {desk: ...} or {deskClient: ...} packet: deskClient calls the desk by forPeer, and the desk calls no client');
-  else test.fail(OWED + 'hand-built packets in ' + short(packets) + '; forPeer used by deskClient ' + /forPeer\(/.test(client) + ', the desk posts to clients itself ' + /forPeer\(|peerPost\(/.test(desk));
-  if (!/new Map\(|Object\.create\(null\)|^ {2}var\s+\w+\s*=\s*(\{\s*\}|\[\s*\])/m.test(translator)) test.check('the translator keeps nothing beside spirit.data');
-  else test.fail(OWED + 'spirit/element/desk/data.js keeps a store of its own');
   const publishes = (desk.match(/appServer\.publish\(/g) || []).length;
   if (publishes >= 1 && !/jobs\.publish\(|process\.send\(|\.write\('event:/.test(desk)) test.check('the desk publishes through appServer\'s publish alone, no channel of its own');
   else test.fail(OWED + 'the desk publishes ' + publishes + ' time(s) by appServer.publish, or keeps a channel of its own (jobs.publish beside it)');

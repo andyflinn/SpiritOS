@@ -7,8 +7,7 @@
 //     the name resolves to, at connect, so a name that resolves to loopback is refused too.
 //   - Link-local and the LAN stay open (a node binds 127.0.0.1 only, so no other box's node can be reached).
 //   - Andy: "fetch will not be able to reach ports on this machine, and agents may use it." So spirit/net/fetch.json
-//     and spirit/net/AGENTS.md (under spirit/run/) describe it. The check that deskAgent lists net among its tool
-//     namespaces reads process/js/deskAgent/deskAgent.js, which is gone from the tree, so it fails.
+//     and spirit/net/AGENTS.md (under spirit/run/) describe it.
 // NAMED HERE where the box names none: spirit/run/spirit/netFence.js holds the rule, isThisMachine(address) and
 // lookup(hostname, options, callback), a dns.lookup that refuses this machine; a refusal answers 403 with code
 // 'this-machine'.
@@ -103,10 +102,6 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   else test.fail(OWED + 'spirit/net/fetch.json missing, or not saying it cannot reach this machine');
   if (fs.existsSync(path.join(netDir, 'AGENTS.md'))) test.check('spirit/net/AGENTS.md opens the namespace to agents');
   else test.fail(OWED + 'no js/net/AGENTS.md');
-  const agent = code('process/js/deskAgent/deskAgent.js');
-  const namespaces = (/const TOOL_NAMESPACES = \[([^\]]*)\]/.exec(agent) || [])[1] || '';
-  if (/'net'/.test(namespaces)) test.check('deskAgent lists net among its tool namespaces: ' + namespaces.trim());
-  else test.fail(OWED + 'deskAgent\'s TOOL_NAMESPACES are ' + namespaces.trim());
   if (!fs.existsSync(path.join(__dirname, 'netNoAgentTool.js'))) test.check('goal/G19.9\'s netNoAgentTool.js is retired with the ruling it held');
   else test.fail(OWED + 'spirit/test/netNoAgentTool.js still asserts the reversed ruling');
 

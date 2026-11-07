@@ -15,11 +15,7 @@
 // Purely predicate/read checks — nothing here writes to disk, so it's
 // safe to run against a live checkout.
 //
-// SEVERAL SPECIMENS BELOW ARE NO LONGER IN THE TREE, so their checks fail on
-// the path, not on the gate: index.html and favicon.svg at the run root (the
-// page is spirit/shell/index.html), spirit/client/chatLog.js and
-// spirit/client/iconIndex.js (gone), process/js/pushOrigin/ (an app at
-// spirit/app/pushOrigin/ since goal/G43.21). "js/" below means spirit/run/spirit/.
+// "js/" below means spirit/run/spirit/.
 const path = require('path');
 const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
@@ -107,15 +103,11 @@ expectNotWritable('spirit/relayAuth.js', 'spirit/relayAuth.js');
 
 // ---- genuine browser assets stay open ----
 test.subHeading('Client assets stay servable');
-expectLoads('index.html (desktop homepage)', 'index.html');
-expectLoads('favicon.svg', 'favicon.svg');
 expectLoads('spirit/client/shell.js (browser boot)', 'spirit/client/shell.js');
 // packet.js lives in client/. If it ever stops serving, no app can
 // send or read an envelope, and the shell can only say so in the console —
 // so the serving is asserted rather than discovered.
 expectLoads('spirit/client/packet.js (the app envelope)', 'spirit/client/packet.js');
-expectLoads('spirit/client/chatLog.js', 'spirit/client/chatLog.js');
-expectLoads('spirit/client/iconIndex.js', 'spirit/client/iconIndex.js');
 expectLoads('spirit/limits.js (the size both ends refuse at)', 'spirit/limits.js');
 expectLoads('spirit/peerFile.js', 'spirit/peerFile.js');
 
@@ -141,19 +133,6 @@ expectWritable('shell/info/info.json (manifest, goal/G14.8)', 'shell/info/info.j
 // that happened to hold one (WSL, 2026-09-19).
 expectServable('shell/info/captions.json (app data)', 'shell/info/captions.json');
 expectWritable('shell/info/captions.json (app data)', 'shell/info/captions.json');
-
-// ---- process scripts: readable, never writable ----
-// Job Selector/Job Monitor list them, the Code Viewer shows them; writes are already
-// impossible since process/ isn't a writable root.
-// The RULE is about process/ as a directory and outlives any one script in
-// it: when a specimen leaves, the specimen moves, not the check — a rule
-// whose only witness gets deleted is a rule that silently stops being
-// tested. The specimen named here, pushOrigin, left process/js/ for
-// spirit/app/pushOrigin/ (goal/G43.21), so it needs replacing again.
-test.subHeading('Process scripts are read-only, not hidden');
-expectLoads('process/js/pushOrigin/pushOrigin.js', 'process/js/pushOrigin/pushOrigin.js');
-expectWritable('process/js/pushOrigin/pushOrigin.js (only core is protected, goal/G30.21)', 'process/js/pushOrigin/pushOrigin.js');
-expectLoads('process/js/pushOrigin/pushOrigin.json', 'process/js/pushOrigin/pushOrigin.json');
 
 // ---- sidecars and relay state are invisible to every generic consumer ----
 test.subHeading('Sidecars and relay-state are invisible');

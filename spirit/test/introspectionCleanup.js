@@ -31,9 +31,6 @@
 //     to a node family runs through call, any other goes to the apps).
 //   - puppetMode and apiDoor run node verbs through table.call; puppetMode keeps no shim of its own.
 //   - createAppClient({ reserved }) refuses to register an app whose name reserved() lists.
-// STALE PARTS: 7b reads process/js/deskAgent/ (tools.js, deskAgent.js), removed in goal/G41.28; 8 looks for
-// <module>.family folders and a '.family' in appServer.js, where the folder is now process/js/<module>/family/
-// (appServer.js asks spirit.familyPath), and lists deskAgent.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -169,37 +166,6 @@ async function main() {
   try { warn = fs.readFileSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt'), 'utf8').trim(); } catch (e) { warn = ''; }
   if (warn.length) test.check('spirit/auth/grant.warning.txt is there: ' + short(warn));
   else test.fail(OWED + 'spirit/auth/grant.warning.txt is missing');
-  const grants = code('shell/grants/grants.js');
-  if (/FS\.loadFile/.test(grants) && /\.warning\.txt/.test(grants) && !/'AGENTS\.' \+ verb/.test(grants)) test.check('the grants app reads <verb>.warning.txt through the family\'s FS and shows it before the grant');
-  else test.fail(OWED + 'the grants app does not read warnings through FS');
-
-  test.subHeading('7b. deskAgent reads the table, AGENTS.md and each verb file through FS; nothing asks AGENTS');
-  const tools = code('process/js/deskAgent/tools.js');
-  const agentJs = code('process/js/deskAgent/deskAgent.js');
-  const apiDoorJs = code('spirit/apiDoor.js');
-  const noAgents = ['spirit/apiDoor.js', 'spirit/appServer.js', 'spirit/verbTable.js', 'process/js/deskAgent/tools.js', 'process/js/deskAgent/deskAgent.js']
-    .filter(function (f) { return /AGENTS\.introspect|'AGENTS\.'\s*\+|\.AGENTS\.|'AGENTS'/.test(code(f)); });
-  // The route names the FS verb (fs('loadJsonValue') becomes ns.FS.loadJsonValue or FS.loadJsonValue).
-  if (/fs\('loadJsonValue'\)/.test(tools) && /\.FS\.'/.test(tools) && /'api'/.test(tools) && /FS\.loadFile/.test(agentJs) && !noAgents.length)
-    test.check('tools.js describes a family from the api table and FS.loadJsonValue of each verb file; deskAgent reads AGENTS.md by FS.loadFile; no product file asks an AGENTS verb');
-  else test.fail(OWED + 'AGENTS verbs still asked in ' + short(noAgents) + (/fs\('loadJsonValue'\)/.test(tools) ? '' : '; tools.js reads no verb file by FS'));
-  if (!/AGENTS\.introspect/.test(door)) test.check('apiDoor has no AGENTS special case');
-  else test.fail(OWED + 'apiDoor still cuts AGENTS.introspect');
-
-  test.subHeading('8. app family folders hold no code');
-  const APPS = ['desk', 'deskAgent', 'deskVerify'];
-  const wrong = APPS.filter(function (a) {
-    const home = path.join(RUN, 'process', 'js', a);
-    const famDir = path.join(home, a + '.family');
-    return !fs.existsSync(path.join(famDir, 'AGENTS.md')) || fs.existsSync(path.join(home, 'AGENTS.md')) ||
-      // The one script a family folder holds is its interface, api.js (goal/G32.3): the node reads it, the server never runs it.
-      fs.readdirSync(famDir).some(function (f) { return /\.js$/.test(f) && f !== 'api.js'; });
-  });
-  if (!wrong.length) test.check('desk, deskAgent and deskVerify keep AGENTS.md, their verb files and their api.js in <module>.family beside <module>.js, with no other code in it');
-  else test.fail(OWED + 'not moved to <module>.family: ' + short(wrong));
-  const appServerJs = code('spirit/appServer.js');
-  if (/'\.family'/.test(appServerJs)) test.check('appServer reads the AGENTS family (and FS) from <script>.family');
-  else test.fail(OWED + 'appServer still reads the AGENTS family from the script\'s own folder');
   // The picker lists spirit.apiTreeIndex.servers of the verb api's answer, which is now the flat table.
   let listed = null;
   try {

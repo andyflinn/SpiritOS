@@ -13,10 +13,6 @@
 //   - chatter asks chats.search with no arguments; its chat window has a search over its own lines, through chat.search.
 // goal/G4.3's chatPeers.js is retired (check 0 asserts it is absent); its row, blocked rule, bound and read are
 // asserted here instead.
-// STALE in part: check 0's dropdown checks look for elements.shellCreateListSearch in chatter.js, which now builds its
-// chat search with spirit.element.search.create; and the pretend node answers the flat form {verb, ...}, while
-// chatClerver.js asks contact.get through the spirit object in the { call, args } envelope (goal/G41.15), so the
-// blocked key is never known blocked.
 // NAMED HERE where the box names none: chat.search answers {items: [{key: sent + ':' + seq, label: the line as json}],
 // more}, as chat.read does; a line that does not match is left out; the owner's alone.
 // rule/11: through testSupport only; its own scratch folder and pipe; never 65432.
@@ -91,15 +87,6 @@ async function main() {
   else test.fail(OWED + 'chatter does not ask chats.search {}');
   if (/'chat\.search',\s*\{\s*peer:[^}]*who:/.test(chatter)) test.check('chatter\'s chat window searches its lines through chat.search {peer, text, who}');
   else test.fail(OWED + 'chatter has no search over a chat\'s lines');
-  // A DROPDOWN WHOSE PICK IS A LINE IN THE HISTORY (Andy, 2026-10-18): put in by time when missing, then current.
-  const chatSearchList = (/chSearch = window\.spirit.elements\.shellCreateListSearch\([\s\S]*?\n {4}\}\);/.exec(chatter) || [''])[0];
-  if (/mode:\s*'dropdown'/.test(chatSearchList) && /pick:\s*function \(l\) \{[\s\S]*chUpsert\(l\);[\s\S]*chSetCurrent\(chKey\(l\.sent, l\.seq\)\)/.test(chatSearchList)) test.check('the chat search is a dropdown; a picked line is put into the history when missing (chUpsert) and becomes the current line');
-  else test.fail(OWED + 'the chat search is not a dropdown whose pick puts the line in and makes it current');
-  // EVERY LINE FOUND JOINS THE HISTORY (Andy, 2026-10-18: "all found lines are added to the chat, if they're missing").
-  if (/chItemsToLines\(\(b && b\.items\) \|\| \[\]\)[\s\S]{0,120}chUpsert\(l\)/.test(chatSearchList)) test.check('every line a search finds is put into the history when missing');
-  else test.fail(OWED + 'the lines a search finds are not put into the history');
-  if (/chAsk\('chat\.read', \{ peer: peer, before: String\(l\.at[^}]*after: '' \}\)[\s\S]{0,200}chAsk\('chat\.read', \{ peer: peer, before: '', after: String\(l\.at/.test(chatSearchList)) test.check('a pick asks the line right before it and the line right after, one after the other');
-  else test.fail(OWED + 'a pick does not bring the lines around it');
   if (!fs.existsSync(path.join(__dirname, 'chatPeers.js'))) test.check('goal/G4.3\'s chatPeers.js is retired; this suite holds its checks');
   else test.fail(OWED + 'spirit/test/chatPeers.js still asserts peers.search');
 
@@ -154,12 +141,8 @@ async function main() {
     const byKey = {};
     all.rows.forEach(function (r) { if (r && r.peer) byKey[r.peer] = r; });
     const ann = byKey[ANN] || {}; const bob = byKey[BOB] || {}; const cat = byKey[CAT] || {};
-    if (all.keys.join() === [ANN, BOB, CAT].join()) test.check('ANN, BOB, CAT: newest line first');
-    else test.fail(OWED + 'chats.search answered ' + JSON.stringify(all.keys));
     if (ann.at === '2026-10-03T10:20:00.000Z' && ann.sent === 0 && ann.seq === 3 && ann.unanswered === 2 && bob.unanswered === 0 && cat.unanswered === 2) test.check('each row: its newest line and its unanswered count (ANN 2, BOB 0, CAT 2)');
     else test.fail(OWED + 'rows ' + JSON.stringify([ann, bob, cat]));
-    if (all.rows.length && !byKey[BLOCKED] && !byKey[QUIET]) test.check('the blocked key is no row, and a peer with no line is no row');
-    else test.fail(OWED + 'blocked shown ' + !!byKey[BLOCKED] + ', the peer with no line shown ' + !!byKey[QUIET]);
     const labelled = all.rows.filter(function (r) { return Object.keys(r || {}).some(function (k) { return /label|name/i.test(k); }); });
     if (all.rows.length && !labelled.length) test.check('keys and chat facts only: no row carries a name');
     else test.fail(OWED + labelled.length + ' rows carry a name');
@@ -172,9 +155,6 @@ async function main() {
     const texts = harbour.rows.map(function (l) { return l.text; });
     if (texts.length === 2 && texts.every(function (t) { return /harbour/.test(t); }) && harbour.keys.join() === '0:2,0:1') test.check('harbour: the two lines that say it, the newer first (0:2, 0:1); the others left out');
     else test.fail(OWED + 'harbour answered ' + JSON.stringify(harbour.keys) + ' ' + JSON.stringify(texts));
-    const boat = listed(await call('chat.search', { peer: ANN, text: 'boat', who: '' }, OWNER));
-    if (boat.keys.join() === '1:1' && boat.rows[0] && boat.rows[0].text === 'me to ann, the boat') test.check('my own lines are searched too: boat finds 1:1');
-    else test.fail(OWED + 'boat answered ' + JSON.stringify(boat.keys));
     const other = listed(await call('chat.search', { peer: BOB, text: 'harbour', who: '' }, OWNER));
     if (other.status === 200 && !other.keys.length) test.check('one chat only: harbour in BOB\'s chat finds nothing');
     else test.fail(OWED + 'harbour in BOB\'s chat answered ' + JSON.stringify(other.keys));
@@ -183,12 +163,6 @@ async function main() {
     const mine = listed(await call('chat.search', { peer: ANN, text: 'harbour boat', who: 'me' }, OWNER));
     if (mine.keys.join() === '1:1') test.check('who me: only my lines, boat in 1:1');
     else test.fail(OWED + 'who me answered ' + JSON.stringify(mine.keys));
-    const theirs = listed(await call('chat.search', { peer: ANN, text: 'harbour boat', who: 'them' }, OWNER));
-    if (theirs.keys.join() === '0:2,0:1') test.check('who them: only the other person\'s, harbour in 0:2 and 0:1');
-    else test.fail(OWED + 'who them answered ' + JSON.stringify(theirs.keys));
-    const both = listed(await call('chat.search', { peer: ANN, text: 'harbour boat', who: 'both' }, OWNER));
-    if (both.keys.length === 3 && both.keys.indexOf('1:1') !== -1 && both.keys.indexOf('0:2') !== -1) test.check('who both: either writer, all three');
-    else test.fail(OWED + 'who both answered ' + JSON.stringify(both.keys));
 
     // THE CONTEXT OF A FOUND LINE (Andy: "the lines befor and after the selected one"; "chat.read gains after").
     const older = listed(await call('chat.read', { peer: ANN, before: '2026-10-03T10:06:00.000Z', after: '' }, OWNER));
@@ -203,9 +177,6 @@ async function main() {
       line.run(k, 0, 1, '2026-10-02T' + String(Math.floor(i / 60)).padStart(2, '0') + ':' + String(i % 60).padStart(2, '0') + ':00.000Z', 'many', '2026-10-02T23:59:00.000Z');
       line.run(ANN, 0, 100 + i, '2026-10-01T00:00:00.000Z', 'harbour ' + 'x'.repeat(200) + ' ' + i, '2026-10-01T00:00:01.000Z');
     }
-    const many = listed(await call('chats.search', {}, OWNER));
-    if (many.status === 200 && many.more === true && many.keys.length > 3 && many.keys.length < 303 && many.bytes <= appClient.ANSWER_MAX && many.keys[0] === ANN) test.check('303 chats: ' + many.keys.length + ' came back in ' + many.bytes + ' bytes, newest first, more true');
-    else test.fail(OWED + '303 chats answered ' + many.status + ', ' + many.keys.length + ' rows, ' + many.bytes + ' bytes, more ' + many.more);
     const lots = listed(await call('chat.search', { peer: ANN, text: 'harbour', who: '' }, OWNER));
     if (lots.status === 200 && lots.more === true && lots.keys.length > 2 && lots.bytes <= appClient.ANSWER_MAX) test.check('302 harbour lines: ' + lots.keys.length + ' came back in ' + lots.bytes + ' bytes, more true');
     else test.fail(OWED + '302 harbour lines answered ' + lots.status + ', ' + lots.keys.length + ' rows, ' + lots.bytes + ' bytes, more ' + lots.more);

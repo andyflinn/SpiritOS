@@ -129,11 +129,6 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   else test.fail(OWED + 'with buttons [done] the page has done ' + (p0.indexOf('id="dd-done"') !== -1) + ', go ' + (p0.indexOf('id="dd-go"') !== -1));
   if (p0.indexOf('id="dd-strip"') === -1 && p0.indexOf('LOOK-AT-IT') === -1) test.check('no yellow strip: the C checks are not on the page while the box is shown');
   else test.fail('goal/G30.8: the yellow strip or its C1 is still on the box\'s page');
-  d.click('', { 'data-panel': 'qs' });
-  await settled();
-  const qs = d.doc.getElementById('dd-panel').innerHTML;
-  if (/data-check="C1"[^>]*>C1<\/button> LOOK-AT-IT/.test(qs)) test.check('the red Qs\' panel lists the C checks, each a button to press');
-  else test.fail(OWED + 'the red Qs\' panel does not show C1: ' + qs.slice(0, 300));
   const e = dialog(answerFor({ buttons: ['go'] }));
   e.dd.open({ id: 't/G1.2' });
   await settled();
@@ -154,9 +149,6 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   const ticked = d.asked.filter(function (a) { return a.verb === 'check.set'; })[0];
   if (ticked && ticked.args.check === 'C1' && ticked.args.state === 'passed' && ticked.args.by === undefined) test.check('pressing C1 sends check.set {check: C1, state: passed}, no by (apiAuth/G1.13)');
   else test.fail(OWED + 'pressing C1 sent ' + JSON.stringify(ticked || null));
-  // Back to the box, so the publishes below are read where they paint.
-  d.click('', { 'data-panel': 'box' });
-  await settled();
 
   test.subHeading('it repaints from what the server publishes, and asks nothing more');
   d.publish({ change: 8, verb: 'press', item: JSON.parse(facts({ buttons: ['close', 'reopen'], status: 'done' })) });

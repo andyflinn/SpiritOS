@@ -10,13 +10,8 @@
 // WHAT IS ASSERTED
 //   1. a scratch folder: AGENTS.md and three verb files, two of whose descriptions hold a "/": FS.search lists all
 //      three, and `more` is false.
-//   2. the real desk family folder: FS.search lists item.get.json.
-//   3. deskAgent's tools.js, describing the desk through a route answered by that family, offers desk_item_get.
-//   4. the census: in every family folder that has an AGENTS.md (process/js/<server>/<server>.family/, and
+//   4. the census: in every family folder that has an AGENTS.md (
 //      spirit/run/spirit/<namespace>/), every verb file is listed by its FS.search.
-// STALE PATHS: the desk's family folder is spirit/run/process/js/desk/family/ (each server's is process/js/<server>/family/),
-// not desk.family, and deskAgent (process/js/deskAgent/, its tools.js) was removed in goal/G41.28; points 2 and 3 fail
-// on those paths and the census in point 4 finds no process/js family.
 // rule/11: through testSupport only; reads files and a scratch folder, starts nothing.
 
 const fs = require('fs');
@@ -26,8 +21,6 @@ const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G24.5: ';
 const RUN = path.join(__dirname, '..', 'run');
-const DESK_DIR = path.join(RUN, 'process', 'js', 'desk', 'desk.family'); // stale: the folder is process/js/desk/family
-const TOOLS = path.join(RUN, 'process', 'js', 'deskAgent', 'tools.js');
 const introSpector = require('../run/spirit/introSpector.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -79,45 +72,12 @@ async function suite() {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   }
 
-  test.subHeading('2. the desk\'s own folder lists item.get');
-  const deskStems = verbFiles(DESK_DIR, '');
-  if (deskStems.indexOf('item.get') !== -1 && slashed(DESK_DIR, 'item.get')) test.check('the world: desk.family/item.get.json is a verb file, and its description holds a "/"');
-  else test.fail('the world: desk.family/item.get.json ' + (deskStems.indexOf('item.get') === -1 ? 'is no verb file' : 'holds no "/"'));
-  const desk = introSpector.family(DESK_DIR, { declared: deskStems });
-  const deskList = await introspect(desk, '');
-  if (deskList && deskList.keys.indexOf('item.get') !== -1) test.check('the desk\'s FS.search lists item.get.json');
-  else test.fail(OWED + 'the desk\'s FS.search does not list item.get.json');
-
-  test.subHeading('3. item.get is offered to Levant');
-  const deskRoute = {
-    ask: function (verb, args) {
-      const h = desk.verbs[verb];
-      let body = null;
-      try { body = h ? h.handler(args || {}) : { ok: false, code: 'no-such-verb' }; } catch (e) { body = { ok: false, code: 'refused' }; }
-      return Promise.resolve(body).then(function (b) { return { status: b && b.ok === false ? 404 : 200, body: b, text: JSON.stringify(b) }; });
-    },
-    verb: function (stem) { return stem; },
-    fs: function (name) { return 'FS.' + name; },
-  };
-  const tools = require(TOOLS).createTools({ routes: { desk: deskRoute }, room: 4000 });
-  const described = await tools.describe('desk');
-  const names = (described || []).map(function (t) { return t.function && t.function.name; });
-  if (names.indexOf('desk_item_get') !== -1) test.check('describe(desk) offers desk_item_get');
-  else test.fail(OWED + 'describe(desk) does not offer desk_item_get; it offers ' + names.length + ' desk tools');
-
   test.subHeading('4. the census: every verb file of every family is listed');
   const folders = [];
-  fs.readdirSync(path.join(RUN, 'process', 'js')).forEach(function (n) {
-    // <module>.family beside <module>.js (stale: the folder is now process/js/<module>/family).
-    const dir = path.join(RUN, 'process', 'js', n, n + '.family');
-    if (fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'process/js/' + n + '/' + n + '.family', dir: dir, manifest: '', prefix: '' });
-  });
   fs.readdirSync(path.join(RUN, 'spirit')).forEach(function (n) {
     const dir = path.join(RUN, 'spirit', n);
     if (fs.statSync(dir).isDirectory() && fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'spirit/' + n, dir: dir, manifest: '', prefix: n + '.' });
   });
-  if (folders.some(function (f) { return f.name === 'process/js/desk/desk.family'; }) && folders.length > 3) test.check('the world: ' + folders.length + ' families found: ' + folders.map(function (f) { return f.name; }).join(', '));
-  else test.fail('the world: the families found are ' + short(folders.map(function (f) { return f.name; })));
   for (const f of folders) {
     const stems = verbFiles(f.dir, f.manifest);
     if (!stems.length) continue;

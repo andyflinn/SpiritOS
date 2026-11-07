@@ -17,29 +17,14 @@ module.exports = [
   // NOT A HARNESS SUITE (goal/G27.2): the one-door stack-frame suite is never run by runAll. The Stacks plugin that ran
   // it a door at a time is gone (goal/G43.22); the file is kept beside its list, run by hand.
   'oneDoorStacks.js',
-  'labWorld.js', 'labPopulate.js', 'setupRelayFakes.js',
+  'labWorld.js', 'setupRelayFakes.js',
   'relayProbe.js', 'startTestAndy.js', 'startTestBert.js', 'startTestRelay.js',
   // A helper, not a suite: reads a relay's roll off its disc for the suites
   // that inspect it.
   'rollOf.js',
-  // The board's ranking graph. Pure, asserts nothing; boardRankSuite.js is
-  // the suite that holds it to account.
-  'boardRank.js',
-  // Whether the lead posts the board to Andy's node, decided pure;
-  // boardPostSuite.js is the suite.
-  'boardPost.js',
   // Two nodes and a relay with an empty contact book, shared by cardFetch.js
   // and cardRotation.js. Builds a world; asserts nothing.
   'cardWorld.js',
-  // Andy's rulings on dependencies between to-dos: data, read by the board.
-  'edges.js',
-  // NOT A SUITE AND DELIBERATELY SO: the rows an agent writes by hand when
-  // it stops and waits for Andy. It reports nothing and asserts nothing —
-  // the board reads it. Listed here rather than given a startTest, because
-  // a block is a DECLARATION about the world and not a claim about the
-  // code (see its own header for why the board's "blocked is a join, not a
-  // flag" rule cannot serve this one).
-  'blocking.js',
   // A DECLARATION, NOT A SUITE: which capacity figures depend on the box
   // and which cannot. It asserts nothing — capacityFresh reads it. Its
   // own header says why it is not inside measureCapacity.js: that file
@@ -69,12 +54,6 @@ module.exports = [
   // knocks on it — the card ask for readiness and the key, a stranger's
   // claim, paced past the relay's address table.
   'relayDoor.js',
-  // A BUILDER, not a suite: the four worlds an app server can find itself
-  // in — a relay nobody claimed, a relay with every seat taken, an owner
-  // node that is not running, a second relay with a different key. It
-  // makes no pass/fail claim. The suite named as its reader,
-  // appServerBoundary.js, is not in the tree.
-  'appServerWorlds.js',
   // A helper, not a suite: copies the NON-IGNORED spirit/run into a
   // fixture, for the suites that spawn a real server, so media, the
   // brains vault and relay-state's private key stay out of it.
@@ -102,11 +81,6 @@ module.exports = [
   // Fails on purpose: it is the worked example of what a failing check
   // looks like, and it would be the one permanent red in every run.
   'testTemplate.js',
-  // TALKS TO ANOTHER CONTINENT. Every other suite runs in process in
-  // milliseconds and could run a thousand times; this one opens sockets
-  // to a live relay and changes state on a box other people use. Run by
-  // hand: `node spirit/test/liveRelay.js`.
-  'liveRelay.js',
   // ASSERTED BY A PERSON LOOKING AT A SCREEN. It moves the world one step
   // at a time, slowly enough to be followed, and asks Andy what he sees —
   // so a harness that ran it would sit at a prompt for ever. Listed here

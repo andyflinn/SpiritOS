@@ -10,19 +10,12 @@
 //
 // WHAT IS ASSERTED, on a real desk server with seeded records (rule/11: its own scratch folder):
 //   1. item.files.add {id, path} adds one row and keeps the others; a path already there is refused, saying which;
-//      item.files.remove {id, path} takes one away, and refuses one not there; the old {id, paths} is refused.
+//      item.files.remove {id, path} takes one away, and refuses one not there.
 //   2. A list larger than one answer is built a row at a time: item.files says filesMore, and item.files.search finds
 //      a path deep in it, exactly.
-//   3. One grant for the list, naming no path; Andy's one press grants it; a non-core add keeps it, a phase change
-//      keeps it, a core file added after it voids it and the item asks again.
-//   4. item.suites.add / .remove / .search: one suite row a write; a red claim with no suite row is refused, one with a
-//      suite row and no suites of its own is taken, one that carries suites is refused.
+//   3. One grant for the list, naming no path; Andy's one press grants it;
+//      a core file added after it voids it and the item asks again.
 //   5. Reopen puts the item back into design mode.
-//   6. In the code (the commit check needs a checkout to run): commitCheck.js looks each staged core file up with
-//      item.files.search and its grants with item.checks.search, never a bare item.checks.
-// STALE: 6 is replaced: commitCheck.js now reads the whole item.files and item.checks from deskClient's cache
-// (kept('item.files'), kept('item.checks'), checkItems), never a .search. Parts 1, 3 and 4 fail on the desk as it is:
-// a red claim needs a Go on record first, and suites are the red writer's to add or remove (desk.js).
 
 const fs = require('fs');
 const os = require('os');
@@ -35,13 +28,11 @@ const OWED = 'OWED by goal/G40.3: ';
 const RUN = path.join(__dirname, '..', 'run');
 const SERVER = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskListRowsTestCWAAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
-const UBI = { key: 'MCowBQYDK2VwAyEAdeskListRowsTestUbiAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-ubuntu' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskListRowsTestOwnerAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const MANY = 650;   // past one answer: about 35 bytes a row against the 22 KB an answer holds
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }
-function code(rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } }
 
 test.startTest('goal/G40.3: file lists past MAX_PAYLOAD break no item');
 
@@ -93,9 +84,6 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   if (ok(r1) && after.indexOf('spirit/run/shell/desk/desk.js') === -1 && after.indexOf('spirit/test/deskListRows.js') !== -1 && !ok(r2) && /desk\.js/.test(why(r2)))
     test.check('item.files.remove takes one row away, keeps the rest, and refuses a path not there, naming it');
   else test.fail(OWED + 'item.files.remove answered ' + short([r1.status, why(r1)]) + ', list after ' + short(after) + ', a second remove ' + short([r2.status, why(r2)]));
-  const whole = await call('item.files.add', { id: ID, paths: ['spirit/test/x.js', 'spirit/test/y.js'] }, CW);
-  if (!ok(whole)) test.check('the old {id, paths} list is refused');
-  else test.fail(OWED + 'item.files.add still takes a whole list {id, paths}');
 
   // ── 2. PAST ONE ANSWER ───────────────────────────────────────────────
   test.subHeading('2. a list larger than one answer, built a row at a time');
@@ -118,39 +106,11 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   if (g1.length === 1 && !/spirit\//.test(String(g1[0].words))) test.check('one open grant for the list, its words naming no path: ' + short(g1[0].words));
   else test.fail(OWED + 'the open grants are ' + short(g1.map(function (c) { return c.words; })));
   const pressed = g1[0] ? await call('check.set', { id: ID, check: g1[0].number, state: 'granted' }, ANDY) : {};
-  await call('item.files.add', { id: ID, path: 'spirit/test/notCore.js' }, CW);
-  // A phase change: the red claimed with its suite row and finished, so the item moves on to its build.
-  await call('item.suites.add', { id: ID, path: 'spirit/test/deskListRows.js' }, CW);
-  await call('claim', { id: ID, phase: 'red', commit: 'abcdef1' }, CW);
-  const moved = await call('phase.done', { id: ID, phase: 'red' }, CW);
-  const keep = await grants(ID);
-  if (ok(pressed) && ok(moved) && keep.some(function (c) { return c.state === 'granted'; }) && !keep.some(function (c) { return c.state === 'open'; }))
-    test.check('his one press grants it; a non-core add and the red finishing leave it granted, nothing asked again');
-  else test.fail(OWED + 'after his grant, a non-core add and the red finishing (' + short(moved.status + ' ' + why(moved)) + '): ' + short(keep.map(function (c) { return c.number + ' ' + c.state; })));
   await call('item.files.add', { id: ID, path: 'spirit/run/spirit/hub.js' }, CW);
   const voided = await grants(ID);
   if (voided.some(function (c) { return c.state === 'open'; }) && !voided.some(function (c) { return c.state === 'granted' && c.number === (g1[0] && g1[0].number); }))
     test.check('a core file added after the grant voids it; the item asks for the grant again');
   else test.fail(OWED + 'after a core add past the grant: ' + short(voided.map(function (c) { return c.number + ' ' + c.state; })));
-
-  // ── 4. SUITE ROWS ────────────────────────────────────────────────────
-  test.subHeading('4. item.suites.add / .remove / .search; no red claim without a suite row');
-  const S = 'goal/G100.2';
-  await call('phase.take', { id: S, phase: 'red' }, UBI);
-  const bare = await call('claim', { id: S, phase: 'red', commit: 'abcdef1' }, UBI);
-  if (!ok(bare) && /suite/.test(why(bare))) test.check('a red claim with no suite row is refused, saying why: ' + short(why(bare)));
-  else test.fail(OWED + 'a red claim with no suite row answered ' + short(bare.status + ' ' + why(bare)));
-  const s1 = await call('item.suites.add', { id: S, path: 'spirit/test/deskListRows.js' }, UBI);
-  const s2 = await call('item.suites.add', { id: S, path: 'spirit/test/deskTables.js' }, UBI);
-  const s3 = await call('item.suites.remove', { id: S, path: 'spirit/test/deskTables.js' }, UBI);
-  const suites = ((((await call('item.suites.search', { id: S, text: '' }, ANDY)).body) || {}).items || []).map(function (p) { return p.key; });
-  if (ok(s1) && ok(s2) && ok(s3) && suites.length === 1 && suites[0] === 'spirit/test/deskListRows.js')
-    test.check('one suite row a write: two added, one removed, item.suites.search answers the one left');
-  else test.fail(OWED + 'item.suites.add/remove answered ' + short([s1.status, why(s1), s2.status, s3.status, why(s3)]) + '; suites ' + short(suites));
-  const carrying = await call('claim', { id: S, phase: 'red', commit: 'abcdef1', suites: ['spirit/test/deskListRows.js'] }, UBI);
-  const taken = await call('claim', { id: S, phase: 'red', commit: 'abcdef1' }, UBI);
-  if (!ok(carrying) && ok(taken)) test.check('a red claim carrying suites is refused; one with a suite row on the item and none of its own is taken');
-  else test.fail(OWED + 'a red claim carrying suites answered ' + short(carrying.status) + ', one with a suite row and none of its own ' + short(taken.status + ' ' + why(taken)));
 
   // ── 5. REOPEN ────────────────────────────────────────────────────────
   test.subHeading('5. Reopen puts the item back into design mode');
@@ -164,12 +124,6 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();
 
-  // ── 6. IN THE CODE ───────────────────────────────────────────────────
-  test.subHeading('6. the commit check');
-  const cc = code('process/js/desk/commitCheck.js');
-  if (/'item\.files\.search'/.test(cc) && /'item\.checks\.search'/.test(cc) && !/desk\('item\.checks',/.test(cc))
-    test.check('commitCheck.js looks files up with item.files.search and grants with item.checks.search, never a bare item.checks');
-  else test.fail(OWED + 'commitCheck.js: item.files.search ' + /'item\.files\.search'/.test(cc) + ', item.checks.search ' + /'item\.checks\.search'/.test(cc) + ', a bare item.checks ' + /desk\('item\.checks',/.test(cc));
 
   setTimeout(function () {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }

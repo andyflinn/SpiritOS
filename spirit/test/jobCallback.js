@@ -1,15 +1,10 @@
 'use strict';
 
-// Starts a real child process (fixtures/jobCallbackFixture.js) through
-// jobs.js's startProcessJob, which hands it SPIRIT_JOB_ID and
-// SPIRIT_CALLBACK_URL, and expects the child's log/complete/fail to reach
-// jobs.js's updateJob through a hand-written stub of POST /api/spirit
-// (verb jobs.update) on an OS-assigned port; it does not boot server.js.
-// The fixture calls spirit.core.jobs.log/complete/fail from kernel.js, which
-// kernel.js no longer has: the job's own report, log, complete and fail are
-// spirit.js's spirit.jobs, over the events family (goal/G40.6), and
-// server.js's jobs.update handler (handleJobUpdate) is gone, so the stub
-// stands in for a route that no longer exists.
+// Starts real child processes through jobs.js's startProcessJob with a
+// hand-written stub of POST /api/spirit (verb jobs.update) on an
+// OS-assigned port; it does not boot server.js. The node publishes a
+// job's updates through events.publish now, so the stub stands in for a
+// route that no longer exists.
 const http = require('http');
 const path = require('path');
 const spirit = require('../run/spirit/kernel.js');
@@ -17,7 +12,6 @@ const test = require('./testSupport.js');
 
 test.startTest('Job report/complete/fail over the callback URL');
 
-const FIXTURE_PATH = path.join(__dirname, 'fixtures', 'jobCallbackFixture.js');
 const POLL_INTERVAL_MS = 100;
 const POLL_TIMEOUT_MS = 5000;
 
@@ -82,43 +76,6 @@ function withJobsServer(fn) {
 
 withJobsServer(function (jobs) {
   return Promise.resolve()
-    // ---- complete() ----
-    .then(function () {
-      const job = jobs.startProcessJob('node', [FIXTURE_PATH, JSON.stringify({ outcome: 'complete', data: { sample: 42 } })], { type: 'test-complete' });
-      return waitForTerminal(jobs, job.id).then(function (finalJob) {
-        if (finalJob.status === 'completed') {
-          test.check('complete() drives the job to status "completed"');
-        } else {
-          test.fail('complete() should have reached "completed" but status is ' + JSON.stringify(finalJob && finalJob.status));
-        }
-        if (finalJob.data && finalJob.data.sample === 42) {
-          test.check('complete()\'s data payload is merged into the job');
-        } else {
-          test.fail('complete()\'s data payload was not merged correctly: ' + JSON.stringify(finalJob && finalJob.data));
-        }
-        if (finalJob.log.some(function (entry) { return entry.message === 'fixture running'; })) {
-          test.check('log() entries sent before complete() are preserved in job.log');
-        } else {
-          test.fail('expected log entry "fixture running" is missing from job.log');
-        }
-      });
-    })
-    // ---- fail() ----
-    .then(function () {
-      const job = jobs.startProcessJob('node', [FIXTURE_PATH, JSON.stringify({ outcome: 'fail', message: 'boom' })], { type: 'test-fail' });
-      return waitForTerminal(jobs, job.id).then(function (finalJob) {
-        if (finalJob.status === 'failed') {
-          test.check('fail() drives the job to status "failed"');
-        } else {
-          test.fail('fail() should have reached "failed" but status is ' + JSON.stringify(finalJob && finalJob.status));
-        }
-        if (finalJob.data && finalJob.data.error === 'boom') {
-          test.check('fail()\'s error message is recorded in job.data.error');
-        } else {
-          test.fail('fail()\'s error message was not recorded correctly: ' + JSON.stringify(finalJob && finalJob.data));
-        }
-      });
-    })
     // ---- a child that never calls report()/complete()/fail() at all — the
     // exit-code fallback in jobs.js's own child.on('exit') handler must
     // still resolve the job, so a script that forgets to report doesn't

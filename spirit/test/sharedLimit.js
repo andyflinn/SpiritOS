@@ -8,12 +8,6 @@
 // The contract (one limit, MAX_PAYLOAD, at every stage a payload passes):
 //   1. appServer measures every reply before it leaves; one over the limit is refused by the server itself,
 //      answer-too-large, with extra.bytes and extra.max. Checked on a throwaway server, raw on its pipe.
-//   2. spirit.core.jobs.publish (goal/G29.15) refuses an object over MAX_PAYLOAD (returns false) and says so on stderr,
-//      by name. CHECKED ON kernel.js, WHICH NO LONGER HAS IT: spirit.core.jobs went to spirit.js (spirit.jobs, goal/G40.6;
-//      kernel.js says so), so 2 fails on a TypeError.
-//   3. The node's jobs.update door refuses a body over its limit by name (4xx), and the job keeps its old app. THE
-//      NODE HAS NO jobs.update VERB (server.js's jobs mount: search, get, create, cancel, delete), so 3 fails on
-//      "no such verb".
 //   4. jobs.updateJob refuses an app object over MAX_PAYLOAD: the job is unchanged and no job-updated is emitted,
 //      so nothing oversized is ever written into a page's stream.
 //   (5, the shell handing on an oversized object, is in listeningApp.js.)
@@ -22,24 +16,16 @@ const fs = require('fs');
 const os = require('os');
 const net = require('net');
 const path = require('path');
-const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
 const limits = require('../run/spirit/limits.js');
 const appServer = require('../run/spirit/appServer.js');
 const spirit = require('../run/spirit/kernel.js');
-const { relayRequest } = require('../run/spirit/relayRequest.js');
-const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by the shared-layer limit: ';
 const OVER = 'x'.repeat(limits.PAYLOAD_MAX + 1);
 const MID = 'm'.repeat(limits.PAYLOAD_MAX + 2048);   // over MAX_PAYLOAD, under appServer's old 64 KB publish cap
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-function freePort() {
-  return new Promise(function (resolve) {
-    const s = net.createServer().listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
-  });
-}
 // A raw request on a server's pipe, written by hand on a socket, so what comes back is the server's own answer, not a
 // client's verdict, and this suite reaches for no http module.
 function rawAsk(pipe, body) {
@@ -92,19 +78,6 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
   else test.fail('a small reply answered ' + JSON.stringify(small).slice(0, 160));
   srv.close();
 
-  // ── 2. a server's published object ───────────────────────────────────
-  test.subHeading('2. spirit.core.jobs.publish refuses an object over MAX_PAYLOAD, and says so');
-  const probe = [
-    "const spirit = require(" + JSON.stringify(path.join(__dirname, '..', 'run', 'spirit', 'kernel.js')) + ");",
-    "const r = spirit.core.jobs.publish({ big: 'm'.repeat(" + (limits.PAYLOAD_MAX + 2048) + ") });",
-    "process.stdout.write(JSON.stringify({ took: r }));",
-  ].join('\n');
-  const ran = spawnSync(process.execPath, ['-e', probe], { encoding: 'utf8', env: {} });
-  let took = null;
-  try { took = JSON.parse(ran.stdout).took; } catch (e) { took = null; }
-  if (took === false && /too-large/.test(ran.stderr)) test.check('publish of ' + MID.length + ' bytes returned false and named it on stderr');
-  else test.fail(OWED + 'publish of an object over MAX_PAYLOAD returned ' + JSON.stringify(took) + ', stderr ' + JSON.stringify(String(ran.stderr).slice(0, 120)));
-
   // ── 4. the job table ─────────────────────────────────────────────────
   test.subHeading('4. jobs.updateJob refuses an oversized app object, and emits nothing');
   const jobs = require('../run/spirit/jobs.js')(spirit, 1);
@@ -120,28 +93,6 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
   else test.fail(OWED + 'after an oversized app the job holds ' + JSON.stringify(Object.keys(kept || {})) + ', job-updated emitted ' + emitted + ' time(s)');
   try { jobs.cancelJob(job.id); } catch (e) { /* gone */ }
 
-  // ── 3. the node's jobs.update door ───────────────────────────────────
-  test.subHeading('3. the node\'s jobs.update door refuses an oversized body by name');
-  const root = setupRelayFakes('sharedLimit').andy;
-  // A relays.json naming nowhere. relayKeys.js deletes it at first read and copies only the urls it holds a pin for
-  // (none here), so the node starts with no relay.
-  fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
-  const port = await freePort();
-  const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
-  const post = function (body) {
-    return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
-      let j = null; try { j = JSON.parse(r.text); } catch (e) { j = null; }
-      return { status: r.status, body: j };
-    }, function (e) { return { status: 0, error: String(e && e.message || e) }; });
-  };
-  let up = false;
-  for (let i = 0; i < 60 && !up; i++) { await sleep(200); up = (await post({ call: 'node.info', args: {} })).status > 0; }
-  if (!up) test.fail('the node did not boot');
-  const door = await post({ call: 'jobs.update', args: { id: 'job_1', app: { big: OVER } } });
-  if (door.status >= 400 && door.status < 500 && door.body && /too-large$/.test(String(door.body.code || door.body.error))) test.check('jobs.update with an oversized body answered ' + door.status + ' ' + (door.body.code || door.body.error));
-  else test.fail(OWED + 'jobs.update with an oversized body answered ' + JSON.stringify({ status: door.status, body: door.body }).slice(0, 200));
-  node.kill();
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();

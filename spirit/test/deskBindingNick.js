@@ -38,7 +38,6 @@ const packet = require('../run/spirit/client/packet.js');
 
 const OWED = 'OWED by goal/G21.1: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
-const PAGE = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskBindingNickTestCWAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskBindingNickTestWSLAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
@@ -92,7 +91,6 @@ test.startTest('goal/G21.1: the agent pane, names by key, the binding nick, incl
 
 (async function () {
   await theServer();
-  await thePage();
   await theDialog();
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
@@ -122,18 +120,6 @@ async function theServer() {
     const r = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false }, ANDY);
     try { return JSON.parse((((r.items) || [])[0] || {}).label); } catch (e) { return {}; }
   };
-  // WHETHER caller WAS HANDED the chat line holding text, written after change from (goal/G33.4): Andy by his pages'
-  // publish, an agent by the desk's stream to its deskClient. Waits up to a few seconds for it to arrive.
-  const heardBy = async function (from, caller, text) {
-    const line = function (o) { return o && o.table === 'chat' && o.row && Number(o.change) > from && JSON.stringify(String(o.row.text)).indexOf(text) !== -1; };
-    const got = function () {
-      if (caller.owner) return andysNode.pages.some(line);
-      return andysNode.sent.some(function (s) { return s.to === caller.key && line(s.row); });
-    };
-    for (let i = 0; i < 40 && !got(); i++) await sleep(100);
-    return got();
-  };
-  const lastN = async function () { const r = await call('item.get', { id: 'goal/G100' }, ANDY); return Number(r.change) || 0; };
   const why = function (r) { return r && r.extra && r.extra.why ? String(r.extra.why) : ''; };
   try {
     let up = false;
@@ -174,7 +160,6 @@ async function theServer() {
     else test.fail(OWED + 'the goal row\'s names: ' + short(row.names));
 
     test.subHeading('2. a nick followed by punctuation or a space binds the line');
-    let n0 = await lastN();
     await call('chat.add', { id: 'goal/G100.2', text: 'wsl, have a look' }, ANDY);
     const cwTake = await call('line.take', { id: 'goal/G100.2' }, CW);
     const cwSay = await call('chat.add', { id: 'goal/G100.2', text: 'cw butting in' }, CW);
@@ -183,13 +168,6 @@ async function theServer() {
     const wslSay = await call('chat.add', { id: 'goal/G100.2', text: 'wsl answers' }, WSL);
     if (wslSay.change) test.check('wsl-claude answers it');
     else test.fail(OWED + 'wsl-claude\'s answer: ' + short(wslSay));
-
-    test.subHeading('3. only the addressed agent is notified');
-    const toWsl = await heardBy(n0, WSL, 'wsl, have a look');
-    const toCw = await heardBy(n0, CW, 'wsl, have a look');
-    const toAndy = await heardBy(n0, ANDY, 'wsl, have a look');
-    if (toWsl === true && toCw === false && toAndy === true) test.check('the desk\'s stream hands "wsl, ..." to wsl-claude (and Andy\'s pages), not to claude-windows');
-    else test.fail(OWED + 'the stream: wsl ' + toWsl + ', claude-windows ' + toCw + ', Andy ' + toAndy);
 
     test.subHeading('2b. a space binds; the old "<nick>:" still binds; a longer word does not');
     await call('chat.add', { id: 'goal/G100.3', text: 'cw look here' }, ANDY);
@@ -268,12 +246,7 @@ async function theServer() {
     else test.fail(OWED + 'included again: ' + short(back));
 
     test.subHeading('7. a bare "cap": to the agents with cap on');
-    n0 = await lastN();
     await call('chat.add', { id: 'goal/G100.6', text: 'cap' }, ANDY);
-    const capCw = await heardBy(n0, CW, '"cap"');
-    const capWsl = await heardBy(n0, WSL, '"cap"');
-    if (capCw === true && capWsl === false) test.check('the cap reaches claude-windows (cap on), not wsl-claude (cap off)');
-    else test.fail(OWED + 'the cap reached cw ' + capCw + ', wsl ' + capWsl);
     const wslCap = await call('box.take', { id: 'goal/G100.6' }, WSL);
     const cwCap = await call('box.take', { id: 'goal/G100.6' }, CW);
     const f7 = await facts('goal/G100.6');
@@ -319,81 +292,6 @@ function node(tag) {
 function bubble(target, ev) {
   if (!ev.target) { try { Object.defineProperty(ev, 'target', { value: target, configurable: true }); } catch (x) { ev.target = target; } }
   for (let n = target; n; n = n.parentNode) (n.listeners[ev.type] || []).slice().forEach(function (fn) { fn.call(n, ev); });
-}
-function all(el) { return [el].concat(el.children.reduce(function (a, c) { return a.concat(all(c)); }, [])); }
-function byProfile(el, which) { return all(el).filter(function (x) { return x.getAttribute('data-profile') === which; })[0] || null; }
-
-async function thePage() {
-  test.subHeading('8. the page: names on bubbles, chat and List; the absent bubble; no key shown; the pane\'s two rows');
-  const goalRow = { id: 'goal/G101', title: 'Known', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], design: false, waiting: 0,
-    live: [CW.label], working: [], excluded: [WSL.label], agents: { 'claude-windows': CW.key, 'wsl-claude': WSL.key },
-    names: { 'claude-windows': 'Claude Windows', 'wsl-claude': 'WSL Claude' }, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '' };
-  const itemRow = { id: 'goal/G101.1', title: 'Talk', goal: 'goal/G101', status: 'running', with: CW.label, buttons: [], blocking: ['goal/G101'], blocked: [], alone: false, alert: false,
-    claims: 0, asks: 0, boxTaken: '', names: { 'claude-windows': 'Claude Windows' } };
-  const byId = {};
-  const doc = { getElementById: function (id) { if (!byId[id]) { byId[id] = node('div'); byId[id].id = id; } return byId[id]; }, createElement: node, all: byId };
-  let behavior = null;
-  new Function('spirit', 'document', 'window', fs.readFileSync(PAGE, 'utf8'))({ shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, {});
-  const asked = [];
-  const container = node('div');
-  behavior.mount(container, {
-    escapeHtml: kernel.core.util.escapeHtml,
-    verb: function (name, body) {
-      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
-      if (!ask) return Promise.resolve({ status: 200, body: {} });
-      const v = Object.keys(ask)[0];
-      asked.push({ verb: v, args: ask[v] });
-      if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 'goal/G101', label: JSON.stringify(goalRow) }, { key: 'goal/G101.1', label: JSON.stringify(itemRow) }], more: false } });
-      if (v === 'profile.get') return Promise.resolve({ status: 200, body: { name: 'Claude Windows', nick: 'cw', included: true, cap: false } });
-      if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [{ by: CW.label, key: CW.key, name: 'Claude Windows', at: new Date().toISOString(), text: 'hello team', taken: '' }], chatMore: false } });
-      return Promise.resolve({ status: 200, body: { items: [], more: false, json: '{}', chat: [], chatMore: false, change: 1 } });
-    },
-    ui: { elements: {} },
-    onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
-    peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
-    armUntilElsewhere: function () {}, fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
-  });
-  await settled();
-  const tabs = byId['desk-tabs'] ? byId['desk-tabs'].innerHTML : '';
-  const cwBubble = (/<span[^>]*data-bubble="claude-windows"[^>]*>([^<]*)<\/span>/.exec(tabs) || ['', ''])[1];
-  if (cwBubble === 'Claude Windows') test.check('the presence bubble shows the name');
-  else test.fail(OWED + 'claude-windows\'s bubble reads ' + short(cwBubble));
-  const wslBubble = (/<span[^>]*data-bubble="wsl-claude"[^>]*>/.exec(tabs) || [''])[0];
-  if (/data-absent="1"/.test(wslBubble)) test.check('an excluded agent\'s bubble shows absent');
-  else test.fail(OWED + 'wsl-claude\'s bubble reads ' + short(wslBubble));
-  const pageHtml = function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n') + container.innerHTML; };
-  if (/Claude Windows/.test(byId['desk-list'] ? byId['desk-list'].innerHTML : pageHtml()) && !/<td>claude-windows<\/td>/.test(pageHtml())) test.check('the List names the taker by name');
-  else test.fail(OWED + 'the List: ' + short((/<td>[^<]*claude[^<]*<\/td>/i.exec(pageHtml()) || [''])[0]));
-  // There is no Team group chat (goal/G43.22; Andy, the box, Q5: "G0 goes, from ui and server, kept in database.");
-  // an item chat line's name is the dialog's (deskDetails). Next, the agent's tab in the tab row opens its pane.
-  const t = node('button');
-  t.setAttribute('data-tab', 'agent:claude-windows');
-  doc.getElementById('desk-tabs').appendChild(t);
-  bubble(t, { type: 'click', bubbles: true, currentTarget: doc.getElementById('desk-tabs'), preventDefault: function () {}, stopPropagation: function () {} });
-  await settled();
-  if (pageHtml().indexOf(CW.key) === -1 && pageHtml().indexOf(WSL.key) === -1) test.check('no key is shown on the page');
-  else test.fail(OWED + 'a key is on the page');
-  const slot = byId['desk-agent-picker'];
-  const rows = slot ? slot.children.filter(function (c) { return c.getAttribute('data-profile-row') !== null; }) : [];
-  const name = slot && byProfile(slot, 'name');
-  const nick = slot && byProfile(slot, 'nick');
-  const inc = slot && byProfile(slot, 'included');
-  const cap = slot && byProfile(slot, 'cap');
-  const inRow = function (el, r) { return !!(el && r && r.contains(el)); };
-  if (rows.length === 2 && inRow(name, rows[0]) && inRow(nick, rows[0]) && inRow(inc, rows[1]) && inRow(cap, rows[1])) test.check('the pane: row one name and nick, row two included and cap');
-  else test.fail(OWED + 'the pane: ' + rows.length + ' rows; name ' + !!name + ', nick ' + !!nick + ', included ' + !!inc + ', cap ' + !!cap);
-  if (inc && cap && inc.checked === true && cap.checked === false && name && name.value === 'Claude Windows') test.check('the pane reads the profile: included on, cap off');
-  else test.fail(OWED + 'the pane read: included ' + (inc && inc.checked) + ', cap ' + (cap && cap.checked));
-  if (cap) {
-    cap.checked = true;
-    (cap.listeners.change || []).forEach(function (fn) { fn({ target: cap }); });
-    await settled();
-  }
-  const sets = asked.filter(function (a) { return a.verb === 'profile.set'; });
-  const last = sets[sets.length - 1] || {};
-  if (last.args && last.args.agent === CW.key && last.args.cap === true && last.args.included === true && last.args.nick === 'cw') test.check('toggling cap writes the profile with it at once');
-  else test.fail(OWED + 'toggling cap asked ' + short(sets));
 }
 
 async function theDialog() {

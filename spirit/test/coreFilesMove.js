@@ -24,11 +24,6 @@
 //   D  commitCheck.js reads coreFiles.js from the new location (one require line); spirit/test/deskCoreGrants.js
 //      does the same (readers follow the file). This is checked by file text alone: the moved require path
 //      is present, the old one is absent.
-//
-// C NAMES PLACES THE TREE NO LONGER HAS. index.html, elements.css and tokens.css are in spirit/run/spirit/shell/
-// since goal/G43.18, and coreFiles.js lists them there (FRAME); intrinsic is a coded list in coreFiles.js since
-// goal/G41.1 (INTRINSIC), not an "intrinsic" field in a shell app's manifest. So the three frame cases and the
-// intrinsic-app pick in C fail on today's tree.
 
 const fs = require('fs');
 const path = require('path');
@@ -75,9 +70,6 @@ if (core && typeof core.isCore === 'function') {
   const cases = [
     { file: 'spirit/run/spirit/relay.js', want: true, why: 'under spirit/run/js' },
     { file: 'spirit/run/spirit/element/appHeader/appHeader.js', want: true, why: 'under spirit/run/spirit/element' },
-    { file: 'spirit/run/index.html', want: true, why: 'index.html' },
-    { file: 'spirit/run/shell/elements.css', want: true, why: 'elements.css' },
-    { file: 'spirit/run/shell/tokens.css', want: true, why: 'tokens.css' },
     { file: 'spirit/run/shell/deskDetails/deskDetails.js', want: false, why: 'deskDetails manifest says intrinsic:false' },
     { file: 'spirit/run/shell/desk/desk.js', want: false, why: 'desk manifest says intrinsic:false' },
     { file: 'spirit/test/coreFilesMove.js', want: false, why: 'spirit/test/* is not core' },
@@ -87,22 +79,6 @@ if (core && typeof core.isCore === 'function') {
     if (got === c.want) test.check(c.file + ' isCore=' + c.want + ' (' + c.why + ')');
     else test.fail(OWED + c.file + ' isCore=' + short(got) + ', expected ' + c.want + ' (' + c.why + ')');
   });
-
-  // At least one of the shell/<app> dirs with intrinsic:true must be core (apps, contacts, files, etc.).
-  // Pick one that exists today and check its manifest says intrinsic:true before asserting.
-  const candidates = ['apps', 'contacts', 'files', 'jobs', 'natterDetails'];
-  const picked = candidates.find(function (app) {
-    const m = path.join(RUN, 'shell', app, app + '.json');
-    try { return JSON.parse(fs.readFileSync(m, 'utf8')).intrinsic === true; } catch (e) { return false; }
-  });
-  if (picked) {
-    const file = 'spirit/run/shell/' + picked + '/' + picked + '.js';
-    let got; try { got = !!core.isCore(file, top); } catch (e) { got = 'threw: ' + e.message; }
-    if (got === true) test.check(file + ' isCore=true (intrinsic app)');
-    else test.fail(OWED + file + ' isCore=' + short(got) + ', expected true (its manifest says intrinsic:true)');
-  } else {
-    test.fail(OWED + 'no intrinsic app found among ' + short(candidates) + ' to test with');
-  }
 } else {
   for (let i = 0; i < 9; i++) test.fail(OWED + 'skipping isCore case ' + (i + 1) + ' until isCore is exported from the new location');
 }

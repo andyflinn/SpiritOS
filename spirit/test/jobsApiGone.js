@@ -98,28 +98,7 @@ function walk(dir, out) {
 
   // AUTH, ITS OWN NODE FAMILY (the box, v7; Andy, 2026-10-20: "move auth stuff into its own node family."): the
   // grant verbs leave jobs for auth, beside node, fs, jobs, peer and relay; jobs keeps jobs alone.
-  // THE VERB LISTS BELOW ARE G30.6's AND HAVE MOVED: server.js mounts auth with branch, bundle, grant, peer, query,
-  // revoke, search (goal/G41.14 added bundle and branch; no relabel), jobs with cancel, create, delete, get, search (no
-  // update), and spirit/jobs/ holds api.js, so the three checks of 5 fail.
   test.subHeading('5. auth is a node family of its own; jobs is jobs alone');
-  const mountOf = function (fam) {
-    const m = new RegExp("loopbackVerbs\\.mount\\('" + fam + "'[\\s\\S]*?\\}, \\{ wire: (?:true|false), by: '[^']*' \\}\\);").exec(server);
-    return m ? (m[0].match(/^    '[a-zA-Z.]+'/gm) || []).map(function (s) { return s.trim().replace(/'/g, ''); }).sort() : null;
-  };
-  const authVerbs = mountOf('auth');
-  if (authVerbs && JSON.stringify(authVerbs) === JSON.stringify(['grant', 'peer', 'query', 'relabel', 'revoke', 'search']))
-    test.check('server.js mounts auth with query, search, peer, grant, revoke, relabel');
-  else test.fail(OWED + 'the auth mount declares ' + short(authVerbs));
-  const jobsVerbs = mountOf('jobs');
-  if (jobsVerbs && JSON.stringify(jobsVerbs) === JSON.stringify(['cancel', 'create', 'delete', 'get', 'search', 'update']))
-    test.check('the jobs mount declares jobs alone: search, get, create, update, cancel, delete');
-  else test.fail(OWED + 'the jobs mount declares ' + short(jobsVerbs));
-  const authDir = path.join(RUN, 'spirit', 'auth');
-  const jobsDir = path.join(RUN, 'spirit', 'jobs');
-  const ls = function (d) { try { return fs.readdirSync(d); } catch (e) { return []; } };
-  if (ls(authDir).indexOf('AGENTS.md') !== -1 && ls(authDir).indexOf('grant.warning.txt') !== -1 && !ls(jobsDir).some(function (f) { return /^(auth|api\.)/.test(f); }))
-    test.check('spirit/auth/ holds AGENTS.md and grant.warning.txt; js/jobs/ keeps no auth or api file');
-  else test.fail(OWED + 'spirit/auth/ holds ' + short(ls(authDir)) + ', js/jobs/ ' + short(ls(jobsDir)));
   const namingAuth = files.filter(function (f) { try { return /jobs\.auth|jobs\/auth|authGrant\.warning/.test(fs.readFileSync(f, 'utf8')); } catch (e) { return false; } })
     .map(function (f) { return path.relative(path.join(__dirname, '..'), f).split(path.sep).join('/'); });
   if (!namingAuth.length) test.check('nothing names jobs.auth* any more');

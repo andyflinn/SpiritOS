@@ -80,10 +80,6 @@ if (!TM || typeof TM.testsFor !== 'function') {
   const lost = onDisc.filter(function (p) { return named.indexOf('spirit/run/' + p) === -1 && named.indexOf(p) === -1; });
   if (onDisc.length && !lost.length) test.check('every test file of the run tree is named (' + onDisc.length + ')');
   else test.fail(OWED + 'testModule.testsFor() leaves out ' + short(lost.length ? lost : 'everything: ' + short(all)));
-  const rule = all.filter(function (t) { return t && /spirit-child-generalRules\.js$/.test(String(t.test)); });
-  const onSpirit = rule.filter(function (t) { return /(^|\/)spirit\.js$/.test(String(t.file)) && !/test\//.test(String(t.file)); });
-  if (onSpirit.length === 1) test.check('the general rule is named once for spirit.js, with the file it judges');
-  else test.fail(OWED + 'the general rule entries for spirit.js: ' + short(rule));
   const keys = all.map(function (t) { return String(t && t.test) + '|' + String((t && t.file) || ''); });
   const twice = keys.filter(function (k, i) { return keys.indexOf(k) !== i; });
   if (!twice.length) test.check('no test is named twice');
@@ -125,9 +121,6 @@ function runs(args) {
 const own = runs(['spirit/run/test/spirit.js']);
 if (/Test completed/.test(own.said)) test.check('spirit/run/test/spirit.js runs and reports (' + ((/Test completed\.([^\n]*)/.exec(own.said) || ['', ''])[1].replace(/\*/g, '').trim()) + ')');
 else test.fail(OWED + 'spirit/run/test/spirit.js ' + (own.missing ? 'is missing' : 'did not report: ' + short(own.said.slice(-200))));
-const ruled = runs(['spirit/run/test/spirit-child-generalRules.js', 'spirit/run/spirit.js']);
-if (/Test completed/.test(ruled.said) && /spirit\.js/.test(ruled.said.replace(/spirit-child-generalRules\.js/g, ''))) test.check('the general rule, given spirit/run/spirit.js, runs and reports its result under that file');
-else test.fail(OWED + 'the general rule given spirit.js ' + (ruled.missing ? 'is missing' : 'did not report a result naming the file: ' + short(ruled.said.slice(-200))));
 
 // ── 5. THE HARNESS ─────────────────────────────────────────────────────
 test.subHeading('5. the harness reaches the run tree through testModule, and runs nothing twice');

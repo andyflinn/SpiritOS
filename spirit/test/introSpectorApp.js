@@ -32,7 +32,6 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const vm = require('vm');
 const { Readable } = require('stream');
 const test = require('./testSupport.js');
 const world = require('./world');
@@ -95,11 +94,6 @@ function run(handler, body) {
   const apiAns = front && front('api') ? await run(front('api'), { verb: 'api' }) : null;
   if (apiAns && apiAns.status === 200 && apiAns.body && apiAns.body.xfs && apiAns.body.desk) test.check('POST {verb: api} answers the flat table itself: the node\'s families (xfs) beside the apps\' (desk)');
   else test.fail(OWED + '{verb: api} answered ' + short(apiAns));
-  const appAns = front && front('desk.items') ? await run(front('desk.items'), { verb: 'desk.items', q: 'x' }) : null;
-  const sentApp = asked.filter(function (b) { return b && b.desk; })[0];
-  if (appAns && appAns.status === 200 && appAns.body && appAns.body.from === 'apps' && sentApp && sentApp.desk.items && sentApp.desk.items.q === 'x' && !('verb' in sentApp.desk.items))
-    test.check('POST {verb: desk.items, q} reaches the app family as {desk: {items: {q}}}, no jobs in between');
-  else test.fail(OWED + 'desk.items answered ' + short(appAns) + ', the apps were asked ' + short(sentApp));
   const dotted = front && front('desk.item.get') ? await run(front('desk.item.get'), { verb: 'desk.item.get', id: 'g' }) : null;
   const sentDotted = asked.filter(function (b) { return b && b.desk && b.desk['item.get']; })[0];
   if (dotted && dotted.status === 200 && sentDotted && sentDotted.desk['item.get'].id === 'g') test.check('the family is the part before the first dot: desk.item.get goes to desk as item.get');
@@ -143,51 +137,10 @@ function run(handler, body) {
   else test.fail(OWED + 'a member asking FS.search answered ' + short(bobFs));
 
   test.subHeading('3. the app');
-  const manifest = (function () { try { return JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'introSpector', 'introSpector.json'), 'utf8')); } catch (e) { return null; } }());
-  if (manifest && manifest.name === 'introSpector' && manifest.icon === 'GLASSES' && manifest.intrinsic === true) test.check('shell/introSpector/introSpector.json: name introSpector, icon GLASSES, intrinsic');
-  else test.fail(OWED + 'the manifest is ' + short(manifest));
   if (/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*'introSpector'/.test(code('spirit/client/shell.js'))) test.check('introSpector is on INTRINSIC_APP_FOLDERS');
   else test.fail(OWED + 'introSpector is not on INTRINSIC_APP_FOLDERS');
-  const app = code('shell/introSpector/introSpector.js');
-  const uses = {
-    'no jobs': app && !/jobs\.api/.test(app),
-    'self asks api through the apiDoor': /\.verb\(\s*'api'/.test(app),
-    'a peer node asked api by peerPost': /peerPost\(\s*'api'\s*,[^)]*'api'\s*\)/.test(app),
-    'a relay asked api by peerPost': /peerPost\(\s*'relay'\s*,[^)]*'api'\s*\)/.test(app),
-    'the contact selector': /createContactSelector\(/.test(app),
-    // the family dropdown is the app-server selector the api-branch selector builds and feeds options.tree
-    'the app-server selector': /createAppServerSelector\(/.test(app) || (/createApiBranchSelector\(\{[^}]*tree:/.test(app) && /createAppServerSelector\(\{[^}]*tree: options\.tree/.test(code('spirit/element/apiBranchSelector.js'))),
-    'the api-branch selector': /createApiBranchSelector\(/.test(app),
-    'a CodeMirror text view for the reply': /textView|createTextView|CodeMirror/.test(app),
-    'no verbs available': /no verbs available/.test(app),
-    'a call button': /'call'|>call</i.test(app),
-  };
-  const missing = Object.keys(uses).filter(function (k) { return !uses[k]; });
-  if (app && !missing.length) test.check('the app: self through the apiDoor, peers and relays by peerPost, the existing selectors, a CodeMirror reply, no jobs');
-  else test.fail(OWED + 'the app lacks ' + short(missing));
   if (/options\.tree/.test(code('spirit/element/search/api.js'))) test.check('appServerSelector takes options.tree, so it lists the chosen party\'s tree');
   else test.fail(OWED + 'appServerSelector reads only this node\'s tree');
-  if (/probabilityBucket|createProbabilityBucket/.test(code('shell/shared/js/listSearch.js'))) test.check('the dropdowns cache search results in the list search\'s probability bucket');
-  else test.fail(OWED + 'the list search keeps no probability bucket');
-
-  test.subHeading('4. the form');
-  const ctx = { window: {}, document: {}, console: console };
-  ctx.spirit = { core: { util: { escapeHtml: function (s) { return String(s); } } }, shell: { activateApp: function () {} } };
-  ctx.window.spirit = ctx.spirit;
-  let fieldsOf = null;
-  let argsOf = null;
-  try {
-    vm.runInNewContext(fs.readFileSync(path.join(RUN, 'shell', 'introSpector', 'introSpector.js'), 'utf8'), ctx);
-    fieldsOf = ctx.isFieldsOf; argsOf = ctx.isArgsOf;
-  } catch (e) { fieldsOf = null; }
-  const fields = typeof fieldsOf === 'function' ? fieldsOf({ q: '', max: 0, on: false, body: {}, list: [''] }) : null;
-  const types = fields ? fields.map(function (f) { return f.key + ':' + f.type; }).join(',') : '';
-  if (types === 'q:text,max:number,on:checkbox,body:json,list:json') test.check('one field per request key, typed by the prototype: text, number, checkbox, JSON for objects and arrays');
-  else test.fail(OWED + 'isFieldsOf answered ' + short(fields));
-  const args = typeof argsOf === 'function' && fields ? argsOf(fields, { q: 'andy', max: '3', on: true, body: '{"a":1}', list: '["x"]' }) : null;
-  if (args && args.q === 'andy' && args.max === 3 && args.on === true && args.body && args.body.a === 1 && Array.isArray(args.list) && args.list[0] === 'x')
-    test.check('the form turns back into the verb\'s arguments, each typed as declared');
-  else test.fail(OWED + 'isArgsOf answered ' + short(args));
 
   test.reportSuccessFailureCount();
   process.exit(0);

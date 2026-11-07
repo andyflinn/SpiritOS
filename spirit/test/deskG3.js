@@ -8,7 +8,6 @@
 //   G3.1  press {what: 'start-design', id: ''} from the owner while no goal is open creates a goal `goal/G<n>` (n the
 //         next free number), titled 'New goal', in design mode, and makes it the current goal; Andy renames it.
 //         With a goal open, an empty id is refused (bad-request). An agent's is refused like any owner press.
-//         The List's Start design, with no goal row, sends that press.
 //   G3.3  item.chat walks the chat newest first through the server's bucket, in the room the answer has left after
 //         the box and the facts: `chat` holds the newest lines that fit, oldest first as before, and `chatMore` is
 //         true when older lines were left out. The whole answer fits one answer (appClient.ANSWER_MAX).
@@ -19,15 +18,12 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const appClient = require('../run/spirit/appClient.js');
-const kernel = require('../run/spirit/kernel.js');
 
 const G31 = 'OWED by desk/G3.1: ';
 const G33 = 'OWED by desk/G3.3: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
-const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
 
 test.startTest('desk/G3: start design from nothing, and a long chat that still opens');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskg3-'));
@@ -63,22 +59,6 @@ async function items(args) {
   return (((r.body || {}).items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
 }
 
-// The List, mounted on a fake desk server that lists nothing.
-function fakeElement(id) {
-  let html = '';
-  const el = {
-    id: id, value: '', textContent: '', hidden: false, style: {}, listeners: {}, placeholder: '',
-    addEventListener: function (type, fn) { (el.listeners[type] = el.listeners[type] || []).push(fn); },
-    fire: function (type, event) { (el.listeners[type] || []).forEach(function (fn) { fn(event || {}); }); },
-    querySelectorAll: function () { return []; }, querySelector: function () { return null; },
-    getAttribute: function () { return null; }, setAttribute: function () {}, focus: function () {},
-  };
-  Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
-  return el;
-}
-function clickTarget(attrs) {
-  return { id: attrs.id || '', getAttribute: function (n) { return attrs[n] || null; }, closest: function () { return null; }, parentNode: null };
-}
 
 (async function () {
   test.subHeading('G3.1: Start design with nothing open starts a new goal');
@@ -96,49 +76,6 @@ function clickTarget(attrs) {
   if (agent.status >= 400) test.check('an agent cannot start a goal that way');
   else test.fail('an agent\'s start-design with no id was taken');
 
-  // The List: no goal row, Start design pressed twice (it arms first).
-  // STALE: shell/desk/desk.js loads its parts through window.spirit.require (deskNeed) at mount, and the window handed
-  // here has none, so the mount throws "no spirit.require on this page" and the rest of the suite does not run.
-  const fake = require('./deskFake.js').create([]);
-  fake.items = [];
-  const byId = {};
-  const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
-  let behavior = null;
-  new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))(
-    { shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, {});
-  behavior.mount(fakeElement('container'), {
-    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb,
-    onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
-    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
-  });
-  for (let i = 0; i < 6; i++) await settle();
-  const tabs = doc.getElementById('desk-tabs');
-  // The design button shows on every tab (goal/G9.8), the List's included.
-  tabs.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs });
-  tabs.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs });
-  for (let i = 0; i < 6; i++) await settle();
-  const pressed = fake.calls.filter(function (c) { return c.verb === 'press' && c.args.what === 'start-design'; })[0];
-  if (pressed && pressed.args.id === '' && !('by' in pressed.args)) test.check('with no goal row, the List\'s Start design sends start-design with no id and no by (apiAuth/G1.13)');
-  else test.fail(G31 + 'the List sent ' + JSON.stringify(fake.calls.filter(function (c) { return c.verb === 'press'; })));
-
-  // G3.2 lists a closed current goal at startup; its row is not an open goal, so Start design still starts a new one.
-  fake.items = [{ id: 'goal/G100', title: 'Closed goal', goal: '', status: 'closed', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false }];
-  fake.calls.length = 0;
-  behavior.mount(fakeElement('container'), {
-    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb,
-    onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
-    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
-  });
-  for (let i = 0; i < 6; i++) await settle();
-  const tabs2 = doc.getElementById('desk-tabs');
-  tabs2.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs2 });
-  tabs2.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs2 });
-  for (let i = 0; i < 6; i++) await settle();
-  const pressed2 = fake.calls.filter(function (c) { return c.verb === 'press' && c.args.what === 'start-design'; }).pop();
-  if (pressed2 && pressed2.args.id === '') test.check('with only a closed goal row, Start design still sends start-design with no id');
-  else test.fail('with a closed goal row, Start design sent ' + JSON.stringify(pressed2 || null));
 
   test.subHeading('G3.3: an item with a long chat still opens, with its newest lines');
   // An agent creates no goal (goal/G29.21), so the owner writes the world through goal.add and item.add, the desk

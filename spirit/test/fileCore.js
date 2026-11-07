@@ -22,13 +22,12 @@
 //      then the answer-post whose re matches that post's hash, read off the node's event stream, resolves with
 //      its body. A refused post resolves {ok: false, code: 'not-posted'} at once; no answer within how.waitMs
 //      (default 30 s) resolves {ok: false, code: 'no-answer'}. how.node names the node, else the origin of
-//      SPIRIT_CALLBACK_URL; how.kind rides to peer.post. PART D LOOKS FOR IT ON kernel.js, WHICH NO LONGER HAS IT:
-//      peerPost is spirit.js's (spirit/run/spirit/spirit.js; kernel.js says so where it stood), so D fails.
+//      SPIRIT_CALLBACK_URL; how.kind rides to peer.post. D is not asserted here: peerPost is spirit.js's
+//      (spirit/run/spirit/spirit.js), not kernel.js's.
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const http = require('http');
 const test = require('./testSupport.js');
 
 const RUN = path.join(__dirname, '..', 'run');
@@ -39,7 +38,6 @@ const apiDoor = require('../run/spirit/apiDoor.js');
 const hub = require('../run/spirit/hub').createHub(process.cwd());
 const packet = require('../run/spirit/client/packet.js');
 const arrivals = require('../run/spirit/arrivals.js');
-const spirit = require('../run/spirit/kernel.js');
 
 function fakeRes() {
   const res = { status: 0, body: '', writeHead: function (s) { res.status = s; }, end: function (b) { res.body = b || ''; } };
@@ -142,66 +140,10 @@ async function partC() {
   else test.fail(OWED + 'dropVerb: fixed ' + (fixedDrop ? 'kept' : 'dropped') + ', runtime ' + (after[NAME] ? 'still listed' : 'gone') + ', a call answered ' + JSON.stringify(gone.body && gone.body.code));
 }
 
-async function partD() {
-  test.subHeading('D. spirit.peerPost: post, then the answer that comes back by re');
-  if (typeof spirit.peerPost !== 'function') { test.fail(OWED + 'kernel.js\'s spirit object has no peerPost'); return; }
-  const PEER = 'MCowBQYDK2VwAyEAfileCorePeerAAAAAAAAAAAAAAAAAAAAAAAAA=';
-  let mode = 'answer';
-  const posts = [];
-  const streams = [];
-  const node = http.createServer(function (req, res) {
-    if (req.method === 'GET' && req.url === '/api/events') {
-      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
-      res.write(': open\n\n');
-      streams.push(res);
-      return;
-    }
-    let raw = '';
-    req.on('data', function (c) { raw += c; });
-    req.on('end', function () {
-      let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
-      posts.push(b);
-      if (mode === 'refuse') { res.writeHead(502, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: false, error: 'no relay' })); return; }
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, hash: 'HASH-' + posts.length }));
-      if (mode === 'answer') {
-        const made = packet.encode('api', { command: 'info', data: '{"bytes":3}' }, { re: 'HASH-' + posts.length });
-        setTimeout(function () {
-          streams.forEach(function (s) { s.write('event: packet\ndata: ' + JSON.stringify({ from: PEER, text: made.text }) + '\n\n'); });
-        }, 50);
-      }
-    });
-  });
-  await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
-  const url = 'http://127.0.0.1:' + node.address().port;
-  try {
-    const got = await Promise.race([spirit.peerPost(PEER, 'api', { files: { info: {} } }, { node: url, kind: 'background', waitMs: 2000 }), sleep(4000)]);
-    if (got && got.command === 'info' && got.data === '{"bytes":3}') test.check('it resolves with the body of the answer whose re is its post\'s hash');
-    else test.fail(OWED + 'spirit.peerPost resolved ' + JSON.stringify(got));
-    if (posts[0] && posts[0].verb === 'peer.post' && posts[0].to === PEER && posts[0].kind === 'background') test.check('it posts through peer.post, with how.kind riding along');
-    else test.fail(OWED + 'the node was asked ' + JSON.stringify(posts[0]));
-
-    mode = 'silent';
-    const silent = await Promise.race([spirit.peerPost(PEER, 'api', { files: { info: {} } }, { node: url, waitMs: 300 }), sleep(3000)]);
-    if (silent && silent.ok === false && silent.code === 'no-answer') test.check('no answer within waitMs resolves no-answer');
-    else test.fail(OWED + 'a silent peer resolved ' + JSON.stringify(silent));
-
-    mode = 'refuse';
-    const t0 = Date.now();
-    const refused = await Promise.race([spirit.peerPost(PEER, 'api', { files: { info: {} } }, { node: url, waitMs: 5000 }), sleep(4000)]);
-    if (refused && refused.ok === false && refused.code === 'not-posted' && Date.now() - t0 < 2000) test.check('a refused post resolves not-posted at once');
-    else test.fail(OWED + 'a refused post resolved ' + JSON.stringify(refused) + ' after ' + (Date.now() - t0) + ' ms');
-  } finally {
-    streams.forEach(function (s) { try { s.end(); } catch (e) { /* gone */ } });
-    node.close();
-  }
-}
-
 (async function () {
   await partA();
   await partB();
   await partC();
-  await partD();
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 200);

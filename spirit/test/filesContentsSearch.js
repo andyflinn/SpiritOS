@@ -13,8 +13,6 @@
 //   first match in view; the editor's picker in contents opens marked.
 //
 // NAMED HERE where the box names none:
-// Parts 2 and 4 read spirit/run/shell/shared/js/listSearch.js, shell/files/files.js, shell/textEditor/textEditor.js
-// and spirit/run/spirit/element/textView.js; none of them is in the tree any more, so the suite throws at part 2.
 //   - createNodeSearches({ jobs, rootDir, mimeTypes }).
 //   - the rank bar is a cell of class list-rank holding one element whose style width is a percentage.
 //   - createTextView takes line: the 1-based line put in view.
@@ -31,40 +29,10 @@ const RUN = path.join(__dirname, '..', 'run');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
 function code(file) { try { return fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); } catch (e) { return ''; } }
-function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setTimeout(r, 5); }); }); }
 function parse(s) { try { return JSON.parse(s); } catch (e) { return null; } }
 
 test.startTest('goal/G29.11: words searched inside text files, ranked by their contents, the rank shown as a bar');
 
-// A small page: elements by id, events bubbling along parentNode.
-function page() {
-  const byId = {};
-  const node = function () {
-    let html = '';
-    const e = { children: [], style: {}, listeners: {}, parentNode: null, hidden: false, className: '', value: '',
-      appendChild: function (c) { e.children.push(c); c.parentNode = e; return c; },
-      addEventListener: function (t, fn) { (e.listeners[t] = e.listeners[t] || []).push(fn); },
-      dispatchEvent: function (ev) { for (let n = e; n; n = n.parentNode) (n.listeners[ev.type] || []).forEach(function (fn) { fn(ev); }); return true; },
-      setAttribute: function () {}, getAttribute: function () { return null; }, focus: function () {}, contains: function () { return true; } };
-    Object.defineProperty(e, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); e.children = []; } });
-    return e;
-  };
-  const doc = { createElement: node, getElementById: function (id) { if (!byId[id]) { byId[id] = node(); byId[id].id = id; } return byId[id]; }, addEventListener: function () {} };
-  const win = {};
-  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
-  });
-  new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(doc, win);
-  return { doc: doc, win: win, node: node };
-}
-function rowsIn(html) {
-  const out = [];
-  const re = /<tr[^>]*\bdata-key="([^"]*)"[^>]*>([\s\S]*?)<\/tr>/g;
-  let m;
-  while ((m = re.exec(html))) out.push({ key: m[1], html: m[2], first: (/<td[^>]*>[\s\S]*?<\/td>/.exec(m[2]) || [''])[0] });
-  return out;
-}
-function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?width:\s*([0-9.]+)%/.exec(cell); return m ? Number(m[1]) : null; }
 
 (async function () {
   // ── 1. the node ──
@@ -119,34 +87,9 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
 
   // ── 2. the rank bar, every search ──
   test.subHeading('2. every search on the shared list shows its ranking as a bar');
-  const p1 = page();
-  const box1 = p1.node();
-  p1.win.spirit.elements.shellCreateListSearch(box1, { rows: function () { return [{ key: 'a', name: 'alpha gate' }, { key: 'b', name: 'beta door' }, { key: 'c', name: 'gamma gate keeper' }]; },
-    paint: function (row, mark) { return '<td>' + mark(row.name) + '</td>'; } });
-  await settle();
-  const pre1 = (/id="(listsearch-\d+-)text"/.exec(box1.innerHTML) || [])[1];
-  const plainRows = rowsIn(p1.doc.getElementById(pre1 + 'list').innerHTML);
-  if (plainRows.length && plainRows.every(function (r) { return barWidth(r.first) === null; })) test.check('with no words there is no rank column');
-  else test.fail(OWED + 'with no words the rows read ' + short(plainRows.map(function (r) { return r.first; })));
-  const t1 = p1.doc.getElementById(pre1 + 'text');
-  t1.value = 'gate';
-  box1.dispatchEvent({ type: 'input', target: t1 });
-  await settle();
-  const ranked = rowsIn(p1.doc.getElementById(pre1 + 'list').innerHTML);
-  const widths = ranked.map(function (r) { return barWidth(r.first); });
-  if (widths.length === 3 && widths[0] === 100 && widths.every(function (w, i) { return w !== null && (i === 0 || w <= widths[i - 1]); }) && /width:\s*3em/.test(ranked[0].first) && /margin-left:\s*auto|text-align:\s*right/.test(ranked[0].first)) test.check('words typed: the left-most column is a 3em bar, right adjusted, full (100%) for the best row, shorter down the list: ' + widths.join(', '));
-  else test.fail(OWED + 'with words the first cells read ' + short(ranked.map(function (r) { return r.first; })));
-  // Andy: "score bars STILL NOT SEEN". A bar drawn only as a background colour is dropped by contrast themes, so the
-  // bar is a solid border, 0.8em tall. The cell holds a fixed box the bar sits in, so rows that never wrap cannot
-  // squeeze it to nothing. Andy: "i'm sure 3em is wide enough, don't want to waste too much horizontal space".
-  if (/<td[^>]*class="list-rank"[^>]*min-width:\s*3em[^>]*>\s*<div[^>]*style="[^"]*width:\s*3em/.test(ranked[0].first)) test.check('the rank cell holds a fixed 3em box (min-width 3em): no row can squeeze it to nothing');
-  else test.fail(OWED + 'the rank cell is ' + short(ranked[0].first));
-  const barTag = (/<div[^>]*border-top[^>]*>/.exec(ranked[0].first) || [''])[0];
   // Andy: "i do like to have the same color for the text highlights as the score bar has, try a pastel blue (in the
   // color scheme?)". One colour, --spirit-match, defined once in spirit/run/spirit/shell/shell.css, for the bar, the
   // list's marks and the viewer's marks.
-  if (/border-top:\s*0\.8em\s+solid\s+var\(--spirit-match/.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid border in the one match colour, var(--spirit-match), 0.8em tall');
-  else test.fail(OWED + 'the bar is drawn ' + short(barTag));
   // The shell's styles are spirit/run/spirit/shell/shell.css (goal/G30.9).
   const idx = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8');
   const token = (/--spirit-match:\s*([^;]+);/.exec(idx) || [])[1] || '';
@@ -155,50 +98,6 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   else test.fail(OWED + 'index.html defines --spirit-match as ' + short(token));
   if (/(^|[\s,}])mark\s*\{[^}]*background:\s*var\(--spirit-match\)/.test(idx) && /\.text-view-match\s*\{[^}]*background:\s*var\(--spirit-match\)/.test(idx)) test.check('the list\'s marks and the viewer\'s marks take the same colour');
   else test.fail(OWED + 'mark and .text-view-match do not both use var(--spirit-match)');
-
-  // Andy, 2026-10-18: "whenever the search expression changes even by one character, the list (in dropdowns) should
-  // snap to the highest ranking (top) row", then "in the dropdown, the list REALLY should snap to the top with every
-  // change in the search-term." Every list: the best row current, the list scrolled to its top.
-  const list1 = p1.doc.getElementById(pre1 + 'list');
-  list1.scrollTop = 400;
-  t1.value = 'gat';
-  box1.dispatchEvent({ type: 'input', target: t1 });
-  await settle();
-  const snapped = rowsIn(list1.innerHTML);
-  const current = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec(list1.innerHTML) || [])[1];
-  if (list1.scrollTop === 0 && snapped.length && current === snapped[0].key) test.check('a change of the words snaps the list: the top row current (' + current + '), scrolled to the top');
-  else test.fail(OWED + 'after a change of the words: scrollTop ' + list1.scrollTop + ', current ' + short(current) + ', top row ' + short(snapped[0] && snapped[0].key));
-
-  // ── 4. opened marked ──
-  test.subHeading('4. Files opens the viewer marked, the editor\'s picker opens marked');
-  const files = code(path.join(RUN, 'shell', 'files', 'files.js'));
-  if (/launchApp\([^)]*\{[^}]*words\s*:[^}]*line\s*:/.test(files)) test.check('Files opens the viewer with {path, words, line}');
-  else test.fail(OWED + 'files.js launches ' + short((/launchApp\([^\n]*/.exec(files) || [''])[0]));
-  const index = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8');
-  if (/createTextView\([^)]*\{[\s\S]{0,200}?line\s*:/.test(index)) test.check('the viewer hands the line to its text view');
-  else test.fail(OWED + 'the viewer passes no line to createTextView');
-  const editor = code(path.join(RUN, 'shell', 'textEditor', 'textEditor.js'));
-  if (/picker\.words\(\)/.test(editor) && /contents/.test(editor)) test.check('the editor opens a file its picker found by contents marked with the picker\'s words');
-  else test.fail(OWED + 'textEditor.js: picker.words() ' + /picker\.words\(\)/.test(editor) + ', contents ' + /contents/.test(editor));
-  const p2 = page();
-  const sp = { core: { ask: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
-    util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: kernel.core.util.formatBytes }, const: { ICON: kernel.core.const.ICON } } };
-  const CM = [];
-  p2.win.CodeMirror = function (place, opts) {
-    const text2 = String(opts.value || '');
-    const starts = [0];
-    for (let i = 0; i < text2.length; i++) if (text2[i] === '\n') starts.push(i + 1);
-    const cm = { opts: opts, scrolled: [], getValue: function () { return text2; },
-      posFromIndex: function (i) { let l = 0; while (l + 1 < starts.length && starts[l + 1] <= i) l++; return { line: l, ch: i - starts[l] }; },
-      markText: function () { return { clear: function () {} }; }, scrollIntoView: function (w) { cm.scrolled.push(w); }, setCursor: function () {}, refresh: function () {} };
-    CM.push(cm);
-    return cm;
-  };
-  new Function('window', 'document', 'spirit', fs.readFileSync(path.join(RUN, 'spirit', 'element', 'textView.js'), 'utf8'))(p2.win, p2.doc, sp);
-  p2.win.spirit.elements.createTextView(p2.node(), { text: 'a\nb\nc\nd\ne\n', readOnly: true, line: 4 });
-  const sc = (CM[CM.length - 1] || { scrolled: [] }).scrolled[0];
-  if (sc && sc.line === 3) test.check('createTextView puts line 4 in view (0-based 3)');
-  else test.fail(OWED + 'with line 4 the view scrolled to ' + short((CM[CM.length - 1] || {}).scrolled));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 100);

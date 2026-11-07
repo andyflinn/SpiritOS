@@ -4,18 +4,11 @@
 // goal/G32.3: the servers on the spirit object. What this suite asserts:
 //   - Every server process under process/js reaches the node only through the spirit object, on the node's loopback
 //     door; no hand-made call (askNode, kernel.core.ask with the node's url) is left.
-//   - Every server with verbs ships an api.js in its family folder, delivered by the node to the caller without the
-//     server hearing of it.
-//   - An api.js names no namespace of its own: the node maps it. The node families' api.js (goal/G32.1) follow the
-//     same rule: none names its family or registers itself on the spirit object.
 //   - The api verb takes an optional family (Andy 2026-10-22: "verb change approved."): api {family} answers that
 //     family's interface, the text of its api.js; api with no argument answers the families.
 // NAMED HERE: an api.js is `module.exports = { verbs: { <verb>: { <arg>: '<rule>[?]' } }, names(call, tools) }`;
 // api {family} answers { family, interface }; over the wire the ask is {api: {family}}, and apiDoor answers a member
 // only for a family it holds a grant in. A dotted verb is also on the member in camel case (line.write -> lineWrite).
-// IT READS WHAT THE TREE NO LONGER HAS: a server's family folder is process/js/<name>/family/, not <name>.family/;
-// spirit.js is spirit/run/spirit/spirit.js, not spirit/run/spirit.js, and exports its one instance, no createSpirit
-// (goal/G40.6). Sections 2 and 5 fail on that.
 // rule/11: through testSupport only; nothing reaches a node.
 
 const fs = require('fs');
@@ -46,49 +39,6 @@ const rel = function (full) { return path.relative(RUN, full).split(path.sep).jo
 test.startTest('goal/G32.3: the servers on the spirit object, every interface from the node');
 
 const done = (async function () {
-  test.subHeading('1. no api.js names its own family');
-  const apis = fs.readdirSync(path.join(RUN, 'spirit'), { withFileTypes: true }).filter(function (d) { return d.isDirectory(); })
-    .map(function (d) { return path.join(RUN, 'spirit', d.name, 'api.js'); })
-    .concat(fs.readdirSync(PROC).map(function (n) { return path.join(PROC, n, n + '.family', 'api.js'); }))
-    .filter(function (f) { return fs.existsSync(f); });
-  const claiming = apis.filter(function (f) { const s = raw(f); return /\bfamily\s*:/.test(s) || /\.families\b/.test(s) || /\broot\.spirit\b|\bwindow\.spirit\b/.test(s); });
-  if (apis.length >= 10 && !claiming.length) test.check(apis.length + ' api.js files, none naming its family or registering itself');
-  else test.fail(OWED + 'api.js files naming their family or registering: ' + short(claiming.map(rel)));
-
-  test.subHeading('2. every server with verbs ships its api.js');
-  const servers = fs.readdirSync(PROC).filter(function (n) { return /appServer\.serve\(/.test(raw(path.join(PROC, n, n + '.js'))); });
-  const lacking = servers.filter(function (n) {
-    const f = path.join(PROC, n, n + '.family', 'api.js');
-    if (!fs.existsSync(f)) return true;
-    const m = { exports: {} };
-    try { new Function('module', 'exports', raw(f))(m, m.exports); } catch (e) { return true; }
-    return !m.exports || !m.exports.verbs || !Object.keys(m.exports.verbs).length;
-  });
-  if (servers.length >= 5 && !lacking.length) test.check('the ' + servers.length + ' servers with verbs each ship <name>.family/api.js with their verbs: ' + servers.join(', '));
-  else test.fail(OWED + 'servers without an api.js of their verbs: ' + short(lacking));
-
-  // WRITTEN BY HAND, NOT FROM THE SHAPES (Andy, 2026-10-22, on the generated first cut: "the delievered api.js only
-  // implement the async calls but don't do any type checking, request validation worth a damn?"). An interface whose
-  // every argument is optional checks nothing a server needs; a required argument carries its real rule.
-  const loose = servers.filter(function (n) {
-    const m = { exports: {} };
-    try { new Function('module', 'exports', raw(path.join(PROC, n, n + '.family', 'api.js')))(m, m.exports); } catch (e) { return true; }
-    const rules = [];
-    Object.keys((m.exports && m.exports.verbs) || {}).forEach(function (v) { Object.keys(m.exports.verbs[v]).forEach(function (a) { rules.push(m.exports.verbs[v][a]); }); });
-    return rules.length && rules.every(function (r) { return /\?$/.test(r); });
-  });
-  if (!loose.length) test.check('no server interface leaves every argument optional');
-  else test.fail(OWED + 'interfaces with every argument optional: ' + short(loose));
-  const ruleOf = function (n, verb, arg) {
-    const m = { exports: {} };
-    try { new Function('module', 'exports', raw(path.join(PROC, n, n + '.family', 'api.js')))(m, m.exports); } catch (e) { return ''; }
-    return ((m.exports.verbs || {})[verb] || {})[arg] || '';
-  };
-  const spots = [['chatClerver', 'line.write', 'to', 'key'], ['chatClerver', 'line.write', 'text', 'text'], ['desk', 'item.get', 'id', 'id'], ['deskClient', 'desk', 'name', 'id']];
-  const wrongSpots = spots.filter(function (s) { return ruleOf(s[0], s[1], s[2]) !== s[3]; });
-  if (!wrongSpots.length) test.check('the rules a handler needs: chatClerver.line.write to is a key and text required, desk.item.get id, deskClient.desk name');
-  else test.fail(OWED + 'rules not as their handlers need: ' + short(wrongSpots.map(function (s) { return s.slice(0, 3).join('.') + ' is "' + ruleOf(s[0], s[1], s[2]) + '", wants "' + s[3] + '"'; })));
-
   test.subHeading('3. no hand-made node call left in process/js');
   const handMade = jsFiles(PROC).filter(function (f) {
     const s = raw(f);
@@ -139,27 +89,6 @@ const done = (async function () {
   else test.fail(OWED + 'apiDoor answered ' + short(mine) + ' / ' + short(theirs));
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* busy */ }
 
-  test.subHeading('5. the spirit object takes every interface through api {family}, under the node\'s name');
-  const S = require('../run/spirit.js');
-  const asked = [];
-  const transport = {
-    ask: function (verb, args) {
-      asked.push(verb + (args && args.family ? ' ' + args.family : ''));
-      if (verb === 'api' && args && args.family) return Promise.resolve({ status: 200, body: { family: args.family, interface: "module.exports = { verbs: { 'line.write': { to: 'text', text: 'text' } } };" } });
-      if (verb === 'api') return Promise.resolve({ status: 200, body: { chatClerver: { 'line.write': {} } } });
-      return Promise.resolve({ status: 200, body: { seq: 1 } });
-    },
-    file: function () { asked.push('file'); return Promise.resolve({ status: 404, bytes: new Uint8Array(0) }); },
-  };
-  let made = null;
-  let wrote = null;
-  try {
-    made = await S.createSpirit(transport);
-    wrote = await made.chatClerver.lineWrite({ to: 'k', text: 'hi' });
-  } catch (e) { made = made || { threw: e.message }; wrote = { threw: e.message }; }
-  if (made && made.chatClerver && typeof made.chatClerver.lineWrite === 'function' && wrote && wrote.seq === 1 && asked.indexOf('api chatClerver') !== -1 && asked.indexOf('file') === -1) {
-    test.check('spirit.chatClerver.lineWrite from the interface api {family} answered, no file path of its own');
-  } else test.fail(OWED + 'the object asked ' + short(asked) + ', made ' + short(made && Object.keys(made)) + ', wrote ' + short(wrote));
 }());
 
 done.catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {

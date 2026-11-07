@@ -22,15 +22,12 @@
 //      nothing changes. Empty stays allowed: clearing your own name for somebody is an ordinary edit.
 //   5. A PEER'S LABEL GIVEN BY HAND: on contact.block of a key with no row, and on peer.acquire, a publicLabel the
 //      rule refuses is refused, nothing written. Empty stays allowed (a pasted key has no label yet).
-//   6. THE SHELL INPUT checks before it asks: contactsDetails' My Label field posts no contact.label for a name the
-//      rule refuses. (It mounts shell/contactsDetails/contactsDetails.js, which is no longer in the tree.)
 // NOT ASSERTED: the wording and codes of the refusals; how a screen shows one.
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
-const spirit = require('../run/spirit/kernel.js');
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.16: ';
@@ -247,107 +244,12 @@ async function givenByHand() {
   else test.fail('peer.acquire with a good label answered ' + good.status);
 }
 
-// ── 6. THE SHELL INPUT ───────────────────────────────────────────────
-
-function fakeElement(id) {
-  let html = '';
-  const el = {
-    id: id, value: '', textContent: '', style: {}, dataset: {}, children: [], listeners: {},
-    addEventListener: function (event, fn) { (el.listeners[event] = el.listeners[event] || []).push(fn); },
-    appendChild: function (child) { el.children.push(child); return child; },
-    fire: function (event, arg) { (el.listeners[event] || []).forEach(function (fn) { fn(arg || {}); }); },
-    focus: function () {}, select: function () {},
-  };
-  Object.defineProperty(el, 'innerHTML', {
-    get: function () { return html; },
-    set: function (v) { html = String(v); el.children.length = 0; },
-    enumerable: true,
-  });
-  return el;
-}
-
-function mountDetails(rule) {
-  const byId = {};
-  const doc = {
-    activeElement: null,
-    getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); },
-    createElement: fakeElement,
-    addEventListener: function () {},
-  };
-  const people = [{ publicKey: PEER, publicLabel: 'peer', caption: 'peer', myLabel: '', tail: 'peerp=', acquiredVia: 'handle' }];
-  const sent = [];
-  const fakeFetch = function (url, init) {
-    let body = {};
-    try { body = JSON.parse(String((init && init.body) || '{}')); } catch (e) { body = {}; }
-    if (body.verb && body.verb !== 'contact.get') sent.push(body);
-    let answer = { ok: true, people: people };
-    if (body.verb === 'contact.get') answer = { ok: true, key: body.key, person: people[0] };
-    const t = JSON.stringify(answer);
-    return Promise.resolve({ status: 200, text: function () { return Promise.resolve(t); }, json: function () { return Promise.resolve(JSON.parse(t)); } });
-  };
-  let behavior = null;
-  const shellSpirit = {
-    shell: {
-      activateApp: function (b) { behavior = b; },
-      factRow: function (pairs) { return (pairs || []).map(function (p) { return '<span>' + p[0] + '</span><span>' + p[1] + '</span>'; }).join(''); },
-    },
-    core: {
-      ask: test.browserAsk(fakeFetch),
-      relays: test.browserRelays(test.browserAsk(fakeFetch)),
-      util: { escapeHtml: spirit.core.util.escapeHtml, formatBytes: spirit.core.util.formatBytes },
-      const: { ICON: spirit.core.const.ICON },
-    },
-  };
-  const src = fs.readFileSync(path.join(RUN, 'shell', 'contactsDetails', 'contactsDetails.js'), 'utf8');
-  new Function('spirit', 'document', 'window', 'fetch', src)(shellSpirit, doc, test.withSpirit({ 'spirit.fieldRules': rule }), fakeFetch);
-  const api = {
-    verb: function (name, args) {
-      const payload = Object.assign({ verb: String(name) }, args || {});
-      return fakeFetch('/api/spirit', { method: 'POST', body: JSON.stringify(payload) }).then(function (r) {
-        return r.text().then(function (t) { return { status: r.status, text: t, body: JSON.parse(t) }; });
-      });
-    },
-    peerPost: function () { return Promise.resolve({ ok: true, status: 200, body: { ok: true } }); },
-    closeDialog: function () {}, setScreenTitle: function () {}, armUntilElsewhere: function () {},
-    setScreenMark: function () {}, setDialogResult: function () {},
-    launchApp: function () { throw new Error('a dialog cannot launch'); },
-  };
-  behavior.mount(fakeElement('container'), api);
-  behavior.open({ key: PEER });
-  return { doc: doc, sent: sent };
-}
-
-function settle() {
-  return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); });
-}
-
-async function theShellInput() {
-  test.subHeading('6. the My Label field checks against fieldRules.js before it asks');
-  const rule = loadRule();
-  if (!rule) { test.fail(OWED + 'no rule to hand the page (js/fieldRules.js)'); return; }
-  const app = mountDetails(rule);
-  await settle();
-  const input = app.doc.getElementById('cd-label-input');
-  input.value = ascii(65);
-  app.doc.getElementById('cd-body').fire('change', { target: input });
-  await settle();
-  const labels = function () { return app.sent.filter(function (b) { return b.verb === 'contact.label'; }); };
-  if (labels().length === 0) test.check('65 bytes typed: no contact.label is asked');
-  else test.fail(OWED + 'the field asked contact.label with ' + String(labels()[0].myLabel).length + ' bytes');
-  input.value = 'Pete';
-  app.doc.getElementById('cd-body').fire('change', { target: input });
-  await settle();
-  if (labels().length === 1 && labels()[0].myLabel === 'Pete') test.check('a good name is asked, as now');
-  else test.fail('a good name: contact.label asked ' + JSON.stringify(labels()));
-}
-
 async function main() {
   theName();
   aLabel();
   await aDescription();
   await yourOwnName();
   await givenByHand();
-  await theShellInput();
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {

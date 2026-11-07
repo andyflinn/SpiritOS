@@ -23,9 +23,6 @@
 //   - spirit.element.search.contact.listElement (spirit/element/search/contact/listElement.js) and spirit.element.faceForm
 //     (spirit/element/faceForm.js).
 //   - The Join app keeps the opened link as its own override: setAppOverride('shell/join', { faceOpened: true }).
-// Paths are read under spirit/run/. Several no longer hold what is read: shell/natterDetails/natterDetails.js is gone,
-// the page is spirit/shell/index.html (read here as index.html), and join.js and faceForm.js now need spirit.require
-// and a fuller page than the fakes here give.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -41,7 +38,6 @@ const raw = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), '
 function element(rel, name) {
   try { const win = {}; new Function('window', raw(rel))(win); return (win.spirit.element || {})[name] || null; } catch (e) { return null; }
 }
-function settle() { return new Promise(function (r) { setTimeout(r, 5); }); }
 const homes = [];
 
 test.startTest('goal/G30.1: the Join app walks a new user from joining to his face link');
@@ -121,147 +117,11 @@ else test.fail(OWED + 'the shell or joinSteps still asks the node for the steps,
 if (/get\('app'\)/.test(shell) && /launchApp\(/.test((shell.split("get('app')")[1] || '').slice(0, 800)))
   test.check('the shell opens the app named by ?app= on load');
 else test.fail(OWED + 'the shell does not open ?app=');
-const mails = [];
-let link = '';
-try {
-  const auth = require('../run/spirit/relayAuth');
-  const plant = require('./plantIdentity.js');
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g301-steps-'));
-  homes.push(home);
-  plant.ensureAt(home, 'relay');
-  auth.writeOwner(home, auth.generateIdentity('andy').publicKey);
-  const box = require('../run/spirit/relay').createRelay(home, { sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
-  box.join(auth.generateIdentity('bert').publicKey, 'bert@example.org', 11112, '');
-  link = ((/http:\/\/127\.0\.0\.1:\d+\/?\?[^\s]+/.exec((mails[0] || {}).text || '')) || [''])[0];
-} catch (e) { link = 'threw ' + e.message; }
-if (/^http:\/\/127\.0\.0\.1:11112\/?\?join=[A-Za-z0-9_-]+&app=join$/.test(link)) test.check('the mail\'s link carries ?join=<code>&app=join, so it opens the Join app');
-else test.fail(OWED + 'the mail\'s link reads ' + short(link));
 
 test.subHeading('4. the shell elements and who draws them');
-const index = raw('index.html');
-const contacts = code('spirit/app/contact/contact.js');
-const info = code('shell/info/info.js');
-const joinApp = code('shell/join/join.js');
-// Find someone is Contacts' one list (goal/G30.19), contactSearch: contact.search (the book, the shadow, the
-// network), Add by peer.acquire on its contactElement rows.
-const contactSearch = element('spirit/element/search/contact/listElement.js', 'contactList');
-const faceForm = element('spirit/element/faceForm.js', 'faceForm');
-if (contactSearch && typeof contactSearch.create === 'function' && /\.contact\.search\(/.test(code('spirit/element/search/contact/listElement.js')) && /\.peer\.acquire\(/.test(code('spirit/element/search/contact/rowElement.js'))
-    && /spirit\.element\.search.contact.listElement/.test(contacts) && /spirit\.element\.search.contact.listElement/.test(joinApp)
-    && !/function contactsSeenSource|function contactsSeenCells|function contactsAskCard|function contactsSeenAdd/.test(contacts))
-  test.check('Find someone is the one list, contactSearch (contact.search, Add by peer.acquire); Contacts and the Join app draw it, Contacts keeps no copy');
-else test.fail(OWED + 'contactSearch is missing, or Contacts keeps its own find panel, or the Join app does not draw it');
-if (faceForm && typeof faceForm.mount === 'function' && /\.relay\.face\(/.test(code('spirit/element/faceForm.js'))
-    && /spirit\.element\.faceForm/.test(info) && /spirit\.element\.faceForm/.test(joinApp) && !/'relay\.face'/.test(info))
-  test.check('the face form is the faceForm element (relay.face); Info and the Join app draw it, Info keeps no copy');
-else test.fail(OWED + 'faceForm is missing, or Info keeps its own face form, or the Join app does not draw it');
-if (['contacts/listElement', 'faceForm', 'joinSteps'].every(function (nm) { return new RegExp('src="/spirit/element/' + nm + '\\.js"').test(index); }))
-  test.check('index.html loads contacts/listElement, faceForm and joinSteps');
-else test.fail(OWED + 'index.html does not load all three elements');
-// Box v42: decided once, in the shell. The shell hands the Join app what it worked out (onSteps); the app neither
-// subscribes nor decides.
-if (/onSteps:/.test(joinApp) && !/spirit\.element\.joinSteps|jobs\.subscribe|\.current\(|\.done\(/.test(joinApp)
-    && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spirit\.element\.joinForm/.test(joinApp))
-  test.check('the Join app draws what the shell hands it (onSteps): it neither subscribes nor decides, draws the join form and keeps the opened link as its override');
-else test.fail(OWED + 'the Join app still decides or subscribes, or lacks onSteps, the join form or faceOpened');
 if (/apps\[id\]\.onSteps = behavior\.onSteps/.test(shell) && /\.onSteps\(/.test(shell) && /function handSteps\(/.test(shell))
   test.check('the shell keeps the app\'s onSteps and hands it the steps (handSteps)');
 else test.fail(OWED + 'the shell does not hand the steps to the app');
-
-test.subHeading('4b. one join control, and the face form on one line (box v41)');
-// joinForm.words({seated}) picks the control's words, so its callers draw the same control (this reads natterDetails,
-// which is gone, and the Join app): no seat
-// Join; a seat Change, never prefilled (goal/G40.11: the node keeps no email, so a caller handing one changes nothing).
-const joinFormEl = element('spirit/element/joinForm.js', 'joinForm');
-let words = null;
-try {
-  words = [joinFormEl.words({ seated: false }), joinFormEl.words({ seated: true }), joinFormEl.words({ seated: true, email: 'carl@example.org', emailVerified: true })];
-} catch (e) { words = { threw: e.message }; }
-const nd = code('shell/natterDetails/natterDetails.js');
-if (Array.isArray(words) && words[0].button === 'Join' && words[1].button === 'Change' && /Change email address/.test(words[1].title) && words[1].email === '' && words[2].button === 'Change' && words[2].email === ''
-    && /ndJoinForm\(\)\.words\(/.test(nd) && /\.joinForm\.words\(/.test(joinApp) && !/'Add email address'|'Change email address'/.test(nd))
-  test.check('joinForm picks Join or Change by where the node stands, never prefilled, and natterDetails and the Join app both ask it');
-else test.fail(OWED + 'joinForm.words answered ' + short(words) + ', or a caller keeps its own words');
-let faceHtml = '';
-try {
-  const byId = {};
-  const fakeEl = function (id) { return byId[id] || (byId[id] = { id: id, innerHTML: '', value: '', hidden: false, addEventListener: function () {} }); };
-  const win = {};
-  new Function('window', 'document', raw('spirit/element/faceForm.js'))(win, { getElementById: fakeEl });
-  const box = fakeEl('box');
-  win.spirit.element.faceForm.mount(box, { seats: [{ url: 'https://relay.example', label: 'relay', emailVerified: true, email: 'a@b.c' }], ask: function () { return Promise.resolve({}); } });
-  faceHtml = box.innerHTML;
-} catch (e) { faceHtml = 'threw ' + e.message; }
-if (/<\/select><\/label><label class="field-label grow">Face name<input[^>]*><\/label><button type="button" id="info-face-save">/.test(faceHtml))
-  test.check('the face form draws relay, face name and Ask side by side in one row');
-else test.fail(OWED + 'the face form row reads ' + short(faceHtml));
-
-// 5. THE APP DRAWS WHAT THE SHELL HANDS IT (box v42). The real join.js on a fake page with the real joinForm: the shell
-// (played here) works out the steps and hands them to the app's onSteps; the app draws when handed something new, not
-// when handed the same again, not on render, not while a field inside the list has focus; it subscribes to nothing and
-// asks the node nothing about the steps.
-const holdsStill = (function () {
-  const byId = {};
-  function fakeEl(id) {
-    let html = '';
-    const el = { id: id, writes: 0, value: '', hidden: false, addEventListener: function () {}, querySelector: function () { return fakeEl('q'); }, contains: function (x) { return !!x && x.inside === id; } };
-    Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); el.writes += 1; } });
-    return el;
-  }
-  const doc = { activeElement: null, getElementById: function (id) { return byId[id] || (byId[id] = fakeEl(id)); } };
-  const win = {};
-  try { new Function('window', raw('spirit/element/joinForm.js'))(win); } catch (e) { /* missing */ }
-  let app = null;
-  const subscribers = [];
-  const sp = { core: { const: { ICON: {} }, fs: { loadFile: function () { return raw('shell/join/join.json'); } },
-    jobs: { subscribe: function (sub) { subscribers.push(sub); return function () {}; } } }, shell: { activateApp: function (d) { app = d; } } };
-  try { new Function('spirit', 'document', 'window', raw('shell/join/join.js'))(sp, doc, win); } catch (e) { return Promise.resolve({ threw: e.message }); }
-  if (!app) return Promise.resolve({ threw: 'no app' });
-  const asked = [];
-  const api = { escapeHtml: function (x) { return String(x); }, verb: function (v) { asked.push(v); return Promise.resolve({ status: 200, body: { ok: true, items: [] } }); },
-    getAppOverride: function () { return {}; }, setAppOverride: function () {}, peerPost: function () { return Promise.resolve({}); }, callDialog: function () { return Promise.resolve(null); } };
-  // What the shell hands: the facts, the open step and which steps are done, worked out by joinSteps as the shell does.
-  const hand = function (data) {
-    const facts = joinSteps.fromJob(data, false);
-    const open = joinSteps.current(steps, facts);
-    return { facts: facts, open: open ? open.until : null, done: steps.map(function (st) { return joinSteps.done(st, facts); }) };
-  };
-  app.mount(doc.getElementById('container'), api);
-  const list = function () { return doc.getElementById('join-list').writes; };
-  const r = {};
-  const give = function (data) { if (typeof app.onSteps === 'function') app.onSteps(hand(data)); };
-  return settle().then(function () {
-    r.subscribed = subscribers.length > 0;
-    r.hasOnSteps = typeof app.onSteps === 'function';
-    const before = list();
-    give({ seated: false, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' });
-    return settle().then(function () { r.drewOnHand = list() > before; });
-  }).then(function () {
-    const before = list();
-    give({ seated: false, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' });
-    for (let i = 0; i < 5; i += 1) app.render();
-    return settle().then(function () { r.quietOnSame = list() === before; });
-  }).then(function () {
-    const before = list();
-    doc.activeElement = { inside: 'join-list' };
-    give({ seated: true, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' });
-    return settle().then(function () { r.quietWhileTyping = list() === before; });
-  }).then(function () {
-    r.askedSteps = asked.filter(function (v) { return v === 'relay.search' || v === 'contact.search'; });
-    return r;
-  }, function (e) { return { threw: e.message }; });
-}());
-const stillDone = holdsStill.then(function (r) {
-  test.subHeading('5. the Join app draws what the shell hands it');
-  if (r && r.hasOnSteps && !r.subscribed && r.drewOnHand) test.check('the Join app has onSteps, subscribes to nothing, and draws when the shell hands it the steps');
-  else test.fail(OWED + 'the Join app does not draw from what the shell hands it: ' + short(r));
-  if (r && r.quietOnSame && r.quietWhileTyping && r.askedSteps && r.askedSteps.length === 0)
-    test.check('the same steps again, five renders, and a change while a field has focus redraw nothing; it asks the node nothing about the steps');
-  else test.fail(OWED + 'the Join app redrew or asked: ' + short(r));
-});
-
-stillDone.then(function () {
   homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
   test.reportSuccessFailureCount();
   process.exit(0);
-}, function (e) { test.fail('the suite threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });

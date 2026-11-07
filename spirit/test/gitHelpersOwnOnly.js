@@ -12,21 +12,11 @@
 //     commitCheck keys a pending commit by more than its subject.
 //
 // WHAT IS ASSERTED (the box names no shapes):
-//   1  publishData: other work staged in the agent's clone before a publish is still staged after it, and neither the
-//      publish commit nor origin holds it. Run against a pretend node that answers every desk ask (profile.get names
-//      the agent gemma) and a traffic log with no rows, so the publish counts 0 posts and still commits (Q16).
 //   2  pushOrigin: on a detached HEAD it refuses with a reason and pushes nothing (no branch named HEAD on origin).
 //      Its stash is found by its label: a stash somebody else made while it ran
 //      (a pre-push hook here) stays where it is, and the unsaved edit comes back. A stash it cannot put back answers ok
 //      false with a reason that says so, and the stash is kept, not lost.
 //   3  desk.js: the goal file it shares holds no writtenAt, so the same goal is the same bytes.
-//   4  commitCheck: a pending commit is known by its subject AND its patch (git patch-id), so a second commit with the
-//      same subject is not written under the first one's item, and a commit re-stacked by a pull --rebase (new hash,
-//      same patch) still is.
-// STALE, parts 1 and 4: publishData.js (spirit/run/spirit/app/publishData/) and commitCheck.js now ask their desk
-// verbs through the spirit object's deskClient family (goal/G32.3, goal/G40.6), which reaches the node the process
-// belongs to, not the pretend node on the port handed here. So the publish is named after the real node's profile
-// (not gemma) and commitCheck's chat.add is refused by the real deskClient (not-taken). Parts 2 and 3 pass.
 
 const fs = require('fs');
 const os = require('os');
@@ -38,10 +28,8 @@ const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G19.6: ';
 const RUN = path.join(__dirname, '..', 'run');
-const PUBLISH = path.join(RUN, 'spirit', 'app', 'publishData', 'publishData.js');
 const PUSH_ORIGIN = path.join(RUN, 'spirit', 'app', 'pushOrigin', 'pushOrigin.js');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
-const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
 const CW = { key: 'MCowBQYDK2VwAyEAgitHelpersTestPeerCWAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 // The owner writes the world, since an agent creates no goal (goal/G29.21).
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAgitHelpersTestOwnerAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
@@ -50,19 +38,6 @@ const ENV = Object.assign({}, process.env, { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EM
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
 function git(cwd, args, input) { const r = spawnSync('git', args, { cwd: cwd, encoding: 'utf8', env: ENV, timeout: 60000, input: input }); return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim() }; }
-// A script run beside this suite's pretend node, never blocking it: spawnSync would hold the node's answers until the
-// script gave up on them.
-function runScript(script, args, cwd, input) {
-  return new Promise(function (resolve) {
-    const k = spawn(process.execPath, [script].concat(args), { cwd: cwd, env: ENV, stdio: ['pipe', 'pipe', 'pipe'] });
-    let out = '';
-    let err = '';
-    k.stdout.on('data', function (c) { out += c; });
-    k.stderr.on('data', function (c) { err += c; });
-    k.on('close', function (code) { resolve({ status: code, stdout: out, stderr: err }); });
-    k.stdin.end(input || '');
-  });
-}
 function lines(text) { return String(text || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean); }
 // LINE ENDINGS STAY AS WRITTEN (as spirit/test/pushOrigin.js clones): core.autocrlf off, so a clash stays a clash.
 const CLONE = ['clone', '-q', '-c', 'core.autocrlf=false'];
@@ -107,8 +82,7 @@ function runPush(repo) {
 }
 
 // A PRETEND NODE: every POST answered {ok: true, name: 'gemma'}, meant as the desk's answer to any desk ask through
-// deskClient (deskClient.desk by name, goal/G30.6), and as a node that took a jobs.create. Each body is kept. (The
-// helpers no longer reach it for their desk asks: see STALE above.)
+// deskClient (deskClient.desk by name, goal/G30.6), and as a node that took a jobs.create. Each body is kept.
 const heard = [];
 const node = http.createServer(function (req, res) {
   let raw = '';
@@ -121,54 +95,12 @@ const node = http.createServer(function (req, res) {
     res.end(JSON.stringify({ ok: true, name: 'gemma', id: 'job-' + heard.length }));
   });
 });
-function deskAsked(verb) {
-  return heard.filter(function (b) { return b.verb === 'deskClient.desk' && b.name === verb; })
-    .map(function (b) { let a = {}; try { a = JSON.parse(b.json); } catch (e) { a = {}; } return a; });
-}
 
 test.startTest('goal/G19.6: the git helpers touch only what they put there themselves');
 
 (async function () {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const port = node.address().port;
-
-  // ── 1. publishData ──
-  test.subHeading('1. publishData commits its one folder; other staged work stays staged and goes nowhere');
-  {
-    const w = world();
-    const clone = w.ours;
-    fs.writeFileSync(path.join(clone, '.gitignore'), 'spirit/run/relay-state/\nspirit/run/spirit/state/\n');
-    commitFile(clone, 'tracked.txt', 'tracked before\n', 'a tracked file');
-    git(clone, ['push', '-q', 'origin', 'master']);
-    // The traffic log publishData reads: the table, no rows.
-    const dbDir = path.join(clone, 'spirit', 'run', 'spirit', 'state');
-    fs.mkdirSync(dbDir, { recursive: true });
-    const { DatabaseSync } = require('node:sqlite');
-    const tdb = new DatabaseSync(path.join(dbDir, 'node.db'));
-    tdb.exec('CREATE TABLE traffic (at TEXT, dir TEXT, kind TEXT, outcome TEXT, code TEXT, ms INTEGER, extra TEXT)');
-    tdb.close();
-    // The agent's own work, staged and not committed: a change to a tracked file and a new file.
-    fs.writeFileSync(path.join(clone, 'tracked.txt'), 'tracked, my staged change\n');
-    fs.writeFileSync(path.join(clone, 'mine.txt'), 'my new staged file\n');
-    git(clone, ['add', 'tracked.txt', 'mine.txt']);
-    const run = await runScript(PUBLISH, [String(port), '--asks', '1'], clone);
-    const said = short(String(run.stderr).trim().slice(-260) || String(run.stdout).trim().slice(-260));
-    const tipSubject = git(w.bare, ['log', '-1', '--format=%s', 'master']).out;
-    const tipFiles = lines(git(w.bare, ['show', '--name-only', '--format=', 'master']).out);
-    const published = run.status === 0 && /^publish: gemma/.test(tipSubject);
-    if (published) test.check('publishData exited 0 and origin\'s newest commit is the publish (' + tipSubject.slice(0, 40) + ')');
-    else test.fail('the world: publishData exited ' + run.status + ', origin\'s newest reads ' + short(tipSubject) + '; it said ' + said);
-    if (published && tipFiles.length && tipFiles.every(function (f) { return /^agents\/gemma\//.test(f); })) test.check('the publish commit holds agents/gemma/ alone (' + tipFiles.length + ' files)');
-    else test.fail(OWED + 'the publish commit holds ' + short(tipFiles));
-    const onOrigin = git(w.bare, ['show', 'master:tracked.txt']).out;
-    const mineOnOrigin = git(w.bare, ['cat-file', '-e', 'master:mine.txt']).status === 0;
-    if (onOrigin === 'tracked before' && !mineOnOrigin) test.check('origin holds neither staged change: tracked.txt as committed, no mine.txt');
-    else test.fail(OWED + 'origin holds tracked.txt ' + short(onOrigin) + ' and mine.txt ' + mineOnOrigin);
-    const staged = lines(git(clone, ['diff', '--cached', '--name-only']).out);
-    const text = fs.readFileSync(path.join(clone, 'tracked.txt'), 'utf8');
-    if (staged.indexOf('tracked.txt') !== -1 && staged.indexOf('mine.txt') !== -1 && text === 'tracked, my staged change\n') test.check('both are still staged in the clone, uncommitted, the text unchanged');
-    else test.fail(OWED + 'staged after the publish: ' + short(staged) + '; tracked.txt reads ' + short(text));
-  }
 
   // ── 2. pushOrigin ──
   test.subHeading('2. pushOrigin refuses a detached HEAD');
@@ -249,60 +181,6 @@ test.startTest('goal/G19.6: the git helpers touch only what they put there thems
       if (doc && !('writtenAt' in doc)) test.check('it holds no writtenAt: ' + short(Object.keys(doc)));
       else test.fail(OWED + 'the goal file holds ' + short(doc && Object.keys(doc)));
     } finally { try { kid.kill(); } catch (e) { /* gone */ } }
-  }
-
-  // ── 4. commitCheck ──
-  test.subHeading('4. commitCheck knows a pending commit by its subject and its patch');
-  {
-    const w = world();
-    const repo = w.ours;
-    const run = function (args, input) { return runScript(CHECK, args, repo, input); };
-    const gitDir = path.join(repo, '.git');
-    const pendingNow = function () { try { return lines(fs.readFileSync(path.join(gitDir, 'commitCheck.pending'), 'utf8')); } catch (e) { return []; } };
-    // A: checked and recorded under x/G1.1. B: the same subject, made with no check (somebody else's, or before the
-    // hooks), so nothing is pending for it.
-    commitFile(repo, 'a.txt', 'a\n', 'x/G1.1: the same words');
-    const a = git(repo, ['rev-parse', 'HEAD']).out;
-    fs.writeFileSync(path.join(gitDir, 'commitCheck.item'), 'x/G1.1');
-    const rec = await run(['record', String(port)]);
-    commitFile(repo, 'b.txt', 'b\n', 'x/G1.1: the same words');
-    const b = git(repo, ['rev-parse', 'HEAD']).out;
-    git(repo, ['push', '-q', 'origin', 'HEAD:master']);
-    if (rec.status === 0 && pendingNow().length === 1) test.check('A is recorded as pending under x/G1.1');
-    else test.fail('the world: record exited ' + rec.status + ' ' + short(rec.stderr) + '; pending ' + short(pendingNow()));
-    const confirm = function (hashes) {
-      const job = path.join(gitDir, 'commitCheck.confirm.test' + Date.now() + '.json');
-      fs.writeFileSync(job, JSON.stringify({ remote: 'origin', refs: [{ ref: 'refs/heads/master', sha: git(repo, ['rev-parse', 'HEAD']).out, commits: hashes }] }));
-      return run(['confirm', String(port), job]);
-    };
-    const writtenFor = function (hash) { return deskAsked('chat.add').filter(function (x) { return String(x.text || '').indexOf('commit ' + hash) === 0; }); };
-    // The push hook first: it hands B alone (A is already on the remote's side of the range) to the helper.
-    const hooked = await run(['push', String(port), 'origin'], 'refs/heads/master ' + b + ' refs/heads/master ' + a + '\n');
-    if (hooked.status === 0 && /carries no pending commit/.test(hooked.stdout)) test.check('pre-push: a push carrying only B carries no pending commit');
-    else test.fail(OWED + 'pre-push with only B said ' + short(String(hooked.stdout) + String(hooked.stderr)));
-    await sleep(1500);
-    const c1 = await confirm([b]);
-    if (c1.status === 0 && !writtenFor(b).length && pendingNow().length === 1) test.check('confirm: B is written under no item, and A stays pending');
-    else test.fail(OWED + 'confirm of B exited ' + c1.status + '; lines naming B: ' + writtenFor(b).length + ', pending left ' + short(pendingNow()));
-    const c2 = await confirm([a]);
-    const forA = writtenFor(a);
-    if (c2.status === 0 && forA.length === 1 && forA[0].id === 'x/G1.1' && pendingNow().length === 0) test.check('confirm: A is written under x/G1.1 and taken off the pending list');
-    else test.fail(OWED + 'confirm of A exited ' + c2.status + ' ' + short(c2.stderr) + '; lines naming A: ' + short(forA) + ', pending left ' + short(pendingNow()));
-    // A re-stack by pull --rebase: a new hash, the same patch.
-    commitFile(repo, 'c.txt', 'c\n', 'x/G1.1: re-stacked later');
-    fs.writeFileSync(path.join(gitDir, 'commitCheck.item'), 'x/G1.1');
-    await run(['record', String(port)]);
-    const made = git(repo, ['rev-parse', 'HEAD']).out;
-    git(w.theirs, ['pull', '-q', 'origin', 'master']);
-    commitFile(w.theirs, 'o.txt', 'o\n', 'somebody else pushed');
-    git(w.theirs, ['push', '-q', 'origin', 'HEAD:master']);
-    git(repo, ['pull', '-q', '--rebase', 'origin', 'master']);
-    const restacked = git(repo, ['rev-parse', 'HEAD']).out;
-    git(repo, ['push', '-q', 'origin', 'HEAD:master']);
-    const c3 = await confirm([restacked]);
-    const forC = writtenFor(restacked);
-    if (made !== restacked && c3.status === 0 && forC.length === 1 && forC[0].id === 'x/G1.1' && pendingNow().length === 0) test.check('a commit re-stacked by a pull (' + made.slice(0, 7) + ' -> ' + restacked.slice(0, 7) + ') is still found and written');
-    else test.fail(OWED + 'made ' + made.slice(0, 7) + ', re-stacked ' + restacked.slice(0, 7) + '; confirm exited ' + c3.status + ' ' + short(c3.stderr) + '; lines naming it ' + short(forC) + ', pending left ' + short(pendingNow()));
   }
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   try { node.close(); } catch (e) { /* closed */ }

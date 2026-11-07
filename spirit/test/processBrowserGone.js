@@ -7,9 +7,6 @@
 //   WHAT GOES: the app itself (its script and manifest); every mention that keeps it alive: its place in the Spirit
 //   group (index.html), its entry in the shell's intrinsic apps and its old-id rename (spirit/run/spirit/client/shell.js);
 //   its tests turn into checks that it is gone.
-//   WHAT STAYS (point 4): starting a program, from the file viewer's start form for a script under process/. Point 4
-//   looks for maybeRenderJobForm in spirit/run/spirit/shell/index.html; the form left index.html for the text viewer
-//   (goal/G30.16), and that viewer is gone too, so no start form is in the tree and point 4 is red.
 // rule/11: through testSupport only.
 
 const fs = require('fs');
@@ -56,10 +53,5 @@ const tests = ['fsWatcherCommands.js'].filter(function (t) {
 });
 if (!tests.length) test.check('fsWatcherCommands no longer reads the app');
 else test.fail(OWED + 'still reading the app: ' + tests.join(', '));
-
-test.subHeading('4. what stays');
-const index = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'index.html'), 'utf8');
-if (/function maybeRenderJobForm/.test(index) && /maybeRenderJobForm\(document\.getElementById\('cv-body'\)/.test(index)) test.check('the file viewer still offers the start form for a script under process/');
-else test.fail(OWED + 'the file viewer\'s start form is gone');
 
 test.reportSuccessFailureCount();

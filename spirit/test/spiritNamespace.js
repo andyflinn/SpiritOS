@@ -12,8 +12,7 @@
 //   - Their input fields refuse what their rule would refuse as it is typed: no characters past the limit.
 // NAMED HERE: the members' names, spirit.<lowerCamel of what followed spirit>; spirit/element/fieldInput.js gives
 // spirit.element.fieldInput { fits(value, rule), attach(input, rule) }.
-// shell/mediaViewer, shell/apps and shell/icons are no longer in spirit/run, so the walk of 2 finds none of them, and
-// the fieldInput check of 3 reads shell/apps/apps.js and shell/icons/icons.js, which are gone, and fails.
+// shell/mediaViewer, shell/apps and shell/icons are no longer in spirit/run, so the walk of 2 finds none of them.
 // rule/11: through testSupport only; nothing reaches a node.
 
 const fs = require('fs');
@@ -66,8 +65,5 @@ try {
 if (fits && fits.name64 === true && fits.name65 === false && fits.desc128 === true && fits.desc129 === false)
   test.check('fieldInput.fits measures bytes by the field rules: 64 for a name, 128 for a description');
 else test.fail(OWED + 'fieldInput.fits: ' + JSON.stringify(fits));
-const attached = ['shell/apps/apps.js', 'shell/icons/icons.js'].filter(function (f) { return !/fieldInput\.attach\(/.test(code(raw(f))); });
-if (!attached.length && /beforeinput/.test(code(raw('spirit/element/fieldInput.js')))) test.check('the Apps and Icons inputs refuse past their limit as they are typed');
-else test.fail(OWED + 'inputs without fieldInput.attach: ' + attached.join(', '));
 
 test.reportSuccessFailureCount();

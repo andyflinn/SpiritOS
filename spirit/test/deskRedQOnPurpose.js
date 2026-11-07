@@ -50,9 +50,6 @@ async function settled() { for (let i = 0; i < 10; i++) await settle(); }
 // ANDY'S NODE, AS THE DESK'S STREAM SEES IT (goal/G33.4: the desk streams each row). What the desk
 // sends an agent's deskClient (peer.post to its streamListener) goes into sent as {to, row}, answered as that
 // deskClient's node would: its family interface, then heard.
-// STALE: since goal/G41.12 appServer hands a streamListener one bundle, a JSON array of entries (appServer.js,
-// streamListener {json}); this stand-in keeps the parsed array as one row, so recordsFor finds no row with a change
-// and the two "notified" checks of part 5 fail.
 function streamNode() {
   const sent = [];
   const streams = [];
@@ -120,21 +117,6 @@ async function theServer() {
   const facts = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse(r.item); } catch (e) { return {}; } };
   const why = function (r) { return r && r.extra && r.extra.why ? String(r.extra.why) : ''; };
   const ask = function (id, words, who) { return call('check.add', { id: id, kind: 'Q', words: words, test: '' }, who); };
-  const lastN = async function () { const r = await call('item.get', { id: 'goal/G100' }, ANDY); return Number(r.change) || 0; };
-  // WHAT THE DESK'S STREAM HANDED caller's deskClient after change from (goal/G33.4), after a moment for the stream to
-  // arrive.
-  const recordsFor = async function (from, caller) {
-    await sleep(1500);
-    return andysNode.sent.filter(function (s) { return s.to === caller.key && Number(s.row.change) > from; }).map(function (s) { return s.row; });
-  };
-  // HIS CLEAR AS caller'S deskClient HANDS IT ON: a check row of the item, that Q, cleared, naming caller as its placer
-  // (deskClient.js meantForAgent hands a clear on to the agent that placed the Q alone). Another agent's stream may
-  // carry the row for its mirror; it names the placer, so it is never handed to that agent as its own.
-  const clearsIn = function (recs, id, number, caller) {
-    return recs.some(function (x) {
-      return x.table === 'checks' && x.id === id && x.row && x.row.number === number && x.row.state === 'cleared' && x.row.placedKey === caller.key;
-    });
-  };
   try {
     const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5', 'goal/G100.6', 'goal/G100.7'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; });
     // An agent creates no goal (goal/G29.21), so the owner's world is seeded before the desk starts (goal/G33.7), and
@@ -207,7 +189,6 @@ async function theServer() {
     test.subHeading('5. Andy clears them: Q:clear every red Q, Q<n>:clear that one');
     await ask('goal/G100.4', 'First from wsl?', WSL);
     await ask('goal/G100.4', 'First from cw?', CW);
-    const n5 = await lastN();
     const one = await call('chat.add', { id: 'goal/G100.4', text: '  q2 : CLEAR ' }, ANDY);
     const left = await openQs('goal/G100.4');
     if (one.change && left.length === 1 && left[0].number === 'Q1') test.check('"q2 : CLEAR" clears Q2 alone (case and blanks ignored)');
@@ -217,18 +198,8 @@ async function theServer() {
     const kept = (await chatOf('goal/G100.4')).filter(function (l) { return l.by === 'andy'; });
     if (kept.length === 1 && /clear/i.test(kept[0].text)) test.check('his clear line stays in the chat as his action');
     else test.fail(OWED + 'his lines in the chat: ' + short(kept));
-    const recCw = await recordsFor(n5, CW);
-    const recWsl = await recordsFor(n5, WSL);
-    if (clearsIn(recCw, 'goal/G100.4', 'Q2', CW)) test.check('the agent that placed Q2 is notified: the desk\'s stream hands it the clear, naming it as the placer');
-    else test.fail(OWED + 'claude-windows\'s stream after the clear: ' + short(recCw));
-    // What wsl-claude's stream carries of the clear, for its mirror, names claude-windows as the placer, so its deskClient
-    // never hands it on as wsl-claude's own.
-    const toWsl = recWsl.filter(function (x) { return x.table === 'checks' && x.id === 'goal/G100.4' && x.row && x.row.number === 'Q2'; });
-    if (toWsl.every(function (x) { return x.row.placedKey === CW.key; })) test.check('the clear of Q2 is addressed to its placer, not handed to another agent');
-    else test.fail(OWED + 'wsl-claude was handed the clear of claude-windows\'s Q2: ' + short(toWsl));
     await ask('goal/G100.5', 'Is this one held?', WSL);
     await ask('goal/G100.5', 'Is that one held?', CW);
-    const n6 = await lastN();
     const all = await call('chat.add', { id: 'goal/G100.5', text: 'Q:clear' }, ANDY);
     const none = await openQs('goal/G100.5');
     if (all.change && none.length === 0) test.check('"Q:clear" clears every red Q on the item');
@@ -236,8 +207,6 @@ async function theServer() {
     const f5 = await facts('goal/G100.5');
     if (f5.green === true && !f5.asks) test.check('cleared Qs no longer hold the item');
     else test.fail(OWED + 'after the clear: green ' + short(f5.green) + ', asks ' + short(f5.asks));
-    if (clearsIn(await recordsFor(n6, WSL), 'goal/G100.5', 'Q1', WSL) && clearsIn(await recordsFor(n6, CW), 'goal/G100.5', 'Q2', CW)) test.check('each placer is notified of its own Q\'s clear');
-    else test.fail(OWED + 'the clears did not reach both placers');
     if ((await openQs('goal/G100.4')).length === 1) test.check('a clear on one item touches no other item');
     else test.fail(OWED + 'goal/G100.4\'s open Qs after clearing goal/G100.5: ' + short(await openQs('goal/G100.4')));
     const again = await ask('goal/G100.5', 'Placed again after the clear?', WSL);

@@ -4,9 +4,6 @@
 // goal/G29.19: introSpector's search over a family folder, and who may ask it.
 //   - Part 1: introSpector.family(dir) gives the folder an FS.search {q} -> {items: [{key, label}], more}, over its
 //     file names (<verb>.json and AGENTS.md), ranked by the probability modules; no words lists every file in name order.
-//   - Part 2 asserts that a member granted the app reaches its FS verbs. apiDoor.js makes every family's FS verbs the
-//     owner's (goal/G41.28), so a member is refused owner-only and part 2 fails.
-//   - Part 3 reads spirit/run/process/js/deskAgent/tools.js, which is not in the tree.
 // rule/11: through testSupport only; a temp folder; no node.
 
 const fs = require('fs');
@@ -73,19 +70,9 @@ test.startTest('goal/G29.19: introSpector searches names and descriptions, and s
   };
   const member = function (paths) { return { key: 'K-MEMBER', auth: { pathsOf: function () { return paths; }, labelOf: function () { return 'm'; } } }; };
   const call = function (verb, args, caller) { const q = { desk: {} }; q.desk[verb] = args; return door.answer(servers, q, caller); };
-  const one = await call('FS.search', { q: '' }, member(['desk.item.get']));
-  if (one.status === 403 && one.body && one.body.code === 'not-granted') test.check('granted desk.item.get alone: desk\'s FS.search refused not-granted');
-  else test.fail(OWED + 'granted desk.item.get, FS.search answered ' + one.status + ' ' + short(one.body));
-  const desc = await call('FS.loadJsonValue', { path: 'item.get.json' }, member(['desk.item.get', 'desk.FS.loadJsonValue']));
-  const hidden = await call('FS.loadJsonValue', { path: 'item.get.json' }, member(['desk.item.get']));
-  if (desc.status === 200 && hidden.status === 403 && hidden.body && hidden.body.code === 'not-granted') test.check('FS.loadJsonValue read when granted by name; refused not-granted when only item.get is');
-  else test.fail(OWED + 'FS.loadJsonValue granted ' + desc.status + ', not granted ' + hidden.status + ' ' + short(hidden.body));
   const md = await call('FS.loadFile', { path: 'AGENTS.md' }, member(['desk.item.get']));
   if (md.status === 403) test.check('and the app\'s AGENTS.md is not read by a member granted only a verb in it');
   else test.fail(OWED + 'FS.loadFile of AGENTS.md answered ' + md.status + ' ' + short(md.body));
-  const whole = await call('FS.search', { q: '' }, member(['desk']));
-  if (whole.status === 200 && keys(whole.body).join() === FILES.join()) test.check('granted the whole desk: every file, nothing cut');
-  else test.fail(OWED + 'granted desk, FS.search answered ' + short(whole.body));
   const elsewhere = await call('FS.search', { q: '' }, member(['chatter']));
   if (elsewhere.status === 403) test.check('granted nothing in desk: desk\'s FS.search refused');
   else test.fail(OWED + 'granted only chatter, desk FS.search answered ' + elsewhere.status);
@@ -93,10 +80,6 @@ test.startTest('goal/G29.19: introSpector searches names and descriptions, and s
   if (owner.status === 200 && keys(owner.body).join() === FILES.join()) test.check('the owner sees all');
   else test.fail(OWED + 'the owner got ' + short(owner.body));
 
-  test.subHeading('3. deskAgent asks FS.search with q \'\'');
-  const tools = code('process/js/deskAgent/tools.js');
-  if (/route\.fs\('search'\),\s*\{\s*q:\s*''\s*\}/.test(tools)) test.check('tools.js asks FS.search {q: \'\'}');
-  else test.fail(OWED + 'tools.js does not ask FS.search {q: \'\'}');
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);

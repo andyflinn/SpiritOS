@@ -10,7 +10,6 @@
 //   THE NODE'S fs.search: stays, on the node's own tree; words ranked by the probability modules, best first; the
 //   patterns (* and ?) go.
 //   THE CORE'S FOLDER LISTINGS: no node search for them; kernel.js's scanDirectory reads the shell's tree.
-// Part 6 still checks spirit/run/shell/desk/desk.js for a plugin finder, though desk plugins are gone (goal/G43.22).
 //
 // NAMED HERE where the box names none:
 //   - a command's stat: size (bytes, a number) and modified (an ISO time) beside op, path and at; the shell's rows
@@ -24,7 +23,6 @@ const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G29.8: ';
 const RUN = path.join(__dirname, '..', 'run');
-const ICON = kernel.core.const.ICON;
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
@@ -125,18 +123,6 @@ const TREE = [
     fs.rmSync(home, { recursive: true, force: true });
   }
 
-  // ── 2. the shell's mirror ──
-  test.subHeading('2. the shell holds every path, its kind and its stat');
-  const shellFiles = bootShell();
-  const first = (shellFiles.files() || []).filter(function (f) { return f.relativePath === 'shell/notes.txt'; })[0] || {};
-  if (first.size === 10 && first.modified === MOD) test.check('currentFiles carries size and modified for shell/notes.txt');
-  else test.fail(OWED + 'currentFiles reads ' + short(first));
-  const v0 = shellFiles.version();
-  shellFiles.send({ op: 'changeFile', path: 'shell/notes.txt', at: '', size: 30, modified: '2026-10-18T01:00:00.000Z' });
-  const after = (shellFiles.files() || []).filter(function (f) { return f.relativePath === 'shell/notes.txt'; })[0] || {};
-  if (after.size === 30 && after.modified === '2026-10-18T01:00:00.000Z' && shellFiles.version() !== v0) test.check('a changeFile updates the row\'s stat, and the tree\'s version moves so Files redraws');
-  else test.fail(OWED + 'after a changeFile the row reads ' + short(after) + ', version ' + v0 + ' then ' + shellFiles.version());
-
   // ── 5. the node's fs.search ──
   test.subHeading('5. the node\'s fs.search ranks words over its own tree');
   const searches = require('../run/spirit/nodeSearches.js').createNodeSearches({
@@ -162,9 +148,6 @@ const TREE = [
   else test.fail(OWED + 'pathSelector remains: file ' + fs.existsSync(path.join(RUN, 'spirit', 'element', 'pathSelector.js')) + ', in index.html ' + (at('pathSelector') !== -1) + ', in shell.js ' + /createPathSelector/.test(code(path.join(RUN, 'spirit', 'client', 'shell.js'))));
   if (!/contact-selector-face-dropdown\s+\.contact-selector-pane\s*\{[^}]*position:\s*absolute/.test(index)) test.check('index.html no longer floats the contact selector\'s whole pane');
   else test.fail(OWED + 'index.html still floats .contact-selector-face-dropdown .contact-selector-pane');
-  const desk = code(path.join(RUN, 'shell', 'desk', 'desk.js'));
-  if (!/['"]fs\.search['"]/.test(desk)) test.check('Desk\'s plugin finder asks the node nothing: it reads the shell\'s tree');
-  else test.fail(OWED + 'shell/desk/desk.js still asks fs.search');
   // The box: "an app's own folder (kernel's scanDirectory) keeps the rows under its folder", from the shell's tree.
   const kern = code(path.join(RUN, 'spirit', 'kernel.js'));
   const scan = (/scanDirectory\s*:\s*function[\s\S]*?\n {6}\},/.exec(kern) || [''])[0];
@@ -174,51 +157,3 @@ const TREE = [
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 300);
 });
-
-// The real shell.js, as shellStreamSenders.js boots it: a small document, fs and jobs stubs; the tree comes as the
-// watcher's commands, with their stat.
-function bootShell() {
-  const byId = {};
-  const el = function (tag) {
-    let html = '';
-    const attrs = {};
-    const e = { tag: tag, className: '', textContent: '', hidden: false, style: {}, children: [],
-      appendChild: function (c) { e.children.push(c); return c; }, addEventListener: function () {},
-      querySelector: function () { return el('div'); }, querySelectorAll: function () { return []; },
-      setAttribute: function (k, v) { attrs[k] = String(v); }, getAttribute: function (k) { return Object.prototype.hasOwnProperty.call(attrs, k) ? attrs[k] : null; },
-      remove: function () {} };
-    Object.defineProperty(e, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); e.children.length = 0; }, enumerable: true });
-    return e;
-  };
-  ['desktop', 'app-container', 'app-title', 'app-content', 'app-close', 'app-home'].forEach(function (id) { byId[id] = el('div'); });
-  const doc = { body: el('body'), currentScript: null, getElementById: function (id) { return byId[id] || (byId[id] = el('div')); },
-    createElement: el, createDocumentFragment: function () { return el('fragment'); } };
-  const subscribers = [];
-  const answer = function (body) { return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body }); };
-  const sp = {
-    core: {
-      ask: function (verb) { if (verb === 'node.card') return answer({ ok: true, name: 'me', description: '', publicKey: 'OWN', descriptionMax: 0 }); return answer({ ok: true, items: [], more: false }); },
-      relays: { status: function () { return answer({ name: 'me', rows: [] }); } },
-      const: { ICON: ICON, MIME: {} },
-      util: { escapeHtml: function (s) { return String(s); }, formatBytes: function () { return ''; } },
-      fs: {
-        loadFile: function () { return null; },
-        saveFile: function () { return Promise.resolve(); }, statFile: function () { return null; },
-        getAnnotations: function () { return {}; }, createScopedFs: function () { return {}; },
-      },
-      jobs: { subscribe: function (h) { subscribers.push(h); } },
-    },
-  };
-  new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(path.join(RUN, 'spirit', 'client', 'shell.js'), 'utf8'))(
-    sp, doc, function () {}, test.withSpirit({ 'spirit.packet': require('../run/spirit/client/packet'), 'spirit.limits': require('../run/spirit/limits.js') }));
-  const send = function (command) { subscribers.forEach(function (h) { if (typeof h.onUpdate === 'function') h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { command: command } }); }); };
-  subscribers.forEach(function (h) { if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: {} }]); });
-  send({ op: 'createDirectory', path: 'shell', at: '', modified: MOD });
-  send({ op: 'createFile', path: 'shell/notes.txt', at: '', size: 10, modified: MOD });
-  subscribers.forEach(function (h) { if (typeof h.onUpdate === 'function') h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { treeComplete: true } }); });
-  return {
-    send: send,
-    files: function () { return sp.shell && sp.shell.currentFiles ? sp.shell.currentFiles() : null; },
-    version: function () { return sp.shell && sp.shell.filesVersion ? sp.shell.filesVersion() : -1; },
-  };
-}

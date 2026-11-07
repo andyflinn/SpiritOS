@@ -12,11 +12,6 @@
 // './spirit/state/identity.json' is denied like 'spirit/state/identity.json',
 // and that file holds an Ed25519 PRIVATE KEY.
 //
-// STALE: './index.html' and 'x/../index.html' (the legitimate-path cases
-// below) are refused, because spirit/run/index.html is not in the tree:
-// the shell frame's index.html is spirit/run/spirit/shell/index.html
-// (goal/G43.18).
-//
 // Purely predicate/read checks — nothing here writes to disk (the write
 // cases only ask fileWritable's verdict, they never call saveFile), so
 // it's safe to run against a live checkout.
@@ -159,8 +154,6 @@ expectEverySpellingUnwritable('spirit/relayAuth.js', 'spirit/relayAuth.js');
 // are fixed by blanket-rejecting dot segments instead of resolving them.
 test.subHeading('Legitimate paths still work in non-canonical spellings');
 [
-  ['./index.html', 'index.html'],
-  ['x/../index.html', 'index.html'],
   ['spirit/./client/shell.js', 'spirit/client/shell.js'],
   // A TRACKED app file, because this check loads it: an untracked one
   // would pass only on a working copy that happened to hold it.

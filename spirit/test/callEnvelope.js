@@ -67,22 +67,6 @@ test.startTest('goal/G41.15: a call keeps its verb name apart from its arguments
     ok(got && /\/api\/spirit$/.test(got.url) && isEnvelope(got.body, 'auth.branch'), 'kernel.js spirit.core.ask posts { call: auth.branch, args } to /api/spirit, args.verb kept',
       'kernel posted ' + short(got));
   }
-  // spirit.js, on a node: spirit.tree() asks the api tree, through post, the one builder every verb goes through.
-  {
-    const f = catcher();
-    const was = global.fetch;
-    global.fetch = f;
-    const file = require.resolve(path.join(RUN, 'spirit.js'));
-    delete require.cache[file];
-    const s = require(file);
-    if (s && typeof s.tree === 'function') s.tree().then(null, function () { /* the caught fetch answers no tree */ });
-    await sleep(50);
-    global.fetch = was;
-    const first = f.sent.filter(function (x) { return /\/api\/spirit$/.test(x.url); })[0];
-    ok(first && first.body && JSON.stringify(Object.keys(first.body).sort()) === '["args","call"]' && first.body.call === 'api' && JSON.stringify(first.body.args) === '{}',
-      'spirit.js on a node posts { call: api, args: {} } for spirit.tree(): post builds the envelope', 'spirit.js posted ' + short(first));
-    void s;
-  }
   // The shell's shared ask (an ES module, read as a script here).
   {
     const f = catcher();
@@ -140,8 +124,8 @@ test.startTest('goal/G41.15: a call keeps its verb name apart from its arguments
   // Every file on G41.15's list that builds or reads a call to the door. deskClient.js is on the list but builds none (its
   // desk verb took name for its argument in goal/G30.6, for this same clash); its rows' own verb field is data, not a call.
   // Comments are not code.
-  const FILES = ['spirit.js', 'spirit/kernel.js', 'spirit/server.js', 'spirit/verbTable.js', 'spirit/apiDoor.js', 'spirit/faceHome.js',
-    'spirit/events/events.js', 'spirit/client/shell.js', 'shell/boot.js', 'shell/shared/ask.js'];
+  const FILES = ['spirit/kernel.js', 'spirit/server.js', 'spirit/verbTable.js', 'spirit/apiDoor.js', 'spirit/faceHome.js',
+    'spirit/events/events.js', 'spirit/client/shell.js', 'shell/shared/ask.js'];
   const FLAT = [
     { re: /\b(?:payload|request)\s*=\s*\{\s*verb\s*:/, what: 'a payload built { verb: ... }' },
     // { verb: name, body } is the nested form of an owner command, not a call to the door, and is left alone.
@@ -161,7 +145,7 @@ test.startTest('goal/G41.15: a call keeps its verb name apart from its arguments
       FLAT.forEach(function (p) { if ((!p.only || p.only === rel) && p.re.test(code)) found.push(rel + ':' + (i + 1) + ' ' + p.what); });
     });
   });
-  ok(found.length === 0, 'none of the ten files builds { verb, ...args }, reads body.verb, or drops an argument named verb', 'still flat: ' + found.slice(0, 40).join('; '));
+  ok(found.length === 0, 'none of the eight files builds { verb, ...args }, reads body.verb, or drops an argument named verb', 'still flat: ' + found.slice(0, 40).join('; '));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);

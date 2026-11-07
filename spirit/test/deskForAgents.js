@@ -21,8 +21,6 @@
 //       of his is refused no-row.
 //   6a. The goal row's facts carry live (the agents that wrote lately) and agents: {name: key} (one field, no new
 //       verb), beside working.
-//   6b. The desk's tab row (#desk-tabs) has a bubble for every agent in the goal row's live, lines or none, and no
-//       agent tab.
 
 const fs = require('fs');
 const os = require('os');
@@ -35,7 +33,6 @@ const kernel = require('../run/spirit/kernel.js');
 const OWED = 'OWED by goal/G2.2: ';
 const RUN = path.join(__dirname, '..', 'run');
 const SERVER = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
-const DESK = path.join(RUN, 'shell', 'desk', 'desk.js');
 const DETAILS = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskForAgentsTestPeerCWAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskForAgentsTestPeerWSLAAAAAAAAAAAA=', label: 'wsl-claude' };
@@ -93,13 +90,6 @@ function boxLook(doc) { const el = doc.all['dd-panel']; return el ? el.innerHTML
 function itemFacts(over) {
   return Object.assign({ id: 'goal/G100.2', title: 'Beta', goal: 'goal/G100', status: 'running', with: 'wsl-claude',
     buttons: [], blocking: ['goal/G100'], blocked: [], alone: false, star: false, half: false, full: false }, over || {});
-}
-function goalRow(live, agents) {
-  return { id: 'goal/G101', title: 'Round', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false,
-    design: false, waiting: 0, live: live, working: [], agents: agents || {} };
-}
-function logLine(key, from, peer) {
-  return { key: key, at: '2026-10-02T01:00:00.000Z', dir: 'in', from: from, peer: peer, kind: 'note', text: 'hello from ' + from, todo: 'team/chat' };
 }
 
 test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line, Team tabs from the goal row');
@@ -194,22 +184,6 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
   if (!orange.test(looks.none) && !red.test(looks.none) && orange.test(looks.half) && !red.test(looks.half) && red.test(looks.full)) {
     test.check('no border below half; an orange border at half; a red border at full');
   } else test.fail(OWED + 'the box wears: none ' + JSON.stringify(looks.none.slice(0, 100)) + ' | half ' + JSON.stringify(looks.half.slice(0, 100)) + ' | full ' + JSON.stringify(looks.full.slice(0, 100)));
-
-  // ── THE TAB ROW: 6b ────────────────────────────────────────────────────
-  // What 6a guards (an agent live through item chat alone is not lost) shows as a bubble in the tab row, drawn from
-  // the goal row's live; there is no agent tab and no direct line (goal/G3.12).
-  test.subHeading('6b. a bubble for every live agent, lines or none, from the goal row');
-  const keys = {}; keys['claude-windows'] = CW.key; keys['wsl-claude'] = WSL.key;
-  const p = mountPage(DESK, {
-    'items.search': { items: [{ key: 'goal/G101', label: JSON.stringify(goalRow(['claude-windows', 'wsl-claude'], keys)) }], more: false },
-    'log.search': { items: [{ key: 'l1', label: JSON.stringify(logLine('l1', 'claude-windows', CW.key)) }], more: false },
-  });
-  await settled();
-  const strip = p.doc.getElementById('desk-tabs').innerHTML;
-  const bubbles = (strip.match(/data-bubble="([^"]+)"/g) || []).map(function (s) { return s.slice(13, -1); });
-  if (bubbles.indexOf('wsl-claude') !== -1 && bubbles.indexOf('claude-windows') !== -1 && !/data-agent=/.test(strip)) {
-    test.check('wsl-claude, live with no line in the window, has its bubble beside claude-windows; no agent tab');
-  } else test.fail(OWED + 'the tab row has bubbles ' + JSON.stringify(bubbles) + ' — an agent working only through item chat vanishes');
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 200);

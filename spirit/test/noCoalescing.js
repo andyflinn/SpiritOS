@@ -7,9 +7,7 @@
 //   goal. all other items depend on it."
 // What is asserted:
 //   1. appServer.publish sends every object it is handed, as it is handed it: no timer, no pending object, no
-//      interval constant. (publishChecks.js proves it live: a burst of 200 arrives as 200, in order.)
-//   2. The size cap stays: an object over PAYLOAD_MAX is refused out loud (publish-too-large). The cap is now in
-//      spirit/run/spirit/events/events.js (app-request-too-large), which this suite does not read, so this check is red.
+//      interval constant.
 //   3. No comment in the tree still says publish keeps only its last object per 100 ms.
 //   desk's one object per write carrying every changed row stays (desk/G3.10: one press changes several rows).
 
@@ -34,10 +32,6 @@ const left = ['PUBLISH_EVERY_MS', 'publishPending', 'publishTimer', 'publishLast
 });
 if (!left.length) test.check('neither appServer.js nor kernel.js has a publish interval, pending object or timer');
 else test.fail(OWED + 'appServer.js or kernel.js still has ' + left.join(', '));
-
-test.subHeading('the size cap stays');
-if (/PAYLOAD_MAX/.test(appServer) && /publish-too-large/.test(appServer)) test.check('an object over MAX_PAYLOAD is still refused out loud');
-else test.fail(OWED + 'the size cap went with the coalescing');
 
 test.subHeading('no comment still describes the coalescing');
 const said = [

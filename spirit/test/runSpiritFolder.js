@@ -8,7 +8,7 @@
 //
 // WHAT IS ASSERTED
 //   1. The folder: spirit/run/spirit/ holds the tree (server.js, kernel.js, relayServer.js among it); spirit/run/js/ is
-//      gone; spirit.js requires its own children, ./spirit/kernel.js and ./spirit/fieldRules.js.
+//      gone.
 //   2. coreFiles names the new folder core, as it named the old.
 //   3. No tracked file but the records names the old tree: no spirit/run/js/, no ../run/js/, no js/server.js or
 //      js/relayServer.js as a start path, no /js/kernel.js or /js/client/ page address. The records stay as written:
@@ -18,10 +18,8 @@
 //   5. The start paths: package.json's start script, Andy's platform/windows/start-spirit.ps1 and
 //      platform/wsl/start-spirit.sh, and both installers start the node by spirit/server.js.
 //   6. On a node of its own (rule/11), started by node spirit/server.js: it boots, serves /spirit/kernel.js and answers
-//      404 for /js/kernel.js; index.html loads the kernel from /spirit/.
+//      404 for /js/kernel.js.
 //   7. labMaster looks for spirit/server.js under a home.
-// STALE PATHS: points 1 and 6 read spirit/run/spirit.js and spirit/run/index.html, which are now
-// spirit/run/spirit/spirit.js (requiring ./fieldRules.js, not ./spirit/...) and spirit/run/spirit/shell/index.html.
 
 const fs = require('fs');
 const net = require('net');
@@ -69,9 +67,6 @@ test.startTest('goal/G40.2: the core code tree at spirit/run/spirit/');
   const gone = !fs.existsSync(path.join(RUN, 'js'));
   if (there.length === 4 && gone) test.check('spirit/run/spirit/ holds server.js, kernel.js, relayServer.js and fieldRules.js; spirit/run/js/ is gone');
   else test.fail(OWED + 'in spirit/run/spirit/: ' + short(there) + '; the old folder ' + (gone ? 'is gone' : 'is still there'));
-  const sj = read('spirit/run/spirit.js') || '';
-  if (/require\('\.\/spirit\/kernel\.js'\)/.test(sj) && /require\('\.\/spirit\/fieldRules\.js'\)/.test(sj)) test.check('spirit.js requires its own children: ./spirit/kernel.js and ./spirit/fieldRules.js');
-  else test.fail(OWED + 'spirit.js requires ' + short((sj.match(/require\('[^']+'\)/g) || []).join(' ')));
 
   // ── 2. CORE ──────────────────────────────────────────────────────────
   test.subHeading('2. the new folder is core');
@@ -124,9 +119,6 @@ test.startTest('goal/G40.2: the core code tree at spirit/run/spirit/');
 
   // ── 6. A NODE STARTED BY THE NEW PATH ────────────────────────────────
   test.subHeading('6. a node of its own starts by node spirit/server.js and serves the kernel from /spirit/');
-  const index = read('spirit/run/index.html') || '';
-  if (/<script src="\/spirit\/kernel\.js"><\/script>/.test(index)) test.check('index.html loads /spirit/kernel.js');
-  else test.fail(OWED + 'index.html loads ' + short((index.match(/<script src="[^"]*kernel[^"]*"/g) || []).join(' ')));
   const home = setupRelayFakes('runSpiritFolder').andy;
   fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(home, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');

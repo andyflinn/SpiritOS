@@ -17,16 +17,11 @@
 //   3. the item dialog: the title input is marked data-field="label"; typed over 64 bytes it shows the bytes over and
 //      Add is refused without asking the desk; within the limit Add sends; a refusal from the desk is shown with why.
 //      The Rename input is marked data-field="label" and refused past the limit the same way.
-//   4. the Remote: a refresh button left of the model picker asks the models again; with deskAgent on the Remote's own
-//      node the target is that node and the where bubble is never shown; without it the bubble shows.
-//      deskAgent (goal/G41.28) and its Remote (shell/deskAgentRemote/, commit c298051d) are gone from the tree, so part 4
-//      reads a file that no longer exists and the suite throws there.
 // NOT ASSERTED: the words of each reason beyond the ones named; layout.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
 const os = require('os');
-const vm = require('vm');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
@@ -39,7 +34,6 @@ const ROOT = path.join(__dirname, '..', '..');
 const RUN = path.join(ROOT, 'spirit', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const DETAILS = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
-const APP = path.join(RUN, 'shell', 'deskAgentRemote', 'deskAgentRemote.js');
 const LONG = 'deskAgentRemote: Smaller Fixes to the UI and to both deskAgent and its Remote';
 // The size and the overrun come from LONG itself (goal/G27.17), not from fixed numbers.
 const LONG_BYTES = Buffer.byteLength(LONG, 'utf8');
@@ -100,24 +94,6 @@ async function deskHalf() {
     // that my attention is caught when something happens", and "red until i open it, it may be just a status report".
     test.subHeading('2b. a line from the phase holder marks the item until he opens it (goal/G33.2)');
     const G33 = 'OWED by goal/G33.2: ';
-    const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item); } catch (e) { return {}; } };
-    // Its own goal, goal/G101, seeded above.
-    await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
-    await call('press', { id: 'goal/G101.1', what: 'code' }, ANDY);
-    await call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);
-    await call('item.take', { id: 'goal/G101.1' }, CW);
-    await call('phase.take', { id: 'goal/G101.1', phase: 'red' }, CW);
-    const before = await factsOf('goal/G101.1');
-    await call('chat.add', { id: 'goal/G101.1', text: 'a report from the phase holder' }, CW);
-    const marked = await factsOf('goal/G101.1');
-    await call('press', { id: 'goal/G101.1', what: 'seen' }, ANDY);
-    const seen = await factsOf('goal/G101.1');
-    await call('chat.add', { id: 'goal/G101.1', text: 'his own line' }, ANDY);
-    const his = await factsOf('goal/G101.1');
-    if (before.phase === 'red' && before.alert !== true && marked.alert === true) test.check('the phase holder\'s line marks the item');
-    else test.fail(G33 + 'phase ' + before.phase + ', marked before ' + before.alert + ', after the holder\'s line ' + marked.alert);
-    if (seen.alert !== true && his.alert !== true) test.check('his seen clears it, and his own line does not mark it');
-    else test.fail(G33 + 'after seen ' + seen.alert + ', after his own line ' + his.alert);
     const list = fs.readFileSync(path.join(RUN, 'shell', 'desk', 'desk.js'), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
     // goal/G33.8 (box v13; Andy: "it's enough to put a red ! next to the item"): a red ! beside the item, the row in its
     // normal colour; drawn and asserted on the real rendering in deskAdjustments.js (f).
@@ -223,63 +199,10 @@ async function dialogHalf() {
   else test.fail(OWED + 'Save sent ' + short(sentOf('item.rename', n2)));
 }
 
-async function remoteHalf() {
-  test.subHeading('4. the Remote: refresh, and its own node');
-  const READY = { connected: true, persona: 'Levant', model: 'm', server: { url: 'u', answers: true, error: '' } };
-  const MODELS = { active: 'm', activeQuant: 'Q4', cached: false, load: {}, test: {}, models: [{ id: 'm', quant: 'Q4', loaded: true, recommended: true }] };
-  async function mount(local) {
-    const byId = {};
-    const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
-    const calls = [];
-    let behavior = null;
-    const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
-    ctx.window = ctx;
-    vm.runInNewContext(fs.readFileSync(APP, 'utf8'), ctx, { filename: APP });
-    behavior.mount(doc.getElementById('container'), {
-      escapeHtml: kernel.core.util.escapeHtml, onPublished: function () {},
-      fs: { loadFile: function (n) { return n === 'puppets.json' ? JSON.stringify({ puppets: [{ name: 'agent', key: 'KEY-AGENT' }] }) : null; } },
-      verb: function (name, body) {
-        calls.push({ name: name, body: body });
-        if (name === 'api') return Promise.resolve({ status: 200, body: local ? { desk: {}, deskAgent: {} } : { desk: {} } });
-        // deskAgent's verbs by name (deskAgent.<verb>, goal/G30.6) here; on a puppet the same name rides in owner.command.
-        const here = String(name).indexOf('deskAgent.') === 0;
-        const named = here ? String(name) : name === 'owner.command' ? String((body && body.command) || '') : '';
-        const v = named.indexOf('deskAgent.') === 0 ? named.slice('deskAgent.'.length) : '';
-        if (here && !local) return Promise.resolve({ status: 404, body: { ok: false, code: 'app-not-served', error: 'deskAgent is not served here' } });
-        // goal/G27.17: the picker asks models.search; it answers as models did.
-        const said = v === 'state' ? READY : (v === 'models' || v === 'models.search') ? MODELS : {};
-        return Promise.resolve(here ? { status: 200, body: said } : { status: 200, body: { ok: true, status: 200, body: said } });
-      },
-    });
-    for (let i = 0; i < 6; i++) { await settled(); await sleep(20); }
-    return { doc: doc, calls: calls };
-  }
-  const own = await mount(true);
-  const models = own.doc.getElementById('dur-models').innerHTML;
-  const r = models.indexOf('id="dur-refresh"');
-  const s = models.indexOf('id="dur-model"');
-  if (r !== -1 && s !== -1 && r < s) test.check('a refresh button sits left of the model picker');
-  else test.fail(OWED + '#dur-models reads ' + short(models));
-  const asked = function (c) { return c.slice().filter(function (x) { const named = x.name === 'owner.command' ? String((x.body && x.body.command) || '') : String(x.name); return named === 'deskAgent.models' || named === 'deskAgent.models.search'; }).length; };
-  const before = asked(own.calls);
-  own.doc.getElementById('dur-refresh').fire('click', {});
-  await settled();
-  if (asked(own.calls) > before) test.check('pressing it asks the models again');
-  else test.fail(OWED + 'refresh asked nothing: ' + short(own.calls.slice(-3)));
-  const where = own.doc.getElementById('dur-where');
-  if (own.doc.getElementById('dur-target').value === '0' && where.style.display === 'none') test.check('with deskAgent on its own node, the target is that node and the where bubble is not shown');
-  else test.fail(OWED + 'own node: target ' + short(own.doc.getElementById('dur-target').value) + ', where bubble display ' + short(where.style.display));
-  const away = await mount(false);
-  const where2 = away.doc.getElementById('dur-where');
-  if (where2.style.display !== 'none' && /select the node where your local agent lives/.test(away.doc.getElementById('dur-tab-connect').innerHTML)) test.check('without it on its own node, the where bubble shows');
-  else test.fail(OWED + 'no deskAgent here: where bubble display ' + short(where2.style.display));
-}
-
 (async function () {
   sourceHalf();
   await deskHalf();
   await dialogHalf();
-  await remoteHalf();
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   test.reportSuccessFailureCount();

@@ -15,10 +15,6 @@
 // make each row pass for a reason that has nothing to do with
 // fileServable (labRelaySurface.js is where that allowlist is tested).
 //
-// Two rows name the Natter app, /shell/natter/natter.js and natter.json,
-// which went with goal/G30.7: no spirit/run/shell/natter is tracked, so a
-// fake node's home has neither file.
-//
 //   node spirit/test/labServableStatic.js
 
 const http = require('http');
@@ -50,11 +46,6 @@ const STATIC_ROUTES = [
   // (Andy's decision, goal/G22.6), so a node no longer serves it either.
   { path: '/relay.html', expect: 404, why: 'the relay brochure is gone (goal/G22.6)' },
   { path: '/favicon.svg', expect: 200, why: 'static asset' },
-  { path: '/shell/natter/natter.js', expect: 200, why: 'the shell fetches app entry scripts' },
-  // An app's manifest: app data the SHELL fetches, on every boot, for
-  // every app. (A node's relay list is its own state and untracked, so
-  // absent from a git-built home, like media/ and relay-state/.)
-  { path: '/shell/natter/natter.json', expect: 200, why: 'ordinary scoped app data' },
 ];
 
 function request(urlString, method, bodyObj) {

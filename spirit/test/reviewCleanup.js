@@ -5,9 +5,6 @@
 // asserted BY ITS BEHAVIOUR below rather than by the line it lives on.
 //
 // WHAT IS ASSERTED, one section per finding
-//   1. THE NODE'S VERB FILE NAMES NO APP. Andy: "nothing in node and relay should know about apps." It reads
-//      spirit/run/spirit/jobs/api.json, which the tree no longer has (the jobs family's interface is
-//      spirit/run/spirit/jobs/api.js), so this check fails on a missing file.
 //   2. A RELAY DOES NOT DEMAND FOLDERS IT NEVER LOADS. serveCommon's start check must not require shell/ and
 //      process/ of every server; a relay spawns no jobs and loads neither.
 //   3. NO NODE CONTACT CODE LOADS ON A RELAY: requiring peerPost pulls neither nodeStore.js nor contacts.js.
@@ -42,21 +39,7 @@ const JS = path.join(RUN, 'spirit');
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 function read(p) { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return ''; } }
 
-test.startTest('The review\'s cleanup: six findings that need no decision (goal/G16.9)');
-
-// ── 1. THE NODE'S VERB FILE NAMES NO APP ────────────────────────────────
-test.subHeading('1. the node\'s own api description names no app');
-{
-  const file = path.join(JS, 'jobs', 'api.json');
-  const text = read(file);
-  if (!text) {
-    test.fail(OWED + 'spirit/run/spirit/jobs/api.json could not be read');
-  } else if (!/\bdesk\b/i.test(text)) {
-    test.check('jobs/api.json describes the door without naming an app');
-  } else {
-    test.fail(OWED + 'jobs/api.json names the desk, so the node\'s own description knows an app: ' + short(text));
-  }
-}
+test.startTest('The review\'s cleanup: five findings that need no decision (goal/G16.9)');
 
 // ── 2. A RELAY DOES NOT DEMAND FOLDERS IT NEVER LOADS ───────────────────
 //

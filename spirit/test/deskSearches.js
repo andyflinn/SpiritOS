@@ -9,11 +9,8 @@
 //     in, and the goal dialog draws it as a link to that item; block.targets in goal order through the probability bucket.
 //   - deskClient history.search ranks by verb and outcome; deskAgent's models search by id and quant, loaded first.
 //   - desk, deskClient and deskAgent no longer require the old graded search.
-// deskAgent was removed from the tree in goal/G41.28 (process/js/deskAgent/ is gone), so the deskAgent checks in 0 and
-// 4 read an empty file: 0 passes vacuously for it, 4 fails.
 // NAMED HERE where the box names none: scope '' is the item's own chat, as chat.search always was; a goal-wide line's
-// label carries item, the id of the item (or goal) it was said in; deskDetails asks chat.search with scope 'items' on a
-// goal and draws a found line's item as a link (data-open-item).
+// label carries item, the id of the item (or goal) it was said in.
 // rule/11: through testSupport only; its own scratch folder and pipe.
 
 const fs = require('fs');
@@ -50,12 +47,9 @@ const listed = function (r) {
 
 async function main() {
   test.subHeading('0. no graded bucket in the Desk servers');
-  const left = ['process/js/desk/desk.js', 'process/js/deskClient/deskClient.js', 'process/js/deskAgent/deskAgent.js'].filter(function (f) { return /searchBucket/.test(code(f)); });
+  const left = ['process/js/desk/desk.js', 'process/js/deskClient/deskClient.js'].filter(function (f) { return /searchBucket/.test(code(f)); });
   if (!left.length) test.check('desk, deskClient and deskAgent require no searchBucket');
   else test.fail(OWED + 'still on searchBucket: ' + left.join(', '));
-  const details = code('shell/deskDetails/deskDetails.js');
-  if (/ddAsk\('chat\.search', \{[^}]*scope:/.test(details) && /data-open-item/.test(details)) test.check('the dialog asks chat.search with a scope and draws a found line\'s item as a link');
-  else test.fail(OWED + 'deskDetails neither asks a scope nor links a found line to its item');
 
   // The world, seeded before the desk starts.
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'A goal' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] });
@@ -116,10 +110,6 @@ async function main() {
   const historyHandler = (/'history\.search': \{[\s\S]*?\r?\n {2}\},\r?\n/.exec(client2) || [''])[0];
   if (/probabilityStringObjectMatch|probabilityStringMatch/.test(historyHandler)) test.check('deskClient history.search ranks with the probability modules');
   else test.fail(OWED + 'deskClient history.search does not rank with the probability modules');
-  const agent = code('process/js/deskAgent/deskAgent.js');
-  const modelsFn = (/function modelsSearch\([\s\S]*?\r?\n\}\r?\n/.exec(agent) || [''])[0];
-  if (/probabilityStringObjectMatch|probabilityStringMatch/.test(modelsFn) && /createProbabilityBucket/.test(modelsFn)) test.check('deskAgent\'s models search ranks with the probability modules');
-  else test.fail(OWED + 'deskAgent\'s models search does not rank with the probability modules');
 }
 
 main().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {

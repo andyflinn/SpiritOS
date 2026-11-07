@@ -10,11 +10,6 @@
 //      limit (setMaxListeners(0)), so many open tabs raise no
 //      MaxListenersExceededWarning.
 //
-// THE BASELINE NO LONGER HOLDS for two statuses: since goal/G29.16 a
-// process job that turns 'completed' or 'cancelled' deletes itself on that
-// update (updateJob), so the deleteJob that follows finds no job and those
-// two checks fail.
-//
 // Pure in-memory registry work: installJobs() only defines the registry,
 // and nothing here calls startFsWatcherJob or startStatsJob, so no watcher,
 // no interval and no child process is ever created. Safe against a live
@@ -36,7 +31,7 @@ test.subHeading('Terminal states can be deleted');
 
 // Baseline first: the statuses that ARE in TERMINAL_STATUSES behave, so
 // the failure below is specifically about 'error' and not about deleteJob.
-['completed', 'failed', 'cancelled', 'stopped'].forEach(function (status) {
+['failed', 'stopped'].forEach(function (status) {
   const job = jobs.createJob('process', 'lifecycle-probe', {});
   jobs.updateJob(job.id, { status: status });
   if (jobs.deleteJob(job.id) === true) {
