@@ -1,6 +1,6 @@
 'use strict';
 
-// install/backup-windows/test/backupWindows.js
+// spirit/test/backupWindows.js
 // THE WINDOWS BACKUP HOLDS node.db AND THE KEYS (goal/G43.23, item 5; spec: ./backupWindows.md). The box: "the Windows
 // backup misses node.db and the keys." This tree's backup.js, copied into a scratch SpiritOS tree under /tmp shaped as a
 // node keeps it now (node.db and identity.json in spirit/run/spirit/state/, relay-state/ holding only process/ and
@@ -12,7 +12,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { spawnSync, execFileSync } = require('child_process');
-const REPO = path.resolve(__dirname, '..', '..', '..');
+const REPO = path.resolve(__dirname, '..', '..');
 const test = require(path.join(REPO, 'spirit', 'run', 'test', 'testReport.js'));
 const SCRIPT = path.join(REPO, 'install', 'backup-windows', 'backup.js');
 
