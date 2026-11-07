@@ -71,7 +71,9 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (!l) return;
   const o = l.o;
   ok(o.data === 'nOdE-key_one/agent/grant', 'it is a view of the branch its table names: here nOdE-key_one/agent/grant', 'data: ' + short(o.data));
-  const got = await o.api.verb(String(o.server || '') + '.' + String(o.verb || ''), o.args(' ni ', {}));
+  // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): its own data source is the search's options.search, never an api.
+  ok(o.api === undefined && typeof o.search === 'function', 'it hands its search a data source of its own (options.search), no api', 'api ' + typeof o.api + ', search ' + typeof o.search);
+  const got = await o.search(o.args(' ni ', {}), o.verb);
   ok(searched.length === 1 && searched[0] === 'ni' && got && got.status === 200 && got.body && got.body.items.length === 1, 'its search is the table\'s search(text), the text trimmed, answered as a reply', 'searched ' + short(searched) + ', got ' + short(got));
   const cols = (o.columns || []).map(function (c) { return c.field; });
   ok(JSON.stringify(cols) === '["name","path","revoke"]', 'its columns are whose, the path and Revoke, Revoke the rightmost', 'columns: ' + short(cols));

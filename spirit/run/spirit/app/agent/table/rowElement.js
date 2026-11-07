@@ -4,7 +4,7 @@
 // field line, the table's searches and the one way to its server are the tables' shared element's (./tableElement.js,
 // spirit.elements.agentDetail), which this file loads as part of its tree.
 //
-//   spirit.elements.agentRow.create(container, { api, table, id, added, look, fields, required }) -> { destroy }
+//   spirit.elements.agentRow.create(container, { table, id, added, look, fields, required }) -> { destroy }
 //     one row's fields as inputs, under a title row; added says the row was just made by Add; fields
 //     [{ field, label, kind }], the row's icon always the first before them; the kinds are listed in ./tableElement.js.
 //
@@ -167,7 +167,7 @@
           var current = other ? nameOf(Object.assign({ key: row[f.field] }, other), columnsOf(f.pick)) : '';
           needs(['spirit/element/search.js', 'spirit/element/icon.js']).then(function () {
             if (gone) return;
-            picks[f.field] = search(el, { api: o.api, table: f.pick }, Object.assign({
+            picks[f.field] = search(el, { table: f.pick }, Object.assign({
               face: 'dropdown', placeholder: current || 'Pick a ' + f.pick, pick: function () { save(); },
             }, f.of ? narrowedTo(f) : {}));
           });
@@ -195,7 +195,7 @@
             // The bundle by its label, as the node has it (Andy: "why would the bundle picker show \"bundle 2\" for it's
             // selection instead of the fucking label?"); its number only once the node has no such bundle.
             var says = !row[f.field] ? 'Pick a bundle' : bundleLabel[row[f.field]] !== undefined ? bundleLabel[row[f.field]] : bundleHeld[row[f.field]] === false ? 'bundle ' + row[f.field] : '…';
-            bundles[f.field] = window.spirit.element.search.bundle.create(el, { api: o.api, placeholder: says });
+            bundles[f.field] = window.spirit.element.search.bundle.create(el, { placeholder: says });
             if (bundles[f.field] && typeof bundles[f.field].addEventListener === 'function') bundles[f.field].addEventListener('change', save);
           });
           if (row[f.field] && bundleHeld[row[f.field]] === undefined) {
@@ -221,7 +221,7 @@
       var del = container.querySelector('#' + pre + 'delete');
       needs(['spirit/element/armingButton.js']).then(function () {
         if (gone || !del.isConnected || !window.spirit.element.armingButton) return;
-        window.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove, api: o.api });
+        window.spirit.element.armingButton.attach(del, { label: 'Delete', run: remove });
       });
     }
     // THE WHOLE ROW, as the verb takes it (Andy, Q2: "yes, send the whole row for update"): every field as the editor shows

@@ -69,7 +69,7 @@ function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
 
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button here is an armingButton
 // (spirit/element/armingButton.js), which the dialog loads itself. A button drawn with data-arming="<what it says armed>" is
-// made one after each paint; it arms, says so, and hands the shell its disarm, and its second press is ddSecondPress.
+// made one after each paint; it arms, says so, and disarms itself on a click elsewhere; its second press is ddSecondPress.
 // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the say box
 // held to fieldRules' line rule by fieldInput, loaded here with the armingButton and attached after each paint.
 var ddParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
@@ -84,7 +84,7 @@ function ddArming() {
     if (!A || !body || typeof body.querySelectorAll !== 'function') return;
     Array.prototype.forEach.call(body.querySelectorAll('[data-arming]'), function (b) {
       if (typeof b.armed === 'function') return;
-      A.attach(b, { label: b.textContent, armedLabel: b.getAttribute('data-arming'), run: function () { ddSecondPress(b); }, api: ddApi });
+      A.attach(b, { label: b.textContent, armedLabel: b.getAttribute('data-arming'), run: function () { ddSecondPress(b); } });
     });
   }, function () { /* no armingButton, no second press */ });
 }
@@ -828,7 +828,10 @@ function ddMountRulePick() {
     var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
     if (!P || typeof P.create !== 'function' || ddRulePickHost !== el || ddRulePick) return;
     ddRulePick = P.create(el, {
-      api: ddApi, server: 'desk', verb: 'rules.search',
+      // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api).
+      search: function (args, verb) { return ddApi.verb('desk.' + verb, args); },
+      published: function (fn) { return typeof ddApi.onPublished === 'function' ? ddApi.onPublished(fn, 'desk') : function () {}; },
+      server: 'desk', verb: 'rules.search',
       // A TYPE FILTER BESIDE THE WORDS, as the Rules list has (Andy: "where are my type filters, when i search for rules
       // to attach to a goal or item?"). Active rules only: a proposed rule is not yet a rule to attach.
       // ALL OFF UNTIL PRESSED (goal/G43.3; Andy, the box: "when i manually add rules to an item, the rule-picker should

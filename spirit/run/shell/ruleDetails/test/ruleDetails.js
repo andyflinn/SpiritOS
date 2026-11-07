@@ -144,7 +144,7 @@ function answer(name) {
     if (!a) continue;
     const label = a.opts.label != null ? a.opts.label : a.button.textContent;
     ok(label === c.label && a.opts.armedLabel === c.armed, 'it says ' + c.label + ', and armed ' + c.armed, 'label ' + short(label) + ', armedLabel ' + short(a.opts.armedLabel));
-    ok(a.opts.api === w.api, 'it is handed the app\'s api, so a click elsewhere disarms it', 'api handed: ' + short(a.opts.api === w.api));
+    ok(!('api' in a.opts), 'it is handed no api: the arming button hears a click elsewhere itself (goal/G43.24)', 'handed: ' + short(Object.keys(a.opts)));
     const before = w.calls.filter(function (x) { return x.name === 'desk.rule.version'; }).length;
     ok(typeof a.opts.run === 'function', 'it has a run', 'no run');
     if (typeof a.opts.run !== 'function') continue;

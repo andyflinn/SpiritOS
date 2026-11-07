@@ -6,8 +6,9 @@ goal/G41.28), drawn by `probabilitySearch`, each row a contact row element (`spi
 
 ## API
 
-`spirit.element.search.contact.listElement = { create(host, opts) -> { list, refresh(), destroy() }, filters }`; opts `api`
-(`peerPost`), `open` (the mounter's panel stack, handed to each row), `face`, `placeholder`, `all`, `pick(row, key)`, `say(text)`, `onAdded(row)`, `empty`.
+`spirit.element.search.contact.listElement = { create(host, opts) -> { list, refresh(), destroy() }, filters }`; opts `open` (the mounter's panel stack, handed to each row), `face`, `placeholder`, `all`, `pick(row, key)`, `say(text)`, `onAdded(row)`, `empty`. It is
+handed no api (goal/G43.24; Andy: *"every element that accesses ANY api must require them themselves"*): its search is
+the probabilitySearch's own data source (`options.search`), and what it asks a peer goes through the spirit object.
 
 ## Requirements
 
@@ -21,7 +22,8 @@ goal/G41.28), drawn by `probabilitySearch`, each row a contact row element (`spi
   refreshes once at once. Its search asks `contact.search { q }` with the text trimmed and answers `{ status: 200,
   body: { ok, items, more } }`, an empty answer an empty list. Rows are contact row elements by key; a row matches on name
   and public label.
-- **Pressing a row**: kept → the element's `open`; any other → `peerPost('', key, { card: true })`, saying
+- **Pressing a row**: kept → the element's `open`; any other → a card ask, `{ card: true }` in its packet envelope (`spirit/client/packet.js`, required
+  here) through the node's `peer.post` on `spirit.ready`, saying
   the card, or that a different key answered.
 - **A row's Add**: a click on a `[data-action]` inside a row runs that element's action, says `added <label>`, calls
   `onAdded`, searches again. A click on no button or a row the list did not make does nothing.

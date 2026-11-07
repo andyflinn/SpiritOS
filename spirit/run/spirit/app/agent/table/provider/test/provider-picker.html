@@ -38,15 +38,13 @@ window.picker = function (answers) {
   // real FS.path would point it to. Every other family is asked as the page asks it.
   var realManager = spirit.cacheManager;
   spirit.cacheManager = function (name) { return name === 'agent' ? realRequire.call(spirit, 'spirit/app/agent/data.js') : realManager.apply(spirit, arguments); };
-  // The app's api, as the dropdown calls it: agent.<table> over the shell's verb.
-  var api = { verb: function (name, args) { var t = String(name).replace(/^agent\./, ''); var a = answer(t, args); return Promise.resolve({ status: 200, body: a }); },
-    onPublished: function () { return function () {}; } };
+  // No api is handed (goal/G43.24): the dropdown asks agent.<table> through the spirit object, the stand-in family above.
   var detail = { open: function () {}, look: function (t) { return { icon: '🏢', name: 'Provider', title: 'Model providers', table: t }; } };
   var pane = document.getElementById('pane');
   // The page starts as the Agent app's does (goal/G41.28): the data set loaded and its home node known, from node.card,
   // before the row element is asked for.
   return Promise.resolve(spirit.start()).then(function () { return spirit.require('spirit/app/agent/table/provider/elementRow.js'); }).then(function () {
-    spirit.elements.providerRow.create(pane, api, answers.provider, false, detail);
+    spirit.elements.providerRow.create(pane, answers.provider, false, detail);
     return wait(1500);
   }).then(function () {
     var label = Array.prototype.filter.call(pane.querySelectorAll('label'), function (l) { return /^\s*Model\s*$/.test(l.textContent); })[0] || null;

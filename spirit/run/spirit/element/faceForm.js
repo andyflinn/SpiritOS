@@ -17,7 +17,7 @@
 //                         hidden with no relay to offer; opts.fixed, a url, fixes the dropdown to that relay;
 //                         opts.none, words: with no relay to offer the form stays, says them where its messages go, and asks
 //                         nothing (Join: Andy, "leave the form, and print that message at the bottom right of the form");
-//                         opts.reload() (Promise, after a face is confirmed), opts.escape. It follows each relay's row in the
+//                         opts.reload() (Promise, after a face is confirmed). It follows each relay's row in the
 //                         contact family's cache, reading nothing, and redraws if the ones it offers changed (goal/G41.32).
 // A ROWFORM (goal/G41.27; Andy: "faceForm:\n\n[❓] [Relay▾][Face-name-input][Ask-button]"): the title above the bubble,
 // then ❓, the relay dropdown and the face name in its span, Ask its button; what this node holds and the relay's answer
@@ -26,9 +26,9 @@
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
   if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/rowForm.js');
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
+  // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
+  // themselves"): no escape is handed to it.
+  function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
 
   function offered(relays, o) {
     var list = (Array.isArray(relays) ? relays : []).filter(function (r) { return r && (r.claimed || r.owned) && r.mine === true; });
@@ -44,7 +44,7 @@
   // The form drawn into box, or nothing with no relay to offer: the title, the rowForm, the lines under it.
   function form(box, relays, opts) {
     var o = opts || {};
-    var escape = o.escape || esc;
+    var escape = esc;
     var list = offered(relays, o);
     box.innerHTML = '';
     // Its box hidden, and the tile a mounter gave it with it, unless the mounter asked it to stay and say why.
@@ -72,10 +72,10 @@
     var o = opts || {};
     var was = box.querySelector && box.querySelector('.sp-face-relay');
     var typed = box.querySelector && box.querySelector('.sp-face-name');
-    box._spFace = { relays: Array.isArray(o.relays) ? o.relays : [], fixed: o.fixed, escape: o.escape, reload: o.reload, none: o.none };
+    box._spFace = { relays: Array.isArray(o.relays) ? o.relays : [], fixed: o.fixed, reload: o.reload, none: o.none };
     function draw(picked, name) {
       var now = box._spFace;
-      form(box, now.relays, { fixed: now.fixed, picked: picked, name: name, escape: now.escape, none: now.none });
+      form(box, now.relays, { fixed: now.fixed, picked: picked, name: name, none: now.none });
       if (box._faceSaid) say(box._faceSaid.text, box._faceSaid.bad);
     }
     function say(text, bad) {

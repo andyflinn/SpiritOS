@@ -14,7 +14,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 ## Requirements
 
 - It is an element (goal/G43.13): `spirit.elements.agent.create(container)` answers `{ destroy() }`. It names no `activateApp`.
-- It reads only its container (the `{ title, open }` the appSelector's launch hands it go unread), so it passes its tables one small object of its own, `{ verb }`, calling the same server verbs and answering `{ status, body }`. No new verb.
+- It reads only its container (the `{ title, open }` the appSelector's launch hands it go unread), and hands its tables no api (goal/G43.24; Andy: *"every element that accesses ANY api must require them themselves"*): each table is made with its box and the detail pane, `create(box, detail)`, and its list asks `agent.<table>` through the spirit object itself. No new verb; its code makes no api.
 - It keeps no state of its own: no `showDebug`, no `relay-state`, no title of the old shell, and opening it saves no file.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
 - It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own
@@ -46,8 +46,8 @@ on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows 
 
 - The left strip holds one more tool beside the tables': icon 💬, title `Select Persona`.
 - Mounted, it loads the agent tables' element itself and draws its title row, 💬 Select Persona, then, in a box of its
-  own, only a personaSelector:pane: the persona table's search in pane mode (`agentDetail.search`, rule/29), with its
-  `{ verb }`, and no Add.
+  own, only a personaSelector:pane: the persona table's search in pane mode (`agentDetail.search`, rule/29), handed
+  no api, and no Add.
 - A persona picked there loads `spirit/app/agent/chatPane.js` and opens the chat pane (`./chatPane.md`) in a closable tab of the
   workBench's centre, for that persona; another persona picked opens its own tab beside it (goal/G41.31:
   `spirit/app/agent/test/agentCentreTabs.md`).
@@ -56,6 +56,6 @@ on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows 
 
 - A DEBUG switch that does not follow the server's job in spirit.data.jobs.data, or follows the click instead.
 - A state kept in the cache before the app opened, not shown at once.
-- A table handed no `{ verb }`, or one that does not reach the server.
+- A table handed an api, or an api made in its code.
 - A file saved at all.
 - A Grants tool left, or a right strip without the bundle editor.

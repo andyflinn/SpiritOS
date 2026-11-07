@@ -1,7 +1,7 @@
 // spirit/run/spirit/app/agent/table/persona/elementRow.js
 // ONE PERSONA ROW IN THE PAGE (goal/G41.4): its fields to maintain and edit, each saved as it changes (no Save), and Delete, drawn from the server's
 // answer and its stream only (rule/19). Built on the tables' row element (../rowElement.js).
-//   spirit.elements.personaRow.create(container, api, id, added, detail) -> { destroy }   added: just made by Add; detail: the
+//   spirit.elements.personaRow.create(container, id, added, detail) -> { destroy }   added: just made by Add; detail: the
 //   page's detail pane, whose look(table) gives the title row its icon and name
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
@@ -17,13 +17,13 @@
     // same provider-FUCKING-Selector in drop down mode, that the job detail panel provides for the agent.job.provider").
     { field: 'provider', label: 'Provider', kind: 'pick', pick: 'provider' }];
   E.personaRow = {
-    create: function (container, api, id, added, detail) {
+    create: function (container, id, added, detail) {
       var made = null;
       var gone = false;
       Promise.resolve(spirit.require('spirit/app/agent/table/rowElement.js')).then(function () {
         if (gone) return;
         made = window.spirit.elements.agentRow.create(container, {
-          api: api, table: 'persona', id: id, added: added === true, look: detail && detail.look ? detail.look('persona') : null, fields: FIELDS,
+          table: 'persona', id: id, added: added === true, look: detail && detail.look ? detail.look('persona') : null, fields: FIELDS,
           // Its mandatory fields, as its server names them (goal/G41.21: "# mandatory fields (server AND ui)").
           required: ['icon', 'label'],
         });

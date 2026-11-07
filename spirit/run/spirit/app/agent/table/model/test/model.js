@@ -138,7 +138,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     // The agent tables' shared search (../../tableElement.js, agentDetail.search), the providerSelector it makes: a
     // stand-in that hands the search element what the real one does (rule/29): its data the table's branch, as the agent
     // family's cache manager names it (spirit.data.agent.data.branch, goal/G41.28).
-    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ api: o2.api, server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
+    agentDetail: { search: function (host, o2, more) { const E2 = global.window.spirit.element; const AD2 = ((global.window.spirit.data || {}).agent || {}).data; const s3 = E2.search.create(host, Object.assign({ server: 'agent', verb: o2.table, data: AD2 ? AD2.branch(o2.table) : '' }, more || {})); s3.refresh(); return s3; } },
     agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
     agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
   }) } };
@@ -156,17 +156,16 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(E.modelTable && typeof E.modelTable.create === 'function' && E.modelRow && typeof E.modelRow.create === 'function',
     'they register spirit.elements.modelTable and modelRow', 'elements: ' + short(Object.keys(E)));
   if (!E.modelTable || !E.modelRow) return;
-  const api = { stub: true };
   const opened = [];
   const detail = { open: function (make) { opened.push(make); }, look: function (t2) { return { icon: '🧠', name: 'Model', title: 'Models', table: t2 }; } };
   const pane = box('models');
-  const list = E.modelTable.create(pane, api, detail);
+  const list = E.modelTable.create(pane, detail);
   await settle();
   ok(made.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/table/model/elementRow.js') !== -1,
     'elementTable.js requires the shared element and its own row element', 'required: ' + short(made.required));
   const o = made.tables[0] && made.tables[0].o;
-  ok(made.tables.length === 1 && !!made.tables[0].c && o.table === 'model' && o.api === api && o.detail === detail && o.add === false,
-    'it builds on agentTable, in its box, for the model table, with the page\'s api and detail pane, and no Add (Andy, on G41.18: "get RID of [Add a Model] button ... NOT required")', 'agentTable: ' + short(o && { table: o.table, add: o.add }));
+  ok(made.tables.length === 1 && !!made.tables[0].c && o.table === 'model' && !('api' in o) && o.detail === detail && o.add === false,
+    'it builds on agentTable, in its box, for the model table, with the detail pane and no api, and no Add (Andy, on G41.18: "get RID of [Add a Model] button ... NOT required")', 'agentTable: ' + short(o && { table: o.table, add: o.add }));
   // goal/G41.18, box v17: the list shows "[icon] \"model-name\"", the provider's icon.
   const shownBy = ((o && o.columns) || []).map(function (c) { return c.from || c.field; });
   ok(JSON.stringify(shownBy) === '["providerIcon","label"]', 'its list shows each model by its provider\'s icon and its label, the model name (goal/G41.18, G41.21)', 'columns: ' + short(o && o.columns));
@@ -225,8 +224,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   o.row(into, 'KM', false);
   await settle();
   const r = made.rows[0] && made.rows[0].o;
-  ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'model' && r.id === 'KM' && r.added === false && r.api === api,
-    'a row it opens is a modelRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
+  ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'model' && !('api' in r) && r.id === 'KM' && r.added === false,
+    'a row it opens is a modelRow, built on agentRow, in the box it is handed, with its id and added, no api', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
   ok(r && r.look && r.look.icon === '🧠' && r.look.table === 'model', 'its title row has the model table\'s look', 'look: ' + short(r && r.look));
   const provField = r && r.fields.filter(function (f) { return f.field === 'providerId'; })[0];
   // goal/G41.21, Andy: "In model, the fucking <provider> field is OUTPUT ONLY. I NEVER ordered a fucking picker for

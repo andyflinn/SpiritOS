@@ -9,7 +9,7 @@ grantsPanel element"*: the row knows no table.
 
 ## The grants table it is handed
 
-`spirit.element.search.grant.rowElement.create(row, { grants, serves, api })`, `grants` the caller's configuration of one grants table:
+`spirit.element.search.grant.rowElement.create(row, { grants, serves })`, `grants` the caller's configuration of one grants table:
 
 - `branch`: the data branch its grants are kept in, a whole `spirit.data` path, node/family/branch (goal/G41.28): the
   node's grants are the auth family's cache manager's (`spirit.data.auth.data.grants.branch`, as `spirit/element/grantsPanel.js`, in the Grants app,

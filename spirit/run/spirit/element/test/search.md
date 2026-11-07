@@ -27,7 +27,7 @@ draws and ranks.
   - `state` is `{ words, values, filters, sort: { field, direction }, columns, score }`.
   - It returns `[{ key, row, rank, entry }]`.
 - `create(container, options)` returns `{ value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }`.
-  - The options are those its header lists: `api`, `server`, `verb`, `args`, `columns`, `data`, `element`, `face`,
+  - The options are those its header lists: `server`, `verb`, `search`, `published`, `args`, `columns`, `data`, `element`, `face`,
     `toggle`, `onFace`, `tile`, `visible`, `filters`, `selectors`, `score`, `rows`, `fold`, `details`, `pick`, `empty`,
     `placeholder`, `all`, `name`. A `matched` is not read (goal/G41.28).
 - `matchRanges(text, words)` returns `[[from, to), ...]`.
@@ -69,7 +69,11 @@ draws and ranks.
   - With no row to show, it shows `empty`, or "Nothing matches.".
 - **Typing**:
   - Re-ranks the cache at once.
-  - Asks the server `api.verb(server + '.' + verb, args(words, values))`, or `{ text }` without `args`.
+  - Asks `server.verb` with `args(words, values)`, or `{ text }` without `args`: through its own data source
+    `search(args, verb)` when the mounter hands one, else through the spirit object itself (goal/G43.24; Andy: *"every
+    element that accesses ANY api must require them themselves"*): the family on `spirit.ready`, or the one
+    `spirit.require(spirit.familyPath(server))` binds, a dotted verb walked as a path into it, answered by
+    `spirit.outcome`. It takes no api from its options. With neither a source nor a server and verb it asks nobody.
 - **One call on the wire**:
   - While a search is out, more typing sends nothing.
   - When the search returns, one search goes with the words as they then stand.
@@ -129,9 +133,9 @@ draws and ranks.
   - It opens on a press and shuts on Escape, on a pick, and on a press outside.
   - `all` adds a None button, which picks nothing.
 - **element(row, key)** is made once per key and destroyed by `destroy`.
-- **onPublished** re-asks.
+- **published(fn)**, when handed, re-asks each time it calls fn.
 - **destroy**:
-  - Stops listening to `onPublished`, the data watch, and the outside press.
+  - Stops listening to `published`, the data watch, and the outside press.
   - After destroy, nothing draws.
 - **matchRanges**:
   - Marks every place each word stands, partial words included, case ignored, in order.

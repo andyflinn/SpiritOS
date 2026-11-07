@@ -28,23 +28,9 @@
     { name: 'job', icon: '📋', title: 'Jobs', one: 'Job' },
   ];
 
-  // ITS TABLES ASK THROUGH { verb } (goal/G43.13): what the old shell handed every app, made here, as the lists in the tree make
-  // it. verb('agent.provider', args) calls that verb of that family, answering { status, body }, as a list reads it. No new verb.
-  // A family the page found at its start is on spirit.ready; a server activated after it, as the agent's own is, is bound then.
-  var api = {
-    verb: function (name, args) {
-      var n = String(name || '');
-      var dot = n.indexOf('.');
-      var fam = n.slice(0, dot);
-      return Promise.resolve(spirit.ready).then(function (s) { return s[fam] || spirit.require(spirit.familyPath(fam)); }).then(function (f) {
-        return f[n.slice(dot + 1)](args || {});
-      }).then(function (body) {
-        return { status: 200, body: body };
-      }, function (e) {
-        return { status: (e && e.status) || 500, body: (e && e.body) || { ok: false, code: String((e && e.code) || 'handler-failed'), error: String((e && e.message) || e) } };
-      });
-    },
-  };
+  // ITS TABLES ASK FOR THEMSELVES (goal/G43.24; Andy: "every element that accesses ANY api must require them themselves"):
+  // each table's list is a probabilitySearch that asks agent.<table> through the spirit object, the agent's own family
+  // bound by spirit.require when it is not on spirit.ready. So the app hands its tables no api: their box and its detail pane.
 
   function create(container) {
       var E = (window.spirit && window.spirit.element) || {};
@@ -121,7 +107,7 @@
           return { name: t.name, icon: t.icon, title: t.title, mount: function (box) {
             box.className = 'fill';
             Promise.resolve(spirit.require('spirit/app/agent/table/' + t.name + '/elementTable.js')).then(function () {
-              window.spirit.elements[t.name + 'Table'].create(box, api, detail);
+              window.spirit.elements[t.name + 'Table'].create(box, detail);
             }, function () { box.textContent = 'The ' + t.name + ' table could not be loaded.'; });
           } };
         }).concat([{ name: 'chat', icon: '💬', title: 'Select Persona', mount: function (box) {
@@ -134,7 +120,7 @@
           Promise.resolve(spirit.require('spirit/app/agent/table/tableElement.js')).then(function () {
             var D = window.spirit.elements.agentDetail;
             box.innerHTML = '<div class="fill">' + D.titleRow({ icon: '💬' }, ['Select Persona']) + '<div id="agent-personas" class="fill" style="margin-top:1em"></div></div>';
-            D.search(box.querySelector('#agent-personas'), { api: api, table: 'persona' }, { face: 'pane', pick: function (row, key) {
+            D.search(box.querySelector('#agent-personas'), { table: 'persona' }, { face: 'pane', pick: function (row, key) {
               var picked = { id: String((row && row.id) || key || ''), label: String((row && row.label) || '') };
               // Its own tab beside its persona's, following that persona's row.
               detail.open(function (centre) {
@@ -164,12 +150,12 @@
             serverPanel = { destroy: function () { made.forEach(function (m) { m.destroy(); }); } };
           }, function () { box.textContent = 'The server panel could not be loaded.'; });
         } }, { name: 'bundles', icon: '📦', title: 'Bundles', mount: function (box) {
-          // goal/G41.21: the shell's bundle editor, loaded when its tool is first shown (rule/26), with the app's api. Its rows
+          // goal/G41.21: the shell's bundle editor, loaded when its tool is first shown (rule/26). Its rows
           // open in this centre's tabs (goal/G41.31; Andy: "agent: <bundle-name>."; "if the bundle is not node-owned:
           // (<bundle-name>) in italic print.").
           box.className = 'fill';
           Promise.resolve(spirit.require('spirit/element/bundleEditor.js')).then(function () {
-            window.spirit.element.bundleEditor.create(box, { api: api, tabs: tabs, tabLabel: function (row) {
+            window.spirit.element.bundleEditor.create(box, { tabs: tabs, tabLabel: function (row) {
               var label = String(row.label || '');
               return String(row.owner || 'node') === 'node' ? label : { label: '(' + label + ')', italic: true };
             } });

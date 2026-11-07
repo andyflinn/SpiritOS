@@ -3,6 +3,9 @@
 The face form, a rowForm (goal/G41.27). Its test is `./faceForm.js`. Join, Info and the relay details draw it by mount
 (goal/G40.10).
 
+It escapes what it draws with `spirit.escapeHtml` itself (goal/G43.24; Andy: *"every element that accesses ANY api must
+require them themselves"*): no escape is handed to it, and a mounter hands only its relays and its own options.
+
 Andy, on G41.27: *"faceForm:\n\n[❓] [Relay▾][Face-name-input][Ask-button]"*. The box: *"a line saying what a press did
 (a refusal, a result) is the mounter's, below the bubble, not in it."*
 

@@ -117,7 +117,6 @@ spirit.shell.activateApp({
       E.fieldInput.attach(container.querySelector('[data-icons="new-keywords"]'), 'description');
       E.fieldInput.attach(container.querySelector('[data-icons="new-glyph"]'), 'glyph');
       iconsList = E.search.icon.listElement.create(container.querySelector('[data-icons="pane"]'), {
-        api: api,
         face: 'pane',
         details: function (row, glyph) { iconsPanel(api, row, glyph); },
       });

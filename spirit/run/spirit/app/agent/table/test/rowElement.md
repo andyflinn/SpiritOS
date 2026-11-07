@@ -13,7 +13,8 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   (`./tableElement.js`, `spirit.elements.agentDetail`), which it loads itself as part of its tree (rule/26).
 - **Unconfigured** (`agentRow.create(box, {})`, as the general test mounts every element by itself), it says it is not
   configured and throws nothing; its `destroy` empties the box (goal/G41.19, box v23), as the table does.
-- **A row's editor**, `agentRow.create(container, { api, table, id, added, look, fields, required })`:
+- **A row's editor**, `agentRow.create(container, { table, id, added, look, fields, required })`, handed no api
+  (goal/G43.24): its pick lists, its bundle selector and its Delete each reach what they need themselves:
   - Its row is the one at `<node>/agent/<table>/<id>` in spirit.data. It asks `{ op: 'get', id }` as it opens, whatever the
     branch holds, and puts the answer there: a search answers only what a list shows, so a row in the branch may be
     slim (goal/G41.18; Andy: *"that exactly what GET is for, to bring in the rest for detail panels etc..."*).

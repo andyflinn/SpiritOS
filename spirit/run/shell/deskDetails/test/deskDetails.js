@@ -149,7 +149,6 @@ function armingStub(document, made) {
       if (!on) {
         if (loaded && loaded !== b) loaded.disarm();
         on = true; loaded = b; b.setAttribute('data-armed', 'yes'); b.textContent = armedLabel;
-        if (o.api && typeof o.api.armUntilElsewhere === 'function') o.api.armUntilElsewhere(disarm);
         return;
       }
       disarm();
@@ -264,13 +263,13 @@ function ddWorld(facts, checks, o) {
 }
 async function settle() { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); }
 
-// One two-press button, clicked twice: made by armingButton (handed the app's api, so the shell's click-elsewhere reaches
-// it), saying today's armed wording, writing nothing on the first press and what it wrote before on the second.
+// One two-press button, clicked twice: made by armingButton (handed no api: it hears a click elsewhere itself, goal/G43.24),
+// saying today's armed wording, writing nothing on the first press and what it wrote before on the second.
 async function twoPress(w, find, armedSays, want, what) {
   const before = w.writes().length;
   const b = find();
   if (!b) { test.fail(what + ': no such button in the dialog'); return; }
-  const byElement = w.made.some(function (m) { return m.button === b && m.opts && m.opts.api && typeof m.opts.api.armUntilElsewhere === 'function'; });
+  const byElement = w.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
   w.document.click(b); await settle();
   const b1 = find();
   const armedText = b1 ? b1.textContent : '';
@@ -330,7 +329,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
     const before = anyWrite(g).length;
     const b = find();
     if (!b) { test.fail(what + ': no such button in the dialog'); return; }
-    const byElement = g.made.some(function (m) { return m.button === b && m.opts && m.opts.api && typeof m.opts.api.armUntilElsewhere === 'function'; });
+    const byElement = g.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
     g.document.click(b); await settle();
     const firstWrote = anyWrite(g).length - before;
     const b1 = find();

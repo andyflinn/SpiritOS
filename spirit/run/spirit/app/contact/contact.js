@@ -9,7 +9,6 @@
 // else here calls the node.
 
 var contactsEscapeHtml = spirit.escapeHtml;
-var contactsApi = null;
 
 // NO CHOICE ABOUT STRANGERS (goal/G43.17): the node ignores them always, and keeps their id only in its log. Andy: "so NO,
 // we don't need a "held" "status"".
@@ -109,7 +108,6 @@ function contactCreate(container, options) {
       if (gone) return;
       if (typeof o.open !== 'function') stack = window.spirit.elements.panel.create(container, container.firstElementChild);
       contactsList = window.spirit.element.search.contact.listElement.create(book, {
-        api: contactsApi,
         open: openOver,
         say: contactsStatus,
         empty: 'Nobody matches: the network is searched as you type.',

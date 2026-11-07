@@ -69,8 +69,8 @@
     function drawForms() {
       if (gone) return;
       var E = S.element;
-      if (E.joinForm) E.joinForm.mount(slot('email'), { relays: seats(), pick: 'seated', escape: S.escapeHtml });
-      if (E.faceForm) E.faceForm.mount(slot('face'), { relays: seats(), reload: loadRelays, escape: S.escapeHtml });
+      if (E.joinForm) E.joinForm.mount(slot('email'), { relays: seats(), pick: 'seated' });
+      if (E.faceForm) E.faceForm.mount(slot('face'), { relays: seats(), reload: loadRelays });
     }
     function loadRelays() {
       return S.outcome(Promise.resolve(S.ready).then(function (s) { return s.relay.status(''); })).then(function (r) {

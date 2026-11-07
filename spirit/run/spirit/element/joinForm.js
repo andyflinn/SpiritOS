@@ -9,7 +9,7 @@
 //   words(state)      -> { title, icon, button, email } for where the node stands on a relay (seated).
 //   mount(box, opts)  -> draws the form into box and sends it: opts.relays, relay rows (url, label, claimed or owned);
 //                        opts.pick ('seated': only relays with a seat; else every relay listed); opts.fixed, a url, gives
-//                        the dropdown that one relay and fixes it; opts.escape. It follows each relay's row in the
+//                        the dropdown that one relay and fixes it. It follows each relay's row in the
 //                        contact family's cache, reading nothing, and redraws if the relays it shows changed
 //                        (goal/G40.11, G41.32), keeping what is typed.
 //   send(opts)        -> Promise of { ok, text }: the sentence the line shows.
@@ -20,9 +20,9 @@
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the rowForm, asked as this file runs.
   if (window.spirit && typeof window.spirit.require === 'function') window.spirit.require('spirit/element/rowForm.js');
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
+  // IT ESCAPES WITH spirit.escapeHtml (goal/G43.24; Andy: "every element that accesses ANY api must require them
+  // themselves"): no escape is handed to it.
+  function esc(s) { return window.spirit.escapeHtml(s == null ? '' : s); }
 
   // ONE CONTROL FOR JOIN AND CHANGE (goal/G30.1, box v41; Andy: "Join, Add AND Change email address MUST be one and
   // the same control, a bit flexible..."). Its words follow where the node stands on that relay, so every caller asks
@@ -46,7 +46,7 @@
   // picked, o.email what is typed.
   function form(box, relays, opts) {
     var o = opts || {};
-    var escape = o.escape || esc;
+    var escape = esc;
     var list = offered(relays, o);
     box.innerHTML = '';
     if (!list.length) return;
@@ -102,12 +102,12 @@
     var was = box.querySelector('.sp-join-relay');
     var field = box.querySelector('.sp-join-email');
     var typed = field && field.value !== field.defaultValue ? field.value : null;
-    form(box, now.relays, { fixed: now.fixed, picked: now.picked || (was ? was.value : ''), email: typed, escape: now.escape });
+    form(box, now.relays, { fixed: now.fixed, picked: now.picked || (was ? was.value : ''), email: typed });
   }
   function mount(box, opts) {
     if (!box) return;
     var o = opts || {};
-    box._spJoin = { relays: Array.isArray(o.relays) ? o.relays : [], pick: o.pick, fixed: o.fixed, escape: o.escape, picked: '' };
+    box._spJoin = { relays: Array.isArray(o.relays) ? o.relays : [], pick: o.pick, fixed: o.fixed, picked: '' };
     draw(box);
     if (box._spJoinBound) return;
     box._spJoinBound = true;

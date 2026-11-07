@@ -5,8 +5,8 @@
 // (duh?) 2. Verb 3. armingButton 'Delete'". The two dropdowns of the add form are the family selector's two halves (Andy:
 // "apiFamiliySelector.js will use apiVerbSelector as part of itself").
 //
-//   spirit.element.branchEditor.create(container, { bundle, label, owner, api, gone }) -> { destroy() }
-//     bundle  the bundle's id; label its label; owner its owner; api the app's shell api, for the are-you-sure
+//   spirit.element.branchEditor.create(container, { bundle, label, owner, gone }) -> { destroy() }
+//     bundle  the bundle's id; label its label; owner its owner (its Delete is an armingButton, which hears a click elsewhere itself)
 //     gone    called when this bundle's deletion is heard (Andy: "a bundle that hears its deletion, closes its branchEditor tab.")
 // A BUNDLE NOT THE NODE'S IS SHOWN ONLY (Andy: "A user can only create, change and delete node-owned bundles and branches, and
 // sees the others read-only"): its branches, no add form, no Delete. The node refuses them as well.
@@ -27,7 +27,7 @@
       if (String(key) === String(o.bundle) && !v) o.gone();
     }) : null;
     if ((o.owner || 'node') !== 'node') {
-      var shown = E.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb'], api: o.api });
+      var shown = E.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb'] });
       shown.className += ' fill';
       return { destroy: function () { if (typeof offBundle === 'function') offBundle(); shown.destroy(); } };
     }
@@ -43,7 +43,7 @@
     said.className = 'job-manifest-note';
     box.appendChild(said);
     // THE BUNDLE'S BRANCHES, filling the rest (shell.css fill).
-    var branches = E.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'], api: o.api });
+    var branches = E.search.branch.create(box, { bundle: o.bundle, face: 'pane', columns: ['family', 'verb', 'delete'] });
     branches.className += ' fill';
 
     function say(text) { said.textContent = String(text || ''); }
@@ -73,7 +73,7 @@
     var delSaid = document.createElement('div');
     delSaid.className = 'job-manifest-note';
     box.appendChild(delSaid);
-    E.armingButton.attach(del.button, { label: 'Delete', api: o.api, run: function () {
+    E.armingButton.attach(del.button, { label: 'Delete', run: function () {
       delSaid.textContent = '';
       return spirit.ready.then(function (s) { return s.auth.bundle({ op: 'delete', id: Number(o.bundle) }); }).then(null, function (e) {
         delSaid.textContent = (e && (e.message || e.refusal)) || 'not deleted';

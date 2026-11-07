@@ -95,7 +95,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.branches;
   ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s branches (spirit.data.auth.data.branches.branch), the spirit object\'s cache', 'data: ' + short(o.data) + ', authReads.branches.branch ' + short(B && B.branch));
 
-  const got = await o.api.verb(o.server + '.' + o.verb, o.args(' cha ', {}));
+  const got = await o.search(o.args(' cha ', {}));
   ok(o.server === 'auth' && o.verb === 'branch' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'cha' && asked[0].bundle === 7,
     'its search asks auth.branch { op: search, text, bundle } through the spirit object, the text trimmed', 'asked: ' + short(asked));
   ok(got && got.status === 200 && got.body && got.body.items.length === 1 && got.body.more === false, 'and answers as a reply: { items, more }', 'got: ' + short(got));
@@ -127,19 +127,19 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     'its test narrows by the family and verb chosen, every row when none is', 'test: ' + short(sel[0] && 'given'));
   if (!fam) return;
   asked.length = 0;
-  await o.api.verb('auth.branch', o.args('', {}));
+  await o.search(o.args('', {}), 'branch');
   ok(asked[0] && !asked[0].family && !asked[0].verb, 'nothing chosen: the search narrows by neither family nor verb', 'asked: ' + short(asked));
   const r0 = l.refreshes;
   fam.family = 'desk'; fam.verb = ''; fam.value = 'desk'; fam.dispatchEvent(new Event('change', { bubbles: true }));
   await settle();
   asked.length = 0;
-  await o.api.verb('auth.branch', o.args('', {}));
+  await o.search(o.args('', {}), 'branch');
   ok(l.refreshes > r0 && asked[0] && asked[0].family === 'desk' && !asked[0].verb, 'a family chosen searches again, narrowed by the family', 'asked: ' + short(asked));
   const r1 = l.refreshes;
   fam.verb = 'chat.add'; fam.value = 'desk.chat.add'; fam.dispatchEvent(new Event('change', { bubbles: true }));
   await settle();
   asked.length = 0;
-  await o.api.verb('auth.branch', o.args('', {}));
+  await o.search(o.args('', {}), 'branch');
   ok(l.refreshes > r1 && asked[0] && asked[0].family === 'desk' && asked[0].verb === 'chat.add', 'a verb chosen searches again, narrowed by the family and the verb', 'asked: ' + short(asked));
 
   test.subHeading('refresh and destroy are the search element\'s');

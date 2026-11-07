@@ -79,7 +79,8 @@
       '<div class="files-tree fill"></div>';
     var inner = host.lastChild;
     list = E.search.create(inner, {
-      api: { verb: function (name, args) { return search(args, function (next, at) { scores = next; lines = at; }); } },
+      // Its own data source (goal/G43.24): the search asks it, and is handed no api.
+      search: function (args) { return search(args, function (next, at) { scores = next; lines = at; }); },
       // A view of the node's file tree, the branch the fs family's manager keeps (spirit.data.fs.data.branch).
       data: fsReads().branch,
       server: 'fs',

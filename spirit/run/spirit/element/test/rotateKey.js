@@ -73,9 +73,11 @@ function words(host) { return under(host).map(function (k) { return k.innerHTML;
 // The world: a bare window (rule/26), the arming button put on the page only once the element requires it; the spirit
 // object's escapeHtml and outcome as spirit.js has them, and its node family's rotateCipher, which records every call.
 function world(answer) {
-  const w = { required: [], calls: [], handed: 0, attached: [], release: null };
+  const w = { required: [], calls: [], listening: 0, attached: [], release: null };
   const win = {
-    document: { createElement: function (t) { return node('<' + t + '>'); } },
+    // The document's click listeners counted: an armed arming button listens there for a click elsewhere itself (goal/G43.24).
+    document: { createElement: function (t) { return node('<' + t + '>'); },
+      addEventListener: function (t) { if (t === 'click') w.listening += 1; }, removeEventListener: function (t) { if (t === 'click') w.listening -= 1; } },
     setTimeout: setTimeout, Promise: Promise, JSON: JSON, Object: Object, Array: Array, String: String,
     console: { log: function () {}, error: function () {} },
   };
@@ -129,14 +131,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('nothing hand-rolled: the are-you-sure is the arming button\'s (goal/G41.9)');
   ok(!/data-armed/.test(CODE), 'no data-armed of its own', 'its code still writes data-armed');
-  ok(!/armUntilElsewhere/.test(CODE.replace(/api\s*:\s*o\.api/g, '')), 'it calls no armUntilElsewhere itself', 'its code still calls armUntilElsewhere');
+  ok(!/armUntilElsewhere/.test(CODE), 'it calls no armUntilElsewhere itself', 'its code still calls armUntilElsewhere');
+  // Andy: "anybody can mount any element without knowing what it actually needs...." (goal/G43.24).
+  ok(!/\bapi\b/.test(CODE), 'it takes no api and hands none on', 'its code still names an api');
   ok(!/\brkArmed\b/.test(CODE) && !/classList\.(add|remove|toggle)\(\s*['"]armed['"]/.test(CODE), 'no armed flag and no armed class of its own', 'its code still keeps an armed flag or class');
 
   const host = node('<div>');
-  const api = { armUntilElsewhere: function () { w.handed += 1; } };
-  const made = E.create(host, { api: api });
+  const made = E.create(host);
   await settle();
-  ok(!!made && typeof made.destroy === 'function', 'create(container, opts) answers { destroy() }', 'create answered ' + short(made && Object.keys(made)));
+  ok(!!made && typeof made.destroy === 'function', 'create(container), its container alone, answers { destroy() }', 'create answered ' + short(made && Object.keys(made)));
 
   test.subHeading('its explanation first, as it is');
   const said = words(host);
@@ -152,10 +155,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(!!a, 'its button is attached as an armingButton', 'attached: ' + w.attached.length);
   if (!a) return;
   ok(a.opts.label === BUTTON && a.opts.armedLabel === ARMED && b.textContent === BUTTON, 'it says ' + BUTTON + ', and armed ' + ARMED, 'label ' + short(a.opts.label) + ', armed ' + short(a.opts.armedLabel) + ', shows ' + short(b.textContent));
-  ok(a.opts.api === api, 'the api it was handed goes on to the arming button, so a click elsewhere disarms it', 'api handed on: ' + (a.opts.api === api));
+  ok(!('api' in a.opts), 'the arming button is handed no api: it hears a click elsewhere itself', 'handed: ' + short(Object.keys(a.opts)));
   ok(b.getAttribute('data-armed') === null && w.calls.length === 0, 'it starts disarmed, and nothing is rotated', 'armed ' + short(b.getAttribute('data-armed')) + ', calls ' + w.calls.length);
   b.fire('click', { preventDefault: function () {} }); await settle();
-  ok(b.getAttribute('data-armed') === 'true' && b.textContent === ARMED && w.handed === 1, 'one press arms it: it says ' + ARMED + ' and hands its disarm on', 'armed ' + short(b.getAttribute('data-armed')) + ', says ' + short(b.textContent) + ', handed ' + w.handed);
+  ok(b.getAttribute('data-armed') === 'true' && b.textContent === ARMED && w.listening === 1, 'one press arms it: it says ' + ARMED + ' and listens for a click elsewhere', 'armed ' + short(b.getAttribute('data-armed')) + ', says ' + short(b.textContent) + ', listening ' + w.landed);
   ok(w.calls.length === 0, 'one press rotates nothing', 'one press asked node.rotateCipher ' + w.calls.length + ' times');
   b.disarm(); await settle();
   ok(b.textContent === BUTTON && b.getAttribute('data-armed') === null, 'disarmed (attention moved), it says ' + BUTTON + ' again', 'says ' + short(b.textContent));

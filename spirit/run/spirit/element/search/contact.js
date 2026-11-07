@@ -147,7 +147,8 @@
       root.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    // THE ROWS' SOURCE, as the list's api: the node's contact.search, or a configured ID table.
+    // THE ROWS' SOURCE, the list's own data source (goal/G43.24: the search is handed no api): the node's contact.search,
+    // or a configured ID table.
     function rows(args) {
       var text = String((args && (args.q != null ? args.q : args.text)) || '');
       if (table) {
@@ -156,8 +157,8 @@
       }
       return Promise.resolve(window.spirit.ready).then(function (s) { return s.contact.search(args); }).then(function (b) { return b || {}; });
     }
-    var api = {
-      verb: function (name, body) {
+    var source = {
+      search: function (body) {
         return rows(body || {}).then(function (answer) {
           var items = ((answer && answer.items) || []).filter(function (i) { return i && i.key; }).map(function (i) {
             var row = table ? idRow(i, options) : parseRow(i);
@@ -167,7 +168,7 @@
         });
       },
       // A rename is the node's word on its stream (contact.rename, said once on document by shell.js).
-      onPublished: function (fn) {
+      published: function (fn) {
         if (typeof document.addEventListener !== 'function') return function () {};
         document.addEventListener('contact.rename', fn);
         return function () { if (typeof document.removeEventListener === 'function') document.removeEventListener('contact.rename', fn); };
@@ -185,7 +186,8 @@
         // keeps (spirit.data.contact.data.branch), so a pick finds what any list of contacts was answered; an ID table of another
         // family is the branch its caller names (options.data).
         data: options.data || (table ? undefined : window.spirit.data.contact.data.branch),
-        api: api,
+        search: source.search,
+        published: source.published,
         server: 'node',
         verb: 'contact.search',
         args: function (text, filters) {

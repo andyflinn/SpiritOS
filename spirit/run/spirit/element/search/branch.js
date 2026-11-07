@@ -15,7 +15,7 @@
 //     options.bundle     the bundle whose branches it lists
 //     options.face       'pane' is the list itself; the default is the dropdown
 //     options.columns    the list's fields, of family, verb and delete
-//     options.placeholder, options.all, options.api, options.empty   handed to the list
+//     options.placeholder, options.all, options.empty   handed to the list
 (function () {
   function createBranchSelector(options) {
     options = options || {};
@@ -42,7 +42,6 @@
         placeholder: isPane ? '' : (options.placeholder || 'choose a branch…'),
         all: isPane ? undefined : options.all,
         columns: options.columns,
-        api: options.api,
         empty: options.empty,
         pick: function (row) { pick(row); },
       });

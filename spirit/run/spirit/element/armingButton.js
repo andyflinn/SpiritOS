@@ -5,15 +5,18 @@
 // click anywhere else on the screen ... the button must reset, back to its original state, and the whole are-you-sure
 // procedure must be done from scratch").
 //
-//   armingButton.attach(button, { label, armedLabel, run, api }) -> the button, carrying disarm() and armed()
+//   armingButton.attach(button, { label, armedLabel, run }) -> the button, carrying disarm() and armed()
 //     A button already in the page made an arming one. label is what it says unarmed (by default its own text),
-//     armedLabel what it says armed (by default "<label>? Press again"), run what the second press does, api the app's
-//     api: its armUntilElsewhere is the shell's hook (spirit/client/shell.js, spirit/shell/boot.js).
-//   armingButton.create(container, { label, armedLabel, run, api, title, className }) -> a new <button type="button">,
+//     armedLabel what it says armed (by default "<label>? Press again"), run what the second press does.
+//   armingButton.create(container, { label, armedLabel, run, title, className }) -> a new <button type="button">,
 //     appended to the container, attached
 //
-// The first press arms it (data-armed, which shell.css paints red) and hands the shell its disarm; the second disarms
-// and runs. ONE LOADED AT A TIME is the element's: arming one disarms the one armed before it.
+// The first press arms it (data-armed, which shell.css paints red); the second disarms and runs. ONE LOADED AT A TIME is
+// the element's: arming one disarms the one armed before it.
+// A CLICK ELSEWHERE IS ITS OWN TO HEAR (goal/G43.24; Andy: "every element that accesses ANY api must require them
+// themselves ... that way anybody can mount any element without knowing what it actually needs...."): armed, it listens
+// for clicks on the document and disarms on any but the press that armed it; disarmed, it lets go. No shell hook is
+// handed to it. Its own second press reaches its own handler first, so the confirming press still runs.
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   var loaded = null;   // the one button armed now, if any
@@ -26,25 +29,36 @@
     // IT SAYS WHAT IT DOES BEFORE IT IS PRESSED (goal/G41.30; Andy: "the button for that has nothing written on it").
     button.textContent = label;
 
-    // Harmless twice, as the shell's hook requires.
+    // A click anywhere but this button, and not the press that armed it (which bubbles to the document after arming).
+    var armedBy = null;
+    function elsewhere(e) {
+      if (!on || e === armedBy) return;
+      var t = e && e.target;
+      if (t && (t === button || (typeof button.contains === 'function' && button.contains(t)))) return;
+      disarm();
+    }
+    // Harmless twice.
     function disarm() {
       if (!on) return;
       on = false;
+      armedBy = null;
+      if (typeof document !== 'undefined' && typeof document.removeEventListener === 'function') document.removeEventListener('click', elsewhere);
       if (loaded === button) loaded = null;
       button.removeAttribute('data-armed');
       button.textContent = label;
     }
-    function arm() {
+    function arm(e) {
       if (loaded && loaded !== button && typeof loaded.disarm === 'function') loaded.disarm();
       on = true;
       loaded = button;
+      armedBy = e || null;
       button.setAttribute('data-armed', 'true');
       button.textContent = armedLabel;
-      if (o.api && typeof o.api.armUntilElsewhere === 'function') o.api.armUntilElsewhere(disarm);
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('click', elsewhere);
     }
     button.addEventListener('click', function (e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
-      if (!on) { arm(); return; }
+      if (!on) { arm(e); return; }
       disarm();
       if (typeof o.run === 'function') o.run();
     });

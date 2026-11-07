@@ -16,7 +16,14 @@
 //     and repaints a field that changes on the stream; destroy drops them all.
 //
 // spirit.element.search.create(container, {   (the probabilitySearch)
-//   api, server, verb          the shell api, the server searched (its stream too) and its search verb
+//   server, verb               the family searched and its search verb: the list asks server.verb itself, through the spirit
+//                              object (goal/G43.24; Andy: "every element that accesses ANY api must require them
+//                              themselves"), a family on spirit.ready or one spirit.require(spirit.familyPath(server))
+//                              binds, a dotted verb walked as a path into it
+//   search(args, verb)         optional: the list's own data source, asked instead, answering { status, body } (a list
+//                              that shapes its answer itself: contacts, branches, grants); verb is the search's or ask's
+//   published(fn)              optional: fn told when what the list shows changed elsewhere, so it asks again; answers its
+//                              release
 //   args(text, values)         the verb's arguments from the words and the filters' values
 //   columns                    [{ field, from, label, width, align, sort }]: sort is how the field compares, 'text', 'path',
 //                              'number' or 'date'; without it the column is not a sort trigger. from names the row's value
@@ -52,6 +59,21 @@
       'spirit/element/fieldInput.js'].forEach(function (p) { window.spirit.require(p); });
   }
   function P() { return window.spirit.probability || {}; }
+  // A VERB OF A FAMILY, THROUGH THE SPIRIT OBJECT (goal/G43.24, as grantsPanel asks): family.verb called on that family as
+  // spirit.ready holds it, or as spirit.require binds a server's; a dotted verb is a path into the family (FS.loadFile is
+  // f.FS.loadFile); answered { status, body } by spirit.outcome, as the list reads it.
+  function viaSpirit(name, args) {
+    var S = window.spirit;
+    var n = String(name || '');
+    var dot = n.indexOf('.');
+    var fam = n.slice(0, dot);
+    return S.outcome(Promise.resolve(S.ready).then(function (s) { return (s && s[fam]) || S.require(S.familyPath(fam)); }).then(function (f) {
+      var at = n.slice(dot + 1).split('.');
+      var owner = f;
+      for (var i = 0; i < at.length - 1; i++) owner = owner ? owner[at[i]] : null;
+      return owner[at[at.length - 1]](args || {});
+    }));
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -393,15 +415,19 @@
     // ONE CALL ON THE WIRE: the list's search first, with the words as they stand when it goes; then what the app asks
     // through the lent slot, one at a time.
     var lent = [];
+    // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): its own data source if the mounter gave one, else server.verb asked
+    // through the spirit object; it is handed no api.
+    var asks = typeof o.search === 'function' || (!!o.server && !!o.verb);
     function send(verb, args) {
-      return Promise.resolve(o.api.verb(o.server + '.' + verb, args)).then(function (r) {
+      var asked = typeof o.search === 'function' ? Promise.resolve(o.search(args, verb)) : viaSpirit(o.server + '.' + verb, args);
+      return asked.then(function (r) {
         var body = r && r.body;
         if (!r || r.status !== 200 || !body || body.ok === false) throw new Error((body && (body.error || body.code)) || 'no answer');
         return body;
       });
     }
     function pump() {
-      if (busy || !live || !o.api || typeof o.api.verb !== 'function') return;
+      if (busy || !live || !asks) return;
       var finish = function () { busy = false; pump(); };
       if (again) {
         again = false;
@@ -620,7 +646,7 @@
       if (typeof container.contains === 'function' && !container.contains(e.target)) setOpen(false);
     }
     if (dropdown && typeof document !== 'undefined' && typeof document.addEventListener === 'function') document.addEventListener('click', outside);
-    if (o.api && typeof o.api.onPublished === 'function') off = o.api.onPublished(function () { ask(); }, o.server);
+    if (typeof o.published === 'function') off = o.published(function () { ask(); });
     var unwatch = o.data && window.spirit && window.spirit.data ? window.spirit.data.watchPath(o.data, function () { draw(); }) : null;
 
     self.refresh = function () { draw(); ask(); };

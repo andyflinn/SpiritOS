@@ -5,12 +5,12 @@
 // left pane (🧠Models) and replaces that panes [provider models] buttons. the center pane panel goes. the [Ask] button will
 // no longer spit out a list, and simply update the agent.model table"): a rowForm since goal/G41.27, ❓
 // [providerSelector:dropdown] [Ask], the model list below it following the updated table by the stream. A refusal is said on one line, the provider's reason.
-//   spirit.elements.modelTable.create(container, api, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
+//   spirit.elements.modelTable.create(container, detail) -> { refresh, destroy }   detail: the page's detail pane (../tableElement.js)
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
   var made = 0;
   E.modelTable = {
-    create: function (container, api, detail) {
+    create: function (container, detail) {
       var pre = 'mt' + (++made) + '-';
       var table = null;
       var drop = null;
@@ -29,7 +29,7 @@
         // providerSelector:dropdown in its span, the same the job detail has (../tableElement.js, agentDetail.search), Ask
         // its button; "from" gone.
         var form = window.spirit.element.rowForm.create(container.querySelector('#' + pre + 'form'), { icon: '❓', button: 'Ask' });
-        drop = E.agentDetail.search(form.span, { api: api, table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
+        drop = E.agentDetail.search(form.span, { table: 'provider' }, { face: 'dropdown', placeholder: 'Pick a provider' });
         var said = container.querySelector('#' + pre + 'said');
         // ASK WAITS AS A BUSY BUTTON (goal/G41.23): its request the provider table's ask, which updates the model table.
         window.spirit.element.busyButton.attach(form.button, { run: function () {
@@ -41,8 +41,8 @@
           });
         } });
         table = E.agentTable.create(container.querySelector('#' + pre + 'list'), {
-          api: api, table: 'model', detail: detail,
-          row: function (box, id, added) { return E.modelRow.create(box, api, id, added, detail); },
+          table: 'model', detail: detail,
+          row: function (box, id, added) { return E.modelRow.create(box, id, added, detail); },
           // NO ADD: a model comes from its provider's list (Andy, on G41.18: "get RID of [Add a Model] button in the left
           // panes model mode. NOT required.").
           add: false,

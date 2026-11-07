@@ -5,14 +5,14 @@
 // the damn grantsPanel element". So it names no table: the Grants app hands it contacts and the node's grants, the agent
 // app its jobs and its grants by job. Its contract and its test: ./test/grantsPanel.md and ./test/grantsPanel.js.
 //
-//   grantsPanel.create(host, { ids, grants, api }) -> { destroy() }
+//   grantsPanel.create(host, { ids, grants }) -> { destroy() }
 //   grantsPanel.nodeGrants   the node's own grants table, the one the Grants app picks (below)
 //     ids     the ID table, as the contact selector takes it (G41.13, Q2): { table, key, label }
 //     grants  the grants table those IDs are granted in, as the grant list and row take it: { branch, key, label,
 //             search(text), grant(id, path) -> { ok } or { ok: false, code, error }, revoke(id, path),
 //             watch(fn(id + newline + path, row)) -> its release }
-//     api     optional: handed on to the arming buttons of the grant rows (api.armUntilElsewhere). The panel asks its
-//             verbs through the spirit object itself (goal/G43.24; Andy: "every fucking element gets the interfaces it needs")
+//   The panel asks its verbs through the spirit object itself (goal/G43.24; Andy: "every fucking element gets the interfaces
+//   it needs"), and is handed no api: its rows' arming buttons hear a click elsewhere themselves.
 //   Made without its ID table or its grants table, it throws nothing and draws only a note saying what is missing: it
 //   never falls back to one caller's setting.
 //
@@ -98,7 +98,6 @@
       host.appendChild(note);
       return { destroy: function () { host.innerHTML = ''; } };
     }
-    var api = c.api;
     var tree = null;
     var list = null;          // the grant list
     var idSel = null;         // the grant form's ID selector
@@ -318,7 +317,7 @@
       followServers();
       return loadTree().then(function () {
         if (gone) return;
-        list = P.search.grant.create(listHost, { grants: g, filters: filters, selectors: selectors(), serves: serves, api: api });
+        list = P.search.grant.create(listHost, { grants: g, filters: filters, selectors: selectors(), serves: serves });
       });
     });
 

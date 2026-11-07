@@ -21,8 +21,16 @@ global.window = { spirit: {} };
 global.spirit = window.spirit;
 window.spirit.ready = Promise.resolve({
   contact: { search: function (b) { asked.push({ verb: 'contact.search', body: b }); return Promise.resolve(searchAnswer); } },
-  peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); } },
+  peer: { acquire: function (b) { asked.push({ verb: 'peer.acquire', body: b }); return Promise.resolve({ publicLabel: b.publicLabel }); },
+    // A card ask through the spirit object (goal/G43.24): the packet as it went, and the card the node verified.
+    post: function (b) {
+      const sent = window.spirit.packet.decode(b.text);
+      asked.push({ verb: 'peer.post', key: b.to, body: sent.body, app: sent.app, legacy: sent.legacy });
+      return Promise.resolve(b.to === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } });
+    } },
 });
+// The packet envelope, the real one (spirit/client/packet.js), as the list requires it.
+window.spirit.packet = require(path.join(__dirname, '..', '..', '..', '..', 'client', 'packet.js'));
 let made = null;
 window.spirit.element = nestSearch({
   'search': { create: function (host, o) {
@@ -94,12 +102,10 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   const clicks = [];
   const host = { isConnected: true, addEventListener: function (t, fn) { if (t === 'click') clicks.push(fn); } };
   const said = []; const added = [];
-  const api = { peerPost: function (to, key, b) { asked.push({ verb: 'peerPost', key: key, body: b });
-    return Promise.resolve(key === 'KW' ? { ok: true, card: { ok: false, why: 'wrong key' } } : { ok: true, card: { ok: true, name: 'zed', description: 'hi' } }); } };
-  // The mounter's panel stack's open (goal/G43.18), filling its pane at once; the shell's page api beside it.
-  window.spirit.shell = { pageApi: function (page) { return { page: page }; } };
+  // The mounter's panel stack's open (goal/G43.18), filling its pane at once.
   const openLayer = function (key, spec) { return Promise.resolve(spec.fill({})).then(function () { return { hide: function () {}, set: function () {}, shown: function () { return true; } }; }); };
-  const pane = L.create(host, { api: api, open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
+  // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): it is handed no api; its search is its own data source.
+  const pane = L.create(host, { open: openLayer, say: function (t) { said.push(t); }, onAdded: function (r) { added.push(r); } });
   const o = made.opts;
   const CD = ((window.spirit.data || {}).contact || {}).data;
   if (managers.indexOf('contact') !== -1 && CD && typeof CD.branch === 'string' && CD.branch !== '' && o.data === CD.branch && o.filters === L.filters && o.columns.map(function (c) { return c.field; }).join(',') === 'presence,status,label,add')
@@ -107,13 +113,13 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   else test.fail('the opts: ' + JSON.stringify({ data: o.data, contactBranch: CD && CD.branch, managers: managers, columns: o.columns }));
   if (made.refreshes === 1) test.check('it fills as soon as it is drawn: one refresh at create');
   else test.fail('refreshes at create: ' + made.refreshes);
-  const got = await o.api.verb('search', { q: '  an ' });
+  const got = await o.search({ q: '  an ' }, 'search');
   const s = asked.pop();
   if (s.verb === 'contact.search' && s.body.q === 'an' && got.status === 200 && got.body.ok === true && got.body.items.length === 1 && got.body.more === true)
     test.check('its search asks contact.search with the text trimmed, and answers as a reply');
   else test.fail('search: ' + JSON.stringify({ s: s, got: got }));
   searchAnswer = null;
-  const empty = await o.api.verb('search', {});
+  const empty = await o.search({}, 'search');
   if (empty.body.ok === true && Array.isArray(empty.body.items) && empty.body.items.length === 0 && empty.body.more === false) test.check('an empty answer is an empty list, like any other');
   else test.fail('an empty answer: ' + JSON.stringify(empty));
   const el = o.element({ keep: true, name: 'anna' }, 'K1');
@@ -133,7 +139,8 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   o.details({ name: 'z' }, 'KZ', null);
   await tick();
   const card = asked.pop();
-  if (card.verb === 'peerPost' && card.key === 'KZ' && card.body.card === true && said[said.length - 1] === 'zed: hi') test.check('a row nobody decided about asks that node who it is, and says its card');
+  if (card.verb === 'peer.post' && card.key === 'KZ' && card.body && card.body.card === true && card.legacy === false && card.app === null && said[said.length - 1] === 'zed: hi')
+    test.check('a row nobody decided about asks that node who it is (peer.post through the spirit object, a card ask in its envelope), and says its card');
   else test.fail('pressing an undecided row: ' + JSON.stringify({ card: card, said: said }));
   o.details({}, 'KW', null);
   await tick();

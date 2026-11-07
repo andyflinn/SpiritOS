@@ -15,7 +15,9 @@
 //     expansion made you do.
 //
 // It writes nothing locally: every decision about a person is a verb of
-// the node, asked through the api it is handed (options.api).
+// the node, asked through the spirit object itself (goal/G43.24; Andy:
+// "every element that accesses ANY api must require them themselves").
+// It is handed no api: only its layer's close and title (options.layer).
 
 // ONE PANEL PER ROW (goal/G43.18; Andy: "now you need to give each contact row its own detail panel, similar to the concept
 // where tabs in "agent" can hold the same ui for different rows"): everything below is one panel's own, made per create, its
@@ -23,16 +25,23 @@
 function cdInstance(cdRoot) {
 function cdById(id) { return cdRoot.querySelector('[id="' + id + '"]'); }
 var cdEscapeHtml = spirit.escapeHtml;
-var cdApi = null;
+var cdLayer = {};      // the layer it is drawn in: close() and setTitle(text), the mounter's (options.layer)
 
 var cdKey = '';        // whose row this screen is
 var cdPerson = null;   // the row itself, as contact.get answers it
 var cdChanged = false; // has anything happened? Nothing reads it now: the list repaints from the stream
 
-// Through the shell (AGENT.md, Comms). The verb is the argument; this app
-// no longer knows an address.
+// THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb on spirit.ready, answered { status, text, body } as this screen
+// reads it; a refusal is the node's status and words. The verb is the argument; this app knows no address.
 function cdPost(verb, body) {
-  return cdApi.verb(verb, body);
+  var n = String(verb);
+  var at = n.indexOf('.');
+  return Promise.resolve(spirit.ready).then(function (s) { return s[n.slice(0, at)][n.slice(at + 1)](body || {}); }).then(function (b) {
+    return { status: 200, text: JSON.stringify(b), body: b };
+  }, function (e) {
+    var b = (e && e.body) || { ok: false, error: String((e && e.message) || e) };
+    return { status: (e && e.status) || 500, text: JSON.stringify(b), body: b };
+  });
 }
 
 // ── A MESSAGE THAT SURVIVES THE REPAINT ──────────────────────────────
@@ -147,7 +156,7 @@ function cdArming(id, label, armedLabel, run) {
   var button = cdById(id);
   var E = window.spirit && window.spirit.element && window.spirit.element.armingButton;
   if (!button || !E) return;
-  E.attach(button, { label: label, armedLabel: armedLabel, run: run, api: cdApi });
+  E.attach(button, { label: label, armedLabel: armedLabel, run: run });
 }
 
 // Two presses. Blocking is the one decision here that stops mail
@@ -166,7 +175,7 @@ function cdBlock() {
 // relay's, and is not touched here.
 function cdForget() {
   return cdPeerAction('forget').then(function (ok) {
-    if (ok) { cdChanged = true; cdApi.closeDialog(); }
+    if (ok) { cdChanged = true; if (typeof cdLayer.close === 'function') cdLayer.close(); }
   });
 }
 
@@ -174,11 +183,7 @@ function cdRender() {
   var body = cdById('cd-body');
   if (!body) return;
 
-  if (cdApi) cdApi.setScreenTitle(cdTitle());
-
-  // THE PADLOCK ON THE BAR is gone with the seats it stood for. Cleared on
-  // every render all the same, where the api handed still has the call.
-  if (cdApi && cdApi.setScreenMark) cdApi.setScreenMark('', '');
+  if (typeof cdLayer.setTitle === 'function') cdLayer.setTitle(cdTitle());
 
   if (!cdPerson) {
     // The row went away while this screen was open — blocked from
@@ -293,8 +298,8 @@ function cdPeerAction(action, extra) {
 var cdPage = ({
   // Once per panel, from create. Everything about WHO this screen is
   // showing belongs in open() — see below.
-  mount: function (container, api) {
-    cdApi = api;
+  mount: function (container, layer) {
+    cdLayer = layer || {};
     container.innerHTML = '<div id="cd-body" class="stack"></div>';
 
     // Delegated, because the panel is repainted after every decision and
@@ -340,10 +345,10 @@ return cdPage;
 if (window.spirit && window.spirit.require) window.spirit.require('spirit/element/armingButton.js');
 // A PANEL, NO APP (goal/G40.8; Andy: "natterDetails and contactDetails will become standard intrinsic shell elements"; since
 // goal/G43.18 no page on the navigation: "the details of relays and contacts ... taking over the screen new-style"): the
-// contact row opens it over its list as a layer, its title and ✕ the layer's, its api the shell's (spirit.shell.pageApi);
+// contact row opens it over its list as a layer, its title and ✕ the layer's (options.layer: close, setTitle);
 // nothing is handed back (what it changes reaches every view on the stream).
 // AND THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
-// create(container, options) draws the same screen into the container, options { api, key }.
+// create(container, options) draws the same screen into the container, options { key, layer }.
 // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "contactDetails.js should really be
 // spirit/run/spirit/element/search/contact/detailElement.js"): merged into, so the parts of search/contact/ load in any order.
 Object.assign(['search', 'contact', 'detailElement'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), {
@@ -351,7 +356,7 @@ Object.assign(['search', 'contact', 'detailElement'].reduce(function (o, k) { re
     var o = options || {};
     var done = { destroy: function () { container.innerHTML = ''; } };
     // UNCONFIGURED, IT SAYS SO and throws nothing (box v23: "no throw even unconfigured").
-    if (!o.api || !o.key) {
+    if (!o.key) {
       var note = document.createElement('div');
       note.className = 'job-manifest-note';
       note.textContent = 'not configured: no contact named';
@@ -359,7 +364,7 @@ Object.assign(['search', 'contact', 'detailElement'].reduce(function (o, k) { re
       return done;
     }
     var page = cdInstance(container);
-    page.mount(container, o.api);
+    page.mount(container, o.layer);
     page.open(o);
     return done;
   },

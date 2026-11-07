@@ -1,19 +1,26 @@
 # spirit/element/search/contact/relayPanel.js
 
-One relay, a shell element (goal/G41.32): `spirit.element.search.contact.relayPanel.create(container, { key })`, a panel with no `open`
+One relay, a shell element (goal/G41.32): `spirit.element.search.contact.relayPanel.create(container, { key, layer })`, a panel with no `open`
 of its own (goal/G43.18; it was a page on the navigation, goal/G40.8). It reads that relay's row by `spirit.relay.status` as it is drawn, and listens after
 that: `spirit/element/test/relayRowStream.md`. Its panels fold; the owner's panels (Memory and disc, Invites)
 sit in one more fold, "Managing my relay".
 
 This spec covers what goal/G41.9 asks of it: its four are-you-sure buttons are the shell element armingButton.
 
+**What it needs, it requires itself** (goal/G43.24; Andy: *"every element that accesses ANY api must require them themselves,
+(fast if an other element already required it), that way anybody can mount any element without knowing what it actually
+needs...."*): the node's verbs are `family.verb` on `spirit.ready`; a post to the relay is the node's `peer.post`, its
+body in its packet envelope (`spirit/client/packet.js`, required as it posts), the relay's answer read out of its
+envelope. It is handed no api: `layer` is only the layer it is drawn in, `close()` and `setTitle(text)`, the contact
+row's; its title goes there.
+
 ## Requirements (goal/G41.9)
 
 - **It loads armingButton itself** (goal/G41.3), through `spirit.require('spirit/element/armingButton.js')`.
 - **Nothing hand-rolled is left**: no `data-armed` in its code, no `armUntilElsewhere` of its own, no `armed` class.
   The element does all of it.
-- **Every button below is an arming button** (`armingButton.attach` or `create`), handed the page's api, so a click
-  elsewhere puts it back.
+- **Every button below is an arming button** (`armingButton.attach` or `create`), handed no api: the button hears a
+  click elsewhere itself.
   - **Leave** (a relay this node holds a seat on and does not own): label `Leave this relay`, armed
     `Press again to leave`; its run asks `relay.leave { key: url }`.
   - **Remove** (a relay the removal rule lets go, `ownerBadge.removalRefusal`): label `Remove this relay`, armed
@@ -36,6 +43,6 @@ This spec covers what goal/G41.9 asks of it: its four are-you-sure buttons are t
 ## What its test must try to break
 
 - `data-armed`, `armUntilElsewhere` or an `armed` class left in the file.
-- A button drawn plain, with other wording, or without the page's api.
+- A button drawn plain, with other wording, or handed an api; an api in its code; a post to the relay outside its envelope.
 - A run that asks for another relay, another invite, or sends figures with a restart.
 - Two presses on the drawn Remove that remove the relay without the element.

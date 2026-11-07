@@ -7,8 +7,8 @@
 // its branch editor as a closable tab (goal/G41.32). The grants app draws it in its Bundles tab ("the Grant app must use
 // the bundleEditor in its "Bundle" tab"). A bundle is a label; its branches are the branch editor's.
 //
-//   spirit.element.bundleEditor.create(box, { api, tabs, tabLabel }) -> { destroy() }
-//     box  the space it fills; api the app's shell api, for the are-you-sure; tabs the tabContainer the pane opens tabs in;
+//   spirit.element.bundleEditor.create(box, { tabs, tabLabel }) -> { destroy() }
+//     box  the space it fills; tabs the tabContainer the pane opens tabs in;
 //     tabLabel(row) what names those tabs, its mounter's (the agent app's browserAgent.js), handed on to ./search/bundle.js
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require; and the auth family's cache manager, whose
@@ -47,7 +47,7 @@
       said.className = 'job-manifest-note';
       box.appendChild(said);
       // FILLING THE REST: the bundles, a pane whose labels are shown only.
-      bundles = E.search.bundle.create(box, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel, api: o.api });
+      bundles = E.search.bundle.create(box, { face: 'pane', columns: ['label', 'owner'], tabs: o.tabs, tabLabel: o.tabLabel });
       bundles.className += ' fill';
 
       function say(text) { said.textContent = String(text || ''); }

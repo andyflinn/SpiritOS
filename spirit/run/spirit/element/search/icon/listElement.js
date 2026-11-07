@@ -59,7 +59,8 @@
       });
     }
     list = E.search.create(host, {
-      api: { verb: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); } },
+      // Its own data source (goal/G43.24), which finds nothing: the rows are its own.
+      search: function () { return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } }); },
       server: 'fs',
       verb: 'search',
       face: o.face,

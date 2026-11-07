@@ -87,18 +87,18 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const B = ((global.window.spirit.data || {}).auth || {}).data && global.window.spirit.data.auth.data.bundles;
   ok(!!B && typeof B.branch === 'string' && B.branch !== '' && o.data === B.branch, 'it is a view of the auth family\'s bundles (spirit.data.auth.data.bundles.branch), the spirit object\'s cache, which the node\'s stream keeps current', 'data: ' + short(o.data) + ', authReads.bundles.branch ' + short(B && B.branch));
 
-  const got = await o.api.verb(o.server + '.' + o.verb, o.args('  rea ', {}));
+  const got = await o.search(o.args('  rea ', {}));
   ok(o.server === 'auth' && o.verb === 'bundle' && asked.length === 1 && asked[0].op === 'search' && asked[0].text === 'rea',
     'its search asks auth.bundle { op: search, text } through the spirit object, the text trimmed', 'asked: ' + short(asked) + ', at ' + o.server + '.' + o.verb);
   ok(got && got.status === 200 && got.body && got.body.ok === true && got.body.items.length === 1 && got.body.more === true, 'and answers as a reply: { items, more }', 'got: ' + short(got));
   answer = null;
-  const empty = await o.api.verb(o.server + '.' + o.verb, o.args('', {}));
+  const empty = await o.search(o.args('', {}));
   ok(empty && empty.body && Array.isArray(empty.body.items) && empty.body.items.length === 0 && empty.body.more === false, 'an empty answer is an empty list, like any other', 'empty: ' + short(empty));
   const cols = (o.columns || []).map(function (c) { return c.field; });
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
   ok(JSON.stringify(cols) === '["label","owner"]', 'by default its columns are the label, then the owner', 'columns: ' + short(cols));
   answer = { items: [], more: false };
-  await o.api.verb(o.server + '.' + o.verb, o.args('', {}));
+  await o.search(o.args('', {}));
   ok(asked.length > 0 && asked[asked.length - 1].op === 'search' && !('owner' in asked[asked.length - 1]), 'made for no app server, its search names no owner: every bundle', 'asked: ' + short(asked[asked.length - 1]));
   // THE WHOLE ROW (goal/G41.28; Andy, box v15: "All client side searches will be fixed, too, and search the whole row, as
   // cached in spirit.data."): the list hands its search no matched() of its own.
@@ -131,7 +131,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await settle();
   const fo = lists[2] && lists[2].o;
   const nA = asked.length;
-  if (fo && fo.api && typeof fo.args === 'function') await fo.api.verb(fo.server + '.' + fo.verb, fo.args(' too ', {}));
+  if (fo && typeof fo.search === 'function' && typeof fo.args === 'function') await fo.search(fo.args(' too ', {}), fo.verb);
   const fa = asked[nA];
   ok(!!fa && asked.length === nA + 1 && fa.op === 'search' && fa.text === 'too' && fa.owner === 'agent', 'its search asks auth.bundle { op: search, text, owner: family }, the text trimmed', 'asked: ' + short(asked.slice(nA)));
   // WHAT IT OFFERS: the list is a view of the node's bundles, which holds every bundle the page has, so what it shows is that

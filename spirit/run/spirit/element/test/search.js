@@ -67,15 +67,16 @@ function filterTarget(name, value) {
   return { inside: true, closest: function () { return null; },
     getAttribute: function (a) { return a === 'data-filter' ? name : a === 'data-value' ? value : null; } };
 }
-// The shell api: every verb call kept; held, a call waits until let go.
-function api() {
-  const a = { calls: [], held: false, waiting: [], answer: { status: 200, body: { ok: true, items: [] } }, published: null, off: 0 };
-  a.verb = function (name, args) {
-    a.calls.push({ name: name, args: args });
+// A list's own data source (options.search(args, verb), goal/G43.24): every call kept as server.verb; held, a call waits
+// until let go. And what it is told when its rows changed elsewhere (options.published(fn)).
+function source(server) {
+  const a = { calls: [], held: false, waiting: [], answer: { status: 200, body: { ok: true, items: [] } }, heard: null, off: 0 };
+  a.search = function (args, verb) {
+    a.calls.push({ name: server + '.' + verb, args: args });
     if (a.held) return new Promise(function (r) { a.waiting.push(r); });
     return Promise.resolve(a.answer);
   };
-  a.onPublished = function (fn, server) { a.published = { fn: fn, server: server }; return function () { a.off += 1; }; };
+  a.published = function (fn) { a.heard = fn; return function () { a.off += 1; }; };
   a.release = function (answer) { const r = a.waiting.shift(); r(answer || a.answer); };
   return a;
 }
@@ -166,10 +167,10 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
 (async function () {
   test.subHeading('create: a pane drawn from the page\'s rows');
   let page = [{ key: 'b', name: 'bert', size: 2 }, { key: 'z', name: 'zed', size: 9 }, { key: 'q', name: 'quinn', size: 5 }];
-  const A = api();
+  const A = source('srv');
   const picks = [];
   const c1 = container();
-  const L = PS.create(c1, { api: A, server: 'srv', verb: 'search', rows: function () { return page; },
+  const L = PS.create(c1, { search: A.search, published: A.published, server: 'srv', verb: 'search', rows: function () { return page; },
     columns: [{ field: 'name', label: 'Name', sort: 'text' }, { field: 'size', sort: 'number' }, { field: 'note' }],
     args: function (text, values) { return { q: text, v: values }; }, pick: function (row, key) { picks.push([row, key]); }, empty: 'No one.' });
   ok(c1.get('text') && c1.get('list') && c1.get('search') && c1.get('clear'), 'the pane draws its field, its search and clear buttons and its list',
@@ -303,11 +304,11 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   ok((await lentLater).done === 1, 'and it answers its own answer', 'later did not answer');
   A.held = false;
 
-  test.subHeading('create: onPublished re-asks; destroy stops everything');
+  test.subHeading('create: published re-asks; destroy stops everything');
   await tick(); await tick();
-  ok(A.published && A.published.server === 'srv', 'it listens to its server\'s publishes', 'published: ' + JSON.stringify(A.published));
+  ok(typeof A.heard === 'function', 'it listens through options.published', 'published was handed nothing');
   const n1 = A.calls.length;
-  A.published.fn();
+  A.heard();
   ok(A.calls.length === n1 + 1 && A.calls[n1].name === 'srv.search', 'a publish asks the search again', 'calls: ' + (A.calls.length - n1));
   await tick(); await tick();
   L.destroy();
@@ -318,6 +319,65 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   c1.type('ne');
   await tick();
   ok(c1.get('list').innerHTML === drawn && A.calls.length === n1 + 1, 'after destroy nothing draws and nothing is asked', 'drew after destroy');
+
+  // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "every element that accesses ANY api must require them
+  // themselves"): handed no source, the list asks server.verb through the spirit object, a family on spirit.ready or one
+  // spirit.require binds, a dotted verb walked as a path; it takes no api from its options.
+  test.subHeading('create: handed no source, it asks through the spirit object');
+  const SRC = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  ok(!/\b(?:o|opts|options)\s*\.\s*api\b|\bapi\s*\.\s*verb\b/.test(SRC), 'its code reads no api off its options', 'it still reads an api handed to it');
+  const asked = [];
+  let refuse = null;
+  const fam = function (name) {
+    return new Proxy({}, { get: function (t, verb) {
+      if (verb === 'then') return undefined;
+      const at = function (args) { asked.push({ name: name + '.' + String(verb), args: args }); return refuse ? Promise.reject(refuse) : Promise.resolve({ ok: true, items: [{ key: 'r1', label: JSON.stringify({ key: 'r1', name: 'roxy' }) }], n: 3 }); };
+      return name === 'desk' && verb === 'items' ? { search: function (args) { asked.push({ name: 'desk.items.search', args: args }); return Promise.resolve({ ok: true, items: [] }); } } : at;
+    } });
+  };
+  const bound = [];
+  const S = window.spirit;
+  S.ready = Promise.resolve({ srv: fam('srv'), desk: fam('desk') });
+  S.familyPath = function (n) { return 'process/js/' + n + '/family/api.js'; };
+  S.require = function (p) { bound.push(p); return Promise.resolve(fam(/process\/js\/([^/]+)\//.exec(p)[1])); };
+  S.outcome = function (c) {
+    return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
+      function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; });
+  };
+  const cs = container();
+  const Ls = PS.create(cs, { server: 'srv', verb: 'search', rows: function () { return []; }, columns: [{ field: 'name' }] });
+  cs.type('ro');
+  await tick(); await tick(); await tick();
+  ok(asked.length === 1 && asked[0].name === 'srv.search' && asked[0].args.text === 'ro', 'typing asks srv.search on the family spirit.ready holds', 'asked: ' + short(asked));
+  ok(cs.shown().indexOf('r1') !== -1, 'and its answer joins the list', 'shown: ' + cs.shown());
+  ok((await Ls.ask('count', { a: 1 })).n === 3 && asked[asked.length - 1].name === 'srv.count', 'ask(verb, args) goes the same way', 'asked: ' + short(asked[asked.length - 1]));
+  refuse = { status: 403, body: { ok: false, code: 'owner-only', error: 'not yours' } };
+  let refused = null;
+  try { await Ls.ask('count'); } catch (err) { refused = err.message; }
+  ok(refused === 'not yours', 'a refused call rejects ask with the node\'s words', 'why: ' + refused);
+  refuse = null;
+  Ls.destroy();
+  const co = container();
+  const Lo = PS.create(co, { server: 'other', verb: 'find', rows: function () { return []; }, columns: [{ field: 'name' }] });
+  co.type('x');
+  await tick(); await tick(); await tick();
+  ok(bound.indexOf('process/js/other/family/api.js') !== -1 && asked[asked.length - 1].name === 'other.find',
+    'a family not on spirit.ready is bound through spirit.require(spirit.familyPath(name))', 'bound: ' + short(bound) + ', asked ' + short(asked[asked.length - 1]));
+  Lo.destroy();
+  const cd = container();
+  const Ld = PS.create(cd, { server: 'desk', verb: 'items.search', rows: function () { return []; }, columns: [{ field: 'name' }] });
+  cd.type('g');
+  await tick(); await tick(); await tick();
+  ok(asked[asked.length - 1].name === 'desk.items.search', 'a dotted verb is a path into the family', 'asked: ' + short(asked[asked.length - 1]));
+  Ld.destroy();
+  const cn = container();
+  const n2 = asked.length;
+  const Ln = PS.create(cn, { rows: function () { return []; }, columns: [{ field: 'name' }] });
+  cn.type('y');
+  await tick(); await tick();
+  ok(asked.length === n2, 'with neither a source nor a server and verb it asks nobody', 'asked: ' + short(asked.slice(n2)));
+  Ln.destroy();
+  delete S.ready; delete S.require; delete S.familyPath; delete S.outcome;
 
   test.subHeading('create: an empty list, and no rows given');
   const c2 = container();
@@ -331,8 +391,8 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
 
   test.subHeading('create: filter buttons');
   const c4 = container();
-  const A4 = api();
-  const L4 = PS.create(c4, { api: A4, server: 's', verb: 'v', columns: [{ field: 'name' }],
+  const A4 = source('s');
+  const L4 = PS.create(c4, { search: A4.search, server: 's', verb: 'v', columns: [{ field: 'name' }],
     rows: function () { return [{ key: 'a', name: 'a', mine: true, kind: 'x', n: 9 }, { key: 'b', name: 'b', mine: false, kind: 'y', n: 1 }]; },
     filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function (row, v) { return v ? (row.mine ? 1 : 0) : 1; } },
       { name: 'kind', multi: true, choices: [{ value: 'x', word: 'X' }, { value: 'y', word: 'Y' }], test: function (row, v) { return v[row.kind] ? 0 : 1; } },
@@ -420,8 +480,8 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
     fire: function (t) { (heard[t] || []).forEach(function (fn) { fn({ type: t, target: this }); }, this); } }; };
   const s1 = selEl(); const s2 = selEl();
   const c11 = container();
-  const A11 = api();
-  PS.create(c11, { api: A11, server: 's', verb: 'v', columns: [{ field: 'name' }],
+  const A11 = source('s');
+  PS.create(c11, { search: A11.search, server: 's', verb: 'v', columns: [{ field: 'name' }],
     rows: function () { return [{ key: 'a', name: 'a', who: 'ann', kind: 'x' }, { key: 'b', name: 'b', who: 'bob', kind: 'y' }]; },
     selectors: [{ name: 'who', element: s1, test: function (row) { return !s1.value || row.who === s1.value ? 1 : 0; } },
       { name: 'kind', element: s2, test: function (row) { return !s2.value || row.kind === s2.value ? 1 : 0; } }],
@@ -490,9 +550,9 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
     seatRows: function (type, items) { seatedIn.push([type, items]); },
     watchPath: function (type, fn) { watched.push([type, fn]); return function () { unwatched += 1; }; } };
   const c7 = container();
-  const A7 = api();
+  const A7 = source('s');
   A7.answer = { status: 200, body: { ok: true, items: [{ key: 'p2', label: '{"name":"per"}' }] } };
-  const L7 = PS.create(c7, { api: A7, server: 's', verb: 'v', data: 'people', columns: [{ field: 'name' }] });
+  const L7 = PS.create(c7, { search: A7.search, server: 's', verb: 'v', data: 'people', columns: [{ field: 'name' }] });
   ok(c7.shown().join() === 'p1', 'with data its rows are the branch\'s, drawn at once', 'shown: ' + c7.shown());
   ok(watched.length === 1 && watched[0][0] === 'people', 'it watches its branch', 'watched: ' + watched.length);
   c7.type('pe');
@@ -571,7 +631,7 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
     let made = null; let threw = null;
     const c10 = container();
     try {
-      made = P2.create(c10, { api: api(), server: 'srv', verb: 'search', rows: function () { return [{ key: 'b', name: 'bert' }, { key: 'z', name: 'zed' }]; },
+      made = P2.create(c10, { search: source('srv').search, server: 'srv', verb: 'search', rows: function () { return [{ key: 'b', name: 'bert' }, { key: 'z', name: 'zed' }]; },
         columns: [{ field: 'name', label: 'Name', sort: 'text' }], args: function (t) { return { q: t }; } });
       c10.type('ze');
     } catch (e) { threw = e && e.message; }

@@ -10,7 +10,6 @@
 //     opts.bundle    the bundle whose branches it lists (auth.branch's bundle filter); none: every bundle's
 //     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's
 //     opts.columns   the row's fields it shows, in order, of family, verb and delete; family and verb by default
-//     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
 // A VIEW OF THE auth FAMILY'S BRANCHES (goal/G41.14, G41.28): auth.branch's search seats its rows there, and the node's
 // stream keeps them current through the auth family's cache manager (spirit/auth/data.js), so a branch added or deleted
@@ -50,7 +49,8 @@
     }
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['family', 'verb'];
     list = E.search.create(box, {
-      api: { verb: function (name, args) { return search(args); } },
+      // Its own data source (goal/G43.24): the search asks it, and is handed no api.
+      search: search,
       // A view of the node's branches, the branch the auth family's manager keeps (spirit.data.auth.data.branches.branch).
       data: window.spirit.data.auth.data.branches.branch,
       server: 'auth',
@@ -61,7 +61,7 @@
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
       args: function (text) { return { text: text }; },
       columns: names.map(function (n) { return COLUMNS[n]; }).filter(Boolean),
-      element: function (row) { return E.search.branch.rowElement.create(row, { api: o.api }); },
+      element: function (row) { return E.search.branch.rowElement.create(row); },
       // A pick shows the branch as family.verb, the family alone for (ALL), never its numbers.
       name: function (row) { return row ? (row.verb ? row.family + '.' + row.verb : row.family + ' (ALL)') : ''; },
       // THE VIEW HOLDS EVERY BRANCH THE PAGE KNOWS: this list shows its own bundle's, narrowed by the family selector, as

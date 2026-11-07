@@ -95,22 +95,21 @@
   // mount with the green look at the bottom of the contact list instead of taking over the screen new-style...."; the red:
   // spirit/element/test/panel.js, "a relay's and a person's details open over Contacts under one bar, no navigation page,
   // their ✕ back"): opts.open(key, { icon, label, fill(pane, closed) }), the mounter's panel stack (spirit/element/panel.js),
-  // as file opens its viewers. The page api the details draw with is the shell's (spirit.shell.pageApi), its close, title and
-  // visibility the layer's. No open handed: no details to open. The page loads when it is first opened, through spirit.require.
+  // as file opens its viewers. The details are handed only the layer they are drawn in, its close and title (options.layer);
+  // every verb they ask, they ask through the spirit object themselves (goal/G43.24). No open handed: no details to open.
+  // The page loads when it is first opened, through spirit.require.
   function openDetails(open, kind, key) {
     if (typeof open !== 'function') return Promise.resolve(null);
     var file = kind === 'relay' ? 'spirit/element/search/contact/relayPanel.js' : 'spirit/element/search/contact/detailElement.js';
     var layer = null;
     return Promise.resolve(open('contact/' + kind + '/' + key, { icon: '', label: kind === 'relay' ? 'Relay' : 'Contact', fill: function (pane) {
       return window.spirit.require(file).then(function () {
-        var S = window.spirit;
-        var api = S.shell && typeof S.shell.pageApi === 'function' ? S.shell.pageApi({
+        var here = {
           close: function () { if (layer) layer.hide(); },
           setTitle: function (text) { if (layer) layer.set({ label: String(text || '') }); },
-          isTop: function () { return !!layer && typeof layer.shown === 'function' && layer.shown(); },
-        }) : null;
-        var E = S.element.search.contact;
-        return kind === 'relay' ? E.relayPanel.create(pane, { key: key, api: api || undefined }) : E.detailElement.create(pane, { key: key, api: api });
+        };
+        var E = window.spirit.element.search.contact;
+        return kind === 'relay' ? E.relayPanel.create(pane, { key: key, layer: here }) : E.detailElement.create(pane, { key: key, layer: here });
       });
     } })).then(function (l) { layer = l; return l; });
   }

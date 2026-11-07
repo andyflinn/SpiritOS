@@ -153,23 +153,29 @@ const ALLOC = { ok: true, onFile: { ramLimitMB: 256, discLimitMB: 2048 }, runnin
 function world(rows, relayStatus) {
   const document = makeDom();
   const w = { required: [], calls: [], posts: [], armings: [], closed: 0, document: document };
-  const api = {
-    verb: function (name, body) {
-      w.calls.push({ name: name, body: body });
-      return Promise.resolve({ status: 200, ok: true, text: JSON.stringify({ ok: true }), body: { ok: true } });
-    },
-    peerPost: function (app, key, body) {
-      w.posts.push({ app: app, key: key, body: body });
-      if (body && body.config && !Object.keys(body.config).length) return Promise.resolve({ ok: true, body: ALLOC });
-      if (body && body.config && body.config.restart) return Promise.resolve({ ok: true, body: { ok: true, restarting: true } });
-      if (body && body.revoke) return Promise.resolve({ ok: true, body: { ok: true, revoked: 1 } });
-      return Promise.resolve({ ok: true, body: { ok: true } });
-    },
-    closeDialog: function () { w.closed += 1; },
-    setScreenTitle: function () {}, setScreenMark: function () {},
-    armUntilElsewhere: function (fn) { w.disarm = fn; },
+  // THE NODE BEHIND THE SPIRIT OBJECT (goal/G43.24): every family.verb the panel asks is recorded (w.calls), and each
+  // packet it posts to a relay through peer.post is read out of its envelope (w.posts), the relay's answer put in one.
+  const P = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
+  const relayAnswer = function (body) {
+    if (body && body.config && !Object.keys(body.config).length) return ALLOC;
+    if (body && body.config && body.config.restart) return { ok: true, restarting: true };
+    if (body && body.revoke) return { ok: true, revoked: 1 };
+    return { ok: true };
   };
-  w.api = api;
+  const families = new Proxy({}, { get: function (t, fam) {
+    if (fam === 'then') return undefined;
+    if (fam === 'peer') return { post: function (b) {
+      const sent = P.decode(b.text);
+      w.posts.push({ app: sent.app, key: b.to, body: sent.body });
+      return Promise.resolve({ ok: true, text: P.encode('', relayAnswer(sent.body)).text });
+    } };
+    return new Proxy({}, { get: function (t2, verb) {
+      return function (body) { w.calls.push({ name: String(fam) + '.' + String(verb), body: body }); return Promise.resolve({ ok: true }); };
+    } });
+  } });
+  // The layer it is drawn in (options.layer): its close and title the mounter's.
+  const layer = { close: function () { w.closed += 1; }, setTitle: function (t) { w.title = String(t); } };
+  w.layer = layer;
   const record = function (how, button, opts) {
     const o = opts || {};
     w.armings.push({ how: how, button: button, opts: o, label: o.label != null ? String(o.label) : String(button.textContent || '') });
@@ -187,6 +193,8 @@ function world(rows, relayStatus) {
     // The node's stream through the data set (goal/G43.5): what a translator keeps of a relay's events, as the page's.
     data: { addTranslator: function (t) { const h = { onRelayEvent: t.onRelay }; (w.streams = w.streams || []).push(h); return function () { w.streams.splice(w.streams.indexOf(h), 1); }; } },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
+    ready: Promise.resolve(families),
+    packet: P,
     relay: { status: function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); } },
     // The contact family's cache (goal/G41.28): its manager loads, and the page watches spirit.data.contact.data's rows.
     cacheManager: function (name) { w.managers = (w.managers || []).concat(name); ((win.spirit.data = win.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } }; return Promise.resolve(true); },
@@ -197,9 +205,9 @@ function world(rows, relayStatus) {
       },
     },
   };
-  // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with the page's api, as a layer's
+  // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/rowElement.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.search.contact.relayPanel.create(box, { key: key, api: api }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.search.contact.relayPanel.create(box, { key: key, layer: layer }); };
   vm.createContext(win);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -241,7 +249,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   ok(!!restart, 'Restart is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
   if (restart) {
     ok(restart.opts.armedLabel === 'Restart? Every stream drops', 'armed, it says Restart? Every stream drops', 'armedLabel: ' + short(restart.opts.armedLabel));
-    ok(restart.opts.api === w.api && inPage(w, restart.button), 'handed the page\'s api, and in the page', 'api ' + (restart.opts.api === w.api) + ', in page ' + inPage(w, restart.button));
+    ok(!('api' in restart.opts) && inPage(w, restart.button), 'handed no api, and in the page', 'api ' + ('api' in restart.opts) + ', in page ' + inPage(w, restart.button));
     const before = w.posts.length;
     if (typeof restart.opts.run === 'function') await restart.opts.run();
     await settle();
@@ -256,7 +264,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   ok(!!revoke, 'an invite\'s Revoke is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
   if (revoke) {
     ok(revoke.opts.armedLabel === 'Revoke saint?', 'armed, it names the invite: Revoke saint?', 'armedLabel: ' + short(revoke.opts.armedLabel));
-    ok(revoke.opts.api === w.api && inPage(w, revoke.button), 'handed the page\'s api, and in the page', 'api ' + (revoke.opts.api === w.api) + ', in page ' + inPage(w, revoke.button));
+    ok(!('api' in revoke.opts) && inPage(w, revoke.button), 'handed no api, and in the page', 'api ' + ('api' in revoke.opts) + ', in page ' + inPage(w, revoke.button));
     const before = w.posts.length;
     if (typeof revoke.opts.run === 'function') await revoke.opts.run();
     await settle();
@@ -270,7 +278,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   ok(!!remove, 'Remove is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
   if (remove) {
     ok(remove.opts.armedLabel === 'Press again to remove', 'armed, it says Press again to remove', 'armedLabel: ' + short(remove.opts.armedLabel));
-    ok(remove.opts.api === w.api && inPage(w, remove.button), 'handed the page\'s api, so a click elsewhere puts it back', 'api ' + (remove.opts.api === w.api) + ', in page ' + inPage(w, remove.button));
+    ok(!('api' in remove.opts) && inPage(w, remove.button), 'handed no api: the button hears a click elsewhere itself', 'api ' + ('api' in remove.opts) + ', in page ' + inPage(w, remove.button));
     const before = w.calls.length;
     if (typeof remove.opts.run === 'function') await remove.opts.run();
     await settle();
@@ -298,7 +306,7 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   ok(!!leave, 'Leave is made by armingButton', 'armings: ' + short(w3.armings.map(function (a) { return a.label; })));
   if (leave) {
     ok(leave.opts.armedLabel === 'Press again to leave', 'armed, it says Press again to leave', 'armedLabel: ' + short(leave.opts.armedLabel));
-    ok(leave.opts.api === w3.api && inPage(w3, leave.button), 'handed the page\'s api, so a click elsewhere puts it back', 'api ' + (leave.opts.api === w3.api) + ', in page ' + inPage(w3, leave.button));
+    ok(!('api' in leave.opts) && inPage(w3, leave.button), 'handed no api: the button hears a click elsewhere itself', 'api ' + ('api' in leave.opts) + ', in page ' + inPage(w3, leave.button));
     const before = w3.calls.length;
     if (typeof leave.opts.run === 'function') await leave.opts.run();
     await settle();
@@ -360,5 +368,13 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   w8.open('RK2');
   await settle();
   ok(!!w8.box && !w8.document.querySelector('.nd-own') && !starOf(w8), 'on a face (window.spirit.transport) no button is drawn', 'on a face: .nd-own ' + !!w8.document.querySelector('.nd-own'));
+
+  // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
+  // needs...."): the node's verbs and its posts to the relay go through the spirit object; it is handed no api.
+  test.subHeading('it asks through the spirit object, and is handed no api');
+  ok(!/\bapi\b/.test(code) && !/ndApi/.test(code), 'its code names no api', 'its code still names an api');
+  ok(w.required.indexOf('spirit/client/packet.js') !== -1, 'a post to the relay requires the packet envelope itself (spirit/client/packet.js)', 'required: ' + short(w.required));
+  ok(w.posts.length > 0 && w.posts.every(function (p) { return p.app === 'relay' && p.key === 'RK'; }), 'each post to the relay is a packet for it through peer.post, in its envelope', 'posts: ' + short(w.posts.map(function (p) { return { app: p.app, key: p.key }; })));
+  ok(typeof w.title === 'string' && /^Relay Details/.test(w.title), 'its title goes to the layer it is drawn in (options.layer.setTitle)', 'title: ' + short(w.title));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

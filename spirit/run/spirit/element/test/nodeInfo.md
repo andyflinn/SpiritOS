@@ -29,7 +29,8 @@ judged in `./nodeInfoRotate.js`.
   node's nor a relay's.
 - **The two forms**: the email form (`joinForm.mount`) above the face form (`faceForm.mount`), each in its slot, over the
   relays this node holds a seat on: from `spirit.relay.status('')`, only a row claimed or owned whose roll names the
-  relay's key. The email form picks among them (`pick: 'seated'`); both escape with `spirit.escapeHtml`; the face form is
+  relay's key. The email form picks among them (`pick: 'seated'`); neither is handed an escape (each escapes with
+  `spirit.escapeHtml` itself, goal/G43.24); the face form is
   handed a `reload` that asks relay.status again and draws both forms again. The relays land when they land: the fields
   and the card do not wait for them. relay.status refused, both forms are drawn over no relay and nothing throws.
 - **"What each relay calls you" is dropped** (Andy, 2026-10-27): no relay table, no push of a saved name to every relay,

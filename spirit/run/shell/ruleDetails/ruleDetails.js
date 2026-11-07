@@ -23,7 +23,7 @@ var rdChatMore = false;
 var rdNote = '';
 
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): Activate and Delete are armingButtons
-// (spirit/element/armingButton.js), which the dialog loads itself; each arms, says so, and hands the shell its disarm.
+// (spirit/element/armingButton.js), which the dialog loads itself; each arms, says so, and disarms itself on a click elsewhere.
 var rdParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require ? spirit.require('spirit/element/armingButton.js') : null);
 // And the desk family's cache manager, which keeps the rule and its chat (spirit.data.desk.data).
 var rdData = spirit.cacheManager('desk');
@@ -70,7 +70,7 @@ function rdFrame() {
     if (!A) return;
     [['rd-activate', 'Activate', 'active'], ['rd-delete', 'Delete', 'deleted']].forEach(function (b) {
       var button = document.getElementById(b[0]);
-      if (button) A.attach(button, { label: b[1], armedLabel: b[1] + ': sure?', run: function () { rdVersion(b[2]); }, api: rdApi });
+      if (button) A.attach(button, { label: b[1], armedLabel: b[1] + ': sure?', run: function () { rdVersion(b[2]); } });
     });
   }, function () { /* no armingButton, no second press */ });
 }

@@ -124,24 +124,23 @@ test.startTest('persona/: the persona table');
   ok(E.personaTable && typeof E.personaTable.create === 'function' && E.personaRow && typeof E.personaRow.create === 'function',
     'they register spirit.elements.personaTable and personaRow', 'elements: ' + short(Object.keys(E)));
   if (!E.personaTable || !E.personaRow) return;
-  const api = { stub: true };
     const detail = { open: function () {}, look: function (t2) { return { icon: '🎭', name: 'Persona', title: 'Personas', table: t2 }; } };
   const box = { innerHTML: '' };
-  const list = E.personaTable.create(box, api, detail);
+  const list = E.personaTable.create(box, detail);
   await settle();
   ok(made.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/table/persona/elementRow.js') !== -1,
     'elementTable.js requires the shared element and its own row element', 'required: ' + short(made.required));
   const o = made.tables[0] && made.tables[0].o;
-  ok(made.tables.length === 1 && made.tables[0].c === box && o.table === 'persona' && o.api === api && o.detail === detail && !o.add,
-    'it builds on agentTable, in its box, for the persona table, with the page\'s api and detail pane, and the shared Add', 'agentTable: ' + short(o && { table: o.table, add: !!o.add }));
+  ok(made.tables.length === 1 && made.tables[0].c === box && o.table === 'persona' && !('api' in o) && o.detail === detail && !o.add,
+    'it builds on agentTable, in its box, for the persona table, with the detail pane and no api, and the shared Add', 'agentTable: ' + short(o && { table: o.table, add: !!o.add }));
   list.refresh(); list.destroy();
   ok(made.refreshed && made.destroyed, 'its refresh and destroy are the shared element\'s', 'refreshed ' + made.refreshed + ', destroyed ' + made.destroyed);
   const into = { innerHTML: '' };
   o.row(into, 'K1', false);
   await settle();
   const r = made.rows[0] && made.rows[0].o;
-  ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'persona' && r.id === 'K1' && r.added === false && r.api === api,
-    'a row it opens is a personaRow, built on agentRow, in the box it is handed, with its id and added', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
+  ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'persona' && !('api' in r) && r.id === 'K1' && r.added === false,
+    'a row it opens is a personaRow, built on agentRow, in the box it is handed, with its id and added, no api', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
   // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
   ok(r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label']), 'it hands the editor the persona table\'s mandatory fields, [icon, label]', 'required: ' + short(r && r.required));
   ok(r && r.look && r.look.icon === '🎭' && r.look.table === 'persona', 'its title row has the persona table\'s look', 'look: ' + short(r && r.look));

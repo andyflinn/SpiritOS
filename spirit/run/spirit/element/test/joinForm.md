@@ -3,6 +3,9 @@
 The join form, a rowForm, in its modes (goal/G41.27). Its test is `./joinForm.js`. Join, Info and the relay details
 draw it by mount (goal/G40.10: *"the SAME FUCKING FORM EVERYWHERE"*).
 
+It escapes what it draws with `spirit.escapeHtml` itself (goal/G43.24; Andy: *"every element that accesses ANY api must
+require them themselves"*): no escape is handed to it, and a mounter hands only its relays and its own options.
+
 Andy, on G41.27: *"joinForm? it has several modes:\n\nsuggestions?"*, then *"wsl, agreed."* to these:
 
 - Join (no seat): `[➕] [relay ▾] [email] [Join]`

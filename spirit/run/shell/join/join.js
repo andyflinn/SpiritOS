@@ -107,14 +107,13 @@ function joinForm(step, box) {
   // without a verified email (by invite), Change once verified. So a node seated by invite completes it here.
   if (step.until === 'email' && el.joinForm) {
     // THE EMAIL FORM, THE SAME EVERYWHERE (goal/G40.10, box v19): its dropdown over every relay this node lists.
-    joinRelaysThen(function () { el.joinForm.mount(box, { relays: joinRelays, escape: joinApi.escapeHtml }); });
+    joinRelaysThen(function () { el.joinForm.mount(box, { relays: joinRelays }); });
     return;
   }
   // FIND SOMEONE: the same one list Contacts draws (goal/G30.19), the book, the shadow and the network.
   if (step.until === 'contact' && el.search.contact.listElement) {
     box.innerHTML = '<div class="join-find-list"></div><div class="job-manifest-note join-find-said"></div>';
     el.search.contact.listElement.create(box.querySelector('.join-find-list'), {
-      api: joinApi,
       // The node republishes join-steps once the contact is in the book; nothing to ask here.
       say: function (text) { var s = box.querySelector('.join-find-said'); if (s) s.textContent = text; },
       empty: 'Nobody matches: the network is searched as you type.',
@@ -124,7 +123,7 @@ function joinForm(step, box) {
   if (step.until === 'face' && el.faceForm) {
     // THE FACE FORM, THE SAME EVERYWHERE (goal/G40.10, box v19): it offers the relays with a verified email itself. The
     // node republishes join-steps once a face is accepted.
-    joinRelaysThen(function () { el.faceForm.mount(box, { relays: joinRelays, reload: function () { return Promise.resolve(); }, escape: joinApi.escapeHtml, none: 'Take the star off to name a face.' }); });
+    joinRelaysThen(function () { el.faceForm.mount(box, { relays: joinRelays, reload: function () { return Promise.resolve(); }, none: 'Take the star off to name a face.' }); });
     return;
   }
   if (step.until === 'opened') {

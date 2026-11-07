@@ -2,7 +2,7 @@
 // ONE RELAY, A SHELL ELEMENT (goal/G41.32; Andy: "natterDetails will become an shell element: relayPanel.js, it is configured
 // with it's own contact row, and follows only that."). Its contract and its test: ./test/relayPanel.md and ./test/relayPanel.js.
 //
-//   spirit.element.search.contact.relayPanel.create(container, { key, api? }) -> { destroy() }; it opens as a panel (goal/G43.18)
+//   spirit.element.search.contact.relayPanel.create(container, { key, layer? }) -> { destroy() }; it opens as a panel (goal/G43.18)
 //
 // WHO PAINTS, LISTENS (Andy: "every row's data, wherever it's visible OR invisible must update instantly, and when visible,
 // paint immediately."; "BEING INVISIBLE doesn't change a elements fucking duty to listen to fucking changes"): what it shows it
@@ -24,8 +24,11 @@
 //   - the Invite fields no longer sit inside a list that repaints under
 //     whoever is typing in them.
 //
-// It writes nothing locally: every verb here is the node's (options.api's
-// verb) or a peerPost to the relay's key.
+// It writes nothing locally: every verb here is the node's or a peerPost to
+// the relay's key, both asked through the spirit object itself (goal/G43.24;
+// Andy: "every element that accesses ANY api must require them themselves").
+// It is handed no api: only the layer it is drawn in, its close() and
+// setTitle(text) (options.layer, the contact row's).
 
 (function () {
 // What it draws with, it loads itself (rule/26): the join and face forms (goal/G41.3; Andy: "bug: "A face name" doesn't show the
@@ -92,7 +95,7 @@ function ndLabelProblem(name) {
   var rule = (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
   return rule ? rule.problem(name) : '';
 }
-var ndApi = null;
+var ndLayer = {};       // the layer it is drawn in: close() and setTitle(text), the mounter's (options.layer)
 
 var ndKey = '';         // the relay's row this panel is configured with
 var ndUrl = '';         // which mailbox this screen is
@@ -197,8 +200,35 @@ var ndUnlisted = false;
 // A verb that moves from hub.js to somewhere else changes nothing here,
 // and there is no longer a way to get the address right and the request
 // wrong.
+// THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb on spirit.ready, answered { status, text, body } as this screen
+// reads it; a refusal is the node's status and body.
 function ndPost(verb, body) {
-  return ndApi.verb(verb, body);
+  var at = String(verb).indexOf('.');
+  return Promise.resolve(spirit.ready).then(function (s) { return s[String(verb).slice(0, at)][String(verb).slice(at + 1)](body || {}); }).then(function (b) {
+    return { status: 200, text: JSON.stringify(b), body: b };
+  }, function (e) {
+    var b = (e && e.body) || { ok: false, error: String((e && e.message) || e) };
+    return { status: (e && e.status) || 500, text: JSON.stringify(b), body: b };
+  });
+}
+
+// A PACKET TO THE RELAY, THROUGH THE SPIRIT OBJECT (goal/G43.24): the node's peer.post, the body in its packet envelope
+// (spirit/client/packet.js, required as it posts), the answer read as the shell's peerPost read it:
+// { ok, status, body, error }, ok only when it reached and the relay did not refuse.
+function ndPeerPost(app, key, body) {
+  return Promise.all([spirit.require('spirit/client/packet.js'), spirit.ready]).then(function (got) {
+    var made = spirit.packet.encode(app, body);
+    if (!made.ok) return { ok: false, status: 400, body: null, error: made.error };
+    return Promise.resolve(got[1].peer.post({ to: String(key), text: made.text })).then(function (said) {
+      var text = said && typeof said.text === 'string' ? said.text : '';
+      var decoded = text ? spirit.packet.decode(text) : null;
+      var yes = !decoded || !decoded.body || decoded.body.ok === undefined || !!decoded.body.ok;
+      return { ok: !!(said && said.ok) && yes, status: 200, body: decoded ? decoded.body : null, from: (said && said.from) || '', error: (said && said.error) || '' };
+    }, function (e) {
+      var b = (e && e.body) || {};
+      return { ok: false, status: (e && e.status) || 0, body: null, error: String(b.error || b.code || (e && e.message) || e) };
+    });
+  });
 }
 
 // The same call when the answer is JSON and a failure is simply "the
@@ -422,7 +452,7 @@ function ndStarHtml() {
 }
 // What it changes comes back on its row.
 function ndStar() {
-  return ndApi.verb('contact.own', { key: ndRelayKey(), own: !ndBadge.mine });
+  return ndPost('contact.own', { key: ndRelayKey(), own: !ndBadge.mine });
 }
 
 function ndRemoveHtml() {
@@ -440,8 +470,7 @@ function ndLeaveHtml() {
 }
 function ndLeave(button) {
   button.disabled = true;
-  if (!ndApi) return;
-  return ndApi.verb('relay.leave', { key: ndUrl }).then(function (r) {
+  return ndPost('relay.leave', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
     var out = ndContainer.querySelector('.nd-leave-out');
     if (said.ok) { if (out) out.textContent = 'You left this relay.'; return; }
@@ -454,10 +483,9 @@ function ndLeave(button) {
 // asks the same rule.
 function ndRemove() {
   if (ndRemoveRefusal()) return;
-  if (!ndApi) return;
-  return ndApi.verb('relay.remove', { key: ndUrl }).then(function (r) {
+  return ndPost('relay.remove', { key: ndUrl }).then(function (r) {
     var said = (r && r.body) || {};
-    if (said.ok) { ndApi.closeDialog(); return; }
+    if (said.ok) { if (typeof ndLayer.close === 'function') ndLayer.close(); return; }
     var out = ndContainer.querySelector('.nd-remove-out');
     if (out) out.textContent = 'not removed: ' + (said.error || 'no answer');
   });
@@ -993,7 +1021,7 @@ function ndSetRelayLabel(button) {
   if (!relayKey) { ndNoKey(out, 'nd-relay-label-out'); return; }
 
   say('asking…');
-  ndApi.peerPost('relay', relayKey, { relayLabel: { label: wanted } }).then(function (r) {
+  ndPeerPost('relay', relayKey, { relayLabel: { label: wanted } }).then(function (r) {
     var said = r && r.reply;
     if (r && r.ok && said && said.ok !== false) {
       say('this relay is called ' + (said.label || wanted) + ' now');
@@ -1026,7 +1054,7 @@ function ndReadAlloc() {
   var relayKey = ndRelayKey();
   if (!relayKey) return;
   ndAllocAsked = true;
-  ndApi.peerPost('relay', relayKey, { config: {} }).then(function (r) {
+  ndPeerPost('relay', relayKey, { config: {} }).then(function (r) {
     ndAlloc = r && r.ok && r.body ? r.body : null;
     if (!ndAlloc) ndAllocSaid = (r && (r.error || (r.body && r.body.error))) || 'the relay did not say';
     ndRender();
@@ -1079,7 +1107,7 @@ function ndAllocAsk(ask, out) {
   var relayKey = ndRelayKey();
   if (!relayKey) { ndNoKey(out, 'nd-alloc-out'); return; }
   out.textContent = 'asking…';
-  ndApi.peerPost('relay', relayKey, { config: ask }).then(function (r) {
+  ndPeerPost('relay', relayKey, { config: ask }).then(function (r) {
     var b = r && r.body;
     if (r && r.ok && b && b.ok !== false) {
       var when = function (w) { return w === 'now' ? 'now' : 'at the next restart'; };
@@ -1224,9 +1252,9 @@ function ndInvitePanel() {
 //   <relay label>'"
 //
 // Every one of these screens would otherwise be "Relay Details", and the
-// question a person has is which relay. setScreenTitle is the door the
-// contact panel (detailElement.js) uses for exactly this; with the api the
-// contact row hands (spirit.shell.pageApi), it sets the panel layer's label.
+// question a person has is which relay. The layer's setTitle is the door the
+// contact panel (detailElement.js) uses for exactly this; the contact row
+// hands it (options.layer), and it sets the panel layer's label.
 //
 // The label rather than the url: the url is on the row and in the device
 // link, and a title bar is one sticky line that a full https address
@@ -1257,9 +1285,9 @@ function ndRelayName() {
 }
 
 function ndSetTitle() {
-  if (!ndApi || typeof ndApi.setScreenTitle !== 'function') return;
+  if (typeof ndLayer.setTitle !== 'function') return;
   var name = ndRelayName();
-  ndApi.setScreenTitle(name ? 'Relay Details for ' + name : 'Relay Details');
+  ndLayer.setTitle(name ? 'Relay Details for ' + name : 'Relay Details');
 }
 
 // ── THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9) ────────────────────
@@ -1277,7 +1305,7 @@ function ndArming(body) {
   if (!E) return;
   var each = function (selector, fn) { Array.prototype.forEach.call(body.querySelectorAll(selector), fn); };
   var attach = function (button, armedLabel, run) {
-    E.attach(button, { label: button.textContent, armedLabel: armedLabel, run: function () { return run(button); }, api: ndApi });
+    E.attach(button, { label: button.textContent, armedLabel: armedLabel, run: function () { return run(button); } });
   };
   each('.nd-alloc-restart', function (b) { attach(b, 'Restart? Every stream drops', ndAllocRestart); });
   // Two presses about the SAME name: the armed text names the invite.
@@ -1423,14 +1451,12 @@ function ndClaim(button) {
     //   Andy: "when jazz (successfully btw) redeemed her invite, the UI
     //   didn't pop to full featured mode."
     //
-    // So a claim closes the panel (closeDialog, the api's), back to what
+    // So a claim closes the panel (its layer's close), back to what
     // mounted it. Claiming is the one verb here that finishes the screen. Every
     // other one — rename, invite, revoke, rotate — leaves you with more
     // to do on this relay. Taking a seat is the end of the errand, and
     // the thing that comes next is the shell you could not use yet.
-    if (ndApi && ndApi.closeDialog) {
-      ndApi.closeDialog();
-    }
+    if (typeof ndLayer.close === 'function') ndLayer.close();
   });
 }
 
@@ -1475,7 +1501,7 @@ function ndRevoke(button) {
   }
 
   button.disabled = true;
-  return ndApi.peerPost('relay', relayKey, { revoke: { label: label } }).then(function (r) {
+  return ndPeerPost('relay', relayKey, { revoke: { label: label } }).then(function (r) {
     // THE ANSWER IS A BODY, decoded by the layer from the envelope the
     // relay replied in. No JSON.parse here, and no second opinion about
     // what an empty envelope means.
@@ -1515,7 +1541,7 @@ function ndMint(button) {
   // reaches that line IS the owner and a name the caller supplied would
   // be a second opinion about that. The door carried it anyway. `url`
   // went too — the post is addressed to the relay's key.
-  ndApi.peerPost('relay', relayKey, {
+  ndPeerPost('relay', relayKey, {
     invite: { label: label, days: days, token: spoken },
   }).then(function (r) {
     var said = r.body;
@@ -1545,8 +1571,8 @@ var ndPage = ({
 
   // Structure only, once per panel. Everything about WHICH mailbox
   // belongs in open() — see below.
-  mount: function (container, api) {
-    ndApi = api;
+  mount: function (container, layer) {
+    ndLayer = layer || {};
     container.innerHTML = '<div id="nd-body" class="stack"></div>';
 
     // ── THE RELAY SAYS WHEN, RATHER THAN THIS SCREEN ASKING AGAIN ────
@@ -1672,7 +1698,7 @@ var ndPage = ({
     });
   },
 
-  // Called once, right after mount, with the options ({ key, api }): this
+  // Called once, right after mount, with the options ({ key, layer }): this
   // is where the subject arrives. ndUrl is the badge's url once ndLoad
   // finds its row; url, label and relayLabel are read here too, though
   // the contact row hands none of them.
@@ -1735,22 +1761,7 @@ function ndHearRow(key, row) {
   ndRender();
 }
 
-// The api the shell hands a page; with none, the family's verb through the spirit object, answered in the api's shape.
-function ndOwnApi() {
-  return {
-    verb: function (name, args) {
-      var at = String(name).indexOf('.');
-      return spirit.ready.then(function (s) { return s[String(name).slice(0, at)][String(name).slice(at + 1)](args); }).then(function (b) {
-        return { status: 200, text: JSON.stringify(b), body: b };
-      }, function (e) {
-        return { status: (e && e.status) || 500, text: '', body: (e && e.body) || { ok: false, error: String((e && e.message) || e) } };
-      });
-    },
-    peerPost: function () { return Promise.resolve({ ok: false, error: 'this panel was given no shell api' }); },
-  };
-}
-
-ndPage.mount(ndContainer, ndOptions.api || ndOwnApi());
+ndPage.mount(ndContainer, ndOptions.layer);
 ndPage.open(ndOptions);
 iconReady.then(function () { if (!ndGone) ndRender(); }, function () {});
 return {
@@ -1769,7 +1780,7 @@ return {
 // contact row opens it over its list as a layer, its title and ✕ the layer's; nothing is handed back (what it changes reaches
 // every view on the stream).
 // AND THE SHELL'S ELEMENT SHAPE (goal/G41.19, box v23: "every element gets a container and appends itself"):
-// create(container, { key, api? }) draws it into the container.
+// create(container, { key, layer? }) draws it into the container.
 // ITS PLACE ON THE SPIRIT OBJECT, AS ON DISC (goal/G43.18; Andy: "spirit/run/spirit/element/relayPanel.js really should be
 // spirit/run/spirit/element/search/contact/relayPanel.js"): merged into, so the parts of search/contact/ load in any order.
 Object.assign(['search', 'contact', 'relayPanel'].reduce(function (o, k) { return (o[k] = o[k] || {}); }, (window.spirit.element = window.spirit.element || {})), {

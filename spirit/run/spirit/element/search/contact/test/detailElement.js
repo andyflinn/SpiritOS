@@ -151,19 +151,22 @@ function makeDom() {
 function world(person, relayRows) {
   const document = makeDom();
   const w = { required: [], calls: [], posts: [], armings: [], closed: 0, statusAsked: 0, document: document };
-  const answer = function (body) { return Promise.resolve({ status: 200, ok: true, text: JSON.stringify(body), body: body }); };
-  const api = {
-    verb: function (name, body) {
-      w.calls.push({ name: name, body: body });
-      if (name === 'contact.get') return answer({ ok: true, person: person });
-      return answer({ ok: true });
-    },
-    peerPost: function (app, key, body) { w.posts.push({ app: app, key: key, body: body, at: w.calls.length }); return Promise.resolve({ ok: true, body: { ok: true } }); },
-    closeDialog: function () { w.closed += 1; },
-    setScreenTitle: function () {}, setScreenMark: function () {},
-    armUntilElsewhere: function (fn) { w.disarm = fn; },
-  };
-  w.api = api;
+  // THE NODE BEHIND THE SPIRIT OBJECT (goal/G43.24): every family.verb the panel asks is recorded; contact.get answers the
+  // person. A verb answering a refusal rejects, as a family's call does, with the node's status and body.
+  const families = new Proxy({}, { get: function (t, fam) {
+    if (fam === 'then') return undefined;
+    return new Proxy({}, { get: function (t2, verb) {
+      return function (body) {
+        const name = String(fam) + '.' + String(verb);
+        w.calls.push({ name: name, body: body });
+        if (w.refuse && w.refuse[name]) return Promise.reject(w.refuse[name]);
+        return Promise.resolve(name === 'contact.get' ? { ok: true, person: person } : { ok: true });
+      };
+    } });
+  } });
+  // The layer it is drawn in (options.layer), its close and title the mounter's.
+  const layer = { close: function () { w.closed += 1; }, setTitle: function (t) { w.title = String(t); } };
+  w.layer = layer;
   const record = function (how, button, opts) {
     const o = opts || {};
     w.armings.push({ how: how, button: button, opts: o, label: o.label != null ? String(o.label) : String(button.textContent || '') });
@@ -177,6 +180,7 @@ function world(person, relayRows) {
     // The shell's fact rows, drawn as the shell draws them: each name with its value, so what the detail shows can be read.
     shell: { factRow: function (rows) { return '<div class="facts">' + (rows || []).map(function (r) { return '<div>' + String(r[0]) + ' ' + String(r[1]) + '</div>'; }).join('') + '</div>'; } },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
+    ready: Promise.resolve(families),
     relay: { status: function () { w.statusAsked += 1; w.statusAt = w.calls.length; return Promise.resolve({ body: { rows: relayRows || [] } }); } },
     get element() { return this.elements; }, elements: {
       armingButton: {
@@ -185,9 +189,9 @@ function world(person, relayRows) {
       },
     },
   };
-  // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with the page's api, as a layer's
+  // A PANEL'S MOUNT, NO NAVIGATION PAGE (goal/G43.18): the element made in a box of its own with its layer, as a layer's
   // fill makes it (spirit/element/search/contact/rowElement.js, openDetails).
-  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.search.contact.detailElement.create(box, { key: key, api: api }); };
+  w.open = function (key) { const box = document.createElement('div'); document.body.appendChild(box); w.box = box; return win.spirit.element.search.contact.detailElement.create(box, { key: key, layer: layer }); };
   vm.createContext(win);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
@@ -227,7 +231,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   ok(!!block, 'Block is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
   if (block) {
     ok(block.opts.armedLabel === 'Block — press again', 'armed, it says Block — press again', 'armedLabel: ' + short(block.opts.armedLabel));
-    ok(block.opts.api === w.api, 'it is handed the page\'s api, so a click elsewhere puts it back', 'api handed: ' + short(block.opts.api === w.api));
+    ok(!('api' in block.opts), 'it is handed no api: the button hears a click elsewhere itself', 'handed: ' + short(Object.keys(block.opts)));
     ok(inPage(w, block.button), 'the button stands in the page', 'the Block button is not in the page');
     const before = w.calls.length;
     if (typeof block.opts.run === 'function') await block.opts.run();
@@ -244,7 +248,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   ok(!!forget, 'Forget is made by armingButton', 'armings: ' + short(w.armings.map(function (a) { return a.label; })));
   if (forget) {
     ok(!/seat|relay/i.test(String(forget.opts.armedLabel || '')), 'armed, it says nothing of seats or relays', 'armedLabel: ' + short(forget.opts.armedLabel));
-    ok(forget.opts.api === w.api && inPage(w, forget.button), 'handed the page\'s api, and in the page', 'api ' + (forget.opts.api === w.api) + ', in page ' + inPage(w, forget.button));
+    ok(!('api' in forget.opts) && inPage(w, forget.button), 'handed no api, and in the page', 'api ' + ('api' in forget.opts) + ', in page ' + inPage(w, forget.button));
     const before = w.calls.length;
     const postsBefore = w.posts.length;
     if (typeof forget.opts.run === 'function') await forget.opts.run();
@@ -315,5 +319,20 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   w7.open('K7');
   await settle();
   ok(!!w7.box && !w7.document.getElementById('cd-own') && !starOf(w7), 'on a face (window.spirit.transport) no button is drawn', 'on a face: #cd-own ' + !!w7.document.getElementById('cd-own'));
+
+  // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
+  // needs...."): it asks the node through the spirit object, is handed no api, and draws with its key alone.
+  test.subHeading('it asks through the spirit object, and is handed no api');
+  ok(!/\bapi\b/.test(code), 'its code names no api', 'its code still names an api');
+  ok(typeof w.title === 'string' && w.title.indexOf('bob') !== -1, 'its title goes to the layer it is drawn in (options.layer.setTitle)', 'title: ' + short(w.title));
+  const w8 = world({ key: 'K8', publicLabel: 'carol' }, []);
+  const box8 = w8.document.createElement('div'); w8.document.body.appendChild(box8); w8.box = box8;
+  w8.win.spirit.element.search.contact.detailElement.create(box8, { key: 'K8' });
+  await settle();
+  ok(w8.calls.some(function (c) { return c.name === 'contact.get' && c.body.key === 'K8'; }) && /carol/.test(box8.innerHTML), 'mounted with its key alone, no layer, it reads the row and draws it', 'calls: ' + short(w8.calls.map(function (c) { return c.name; })));
+  w8.refuse = { 'contact.block': { status: 403, body: { ok: false, error: 'not yours' } } };
+  const b8 = armingFor(w8, 'Block');
+  if (b8) { await b8.opts.run(); await settle(); }
+  ok(!!b8 && /block failed: 403/.test(box8.innerHTML) && /not yours/.test(box8.innerHTML), 'a verb the node refuses says its status and words', 'said: ' + short(box8.innerHTML.slice(0, 400)));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

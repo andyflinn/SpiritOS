@@ -93,10 +93,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(picked.length === 1 && picked[0] === 'docs/a.md', 'a pick reaches opts.pick', 'picked: ' + short(picked));
 
   test.subHeading('names from the mirror; fs.search only by contents');
-  const none = await o.api.verb('fs.search', o.args('a', { in: 'names' }));
+  const none = await o.search(o.args('a', { in: 'names' }), 'search');
   ok(asked.length === 0 && none.body && none.body.items.length === 0, 'a search of names asks the node nothing: the mirror answers it', 'asked: ' + short(asked));
   D.takeJob({ id: 'job-fs', type: 'fs-watcher', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
-  const found = await o.api.verb('fs.search', o.args('hello', { in: 'contents' }));
+  const found = await o.search(o.args('hello', { in: 'contents' }), 'search');
   const items = (found.body && found.body.items) || [];
   let first = null; try { first = JSON.parse(items[0].label); } catch (e) { first = null; }
   ok(asked.length === 1 && asked[0].q === 'hello' && asked[0].contents === 'yes', 'a search by contents asks fs.search { q, contents: yes }', 'asked: ' + short(asked));

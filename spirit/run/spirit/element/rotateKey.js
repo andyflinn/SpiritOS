@@ -7,8 +7,8 @@
 //   invoke the rotate key dialog." And on G43.24: "it's just a panel that opens exactly overtop of the calling panel,
 //   new-shell-style.", "like fstat".
 //
-//   spirit.elements.rotateKey.create(container, { api }) -> { destroy() }
-//     api   optional: what the arming button hands its disarm to (api.armUntilElsewhere), so a click elsewhere disarms it
+//   spirit.elements.rotateKey.create(container) -> { destroy() }; its arming button hears a click elsewhere itself (goal/G43.24),
+//   so it is mounted with its container alone
 //
 // nodeInfo opens it as a layer over Info through panel.js (spirit/element/nodeInfo.js), as file opens fstat. The explanation
 // comes first, because pressing a red button twice only protects someone who knows what they are agreeing to. The button is
@@ -20,8 +20,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): the arming button.
   var parts = S.require('spirit/element/armingButton.js');
 
-  function create(container, opts) {
-    var o = opts || {};
+  function create(container) {
     var busy = false;
     var result = null;
     var gone = false;
@@ -58,7 +57,7 @@
       var b = body.querySelector('[data-rotate]');
       if (b) parts.then(function () {
         if (gone) return;
-        S.element.armingButton.attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again', api: o.api, run: rotate });
+        S.element.armingButton.attach(b, { label: 'Rotate the key', armedLabel: 'Rotate the key: press again', run: rotate });
       });
     }
 

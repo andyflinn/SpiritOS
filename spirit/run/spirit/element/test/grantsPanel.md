@@ -9,20 +9,18 @@ boody well know how to configure the damn grantsPanel element"*.
 
 ## Its configuration
 
-`grantsPanel.create(host, { ids, grants, api })`, all of it the caller's:
+`grantsPanel.create(host, { ids, grants })`, all of it the caller's:
 
 - `ids`: the ID table, as the contact selector takes it (G41.13, Q2): `table` (its loopback api location), `key`,
   `label`;
 - `grants`: the grants table those IDs are granted in, as the grant list and row take it: `branch`, `key`, `label`,
   `search(text)`, `grant(id, path)` (answering `{ ok }`, or `{ ok: false, code, error }`), `revoke(id, path)`,
   `watch(fn(id + newline + path, row))`, its cache manager's, answering its release (goal/G41.28);
-- `api`: optional, handed on to the grant list for its rows' arming buttons (`api.armUntilElsewhere`); nothing is asked
-  through it.
 
 **What it needs, it gets itself** (goal/G43.24; Andy: *"every fucking element gets the interfaces it needs"*): it asks its
 verbs through the spirit object, `family.verb` called on that family as `spirit.ready` holds it, or, for a server's
 family not there, as `spirit.require(spirit.familyPath(name))` binds it; its answer read through `spirit.outcome`, and its
-markup escaped with `spirit.escapeHtml`. No `api.verb`, no `api.escapeHtml`. A family's own folder verbs are its `FS`
+markup escaped with `spirit.escapeHtml`. No `api.verb`, no `api.escapeHtml`, and no api handed on: its rows' arming buttons hear a click elsewhere themselves. A family's own folder verbs are its `FS`
 verbs, `spirit.<family>.FS.loadFile`, as spirit.js binds them.
 
 Made without its ID table or its grants table, it throws nothing and says so (goal/G41.19, box v23: *"throws nothing

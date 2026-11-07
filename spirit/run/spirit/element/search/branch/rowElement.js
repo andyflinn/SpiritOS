@@ -7,7 +7,6 @@
 //
 //   spirit.element.search.branch.rowElement.create(row, opts) -> a rowElement of kind branch
 //     row            { id, bundle, family, verb }, as auth.branch answers it
-//     opts.api       the app's shell api, for the arming button's are-you-sure
 // THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything
 // that changes their data set", "NO FUCKING DATA SCRIPT"): the node publishes each changed branch row on its permanent
 // job 'bundles' ({ table: 'branch', row }, gone when deleted, a bundle's branches each gone with it); the auth family's
@@ -78,7 +77,7 @@
       mount(h);
       function controls() {
         var del = h.delete && typeof h.delete.querySelector === 'function' ? h.delete.querySelector('[data-action="delete"]') : null;
-        if (del) E.armingButton.attach(del, { label: 'Delete', api: o.api, run: function () { return el.act('delete', {}); } });
+        if (del) E.armingButton.attach(del, { label: 'Delete', run: function () { return el.act('delete', {}); } });
       }
       // Its parts are on the page by the time a list draws a row; until then the control waits for them.
       if (E.armingButton) controls(); else parts.then(controls);

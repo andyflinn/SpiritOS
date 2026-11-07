@@ -4,7 +4,7 @@
 // "elementTable.js (an face-shell compatible interface to the table for browsers, with search-list using the probablility-group of elements in shell/js/)" and "elementRow.js (a
 // panel element, to maintain and edit one row of the table)".
 //
-//   spirit.elements.agentTable.create(container, { api, table, detail, row, add }) -> { refresh, destroy }
+//   spirit.elements.agentTable.create(container, { table, detail, row, add }) -> { refresh, destroy }
 //     a title row, an Add button and a probabilitySearch pane over the table's branch of spirit.data, shown at once,
 //     each row by its icon and its label alone (LIST_COLUMNS); Add gives the new row its table's icon;
 //     picking a row, or adding one, opens row(box, key, added, row) in the detail pane; add(open), when given, is what
@@ -13,7 +13,7 @@
 //     { icon, name, title }. Andy, on G41.4:
 //     "make the detail-panel take over the middle pane of the workBench UI please", so the agent page hands its
 //     workBench's centre.
-//   spirit.elements.agentRow.create(container, { api, table, id, added, look, fields, required }) -> { destroy }, an element
+//   spirit.elements.agentRow.create(container, { table, id, added, look, fields, required }) -> { destroy }, an element
 //   of its own (./rowElement.js), which builds on agentDetail, below:
 //     one row's fields as inputs, each saved as it changes (no Save), and Delete, under a title row; added says the row was
 //     just made by Add; fields
@@ -120,7 +120,8 @@
   function search(host, o, more) {
     var columns = o.columns || columnsOf(o.table);
     var s = window.spirit.element.search.create(host, Object.assign({
-      api: o.api, server: 'agent', verb: o.table, data: branchOf(o.table),
+      // WHAT IT NEEDS, THE SEARCH REQUIRES ITSELF (goal/G43.24): it asks agent.<table> through the spirit object; no api.
+      server: 'agent', verb: o.table, data: branchOf(o.table),
       args: function (text) { return { op: 'search', text: text }; },
       columns: columns,
       name: function (r) { return nameOf(r, columns); },

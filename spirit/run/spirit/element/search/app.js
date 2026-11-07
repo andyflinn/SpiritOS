@@ -24,7 +24,8 @@
       });
     }
     var list = window.spirit.element.search.create(host, {
-      api: { verb: function (name, args) { return search(args); } },
+      // Its own data source (goal/G43.24): the search asks it, and is handed no api.
+      search: search,
       data: window.spirit.data.app.data.branch,
       server: 'app',
       verb: 'search',

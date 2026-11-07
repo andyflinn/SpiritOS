@@ -41,7 +41,8 @@
     }
     var names = Array.isArray(o.columns) && o.columns.length ? o.columns : ['label', 'owner'];
     list = window.spirit.element.search.create(host, {
-      api: { verb: function (name, args) { return search(args); } },
+      // Its own data source (goal/G43.24): the search asks it, and is handed no api.
+      search: search,
       // A view of the node's bundles, the branch the auth family's manager keeps (spirit.data.auth.data.bundles.branch).
       data: window.spirit.data.auth.data.bundles.branch,
       server: 'auth',

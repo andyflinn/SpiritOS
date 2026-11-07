@@ -184,7 +184,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   };
   const rows = [];
   const left = box('left');
-  const t = E.agentTable.create(left, { api: { stub: true }, table: 'provider', detail: detail, row: function (b, key, added, row) { rows.push({ box: b, key: key, added: added, row: row }); return { destroy: function () {} }; } });
+  const t = E.agentTable.create(left, { table: 'provider', detail: detail, row: function (b, key, added, row) { rows.push({ box: b, key: key, added: added, row: row }); return { destroy: function () {} }; } });
   await settle();
   ok(left.innerHTML.indexOf('Model providers') !== -1 && left.innerHTML.indexOf('🏢') !== -1 && /class="agent-title"/.test(left.innerHTML),
     'its title row is the table\'s icon and its title, from the detail pane\'s look', 'left: ' + short(left.innerHTML));
@@ -219,7 +219,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   w.calls.length = 0;
   const own = [];
   const left2 = box('left2');
-  E.agentTable.create(left2, { api: {}, table: 'grant', detail: detail, add: function (open) { own.push(open); }, row: function () { return {}; } });
+  E.agentTable.create(left2, { table: 'grant', detail: detail, add: function (open) { own.push(open); }, row: function () { return {}; } });
   await settle();
   the(left2, 'add').click(); await settle();
   ok(own.length === 1 && typeof own[0] === 'function' && w.calls.length === 0, 'given add(open), Add calls it and asks the server nothing', 'add called ' + own.length + ', calls ' + short(w.calls));
@@ -231,7 +231,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const left3 = box('left3');
   const COLS = [{ field: 'icon', from: 'providerIcon', label: '' }, { field: 'label', from: 'modelName', label: 'Model', sort: 'text' }];
   const n3 = w.searches.length;
-  E.agentTable.create(left3, { api: {}, table: 'model', detail: detail, row: function () { return {}; }, columns: COLS,
+  E.agentTable.create(left3, { table: 'model', detail: detail, row: function () { return {}; }, columns: COLS,
     buttons: [{ label: 'provider models', press: function () { pressed.push('provider models'); } }] });
   await settle();
   const b0 = the(left3, 'button0');
@@ -245,7 +245,7 @@ test.startTest('tableElement.js: what the tables\' elements share');
   test.subHeading('a table may have no Add (goal/G41.18)');
   w.calls.length = 0;
   const left4 = box('left4');
-  E.agentTable.create(left4, { api: {}, table: 'model', detail: detail, add: false, row: function () { return {}; },
+  E.agentTable.create(left4, { table: 'model', detail: detail, add: false, row: function () { return {}; },
     buttons: [{ label: 'provider models', press: function () {} }] });
   await settle();
   ok(!the(left4, 'add') && !/Add a model/.test(left4.innerHTML) && !!the(left4, 'button0') && /class="agent-title"/.test(left4.innerHTML),

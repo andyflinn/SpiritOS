@@ -74,7 +74,7 @@ test.startTest('contactSelector.js: the configurable ID selector');
   if (!made || typeof made.create !== 'function') return;
   // Box v23: "every element gets a container and appends itself".
   const make = function (o) { return made.create(element('div'), o); };
-  const rowsOf = async function (l, text) { const a = await l.o.api.verb(l.o.server + '.' + l.o.verb, l.o.args(text, {})); return (a && a.body && a.body.items) || []; };
+  const rowsOf = async function (l, text) { const a = await l.o.search(l.o.args(text, {}), l.o.verb); return (a && a.body && a.body.items) || []; };
   const parsed = function (item) { try { return JSON.parse(item.label); } catch (e) { return null; } };
 
   test.subHeading('it loads what it uses itself (rule/26)');

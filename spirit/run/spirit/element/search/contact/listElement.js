@@ -17,7 +17,6 @@
 // This node's relays are rows of the same search (goal/G40.11: relay.search went), each keyed by its ID, its url on it.
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; list.value and list.row are the one picked in a dropdown
-//     opts.api        the app's shell api: verb, peerPost
 //     opts.open       the mounter's panel stack's open(key, spec) (spirit/element/panel.js): a row's details open over it (goal/G43.18)
 //     opts.face, opts.placeholder, opts.all, opts.pick(row, key)   as probabilitySearch's; a pane opens a pressed row
 //     opts.say(text)  where it says what an Add or a card did
@@ -61,9 +60,30 @@
       test: function (row) { return row && (row.name || row.relay === true) ? 1 : 0; } },
   ];
 
+  // A PACKET TO A PEER, THROUGH THE SPIRIT OBJECT (goal/G43.24; Andy: "every element that accesses ANY api must require them
+  // themselves"): the node's peer.post, the body in its packet envelope (spirit/client/packet.js, required here), the
+  // answer read as the shell's peerPost read it, { ok, body, card, error }; the card a card ask brings is the node's
+  // verified one (spirit/peerPost.js, answer.card).
+  function peerPost(app, key, body) {
+    var S = window.spirit;
+    return Promise.all([S.require('spirit/client/packet.js'), S.ready]).then(function (got) {
+      var made = S.packet.encode(app, body);
+      if (!made.ok) return { ok: false, status: 400, body: null, error: made.error };
+      return Promise.resolve(got[1].peer.post({ to: String(key), text: made.text })).then(function (said) {
+        var text = said && typeof said.text === 'string' ? said.text : '';
+        var decoded = text ? S.packet.decode(text) : null;
+        var yes = !decoded || !decoded.body || decoded.body.ok === undefined || !!decoded.body.ok;
+        return { ok: !!(said && said.ok) && yes, status: 200, body: decoded ? decoded.body : null, card: (said && said.card) || null,
+          from: (said && said.from) || '', error: (said && said.error) || '' };
+      }, function (e) {
+        var b = (e && e.body) || {};
+        return { ok: false, status: (e && e.status) || 0, body: null, card: null, error: String(b.error || b.code || (e && e.message) || e) };
+      });
+    });
+  }
+
   function create(host, opts) {
     var o = opts || {};
-    var api = o.api;
     var els = Object.create(null);    // key -> its contact row element, as the list made it
     var list = null;
     function say(text) { if (typeof o.say === 'function') o.say(text); }
@@ -81,7 +101,7 @@
     // A row not decided about: that node is asked who it is (its card, checked against the key it was addressed to).
     function askCard(row, key) {
       say('asking them…');
-      Promise.resolve(api.peerPost('', key, { card: true })).then(function (r) {
+      Promise.resolve(peerPost('', key, { card: true })).then(function (r) {
         var said = (r && r.card) || null;
         if (r && r.ok && said && said.ok) say((said.name || row.name || '') + ': ' + (said.description || 'they have not said anything about themselves'));
         else say('could not reach them — ' + ((said && said.why === 'wrong key') ? 'answered by a different key' : ((said && said.error) || (r && r.error) || 'no answer')));
@@ -89,7 +109,8 @@
     }
 
     list = window.spirit.element.search.create(host, {
-      api: { verb: function (name, args) { return search(args); } },
+      // Its own data source (goal/G43.24): the search asks it, and is handed no api.
+      search: search,
       // A view of the node's contacts, the branch the contact family's manager keeps (spirit.data.contact.data.branch).
       data: window.spirit.data.contact.data.branch,
       server: 'contact',

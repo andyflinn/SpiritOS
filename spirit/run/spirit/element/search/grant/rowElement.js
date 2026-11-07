@@ -15,7 +15,6 @@
 //     opts.grants    the grants table, required: { branch, key, label, revoke(id, path), watch(fn(id + newline + path,
 //                    row)) }; branch is a whole spirit.data path (node/family/branch), its rows its family's cache
 //                    manager's
-//     opts.api       the app's shell api, for the arming button's are-you-sure
 //     opts.serves(path)  whether a server serves that path today; one that does not reads deprecated (a REPORT: Andy,
 //                    "so we defer pruning to be triggered by the owners auth app, who can report deprecated branches")
 (function () {
@@ -87,7 +86,7 @@
       mount(h);
       function controls() {
         var b = h.revoke && typeof h.revoke.querySelector === 'function' ? h.revoke.querySelector('[data-action="revoke"]') : null;
-        if (b) E.armingButton.attach(b, { label: 'Revoke', api: o.api, run: function () { return el.act('revoke', {}); } });
+        if (b) E.armingButton.attach(b, { label: 'Revoke', run: function () { return el.act('revoke', {}); } });
       }
       // Its parts are on the page by the time a list draws a row; until then the control waits for them.
       if (E.armingButton) controls(); else parts.then(controls);

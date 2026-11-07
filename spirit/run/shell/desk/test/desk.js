@@ -145,7 +145,6 @@ function armingStub(document, made) {
       if (!on) {
         if (loaded && loaded !== b) loaded.disarm();
         on = true; loaded = b; b.setAttribute('data-armed', 'yes'); b.textContent = armedLabel;
-        if (o.api && typeof o.api.armUntilElsewhere === 'function') o.api.armUntilElsewhere(disarm);
         return;
       }
       disarm();
@@ -237,13 +236,13 @@ function deskWorld(goal, items) {
 }
 async function settle() { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); }
 
-// One two-press button, clicked twice: made by armingButton (handed the app's api, so the shell's click-elsewhere reaches
-// it), saying today's armed wording, asking nothing on the first press and the press on the second.
+// One two-press button, clicked twice: made by armingButton (handed no api: it hears a click elsewhere itself, goal/G43.24),
+// saying today's armed wording, asking nothing on the first press and the press on the second.
 async function twoPress(w, find, armedSays, wantPress, what) {
   const before = w.presses().length;
   const b = find();
   if (!b) { test.fail(what + ': no such button on the page'); return; }
-  const byElement = w.made.some(function (m) { return m.button === b && m.opts && m.opts.api && typeof m.opts.api.armUntilElsewhere === 'function'; });
+  const byElement = w.made.some(function (m) { return m.button === b && m.opts && !('api' in m.opts); });
   w.document.click(b); await settle();
   const b1 = find();
   const armedText = b1 ? b1.textContent : '';

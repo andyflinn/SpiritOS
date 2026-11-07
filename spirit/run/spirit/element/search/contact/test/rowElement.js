@@ -25,8 +25,6 @@ window.spirit.fieldRules = { normalize: function (t) { return String(t || '').tr
 // The details, made in a panel's pane (goal/G43.18): each records what it was made with.
 window.spirit.element = { search: { contact: { detailElement: { create: function (pane, o) { asked.push({ verb: 'contactDetails', body: o }); return {}; } },
   relayPanel: { create: function (pane, o) { asked.push({ verb: 'relayPanel', body: o }); return {}; } } } } };
-// The shell's page api, for a panel's details (spirit.shell.pageApi).
-window.spirit.shell = { pageApi: function (page) { return { page: page }; } };
 // The mounter's panel stack's open (spirit/element/panel.js): it records the layer asked for and fills a pane at once.
 const layers = [];
 function openLayer(key, spec) { layers.push({ key: key, label: spec.label }); return Promise.resolve(spec.fill({})).then(function () { return { hide: function () {}, set: function () {}, shown: function () { return true; } }; }); }
@@ -93,8 +91,8 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   const opens = asked.splice(-2);
   if (opens[0].verb === 'contactDetails' && opens[0].body.key === 'K1' && opens[1].verb === 'relayPanel' && opens[1].body.key === 'R1') test.check('open: a contact\'s details by key, a relay\'s by its key');
   else test.fail('opens: ' + JSON.stringify(opens));
-  // GOAL/G43.18: as a panel over the list, through the mounter's open, the page api the shell's.
-  if (layers.length === 2 && layers[0].key === 'contact/contact/K1' && layers[1].key === 'contact/relay/R1' && opens.every(function (o) { return o.body.api && o.body.api.page && typeof o.body.api.page.close === 'function'; })) test.check('each opens as a layer of the mounter\'s panel stack, with the shell\'s page api, its close the layer\'s');
+  // GOAL/G43.18: as a panel over the list, through the mounter's open; handed the layer, no api (goal/G43.24).
+  if (layers.length === 2 && layers[0].key === 'contact/contact/K1' && layers[1].key === 'contact/relay/R1' && opens.every(function (o) { return !('api' in o.body) && o.body.layer && typeof o.body.layer.close === 'function' && typeof o.body.layer.setTitle === 'function'; })) test.check('each opens as a layer of the mounter\'s panel stack, handed that layer\'s close and title and no api (goal/G43.24)');
   else test.fail('layers: ' + JSON.stringify(layers) + ', made with ' + JSON.stringify(opens.map(function (o) { return Object.keys(o.body); })));
   const pages = required.slice(-2).join(',');
   if (pages === 'spirit/element/search/contact/detailElement.js,spirit/element/search/contact/relayPanel.js') test.check('open loads the page it opens first, through spirit.require');

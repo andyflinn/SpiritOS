@@ -150,7 +150,6 @@ function isMount(api) {
     // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/listElement.js), the book and this
     // node's relays; no pick is self, this node.
     window.spirit.element.search.contact.listElement.create(party, {
-      api: api,
       face: 'dropdown',
       placeholder: 'self (this node)',
       all: 'self (this node)',

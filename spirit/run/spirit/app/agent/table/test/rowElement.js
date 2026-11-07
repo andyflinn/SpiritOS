@@ -164,7 +164,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   w.answer = function (table, a) { return a.op === 'get' ? Object.assign({}, ROW) : { id: 'KR' }; };
   const ed = box('editor');
   const look = { icon: '🏢', name: 'Provider' };
-  const r = E.agentRow.create(ed, { api: {}, table: 'provider', id: 'KR', added: true, look: look, fields: FIELDS });
+  const r = E.agentRow.create(ed, { table: 'provider', id: 'KR', added: true, look: look, fields: FIELDS });
   await settle();
   ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KR' }), 'with the row not in its branch, it asks provider { op: get, id }', 'calls: ' + short(w.calls));
   ok(global.window.spirit.data.agent.data.row('provider', 'KR') && global.window.spirit.data.agent.data.row('provider', 'KR').label === 'Row one', 'and puts the answer at <node>/agent/provider/<id>, where the stream writes it', 'branch: ' + short(global.window.spirit.data.agent.data.row('provider', 'KR')));
@@ -188,7 +188,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
     w.calls.length = 0;
     w.answer = function (table, a) { return a.op === 'add' ? { id: 'KADD' } : (a.op === 'get' ? { id: 'KADD', icon: '🏢', label: 'Fresh', url: 'https://fresh.example' } : { id: 'KADD' }); };
     const ea = box('adding');
-    const ra = E.agentRow.create(ea, { api: {}, table: 'provider', id: '', added: true, look: look, required: ['icon', 'label', 'url'],
+    const ra = E.agentRow.create(ea, { table: 'provider', id: '', added: true, look: look, required: ['icon', 'label', 'url'],
       fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'url', label: 'URL', kind: 'url' }] });
     await settle(); await settle();
     ok(!w.calls.some(function (c) { return c.args && c.args.op === 'get'; }), 'with no row it asks no get', 'calls: ' + short(w.calls));
@@ -274,7 +274,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   w.answer = function (table, a) { return a.op === 'get' ? { id: 'KS', icon: '🧪', label: 'Seated', url: 'https://whole.example', apiKeySet: false } : { id: 'KS' }; };
   D.setPath(rowPath('provider', 'KS'), { id: 'KS', icon: '🧪', label: 'Seated' });
   const ed2 = box('editor2');
-  const r2 = E.agentRow.create(ed2, { api: {}, table: 'provider', id: 'KS', added: false, look: look, fields: FIELDS });
+  const r2 = E.agentRow.create(ed2, { table: 'provider', id: 'KS', added: false, look: look, fields: FIELDS });
   await settle();
   ok(w.calls.length === 1 && JSON.stringify(w.calls[0].args) === JSON.stringify({ op: 'get', id: 'KS' }), 'it asks provider { op: get, id }, though the branch holds a row', 'calls ' + short(w.calls));
   ok(global.window.spirit.data.agent.data.row('provider', 'KS') && global.window.spirit.data.agent.data.row('provider', 'KS').url === 'https://whole.example' && the(ed2, 'url') && the(ed2, 'url').value === 'https://whole.example',
@@ -339,7 +339,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
       return { id: PA };
     };
     const ed3 = box('narrow');
-    const r3 = E.agentRow.create(ed3, { api: {}, table: 'provider', id: PA, added: false, look: look, fields: NARROW });
+    const r3 = E.agentRow.create(ed3, { table: 'provider', id: PA, added: false, look: look, fields: NARROW });
     await settle(); await settle();
     const s = w.searches.slice(before).filter(function (x) { return x.o && x.o.verb === 'model'; })[0] || null;
     let args = null; try { args = s && typeof s.o.args === 'function' ? s.o.args('claude') : null; } catch (e) { args = null; }
@@ -374,7 +374,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
     w.answer = function (table, a) { return a.op === 'get' ? { id: 'KM', icon: '🧠', label: 'A model', providerId: 'KOUT' } : { id: 'KM' }; };
     const before = w.searches.length;
     const eo = box('output');
-    const ro = E.agentRow.create(eo, { api: {}, table: 'model', id: 'KM', added: false, look: look,
+    const ro = E.agentRow.create(eo, { table: 'model', id: 'KM', added: false, look: look,
       fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'providerId', label: 'Provider', kind: 'output', pick: 'provider' }] });
     await settle(); await settle();
     const shownAll = eo.innerHTML + ' ' + Object.keys(eo.parts).map(function (k) { return String(eo.parts[k].textContent || '') + String(eo.parts[k].innerHTML || ''); }).join(' ');
@@ -406,7 +406,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
     const before = w.searches.length;
     const bBefore = w.bundles.length;
     const ej = box('real-job');
-    const rj = E.agentRow.create(ej, { api: {}, table: 'job', id: JZ, added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' },
+    const rj = E.agentRow.create(ej, { table: 'job', id: JZ, added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' },
       { field: 'bundle', label: 'Bundle', kind: 'bundle' }, { field: 'provider', label: 'Provider', kind: 'pick', pick: 'provider' }, { field: 'persona', label: 'Persona', kind: 'pick', pick: 'persona' }] });
     await settle(); await settle();
     const saidNow = function () { return ej.innerHTML + ' ' + Object.keys(ej.parts).map(function (k) { return String(ej.parts[k].textContent || ''); }).join(' '); };
@@ -441,7 +441,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
   w.calls.length = 0;
   w.answer = function (table, a) { return a.op === 'get' ? { id: 'KJ', icon: '', label: 'A job', bundle: '7' } : { id: 'KJ' }; };
   const ed4 = box('bundle');
-  const r4 = E.agentRow.create(ed4, { api: {}, table: 'job', id: 'KJ', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
+  const r4 = E.agentRow.create(ed4, { table: 'job', id: 'KJ', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
   await settle(); await settle();
   const bsel = w.bundles[w.bundles.length - 1];
   ok(w.required.indexOf('spirit/element/search/bundle.js') !== -1, 'it loads the bundle selector itself (rule/26)', 'required: ' + short(w.required));
@@ -476,7 +476,7 @@ test.startTest('rowElement.js: one row of the agent\'s tables, edited');
     w.bundleAsks.length = 0;
     w.answer = function (table, a) { return a.op === 'get' ? { id: 'KG', icon: '', label: 'A job', bundle: bundle } : { id: 'KG' }; };
     const ed5 = box('gone-' + bundle);
-    const r5 = E.agentRow.create(ed5, { api: {}, table: 'job', id: 'KG', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
+    const r5 = E.agentRow.create(ed5, { table: 'job', id: 'KG', added: false, look: look, fields: [{ field: 'label', label: 'Label', kind: 'name' }, { field: 'bundle', label: 'Bundle', kind: 'bundle' }] });
     await settle(); await settle();
     // Everything the editor shows: its markup and what it wrote into its parts since.
     const said = ed5.innerHTML + Object.keys(ed5.parts).map(function (k) { return String(ed5.parts[k].innerHTML || '') + String(ed5.parts[k].textContent || ''); }).join(' ');

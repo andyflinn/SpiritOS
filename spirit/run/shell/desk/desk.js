@@ -671,7 +671,11 @@ function deskMountList() {
     if (!P || typeof P.create !== 'function' || deskList || !K) return;
     deskList = P.create(el, {
       data: K.branch,
-      api: deskApi, server: 'desk', verb: 'items.search',
+      // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api): desk.<verb>, and the desk's
+      // publishes, which ask again.
+      search: function (args, verb) { return deskApi.verb('desk.' + verb, args); },
+      published: function (fn) { return typeof deskApi.onPublished === 'function' ? deskApi.onPublished(fn, 'desk') : function () {}; },
+      server: 'desk', verb: 'items.search',
       args: function (text, values) {
         var want = deskListFilter(values);
         var moved = want.currentGoalOnly !== deskFilter.currentGoalOnly || want.goalsOnly !== deskFilter.goalsOnly || want.includeClosed !== deskFilter.includeClosed;
@@ -719,8 +723,8 @@ function deskTime(at) {
 // neither should be an accident." The first press arms the button and asks
 // "sure?"; only a second press fires it.
 // THE ARE-YOU-SURE IS THE SHELL'S (goal/G41.9; Andy, Q1: "absolutely"): every two-press button on the page is an
-// armingButton (spirit/element/armingButton.js), which the page loads itself. It arms, says so, and hands the shell its
-// disarm, so it disarms the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
+// armingButton (spirit/element/armingButton.js), which the page loads itself. It arms, says so, and disarms
+// itself the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
 var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
   ? spirit.require('spirit/element/armingButton.js') : null);
 function deskArming(button, armedLabel, run) {
@@ -728,7 +732,7 @@ function deskArming(button, armedLabel, run) {
   deskParts.then(function () {
     var A = typeof window !== 'undefined' && window.spirit && window.spirit.element && window.spirit.element.armingButton;
     if (!A || typeof button.armed === 'function') return;
-    A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run, api: deskApi });
+    A.attach(button, { label: button.textContent, armedLabel: armedLabel, run: run });
   }, function () { /* no armingButton, no second press */ });
 }
 // GO ALL (desk/G3.4). Andy: "i should have a go-all button for fixing rounds",
@@ -796,7 +800,11 @@ function deskRulesSearch() {
     deskRulesList = P.create(el, {
       // A VIEW OF THE RULES THE CACHE MANAGER KEEPS (goal/G41.28): every rule the push brought and every answer, seated.
       data: K.rulesBranch,
-      api: deskApi, server: 'desk', verb: 'rules.search',
+      // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api): desk.<verb>, and the desk's
+      // publishes, which ask again.
+      search: function (args, verb) { return deskApi.verb('desk.' + verb, args); },
+      published: function (fn) { return typeof deskApi.onPublished === 'function' ? deskApi.onPublished(fn, 'desk') : function () {}; },
+      server: 'desk', verb: 'rules.search',
       args: function (text, values) {
         var v = values || {};
         return { text: text, types: kept(DESK_RULE_TYPES, v.type), statuses: kept(DESK_RULE_STATUSES, v.status) };

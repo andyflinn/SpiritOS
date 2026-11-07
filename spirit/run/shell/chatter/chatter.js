@@ -565,19 +565,18 @@ function chMount(container, api) {
       if (!C) return;
       chSearch = window.spirit.element.search.create(chEl('ch-search'), {
         data: C.branch,
-        api: {
-          verb: function (name, body) {
-            var a = body || {};
-            var peer = chPeer;
-            if (!peer || !String(a.text || '').trim()) return Promise.resolve({ status: 200, body: { items: [], more: false } });
-            return chAsk('chat.search', { peer: peer, text: String(a.text || ''), who: String(a.who || '') }).then(function (b) {
-              var items = chItemsToLines((b && b.items) || []).map(function (l) {
-                l.peer = peer;
-                return { key: C.keyOf(peer, l.sent, l.seq), label: JSON.stringify(l) };
-              });
-              return { status: 200, body: { items: items, more: !!(b && b.more) } };
+        // ITS OWN DATA SOURCE (goal/G43.24: the search is handed no api): chat.search for the open peer.
+        search: function (body) {
+          var a = body || {};
+          var peer = chPeer;
+          if (!peer || !String(a.text || '').trim()) return Promise.resolve({ status: 200, body: { items: [], more: false } });
+          return chAsk('chat.search', { peer: peer, text: String(a.text || ''), who: String(a.who || '') }).then(function (b) {
+            var items = chItemsToLines((b && b.items) || []).map(function (l) {
+              l.peer = peer;
+              return { key: C.keyOf(peer, l.sent, l.seq), label: JSON.stringify(l) };
             });
-          },
+            return { status: 200, body: { items: items, more: !!(b && b.more) } };
+          });
         },
         server: 'chatClerver',
         verb: 'chat.search',

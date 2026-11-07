@@ -24,9 +24,9 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
 - **A search answers the id and what the list shows, nothing else** (goal/G41.18; Andy: *"only the ID and the fields
   shown in a table, that's all it needs."*): `id`, `label` (the model name) and `providerIcon`. The editor reads the rest by get. Not asserted: a model shown
   again when its provider's icon changes.
-- `elementTable.js` registers `spirit.elements.modelTable.create(container, api, detail)`:
+- `elementTable.js` registers `spirit.elements.modelTable.create(container, detail)`, handed no api: its list asks `agent.<table>` through the spirit object itself (goal/G43.24):
   - It requires the shared element and its own `elementRow.js`.
-  - It builds on `agentTable` for the model table, with the page's api and detail pane, and no Add (`add: false`;
+  - It builds on `agentTable` for the model table, with the detail pane, and no Add (`add: false`;
     Andy, on G41.18: *"get RID of [Add a Model] button in the left panes model mode. NOT required."*): its rows come
     from the providers.
   - Its list shows each model by its provider's icon and its model name: the columns it hands are `providerIcon`, then
@@ -44,7 +44,7 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
       model table it updated is the list below;
     - Ask is a busyButton, its request waiting until the provider answers (goal/G41.23).
   - A row it opens is a `modelRow`.
-- `elementRow.js` registers `spirit.elements.modelRow.create(container, api, id, added, detail)`:
+- `elementRow.js` registers `spirit.elements.modelRow.create(container, id, added, detail)`, handed no api:
   - It builds on `agentRow` with the model table's look.
   - Its fields are the label, the provider and the capabilities, all shown only (goal/G41.21, below).
 

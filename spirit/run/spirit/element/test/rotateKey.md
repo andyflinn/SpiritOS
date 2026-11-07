@@ -9,7 +9,8 @@ that opens exactly overtop of the calling panel, new-shell-style."*, *"like fsta
 
 ## Requirements
 
-- **Mounted the new shell's way**: it sets `spirit.elements.rotateKey = { create(container, opts) -> { destroy() } }`. No
+- **Mounted the new shell's way**: it sets `spirit.elements.rotateKey = { create(container) -> { destroy() } }`, mounted
+  with its container alone. No
   `spirit.shell.activateApp`, no `callDialog` or `closeDialog` of the old shell.
 - **What it needs, it gets itself** (Andy: *"every fucking element gets the interfaces it needs"*): the rotation is the
   node family's own verb, `spirit.node.rotateCipher({})`, its answer read through `spirit.outcome`; no `api.verb`.
@@ -18,7 +19,8 @@ that opens exactly overtop of the calling panel, new-shell-style."*, *"like fsta
   it costs*, *What it does not do*, each in the dialog's words; and *It is a crisis measure, not a routine one.* Then its
   button.
 - **Its button is the shell's armingButton** (goal/G41.9): `armingButton.attach`, saying `Rotate the key`, armed
-  `Rotate the key: press again`; the `opts.api` it was handed goes on to it, so a click elsewhere disarms it. The first
+  `Rotate the key: press again`; it is handed no api and hands none on (goal/G43.24): the button hears a click elsewhere
+  itself, listening on the document while armed. The first
   press only arms it and asks nothing; disarmed, the next press arms it again; the second press in a row runs.
 - **Its run asks `spirit.node.rotateCipher({})` once.** While the node has not answered, the button is drawn disabled.
   Answered, it says *Rotated* and *This node's card is now number &lt;at&gt;, handed to &lt;relays&gt; relay(s).*, the
@@ -35,4 +37,4 @@ that opens exactly overtop of the calling panel, new-shell-style."*, *"like fsta
 - One press that rotates, or a run that rotates more than once, or a press on the disabled button while waiting.
 - A result or refusal not said, a refusal not escaped, or a result left over into the next create.
 - The explanation's words changed or gone.
-- An `api.verb`, an `activateApp`, `data-armed` or `armUntilElsewhere` back in the file.
+- An `api` (an `api.verb`, one handed on), an `activateApp`, `data-armed` or `armUntilElsewhere` back in the file.

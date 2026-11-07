@@ -113,8 +113,6 @@ function world() {
     } },
     'search.grant': { create: function (host, opts) { const l = { host: host, opts: opts || {}, redrawn: 0, list: { redraw: function () { l.redrawn += 1; } } }; w.grantLists.push(l); return l; } },
   });
-  // What it hands on to the grant rows' arming buttons, and nothing it asks through.
-  const api = { armUntilElsewhere: function () {} };
   // A warning file in a family's folder, <verb>.warning.txt, as w.warnings holds it ('family.verb' -> text).
   const warning = function (fam) { return function (args) {
     const verb = String(args.path || '').replace(/\.warning\.txt$/, '');
@@ -173,7 +171,7 @@ function world() {
   vm.runInContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), win, { filename: 'data.js' });
   win.spirit.data.homeNode(win.spirit.node.key);
   if (SRC) vm.runInContext(SRC, win, { filename: FILE });
-  w.win = win; w.api = api; w.page = page;
+  w.win = win; w.page = page;
   return w;
 }
 
@@ -207,7 +205,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const unset = [];
   [[{}, /ID table/], [{ ids: config(w).ids }, /grants table/], [{ grants: config(w).grants }, /ID table/]].forEach(function (c) {
     const host = node('x'); let threw = null; let made = null;
-    try { made = E.grantsPanel.create(host, Object.assign({ api: w.api }, c[0])); } catch (e) { threw = e && e.message; }
+    try { made = E.grantsPanel.create(host, Object.assign({}, c[0])); } catch (e) { threw = e && e.message; }
     const said = host.kids.map(function (k) { return String(k.textContent || ''); }).join(' ');
     unset.push({ threw: threw, said: said, fits: host.kids.length === 1 && /^not configured: /.test(said) && c[1].test(said) && /\bjob-manifest-note\b/.test(host.kids[0].className),
       empties: !!made && typeof made.destroy === 'function' && (made.destroy(), host.innerHTML === '') });
@@ -220,7 +218,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   const box = node('panel');
   const cfg = config(w);
-  E.grantsPanel.create(box, Object.assign({ api: w.api }, cfg));
+  E.grantsPanel.create(box, Object.assign({}, cfg));
   await settle();
 
   test.subHeading('the grant form, a rowForm: ➕ [ID] [bundle] [Grant] (goal/G41.27)');
@@ -258,7 +256,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const gl = w.grantLists[0];
   ok(w.grantLists.length === 1 && gl && gl.opts.grants === cfg.grants && /\bfill\b/.test(String(gl.host.className || '')), 'one grant list, handed the grants table it was given, in a fill box', 'grant lists ' + w.grantLists.length + ', same table ' + (gl && gl.opts.grants === cfg.grants) + ', host ' + short(gl && gl.host.className));
   if (!gl) return;
-  ok(gl.opts.api === w.api, 'the api it was handed goes on to the grant list, for its rows\' arming buttons, and is asked nothing', 'grant list api: ' + (gl.opts.api === w.api));
+  // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24): mounted with no api, it hands the grant list none.
+  ok(!('api' in gl.opts), 'it hands the grant list no api: its rows\' arming buttons hear a click elsewhere themselves', 'grant list handed: ' + short(Object.keys(gl.opts)));
   const fills = box.nodes.filter(function (n) { return /\bfill\b/.test(n.className || ''); }).length + box.kids.filter(function (k) { return k !== gl.host && /\bfill\b/.test(k.className || ''); }).length;
   ok(fills === 0, 'nothing above the list fills: the heading, the form and the filters take their own height', fills + ' other fill box(es): ' + short(box.innerHTML.slice(0, 120)));
 

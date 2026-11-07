@@ -178,24 +178,22 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const BUNDLE_TOOL = R.filter(function (t) { return t.name !== 'server'; })[0];
 
   test.subHeading('each table\'s tool mounts that table\'s own element');
+  const CODE = fs.readFileSync(FILE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+  ok(!/\bapi\b/.test(CODE), 'it makes no api for its tables: each list asks agent.<table> through the spirit object itself (goal/G43.24)', 'browserAgent.js still makes or hands an api');
   for (const name of TABLES) {
     const t = L.filter(function (x) { return x.name === name; })[0];
     const before = w.required.length;
     const made = [];
-    global.window.spirit.elements[name + 'Table'] = { create: function (into, api, detail) { made.push({ into: into, api: api, detail: detail }); return { refresh: function () {}, destroy: function () {} }; } };
+    global.window.spirit.elements[name + 'Table'] = { create: function (into, detail) { made.push({ into: into, detail: detail, handed: arguments.length }); return { refresh: function () {}, destroy: function () {} }; } };
     const tb = box('table-' + name); t.mount(tb); await settle();
     const asked = w.required.slice(before);
     ok(asked.indexOf('spirit/app/agent/table/' + name + '/elementTable.js') !== -1 && /\bfill\b/.test(tb.className),
       'the ' + name + ' tool requires spirit/app/agent/table/' + name + '/elementTable.js into a fill box', 'required ' + short(asked) + ', class ' + short(tb.className));
     const d = made[0] && made[0].detail;
-    ok(made.length === 1 && made[0].into === tb && !!made[0].api && typeof made[0].api.verb === 'function' && d && typeof d.open === 'function' && typeof d.look === 'function',
-      'and creates ' + name + 'Table once in that box, with an object holding verb and its detail pane', 'created: ' + made.length + ', api: ' + short(made[0] && Object.keys(made[0].api || {})));
-    if (name === 'provider' && made[0] && made[0].api && typeof made[0].api.verb === 'function') {
-      // The box: "one small object of its own, { verb }, calling the same server verbs". A list reads { status, body } (probabilitySearch).
-      const got = await made[0].api.verb('agent.provider', { op: 'search', text: 'zz' });
-      ok(w.provider.length === 1 && w.provider[0].text === 'zz', 'its verb calls the server\'s own verb, with the arguments given', 'server asked: ' + short(w.provider));
-      ok(!!got && got.status === 200 && !!got.body && Array.isArray(got.body.items) && got.body.items[0].key === 'KP', 'and answers as a list reads it, { status: 200, body }', 'it answered: ' + short(got));
-    }
+    // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "anybody can mount any element without knowing what it actually
+    // needs...."): the table is handed its box and the detail pane, no api; its list asks agent.<table> itself.
+    ok(made.length === 1 && made[0].into === tb && made[0].handed === 2 && d && typeof d.open === 'function' && typeof d.look === 'function',
+      'and creates ' + name + 'Table once in that box, with its detail pane and no api', 'created: ' + made.length + ', handed ' + (made[0] && made[0].handed) + ' arguments');
     const look = d && d.look(name);
     ok(look && look.icon === t.icon && look.name && look.title === t.title, 'the detail pane\'s look of ' + name + ' is its tool\'s icon and title, and its one name', 'look: ' + short(look));
   }
@@ -221,8 +219,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     ok(asked.indexOf('spirit/app/agent/table/tableElement.js') !== -1, 'its mount loads the agent tables\' element itself (rule/26)', 'required: ' + short(asked));
     ok(/class="agent-title"/.test(cb.innerHTML) && cb.innerHTML.indexOf('💬') !== -1 && /Select Persona/.test(cb.innerHTML), 'its panel is titled 💬 Select Persona', 'panel: ' + short(cb.innerHTML));
     const sel = sels[0];
-    ok(sels.length === 1 && sel.o && sel.o.table === 'persona' && !!sel.o.api && typeof sel.o.api.verb === 'function' && sel.more.face === 'pane' && typeof sel.more.pick === 'function',
-      'below the title, only a personaSelector:pane: the persona table\'s search in pane mode, with an object holding verb', 'selectors: ' + short(sels.map(function (x) { return { table: x.o && x.o.table, face: x.more.face }; })));
+    ok(sels.length === 1 && sel.o && sel.o.table === 'persona' && !('api' in sel.o) && sel.more.face === 'pane' && typeof sel.more.pick === 'function',
+      'below the title, only a personaSelector:pane: the persona table\'s search in pane mode, handed no api', 'selectors: ' + short(sels.map(function (x) { return { table: x.o && x.o.table, face: x.more.face }; })));
     ok(!!sel && !!sel.host && sel.host !== cb && !/Add a persona/.test(cb.innerHTML), 'in a box of its own, not over the title, with no Add', 'panel: ' + short(cb.innerHTML));
     if (sel && typeof sel.more.pick === 'function') {
       const cBefore = w.required.length;
@@ -249,7 +247,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const bb = box('bundles'); BUNDLE_TOOL.mount(bb); await settle();
     const asked = w.required.slice(before);
     ok(asked.indexOf('spirit/element/bundleEditor.js') !== -1, 'its mount requires spirit/element/bundleEditor.js', 'required: ' + short(asked));
-    ok(editors.length === 1 && editors[0].into === bb, 'and makes the bundle editor in the box it is handed', 'bundle editors: ' + editors.length);
+    ok(editors.length === 1 && editors[0].into === bb && !('api' in editors[0].cfg), 'and makes the bundle editor in the box it is handed, handed no api', 'bundle editors: ' + editors.length + ', handed ' + short(editors[0] && Object.keys(editors[0].cfg)));
     delete global.window.spirit.element.bundleEditor;
   }
 

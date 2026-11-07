@@ -9,7 +9,6 @@
 //     opts.filters   the page's filters, handed to probabilitySearch as they are
 //     opts.selectors the page's selectors, handed to probabilitySearch as they are, drawn in its 🪣 row
 //     opts.serves(path)  handed to each row: a path no server serves today reads deprecated
-//     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
 // A VIEW OF ITS TABLE'S BRANCH (Andy: "WHY DOES A GRANT NOT JUST SIMPLY UPDATE AN EXISTING FUCKING ROW?"): the table's
 // search seats its rows there, and the stream keeps them current through the table's family's cache manager (the
@@ -37,7 +36,8 @@
       });
     }
     var list = window.spirit.element.search.create(host, {
-      api: { verb: function (name, args) { return search(args); } },
+      // Its own data source (goal/G43.24): the search asks it, and is handed no api.
+      search: search,
       data: String(g.branch),
       server: 'table',
       verb: 'search',
@@ -48,7 +48,7 @@
         { field: 'path', label: 'Path', sort: 'text' },
         { field: 'revoke', label: '' },
       ],
-      element: function (row) { return window.spirit.element.search.grant.rowElement.create(row, { grants: g, api: o.api, serves: o.serves }); },
+      element: function (row) { return window.spirit.element.search.grant.rowElement.create(row, { grants: g, serves: o.serves }); },
       filters: o.filters,
       selectors: o.selectors,
       empty: o.empty || 'No grant matches.',

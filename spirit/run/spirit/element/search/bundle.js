@@ -21,7 +21,7 @@
 //     options.tabLabel   tabLabel(row), from whoever mounts it, names that tab (goal/G41.31): words, or { label, italic };
 //                        the bundle's label when it is not given
 //     options.family     an app server's name: only the bundles it owns are listed (goal/G41.25)
-//     options.placeholder, options.all, options.api, options.empty   handed to the list
+//     options.placeholder, options.all, options.empty   handed to the list
 (function () {
   function createBundleSelector(options) {
     options = options || {};
@@ -46,7 +46,7 @@
         var said = typeof options.tabLabel === 'function' ? options.tabLabel(row) : String(row.label || '');
         var header = said && typeof said === 'object' ? said : { label: String(said || '') };
         tabs.add({ name: name, label: String(header.label || ''), italic: header.italic === true, closable: true, mount: function (box) {
-          return window.spirit.element.branchEditor.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), api: options.api, gone: function () { tabs.close(name); } });
+          return window.spirit.element.branchEditor.create(box, { bundle: Number(row.id), label: String(row.label || ''), owner: String(row.owner || 'node'), gone: function () { tabs.close(name); } });
         } });
       });
     }
@@ -60,7 +60,6 @@
         all: isPane ? undefined : options.all,
         columns: options.columns,
         family: options.family,
-        api: options.api,
         empty: options.empty,
         pick: function (row) { pick(row); },
       });

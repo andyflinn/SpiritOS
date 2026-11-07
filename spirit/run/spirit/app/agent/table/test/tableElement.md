@@ -23,7 +23,8 @@ the table)"*.
     (`spirit.data.agent.data.branch`, goal/G41.28). With no agent family's cache on the page (its server not running on the
     node) it refuses and says why: no list is drawn without its branch.
   - `whyOf(refusal)` is the server's own reason (its `extra.why`), else the refusal's words, else `refused`.
-- **A table**, `agentTable.create(container, { api, table, detail, row, add, matched, buttons, columns })`:
+- **A table**, `agentTable.create(container, { table, detail, row, add, matched, buttons, columns })`, handed no api: its list asks
+  `agent.<table>` through the spirit object itself (goal/G43.24):
   - Its title row is the table's icon and title, from `detail.look(table)`.
   - It has an Add button.
   - Its list is a `probabilitySearch` over the agent server's verb for that table, seated in the branch

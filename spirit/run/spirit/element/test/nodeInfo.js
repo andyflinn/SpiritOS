@@ -213,7 +213,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (!join || !face) return;
   const urls = function (f) { return f.o.relays.map(function (r) { return r.url; }).join(','); };
   ok(urls(join) === 'https://a.example,https://o.example' && urls(face) === urls(join), 'each offered only a relay where this key holds a row (claimed or owned) and whose own key is known', 'join ' + urls(join) + ', face ' + urls(face));
-  ok(join.o.pick === 'seated' && join.o.escape === w.S.escapeHtml && face.o.escape === w.S.escapeHtml, 'the email form picks among the seated; both escape with spirit.escapeHtml', 'join ' + short({ pick: join.o.pick, esc: join.o.escape === w.S.escapeHtml }) + ', face esc ' + (face.o.escape === w.S.escapeHtml));
+  ok(join.o.pick === 'seated' && !('escape' in join.o) && !('escape' in face.o), 'the email form picks among the seated; neither form is handed an escape (each escapes with spirit.escapeHtml itself, goal/G43.24)', 'join ' + short({ pick: join.o.pick, escape: 'escape' in join.o }) + ', face escape ' + ('escape' in face.o));
   ok(typeof face.o.reload === 'function', 'the face form is handed a reload', 'face: ' + short(Object.keys(face.o)));
   const nForms = w.forms.length;
   await face.o.reload(); await settle();
