@@ -60,7 +60,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
 
     test.subHeading('what this node may start still starts');
     // A fix that closes these closes the node: the review's own wording names <name>/<name>.js; the desk starts a helper
-    // beside it the same way (goalShare.js, desk.js:2624), by this node's executable and its whole path. deskClient
+    // beside it the same way (goalShare.js, desk.js:2608), by this node's executable and its whole path. deskClient
     // starts no helper any more; the check's text below still names its old line.
     plant('process/js/zzIncluded/zzIncluded.js', mark('included'));
     fs.writeFileSync(path.join(run, 'process/js/zzIncluded/zzIncluded.json'), JSON.stringify({ label: 'zz' }));

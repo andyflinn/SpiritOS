@@ -4,8 +4,8 @@
 **Date:** 2026-09-03
 
 **Status 2026-11-07 (goal/G43.23):** the decision holds in the old shell,
-`spirit/run/spirit/client/shell.js` (`buildApiFor`, line 1026, called at
-`app.mount(app._el, buildApiFor(app), params)`, line 1607). App Builder,
+`spirit/run/spirit/client/shell.js` (`buildApiFor`, line 1024, called at
+`app.mount(app._el, buildApiFor(app), params)`, line 1606). App Builder,
 its `preamble.md`, `aiChat.js` and `appBuilder.js` are gone (304f869a,
 2026-09-13, and 68122539, 2026-09-26; decision 0008), and Text Editor
 is gone (64e2d054, 2026-11-07); what is said about them below is history.
@@ -46,17 +46,17 @@ with.
 
 `api` at the decision (it has since grown: today it also carries `verb`,
 `addTitlebarLink`, `launchApp`, the dialog, screen, stream and `peerPost`
-members, `client/shell.js:1026-1539`):
+members, `client/shell.js:1024-1539`):
 
 - **`api.fs`** — `{loadFile, saveFile, deleteFile, fileStats,
   scanDirectory}`, scoped to the app's own folder (`shell/<app>/`,
-  `kernel.js:376` `createScopedFs`). Built-in apps (no
+  `kernel.js` `spirit.core.fs.createScopedFs`). Built-in apps (no
   folder of their own) don't get this member.
 - **`api.escapeHtml(str)`** — HTML-escapes a string.
 - **`api.fetchExternal(url, options)`** — the only way to reach an
   external API, returning a `Promise` of the already-parsed JSON
   response. Hides the wire envelope (then `/api/proxy`; today the
-  `net.fetch` verb, `client/shell.js:1046-1055`)
+  `net.fetch` verb, `client/shell.js:1044-1053`)
   (`method`/`headers`/`body`/`timeoutMs` nested just so) behind a
   plain call, the same way `api.fs.loadFile` already hides the jailed
   path resolver behind a bare filename.

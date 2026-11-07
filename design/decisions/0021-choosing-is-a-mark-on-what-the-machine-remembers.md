@@ -10,7 +10,7 @@ verbs are `contact.search`, `.get`, `.block`, `.unblock`, `.accept`,
 `.label`, `.forget` and `.own` (`spirit/run/spirit/contact/api.js:7-19`).
 `contact.senders` and `contact.setSenders` are gone (goal/G43.17), so there
 is no *Ignore* / *List them* choice: the front door answers `known` for a
-key in the book and `drop` for a stranger or a blocked key (`hub.js:430-450`,
+key in the book and `drop` for a stranger or a blocked key (`hub.js:430-480`,
 `frontDoor`).
 
 > **Andy:** *"the peer-list is a "choice" now … the implication is: the

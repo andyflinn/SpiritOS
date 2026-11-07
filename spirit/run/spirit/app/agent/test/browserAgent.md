@@ -14,7 +14,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 ## Requirements
 
 - It is an element (goal/G43.13): `spirit.elements.agent.create(container)` answers `{ destroy() }`. It names no `activateApp`.
-- A tile hands it only its container, so it passes its tables one small object of its own, `{ verb }`, calling the same server verbs and answering `{ status, body }`. No new verb.
+- It reads only its container (the `{ title, open }` the appSelector's launch hands it go unread), so it passes its tables one small object of its own, `{ verb }`, calling the same server verbs and answering `{ status, body }`. No new verb.
 - It keeps no state of its own: no `showDebug`, no `relay-state`, no title of the old shell, and opening it saves no file.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
 - It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own

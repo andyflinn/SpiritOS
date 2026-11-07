@@ -20,9 +20,11 @@ const path = require('path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
 // INTRINSIC IS A CODED LIST (goal/G41.1, box v17; Andy: "the user doesn't decide intrinsic, our development team does. so
-// i would agree on a \"coded\" intrinsic list."): the app folders whose code is core, which every node runs and shows.
-// Changed here only, under his grant; no sidecar or manifest says it. Every reader asks it: the commit check below, the
-// node starting servers (spirit/jobs.js), and every face part the node hands out (spirit/fileSystem.js).
+// i would agree on a \"coded\" intrinsic list."): the shell/ and process/js/ app folders whose code is core, which every
+// node runs and shows. Changed here only, under his grant; no sidecar or manifest says it for those (an app of spirit/app/
+// says it in its own <name>.json, appIntrinsic below). shell/apps, shell/icons and shell/stats name folders no longer in
+// the tree (icons is spirit/app/icons/ since 64e2d054). Every reader asks it: the commit check below, the node starting
+// servers (spirit/jobs.js), and every face part the node hands out (spirit/fileSystem.js).
 const INTRINSIC = [
   'process/js/fileServer',
   'shell/apps', 'shell/grants', 'shell/icons', 'shell/info',

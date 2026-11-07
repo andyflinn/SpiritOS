@@ -12,14 +12,15 @@ Design only. Nothing here is built.
 > So `process/js/agents/agents.js`, its envelope, its kinds and
 > `agents-log.jsonl` are gone (ef85bc1f), and no board is posted as an agents
 > packet. Desk is a server process, `spirit/run/process/js/desk/desk.js`,
-> holding goals, items, boxes, rules and their chat in `desk.db` under
-> `relay-state/process/desk/` (`desk.js:11`, `:67`), with its page in
+> holding goals, items, boxes, rules and their chat in `desk.db` in the
+> folder the node hands it, `spirit/state/desk/data/` (goal/G43.10;
+> `desk.js:11`, `:66`), with its page in
 > `spirit/run/shell/desk/`, not `app/desk/` and not a `log.json` of its own.
 > Since goal/G43.22 (Andy, the box: *"the apps and plugin system goes."*,
 > *"there will only be goals, items and rules left, plus the verifier stuff
 > can stay for now."*) it has no apps, plugins, team chat, musings or
-> stacks. Design mode exists, per goal and per item (`desk.js:799`). No
-> `voice.jsonl` is written any more (goal/G2.1, `desk.js:2632-2634`): the
+> stacks. Design mode exists, per goal and per item (`desk.js:795`). No
+> `voice.jsonl` is written any more (goal/G2.1, `desk.js:2615`): the
 > vault's own tool reads his Desk lines through the desk server's api, so
 > decision 6 below is superseded too. The sections below are the record of
 > 2026-09-27.

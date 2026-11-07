@@ -53,8 +53,8 @@ script. It writes only through `merge`, `seat` and `del`.
   update with no item seats nothing; a label that is not JSON seats nothing.
 - **contact.rename** `{ key, caption }`: the row's `name` becomes the caption as text, every other field kept; a key
   with no row gets one.
-- **shadow** (the one table, goal/G40.11): `data.row` with a `publicKey` is merged into its row by key; `gone: true` lets
-  the row go.
+- **shadow** (the one table, goal/G40.11): `data.row` with a `publicKey` is merged into its row by key; `data.row.gone: true`
+  lets the row go.
 - Any other job type leaves the contacts alone.
 
 Its test must also try to break: The same presence twice (no second write), a dropped key, garbage entries and labels, a rename of an unknown key, and

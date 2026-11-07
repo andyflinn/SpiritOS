@@ -77,8 +77,17 @@ function moveLeftovers(rootDir, say) {
 // state, its own identity among it, in app-state/<name>; it moves, once,
 // whole, per face, to relay-state/process/<name>, where processes kept their
 // state until goal/G43.10. server.js calls this after moveRelayState, so what
-// it moves is carried on to spirit/state/<name>/data at the next boot. A
-// folder the new place already holds is kept and said, never merged.
+// it moves is carried on to spirit/state/<name>/data at the next boot, and
+// only when process/js/<name>/ exists (moveProcessState, below); a face's
+// folder with no such process stays in relay-state/process/. A folder the
+// new place already holds is kept and said, never merged.
+//
+// DISCREPANCY WITH ANDY's RULES: goal/G41.30 (Andy: "let's get rid of those
+// \"rescue operations\"", nodeStore.js) and the box of goal/G41.32 ("no
+// \"old-data-rescue-missions\"") rule out moving old stores in. moveLeftovers
+// (app/ into shell/, slim/G1.1) and moveAppState (app-state/, slim/G1.4)
+// are such rescues, still called on every boot (server.js); the moves of
+// goal/G43.8 and goal/G43.10 below are Andy's own later order, not this.
 const LEGACY_APP_STATE_DIR = 'app-state';
 
 function moveAppState(rootDir, say) {

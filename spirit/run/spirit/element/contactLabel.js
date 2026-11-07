@@ -3,7 +3,8 @@
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
 //   so one file per element, each adding itself to window.spirit.element,
-//   which the shell hands to apps at mount as api.ui.elements.
+//   which the shell hands to apps at mount: boot.js (spirit/shell/boot.js) as api.ui.element, the old shell
+//   (spirit/client/shell.js) as api.ui.elements.contactLabel.
 //
 // ── WHAT IT SHOWS IS THE NODE'S, NOT ITS OWN (goal/G4.13) ─────────────
 //

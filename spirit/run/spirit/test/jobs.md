@@ -16,7 +16,7 @@ own, so whether it ran is read from the disk.
   `./appServerMount.md`.
 - **What this node may start still starts**: an included `process/js/<name>/<name>.js` (one that is no intrinsic is
   included by its sidecar, `relay-state/process/<name>/<name>.js.sidecar.json` saying `face.home` true), and a helper in an
-  included process's folder, as `desk.js:2624` starts `goalShare.js` by this node's executable and its whole path.
+  included process's folder, as `desk.js:2608` starts `goalShare.js` by this node's executable and its whole path.
 - **Plain `node` with an included process starts**: the word `node` is read as this node's own executable
   (`spirit/jobs.js:512`); a page sends it so (the app detail's run, `spirit/app/appSelector/detailElement.js:68`).
 

@@ -11,13 +11,15 @@ no page, so it runs in node, where `require` answers the api.
   base64url (`nodeId(key)`), and a key may hold slashes. `viewAt(node, family)` is a family's view: `get`, `set`, `merge`,
   `del`, `watch`, `rows`, `seat`, `ready`, `quietly` and `branch`, given `'<branch>/<key>'`. The test writes and reads
   through one such view, its node a key holding a `+` and a `/`.
+- Below, `get`, `branch`, `watch`, `rows`, `seat`, `quietly` and `ready` are the view's verbs; on `spirit.data` itself they are `getPath`, `branchAt`, `watchPath`,
+  `rowsOf`, `seatRows`, `setQuietly` and `readyBranch`, each given a whole path.
 - `get(path)` gives a value, or with a bare type the whole branch. `branch(type)` gives the branch; a missing one answers empty, for a read makes nothing (goal/G41.28).
 - `watch(path, fn)` returns its unwatch. `rows(type)` gives `[{ key, ...value }]`.
 - `seat(type, items)` merges a search answer's `{ key, label: json }` items.
 - `addTranslator(t)` registers a type's translator. `takeJob(job)` and `takeRename(d)` feed it by hand.
 - `quietly(type, on)` and `ready(type, now?)` control a quiet fill.
 - `searchAll({ text, branches, room })` gives `{ items: [{ key: <the row's whole path>, label, probability }], more }`.
-- `forgetAll()`, `byteCap(n?)`, `allBranches()` and `branchAt(path)` are the cache's life, below.
+- `forgetAll()` and `byteCap(n?)` are the cache's life, below; `allBranches()` lists every branch's whole path.
 
 ## Requirements
 

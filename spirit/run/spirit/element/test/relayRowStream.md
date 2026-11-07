@@ -12,6 +12,8 @@ stream, a real Chrome.
 - **relayPanel** is `spirit/element/search/contact/relayPanel.js`, `relayPanel.create(host, { key })`, and `spirit/element/natterDetails` is gone.
 - **The star is a folding panel like the others** (Andy: *"must use the same heading and style al all the other folding panels in relayPanel"*): the same heading, tile and fold mark, shut as it arrives, holding its button when opened.
 - **"A face name" shows the faceForm, unless the relay is starred** (Andy: *"the folding panel "A face name" should actually show the faceForm, unless the relay is "starred""*): opened, it holds the form's field and button; the star on, the fold goes with no reload; off, it comes back. Judged on boot.js's shell at /face.html, the one he uses.
+  **Turned round since**, as the face form below: relayPanel's fold asks `faceForm.offers`, so since goal/G43.18 (box v29) it
+  shows only on a starred relay. This requirement and its checks still assert the old rule, so they fail against the code.
 - **The face form offers relays this node is a member of or owns, with no star** (Andy, in the chat; his line on who owns is read as today's filter), and `faceForm.offers(relays)` says whether it has any.
   **Turned round since**: goal/G43.18's box (v29), Andy: *"on the home node, NO face is offered (faceForm hides itself) for a
   relay without star."* `spirit/element/faceForm.js` follows that: it offers a starred relay only. This requirement and its

@@ -3,7 +3,7 @@
 **Outstanding. Opened 2026-09-11 against `c9f3104`. Not scheduled.**
 
 **Status 2026-11-07 (goal/G43.23):** the ICON table is in
-`spirit/run/spirit/kernel.js` (from line 498), for the old shell alone
+`spirit/run/spirit/kernel.js` (`spirit.core.const.ICON`), for the old shell alone
 (goal/G41.1); `iconIndex.js` is gone with it (83189be8). The blast radius in
 item 3 is empty today: no code outside `kernel.js` writes `ICON.STOP`,
 `ICON.WAITING` or `ICON.ON`, and Relay Chat, AI Manager, the Natter device

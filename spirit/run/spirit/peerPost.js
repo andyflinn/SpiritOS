@@ -1544,10 +1544,10 @@ function createPeerPost(opts) {
       .catch(function () { return ''; })
       .then(function (said) {
         var text = typeof said === 'string' ? said : '';
-        // THE TUNNEL CHECK, ON THE WAY BACK (cycle 2). This node cannot
-        // tell whether the request crossed a partnership — it arrives the
-        // same either way — so an answer that would not survive being
-        // wrapped for the return is not sent. The receipt still goes, with
+        // THE TUNNEL CHECK, ON THE WAY BACK (cycle 2). Written when this node
+        // could not tell whether the request crossed a partnership; none does
+        // since goal/G22.6, but with checkTunnel on an answer that would not
+        // survive being wrapped for the return is still not sent. The receipt still goes, with
         // no text: "it arrived, no answer travelled", which is the honest
         // reading of an empty reply. The log records why.
         if (checkTunnel && text && !limits.fitsWrappedReply(text, id.publicKey, sizingSig)) {

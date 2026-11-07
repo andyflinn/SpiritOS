@@ -27,7 +27,7 @@ var cdApi = null;
 
 var cdKey = '';        // whose row this screen is
 var cdPerson = null;   // the row itself, as contact.get answers it
-var cdChanged = false; // has anything happened that the table must repaint for?
+var cdChanged = false; // has anything happened? Nothing reads it now: the list repaints from the stream
 
 // Through the shell (AGENT.md, Comms). The verb is the argument; this app
 // no longer knows an address.

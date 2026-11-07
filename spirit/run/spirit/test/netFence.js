@@ -3,7 +3,7 @@
 // spirit/run/spirit/test/netFence.js
 // The tests of spirit/netFence.js, and of no other module (spec: ./netFence.md). net.fetch never reaches this machine
 // (goal/G29.20; Andy, 2026-10-18: "fetch will not be able to reach ports on this machine, and agents may use it."). The
-// node asks isThisMachine of the hostname new URL gives it (spirit/server.js:585), so every case here is asked in that
+// node asks isThisMachine of the hostname new URL gives it (spirit/server.js:588), so every case here is asked in that
 // form: a URL parsed the way the node parses it, its hostname handed over as it comes.
 
 const path = require('path');
@@ -13,7 +13,7 @@ const fence = require(path.join(RUN, 'spirit', 'netFence.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 
-// What the node hands isThisMachine: the target's hostname, lower-cased (server.js:581).
+// What the node hands isThisMachine: the target's hostname, lower-cased (server.js:584).
 function hostOf(url) { return new URL(url).hostname.toLowerCase(); }
 
 test.startTest('netFence.js: net.fetch never reaches this machine');

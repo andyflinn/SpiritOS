@@ -10,7 +10,7 @@
 //   reply, allowing the appFaceApp to cache that route in RAM for future
 //   use", and "at restart, the dance starts anew".
 //
-// Two pure pieces, no I/O, so each is driven by a test and not by a lab:
+// Three pure pieces, no I/O, so each is driven by a test and not by a lab:
 //
 //   nameOf(host, faceDomain)        which name a visitor asked for (relay.js)
 //   faceLabel(name)                 one face name by the host parser's rule (relay.js)

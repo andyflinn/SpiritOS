@@ -138,6 +138,9 @@ test.startTest('relayRowStream.js: who paints, listens: a relay\'s row and relay
 
     // Andy: "the folding panel "A face name" should actually show the faceForm, unless the relay is "starred"", "that's one bug,
     // and one design change.", "bug: "A face name" doesn't show the faceForm.", "change: don't show it if the relay is starred...".
+    // TURNED ROUND SINCE: goal/G43.18's box (v29), Andy: "on the home node, NO face is offered (faceForm hides itself) for a
+    // relay without star." relayPanel's ndFaceHtml asks faceForm.offers, which offers a starred relay only, so the fold
+    // shows only when starred: the checks below assert G41.32's rule and fail against it.
     test.subHeading('"A face name" shows the faceForm, unless the relay is starred');
     const faceHead = 'Array.prototype.slice.call(document.querySelectorAll("#zzPanel .nd-fold")).filter(function (h) { return h.textContent.indexOf("A face name") !== -1; })[0]';
     const hasFaceHead = function () { return chrome.evaluate('!!(' + faceHead + ')'); };

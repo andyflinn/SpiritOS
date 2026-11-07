@@ -69,8 +69,10 @@ the only way a default survives contact with people in a hurry.
 
 > **Status 2026-11-07 (goal/G43.23):** this list is the door at `daf60a6`, not today's.
 > Since goal/G32.1 each family declares its verbs in `spirit/run/spirit/<family>/api.js`,
-> mounted by `server.js:1682-2049`, so `doorContract.js`, which still reads verbs out of
-> `server.js`, finds none. Today there are 55 verbs in 11 families (`config` is kept empty, goal/G30.20):
+> mounted by `server.js:1682-2049`. `doorContract.js` no longer checks this list: its verb
+> check read verbs out of `server.js`, found none there, and was deleted as stale in
+> goal/G43.23 (885f1ab5); it still checks the limits, the error count and the examples.
+> Today there are 55 verbs in 11 families, and a twelfth, `config`, is mounted empty (goal/G30.20):
 > net: fetch · auth: query search peer grant revoke relabel bundle branch ·
 > jobs: search get create cancel delete · events: subscribe publish ·
 > app: search active label icon · fs: search stat load annotations save delete annotate ·

@@ -109,7 +109,10 @@
     <script src="/spirit/element/rowElement.js"></script>
     <script src="/spirit/element/search.js"></script>
     <!-- The viewers (goal/G30.16): the frame both share, fstat since goal/G43.17, then text, and media from its new app (old may
-         require new, never the reverse). -->
+         require new, never the reverse).
+         DISCREPANCY WITH ANDY's RULES: spirit/element/textViewer.js was deleted in Andy's commit faaf2b1b ("kill!"); this
+         page still asks for it (a 404), and the Text File Launcher below still calls spirit.element.textViewer, which
+         throws when a text file is opened. -->
     <script src="/spirit/element/fstat.js"></script>
     <script src="/spirit/element/textViewer.js"></script>
     <script src="/spirit/app/media/media.js"></script>
@@ -146,8 +149,8 @@
         // below stay here.
 
         // ---- The two launchers: the viewer elements (goal/G30.16) ----
-        // The viewers are elements now (spirit/element/fstat.js, textViewer.js, and the media app's spirit/app/media/media.js,
-        // goal/G43.17), so the face has them too; their inline bodies and the job form stood here. Only reachable via
+        // The viewers are elements now (spirit/element/fstat.js and the media app's spirit/app/media/media.js, goal/G43.17;
+        // the text viewer, spirit/element/textViewer.js, is deleted, see the DISCREPANCY note above), so the face has them too; their inline bodies and the job form stood here. Only reachable via
         // launchApp(id, { path }) from Open with or a file row — no desktop icon (hidden: true). A launcher, not a dialog: every one of
         // its launches replaces its own stack entry (assertOneHiddenApp, shell.js). mount runs once; loadFile shows each
         // later file.

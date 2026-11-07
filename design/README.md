@@ -7,8 +7,9 @@ This directory contains the vision, principles, and architecture decisions for *
 - [The door — what a program may ask this node to do](protocol/THE-DOOR.md)
   — **the contract**, and the thing this project is actually for: a local
   HTTP port that any language can post to. Its verbs, the limits, the
-  rates, and what the relay cannot do. Every figure on it is checked
-  against the running tree by `spirit/test/doorContract.js`, and the page
+  rates, and what the relay cannot do. Its limits and its error count are
+  checked against the running tree by `spirit/test/doorContract.js` (its
+  verb list no longer is, see the note on the page), and the page
   names its own gaps — the two worked examples beside it are not
   RUN by the harness, no per-verb
   arguments, no stated version.

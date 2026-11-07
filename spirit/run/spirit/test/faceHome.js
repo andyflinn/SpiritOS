@@ -168,7 +168,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
 
   // GOAL/G41.33. THE BOX: "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay he's
   // a member of or owns", and "this includes" bundles, branches and grants; a job deleted; running jobs; join steps; relay
-  // events. "for a face(relay) without star, the restrictions today stay in place." "for a face(relay) with star, NO
+  // events. "for a face(relay) with star, NO
   // RESTRICTIONS AT ALL, except changing stars." Relay events "overrules goal/G30.13". Box v29 took the half face away: a
   // face with no star hears nothing. Here o.events is a stand-in, and a relay event comes as server.js sends it, an
   // owner's and the monitor's alike by the node's dispatcher alone (ownerEvent went with the half face).

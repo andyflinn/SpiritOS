@@ -40,8 +40,7 @@ answers `true`. With no `faceSet` given it refuses: closed, not open.
 ## goal/G41.33: a starred face gets what the loopback gets
 
 The box: *"anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay he's a member of or
-owns"*, including bundles, branches and grants, a job deleted, running jobs, join steps, relay events. *"for a face(relay)
-without star, the restrictions today stay in place."* *"for a face(relay) with star, NO RESTRICTIONS AT ALL, except changing
+owns"*, including bundles, branches and grants, a job deleted, running jobs, join steps, relay events. *"for a face(relay) with star, NO RESTRICTIONS AT ALL, except changing
 stars."* Here `o.events` is a stand-in, and a relay event comes as `server.js` sends it.
 
 - **A starred face hears each of those whole and once**, a job of a type nobody has listed too, and a server's job with its

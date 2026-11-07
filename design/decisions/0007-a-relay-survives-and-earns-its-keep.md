@@ -13,9 +13,9 @@
 > (cleanup/G1.7); the roll and invites are tables in `relay.db`, not
 > `routingTable.json` and `invites.json`; a relay's key is pinned across
 > restarts by `relayKeys.js` (`spirit/run/spirit/relayKeys.js:1-30`), so
-> the last open point about pinning is answered. In `kernel.js` today
-> `module.exports = spirit` is line 242, `ICON` line 498 and `MIME_TYPES`
-> line 698.
+> the last open point about pinning is answered. The `kernel.js` line numbers below are
+> of `4a0d51e`; today `module.exports = spirit`, `spirit.core.const.ICON` and
+> `MIME_TYPES` are found by those names.
 
 > the relay must [have] one job only: "survive", this includes "earn your
 > keep".

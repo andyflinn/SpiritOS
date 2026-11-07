@@ -102,7 +102,7 @@ function contactCreate(container, options) {
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });
 
-    // THE ONE LIST (goal/G30.19). A row opens the person (search/contact/detailElement.js) or the relay (relayPanel.js) by its
+    // THE ONE LIST (goal/G30.19). A row opens the person (search/contact/detailElement.js) or the relay (search/contact/relayPanel.js) by its
     // row element's open, in the stack above.
     var book = document.getElementById('contacts-book');
     contactsParts.then(function () {

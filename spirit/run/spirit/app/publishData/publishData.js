@@ -152,8 +152,9 @@ async function main() {
   // IN A WORKTREE, NOT THE LIVE CLONE (goal/G4.33, reopened): the first publish ran the harness beside the running
   // node, and a suite disturbed the node's own sockets (wsl-claude's lost its deskClient, 0 packet posts). So the
   // harness runs in a temporary git worktree of the commit being published; its files come back into agents/<agent>/,
-  // and the worktree is removed. The node's relay list is not in git, so it is carried over when the clone has one;
-  // it is spirit/state/relays.json since goal/G16.3, node state rather than the Natter app's file.
+  // and the worktree is removed. The node's relay list is not in git, so it is carried over when the clone has one.
+  // The file copied below, spirit/state/relays.json, is the store of before goal/G19.15: a node's relays are rows of
+  // seen in node.db since (goal/G40.11), so on a node made since there is no such file and nothing is carried over.
   if (!packetsOnly) {
     say('harness and capacity in a worktree of ' + commit + ' (minutes)');
     const tree = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publish-tree-'));

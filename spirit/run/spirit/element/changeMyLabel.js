@@ -44,7 +44,9 @@
       said.className = isError ? 'job-start-error' : 'job-manifest-note';
     }
     // DISCREPANCY WITH ANDY's RULES: goal/G41.27's box (v8) says "character counters outside a form go: a field is limited
-    // by fieldRules.js as it is typed, so a counter says nothing"; this element still writes the bytes left below the
+    // by fieldRules.js as it is typed, so a counter says nothing" (Andy: "the most fucking miserable example are those
+    // fucking character counter OUTSIDE the fucking form, the damned fields are supposed limit input based on
+    // fieldRules.js, they ALL have to go"); this element still writes the bytes left below the
     // rowForm's bubble, outside the form, and its test asserts that counter.
     function count() {
       var R = rules();

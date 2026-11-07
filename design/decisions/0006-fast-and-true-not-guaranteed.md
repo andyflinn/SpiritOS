@@ -6,7 +6,7 @@
 /api/relay/inbox`, `inboxMessage`, `checkInboxKey` and `resolveParty` are
 gone (transport R8, 2026-09-15; `spirit/run/spirit/relay.js:35-45, 987`,
 `relayAuth.js:61, 675`); `inboxSignatureFrom` is `streamSignatureFrom`
-(`relay.js:4549`). The owner record is `spirit/state/owner.json`, not
+(`relay.js:4558`). The owner record is `spirit/state/owner.json`, not
 `allow.json` (cleanup/G1.7); claimed peers and invites are tables in
 `relay.db` (`relayStore.js`), not `routingTable.json` and `invites.json`.
 The device browser is gone (goal/G16.2, 391de42b), so the device paragraphs

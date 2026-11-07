@@ -218,7 +218,7 @@ function packetEncode(app, body, opts) {
   // (ROUTER.md §2: no hash is ever sent).
   //
   // NOT the route table's key in any live sense. That entry is swept
-  // after at most five seconds (router.js DEFAULT_TTL_MS), which is the
+  // after five seconds by default (router.js DEFAULT_TTL_MS), which is the
   // window a sender stands waiting for a reply. This outlives it by as long as
   // somebody keeps the packet: "regarding the thing you said on Tuesday"
   // is a new post that NAMES an old one, not an answer to a request still

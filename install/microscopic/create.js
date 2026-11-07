@@ -1,8 +1,8 @@
 // Builds the "microscopic" installer: a plain .zip of the shippable
 // product (spirit/, minus spirit/test/) that needs nothing but Node.js
 // to run — spirit/run needs no npm install: its one third-party package,
-// chokidar (jobs.js), is tracked under spirit/run/node_modules and ships
-// in the zip, so a zip + Node really is a complete install path, with
+// chokidar (jobs.js), with its one dependency readdirp, is tracked under
+// spirit/run/node_modules and ships in the zip, so a zip + Node really is a complete install path, with
 // git only needed for developing, not running.
 //
 // File list comes from `git ls-files`, not a raw directory walk — that

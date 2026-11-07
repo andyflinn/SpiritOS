@@ -11,8 +11,8 @@
 //   with dropping label out of grant.input", "relabel is FINE verb.", "please fix the api, to be consistent with
 //   your practices in terms of precise answer shapes."
 //
-// The rows are nodeStore's (node.db, peers and grants). A record is { key, label, path }; a path is 'app' or
-// 'app.verb', matched exactly. Every verb answers an object or a refusal { refusal: code }; server.js turns the
+// The rows are nodeStore's (node.db: grants, bundle and branch; a grant's label is his contacts' name for its key).
+// A record is { key, label, path }; a path is 'app' or 'app.verb', matched exactly. Every verb answers an object or a refusal { refusal: code }; server.js turns the
 // refusal into { ok: false, code, error } with the catalogue's status. The auth family sits in the flat table as every
 // node family does: the owner calls it on loopback, a peer only through a grant (apiDoor).
 
@@ -259,7 +259,7 @@ function createApiAuth(opts) {
     // (default), or the name of an appServer"; "the owner field can never be changed after a bundle is added"; "for
     // bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\" field
     // with \"node\", incoming or outgoing"). Set at the add (always node there since goal/G41.32, below; an appServer's
-  // from its Bundles.json at boot), never changed after; read as node wherever it is not valid.
+    // from its Bundles.json at boot), never changed after; read as node wherever it is not valid.
     // NO SET (goal/G41.26; Andy, box: "A bundles label is determined when it's added, and cannot be modified. This will
     // protect family owned bundles from having their label mutilated. the auth.bundle set op will be removed."): a
     // bundle's label and owner are the add's; a set is refused bad-request.

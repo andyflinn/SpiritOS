@@ -241,7 +241,7 @@ function open(rootDir, opts) {
   //
   // One row per ID other than the node itself. Keyed by ID, so somebody seen a thousand times is one row and growth
   // is bounded by distinct IDs rather than by traffic. Every row: label (with how sure, labelRank, and when, labelAt),
-  // myLabel, card, face, present, firstSeen, lastSeen, and six booleans (held went, goal/G43.17, below):
+  // myLabel, card, face, present, firstSeen, lastSeen, and six booleans:
   //
   //   keep     a chosen contact, never shed       mine     owned (puppets, owned relays), never shed
   //   relay    the ID is a relay
@@ -335,7 +335,7 @@ function open(rootDir, opts) {
   //
   // IT IS ALREADY THERE. peerPost writes the outgoing message, payload
   // included, to the traffic log BEFORE it is queued ("written before the
-  // transport is touched"). The readable, permanent copy exists first;
+  // transport is touched"). The readable copy (kept until the cap sheds it) exists first;
   // this is the working duplicate the machine needs in order to send it,
   // and `secure_delete` takes it off the disc when it settles.
   //
@@ -685,7 +685,7 @@ function open(rootDir, opts) {
     //   can be chosen/added until eviction by blocking or ignoring...."
     //
     // The box (v24): "lastSeen is the staleness: it orders shedding once the cap is reached, never age alone. Shedding
-    // takes unflagged rows first, then ignored or blocked, oldest first in each; keep and mine never." (Held went with goal/G43.17.) A
+    // takes unflagged rows first, then ignored or blocked, oldest first in each; keep and mine never." A
     // kept or owned row is not in the line at all — that is the protection, and it is a WHERE (seen_shed's own), not
     // a weight, so no amount of pressure reaches it.
     shedCount: db.prepare('SELECT COUNT(*) AS n FROM seen WHERE keep = 0 AND mine = 0'),

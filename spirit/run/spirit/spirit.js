@@ -2,7 +2,7 @@
 // THE SPIRIT OBJECT (goal/G32.1): the node api for face apps, one file. face.html loads it first, by a script tag, from
 // the relay or the home node (goal/G41.19); the home node's index.html loads it; a server process requires it.
 // THE ONE DOOR (goal/G40.1; at the run root until goal/G43.18, in spirit/ since, line 1). Every script that is not the
-// node or a relay server installs it first, as the global spirit, "and then use[s] that object properly" (Andy). The node and the relay build spirit themselves (kernel.js): they are its embodiments.
+// node or a relay server installs it first, as the global spirit, "and then use[s] that object properly" (Andy). The node and the relay require it first too (server.js, relayServer.js): they are its embodiments.
 // Andy: "a spirit face-app needs a damn spirit object, that packages all neccessary loopback calls on the home node into
 // something easy to use", and "the whole node api (not appServer API's) must be provided in JavaScript form, as an
 // asyncFunction set."

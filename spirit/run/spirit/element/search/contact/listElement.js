@@ -64,7 +64,7 @@
   function create(host, opts) {
     var o = opts || {};
     var api = o.api;
-    var els = Object.create(null);    // key -> its contactElement, as the list made it
+    var els = Object.create(null);    // key -> its contact row element, as the list made it
     var list = null;
     function say(text) { if (typeof o.say === 'function') o.say(text); }
     function body(r) { return (r && r.body) || {}; }

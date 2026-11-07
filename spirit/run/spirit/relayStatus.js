@@ -117,8 +117,8 @@ function report(opts) {
     caps: o.caps || undefined,
 
     // THE OWNER'S CONFIGURED BOUND (cycle 1). The Governor's lever moves
-    // that travelled beside it went with the Governor (lever.js); `levers`
-    // below is the gauges' read-outs. Absent rather than zeroed on a
+    // that travelled beside it went with the Governor (cycle 8); `levers`
+    // below is the read-outs of the gauges lever.js still makes, fixed at boot. Absent rather than zeroed on a
     // relay with no configuration, for the same reason as `meter`: "no
     // bound" and "a bound not yet read" must not be drawn the same.
     ramLimitMB: typeof o.ramLimitMB === 'number' ? o.ramLimitMB : undefined,

@@ -432,8 +432,13 @@ function createRouter(opts) {
     cancel: cancel,
     release: release,
     has: has,
+    // DISCREPANCY WITH ANDY's RULES: Andy, 2026-10-12 (goal/G19.10): "there
+    // shall be no test helpers inside node." relay.js, this table's one
+    // caller, reads open, answer, release, size and ttlMs. has, countFor,
+    // countForTarget, maxPerRequester, caps and maxPerTarget are read by
+    // spirit/test/router.js alone; cancel, msUntilFreeFor, reset and max
+    // by nobody outside this file.
     // Posts in flight for one requester — the per-member count (cycle 1).
-    // relay.js does not read it today (it calls open, answer, release, size).
     countFor: countFor,
     // How many are aimed at one member, and when the next slot frees.
     countForTarget: countForTarget,

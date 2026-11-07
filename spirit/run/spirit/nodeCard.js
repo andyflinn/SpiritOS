@@ -325,7 +325,8 @@ function setName(rootDir, text) {
   // ONE NAME FOR A NODE (goal/G28.3). Andy, 2026-10-16: "there should be
   // only 1 name/label for a node." A seat carries no label of its own since goal/G40.11: what a relay calls this node
   // is this name (relayKeys.seatLabel). A save tells no relay: Info's push of the name to every relay went at
-  // goal/G41.6 (Andy, 2026-10-27, in info.js), and a relay's name for this node is Natter's to change, one relay at a time.
+  // goal/G41.6 (Andy, 2026-10-27, in info.js), and a relay's name for this node is shown and changed in that relay's panel
+  // (element/search/contact/relayPanel.js), one relay at a time.
   return { ok: true, status: 200, name: id.name };
 }
 

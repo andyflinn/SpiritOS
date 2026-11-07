@@ -7,7 +7,8 @@
 //
 // A permanent job like fs-watcher and server-stats, and for the
 // same reason those are jobs: long-lived node state whose updates the
-// shell already receives. `/api/events` carries it as `job-updated`, so
+// shell already receives. The events family's stream carries it as
+// `job-updated` (the /api/events door is gone; server.js), so
 // NO NEW SHELL-FACING CHANNEL EXISTS AT ALL — which is the whole reason
 // for the shape (design/relay/PRESENCE.md §3).
 //

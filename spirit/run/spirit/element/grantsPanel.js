@@ -11,7 +11,8 @@
 //             search(text), grant(id, path) -> { ok } or { ok: false, code, error }, revoke(id, path),
 //             watch(fn(id + newline + path, row)) -> its release }
 //     api     the app's shell api
-//   Made without its ID table or its grants table, it is refused: it never falls back to one caller's setting.
+//   Made without its ID table or its grants table, it throws nothing and draws only a note saying what is missing: it
+//   never falls back to one caller's setting.
 //
 // One panel: the one-row grant form, a rowForm, ➕ [ID selector] [bundle selector] [Grant] (goal/G41.13, G41.27); then the grant list
 // (its search's 🪣 row the ID filter and the family selector, its 🗜 row deprecated) (./search/grant.js), the one box that

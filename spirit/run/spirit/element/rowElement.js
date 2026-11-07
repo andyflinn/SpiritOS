@@ -4,8 +4,8 @@
 //   rowElements carry the listeners and painters a subject needs for real-time updates, wherever they are used: a list
 //   row and a details panel show the same element, so nothing has to keep the two in sync. rowElement does the shared
 //   work once: paints each field into its cell, registers the one listener, drops it on destroy, runs expandInfo and
-//   keeps its answer. Inheriting is plain: rowElement.create(parts) builds the element from the parts fileElement or
-//   contactElement hands in; no class chains.
+//   keeps its answer. Inheriting is plain: rowElement.create(parts) builds the element from the parts a kind's row element
+//   (search/file/rowElement.js, search/contact/rowElement.js, ...) hands in; no class chains.
 //
 // rowElement.create(parts)
 //   parts.kind, parts.key        what the subject is, and its identity (a path, a public key)

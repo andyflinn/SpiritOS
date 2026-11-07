@@ -174,7 +174,8 @@ test.subHeading('7. nothing keeps node rows but spirit.data, and no file names a
 // takes it, for every client. boot.js is the face's own transport, before spirit (Andy: "boot.js MUST be an exception").
 // The node's own side (spirit/, kernel, events) serves the stream and is no client. The client list below names shell/
 // and shell/boot.js; goal/G43.18 moved boot.js and seal.js to spirit/shell/, which the list does not reach, so boot.js
-// stays out by its new place and spirit/shell/seal.js is not read; the apps left in shell/ still are.
+// stays out by its new place and spirit/shell/seal.js is not read; the apps left in shell/ still are. Nor does it reach
+// spirit/app/, where the apps moved to (goal/G43.12, G43.17): none of those is judged here.
 const clients = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && /^(shell|spirit\/element|process\/js)\//.test(f) && f !== 'shell/boot.js'; });
 const takers = clients.filter(function (f) { return /\bevents\.subscribe\(|\bev\.subscribe\(/.test(code(path.join(RUN, f))); });
 ok(!takers.length, 'no client takes the node\'s stream itself: spirit/data.js takes it for all', 'clients taking the stream themselves, their rows outside spirit.data: ' + short(takers));

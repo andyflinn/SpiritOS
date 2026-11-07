@@ -279,8 +279,8 @@ function getJson(urlStr) {
   // "The relay's public door, the one any curl can reach without key or
   // signature, is killed in this item: /api/relay/key, /api/relay/claim,
   // /api/version and the brochure all close." This section still asks a
-  // relay with plain GETs of /api/relay/who and /api/version, which a relay
-  // answers 404 now, so every domain reads as a problem here. The relay's
+  // relay with plain GETs of /api/relay/who (the roll, deleted 2026-09-18) and
+  // /api/version, which a relay answers 404 now, so every domain reads as a problem here. The relay's
   // key is answered to a signed card ask on its one door (bash/card-ask.js,
   // what bash/status runs).
   say('identity, over TLS');
@@ -302,7 +302,7 @@ function getJson(urlStr) {
     // An unowned relay was once first-claim-is-owner; since goal/G16.8 the
     // owner is written at install and a relay with no owner.json refuses
     // every claim. DISCREPANCY WITH ANDY's RULES: Andy, goal/G16.8 (quoted in
-    // bash/install-units): "the invite path to ownership MUST be gone. it is
+    // AGENT.md and spirit/run/spirit/relay.js): "the invite path to ownership MUST be gone. it is
     // a security gap, from the time of install until the time of first
     // claim." The message below still says "first claim wins it", and it
     // looks for an `owner: true` row in `peers`, which no relay sends.

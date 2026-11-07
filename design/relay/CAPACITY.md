@@ -1073,8 +1073,9 @@ true.
   algorithm, and it is a division"*). Whether rate and shedding are one
   governor or two is not.
 - **Nothing measures any of this yet.** The figures above are the ones the
-  relay already reports; no suite drives them under load, and `liveRelay.js`
-  is the only thing in the tree that touches a real box.
+  relay already reports; no suite drives them under load, and nothing in the
+  tree touches a real box (`liveRelay.js`, which did, was deleted in
+  goal/G43.23).
 
 ---
 

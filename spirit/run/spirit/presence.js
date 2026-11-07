@@ -84,9 +84,10 @@ function createRegistry(opts) {
   // Cycle 1 (design/principles/NODE-AND-RELAY.md): held streams are what
   // hold a relay's RAM, and nothing bounded their total — one per
   // identity, six connects a minute, and as many identities as the roll
-  // had. The Governor that moved it is gone (cycle 8), and relay.js builds
-  // the registry with no `allowed`, so it is unlimited; only the tests call
-  // setAllowed.
+  // had. The Governor that moved it is gone (cycle 8). relay.js builds the
+  // registry with no `allowed` and then calls setAllowed once, with the
+  // fixed allowance from the owner's RAM (relay.js setAllowance), when it
+  // has a configuration; a relay built without one stays unlimited.
   //
   // A REFUSAL, NEVER A DROP of somebody already here: a full relay turns a
   // newcomer away with 503, and closing existing streams is a separate act
@@ -156,8 +157,8 @@ function createRegistry(opts) {
     return { ok: true, status: 200, replaced: !!(old && old !== sink) };
   }
 
-  // THE GOVERNOR'S REMEDY, uncalled outside the tests since the Governor
-  // went. Close up to `n` streams, LONGEST-IDLE first
+  // THE GOVERNOR'S REMEDY, called by nothing in the tree, tests included,
+  // since the Governor went. Close up to `n` streams, LONGEST-IDLE first
   // (Andy: "shedding longest-idle connections"), skipping any identity
   // `spare(id)` says to keep — the owner, and anyone with a post in
   // flight, since closing a busy stream loses a reply mid-air.

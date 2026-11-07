@@ -1519,7 +1519,7 @@ falls off because there is nowhere for it to go.
 
 **This is already true of the relay's most obvious store.** `trafficLog`
 writes nothing in relay mode — `if (relayMode …) return null`
-([trafficLog.js:411](../../spirit/run/spirit/trafficLog.js#L411)) — so *"the log
+([trafficLog.js:386](../../spirit/run/spirit/trafficLog.js#L386)) — so *"the log
 should be permanent. period."* is the **node's** rule and the relay was
 exempted from it before this note existed. The generalisation is not a new
 constraint; it is the one the relay already follows, extended to the tables
@@ -1749,7 +1749,7 @@ watching, and one that spends its owner's memory watching itself.
 
 **Half of this is already in the code, for one component.** `meterFloor`
 holds the meter to `METER_SLOTS_MIN` slots and a minimum span
-([relay.js:424-432](../../spirit/run/spirit/relay.js#L424-L432)), with the
+([relay.js:424-440](../../spirit/run/spirit/relay.js#L424-L440)), with the
 reason stated exactly: *"which is what stops 'smaller and slower' becoming
 'blind'."* It has a floor and no ceiling. Under this rule it would have
 both, and so would everything else the monitor keeps.

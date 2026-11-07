@@ -166,5 +166,6 @@ In process: `spirit/test/deviceEnrol.js` walks a whole enrolment down the
 stream and back, `spirit/test/answerRelay.js` holds the sender check, and
 `spirit/test/routerPost.js` the router itself.
 
-Proven live by `spirit/test/liveRelay.js`, which runs by hand against a
-real relay because the numbers above cannot be shown in process.
+Proven live by `spirit/test/liveRelay.js`, which ran by hand against a
+real relay because the numbers above cannot be shown in process. (It was
+deleted as a stale test in goal/G43.23, 885f1ab5; nothing replaces it.)

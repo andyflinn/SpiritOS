@@ -1,6 +1,6 @@
 # Human tools
 
-Three things you run by hand. Commands first; the reasons are underneath.
+Two things you run by hand. Commands first; the reasons are underneath.
 
 *Measured 2026-09-15 at `65fa167`. Everything below was run, not read off
 the source.*
@@ -32,58 +32,29 @@ node spirit/test/runAll.js label
 
 The last line is the count, e.g. `63 suites, 1626 green, 2 red` (on 2026-09-15).
 
-**Two suites are deliberately left out of that count** (`spirit/test/notASuite.js`)
-and only ever run by hand:
+**One suite is deliberately left out of that count** and only ever run by
+hand: `testTemplate.js`, which fails on purpose — it is the worked example of
+what red looks like. It is named in `spirit/test/notASuite.js`, beside the
+helpers there that are not suites at all. (`liveRelay.js`, the suite that opened
+sockets to spirit-3, and `liveFrontDoor.js` were deleted as stale tests in
+goal/G43.23, 885f1ab5.)
 
-| file | why it is excluded |
-|---|---|
-| `testTemplate.js` | fails on purpose — it is the worked example of what red looks like |
-| `liveRelay.js` | opens sockets to spirit-3 and changes state on a box other people use |
-
-`liveFrontDoor.js` and the lab suites, which spawn real relays and nodes, are
-in the harness since 2026-09-15 (`runAll.js`, *THE LAB SUITES ARE IN THE
-HARNESS NOW*); `runAll.js` starts labMaster before the first lane.
+The lab suites, which spawn real relays and nodes, are in the harness since
+2026-09-15 (`runAll.js`, *THE LAB SUITES ARE IN THE HARNESS*); `runAll.js`
+starts labMaster before the first lane.
 
 `visualScenarios.js` always runs last, on purpose: it reads the other
 suites off disk, so it should be answering for the tree as the run leaves
 it.
 
----
-
-## 2. Build a world to look at
-
-```
-node spirit/test/labPopulate.js            # the default world
-node spirit/test/labPopulate.js buddies    # a named one
-node spirit/test/labPopulate.js --list     # what is available
-node spirit/test/labPopulate.js --down     # take it away again
-```
-
-**labMaster must already be running** (section 3) — labPopulate drives it
-over `http://127.0.0.1:65420` and cannot start or stop a node it did not
-spawn.
-
-The worlds are **data, not code**: `spirit/test/visual/*.visual.json`.
-Today there are three.
-
-| scenario | what you get |
-|---|---|
-| `buddies` | a little buddy network |
-| `presence-colours` | presence colours |
-| `on-spirit-3` | two peers on spirit-3 |
-
-To add a world, write another `.visual.json`. You do not touch
-`labPopulate.js`.
-
-**The one rule this tool must never break:** your identity is *read* and
-never written. The key in `spirit/run/spirit/state/identity.json` is the
-key that owns `spirit.andyflinn.com`. Generating a new one there would
-silently cost you that relay, and you would not find out until the next
-time you asked it for a census.
+The world builder this page also described, `spirit/test/labPopulate.js`, was
+deleted as a stale test in goal/G43.23 (885f1ab5). The worlds it built,
+`spirit/test/visual/*.visual.json`, stay; `visualScenarios.js` and
+`presenceShow.js` read them.
 
 ---
 
-## 3. The lab panel
+## 2. The lab panel
 
 ```
 node spirit/test/labMaster/labMaster.js
@@ -151,13 +122,15 @@ suites have run in `npm test` since that day (above).
   `spirit/test/labMaster/STATE.md`.
 - **`liveFrontDoor.js` fails before it starts:**
   `could not build the lab: mint alfa: lab owner could not open a stream: 403`.
-  That is `labWorld.build`, not the front door it is meant to test.
+  That is `labWorld.build`, not the front door it is meant to test. (The
+  suite itself was deleted in goal/G43.23.)
 
 ## Known gap
 
 **There is no button that removes a peer row from a relay you own.**
 The relay's `removePeer` verb (by key, `relay.js`) does it, and has no caller
-outside the tests and `labPopulate --down`; the `/api/hub/remove-peer` route
+outside the tests (`labPopulate --down`, its other caller, was deleted in
+goal/G43.23); the `/api/hub/remove-peer` route
 it once went through is gone. Leaving a relay (`relay.leave`, goal/G40.10) is
 a different act: this node gives up its own seat and removes nobody else. So an
 orphaned lab row on spirit-3 currently has no broom.

@@ -49,7 +49,8 @@ is the appServer serializes the cache to disk."*
    - no client file (under `shell/`, `spirit/element/` or `process/js/`, but `shell/boot.js`, the face's own transport)
      takes the node's stream itself (`events.subscribe`): only `spirit/data.js` takes it, for every client. Those paths
      are the test's; `boot.js` and `seal.js` have been in `spirit/shell/` since goal/G43.18, which the list does not
-     reach, so `spirit/shell/seal.js` is not judged; the apps left in `shell/` are;
+     reach, so `spirit/shell/seal.js` is not judged; the apps left in `shell/` are, and none of `spirit/app/`, where
+     the apps moved, is;
    - no file of the repo (`.js`, `.md`, `.html`, `.json`; the desk's `currentGoal.json` and Andy's vault aside) names a
      replaced way: a page or client that runs `uncached`, the desk's two-level
      branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;

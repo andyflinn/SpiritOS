@@ -4,8 +4,10 @@
 // ONE FAMILY FOLDER, READ AND WRITTEN BY ITS OWNER (goal/G10.5, made FS alone by goal/G30.4).
 //
 //   A family folder holds AGENTS.md and one description file per verb (<verb>.json), and whatever its consumers
-//   place there (verb.design.md, README.md, <verb>.warning.txt). It never holds code: a process server's is
-//   process/js/<name>/family/ (spirit.familyPath), an app of spirit/app/<name>/ has ./api/ (appServer.withAgents).
+//   place there (verb.design.md, README.md, <verb>.warning.txt), and the family's api.js, which spirit.js reads
+//   (some hold more code beside it: desk's cacheRules.js, a test/ folder). Where it sits: a process server's is
+//   process/js/<name>/family/ (spirit.familyPath), an app of spirit/app/<name>/ has ./api/ (appServer.withAgents),
+//   a node family's is spirit/<family>/.
 //
 //   family(folder) answers the folder's FS verbs, FS.<name> with the kernel's fs names and a search, scoped to the
 //   folder. The AGENTS verbs that stood here (AGENTS, AGENTS.introspect, AGENTS.<verb>) are gone: an agent reads
@@ -64,7 +66,7 @@ function readFolder(dir, declared, manifest) {
 
 // THE FAMILY OF ONE FOLDER, in the declaration form {request, reply, handler}.
 // opts: { declared: [stem...], manifest, prefix }
-//   prefix        '' on a process server, 'fs.' on the node: it goes before
+//   prefix        '' on a process server, the namespace and a dot on the node ('fs.', 'contact.', verbTable.js): it goes before
 //                 every verb name the family answers and lists
 // Answers { verbs: {name: declaration}, stale: [fileName] }: the FS verbs
 // (fsVerbs, below) on every folder, AGENTS.md or not.
@@ -77,8 +79,12 @@ function readFolder(dir, declared, manifest) {
 //   on listing, "then put a search in there."
 //
 // One owner verb, multiplexed as AGENTS was: FS.<name>, with the kernel's own names. A path is inside the folder or
-// refused; nothing above it is ever reached. A family folder holds no code, so the folder needs no fence of its own. Annotations are the node's sidecars, so those two go
+// refused; nothing above it is ever reached. The folder gets no fence of its own beyond that, its api.js included. Annotations are the node's sidecars, so those two go
 // through fileSystem.js, for a folder under spirit/run.
+// DISCREPANCY WITH ANDY's RULES: Andy (goal/G30.21, quoted in fileSystem.js): "only "core" files are write-protected".
+// On the node a family folder is spirit/<family>/, core files every one, and FS.saveFile, FS.saveJsonValue and
+// FS.deleteFile write it with fs.writeFileSync / unlink straight, never asking fileWritable: <ns>.FS.saveFile can
+// overwrite spirit/<ns>/api.js.
 function fsVerbs(dir, prefix) {
   const root = path.resolve(String(dir || ''));
   function inside(p) {

@@ -4,8 +4,10 @@
 specifically to make sure public https connections behave, and also to
 hammer our dear little spirit-3 with stress."***
 
-> Status 2026-11-07 (goal/G43.23): the live suite this asked for exists as
-> `spirit/test/liveRelay.js`, run by hand and not in the harness. The device
+> Status 2026-11-07 (goal/G43.23): the live suite this asked for was built as
+> `spirit/test/liveRelay.js`, run by hand and not in the harness, and was
+> deleted as a stale test in goal/G43.23 (885f1ab5); no suite in the tree
+> touches spirit-3 today. The device
 > enrolment, its held request and `device.html` are gone (goal/G16.2), so
 > the rows below about them are history.
 

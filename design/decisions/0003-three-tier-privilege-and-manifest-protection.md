@@ -6,14 +6,14 @@
 **Status 2026-11-07 (goal/G43.23): superseded in its code parts.** App
 Builder, Type Designer, AI Chat and Text Editor are gone (decision 0008;
 304f869a, 68122539, 64e2d054), and with them `saveAppScript`,
-`saveAppManifest` and their routes (`kernel.js:350-353`,
-`server.js:436-443`). Manifest protection went at goal/G30.21. Andy:
+`saveAppManifest` and their routes (the notes left where they stood, in
+`kernel.js` and in `server.js`'s `writeFsResult`). Manifest protection went at goal/G30.21. Andy:
 *"only "core" files are write-protected, manifests are no longer core"*,
 *"any non-core file is fair game"* (`fileSystem.js:65-69`). What holds
-now: `fileWritable` (`fileSystem.js:176`) refuses a core file
-(`coreFiles.js`), `relay-state/` outside a process's or shell app's own
-state folder, a sidecar's own path and every root-level file, and nothing
-else. Apps live under `shell/<name>/`, not `app/<name>/`. The tiers and
+now: `fileWritable` (`fileSystem.js:176-186`) lets a process or shell app
+write its own state folder, and otherwise refuses a sidecar's own path, the
+node's state (`spirit/state/`, `NODE_STATE`), `relay-state/` at any depth,
+every root-level file and a core file (`coreFiles.js`), and nothing else. Apps live under `shell/<name>/`, not `app/<name>/`. The tiers and
 doors below are the record of the decision as made.
 
 ## Context

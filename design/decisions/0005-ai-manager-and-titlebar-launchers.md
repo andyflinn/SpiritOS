@@ -8,7 +8,7 @@ built after this) left the repo at 68122539
 (2026-09-26; Andy: *"AI manager and AI chat will be pushed to public repos
 outside of SpiritOS"*), `claudeModels.json` and `aiStatus.json` with
 them. The titlebar launcher survives in the old shell as
-`api.addTitlebarLink` (`spirit/run/spirit/client/shell.js:1072`).
+`api.addTitlebarLink` (`spirit/run/spirit/client/shell.js:1070`).
 
 ## Context
 

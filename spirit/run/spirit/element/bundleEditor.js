@@ -9,7 +9,7 @@
 //
 //   spirit.element.bundleEditor.create(box, { api, tabs, tabLabel }) -> { destroy() }
 //     box  the space it fills; api the app's shell api, for the are-you-sure; tabs the tabContainer the pane opens tabs in;
-//     tabLabel(row) what names those tabs, its mounter's (./search/bundle.js)
+//     tabLabel(row) what names those tabs, its mounter's (the agent app's browserAgent.js), handed on to ./search/bundle.js
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require; and the auth family's cache manager, whose
   // bundles it adds to (goal/G41.28).

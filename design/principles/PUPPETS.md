@@ -419,7 +419,7 @@ the same reason.*
 ### G1 — a response bound exists, and both paths obey it
 
 **Status:** OPEN. Ruled by Andy 2026-09-25: *"good, so all
-searches are subject to the same return limit."* *Since built in part: `limits.ANSWER_MAX` (`limits.js:261`) caps one server's answer and `appClient.js` refuses past it by name (not on the owner's loopback, goal/G41.28); `puppetsPending.js` goes red on G1 for that reason — the awaiting declaration wants its real assertion. Whether every node verb's answer on both paths obeys it is not asserted.*
+searches are subject to the same return limit."* *Since built in part: `limits.ANSWER_MAX` (`limits.js:267`) caps one server's answer and `appClient.js` refuses past it by name (not on the owner's loopback, goal/G41.28); `puppetsPending.js` goes red on G1 for that reason — the awaiting declaration wants its real assertion. Whether every node verb's answer on both paths obeys it is not asserted.*
 
 The argument and its measurements are in
 [`THE-REQUESTER-IS-RESPONSIBLE.md`](THE-REQUESTER-IS-RESPONSIBLE.md),

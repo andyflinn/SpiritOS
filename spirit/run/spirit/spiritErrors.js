@@ -285,7 +285,7 @@ define('too-big-to-tunnel', {
   texts: ['too big to tunnel'], prefixes: ['too big to tunnel'],
 });
 // REFUSED BY THE COMPOSER, BEFORE ANYTHING IS SIGNED OR SENT.
-// `client/packet.js:275` is the only emitter: `encode` bounds what it
+// `client/packet.js:276` is the only emitter: `encode` bounds what it
 // builds and says so, so a caller learns its packet is too big without a
 // round trip and without a relay counting it against a rate limit.
 //

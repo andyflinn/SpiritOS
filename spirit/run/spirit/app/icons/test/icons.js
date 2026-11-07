@@ -6,6 +6,9 @@
 // app in a box, the rowForm's create kept as it is called.
 // The app moved here from shell/icons/ unchanged (64e2d054): the code below still takes RUN three folders up (which is
 // spirit/run/spirit/ from here), and still addresses /DEBUG/shell/icons/test/icons-laid.html and shell/icons/icons.js.
+// DISCREPANCY WITH ANDY's RULES: so it throws at its first require (spirit/run/spirit/test/testReport.js is no file) and
+// judges nothing; by Andy's word on stale tests (goal/G43.23, Q3, "yes.": a stale test reads a file gone from the tree)
+// it is stale, though it sits outside spirit/test/.
 
 const fs = require('fs');
 const path = require('path');

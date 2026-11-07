@@ -215,9 +215,11 @@ function fitsWrapped(text, from, to, sig) {
 // AND THE SAME ON THE WAY BACK (also partnering's, gone with goal/G22.6).
 // A reply to a tunnelled post was re-wrapped too: the far relay handed it to its partner as its own answer,
 // `{ v, body: { ok, status, forwarded: { from, text, sig } } }`
-// (relay.js, routeReply → sendAnswer). So a reply that fits one hop can
-// fail on the return exactly as a post can on the way out — and the asker
-// hears nothing. Same discipline: build the wrapper, measure it.
+// (relay.js's sendAnswer, gone with it). So a reply that fit one hop could
+// fail on the return exactly as a post could on the way out — and the asker
+// heard nothing. Same discipline: build the wrapper, measure it. peerPost
+// still measures every reply this way when checkTunnel is on (server.js),
+// and sends a too-big one as an empty receipt.
 function fitsWrappedReply(text, from, sig) {
   return JSON.stringify({
     v: 1,

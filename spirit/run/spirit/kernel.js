@@ -150,8 +150,10 @@ if (isNode()) {
   const http = require('http');
   // A process the node started holds an IPC channel to it (jobs.js, launch).
   // The channel closes when the node dies however it dies: a process that
-  // loaded this file goes too. No node process loads it any more (below);
-  // appServer.serve does the same for a server.
+  // loaded this file goes too. No node process loads it any more: the node,
+  // the relay and the servers require spirit.js, and only tests under
+  // spirit/test/ still require this file; appServer.serve does the same for
+  // a server.
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
   // Pinned to this file's own location, not process.cwd() — kernel.js
   // always lives at spirit/run/spirit/kernel.js, so spirit/run/ is always
@@ -252,7 +254,7 @@ if (isNode()) {
   // the UI thread for the round trip. Deliberately left as-is (review #9,
   // 2026-09) rather than converted to async: doing it properly means every
   // call site becoming promise-aware, not just these two functions. Known
-  // synchronous call sites today, if this is ever revisited: shell.js
+  // synchronous call sites today, if this is ever revisited: client/shell.js
   // (discoverDynamicApps, the manifest read beside declareDynamicApp, and
   // its other spirit.core.fs.loadFile calls).
   // Current read: low real-world pain (Media Launcher never goes through

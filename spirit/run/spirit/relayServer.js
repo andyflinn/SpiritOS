@@ -155,12 +155,14 @@ if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
     '({ "owner": "<key>" }); the wire cannot prove ownership.');
 }
 
-// ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
+// ── THE OWNER'S BOUND, READ AT BOOT (cycle 1) ────────────────────────
 //
 // spirit/state/config.json, beside owner.json. Bounded by the box: a
 // ceiling larger than this machine can GIVE refuses to start rather than
-// being honoured (relayConfig.js, relayLimits.js). Never re-read — the
-// configuration is not a real-time tool (NODE-AND-RELAY §5, scope).
+// being honoured (relayConfig.js, relayLimits.js). Read here once, at
+// boot; while the relay runs only the owner's config verb (relay.js
+// reconfigure) reads and writes it, a raised figure applying at once
+// (goal/G30.15).
 //
 // ── AND WRITTEN, THE FIRST TIME, SO NOTHING IS IMPLICIT (cycle 9) ────
 //
@@ -421,7 +423,8 @@ function isRelayPublicPath(method, pathname) {
 // home node present (relay.faceAt). Logged out, the page is the empty face shell with its login app; the login is the
 // relay's (relay.faceLogin), a session in its memory carried by the cookie spirit_face, HttpOnly, for that host only.
 // The face's files are served from spirit/run/spirit/shell/ (goal/G43.18; spirit/run/shell/ from goal/G41.3, face/ before).
-// What the face does beyond the plain page comes from the home node over the link (FACE_FILES below).
+// The relay serves only the plain page and the few files of FACE_FILES (below); what the face does beyond that comes
+// from the home node over the link (/face/call, /face/file).
 //
 // /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it before it
 // fetches a certificate for that name on demand (bash/face-setup).
@@ -430,8 +433,6 @@ function isRelayPublicPath(method, pathname) {
 // goal/G43.18 (Q25, Andy: "the browser should see them the same."): the files moved under spirit/shell/, the addresses stay;
 // each address is served from its file (serveCommon.pageFile), the run root the base.
 const FACE_DIR = path.join(__dirname, '..');
-// /shell.css is the shell's one sheet, served at the path the node serves it too, so face.html works on both
-// (goal/G30.9, box v16); face.css turns its colours green.
 // THE PLAIN PAGE ONLY (goal/G43.18, box v29: "The relay serves a logged-out face one plain page, the one-field form, with
 // spirit.js and seal.js only"): face.html, spirit.js (which holds spirit.login and the link), the seal and the tab's icon.
 // boot.js, the sheets and every other part of the shell come from the home node over the link.

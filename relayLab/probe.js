@@ -12,7 +12,7 @@
 // quoted in spirit/run/spirit/relayServer.js, THE PUBLIC DOOR IS CLOSED):
 // "The relay's public door, the one any curl can reach without key or
 // signature, is killed in this item". This probe still asks with a plain
-// GET of /api/relay/who, a route that is gone, so both `who` lines read
+// GET of /api/relay/who, a route that is gone (the roll, deleted 2026-09-18), so both `who` lines read
 // `!!` (HTTP 404) against a healthy relay. A relay is asked who it is by a
 // signed card ask on its one door: `node bash/card-ask.js <url>`.
 

@@ -85,9 +85,13 @@
 // supposed to forbid this (nodeKnowsNoApps.js, deleted by goal/G16.5)
 // matched one literal call and saw none of it.
 //
-// ONE FILE DECODES WITH client/packet NOW, and it is this one: the file
-// that already admits, witnesses and holds every arrival (hub.js and
-// server.js require packet.js to encode, never to decode). kernel.js keeps its
+// ONE FILE IS MEANT TO DECODE WITH client/packet, and it is this one: the
+// file that already admits, witnesses and holds every arrival. server.js
+// requires packet.js to encode only. DISCREPANCY WITH ANDY's RULES: hub.js
+// decodes too, the relay's answer in relayFace and relayLeave
+// (`packet.decode(answer.text)`), against goal/G16.5's one decoder and
+// hub.js's own rule ("`hub.js` may call `packet.encode` and never
+// `packet.decode`"); spirit/test/oneDecoder.js reads red for it. kernel.js keeps its
 // own, which is a different thing — the shared decode every loopback
 // client uses (Andy, 2026-10-02).
 //

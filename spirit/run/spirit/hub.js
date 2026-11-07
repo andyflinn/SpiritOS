@@ -13,8 +13,8 @@ const contactBook = require('./contacts');
 const relayKeys = require('./relayKeys');
 // WHAT A SEARCH LEARNED, kept until it becomes useful. A search answer
 // says where each person lives, and that was thrown away — see
-// seenPeers.js. Not the contact book: a search result is not a contact,
-// and the book never invents rows.
+// seenPeers.js. A row of the one table, never kept: a search result is
+// not a contact, and only the owner's act keeps a row (contacts.js).
 //
 // ── ONE PER NODE HOME, OPENED ON FIRST USE (cycle R26) ────────────
 //
@@ -111,7 +111,7 @@ function labelRefusal(text) {
 // behalf of the shell — a layer above deciding what its traffic meant.
 // Composing a packet addressed to NO app is the node's own business, and
 // this file already did it by hand (`systemPayload`, used at the relay
-// search and partner-check calls below).
+// search call below).
 //
 // So this replaces a second builder with the one factory rather than
 // reopening a closed question. Ruled by Andy, 2026-09-25: *"agreed. go."*
@@ -366,7 +366,7 @@ function buildPeople(rootDir) {
 // handleMatches STOOD HERE: every roll row whose public label was a handle
 // somebody heard, exactly. Its one caller, peer.find, went on 2026-09-17,
 // and the suite that still asserted it went too, so it was deleted under
-// goal/G19.11. Ranked search (peer.search) answers the same question: an
+// goal/G19.11. Ranked search (contact.search; peer.search until goal/G30.19) answers the same question: an
 // exact label scores 1.0 and comes first, and two johns stay two results.
 
 // acquireFromInbox STOOD HERE — somebody wrote to this node, the relay's
@@ -627,7 +627,7 @@ function createHub(rootDir) {
   // the shell stop responding.
   //
   // 500, not 503: 503 here means "no relay configured", which is a thing
-  // a person can fix in Natter. This is not that, and must not read as it.
+  // a person can fix in the relay panel. This is not that, and must not read as it.
   function guarded(res, url, fn) {
     try { return fn(url); }
     catch (e) {
@@ -641,7 +641,7 @@ function createHub(rootDir) {
   // goal/G19.11.
 
   // The mailbox a mint is aimed at. The scheme is checked (assertRelayUrl),
-  // so a plain-http row in Natter is refused here rather than at the socket.
+  // so a plain-http row on the relay list is refused here rather than at the socket.
   function withChosenRelay(res, wanted, fn) {
     var chosen = ownerBadge.chooseUrl(ownerBadge.configuredUrls(rootDir), wanted);
     if (!chosen.ok) {
@@ -762,7 +762,7 @@ function createHub(rootDir) {
 
             // A SEAT HELD IS A RELAY USED (goal/G16.3): a new seat, or a 409
             // that is this node's own key already sitting there, which is
-            // the answer Natter also reads as success. Either way the relay
+            // which is read as success too. Either way the relay
             // goes on the node's own list, which the next contact.search lists.
             var mineAlready = false;
             try { mineAlready = r.status === 409 && !!JSON.parse(marked).mine; }
@@ -1651,7 +1651,7 @@ function createHub(rootDir) {
   // deliberate. `name` is echoed back, never used to decide anything
   // (see below), so a missing one degrades to the empty string exactly
   // as a missing query parameter did. Failing the whole probe over a
-  // caption would take Natter's relay list down for a reason that has
+  // caption would take the relay list down for a reason that has
   // nothing to do with the relays.
   // ── IS THIS PEER ELIGIBLE TO BE A PARTNER? ──────────────────────────
   // (Of handlePartnerCheck, below. Partnering as a permission went with
@@ -1934,7 +1934,7 @@ function createHub(rootDir) {
   // IT HAD NO CALLER. The note that used to stand above it said it
   // "stays for the small case and for the 'who is here' question, and
   // [peer.search] is what the app should use once a relay is real" — and
-  // the app moved. Contacts paints that panel from `peer.search`
+  // the app moved. Contacts painted that panel from `peer.search`
   // (contacts.js, contactsAsk('peer.search')), and says so itself
   // twenty lines earlier: "anything that wanted it should want
   // peer.search instead." What remained was a route, an export, a
@@ -2194,8 +2194,7 @@ function createHub(rootDir) {
   //   relay? yes."
   //
   // The key is the url (relay.get answers it). Refused when
-  // it would leave no public relay (ownerBadge.canRemoveRelay), the rule
-  // Natter's screen already obeyed.
+  // it would leave no public relay (ownerBadge.canRemoveRelay).
   //
   // AND IT GIVES UP THE SEAT (goal/G19.1). Andy, 2026-10-12: "only the
   // node's user removes a relay, never the last one". The pin stays, so a
@@ -2289,7 +2288,7 @@ function createHub(rootDir) {
   // with a seat, --email does nothing. An email is never required (invites stay a way in). It answers the lines
   // server.js prints before its listening line: that a mail will arrive shortly, or why the join did not start, in a
   // message that names the relay, what went wrong and what to do next (Andy: "i prefer high-quality error messages").
-  // It asks by relayJoin, the path relay.join takes, so the link's code finishes the join as it does from Natter.
+  // It asks by relayJoin, the path relay.join takes, so the link's code finishes the join the same way.
   var JOIN_NEXT = {
     400: 'Correct the address and start the node again with --email <address>.',
     409: 'This node already holds a seat there; start it without --email.',

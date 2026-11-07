@@ -55,8 +55,8 @@ not as cache.
 - **A node's memory of people.** `spirit/run/spirit/spiritErrors.js:206` (`memory-full`, thrown at `hub.js:1351` and `:1485`) —
   *"memory is full of the people you added"*, decision 0021. The node will
   not choose whom to forget.
-- **Two relays on one box.** `bash/RELAY-HOST.md:254` — *"A second clone ... is a second checkout with its
-  own `relay-state/` and `.env`, not a second machine"*. Each measures the same machine
+- **Two relays on one box.** `bash/RELAY-HOST.md:256` — *"A second clone ... is a second checkout with its
+  own `spirit/state/` and `.env`, not a second machine"*. Each measures the same machine
   and neither knows the other exists, so the lab relay's figures come down
   before the public relay's go up. Nothing does that reallocation
   automatically, and nothing should.

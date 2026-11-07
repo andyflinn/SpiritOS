@@ -32,7 +32,7 @@
 //
 // The node reads a SYSTEM packet here and never an app's: the envelope is
 // read by arrivals.js, the node layer's one decoder, and handed to this
-// witness with the arrival (test/oneDecoder.js, goal/G16.5).
+// witness with the arrival (spirit/test/oneDecoder.js, goal/G16.5).
 
 const DEFAULT_WAIT_MS = 20000;
 

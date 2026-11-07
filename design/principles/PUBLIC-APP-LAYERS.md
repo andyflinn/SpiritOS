@@ -20,7 +20,7 @@ the one worked example is marked as one.
 
 One sentence, and the tree already uses the words:
 *"an intrinsic app is what this node IS"*
-([shell.js:365](../../spirit/run/spirit/client/shell.js#L365)).
+([shell.js:370](../../spirit/run/spirit/client/shell.js#L370)).
 
 ```
 a node
@@ -76,7 +76,7 @@ takes, plus what its own app does.
 
 **The dialog rule travels with the dialogs.** One result slot, *"a dialog
 can only return"*
-([shell.js:1096](../../spirit/run/spirit/client/shell.js#L1096)). Moving the
+([shell.js:1101](../../spirit/run/spirit/client/shell.js#L1101)). Moving the
 painting alone would leave the rule behind with no shell to enforce it;
 in the optional layer, taking the dialogs takes the rule.
 

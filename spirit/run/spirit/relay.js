@@ -1685,11 +1685,11 @@ function createRelay(rootDir, deps) {
     });
   }
 
-  // Minting is not checkOwner(): that verifies auth.statusMessage(name),
-  // which says nothing about WHICH invite is being made. A signature that
-  // could be replayed from a status request into "mint me a token for any
-  // label, for any number of days" would not be a mint gate at all. The
-  // owner signs the label and the duration, and that is what is verified.
+  // Minting was never checkOwner() (gone, relayAuth.js): that verified
+  // auth.statusMessage(name), which said nothing about WHICH invite was
+  // being made, so a mint once carried its own signature over the label
+  // and the duration. That signature is gone too (NO SIGNATURE ARGUMENT,
+  // below): the owner's signed post is the proof now.
   //
   // THE TWO HALVES MEET. This note read "the shape this leaves until
   // cycle 4: mint needs an owner key, so it only works in keys mode,
@@ -3505,8 +3505,9 @@ function createRelay(rootDir, deps) {
     // and the target never chose anything — a request simply arrived.
     //
     // Safe to send to anybody, because the NODE decides what to keep:
-    // The node keeps this in its shadow and never in the address book
-    // (server.js), so a route about a stranger is one lookup and gone.
+    // The node keeps this as a route in its one table and never keeps the
+    // person (server.js onRoute; seenPeers.js), so a route about a stranger
+    // makes nobody a contact.
     // ── AND THE LABEL RIDES WITH THE ROUTE ───────────────────────────
     //
     //   Andy: "streamed route updates should need to be accompanied by

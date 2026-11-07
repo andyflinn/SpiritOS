@@ -2,7 +2,7 @@
 
 The fence that keeps net.fetch off this machine (goal/G29.20; Andy, 2026-10-18: *"fetch will not be able to reach
 ports on this machine, and agents may use it."*). The node asks `isThisMachine` of the target's hostname as `new URL`
-gives it (`spirit/server.js:585`), before anything is sent; a name is checked again on the address it resolves to, at
+gives it (`spirit/server.js:588`), before anything is sent; a name is checked again on the address it resolves to, at
 connect (`netFence.lookup`).
 
 ## Requirements

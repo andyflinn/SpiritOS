@@ -65,6 +65,9 @@ test.startTest('rowForm.js: the one-row form, in a bubble');
     ok(!!rule, 'its bubble and the search bubble of probabilitySearch carry one class, shell.css drawing it', 'form ' + short(one.rootClass) + ', search bubble ' + short(m.searchBubbleClass) + ', shared ' + short(shared));
     // SEARCH names spirit/element/probabilitySearch.js, gone since goal/G43.18 (the search is spirit/element/search.js): this
     // check reads nothing and passes whatever the search writes.
+    // DISCREPANCY WITH ANDY's RULES: a check that judged nothing is red, never a green (goal/G41.28; Andy, on a check that
+    // passed on nothing: "You fucking fudge tests to get away with total fucking sloppyness!"); this one is green on an
+    // empty string.
     const ps = fs.existsSync(SEARCH) ? fs.readFileSync(SEARCH, 'utf8').replace(/\/\/.*$/gm, '') : '';
     ok(!/background\s*:\s*transparent/i.test(ps), 'and probabilitySearch keeps no copy of the bubble\'s style of its own', 'probabilitySearch.js still writes a transparent background');
 

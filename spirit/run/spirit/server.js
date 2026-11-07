@@ -23,7 +23,8 @@ if (process.argv.slice(2).includes('--relay')) {
 // faceServer.js. Gone with goal/G13.2 (Andy, 2026-10-10: "no \"face\" crap belongs into node.",
 // "wh the fucdk does the node need a second fucking branch for opening a fucking process?").
 // Every server process is started by jobs.startNodeServers: a process/js script that runs at home
-// (intrinsic, or by its sidecar; goal/G41.1), or a spirit/app one whose node.mount is true.
+// (intrinsic, or by its sidecar; goal/G41.1), or a spirit/app one whose node.mount is true and that is active
+// (intrinsic, or active in spirit/state/<name>/node.json; goal/G43.12).
 
 const http = require('http');
 // For the proxy's outbound calls (handleGenericProxy) — with no 300-second
@@ -871,9 +872,9 @@ const server = http.createServer((req, res) => {
     // or an old comment can find it:
     //
     //   claim              relay.claim
-    //   status             relay.status
-    //   who                peer.list
-    //   handle             peer.find
+    //   status             relay.status, gone since (a list is a search,
+    //                      puppets/G2: contact.search, relay.get)
+    //   who, handle        peer.list, peer.find, gone since: contact.search
     //   contact            peer.acquire
     //   post               peer.post
     //   peer  {action}     contact.block / .unblock / .accept / .label
@@ -927,8 +928,8 @@ const server = http.createServer((req, res) => {
     //   4. device, relay, contact, peer — all of /api/hub/*
     //
     // DONE, 2026-09-15. Twelve routes, seventeen verbs, six namespaces,
-    // and nothing on this node answers a path any more except the stream
-    // and the version.
+    // and nothing on this node answers a path any more except the version
+    // (the stream folded too, goal/G40.6, above).
     //
     // WHO ANSWERS WHAT IS NOT DECIDED HERE. A table of verb-to-function
     // stood on this spot for an hour and would have grown to nineteen
@@ -1213,12 +1214,12 @@ catch (e) {
     rootDir: ROOT_DIR,
     onRelayCard: function (url) { relayChanged(url); },
     request: require('./hub').relayRequest,
-    // THE QUEUE OUTLIVES THE PROCESS (cycle R16). Only here: the relay's
-    // own peerPost (relayServer.js) is built without a store, because a
-    // relay has no node.db and keeps nobody's intentions.
+    // THE QUEUE OUTLIVES THE PROCESS (cycle R16). This is the one peerPost
+    // the tree builds; a relay builds none since partnering went (goal/G22.6).
     store: nodeStore.open(ROOT_DIR),
-    // A node cannot know whether a packet will be tunnelled, so it refuses
-    // at compose one that would not fit once wrapped (cycle 2, SURFACE §8).
+    // Refuses at compose a packet that would not fit once wrapped for a
+    // partner (cycle 2, SURFACE §8). No relay wraps one since goal/G22.6,
+    // so this bound is stricter than the one door needs (peerPost.js).
     checkTunnel: true,
     // WHO THIS NODE WILL HEAR FROM. The same question listenSet has
     // always answered for the `inbox` read, asked on the path packets
@@ -1311,10 +1312,10 @@ catch (e) {
   // ── THE SERVER PROCESSES ON THIS BOX ──────────────────────────────
   //
   // ONE WAY TO START A PROCESS (goal/G13.2, Andy 2026-10-10): jobs.startNodeServers starts every
-  // listed process/js server with the pipe the node names, and appClient knows each by that pipe
+  // process/js server that runs at home, and every active spirit/app server (goal/G43.12), with the pipe the node names, and appClient knows each by that pipe
   // (register) and knocks on it for the api door. Nothing is loaded into this
   // process, nothing is started by any other branch, and the node opens no door for visitors:
-  // a server that wants a port opens its own (process/js/appFaceApp), and the node is not told.
+  // a server that wants a port opens its own, and the node is not told.
   // Two branches stood here until then: nodeApps.mountAll, which loaded a shell app with
   // "boots": true into the node with seams of its own, and appClient.startAll, which spawned
   // spirit/server.js --app for a manifest with "serves": true; and puppetPost.js, the node's own
@@ -1932,8 +1933,8 @@ catch (e) {
   // for a row; none of these is addressed to a person, which is what
   // keeps them out of `peer.*` and `contact.*`.
   //
-  // WIRE, on the namespace: claim, add, face and join reach out, and an
-  // offline box fails them. (relay.status, which probed every configured
+  // WIRE, on the namespace: claim, add, face, join, leave and partnerCheck
+  // reach out, and an offline box fails them. (relay.status, which probed every configured
   // relay through ownerBadge.probe, is gone; see relay.get below.) relay.get
   // and relay.record read what the node holds, under the same flag.
   //
@@ -1964,8 +1965,7 @@ catch (e) {
     // node and its peerPost already hold, with no call to any relay (Andy's decision, goal/G22.4; hub.js relaySummary).
     'get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { router: peerRouter }); }) },
     // ONE RELAY OFF THIS NODE'S OWN LIST (goal/G16.3), keyed by its url. The list is node state and the node its only
-    // writer; there is no relay.add, because a successful relay.claim is
-    // what adds one.
+    // writer: a successful relay.claim adds one, and so does relay.add (below, goal/G28.1).
     //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
     //   list relays and remove relay, with a successful claim adding its
     //   relay? yes."
@@ -2080,9 +2080,9 @@ catch (e) {
 //
 // A first draft registered this for a relay only, on the reasoning that a
 // node has no members to tell. Wrong twice over: a node serves
-// its event stream to its own browser and can pace THAT reconnect the same way,
-// and once a relay holds outbound streams to partners it is a listener as
-// well as a speaker.
+// its event stream to its own browser and can pace THAT reconnect the same way.
+// (The second reason, a relay holding outbound streams to partners, went
+// with partnering, goal/G22.6.)
 //
 // The two books differ — a registry keyed by identity, a Set of page
 // responses — and what gets said to them does not, which is why

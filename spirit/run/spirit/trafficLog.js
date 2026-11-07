@@ -47,7 +47,7 @@
 // in and out, across every app that uses the router.
 //
 // That is the point rather than a side effect. It is also why the rules
-// it shares with the contacts (node.db's shadow roll) and the peerfiles are absolute: local, never
+// it shares with the contacts (node.db's `seen` table, once the shadow roll) and the peerfiles are absolute: local, never
 // uploaded, and NEVER ON A RELAY. A node keeping its own traffic is a
 // machine keeping its own record. A relay keeping this same file would be
 // holding everybody's messages — not metadata, the content — which is a
@@ -62,7 +62,7 @@ const path = require('path');
 //
 // No row ages out here, whether it was read, refused, ignored or sent;
 // this file sets no window. What bounds the log is node.db's file cap (not
-// the owner's cache cap, which counts only the shadow roll): Andy,
+// the owner's cache cap, which counts only `seen` and `seen_routes`): Andy,
 // 2026-10-21: "cap in to 16 MB", "learn to throw out shit, or else my box
 // is gonna grind to a hold very soon". Past nodeStore.MAX_DB_BYTES the
 // table's oldest rows are shed (nodeStore.js, shedToCap), so the log keeps

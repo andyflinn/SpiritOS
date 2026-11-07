@@ -27,7 +27,8 @@ On spirit-3 it checks everything. Elsewhere the systemd, cron and Caddy
 sections skip with a note and the TLS section still runs.
 
 **Both still ask with plain GETs** (`/api/relay/who`, `/api/version`), and a
-relay has answered those with 404 since goal/G22.6 closed its public door;
+relay answers those with 404: the roll at `/api/relay/who` was deleted on
+2026-09-18, and `/api/version` closed with the public door in goal/G22.6;
 so `probe`'s `who` lines and `hostCheck`'s identity and version lines read
 as problems against a healthy relay. A relay's key comes from a signed card
 ask on its one door, `node bash/card-ask.js <url>`, which is what

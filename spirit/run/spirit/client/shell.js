@@ -142,8 +142,13 @@
   // every load starts from empty defaults, so at load this map finds
   // nothing to rewrite. Of the ids it names only shell/jobs is still an
   // app (Stats and Apps were deleted).
+  // DISCREPANCY WITH ANDY's RULES: goal/G43.17, Andy (quoted above): "i
+  // want to remove that information and all the code that references it,
+  // gone." This map, migrateAppIds and pruneStalePreferences still work on
+  // those preferences, which no load can hold any more.
   // DEPRECATED(D7, expires: alpha) — preferences naming apps by their old
   // bare ids, rewritten to app/… at load.
+  // See design/DEPRECATIONS.md (decision 0014).
   var APP_ID_RENAMES = {
     stats: 'shell/stats',
     jobs: 'shell/jobs',
@@ -1863,8 +1868,10 @@
   // ---- Packets (api.sendMessagePacket / api.onPacket) ----
   //
   // One door for every app. An app says who and what; the envelope, the
-  // signature and the route are the node's business. No app calls this
-  // door today (Relay Chat, its first client, is gone),
+  // signature and the route are the node's business. Relay Chat, its
+  // first client, is gone; apps reach the door through api.peerPost,
+  // which sends by api.sendMessagePacket (relayPanel.js, introSpector,
+  // the contact list's card ask), and no app calls api.onPacket today;
   // and the point of the door is that Chess is not a different kind of
   // thing when it arrives — it is another `app` string.
   //

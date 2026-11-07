@@ -5,7 +5,7 @@
 *2026-09-11. Verified against the tree at the commit this landed on.*
 
 > Status 2026-11-07 (goal/G43.23): the server is `spirit/server.js` under a
-> run folder (was `js/server.js`, goal/G40.2; `spirit/test/labMaster/labMaster.js:626`).
+> run folder (was `js/server.js`, goal/G40.2; `spirit/test/labMaster/labMaster.js:571`).
 > A relay's owner is `spirit/state/owner.json`, not `allow.json` (cleanup/G1.7),
 > written at install, never by a first claim (goal/G16.8). The device files
 > (`device.json`, `session.json`) went with the device (goal/G16.2), and
