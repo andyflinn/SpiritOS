@@ -13,7 +13,9 @@ const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const SHARED = path.join(RUN, 'shell', 'shared', 'js');
-const SELF = /shell\/shared\/js\/test\/noDeskLeftovers\.(js|md)$/;
+// This item's own reds of item 10 name the two files to say they are gone: this suite, and noVerifyTests' spec, which
+// quotes the box.
+const SELF = /shell\/shared\/js\/test\/noDeskLeftovers\.(js|md)$|process\/js\/deskVerify\/test\/noVerifyTests\.md$/;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
