@@ -5,7 +5,7 @@
     "intrinsic": false
   },
   "mount": {
-    "push.js":true
+    "pushOrigin.js":true
   },
   "shell": {
     "true":false,

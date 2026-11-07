@@ -1,0 +1,19 @@
+{
+  "identity": {
+    "icon": "🚜",
+    "label": "Publish Data",
+    "intrinsic": false
+  },
+  "mount": {
+    "publishData.js":true
+  },
+  "shell": {
+    "true":false,
+    "mount":false,
+    "tile":false
+  },
+  "node": {
+    "mount":false,
+    "run":true
+  }
+}
