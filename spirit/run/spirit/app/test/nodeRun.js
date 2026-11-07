@@ -78,6 +78,33 @@ test.startTest('nodeRun.js: an app that says node.run is listed in pane mode onl
     const noRun = await chrome.evaluate('!(' + runButton + ')');
     ok(drew && noRun, plain.label + ', which mounts and says no node.run, shows no Run', plain.label + '\'s detail: ' + short(await chrome.evaluate('String(document.getElementById("detail").innerText)')));
 
+    // Andy: "in the app list and details: an app that only has node:run and no node:mount or shell:mount cannot be "activated"
+    // show rowForms should knows that.", and "and the node should know it, too."
+    test.subHeading('Andy: "an app that only has node:run and no node:mount or shell:mount cannot be "activated""');
+    // An Activate or Deactivate row seen under an element: a leaf whose words start so (rowFormAppActive's "Activate <label> ...").
+    const activateUnder = function (expr) { return chrome.evaluate('(function () { var root = ' + expr + '; if (!root) return null; return Array.prototype.filter.call(root.querySelectorAll("*"), function (e) { return !e.children.length && /^\\s*(de)?activate\\b/i.test(String(e.textContent || "")) && e.offsetParent !== null; }).length; }())'); };
+    const only = runs.filter(function (a) { return !own.filter(function (o) { return o.key === a.key; }).some(function (o) { return o.shell; }); });
+    // The row of an app in a pane list: the smallest element holding its label and a button, or its label alone.
+    const rowOf = function (label) { return '(function () { var all = document.querySelectorAll("#rows tr, #rows .list-row"); for (var i = 0; i < all.length; i++) { if (String(all[i].innerText || "").indexOf(' + JSON.stringify(label) + ') !== -1) return all[i]; } return null; }())'; };
+    await chrome.evaluate('(function () { var c = document.createElement("div"); c.id = "rows"; document.body.appendChild(c); window.rows = spirit.element.search.app.create(c, { face: "pane" }); return true; }())');
+    await until(function () { return activateUnder(rowOf(plain.label)).then(function (n) { return n > 0; }); }, 8000);
+    ok((await activateUnder(rowOf(plain.label))) > 0, 'the world: ' + plain.label + '\'s row in the app list shows Activate', plain.label + '\'s row shows no Activate: nothing judged');
+    for (const a of only) {
+      // What it mounts is read from its <name>.json after the row is drawn: given the time that takes.
+      await until(function () { return activateUnder(rowOf(a.label)).then(function (n) { return n === 0; }); }, 4000);
+      const n = await activateUnder(rowOf(a.label));
+      ok(n === 0, a.label + '\'s row in the app list shows no Activate', a.label + '\'s row shows ' + short(n) + ' Activate buttons');
+    }
+    await chrome.evaluate('(function () { window.rows.destroy(); var c = document.getElementById("rows"); if (c) c.remove(); return true; }())');
+    await detailOf(plain);
+    ok(await until(function () { return activateUnder('document.getElementById("detail")').then(function (n) { return n > 0; }); }, 6000), 'the world: ' + plain.label + '\'s detail shows Activate', plain.label + '\'s detail shows no Activate: nothing judged');
+    for (const a of only) {
+      await detailOf(a);
+      await until(function () { return chrome.evaluate('!!(' + runButton + ')'); }, 6000);
+      await sleep(800);
+      const n = await activateUnder('document.getElementById("detail")');
+      ok(n === 0, a.label + '\'s detail shows no Activate', a.label + '\'s detail shows ' + short(n) + ' Activate buttons');
+    }
     test.subHeading('a press runs it, active or not');
     if (!PUSH || !PUSH.run) { test.fail('pushOrigin says no node.run: nothing to press'); return; }
     // Every job the node holds, each read whole, its module with it.
@@ -95,6 +122,18 @@ test.startTest('nodeRun.js: an app that says node.run is listed in pane mode onl
     ok(pressed === true, 'its Run can be pressed', 'no Run to press');
     const started = await until(function () { return jobsOf().then(function (j) { return j.indexOf('spirit.app.pushOrigin') !== -1; }); }, 10000);
     ok(started, 'the press starts spirit/app/pushOrigin/pushOrigin.js, a job of spirit.app.pushOrigin, though the app is not active', 'no job of pushOrigin after the press: ' + short(await jobsOf()));
+
+    // Andy: "and the node should know it, too." Asked last, since a node that takes it would leave the app active.
+    test.subHeading('Andy: "and the node should know it, too."');
+    for (const a of only) {
+      const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'app.active', args: { key: a.key, active: true } }) });
+      const t = await r.text();
+      const listed = await ask('app.search', { q: '' });
+      const row = ((listed && listed.items) || []).filter(function (i) { return i.key === a.key; })[0];
+      let now;
+      try { now = JSON.parse(row.label).active; } catch (e) { now = undefined; }
+      ok(r.status >= 400 && now !== true, 'the node refuses app.active for ' + a.key + ', and it stays inactive', 'app.active for ' + a.key + ' answered ' + r.status + ' ' + short(t) + ', active now ' + short(now));
+    }
   } finally {
     try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }
     try { if (chrome.kid) chrome.kid.kill(); } catch (e) { /* gone */ }
