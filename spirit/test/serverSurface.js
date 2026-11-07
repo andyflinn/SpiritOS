@@ -9,17 +9,29 @@
 //   2. the static route's read gate, spelled in %2f, which the WHATWG URL
 //      parser leaves alone (it collapses a literal '../' but not an encoded
 //      one), so the raw traversal must still be refused;
+//   3. fs.save's write gate, the same non-canonical spelling as
+//      pathCanonicalization.js but through the real route, to real disk;
+//   4. net.fetch refuses this machine (goal/G29.20) and fills no key;
 //   5. A WEB PAGE ON ANOTHER SITE CANNOT MAKE THE NODE ACT. A POST with
 //      Content-Type text/plain is a CORS "simple" request: a browser sends
 //      it from any site with no preflight and only hides the ANSWER — the
 //      verb would run. The Host check stops DNS rebinding, not this;
-//   then one place in hub.js calls router.post, and an oversized body is
-//   refused at the door.
+//   6. net.fetch carries any size, and the door's packet bound holds for
+//      the rest;
+//   then every verb the loopback door answers is reached and the process
+//   survives, one place in hub.js calls router.post, and an oversized body
+//   is refused at the door, with or without a Content-Length.
+//
+// Cases 3, 4, 6, the sweep, "still alive" and the chunked refusal were
+// dropped by 885f1ab5 and are back from 885f1ab5^ (goal/G43.23), rewritten
+// on today's door ({ call, args } at /api/spirit) and today's verb list
+// (the node's own `api` answer).
 //
 // Runs against an isolated fake node under the OS temp dir
 // (setupRelayFakes, the same copies the relay lab uses) and NEVER against
-// the live checkout — case 2 needs a spirit/state/identity.json to try to
-// steal, which would otherwise land in the working tree.
+// the live checkout — case 3 deliberately writes a real app's entry
+// script, and case 2 needs a spirit/state/identity.json to try to steal.
+// Both would otherwise land in the working tree.
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
@@ -100,7 +112,39 @@ function waitForBoot(port) {
   }());
 }
 
+// Stands in for "some host on the internet the caller names" in case 4.
+function startSink() {
+  return new Promise(function (resolve) {
+    const seen = { headers: null, bytes: 0 };
+    const sink = http.createServer(function (req, res) {
+      seen.headers = req.headers;
+      req.on('data', function (c) { seen.bytes += c.length; });
+      req.on('end', function () {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end('{"ok":true}');
+      });
+    });
+    sink.listen(0, '127.0.0.1', function () {
+      resolve({ port: sink.address().port, seen: seen, close: function () { sink.close(); } });
+    });
+  });
+}
+
 const nodeRoot = setupRelayFakes('serverSurface').andy;
+
+// THE ENTRY SCRIPT PROBED IN CASE 3 is a non-intrinsic app's: since
+// goal/G30.21 an intrinsic app's script is core and refused, and an app's
+// own script is writable (goal/G14.8). Which apps are not intrinsic moves,
+// so it is asked of the fake node's own write gate rather than named: the
+// first shell/<app>/<app>.js that fileWritable lets through. Read off the
+// checkout, not the fake's folder: setupRelayFakes never deletes, so an app
+// gone from the tree can linger there.
+const gate = require(path.join(nodeRoot, 'spirit', 'fileSystem.js'));
+const ENTRY_APP = fs.readdirSync(path.join(__dirname, '..', 'run', 'shell')).sort().filter(function (a) {
+  const rel = 'shell/' + a + '/' + a + '.js';
+  return fs.existsSync(path.join(__dirname, '..', 'run', rel)) && fs.existsSync(path.join(nodeRoot, rel)) && gate.fileWritable(rel) === true;
+})[0] || '';
+const ENTRY_SCRIPT = ENTRY_APP ? path.join(nodeRoot, 'shell', ENTRY_APP, ENTRY_APP + '.js') : '';
 
 // An identity for case 2 to try to steal. This node lives in the temp dir,
 // so this never touches the repo. Case 2 asks for relay-state/identity.json,
@@ -121,6 +165,7 @@ fs.writeFileSync(
 fs.mkdirSync(path.join(nodeRoot, 'spirit', 'state'), { recursive: true });
 
 let child = null;
+let sink = null;
 
 // WHAT THE NODE SAID ON ITS WAY DOWN: its output is kept, so a failure
 // names why the node died rather than reading as ECONNREFUSED.
@@ -135,6 +180,7 @@ function lastWords() {
 
 function shutdown() {
   if (child) { try { child.kill(); } catch (e) { /* already gone */ } }
+  if (sink) { try { sink.close(); } catch (e) { /* already closed */ } }
 }
 
 freePort()
@@ -174,6 +220,94 @@ freePort()
         test.check('encoded traversal to spirit/relayAuth.js refused (HTTP ' + r.status + ')');
       }
       return port;
+    });
+  })
+
+  // ---- 3. the write gate, through the real route, to real disk ----
+  .then(function (port) {
+    test.subHeading('fs.save: the write gate through the real route');
+    if (!ENTRY_SCRIPT) {
+      test.fail('no shell/<app>/<app>.js in the fake node is writable by fileWritable, so the entry-script write ' +
+        'cannot be asked: nothing judged');
+      return port;
+    }
+    const before = fs.readFileSync(ENTRY_SCRIPT, 'utf8');
+    const probeRel = 'shell/' + ENTRY_APP + '/serverSurface-probe.json';
+    const probeDisk = path.join(nodeRoot, probeRel);
+    const escapedDisk = path.join(nodeRoot, 'spirit', 'serverSurface-probe.js');
+
+    // ── NO VACUOUS GREEN ───────────────────────────────────────────
+    //
+    // A dead route answers an error, the write never happens, the file is
+    // unchanged, and a refusal check would go green while proving nothing.
+    // So it proves the verb is REACHABLE first, with a write that is
+    // supposed to succeed — and is on disk afterwards — and only then asks
+    // the gate. An app's entry script is writable (goal/G14.8, Andy: "we
+    // only protect intrinsic apps, and they are already gated by the commit
+    // hooks as "core""), so the non-canonical spelling of the entry script
+    // must LAND, at the canonical place, and the refusal asked for is a
+    // non-canonical spelling that reaches core (shell/../spirit/).
+    return request(port, 'POST', '/api/spirit', { call: 'fs.save', args: { path: probeRel, content: '{"written":"by serverSurface, and deleted again below"}' } }).then(function (ok) {
+      const landed = fs.existsSync(probeDisk) && /by serverSurface/.test(fs.readFileSync(probeDisk, 'utf8'));
+      if (ok.status >= 200 && ok.status < 300 && landed) {
+        test.check('fs.save is reachable and writes where it is allowed to (' + probeRel + ')');
+      } else {
+        test.fail('fs.save could not write an ALLOWED path (HTTP ' + ok.status + ', on disk ' + landed + '), so the ' +
+          'refusal below proves nothing — the verb is not wired.' + lastWords());
+      }
+      return request(port, 'POST', '/api/spirit', { call: 'fs.delete', args: { path: probeRel } });
+    }).then(function () {
+      return request(port, 'POST', '/api/spirit', { call: 'fs.save', args: { path: 'shell/./' + ENTRY_APP + '/' + ENTRY_APP + '.js', content: '// serverSurface.js probe — the fakes\' copy, restored at once' } });
+    }).then(function (r) {
+      const after = fs.readFileSync(ENTRY_SCRIPT, 'utf8');
+      if (r.status >= 200 && r.status < 300 && /serverSurface\.js probe/.test(after)) {
+        test.check('fs.save writes an app entry script (shell/./' + ENTRY_APP + '/' + ENTRY_APP + '.js) through a non-canonical spelling, at the canonical place (goal/G14.8)');
+      } else {
+        test.fail('fs.save of the entry script through shell/./ answered HTTP ' + r.status + ' ' + String(r.text).slice(0, 120) +
+          ', on disk changed ' + (after !== before) + lastWords());
+      }
+      fs.writeFileSync(ENTRY_SCRIPT, before, 'utf8');
+      return request(port, 'POST', '/api/spirit', { call: 'fs.save', args: { path: 'shell/../spirit/serverSurface-probe.js', content: '// serverSurface.js probe — must never reach disk' } });
+    }).then(function (r) {
+      const escaped = fs.existsSync(escapedDisk);
+      // REFUSED, AND NOTHING ON DISK: which 4xx the gate answers is its own
+      // business (the call's argument check says "a path without .." before
+      // the write gate is asked); a 2xx or a file in spirit/ is the failure.
+      if (r.status >= 400 && r.status < 500 && !escaped) {
+        test.check('fs.save refused a non-canonical spelling that leaves the writable roots (HTTP ' + r.status + '), nothing on disk');
+      } else {
+        test.fail('fs.save answered HTTP ' + r.status + ' to shell/../spirit/, on disk ' + escaped);
+        try { fs.unlinkSync(escapedDisk); } catch (e) { /* none */ }
+      }
+      return port;
+    });
+  })
+
+  // ---- 4. net.fetch refuses this machine, and fills no key ----
+  .then(function (port) {
+    test.subHeading('net.fetch hands no API key to this machine: it does not reach it at all');
+    return startSink().then(function (s) {
+      sink = s;
+      // THE SINK IS ON THIS MACHINE, AND net.fetch DOES NOT REACH IT (goal/G29.20; Andy, 2026-10-18: "fetch will
+      // not be able to reach ports on this machine, and agents may use it."). So it asserts the refusal by name and
+      // that nothing arrived — never "nothing happened" read as a pass: the 403 and its code are asserted first.
+      // net.fetch fills no key at all.
+      const ask = function (url, headers) {
+        return request(port, 'POST', '/api/spirit', { call: 'net.fetch', args: { url: url, method: 'POST', headers: headers, body: JSON.stringify({ hello: 'world' }) } });
+      };
+      return ask('http://127.0.0.1:' + s.port + '/v1/messages', { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}' }).then(function (r) {
+        let body = null;
+        try { body = JSON.parse(r.text || 'null'); } catch (e) { body = null; }
+        if (r.status === 403 && body && body.code === 'this-machine') test.check('net.fetch to a port on this machine is refused 403, this-machine');
+        else test.fail('net.fetch to this machine answered ' + JSON.stringify({ status: r.status, text: String(r.text).slice(0, 200) }) + lastWords());
+        if (!s.seen.headers) test.check('and the sink on this machine received nothing, so no key reached it');
+        else test.fail('net.fetch reached a port on this machine, carrying ' + JSON.stringify(s.seen.headers['x-api-key'] || ''));
+        return ask('http://localhost:' + s.port + '/v1/responses', { Authorization: 'Bearer ${ENV:GROK_API_KEY}' });
+      }).then(function (r) {
+        if (r.status === 403 && /this-machine/.test(r.text) && !s.seen.headers) test.check('and by name too: localhost is refused, the Grok key goes nowhere');
+        else test.fail('net.fetch to localhost answered ' + r.status + ', sink saw ' + JSON.stringify(s.seen.headers || null) + lastWords());
+        return port;
+      });
     });
   })
 
@@ -245,6 +379,176 @@ freePort()
     });
   })
 
+  // ---- 6. net.fetch carries any size; the packet bound stands for the rest ----
+  // No proxy list or proxy verbs (goal/G29.20: "remove all the env logic and allow-list crap"): net.fetch's own door.
+  .then(function (port) {
+    test.subHeading('net.fetch carries any size; every other verb keeps the packet bound');
+    function call(obj) {
+      return request(port, 'POST', '/api/spirit', null, { raw: JSON.stringify(obj), headers: { 'Content-Type': 'application/json' } });
+    }
+    const big = 'x'.repeat(100000);
+    // NO SIZE LIMIT ON WHAT THE PROXY CARRIES (2026-09-22). Andy: "no limit on size for proxy request, yes". A 100 KB
+    // body — several times the door's packet bound — gets past the door: aimed at this machine, it is refused by the
+    // fence (403, this-machine), which is net.fetch's own answer, never the door's 413.
+    if (big.length <= limits.BODY_MAX) test.fail('the 100 KB probe is not over BODY_MAX (' + limits.BODY_MAX + '): nothing judged');
+    return call({ call: 'net.fetch', args: { url: 'http://127.0.0.1:1/big', method: 'POST', body: JSON.stringify({ blob: big }) } }).then(function (r) {
+      if (r.status === 403 && /this-machine/.test(r.text)) test.check('a 100 KB net.fetch is not refused by size: it reaches net.fetch, whose fence answers this-machine');
+      else test.fail('big net.fetch: HTTP ' + r.status + ' ' + String(r.text).slice(0, 120));
+      return call({ call: 'fs.annotate', args: { path: 'shell/' + (ENTRY_APP || 'x') + '/too-big.json', payload: { blob: big } } });
+    }).then(function (r) {
+      if (r.status === 413 && /too large/i.test(r.text)) test.check('and any other verb with 100 KB is still refused 413, saying too large — the packet bound stands for them');
+      else test.fail('a big non-proxy verb was not refused: HTTP ' + r.status + ' ' + String(r.text).slice(0, 120));
+      return port;
+    });
+  })
+
+  // ---- every verb the loopback door answers can be CALLED ----
+  .then(function (port) {
+    test.subHeading('Every verb at the loopback door survives being called');
+
+    // WHY THIS EXISTS, and it is a class of bug rather than one bug.
+    //
+    // A handler is dispatched inside a request callback, long after the
+    // module finished loading. So a name it reaches for that is not in
+    // scope THERE is a ReferenceError that `node --check` cannot see, that
+    // no unit test calling the handler directly can see, and that does not
+    // exist until somebody makes the request. The door catches it today
+    // and answers 500 handler-failed — which hides it exactly as well, so
+    // a handler-failed is counted as a throw here, beside no answer at all.
+    //
+    // This asks nothing about what the verbs ANSWER. Each refuses for its
+    // own good reason here, and a refusal is a pass. The claim is only: it
+    // was reached, it answered, it did not throw, and the process is still
+    // alive.
+    //
+    // THE LIST IS THE NODE'S OWN, asked of it: `api` answers the flat
+    // table, {family: {verb: {request, reply}}}, the node's families and
+    // its served apps' side by side — everything the loopback door
+    // dispatches. So no verb is left out by a list kept here by hand.
+    //
+    // Each is posted with no arguments unless named below. The ones named
+    // either reach the network, so they are aimed at 127.0.0.1:1 (refused
+    // by the fence or by the kernel at once, no DNS, no waiting), or have
+    // no refusal to hide behind, so the honest thing is to exercise them on
+    // this throwaway node.
+    const ARGS = {
+      'net.fetch': { url: 'http://127.0.0.1:1/sweep' },
+      'relay.claim': { url: 'https://127.0.0.1:1', name: 'x' },
+      'relay.partnerCheck': { publicKey: 'NOPE', url: 'https://127.0.0.1:1' },
+      // An empty description is LEGAL, so it is written; nothing else here reads it.
+      'node.setDescription': { description: 'a node in a test' },
+      // desk/G2.5: reads the node's DEBUG, and changes nothing.
+      'node.debug': { debug: {} },
+      // A command for a puppet nobody is connected to: refused as unreachable.
+      'owner.command': { to: 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '=', command: 'contact.list' },
+    };
+    // A STREAM (events.subscribe keeps its response open): its status line
+    // is its answer, so a call is done at the end of its body or a short
+    // while after its headers, whichever is first.
+    function reach(call, args) {
+      return new Promise(function (resolve) {
+        const payload = JSON.stringify({ call: call, args: args });
+        let done = false;
+        const finish = function (r) { if (!done) { done = true; resolve(r); } };
+        const req = http.request({
+          hostname: '127.0.0.1', port: port, path: '/api/spirit', method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
+        }, function (res) {
+          let text = '';
+          res.on('data', function (c) { text += c; });
+          res.on('end', function () { finish({ status: res.statusCode, text: text }); });
+          setTimeout(function () { finish({ status: res.statusCode, text: text }); req.destroy(); }, 1500);
+        });
+        req.on('error', function (err) { finish({ status: 0, text: '', error: err.code || String(err) }); });
+        req.setTimeout(8000, function () { req.destroy(new Error('timeout')); });
+        req.end(payload);
+      });
+    }
+
+    return request(port, 'POST', '/api/spirit', { call: 'api', args: {} }).then(function (listed) {
+      let table = null;
+      try { table = JSON.parse(listed.text); } catch (e) { table = null; }
+      const verbs = [];
+      if (table && typeof table === 'object') {
+        Object.keys(table).sort().forEach(function (family) {
+          Object.keys(table[family] || {}).sort().forEach(function (v) { verbs.push(family + '.' + v); });
+        });
+      }
+      if (listed.status !== 200 || verbs.length < 10) {
+        test.fail('the node\'s api answer lists ' + verbs.length + ' verbs (HTTP ' + listed.status + '): the sweep has nothing to sweep' + lastWords());
+        return port;
+      }
+
+      const dead = [];
+      const threw = [];
+      const unreached = [];
+      return verbs.concat(['nope.thing']).reduce(function (chain, verb) {
+        return chain.then(function () {
+          const startedAt = Date.now();
+          return reach(verb, ARGS[verb] || {}).then(function (r) {
+            // Status 0 is no answer at all: the handler took the connection —
+            // or the process — with it. NAME THE VERB, and the milliseconds,
+            // because the failure this catches is often slowness, not death.
+            if (r.status === 0) dead.push(verb + ' (' + r.error + ', ' + (Date.now() - startedAt) + 'ms)');
+            else if (r.status === 500 && /handler-failed/.test(r.text)) threw.push(verb);
+            // A verb the table does not hold is answered by the door itself,
+            // "no such verb", which is an answer and would sail through the
+            // checks above. So every listed verb must not say it, and the one
+            // deliberately unclaimed verb must.
+            const missing = r.status === 400 && /no such verb/.test(String(r.text || ''));
+            if (verb === 'nope.thing') {
+              if (!missing) unreached.push('nope.thing was ANSWERED by somebody: ' + r.status);
+            } else if (missing) {
+              unreached.push(verb + ' is listed by api and claimed by nobody');
+            }
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        if (!dead.length) {
+          test.check('all ' + verbs.length + ' verbs the node lists answered at the loopback door');
+        } else {
+          test.fail(dead.join(', ') + ' — answered nothing. A handler that reaches for a ' +
+            'name not in scope at request time is invisible until the request is made.' + lastWords());
+        }
+        if (!threw.length) {
+          test.check('and none of them threw (no 500 handler-failed)');
+        } else {
+          test.fail(threw.join(', ') + ' — the handler threw, and the door answered 500 handler-failed' + lastWords());
+        }
+        if (!unreached.length) {
+          test.check('and every verb listed reached a handler, while an unclaimed one did not');
+        } else {
+          test.fail(unreached.join('; ') + ' — a verb nobody claimed is refused BY THE DOOR, ' +
+            'which is an answer. Without this, deleting a claim leaves the checks above green.');
+        }
+
+        // ── AND THE LIST COVERS EVERY VERB server.js MOUNTS ──
+        //
+        // The sweep trusts the node's own list. The other direction: a verb
+        // mounted in server.js and missing from that list is invisible to
+        // the sweep — it can throw on first contact for as long as nobody
+        // posts to it. Parsed from the mount blocks: the family from each
+        // loopbackVerbs.mount, its verbs from the four-space keys. A block
+        // never runs into the next mount (the config family is mounted empty
+        // on one line).
+        const serverSrc = fs.readFileSync(path.join(nodeRoot, 'spirit', 'server.js'), 'utf8');
+        const mounted = [];
+        for (const block of serverSrc.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)',(?:(?!loopbackVerbs\.mount)[\s\S])*?\n {2}\}, \{ wire:/g)) {
+          for (const m of block[0].matchAll(/^ {4}'([a-z][a-zA-Z0-9]*)':/gm)) mounted.push(block[1] + '.' + m[1]);
+        }
+        const unswept = mounted.filter(function (v) { return verbs.indexOf(v) === -1; });
+        if (mounted.length < 10) {
+          test.fail('only ' + mounted.length + ' verbs parsed out of server.js — the mount shape moved');
+        } else if (!unswept.length) {
+          test.check('and the sweep covers every verb server.js mounts (' + mounted.length + ' of the ' + verbs.length + ')');
+        } else {
+          test.fail('mounted in server.js but not in the node\'s api list, so never swept: ' + unswept.join(', '));
+        }
+        return port;
+      });
+    });
+  })
+
   // ---- one door puts things on the wire ----
   .then(function (port) {
       // ── ONE DOOR PUTS THINGS ON THE WIRE ─────────────────────────────
@@ -280,7 +584,17 @@ freePort()
           'peer.post is the only way onto the wire. A second caller is a second ' +
           'door, whether or not a route has been wired to it yet.' + lastWords());
       }
-      return port;
+
+      // AFTER THE SWEEP: whatever every verb answered, the node is still there.
+      return request(port, 'GET', '/api/version').then(function (after) {
+        if (after.status === 200) {
+          test.check('and the process is still alive after all of them');
+        } else {
+          test.fail('the server DIED somewhere in the sweep (' +
+            (after.error || 'HTTP ' + after.status) + ')' + lastWords());
+        }
+        return port;
+      });
   })
 
   // ── A BODY BIGGER THAN THE CAP IS REFUSED AT THE DOOR ──────────────
@@ -314,7 +628,38 @@ freePort()
         } else if (r.status === 413) {
           test.fail('413 but the text does not say why: ' + r.text.slice(0, 60));
         }
-        return port;
+
+        // ── AND WITHOUT A Content-Length TO BELIEVE ──────────────────
+        //
+        // The header is a CLAIM. `Transfer-Encoding: chunked` carries
+        // none at all, so a pre-check alone is bypassed by omitting it —
+        // which is why the running total must be enforced while reading
+        // and the socket destroyed. Either a 413 or a dead socket is a pass
+        // here; what must not happen is the whole body being accepted.
+        return new Promise(function (resolve) {
+          const req = http.request({
+            hostname: '127.0.0.1', port: port, path: '/api/spirit', method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Transfer-Encoding': 'chunked' },
+          }, function (res) {
+            let t = '';
+            res.on('data', function (c) { t += c; });
+            res.on('end', function () { resolve({ status: res.statusCode, text: t }); });
+          });
+          req.on('error', function (e) { resolve({ status: 0, error: e.code || String(e) }); });
+          req.setTimeout(8000, function () { req.destroy(new Error('timeout')); });
+          req.write('{"call":"contact.search","args":{"pad":"');
+          req.write(over);
+          req.write('"}}');
+          req.end();
+        }).then(function (chunked) {
+          if (chunked.status === 413 || (chunked.status === 0 && !/timeout/.test(chunked.error))) {
+            test.check('and a chunked body with no Content-Length is stopped too (' +
+              (chunked.status === 0 ? chunked.error : '413') + ')');
+          } else {
+            test.fail('chunked oversize was accepted: HTTP ' + chunked.status + (chunked.error ? ' ' + chunked.error : ''));
+          }
+          return port;
+        });
       });
   })
 
