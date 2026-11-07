@@ -1,6 +1,5 @@
 // spirit/run/shell/jobs/jobs.js
-// THE JOB MONITOR: every job this node is running or has run. Its id is 'shell/jobs' (the old shell's APP_ID_RENAMES,
-// spirit/run/spirit/client/shell.js, maps the bare 'jobs' to it).
+// THE JOB MONITOR: every job this node is running or has run. Its id is 'shell/jobs'.
 //
 // ROWS ONLY (goal/G2.11). Andy, 2026-10-02: "the job monitor shell component. the folded "consoles" need to go into
 // jobsDetails", "the form on top should be gone." A row click opens shell/jobsDetails, and that is all a row does.

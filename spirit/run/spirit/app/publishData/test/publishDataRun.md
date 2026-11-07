@@ -14,8 +14,8 @@ check's standing grant for `agents/<agent>/`.
   object): exit 1. A clone with no `spirit/run/spirit/state/node.db`: exit 1, naming where it looked.
 - The output folder is `--out`, else `<clone>/agents/<agent>/`; the commit is the short HEAD of the tree the script
   runs from.
-- **1, unless --only packets**: the harness runs in a temporary git worktree of HEAD (the clone's relays.json carried
-  over), `spirit/test/measurePlatform.js --agent <agent>`; how it exited is said; its files come back into the output
+- **1, unless --only packets**: the harness runs in a temporary git worktree of HEAD,
+  `spirit/test/measurePlatform.js --agent <agent>`; how it exited is said; its files come back into the output
   folder; the worktree is removed and pruned.
 - **2, the packet figures**: N read-only desk asks (profile.get, `--asks`, 20 by default), then the closing rows since
   just before them, from a read-only copy of node.db (the node holds it open): replies in, and requests out refused or

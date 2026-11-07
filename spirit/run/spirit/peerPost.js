@@ -1169,7 +1169,7 @@ function createPeerPost(opts) {
   // the record of what arrived must not depend on whether the answer got
   // out. The inbound row carries NO payload — the question is a fixed
   // shape and keeping a stranger's bytes is what the floor above exists to
-  // prevent — and is not `admitted`, because nothing was handed to an app.
+  // prevent — and its outcome is answered, not delivered: nothing was handed to an app.
   function answerCard(relayUrl, id, body, hash) {
     note({
       dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
@@ -1478,8 +1478,8 @@ function createPeerPost(opts) {
     // A dropped packet is still logged, and WITHOUT its payload: that
     // something was ignored is this node's own business to know, and
     // keeping the text of a line the operator asked not to keep would be
-    // the log contradicting the drop. A delivered row carries `admitted`, the mark the arrival readers take (arrivals.js):
-    // handed to an app.
+    // the log contradicting the drop. Its outcome, delivered, is what the arrival readers take (arrivals.js): handed to an
+    // app.
     note(verdict === 'drop'
       ? {
         dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
@@ -1495,7 +1495,6 @@ function createPeerPost(opts) {
         // the silent weakening the condition names. No new disclosure:
         // the log already holds the plaintext (cycle 10's R14).
         sentAt: body.sentAt,
-        admitted: true,
       });
 
     // NO PER-PEER COUNT IS KEPT. The counting went with goal/G43.14

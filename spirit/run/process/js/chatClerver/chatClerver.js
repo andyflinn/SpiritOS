@@ -219,10 +219,6 @@ appServer.serve({
   //     problem").
   //   - The node's block is the one truth and outranks: a blocked key is refused peer-blocked, nothing granted or
   //     posted ("a node-level-block supersedes app level blocks"). A node that cannot say refuses the write too.
-  //   - DISCREPANCY WITH ANDY's RULES: goal/G43.17, Andy: "Didn't i say remove ALL code referencing "admit" and
-  //     "hold". it was a hair-brained scheme, and it HAS TO GO." The handler below still asks person.held and calls
-  //     contact.accept for a held key. contact.get's person carries no held field any more (contacts.js shaped()),
-  //     so that branch never runs: no line releases anybody.
   //   - A line to K is also the grant to K to answer ("writing to a peer should automatically be a grant to accept
   //     an answer"), asked of this node before the line leaves; a grant not kept refuses the write.
   //   - Refused and unsent lines stay in the record and go again, in their order, before the next new one.
@@ -247,8 +243,7 @@ appServer.serve({
         const person = r.status === 200 && r.body && r.body.person;
         if (!person) throw refused('no-answer');
         if (person.blocked === true) throw refused('peer-blocked');
-        if (person.held !== true) return null;
-        return onNode('contact', function (s) { return s.contact.accept({ publicKey: to }); }).then(function (x) { if (x.status !== 200) throw refused('no-answer'); });
+        return null;
       }).then(function () {
         return onNode('auth', function (s) { return s.auth.grant({ key: to, path: 'chatClerver.line.receive' }); });
       }).then(function (g) {

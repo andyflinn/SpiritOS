@@ -125,90 +125,6 @@
   var preferences = { defaultHandlers: {}, appOverrides: {}, groups: {} };
   function savePreferences() { /* nothing is kept past the page */ }
 
-  // An app's id is its folder once it is a dynamic app: 'jobs' becomes
-  // 'shell/jobs' the day Jobs moves into app/jobs/. Everything the operator
-  // customised is keyed by that id — appOverrides by key, defaultHandlers
-  // by value — and pruneStalePreferences (below) deletes every entry
-  // naming an app it cannot find, then saves. So on the first load after
-  // a move, without this, the shell quietly throws away the custom names,
-  // icons, group placements and "open .md with" choices for every app
-  // that moved, and there is nothing to undo it with.
-  //
-  // One line per move, added in the same commit as the move — a map that
-  // lands afterwards lands after prune has already thrown the overrides
-  // away.
-  //
-  // SINCE goal/G43.17 NOTHING IS KEPT PAST THE PAGE (preferences, above):
-  // every load starts from empty defaults, so at load this map finds
-  // nothing to rewrite. Of the ids it names only shell/jobs is still an
-  // app (Stats and Apps were deleted).
-  // DISCREPANCY WITH ANDY's RULES: goal/G43.17, Andy (quoted above): "i
-  // want to remove that information and all the code that references it,
-  // gone." This map, migrateAppIds and pruneStalePreferences still work on
-  // those preferences, which no load can hold any more.
-  // DEPRECATED(D7, expires: alpha) — preferences naming apps by their old
-  // bare ids, rewritten to app/… at load.
-  // See design/DEPRECATIONS.md (decision 0014).
-  var APP_ID_RENAMES = {
-    stats: 'shell/stats',
-    jobs: 'shell/jobs',
-    'app-manager': 'shell/apps',
-  };
-
-  // Runs at load, which is before any snapshot and therefore before
-  // pruneStalePreferences can see the old keys. Takes the map as an
-  // argument so a test can drive it with a non-identity one; production
-  // always passes the map above.
-  function migrateAppIds(renames) {
-    var map = renames || withShellIds(APP_ID_RENAMES);
-    var changed = false;
-
-    Object.keys(map).forEach(function (oldId) {
-      var newId = map[oldId];
-
-      if (preferences.appOverrides[oldId] !== undefined) {
-        // An override already stored under the new id wins — it was
-        // written by the operator after the move, so it is the newer
-        // intent, and re-running a migration must never undo it.
-        if (preferences.appOverrides[newId] === undefined) {
-          preferences.appOverrides[newId] = preferences.appOverrides[oldId];
-        }
-        delete preferences.appOverrides[oldId];
-        changed = true;
-      }
-
-      Object.keys(preferences.defaultHandlers).forEach(function (ext) {
-        if (preferences.defaultHandlers[ext] === oldId) {
-          preferences.defaultHandlers[ext] = newId;
-          changed = true;
-        }
-      });
-    });
-
-    if (changed) savePreferences();
-    return changed;
-  }
-  // app/ BECAME shell/ (slim/G1.1), so every id stored as app/<name> (an
-  // override's key, a default handler) is shell/<name> now. Without this the
-  // stored keys name no app, and pruneStalePreferences deletes his groups
-  // and handlers on the first snapshot (wsl-claude's finding, T6).
-  function withShellIds(renames) {
-    var map = {};
-    Object.keys(renames).forEach(function (k) { map[k] = renames[k]; });
-    var LEGACY_APP_PREFIX = 'app/';
-    var stored = Object.keys(preferences.appOverrides).concat(Object.keys(preferences.defaultHandlers).map(function (ext) {
-      return preferences.defaultHandlers[ext];
-    }));
-    stored.forEach(function (id) {
-      if (typeof id === 'string' && id.indexOf(LEGACY_APP_PREFIX) === 0 && map[id] === undefined) {
-        map[id] = 'shell/' + id.slice(LEGACY_APP_PREFIX.length);
-      }
-    });
-    return map;
-  }
-
-  migrateAppIds();
-
   // Deleting an app's files by any means other than the shell's own UI
   // (by hand, via Text Editor, from another tab) leaves its
   // appOverrides/defaultHandlers entries behind forever otherwise —
@@ -221,11 +137,6 @@
   // have its overrides wrongly stripped. Deletion reaching the shell
   // through its own UI (deleteGroup, etc.) already cleans up after
   // itself; this only ever has anything to do on the rare path around it.
-  //
-  // An app whose ID changed is not a deleted app, and this cannot tell
-  // the difference — migrateAppIds (above) runs at load, before any
-  // snapshot reaches here, so by the time this runs the keys already name
-  // the apps that exist.
   function pruneStalePreferences() {
     var changed = false;
 
@@ -2707,12 +2618,12 @@
   // Only the manifest decides. A folder listed here whose manifest is
   // missing, unreadable, or not intrinsic is left to ordinary discovery —
   // this list cannot promote an app, only hurry one that is already
-  // intrinsic. stats, apps, contacts and icons name no folder under
-  // shell/ today, so they are passed over.
+  // intrinsic. Every folder named here is under shell/ (goal/G43.23, the
+  // box's item 13: stats, apps, contacts and icons went, and asked 404).
   // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
   // introSpector (goal/G30.5; Andy, 2026-10-20: "I want an intrinsic app: introSpector").
   // Files moved to spirit/app/file/ (goal/G43.17).
-  var INTRINSIC_APP_FOLDERS = ['stats', 'jobs', 'apps', 'contacts', 'info', 'introSpector', 'join', 'icons'];
+  var INTRINSIC_APP_FOLDERS = ['jobs', 'info', 'introSpector', 'join'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {
@@ -2770,9 +2681,6 @@
     listApps: listApps,
     listIntrinsicApps: listIntrinsicApps,
     SPIRIT_GROUP_ID: SPIRIT_GROUP_ID,
-    // Exported for the harness: a migration that cannot be exercised is a
-    // migration nobody finds out about until the move it was written for.
-    migrateAppIds: migrateAppIds,
     // Same reason. Which screens are on the stack, and stepping back one,
     // are the whole of what "Back" means, and until now no test could see
     // either — the {replace: true} that made Spirit disappear from its own
@@ -2781,7 +2689,6 @@
     navStackIds: function () {
       return navStack.map(function (entry) { return entry.id; });
     },
-    APP_ID_RENAMES: APP_ID_RENAMES,
     INTRINSIC_APP_FOLDERS: INTRINSIC_APP_FOLDERS,
     getAppOverride: getAppOverride,
     setAppOverride: setAppOverride,

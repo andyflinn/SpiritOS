@@ -222,9 +222,8 @@ var RATE_KEY_SWEEP_AT = 1000;
 // routingTable.json STOOD HERE — read whole at boot into a map, rewritten
 // whole on every claim, rename and removal. The roll and the invites are
 // tables in spirit/state/relay.db now (relayStore.js), and
-// every question about them is a query. A relay that still holds the old
-// file imports it once and keeps it as routingTable.json.imported (D8, see
-// design/DEPRECATIONS.md); its legacy handling (D1) went with the reader.
+// every question about them is a query. An old routingTable.json is not
+// read (D8, eliminated by goal/G43.23; design/DEPRECATIONS.md).
 //
 // Before that, mailbox.json was this file's name, and the read of the old
 // name was deleted once spirit-3 had written the new one (2026-09-13). The

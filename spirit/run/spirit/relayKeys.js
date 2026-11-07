@@ -55,8 +55,8 @@
 // Info's rename); the email is the node's to type, never stored. So seatLabel answers that name for a relay this
 // node is seated on, and nothing here records more of a seat than `seated`.
 //
-// relayKeys.json and relays.json (the stores before goal/G19.15) are still moved in when found (importOld below),
-// now into the one table: the lab and the suites plant them, and a node that has them is owed its relays.
+// relayKeys.json and relays.json, the stores before goal/G19.15, are not read: the one table is the record (goal/G43.23,
+// the box's item 7; Andy, goal/G41.30: "let's get rid of those "rescue operations"").
 
 const fs = require('fs');
 const path = require('path');
@@ -77,59 +77,7 @@ function normalizeUrl(url) {
 // RANK 1 (seenPeers.HOST): the relay's own card says it answers there, the strongest word there is.
 const OWN_ROUTE_RANK = 1;
 
-function seen(rootDir) { importOld(rootDir); return nodeStore.open(rootDir).seen; }
-
-// ── THE OLD FILES' MOVE (goal/G19.15, into the one table since goal/G40.11) ──
-//
-//   Andy, 2026-10-12: "The first boot copies every row of relays.json and relayKeys.json into the one relays table
-//   and deletes both files."
-//
-// Every pinned url becomes a relay row with its url a direct route, kept when relays.json listed it, under its label.
-// A listed url with no pin is not copied: nothing can key it (his decision). A pin counts as a seat, because the old
-// seatedUrls counted a pin as one and a node's memberships must survive the move. Asked on every read, as before, so a
-// file found later (an older tool, a restored backup, the lab) is moved too and never read as the truth beside the
-// table; the rows first, the files only after.
-//
-// DISCREPANCY WITH ANDY's RULES: goal/G41.30 (Andy: "let's get rid of those \"rescue operations\"", and "delete the
-// code that \"rescues an old json file\""; nodeStore.js, commit 83d07fa9) and goal/G41.32's box ("no
-// \"old-data-rescue-missions\"") rule out moving old stores in. This still moves relays.json and relayKeys.json into
-// the table, on every read of it (seen() above).
-function importOld(rootDir) {
-  const listFile = path.join(rootDir, 'spirit', 'state', 'relays.json');
-  const keyFile = path.join(rootDir, 'spirit', 'state', 'relayKeys.json');
-  const haveList = fs.existsSync(listFile);
-  const haveKeys = fs.existsSync(keyFile);
-  if (!haveList && !haveKeys) return false;
-  const read = function (file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; } };
-  let list = haveList ? read(listFile) : null;
-  if (!Array.isArray(list)) list = [];
-  let book = haveKeys ? read(keyFile) : null;
-  if (!book || typeof book !== 'object' || Array.isArray(book)) book = {};
-  const labelAt = Object.create(null);
-  list.forEach(function (row) {
-    const u = normalizeUrl(row && row.url);
-    if (u && !(u in labelAt)) labelAt[u] = String((row && row.label) || '');
-  });
-  const S = nodeStore.open(rootDir).seen;
-  nodeStore.open(rootDir).transaction(function () {
-    Object.keys(book).forEach(function (bu) {
-      const u = normalizeUrl(bu);
-      const rec = book[bu];
-      const key = rec && typeof rec.publicKey === 'string' ? rec.publicKey.trim() : '';
-      if (!u || !key || S.byUrl(u)) return;
-      S.set(key, { relay: true, seated: true, keep: u in labelAt, myLabel: labelAt[u] && labelAt[u] !== u ? labelAt[u] : '' });
-      S.putRoute(key, { via: '', at: key, url: u, rank: OWN_ROUTE_RANK, told: Date.parse(rec.acceptedAt || rec.firstSeen || '') || Date.now() });
-    });
-    // A listed url already in the table (by an earlier copy) keeps its place on the list.
-    Object.keys(labelAt).forEach(function (u) {
-      const route = S.byUrl(u);
-      if (route) S.set(route.publicKey, { keep: true });
-    });
-  });
-  try { fs.unlinkSync(keyFile); } catch (e) { /* already gone */ }
-  try { fs.unlinkSync(listFile); } catch (e) { /* already gone */ }
-  return true;
-}
+function seen(rootDir) { return nodeStore.open(rootDir).seen; }
 
 // The direct route a relay answers at: its url, or ''.
 function urlOf(rootDir, key) {
@@ -374,7 +322,6 @@ module.exports = {
   list: list,
   unlist: unlist,
   assertSeeds: assertSeeds,
-  importOld: importOld,
   keepFace: keepFace,
   faceOf: faceOf,
 };

@@ -82,7 +82,7 @@ const node = http.createServer(function (req, res) {
     { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') return json(200, { ok: true });
     if (ownDoor.serves(b.verb)) return ownDoor.call(b.verb, argsOf(b)).then(function (a) { json((a && a.status) || 500, a ? a.body : null); }, function (e) { json(500, { ok: false, error: String(e && e.message) }); });
-    if (b.verb === 'contact.get') { const row = book[String(b.key || '')]; return row ? json(200, { ok: true, key: b.key, person: { publicKey: b.key, caption: row.label, blocked: !!row.blocked, held: false } }) : json(404, { ok: false }); }
+    if (b.verb === 'contact.get') { const row = book[String(b.key || '')]; return row ? json(200, { ok: true, key: b.key, person: { publicKey: b.key, caption: row.label, blocked: !!row.blocked } }) : json(404, { ok: false }); }
     if (b.verb === 'contact.search') return json(200, { ok: true, items: Object.keys(book).map(function (k) { return { key: k, label: book[k].label + (book[k].blocked ? ' · blocked' : '') }; }), more: false, selfTail: 'self' });
     if (b.verb !== 'peer.post') return json(400, { ok: false, code: 'no-such-verb' });
     const hash = 'H' + Date.now() + Math.random();

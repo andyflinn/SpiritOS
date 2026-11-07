@@ -136,14 +136,14 @@
       { name: 'unblock', label: 'Unblock', run: function (el) { return spirit.ready.then(function (s) { return s.contact.unblock({ publicKey: el.key }); }); } },
       { name: 'remove', label: 'Remove', run: function (el) { return spirit.ready.then(function (s) { return s.contact.forget({ publicKey: el.key }); }); } },
     ];
-    var heldActions = [
+    var strangerActions = [
       // Acquired at the relay that found them, under the name they gave it.
       { name: 'add', label: 'Add', run: function (el) {
         var ask = { publicKey: el.key, publicLabel: String(el.row.publicLabel || '') };
         return spirit.ready.then(function (s) { return s.peer.acquire(ask); });
       } },
     ];
-    function offered(v) { return v.relay === true ? relayActions : bookOf(v) ? bookActions : heldActions; }
+    function offered(v) { return v.relay === true ? relayActions : bookOf(v) ? bookActions : strangerActions; }
     // WHAT A ROW OFFERS FOLLOWS ITS FLAGS (goal/G40.13): a row added stays on the page and is now a row of the book, so
     // its actions are refilled as the stream moves its flags, never kept as they were when it was made. The one array is
     // the element's own, so its act reads it as it stands.

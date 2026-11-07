@@ -54,8 +54,6 @@ const call = function (verb, args, caller) {
   return client.ask({ chatClerver: q }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; });
 };
 // The pretend node: its contact book alone, which marks BLOCKED blocked.
-// DISCREPANCY WITH ANDY's RULES: goal/G43.17, Andy: "Didn't i say remove ALL code referencing "admit" and "hold". it
-// was a hair-brained scheme, and it HAS TO GO." Its contact.get still answers a held field.
 const node = http.createServer(function (req, res) {
   let raw = '';
   req.on('data', function (c) { raw += c; });
@@ -64,7 +62,7 @@ const node = http.createServer(function (req, res) {
     const json = function (status, body) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)); };
     { const na = test.nodeApi(b); if (na) { res.writeHead(na.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(na.body)); return; } } // api {family} (goal/G32.3)
     if (b.verb === 'jobs.update') return json(200, { ok: true });
-    if (b.verb === 'contact.get') return json(200, { ok: true, key: b.key, person: { publicKey: b.key, blocked: b.key === BLOCKED, held: false } });
+    if (b.verb === 'contact.get') return json(200, { ok: true, key: b.key, person: { publicKey: b.key, blocked: b.key === BLOCKED } });
     return json(400, { ok: false, code: 'no-such-verb', error: 'the pretend node has no ' + b.verb });
   });
 });

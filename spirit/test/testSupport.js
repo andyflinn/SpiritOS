@@ -520,7 +520,7 @@ const test = {
     },
 
     // A PRETEND NODE'S api {family}, as a real node answers it (goal/G32.3): the family's interface, the text of its real
-    // api.js (spirit/run/spirit/<family>/ or the server's process/js/<f>/<f>.family/). A server on the spirit object asks it for each family it
+    // api.js (spirit/run/spirit/<family>/ or the server's process/js/<f>/family/). A server on the spirit object asks it for each family it
     // calls. body is what the pretend node read off /api/spirit ({verb, ...args}). Answers {status, body}, or null when
     // body asks anything else, the plain api tree included: what a pretend node answers to that stays its own.
     // A PRETEND PEER'S api {family} (goal/G33.4): what a far node's apiDoor answers the packet {api: {family}} that the
@@ -592,7 +592,7 @@ const test = {
       if (!body || body.call !== 'api' || !body.args || typeof body.args.family !== 'string') return null;
       const run = require('path').join(__dirname, '..', 'run');
       const f = body.args.family;
-      const tried = [require('path').join(run, 'spirit', f, 'api.js'), require('path').join(run, 'process', 'js', f, f + '.family', 'api.js')];
+      const tried = [require('path').join(run, 'spirit', f, 'api.js'), require('path').join(run, 'process', 'js', f, 'family', 'api.js')];
       for (const file of tried) {
         if (/^[A-Za-z]\w*$/.test(f) && require('fs').existsSync(file)) return { status: 200, body: { family: f, interface: require('fs').readFileSync(file, 'utf8') } };
       }

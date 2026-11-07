@@ -84,7 +84,7 @@ const MODULES = [
   'workBench.js',
 ];
 // What does not move, and stays on spirit.elements: "those elements do NOT belong in spirit.element."
-const STAYS = [['shell/shared/js/deskElement.js', 'createDeskElement'], ['shell/shared/js/deskRunStatus.js', 'deskRunStatus']];
+const STAYS = [['shell/shared/js/deskRunStatus.js', 'deskRunStatus']];
 
 const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
 const IN_RUN = tracked.filter(function (f) { return f.indexOf('spirit/run/') === 0; }).map(function (f) { return f.slice('spirit/run/'.length); });
@@ -207,7 +207,7 @@ test.startTest('elementMove.js: shell/js into spirit/element, its elements on sp
       ok(v.old === true && v.now === false, s[0] + ': ' + s[1] + ' stays on spirit.elements', s[0] + ': ' + short(v));
     }
     const shared = IN_RUN.filter(function (f) { return /^shell\/shared\/js\/[^/]+\.js$/.test(f); });
-    ok(shared.length === 4, 'shell/shared/js keeps its four files', 'shell/shared/js holds ' + short(shared));
+    ok(shared.length === 1, 'shell/shared/js keeps its one file', 'shell/shared/js holds ' + short(shared));
   } finally {
     if (page && page.kid) page.kid.kill();
     if (node.child) node.child.kill();

@@ -10,7 +10,8 @@ valuable if that can be extracted mechanically".
 ## Requirements
 
 - Without a positive whole port and a command it exits 2 with its usage.
-- **It listens**: `deskAgentEar.js <port>`, run by this node.js, its stdout read, its stderr to ours, no window. A
+- **It listens**: `deskAgentEar.js <port>`, then `deskAgentEar.js <port> --read <key>` with the key the last wake's
+  `next:` line handed (goal/G43.23; deskAgentEar.md, goal/G41.11), run by this node.js, its stdout read, its stderr to ours, no window. A
   listen that ends non-zero, or prints nothing, is said (`the listener ended <code>[: <what it printed>]; listening
   again in 10 s`) and waited out 10 s; then it listens again. It never ends by itself.
 - When lines come, the agent's nick is read from the desk, `profile.get {agent: ''}` through deskAgentEar, lower-cased;
@@ -24,8 +25,9 @@ valuable if that can be extracted mechanically".
 - **The echo**: the command's events are shown on stderr as they come, a tool use by its tool and input, a text by its
   words; Desk gets none of it.
 - **The final answer** (opencode run --format json's events): the text of the step that ended with reason `stop`,
-  else of the last step; reasoning leaked before `<channel|>` dropped; trimmed. Posted as `chat.add {id, text}`
-  under the line's item through deskAgentEar. No text: nothing posted, said as `<command> ended <code> with no answer
+  else of the last step; reasoning leaked before `<channel|>` dropped; trimmed. The line is taken first, `line.take
+  {id}` (a refused take is said), then the answer posted as `chat.add {id, text}` under the line's item through
+  deskAgentEar. No text: nothing posted, said as `<command> ended <code> with no answer
   to post`. A post refused is said with what deskAgentEar printed.
 
 ## What its test must try to break
@@ -34,10 +36,3 @@ valuable if that can be extracted mechanically".
 - The model's thinking, tool calls or leaked reasoning posted to Desk.
 - A run with no answer posted as an empty line.
 - A refused listen hammered without its pause, or the loop ending.
-
-## Found while reading, not asserted
-
-- The loop listens without `--read <key>`, so deskClient's `next` hands the same wake again on the next listen
-  (`deskAgentEar.md`, goal/G41.11) and its lines come round once more.
-- It takes no line (`line.take`) before its `chat.add`; deskClient refuses that `not-taken` on an item the agent does
-  not hold (deskClient.js `mayChat`, goal/G27.6).

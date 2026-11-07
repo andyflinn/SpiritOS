@@ -90,12 +90,6 @@ common.verifyStartupCwd('spirit/server.js', ['shell', 'spirit', 'process']);
 
 const ROOT_DIR = fileSystem.ROOT_DIR;
 
-// app/ BECAME shell/ (slim/G1.1): what this node kept in app/, git did not
-// move; it moves here, once, before anything reads shell/.
-require('./shellMove').moveLeftovers(ROOT_DIR);
-// And a face's state followed it into process/ (slim/G1.4).
-require('./shellMove').moveAppState(ROOT_DIR);
-
 const hub =require('./hub').createHub(ROOT_DIR);
 
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.DEFAULT_SPIRIT_PORT;
@@ -1160,13 +1154,8 @@ catch (e) {
   //
   // NODE STATE since goal/G16.3, so no app decides where this node talks;
   // a relay row of node.db's one table since goal/G40.11, where this asserts
-  // the one seed row, noderoutes.net, by key, and relayKeys moves any old
-  // relays.json and relayKeys.json in (relayKeys.importOld).
-  // DISCREPANCY WITH ANDY's RULES: goal/G41.30 (nodeStore.js, Andy: "let's get
-  // rid of those \"rescue operations\"", and in commit 83d07fa9: "delete the
-  // code that \"rescues an old json file\"") and the box of goal/G41.32 ("no
-  // \"old-data-rescue-missions\"") rule out moving old stores in; the code
-  // still does, relayKeys.importOld on every read of the table.
+  // the one seed row, noderoutes.net, by key. An old relays.json or
+  // relayKeys.json is not read (goal/G43.23).
   try { ownerBadge.ensureRelays(ROOT_DIR); }
   catch (e) { /* nor a relay list */ }
 

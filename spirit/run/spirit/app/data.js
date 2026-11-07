@@ -18,14 +18,11 @@
         if (!all || typeof all !== 'object') return;
         var V = D.viewAt(job.fromNode || null, 'app');
         Object.keys(V.branch(APPS)).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(all, k)) V.del(APPS + '/' + k); });
-        // DISCREPANCY WITH ANDY's RULES: goal/G43.21's box says "spirit app search will list these jobs (node:run) only in pane
-        // mode", and Andy's "an app that only has node:run and no node:mount or shell:mount cannot be "activated"" (quoted at
-        // spirit/app.js:69 and ./appSelector/rowFormAppActive.js:30). The node's rows carry run and runOnly (spirit/app.js
-        // rowOf), and element/search/app.js reads row.run, rowFormAppActive row.runOnly; but the set below keeps neither, so
-        // once an 'apps' job has replaced a row, a node:run app shows in the tiles face and its detail shows Activate.
+        // Every field the node's row carries (spirit/app.js rowOf), run and runOnly among them (goal/G43.21: a node:run app
+        // is listed in pane mode only, and shows Run, not Activate).
         Object.keys(all).forEach(function (k) {
           var r = all[k] || {};
-          V.set(APPS + '/' + k, { key: k, label: String(r.label || ''), icon: String(r.icon || ''), active: r.active === true, shell: r.shell === true, intrinsic: r.intrinsic === true, nodeMount: r.nodeMount === true });
+          V.set(APPS + '/' + k, { key: k, label: String(r.label || ''), icon: String(r.icon || ''), active: r.active === true, shell: r.shell === true, intrinsic: r.intrinsic === true, nodeMount: r.nodeMount === true, run: r.run === true, runOnly: r.runOnly === true });
         });
       },
     });

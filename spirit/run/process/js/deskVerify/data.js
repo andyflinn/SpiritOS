@@ -8,14 +8,11 @@
 // deskClient's relay of a run) asks spirit.data.deskVerify.data (below), never a branch by name.
 //   verify      now -> what the verifier last published of itself (deskVerify.js say: doing, suite, index, of, tests,
 //               expected, line, since, stopAsked, idleMs, chores, hasChores, consoleRun, consoleTo, consoleEnded)
-//   verifyTests key -> a test's newest result, as the search over tests answers it (the fallout plugin's list rows;
-//               that plugin went with goal/G43.22, and no reader of testsBranch is left)
 //   verifyFlips suite + newline + title + newline + at -> one flip of a test, as the search over its history answers it
 //               (falloutHistory's rows)
 // The rows come as jobs of module process/js/deskVerify: the verifier's publishes. Every event ends in set; it asks nothing.
 (function () {
   var STATE = 'verify';
-  var TESTS = 'verifyTests';
   var FLIPS = 'verifyFlips';
   var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
   D.makeFamily('deskVerify', function () {
@@ -30,14 +27,12 @@
     // THE READS, ANSWERED HERE:
     //   state()       what the verifier last published of itself, or null
     //   watch(fn)     fn(state) on every publish kept from now on; answers its release
-    //   testsBranch   the tests' whole path, for a list that is a view of it (probabilitySearch's data)
-    //   seatFlips(a)  a search answer over one test's history ({items: [{label}]}, each label a flip's row) kept, each flip
+        //   seatFlips(a)  a search answer over one test's history ({items: [{label}]}, each label a flip's row) kept, each flip
     //                 at its own key
     //   flips(suite, heading)  the flips kept of that test (title the heading, or "<heading> #<n>" under it)
     var verifyReads = {
       state: function () { return HOME.get(STATE + '/now') || null; },
       watch: function (fn) { return HOME.watch(STATE + '/now', function (p, v) { if (v && typeof fn === 'function') fn(v); }); },
-      get testsBranch() { return HOME.path(TESTS); },
       seatFlips: function (answer) {
         ((answer && answer.items) || []).forEach(function (i) {
           var r = null;

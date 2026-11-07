@@ -45,8 +45,9 @@
 // its payload, deliberately never handed to an app. Replaying from it
 // would have walked the front door back.
 //
-// That is fixed at the source rather than worked around here: rows now
-// carry `admitted`, and `trafficLog.arrivals()` returns only those. So
+// That is fixed at the source rather than worked around here: a row
+// handed to an app says outcome delivered, and `trafficLog.arrivals()`
+// returns only those. So
 // there is one store, keyed by hash and ordered by arrival, holding both
 // what crossed the WAN and what is still waiting to be seen.
 //
@@ -79,19 +80,16 @@
 // nothing inside it. The rule held; the arithmetic did not. Six node
 // files each held a decoder — server.js handed `wire.decode` as a VALUE
 // to the api door, the puppet door, ownerPost and boxes, and each of them
-// opened every admitted arrival itself — and three more parsed an
+// opened every delivered arrival itself — and three more parsed an
 // arrival's text by hand. So the envelope was opened up to five times per
 // packet, in five places that could drift, and the guard suite that was
 // supposed to forbid this (nodeKnowsNoApps.js, deleted by goal/G16.5)
 // matched one literal call and saw none of it.
 //
 // ONE FILE IS MEANT TO DECODE WITH client/packet, and it is this one: the
-// file that already admits, witnesses and holds every arrival. server.js
-// requires packet.js to encode only. DISCREPANCY WITH ANDY's RULES: hub.js
-// decodes too, the relay's answer in relayFace and relayLeave
-// (`packet.decode(answer.text)`), against goal/G16.5's one decoder and
-// hub.js's own rule ("`hub.js` may call `packet.encode` and never
-// `packet.decode`"); spirit/test/oneDecoder.js reads red for it. kernel.js keeps its
+// file that already witnesses and holds every arrival. server.js
+// requires packet.js to encode only; hub.js opens a relay's answer through
+// envelopeOf here (goal/G43.23, the box's item 8). kernel.js keeps its
 // own, which is a different thing — the shared decode every loopback
 // client uses (Andy, 2026-10-02).
 //
@@ -214,7 +212,7 @@ function createArrivals(opts) {
   // Andy's included (found live by wsl-claude, 573 rows, the newest
   // returned from two days earlier). It was hidden while the node's own
   // listeners marked everything taken at once. The same filter arrivals
-  // applies (inbound and admitted), over the whole log, in arrival order.
+  // applies (inbound and delivered), over the whole log, in arrival order.
   //
   // NOT THE WHOLE LOG (goal/G4.31). Reading every row to find these few cost about a second on each open, on a node
   // whose log runs back weeks; traffic.untaken() asks for just these rows, the same answer. read() stays only for a
@@ -226,7 +224,7 @@ function createArrivals(opts) {
     if (!traffic || typeof traffic.read !== 'function') return [];
     try {
       return traffic.read().filter(function (row) {
-        return row && row.dir === 'in' && row.admitted && !row.takenAt;
+        return row && row.dir === 'in' && row.outcome === 'delivered' && !row.takenAt;
       }).sort(function (a, b) { return Date.parse(a.at) - Date.parse(b.at); });
     } catch (e) {
       return [];
@@ -325,7 +323,7 @@ function createArrivals(opts) {
 
     // NOBODY HOME, SO IT WAITS — and nothing is written here to make
     // that true. peerPost logged the row before calling this, and a row
-    // that is admitted and not yet `takenAt` IS the backlog. One store,
+    // that is delivered and not yet `takenAt` IS the backlog. One store,
     // one fact, no second copy to drift.
     //
     // Counted as delivered only when a page actually took it: a

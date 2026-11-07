@@ -29,9 +29,11 @@
 // A refusal of the listener's (unblocked, no node) is printed and waited out, then it listens again: the refusal
 // names what is missing, and the loop must not hammer the node while it is fixed.
 //
-// WHAT IT DOES NOT DO TODAY: it arms the listener without --read <key>, so deskClient's next hands the same wake again
-// (deskAgentEar.js, goal/G41.11) and its lines come round once more; and it takes no line (line.take) before its
-// chat.add, which deskClient refuses not-taken on an item the agent does not hold (deskClient.js mayChat, goal/G27.6).
+// EACH WAKE ONCE, EACH LINE TAKEN (goal/G43.23, the box's item 11): the listener is armed again with --read <key>, the key
+// the last wake's "next:" line handed, so deskClient's next moves past the lines already heard (deskAgentEar.js,
+// goal/G41.11); and a line is taken (line.take) before its answer is posted, since deskClient refuses a chat.add not
+// taken on an item the agent does not hold (deskClient.js mayChat, goal/G27.6). A refused take is said, and the answer
+// is still offered: deskClient decides.
 
 const fs = require('fs');
 const path = require('path');
@@ -131,10 +133,18 @@ function finalText(out) {
   return text.trim();
 }
 
+// The key a wake's "next: node deskAgentEar.js <port> --read <key>" line hands, or '' when it names none.
+function nextKey(out) {
+  const m = /^next:.*--read\s+(\S+)\s*$/m.exec(String(out || ''));
+  return m ? m[1] : '';
+}
+
 async function loop() {
+  let key = '';
   for (;;) {
-    const heard = await run(process.execPath, [EAR, String(port)]);
+    const heard = await run(process.execPath, [EAR, String(port)].concat(key ? ['--read', key] : []));
     const lines = heard.out.trim();
+    key = nextKey(heard.out) || key;
     if (heard.code !== 0 || !lines) {
       say('the listener ended ' + heard.code + (lines ? ': ' + lines : '') + '; listening again in ' + REFUSED_PAUSE_MS / 1000 + ' s');
       await sleep(REFUSED_PAUSE_MS);
@@ -150,6 +160,8 @@ async function loop() {
       const answered = await runEchoed(command, args.concat([manual + '\n\n' + a.line]));
       const text = finalText(answered.out);
       if (!text) { say(path.basename(command) + ' ended ' + answered.code + ' with no answer to post'); continue; }
+      const took = await ear('line.take', { id: a.id });
+      if (took.code !== 0) say('the line under ' + a.id + ' was not taken: ' + took.out.trim());
       const posted = await ear('chat.add', { id: a.id, text: text });
       if (posted.code !== 0) say('the answer was not posted under ' + a.id + ': ' + posted.out.trim());
     }

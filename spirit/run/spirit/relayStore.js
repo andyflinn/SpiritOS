@@ -213,10 +213,10 @@ function open(rootDir) {
   //   Ownership is only determined by one identified key. The relay knows
   //   it."
   //
-  // That key is owner.json's (relayAuth.loadOwner), on the relay's card.
-  // Cycle 3 created `members` with an `owner` column copied from it at
-  // claim time; a relay.db that has one loses it here, once. Idempotent:
-  // asked of the table, not assumed.
+  // That key is owner.json's (relayAuth.loadOwner), on the relay's card,
+  // and `members` has no owner column. A relay.db made by cycle 3, with
+  // one, is not altered: the old column is not read (goal/G43.23, the box's
+  // item 7; Andy, goal/G41.30: "let's get rid of those "rescue operations"").
   // The card arrives with cycle 10; a relay.db from before it gains the
   // column here, empty. An empty card means the relay cannot seal an
   // answer to that member, which is the flag day working as ruled —
@@ -258,13 +258,7 @@ function open(rootDir) {
     if (lcols.indexOf('faceLogins') === -1) db.exec("ALTER TABLE members ADD COLUMN faceLogins TEXT NOT NULL DEFAULT '[]'");
   } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
 
-  const hasOwnerColumn = db.prepare('PRAGMA table_info(members)').all()
-    .some(function (c) { return c.name === 'owner'; });
-  if (hasOwnerColumn) db.exec('ALTER TABLE members DROP COLUMN owner');
-
   const store = build(rootDir, db, key);
-  try { importLegacy(rootDir, store); }
-  catch (e) { try { db.close(); } catch (e2) { /* closed */ } throw e; }
   open_.set(key, store);
   return store;
 }
@@ -440,82 +434,6 @@ function build(rootDir, db, key) {
   };
 
   return store;
-}
-
-// ── DEPRECATED(D8, expires: alpha) — THE ONE-TIME IMPORT ──────────────
-// See design/DEPRECATIONS.md (decision 0014).
-//
-// A relay that ran before cycle 3 holds routingTable.json and invites.json.
-// On the first open they are read into the store in one transaction, then
-// renamed to *.imported — kept, never deleted, so nothing is lost if the
-// import is ever doubted. A file that is already renamed is never read
-// again, so this runs once.
-//
-// It absorbs what the old readers carried (D1, D4), so the live code does
-// not: a row's `name` becomes its `publicLabel`; the ring's `messages` and
-// `nextId` are not carried; an invite stamped `consumedAt` by the old
-// `consume` was spent, and is not imported. A member row's `partner` flag
-// became a row in the partner roll until goal/G22.6 removed the roll; it is
-// not carried now.
-function importLegacy(rootDir, store) {
-  const state = path.join(rootDir, 'spirit', 'state');
-  const roll = path.join(state, 'routingTable.json');
-  const inv = path.join(state, 'invites.json');
-  const hasRoll = fs.existsSync(roll);
-  const hasInv = fs.existsSync(inv);
-  if (!hasRoll && !hasInv) return { members: 0, invites: 0 };
-
-  // AN UNREADABLE FILE STOPS THE IMPORT, AND THE RELAY WITH IT. Reading a
-  // torn routingTable.json as empty would open a relay that has quietly
-  // forgotten its members — the same failure B4 refuses to start over
-  // (a relay with members but no owner.json). Nothing is renamed, so the
-  // owner finds the file where it was, over SSH.
-  let peers = {};
-  let invites = [];
-  function readOrRefuse(file) {
-    try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-    catch (e) {
-      throw new Error(path.basename(file) + ' cannot be read, so it cannot be imported: ' +
-        e.message + ' — fix or move it, then start again');
-    }
-  }
-  if (hasRoll) {
-    const parsed = readOrRefuse(roll);
-    if (parsed && parsed.peers && typeof parsed.peers === 'object') peers = parsed.peers;
-  }
-  if (hasInv) {
-    const parsed = readOrRefuse(inv);
-    if (Array.isArray(parsed)) invites = parsed;
-  }
-
-  const counts = { members: 0, invites: 0 };
-  store.transaction(function () {
-    Object.keys(peers).forEach(function (k) {
-      const row = peers[k];
-      if (!row || typeof row !== 'object') return;
-      const key = String(row.publicKey || '').trim();
-      if (!key) return;   // a keyless row was never addressable
-      store.members.put({
-        publicKey: key,
-        publicLabel: String(row.publicLabel || row.name || ''),
-        claimedAt: String(row.claimedAt || ''),
-      });
-      counts.members += 1;
-    });
-    invites.forEach(function (row) {
-      if (!row || !row.token || !row.label || row.consumedAt) return;
-      if (store.invites.get(row.token)) return;
-      store.invites.add({
-        token: String(row.token), label: String(row.label),
-        expiresAt: String(row.expiresAt || ''), invitedBy: String(row.invitedBy || ''),
-      });
-      counts.invites += 1;
-    });
-  });
-
-  if (hasRoll) fs.renameSync(roll, roll + '.imported');
-  if (hasInv) fs.renameSync(inv, inv + '.imported');
-  return counts;
 }
 
 // For relayServer.js: can this Node load the driver at all?

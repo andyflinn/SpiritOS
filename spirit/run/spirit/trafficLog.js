@@ -80,13 +80,6 @@ function logPath(rootDir) {
   return path.join(rootDir, 'spirit', 'state', 'traffic.jsonl');
 }
 
-// WHAT A LIVE NODE ALREADY HAS. The same courtesy routingTable.json paid
-// mailbox.json: read the old shape once on the way in, so a node that has
-// been running does not silently start from nothing. Never written again.
-function legacyPath(rootDir) {
-  return path.join(rootDir, 'spirit', 'state', 'traffic.json');
-}
-
 // Unreadable, missing or malformed all read as no history. A log that can
 // crash the thing it is observing is worse than no log — and this is
 // called on the path a packet takes, so a throw here would break the
@@ -147,20 +140,10 @@ function readFile(rootDir) {
   try { raw = fs.readFileSync(logPath(rootDir), 'utf8'); }
   catch (e) { raw = null; }
 
-  if (raw === null) {
-    // IMPORTED, THEN RETIRED (transport/R19.5): once traffic.jsonl has moved
-    // into the table, the file is gone and so is any reason to fall back to
-    // the shape before it. Reading traffic.json then would bring back rows
-    // the node stopped reading the day traffic.jsonl began.
-    if (fs.existsSync(logPath(rootDir) + '.imported')) return [];
-    // The old shape, once. Nothing writes it again.
-    try {
-      var doc = JSON.parse(fs.readFileSync(legacyPath(rootDir), 'utf8'));
-      return Array.isArray(doc && doc.entries) ? doc.entries : [];
-    } catch (e) {
-      return [];
-    }
-  }
+  // No traffic.jsonl, no rows from a file. The shape before it, traffic.json,
+  // is not read (goal/G43.23, the box's item 7; Andy, goal/G41.30: "let's
+  // get rid of those "rescue operations"").
+  if (raw === null) return [];
 
   var rows = [];
   raw.split('\n').forEach(function (line) {
@@ -426,16 +409,9 @@ function createTrafficLog(opts) {
       hash: String(entry.hash || ''),
       outcome: String(entry.outcome || ''),
     };
-    // WAS IT HANDED UP, or merely received? `outcome: 'delivered'` has
-    // always meant "arrived and filed", which is true of a packet the
-    // front door HELD for a human decision as well as one it admitted —
-    // both are in this file, both with their payload. A reader could not
-    // tell them apart, and one of them must never reach an app.
-    //
-    // The node never reads `app` and never will (that is the shell's
-    // job); this is about ADMISSION, which is a per-peer decision the
-    // front door already made.
-    if (entry.admitted) row.admitted = true;
+    // HANDED UP: `outcome: 'delivered'` is a packet handed to an app; the
+    // arrival readers below take those rows and no other (goal/G43.23, the
+    // box's item 6).
     if (entry.status != null) row.status = Number(entry.status) || 0;
     // WHAT A FAILURE MEANT, as a spiritErrors code (R36). Optional and
     // additive: rows written before it existed simply lack it, and a
@@ -534,7 +510,7 @@ function createTrafficLog(opts) {
   // The node keys on public keys and hashes; routing by app is the
   // shell's reading and filtering here would be this file doing it.
   //
-  // Admitted inbound only. An outbound record is this node's own history
+  // Delivered inbound only. An outbound record is this node's own history
   // and not something to hand back as an arrival, and a held or ignored
   // packet must never reach an app at all.
   function arrivals(opts) {
@@ -544,7 +520,7 @@ function createTrafficLog(opts) {
     var fileRows = readFile(rootDir);
     var marks = takenSet(fileRows);
     var rows = fileRows.filter(function (row) {
-      if (!row || row.mark || row.dir !== 'in' || !row.admitted) return false;
+      if (!row || row.mark || row.dir !== 'in' || row.outcome !== 'delivered') return false;
       if (!since) return true;
       var at = Date.parse(row.at);
       return at > 0 && at > since;
@@ -568,7 +544,7 @@ function createTrafficLog(opts) {
     return foldTaken(rows, marks);
   }
 
-  // EVERY ARRIVAL NOT YET TAKEN, oldest first (goal/G4.31): admitted inbound rows with no taken mark, what a stream
+  // EVERY ARRIVAL NOT YET TAKEN, oldest first (goal/G4.31): delivered inbound rows with no taken mark, what a stream
   // replays when it opens. It touches only those rows (the table's untaken query, through its indexes), never the
   // whole log: arrivals.js once read() everything here, about a second per desk ask on a long-lived node. The table
   // answers only the last day's (nodeStore BACKLOG_MS, goal/G30.19). Rows still in a legacy file are folded in, their
@@ -580,7 +556,7 @@ function createTrafficLog(opts) {
     var fileRows = readFile(rootDir);
     var marks = takenSet(fileRows);
     var tb = table(rootDir, false);
-    var rows = fileRows.filter(function (row) { return row && !row.mark && row.dir === 'in' && row.admitted && !(row.hash && marks[row.hash]); });
+    var rows = fileRows.filter(function (row) { return row && !row.mark && row.dir === 'in' && row.outcome === 'delivered' && !(row.hash && marks[row.hash]); });
     if (tb) {
       rows = rows.filter(function (row) {
         if (!row.hash) return true;
@@ -672,7 +648,7 @@ function createTrafficLog(opts) {
       var already = takenSet(rows);
       var eligible = Object.create(null);
       rows.forEach(function (row) {
-        if (!row || row.mark || row.dir !== 'in' || !row.admitted) return;
+        if (!row || row.mark || row.dir !== 'in' || row.outcome !== 'delivered') return;
         if (!want[row.hash] || already[row.hash]) return;
         eligible[row.hash] = true;
       });
@@ -723,5 +699,4 @@ function createTrafficLog(opts) {
 module.exports = {
   createTrafficLog: createTrafficLog,
   logPath: logPath,
-  legacyPath: legacyPath,
 };

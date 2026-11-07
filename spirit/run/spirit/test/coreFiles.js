@@ -28,7 +28,7 @@ each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'sp
 each(['spirit/run/spirit/element/codeMirror/lib/codemirror.js', 'spirit/run/spirit/element/codeMirror/lib/codemirror.css', 'spirit/run/spirit/element/progressBar.js'], true, 'loaded by index.html on every boot');
 // Andy: "no \"core\" files should reside in shell/shared/ since that folder was meant to be a place where non-intrinsic
 // apps could share modules".
-each(['spirit/run/shell/shared/ask.js', 'spirit/run/shell/shared/js/deskChat.js', 'spirit/run/shell/shared/js/test/deskChat.js'], false, 'shell/shared, where apps share modules');
+each(['spirit/run/shell/shared/ask.js', 'spirit/run/shell/shared/js/deskRunStatus.js', 'spirit/run/shell/shared/js/test/deskRunStatus.js'], false, 'shell/shared, where apps share modules');
 each(['spirit/run/spirit/shell/index.html', 'spirit/run/spirit/spirit.js', 'spirit/run/spirit/shell/elements.css', 'spirit/run/spirit/shell/tokens.css', 'spirit/run/spirit/shell/shell.css', 'spirit/run/spirit/shell/ghost.svg'], true, 'the frame, in spirit/ since goal/G43.18');
 // goal/G41.30, Andy: "make the nav wrapper \"core\"": it moved out of spirit/element/ in G41.19, and no rule named it there.
 each(['spirit/run/shell/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.md'], true, 'the navigation wrapper, and its tests');

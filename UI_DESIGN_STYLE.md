@@ -235,7 +235,7 @@ That suite also checks the **handle** each app guards on actually exists. A sile
 
 **Use `<details name="…">`.** The browser does it: same `name` on siblings and it closes the others itself. No JS, no state, no listener per app. On anything too old to know the attribute the folds stay independent, which is exactly today's behaviour — the fallback is the status quo, so it cannot break a screen.
 
-**Names are the app's id prefix, not its app id.** App ids are folder-derived and have moved before (`app-manager` → `app/apps` → `shell/apps`; `APP_ID_RENAMES` in `spirit/client/shell.js` carries the overrides). A fold group named from one would silently regroup on the next folder move, and nothing asserts which folds are a group. The `rc-` / `contacts-` / `natter-` prefixes are hand-written, stable, and already name every element in their app:
+**Names are the app's id prefix, not its app id.** App ids are folder-derived and have moved before (`app-manager` → `app/apps` → `shell/apps`). A fold group named from one would silently regroup on the next folder move, and nothing asserts which folds are a group. The `rc-` / `contacts-` / `natter-` prefixes are hand-written, stable, and already name every element in their app:
 
 | app | fold group |
 |---|---|

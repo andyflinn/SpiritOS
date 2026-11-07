@@ -2349,7 +2349,8 @@ function createHub(rootDir) {
     return sendPacket(deps.router, row.url, row.key, made.text).then(function (answer) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
       var said = null;
-      try { said = (packet.decode(answer.text) || {}).body; } catch (e) { said = null; }
+      // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
+      try { var env = require('./arrivals').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
       if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
       if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
       return { ok: true, status: 200, url: row.url, name: said.name, email: said.email };
@@ -2380,7 +2381,8 @@ function createHub(rootDir) {
     return sendPacket(deps.router, row.url, row.key, made.text).then(function (answer) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
       var said = null;
-      try { said = (packet.decode(answer.text) || {}).body; } catch (e) { said = null; }
+      // The one decoder opens the relay's answer (arrivals.js envelopeOf; G16.5, goal/G43.23 item 8).
+      try { var env = require('./arrivals').envelopeOf(answer.text); said = env ? env.body : null; } catch (e) { said = null; }
       if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
       if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
       relayKeys.unseat(rootDir, row.url);

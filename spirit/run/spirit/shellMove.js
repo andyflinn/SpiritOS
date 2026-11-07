@@ -1,28 +1,17 @@
 'use strict';
 
 // spirit/run/spirit/shellMove.js
-// A NODE CARRIES ITS OWN FILES FROM app/ INTO shell/ — slim/G1.1; its
-// app-state/ into relay-state/process/ (slim/G1.4); and relay-state/ into
-// spirit/state/ (goal/G43.8, goal/G43.10), all below.
+// A NODE CARRIES relay-state/'s OWN FILES INTO spirit/state/ (goal/G43.8),
+// and a process's files into its data/ (goal/G43.10), both below.
 //
-//   Andy, 2026-09-29: "shell replaces app", with the shell's own CSS at its
-//   top. The rename is a git mv, and git moves only what it tracks. What a
-//   live node keeps in app/ is gitignored (natter's relays, contacts'
-//   files, appFaceApp's grants, fixList's fixes, the AI status), so a pull
-//   leaves it behind in app/, where nothing reads it any more.
-//
-// So at start, before anything reads shell/, every file still in app/ moves
-// to the same place under shell/, once, and each move is said. A file whose
-// name shell/ already holds is KEPT where it is and said, never written over:
-// the one in shell/ is the newer. Once app/ is empty it goes, and later
-// starts find nothing to do and say nothing.
+// The older moves, app/ into shell/ (slim/G1.1) and app-state/ into
+// relay-state/process/ (slim/G1.4), are gone (goal/G43.23, the box's item 7;
+// Andy, goal/G41.30: "let's get rid of those "rescue operations""): a file
+// left in app/ or app-state/ stays where it lies, and nothing reads it.
 
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-
-// Where the shell lived before slim/G1.1; read here and nowhere else.
-const LEGACY_APP_DIR = 'app';
 
 function filesUnder(dir) {
   const out = [];
@@ -42,82 +31,6 @@ function removeEmptyDirs(dir) {
   try { es = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
   es.forEach(function (e) { if (e.isDirectory()) removeEmptyDirs(path.join(dir, e.name)); });
   try { if (!fs.readdirSync(dir).length) fs.rmdirSync(dir); } catch (e) { /* not empty, or gone */ }
-}
-
-function moveLeftovers(rootDir, say) {
-  const tell = typeof say === 'function' ? say : function (line) { console.log(line); };
-  const from = path.join(rootDir, LEGACY_APP_DIR);
-  const to = path.join(rootDir, 'shell');
-  if (!fs.existsSync(from)) return { moved: [], kept: [] };
-  const moved = [];
-  const kept = [];
-  filesUnder(from).forEach(function (rel) {
-    const src = path.join(from, ...rel.split('/'));
-    const dest = path.join(to, ...rel.split('/'));
-    if (fs.existsSync(dest)) {
-      kept.push(rel);
-      tell('shell: kept app/' + rel + ' where it is: shell/' + rel + ' already exists');
-      return;
-    }
-    try {
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.renameSync(src, dest);
-      moved.push(rel);
-      tell('shell: moved app/' + rel + ' to shell/' + rel);
-    } catch (e) {
-      kept.push(rel);
-      tell('shell: could not move app/' + rel + ': ' + ((e && e.message) || e));
-    }
-  });
-  removeEmptyDirs(from);
-  return { moved: moved, kept: kept };
-}
-
-// A FACE'S STATE FOLLOWS IT INTO process/ (slim/G1.4). A face kept its
-// state, its own identity among it, in app-state/<name>; it moves, once,
-// whole, per face, to relay-state/process/<name>, where processes kept their
-// state until goal/G43.10. server.js calls this after moveRelayState, so what
-// it moves is carried on to spirit/state/<name>/data at the next boot, and
-// only when process/js/<name>/ exists (moveProcessState, below); a face's
-// folder with no such process stays in relay-state/process/. A folder the
-// new place already holds is kept and said, never merged.
-//
-// DISCREPANCY WITH ANDY's RULES: goal/G41.30 (Andy: "let's get rid of those
-// \"rescue operations\"", nodeStore.js) and the box of goal/G41.32 ("no
-// \"old-data-rescue-missions\"") rule out moving old stores in. moveLeftovers
-// (app/ into shell/, slim/G1.1) and moveAppState (app-state/, slim/G1.4)
-// are such rescues, still called on every boot (server.js); the moves of
-// goal/G43.8 and goal/G43.10 below are Andy's own later order, not this.
-const LEGACY_APP_STATE_DIR = 'app-state';
-
-function moveAppState(rootDir, say) {
-  const tell = typeof say === 'function' ? say : function (line) { console.log(line); };
-  const from = path.join(rootDir, LEGACY_APP_STATE_DIR);
-  if (!fs.existsSync(from)) return { moved: [], kept: [] };
-  const moved = [];
-  const kept = [];
-  let names = [];
-  try { names = fs.readdirSync(from, { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); }
-  catch (e) { names = []; }
-  names.forEach(function (name) {
-    const dest = path.join(rootDir, 'relay-state', 'process', name);
-    if (fs.existsSync(dest)) {
-      kept.push(name);
-      tell('shell: kept app-state/' + name + ' where it is: relay-state/process/' + name + ' already exists');
-      return;
-    }
-    try {
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.renameSync(path.join(from, name), dest);
-      moved.push(name);
-      tell('shell: moved app-state/' + name + ' to relay-state/process/' + name);
-    } catch (e) {
-      kept.push(name);
-      tell('shell: could not move app-state/' + name + ': ' + ((e && e.message) || e));
-    }
-  });
-  removeEmptyDirs(from);
-  return { moved: moved, kept: kept };
 }
 
 // relay-state's OWN FILES MOVE TO spirit/state/ (goal/G43.8; Andy: "we move just the remaining files to spirit/state/", "flag day.").
@@ -229,4 +142,4 @@ function moveRelayState(rootDir, say) {
 // Whether this tree's key still waits at the old place for the boot's move (relayAuth asks before it would mint one).
 function keyWaitsToMove(rootDir) { return fs.existsSync(path.join(rootDir, 'relay-state', 'identity.json')); }
 
-module.exports = { moveLeftovers: moveLeftovers, moveAppState: moveAppState, moveRelayState: moveRelayState, keyWaitsToMove: keyWaitsToMove, LEGACY_APP_DIR: LEGACY_APP_DIR, LEGACY_APP_STATE_DIR: LEGACY_APP_STATE_DIR };
+module.exports = { moveRelayState: moveRelayState, keyWaitsToMove: keyWaitsToMove };

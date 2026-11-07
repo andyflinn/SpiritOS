@@ -22,7 +22,7 @@
 //     is called once, on the first add.
 //   - window.spirit.element.search.file.rowElement.create(row): row { path, kind, size, modified }; key path; fields icon, name,
 //     size, changed; fed by fs-watcher job-updated commands for its path. Actions open and remove.
-//   - window.spirit.element.search.contact.rowElement.create(row): row { key, name, owned, blocked, held }; fields presence, status,
+//   - window.spirit.element.search.contact.rowElement.create(row): row { key, name, owned, blocked }; fields presence, status,
 //     label; fed by the relay-presence job and contact renames. Actions open, block, unblock, remove.
 // The elements are browser scripts; this runs them in a sandbox with a stand-in window and spirit.core, and checks what
 // they paint and ask. rule/11: through testSupport only.
@@ -125,10 +125,8 @@ const done = (async function () {
   let people = null;
   try {
     const before = subscribers.length;
-    // DISCREPANCY WITH ANDY's RULES: Andy, goal/G43.17: "Didn't i say remove ALL code referencing "admit" and "hold"."
-    // These two rows still carry a held field, and the contact rowElement.js it drives still names heldActions.
-    const p = E.search.contact.rowElement.create({ key: 'KEY-P', name: 'Pia', owned: false, blocked: false, held: false });
-    const q = E.search.contact.rowElement.create({ key: 'KEY-Q', name: 'Quin', owned: false, blocked: false, held: false });
+    const p = E.search.contact.rowElement.create({ key: 'KEY-P', name: 'Pia', owned: false, blocked: false });
+    const q = E.search.contact.rowElement.create({ key: 'KEY-Q', name: 'Quin', owned: false, blocked: false });
     const hp = { presence: counted(), status: counted(), label: counted() };
     const hq = { presence: counted(), status: counted(), label: counted() };
     p.mount(hp); q.mount(hq);

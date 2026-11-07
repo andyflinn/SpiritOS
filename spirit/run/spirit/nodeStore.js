@@ -115,7 +115,7 @@ function dbPath(rootDir) {
 // and nothing is reshaped.
 const TRAFFIC_TYPES = {
   at: 'text', dir: 'text', kind: 'text', peer: 'text', relay: 'text', hash: 'text', outcome: 'text',
-  admitted: 'bool', status: 'int', code: 'text', ms: 'int', payload: 'text', bytes: 'int',
+  status: 'int', code: 'text', ms: 'int', payload: 'text', bytes: 'int',
   event: 'text', label: 'text', invite: 'text', key: 'text', why: 'text', owner: 'bool',
   revoked: 'int', invitesRevoked: 'int', expiresAt: 'text', cause: 'text', mark: 'text',
 };
@@ -485,7 +485,7 @@ function open(rootDir, opts) {
   db.exec(`
     CREATE INDEX IF NOT EXISTS traffic_hash ON traffic (hash) WHERE hash <> '';
     CREATE INDEX IF NOT EXISTS traffic_owner_at ON traffic (at) WHERE kind = 'owner';
-    CREATE INDEX IF NOT EXISTS traffic_arrivals_at ON traffic (at) WHERE dir = 'in' AND admitted = 1;
+    CREATE INDEX IF NOT EXISTS traffic_delivered_at ON traffic (at) WHERE dir = 'in' AND outcome = 'delivered';
   `);
 
   // ── WHO MAY CALL WHICH API (apiAuth/G1.3) ───────────────────────────
@@ -762,13 +762,13 @@ function open(rootDir, opts) {
     count: db.prepare('SELECT COUNT(*) AS n FROM traffic'),
     byHash: db.prepare("SELECT * FROM traffic WHERE hash = ? AND hash <> '' ORDER BY seq"),
     owner: db.prepare("SELECT * FROM traffic WHERE kind = 'owner' AND at > ? ORDER BY at LIMIT ?"),
-    arrivals: db.prepare("SELECT * FROM traffic WHERE dir = 'in' AND admitted = 1 AND at > ? ORDER BY at LIMIT ?"),
+    arrivals: db.prepare("SELECT * FROM traffic WHERE dir = 'in' AND outcome = 'delivered' AND at > ? ORDER BY at LIMIT ?"),
     // THE ARRIVALS NOT YET TAKEN (goal/G4.31), every one, oldest first: what a stream replays when it opens. Both
-    // partial indexes' WHEREs are repeated (traffic_arrivals_at for the rows, traffic_hash for each one's mark), so it
+    // partial indexes' WHEREs are repeated (traffic_delivered_at for the rows, traffic_hash for each one's mark), so it
     // never reads the whole log, which cost about a second per desk ask on a long-lived node.
     // THE LAST DAY'S ONLY (goal/G30.19): an untaken packet older than BACKLOG_MS is not work still waiting (Andy: "I
     // don't go clean a room my mother tld me to clean 60 years ago"); `at > ?` keeps the read to the index's newest rows.
-    untaken: db.prepare("SELECT t.* FROM traffic t WHERE t.dir = 'in' AND t.admitted = 1 AND t.at > ? AND NOT EXISTS " +
+    untaken: db.prepare("SELECT t.* FROM traffic t WHERE t.dir = 'in' AND t.outcome = 'delivered' AND t.at > ? AND NOT EXISTS " +
       "(SELECT 1 FROM traffic m WHERE m.hash = t.hash AND m.hash <> '' AND m.mark = 'taken') ORDER BY t.at"),
     // The oldest rows, a chunk at a time, for the shedding below.
     // The oldest rows below the one just written: a packet is never shed in the moment it is written.

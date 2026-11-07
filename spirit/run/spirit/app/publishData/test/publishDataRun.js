@@ -163,7 +163,6 @@ test.startTest('publishData.js: one measurement run per agent');
   fs.rmSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true, force: true });
   trafficLog(CLONE, [ROWS[6]]);
   fs.mkdirSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(CLONE, 'spirit', 'run', 'spirit', 'state', 'relays.json'), '[]\n');
   fs.writeFileSync(path.join(CLONE, 'his-staged.txt'), 'his work in progress\n');
   git(CLONE, ['add', 'his-staged.txt']);
   const before = git(CLONE, ['rev-parse', 'HEAD']).out;
