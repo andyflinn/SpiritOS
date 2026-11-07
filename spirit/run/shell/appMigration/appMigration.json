@@ -1,7 +1,0 @@
-{
-  "runs": ["home"],
-  "name": "appMigration",
-  "icon": "🧨",
-  "hidden": false,
-  "owner": "system"
-}

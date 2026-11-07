@@ -1,8 +1,0 @@
-{
-  "runs": ["home"],
-  "name": "Apps",
-  "description": "Every app of this node, shell and process, each with its face part: whether it shows on the face, and its name, icon and description there.",
-  "icon": "📊",
-  "hidden": false,
-  "owner": "system"
-}

@@ -1,8 +1,0 @@
-{
-  "runs": ["home"],
-  "name": "Stats",
-  "description": "Live server vitals for this personal node: memory, CPU, event loop, filesystem counts, requests and active jobs.",
-  "icon": "📈",
-  "hidden": false,
-  "owner": "system"
-}
