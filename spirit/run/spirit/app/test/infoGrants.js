@@ -29,7 +29,9 @@ const APPS = { info: { label: 'Info', icon: 'ℹ️' }, grants: { label: 'Grants
 const APP_DIR = function (name) { return path.join(RUN, 'spirit', 'app', name); };
 // This item's own red files: they must name the old paths to judge them.
 const MINE = ['spirit/run/spirit/app/test/infoGrants.js', 'spirit/run/spirit/app/test/infoGrants.md',
-  'spirit/run/spirit/element/test/nodeInfoRotate.js', 'spirit/run/spirit/element/test/nodeInfoRotate.md'];
+  'spirit/run/spirit/element/test/nodeInfoRotate.js', 'spirit/run/spirit/element/test/nodeInfoRotate.md',
+  // The desk's share of the current goal: our chat about this item, which quotes the old paths while we talk of them.
+  'spirit/run/process/js/desk/currentGoal.json'];
 
 // The tree's files under spirit/run, the tracked ones and the new ones not ignored, as they are on the disk.
 function treeFiles() {
