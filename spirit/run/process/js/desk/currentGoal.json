@@ -1,5 +1,5 @@
 {
- "change": 153628,
+ "change": 153877,
  "goal": "goal/G43",
  "items": [
   {
@@ -154,7 +154,7 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -312,8 +312,7 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.19",
-    "goal/G43.21"
+    "goal/G43.19"
    ],
    "codeOffered": true,
    "go": false,
@@ -17589,15 +17588,13 @@
    "id": "goal/G43.21",
    "title": "Fix spirit/app/pushOrigin/ and add spirit/app/publishData/",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 10,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -17606,21 +17603,21 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 10,
+   "fileCount": 26,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "verify",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "dd4d07b6",
+   "redCommit": "1990e217",
    "waived": false,
    "rules": [],
    "phaseRules": [
@@ -17677,7 +17674,7 @@
      "version": 34
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -17685,8 +17682,8 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
@@ -17722,9 +17719,57 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T10:42:27.045Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T10:42:54.199Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T11:07:01.829Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T11:09:27.897Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
      "state": "granted",
      "by": "andy",
-     "at": "2026-11-07T10:23:06.932Z",
+     "at": "2026-11-07T11:09:37.849Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -18000,6 +18045,156 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-07T10:22:25.062Z",
      "text": "cw: files on the item, ten:\n- node and search: app.js, element/search/app.js, appSelector/detailElement.js, jobs.js (core: app.js and jobs.js need your word)\n- pushOrigin.js; publishData.js and agentReadme.js in spirit/app/publishData/\n- in process/js/deskClient/: deskClient.js, and publishData.js and agentReadme.js, both to delete."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T10:29:26.057Z",
+     "text": "wsl: the red is in, 1990e217, three suites, each red on cb7bdd30 and green with a mutant of the fix:\n- app/test/nodeRun.js: only pane lists node:run apps, the detail shows Run, a press starts it while not active (8/6).\n- app/pushOrigin/test/pushOrigin.js: run bare it pushes its own repo (1/2).\n- app/publishData/test/publishData.js: no usage stop, verify.db and agentReadme in place, the deskClient copy and trigger gone (0/7).\nBuild is open."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:29:55.624Z",
+     "text": "cw: taking the build. Files: spirit/app.js, element/search/app.js, appSelector/detailElement.js, jobs.js, pushOrigin.js, publishData.js and agentReadme.js into spirit/app/publishData/, deskClient.js, and the two old copies in deskClient deleted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:30:59.981Z",
+     "text": "cw → wsl: the old product tests of the two files that move, deskClient/test/publishData.js and agentReadme.js, move with them. agentReadme's goes to spirit/app/publishData/test/agentReadme.js. The old publishData one clashes with your red of the same name there: shall I fold its checks into your file, or keep it beside it as publishDataRun.js?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:44:00.973Z",
+     "text": "cw: built and green, waiting to commit. Your G2 came in while I was still adding the tests and docs that move or change, so the last adds voided it; G3 is open for the whole list now. Once it is granted I commit and push."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:48:15.938Z",
+     "text": "commit e70434f4b8874f896c6f60ab7acd440991dee486: goal/G43.21: node:run, pushOrigin and publishData built. Andy, the box: \"spirit app search will list these jobs (node:run) only in pane mode\", \"the app detail will show a run button.\", \"the Andy user \n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/process/js/deskClient/publishData.js\n- spirit/run/spirit/app.js\n- spirit/run/spirit/app/appSelector/detailElement.js\n- spirit/run/spirit/app/appSelector/test/detailElement.md\n- spirit/run/spirit/app/publishData/agentReadme.js\n- spirit/run/spirit/app/publishData/publishData.js\n- spirit/run/spirit/app/publishData/test/agentReadme.js\n- spirit/run/spirit/app/publishData/test/agentReadme.md\n- spirit/run/spirit/app/publishData/test/publishDataRun.js\n- spirit/run/spirit/app/publishData/test/publishDataRun.md\n- spirit/run/spirit/app/pushOrigin/pushOrigin.js\n- spirit/run/spirit/element/search/app.js\n- spirit/run/spirit/element/search/app/test/listElement.md\n- spirit/run/spirit/jobs.js\n- spirit/run/spirit/test/app.md\n- spirit/test/agentReadme.js\n- spirit/test/deskVerifyFixes.js\n- spirit/test/gitHelpersOwnOnly.js\n- spirit/test/publishCapacity.js\n- spirit/test/pushOrigin.js\n- spirit/test/spiritAtRunRoot.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:48:32.738Z",
+     "text": "cw: pushed, e70434f4. node:run apps show only in the pane, their detail has Run, the node starts them unactivated; pushOrigin bare pushes its own repo; publishData takes its port from the node, finds verify.db and agentReadme, deskClient no longer starts it and its old copy is gone. All three reds green (14, 3, 7), the moved tests and the item suites too. Ready to verify."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:51:06.305Z",
+     "text": "cw → wsl: verify is red only on two suite rows of the old place: deskClient/test/agentReadme.js and deskClient/test/publishData.js moved in e70434f4 to spirit/app/publishData/test/agentReadme.js and publishDataRun.js, both green (36, 33). Only you may swap them on the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:51:28.994Z",
+     "text": "red: 2 suites"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:51:58.543Z",
+     "text": "cw: both are rows naming the old place of two tests I moved: deskClient/test/agentReadme.js and publishData.js now stand in spirit/app/publishData/test/ (agentReadme.js 36/0, publishDataRun.js 33/0). The suite list is wsl's to change; I asked for the swap."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:52:24.438Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T10:54:04.738Z",
+     "text": "wsl: suites swapped to spirit/app/publishData/test/agentReadme.js and publishDataRun.js. Verified e70434f4: nodeRun 14/0, pushOrigin 3/0, publishData 7/0, agentReadme 36/0, publishDataRun 33/0. Mutants of the build go red where they should: the start check undone, the pane filter undone, the bare repo undone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:01:40.653Z",
+     "text": "cw: fixed, pushed 36de31d8. publishDataRun failed only under the verifier: it handed the script its own env, and a verifier runs as a job, so the script found the node's address there and took it for its own port. The test now hands it a clean world. 33/0 with the verifier's env set."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:06:21.747Z",
+     "text": "in the app list and details: an app that only has node:run and no node:mount or shell:mount cannot be \"activated\" show rowForms should knows that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:06:50.589Z",
+     "text": "all, and the node should know it, too."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-07T11:06:53.741Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:07:17.525Z",
+     "text": "cw: taking it. The Activate row is one element, rowFormAppActive.js, used by both the list rows and the detail; it hides itself for an app whose json says node.run and neither node.mount nor shell.mount, as it hides for an intrinsic one. File added to the list."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:07:30.815Z",
+     "text": "wsl: I write its red into nodeRun.js: for an app with node:run only, the app list row and the detail show no Activate, and the node refuses app.active for it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:10:12.866Z",
+     "text": "cw: built both halves, not committed yet: the row says runOnly, the Activate row hides on it, and app.active refuses such an app by name (app-run-only, 409, nothing written). The suites I have are green; waiting for wsl's red to run it before I push."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:11:02.923Z",
+     "text": "wsl: the red is in, ff4a56f4, in app/test/nodeRun.js: a node:run-only app shows no Activate in its list row nor its detail, and the node refuses app.active for it. 16/6 on 36de31d8, 22/0 with a mutant."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:12:23.211Z",
+     "text": "cw: pushed dd4d07b6. A run-only app (pushOrigin, publishData) shows no Activate in its list row or its detail, and the node refuses app.active for it by name. wsl's red 22/0. Ready to verify."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:12:34.841Z",
+     "text": "commit dd4d07b605e28cb30289e82497b408591cdfafab: goal/G43.21: an app that is only run cannot be activated. Andy: \"an app that only has node:run and no node:mount or shell:mount cannot be \"activated\" show rowForms should knows that.\", \"and the node s\n- spirit/run/spirit/app.js\n- spirit/run/spirit/app/appSelector/rowFormAppActive.js\n- spirit/run/spirit/app/appSelector/test/rowFormAppActive.md\n- spirit/run/spirit/spiritErrors.js\n- spirit/run/spirit/test/app.md"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:16:20.487Z",
+     "text": "i tried to pushOrigin a small change in word.js, the jub-start etc runs fine, but it doesn't commit and push.... is it just for pushing committed stuff?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:16:58.863Z",
+     "text": "cw: yes. pushOrigin only sends commits already made (its header, goal/G5.1). An unsaved edit like yours is put aside, the commits are rebased and pushed, and the edit is put back, uncommitted. So word.js is still there as you left it; commit it first, then Run pushes it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:19:55.320Z",
+     "text": "cw, claim done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-07T11:20:27.897Z",
+     "text": "not pulled: a test run is going on in the desk's checkout (goal/G43.21)"
     }
    ]
   }
