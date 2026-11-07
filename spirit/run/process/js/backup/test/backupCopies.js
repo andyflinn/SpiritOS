@@ -61,7 +61,8 @@ test.startTest('backupCopies.js: the backup server copies the node\'s state, to 
       'the world: spirit/state/ holds node.db with its row, desk/data/marker.json, and config.json naming a spiritHome',
       'the scratch state was not planted: nothing judged');
 
-    const pipe = path.join(scratch, 'b.sock');
+    // A named pipe on Windows, as the node names its servers' (appClient.js); a socket file elsewhere.
+    const pipe = process.platform === 'win32' ? '\\\\.\\pipe\\spirit-backupCopies-' + process.pid : path.join(scratch, 'b.sock');
     const node = JSON.stringify({ name: 'scratch', publicKey: 'scratch-public-key-' + process.pid });
     const env = Object.assign({}, process.env, { HOME: fakeHome, USERPROFILE: fakeHome });
     let out = '';
