@@ -1,4 +1,4 @@
-# process/js/deskClient/publishData.js
+# spirit/app/publishData/publishData.js, run whole
 
 One measurement run per agent, its data in `agents/<agent>/` (goal/G4.33; Andy: "so one single script for all of you
 puts the data into the repo", "automated publishing will have a standing grant, attached to the script in
@@ -8,7 +8,7 @@ deskClient"). Run by the agent in its own clone, with its own node up.
 
 ## Requirements
 
-- Without a positive whole port it exits 2 with its usage. Outside a git clone (from the working folder): exit 1, `not
+- Without a positive whole port, given first or handed by the node that starts it (`SPIRIT_CALLBACK_URL`, goal/G43.21), it exits 2 with its usage. Outside a git clone (from the working folder): exit 1, `not
   in a git clone`. An agent with no name at the desk (`profile.get {agent: ''}`, through deskClient.desk on the spirit
   object): exit 1. A clone with no `spirit/run/spirit/state/node.db`: exit 1, naming where it looked.
 - The output folder is `--out`, else `<clone>/agents/<agent>/`; the commit is the short HEAD of the tree the script

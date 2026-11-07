@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/pushOrigin/pushOrigin.js
+// spirit/run/spirit/app/pushOrigin/pushOrigin.js (it was process/js/pushOrigin/pushOrigin.js until goal/G43.21)
 // goal/G5.1: ONE PLACE THAT SENDS COMMITS ALREADY MADE TO GITHUB, EVEN WHEN THE CLONE IS BEHIND ORIGIN.
 //
 //   Andy, 2026-10-05, under goal/G5.1: "I run into the problem that you ran into while pushing measurements. happens
@@ -109,10 +109,11 @@ function pushOrigin(opts) {
 
 module.exports = { pushOrigin: pushOrigin };
 
-// RUN FROM JOBS. The manifest (pushOrigin.json) names the arguments; the launcher hands them in as one JSON
-// string after the script path (index.html 1559), the way process scripts read them.
+// RUN BY ITSELF (goal/G43.21): an app that is run, not mounted (pushOrigin.json, node.run), started by its Run in the app detail
+// with no argument. Andy, Q1: "of course it will push the repo it's in.": with no repo given, the clone this file lives in.
 if (require.main === module) {
   const args = (function () { try { return JSON.parse(process.argv[2] || '{}'); } catch (e) { return {}; } })();
+  if (!args.repo) args.repo = (git(['rev-parse', '--show-toplevel'], __dirname).stdout || '').trim();
   pushOrigin(args).then(function (r) {
     if (r && r.ok) { console.log('pushOrigin: ok'); process.exit(0); }
     console.error('pushOrigin: ' + ((r && r.reason) || 'failed'));

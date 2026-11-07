@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/deskClient/publishData.js
+// spirit/run/spirit/app/publishData/publishData.js (it was process/js/deskClient/publishData.js until goal/G43.21)
 // ONE MEASUREMENT RUN PER AGENT, ITS DATA IN agents/<agent>/ — goal/G4.33.
 //
 //   Andy, 2026-10-04: "so one single script for all of you puts the data into the repo"; "this is desk stuff."; "it
@@ -10,7 +10,10 @@
 //
 // Run by the agent in its own clone, with its own node up (the node runs from <clone>/spirit/run):
 //
-//   node spirit/run/process/js/deskClient/publishData.js <port> [--asks N] [--only packets] [--out <dir>]
+//   node spirit/run/spirit/app/publishData/publishData.js [<port>] [--asks N] [--only packets] [--out <dir>]
+//
+// Since goal/G43.21 Andy starts it with Run in its app detail (Andy, the box: "the Andy user on each box will run those scripts
+// when he feels like it"); the port is then the starting node's own.
 //
 //   1  unless --only packets: spirit/test/measurePlatform.js --agent <agent> (harness, capacity) into agents/<agent>/
 //   2  N read-only desk asks (profile.get; scope.get until goal/G10.8 removed agent scopes) from this node, then their figures from its own traffic log: packets.json
@@ -31,12 +34,15 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const USAGE = 'usage: node publishData.js <port of the agent\'s own node> [--asks N] [--only packets] [--out <dir>]';
+const USAGE = 'usage: node publishData.js [<port of the agent\'s own node>] [--asks N] [--only packets] [--out <dir>]';
 const NODE_WAIT_MS = 20000;
 const DEFAULT_ASKS = 20;
 
 const argv = process.argv.slice(2);
-const port = Number(argv[0]);
+// THE PORT OF THE NODE THAT STARTS IT (goal/G43.21): Run in the app detail hands no argument, and the node hands every job it
+// starts its own address, SPIRIT_CALLBACK_URL (spirit/jobs.js). A port given first still wins.
+const fromNode = (/:(\d+)\//.exec(String(process.env.SPIRIT_CALLBACK_URL || '')) || [])[1];
+const port = /^\d+$/.test(String(argv[0] || '')) ? Number(argv[0]) : Number(fromNode);
 function flag(name) { const i = argv.indexOf(name); return i === -1 ? '' : String(argv[i + 1] || ''); }
 if (!Number.isInteger(port) || port <= 0) { console.error(USAGE); process.exit(2); }
 const asks = Math.max(1, Number(flag('--asks')) || DEFAULT_ASKS);
@@ -86,7 +92,7 @@ function closingRows(clone, sinceIso) {
 // "each chore names the folders it updates and finds its own agent, so the verifier knows neither (the test-state file
 // it writes today moves into the publish chore)"). So it is written here, from the newest row of each test in this
 // clone's verify.db, read only; no suite is run for it.
-const VERIFY_DB = path.join(__dirname, '..', 'deskVerify', 'verify.db');
+const VERIFY_DB = path.join(__dirname, '..', '..', '..', 'process', 'js', 'deskVerify', 'verify.db');
 function writeTestState(out, agent, commit) {
   let rows = [];
   if (fs.existsSync(VERIFY_DB)) {

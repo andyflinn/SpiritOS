@@ -57,8 +57,8 @@ const MACHINE = {
   fs.writeFileSync(path.join(out, 'capacity.json'), JSON.stringify(CAP));
   ['platform.md', 'harness.txt', 'capacity.md', 'packets.md', 'testState.md'].forEach(function (f) { fs.writeFileSync(path.join(out, f), 'x\n'); });
   let writer = null;
-  try { writer = require(path.join(RUN, 'process', 'js', 'deskClient', 'agentReadme.js')); } catch (e) { writer = null; }
-  if (!writer || typeof writer.write !== 'function') { test.fail(OWED + 'there is no process/js/deskClient/agentReadme.js with write(out, agent, machine)'); return; }
+  try { writer = require(path.join(RUN, 'spirit', 'app', 'publishData', 'agentReadme.js')); } catch (e) { writer = null; }
+  if (!writer || typeof writer.write !== 'function') { test.fail(OWED + 'there is no spirit/app/publishData/agentReadme.js with write(out, agent, machine)'); return; }
   try { writer.write(out, 'claude-ubuntu', MACHINE); } catch (e) { test.fail(OWED + 'write threw: ' + e.message); return; }
   const md = fs.readFileSync(path.join(out, 'README.md'), 'utf8');
   const at = function (s) { return md.indexOf(s); };

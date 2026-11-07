@@ -34,8 +34,8 @@ const appClient = require('../run/spirit/appClient.js');
 
 const OWED = 'OWED by goal/G19.6: ';
 const RUN = path.join(__dirname, '..', 'run');
-const PUBLISH = path.join(RUN, 'process', 'js', 'deskClient', 'publishData.js');
-const PUSH_ORIGIN = path.join(RUN, 'process', 'js', 'pushOrigin', 'pushOrigin.js');
+const PUBLISH = path.join(RUN, 'spirit', 'app', 'publishData', 'publishData.js');
+const PUSH_ORIGIN = path.join(RUN, 'spirit', 'app', 'pushOrigin', 'pushOrigin.js');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
 const CW = { key: 'MCowBQYDK2VwAyEAgitHelpersTestPeerCWAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };

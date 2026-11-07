@@ -1,7 +1,8 @@
 'use strict';
 
-// spirit/run/process/js/deskClient/test/publishData.js
-// The tests of process/js/deskClient/publishData.js, and of no other module (spec: ./publishData.md; goal/G41.11). The
+// spirit/run/spirit/app/publishData/test/publishDataRun.js
+// The tests of spirit/app/publishData/publishData.js run whole, as an agent runs it, and of no other module (spec:
+// ./publishDataRun.md; the box's red is ./publishData.js; goal/G41.11). The
 // script runs as an agent runs it, its own process, in a scratch clone of the test's own with a bare origin beside it
 // and a traffic log (spirit/state/node.db) the test writes. A preload of the test's own stands in for the spirit object:
 // its deskClient family answers profile.get with the agent's name and logs every ask. The harness step finds no
@@ -110,7 +111,7 @@ test.startTest('publishData.js: one measurement run per agent');
 
   test.subHeading('its usage, and what it needs');
   const u = publish(CLONE, []);
-  ok(u.status === 2 && /^usage: node publishData.js <port of the agent's own node>/.test(u.err) && u.asks.length === 0, 'no port: exit 2, its usage, nothing asked', 'exit ' + u.status + ' err ' + short(u.err));
+  ok(u.status === 2 && /^usage: node publishData.js \[<port of the agent's own node>\]/.test(u.err) && u.asks.length === 0, 'no port, given or handed by its node: exit 2, its usage, nothing asked', 'exit ' + u.status + ' err ' + short(u.err));
   const nogit = publish(os.tmpdir(), ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')]);
   ok(nogit.status === 1 && nogit.err === 'publishData: not in a git clone' && nogit.asks.length === 0, 'run outside a git clone: exit 1, saying so, nothing asked', 'exit ' + nogit.status + ' err ' + short(nogit.err));
   const noname = publish(CLONE, ['45440', '--only', 'packets', '--out', path.join(TMP, 'x')], '');

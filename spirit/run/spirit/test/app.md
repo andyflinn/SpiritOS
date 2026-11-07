@@ -45,3 +45,4 @@ The first activate, Andy: *"on first activate, spirit/state/<name>/node.json sho
 - `app.active` with false does not switch it off.
 - Before any press, no row says active but an intrinsic app's.
 - goal/G43.15: an app's row carries `intrinsic`, true or false. `app.active` on an intrinsic app is refused by name, not 200, with a code, and writes nothing.
+- goal/G43.21: an app's row carries `run`, its `<name>.json`'s `node.run`, true or false.

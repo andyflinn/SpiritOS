@@ -465,6 +465,11 @@ module.exports = function installJobs(port) {
     if (require('./coreFiles').appIntrinsic(path.resolve(root, '..', '..'), name) === true) return true;
     try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
   }
+  // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21; Andy, the box: "the Andy user on each box will run those scripts when he feels
+  // like it"): node.run in its <name>.json. It has nothing to activate, so a start of it is not refused for being inactive.
+  function appRuns(root, name) {
+    try { const own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); return !!(own && own.node && own.node.run === true); } catch (e) { return false; }
+  }
   function appServes(root, name) {
     let own = null;
     try { own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { return false; }
@@ -492,7 +497,7 @@ module.exports = function installJobs(port) {
   }
   function refuseUnlisted(script, cwd) {
     const p = processOf(script, cwd);
-    if (!p || (p.app ? appActive(p.root, p.name) : runsHome(p.root, p.name))) return;
+    if (!p || (p.app ? (appActive(p.root, p.name) || appRuns(p.root, p.name)) : runsHome(p.root, p.name))) return;
     const e = new Error('process not included on this node: ' + p.name);
     e.refusal = 'process-not-included';
     e.process = p.name;

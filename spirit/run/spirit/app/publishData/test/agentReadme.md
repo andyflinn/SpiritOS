@@ -1,4 +1,4 @@
-# process/js/deskClient/agentReadme.js
+# spirit/app/publishData/agentReadme.js
 
 An agent's README in the measurement tree (goal/G33.5), written by publishData.js into `agents/<agent>/`. Andy's box:
 the agent's name as the title, then "Machine Description", "Summary" in three bullets, then "Measurements", "that

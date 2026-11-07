@@ -11,14 +11,14 @@
 //
 // THE SHAPES (the box's; where it names none, wsl-claude's picks, the builder may argue them in Desk first):
 //   1  pushOrigin.js loads as shared code without running anything, and exports pushOrigin({ repo }) -> (a promise
-//      of) { ok, reason }. pushOrigin.json beside it lists its arguments as a process manifest does, one of them
-//      named repo. (The export's name and the argument's name are wsl-claude's picks.)
+//      of) { ok, reason }. Since goal/G43.21 it is an app of spirit/app/ that is run, not mounted: pushOrigin.json says
+//      node.run. (The export's name and the argument's name are wsl-claude's picks.)
 //   2  BEHIND ORIGIN: it fetches, re-stacks the clone's own commits on origin's newest, and pushes; ok true.
 //   3  UNSAVED EDITS are put aside and back: a modified tracked file is still modified, with the same text, after.
 //   4  A CLASH (both sides changed the same line) stops it: ok false with a reason; the clone is left as it was (same
 //      HEAD, no rebase in progress, the unsaved edit still there) and origin is unchanged.
-//   5  FROM JOBS: started as a job on a node that lists process/js/pushOrigin, with its arguments as ONE JSON string
-//      after the script (index.html 1559), it pushes.
+//   5  FROM JOBS: started as a job of spirit/app/pushOrigin/ (goal/G43.21: no activation asked of a node.run app), with
+//      its arguments as ONE JSON string after the script, it pushes.
 //   6  publishData loads it in place of its own pull-and-push loop (publishData.js 183-192 today).
 //   4b A RACE: someone pushes after the rebase and before the push lands; pushOrigin itself tries again and its
 //      commit lands on top. Andy, to Q7 (move the retry into pushOrigin itself, as the box says): "yes". Staged with a
@@ -33,14 +33,13 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
-const runsHome = require('./tools/runsHome.js');
 const { relayRequest } = require('../run/spirit/relayRequest.js');
 
 const OWED = 'OWED by goal/G5.1: ';
 const RUN = path.join(__dirname, '..', 'run');
-const SCRIPT = path.join(RUN, 'process', 'js', 'pushOrigin', 'pushOrigin.js');
-const MANIFEST = path.join(RUN, 'process', 'js', 'pushOrigin', 'pushOrigin.json');
-const PUBLISH = path.join(RUN, 'process', 'js', 'deskClient', 'publishData.js');
+const SCRIPT = path.join(RUN, 'spirit', 'app', 'pushOrigin', 'pushOrigin.js');
+const MANIFEST = path.join(RUN, 'spirit', 'app', 'pushOrigin', 'pushOrigin.json');
+const PUBLISH = path.join(RUN, 'spirit', 'app', 'publishData', 'publishData.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
@@ -109,15 +108,14 @@ function run(fn, repo) {
 test.startTest('goal/G5.1: pushOrigin sends commits already made, even when the clone is behind origin');
 
 (async function () {
-  test.subHeading('1. shared code, and its arguments for the Jobs launcher');
+  test.subHeading('1. shared code, and an app that is run');
   const fn = loadPushOrigin();
   if (fn) test.check('pushOrigin.js loads as shared code and exports pushOrigin');
   else test.fail(OWED + 'require(pushOrigin.js) gives no pushOrigin function (today it is a three-line stub)');
   let manifest = null;
   try { manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch (e) { manifest = null; }
-  const args = (manifest && Array.isArray(manifest.args)) ? manifest.args : [];
-  if (args.some(function (a) { return a && a.name === 'repo'; })) test.check('pushOrigin.json lists its arguments, repo among them');
-  else test.fail(OWED + 'pushOrigin.json ' + (manifest ? 'lists ' + short(args) : 'is missing'));
+  if (manifest && manifest.node && manifest.node.run === true) test.check('pushOrigin.json says node.run');
+  else test.fail(OWED + 'pushOrigin.json ' + (manifest ? 'says ' + short(manifest.node) : 'is missing'));
   if (!fn) { test.fail(OWED + 'sections 2 to 4 need the pushOrigin function; skipped'); }
 
   if (fn) {
@@ -178,10 +176,9 @@ test.startTest('goal/G5.1: pushOrigin sends commits already made, even when the 
     else test.fail(OWED + 'with a push raced in, pushOrigin answered ' + short(rx) + '; origin reads ' + short(xlog) + '; race staged ' + fs.existsSync(mark));
   }
 
-  test.subHeading('5. from Jobs: one JSON string of arguments, on a node that lists the process');
+  test.subHeading('5. from Jobs: one JSON string of arguments, an app that is run, not active');
   const home = path.join(scratch, 'node', 'spirit', 'run');
   plantRun.plantRunTree(home);
-  runsHome(home, 'process/js/pushOrigin');
   const port = await freePort();
   const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] });
   kids.push(node);
@@ -196,8 +193,8 @@ test.startTest('goal/G5.1: pushOrigin sends commits already made, even when the 
   commitFile(j.theirs, 'theirs.txt', 'theirs\n', 'theirs pushed first');
   git(['push', '-q', 'origin', 'master'], j.theirs);
   commitFile(j.ours, 'ours.txt', 'ours\n', 'ours, sent from Jobs');
-  const made = await ask({ verb: 'jobs.create', command: process.execPath,
-    args: [path.join(home, 'process', 'js', 'pushOrigin', 'pushOrigin.js'), JSON.stringify({ repo: j.ours })], type: 'pushOrigin' });
+  const made = await ask({ call: 'jobs.create', args: { command: process.execPath,
+    args: [path.join(home, 'spirit', 'app', 'pushOrigin', 'pushOrigin.js'), JSON.stringify({ repo: j.ours })], type: 'pushOrigin' } });
   const landed = made.status >= 200 && made.status < 300 &&
     await waitFor(function () { return originLog(j.bare, 1)[0] === 'ours, sent from Jobs'; }, 60000);
   if (landed) test.check('started from Jobs with {"repo": ...} as one argument, it pushed the clone\'s commit');

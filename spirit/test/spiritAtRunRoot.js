@@ -50,7 +50,7 @@ function tracked(dir) { return execSync('git ls-files -- ' + dir, { cwd: REPO, e
 // The scripts the box lists as loading spirit.js, and those of them that leave the kernel (box v17).
 const LOADERS = ['spirit/appServer.js', 'process/js/chatClerver/chatClerver.js', 'process/js/desk/desk.js', 'process/js/desk/commitCheck.js',
   'process/js/desk/deskAgentEar.js', 'process/js/desk/removeAgent.js', 'process/js/deskAgent/deskAgent.js', 'process/js/deskClient/deskClient.js',
-  'process/js/deskClient/publishData.js', 'process/js/fileServer/fileServer.js', 'process/js/relayLimits/relayLimits.js'];
+  'spirit/app/publishData/publishData.js', 'process/js/fileServer/fileServer.js', 'process/js/relayLimits/relayLimits.js'];
 const OFF_KERNEL = ['spirit/appServer.js', 'spirit/introSpector.js', 'process/js/chatClerver/chatClerver.js', 'process/js/desk/desk.js',
   'process/js/deskAgent/deskAgent.js', 'process/js/deskClient/deskClient.js', 'process/js/deskVerify/deskVerify.js', 'process/js/fileServer/fileServer.js'];
 

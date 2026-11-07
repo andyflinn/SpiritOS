@@ -20,7 +20,7 @@
 // link.
 //
 // So the section is generated whole from agents/claude-ubuntu/summary.json (written beside that agent's README by
-// process/js/deskClient/agentReadme.js). place(readme, summary, agent) puts "How to get started" right after the title,
+// spirit/app/publishData/agentReadme.js). place(readme, summary, agent) puts "How to get started" right after the title,
 // this section right after it, and takes the old capacity section away; the rest of the page stays as Andy wrote it.
 //
 // ── UBUNTU ONLY ───────────────────────────────────────────────────────

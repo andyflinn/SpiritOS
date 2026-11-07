@@ -14,6 +14,8 @@
 
   function create(host, opts) {
     var o = opts || {};
+    // THE FACE IT SHOWS NOW, told by the list itself on a toggle (onFace), for the filter of run apps below.
+    var face = o.face || 'pane';
     // THE SOURCE: app.search, with a search string and nothing more (Andy, box: "no filters, just a search string").
     function search(args) {
       var q = String((args && args.text) || '').trim();
@@ -28,7 +30,7 @@
       verb: 'search',
       face: o.face,
       toggle: o.toggle === true,
-      onFace: o.onFace,
+      onFace: function (f) { face = f; if (typeof o.onFace === 'function') o.onFace(f); },
       visible: o.visible,
       placeholder: 'choose an app…',
       pick: function (row, key) { if (typeof o.pick === 'function') o.pick(row, key); },
@@ -44,7 +46,13 @@
         .concat(o.shells === true ? [{ name: 'shells', when: function () { return false; }, test: function (row) {
           var held = row && window.spirit.data.app.data.rows()[row.key];
           return held && held.shell === true ? 1 : 0;
-        } }] : []),
+        } }] : [])
+        // RUN APPS IN THE PANE ONLY (goal/G43.21; Andy, the box: "spirit app search will list these jobs (node:run) only in pane
+        // mode, bacause it they have no shell-mount."): a filter with no button, the row as the family's cache holds it.
+        .concat([{ name: 'runs', when: function () { return false; }, test: function (row) {
+          var held = row && window.spirit.data.app.data.rows()[row.key];
+          return face === 'pane' || !(held && held.run === true) ? 1 : 0;
+        } }]),
       // Andy, box: "the appSelector will only show icon and label in the list."
       // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.
       columns: [{ field: 'icon', label: '' }, { field: 'label', label: 'App', sort: 'text' }].concat(o.face === 'dropdown' ? [] : [{ field: 'active', label: '' }]),

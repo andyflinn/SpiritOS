@@ -489,7 +489,6 @@ function meantForAgent(row) {
   const nobodyHolds = !facts || !facts.with;
   const group = id === 'goal/G0';
   if (l.by === 'andy') {
-    if (group) publishOn(body);
     // His line addressed to agents comes only to them, its row naming them (desk.js streamToClients).
     // His line addressed to this agent wakes it as its own with no take (the desk bound a nick line's take already; his
     // "all" line needs none, goal/G33.2), and entitles it to answer there (mayChat).
@@ -518,23 +517,6 @@ function meantForAgent(row) {
 }
 // THE AGENT'S STATUS, KEPT IN RAM AND KEPT ALIVE WITH DESK (goal/G27.12): connected, busy, idle, or signed off.
 let agentState = 'connected';
-
-// HIS "publish" STARTS A PUBLISH (goal/G4.33). Andy, to what starts it: "\"publish\"", his group-chat line exactly
-// that; to N: "that's a fine number" (20); "it will be done as a SpiritOS process, that will be cleaned-up/deleted
-// from jobs when it's done." So the line asks this agent's own node for a publishData job, removed from Jobs once it
-// exited cleanly (goal/G4.34); any other line starts nothing. The job runs from the node's own tree, so publishData
-// finds the agent's clone, measures, commits agents/<agent>/ under the standing grant, and says so in Desk.
-const PUBLISH_ASKS = 20;
-function publishOn(body) {
-  let b = null;
-  try { b = JSON.parse(body); } catch (e) { return; }
-  // goal/G33.4: the group chat is goal 0.
-  if (!b || b.id !== 'goal/G0' || String(b.text || '').trim() !== 'publish' || !PORT) return;
-  // Through the one spirit object (goal/G32.3, goal/G40.6).
-  spirit.require('spirit/jobs/api.js').then(function (jobs) {
-    return jobs.create({ command: process.execPath, args: [path.join(__dirname, 'publishData.js'), String(PORT), '--asks', String(PUBLISH_ASKS)], type: 'publishData' });
-  }).then(null, function (e) { console.error('deskClient: the node refused the publish job: ' + ((e && e.message) || e)); });
-}
 
 // THE PULL (goal/G5.8): the clone this deskClient runs from, fast-forwarded onto its origin only when it holds no
 // unsaved edit; with one, nothing is touched and the agent is told. A rebase that clashes is undone. '' when pulled

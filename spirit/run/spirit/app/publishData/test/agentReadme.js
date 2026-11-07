@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/deskClient/test/agentReadme.js
-// The tests of process/js/deskClient/agentReadme.js, and of no other module (spec: ./agentReadme.md; goal/G41.11). The
+// spirit/run/spirit/app/publishData/test/agentReadme.js
+// The tests of spirit/app/publishData/agentReadme.js, and of no other module (spec: ./agentReadme.md; goal/G41.11). The
 // module is required as publishData requires it; write() runs on a scratch agents/<agent>/ folder of the test's own,
 // with a machine handed in, so what it writes is known. The relay's own rule (spirit/relay.js allowanceFor) is the real
 // one, as the module's members figure is.

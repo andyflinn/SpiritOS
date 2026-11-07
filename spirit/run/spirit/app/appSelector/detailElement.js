@@ -15,6 +15,8 @@
   window.spirit.require('spirit/app/appSelector/rowFormSetShell.js');
   window.spirit.require('spirit/app/appSelector/changeAppIcon.js');
   window.spirit.require('spirit/app/appSelector/changeAppLabel.js');
+  // goal/G43.21: the Run row is a rowForm.
+  window.spirit.require('spirit/element/rowForm.js');
 
   // THE PANEL'S FORM (goal/G43.9, as Andy drew it), rowForms under the title bar. What the node chose comes on the row, and follows
   // it; what <name>.json describes, whether it mounts a face or a server, is read by the switch from the file, again each time its row changes, so it stays off the rows.
@@ -29,6 +31,7 @@
     var debugBox = document.createElement('div');
     var homeShellBox = document.createElement('div');
     var faceShellBox = document.createElement('div');
+    var runBox = document.createElement('div');
     // rule/2: every block carries a leading 1em: a rowForm carries its own since goal/G43.15, so a hidden one takes it along.
     box.appendChild(iconBox);
     box.appendChild(labelBox);
@@ -36,6 +39,7 @@
     box.appendChild(debugBox);
     box.appendChild(homeShellBox);
     box.appendChild(faceShellBox);
+    box.appendChild(runBox);
     host.appendChild(box);
     // THE ICON AND THE LABEL (goal/G43.15, Q4): elements of their own, so an app's own face can show them too.
     var icon = S.elements.changeAppIcon.create(iconBox, { key: key });
@@ -48,7 +52,25 @@
     // <name>.json says shell:true:true; the RULE: a shell must be able to replace itself.
     var homeShell = S.elements.rowFormSetShell.create(homeShellBox, { key: key, at: 'home' });
     var faceShell = S.elements.rowFormSetShell.create(faceShellBox, { key: key, at: 'face' });
-    return { destroy: function () { icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); homeShell.destroy(); faceShell.destroy(); host.innerHTML = ''; } };
+    // RUN (goal/G43.21; Andy, the box: "the app detail will show a run button."): only for an app whose <name>.json says node.run,
+    // read from the file as the switches read theirs. A press asks the node to start spirit/app/<name>/<name>.js; what it did is
+    // said below the bubble, the mounter's line (rowForm).
+    var runGone = false;
+    S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+      var j = JSON.parse(String(text));
+      if (runGone || !(j.node && j.node.run === true)) return;
+      var form = S.element.rowForm.create(runBox, { icon: '▶️', button: 'Run' });
+      form.span.textContent = 'Run ' + String(row.label || key);
+      var said = document.createElement('div');
+      runBox.appendChild(said);
+      form.button.addEventListener('click', function () {
+        said.textContent = '';
+        S.ready.then(function (s) { return s.jobs.create({ command: 'node', args: ['spirit/app/' + key + '/' + key + '.js'], type: key }); }).then(function () {
+          if (!runGone) said.textContent = 'started';
+        }, function (e) { if (!runGone) said.textContent = String((e && e.message) || e); });
+      });
+    }).then(null, function () { /* a face that may not read the file: nothing to run */ });
+    return { destroy: function () { runGone = true; icon.destroy(); label.destroy(); active.destroy(); debug.destroy(); homeShell.destroy(); faceShell.destroy(); host.innerHTML = ''; } };
   }
 
   function create(host, opts) {

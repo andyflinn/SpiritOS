@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/deskClient/agentReadme.js
+// spirit/run/spirit/app/publishData/agentReadme.js
 // AN AGENT'S README IN THE MEASUREMENT TREE (goal/G33.5), written by publishData.js into agents/<agent>/. The box, Andy:
 // "The title, the agents name is fine, then MUST come under the first sub-heading, 'Machine Description', a full account
 // of the actual system the measurements were taken on, including OS/platform, total RAM and RAM used at the time the
