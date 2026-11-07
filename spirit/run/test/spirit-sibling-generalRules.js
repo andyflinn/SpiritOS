@@ -388,7 +388,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
   // no api off its options; it reaches its verbs through spirit itself.
   {
     const own = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
-    const handed = own.match(/\b(?:opts|options|o|op)\s*\.\s*api\b|\bapi\s*\.\s*(?:verb|escapeHtml)\b/g) || [];
+    const handed = own.match(/\b(?:opts|options|o|op)\s*\.\s*api\b|(?<![.\w$])api\s*\.\s*(?:verb|escapeHtml)\b/g) || [];
     test.subHeading(NAMED + ': ' + 'what it needs, it requires itself');
     ok(!handed.length, 'it takes no api from what it is handed', 'it uses an api handed to it: ' + short(handed.filter(function (h, i) { return handed.indexOf(h) === i; })));
   }
