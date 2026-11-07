@@ -1,5 +1,5 @@
 {
- "change": 154096,
+ "change": 154210,
  "goal": "goal/G43",
  "items": [
   {
@@ -310,8 +310,7 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.19",
-    "goal/G43.22"
+    "goal/G43.19"
    ],
    "codeOffered": true,
    "go": false,
@@ -18206,15 +18205,13 @@
    "id": "goal/G43.22",
    "title": "Fix Desk.",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
    "with": "",
    "version": 9,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -18224,20 +18221,20 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 71,
+   "fileCount": 94,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "1f449576",
+   "redCommit": "8d5da05e",
    "waived": false,
    "rules": [
     {
@@ -18269,10 +18266,6 @@
      "version": 68
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/25",
      "version": 62
     },
@@ -18291,10 +18284,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -18337,7 +18326,7 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -18345,9 +18334,9 @@
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-ubuntu": "claude-ubuntu",
+    "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "claude-ubuntu": "claude-ubuntu"
    },
    "asks": 0,
    "half": false,
@@ -18673,6 +18662,72 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-07T11:55:17.142Z",
      "text": "cw: read v9: past the hook, plugin support and the plugin folders go. All covered by the file list; nothing left open from my side."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T12:01:49.833Z",
+     "text": "wsl: the red is in, 8d5da05e: process/js/desk/test/noPlugins.js, 19 checks, 1/18 on 85fb4db6. A scratch desk of the tree is started and asked: its api serves no plugin verb, a fresh desk holds no goal/G0. The rest reads the tree: folders gone, desk.js, the page, its cache and deskClient name no plugin nor G0, deskVerify has no door.record, no box find nor chat search, publishData posts nothing, the door list and violators.js kept in spirit/test/ with wirePaths reading there. Build is open."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T12:02:38.278Z",
+     "text": "cw: taking the build, on the item's file list: the plugin folders and stackFrameCheckDetail deleted; desk.js, desk/data.js, deskClient.js, deskVerify.js, shell/desk/desk.js, deskDetails.js, publishData.js changed; stackFrameList.json and violators.js into spirit/test/; the tests that name them changed or deleted."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T12:36:56.079Z",
+     "text": "all, i still have an \"apps\" tab at the top, ???"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T12:37:32.692Z",
+     "text": "wsl: expected for now: cw is still building, nothing of it is pushed yet (origin is at 8d5da05e, my red). The Apps tab is still in shell/desk/desk.js:351 until that build lands and your desk runs it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T12:37:41.661Z",
+     "text": "cw: the build is not pushed yet: Apps, Team and the plugins are gone in my worktree, the red is green, and I am finishing the old tests. Once pushed, your desk needs a pull and a restart to show it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T12:44:30.513Z",
+     "text": "cw: pushed, 1f449576. The plugins, Apps, Team and G0 are gone from server, page and deskClient (G0, G37-G39 stay in desk.db); deskVerify keeps no Stacks verdict; publishData posts nothing; the box find and the chat search are gone; the stack-frame tests keep their list and formatter in spirit/test/. The red is green (19/0), the item suites too. Your desk shows it after a pull and a restart."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T12:45:27.910Z",
+     "text": "wsl: verified 1f449576: noPlugins 19/0, stackFrameViolators 16/0. A goal/G0 put back into deskClient.js turns it red. stackFrameTestItems is 5/2, the same on 8d5da05e before the build: G19.14 and G22.2 owe doors to a list that never named them, nothing this build broke."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T12:49:59.783Z",
+     "text": "red: 9 suites"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T12:50:29.894Z",
+     "text": "cw: all nine are suite rows of tests deleted with what they tested: the seven plugin tests, deskDoorFields and stackFrameCheckDetail. No test failed.\nwsl: please remove those nine rows; the stackFrameChecks violators one moved to spirit/test/violatorsFormat.js (22/0), if you want it on the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T12:51:27.669Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T12:52:51.588Z",
+     "text": "wsl: the nine rows are off the item, all tests deleted with what they tested; spirit/test/violatorsFormat.js is on it instead (22/0). Verify can run again."
     }
    ]
   }
