@@ -116,12 +116,11 @@ function report(opts) {
     // budget (the partner pool beside it went with partnering, goal/G22.6).
     caps: o.caps || undefined,
 
-    // THE GOVERNOR (cycle 1). The owner's configured bound, the position
-    // of the one lever inside it (the connection allowance, in twelfths),
-    // and the last move with its reason. Absent rather than zeroed on a
+    // THE OWNER'S CONFIGURED BOUND (cycle 1). The Governor's lever moves
+    // that travelled beside it went with the Governor (lever.js); `levers`
+    // below is the gauges' read-outs. Absent rather than zeroed on a
     // relay with no configuration, for the same reason as `meter`: "no
-    // Governor" and "a Governor that has not moved" must not be drawn the
-    // same.
+    // bound" and "a bound not yet read" must not be drawn the same.
     ramLimitMB: typeof o.ramLimitMB === 'number' ? o.ramLimitMB : undefined,
 
     // ── THE SECOND BOUND, AND WHICH ONE IS BITING (cycle 9) ──────────
@@ -173,10 +172,8 @@ function report(opts) {
     at: o.at || undefined,
     decision: o.decision || undefined,
 
-    // THE RING, and it is here so that its disappearance is visible.
-    // When R8 deletes send/inbox this number goes to zero and then the
-    // field goes, and an owner watching a monitor sees the change rather
-    // than reading about it.
+    // THE RING. It is gone (relay.js no longer puts `messages` in the
+    // snapshot), so this reports 0; the field itself is still sent.
     messages: typeof snap.messages === 'number' ? snap.messages : 0,
 
     // THE ONE THING THE CONSOLE COULD TELL AN OWNER THAT NOTHING ELSE

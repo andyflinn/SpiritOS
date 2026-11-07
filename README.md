@@ -20,7 +20,7 @@ The easiest way onto the network, noderoutes.net, is to start the node with your
 cd spirit/run
 node spirit/server.js --email you@example.org
 ```
-A mail arrives shortly with a link; open it on this computer within 10 minutes and the browser opens on a node already connected. The email is optional: without it, join from Natter, or claim a seat with an invite from a relay's owner.
+A mail arrives shortly with a link; open it on this computer within 10 minutes and the browser opens on a node already connected. The email is optional: without it, join from the Join app in the shell, or claim a seat with an invite from a relay's owner.
 
 Public relay: from `spirit/run/`, `node spirit/server.js --relay`.
 

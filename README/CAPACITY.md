@@ -4,6 +4,13 @@
 v24.20.0. Every number here came off a running process or a real file.
 Where something is still a guess, it says so.
 
+**The tree has moved since that measurement, and the figures below were not
+re-taken for it.** Partnering between relays is gone (goal/G22.6), so the
+partner rows and the partner figures are history. A node's own files are in
+`spirit/state/` (`relay-state/` until goal/G43.8); `contacts.json` moved into
+`node.db`'s `seen` table and went (goal/G40.11), as `relayKeys.json` did
+before it (goal/G19.15); `device.json` went with the device. The core code is `spirit/run/spirit/` (goal/G40.2).
+
 > **Andy:** *"the README.md should contain a summary of what the capacity
 > of a relay with 100 MBytes of RAM and 1 Gigabyte of DISC is for members
 > and partners, and the capacity of a node with 1 MBytes of RAM and 10
@@ -176,7 +183,7 @@ is yours to worry about. Measured on a working node, 2026-09-21:
 | **the program** | `spirit/run/js` + `app` | **~2 MB** — fixed, arrives with the clone |
 | **the node's own bookkeeping** | `relay-state/` | **~340 KB**, and 90% of it is one file |
 | **the auto-memory** | `spirit/state/node.db` | **tens of KB** empty, the cache **capped at 20 MB** by default |
-| **your space** | `media/`, `published/`, `app/` | **92 MB** on this node, and unbounded by design |
+| **your space** | the owner's own folders under `spirit/run/` | **92 MB** on this node, and unbounded by design |
 
 ### What the node needs
 

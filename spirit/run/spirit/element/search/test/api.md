@@ -1,13 +1,13 @@
 # spirit/element/search/api.js
 
 The app-server selector (apiAuth/G1.8; goal/G41.5): one shell element, a dropdown of the families a party's api tree
-lists. Grants and introSpector build their lines with it, through the api-branch selector.
+lists. Grants and introSpector build their lines with it, through the family selector in the same file.
 
 ## Requirements
 
 - **Built on probabilitySearch**, as a dropdown (`face: 'dropdown'`); nothing of `shellCreateListSearch` (goal/G40.8).
 - **It loads probabilitySearch itself**, through `spirit.require` (goal/G41.3).
-- `appServerSelector.create(container, { placeholder, all, tree })` appends its root element to the container and
+- `spirit.element.search.api.server.create(container, { placeholder, all, tree })` appends its root element to the container and
   answers it (box v23: *"every element gets a container and appends itself"*); `createAppServerSelector` no more.
   `root.value` the chosen family, `''` for none; `root.tree` the tree it was drawn from.
 - Its rows are `apiTreeIndex.servers(tree)`: sorted, a family that did not answer (`{ ok: false }`) left out.

@@ -9,9 +9,9 @@
 //   words(state)      -> { title, icon, button, email } for where the node stands on a relay (seated).
 //   mount(box, opts)  -> draws the form into box and sends it: opts.relays, relay rows (url, label, claimed or owned);
 //                        opts.pick ('seated': only relays with a seat; else every relay listed); opts.fixed, a url, gives
-//                        the dropdown that one relay and fixes it; opts.escape. It hears the shadow stream itself and,
-//                        when a relay's row changed, reads its relays again and redraws if they changed (goal/G40.11),
-//                        keeping what is typed.
+//                        the dropdown that one relay and fixes it; opts.escape. It follows each relay's row in the
+//                        contact family's cache, reading nothing, and redraws if the relays it shows changed
+//                        (goal/G40.11, G41.32), keeping what is typed.
 //   send(opts)        -> Promise of { ok, text }: the sentence the line shows.
 // A ROWFORM (goal/G41.27; Andy: "joinForm? it has several modes"): the title above the bubble, then ➕ or ✏️, the relay
 // dropdown and the email in its span, Join or Change its button, the line of what was sent below it. The icon follows the

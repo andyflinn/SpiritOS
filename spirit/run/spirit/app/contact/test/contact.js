@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/contact/test/contact.js
 // The tests of spirit/app/contact/contact.js, and of Contacts as Andy sees it (spec: ./contact.md; goal/G43.14). Andy: "the new
 // contact app will be exactly the same as the old, merely placed where it now belongs." A real node on a scratch copy of the
-// tracked files, and real clicks in a real Chrome on the appSelector, made as appMigration makes it. Neither Andy's node nor an
+// tracked files, and real clicks in a real Chrome on the appSelector, made as the shell app (spirit/app/shell/shell.js) makes it. Neither Andy's node nor an
 // agent's is touched.
 
 const fs = require('fs');
@@ -106,7 +106,7 @@ test.startTest('contact.js: Contacts in spirit/app/contact/, as Andy sees it (go
     if (!where) { test.fail('no Chrome here: the page was not judged'); return; }
     c = await chromePage(where);
     if (c.error) { test.fail('Chrome: ' + c.error); return; }
-    // The shell Andy uses, /face.html, where appMigration runs the appSelector (boot.js loads what an app's pages open with).
+    // The shell Andy uses, /face.html, where the shell app (spirit/app/shell/shell.js) runs the appSelector (boot.js loads what an app's pages open with).
     await c.send('Page.navigate', { url: N.base + '/face.html' });
     ok(await until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready && window.spirit.events)'); }, 20000), 'the world: the face shell has its spirit', 'the page has no spirit: nothing judged');
     const selector = function (face) {

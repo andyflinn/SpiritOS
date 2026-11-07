@@ -7,6 +7,10 @@
 //
 // progressBar(done, total, text) -> html: a progress tag, done of total, and the text beside it. total 0 means the
 // total is unknown, and a progress tag with no value is the browser's own indeterminate bar.
+//
+// DISCREPANCY WITH ANDY's RULES: goal/G41.19's box (v26) says "Every element is create(container, options) and appends
+// itself to the container"; progressBar is still a function answering markup (window.spirit.element.progressBar), with
+// no create and no container.
 
 (function () {
   function esc(s) {

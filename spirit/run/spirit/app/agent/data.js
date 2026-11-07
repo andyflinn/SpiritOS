@@ -8,7 +8,7 @@
 // spirit.data.agent.data (below), never a branch by name.
 //   job, model, persona, provider   id -> the row, one branch per table of the agent server
 // The agent server publishes each row as it changes, its job's app { agent: { table, row } }, or { agent: { table, id,
-// removed } } for one gone (../table/rowTable.js), moved here from the four tables' row elements (goal/G41.16): the row is
+// removed } } for one gone (./table/rowTable.js), moved here from the four tables' row elements (goal/G41.16): the row is
 // merged into its table's branch, so the table's list and editors, views of that branch, follow it. Another table's
 // rows, another module's, or a row with no id write nothing. It asks nothing.
 (function () {

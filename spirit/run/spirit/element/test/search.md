@@ -7,7 +7,7 @@ rows by a column sort or in arrival order.
 - One call on the wire at a time.
 - The server's answers only feed the cache.
 - It draws a pane, or a dropdown that opens to the same pane.
-- It loads on `window.spirit.element.probabilitySearch`. It also sets `window.spirit.matchRanges`, the one marking rule.
+- It loads on `window.spirit.element.search` (the probabilitySearch; goal/G43.18, Q5). It also sets `window.spirit.matchRanges`, the one marking rule.
 
 It reads `window.spirit.probability` (`probabilityStringObjectMatch`, `createProbabilityBucket`), and nothing else of
 the spirit.
@@ -15,7 +15,8 @@ the spirit.
 **It loads those files itself** (rule/26: every element loads its own parts via spirit.require; nothing is preloaded;
 goal/G41.18, found by the shell's general rules on a bare page, where the Apps and Grants lists threw
 `createProbabilityBucket is not a function`). Through `spirit.require` it asks for `spirit/probabilityStringMatch.js`,
-`spirit/probabilityStringObjectMatch.js` and `spirit/probabilityBucket.js`. Loaded on a window with nothing
+`spirit/probabilityStringObjectMatch.js` and `spirit/probabilityBucket.js`, and `spirit/element/icon.js` and
+`spirit/element/fieldInput.js`. Loaded on a window with nothing
 preloaded, whose loader answers in the reverse of the order asked (as a page's fetches may), once its files are in, it
 draws and ranks.
 
@@ -23,11 +24,12 @@ draws and ranks.
 
 - `order(entries, state)` is the pure heart.
   - `entries` is `[{ key, row, at, gone, el }]`.
-  - `state` is `{ words, values, filters, sort: { field, direction }, columns, matched, score }`.
+  - `state` is `{ words, values, filters, sort: { field, direction }, columns, score }`.
   - It returns `[{ key, row, rank, entry }]`.
 - `create(container, options)` returns `{ value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }`.
   - The options are those its header lists: `api`, `server`, `verb`, `args`, `columns`, `data`, `element`, `face`,
-    `filters`, `matched`, `score`, `rows`, `fold`, `details`, `pick`, `empty`, `placeholder`, `all`, `name`.
+    `toggle`, `onFace`, `tile`, `visible`, `filters`, `selectors`, `score`, `rows`, `fold`, `details`, `pick`, `empty`,
+    `placeholder`, `all`, `name`. A `matched` is not read (goal/G41.28).
 - `matchRanges(text, words)` returns `[[from, to), ...]`.
 
 ## Requirements of order

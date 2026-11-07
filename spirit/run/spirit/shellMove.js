@@ -1,7 +1,9 @@
 'use strict';
 
 // spirit/run/spirit/shellMove.js
-// A NODE CARRIES ITS OWN FILES FROM app/ INTO shell/ — slim/G1.1.
+// A NODE CARRIES ITS OWN FILES FROM app/ INTO shell/ — slim/G1.1; its
+// app-state/ into relay-state/process/ (slim/G1.4); and relay-state/ into
+// spirit/state/ (goal/G43.8, goal/G43.10), all below.
 //
 //   Andy, 2026-09-29: "shell replaces app", with the shell's own CSS at its
 //   top. The rename is a git mv, and git moves only what it tracks. What a
@@ -72,8 +74,10 @@ function moveLeftovers(rootDir, say) {
 }
 
 // A FACE'S STATE FOLLOWS IT INTO process/ (slim/G1.4). A face kept its
-// state, its own identity among it, in app-state/<name>; every process keeps
-// its state in relay-state/process/<name>. Moved once, whole, per face; a
+// state, its own identity among it, in app-state/<name>; it moves, once,
+// whole, per face, to relay-state/process/<name>, where processes kept their
+// state until goal/G43.10. server.js calls this after moveRelayState, so what
+// it moves is carried on to spirit/state/<name>/data at the next boot. A
 // folder the new place already holds is kept and said, never merged.
 const LEGACY_APP_STATE_DIR = 'app-state';
 

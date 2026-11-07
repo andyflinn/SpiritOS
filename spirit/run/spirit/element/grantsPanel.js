@@ -1,7 +1,7 @@
 // spirit/run/spirit/element/grantsPanel.js
 // THE GRANTS PANEL, A SHELL ELEMENT (goal/G41.16): grants of whichever ID table its caller hands it. Andy: "the shell app
-// shell/grans/grants/ must be a wrapper for a new shell element: spirit/element/grantsPanel.js, and spirit/element/grantsPanel.js is
-// configurable with an ID table", and "the callers (Grants and agent shell apps should boody well know how to configure
+// shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js, and shell/js/grantsPanel.js is
+// configurable with an ID table" (shell/js/ is spirit/element/ now), and "the callers (Grants and agent shell apps should boody well know how to configure
 // the damn grantsPanel element". So it names no table: the Grants app hands it contacts and the node's grants, the agent
 // app its jobs and its grants by job. Its contract and its test: ./test/grantsPanel.md and ./test/grantsPanel.js.
 //
@@ -14,7 +14,7 @@
 //   Made without its ID table or its grants table, it is refused: it never falls back to one caller's setting.
 //
 // One panel: the one-row grant form, a rowForm, ➕ [ID selector] [bundle selector] [Grant] (goal/G41.13, G41.27); then the grant list
-// (its search's 🪣 row the ID filter and the family selector, its 🗜 row deprecated) (./grantSelector/listElement.js), the one box that
+// (its search's 🪣 row the ID filter and the family selector, its 🗜 row deprecated) (./search/grant.js), the one box that
 // fills (rule/16). Deprecated is a REPORT read from the node's api tree (a server is away or the verb is gone, and the
 // grant waits for the owner, intact: suspend/repair, G1.4), following the stream, its filter off by default.
 // A BUNDLE IS NOT GRANTED BY REFERENCE (G41.13, box v7): the node's bundles are the one dictionary both kinds of grant are

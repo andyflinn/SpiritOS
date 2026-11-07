@@ -1,5 +1,14 @@
 # The transport, and what it has been shown to do
 
+**Status 2026-11-07 (goal/G43.23).** Since this was written: devices were
+removed at goal/G16.2 (391de42b), with `deviceTick.js`, the device offer,
+`DEVICE_PER_MIN`, `/api/relay/device` and `spirit/test/deviceEnrol.js`; the
+relay's message ring and `send`/`inbox` were deleted on 2026-09-15
+(3b1c468a), so the old road is gone, not half gone; and since cycle 10 posts
+are sealed, so "the relay reads everything" no longer holds
+(`spirit/test/relayCannotRead.js`). The mechanism described is the one in
+force.
+
 **Status: built and proven live. Verified against `d087375` (2026-09-12);
 the poll it replaced was deleted the same day — see "What it retired".**
 

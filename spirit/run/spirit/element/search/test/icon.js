@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/icon.js
-// What the icon selector offers (spec: ./iconSelector.md; goal/G43.11). Andy: "run://spirit/iconSet.json IS the system set now."
+// What the icon selector offers (spec: ./icon.md; goal/G43.11). Andy: "run://spirit/iconSet.json IS the system set now."
 // The box: "So the icon selector reads it too". A real Chrome on a scratch node's page, the selector made and opened there.
 
 const fs = require('fs');

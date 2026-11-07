@@ -22,7 +22,7 @@ grant on the item. It needs nothing of the desk's.
   the review's H5; Andy: *"shell/node_modules/codemirror/ MUST BE \"core\""*).
 - Never `spirit/run/shell/shared/`, where apps that are not intrinsic share modules (Andy: *"no \"core\" files should
   reside in shell/shared/"*); the progress bar it held lives in `spirit/element/`.
-- The frame: `spirit/shell/index.html`, `spirit/spirit.js`, `spirit/shell/elements.css`, `spirit/shell/tokens.css`, and `shell/navigationWrapper.js`
+- The frame: `spirit/shell/index.html`, `spirit/spirit.js`, `spirit/shell/elements.css`, `spirit/shell/tokens.css`, `spirit/shell/shell.css`, `spirit/shell/ghost.svg`, and `shell/navigationWrapper.js`
   (goal/G41.30, Andy: *"make the nav wrapper \"core\""*), its companion tests with it.
 - An intrinsic app's or server's code only (`.js`, `.css`, `.html`); its data files stay writable.
 

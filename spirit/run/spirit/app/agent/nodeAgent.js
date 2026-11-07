@@ -2,8 +2,8 @@
 
 // spirit/run/spirit/app/agent/nodeAgent.js
 // THE AGENT SERVER (goal/G41.1): the server process behind the agent face app. It keeps all of the app's state, in
-// agent.db, an SQLite database in the folder the node hands it as --state (relay-state/process/agent/ on a node, never in
-// git), and streams that state to its clients. Its contract and its test: ./test/nodeAgent.md and ./test/nodeAgent.js.
+// agent.db, an SQLite database in the folder the node hands it as --state (spirit/state/agent/data/ on a node, goal/G43.10,
+// never in git), and streams that state to its clients. Its contract and its test: ./test/nodeAgent.md and ./test/nodeAgent.js.
 //
 // NO AGENTS TALK TO EACH OTHER THROUGH IT (goal/G41.1, Q1, Andy: "the rules of this app will have no agents talking to
 // each other either, each agent will see itself as the only agent/user of the node"; the ruling of 2026-10-02, goal/G3.1,

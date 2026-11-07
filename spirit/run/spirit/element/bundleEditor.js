@@ -9,14 +9,14 @@
 //
 //   spirit.element.bundleEditor.create(box, { api, tabs, tabLabel }) -> { destroy() }
 //     box  the space it fills; api the app's shell api, for the are-you-sure; tabs the tabContainer the pane opens tabs in;
-//     tabLabel(row) what names those tabs, its mounter's (./bundleSelector.js)
+//     tabLabel(row) what names those tabs, its mounter's (./search/bundle.js)
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require; and the auth family's cache manager, whose
   // bundles it adds to (goal/G41.28).
   var parts = Promise.all(['spirit/element/fieldInput.js', 'spirit/element/search/bundle.js', 'spirit/element/rowForm.js'].map(function (p) {
     return window.spirit.require ? window.spirit.require(p) : null;
   }).concat([window.spirit.cacheManager('auth')]));
-  // The label's rule, the one definition both sides use (js/fieldRules.js).
+  // The label's rule, the one definition both sides use (spirit/fieldRules.js).
   function labelOf(text) {
     var R = window.spirit.fieldRules || {};
     var v = typeof R.normalize === 'function' ? R.normalize(text) : String(text == null ? '' : text).trim();

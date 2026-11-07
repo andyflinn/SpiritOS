@@ -1,5 +1,7 @@
 # 2026-09-19 — the first Governor: one lever, one remedy, a reason each move
 
+Status 2026-11-07 (goal/G43.23): the Governor (`governor.js`, `settableCensus.js`) and its suites `spirit/test/governor.js` and `spirit/test/governorTwoRelays.js` were deleted in cycle 8 (11dcb1e0, 2026-09-22), as the statuses below say; the allowance is fixed at boot (`spirit/run/spirit/relay.js:147`, `allowanceFor`). R5's panel `app/natterDetails` is `spirit/run/spirit/element/search/contact/relayPanel.js` since goal/G41.32, and `spirit/test/natterIntrinsic.js` went with Natter (goal/G30.7). `spirit/state/config.json` is still read through `relayConfig.js`.
+
 **Status: CLOSED as a checkpoint, 2026-09-19.** Five requirements done, two
 deferred by the build sequence (monitor → cycle 4, live run → optimization).
 Scoped in
@@ -37,7 +39,7 @@ own startup module, so what is measured here is a relay carrying no node code.
 ### R1 — the relay's first configuration, bounded by the box
 
 `relayServer.js` reads `spirit/state/config.json` once at boot, through the
-pure `js/relayConfig.js`. Missing → 256 MB. Not a positive number, not JSON,
+pure `spirit/run/spirit/relayConfig.js`. Missing → 256 MB. Not a positive number, not JSON,
 or larger than the machine → the relay refuses to start and says why. Never
 re-read.
 

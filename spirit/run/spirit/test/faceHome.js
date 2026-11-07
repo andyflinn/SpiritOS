@@ -2,9 +2,9 @@
 
 // spirit/run/spirit/test/faceHome.js
 // The tests of spirit/faceHome.js, and of no other module (spec: ./faceHome.md). This file holds goal/G41.30, the review's
-// RC1: "any relay a node is connected to can run every owner verb on that node by sending a face event", and Andy's Q3,
-// "Shall we fix RC1, RC2, RH1, RH3 and RH4 in this item, taking jobs, fs, fileServer and net.fetch off the face until
-// faces can prove they are the owner?" "yes.". createFaceHome runs on stand-ins that keep what reached them: the door
+// RC1: "any relay a node is connected to can run every owner verb on that node by sending a face event". The verbs G41.30
+// took off the face went with the half face (goal/G43.18, box v29: "a face it answers is a full face"), so a relay with no
+// face of this node's, or no star, gets nothing at all. createFaceHome runs on stand-ins that keep what reached them: the door
 // (o.call), the file route, the save and the annotate. An answer is read from the stand-in upload, sealed or not.
 
 const fs = require('fs');
@@ -24,7 +24,8 @@ const FACE = auth.generateIdentity('face');
 const MINE = 'https://my-face-is-here.example';
 const OTHER = 'https://a-relay-with-no-face-of-mine.example';
 
-// THE OPTION THE FIX NEEDS: faceSet(url), true when this node set a face on that relay (none exists today; see the spec).
+// THE OPTIONS THE FIX NEEDS: faceSet(url), true when this node set a face on that relay, and faceOwned(url), the star
+// (server.js gives both from the relay's row; see the spec).
 function world(faceSet, faceOwned) {
   const w = { calls: [], files: [], saved: [], annotated: [], uploads: {} };
   const o = {
@@ -168,9 +169,9 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   // GOAL/G41.33. THE BOX: "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay he's
   // a member of or owns", and "this includes" bundles, branches and grants; a job deleted; running jobs; join steps; relay
   // events. "for a face(relay) without star, the restrictions today stay in place." "for a face(relay) with star, NO
-  // RESTRICTIONS AT ALL, except changing stars." Relay events "overrules goal/G30.13". Here o.events is a stand-in, and a
-  // relay event comes as server.js:1617 sends it: an owner's event to ownerEvent and to the node's dispatcher, the
-  // monitor's to the dispatcher alone.
+  // RESTRICTIONS AT ALL, except changing stars." Relay events "overrules goal/G30.13". Box v29 took the half face away: a
+  // face with no star hears nothing. Here o.events is a stand-in, and a relay event comes as server.js sends it, an
+  // owner's and the monitor's alike by the node's dispatcher alone (ownerEvent went with the half face).
   const PRIORITIES_TODAY = { fs: 2, presence: 3, app: 4, stats: 5 };
   const STARRED = 'https://a-relay-i-starred.example';
   const PLAIN = 'https://a-relay-with-no-star.example';

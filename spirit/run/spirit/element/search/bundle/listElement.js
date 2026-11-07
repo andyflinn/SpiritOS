@@ -10,9 +10,9 @@
 //     opts.columns   the row's fields it shows, in order, of label and owner; both by default
 //     opts.family    an app server's name: it lists the bundles that server owns alone (goal/G41.25)
 //     opts.empty     the words when nothing matches
-// A VIEW OF data.bundles (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their
-// data set"): auth.bundle's search seats its rows there, and the node's stream keeps them current through the bundle
-// row element (./rowElement.js, the type's own), so a bundle added, renamed or deleted anywhere shows in every list.
+// A VIEW OF THE auth FAMILY'S BUNDLES (goal/G41.14, G41.28; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes their
+// data set"): auth.bundle's search seats its rows there, and the node's stream keeps them current through the auth
+// family's cache manager (spirit/auth/data.js), so a bundle added, renamed or deleted anywhere shows in every list.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   if (window.spirit.require) ['spirit/element/search.js', 'spirit/element/search/bundle/rowElement.js'].forEach(function (p) { window.spirit.require(p); });

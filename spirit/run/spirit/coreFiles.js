@@ -22,7 +22,7 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
 // INTRINSIC IS A CODED LIST (goal/G41.1, box v17; Andy: "the user doesn't decide intrinsic, our development team does. so
 // i would agree on a \"coded\" intrinsic list."): the app folders whose code is core, which every node runs and shows.
 // Changed here only, under his grant; no sidecar or manifest says it. Every reader asks it: the commit check below, the
-// node starting servers (js/jobs.js), and every face part the node hands out (js/fileSystem.js).
+// node starting servers (spirit/jobs.js), and every face part the node hands out (spirit/fileSystem.js).
 const INTRINSIC = [
   'process/js/fileServer',
   'shell/apps', 'shell/grants', 'shell/icons', 'shell/info',
@@ -47,8 +47,9 @@ function appIntrinsic(root, name) {
 // spirit.js at the run root is the one spirit object (goal/G40.1): core.
 // The navigation wrapper, the shell's one stack, too (goal/G41.30; Andy: "make the nav wrapper \"core\""): core while it
 // lived in spirit/element/, it moved to shell/ in goal/G41.19 and no rule named it there.
-// The run root's shell.css and favicon.svg too (goal/G41.30; Andy: "those files that core files depend on, are core-files,
-// too"): index.html and face.html load them on every boot.
+// The shell's shell.css and its favicon too (goal/G41.30; Andy: "those files that core files depend on, are core-files,
+// too"): index.html and face.html load them on every boot. Both sit in spirit/shell/ since goal/G43.18; /favicon.svg is
+// served from ghost.svg (serveCommon.pageFile), the face's own favicon.svg is in BOOT below.
 const FRAME = ['spirit/run/spirit/shell/index.html', 'spirit/run/spirit/spirit.js', 'spirit/run/spirit/shell/elements.css', 'spirit/run/spirit/shell/tokens.css', 'spirit/run/shell/navigationWrapper.js',
   'spirit/run/spirit/shell/shell.css', 'spirit/run/spirit/shell/ghost.svg'];
 

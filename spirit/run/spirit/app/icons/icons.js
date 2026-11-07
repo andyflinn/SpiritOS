@@ -4,8 +4,9 @@
 // added at the top. Every change writes the whole set at once (fs.save), and every icons list on the page reads it
 // again from the Files cache's word that it changed.
 //
-// Intrinsic: its code is core by the intrinsic mark in its sidecar's face part; the set beside it is data and stays
-// writable (box v22).
+// Its sidecar, ./icons.json, carries no intrinsic mark, so the app is switched like any other; the set it writes is data,
+// out of git, and stays writable (box v22). It still mounts through spirit.shell.activateApp, the old shell's way, and
+// registers no spirit.elements.icons.
 
 var iconsList = null;
 // WHERE THE SET LIVES (goal/G40.8; Andy: "all shell-app state data should go into spirit/run/relay-state/shell/<appname>/

@@ -14,6 +14,9 @@
 // whose object is an object literal. Each call that breaks it is named by its line.
 //
 // Given no file, it judges every module testModule.js gives it, each its own check, named by its path.
+// DISCREPANCY WITH ANDY's RULES: since goal/G43.18 moved spirit.js off the run root, testModule.js no longer counts this
+// as a general test (./TEST_SYSTEM.md): it runs once with no file and testModule.js gives it none, so it judges no
+// module and goes red with "testModule.js gives it no file to judge".
 
 const fs = require('fs');
 const path = require('path');

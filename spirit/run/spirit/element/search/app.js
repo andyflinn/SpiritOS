@@ -1,6 +1,6 @@
 // spirit/run/spirit/element/search/app.js
 // THE APP LIST, A DROP-IN ELEMENT (goal/G43.2), as spirit/element/search/bundle/listElement.js is the bundle list: the
-// probabilitySearch the selector draws. Its contract and its test: ./test/listElement.md and ./test/listElement.js.
+// probabilitySearch the selector draws. Its contract and its test: ./app/test/listElement.md and ./app/test/listElement.js.
 //
 //   create(host, opts) -> { list, refresh(), destroy() }; opts.face, opts.pick(row, key), opts.servers (the server filter shown),
 //     opts.shells (only the apps that may be a shell, goal/G43.18)

@@ -30,7 +30,7 @@ It runs exactly two long-lived processes:
 
 systemd unit: `spirit-relay.service`  
 Working directory: `/root/SpiritOS/spirit/run`  
-State that is **not** in git: `spirit/run/relay-state/` (`owner.json`, `relay.db`, `identity.json`).
+State that is **not** in git: `spirit/run/spirit/state/` (`owner.json`, `relay.db`, `identity.json`; `spirit/run/relay-state/` until goal/G43.8).
 `owner.json` comes from `install-units`, given `OWNER_KEY`.
 
 ---
@@ -118,12 +118,14 @@ Caddy  -- HTTP 127.0.0.1:65430 -->  node --relay
 | `install-units` | 755 | Install `spirit-relay.service` |
 | `start` `stop` `restart` | 755 | That unit only |
 | `boot-on` `boot-off` | 755 | Enable / disable at boot |
-| `update` | 755 | Fetch + hard reset to `origin/master`; restart only if SHA changed |
+| `update` | 755 | Fetch + hard reset to what the clone follows (the newest tag by default, `SPIRIT_TRACK`); restart only if SHA changed |
 | `cron-install` `cron-remove` | 755 | 10-minute update cron |
 | `firewall` | 755 | ufw: 22/80/443 allow, 65430 deny |
 | `tls` | 755 | Install Caddy + write `sites/<domain>.caddy` (never the main file) |
 | `http-to-https` | 755 | One-shot cutover (unit + firewall + tls + start) |
-| `logs` | 755 | Last 100 lines of `spirit-relay` |
+| `face-setup` | 755 | The relay's face domain (`spirit/state/face.json`) and the Caddy site for `*.<domain>` (goal/G30.9) |
+| `face-tls` | 755 | Caddy site for the old face node's `*.face.<domain>` (see `FACE.md`) |
+| `card-ask.js` | 644 | The signed card ask `status` runs (`node bash/card-ask.js <url>`) |
 | `systemd/spirit-relay.service` | 644 | Unit template |
 | `caddy/Caddyfile` | 644 | Template (`__DOMAIN__` → `__PORT__`) |
 
@@ -180,14 +182,14 @@ else needs an invite the owner mints.
 
 ```
 git fetch origin
-if HEAD != origin/master:
-  git reset --hard origin/master
+if HEAD != <what this clone follows>:     # the newest tag on origin/master, or origin/master (SPIRIT_TRACK)
+  git reset --hard <that>
   systemctl restart spirit-relay
 else
   no restart
 ```
 
-`relay-state/` is gitignored. Hard reset does not delete the mailbox or
+`spirit/state/` is gitignored. Hard reset does not delete the mailbox or
 the owner file.
 
 ### `./bash/cron-install`
@@ -230,9 +232,9 @@ The first-time / cutover script:
 4. `start` then `boot-on`
 5. `status`
 
-### `./bash/logs`
+### Logs
 
-`journalctl -u spirit-relay -n 100 --no-pager`
+There is no `logs` script; ask systemd: `journalctl -u spirit-relay -n 100 --no-pager`
 
 Caddy logs are separate: `journalctl -u caddy -n 40 --no-pager`
 
@@ -251,8 +253,8 @@ SPIRIT_CLONE_DIR=/root/SpiritOS
 
 ## More than one clone on this box
 
-A second clone (the face, `bash/face-install`) is a second checkout with its
-own `relay-state/` and `.env`, not a second machine and not a second Unix
+A second clone (the face node was one, until its `bash/face-install` went with
+goal/G30.1) is a second checkout with its own `spirit/state/` and `.env`, not a second machine and not a second Unix
 user — `bash/ONE-OPERATOR.md` still stands, and root is still spirit.
 
 ### The clone decides, not the shell
@@ -364,16 +366,11 @@ does not need `chmod`.
 
 ## Personal-node half (not these scripts)
 
-On the **laptop**, after the box is on HTTPS:
-
-1. `spirit/run/app/natter/relays.json` →
-   `{ "label": "kamatera", "url": "https://spirit.andyflinn.com" }`
-2. `spirit/run/spirit/hub.js` uses `https` and rejects remote `http://`
-3. Restart the local spirit on `:65432`
-
-Until those two files are live, a personal node may still open plain
-HTTP to `http://194.37.81.237`. Caddy will 301 GET to HTTPS; POSTs from
-old `http.request` are not the plan.
+On the **laptop**, after the box is on HTTPS: a personal node adds the relay
+by its `https://` address (its relays are rows of the node's shadow roll,
+`seen` in `node.db`, since goal/G40.11; Natter's `relays.json` is long gone),
+and the node's outbound socket (`spirit/run/spirit/relayRequest.js`, through
+`assertRelayUrl` in `relayUrl.js`) refuses a remote `http://` address.
 
 Lab relays on `http://127.0.0.1:654xx` stay allowed (loopback only).
 
@@ -441,10 +438,12 @@ route is closed since goal/G22.6; a card ask on the door answers it now.)
 
 ### What the update does NOT do for you
 
-- **`bash/update` does not reinstall the unit.** The unit gained
-  `MemoryMax` and `Restart=always`; run `bash/install-units` where those
-  are wanted. **That script has never run on Linux** — it is the least
-  tested step in this procedure; watch it most.
+- **`bash/update` reinstalls the unit only when the template's start path
+  changed** (`unit_current` in `lib.sh`, goal/G40.2; Andy: "teach bash to
+  re-install a changed unit."): it then runs `bash/install-units` with the
+  owner on record. Any other change to the unit (`MemoryMax`, `Restart=`)
+  still needs `bash/install-units` by hand. When this flag day was written,
+  that script had never run on Linux; watch it most.
 - **The `card` column is added, not altered.** Rolling a relay back
   leaves a column nothing reads, which is harmless.
 - **Members enrolled before cycle 10 have no card on the relay.** The node
@@ -465,7 +464,7 @@ not make the flag day safer; it only delays it.
 | HTTPS who: connection refused on 443 | Caddy down / cutover not run | `systemctl status caddy` then `./bash/tls` |
 | `tlsv1 alert internal error` | Cert still issuing (first minute) | wait, `./bash/status` again |
 | HTTPS who fails, local :65430 works | DNS or cert name mismatch | `curl -vI https://spirit.andyflinn.com/` |
-| Local :65430 dead | Unit crashed | `./bash/logs` then `./bash/restart` |
+| Local :65430 dead | Unit crashed | `journalctl -u spirit-relay -n 100 --no-pager` then `./bash/restart` |
 | Node still on `:80` | Old stitch, cutover not run | `./bash/http-to-https` |
 | `git push` asks for HTTPS username | origin is still `https://` | `git remote set-url origin git@github.com:andyflinn/SpiritOS.git` |
 | Push rejected, fetch first | Laptop and box both committed | `git pull --rebase origin master` then push |
@@ -495,4 +494,4 @@ Cron log: `/var/log/spirit-host-update.log`
 - SSH from the laptop into these scripts
 - TLS inside `server.js`
 - Binding Node to public 443
-- Deleting `relay-state/` on update
+- Deleting `spirit/state/` on update

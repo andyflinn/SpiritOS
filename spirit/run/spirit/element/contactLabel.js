@@ -3,7 +3,7 @@
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
 //   so one file per element, each adding itself to window.spirit.element,
-//   which the shell hands to apps at mount as api.ui.element.
+//   which the shell hands to apps at mount as api.ui.elements.
 //
 // ── WHAT IT SHOWS IS THE NODE'S, NOT ITS OWN (goal/G4.13) ─────────────
 //
@@ -20,10 +20,10 @@
 //   hit on the keyboard, and the string is not empty."
 //   Andy: "the label listens to changes in both modes."
 //
-// Mode 2 checks what is typed with js/fieldRules.js before it asks; the
+// Mode 2 checks what is typed with spirit/fieldRules.js before it asks; the
 // node checks again (contact.label, goal/G4.16). Every label hears a
 // rename from anywhere: the node writes contact.rename {key, caption} on
-// its stream and the shell says it once on document (js/client/shell.js,
+// its stream and the shell says it once on document (spirit/client/shell.js,
 // onContactRename) — the node owns that event (Andy: "so node owns
 // contact.rename").
 

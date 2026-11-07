@@ -1,8 +1,9 @@
 # spirit/relayServer.js
 
-The relay's server. This test holds one part of it: how it serves a face its files (goal/G41.3). face/ moved into
-shell/, face/shell.js became shell/boot.js, and the relay serves the moved files at their new addresses. The relays run
-this code the same day as the nodes (no backward compatibility before alpha).
+The relay's server. This test holds parts of it: how it serves a face its files (goal/G41.3), the face page and a token
+in its address (goal/G41.29), and who may post to the face's routes (goal/G41.30). The map, the folder, `faceSend` and
+the face page's route are lifted out of the source and run; the posts go to a scratch relay with faces
+(`scratchFaceRelay`). The relays run this code the same day as the nodes (no backward compatibility before alpha).
 
 ## Requirements
 

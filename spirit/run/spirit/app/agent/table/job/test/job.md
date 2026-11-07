@@ -9,11 +9,10 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
 ## Requirements
 
 - It has `server.js`, `elementTable.js` and `elementRow.js`.
-- `server.js(ctx)` makes the `job` table on `ctx.db` with the shared rowTable. Its columns are the key set, the icon,
-  label and description, then `loop` and `job`, and nothing else.
+- `server.js(ctx)` makes the `job` table on `ctx.db` with the shared rowTable. Its columns are the key set, the icon and
+  label, then `loop`, `job`, `bundle`, `provider` and `persona` (goal/G41.21, below), and nothing else.
 - `loop` is a bool, kept as an INTEGER. `job` is its text, kept as typed. A set of one keeps the other.
-- A job's grants are keyed by its id (the grant table). So deleting a job asks the grant table to drop that job's
-  grants, once. An add or a set drops nothing.
+- No grant table: deleting a job asks nothing of any other table (goal/G41.21, below).
 - **A search answers the id, the icon and the label of a row, nothing else** (goal/G41.18; Andy: *"only the ID and
   the fields shown in a table, that's all it needs."*): what its list shows. The editor reads the rest by get.
 - `elementTable.js` registers `spirit.elements.jobTable.create(container, api, detail)`:
@@ -22,7 +21,8 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
   - A row it opens is a `jobRow`.
 - `elementRow.js` registers `spirit.elements.jobRow.create(container, api, id, added, detail)`:
   - It builds on `agentRow` with the job table's look.
-  - Its fields are the label, the description, the loop flag as a checkbox, and the job in a CodeMirror editor.
+  - Its fields are the label, the loop flag as a checkbox, the job in a CodeMirror editor, then the bundle, the provider
+    and the persona (goal/G41.21, below).
 
 - **elementRow.js loads the agent family's cache manager, which takes the job table's rows from the stream** (goal/G41.16;
   Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
@@ -34,10 +34,10 @@ for the model, for the agent-app), and a codeMirror-field for the job-descriptio
 ## Requirements (goal/G41.21, box v17)
 
 - **The job table gains three fields**: `bundle` (the key of one of the node's bundles), `provider` (the id of a provider
-  row) and `persona` (the id of a persona row); a job keeps them, its text as it was. Twelve columns, nothing else.
+  row) and `persona` (the id of a persona row); a job keeps them, its text as it was. Eleven columns since the description went, nothing else.
 - **A job deleted asks no grant table**: the delete hook that dropped a job's grants goes with agent.grant (*"With it go
   ... the job's delete hook"*).
-- **Its detail panel**: after the label, the description, the loop flag and the job, the bundle by the bundle selector in
+- **Its detail panel**: after the label, the loop flag and the job, the bundle by the bundle selector in
   dropdown mode (kind `bundle`), the provider and the persona each by a pick field of its table.
 - Enforcing the bundle when a job runs is out of scope (Andy: *"oos."*).
 
@@ -53,8 +53,6 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
 
 ## What its test must try to break
 
-- A job deleted whose grants stay.
-- A grant dropped by an add or a set.
 - A loop flag that comes back as a number.
 - A job without its bundle, provider or persona; a delete that still asks a grant table.
 - A job row added without its icon and label.

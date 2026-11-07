@@ -3,7 +3,7 @@
 // derivative"), following spirit/element/search/bundle.js. Its contract and its test: ./test/appSelector.md and
 // ./test/appSelector.js.
 //
-// A THIN SELECTOR OVER ITS OWN LIST, ./appSelector/listElement.js, WHICH IT LOADS ITSELF (rule/26).
+// A THIN SELECTOR OVER THE APP LIST, spirit/element/search/app.js, WHICH IT LOADS ITSELF (rule/26).
 //
 //   spirit.elements.appSelector.create(container, options) -> root
 //     root.value   the chosen app's key, '' while none is
@@ -16,7 +16,8 @@
 // ONE appSelector, THREE FACES (goal/G43.9; Andy, box: "One appSelector, with three faces: dropdown, pane and tiles."): "tiles
 // shows active only, pane shows all", "and the picks differ: tiles launches, pane shows the detail with its button." Both open on
 // top, here alone (Andy: "the detail panel needs to open on top of the whole container"), under one title bar, whose close
-// button brings the list back. spirit.elements holds server, spirit.app the rest.
+// button brings the list back. A launched app is spirit.app.<key>.createApp(pane) where it has one (monitor),
+// spirit.elements.<key>.create(pane, { title, open }) otherwise.
 //
 // THROUGH panel (goal/G43.17, spirit/element/panel.js): a closed app or detail is hidden, not destroyed, so pressing it again
 // shows it as it was left (Q3: "yes."). A launched app switched off leaves the view and stays loaded until the shell boots

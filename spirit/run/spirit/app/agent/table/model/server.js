@@ -7,6 +7,7 @@
 // SINCE goal/G41.21 THE LABEL IS THE MODEL NAME (Andy: "i decided that model, does NOT need a name field, which i also
 // NEVER FUCKING ASKED FOR, and the label hold the model name as provided by the provider, and is output only in the
 // models UI."): no modelName column, and a model the provider lists is labelled with its name, never its display name.
+// No description since goal/G41.21 (Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.").
 //
 // A MODEL IS SHOWN WITH ITS PROVIDER'S ICON (goal/G41.18; Andy, box v17: "the model will [icon] \"model-name\", where the
 // [icon] will be the provider-icon, associated with the provider-key on the model row"): every row shown carries

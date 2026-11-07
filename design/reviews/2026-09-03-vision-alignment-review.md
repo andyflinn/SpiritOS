@@ -8,6 +8,14 @@
 against the current `spirit/run/` codebase, its real data (`media/`, `published/`), and
 this session's own work (proven identity, kernel-privilege, App Builder).
 
+> Status 2026-11-07 (goal/G43.23): a review of 2026-09-03, kept as written.
+> Since then `preferences.json` is gone (goal/G43.17), App Builder is gone
+> (decision 0008), the `imageCaption*` and `wordpressScanner` processes are
+> gone (goal/G29.20, goal/G40.1), `media/` and `published/` hold no tracked
+> files, `spirit/currentIssues.md` and `app/contactApp/` no longer exist,
+> `design/relay/` is a full folder, and the node keeps SQLite stores
+> (`node.db`, `relay.db`) beside its JSON files (decision 0018).
+
 ## Coherence: strong where it counts
 
 The core philosophy is genuinely, verifiably reflected in the running code, not just stated:

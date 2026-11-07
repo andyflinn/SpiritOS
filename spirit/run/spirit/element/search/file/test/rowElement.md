@@ -1,21 +1,22 @@
-# files/rowElement.js
+# spirit/element/search/file/rowElement.js
 
-`spirit/run/spirit/element/search/file/rowElement.js` is one file or folder as a row element (goal/G30.18), and since goal/G41.16
-what the fs-watcher's stream means for the page's mirror of the node's tree. Its test is `./rowElement.js`.
+`spirit/run/spirit/element/search/file/rowElement.js` is one file or folder as a row element (goal/G30.18). From goal/G41.16
+to goal/G41.28 it was also what the fs-watcher's stream means for the page's mirror of the node's tree. Its test is `./rowElement.js`.
 
 Since goal/G41.28 the tree is the fs family's cache: its translator and its branch are
 `spirit/run/spirit/fs/data.js`'s, filed in `spirit.data` under the serving node
 (`<node>/fs/files/<path>`), and read through `spirit.data.fs.data`. The element loads that manager itself
-(`spirit.cacheManager('fs')`); the test loads it as a page does, the page's node known (`spirit.node.key`, `data.home`).
+(`spirit.cacheManager('fs')`); the test loads it as a page does, the page's node known (`spirit.node.key`, `data.homeNode`).
 
 Andy, goal/G41.16: *"get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?"*: the
-file tree's translation, `spirit/element/search/file/data.js` until G41.16, is this element's (G30.18: rowElements carry the listeners
-a subject needs), loaded with it.
+file tree's translation, `spirit/element/search/file/data.js` until G41.16, was this element's (G30.18: rowElements carry the listeners
+a subject needs), and is since goal/G41.28 the fs family's cache manager's, which it loads.
 
 ## Requirements
 
-- It loads what it uses itself (rule/26): `spirit/element/rowElement.js` and the fs family's cache manager; no data script.
-- It registers `spirit.element.fileElement.create(row)`.
+- It loads what it uses itself (rule/26): `spirit/element/rowElement.js`, `spirit/element/icon.js`, `spirit/word.js`,
+  `spirit/element/fstat.js` and the fs family's cache manager; no data script.
+- It registers `spirit.element.search.file.rowElement.create(row)`.
 - **What the stream means for the file tree** (`spirit.data.fs.data`) (fs-watcher jobs, `data.command { op, path, size, modified, core }`):
   - before `treeComplete` the branch fills unready; `treeComplete` makes the tree ready (`spirit.data.fs.data.ready()`);
   - `createDirectory` is a folder at its path (`spirit.data.fs.data.file(path)`); any other create or change sets a file with its size, its time and
@@ -23,7 +24,7 @@ a subject needs), loaded with it.
   - `deleteFile` takes that file out; `deleteDirectory` the folder and everything under it;
   - another job's command, or a command with no path, writes nothing.
 - **A row**: kind `file`, keyed by its path, its facts from the file tree. Its fields are `name`, `size` and `changed`:
-  - the name cell: an icon by its kind (goal/G43.17: text 📜, video 📹, image 🌇, audio 🔊, any other ❔; 📁 for a folder, ❌ once gone), where it lives and its name, escaped; a core file's name
+  - the name cell: an icon by its kind (goal/G43.17: text 📜, video 📹, image 🌇, audio 🔊, any other ❔; 📁 for a folder shut, 📂 open, ❌ once gone), where it lives and its name, escaped; a core file's name
     in yellow, titled `core: write-protected`;
   - the size through `formatBytes`, none for a folder; the time to the minute.
 - **It repaints from the file tree**: its path changed there, its cells repaint; its path gone, it is marked gone.

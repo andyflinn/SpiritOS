@@ -2,8 +2,8 @@
 
 // spirit/run/spirit/element/test/searchBubble.js
 // The tests of spirit/element/search.js in a real browser, its bubble's rows laid out (spec:
-// ./probabilitySearchBubble.md; goal/G41.26). Its other tests run in node: ./probabilitySearch.js. Here
-// ./probabilitySearchBubble-laid.html, on a scratch node with its DEBUG on, draws a pane and a dropdown with a filter.
+// ./searchBubble.md; goal/G41.26). Its other tests run in node: ./search.js. Here
+// ./searchBubble-laid.html, on a scratch node with its DEBUG on, draws a pane and a dropdown with a filter.
 
 const fs = require('fs');
 const path = require('path');

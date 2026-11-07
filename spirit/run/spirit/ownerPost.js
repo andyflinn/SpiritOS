@@ -30,7 +30,7 @@
 // Refusals from the way there (no route, peer not reachable) come back
 // as the post's own answer, so a remote failure keeps its contract.
 //
-// The node decodes a SYSTEM packet here and never an app's: `decode` is
+// The node reads a SYSTEM packet here and never an app's: the envelope is
 // read by arrivals.js, the node layer's one decoder, and handed to this
 // witness with the arrival (test/oneDecoder.js, goal/G16.5).
 
@@ -98,7 +98,7 @@ function createOwnerPost(opts) {
     });
   }
 
-  // Every arrival, straight from arrivals.subscribe. Only a system packet
+  // Every arrival, as a witness of arrivals (server.js, arrivals.witness). Only a system packet
   // whose `re` names a command still waiting, from that command's puppet,
   // is taken; everything else passes by untouched.
   function onArrival(message) {

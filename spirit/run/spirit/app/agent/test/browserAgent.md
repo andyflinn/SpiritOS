@@ -13,13 +13,13 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 ## Requirements
 
-- It is an element, as `monitor.js` is (goal/G43.13): `spirit.elements.agent.create(container)` answers `{ destroy() }`. It names no `activateApp`.
+- It is an element (goal/G43.13): `spirit.elements.agent.create(container)` answers `{ destroy() }`. It names no `activateApp`.
 - A tile hands it only its container, so it passes its tables one small object of its own, `{ verb }`, calling the same server verbs and answering `{ status, body }`. No new verb.
 - It keeps no state of its own: no `showDebug`, no `relay-state`, no title of the old shell, and opening it saves no file.
 - Its whole app area is one workBench: it hands `workBench.create` a box that takes the shell's `fill` class (rule/16).
 - It bootstraps its own components (Andy: "the shell should not know that. every app needs to bootstrap its own
   components."): with no workBench on the page, it loads `spirit/element/workBench.js` through `spirit.require`, then builds.
-- The workBench has one tool on its right strip, and on its left one per table of `agent.db`,
+- The workBench has two tools on its right strip (the server's and the bundle editor, below), and on its left one per table of `agent.db`,
   in the order provider, model, persona, job, each with an icon of its own (goal/G41.4, box v22: "every one of
   these tables will come with a left-edge icon that puts up a panel in the left-side tool-display of the workBench UI
   used in this app").
@@ -54,7 +54,7 @@ on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows 
 
 ## What its test must try to break
 
-- A checkbox that does not follow the server's job in spirit.data.jobs.data, or follows the click instead.
+- A DEBUG switch that does not follow the server's job in spirit.data.jobs.data, or follows the click instead.
 - A state kept in the cache before the app opened, not shown at once.
 - A table handed no `{ verb }`, or one that does not reach the server.
 - A file saved at all.

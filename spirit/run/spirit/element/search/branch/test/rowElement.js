@@ -6,7 +6,7 @@
 // row element is put there real; the arming button is a stand-in that records what it was handed. The node's auth
 // family is the spirit object's, each call recorded. The page's data set is real, and so is the auth family's
 // data.js (goal/G41.28), loaded as a page's spirit.cacheManager('auth') loads it, the page's node known as
-// spirit.start makes it known (spirit.node.key, then data.home).
+// spirit.start makes it known (spirit.node.key, then data.homeNode).
 
 const fs = require('fs');
 const path = require('path');
@@ -113,7 +113,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('the type\'s own element takes the node\'s branch rows from the stream (goal/G41.14)');
   // The row element is the data type's code (G30.18: "rowElements carry the listeners and painters a subject needs
-  // for real-time updates"); it is loaded with every list of its kind. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
+  // for real-time updates"); it is loaded with every list of its kind, and since goal/G41.28 the rows are taken by the
+  // auth family's cache manager it loads. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
   // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
   // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
   DATA.takeJob({ type: 'bundles', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });

@@ -1,4 +1,4 @@
-# shell/icons/icons.js, its add row
+# spirit/app/icons/icons.js, its add row
 
 The icons app's add row, a rowForm (goal/G41.27). Its test is `./icons.js`.
 
@@ -6,7 +6,8 @@ Andy, on G41.27: *"icons app:\n[➕] [an icon:paste] [keywords, comma separated]
 itself"*, and *"a line saying what a press did (a refusal, a result) is the mounter's, below the bubble, not in it."*
 
 Asked of a real browser, the real rowForm composed: `./icons-laid.html`, opened at
-`/DEBUG/shell/icons/test/icons-laid.html` on a scratch node with its DEBUG on (`test/headLessChrome.js`), mounts the
+`/DEBUG/shell/icons/test/icons-laid.html` (the app's folder before its move to `spirit/app/icons/`; the test and its page
+still name that one) on a scratch node with its DEBUG on (`test/headLessChrome.js`), mounts the
 app in a box of 600 by 400 and keeps each rowForm it makes.
 
 ## Requirements

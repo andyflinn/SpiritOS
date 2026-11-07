@@ -5,6 +5,7 @@
 // ID same as the shadow-roll (with Label and Description, URL, and API_KEY which will never reach the browser or any
 // place outside of the agent process except the model providers API)". So apiKey is secret: no answer and no row on the
 // stream carries it, only apiKeySet (rowTable.js).
+// No description since goal/G41.21 (Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.").
 //
 // ONE ROW PER URL (goal/G41.18; Andy, box v17: "a new provider row will not be added if the URL is the same as an
 // existing URL in the provider table, nor will a change be allowed if the change would result in duplicate URL's,

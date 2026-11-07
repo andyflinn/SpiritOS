@@ -83,8 +83,8 @@
 
 // WHAT A COMPOSER MAY BUILD. Unchanged at 16 KB, deliberately: this is
 // the promise apps were written against, and cycle 10 is not an occasion
-// to move it. `natterDetails` and every app that sizes a
-// payload measure themselves against this.
+// to move it. Every app that sizes a payload measures itself against
+// this.
 var PLAINTEXT_MAX = 16384;
 
 // WHAT MAY TRAVEL: the encoded envelope as it goes on the wire, measured
@@ -199,8 +199,12 @@ var STREAM_BACKLOG_MAX = 2 * STREAM_EVENT_MAX;
 //
 // Exact rather than estimated: build the wrapper the relay would build and
 // measure it. A node checks this at compose, on every route, because it
-// cannot know whether it will be tunnelled; the relay checks it again
-// before carrying.
+// could not know whether it would be tunnelled.
+//
+// PARTNERING IS GONE (goal/G22.6): no relay wraps a packet any more, and
+// relay.js does not check this. peerPost still does at compose when
+// server.js turns checkTunnel on, a bound stricter than the one door needs
+// (peerPost.js says so where it reads it).
 function fitsWrapped(text, from, to, sig) {
   return JSON.stringify({
     v: 1,
@@ -208,8 +212,8 @@ function fitsWrapped(text, from, to, sig) {
   }).length <= PAYLOAD_MAX;
 }
 
-// AND THE SAME ON THE WAY BACK. A reply to a tunnelled post is re-wrapped
-// too: the far relay hands it to its partner as its own answer,
+// AND THE SAME ON THE WAY BACK (also partnering's, gone with goal/G22.6).
+// A reply to a tunnelled post was re-wrapped too: the far relay handed it to its partner as its own answer,
 // `{ v, body: { ok, status, forwarded: { from, text, sig } } }`
 // (relay.js, routeReply → sendAnswer). So a reply that fits one hop can
 // fail on the return exactly as a post can on the way out — and the asker

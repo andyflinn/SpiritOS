@@ -14,6 +14,9 @@ const REPORTER = path.join(RUN, 'test', 'testReport.js');
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 
 // What the reporter sends when run as <file> (relative to spirit/run), with the arguments given: the records, or [].
+// The stand-in is planted at spirit/run/spirit.js, where the reporter still looks; spirit.js itself is at
+// spirit/run/spirit/spirit.js since goal/G43.18, and no file at the old path means the load throws and nothing is sent
+// (see the DISCREPANCY note in ../testReport.js).
 function sent(file, args, verify) {
   const child = [
     'const path = require("path");',

@@ -12,7 +12,7 @@
 // What a row offers depends on what it is (goal/G30.19): a kept or blocked row open (Contact), block, unblock and
 // remove (contact.forget); a row not decided about add (peer.acquire); a relay open (Relay Details). An action asks and paints
 // nothing: the node's confirmed change on the stream repaints. The label's editor
-// checks js/fieldRules.js (the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
+// checks spirit/fieldRules.js (spirit.fieldRules, the one definition both sides use) before it asks contact.label. expandInfo asks contact.get,
 // once.
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
@@ -64,7 +64,7 @@
   function known(key) { var C = contactReads(); return C ? C.contact(key) : null; }
   // A RELAY'S ROW IS KEYED BY ITS OWN ID (goal/G40.11: a row of the one table), and the node marks a relay's own key
   // present while it holds the stream to it (goal/G40.5): its dot is its own key's, like anybody's.
-  // A write to data.contacts, by key, to the rows that show that key: only the fields a row shows.
+  // A write to the contact family's contacts, by key, to the rows that show that key: only the fields a row shows.
   // Its release answered to the index, which lets it go with the kind's last row (rowElement.index).
   // Made once the contact family's manager is on the page; let go at once if the index lets it go first.
   function dispatch(idx) {

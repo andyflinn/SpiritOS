@@ -8,7 +8,7 @@
 //   armingButton.attach(button, { label, armedLabel, run, api }) -> the button, carrying disarm() and armed()
 //     A button already in the page made an arming one. label is what it says unarmed (by default its own text),
 //     armedLabel what it says armed (by default "<label>? Press again"), run what the second press does, api the app's
-//     api: its armUntilElsewhere is the shell's hook (spirit/client/shell.js, shell/boot.js).
+//     api: its armUntilElsewhere is the shell's hook (spirit/client/shell.js, spirit/shell/boot.js).
 //   armingButton.create(container, { label, armedLabel, run, api, title, className }) -> a new <button type="button">,
 //     appended to the container, attached
 //

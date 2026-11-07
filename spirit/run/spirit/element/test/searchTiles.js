@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/element/test/searchTiles.js
-// probabilitySearch's third face (spec: ./probabilitySearchTiles.md; goal/G43.6). Andy, box: "probabilitySearch gets a third face,
+// probabilitySearch's third face (spec: ./searchTiles.md; goal/G43.6). Andy, box: "probabilitySearch gets a third face,
 // 'tiles', beside 'pane' and 'dropdown': the same ranked rows, drawn as tiles. Any list can use it." A real Chrome on a scratch
 // node's page, what a tile looks like measured there, rows of the test's own; and the one scan, from the module itself.
 

@@ -1,5 +1,7 @@
 # 2026-09-19 — the relay's data on disc, and the owner's token
 
+Status 2026-11-07 (goal/G43.23): Part A stands, but R9 and R10 were superseded at goal/G22.6 (marked below). Part B's owner token is gone: goal/G16.8 removed the owner invite, `install.js` and the first claim on an unowned relay. Andy: *"the invite path to ownership MUST be gone. it is a security gap, from the time of install until the time of first claim."* The owner is written at install by `bash/install-units` from `OWNER_KEY` into `spirit/state/owner.json` (`spirit/run/spirit/relayAuth.js:435-446`), and a relay with no owner refuses every claim (`spirit/run/spirit/relay.js:1357-1361`). B1 to B3 are marked SUPERSEDED below; B4's refusal to start stands (`spirit/test/ownerToken.js`). `allow.json` became `owner.json` at cleanup/G1.7. Suites named here and gone: `devicePeers.js` and `deviceEnrol.js` (goal/G16.2), `hintWire.js` and `liveFanOut.js` (goal/G22.6).
+
 **Status: CLOSED, 2026-09-19. Part A (disc), eleven requirements, and Part B
 (the owner's first-claim token), five — all done.** Scaffolding cycle 3 of the build sequence
 ([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), *Build sequence*),
@@ -18,7 +20,7 @@ with utmost care.
 
 ### R1 — one store, three tables
 
-`js/relayStore.js`: `node:sqlite` at `spirit/state/relay.db`. `members` (by
+`spirit/run/spirit/relayStore.js`: `node:sqlite` at `spirit/state/relay.db`. `members` (by
 key, label indexed for search and display), `invites`, `partners` in the §5
 shape (by relay key, with a status; today's partnerships are `partnered`,
 cycle 5 adds the rest). Rollback journal, not WAL, with `synchronous=FULL`:
@@ -269,7 +271,7 @@ and the owner token under the wrong name are all refused; the owner invite
 makes the owner and is spent; a leftover owner invite on a claimed relay is
 refused; members with no `allow.json` refuse even the owner invite (503).
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G16.8 — ownership is never by invite; the owner is written at install (`bash/install-units`, `OWNER_KEY`) and nothing over the wire makes one. Before: DONE.
 
 ### B2 — install.js
 
@@ -286,7 +288,7 @@ the owner to claim with the name and token install.js printed.
 **Verify:** `spirit/test/ownerToken.js` — install.js run for real in a copied
 repo; `spirit/test/relayGates.js` — the boot announcement.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G16.8 — ownership is never by invite; the owner is written at install (`bash/install-units`, `OWNER_KEY`) and nothing over the wire makes one. Before: DONE.
 
 ### B3 — fixtures mint the owner invite in process
 
@@ -302,7 +304,7 @@ labRefusals and labLifecycle.
 **Verify:** the harness — 101 suites green, every one of them building its
 relays through the owner invite.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G16.8 — ownership is never by invite; the owner is written at install (`bash/install-units`, `OWNER_KEY`) and nothing over the wire makes one. Before: DONE.
 
 ### B4 — a relay with members but no owner refuses to start
 

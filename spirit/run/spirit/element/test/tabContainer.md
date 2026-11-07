@@ -5,9 +5,11 @@ An element with one row of tabs at the top, showing the selected tab's content i
 
 ## API
 
-- `create(container, { tabs, selected })`. `tabs` is a list of `{ name, label, mount(box) }`; `selected` names the tab
-  shown first, and defaults to the first tab.
-  It returns `{ select(name), selected(), destroy() }`.
+- `create(container, { tabs, selected })`. `tabs` is a list of `{ name, label, mount(box), closable, italic }`; `selected`
+  names the tab shown first, and defaults to the first tab.
+  It returns `{ select(name), selected(), add(tab), close(name), rename(name, { name, label, italic }), destroy() }`.
+  `rename` (goal/G41.31) changes a tab's name or header and keeps what it holds; an italic tab's label is drawn in
+  italics. This test does not reach `rename` or `italic`.
 
 ## Requirements
 

@@ -13,7 +13,7 @@ This spec covers what goal/G41.9 asks of it: its four are-you-sure buttons are t
 - **Nothing hand-rolled is left**: no `data-armed` in its code, no `armUntilElsewhere` of its own, no `armed` class.
   The element does all of it.
 - **Every button below is an arming button** (`armingButton.attach` or `create`), handed the page's api, so a click
-  elsewhere puts it back. Leave and Remove gain that reset: today they arm without it.
+  elsewhere puts it back.
   - **Leave** (a relay this node holds a seat on and does not own): label `Leave this relay`, armed
     `Press again to leave`; its run asks `relay.leave { key: url }`.
   - **Remove** (a relay the removal rule lets go, `ownerBadge.removalRefusal`): label `Remove this relay`, armed

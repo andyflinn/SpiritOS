@@ -4,16 +4,16 @@
 // element"): the grants as a pane, each row a grant row element (./rowElement.js) with its Revoke. It names no table.
 //
 //   create(host, opts) -> { list, refresh(), destroy() }
-//     opts.grants    the grants table, required: { branch, key, label, search(text) -> { items, more }, revoke, stream },
-//                    handed on to each row as it is
+//     opts.grants    the grants table, required: { branch, key, label, search(text) -> { items, more }, revoke, watch },
+//                    handed on to each row as it is (the note an unconfigured list draws still says stream)
 //     opts.filters   the page's filters, handed to probabilitySearch as they are
 //     opts.selectors the page's selectors, handed to probabilitySearch as they are, drawn in its 🪣 row
 //     opts.serves(path)  handed to each row: a path no server serves today reads deprecated
 //     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
 // A VIEW OF ITS TABLE'S BRANCH (Andy: "WHY DOES A GRANT NOT JUST SIMPLY UPDATE AN EXISTING FUCKING ROW?"): the table's
-// search seats its rows there, and the stream keeps them current through the grant row element, so one grant appears
-// or goes and nothing is read again.
+// search seats its rows there, and the stream keeps them current through the table's family's cache manager (the
+// node's grants: the auth family's, goal/G41.28), so one grant appears or goes and nothing is read again.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   if (window.spirit.require) ['spirit/element/search.js', 'spirit/element/search/grant/rowElement.js'].forEach(function (p) { window.spirit.require(p); });

@@ -102,6 +102,8 @@ stream"); Desk and deskClient move onto it.
 - **The client's query of its cache through the family api.js, and `includeServer`**, and **the client bundling its
   requests**: the box names no verb for them; the build names them, and the verify asserts them.
 
+## The shared gate (asserted, the test's first section)
+
 - **The shared gate, every permutation, in memory** (goal/G41.30; the box: *"Test the shared gate once, in full.
   appServer's one check guards every verb with a request shape. Every permutation is thrown at that check directly, in
   memory: thousands a second, no network."*). `matches(request, args)`, the check `route()` asks for every verb without

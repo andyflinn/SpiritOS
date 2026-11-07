@@ -1,5 +1,11 @@
 # Close: desk/G2 (List, dialog, agents) and desk/G3 (Desk after the switch)
 
+> Status 2026-11-07 (goal/G43.23): `process/js/agents/agents.js` is gone
+> (ef85bc1f, 2026-10-02); musings and the team went with goal/G43.22
+> (1f449576; Andy, the box: *"there will only be goals, items and rules left,
+> plus the verifier stuff can stay for now."*). The List and the item dialog
+> stand. The rest is the record of 2026-09-30.
+
 2026-09-30. Andy: *"So lets do a SpiritOS close: try this. for sourcing input,
 you may read desk records. Go."* Sourced from his desk.db `records` (269 on his
 node, 16:39 to 18:52; 141 his, 60 of them his chat lines) and git

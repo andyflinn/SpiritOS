@@ -7,8 +7,8 @@
 //   Andy's box, v24: "seen, the shadow in node.db, is the one table. contacts.json, the relays table and the peers
 //   table move into it and go."
 //
-// A contact is a row of seen flagged `keep`: "a chosen contact, never shed". Somebody refused is `blocked`, a node whose signed card names this one its owner is `mine`. The file is
-// gone (nodeStore moved it in on the first start); this module keeps the rules the book had, as acts on those flags.
+// A contact is a row of seen flagged `keep`: "a chosen contact, never shed". Somebody refused is `blocked`; a relay or a puppet the owner starred is `mine` (hub.handleOwn, the one writer of it,
+// goal/G41.30). The file is gone and nothing moves it in any more (goal/G41.30); this module keeps the rules the book had, as acts on those flags.
 // Perception only. Lives on a personal node, never on a --relay.
 //
 // A contact row, as every reader here gets it:

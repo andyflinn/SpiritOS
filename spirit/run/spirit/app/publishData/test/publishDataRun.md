@@ -1,8 +1,9 @@
 # spirit/app/publishData/publishData.js, run whole
 
 One measurement run per agent, its data in `agents/<agent>/` (goal/G4.33; Andy: "so one single script for all of you
-puts the data into the repo", "automated publishing will have a standing grant, attached to the script in
-deskClient"). Run by the agent in its own clone, with its own node up.
+puts the data into the repo"). Run in a clone with its node up; since goal/G43.21 Andy starts it with Run in its app
+detail (*"the Andy user on each box will run those scripts when he feels like it"*), and its commit takes the commit
+check's standing grant for `agents/<agent>/`.
 
     node publishData.js <port> [--asks N] [--only packets] [--out <dir>]
 

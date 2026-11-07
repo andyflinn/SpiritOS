@@ -4,9 +4,9 @@
 // The tests of spirit/element/search/contact/listElement.js, and of no other module: the contacts list's filters, and what its
 // create hands the search element, a row's button and a pressed row (spec: ./listElement.md).
 // The browser file runs in node on a window of its own; probabilitySearch is a recorder in its place, so this tests the
-// list and not the search under it; the rows are the real contactElement (contacts/rowElement.js), over the real data set
+// list and not the search under it; the rows are the real contact row element (search/contact/rowElement.js), over the real data set
 // and the contact family's data.js (goal/G41.28), loaded as a page's spirit.cacheManager('contact') loads it,
-// the page's node known as spirit.start makes it known (spirit.node.key, then data.home).
+// the page's node known as spirit.start makes it known (spirit.node.key, then data.homeNode).
 
 const fs = require('fs');
 const path = require('path');

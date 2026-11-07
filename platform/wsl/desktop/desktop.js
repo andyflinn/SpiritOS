@@ -13,7 +13,7 @@
 //
 // ── WHAT IT DOES ─────────────────────────────────────────────────────
 //
-// Reads the installed programs from the XDG .desktop entries, shows one
+// Reads the programs on Andy's list (below) from the XDG .desktop entries, shows one
 // icon each, and launches the one clicked — detached, so its window comes
 // up through WSLg and outlives this server. Terminal programs (Vim, Byobu)
 // are launched inside a terminal window.

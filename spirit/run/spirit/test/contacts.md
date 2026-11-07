@@ -1,6 +1,6 @@
 # spirit/contacts.js
 
-The contact book, and the verb that sets a contact's star. This test holds one part of it (goal/G41.30).
+The owner's acts on the contacts, rows of the one table (`seen` in node.db), and the verb that sets a contact's star. This test holds one part of it (goal/G41.30).
 
 ## Requirements
 

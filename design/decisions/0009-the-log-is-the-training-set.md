@@ -2,6 +2,18 @@
 
 **Decided 2026-09-13 by Andy. Measured against `359febe`.**
 
+**Status 2026-11-07 (goal/G43.23):** constraint 2 below no longer holds
+for the traffic log. Andy, 2026-09-28: *"Moving the node log into
+machine-side database"* (transport/R19.3): every row now goes into
+node.db's `traffic` table, owned by `nodeStore.js`, and `traffic.jsonl`
+is written only when node.db cannot be opened, and imported and renamed
+`.imported` when found (`spirit/run/spirit/trafficLog.js:99-110`,
+`nodeStore.js:449-463`). `trafficLog`'s api block (`note`, `read`,
+`arrivals`, `byHash`, `taken`) is still the only reader and writer
+(`trafficLog.js:706-718`). `whoBook` is `contacts.js` (rows in node.db
+since goal/G40.11); `peerStats` is gone (goal/G43.14); there is no
+`unknownSenders` setting in the tree any more.
+
 > if SpiritOS is designed to be a manifestation of the human user. Memory
 > of interactions and experiences is a character/behaviour forming
 > training set….

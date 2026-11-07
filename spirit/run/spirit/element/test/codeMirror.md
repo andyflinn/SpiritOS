@@ -2,8 +2,9 @@
 
 The CodeMirror shell element (goal/G41.7; Andy, Q1: "make codeMirror a shell element by the same name. and make sure
 that it supports both read and edit-mode, and that the text viewer uses that new element as well."). One CodeMirror 5
-on a file's text, in one of two modes. The text viewer (`spirit/element/textViewer.js`) and the TextEditor app
-(`shell/textEditor/textEditor.js`) both draw with it. It replaces `spirit/element/textView.js`, which goes.
+on a file's text, in one of two modes. The text element (`spirit/app/text/text.js`) edits with it; deskDetails,
+introSpector, jobsDetails and the agent tables' rows draw with it. The text viewer (`spirit/element/textViewer.js`) and the
+TextEditor app are gone. It replaces `spirit/element/textView.js`, which is gone.
 
 ## API
 
@@ -15,15 +16,17 @@ on a file's text, in one of two modes. The text viewer (`spirit/element/textView
 - `words` the search words: every match marked, the first put in view.
 - `line` a 1-based line put in view instead of the first match.
 - `path` the file's path; its extension picks the syntax colours.
-- `value()` the text as it stands now, edits included: what TextEditor saves.
+- `value()` the text as it stands now, edits included: what the text element saves.
 - `mark(words)` marks again, clearing the old marks; answers how many it marked.
 
 ## Requirements
 
+- **It is the only door to the library** (goal/G43.5; Andy: *"only access to codeMirror library is through the element!"*).
 - **It loads the CodeMirror library itself**, through `spirit.require`:
-  `spirit/element/codeMirror/lib/codemirror.js`, and the mode file of the path's syntax
-  (`spirit/element/codeMirror/mode/<mode>/<mode>.js`). Its stylesheets, `lib/codemirror.css` and
-  `theme/material-darker.css`, are put on the page. **It never reads `index.html`** (goal/G40.7: the face never reads
+  `spirit/element/codeMirror/lib/codemirror.js`, then CodeMirror's search add-ons (`addon/dialog/dialog.js`,
+  `addon/search/searchcursor.js`, `addon/search/search.js`, `addon/search/jump-to-line.js`), and the mode files of the
+  path's syntax (`spirit/element/codeMirror/mode/<mode>/<mode>.js`, a mode it builds on first). Its stylesheets,
+  `lib/codemirror.css`, `theme/material-darker.css` and `addon/dialog/dialog.css`, are put on the page. **It never reads `index.html`** (goal/G40.7: the face never reads
   the old shell's page) and nothing of it asks for it.
 - **Read mode** makes CodeMirror read-only; **edit mode** editable, and `value()` answers what was typed.
 - **The syntax by extension**: `.js`/`.mjs` javascript, `.json` javascript with `json: true`, `.css` css, `.html`/`.htm`

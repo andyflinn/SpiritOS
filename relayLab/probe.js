@@ -5,8 +5,16 @@
 //   node relayLab/probe.js
 //   node relayLab/probe.js https://spirit.andyflinn.com
 // Talks to the public name over HTTPS and, if this process can
-// reach it, to http://127.0.0.1:65430. Never writes relay-state.
+// reach it, to http://127.0.0.1:65430. Never writes a relay's state.
 // Never starts a server.
+//
+// DISCREPANCY WITH ANDY's RULES: Andy's decision (goal/G22.6, 2026-10-13,
+// quoted in spirit/run/spirit/relayServer.js, THE PUBLIC DOOR IS CLOSED):
+// "The relay's public door, the one any curl can reach without key or
+// signature, is killed in this item". This probe still asks with a plain
+// GET of /api/relay/who, a route that is gone, so both `who` lines read
+// `!!` (HTTP 404) against a healthy relay. A relay is asked who it is by a
+// signed card ask on its one door: `node bash/card-ask.js <url>`.
 
 const http = require('http');
 const https = require('https');
@@ -94,7 +102,7 @@ function summarizeWho(result) {
 
   console.log();
   // "mailbox" — it said that until 2026-09-16. There are no mailboxes in
-  // this system (relay.js:80). A relay routes and refuses; it holds
+  // this system (relay.js). A relay routes and refuses; it holds
   // nothing on anyone's behalf, which is decision 0006.
   if (pub.ok) line('relay reachable over TLS', true, PUBLIC);
   else line('relay reachable over TLS', false, 'fix DNS/Caddy/unit before anything else');

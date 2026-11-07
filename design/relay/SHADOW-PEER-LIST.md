@@ -1,5 +1,16 @@
 # The shadow peer list — its structure, and what feeds it
 
+**Status 2026-11-07 (goal/G43.23): built, and its structure superseded.**
+The shadow is the `seen` table in node.db, and since goal/G40.11 it is the
+one table for every known ID: the contacts are its rows flagged `keep`
+(Andy, goal/G40.11 box v24: *"seen, the shadow in node.db, is the one table.
+contacts.json, the relays table and the peers table move into it and go."*),
+with the row shape that box lists; routes are their own rows (`seen_routes`).
+The cap is a byte cap on the whole file (nodeStore.js, `shedToCap`,
+goal/G30.19), not `MAX_ENTRIES = 500`. The `partner-added` event went with
+partnering (goal/G22.6). Line citations are pinned to the commit they were
+measured at.
+
 **Design note, 2026-09-21. Every claim measured against `d83f05f`.
 Nothing here is built.**
 
@@ -64,10 +75,10 @@ licensed for all of them.**
 
 | event | line @ `d83f05f` | who hears it | what it holds |
 |---|---|---|---|
-| `claim` — a member was added | `relay.js:1254` | **owner only** | `label`, `key` |
-| `peer-renamed` — a label changed | `relay.js:1767` | **owner only** | `key`, `was`, `label` |
-| `peer-removed` | `relay.js:1855` | owner, **and** all members as `presence {gone:true}` (`relay.js:1845`) | key |
-| `partner-added` | `relay.js:803` | **owner only** | the partnership itself |
+| `claim` — a member was added | `relay.js:1254 @ d83f05f` | **owner only** | `label`, `key` |
+| `peer-renamed` — a label changed | `relay.js:1767 @ d83f05f` | **owner only** | `key`, `was`, `label` |
+| `peer-removed` | `relay.js:1855 @ d83f05f` | owner, **and** all members as `presence {gone:true}` (`relay.js:1845 @ d83f05f`) | key |
+| `partner-added` | `relay.js:803 @ d83f05f` | **owner only** | the partnership itself |
 
 `ownerEvent` is one sink by construction — `relay.js:3451` @ `d83f05f`:
 *"`presentNow.send(ownerKey, …)` addresses ONE sink."*
@@ -90,7 +101,7 @@ was being thrown away. **Here is the eighth, and by volume it is the
 largest of them.**
 
 A relay broadcasts `presence {key, present}` to every member on every
-arrival and every departure — `relay.js:3741`, `:3797`, `:3827`, `:1845`
+arrival and every departure — `relay.js:3741 @ d83f05f`, `:3797`, `:3827`, `:1845`
 @ `d83f05f`.
 
 The node drops most of them:
@@ -127,13 +138,13 @@ Andy's framing, stated precisely, because it decides the bounds:
 | **superset** | it holds peers from *every* relay this node touches, plus peers reached through partners who are on no relay it knows |
 | **neither** | it is time-lagged and may be wrong; the roll is canonical and it is not |
 
-That last row is the licence to exist at all — `seenPeers.js:79`
+That last row is the licence to exist at all — `seenPeers.js:79 @ d83f05f`
 @ `d83f05f`: *"IT MAY GUESS AND MAY NEVER ASSERT."*
 
 **The superset direction is what bounds it.** Growth is not *members of my
 relay*; it is *everyone I have been told about, anywhere*. With presence
 feeding it, the floor becomes the sum of the memberships of every relay
-this node is on — which is why `MAX_ENTRIES = 500` (`seenPeers.js:92`)
+this node is on — which is why `MAX_ENTRIES = 500` (`seenPeers.js:92 @ d83f05f`)
 stops being a generous bound and becomes the binding one.
 
 ---
@@ -181,7 +192,7 @@ key -> {
   about whether the last evidence was positive, so `seen` dates it and
   *"present, as of this row's last update"* is the whole statement. Fed by
   a search row, by any reply to a post, and by `503 peer not reachable`
-  (`relay.js:1579`, `:1996`, `:3094`) — which is first-hand, already on
+  (`relay.js:1579 @ 4d8617b`, `:1996`, `:3094`) — which is first-hand, already on
   the wire, and today thrown away.
 - **`routes` is a short list, not a value.** Cap at 3. A peer on several
   relays is normal, a node on several relays is normal, and one slot
@@ -192,7 +203,7 @@ key -> {
 | rank | source | authoritative for |
 |---|---|---|
 | **1 — the host says so** | `presence`, `claim`, `peer-renamed`, from the relay the peer is a member of | **label and route.** The relay holds the row it is describing |
-| **2 — proved by signature** | a route announcement after a verified reply (`relay.js:2196`, and the sibling pair at `relay.js:3314`) | **route.** `relay.js:2186` @ `d83f05f`: *"A reply signed by the target key cannot be produced by anyone who does not hold that key"* |
+| **2 — proved by signature** | a route announcement after a verified reply (`relay.js:2196 @ d83f05f`, and the sibling pair at `relay.js:3314 @ d83f05f`) | **route.** `relay.js:2186` @ `d83f05f`: *"A reply signed by the target key cannot be produced by anyone who does not hold that key"* |
 | **3 — a packet arrived** | `peerPost` inbound | **route** — it demonstrably came from there. Not label |
 | **4 — second-hand** | a search answer carried by a partner | both, weakly |
 
@@ -201,7 +212,7 @@ overwrites higher** — except where the higher statement has aged past its
 own usefulness, which is what `rank` plus a per-field timestamp lets the
 row decide instead of guess.
 
-This preserves the greedy rule (`seenPeers.js:122`, *"never blanking what
+This preserves the greedy rule (`seenPeers.js:122 @ d83f05f`, *"never blanking what
 it knows"*) and adds the one thing greed alone cannot do: refusing a
 **downgrade**. Greedy today means a worse answer that arrives later wins.
 
@@ -227,7 +238,7 @@ So the row has two presence regimes, and can distinguish them:
 | **foreign** | **last-known** | this node's own traffic |
 
 **Which is what makes recommendation 4 worth more than one line.** A
-sibling stranger is precisely what `presenceNode.js:181` drops: somebody on
+sibling stranger is precisely what `presenceNode.js:181 @ 4d8617b` drops: somebody on
 a relay this node is on, whose presence is being delivered free.
 
 ---
@@ -287,7 +298,7 @@ knows exactly. The rule that falls out, and it is worth writing down:
 
 ### What it replaces
 
-`MAX_ENTRIES = 500` (`seenPeers.js:92`) — a row count, declared and never
+`MAX_ENTRIES = 500` (`seenPeers.js:92 @ 0fd5994`) — a row count, declared and never
 measured, in a unit no person thinks in.
 
 **`MAX_AGE_MS` stays**, and 0016's argument is why: *"a space bound leaves a
@@ -400,7 +411,7 @@ the machine, so its shape is the machine's to choose).
 2. **Broadcast `claim` as `{key, label}`** — 0012 names it in Andy's own
    words, and the code sends it to one listener.
 3. **Carry `label` on `presence`.** No new event, no new rate.
-4. **Stop discarding presence about strangers** (`presenceNode.js:181`).
+4. **Stop discarding presence about strangers** (`presenceNode.js:181 @ d83f05f`).
    Keep the filter for the *presence picture*, which is about contacts;
    feed the shadow from every event, which is what it is for.
 5. **Adopt rank-plus-provenance**, `routes` as a capped list, and `via`.
@@ -431,7 +442,7 @@ the machine, so its shape is the machine's to choose).
   `limits.js:74` @ `d83f05f` — `WIRE_OVERHEAD = 246`, measured.
 - **What colour NOT-green is.** `0019` rules that a stranger who cannot be
   reached in a post stops being green, and deliberately does not say which
-  mark they get. The screen has three (`contacts.js:261`) and a failed post
+  mark they get. The screen has three (`contacts.js:261 @ 4d8617b`) and a failed post
   fits none: more than white knows, less than red claims. The standing
   tie-break holds until it is decided — the mark that promises less.
 - **Negative results.** Unchanged and still open from

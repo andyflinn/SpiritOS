@@ -10,18 +10,19 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
 ## Requirements
 
 - It has `server.js`, `elementTable.js` and `elementRow.js`.
-- `server.js(ctx)` makes the `model` table on `ctx.db` with the shared rowTable. Its columns are the key set, the icon,
-  label and description, then `providerId`, `modelName` and `capabilities`, and nothing else.
+- `server.js(ctx)` makes the `model` table on `ctx.db` with the shared rowTable. Its columns are the key set, the icon
+  and label, then `providerId` and `capabilities`, and nothing else (no description and no model name since goal/G41.21,
+  below).
 - `providerId` is a provider row's id. An add or a set naming a provider that is not there is refused, saying so, and
   the provider kept.
 - `capabilities` is a list.
 - **A model is shown with its provider's icon** (goal/G41.18; Andy, box v17: *"the model will [icon] \"model-name\",
   where the [icon] will be the provider-icon, associated with the provider-key on the model row"*): every row the server
   shows, by get, search or the stream, carries `providerIcon`, the icon of its provider row, empty for a model with no
-  provider. It is shown, not kept: the table has no such column. The server says it with the row as the grant server
-  says a grant's job (goal/G41.16), so the list draws only what the server sends (rule/19).
+  provider. It is shown, not kept: the table has no such column. The server says it with each row (rowTable's `shows`),
+  so the list draws only what the server sends (rule/19).
 - **A search answers the id and what the list shows, nothing else** (goal/G41.18; Andy: *"only the ID and the fields
-  shown in a table, that's all it needs."*): `id`, `modelName` and `providerIcon`. The editor reads the rest by get. Not asserted: a model shown
+  shown in a table, that's all it needs."*): `id`, `label` (the model name) and `providerIcon`. The editor reads the rest by get. Not asserted: a model shown
   again when its provider's icon changes.
 - `elementTable.js` registers `spirit.elements.modelTable.create(container, api, detail)`:
   - It requires the shared element and its own `elementRow.js`.
@@ -29,7 +30,7 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
     Andy, on G41.18: *"get RID of [Add a Model] button in the left panes model mode. NOT required."*): its rows come
     from the providers.
   - Its list shows each model by its provider's icon and its model name: the columns it hands are `providerIcon`, then
-    `modelName` (goal/G41.18).
+    `label`, the model name (goal/G41.18, G41.21).
   - **The Ask form at the top** (goal/G41.26, Andy: *"The form \"from [Pick a provider ▾] [Ask]\" moves to the top of the
     left pane (🧠Models) and replaces that panes [provider models] buttons. the center pane panel goes. the [Ask] button
     will no longer spit out a list, and simply update the agent.model table"*):
@@ -45,8 +46,7 @@ model-name and capabilities)"*. goal/G41.18 fills it from the providers: the pro
   - A row it opens is a `modelRow`.
 - `elementRow.js` registers `spirit.elements.modelRow.create(container, api, id, added, detail)`:
   - It builds on `agentRow` with the model table's look.
-  - Its fields are the label, the description, the provider, the model name, and the capabilities as a list.
-  - The provider is picked from a search of the provider table.
+  - Its fields are the label, the provider and the capabilities, all shown only (goal/G41.21, below).
 
 - **elementRow.js loads the agent family's cache manager, which takes the model table's rows from the stream** (goal/G41.16;
   Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element

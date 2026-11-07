@@ -32,7 +32,7 @@
 //
 //   followStream(o)       a server's ask for its own node's events (goal/G43.5): the one stream, into the translators; on a page it
 //                   is fed anyway. o.onConnection(up) is told each time the stream comes up or goes down.
-//   addTranslator(t)    a type's translator, registered by its row element (goal/G30.20, G41.16): t.onJob(job, D), t.onRename(d, D), t.onRelay(event); answers its release;
+//   addTranslator(t)    a type's translator, registered by its row element (goal/G30.20, G41.16): t.onJob(job, D), t.onRename(d, D), t.onDelete(gone, D), t.onRelay(event); answers its release;
 //                   every one ends in set, merge or del. A job comes with fromNode, the node that served it, so the
 //                   translator files it under that node. This file knows no type.
 //
@@ -176,7 +176,7 @@
     total = 0;
   }
   // WHAT A WRITE TOUCHED (goal/G41.12): a stream's client keeps each row with the paths it wrote, so a row its cache
-  // sheds, or a full push replaces, takes those with it (appServer). recording(fn) answers every path fn set, merged or
+  // sheds, or a full push replaces, takes those with it (appServer). recordPaths(fn) answers every path fn set, merged or
   // deleted, once each, in order; a recording inside another counts for both.
   var recorders = [];
   function recorded(path) {
@@ -244,7 +244,8 @@
 
   // ── THE TRANSLATORS ARE THE TYPES' (goal/G30.20) ─────────────────────────────────────────────────────────────
   // Each type's row element (spirit/element/search/file/rowElement.js, spirit/element/search/contact/rowElement.js; goal/G41.16) registers here what it
-  // makes of the stream's events: translate({ onJob(job, D), onRename(d, D) }). This file knows no type.
+  // makes of the stream's events: addTranslator({ onJob(job, D), onRename(d, D), onDelete(gone, D), onRelay(event) }). This
+  // file knows no type.
   // A TYPE LOADED LATE IS HANDED ITS DATA WHOLE (goal/G41.3, Q4: the translators are lazy, each loading with its app):
   // on a page every job as it now stands and every rename are kept as the stream hands them, and a translator registered
   // later is handed them all at once, so its branch is whole. A process's translator comes with its server, before any
@@ -318,7 +319,7 @@
   //   serves the page and every server alike. It asks nobody and ranks by probability across every table it holds,
   //   returning the most relevant rows whatever table they are in, bounded like every search."
   //
-  // search({ text, branches?, room? }) -> { items: [{ key: '<branch>/<key>', label: <the row as JSON>, probability }],
+  // searchAll({ text, branches?, room? }) -> { items: [{ key: '<branch>/<key>', label: <the row as JSON>, probability }],
   // more }. Every row of every branch (or of the branches named) is weighed by the desk's own ranking: the text against
   // the row's key and its fields (probabilityStringObjectMatch), seated in a probabilityBucket, best first, an equal one
   // behind those already in. Bounded like the desk's searches: the items fill one answer (room, by default the answer

@@ -1,4 +1,6 @@
-> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay is to serve the face pages itself (not built). Passages below that describe those processes are history, kept as bones for the fold.
+> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay serves the face pages itself (goal/G30.9–G30.14: `faceDoor`, `spirit/run/spirit/relayServer.js:472`; the home node answers through `spirit/run/spirit/faceHome.js`). Passages below that describe those processes are history, kept as bones for the fold.
+
+> **Status 2026-11-07 (goal/G43.23):** the `Status:` lines below are of 2026-09-24 to 09-28. Since then: the `--app` mode and `faceServer.js` (G1, G5, G14, built in cycle 2), `appServerBoundary.js`, `nodeApps.js`, `puppetPost.js` and `faceRoutePending.js` were deleted at goal/G13.2 (013dc827; Andy, 2026-10-10: *"no "face" crap belongs into node."*), and appFaceApp, grantFace, faceProof and `appFaceGrant.js` at goal/G30.1 (ba2f3b62), so G19's chain (grantFace, the face's contact sync) is not today's route. What stands: a server is a process started by `jobs.startNodeServers` and reached over its pipe (G18; `spirit/run/spirit/appClient.js:73-86`), and its state sits outside its code in `relay-state/process/<name>/`, or `spirit/state/<name>/` for an app of `spirit/app/` (G12). `app/` became `spirit/run/shell/` at slim/G1.1, and the core tree moved from `spirit/run/js/` to `spirit/run/spirit/` at goal/G40.2; the `shell.js:` line numbers below are of the old `spirit/run/js/client/shell.js`. `device.html` and `relay.html` are gone (goal/G16.2, goal/G22.6), and `publicAppServer.js`, `joinServer.js` and `join.html` were never built.
 
 # The public app server — and `join` as its first app
 
@@ -356,7 +358,7 @@ His reason for plumbing: *"plumbing becaue it's in the puppet, on the box
 and in the server process"*. It runs through all three, and none of them shows it.
 - **Contract:** what an app, or the face carrying it, can see, and is
   promised: the one function its page calls (`puppetPost()`, today
-  `app/shared/ask.js`), the flat door and its verbs. It changes only with a
+  `app/shared/ask.js`, now `spirit/run/shell/shared/ask.js`), the flat door and its verbs. It changes only with a
   deprecation path.
 - **Plumbing:** what no app sees and anyone may re-lay: the pipe path, the
   port, the memory cap, the unit. It changes freely, because something no app
@@ -1505,7 +1507,7 @@ the one before:**
 
 | step | what | blocked by |
 |---|---|---|
-| G19.1 | The process spec written (`design/node/PROCESSES.md`) and the server process type completed: a server job gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL`; `spirit.core.ask` works from a process; a serving app's own code runs as its job; a server job can be stopped from the jobs app | — |
+| G19.1 | The process spec written (`design/principles/PROCESSES.md`) and the server process type completed: a server job gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL`; `spirit.core.ask` works from a process; a serving app's own code runs as its job; a server job can be stopped from the jobs app | — |
 | G19.2 | Passthrough: a packet for a serving app goes down its pipe, and the answer returns signed by the node | G19.1 |
 | G19.3 | grantFace: grant, faceKey, the route answers, `grants.json` (canonical), the face's contact sync by owner command | G19.2 |
 | G19.4 | The `api` verb, introspection by layers. Andy's yes on the verb: "go." on the ask "Is this your yes on 'api'?" (Desk, G17, 2026-09-28); wsl-claude's review is recorded under G17 | G19.3 |

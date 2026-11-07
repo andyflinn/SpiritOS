@@ -1,5 +1,7 @@
 # Cycle 9 — a relay is bounded by its disc as well as its RAM, and its owner sets both over the wire
 
+Status 2026-11-07 (goal/G43.23): moved paths are corrected (`spirit/run/spirit/`, goal/G40.2). R7's *"no verb, no door"* no longer holds: since goal/G30.3 `config` is one of the relay's owner verbs (`OWNER_VERBS`, `spirit/run/spirit/relay.js:2620`).
+
 **Built 2026-09-22, from `0bf76b4` to `8f11809`. Harness green on Windows
 (130 suites, 2875) and verified on Linux by wsl-claude against real
 cgroup caps.**
@@ -17,7 +19,7 @@ figures settable **without SSH**:
 ---
 ### R1 — one arithmetic for the box, used by every door
 
-`js/relayLimits.js`, pure but for one probe. `measure()` reads total and
+`spirit/run/spirit/relayLimits.js`, pure but for one probe. `measure()` reads total and
 available memory — `MemAvailable` on Linux, `os.freemem()` elsewhere, and
 the **smallest cgroup cap from its own cgroup upward** — and the relay's
 own partition through `statfsSync`. `ceilings()` takes availability minus
@@ -40,7 +42,7 @@ and at a slice above it, and a box that will not say.
 
 ### R2 — a second limit, and a ceiling that is availability
 
-`js/relayConfig.js` takes `discLimitMB` beside `ramLimitMB`, validated the
+`spirit/run/spirit/relayConfig.js` takes `discLimitMB` beside `ramLimitMB`, validated the
 same way, and `DEFAULT_RAM_LIMIT_MB = 256` is gone. The refusal compares
 against **what the box can give**, not what it has — the old check let an
 owner configure memory the machine never had spare. A config written

@@ -7,15 +7,31 @@ no proposal, nothing about what should change.
 Remeasured after stages 1–4b of the loopback fold. The relay section below is
 unchanged from `25489ab`; the node section is not, and says where it stands.
 
-One file, [`spirit/run/js/server.js`](../../spirit/run/js/server.js),
+One file, [`spirit/run/spirit/server.js`](../../spirit/run/spirit/server.js),
 serves both. Which server you get is `--relay` on the command line.
+
+> **Status 2026-11-07 (goal/G43.23):** a measurement of 2026-09-15, kept as
+> the record; much of it no longer holds. The code is under `spirit/run/spirit/`
+> since goal/G40.2, and `server.js` hands a relay to `relayServer.js`. A relay's
+> open routes today are `GET /api/relay/stream`, `POST /api/relay/post` and
+> `/reply`, and the home node's face uploads `POST /api/relay/face/answer` and
+> `/face/stream` (`isRelayPublicPath`, `relayServer.js:403-416`), plus the face
+> pages a relay serves (`faceDoor`, `relayServer.js:472`). `claim` is gone (goal/G16.8:
+> the owner is written at install), `device` and `/<key>/device` with the device
+> (goal/G16.2), `who` by goal/G19.11 (8b41dd27), and `relay.html` at goal/G22.6.
+> On the node, `GET /api/events` is gone since goal/G40.6: the stream is the
+> `events` family's subscribe through the one door (`server.js:287-289`, `:903-906`;
+> Andy: *"it's a severe violation, that there is some stupid api/events door,
+> that is not part of the an actual api"*). Only `GET /api/version` stays a
+> route. `device.*` and `contact.senders`/`setSenders` are gone (goal/G16.2,
+> goal/G43.17); the verb table below is not today's.
 
 ---
 
 ## The relay — `node js/server.js --relay`
 
 Binds `0.0.0.0`. Every path not on the allowlist
-(`isRelayPublicPath`, [server.js:680](../../spirit/run/js/server.js#L680))
+(`isRelayPublicPath`, [relayServer.js:403](../../spirit/run/spirit/relayServer.js#L403))
 is 404 before dispatch, so this is the whole surface.
 
 ```
@@ -54,7 +70,7 @@ is asking for.
 ### Everything else a relay can be asked is a packet
 
 `post` carries them. A relay answers a packet addressed to its own key in
-`relay.answerSelf` ([relay.js:1358](../../spirit/run/js/relay.js#L1358)), and
+`relay.answerSelf` ([relay.js:2347](../../spirit/run/spirit/relay.js#L2347)), and
 the verbs are:
 
 ```
@@ -144,7 +160,7 @@ different verb, and no body can express it. `GET /api/version` has to answer a
 client that knows nothing — including one running older code, which is the case
 it exists for.
 
-**A module CLAIMS a namespace** ([verbTable.js](../../spirit/run/js/verbTable.js)),
+**A module CLAIMS a namespace** ([verbTable.js](../../spirit/run/spirit/verbTable.js)),
 at the foot of server.js where its dependencies exist, so the dispatch knows how
 to find an answer and nothing about what the answers are. Two modules claiming
 the same namespace, or one answering outside its own, is a crash at boot rather
@@ -187,7 +203,7 @@ reading an older app.
 A browser holds no key and cannot sign. Neither does a spawned process. Both are
 **loopback clients**: they ask this node to act, and this node signs. The shell
 hands apps `api.peerPost(app, toKey, body)` and `api.onRegarding(hash, fn)`
-([shell.js](../../spirit/run/js/client/shell.js)); a process does the same thing
+([shell.js](../../spirit/run/spirit/client/shell.js)); a process does the same thing
 with an HTTP client and gets the same answer for the same reason. Neither is a
 peer, because a peer holds a key. See decision 0011.
 
@@ -231,7 +247,7 @@ were its first customer, and it now carries `job-updated`, `job-deleted`,
 `relay-event` and `packet`.
 
 **A relay writes no traffic log.** `trafficLog.note` returns null in relay mode
-([trafficLog.js:226](../../spirit/run/js/trafficLog.js#L226)). The owner's log
+([trafficLog.js:385](../../spirit/run/spirit/trafficLog.js#L385)). The owner's log
 of membership events lives on the owner's own node, fed down the stream — so a
 relay keeps no record of who talked to whom.
 

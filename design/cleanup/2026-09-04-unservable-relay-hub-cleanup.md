@@ -1,5 +1,15 @@
 # Cleanup: fold relay/hub into `fileServable` / `fileWritable`
 
+> Status 2026-11-07 (goal/G43.23): carried out, and the tree has moved on.
+> The gates live in `spirit/run/spirit/fileSystem.js` (`fileWritable` :176,
+> `fileServable` after it), not `kernel.js`; the core modules are under
+> `spirit/` (was `js/`, goal/G40.2), so `UNSERVABLE_FILES` (`fileSystem.js:125`)
+> names `spirit/relay.js`, `spirit/hub.js` and nine more, and `BOOT_ASSETS` is
+> `index.html`, `spirit/kernel.js`, `spirit/client/shell.js`, `favicon.svg`
+> (`server.js:152`). Natter and its `relays.json` (goal/G30.7), Relay Chat
+> (f589d46d), `relayLabPing` (452e78d6), `preferences.json` (goal/G43.17) and
+> the manifest patterns (goal/G30.21) are gone. The body is the record.
+
 > 2026-10-13 (goal/G22.6): `relay.html`, the relay brochure kept servable below, is deleted with the relay's public door and is off `BOOT_ASSETS`.
 
 **Date:** 2026-09-04  

@@ -13,7 +13,8 @@
 //
 // The rows are nodeStore's (node.db, peers and grants). A record is { key, label, path }; a path is 'app' or
 // 'app.verb', matched exactly. Every verb answers an object or a refusal { refusal: code }; server.js turns the
-// refusal into { ok: false, code, error } with the catalogue's status. Loopback only: jobs.* never travel.
+// refusal into { ok: false, code, error } with the catalogue's status. The auth family sits in the flat table as every
+// node family does: the owner calls it on loopback, a peer only through a grant (apiDoor).
 
 const fs = require('fs');
 const path = require('path');
@@ -40,7 +41,7 @@ const isId = function (v) { return typeof v === 'number' && Number.isInteger(v) 
 function createApiAuth(opts) {
   const o = opts || {};
   const rootDir = o.rootDir;
-  // The live tree, to tell a served path: (appClient.ask('api')).body. Only grant needs it.
+  // The live tree, to tell a served path: (nodeDoor.ask('api')).body, as server.js hands it. Grant and branch need it.
   const servedTree = typeof o.tree === 'function' ? o.tree : function () { return Promise.resolve({}); };
   const store = function () { return nodeStore.open(rootDir).auth; };
   // The two bundle tables, nodeStore's.
@@ -102,8 +103,8 @@ function createApiAuth(opts) {
   // keeps each key's bundle id and label, so a bundle is never added twice. A kept id whose row is gone, or no longer
   // the appServer's, is added again under the same key ("if a USER deletes a bundle owned by an Server, apiAuth.js it
   // will create a new bundle"); a key no longer in the file goes with all its branches ("apiAuth.js will delete that
-  // key from auth.bundle AND all its rows in auth.branch"). A bundle the editor added for the appServer is kept under no
-  // key, so it is never touched. No appServer runs yet, so its own verbs are not in the live tree: the branches are
+  // key from auth.bundle AND all its rows in auth.branch"). A bundle owned by the appServer but kept under no key is
+  // never touched. At the node's boot no appServer runs yet, so its own verbs are not in the live tree: the branches are
   // written as the file says, unchecked.
   function bundleFile(app) {
     let got = null;
@@ -257,7 +258,8 @@ function createApiAuth(opts) {
     // THE OWNER (goal/G41.25; Andy, box: "the bundle table gains 1 field: \"owner\", which can contains either \"node\"
     // (default), or the name of an appServer"; "the owner field can never be changed after a bundle is added"; "for
     // bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\" field
-    // with \"node\", incoming or outgoing"). Given at the add, never changed after; read as node wherever it is not valid.
+    // with \"node\", incoming or outgoing"). Set at the add (always node there since goal/G41.32, below; an appServer's
+  // from its Bundles.json at boot), never changed after; read as node wherever it is not valid.
     // NO SET (goal/G41.26; Andy, box: "A bundles label is determined when it's added, and cannot be modified. This will
     // protect family owned bundles from having their label mutilated. the auth.bundle set op will be removed."): a
     // bundle's label and owner are the add's; a set is refused bad-request.

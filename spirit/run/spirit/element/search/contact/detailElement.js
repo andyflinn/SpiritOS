@@ -1,29 +1,21 @@
-// One row of the address book, as its own screen.
+// spirit/run/spirit/element/search/contact/detailElement.js
+// One row of the contacts, as its own panel, opened over the list that
+// mounted it (search/contact/rowElement.js, openDetails): it shows that
+// row and nothing else, and the only way out is the panel's ✕, back to
+// that list. Nothing is handed back: what it changes reaches every view
+// on the stream.
 //
-// The first DIALOG (Andy). A dialog is a hidden app a table pushes for
-// one row: it shows that row and nothing else, it cannot launch anything,
-// and the only way out is back to the table it came from. What it wants
-// to happen elsewhere it RETURNS, and the app underneath acts on it.
-//
-// Why a screen and not the expanding row it replaces:
+// Why a panel and not the expanding row it replaces:
 //
 //   - the table keeps its shape. A six-fact bubble and a form inside a
 //     colspan made the widest thing on the page live inside the narrowest,
 //     which is what pushed Contacts off a portrait screen;
-//   - the table keeps its scroll. Panes are hidden and never destroyed,
-//     so the list is exactly where it was when you come back — which is
-//     the reason this is a separate app id and not a second view of
-//     Contacts, whose one pane would have been rebuilt;
 //   - one thing on screen. Reading somebody's numbers while their
 //     neighbours are still listed above and below is what the row
 //     expansion made you do.
 //
-// A sibling folder, not a child: discovery is flat and stays flat
-// (app/<name>/<name>.js). The cost is that api.fs here is scoped to
-// app/contactsDetails/ — NOT to Contacts' folder — so this app writes
-// nothing locally. It does not need to: every decision about a person is
-// a hub verb, and the one file Contacts keeps (prefs.json, the stranger
-// policy) belongs to the list rather than to any row.
+// It writes nothing locally: every decision about a person is a verb of
+// the node, asked through the api it is handed (options.api).
 
 // ONE PANEL PER ROW (goal/G43.18; Andy: "now you need to give each contact row its own detail panel, similar to the concept
 // where tabs in "agent" can hold the same ui for different rows"): everything below is one panel's own, made per create, its
@@ -34,7 +26,7 @@ var cdEscapeHtml = spirit.escapeHtml;
 var cdApi = null;
 
 var cdKey = '';        // whose row this screen is
-var cdPerson = null;   // the row itself, as buildPeople hands it over
+var cdPerson = null;   // the row itself, as contact.get answers it
 var cdChanged = false; // has anything happened that the table must repaint for?
 
 // Through the shell (AGENT.md, Comms). The verb is the argument; this app
@@ -121,7 +113,7 @@ function cdLoad() {
     .catch(function (e) { cdStatus('could not read the book: ' + e.message); });
 }
 
-// The titlebar says WHOSE row this is, because the app's own name
+// The titlebar says WHOSE row this is, because the panel's own name
 // ("Contact") is the least useful word available on a screen that only
 // ever shows one person. The mark comes with it: a screen about somebody
 // refused should say so where you are already looking.
@@ -135,12 +127,10 @@ function cdTitle() {
   return mark + (mine || name || '(no name)');
 }
 
-// No focus guard, and that is the shell's doing rather than an oversight.
-// A dialog is never driven by the job tick (switchTo, renderActive), so
-// the only repaints are the ones this file asks for: a load, and a
-// decision. There is no two-second repaint left to destroy the field
-// somebody is typing in — which is exactly what it used to do, and what
-// every table in the shell still needs a guard against.
+// No focus guard, and that is no oversight. This panel is never
+// repainted by a tick, so the only repaints are the ones this file asks
+// for: a load, and a decision. There is no two-second repaint left to
+// destroy the field somebody is typing in.
 // THE "OBVIOUS DUD" BUBBLE AND THE "LOCKED TO RELAYS I OWN" FOLD STOOD
 // HERE (2026-09-19). Both were drawn from facts a roster sweep wrote —
 // `missingSince` (a key on no roll) and `memberOf` (seats on relays I
@@ -170,7 +160,7 @@ function cdBlock() {
 // THE SCREEN GOES WITH THE ROW. Every other action here repaints
 // the person; this one removed them, so there is nobody left to
 // paint and staying would be a screen about a contact that is not
-// one. Back to the book, which is where the change is visible.
+// one. The panel closes, back to the list, where the change is visible.
 // ONLY THE ROW (goal/G43.17; Andy: ""forget" a contact means only: delete that row from my contacts. it does NOT mean:
 // "eject them from relays i own", not at all. not the same scope of decision."). A seat on a relay you own is the
 // relay's, and is not touched here.
@@ -187,8 +177,7 @@ function cdRender() {
   if (cdApi) cdApi.setScreenTitle(cdTitle());
 
   // THE PADLOCK ON THE BAR is gone with the seats it stood for. Cleared on
-  // every render all the same: this screen is reused for every contact,
-  // and a mark left by older code must not survive onto the next one.
+  // every render all the same, where the api handed still has the call.
   if (cdApi && cdApi.setScreenMark) cdApi.setScreenMark('', '');
 
   if (!cdPerson) {
@@ -238,8 +227,8 @@ function cdRender() {
   //
   // OFFERED IN BOTH STATES, unlike Accept and Unblock, because it is not
   // about the relationship: it is about this node's own book. A blocked
-  // person can be forgotten without being unblocked — contactBook downgrades
-  // that row rather than deleting it, or the block would evaporate and
+  // person can be forgotten without being unblocked — the node's forget
+  // (spirit/contacts.js) downgrades that row rather than deleting it, or the block would evaporate and
   // they would be readmitted the moment they wrote.
   //
   // Two presses, for the same reason Block has two: it is at the end of a
@@ -275,7 +264,7 @@ function cdRender() {
 }
 
 // Everything this screen decides is a hub verb. Nothing is written to
-// disk here, and nothing about the person is kept: contactBook is the book.
+// disk here, and nothing about the person is kept: the node's contacts are the book.
 // THE ACTION IS THE VERB, and since 2026-09-15 it is spelled as one.
 // This built `{ action: 'block' }` and posted it to a route that was
 // itself a verb, so hub.js had to dispatch the field by hand. Now the
@@ -294,17 +283,16 @@ function cdPeerAction(action, extra) {
       return false;
     }
     cdStatus('');
-    // The table behind this screen paints from a list it fetched before
-    // this screen existed, so it has to be told. Said NOW rather than on
-    // the way out, because the way out is Back and Back is the shell's.
+    // Marked, though nothing reads it now: the list behind this panel
+    // repaints from the stream.
     cdChanged = true;
     return cdLoad().then(function () { return true; });
   });
 }
 
 var cdPage = ({
-  // Once per pane, ever. Everything about WHO this screen is showing
-  // belongs in open(), which runs on every call — see below.
+  // Once per panel, from create. Everything about WHO this screen is
+  // showing belongs in open() — see below.
   mount: function (container, api) {
     cdApi = api;
     container.innerHTML = '<div id="cd-body" class="stack"></div>';
@@ -322,7 +310,7 @@ var cdPage = ({
       if (!event.target || event.target.id !== 'cd-label-input') return;
       var typed = event.target.value.trim();
       // Checked here before anything is asked, by the same rule the node
-      // checks again (js/fieldRules.js; Andy, goal/G4.16: "the shell may
+      // checks again (spirit/fieldRules.js; Andy, goal/G4.16: "the shell may
       // as well rule that inputs themselves implement constraints in
       // fieldRules.js"). Empty clears your name for them, and is asked.
       var rule = (typeof window !== 'undefined' && window.spirit && window.spirit.fieldRules) || null;
@@ -333,15 +321,11 @@ var cdPage = ({
 
   },
 
-  // Every call, mounted or not — the shell guarantees it (switchTo). So
-  // this is where the subject arrives, and where everything about the
-  // last subject has to be let go of.
-  //
-  // The shell can promise that open() runs; it cannot know what is stale
-  // inside. A half-armed Block is the example: two presses must mean two
-  // presses about the SAME person, so arming it for bert and then
-  // opening carol has to disarm — and it does, because the load redraws
-  // the buttons and attaches new ones.
+  // Called by create, right after mount, with the key: this is where the
+  // subject arrives, and where everything about a last subject would be
+  // let go of. Each panel is one person's (cdInstance), so a half-armed
+  // Block never carries over to another; the load redraws the buttons
+  // and attaches new ones all the same.
   open: function (params) {
     cdKey = (params && params.key) || '';
     cdPerson = null;

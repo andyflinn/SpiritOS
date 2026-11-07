@@ -2,6 +2,14 @@
 
 **Status: opened 2026-09-17 against `833d5d4`. The public door closed 2026-10-13 (goal/G22.6).**
 
+Status 2026-11-07 (goal/G43.23): the table below is today's surface (relayServer.js,
+`isRelayPublicPath`), with the face routes added since goal/G22.6. The sections after it
+are the record from 2026-09-17 on: their line citations are pinned to the commit they
+were measured at, and what they name of partners (`partnerLink.js`, gone with cycle 8's
+"no streams between partners", c4054152; partnering itself gone at goal/G22.6), devices
+(`device.html`, `deviceAuth.js`, gone at goal/G16.2, 391de42b) and `relays.json` (the
+node's relays are rows in node.db since goal/G40.11) is history.
+
 ## The relay's surface since goal/G22.6
 
 Andy, goal/G22.6 box, 2026-10-13: *"The relay's public door, the one any curl
@@ -14,6 +22,8 @@ one door (post) and its members' stream."*
 | `POST /api/relay/post` | **the one door**: signed posts, addressed by key | the protocol |
 | `POST /api/relay/reply` | a member's answer to what came through the door | the protocol |
 | `GET /api/relay/stream` | the members' stream, signed, members only | the protocol |
+| `POST /api/relay/face/answer`, `POST /api/relay/face/stream` | a home node's uploads to its member's face, signed (goal/G30.14) | the face |
+| a member's face host: `/`, `/face.html`, its files, `/face/call`, `/face/file`, `/face/stream`, `/face/api`, `/face/allowed` | the face of a member with a face name (goal/G30.9; relayServer.js `faceDoor`) | the face |
 | everything else | 404 | — |
 
 What the closed routes did moved onto the door, signed (relay.js):
@@ -72,7 +82,7 @@ case that all three can go, and what each costs to remove.
 > **Andy:** *"the roll gets are on our shooting list too — because they
 > cannot withstand 1000 entries."*
 
-`PAYLOAD_MAX` is 16384 ([limits.js:70](../../spirit/run/js/limits.js#L70)).
+`PAYLOAD_MAX` is 16384 ([limits.js:70 @ 833d5d4](../../spirit/run/spirit/limits.js)).
 A roll row measures 151 bytes
 ([boundedByTime.js](../../spirit/test/boundedByTime.js)), so a thousand
 members is **~147 KB — nine times the ceiling.**
@@ -94,7 +104,7 @@ thousand members.**
 ## 1. Where the surface is today
 
 Everything reachable from the internet on a relay, at `833d5d4`
-([server.js:920-944](../../spirit/run/js/server.js#L920-L944)) — history; the
+([server.js:920-944 @ 113d132](../../spirit/run/spirit/server.js)) — history; the
 surface since goal/G22.6 is the table at the head of this note:
 
 | | | |
@@ -109,7 +119,7 @@ surface since goal/G22.6 is the table at the head of this note:
 | `POST /api/relay/post` · `/reply` | the router — signed, addressed by key | the protocol |
 
 The node reached this shape already, on 2026-09-15
-([server.js:1379-1420](../../spirit/run/js/server.js#L1379-L1420)):
+([server.js:1379-1420 @ 833d5d4](../../spirit/run/spirit/server.js)):
 
 > **THE LOOPBACK CLIENT API — ONE DOOR, VERBS IN THE BODY.**
 > Andy: *"Do we maximally fold as much as possible into one single
@@ -126,7 +136,7 @@ and its relay half is what these four moves rewrite. **Andy remeasures it
 when the migration lands**, so treat it as the picture of the world before
 this note, not as a spec to build against. (Its relay section is unchanged
 from `25489ab` and says so; the `isRelayPublicPath` anchor has since moved
-from `server.js:680` to `server.js:902`.)
+from `server.js:680 @ 833d5d4` to `server.js:902 @ 833d5d4`.)
 
 ---
 
@@ -138,7 +148,7 @@ from `server.js:680` to `server.js:902`.)
 `POST /api/relay/claim` was public, needed no key, and was held permanently
 outside the post rule by 0010's reasoning. It answered
 `{ ok, status: 201, peer, owner }`
-([relay.js:1152](../../spirit/run/js/relay.js#L1152)).
+([relay.js:1152 @ 833d5d4](../../spirit/run/spirit/relay.js)).
 
 **Add `relayPublicKey` to that response.** The key then arrives with the
 row, and the roll stops being where a node learns it — which is the *only*
@@ -182,7 +192,7 @@ file. The owner's relay-status report carries the running version.)*
 
 `VERSION`, `BUILD.commit`, `BUILD.dirty`, `BUILD.at`, `BUILD.source`,
 `BUILD.untracked` are all fixed at boot
-([server.js:1156-1168](../../spirit/run/js/server.js#L1156-L1168)). Only
+([server.js:1156-1168 @ 833d5d4](../../spirit/run/spirit/server.js)). Only
 `startedAt` is process state, and the deploy check it exists for does not
 need it.
 
@@ -200,7 +210,7 @@ about request/response pairing, and a constructor is not one. The sentence
 was never wrong, it just never applied.
 
 - an ordinary peerPost, addressed to the relay's key like `removePeer` and
-  `partners` already are ([hub.js:2101](../../spirit/run/js/hub.js#L2101))
+  `partners` already are ([hub.js:2101 @ 833d5d4](../../spirit/run/spirit/hub.js))
 - **the body is the constructor's arguments** — the identity token and
   whatever the stream needs to come up. **Not route couplets**: a hint
   answers *"which partner do I tunnel this through?"*, and this post
@@ -212,16 +222,16 @@ was never wrong, it just never applied.
 
 **`stream.close()`** — the destructor, and it is not redundant with socket
 teardown. `sinks[id]` is freed only when a socket dies, and a half-open
-socket does not die ([sseClient.js:50-57](../../spirit/run/js/sseClient.js#L50-L57));
+socket does not die ([sseClient.js:50-57 @ 833d5d4](../../spirit/run/spirit/sseClient.js));
 `presence.js` has no heartbeat and no timeout by design
-([presence.js:12-16](../../spirit/run/js/presence.js#L12-L16)).
+([presence.js:12-16 @ 833d5d4](../../spirit/run/spirit/presence.js)).
 
 What the call buys that teardown cannot is **intent versus loss**:
 
 | | |
 |---|---|
 | clean close | broadcast absence now, free the slot now |
-| dropped socket | hold the presence *bit* for a grace period — sseClient retries in 1–8s ([sseClient.js:43](../../spirit/run/js/sseClient.js#L43)) |
+| dropped socket | hold the presence *bit* for a grace period — sseClient retries in 1–8s ([sseClient.js:43 @ 833d5d4](../../spirit/run/spirit/sseClient.js)) |
 
 Today those are the same fact, so a relay restart flickers every member's
 roster. A grace period is only affordable once departure and reconnect can
@@ -229,7 +239,7 @@ be told apart.
 
 **The client already makes that distinction and has never shared it.**
 `stopped` is set in exactly one place —
-[sseClient.js:331](../../spirit/run/js/sseClient.js#L331) — and every other
+[sseClient.js:331 @ 833d5d4](../../spirit/run/spirit/sseClient.js) — and every other
 path goes to `scheduleRetry`. So clinginess is *already* conditional on
 intent; the relay has simply never been told. The change:
 
@@ -242,7 +252,7 @@ handle.close()
 
 **Post before abort**, or the FIN beats the post and the relay spends a
 grace period on a departure. Harmless — `disconnect(id, sink)` is idempotent
-and sink-checked ([presence.js:127-137](../../spirit/run/js/presence.js#L127-L137))
+and sink-checked ([presence.js:127-137 @ 833d5d4](../../spirit/run/spirit/presence.js))
 — but the grace is the thing this exists to save.
 
 `stream.close()` resolves to the sender's own identity like every post, so
@@ -261,11 +271,11 @@ Because the stream is an ordinary post, not a special one:
   carries the identity token and no route table, so the existing payload
   rules apply unchanged (§8, route hints).
 - **the partner branch disappears.** `partnerLink.js` dials
-  `/api/relay/stream?key=` today ([partnerLink.js:48](../../spirit/run/js/partnerLink.js#L48))
+  `/api/relay/stream?key=` today (`partnerLink.js:48 @ 833d5d4`)
   — a second path to the same thing. A partner opens its stream with the
   identical post a member uses, which is [PARTNERS.md](PARTNERS.md)'s
   one-protocol rule arriving rather than being asserted.
-- **`streamSignatureFrom` is deleted** ([relay.js:3399-3405](../../spirit/run/js/relay.js#L3399-L3405)),
+- **`streamSignatureFrom` is deleted** ([relay.js:3399-3405 @ 833d5d4](../../spirit/run/spirit/relay.js)),
   with its export, its call site, and most of what `streamSig.js` guards.
   Not because its rule becomes unenforced — because **there is no second
   signature path left.** One check, peerPost's, for everything a relay is
@@ -302,7 +312,7 @@ So the split is the condition of the change:
 > protocols more feasible."*
 
 A peerPost already signs **in the envelope**, not a header
-([peerPost.js:289](../../spirit/run/js/peerPost.js#L289)):
+([peerPost.js:289 @ 833d5d4](../../spirit/run/spirit/peerPost.js)):
 
 ```js
 { from: id.publicKey, to: toKey, text: text, sig: sig }
@@ -414,7 +424,7 @@ everything lives.
   is good, so the answer is probably the former.
 - **The restart re-check is lost.** `answerRelay.relayKey` re-fetches once
   per process and compares to the pin
-  ([answerRelay.js:142-144](../../spirit/run/js/answerRelay.js#L142-L144)).
+  ([answerRelay.js:142-144 @ 833d5d4](../../spirit/run/spirit/answerRelay.js)).
   With no door there is no re-check. Assessed as a small loss: it compared
   against an **unsigned** source, which anyone able to substitute a relay
   can also forge. The real detector is that every signed exchange fails when
@@ -427,7 +437,7 @@ everything lives.
 - **`ownerBadge.probe` polls boxes this node has no row on**, and its own
   note says that is the point — *"a question asked on a timer against every
   URL in relays.json, including boxes this node has no relationship with"*
-  ([ownerBadge.js:428-431](../../spirit/run/js/ownerBadge.js#L428-L431)). A
+  ([ownerBadge.js:428-431 @ 833d5d4](../../spirit/run/spirit/ownerBadge.js)). A
   signed post needs a row, so that case has no post form.
 
   **Recommended: it rides the streams instead, and stops being a poll** —
@@ -436,7 +446,7 @@ everything lives.
 
   It read: *"the node already holds a stream to every relay it has a row on
   — `urls.forEach(openTo)`
-  ([presenceNode.js:313](../../spirit/run/js/presenceNode.js#L313))"*, and
+  ([presenceNode.js:313 @ ac32d11](../../spirit/run/spirit/presenceNode.js))"*, and
   concluded the stream could therefore report which relays have a row.
 
   That sentence is true and the conclusion inverts it. **Four lines above
@@ -477,11 +487,11 @@ everything lives.
   > it** and are covered by WIRE_HEADROOM in BODY_MAX, so they must not be
   > subtracted here. **Doing so once reserved room inside the packet for
   > things that are not in it.**
-  > — [relay.js:57-64](../../spirit/run/js/relay.js#L57-L64)
+  > — [relay.js:57-64 @ 833d5d4](../../spirit/run/spirit/relay.js)
 
   So the sender's packet is 16384, and one signed wrapper is absorbed by
   `BODY_MAX = PAYLOAD_MAX + WIRE_HEADROOM`
-  ([limits.js:100](../../spirit/run/js/limits.js#L100)). The word *envelope*
+  ([limits.js:100 @ 833d5d4](../../spirit/run/spirit/limits.js)). The word *envelope*
   means the packet in limits.js and the signed wrapper in relay.js, which is
   most of how the earlier reading went wrong.
 
@@ -500,7 +510,7 @@ everything lives.
   The tree confirms the cost: `carryToPartner` nests the inner
   `{from,to,text,sig}` inside `{ v:1, body:{ forward: … } }` and hands that
   to `askPartner`, which signs it in its own right
-  ([relay.js:1993-1998](../../spirit/run/js/relay.js#L1993-L1998)). Two full
+  ([relay.js:1993-1998 @ 833d5d4](../../spirit/run/spirit/relay.js)). Two full
   envelopes, two overheads, and `MATCH_BUDGET` reserves for one.
 
   Two things make the reservation unavoidable — though not, as it turns out,
@@ -526,9 +536,9 @@ everything lives.
   serialised form** — headroom bytes included — into the `text` of the outer
   packet: `askPartner(url, relayKey, wrapper)` becomes
   `partnerRouter.post(url, relayKey, text)`
-  ([server.js:40-43](../../spirit/run/js/server.js#L40-L43)), and `text` is
+  ([server.js:40-43 @ 833d5d4](../../spirit/run/spirit/server.js)), and `text` is
   exactly what `MAX_ROUTED_TEXT = limits.PAYLOAD_MAX` bounds
-  ([relay.js:53](../../spirit/run/js/relay.js#L53)). Raising `BODY_MAX` only
+  ([relay.js:53 @ 833d5d4](../../spirit/run/spirit/relay.js)). Raising `BODY_MAX` only
   lets the socket accept bytes the packet check then refuses: an inner packet
   at 16384 reaches the partner as ~16650 of routed text and 413s there.
 
@@ -595,10 +605,10 @@ everything lives.
 
   `MAX_ROUTED_TEXT` applies the same check at the relay, so the browser
   pre-check stays true to what the relay enforces
-  ([limits.js:110-112](../../spirit/run/js/limits.js#L110-L112)).
+  ([limits.js:110-112 @ 833d5d4](../../spirit/run/spirit/limits.js)).
 
   **Then check `MATCH_BUDGET = PAYLOAD_MAX - 512`**
-  ([relay.js:2101](../../spirit/run/js/relay.js#L2101)). It subtracts exactly
+  ([relay.js:2101 @ 833d5d4](../../spirit/run/spirit/relay.js)). It subtracts exactly
   what the comment ten lines away says must not be subtracted. Either it
   reserves for the packet's own structure — legitimate, a different thing —
   or it is the residue of the error that comment was written about, in which
@@ -608,7 +618,7 @@ everything lives.
   **Not a live bug, and the trigger is exact.** `atRelayKey` is the one
   argument nothing on the wire supplies — *"the public route calls this with
   four arguments"*
-  ([relay.js:2607-2617](../../spirit/run/js/relay.js#L2607-L2617)) — so
+  ([relay.js:2607-2617 @ 833d5d4](../../spirit/run/spirit/relay.js)) — so
   `carryToPartner` is unreachable from outside today. The doubled subtraction
   belongs **in the same commit that adds the `atRelayKey` wire field**, which
   is what turns a reserved-for-one budget into a reply that cannot be
@@ -629,7 +639,7 @@ everything lives.
 
   Stripping is mandatory, and it decides where they live: **a field cannot be
   removed from a signed packet.** The signature covers `from`/`to`/`text` as
-  bytes ([relay.js:1983](../../spirit/run/js/relay.js#L1983)), and
+  bytes ([relay.js:1983 @ 833d5d4](../../spirit/run/spirit/relay.js)), and
   [0011](../decisions/0011-the-hash-is-computed-never-carried.md) requires
   the hash to be derived from those bytes at every party. Anything inside
   `text` is load-bearing for the far end's verification.
@@ -714,9 +724,9 @@ everything lives.
   > or whatever."*
 
   The two being `frontDoor`'s *"is this sender a relay?"*
-  ([hub.js:564](../../spirit/run/js/hub.js#L564)) and `handleSearch`'s
+  ([hub.js:564 @ 833d5d4](../../spirit/run/spirit/hub.js)) and `handleSearch`'s
   *"which key do I address this box as"*
-  ([hub.js:1929](../../spirit/run/js/hub.js#L1929)). Both need a **pin**, and
+  ([hub.js:1929 @ 833d5d4](../../spirit/run/spirit/hub.js)). Both need a **pin**, and
   the pin was being derived from the whole roll, once per relay per node
   boot.
 
@@ -782,7 +792,7 @@ everything lives.
   **`ownerBadge.probe` is not a `?key=` job, though it looks like one.**
   `censusFacts` scans the whole list for the owner's label, the member count
   and the roster
-  ([ownerBadge.js:335-353](../../spirit/run/js/ownerBadge.js#L335-L353)), and
+  ([ownerBadge.js:335-353 @ 833d5d4](../../spirit/run/spirit/ownerBadge.js)), and
   builds it for every relay this node is *claimed* on — which in practice is
   all of them. Narrowing would save nothing and add a round trip. It belongs
   with `handleRoster` in the paging job.
@@ -832,21 +842,21 @@ invisible gets undone by the next reader.
   reliable. It is not — see 2d.
 - **server.js's own reason for exempting `GET /api/events`** — *"a
   different transport shape, not a different verb, and no body can express
-  it"* ([server.js:1394-1396](../../spirit/run/js/server.js#L1394-L1396)).
+  it"* ([server.js:1394-1396 @ 833d5d4](../../spirit/run/spirit/server.js)).
   A body **can** express it; that is the whole of 2d. What actually stops
   `/api/events` folding is the **client**: EventSource can neither POST nor
   set headers, and the node's only listener is a browser. The relay's only
-  listeners are node-side ([presenceNode.js:24](../../spirit/run/js/presenceNode.js#L24),
-  [partnerLink.js:48](../../spirit/run/js/partnerLink.js#L48)), so it has no
+  listeners are node-side ([presenceNode.js:24 @ 833d5d4](../../spirit/run/spirit/presenceNode.js),
+  `partnerLink.js:48 @ 833d5d4`), so it has no
   such constraint. **Same exception on both sides, different reasons, and
   only the node's is permanent.**
 - **`GET /api/relay/stream` was never a "public path"**, though it is listed
-  as one ([server.js:929](../../spirit/run/js/server.js#L929)). It is the
+  as one ([server.js:929 @ 833d5d4](../../spirit/run/spirit/server.js)). It is the
   most authenticated thing on the box — unknown identities refused before
   any crypto, signature checked against that row's own key, authenticated
   *before* `connect` evicts, or anyone could knock any peer offline by
   connecting badly in someone's name
-  ([relay.js:3242-3269](../../spirit/run/js/relay.js#L3242-L3269)). The list
+  ([relay.js:3242-3269 @ 833d5d4](../../spirit/run/spirit/relay.js)). The list
   means "not handled by the generic gate", which is not what it is called.
 
 ---
@@ -869,12 +879,12 @@ refused is the bulk question:
 
 | | verdict | why |
 |---|---|---|
-| `GET /api/relay/who` ([server.js:1271](../../spirit/run/js/server.js#L1271)) | **delete** | O(members) per request, per requester, by anyone including strangers |
-| `presence` broadcast ([relay.js:3298](../../spirit/run/js/relay.js#L3298), [3326](../../spirit/run/js/relay.js#L3326), [1785](../../spirit/run/js/relay.js#L1785)) | **keep** | O(1) per event. The design |
-| `route` broadcast ([relay.js:2080](../../spirit/run/js/relay.js#L2080)) | **keep** | same, and Andy's own example |
+| `GET /api/relay/who` ([server.js:1271 @ 833d5d4](../../spirit/run/spirit/server.js)) | **delete** | O(members) per request, per requester, by anyone including strangers |
+| `presence` broadcast ([relay.js:3298 @ 833d5d4](../../spirit/run/spirit/relay.js), [3326 @ 833d5d4](../../spirit/run/spirit/relay.js), [1785 @ 833d5d4](../../spirit/run/spirit/relay.js)) | **keep** | O(1) per event. The design |
+| `route` broadcast ([relay.js:2080 @ 833d5d4](../../spirit/run/spirit/relay.js)) | **keep** | same, and Andy's own example |
 | **member-added broadcast** | **add** | does not exist. It is what auto-contacts wanted |
-| `streamRoster`'s member list ([relay.js:3208](../../spirit/run/js/relay.js#L3208)) | **narrow to the relay's own row** | see below |
-| `snapshot()`'s `peers: who()` ([relay.js:901](../../spirit/run/js/relay.js#L901)) | **delete the list** | built, then reduced to `peers.length` by its only reader. Discloses nothing; pure waste |
+| `streamRoster`'s member list ([relay.js:3208 @ 833d5d4](../../spirit/run/spirit/relay.js)) | **narrow to the relay's own row** | see below |
+| `snapshot()`'s `peers: who()` ([relay.js:901 @ 833d5d4](../../spirit/run/spirit/relay.js)) | **delete the list** | built, then reduced to `peers.length` by its only reader. Discloses nothing; pure waste |
 
 **`streamRoster` needs no catch-up substitute**, which was the last thing
 this plan was unsure about:
@@ -891,7 +901,7 @@ because that is how a member addresses the box it is attached to.
 ### The node side
 
 One HTTP reader left: `ownerBadge.probe`
-([ownerBadge.js:441](../../spirit/run/js/ownerBadge.js#L441)). `censusFacts`
+([ownerBadge.js:441 @ 833d5d4](../../spirit/run/spirit/ownerBadge.js)). `censusFacts`
 scans the whole list for six facts, and five are already available:
 
 | fact | replacement |
@@ -899,7 +909,7 @@ scans the whole list for six facts, and five are already available:
 | `owned` | `/api/relay/key` → `ownerKey === myKey`. A comparison, not a search |
 | `owner`, `relayKey`, `relayLabel` | `/api/relay/key` — **already built** |
 | `claimed` | **not settled — see below.** This row said "the stream opens, or refuses `no such identity`", inherited from §8 without re-deriving it |
-| `claimedLabel` | `streamOpen` returns `label` ([relay.js:3306](../../spirit/run/js/relay.js#L3306)) and it is discarded today |
+| `claimedLabel` | `streamOpen` returns `label` ([relay.js:3306 @ 833d5d4](../../spirit/run/spirit/relay.js)) and it is discarded today |
 | `peers` (a count) | **delete** — no consumer in `run/` |
 | `roster` | gone with the fetch; the member reconcile listens instead |
 
@@ -907,7 +917,7 @@ scans the whole list for six facts, and five are already available:
 
 **The roll is the only thing that tells a node it holds a row anywhere.**
 `presenceNode.start` calls `probe` to decide which relays to dial
-([presenceNode.js:309-313](../../spirit/run/js/presenceNode.js#L309-L313)),
+([presenceNode.js:309-313 @ ac32d11](../../spirit/run/spirit/presenceNode.js)),
 so the stream cannot answer it — the stream depends on the answer. And
 nothing is written down locally: `relays.json` rows are `{label, url}`, and
 a successful claim records nothing.
@@ -924,7 +934,7 @@ store, cheaper than a roll per relay, and it takes `probe` out of presence
 startup altogether.
 
 The catch is real: `sseClient` treats any non-OK as retry-with-backoff
-([sseClient.js:236](../../spirit/run/js/sseClient.js#L236)), so dialling an
+([sseClient.js:236 @ ac32d11](../../spirit/run/spirit/sseClient.js)), so dialling an
 unjoined relay becomes a permanent retry loop. It has to tell *"you are not
 a member"* from *"the box is down"* — worth having regardless, since a
 clingy client should not cling to a door telling it to go away.
@@ -938,7 +948,7 @@ startup, which is nearer infrastructure than the rest of this plan.
 
 And one thing to build rather than move: `presenceNode.onRoster` already
 receives labels and throws them away
-([presenceNode.js:126](../../spirit/run/js/presenceNode.js#L126)). Whatever
+([presenceNode.js:126 @ 833d5d4](../../spirit/run/spirit/presenceNode.js)). Whatever
 the stream carries after the narrowing is read there.
 
 ### Intrinsic UI

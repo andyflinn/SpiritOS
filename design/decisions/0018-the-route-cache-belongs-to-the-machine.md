@@ -119,19 +119,21 @@ provenance (R29), presence dated on it (R30), and the owner's disc cap
 **What it does not grant.** A store for the shadow, and the node-side
 things named above that share it. Not a licence for a database wherever one
 would be convenient, and not a change to what stays a readable file:
-`identity.json`, `allow.json` and `config.json` are *"constant, tiny, and
-the ones an owner may have to read or restore over SSH"*
-(`relayStore.js:27`).
+`identity.json`, `owner.json` (`allow.json` until cleanup/G1.7) and
+`config.json` are *"constant, tiny, and the ones an owner may have to read
+or restore over SSH"* (`relayStore.js:29`).
 
 ## Retrofitted
 
 - [NODE-AND-RELAY](../principles/NODE-AND-RELAY.md) §Premise — amended in
   place, stating the ownership test and naming `server.js` as the
   exemption that was already there.
-- `spirit/run/js/seenPeers.js` — the header carries the rule where
+- `spirit/run/spirit/seenPeers.js` — the header carries the rule where
   somebody would go to add a reader.
 - [the gap cycle](../cycles/2026-09-21-filling-the-gaps-request-budget.md)
   R26 — the store, its shape, and its floor.
 - [A-CORRESPONDENT-NODE](../principles/A-CORRESPONDENT-NODE.md) —
   **checked and unchanged.** Its readability claim is about the traffic
-  log, which is the owner's.
+  log, which is the owner's. (Since transport R19.3, Andy 2026-09-28:
+  *"Moving the node log into machine-side database"*, that log is a table
+  in node.db too; see the note on 0009.)

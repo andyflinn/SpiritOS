@@ -2,6 +2,8 @@
 
 > 2026-10-13 (goal/G22.6): `GET /api/relay/key`, named below, is closed; a relay's key is the answer to a signed card ask on its one door. Partnering, which this plan budgets for, is gone as a permission.
 
+Status 2026-11-07 (goal/G43.23): line numbers are as measured then. `contacts.json`, `relays.json` and `relayKeys.json` are rows of node.db's one table since goal/G40.11 (`spirit/run/spirit/relayKeys.js:58`). `searchMemoryRows` is gone (`spirit/run/spirit/nodeSettings.js:46`): R39's memory is the kept and owned rows only (`spirit/test/searchMemory.js`); `cacheMaxMB` stays in `spirit/state/node.json`. Gone modules: `governor.js` and `settableCensus.js` (cycle 8, 11dcb1e0), `partnerLink.js` (c4054152), `partnerAvailability.js` and the partner suites (goal/G22.6), `contactsDetails.js` (goal/G43.17), Relay Chat (f589d46d) and Natter (goal/G30.7). `spirit/test/contacts.js` was deleted at goal/G41.28, so R2 and R8 are marked SUPERSEDED below, and R12 with the partner roll.
+
 **Plan, 2026-09-21. Measured against `bfd5df0`.**
 
 ~~*Nothing here is built.*~~ — struck 2026-09-21. ~~Twelve of the twenty-six
@@ -519,7 +521,7 @@ boundary to manage traffic that should not exist.
 that person and nobody else; a second press on the same row spends no
 second request; what they said appears under their name once pressed.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G41.28 — the contacts data this verified was replaced, and `spirit/test/contacts.js` was deleted with it (Andy: "Kill'em."); no suite asserts the press-to-ask rule today. Before: DONE.
 
 ### R3 — queue depth, and what is shed at the limit
 
@@ -789,7 +791,7 @@ R9 rather than with this.
 **Verify:** `spirit/test/contacts.js` — a row marked `viaPartner` carries
 the partner's URL, and acquiring it keeps that URL as a route.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — no relay answers for a partner's members, and `spirit/test/contacts.js` was deleted at goal/G41.28. Before: DONE.
 
 ### R9 — hints carry `{ key, url }`
 
@@ -1109,7 +1111,7 @@ moves nothing else, a stamp for a non-partner that creates nothing, and a
 database built with the OLD schema by hand that gains the column, keeps its
 rows and takes the write.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — the partner roll and its `last` column are gone (`spirit/run/spirit/relayStore.js:205-206`). Before: DONE.
 
 ### R13 — no streams between partners
 

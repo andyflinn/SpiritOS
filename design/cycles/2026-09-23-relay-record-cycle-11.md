@@ -1,5 +1,7 @@
 # Cycle 11 — the owner's relay record
 
+Status 2026-11-07 (goal/G43.23): all seven requirements were built at `78d6e3a` (the line below is the opening). The record is node.db's `relay_record` table (`spirit/run/spirit/nodeStore.js:434`); `relay.record` reads a window newest first, cut in bytes (puppets/G2, `spirit/run/spirit/hub.js:2068-2087`), and its list of relays went to `relay.search`, then to `contact.search` (goal/G40.11). `relays.json` is gone into node.db. Line numbers are as measured then.
+
 **Opened 2026-09-23 from `36406eb`. Nothing built. Seven requirements.**
 
 > **Andy:** *"relay record is in the alpha"* — and on where it belongs:

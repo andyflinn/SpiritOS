@@ -67,6 +67,22 @@ the only way a default survives contact with people in a hurry.
 
 **55 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
+> **Status 2026-11-07 (goal/G43.23):** this list is the door at `daf60a6`, not today's.
+> Since goal/G32.1 each family declares its verbs in `spirit/run/spirit/<family>/api.js`,
+> mounted by `server.js:1682-2049`, so `doorContract.js`, which still reads verbs out of
+> `server.js`, finds none. Today there are 55 verbs in 11 families (`config` is kept empty, goal/G30.20):
+> net: fetch · auth: query search peer grant revoke relabel bundle branch ·
+> jobs: search get create cancel delete · events: subscribe publish ·
+> app: search active label icon · fs: search stat load annotations save delete annotate ·
+> node: card debug setName setDescription rotateCipher shell · owner: boxSearch boxGet command ·
+> relay: claim partnerCheck get remove add face join leave record ·
+> contact: search get block unblock accept label forget own · peer: post acquire.
+> Gone from the list below: `proxy.*` (goal/G29.20, 62c1371e), `contact.senders` and
+> `contact.setSenders` (goal/G43.17), `config.searchModules` and `config.setModules`,
+> `jobs.update` (now `events.publish`, goal/G40.6), the `jobs.auth*` verbs (now the `auth`
+> family), `jobs.api`, `relay.search` (goal/G40.11: a relay is a row of `contact.search`)
+> and `peer.search`. The authorities below are recorded for the verbs as they stood.
+
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
 *"my Yes's may be dumb, too, and revoked later on."* So every line ends with
@@ -151,7 +167,7 @@ his words, which keeps the harness red until the verb is gone.
 - `relay.remove` — Andy, 2026-10-10: "Q4: Do you approve two new commands on the node, list relays and remove relay, with a successful claim adding its relay? yes." (Desk, goal/G16.3)
 - `relay.search` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 
-**Inside the node, not on this door.** A booted app (`nodeApps.js`) is
+**Inside the node, not on this door.** A booted app (`nodeApps.js`, deleted at goal/G13.2 with the booted apps) was
 handed an api of its own, and it is the node's interface too, so the same
 rule covers it. One call was added there, and none here:
 - `api.toLocalApp(name, { method, path, body, type })` — the node's one
@@ -160,6 +176,8 @@ rule covers it. One call was added there, and none here:
   "i explicitly permit the two new/proposed interfaces/api' for
   communication from node to appserver", and "Go. and two verbs approved."
   (Desk, public-app-server/G17)
+  It left with goal/G13.2 (Andy, 2026-10-10: *"no "face" crap belongs into node."*,
+  `appClient.js:23-28`): a server is started by startNodeServers and reached by its pipe.
 
 **By packet, not on this door.** A known sender (the front door's `known`,
 never `admit`) asks with an ordinary packet of app `api` (`apiDoor.js`):
@@ -191,18 +209,21 @@ that box"*.
 
 | | |
 |---|---|
-| claims accepted by a relay | **10 a minute** |
-| posts in flight per sender | **16** |
+| claims accepted by a relay | **no per-address limit**: since goal/G22.6 the strangers' address table at the door "replaces the per-address claim limit" (Andy; `relay.js:1377-1379`) |
+| posts in flight per sender | **1** |
 | **posts in flight per recipient** | **1** |
 
 **That last one is the load-bearing number.** One inbound route per
 member means a relay's inbound work is bounded by its membership rather
 than by anybody's intent — and it is what makes a relay's capacity a
 figure you can compute instead of estimate.
+Since goal/G22.6 the slot is counted per sender: one request in flight from
+each sender to each member, so no stranger can keep a member busy for
+everybody (`router.js:42-55`).
 
 ## The errors
 
-**96 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**103 conditions are catalogued** in `spirit/run/spirit/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

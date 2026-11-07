@@ -2,6 +2,10 @@
 
 **Decided 2026-09-21 by Andy. Measured against `144791d`.**
 
+**Status 2026-11-07 (goal/G43.23):** the decision holds. The code it names
+as examples is gone: `governor.js` (cycle 8, 11dcb1e0, 2026-09-22) and
+`partnerLink.js` (cycle 8, c4054152, 2026-09-22).
+
 > **Andy:** *"the new core-relay-design, even incomplete, now supersedes
 > decisions made earlier, if they block progress in cleaning up with the
 > new vision in mind...... and we go forward adjusting downstream plans as

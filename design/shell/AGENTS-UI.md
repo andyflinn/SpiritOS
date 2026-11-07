@@ -6,6 +6,24 @@ shape changes.**
 
 Design only. Nothing here is built.
 
+> **Status 2026-11-07 (goal/G43.23): built, in another shape, and the
+> agents app is gone.** Andy, goal/G3 (2026-10-02): *"the agents APP is no
+> longer permitted in this REPO"*, and agents speak only in Desk (`AGENT.md`).
+> So `process/js/agents/agents.js`, its envelope, its kinds and
+> `agents-log.jsonl` are gone (ef85bc1f), and no board is posted as an agents
+> packet. Desk is a server process, `spirit/run/process/js/desk/desk.js`,
+> holding goals, items, boxes, rules and their chat in `desk.db` under
+> `relay-state/process/desk/` (`desk.js:11`, `:67`), with its page in
+> `spirit/run/shell/desk/`, not `app/desk/` and not a `log.json` of its own.
+> Since goal/G43.22 (Andy, the box: *"the apps and plugin system goes."*,
+> *"there will only be goals, items and rules left, plus the verifier stuff
+> can stay for now."*) it has no apps, plugins, team chat, musings or
+> stacks. Design mode exists, per goal and per item (`desk.js:799`). No
+> `voice.jsonl` is written any more (goal/G2.1, `desk.js:2632-2634`): the
+> vault's own tool reads his Desk lines through the desk server's api, so
+> decision 6 below is superseded too. The sections below are the record of
+> 2026-09-27.
+
 ## Vision, in his words
 
 - *"soon I'll ask you to make me a shell app that pipes my responses into

@@ -4,7 +4,7 @@
 // WHAT A TEST NEEDS TO DRIVE A REAL BROWSER (goal/G41.22): a scratch node with its DEBUG on, and headless Chrome on a
 // scratch profile, one page of it over the debugging protocol. Taken out of the shell's general rules
 // (test/spirit-sibling-generalRules.js), so an element's own test can open its own pages, /DEBUG/<path>/test/<page>.html
-// (spirit/DEBUG.md), in the same browser on the same kind of node. Never Andy's node nor an agent's.
+// (spirit/test/DEBUG.md), in the same browser on the same kind of node. Never Andy's node nor an agent's.
 
 const fs = require('fs');
 const os = require('os');
@@ -34,7 +34,9 @@ function findChrome() {
 }
 
 // A scratch copy of the tracked files of spirit/run, its node started on a free port. o.servers names app servers turned
-// on at home before it starts, as their owner turns one on: the face part of its sidecar, face.home (goal/G41.1).
+// on at home before it starts, as their owner turns one on: the face part of its sidecar, face.home (goal/G41.1). That
+// switch is a process/js/<name>/ server's; an app of spirit/app/<name>/ runs by active in spirit/state/<name>/node.json
+// (goal/G43.12, spirit/jobs.js), which o.servers does not write.
 async function scratchNode(o) {
   // One node for a whole run of every file (below): the run that started this one hands its address on.
   if (process.env.SPIRIT_MOUNT_BASE) return { base: process.env.SPIRIT_MOUNT_BASE, child: null, root: '', up: true, debug: true, shared: true };

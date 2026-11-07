@@ -5,14 +5,14 @@
 // drawn "(ALL)" as the filter draws it ("A branch row with an empty verb shows as "(ALL)", as the filter does").
 // rowElement.js does the shared work; this file says what a branch is.
 //
-//   branchElement.create(row, opts) -> a rowElement of kind branch
+//   spirit.element.search.branch.rowElement.create(row, opts) -> a rowElement of kind branch
 //     row            { id, bundle, family, verb }, as auth.branch answers it
 //     opts.api       the app's shell api, for the arming button's are-you-sure
 // THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (goal/G41.14; Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything
 // that changes their data set", "NO FUCKING DATA SCRIPT"): the node publishes each changed branch row on its permanent
-// job 'bundles' ({ table: 'branch', row }, gone when deleted, a bundle's branches each gone with it); this file puts it
-// into data.branches of the spirit object, and every branch row on the page repaints from there through its kind's
-// index. A row asks and draws nothing of its own (rule/19).
+// job 'bundles' ({ table: 'branch', row }, gone when deleted, a bundle's branches each gone with it); the auth family's
+// cache manager (below) puts it into spirit.data.auth.data.branches, and every branch row on the page repaints from there
+// through its kind's index. A row asks and draws nothing of its own (rule/19).
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.

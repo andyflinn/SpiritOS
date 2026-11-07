@@ -81,7 +81,7 @@ const isOn = function (b) { return !!(b.inputs[0] && b.inputs[0].checked === tru
 
 function world() {
   const w = { created: [], loads: [], saves: [], def: null };
-  // The tabContainer in the centre (goal/G41.31), a stand-in: its contract and test are ../../js/test/tabContainer.md. Each tab added
+  // The tabContainer in the centre (goal/G41.31), a stand-in: its contract and test are spirit/element/test/tabContainer.md. Each tab added
   // mounts at once in a box of its own; its real behaviour is judged in spirit/app/agent/test/agentCentreTabs.js.
   w.tabs = [];
   w.tabContainer = { create: function (into) {
@@ -159,10 +159,10 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(/\bfill\b/.test(String(into.className || '')) || (into === app && false), 'the box it hands the workBench takes the shell\'s fill class',
     'the box: ' + short(into.tag || into.className || (into === app ? 'the container itself, unsized' : typeof into)));
   const L = wb.opts.left || []; const R = wb.opts.right || [];
-  // The app's own tool, then one per table of agent.db (goal/G41.4, box v22: "every one of these tables will come with a
+  // One per table of agent.db (goal/G41.4, box v22: "every one of these tables will come with a
   // left-edge icon that puts up a panel in the left-side tool-display of the workBench UI used in this app").
   // goal/G41.26, Andy, box: "the left site icon strip gains a [chat] icon, that opens the following, NEW panel, titled:
-  // \"💬 Select Persona\"". Its place in the strip is not said; it is the one tool that is neither the app's nor a table's.
+  // \"💬 Select Persona\"". Its place in the strip is not said; it is the one left tool that is not a table's.
   const LEFT = TABLES.slice();
   // goal/G41.21: "The right strip gets its first real tool: the bundle editor ... It joins the agent server's DEBUG box".
   const CHAT_TOOL = L.filter(function (t) { return t && t.icon === '💬'; });
@@ -240,7 +240,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   }
 
   test.subHeading('the right strip\'s bundle editor (goal/G41.21)');
-  // Box v17: "the bundle editor (shell/js/bundleEditor.js, the shell element that lists, makes and edits bundles)".
+  // Box v17: "the bundle editor (shell/js/bundleEditor.js, the shell element that lists, makes and edits bundles)"; it is
+  // spirit/element/bundleEditor.js now.
   {
     const before = w.required.length;
     const editors = [];

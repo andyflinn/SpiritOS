@@ -1,5 +1,15 @@
 # Collaborative route discovery, on demand
 
+**Status 2026-11-07 (goal/G43.23): kept as the record.** The gap it was
+framed around, a peer found across a partnership, went with partnering
+(goal/G22.6, PARTNERS.md): a relay now carries a post to its own member from
+any sender, so a node posts at the peer's relay. Route hints, built in
+cycle 2 (`routeHints.js`), were deleted at goal/G22.6 (113d1327). What stands
+of this design: a relay announces routes on its stream (relay.js,
+`presentNow.broadcast('route', ...)`; read in presenceNode.js) and a node
+keeps them as its own rows in node.db (0018; goal/G40.11). The device page
+is gone (goal/G16.2), and the census is the roll (cycle 10, R18).
+
 **Designed 2026-09-17. Nothing built.** Every claim about the tree was checked at
 `1edc4fe`.
 

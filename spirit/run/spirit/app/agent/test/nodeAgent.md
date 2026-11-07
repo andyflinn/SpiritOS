@@ -1,7 +1,7 @@
 # spirit/app/agent/nodeAgent.js
 
 The agent server (goal/G41.1): the server process behind the agent face app. It keeps all of the app's state, in
-`agent.db`, an SQLite database, and streams that state to its clients. In this item its state is its DEBUG state.
+`agent.db`, an SQLite database, and streams that state to its clients: the rows of its four tables.
 
 No agents talk to each other through it: each agent sees itself as the only agent and user of the node (goal/G3.1,
 2026-10-02, and G41.1's Q1).
@@ -10,26 +10,22 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 - `spirit/app/agent/nodeAgent.js`, the server. The node starts `agent.js` (`./agent.md`), which loads it.
 - `spirit/app/agent/agent.json`, its manifest, in the new shape: `node.mount` true, no `kind`, no `operated`.
-- `spirit/app/agent/api/api.js`, its interface: the verb `debug` with `on`, a `bool`.
-- `spirit/app/agent/api/debug.json`, the verb's description and request.
+- `spirit/app/agent/api/api.js`, its interface: one verb per table, provider, model, persona and job; no `debug`
+  (goal/G43.15, below).
 
 ## Its state
 
 - In the folder the node hands it as `--state`, which is `spirit/state/agent/data/` on a node: never in git.
 - `agent.db` is created there at start, an SQLite database.
-- `config.json` there holds `{ "debug": <true or false> }`.
+- No `config.json` is written there (goal/G43.15).
 
 ## Requirements
 
 - It starts on the node's pipe (`--pipe`) and its `--state` folder, and answers there.
-- `agent.debug {on}` maintains the existing debug state of the server, the one appServer's own `DEBUG` verb switches,
-  not a second one (Andy, Q4): after `debug {on: true}`, `DEBUG {}` answers `debug: true`, and the other way round.
-- `debug {on}` writes `config.json` with the new state, and answers `{ debug }`.
-- A `debug` whose `on` is not true or false is refused, and changes nothing.
-- The state persists across restarts: started again on the same `--state`, the server reads `config.json` and its DEBUG
-  state is what it was. With no `config.json`, DEBUG starts off.
-- It streams its state as `{ agent: { debug } }`: it serves with a publisher whose bootstrap hands a subscriber the
-  state, and `debug` publishes the new state. There is no read verb: the page reads the state from the stream.
+- Its DEBUG is appServer's own `DEBUG`, as every server's, kept by the node across restarts (goal/G43.15, below).
+- It streams its state: it serves with a publisher (family `agent`, its bootstrap an empty list), and each table
+  publishes a row as it changes, `{ agent: { table, row } }` or `{ agent: { table, id, removed } }`. There is no read
+  verb: the page reads the rows from the stream.
 
 ## Requirements (goal/G41.21, box v17)
 
@@ -44,17 +40,18 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
 
 ## What its test must try to break
 
-- A DEBUG state kept apart from the built-in one.
-- A restart that forgets the state.
-- A `debug` with a value that is not true or false.
+- A `debug` verb or a `config.json` of its own (goal/G43.15).
 
 ## goal/G41.4 (box v22): the data set of agent.db
 
-- **Five tables in agent.db**, camelCase as the shadow-roll is (cw): every table has `id` (an ed25519 public key, as the
-  shadow-roll keys a row), `privateKey`, `sealPublicKey`, `sealPrivateKey`, `label`, `description`, keyed by `id` alone;
-  provider adds `url`, `apiKey`; model `providerId`, `modelName`, `capabilities`; persona `persona`; job `loop`, `job`.
-  grant is node's grants exactly: `job_id`, `path`, keyed by both (spirit/nodeStore.js:502).
-- **One verb per table** (provider, model, persona, job, grant), flat as every family verb is (cw): `{op, ...fields}`,
+The grant table, the description column and the model name are gone since goal/G41.21 (above); what follows says the
+tables as they are now.
+
+- **Four tables in agent.db**, camelCase as the shadow-roll is (cw): every table has `id` (an ed25519 public key, as the
+  shadow-roll keys a row), `privateKey`, `sealPublicKey`, `sealPrivateKey`, `icon`, `label`, keyed by `id` alone;
+  provider adds `url`, `apiKey`, `unusable`, `model`; model `providerId`, `capabilities`; persona `persona`, `bundle`, `provider`;
+  job `loop`, `job`, `bundle`, `provider`, `persona`.
+- **One verb per table** (provider, model, persona, job), flat as every family verb is (cw): `{op, ...fields}`,
   op one of add (answers the new id), set, delete, get (the row without its secrets, `apiKeySet` in place of the key)
   and search (items and more); any other op refused.
 - **The key set at add-row** (Andy: "including the rest of the key-set stored on that table row"), the shadow-roll's
@@ -63,8 +60,7 @@ Andy: *"ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS
   process except the model providers API"; "The private halves of that set stay in the agent process"): no answer of
   add, set, get or search carries the API key or a private key.
 - **The folders**: spirit/app/agent/table/<name>/ with server.js, elementTable.js and elementRow.js, for provider,
-  model, persona and job; grant with server.js alone, its page files gone since goal/G41.16 (the grants panel,
-  spirit/element/grantsPanel.js, configured by the agent app, draws the grants by job). The table servers publish their rows.
+  model, persona and job; no grant folder (goal/G41.21). The table servers publish their rows.
 - Not asserted yet: the stream's rows carry no secret (a test server's stream reaches no node); the workBench icons.
 - A grant table or verb left, or an old grant table kept at start.
 - A description column left on an agent table; a model name column.

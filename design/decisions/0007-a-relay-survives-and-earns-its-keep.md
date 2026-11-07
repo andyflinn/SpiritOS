@@ -4,6 +4,19 @@
 
 **Decided 2026-09-12 by Andy. Against `4a0d51e`. Nothing implemented.**
 
+> **Status 2026-11-07 (goal/G43.23):** the decision holds; the code
+> described below is the tree at `4a0d51e`. Since then: the device model
+> (`deviceAuth.js`, `deviceTick.js`, `DEVICE_PER_MIN`) is gone (goal/G16.2,
+> 391de42b); `relayConsole.js` is gone (8b6f7eb1); `whoBook.js` is
+> `contacts.js` (e537880b) and `peerStats.js` is gone (goal/G43.14); the
+> owner record is `spirit/state/owner.json`, not `allow.json`
+> (cleanup/G1.7); the roll and invites are tables in `relay.db`, not
+> `routingTable.json` and `invites.json`; a relay's key is pinned across
+> restarts by `relayKeys.js` (`spirit/run/spirit/relayKeys.js:1-30`), so
+> the last open point about pinning is answered. In `kernel.js` today
+> `module.exports = spirit` is line 242, `ICON` line 498 and `MIME_TYPES`
+> line 698.
+
 > the relay must [have] one job only: "survive", this includes "earn your
 > keep".
 

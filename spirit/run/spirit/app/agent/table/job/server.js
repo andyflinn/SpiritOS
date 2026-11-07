@@ -6,6 +6,7 @@
 // that may come with a prompt)": loop and job. SINCE goal/G41.21 (box v17) a job names its bundle ("That bundle is the
 // job's grant"), its provider and its persona; the grant table, and the delete hook that dropped a job's grants, are gone.
 // Enforcing the bundle when a job runs is out of scope (Andy: "oos."): it is stored.
+// No description since goal/G41.21 (Andy: "ALL, drop the description for ALL tables. it does NOTHING AND IS USELESS.").
 const { rowTable } = require('../rowTable.js');
 
 module.exports = function (ctx) {

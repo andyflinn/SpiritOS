@@ -1,15 +1,15 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/apiFamily.js
-// The tests of spirit/element/search/api.js, and of no other module (spec: ./apiFamilySelector.md; goal/G41.14). It was
+// The tests of spirit/element/search/api.js, and of no other module (spec: ./apiFamily.md; goal/G41.14). It was
 // apiBranchSelector.js, renamed (Andy: "apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper
 // name for it"), its verb half kept (Andy: "apiFamiliySelector.js will use apiVerbSelector as part of itself, because
 // the verb selector NEEDs the family selector to have any meaning at all."). The browser file runs in node on a BARE
-// window (rule/26): its two halves, appServerSelector.js and apiVerbSelector.js, are put there real once required;
+// window (rule/26): its verb half, search/api/verb.js, is put there real once required, its app-server half in the file under test;
 // probabilitySearch is a stand-in that keeps every list it was asked to make; the node's api tree is the spirit
 // object's answer, kept by the node family's data.js (goal/G41.28), loaded as a page's
 // spirit.cacheManager('node') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
-// data.home).
+// data.homeNode).
 
 const fs = require('fs');
 const path = require('path');

@@ -52,7 +52,7 @@ test.startTest('agentCentreTabs.js: the agent app\'s centre is closable tabs (go
     await until(function () { return c.evaluate('!!(window.spirit && window.spirit.events)'); }, 20000);
     const LEAF = 'function leaf(w, within) { var root = within ? document.querySelector(within) : document; if (!root) return null; return Array.prototype.slice.call(root.querySelectorAll("*")).filter(function (e) { return e.offsetParent !== null && e.textContent.trim() === w && !Array.prototype.some.call(e.children, function (k) { return k.textContent.trim() === w; }); })[0] || null; }';
     const press = function (words, within) { return c.evaluate('(function () { ' + LEAF + ' var e = leaf(' + JSON.stringify(words) + ', ' + JSON.stringify(within || '') + '); if (!e) return false; e.click(); return true; }())'); };
-    // The Agent opens from the appSelector's tiles, as appMigration makes them (goal/G43.13).
+    // The Agent opens from the appSelector's tiles, as the shell app makes them (goal/G43.13).
     await c.evaluate('(function () { var b = document.createElement("div"); b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { spirit.elements.appSelector.create(b, { face: "tiles" }); return 1; }); }())');
     await until(function () { return press('Agent'); }, 20000);
     await until(function () { return c.evaluate('!!document.querySelector("[data-tool=provider]")'); }, 10000);

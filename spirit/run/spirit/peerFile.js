@@ -2,9 +2,10 @@
 
 // One peer, one file, named by the peer's WHOLE public key.
 //
-// Anything that keeps a file per peer goes through here — chat logs
-// today, contactBook sidecars later — so that "which file is this peer's" has
-// exactly one answer in the tree.
+// Anything that keeps a file per peer goes through here, so that "which
+// file is this peer's" has exactly one answer in the tree. No module in
+// the tree writes such a file today; hub.bytesHeldByPeer reads the names
+// back, and the shell loads this file for a page that would.
 //
 // The rules this has to satisfy, in the order they bite:
 //

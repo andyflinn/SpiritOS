@@ -24,8 +24,9 @@
 // owner edits, read on every report, where absent means nobody. Any other
 // sender is ignored silently.
 //
-// `decode` is handed in as a value: the node reads a SYSTEM packet here and
-// never an app's (test/oneDecoder.js, goal/G16.5).
+// No decoder is handed in: arrivals.js reads the envelope once and hands
+// it over, and this reads a SYSTEM packet and never an app's
+// (test/oneDecoder.js, goal/G16.5).
 
 const fs = require('fs');
 const path = require('path');

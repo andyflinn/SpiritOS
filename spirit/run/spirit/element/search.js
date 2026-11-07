@@ -15,7 +15,7 @@
 //   - Rows drawn by rowElements (goal/G30.18) when the app gives element(row): each row's element paints its own cells
 //     and repaints a field that changes on the stream; destroy drops them all.
 //
-// probabilitySearch.create(container, {
+// spirit.element.search.create(container, {   (the probabilitySearch)
 //   api, server, verb          the shell api, the server searched (its stream too) and its search verb
 //   args(text, values)         the verb's arguments from the words and the filters' values
 //   columns                    [{ field, from, label, width, align, sort }]: sort is how the field compares, 'text', 'path',
@@ -35,13 +35,13 @@
 //   tile(row, key)             optional: { icon, label } of a tile, where the row's own icon and label are not (goal/G43.17,
 //                              Q14: a file's tile shows its kind's icon and its name); either left out is the row's
 //   visible(row)               false holds a row back; asked at every draw
-//   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch; the words
+//   filters, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   the list's own; the words
 //                              are matched against the whole row (goal/G41.28), so a list hands no matched()
 //   selectors                  [{ name, element, test(row) }]: selectors the mounter made, mounted in the 🪣 row; each
 //                              element's change redraws the list, and its test narrows it as a filter's does
 // }) -> { value, row, refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
 //
-// probabilitySearch.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
+// spirit.element.search.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, score }.
 (function () {
   // ITS LIBRARIES, IT LOADS ITSELF (rule/26; found by the shell's general test on a bare page, goal/G41.18): the string
@@ -248,7 +248,7 @@
       if (typeof s.element.addEventListener === 'function') s.element.addEventListener('change', onSelector);
     });
 
-    // THE MATCHED PARTS MARKED, by the one marking rule the text view shares (window.spirit.matchRanges, below).
+    // THE MATCHED PARTS MARKED, by the one marking rule the codeMirror element shares (window.spirit.matchRanges, below).
     function mark(text) {
       var s = String(text == null ? '' : text);
       var ranges = typeof window.spirit.matchRanges === 'function' ? window.spirit.matchRanges(s, words()) : [];

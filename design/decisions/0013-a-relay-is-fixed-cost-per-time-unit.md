@@ -3,6 +3,13 @@
 **Decided 2026-09-17. Against `1edc4fe`. The invariant is decided; the mechanism
 below is designed and not built.**
 
+**Status 2026-11-07 (goal/G43.23):** the invariant holds. Two rows of the
+table below are gone from the tree: the Governor (deleted in cycle 8,
+11dcb1e0, 2026-09-22; the relay keeps fixed limits, `lever.js:7-21`) and
+the partner budget (goal/G22.6, 2026-10-13, with partnering itself,
+`relay.js:1110-1115`). Levers are no longer persisted: a gauge is
+described once at boot and only read after.
+
 > A relay is fixed-cost per time-unit. Simple. (Andy)
 
 ## The invariant

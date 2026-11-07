@@ -1,12 +1,12 @@
 # spirit/element/search.js, its bubble laid out
 
-The search element's bubble, in a real browser (goal/G41.26). Its test is `./probabilitySearchBubble.js`; the
-element's other tests run in node (`./probabilitySearch.md`).
+The search element's bubble, in a real browser (goal/G41.26). Its test is `./searchBubble.js`; the
+element's other tests run in node (`./search.md`).
 
 Andy, on G41.26: *"why do the icons in the probabilitySearch row have different width's? do they not use the icon
 element? I'd like it, if the controls in the search bubble look better aligned."*
 
-Asked of a real browser, since widths and places are layout: `./probabilitySearchBubble-laid.html`, opened at
+Asked of a real browser, since widths and places are layout: `./searchBubble-laid.html`, opened at
 `/DEBUG/spirit/element/test/searchBubble-laid.html` on a scratch node with its DEBUG on
 (`test/headLessChrome.js`), a pane and a dropdown, each with a filter.
 

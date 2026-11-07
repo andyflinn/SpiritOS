@@ -5,6 +5,8 @@ carries `path:line` verified at `9a3988f`, and the measured results were
 run rather than reasoned. Decided and open are kept apart: a third party
 should be able to act on this without re-deriving it.*
 
+*Status 2026-11-07 (goal/G43.23): line numbers are at `9a3988f`; the core files moved from `spirit/run/js/` to `spirit/run/spirit/` (goal/G40.2). What changed since: `packet.js` is `spirit/run/spirit/client/packet.js`, and `packetDecode` (now `:311`) still classifies rather than refuses — the split is not built. `nodeApps.js` and `appServerBoundary.js` are deleted (goal/G13.2): the node loads no app and fans no arrival out to booted apps any more; processes are started by `jobs.js`. `jobs.list` is gone (puppets/G2) — `jobs.search` answers key/label pairs and the `fs-watcher` job's data is `{}` (`jobs.js:218`), so the 207 KB answer measured below no longer ships.*
+
 ---
 
 ## The rule, in his words
@@ -63,7 +65,7 @@ is `TYPE-SYSTEM.md` back from the archive wearing a constructor.
 
 ## The pattern exists, once, and it works
 
-`spirit/run/js/client/packet.js` is a factory with serialise and
+`spirit/run/spirit/client/packet.js` is a factory with serialise and
 deserialise, and it bounds at serialisation. Measured, not read:
 
 ```
@@ -246,7 +248,7 @@ enough for a whole-object bound, useless for a field.
 
 So a factory's refusal wants three things:
 
-- **a code**, from `spirit/run/js/spiritErrors.js` — the closed set
+- **a code**, from `spirit/run/spirit/spiritErrors.js` — the closed set
   already exists, and G9 (`appServerBoundary.js:493`) already insists
   every refusal be a member of it
 - **the field** it is about

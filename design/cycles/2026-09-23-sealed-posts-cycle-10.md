@@ -2,6 +2,8 @@
 
 > 2026-10-13 (goal/G22.6): `GET /api/relay/key` and `POST /api/relay/claim`, named below, are closed. The signed key statement (with `payloadMax`) is the answer to a signed card ask on the relay's one door, and the sealed claim is a post on that door; `hub.sealedClaim` became `peerPost.claim`.
 
+Status 2026-11-07 (goal/G43.23): moved paths are corrected (`spirit/run/spirit/`, goal/G40.2); line numbers are as measured then. `agents.js` (R7, R19) is gone with the agents process (ef85bc1f, 2026-10-02; `spirit/test/agentsAppGone.js`). The partner router that R7 names as the one place setting `sealsPosts: false` is gone too: nothing in the tree sets it (`spirit/run/spirit/peerPost.js:890`). `partnerTunnel.js`, `routeHints.js` and `hintWire.js` went with partnering (goal/G22.6). `censusNarrow.js` is `rollNarrow.js` (R18). R18's suite `spirit/test/contacts.js` was deleted at goal/G41.28 and `acquiredVia`, whose fallback it asserted, at goal/G40.11, so R18 is marked below.
+
 **Opened 2026-09-23, from `989f39a`. Nothing built but the keypair. Sixteen requirements, after wsl-claude reviewed it.**
 
 > **Andy:** *"I also want to make sure we have alpha Product at the end,
@@ -37,7 +39,7 @@ where the refusals should be.
 
 ## What was found before anything was written
 
-- **No key agreement exists** anywhere in `spirit/run/js`. Node's own
+- **No key agreement exists** anywhere in `spirit/run/spirit`. Node's own
   crypto does X25519 — a 32-byte shared secret, a 60-character public
   key — so nothing is hand-rolled and nothing is added as a dependency.
 - **The card is already the carrier**, and already always answered
@@ -154,7 +156,7 @@ does not open either; one flipped byte anywhere fails; a ciphertext short
 of its tag is refused rather than half-read; the same plaintext twice
 produces different bytes; a nine-day-old message still opens.
 
-**Status:** DONE. `spirit/run/js/seal.js`, pure — keys and bytes in, no
+**Status:** DONE. `spirit/run/spirit/seal.js`, pure — keys and bytes in, no
 identity loaded, no file read, correct in a node, a relay or a test.
 
 - **AAD is sender, recipient and the domain separator `spirit-seal-v1`.**
@@ -332,7 +334,7 @@ envelopes, never payloads — which cycle 9's screenless verification
 already proved end to end.
 
 **Verify:** `spirit/test/sealedLayering.js` — **counted, not argued.**
-Exactly one place in `spirit/run/js` can set `sealsPosts: false`, and it
+Exactly one place in `spirit/run/spirit` can set `sealsPosts: false`, and it
 is `relayServer.js`'s partner router; and `agents.js` contains no sealing
 code whatsoever.
 
@@ -359,7 +361,7 @@ this cycle needs is the shape `oneDoor.js` already has in this tree: a
 anybody took it.
 
 - **One place composes an outbound peer post, and it seals.** The guard
-  walks `spirit/run/js` and fails if any other site builds peer post text
+  walks `spirit/run/spirit` and fails if any other site builds peer post text
   — the same counting discipline that keeps 76 `fetch` calls from
   becoming 77.
 - **One place accepts an inbound peer post, and it refuses plaintext.**
@@ -806,7 +808,7 @@ breaks posts already sealed to the old key, so:
   2026-09-26: *"so it must be made available in a portion of the UI with
   the are-you-sure mechanism"*. That is the shell's two-press button, which
   shows red when armed and disarms when attention moves
-  (`spirit/run/js/client/shell.js:1085`, `index.html:553`). No app builds
+  (`spirit/run/spirit/client/shell.js:1085`, `index.html:553`). No app builds
   its own confirm. The verb `nodeCard.rotate` is bones and the button is
   app work, so they land as two pieces.
 - **It is part of managing the relay you own.** Andy, 2026-09-26: *"it
@@ -1231,7 +1233,7 @@ above, and let an unrecognised `acquiredVia` be what it is. The same pass
 should sweep for the other fallbacks internal development has left, since
 the same reasoning retires all of them at once.
 
-**Status:** DONE. 476 words across 75 code files, the living design docs,
+**Status:** SUPERSEDED: goal/G40.11 — `acquiredVia`, whose `census` fallback this verified, is gone (the box, v24: "Gone: acquiredVia"), and `spirit/test/contacts.js` was deleted at goal/G41.28; the rename itself stands, with no suite of its own. Before: DONE. 476 words across 75 code files, the living design docs,
 and a `Roll` entry in `DICTIONARY.md` naming the old word. The suite
 `censusNarrow.js` became `rollNarrow.js` and its citations moved with it.
 

@@ -2,6 +2,12 @@
 
 *2026-09-11. Verified against the tree at the commit this landed on.*
 
+> Status 2026-11-07 (goal/G43.23): `scenario.js` and `world.js` stand. Of the
+> suites named below, the device ones, `relayConsole`, `inboxSig` and
+> `chatPeople` are gone with what they tested (goal/G16.2, 8b6f7eb1, the
+> ring), and a relay's owner is `owner.json`, written at install, not
+> `allow.json` (cleanup/G1.7, goal/G16.8).
+
 Andy:
 
 > a scenario, is a scenario, a test is a test within a scenario. i, visually can
@@ -94,7 +100,7 @@ wrong reason, which is the only kind of bug a test suite can have.
 
 **1. The relay wore its owner's key.** `world.js` saved the owner's identity into
 the relay's home. But `spirit/state/identity.json` in a relay home is the
-**mailbox's own** key — [`server.js`](../../spirit/run/js/server.js) makes it
+**mailbox's own** key — [`server.js`](../../spirit/run/spirit/server.js) makes it
 with `ensureIdentity(ROOT_DIR, 'relay')` on the first `--relay` boot, and
 `relay.js` says so at `mailboxPublicKey()`: *"the owner is a peer who claimed,
 the mailbox is the box."* So any check that distinguished the two passed without

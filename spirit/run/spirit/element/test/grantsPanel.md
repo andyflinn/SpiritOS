@@ -25,7 +25,8 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 ## Requirements
 
 - It loads what it uses itself (rule/26): `spirit/element/search/contact.js`, `spirit/element/search/bundle.js`,
-  `spirit/element/search/api.js` and `spirit/element/search/grant.js`; no data script.
+  `spirit/element/search/api.js`, `spirit/element/search/grant.js`, `spirit/element/busyButton.js` and
+  `spirit/element/rowForm.js`, and the jobs family's cache manager (`spirit.cacheManager('jobs')`); no data script.
 - It names no grants table and no ID table: no auth grant verb, no agent verb, no loopback location, no branch. The
   node's bundles are the one dictionary both kinds of grant are made from, so reading a bundle's branches
   (`auth.branch`) is its own.
@@ -54,7 +55,8 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
 
 ### Grant is a busyButton (goal/G41.23)
 
-Box: *"first users: Ask in the agent's Update model list, and Grant in the grants panel"*. The busyButton is tested in
+Box: *"first users: Ask in the agent's Update model list, and Grant in the grants panel"* (the Update model list is now
+the agent's model table, `spirit/app/agent/table/model/elementTable.js`). The busyButton is tested in
 its own folder (`./busyButton.md`); here a stand-in keeps what it is handed.
 
 - The panel loads `spirit/element/busyButton.js` itself (rule/26).

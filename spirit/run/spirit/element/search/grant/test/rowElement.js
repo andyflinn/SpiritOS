@@ -10,7 +10,7 @@
 // and its watch), and a second table shaped as the agent's grants by job were, its branch a whole spirit.data path
 // (node/family/branch) and its watch that branch's. The auth family's data.js is loaded as a
 // page's spirit.cacheManager('auth') loads it, as the Grants app asks it, the page's node known as spirit.start makes it
-// known (spirit.node.key, then data.home).
+// known (spirit.node.key, then data.homeNode).
 
 const fs = require('fs');
 const path = require('path');

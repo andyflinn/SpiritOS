@@ -60,8 +60,9 @@
 
 const fs = require('fs');
 const path = require('path');
-// Required on first use, not at load: a relay loads this file through
-// presenceNode and must never pull the node's store in (reviewCleanup).
+// Required on first use, not at load (reviewCleanup): written when a relay
+// loaded this file through presenceNode and must not pull the node's store in.
+// A relay loads no node code now (relayServer.js), so neither happens.
 const nodeStore = { open: function (rootDir) { return require('./nodeStore.js').open(rootDir); } };
 
 // A URL is the ADDRESS a relay answers at, held on its keyed record, and
@@ -88,6 +89,11 @@ function seen(rootDir) { importOld(rootDir); return nodeStore.open(rootDir).seen
 // seatedUrls counted a pin as one and a node's memberships must survive the move. Asked on every read, as before, so a
 // file found later (an older tool, a restored backup, the lab) is moved too and never read as the truth beside the
 // table; the rows first, the files only after.
+//
+// DISCREPANCY WITH ANDY's RULES: goal/G41.30 (Andy: "let's get rid of those \"rescue operations\"", and "delete the
+// code that \"rescues an old json file\""; nodeStore.js, commit 83d07fa9) and goal/G41.32's box ("no
+// \"old-data-rescue-missions\"") rule out moving old stores in. This still moves relays.json and relayKeys.json into
+// the table, on every read of it (seen() above).
 function importOld(rootDir) {
   const listFile = path.join(rootDir, 'spirit', 'state', 'relays.json');
   const keyFile = path.join(rootDir, 'spirit', 'state', 'relayKeys.json');

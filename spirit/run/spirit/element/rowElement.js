@@ -10,16 +10,17 @@
 // rowElement.create(parts)
 //   parts.kind, parts.key        what the subject is, and its identity (a path, a public key)
 //   parts.row                    its values, by field name
-//   parts.fields                 [{ name, rule, paint(row), edit }], in order: the default column order. rule is the
-//                                field's rule from js/fieldRules.js; paint draws the value; edit (details dialogs) asks
-//                                the server and never paints: the confirmed change on the stream repaints.
+//   parts.fields                 [{ name, paint(row), from }], in order: the default column order. paint draws the value;
+//                                from names the values a field is drawn from (a status from several), so a change of
+//                                any of them repaints it. Anything else on a field is the caller's: rowElement reads
+//                                only these.
 //   parts.actions                [{ name, label, run(el, ctx) }]: what can be done to the subject, the same in a row and
 //                                in a details screen (add, block, remove, open). An action asks; it paints nothing.
 //   parts.expand(el)             fetches what is too large for a row (long text, attached lists, fan-out data): asked
 //                                once, the answer kept.
 //   parts.index                  the kind's index (rowElement.index): the element registers its key there and leaves
 //                                on destroy.
-// -> { kind, key, row, cells(), mount(hosts), apply(changes), act(name, ctx), expandInfo(), destroy() }
+// -> { kind, key, row, fields, actions, cells(), mount(hosts), apply(changes), act(name, ctx), expandInfo(), destroy() }
 //   cells() is [{ name, html }] in field order; mount(hosts) takes a node per field name and paints each; apply(changes)
 //   merges new values and repaints only the fields that changed.
 //

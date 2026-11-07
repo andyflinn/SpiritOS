@@ -8,14 +8,15 @@
 //     a title row, an Add button and a probabilitySearch pane over the table's branch of spirit.data, shown at once,
 //     each row by its icon and its label alone (LIST_COLUMNS); Add gives the new row its table's icon;
 //     picking a row, or adding one, opens row(box, key, added, row) in the detail pane; add(open), when given, is what
-//     Add does instead of adding an empty row. detail is the page's: detail.open(make, { table, id, row }) makes that row's closable
+//     Add does instead of opening the editor in Add mode. detail is the page's: detail.open(make, { table, id, row }) makes that row's closable
 //     tab in the pane with make(box) in it, or makes its tab active (goal/G41.31), and detail.look(table) is the table's
 //     { icon, name, title }. Andy, on G41.4:
 //     "make the detail-panel take over the middle pane of the workBench UI please", so the agent page hands its
 //     workBench's centre.
-//   spirit.elements.agentRow.create(container, { api, table, id, added, look, fields }) -> { destroy }, an element of its
-//   own (./rowElement.js), which builds on agentDetail, below:
-//     one row's fields as inputs, Save and Delete, under a title row; added says the row was just made by Add; fields
+//   spirit.elements.agentRow.create(container, { api, table, id, added, look, fields, required }) -> { destroy }, an element
+//   of its own (./rowElement.js), which builds on agentDetail, below:
+//     one row's fields as inputs, each saved as it changes (no Save), and Delete, under a title row; added says the row was
+//     just made by Add; fields
 //     [{ field, label, kind }], the row's icon always the first before them (ICON_FIELD), kind one of
 //       icon                            a glyph from the shell's icon selector, the table's icon until one is chosen
 //       text, url, name, description   one line (name and description stop at their field rules' limits)
@@ -25,6 +26,8 @@
 //       list                            a list typed as words split by commas
 //       code                            a CodeMirror editor (spirit/element/codeMirror.js)
 //       pick                            a row of another table, from a dropdown search of it (pick: that table)
+//       output                          a row of another table (pick: that table), shown by its icon and label, never sent
+//       bundle                          a bundle of the node, from the shell's bundle selector in dropdown mode
 //
 // EVERY ELEMENT LISTENS BY ITSELF, THROUGH THE ONE FRAMEWORK (Andy, on G41.4: "make sure that all element LISTEN to what
 // needs listening to, by themselves, automatically. This should also be a general implementation. if those table
@@ -35,7 +38,7 @@
 // row's path there. Nothing here hears the stream by hand.
 //
 // THE PAGE ONLY PROPOSES (rule/19: "the ui must propose all state changes to the server and only draw changes contained
-// in the servers update/change stream"): Save and Delete go to the server, and what an editor shows is the server's get
+// in the servers update/change stream"): a changed field and Delete go to the server, and what an editor shows is the server's get
 // and the rows its stream then brings, never what was typed.
 (function () {
   var E = (window.spirit = window.spirit || {}).elements = window.spirit.elements || {};
@@ -67,7 +70,7 @@
   // EVERY PANE'S LOOK, IN THIS ONE PLACE (Andy, on G41.4: "is it possible to organize the code so that my changes so far
   // are only done in one place?"; "both the list pane and detail pane should have similarly styled title areas ... these
   // title bits should be structured so that a style change affects them all equally"): the title row and the field
-  // line, which every table's list and editor draw with, the grant editor included (E.agentDetail).
+  // line, which every table's list and editor draw with (E.agentDetail).
   //   THE TITLE ROW: [icon] then the words, each part in its own span; a detail pane's words are "Add | Change" and the
   //   table's name, a list pane's the table's name alone.
   // ITS ICON IS THE ICON ELEMENT (goal/G41.23; Andy: "this element will replace icons painting all shell elements and
@@ -129,11 +132,11 @@
   E.agentDetail = { titleRow: titleRow, fieldLine: fieldLine, stretch: STRETCH, search: search, branchOf: branchOf, whyOf: whyOf,
     esc: esc, call: call, needs: needs, nameOf: nameOf, columnsOf: columnsOf };
 
-  // o.add(open): what Add does instead of an empty row (the grant table's: an empty editor, since a grant is made from a
-  // job and a path); o.add false: no Add at all (the model table's, whose rows come from the providers: Andy, on
+  // o.add(open): what Add does instead of opening the editor in Add mode (no table hands one since the grant table went,
+  // goal/G41.21); o.add false: no Add at all (the model table's, whose rows come from the providers: Andy, on
   // G41.18, "get RID of [Add a Model] button in the left panes model mode. NOT required."). o.row(box, key, added, row): the editor of the row picked or added. o.buttons [{ label, press }]:
   // the table's own buttons on the Add line, Add kept; o.columns: what its list shows in place of icon and label (the
-  // model table's "provider models" and its provider's icon with the model name, goal/G41.18).
+  // model table's: its provider's icon with the model name, goal/G41.18).
   function createTable(container, options) {
     var o = options || {};
     // UNCONFIGURED, IT SAYS SO and throws nothing (goal/G41.19, box v23: "no throw even unconfigured").

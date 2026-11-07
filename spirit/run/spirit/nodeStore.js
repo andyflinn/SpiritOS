@@ -23,18 +23,19 @@
 //                           (R16) and the owner's cache cap (R31) join it.
 //
 // CONTACTS ARE HERE SINCE goal/G40.11 (Andy's box, v24: "contacts.json, the relays table and the peers table move
-// into it and go"): one table for every known ID, the owner's chosen ones flagged keep. NOT identity.json, allow.json or
+// into it and go"): one table for every known ID, the owner's chosen ones flagged keep. NOT identity.json, owner.json or
 // config.json. 0018 is explicit that it licenses the route cache and
 // "everything else on a node's disk" stays as it is — and relayStore.js
 // gives the reason for the last three: they are "constant, tiny, and the
 // ones an owner may have to read or restore over SSH".
 //
 // A CORPUS IS THE OWNER'S; A ROUTING TABLE IS NOT. The traffic log stays
-// permanent and readable — Andy: "the log should be permanent. period."
+// readable, and kept until node.db passes its cap: since goal/G30.19 its
+// oldest rows go then (shedToCap, below; Andy: "learn to throw out shit").
 //
 // ── SEPARATE FROM relay.db, AND NOT A LAYER OVER IT ──────────────────
 //
-// A relay's store answers for a box's members, invites and partners; this
+// A relay's store answers for a box's members and invites; this
 // answers for one person's node. They are never the same process —
 // server.js hands off to relayServer.js on `--relay` and loads no node
 // code — so sharing a file would only mean two schemas in one place with
@@ -240,7 +241,7 @@ function open(rootDir, opts) {
   //
   // One row per ID other than the node itself. Keyed by ID, so somebody seen a thousand times is one row and growth
   // is bounded by distinct IDs rather than by traffic. Every row: label (with how sure, labelRank, and when, labelAt),
-  // myLabel, card, present, firstSeen, lastSeen, and seven booleans:
+  // myLabel, card, face, present, firstSeen, lastSeen, and six booleans (held went, goal/G43.17, below):
   //
   //   keep     a chosen contact, never shed       mine     owned (puppets, owned relays), never shed
   //   relay    the ID is a relay
@@ -458,9 +459,10 @@ function open(rootDir, opts) {
   //     never reused, not even after the newest row is deleted;
   //   - a column for every field a row carries, all allowed empty, and
   //     `extra` for any field this list does not name, so nothing is lost;
-  //   - every row kept ("the log should be permanent. period."), which is
-  //     why it is NOT in the cache cap above: cacheBytes counts only `seen`
-  //     and `seen_routes`, so this table can grow without evicting anyone.
+  //   - NOT in the cache cap above: cacheBytes counts only `seen` and
+  //     `seen_routes`, so this table never evicts anyone. Its own bound is
+  //     the file's (MAX_DB_BYTES, goal/G30.19): past it the oldest rows go
+  //     (shedToCap, below).
   //
   // EACH VALUE IN ITS OWN TYPE, NULL when absent (TRAFFIC_TYPES above), so a
   // row reads back exactly as it was written (true stays true, 3 stays 3)
@@ -649,7 +651,7 @@ function open(rootDir, opts) {
     // on insert then broke the other half: `excluded.present` became 0, so
     // a silent caller marked a present peer absent.
     //
-    // The bug was pointing at the model. contacts.js has had three marks
+    // The bug was pointing at the model. The contacts view had three marks
     // all along — "WHITE is NOT a dimmer red. A contact we share no relay
     // with is not offline, they are UNSEEN" — and 0019 rests on the same
     // distinction. Two states could not hold it.

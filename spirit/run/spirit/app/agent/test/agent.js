@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/test/agent.js
 // The tests of spirit/app/agent/agent.js, and of the Agent as Andy sees it (spec: ./agent.md; goal/G43.13). Andy: "Make
 // spirit/app/agent/ work". A real node on a scratch copy of the tracked files, and real clicks in a real Chrome on the appSelector,
-// made as appMigration makes it. Neither Andy's node nor an agent's is touched.
+// made as the shell app (spirit/app/shell/shell.js) makes it. Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const os = require('os');
@@ -78,7 +78,7 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
       return until(function () { return c.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
     };
     ok(await open(), 'the world: the page has its spirit', 'the page has no spirit: nothing judged');
-    // The appSelector, as appMigration makes it, over the page. A second call replaces the first.
+    // The appSelector, as the shell app makes it, over the page. A second call replaces the first.
     const selector = function (face) {
       return c.evaluate('(function () { if (window.__sel) window.__sel.destroy(); var old = document.getElementById("zzBox"); if (old) old.remove(); var b = document.createElement("div"); b.id = "zzBox"; b.className = "fill"; b.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;background:#fff;z-index:9999"; document.body.appendChild(b); return spirit.require("spirit/app/appSelector.js").then(function () { window.__sel = spirit.elements.appSelector.create(b, { face: ' + JSON.stringify(face) + ' }); return "made"; }); }())');
     };

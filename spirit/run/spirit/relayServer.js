@@ -142,8 +142,8 @@ catch (e) {
 
 // ── MEMBERS BUT NO OWNER: REFUSE, AND LET SSH DECIDE (cycle 3, B4) ───
 //
-// Decided (Andy): a relay whose store holds members but whose allow.json
-// has no owner refuses to start — "forcing the owner to ssh and
+// Decided (Andy): a relay whose store holds members but whose owner.json
+// names no owner refuses to start — "forcing the owner to ssh and
 // investigate". Since goal/G16.8 no claim can take an unowned box, but a
 // relay with people on it and nobody answering for them is still broken,
 // not new, so it does not start. No members and no owner is a relay that
@@ -157,7 +157,7 @@ if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
 
 // ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
 //
-// spirit/state/config.json, beside allow.json. Bounded by the box: a
+// spirit/state/config.json, beside owner.json. Bounded by the box: a
 // ceiling larger than this machine can GIVE refuses to start rather than
 // being honoured (relayConfig.js, relayLimits.js). Never re-read — the
 // configuration is not a real-time tool (NODE-AND-RELAY §5, scope).
@@ -175,9 +175,9 @@ if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
 // that the file is the record, and `source: 'default'` stops being a
 // state that hides.
 //
-// THE SAME ARITHMETIC THE INSTALLER USES (relayLimits.js), so `node
-// install` and a bare first start cannot propose different figures for
-// the same machine.
+// THE SAME ARITHMETIC THE INSTALLER USES (relayLimits.js), so
+// bash/install-units and a bare first start cannot propose different
+// figures for the same machine.
 const MEASURED = relayLimits.measure(ROOT_DIR);
 const CONFIG = (function () {
   const file = path.join(ROOT_DIR, 'spirit', 'state', 'config.json');
@@ -373,8 +373,9 @@ if (process.env.INVOCATION_ID) setServiceCap(2 * CONFIG.ramLimitMB);
 // answers to, not an identity. A node that keeps one file per peer cannot
 // file the relay anywhere without a key, so the relay gets one: made
 // once, by relayAuth.js on its first load (goal/G22.5), into this
-// process's own relay-state beside allow.json. Here it is only NAMED
-// 'relay' over the machine-name default, keys untouched. It is handed out
+// process's spirit/state/identity.json. Here it is only NAMED 'relay' over
+// a blank or machine-name default, keys untouched; ensureFirstRun below
+// then makes 'relay' into 'relay <machine name>' (goal/G40.1). It is handed out
 // as the answer to a card ask on the one door (relay.js relayCard,
 // goal/G22.6), and it is NOT the owner's key — the owner is a peer who
 // claimed, the relay is the box.
@@ -419,8 +420,8 @@ function isRelayPublicPath(method, pathname) {
 // The relay serves <face>.<its face domain> to anyone while that member has a verified email, a face name and his
 // home node present (relay.faceAt). Logged out, the page is the empty face shell with its login app; the login is the
 // relay's (relay.faceLogin), a session in its memory carried by the cookie spirit_face, HttpOnly, for that host only.
-// The face shell's files are served from spirit/run/shell/ alone (goal/G41.3; face/ until then). Nothing reaches the home node yet: that is the
-// plumbing, the next item.
+// The face's files are served from spirit/run/spirit/shell/ (goal/G43.18; spirit/run/shell/ from goal/G41.3, face/ before).
+// What the face does beyond the plain page comes from the home node over the link (FACE_FILES below).
 //
 // /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it before it
 // fetches a certificate for that name on demand (bash/face-setup).
@@ -616,10 +617,9 @@ const server = http.createServer((req, res) => {
   // with the device enrolment.
 
   // One held connection per identity, carrying who is reachable. The
-  // signature is a HEADER for the same reason device-pending's is: a
-  // query string is written to every access log the request passes, and
-  // this one buys a STANDING grant rather than a single read. Same
-  // function enforces it, so there is one rule and not two.
+  // signature is a HEADER (streamSignatureFrom, relay.js): a query string
+  // is written to every access log the request passes, and this one buys
+  // a STANDING grant rather than a single read.
   if (req.method === 'GET' && pathname === '/api/relay/stream') {
     const from = createRelay.streamSignatureFrom(url.searchParams.get('sig'), req.headers);
     if (!from.ok) {

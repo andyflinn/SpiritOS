@@ -1,5 +1,5 @@
 // spirit/run/spirit/element/search/bundle/rowElement.js
-// ONE BUNDLE, AS A ROW ELEMENT, AND WHAT A BUNDLE IS ON THE STREAM (goal/G41.14). Its subject is a bundle of node.db's
+// ONE BUNDLE, AS A ROW ELEMENT (goal/G41.14). Its subject is a bundle of node.db's
 // bundle table, keyed by its hidden number; its fields label and owner. rowElement.js does the shared work; this
 // file says what a bundle is (G30.18: "rowElements carry the listeners and painters a subject needs for real-time
 // updates, wherever they are used").
@@ -10,11 +10,11 @@
 // THE TYPE ON THE STREAM, IN ITS OWN ELEMENT (Andy: "EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 // their data set. and the SHELL's spirit fucking object is supposed to hold ALL cached data, and propagate updates to the
 // fucking elements", "NO FUCKING DATA SCRIPT", "THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"): the node
-// publishes each changed bundle row on its permanent job 'bundles' ({ table: 'bundle', row }, gone when deleted); this
-// file puts it into data.bundles of the spirit object, and every bundle row on the page repaints from there through its
+// publishes each changed bundle row on its permanent job 'bundles' ({ table: 'bundle', row }, gone when deleted); the
+// auth family's cache manager (below) puts it into spirit.data.auth.data.bundles, and every bundle row on the page repaints from there through its
 // kind's index. A row asks and draws nothing of its own (rule/19): what it shows is what the stream said.
 //
-//   bundleElement.create(row) -> a rowElement of kind bundle
+//   spirit.element.search.bundle.rowElement.create(row) -> a rowElement of kind bundle
 //     row            { id, label, owner }, as auth.bundle answers it
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};

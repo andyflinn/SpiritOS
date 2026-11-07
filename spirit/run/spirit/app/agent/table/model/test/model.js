@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/table/model/test/model.js
 // The tests of spirit/app/agent/table/model/, its server.js, elementTable.js and elementRow.js, and of no other module
 // (spec: ./model.md; goal/G41.4, goal/G41.18, goal/G41.26). What the tables share is tested in ../../test/. The Update
-// model list pane is gone (goal/G41.26): its Ask form sits at the top of the model list, tested here. The server is made on a scratch agent.db as agent.js
+// model list pane is gone (goal/G41.26): its Ask form sits at the top of the model list, tested here. The server is made on a scratch agent.db as nodeAgent.js
 // makes it, beside the provider table it names; the page files run in node on a window of their own, the shared
 // elements stubs that keep what they were handed.
 
@@ -96,8 +96,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('server.js: a model is shown with its provider\'s icon (goal/G41.18)');
   // Andy, box v17: "the model will [icon] \"model-name\", where the [icon] will be the provider-icon, associated with the
-  // provider-key on the model row". The server says it with the row, as the grant server says a grant's job
-  // (goal/G41.16), so the list draws only what the server sends (rule/19).
+  // provider-key on the model row". The server says it with the row (rowTable's shows), so the
+  // list draws only what the server sends (rule/19).
   call(ctx.tables.provider.verb, { op: 'set', id: provider.id, icon: '🅰' });
   const shownGet = call(t.verb, { op: 'get', id: added.id });
   ok(shownGet && shownGet.providerIcon === '🅰', 'a model\'s get carries providerIcon, the icon of its provider row', 'get: ' + short(shownGet));

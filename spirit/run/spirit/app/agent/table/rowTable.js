@@ -2,8 +2,8 @@
 
 // spirit/run/spirit/app/agent/table/rowTable.js
 // ONE KEYED TABLE OF agent.db AND ITS ONE VERB (goal/G41.4), what the provider, model, persona and job tables share; each
-// table's server.js names its own fields and nothing else. The contract and the test: ../test/agent.md and
-// ../test/agent.js.
+// table's server.js names its own fields and nothing else. The contract and the test: ./test/rowTable.md and
+// ./test/rowTable.js.
 //
 // EVERY ROW IS KEYED AS THE SHADOW ROLL KEYS A PEER (Andy, box v22: "keyed by ID same as the shadow-roll"; "the ID-key for
 // each row of these tables is generated at \"add-row\", including the rest of the key-set stored on that table row"): its
@@ -186,8 +186,8 @@ function rowTable(db, def, publish) {
       return { items: r.items, more: !!r.more };
     },
   };
-  // has(id): the row is there; label(id), icon(id): its label and its icon, '' when it is not (a grant shows its job by
-  // them).
+  // has(id): the row is there; label(id), icon(id): its label and its icon, '' when it is not (a model checks and shows
+  // its provider by them).
   return {
     verb: verb,
     required: required.slice(),

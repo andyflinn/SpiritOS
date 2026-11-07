@@ -1,5 +1,9 @@
 # Local model performance history
 
+> Status 2026-11-07 (goal/G43.23): the run it records read `spirit/run/js`,
+> which is `spirit/run/spirit/` since goal/G40.2. `localResearch.js`, named at
+> the end as the job's script, is gone (goal/G40.6, c2368d43).
+
 **Opened 2026-09-23.** Decided by Andy: *"so an over a week evaluation
 could teach us valid uses, we also want to file the perormance history of
 this modes, so we can track and categorize thir optimal use...."*

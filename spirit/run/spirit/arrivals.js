@@ -82,11 +82,12 @@
 // opened every admitted arrival itself — and three more parsed an
 // arrival's text by hand. So the envelope was opened up to five times per
 // packet, in five places that could drift, and the guard suite that was
-// supposed to forbid this (nodeKnowsNoApps.js) matched one literal call
-// and saw none of it.
+// supposed to forbid this (nodeKnowsNoApps.js, deleted by goal/G16.5)
+// matched one literal call and saw none of it.
 //
-// ONE FILE REQUIRES client/packet NOW, and it is this one: the file that
-// already admits, witnesses and holds every arrival. kernel.js keeps its
+// ONE FILE DECODES WITH client/packet NOW, and it is this one: the file
+// that already admits, witnesses and holds every arrival (hub.js and
+// server.js require packet.js to encode, never to decode). kernel.js keeps its
 // own, which is a different thing — the shared decode every loopback
 // client uses (Andy, 2026-10-02).
 //
@@ -229,8 +230,8 @@ function createArrivals(opts) {
   }
 
   // Returns its own unsubscribe, so a caller cannot leak one by holding
-  // the wrong handle. The SSE route takes this and calls it from the
-  // same teardown that clears its heartbeat — a subscriber that outlives
+  // the wrong handle. The events family's subscribe (events/events.js)
+  // takes this and calls it from its own teardown — a subscriber that outlives
   // its socket writes to a dead response for ever.
   function subscribe(fn) {
     if (typeof fn !== 'function') return function () {};
@@ -333,9 +334,8 @@ function createArrivals(opts) {
     return delivered;
   }
 
-  // A stored row, in the shape a live push sends. The same conversion
-  // hub.rowAsMessage does for the read route — one shape for a client to
-  // merge, whichever door it came through.
+  // A stored row, in the shape a live push sends — one shape for a client
+  // to merge, backlog or live (hub.rowAsMessage and its read route are gone).
   function asMessage(row) {
     // Plain, for the reason above: the node does not read the payload.
     return ({
@@ -365,8 +365,8 @@ module.exports = {
   createArrivals: createArrivals,
   createFanOut: createFanOut,
   // The node layer's one reading of what arrived (N1, goal/G16.5). A
-  // reader that is not a witness — answerRelay, nodeCard, peerPost's
-  // refusal check — asks here instead of parsing the text itself.
+  // reader that is not a witness — nodeCard, peerPost's refusal check —
+  // asks here instead of parsing the text itself.
   envelopeOf: envelopeOf,
   relayWordOf: relayWordOf,
 };

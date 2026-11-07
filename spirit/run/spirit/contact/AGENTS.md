@@ -7,5 +7,5 @@ starts a network search across the relays, whose rows stream as the peer-search 
 in the shadow, not listed; its own answer never waits for a relay.
 
 Described to agents (goal/G10.5): the reads, contact.search and contact.get.
-The writes (block, unblock, accept, label, forget) have no file here and are closed to agents until a goal opens
+The writes (block, unblock, accept, label, forget, own) have no file here and are closed to agents until a goal opens
 them.

@@ -3,8 +3,8 @@
 // spirit/run/spirit/element/search/bundle/test/rowElement.js
 // The tests of spirit/element/search/bundle/rowElement.js, and of no other module (spec: ./rowElement.md; goal/G41.14). The
 // browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. What it
-// requires is put there then: the shared row element and the field input real, the arming button and the branch editor
-// stand-ins that record what they were handed. The node's auth family is the spirit object's, each call recorded.
+// requires is put there then: the shared row element real. The field input real and the arming button and branch editor
+// as recording stand-ins are offered too, though since goal/G41.26 and G41.32 it asks for none of them. The node's auth family is the spirit object's, each call recorded.
 
 const fs = require('fs');
 const path = require('path');
@@ -145,7 +145,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('the type\'s own element takes the node\'s bundle rows from the stream (goal/G41.14)');
   // The row element is the data type's code (G30.18: "rowElements carry the listeners and painters a subject needs
-  // for real-time updates"); it is loaded with every list of its kind. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
+  // for real-time updates"); it is loaded with every list of its kind, and since goal/G41.28 the rows are taken by the
+  // auth family's cache manager it loads. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
   // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
   // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
   DATA.takeJob({ type: 'bundles', data: { table: 'bundle', row: { id: 7, label: 'Reader' } } });

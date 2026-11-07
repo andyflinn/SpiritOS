@@ -23,12 +23,12 @@ const DEBUG = require('./DEBUG.js');
 const MIME_TYPES = spirit.MIME_TYPES;
 
 // Job spawning (jobs.js's startProcessJob) passes relative script paths
-// like "process/js/pushOrigin/pushOrigin.js" straight to
-// child_process.spawn without ever setting an explicit cwd, so it
+// like "spirit/app/pushOrigin/pushOrigin.js" straight to
+// child_process.spawn with no cwd unless its caller passes one, so it
 // inherits whatever directory THIS process was started from. Every other
 // path in the app is resolved off ROOT_DIR (__dirname-relative, always
 // correct) — this is the one place actual process.cwd() matters, and
-// starting the server from the wrong place (e.g. `cd js && node
+// starting the server from the wrong place (e.g. `cd spirit && node
 // server.js` instead of `node spirit/server.js` from spirit/run) breaks job
 // spawning silently: scripts fail in well under a second with no useful
 // error, easy to mistake for a real bug in the spawned script itself.
@@ -36,8 +36,9 @@ const MIME_TYPES = spirit.MIME_TYPES;
 //
 // A relay spawns no jobs and loads neither shell/ nor process/, so it
 // must not be refused for lacking them (goal/G16.9): each entry point
-// names the folders IT needs, and the default is only js/, which both
-// run from. The node passes its own longer list (server.js).
+// names the folders IT needs, and the default is only spirit/, which
+// both run from. The node passes its own longer list (server.js: shell,
+// spirit, process).
 function verifyStartupCwd(entry, requiredDirs) {
   var cwd = process.cwd();
   var errors = [];
@@ -54,7 +55,7 @@ function verifyStartupCwd(entry, requiredDirs) {
   // Belt and suspenders: this project's own folder is always named
   // "spirit", one level up from wherever the server actually runs
   // (spirit/run) — catches starting from some unrelated folder that
-  // happens to also have app/js/process children.
+  // happens to also have spirit/ or process/ children.
   if (path.basename(path.dirname(cwd)) !== 'spirit') {
     errors.push('expected the current directory\'s parent to be named "spirit" (i.e. running from spirit/run), but it\'s "' + path.basename(path.dirname(cwd)) + '"');
   }
@@ -202,7 +203,7 @@ function readBody(stream, opts) {
 // This read `body += chunk` with no limit of any kind. The payload caps
 // in relay.js are checked AFTER the body is whole and parsed, so they
 // bounded what got ROUTED and never what got ACCEPTED — on a public box,
-// on every POST, /claim and /device included.
+// on every POST.
 //
 // So the memory arithmetic everybody reasoned from was an intention:
 //
@@ -228,7 +229,7 @@ function readBody(stream, opts) {
 // refusing.
 // `opts.max` lifts the bound for ONE caller that has decided it may: the
 // node's own door, which reads before it knows the verb and then applies
-// BODY_MAX to every verb but net.fetch (server.js, 2026-09-22). Everybody
+// BODY_MAX to every verb but net.fetch, fs.save and fs.load (server.js). Everybody
 // else reads under BODY_MAX exactly as before. The bytes seen are kept on
 // the request, so the door can judge the body it has already read.
 function readJsonBody(req, opts) {
@@ -309,15 +310,15 @@ function clientKeyFor(req) {
 
 // One answer for every way this can fail, and it says nothing.
 //
-// Wrong password, a node that is not connected, a node that took the
-// offer and went quiet — all of it comes back as `not now`. A form that
-// distinguished them would answer questions nobody standing at it is
-// entitled to ask: "is this the right password but the wrong moment" is
-// exactly what a caller with the wrong password wants to know.
+// Its callers are the relay's stream door (relayServer.js, /api/relay/stream):
+// a bad signature or a refused open comes back as `not now` (a sender that
+// is not a member is told so apart, before this). It was the device page's
+// answer until the device enrolment went (goal/G16.2), where a form that
+// distinguished wrong password from wrong moment would have told a guesser
+// which one it had.
 //
-// The STATUS still varies, and only for the rate limit — 429, which the
-// page waits out rather than gives up on. The STRING never varies
-// (DEVICE-CYCLE3.md).
+// The STATUS still varies (429 for the rate limit, which a client waits
+// out); the STRING never varies.
 // "not now" stays the sentence — Grok's review: "Do not drop "not now" to a
 // code-only body" — and the code rides beside it (R36 phase B).
 function nodeRefusal(res, status) {
@@ -327,9 +328,8 @@ function nodeRefusal(res, status) {
 
 // ── TOO BIG IS ANSWERED ONCE, HERE, BEFORE ANY ROUTE ─────────────────
 //
-// One place for every POST, because /claim and /device were as
-// unbounded as /post and none of them should each carry their own
-// opinion about it. Declared size only — the running total is enforced
+// One place for every POST, so no route carries its own opinion about
+// it. Declared size only — the running total is enforced
 // in readJsonBody, which is what catches a chunked body or a client
 // that sends more than it said.
 //
@@ -471,7 +471,7 @@ function ensureFirstRun(rootDir, opts) {
 // THIS NODE'S PORT, FOR EVERY node.js PROCESS ON IT (goal/G40.6). Andy: "only a node.js servers listening on a loopback
 // port writes that port to environment.json", "it really belongs in serverCommon", and "anytime a node.js process
 // requires(spirit) spirit itself fetches the port from environment.json". Written before the node starts any server
-// process, so each finds it; the folder first, since a fresh tree has no relay-state (goal/G16.2).
+// process, so each finds it; the folder first, since a fresh tree has no spirit/state/ (relay-state until goal/G43.8).
 function writeEnvironment(rootDir, port) {
   const fs = require('fs');
   const file = path.join(rootDir, 'spirit', 'state', 'environment.json');

@@ -5,7 +5,7 @@
 // The browser file runs in node on a BARE window (rule/26): nothing is on the page until the row requires it. The shared
 // row element and the page's data set are real, and so is the fs family's data.js (goal/G41.28), loaded as a
 // page's spirit.cacheManager('fs') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
-// data.home); the node's fs family is the spirit object's, each call recorded.
+// data.homeNode); the node's fs family is the spirit object's, each call recorded.
 
 const fs = require('fs');
 const path = require('path');
@@ -66,7 +66,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('what the fs-watcher\'s stream means for data.files, in the type\'s own element (goal/G41.16)');
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": the file tree's
-  // translation, spirit/element/search/file/data.js until G41.16, is this element's (G30.18), loaded with it.
+  // translation, spirit/element/search/file/data.js until G41.16, was this element's (G30.18), and is since goal/G41.28 the
+  // fs family's cache manager's, which it loads.
   const cmd = function (c) { return { id: 'job-fs', type: 'fs-watcher', data: { command: c } }; };
   ok(F.ready() !== true, 'before the tree is whole, data.files is not ready', 'ready: ' + short(F.ready()));
   D.takeJob(cmd({ op: 'createDirectory', path: 'docs' }));

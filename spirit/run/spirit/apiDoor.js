@@ -8,7 +8,7 @@
 //   the node's 'api' verb over peerPost). A NEW NODE VERB: changing it needs
 //   peer review and his yes again (CLAUDE.md, "You do not").
 //
-// An arrivals witness, as puppetDoor and appFaceApp are: it reads packets
+// An arrivals witness, as puppetDoor is: it reads packets
 // of app 'api' only, so app-less ones stay puppetDoor's. The body is 'api'
 // or {app: {verb: {args}}} (D10); the node's appClient answers it
 // (appClient.ask), and the answer goes back to the asker as a packet of app
@@ -50,8 +50,8 @@ function refusal(code, error) {
 // A member's api is the tree stripped to its grants (Andy: "apiAuth will
 // strip the app.DEBUG verb the result of returned api trees, including all
 // branches of the tree that don't have a match for the calling ID"): a
-// granted app keeps its verbs but the owner's two; a granted verb keeps
-// that verb alone. Exact strings, no prefix, no case folding.
+// granted app keeps its verbs but the owner's (DEBUG, every FS. verb,
+// contact.own); a granted verb keeps that verb alone. Exact strings, no prefix, no case folding.
 function stripTree(tree, paths) {
   const kept = {};
   Object.keys(tree || {}).forEach(function (app) {

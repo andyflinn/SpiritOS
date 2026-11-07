@@ -1,4 +1,4 @@
-# grantSelector/rowElement.js
+# spirit/element/search/grant/rowElement.js
 
 `spirit/run/spirit/element/search/grant/rowElement.js` is one grant as a row element (goal/G41.14), of whichever grants table
 its caller hands it (goal/G41.16): the node's grants of contacts, or the agent's grants by job. The grant list draws its
@@ -9,7 +9,7 @@ grantsPanel element"*: the row knows no table.
 
 ## The grants table it is handed
 
-`grantElement.create(row, { grants, serves, api })`, `grants` the caller's configuration of one grants table:
+`spirit.element.search.grant.rowElement.create(row, { grants, serves, api })`, `grants` the caller's configuration of one grants table:
 
 - `branch`: the data branch its grants are kept in, a whole `spirit.data` path, node/family/branch (goal/G41.28): the
   node's grants are the auth family's cache manager's (`spirit.data.auth.data.grants.branch`, as `shell/grants/grants.js`

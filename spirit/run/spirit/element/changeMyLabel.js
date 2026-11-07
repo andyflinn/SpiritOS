@@ -1,12 +1,12 @@
 // spirit/run/spirit/element/changeMyLabel.js
 // THE NODE'S NAME, CHANGED (goal/G41.6; Andy, Q1: Info's two blocks "become shell elements of their own, each with its
-// test folder"). One field and its Save: what this node answers to anybody who asks (js/nodeCard.js). Info draws it.
+// test folder"). One field and its Save: what this node answers to anybody who asks (spirit/nodeCard.js). Info draws it.
 //
 //   changeMyLabel.create(host, { api }) -> { set(value), destroy() }
 //
 // The field is marked with its rule (rule/12, data-field="label") and held at the name rule's byte limit by fieldInput,
 // the bytes left beside it, counted in bytes as typed: an emoji costs four. Save asks here first and the wire is not
-// troubled when the rule already says no (js/fieldRules.js, the rule the node checks with). Then node.setName, and the
+// troubled when the rule already says no (spirit/fieldRules.js, the rule the node checks with). Then node.setName, and the
 // field shows what the node STORED, not what was typed (rule/19): the node normalises what it keeps.
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
@@ -43,6 +43,9 @@
       said.textContent = text || '';
       said.className = isError ? 'job-start-error' : 'job-manifest-note';
     }
+    // DISCREPANCY WITH ANDY's RULES: goal/G41.27's box (v8) says "character counters outside a form go: a field is limited
+    // by fieldRules.js as it is typed, so a counter says nothing"; this element still writes the bytes left below the
+    // rowForm's bubble, outside the form, and its test asserts that counter.
     function count() {
       var R = rules();
       if (!R) { left.textContent = ''; return; }

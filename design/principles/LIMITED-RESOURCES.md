@@ -43,20 +43,20 @@ somebody's standing, not a copy of something retrievable. Where the two
 meet — a node's cache of people it has added — 0021 rules it as standing,
 not as cache.
 
-## Where it already bites, at `0bf76b4` plus cycle 9
+## Where it already bites (lines re-checked 2026-11-07, goal/G43.23)
 
-- **A claim on a full relay.** `spirit/run/js/relay.js:1551` — *"THE DISC
+- **A claim on a full relay.** `spirit/run/spirit/relay.js:1463` — *"THE DISC
   BOUND BITES HERE"*: past the configured disc figure, a claim is refused
   507 before the invite burns, and nobody on the roll is touched.
-- **A shrink under the membership.** `relay.js:646` and `:657` — the two
+- **A shrink under the membership.** `relay.js:794` and `:805` — the two
   strandings, by disc and by allowance. The answer names the gap and
   refuses; the owner removes members with `removePeer` or `revoke` and
   asks again.
-- **A node's memory of people.** `spirit/run/js/spiritErrors.js:176` —
+- **A node's memory of people.** `spirit/run/spirit/spiritErrors.js:206` (`memory-full`, thrown at `hub.js:1351` and `:1485`) —
   *"memory is full of the people you added"*, decision 0021. The node will
   not choose whom to forget.
-- **Two relays on one box.** `bash/RELAY-HOST.md:204` — *"A second relay is
-  a second clone, not a second machine"*. Each measures the same machine
+- **Two relays on one box.** `bash/RELAY-HOST.md:254` — *"A second clone ... is a second checkout with its
+  own `relay-state/` and `.env`, not a second machine"*. Each measures the same machine
   and neither knows the other exists, so the lab relay's figures come down
   before the public relay's go up. Nothing does that reallocation
   automatically, and nothing should.
@@ -65,7 +65,7 @@ not as cache.
 
 A boot-time **clamp** looks like the system taking a decision: a relay
 whose configured figure no longer fits comes up on what the box can give
-rather than refusing to start (`spirit/run/js/relayConfig.js:115`).
+rather than refusing to start (`spirit/run/spirit/relayConfig.js:134`).
 
 It is not an exception, because **nothing is released and nothing is
 written**. The file keeps what the owner asked for, the relay runs

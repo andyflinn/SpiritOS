@@ -1,3 +1,3 @@
 {
-  "description": "The owner's allow-table searched by label and path words (text): {records: [{key, label, path}], more}."
+  "description": "The owner's allow-table, every grant ranked by the words (text) over the grant as it is served, its name, key and path, best first; no words is every grant in the table's order: {ok, items: [{key: the key, a newline and the path, label: {name, key, path} as JSON}], more}."
 }

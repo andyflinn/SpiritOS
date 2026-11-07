@@ -9,8 +9,9 @@ passing: the server MUST not CRASH or HANG."*
 ## How
 
 - A scratch copy of `spirit/run` on a node of its own (`test/headLessChrome.js`), its app servers turned on at home
-  (agent, desk, deskVerify, backup, chatClerver; the file server runs on every node). Neither Andy's node nor an agent's
-  is touched.
+  by a `face.home` sidecar each (desk, deskVerify, backup, chatClerver; the file server, intrinsic, runs on every node).
+  The list names agent too, but agent is an app of `spirit/app/` now, started by `active` in its `node.json`, which a
+  sidecar does not set. Neither Andy's node nor an agent's is touched.
 - **Introspect** (the box: *"introspect: each server's own api answer says its verbs and the shape of their
   arguments"*): the node's own api answer, every family and verb with its request shape.
 - **Then throw garbage**, raw: over a bare socket, never through `spirit.js`, the request as written.
@@ -38,8 +39,9 @@ passing: the server MUST not CRASH or HANG."*
   byte past `BODY_MAX`, a Content-Length far past what is sent, nesting 5000 deep, `__proto__` and `constructor` keys and
   calls, no Content-Type, a wrong one, invalid UTF-8, a request line that is not HTTP, a header line with no colon.
 - **Malformed paths, GET and POST**: `..`, climbs encoded (`%2e%2e`, `%2f`), a 9000-character path, bad
-  percent-encoding (`%`, `%zz`, a cut-off UTF-8 escape), double slashes, climbs into `relay-state/` through the
-  DEBUG, shell and api routes, backslashes, `*`, and a null byte (`%00`), thrown last since it may kill the node.
+  percent-encoding (`%`, `%zz`, a cut-off UTF-8 escape), double slashes, climbs into `spirit/state/` (node.json, identity.json) through
+  the DEBUG, element and api routes, backslashes toward `relay-state`, `?%`, `#x`, `*`, and a null byte (`%00`), thrown
+  last since it may kill the node.
 
 ## What counts as passing
 

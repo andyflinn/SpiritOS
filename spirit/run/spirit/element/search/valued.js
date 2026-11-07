@@ -1,7 +1,8 @@
 // spirit/run/spirit/element/search/valued.js
-// LABEL AND VALUE ROWS, SEARCHABLE (goal/G43.6). Andy, box: "It will be spirit.element.search.valued, on disc and in spirit", "a list of
+// LABEL AND VALUE ROWS, SEARCHABLE (goal/G43.6). Andy, box: "It will be spirit.element.valued, on disc and in spirit", "a list of
 // a name and a value, one per line, with an optional group", "It is searchable (probabilitySearch), over rows it already holds,
-// with no node verb." Its contract and its test: ./test/valued.md and ./test/valued.js.
+// with no node verb." Since goal/G43.18 (Q5) it is spirit/element/search/valued.js on disc and spirit.element.search.valued in
+// spirit. Its contract and its test: ./test/valued.md and ./test/valued.js.
 //
 //   spirit.element.search.valued.create(container, { rows(), columns }) -> { redraw(), destroy() }
 //     rows()     the rows as they stand now, each { group, name, value }; a row with no key is known by its group and name

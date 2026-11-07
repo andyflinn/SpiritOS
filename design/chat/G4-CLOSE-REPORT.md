@@ -1,5 +1,10 @@
 # Close: goal/G4, the chatClerver and chatter
 
+> Status 2026-11-07 (goal/G43.23): chatClerver and chatter stand. The
+> `contactSelector` element is `spirit/run/spirit/element/search/contact.js`
+> since goal/G43.18 (f0edbdb8); the contact label is
+> `spirit/run/spirit/element/contactLabel.js`.
+
 2026-10-03 to 10-04. Andy: *"lets sync out repos, do a SpiritOS close and take
 a break."* Sourced from the boxes of goal/G4's items and git `9dfc1c1e..8eea76df`.
 Lead: claude-windows. The other half: wsl-claude, quoted below. Tests were

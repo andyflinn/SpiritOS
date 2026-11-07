@@ -1,5 +1,6 @@
 SpiritOS code review
 Oct 10, 2026 · @Andreas Thut
+Status 2026-11-07 (goal/G43.23): a review of e8f8ffd, kept as written. Its paths under js/ are under spirit/ since goal/G40.2. C1 is answered by net.fetch never reaching this machine (netFence.js, goal/G29.20) and jobs starting only this node's own processes (jobs.js:509, goal/G41.30); H1 by a NUL refused at the entry (serveCommon.js:385-387, goal/G41.30). proxyList.js, deskAgent and partnering are gone. The other findings were not rechecked here.
 Verdict
 SpiritOS is carefully reasoned at the protocol level, and its sealing and request signing hold up. The weak points are at the edges: one critical path from the node's own outbound fetch to running any command, a one-request crash reachable from any website, reply content that a relay can rewrite, and several places where a relay counts or trusts a claimed identity before checking its signature.
 Fix these five first:

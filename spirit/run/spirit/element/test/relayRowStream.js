@@ -201,6 +201,8 @@ test.startTest('relayRowStream.js: who paints, listens: a relay\'s row and relay
     // a member of AND are not starred.", "if there are no relays that satisfy the requirement, don't display the form at all.",
     // "faceForm provides that check as a function", "info-app: don't show the faceForm, if the faceForm says it shouldn't be
     // displayed"; and of following the rows with no read: "agreed."). This node sits on two relays here, neither starred.
+    // TURNED ROUND SINCE: goal/G43.18's box (v29), Andy: "on the home node, NO face is offered (faceForm hides itself) for a
+    // relay without star." faceForm.js offers a starred relay only, so the checks below assert G41.32's rule and fail against it.
     test.subHeading('the face form: its check, as a function');
     await chrome.send('Page.navigate', { url: N.base + '/face.html' });
     await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.require)'); }, 20000);

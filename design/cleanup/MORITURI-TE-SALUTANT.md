@@ -12,6 +12,13 @@
 > is effectively superseded by that fresh build rather than executed
 > against zs4/ itself; Phase 1/2 are still ahead of where spirit/run is
 > today.
+>
+> **Status 2026-11-07 (goal/G43.23):** Phase 1 and 2 were built in other
+> shapes than listed: browser and server talk over one POST door
+> (`/api/spirit`) and a server-sent event stream, not WebSocket (no
+> WebSocket code is in `spirit/run/spirit/`); persistence is small JSON files
+> plus SQLite (`node.db`, `relay.db`); identity is Ed25519 public keys
+> (`relayAuth.js`); and relays and personal nodes exchange signed posts.
 
 ### Phase 0: The Great Purge (Current Phase)
 

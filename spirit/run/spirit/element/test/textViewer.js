@@ -4,6 +4,7 @@
 // The tests of spirit/element/textViewer.js, and of no other module (spec: ./textViewer.md; goal/G41.7). The browser file runs
 // in node on a window of its own: the file viewer and the codeMirror element are recorders, the node behind
 // spirit.ready answers the sidecar.
+// THE MODULE IS GONE: spirit/element/textViewer.js was deleted in faaf2b1b ("kill!"), so this test throws as it reads it.
 
 const fs = require('fs');
 const path = require('path');

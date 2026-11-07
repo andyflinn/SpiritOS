@@ -95,8 +95,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   if (!E.bundleEditor || typeof E.bundleEditor.create !== 'function') return;
 
   test.subHeading('at the top: new [label] [Add]');
-  // Andy, box: "top: a one-row add form: \"new\" [fieldInput.js/fieldRules:Label input field] [Add-Button]", and "the
-  // [add-Button] refused an empty or invalid label".
+  // Andy, box: "the [add-Button] refused an empty or invalid label"; the form itself is goal/G41.27's rowForm (below).
   const box = node('box');
   const made = E.bundleEditor.create(box, {});
   await settle();
@@ -120,8 +119,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   ok(asked.length === 0, 'Add refuses an empty label, or one the label\'s rule refuses: nothing asked', 'asked: ' + short(asked));
 
   test.subHeading('below it, filling the rest: the bundles, as a pane');
-  // Andy, box: "the bundleSelector in pane-mode, with the following columns 1. [fieldInput:fieldRule:Label] ... 2. an
-  // edit button, leading to the branchEditor.js ... 3. a delete armingButton.js".
+  // Andy, goal/G41.32: "the bundleSelector:pane looses both the 'Edit' button and the 'Delete' Button." A row pressed
+  // opens its branchEditor tab (the row element's, tested in its own folder).
   const sel = sels[0];
   // goal/G41.25, box: "the bundleSelector's list will gain a new column \"owner\", displayed right after the bundles label."
   ok(!!sel && sel.container === box && all(box).indexOf(sel) !== -1 && sel.o.face === 'pane' && JSON.stringify(sel.o.columns) === '["label","owner"]' && !sel.o.editable,
@@ -134,8 +133,8 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const r0 = sel.refreshed;
   add.dispatchEvent({ type: 'click' });
   await settle();
-  // goal/G41.25, box: "when a bundle is added the \"owner\" field will ALWAYS be set to \"node\", unless the bundleEditor
-  // was mounted for an appServer".
+  // Andy, goal/G41.32: "A user can only create, change and delete node-owned bundles and branches, and sees the others
+  // read-only": the add names no owner.
   ok(asked.length === 1 && asked[0].op === 'add' && asked[0].label === 'Reader' && Object.keys(asked[0]).length === 2, 'a valid label asks auth.bundle { op: add, label }, the label as the rule writes it (goal/G41.32: a user makes node-owned bundles alone)', 'asked: ' + short(asked));
   // goal/G41.28 (Andy: "EVERY FUCKING ELEMENT is verified to make sure when it changes shit it listens to fucking update
   // via the spirit object"): what it adds, it listens for, in spirit.data.auth.data.bundles.

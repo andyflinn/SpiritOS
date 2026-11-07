@@ -1,12 +1,12 @@
 // spirit/run/spirit/element/search/branch.js
 // ONE SHELL ELEMENT: the branch selector, a bundle's branches picked or listed (goal/G41.14; Andy, box: "branchSelector.js
 // and branchSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting branch rows"). Its
-// contract and its test: ./test/branchSelector.md and ./test/branchSelector.js.
+// contract and its test: ./test/branch.md and ./test/branch.js.
 //
 // A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/branch/listElement.js, WHICH IT LOADS ITSELF (rule/26: "every
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
 // the family selector as its filter, the bundle's branches (auth.branch search) and each row
-// (branchSelector/rowElement.js).
+// (branch/rowElement.js).
 //
 //   spirit.element.search.branch.create(container, options) -> root
 //     root.value   the chosen branch's id, a number, '' while none is

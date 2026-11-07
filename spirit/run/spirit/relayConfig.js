@@ -5,21 +5,21 @@
 //
 // Cycle 1 (design/principles/NODE-AND-RELAY.md, §8 and Decided). Until
 // now a relay read nothing but --port: every limit was a constant in the
-// code. This is the owner's bound, and three levels govern it (Andy,
-// 2026-09-19):
+// code. This is the owner's bound, and two levels govern it (Andy,
+// 2026-09-19, named three; the third, the Governor's lever positions, went
+// with the Governor, cycle 8):
 //
 //   the box            physical RAM — what the owner bought
 //   the configuration  this file, bounded by the box
-//   the Governor       lever positions, bounded by this file
 //
-// Each level may narrow the one above it and never widen it. So a
+// A level may narrow the one above it and never widen it. So a
 // configured ceiling larger than the box is refused, not honoured: a
 // ceiling the machine cannot supply is a misconfiguration, not a
 // generous setting.
 //
-// READ ONCE, AT BOOT. The owner's only real-time tools are signed grants
-// (injecting a partner, minting an invite); the configuration is not
-// changed while the relay runs (NODE-AND-RELAY §5, scope).
+// READ AT BOOT, AND BY THE OWNER'S config VERB (relay.js). A figure he
+// raises there applies at once (goal/G30.15); a lowered one at the next
+// start. The file is not otherwise re-read while the relay runs.
 //
 //   spirit/state/config.json   { "ramLimitMB": 256, "discLimitMB": 64 }
 //
@@ -83,11 +83,11 @@ function parse(text, measured, opts) {
   // file on 2026-09-20 arguing that the file "is only ever written by a
   // person with a shell" — the same argument Andy revoked hours later for
   // `settable`. By the rule that replaced it, a LIMIT is the code's and a
-  // POLICY is the owner's, and this is a limit: it bounds what a partner
-  // may aim at a member, so it protects parties other than the owner. A
+  // POLICY is the owner's, and this is a limit: it bounded what a partner
+  // (gone with goal/G22.6) could aim at a member, so it protected parties other than the owner. A
   // limit an owner can widen is not a limit, it is a default.
   //
-  // It is now a constant in router.js, at 1, which is where 0016 always
+  // It is now a constant in router.js (DEFAULT_PER_TARGET, 1), which is where 0016 always
   // said it would land once a node could queue.
   //
   // A KEY THE FILE OMITS TAKES THE MEASURED DEFAULT rather than failing:

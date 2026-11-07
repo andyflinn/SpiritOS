@@ -1,5 +1,16 @@
 # Presence — the first cut of the stream, carrying nothing else
 
+**Status 2026-11-07 (goal/G43.23): built (see §5); the header is the
+record of 2026-09-11.** Since then: the dot belongs to each contact row,
+not to the Contacts app (goal/G30.18, G30.19; the `relay-presence` job is
+read in `spirit/run/spirit/contact/data.js`), and Contacts lives at
+`spirit/run/spirit/app/contact/` (goal/G43.14). Relay Chat (f589d46d) and
+Natter (goal/G30.7) are gone, whoBook became contacts.js on 2026-09-18 and
+the contacts are rows of node.db since goal/G40.11. Devices and their panel
+were removed at goal/G16.2 (391de42b). The relay's 200-message store and
+polled inbox in §7 were deleted on 2026-09-15 (3b1c468a). Line citations
+are pinned to the commit they were measured at.
+
 **Status: in design. Verified against `8dcc28b` (2026-09-11).**
 
 One held connection between a personal node and each relay it holds a row
@@ -69,9 +80,9 @@ The node→shell half is **running in production for jobs**:
 
 | | where |
 |---|---|
-| SSE endpoint, `snapshot` then incremental events, 20s heartbeat | [server.js:364](../../spirit/run/js/server.js#L364) |
+| SSE endpoint, `snapshot` then incremental events, 20s heartbeat | [server.js:364 @ 8dcc28b](../../spirit/run/spirit/server.js) |
 | teardown on `close` **and** `error` | same, with the comment that earned it |
-| browser wrapper over `EventSource` | [kernel.js:806](../../spirit/run/js/kernel.js#L806) |
+| browser wrapper over `EventSource` | [kernel.js:806 @ 8dcc28b](../../spirit/run/spirit/kernel.js) |
 | long-lived node-side state as a **permanent job** | `jobs.js` — `fs-watcher`, `server-stats` |
 
 So the shape is two hops of the same protocol, and only the left one is
@@ -281,9 +292,12 @@ Each ends green with its own tests, and is worth having on its own.
 > fold Stage 3 proposes would today have exactly one subscriber to fold.
 > Do it when a second app wants presence, not before.
 >
-> The column is `contactsPresenceMark` in
-> [`app/contacts/contacts.js`](../../spirit/run/app/contacts/contacts.js),
-> covered by `spirit/test/contacts.js`, and demonstrated on a real screen
+> The column was `contactsPresenceMark` in the Contacts app; today the
+> dot belongs to each contact row (goal/G30.18, G30.19): the
+> `relay-presence` job is read in
+> [`contact/data.js`](../../spirit/run/spirit/contact/data.js) and Contacts
+> itself ([`app/contact/contact.js`](../../spirit/run/spirit/app/contact/contact.js),
+> since goal/G43.14) paints no presence. It is demonstrated on a real screen
 > by [`spirit/test/presenceShow.js`](../../spirit/test/presenceShow.js) —
 > which moves the world one step at a time and asks a person what colour
 > they see, because nothing between the job payload and the pixel has an
@@ -399,8 +413,8 @@ path.
 [EVENT-STREAM.md](EVENT-STREAM.md) §2 says *"the stream carries the
 message"* and reads as though 0006 already holds. **Neither is true yet**
 — the relay stores the last 200 messages on disk
-([relay.js:546](../../spirit/run/js/relay.js#L546)) and `inbox` filters
-rather than drains ([relay.js:612](../../spirit/run/js/relay.js#L612)), so
+([relay.js:546 @ 8dcc28b](../../spirit/run/spirit/relay.js)) and `inbox` filters
+rather than drains ([relay.js:612 @ 8dcc28b](../../spirit/run/spirit/relay.js)), so
 a reader gets the whole backlog every poll, forever.
 
 This document does not change that design. It splits it: **the wire first,

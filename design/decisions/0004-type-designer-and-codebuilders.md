@@ -3,6 +3,12 @@
 **Status:** Proposed — design settled, not yet implemented
 **Date:** 2026-09-03
 
+**Status 2026-11-07 (goal/G43.23): superseded, never built.** Decision 0008
+(Andy, 2026-09-12: *"no app builder and no type designer."*) took App
+Builder and Type Designer out of scope, and both were removed at 304f869a
+(2026-09-13); AI Manager left the repo at 68122539 (2026-09-26). Nothing
+below exists in today's tree; it is the record of a proposal.
+
 ## Context
 
 Real usage of App Builder surfaced a clear pattern: a vague prompt

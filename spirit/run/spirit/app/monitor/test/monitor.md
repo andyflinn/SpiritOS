@@ -6,7 +6,7 @@ Andy, box: *"An app that reads and displays a stream, called "monitor". It resid
 
 ## Requirements
 
-- `monitor.json`: icon 🦻, label `Monitor`, mount `monitor.js`, shell mount and tile true, node mount false.
+- `monitor.json`: icon 🦻, label `Monitor`, intrinsic true (Andy's 7f6ebbbe), mount `monitor.js`, shell mount and tile true, node mount false.
 - `spirit.app.monitor.createApp(container) -> { destroy() }`, beside `spirit.app.searchApp`, the function that implements the family's verb `app.search`, and on neither `spirit.elements` nor `spirit.element`.
 - It requires no old code: no `spirit.shell`, nothing under `shell/`, nothing through `spirit.elements`. It opens no other app. It loads and uses `spirit/element/search/valued.js`.
 - Until the first reading it says it is waiting. The reading the stream brings replaces that.

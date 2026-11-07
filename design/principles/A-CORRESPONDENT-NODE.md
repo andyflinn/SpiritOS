@@ -10,6 +10,8 @@
 Feasibility and shape only. This changes the **priority** of an existing
 requirement and adds no new mechanism, which is the finding.
 
+*Status 2026-11-07 (goal/G43.23): the node's log is no longer permanent. Since goal/G30.19 node.db is capped at 16 MB and the packet log's oldest rows are shed past it (`nodeStore.js` `MAX_DB_BYTES`, `shedToCap`; Andy, 2026-10-21: "cap in to 16 MB", "learn to throw out shit, or else my box is gonna grind to a hold very soon"). Where this sketch says "permanent log", read "the newest traffic that fits".*
+
 ---
 
 ## 1. The shape
@@ -26,7 +28,7 @@ log of its own side.**
 ## 2. Why it is one function rather than an architecture
 
 **The seam already exists and is already load-bearing.**
-[`peerPost`](../../spirit/run/js/peerPost.js)'s `answer` hook is handed an
+[`peerPost`](../../spirit/run/spirit/peerPost.js)'s `answer` hook is handed an
 arriving packet and **may return a string that becomes the reply's text**.
 No browser is involved. Its own comment says why it lives where it does:
 
@@ -34,15 +36,20 @@ No browser is involved. Its own comment says why it lives where it does:
 > reason this hook belongs to the node's own code and not to anything an
 > app can register freely.
 
-Today exactly one thing uses it, for device enrolment, and it returns `''`
-for everything else. **A node that answers as a model is that same seam
+At the time exactly one thing used it, for device enrolment, and it returned `''`
+for everything else. *Today nothing does: device went in goal/G16.2, and
+`server.js` passes `createPeerPost` no `answer`; the hook asks it only of a
+`known` sender.* **A node that answers as a model is that same seam
 with a different answerer.**
 
 **And the credential path is built.** `/api/proxy` substitutes
 `ANTHROPIC_API_KEY` server-side, gated by variable name **and** by
-destination host ([server.js:562](../../spirit/run/js/server.js#L562)), so
+destination host (`server.js:562` at `27143b3`), so
 the key never exists in browser-visible code and cannot be aimed at a host
-of a caller's choosing.
+of a caller's choosing. *No longer: since goal/G29.20 `net.fetch` (was
+`/api/proxy`) fills no key and never reaches this machine; the env key fill
+and the allow list are gone. A model provider is now the agent app's
+(`spirit/run/spirit/app/agent/provider/`).*
 
 **And the conversation has structure.** `re` — a packet naming the packet
 it is about, by request hash — landed the same day as this sketch
@@ -91,9 +98,11 @@ doing: **provenance is not hygiene here, it is the product.**
 ## 5. The constraint that shapes the design
 
 **The `answer` hook is awaited, and the route expires.**
-`ROUTE_WAIT_MS` is 15s on the relay
-([relay.js:38](../../spirit/run/js/relay.js#L38)); the router table sweeps
-at 20s ([router.js:31](../../spirit/run/js/router.js#L31)). A model that
+`ROUTE_WAIT_MS` was 15s on the relay (`relay.js:38` at `27143b3`); the
+router table swept at 20s. *Today a router entry lives `min(what its
+requester asked for, DEFAULT_TTL_MS)`, 5s
+([router.js:117](../../spirit/run/spirit/router.js#L117)), and
+`ROUTE_WAIT_MS` is gone — tighter still.* A model that
 takes longer than that leaves the requester with `no-answer` — truthfully,
 and with the bare receipt already sent.
 
@@ -124,7 +133,7 @@ begin by uploading everything to somebody else's box.
 
 **Decided already, and this depends on nothing new:** a node is a node
 (0006, 0009); the answer seam exists; `re` exists; the proxy scopes the
-key.
+key. *(The proxy no longer does — see §2.)*
 
 **Open, and not answered here:**
 

@@ -6,7 +6,8 @@ the same wherever it is used (the Apps list's column, the app's details panel). 
 ## API
 
 - `spirit.element.appInstaller.create(host, { path })` draws into `host` and returns `{ destroy() }`. `path` is the
-  app's script: `shell/<name>/<name>.js` (a shell app) or `process/js/<name>/<name>.js` (an appServer).
+  app's script: `shell/<name>/<name>.js` (a shell app), `process/js/<name>/<name>.js` (an appServer) or
+  `spirit/app/<name>/<name>.js` (an app in spirit/app).
 
 ## Requirements
 
@@ -25,6 +26,10 @@ the same wherever it is used (the Apps list's column, the app's details panel). 
 - **Every button listens** (box v15: "it's the buttons that have to listen, too"): the node streams an app's face part
   as an `app-face` job (`{ path, face }`) whenever its sidecar changes. A button takes its own app's face part from it:
   a shell app's turns on or off with `app`, and an app made intrinsic loses its button. Another app's is ignored.
+- **An app in spirit/app** (goal/G43.9): it is on while its row in `spirit.data.app` says `active: true`
+  (`spirit.cacheManager('app')`, then `watchApp(key)`). A press asks the node, `spirit.app.activeApp({ key, active })`;
+  the button draws what the stream then brings. A row that says `intrinsic: true` gets no button and no note
+  (goal/G43.15). This test does not reach this path.
 - **The button** says `Activate` while off and `Deactivate` while on, and carries `data-on`.
 - **A press stays its own**: the click does not reach the row or panel around it (a row's press opens its details).
 - **destroy** ends its watch on `spirit.data.jobs.data`; nothing is drawn after it.

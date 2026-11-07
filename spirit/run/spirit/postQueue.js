@@ -29,9 +29,9 @@
 // generating new work would starve its own retries for ever, and the
 // busier the node the worse it would get.
 //
-// A SEQUENCE, NOT A CLOCK. `contactsAskEveryone` fires a member's whole
-// contact list in one synchronous loop, so every entry takes the same
-// millisecond and Date.now() supplies no order at all — the queue would
+// A SEQUENCE, NOT A CLOCK. A caller that posts in one synchronous loop
+// (`contactsAskEveryone` did, for a whole contact list; it is gone) gives
+// every entry the same millisecond and Date.now() supplies no order at all — the queue would
 // sort differently on every run. A monotonic counter is the request time
 // in the only sense this needs: it never collides and never goes
 // backwards, where wall-clock does both (NTP steps, DST, suspend).

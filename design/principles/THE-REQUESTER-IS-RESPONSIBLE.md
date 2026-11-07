@@ -153,6 +153,8 @@ cheat is a defended one.**
 
 ## The enforcement point — one return bound, both paths (2026-09-25)
 
+*Status 2026-11-07 (goal/G43.23): the line numbers in this section are as of 2026-09-25; the core moved from `spirit/run/js/` to `spirit/run/spirit/` (goal/G40.2). Since then: `limits.js` has an answer cap, `ANSWER_MAX` (half of `SEALED_MAX`, `limits.js:261`), refused by name in `appServer`/`appClient`; the door's request bound now exempts `net.fetch`, `fs.save` and `fs.load` (`server.js:952-953`, goal/G33.10); `jobs.list` is gone (puppets/G2) and the `fs-watcher` job's data is `{}` (`jobs.js:218`), so the 207 KB answer no longer ships; `searchMemoryRows` is gone (goal/G40.11, `nodeSettings.js:46`); `peer.search` is gone too — a search of people is `contact.search`'s (goal/G30.19, `spirit/run/spirit/peer/AGENTS.md`).*
+
 Until now this was a principle the code could decline to follow, and
 the verbs that return collections declined. It gets a mechanism here.
 
@@ -163,7 +165,7 @@ the verbs that return collections declined. It gets a mechanism here.
 **Where it came from.** Designing the owner's proxy path to a puppet
 (`PUPPETS.md`) turned up an asymmetry nobody had looked at: **every
 bound in this system is on a request or a packet, and nothing anywhere
-bounds a response.** `spirit/run/js/limits.js` has no response cap. So:
+bounds a response.** `spirit/run/js/limits.js` had no response cap *(it has `ANSWER_MAX` now, see the status above)*. So:
 
 - `BODY_MAX` (23552) bounds what the local door ACCEPTS.
 - `PLAINTEXT_MAX` (16384) bounds what a composer may BUILD, which is

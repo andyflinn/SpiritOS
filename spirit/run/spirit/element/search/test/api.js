@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/api.js
-// The tests of spirit/element/search/api.js, and of no other module (spec: ./appServerSelector.md; goal/G41.5). The browser file runs in node on a window of their own: probabilitySearch is a
+// The tests of spirit/element/search/api.js, and of no other module (spec: ./api.md; goal/G41.5). The browser file runs in node on a window of their own: probabilitySearch is a
 // stub that keeps every list it was asked to make, and the node's api tree is the spirit object's answer.
 
 const fs = require('fs');

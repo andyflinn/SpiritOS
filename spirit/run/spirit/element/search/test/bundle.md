@@ -1,14 +1,14 @@
-# bundleSelector.js
+# spirit/element/search/bundle.js
 
 `spirit/run/spirit/element/search/bundle.js` is the bundle selector (goal/G41.14): a thin selector over its own list,
-`spirit/element/search/bundle/listElement.js`, as `contactSelector.js` is over the contacts. Its test is `./bundleSelector.js`.
+`spirit/element/search/bundle/listElement.js`, as `spirit/element/search/contact.js` is over the contacts. Its test is `./bundle.js`.
 
 Andy, box: *"bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and
 selecting bundle rows."*
 
 ## Requirements
 
-- It registers `spirit.element.bundleSelector.create(container, options)`, and `createBundleSelector` no more. Its root is
+- It registers `spirit.element.search.bundle.create(container, options)`, and `createBundleSelector` no more. Its root is
   appended to the container and answered (box v23: *"every element gets a container and appends itself"*).
 - It answers its root at once, class `bundle-selector`, with nothing chosen: `.value` is `''` and `.row` is `null`.
 - It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search/bundle/listElement.js` and draws
@@ -27,5 +27,5 @@ selecting bundle rows."*
 - The old factory still registered, or a root not appended to its container.
 - A selector that counts on an element the page did not load, or on the old list search.
 - A pick that leaves `.value` a text, or `.row` without the bundle.
-- A pane that loses the editor's columns or its editing.
+- A pane that loses the editor's columns.
 - A family not handed to the list, or one handed when none was asked.

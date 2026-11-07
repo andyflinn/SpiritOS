@@ -1,7 +1,7 @@
-# contactSelector.js
+# spirit/element/search/contact.js
 
 `spirit/run/spirit/element/search/contact.js` is the contact selector. Since goal/G41.13 it is the configurable ID selector
-of the grants app's add-grant row. Its test is `./contactSelector.js`; this spec covers what G41.13 adds.
+of the grants app's add-grant row. Its test is `./contact.js`; this spec covers what G41.13 adds.
 
 Andy, Q2: *"the loopback-api-location of the ID table, which must be formed like the shadow roll : key:ID (ID-field-rules,
 label (label-field rules)"*, *"table:\"loopback://api/contact/search\""*, and *"if neccessary: key field name ('id',
@@ -10,7 +10,7 @@ based table calls its label)"*.
 
 ## Requirements
 
-- It registers `spirit.element.contactSelector.create(container, options)`, and `createContactSelector` no more. Its
+- It registers `spirit.element.search.contact.create(container, options)`, and `createContactSelector` no more. Its
   root is appended to the container (box v23: *"every element gets a container and appends itself"*) and answered at
   once, nothing chosen, with `refresh`, `present` and `mark`, as Chatter and the shell use it.
 - It loads what it uses itself (rule/26): on a bare page it requires `spirit/element/search.js`, then builds on

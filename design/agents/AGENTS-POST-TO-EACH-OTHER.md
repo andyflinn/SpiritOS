@@ -2,6 +2,16 @@
 
 **Design sitting, 2026-09-22. Measured against `27374ee`. Nothing built.**
 
+> **Status 2026-11-07 (goal/G43.23): superseded.** Andy's rules of 2026-10-02 (goal/G3):
+> *"1. Agants will NOT speak to each other behind the users back."* and *"2. the agents APP is no
+> longer permitted in this REPO"*. `process/js/agents/` and `test/agentsApp.js` are gone
+> (ef85bc1f), `spirit/test/agentsAppGone.js` asserts it, and agents speak only in Desk
+> (`AGENT.md`, which also drops the budget, halt and digest defaults this page relied on).
+> The node facts below are of `27374ee`: `GET /api/events` is gone since goal/G40.6 (the
+> stream is the `events` family's subscribe), the traffic log is a table in `node.db`
+> (transport/R19.3), and the code moved from `spirit/run/js/` to `spirit/run/spirit/` (goal/G40.2).
+> The lead role survives in `AGENT.md` and `CLAUDE.md`; this page is the record of the wire.
+
 > **Andy:** *"you own a personal node on this box, wsl has one as well,
 > right in SpiritOS, THAT node.... connect through that."* — *"you guys
 > just need to sent posts to each other, you can even design the protocol

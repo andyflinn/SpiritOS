@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/element/search/contact/test/detailElement.js
-// The tests of spirit/element/search/contact/detailElement.js, and of no other module (spec: ./contactDetails.md;
+// The tests of spirit/element/search/contact/detailElement.js, and of no other module (spec: ./detailElement.md;
 // goal/G41.9). The browser file runs in node on a window of its own, on a small DOM (markup parsed into a tree,
 // selectors, clicks that bubble); the navigation, the node behind the page's api, the relay family and the armingButton
 // element are recorders.

@@ -30,7 +30,9 @@ it is destroyed. A list row and a details panel show the same element. It loads 
 - With an `index` given, `create` registers the element under its key and `destroy` removes it. A second `destroy`
   does nothing. After `destroy`, `mount` hosts are dropped, so `apply` paints nothing.
 - `index(subscribe)`:
-  - Calls `subscribe(index)` exactly once, on the first `add`.
+  - Calls `subscribe(index)` once, on the first `add`; later adds do not subscribe again. `subscribe` may answer its
+    release: when the last element leaves, the index calls it, and the next `add` subscribes again (goal/G41.27,
+    rule/8). This test does not reach the release.
   - `forKey(key)` gives a copy of the elements registered for that key, or `[]`.
   - A key whose last element leaves is gone from `keys()`.
   - Removing an element that was never registered changes nothing.
@@ -46,4 +48,4 @@ it is destroyed. A list row and a details panel show the same element. It loads 
 - A double `destroy`.
 - Two elements under one key.
 - Mutating the array `forKey` returns.
-- `subscribe` called more than once.
+- `subscribe` called again while elements are registered.

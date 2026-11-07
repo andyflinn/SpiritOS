@@ -13,7 +13,7 @@ Andy, box: *"We are ONLY moving the contents of "run://shell/js/" to "run://spir
 - *"all, only access to codeMirror library is through the element!"* The page starts with no `window.CodeMirror`, and no product file but `spirit/element/codeMirror.js` names the library's folder. The element brings the library, its sheets and its search add-ons itself.
 - Andy's own words are never rewritten: a double-quoted part of a comment or a document is left out of that scan. What the desk writes (`currentGoal.json`, `rules.md`), `agents/` and `design/` are left out too.
 - On a real page `spirit.element` exists at start, every moved module loads from its new place, and all the moved elements stand on `spirit.element` and none on `spirit.elements`.
-- *"shell/shared/ will not be moved or touched. thos elements do NOT belong in spirit.element."* The desk's shared elements stay on `spirit.elements`.
+- *"shell/shared/ will not be moved or touched. thos elements do NOT belong in spirit.element."* The desk's shared elements stay on `spirit.elements`, and `shell/shared/js` keeps its four files.
 
 ## What else proves it
 

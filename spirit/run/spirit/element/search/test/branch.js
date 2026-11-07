@@ -1,10 +1,10 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/branch.js
-// The tests of spirit/element/search/branch.js, and of no other module (spec: ./branchSelector.md; goal/G41.14). The browser
+// The tests of spirit/element/search/branch.js, and of no other module (spec: ./branch.md; goal/G41.14). The browser
 // file runs in node on a BARE window (rule/26: "every shell element loads its own elements dynamically through the ...
 // spirit.require functionality"): no element is on the page until the selector requires it. Its list,
-// branchSelector/listElement.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
+// search/branch/listElement.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
 
 const fs = require('fs');
 const path = require('path');

@@ -12,9 +12,9 @@
 //     opts.columns   the row's fields it shows, in order, of family, verb and delete; family and verb by default
 //     opts.api       the app's shell api, handed to each row for its are-you-sure
 //     opts.empty     the words when nothing matches
-// A VIEW OF data.branches (goal/G41.14): auth.branch's search seats its rows there, and the node's stream keeps them
-// current through the branch row element (./rowElement.js, the type's own), so a branch added or deleted anywhere shows
-// in every list.
+// A VIEW OF THE auth FAMILY'S BRANCHES (goal/G41.14, G41.28): auth.branch's search seats its rows there, and the node's
+// stream keeps them current through the auth family's cache manager (spirit/auth/data.js), so a branch added or deleted
+// anywhere shows in every list.
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26): through spirit.require.
   // And the auth family's cache manager, whose branches branch the list is a view of (goal/G41.28). And the verb filter

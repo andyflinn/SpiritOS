@@ -1,4 +1,4 @@
-// spirit/run/shell/boot.js (goal/G41.3: face/shell.js moved into shell/ as the boot)
+// spirit/run/spirit/shell/boot.js (goal/G41.3: face/shell.js moved into shell/ as the boot)
 // THE BOOT OF THE GREEN SHELL'S PAGE (goal/G30.9; since goal/G43.18, box v29, "The shell"; Andy: "boot should solve
 // transport issues only, then load whichever shell the node has configured"; Q22, Andy: "ok." to "the link home moves
 // into spirit.js, and boot.js keeps only the stream and loading the shell"). spirit.js runs it once the page stands: at
@@ -278,7 +278,8 @@
 
   // ── THE SHELL THE NODE NAMES (goal/G43.18, box v29) ────────────────────────────────────────────────────────────
   // node.shell({ at }) names it, spirit/app/<name>/<name>.js; it is loaded and handed the page's area, the shell's
-  // element made there when it has one (spirit.elements.<name>.create). No shell named, or none loading: the shell app.
+  // element made there when it has one (spirit.elements.<name>.create). No shell named, or no answer: the shell app; one that does not load is said
+  // in the banner.
   function loadShell() {
     var at = state.home ? 'home' : 'face';
     return Promise.resolve(spirit.node && typeof spirit.node.shell === 'function' ? spirit.node.shell({ at: at }) : { name: 'shell' }).then(function (r) {
@@ -342,7 +343,7 @@
     });
   }
 
-  // The old shell's fact row (js/client/shell.js factRow), the same markup, for the dialogs that draw with it
+  // The old shell's fact row (spirit/client/shell.js factRow), the same markup, for the dialogs that draw with it
   // (Relay Details, Contact): pairs of [label, value], escaped.
   function factRow(pairs) {
     var esc = spirit.escapeHtml;

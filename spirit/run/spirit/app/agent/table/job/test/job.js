@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/table/job/test/job.js
 // The tests of spirit/app/agent/table/job/, its server.js, elementTable.js and elementRow.js, and of no other module
 // (spec: ./job.md; goal/G41.4). What the tables share is tested in ../../test/. The server is made on a scratch
-// agent.db as agent.js makes it; the page files run in node on a window of their own, the shared elements stubs that
+// agent.db as nodeAgent.js makes it; the page files run in node on a window of their own, the shared elements stubs that
 // keep what they were handed.
 
 const fs = require('fs');
@@ -46,7 +46,8 @@ test.startTest('job/: the job table');
   const cols = db.prepare('PRAGMA table_info("job")').all().map(function (c) { return c.name; });
   // Andy, box v22: "with Label and Description, boolean loop-flag (not for the model, for the agent-app), and a codeMirror-field for the
   // job-description that may come with a prompt".
-  // goal/G41.21 (box v17): "The job table gains a field, bundle", "a second field, provider", "a third field, persona".
+  // goal/G41.21 (box v17): "The job table gains a field, bundle", "a second field, provider", "a third field, persona". The
+  // description went in goal/G41.21 ("ALL, drop the description for ALL tables.").
   ['id','privateKey','sealPublicKey','sealPrivateKey','icon','label','loop','job','bundle','provider','persona'].forEach(function (c) {
     ok(cols.indexOf(c) !== -1, 'the job table has ' + c, 'columns: ' + short(cols));
   });

@@ -1,4 +1,6 @@
-> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay is to serve the face pages itself (not built). Passages below that describe those processes are history, kept as bones for the fold.
+> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay serves the face pages itself (goal/G30.13–G30.14: `faceDoor`, `spirit/run/spirit/relayServer.js:472`; the home node answers through `spirit/run/spirit/faceHome.js`). Passages below that describe those processes are history, kept as bones for the fold.
+
+> **Status 2026-11-07 (goal/G43.23):** none of the route below runs today. `puppetPost.js`, `nodeApps.js`, `faceServer.js`, `appServerBoundary.js` and `spirit/test/faceRoutePending.js` were deleted at goal/G13.2 (013dc827); `appFaceApp.js` at goal/G30.1 (ba2f3b62). `spirit/run/js/` paths below are at `7bce8d1`; the files that survive are now under `spirit/run/spirit/` (moved at goal/G40.2): `ownerPost.js`, `arrivals.js`, `client/packet.js`.
 
 # The face round trip: browser to app-server process and back
 

@@ -273,6 +273,16 @@ function getJson(urlStr) {
   //
   // This runs from anywhere with a network — it is the half of the check
   // the Windows box can do.
+  //
+  // DISCREPANCY WITH ANDY's RULES: Andy's decision (goal/G22.6, 2026-10-13,
+  // quoted in spirit/run/spirit/relayServer.js, THE PUBLIC DOOR IS CLOSED):
+  // "The relay's public door, the one any curl can reach without key or
+  // signature, is killed in this item: /api/relay/key, /api/relay/claim,
+  // /api/version and the brochure all close." This section still asks a
+  // relay with plain GETs of /api/relay/who and /api/version, which a relay
+  // answers 404 now, so every domain reads as a problem here. The relay's
+  // key is answered to a signed card ask on its one door (bash/card-ask.js,
+  // what bash/status runs).
   say('identity, over TLS');
   const keys = {};
   for (const domain of domains) {
@@ -282,14 +292,20 @@ function getJson(urlStr) {
       continue;
     }
     // `relayPublicKey`, and it is NOT the owner's key. The owner's is the
-    // `owner:true` row in `peers`; this is the box's own Ed25519 identity,
+    // key in the relay's spirit/state/owner.json (no roll row is marked
+    // owner since 2026-09-19); this is the box's own Ed25519 identity,
     // made once on the first --relay boot, and it is the one a member
-    // pins in relayKeys.json. Two relays may legitimately share an owner,
+    // pins (in the node's seen table). Two relays may legitimately share an owner,
     // but they can never share this.
     const key = r.json.relayPublicKey || '';
     const label = r.json.relayLabel || '';
-    // AN UNCLAIMED PUBLIC RELAY IS FIRST-CLAIM-IS-OWNER, and certificate
-    // transparency publishes the hostname the moment the cert issues.
+    // An unowned relay was once first-claim-is-owner; since goal/G16.8 the
+    // owner is written at install and a relay with no owner.json refuses
+    // every claim. DISCREPANCY WITH ANDY's RULES: Andy, goal/G16.8 (quoted in
+    // bash/install-units): "the invite path to ownership MUST be gone. it is
+    // a security gap, from the time of install until the time of first
+    // claim." The message below still says "first claim wins it", and it
+    // looks for an `owner: true` row in `peers`, which no relay sends.
     const owner = (r.json.peers || []).filter(function (p) { return p && p.owner === true; })[0];
     line(domain, true, 'HTTP 200  ' + (r.json.peers || []).length + ' peers' +
       (label ? '  "' + label + '"' : ''));
@@ -306,8 +322,10 @@ function getJson(urlStr) {
 
     // ── AND IS IT RUNNING THE CODE WE THINK IT IS ────────────────────
     //
-    // /api/version is public on purpose — "the question a deploy check
-    // asks must not need a private key". This is the read half of remote
+    // /api/version WAS public on purpose — "the question a deploy check
+    // asks must not need a private key" — until goal/G22.6 closed it (see
+    // above); a relay's version now reaches its owner in his relay-status
+    // report (relay.js). This was the read half of remote
     // update: cron pulls, and this says whether it landed. A clone that
     // is `dirty` has been edited on the box, which `reset --hard` will
     // silently throw away at the next tick.

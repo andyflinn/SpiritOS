@@ -1,5 +1,20 @@
 # A member's request budget — announced, and honoured
 
+**Status 2026-11-07 (goal/G43.23): partly built, partly superseded; kept as
+the record.** Built: the node serializes its posts (`postQueue.js`), and the
+relay holds one request in flight per requester and one per sender at each
+member (router.js, `DEFAULT_PER_MEMBER`, `DEFAULT_PER_TARGET`; the slot
+counted per sender since goal/G22.6). Not built: announcing the limits to
+members; the relay's `caps` reach the owner's report only (relay.js,
+`caps: { memberPerMin: MEMBER_PER_MIN }`). Gone: the partner budget and every
+partner path below (goal/G22.6, PARTNERS.md), the Governor and
+`settableCensus.js` (cycle 8, 11dcb1e0), `partnerLink.js` (c4054152),
+`routeHints.js` (goal/G22.6, 113d1327), `devicePeers.js` (goal/G16.2,
+391de42b) and `peerSearch.js` (goal/G29.17, ecda00ac; the search is
+peerRank now). The contacts are rows of node.db since goal/G40.11, and
+`info.js` is `spirit/run/shell/info/info.js`. Line citations are pinned to
+the commit they were measured at.
+
 *Design note. Nothing here is built. Feasibility and shape only, measured
 against `67e6f03` (2026-09-20).*
 
@@ -39,14 +54,14 @@ nothing. The in-flight cap is not in `caps` at all.
 
 **2. A node learns its limits by being refused.** The router answers
 `429 too many in flight` once a requester is at the cap
-(`router.js:108`), `503 router full` when the table is spent
-(`router.js:103`), and `409 already in flight` for a duplicate hash
-(`router.js:95`). All three arrive *after* the request was made and the
+(`router.js:108 @ 67e6f03`), `503 router full` when the table is spent
+(`router.js:103 @ 67e6f03`), and `409 already in flight` for a duplicate hash
+(`router.js:95 @ 67e6f03`). All three arrive *after* the request was made and the
 hop was paid for.
 
 **3. THE CAP IS NOT CONFIGURABLE.** `var DEFAULT_PER_REQUESTER = 16;`
-(`router.js:27`), and the relay builds its table with
-`routerTable.createRouter()` — **no options** (`relay.js:410`). So the
+(`router.js:27 @ 67e6f03`), and the relay builds its table with
+`routerTable.createRouter()` — **no options** (`relay.js:410 @ 67e6f03`). So the
 number bounding every member is a hard-coded constant that no
 configuration reaches, no report mentions, and no Governor can move.
 
@@ -60,7 +75,7 @@ as a failure. Nothing retries and nothing waits.
 **But the right home already exists.** `peerPost` owns comms by the
 one-interface rule (`AGENT.md`, *Comms*), already knows what it has
 outstanding, and already carries the back-off signal it currently ignores
-— `inFlight: !!(body && body.inFlight)` at `peerPost.js:330`. The relay
+— `inFlight: !!(body && body.inFlight)` at `peerPost.js:330 @ 67e6f03`. The relay
 even distinguishes *already in flight* from *too many in flight*, which
 is precisely the difference between "this one is a duplicate" and "wait
 your turn".
@@ -79,11 +94,11 @@ held bytes  =  requests in flight  x  bytes each  x  how long each is held
 ```
 
 - **requests in flight** — `DEFAULT_MAX = 256` for the whole table
-  (`router.js:26`), `DEFAULT_PER_REQUESTER = 16` per member
-  (`router.js:27`)
+  (`router.js:26 @ 67e6f03`), `DEFAULT_PER_REQUESTER = 16` per member
+  (`router.js:27 @ 67e6f03`)
 - **bytes each** — `MAX_ROUTED_TEXT = limits.PAYLOAD_MAX`
-  (`relay.js:57`), 16 KB
-- **how long** — `ROUTE_WAIT_MS = 15000` (`relay.js:95`)
+  (`relay.js:57 @ 67e6f03`), 16 KB
+- **how long** — `ROUTE_WAIT_MS = 15000` (`relay.js:95 @ 67e6f03`)
 
 **So the worst case a relay can be driven to is 4 MB held at once, and it
 takes only sixteen members to get there.** One member alone can hold
@@ -135,7 +150,7 @@ refuses and says which — *"honest about anticipated failures"* rather
 than hiding them in latency.
 
 **Per relay, not per peer.** The relay's cap counts by requester key
-(`router.js:50`, `countFor`), so the node's line is per relay.
+(`router.js:50 @ 67e6f03`, `countFor`), so the node's line is per relay.
 
 ## The proof case already exists, and it is nearly free
 
@@ -144,12 +159,12 @@ than hiding them in latency.
 > relays stream or broadcast confirmations, the UI can actually show
 > status updates on the operation."*
 
-`info.js:281` `infoPush` is **one** node-side fan-out — a rename posted
+`info.js:281 @ f95c032` `infoPush` is **one** node-side fan-out — a rename posted
 to every relay this node holds a seat on. It is already built the way a
 queue needs:
 
 > *Corrected 2026-09-20: this first said "the only node-side fan-out in
-> the tree". **`contacts.js:595` `contactsAskEveryone` is the bigger
+> the tree". **`contacts.js:595 @ f95c032` `contactsAskEveryone` is the bigger
 > one** — it loops `contactsSeen` and fires a `peerPost({describe:true})`
 > per contact, all at once, so its width is the contact count rather than
 > the relay count. Missed because the call site was read and its caller
@@ -159,7 +174,7 @@ queue needs:
 > lively as before..."*
 >
 > *And it is already built for a queue too. `contactsCards[key]` is
-> `'asking' | {name, description} | {why}` (`contacts.js:110`) and the
+> `'asking' | {name, description} | {why}` (`contacts.js:110 @ f95c032`) and the
 > `'asking'` state is rendered (`:679`), so cards already fill in as
 > answers arrive. Under a cap of 1 that becomes visibly progressive
 > rather than broken — fifty local contacts at ~3 ms serialise in under
@@ -168,11 +183,11 @@ queue needs:
 > *"EVERY RELAY IS ASKED INDEPENDENTLY and one refusal costs the others
 > nothing. That is not politeness, it is the only workable rule: a relay
 > may be down for days, and an all-or-nothing save would mean nobody can
-> ever change their name while one box is offline."* — `info.js:277`
+> ever change their name while one box is offline."* — `info.js:277 @ 1762549`
 
 And `infoPushed[row.url]` is written **the moment each relay answers**,
-with its own reason on failure (`info.js:290-305`), and is already drawn
-from at `info.js:220`. What is missing is a repaint inside each `.then`:
+with its own reason on failure (`info.js:290-305 @ 1762549`), and is already drawn
+from at `info.js:220 @ 1762549`. What is missing is a repaint inside each `.then`:
 today the screen says *"saved — telling 3 relay(s)…"* and then nothing
 until all three settle.
 
@@ -239,7 +254,7 @@ prove the overall design... then we learn from the results."*
 > gives the node two concurrent accesses to that route."*
 
 **The cap counts inside the router table of the relay posted to**
-(`router.js:50`, `countFor`, keyed by requester). Two relays are two
+(`router.js:50 @ 3d9b17d`, `countFor`, keyed by requester). Two relays are two
 tables and two independent counts, so a member of two relays has two
 slots under a cap of 1 — and it holds even when both relays forward down
 the same onward route, because that hop is the relays' business and
@@ -251,7 +266,7 @@ cycle 2 deliberately removed it:
 > *"The first connected relay, because which one partners with the hinted
 > relay is the relays' knowledge, not this node's… that relay knows which
 > of them it partners with and which are live, so it chooses — the node
-> does not guess."* — `hub.js:935`
+> does not guess."* — `hub.js:935 @ 3d9b17d`
 
 Spreading across **relays you are a member of** takes nothing back from
 that decision. The node is not choosing a route; it is choosing which of
@@ -259,12 +274,12 @@ its own doors to knock on.
 
 **And a wrong door is cheap.** A relay that cannot reach the target
 refuses at once — *"it refuses an absent target at once (0006, 503 peer
-not reachable)"* (`hub.js:941`) — so a guess costs a fast refusal rather
+not reachable)"* (`hub.js:941 @ 3d9b17d`) — so a guess costs a fast refusal rather
 than a timeout, which is what makes spreading safe to attempt without
 knowing.
 
 **A mesh-wide search already costs one slot.** The fan-out is relay-side:
-the node posts one search and `relay.js:2703` has the relay ask its
+the node posts one search and `relay.js:2703 @ 3d9b17d` has the relay ask its
 partners in parallel and merge. The most expensive-sounding operation a
 node can perform occupies a single slot however large the mesh — an
 argument for the cap rather than against it.
@@ -281,7 +296,7 @@ case for cap 1 — not Andy's three-row node.
 
 And the downstream bottleneck is unaffected: if both relays forward to
 the same partner, each forwarding relay spends its own slot on that
-partner's table under its own key (`relay.js:1969`), where one requester
+partner's table under its own key (`relay.js:1969 @ 3d9b17d`), where one requester
 identity still carries all of its members. The partner pool needs its own
 bound regardless of how well the node spreads.
 
@@ -310,7 +325,7 @@ that makes `requestsInFlight1` a stronger lever than `connections1`.
 > of a relay whose partners do not share the cap.*
 
 Inbound partner forwards do open routes under `mineKey()`
-(`relay.js:1969`), so every partner's members share one requester
+(`relay.js:1969 @ 942dbd7`), so every partner's members share one requester
 identity on this relay's table — that part stands. But **what arrives is
 what a partner's members were allowed to send.** The cap is
 `DEFAULT_PER_REQUESTER` in the shipped code, so it travels with releases:
@@ -374,7 +389,7 @@ Both hold at once, and they are not in tension.
 
 **Separate, because it is a different population.** Forwarding and
 inbound partner traffic are not members, arrive under one identity
-(`mineKey()`, `relay.js:1969`), and answer to a different argument.
+(`mineKey()`, `relay.js:1969 @ bff5be7`), and answer to a different argument.
 `caps: { memberPerMin, partnerPerMin }` already splits on exactly this
 line.
 
@@ -405,7 +420,7 @@ configured, visible divergence — the same shape as `settable` in 0015.
 > **Andy:** *"it is computable though, based on configured MAX_MEM."*
 
 **And the constants already encode a memory budget without saying so.**
-`DEFAULT_MAX = 256` slots (`router.js:26`) times `PAYLOAD_MAX = 16384`
+`DEFAULT_MAX = 256` slots (`router.js:26 @ 53f9a34`) times `PAYLOAD_MAX = 16384`
 (`limits.js`) is **exactly 4 MB**. Somebody sized that against memory and
 then wrote it as a slot count, so the reasoning vanished and the number
 survived. Deriving it puts the reasoning back.
@@ -433,7 +448,7 @@ being required. What the protocol needs is not that everyone picks the
 same number, but that **everyone enforces their own**.
 
 **Nothing is computed today.** `createRouter()` is called with no options
-at all (`relay.js:410`), so the table size, the per-member cap and the
+at all (`relay.js:410 @ 53f9a34`), so the table size, the per-member cap and the
 4 MB assumption behind them are fixed at build time and reach no
 configuration. That is the same root gap as §Feasibility 3, seen from the
 other end: a number that cannot be computed cannot be declared, and a
@@ -471,14 +486,14 @@ it did.**
 > *Corrected in place. Checking that bet found the over-claim.*
 
 `routeHints`'s `askPartner` returns `new Promise(function () {})` —
-*"the answer is not under test here"* (`routeHints.js:61`). Every forward
+*"the answer is not under test here"* (`routeHints.js:61 @ e732765`). Every forward
 it makes stays open **forever**, so at cap 1 the first one takes the slot
 and nothing ever frees it. That is a fixture that never replies, not a
 relay that cannot forward.
 
 **The production concern is still real, but it is reached by inspection
 rather than by this suite.** Forwarding opens routes under `mineKey()`
-(`relay.js:1969`), so one *unanswered* forward holds the relay's only
+(`relay.js:1969 @ e732765`), so one *unanswered* forward holds the relay's only
 slot for the whole of `ROUTE_WAIT_MS`. At 15 s that stalls every forward
 the box makes. The split is still the prerequisite — but because of the
 timeout and the shared identity, not because a suite went red.
@@ -506,8 +521,8 @@ every post leaves a route open. Same shape as `routeHints`. Not evidence.
 
 **`devicePeers` is real, and it is the relay-as-requester bottleneck.**
 Two `deviceOffer` calls to two different members, back to back
-(`devicePeers.js:134-135`). A device offer is the relay posting as
-itself, so it opens its route under `mine.publicKey` (`relay.js:1575`) —
+(`devicePeers.js:134-135 @ 7552492`). A device offer is the relay posting as
+itself, so it opens its route under `mine.publicKey` (`relay.js:1575 @ 7552492`) —
 **two offers to two different people are two routes under one requester
 identity**, and at a cap of 1 the second is refused.
 
@@ -566,7 +581,7 @@ The sharpest thing about it is the qualifier. This is not misconfiguration
 or an old release — **capacity asymmetry alone is enough**, with every box
 behaving correctly. A relay with more memory has more members generating
 more forwards, and they all arrive at a small partner under one identity
-(`mineKey()`, `relay.js:1969`).
+(`mineKey()`, `relay.js:1969 @ b6f77c5`).
 
 **Nothing paces per partner today.** No per-partner budget, no queue, no
 back-off: a relay offers forwards at whatever rate its members produce
@@ -628,7 +643,7 @@ inverts the intuition that made this a red line: inbound scales with the
 size of the relay being written to.
 
 **Two bounds follow, and the data for both is already stored.**
-`pending[hash] = { requester, target, at, carry }` (`router.js:111`), and
+`pending[hash] = { requester, target, at, carry }` (`router.js:111 @ 9d78bfd`), and
 `countFor` already filters that map — so each is the same scan with one
 more predicate. **No new state, no new memory.**
 
@@ -831,7 +846,7 @@ proven by unit test alone — which is exactly how `routeHints` came to
 assert against a fixture that never answers.
 
 **Both are buildable against today's lab with no new machinery.**
-`peer.post` is already a loopback verb (`server.js:1351` ->
+`peer.post` is already a loopback verb (`server.js:1351 @ 3eaf1ad` ->
 `hub.handlePost`), taking `{to, text, via}`; `via` names the relay, so
 the route is pinned rather than guessed. `labPopulate` already drives
 peers exactly this way — through each peer's own node, *"the same route a
@@ -948,19 +963,19 @@ guess.
 
 **Corrected 2026-09-21: the number quoted below as "relay lets go" was the
 wrong constant, all day.** `ROUTE_WAIT_MS = 15000` governs the relay's own
-outbound posts (`relay.js:1589`, device offers). **A member's route lives
+outbound posts (`relay.js:1589 @ bb9ff5f`, device offers). **A member's route lives
 in the router's table and expires on `DEFAULT_TTL_MS = 20000`**
-(`router.js:92`), which `relay.js` never overrides. So the orphan window
+(`router.js:92 @ bb9ff5f`), which `relay.js` never overrides. So the orphan window
 described below as seven seconds is **twelve**.
 
 **The whole chain, which is four waits and not two:**
 
 | waiter | holds | where |
 |---|---|---|
-| node's post | **8 s** | `peerPost.js:43` `DEFAULT_WAIT_MS` |
-| **relay's note about that request** | **20 s** | `router.js:92` `DEFAULT_TTL_MS` |
+| node's post | **8 s** | `peerPost.js:43 @ bb9ff5f` `DEFAULT_WAIT_MS` |
+| **relay's note about that request** | **20 s** | `router.js:92 @ bb9ff5f` `DEFAULT_TTL_MS` |
 | relay -> partner hop | **8 s** | the same `DEFAULT_WAIT_MS`, via `partnerRouter` |
-| relay's own posts | 15 s | `relay.js:95` `ROUTE_WAIT_MS` |
+| relay's own posts | 15 s | `relay.js:95 @ bb9ff5f` `ROUTE_WAIT_MS` |
 
 **Inverted, and flat in the middle.** The inner hop (20 s) outlives the
 outer waiter (8 s), which is what orphans a slot. And the relay's hop to a
@@ -1137,8 +1152,8 @@ for whatever pair of numbers is chosen:**
 
 | | value | file |
 |---|---|---|
-| node gives up | **8000 ms** | `peerPost.js:37`, `DEFAULT_WAIT_MS` |
-| relay lets go | ~~15000 ms~~ **20000 ms** | ~~`relay.js:95`~~ `router.js:92` |
+| node gives up | **8000 ms** | `peerPost.js:37 @ 6e807c5`, `DEFAULT_WAIT_MS` |
+| relay lets go | ~~15000 ms~~ **20000 ms** | ~~`relay.js:95 @ bb9ff5f`~~ `router.js:92 @ bb9ff5f` |
 
 **The node abandons a request seven seconds before the relay releases the
 route.** At a cap of 16 this is invisible. At a cap of 1 it is the
@@ -1180,8 +1195,8 @@ request**, so nothing has to be exempted:
 
 | | request | reply |
 |---|---|---|
-| route | `/api/relay/post` | `/api/relay/reply` (`relayServer.js:537`) |
-| effect on `pending` | **creates** a row | **deletes** one — `router.js:134`, `answer()` |
+| route | `/api/relay/post` | `/api/relay/reply` (`relayServer.js:537 @ d60ac9b`) |
+| effect on `pending` | **creates** a row | **deletes** one — `router.js:134 @ d60ac9b`, `answer()` |
 | delivery | relay holds it and waits | pushed down the requester's existing stream, `presentNow.send` |
 
 **No deadlock.** The feared cycle is A posting to B while B is mid-post
@@ -1240,11 +1255,11 @@ decision's arithmetic to be wrong.** `0016` states peak RAM as
 `2N x PAYLOAD_MAX` and prices 1000 members at 31 MB. **The relay does not
 retain the payload.**
 
-On a plain member-to-member route (`relay.js:3016`) `routes.open` is
+On a plain member-to-member route (`relay.js:3016 @ 8c84f43`) `routes.open` is
 called with **no `carry`**. The text lives in the `deliver` closure, is
 pushed down the target's stream immediately, and the closure is not
 stored in the entry — `pending[hash] = {requester, target, at, carry}`
-and nothing else (`router.js:111`). `carry` is non-null only for a
+and nothing else (`router.js:111 @ 8c84f43`). `carry` is non-null only for a
 partner forward, and there it holds a continuation and a key, never the
 payload.
 
@@ -1285,14 +1300,14 @@ assessment stands and this is a second reason for it.
 endpoints.**
 
 - `/api/relay/post` -> `routes.open()`, where `max` and `perRequester`
-  are tested (`router.js:105-110`)
+  are tested (`router.js:105-110 @ 8c84f43`)
 - `/api/relay/reply` -> `relay.routeReply()` -> `routes.answer()`
-  (`relayServer.js:537`, `router.js:127`), which has **no cap in it at
+  (`relayServer.js:537 @ 8c84f43`, `router.js:127 @ 8c84f43`), which has **no cap in it at
   all**
 
 The partner case holds too: a member answering a packet forwarded by a
 partner returns through the `answerPartner` continuation carried in the
-entry (`relay.js:3081`), not through a fresh `routes.open`. **No reply
+entry (`relay.js:3081 @ 8c84f43`), not through a fresh `routes.open`. **No reply
 path allocates a row or consults the cap.**
 
 **Why this is written down rather than left as an observation.** The
@@ -1328,7 +1343,7 @@ refused for lack of room.
 > become a computable constant, too."* — *"then connections will be
 > derived from ram_available."*
 
-**The derivation already exists.** `governor.js:69`:
+**The derivation already exists.** `governor.js:69 @ 92b2c11`:
 
 ```js
 var ceiling = Math.max(FLOOR, Math.floor(ramLimitMB * perMB));
@@ -1423,7 +1438,7 @@ only one of them.
 
 ### What it changes, because today there is no bound at all
 
-`partnerLink.js:122`:
+`partnerLink.js:122 @ 5828b65`:
 
 ```js
 start: function () {
@@ -1443,7 +1458,7 @@ uncertainty like every other one here.
 
 ### It supersedes a recorded stance, which is Andy's to confirm
 
-`partnerLink.js:6` carries the opposite position, in his words:
+`partnerLink.js:6 @ 5828b65` carries the opposite position, in his words:
 
 > *"partners are the most permanent presences in practice: they are
 > designed to run indefinitely, browsers are not."*
@@ -1508,7 +1523,7 @@ already designed in rather than needing to be added.
 
 ### What is genuinely not done: partner streams share the member allowance
 
-`presence.js:145`, the admission rule for **every** stream:
+`presence.js:145 @ b467c0f`, the admission rule for **every** stream:
 
 ```js
 if (!old && !always && Object.keys(sinks).length >= allowed) {
@@ -1591,7 +1606,7 @@ micro-relay those may be the scarcer ones:
   stream pays it once. Unmeasured here, and it is the sort of thing a
   small box notices before it notices 64 KB.
 - **Each dial is an admission at the partner**, counted against their
-  `partnerPerMin` (`relay.js:283`, reported in `caps`). Churn spends a
+  `partnerPerMin` (`relay.js:283 @ dafa73e`, reported in `caps`). Churn spends a
   budget that already exists and was sized for requests, not for
   connections. A relay that reconnects per request could rate-limit
   itself out of a partner it is entitled to talk to.
@@ -1637,14 +1652,14 @@ Andy corrected that in the same sitting.**
 > *"but same thing. only request/response."*
 
 **The claim as first written:** every `'request'` a relay pushes down a
-stream targets a MEMBER (`relay.js:1604` `post()`, `1995`
+stream targets a MEMBER (`relay.js:1604 @ a8cb256` `post()`, `1995`
 `forwardToMine()`, `3053` `routePost()`), and a partner can never BE a
 target, because `routePost` refuses it — *"A PARTNER MAY ONLY ADDRESS
 THIS BOX"*, 403.
 
 **That is true of this tree and it is the wrong thing to rest on**, because
 it is true only for as long as acquisition is unbuilt. Partner acquisition
-is cycle 5 (`relay.js:3003`, `relayStore.js:24`), and when it lands the
+is cycle 5 (`relay.js:3003 @ a8cb256`, `relayStore.js:24 @ a8cb256`), and when it lands the
 partner IS the target — so the premise would have expired exactly when the
 design depending on it was being built.
 
@@ -1683,7 +1698,7 @@ does exactly this, `POST /api/relay/reply` (`peerPost.answerCard`).
 ### What it removes
 
 - **The whole partner stream pool.** The gap found above —
-  `presence.js:145` measuring partner streams against the same `allowed`
+  `presence.js:145 @ 14a72a5` measuring partner streams against the same `allowed`
   as members — closes by **deletion rather than by a budget**. Nothing to
   size, nothing to reserve, nothing to argue.
 - **The red line's remaining path.** A large partner could still overwhelm
@@ -1732,7 +1747,7 @@ that were not expected.**
 
 ### It does not work today
 
-`partnerLink.js:105` takes `request` and `reply` and drops everything
+`partnerLink.js:105 @ 5b7071a` takes `request` and `reply` and drops everything
 else on the floor — *"A partner's roster is not this relay's to hold,
 even in RAM, even briefly."* Nothing consumes a `presence` or `roster`
 event arriving from a partner.
@@ -1749,7 +1764,7 @@ make the cost zero.
 
 ### But the sending half is live, and it is a leak
 
-`presence.js:215`:
+`presence.js:215 @ 5b7071a`:
 
 ```js
 function broadcast(event, data) {
@@ -1759,7 +1774,7 @@ function broadcast(event, data) {
 
 **Unfiltered — every sink.** And partners ARE sinks, because
 `partnersNow` was never built and a partner's stream enters `presentNow`
-(`relay.js:406`, one registry). So this relay already announces **every
+(`relay.js:406 @ 5b7071a`, one registry). So this relay already announces **every
 member's arrival and departure to every partner relay**, continuously.
 
 Nothing asked for it and nothing needs it. It is discarded at the far end
@@ -1798,7 +1813,7 @@ true.
 > **Andy:** *"hmmm successful search = presence."*
 
 **Exact, and it is not a new idea — it is a decision from 2026-09-19 whose
-consequence here had not been noticed.** `peerSearch.js:58`:
+consequence here had not been noticed.** `peerSearch.js:58 @ 5682b59`:
 
 > *"`present` STOOD HERE, a quarter of the match: 'is there anybody
 > there'. Moot since 2026-09-19 — a relay answers a search from its
@@ -1820,7 +1835,7 @@ did. **What each partner exchange tells you about presence is different:**
 | exchange | what it asserts |
 |---|---|
 | **search** | an enumeration: *these members of mine are present now* |
-| **forward** | one peer, and only by refusal — an absent target is 503 *"peer not reachable"* (`relay.js:1968`) before the packet goes anywhere |
+| **forward** | one peer, and only by refusal — an absent target is 503 *"peer not reachable"* (`relay.js:1968 @ b88266a`) before the packet goes anywhere |
 | **acquisition** (cycle 5) | nothing about members at all |
 
 So a search **enumerates** present peers; a forward **tests** one. Both
@@ -1865,7 +1880,7 @@ design is avoiding.
 - **It is discovery-time only.** Once acquired, a contact row carries the
   key and the route hints and is permanent. You can never *lose* somebody
   by their going offline; you can only fail to *meet* them.
-- **Search is one acquisition route of six.** `contacts.js:94` —
+- **Search is one acquisition route of six.** `contacts.js:94 @ ab3e16f` —
   `['message', 'invite', 'handle', 'member']` are listening routes beside
   `roll` and `hold`, and **`handle` and `invite` do not need the peer
   present at all**. The presence-dependent path is one of several, and
@@ -1884,7 +1899,7 @@ else about reaching them is unaffected.
 > **Andy:** *"A simple post from N1 to B could confirm presence...."*
 
 **Yes, and nothing needs building.** A post to a foreign peer answers
-*delivered* or 503 *"peer not reachable"* (`relay.js:1968`), so the
+*delivered* or 503 *"peer not reachable"* (`relay.js:1968 @ e37c61a`), so the
 attempt is the answer. `ROUTER-PACKETS.md` already names the shape — *"a
 ping is the whole mechanism with the payload taken out"* — and there is
 no separate verb because there need not be: `contacts.js` sends
@@ -1914,7 +1929,7 @@ this cycle's scheduler is being written against.
 
 **Correct, and it weakens the guidance above rather than confirming it.**
 Nothing fails: the queue absorbs the burst, and `contacts.js` already
-renders each card's `'asking'` state (`contacts.js:110`, drawn at `:679`),
+renders each card's `'asking'` state (`contacts.js:110 @ 84e9107`, drawn at `:679`),
 so a sweep *fills in* rather than hanging. That is *reach over speed*
 working as intended — the sweep is slower, not lost.
 
@@ -2000,8 +2015,8 @@ and this is a different one:
 
 | | what it bounds | whose |
 |---|---|---|
-| `ROUTE_WAIT_MS` (15 s, `relay.js:95`) | one **attempt** — how long a relay holds a route | the relay's |
-| node-local per-attempt wait (8 s, `peerPost.js:37`) | one **attempt**, from the node's side | must not be shorter than the relay's, or `cancel` is required |
+| `ROUTE_WAIT_MS` (15 s, `relay.js:95 @ 951d8af`) | one **attempt** — how long a relay holds a route | the relay's |
+| node-local per-attempt wait (8 s, `peerPost.js:37 @ 951d8af`) | one **attempt**, from the node's side | must not be shorter than the relay's, or `cancel` is required |
 | **scheduler patience** (new, days) | the **whole intent**, across many attempts | the user's |
 
 So a three-day patience is not a three-day request. It is many attempts,
@@ -2088,14 +2103,14 @@ For partners that was fine, because disc was never the binding cost — two
 held streams were. **Remove the streams and disc is all that is left**, so
 the limit becomes real in the sense of being the *only* one, and loose in
 the sense of hardly constraining anything: a partner row is `relayKey,
-url, ownerKey, status, since` (`relayStore.js:103`), a few hundred bytes.
+url, ownerKey, status, since` (`relayStore.js:103 @ 3ed8349`), a few hundred bytes.
 A hundred thousand partnerships is around 19 MB.
 
 **A roll that large is the problem, not the prize.**
 
 ### Because liveness went with the streams
 
-`relay.js:2698` records what a dead partner costs and how it was fixed:
+`relay.js:2698 @ 3ed8349` records what a dead partner costs and how it was fixed:
 
 > *"LIVE PARTNERS ONLY. A partner is live when it holds its stream here
 > now — the test hint routing uses. **Asking one that is down held every
@@ -2122,7 +2137,7 @@ different road.
 > last-successful transmission."*
 
 **Not built.** The schema has `since` — when the partnership began — and
-nothing about when it last worked (`relayStore.js:107`).
+nothing about when it last worked (`relayStore.js:107 @ 3ed8349`).
 
 That field now does two jobs, and it is the answer to the open question
 *"does partner liveness need a replacement"*:
@@ -2230,7 +2245,7 @@ spend our disc and our search ordering.
 
 ### Which the reserved statuses already resolve
 
-`relayStore.js:24`: *"Today's partnerships are `partnered`; cycle 5 adds
+`relayStore.js:24 @ cd5d29e`: *"Today's partnerships are `partnered`; cycle 5 adds
 `injected` and `requested`."* That distinction does exactly this job:
 
 - **self-connected partners are provisional** (`requested`) — evictable
@@ -2443,7 +2458,7 @@ so the honest range stays *hundreds, for ten members*.
 > thoughts?"*
 
 **Confirmed, and the missing half is discarded one line after it
-arrives.** `server.js:1109`:
+arrives.** `server.js:1109 @ cea5894`:
 
 ```js
 onRoute: function (url, body) {          // `url` IS the relay that announced it
@@ -2452,7 +2467,7 @@ onRoute: function (url, body) {          // `url` IS the relay that announced it
 ```
 
 `learnRoute(rootDir, publicKey, relayKey)` takes the **far** relay key and
-nothing else (`contacts.js:341`). A node on three relays that learns
+nothing else (`contacts.js:341 @ cea5894`). A node on three relays that learns
 *"Bella is at B"* cannot tell which of A1/A2/A3 proved it — and **at one
 request in flight, guessing wrong spends the member's only slot.**
 
@@ -2461,7 +2476,7 @@ A route is half an edge. It records a destination and drops the path.
 ### The fix is the cheapest kind: stop throwing it away
 
 The near relay is **already in hand** at the moment of learning — it is
-the stream the announcement came down, and `presenceNode.js:276` passes
+the stream the announcement came down, and `presenceNode.js:276 @ cea5894` passes
 it. So a route entry becomes a pair:
 
 ```
@@ -2486,7 +2501,7 @@ Andy calls it dirty and the instinct is right **as a primary
 mechanism**, for three reasons:
 
 - **It does not actually solve this on its own.** A hint carries a relay
-  **key**, never an address (`contacts.js:337`), so a relay told to
+  **key**, never an address (`contacts.js:337 @ cea5894`), so a relay told to
   handshake with an unknown partner has nothing to dial. The node holds
   URLs in `relays`, a separate list that never goes on the wire.
 - **It is traffic-driven roll growth.** A member's post causes their
@@ -2518,12 +2533,12 @@ that case:
 > **Andy:** *"that's the one i saw first."*
 
 > **WRONG, AND CORRECTED 2026-09-21.** Everything below is reasoned from
-> `relay.js:2728` alone and never checked what the CALLER does with that
+> `relay.js:2728 @ 0844582` alone and never checked what the CALLER does with that
 > answer. `hub.handleSearch` resolves it: a row carrying `via` makes the
 > node ask the answering relay `{ partners: true }`, which is answered
-> with `{ url, relayKey, since }` (`relay.js:2500`), and `row.relay` is
+> with `{ url, relayKey, since }` (`relay.js:2500 @ 0844582`), and `row.relay` is
 > rewritten to the partner's URL. The Add button carries it,
-> `peer.acquire` takes it, `contacts.js:451` keeps it. **A foreign contact
+> `peer.acquire` takes it, `contacts.js:451 @ 0844582` keeps it. **A foreign contact
 > acquired by search does hold the address of the relay it lives on.**
 >
 > So *"nothing in the tree can dial a relay it has not met"* is false, and
@@ -2536,7 +2551,7 @@ that case:
 > time this cycle that a claim was made from a call site without reading
 > its caller.
 
-**Checked, and it is structural.** `relay.js:2728`, building a search
+**Checked, and it is structural.** `relay.js:2728 @ caaecab`, building a search
 answer from a partner:
 
 ```js
@@ -2545,7 +2560,7 @@ return { via: p.relayKey, rows: rows };     // the KEY. p.url sits right there, 
 
 `via` is the partner's relay **key**. A foreign peer found by search
 therefore arrives with a key and **no address**, so acquisition writes
-nothing to `relays` (`contacts.js:313`, `:451`) — there was no URL to
+nothing to `relays` (`contacts.js:313 @ caaecab`, `:451`) — there was no URL to
 write.
 
 **Which closes the loop badly:**
@@ -2564,7 +2579,7 @@ relay they have not met. **Nothing in the tree can.**
 ### The fix is one field the answering relay is already holding
 
 `p` is a partner row: `relayKey, url, ownerKey, status, since`
-(`relayStore.js:103`). The relay building that answer is reading
+(`relayStore.js:103 @ caaecab`). The relay building that answer is reading
 `p.relayKey` off an object that carries `p.url` beside it.
 
 ```js
@@ -2588,7 +2603,7 @@ change needing the wire is a team review rather than a patch. Recorded as
 the shape, not built.
 
 **Also unresolved by it:** the hint format. `HINTS_PER_POST` sends relay
-**keys** (`contacts.js:337`), so even holding a URL, a node has no way to
+**keys** (`contacts.js:337 @ caaecab`), so even holding a URL, a node has no way to
 *tell* its relay where an unknown relay is. Either hints become
 `{key, url}` pairs, or the handshake fallback is unreachable by a second
 route after being made reachable by the first.
@@ -2644,7 +2659,7 @@ here so it is not mistaken for a settled shape.
 ### The default, and the argument for it
 
 **On**, with every self-formed partnership landing as a **provisional
-row** (`requested`, the status `relayStore.js:24` already reserves).
+row** (`requested`, the status `relayStore.js:24 @ 0f4b0c4` already reserves).
 
 The sizing says why: ten members need partnerships in the **hundreds**,
 nobody can hand-curate that, and it changes every time a member acquires
@@ -2713,7 +2728,7 @@ which is true of the REQUEST and false of the REPLY.** `0011` governs the
 request: nothing sends the hash, each hop derives it from the bytes it
 holds, which is what makes it evidence rather than an echo. A reply is the
 other way round — a member must **name** the request they are answering,
-so `routeReply(from, hash, text, sig)` carries it (`relayServer.js:537`).
+so `routeReply(from, hash, text, sig)` carries it (`relayServer.js:537 @ 619c105`).
 
 **Three hops, three different answers:**
 

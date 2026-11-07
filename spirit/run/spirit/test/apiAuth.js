@@ -297,7 +297,7 @@ test.startTest('apiAuth.js: auth.bundle and auth.branch, the node\'s bundles');
     'and each key kept in relay-state/process/<appServerName>/bundles.json with its bundle\'s id and the same label', 'state: ' + short(st1));
   ok((await call(a1, 'bundle', { op: 'search', text: '' })).items.map(parsed).every(function (x) { return x.owner !== 'plain' && x.owner !== 'broken'; }) && stateOf('broken') === null,
     'an appServer with no Bundles.json, or one that is not valid, gets nothing, and the others are written all the same', 'owners: ' + short((await call(a1, 'bundle', { op: 'search', text: '' })).items.map(parsed).map(function (x) { return x.owner; })));
-  // A bundle the editor added for that appServer (goal/G41.25) is the user's: no key of the file names it.
+  // A bundle the user added (node-owned: goal/G41.32 refuses a user's add naming an app server): no key of the file names it.
   const byEditor = await call(a1, 'bundle', { op: 'add', label: 'Made in the editor' });
   await call(a1, 'branch', { op: 'add', bundle: byEditor.id, family: 'files', verb: 'list' });
 

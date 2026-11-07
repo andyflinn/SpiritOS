@@ -53,7 +53,9 @@ function ownTest(m) { return join(join(dirOf(m), 'test'), path.posix.basename(m)
 function under(p, dir) { return dir === '' || p.indexOf(dir + '/') === 0; }
 
 // A general test's reach, or null when it is a plain test: the folder holding its test folder, the module it is named
-// after, and the files it judges.
+// after, and the files it judges. A -child-/-sibling- file whose module is not beside its test folder is a plain test:
+// since goal/G43.18 moved spirit.js off the run root, the spirit-* general tests of spirit/run/test/ are this case (see
+// the DISCREPANCY note in ./TEST_SYSTEM.md).
 function generalOf(t, has) {
   const m = /^(.*?)-(child|sibling)-[^/]+\.js$/.exec(path.posix.basename(t));
   if (!m) return null;

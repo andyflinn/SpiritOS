@@ -1,16 +1,26 @@
-// A crude, periodic, ENCRYPTED backup of a node's relay-state folder.
+// A crude, periodic, ENCRYPTED backup of the files at the top of a node's
+// relay-state folder (--from, by default spirit/run/relay-state).
 //
 // transport/R19.1. Andy: "it's required to pull this off safely and keep my
 // node safer" — the node log moves into node.db, and losing node.db is
 // covered by backups, not by a rebuild (his decision, 2026-09-28: "i'm ok
 // with that risk, i'd rather rely on backups, and not worry about it").
 //
+// DISCREPANCY WITH ANDY's RULES: his ruling above (2026-09-28, transport/R19.1)
+// is that losing node.db is covered by these backups. Since goal/G43.8 a
+// node's own files (identity.json, node.db and the rest) live in
+// spirit/run/spirit/state/ (shellMove.js, moveRelayStateTop), and relay-state/
+// keeps only its process/ and shell/ folders. This script still reads
+// spirit/run/relay-state by default and copies only the FILES at its top
+// (snapshot skips folders), so a default run backs up nothing of the node's
+// keys or node.db.
+//
 // Machine-side, not part of the product: nothing in spirit/run calls this.
 // Run it by hand or from Windows Task Scheduler (see README.txt).
 //
 // ENCRYPTED BECAUSE THE TARGET SYNCS. Andy: "i want it synced for extra
 // backup for now" — the default target is his Google Drive folder, and
-// relay-state holds the node's private keys and every opened message. So
+// the node's state holds its private keys and every opened message. So
 // each run writes ONE sealed file (AES-256-GCM, key from scrypt over a
 // passphrase only he holds), and Google keeps a blob it cannot read.
 //
@@ -71,7 +81,7 @@ function snapshot(into) {
     const dst = path.join(into, n);
     if (/\.db$/.test(n)) {
       const db = new DatabaseSync(src, { readOnly: true });
-      // node.db runs a rollback journal (nodeStore.js:192): while the node
+      // node.db runs a rollback journal (nodeStore.js, journal_mode = DELETE): while the node
       // holds its write lock a reader is refused at once, so wait for it
       // rather than fail an hourly run now and then (wsl-claude's review).
       try { db.exec('PRAGMA busy_timeout = 5000'); db.exec("VACUUM INTO '" + dst.replace(/'/g, "''") + "'"); } finally { db.close(); }
@@ -99,7 +109,7 @@ function prune() {
 }
 
 // A run killed half-way never reaches its `finally`, and would leave an
-// UNENCRYPTED copy of relay-state (private key included) in the temp
+// UNENCRYPTED copy of what it backs up (a private key among it, when that is the node's state) in the temp
 // folder. So every run first clears what an earlier one left behind: any
 // spirit-backup-* working folder older than an hour.
 function clearStale() {

@@ -10,19 +10,20 @@ own, so whether it ran is read from the disk.
 - **Another program is refused, and never runs**, a 4xx with a `code`: `/bin/sh` with a command line, `sh` from the path,
   this node's own executable given `-e` code.
 - **This node's executable on a script that is not its process is refused, and never runs**: a script outside process/js
-  and `spirit/app/<name>/`, a path climbing out of either, a process this node does not include, a script of an app that is
-  not active (goal/G43.12, Andy: *"it widens until all processes are migrated, then it tightens back to the new side..."*).
-  The new side's start and stop are specified in `./appServerMount.md`.
-- **What this node may start still starts**: an included `process/js/<name>/<name>.js`, and a helper in an included
-  process's folder, as `desk.js:2589` and `deskClient.js:535` start theirs by this node's executable and its whole path.
-
-- **Plain `node` with an included process starts** (Andy, Q5: keep the file viewer's Start Job, *"ok."*): `spirit/element/textViewer.js:55`
-  sends it so, and it names this node's own executable.
+  and `spirit/app/<name>/`, a path climbing out of process/js, a process this node does not include. The module also
+  refuses a script of an app that is not active (goal/G43.12, Andy: *"it widens until all processes are migrated, then it
+  tightens back to the new side..."*); this test does not ask it: the new side's start and stop are specified in
+  `./appServerMount.md`.
+- **What this node may start still starts**: an included `process/js/<name>/<name>.js` (one that is no intrinsic is
+  included by its sidecar, `relay-state/process/<name>/<name>.js.sidecar.json` saying `face.home` true), and a helper in an
+  included process's folder, as `desk.js:2624` starts `goalShare.js` by this node's executable and its whole path.
+- **Plain `node` with an included process starts**: the word `node` is read as this node's own executable
+  (`spirit/jobs.js:512`); a page sends it so (the app detail's run, `spirit/app/appSelector/detailElement.js:68`).
 
 ## What its test must try to break
 
 - A shell, or code on the node's own executable, run through jobs.create.
-- A fix so narrow that the desk's and deskClient's own helpers no longer start.
+- A fix so narrow that the desk's own helper no longer starts.
 
 ## goal/G41.33: a process's console goes to null
 

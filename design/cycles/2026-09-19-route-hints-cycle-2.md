@@ -3,6 +3,8 @@
 > **2026-10-14, goal/G22.6:** Andy decided that partnering goes. R1, R2 and
 > R4–R7 are marked SUPERSEDED below; R3 (the node's contact routes) stands.
 
+Status 2026-11-07 (goal/G43.23): R3's shape changed after this cycle: routes left the contact row for the machine (R25, decision 0018) and `learnRoute` is gone; since goal/G40.11 a route is a `seen_routes` row of node.db's one table, and `hub.js:927` reads them as the hints (`spirit/test/routeStash.js` asserts the current shape).
+
 **Status: CLOSED, 2026-09-19. Seven requirements, all done.** First scaffolding cycle of the build sequence
 ([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), *Build sequence*),
 locked in by Andy:

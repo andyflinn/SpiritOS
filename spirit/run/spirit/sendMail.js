@@ -3,7 +3,7 @@
 // spirit/run/spirit/sendMail.js
 // THE RELAY SENDS MAIL THROUGH A DRIVER, NEVER A VENDOR (goal/G30.2). Andy, 2026-10-19: the core "must have a generic
 // js/sendMail.js with a folder sendMail/ to go with it" — no app- or site-specific code in core. The vendors live in
-// js/sendMail/<driver>.js, each exporting create(settings, fetch) answering { send } or null.
+// sendMail/<driver>.js beside this file, each exporting create(settings, fetch) answering { send } or null.
 //
 //   spirit/state/mail.json   { "driver": "<name>", ...that driver's settings }
 //

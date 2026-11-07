@@ -1,5 +1,6 @@
 SpiritOS master review, Sep 18 to Oct 10
 Oct 10, 2026 · @Andreas Thut
+Status 2026-11-07 (goal/G43.23): a review of e8f8ffd7, kept as written. Its paths under js/ are under spirit/ since goal/G40.2. Levant and process/js/deskAgent/ are gone (goal/G41.28, a3e255bb; Andy: "all, KILL deskAgent!"), and net.fetch never reaches this machine (netFence.js, goal/G29.20), so the Levant rows are history; the device verbs are gone with the device (goal/G16.2). The other findings were not rechecked here.
 Read-only review of andyflinn/SpiritOS master at e8f8ffd7. It covers ac32d117 and e537880b (Sept 18) and the 441 non-auto October commits. Line numbers are at e8f8ffd7.
 Top findings
 Three findings are high: Levant's fetch tool can drive the node's own door, and the census commit's seat is erased on first connect and never given up. A local API key is also committed. Everything below was checked against the code and its callers; the seat erasure and the verifier reply shape were also confirmed by running code.

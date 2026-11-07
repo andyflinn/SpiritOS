@@ -2,7 +2,8 @@
 
 // spirit/run/spirit/test/relayServer.js
 // The tests of spirit/relayServer.js, and of no other module (spec: ./relayServer.md; goal/G41.3): how it serves a
-// face its files. Its map and its folder are lifted out of the source and asked, so no relay runs.
+// face its files. Its map and its folder are lifted out of the source and asked, with no relay running; the /face/ posts
+// at the end (goal/G41.30) go to a scratch relay with faces.
 
 const fs = require('fs');
 const path = require('path');

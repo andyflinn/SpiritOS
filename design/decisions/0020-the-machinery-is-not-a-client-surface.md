@@ -2,6 +2,11 @@
 
 **Decided 2026-09-21 by Andy. Measured against `973ce17`.**
 
+**Status 2026-11-07 (goal/G43.23):** still holds. `seenPeers` and
+`postQueue` are referenced only by core node modules (`hub.js`,
+`server.js`, `peerPost.js`, `router.js`, `nodeStore.js`, `relayKeys.js`),
+no app and no verb; the line numbers below are at `973ce17`.
+
 > **Andy:** *"considering that the queue is opaque to the client (shell,
 > processes, harness?) — if the harness can assert the proper functioning
 > of the machine, I want shadow-roll and request-scheduling to remain

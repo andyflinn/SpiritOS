@@ -7,7 +7,8 @@
 // the mechanics — signing, the hash computed and never sent, dispatch by
 // that hash. This is the socket that interface is HANDED, as
 // `opts.request`, and the only place in node code that `http` and `https`
-// appear for an outbound call.
+// appear for an outbound call to a relay (server.js's proxy, handleGenericProxy,
+// uses them for net.fetch).
 //
 // ── WHY IT LEFT hub.js ───────────────────────────────────────────────
 //
@@ -51,7 +52,7 @@ const assertRelayUrl = require('./relayUrl.js').assertRelayUrl;
 //
 // THE DEADLINE IS A DEADLINE, not an idle timer, for pipeRequest's own
 // reason: a sender dribbling a byte at a time never trips `setTimeout` on
-// the socket. 30 s is `peerPost`'s own patience (kernel.js), so a hop that
+// the socket. 30 s is `peerPost`'s own public patience (PUBLIC_PATIENCE_MS), so a hop that
 // outlives it is already past the point where its caller gave up.
 //
 // AND THE SIZE IS limits.BODY_MAX, WHICH IS NOT THIS FILE'S NUMBER TO

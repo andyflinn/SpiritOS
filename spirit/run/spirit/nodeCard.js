@@ -43,8 +43,8 @@
 //     same reach as a public label and should be said in the words the
 //     owner types it into.
 //
-// WHAT IT IS NOT. Not a general query surface. It answers `{describe:true}`
-// and nothing else; every other system packet falls through to the gate it
+// WHAT IT IS NOT. Not a general query surface. It answers `{card: true}`
+// (the wire word since cycle 10's R1, below) and nothing else; every other system packet falls through to the gate it
 // always had. Adding a second question here is a decision about what a
 // node is, and deserves the argument this one got.
 
@@ -90,9 +90,9 @@ function asks(text) {
 // sender seal to it, read everything and re-seal onward. Encryption built
 // on an unsigned card is encryption addressed to whoever forwards it.
 //
-//   name         what the identity was minted with, not a public label —
-//                labels belong to relays, one each, and a node has as
-//                many as it has enrolments. It is here because it is
+//   name         the node's one name (goal/G28.3), which is also what
+//                every relay it is seated on calls it (relayKeys.seatLabel;
+//                a seat has no label of its own since goal/G40.11). It is here because it is
 //                often the only word a node has beside its key — the
 //                machine's name, by default, from its first boot
 //                (goal/G22.5) — and an empty card is worse than a weak one
@@ -250,7 +250,7 @@ function advance(rootDir, id, owner) {
 // without coming through here.
 //
 // It does NOT decide whether this card supersedes one already held: that
-// is the shadow roll's, where both keys are protected (cycle 10, R13).
+// is contacts.setCard's, on the row of the one table (cycle 10, R13).
 // This answers one question only — are these fields the ones their owner
 // signed?
 function verify(text) {
@@ -324,7 +324,8 @@ function setName(rootDir, text) {
   catch (e) { return { ok: false, status: 500, error: 'could not write identity.json' }; }
   // ONE NAME FOR A NODE (goal/G28.3). Andy, 2026-10-16: "there should be
   // only 1 name/label for a node." A seat carries no label of its own since goal/G40.11: what a relay calls this node
-  // is this name (relayKeys.seatLabel), and telling the relays is Info's push, retried until each agrees.
+  // is this name (relayKeys.seatLabel). A save tells no relay: Info's push of the name to every relay went at
+  // goal/G41.6 (Andy, 2026-10-27, in info.js), and a relay's name for this node is Natter's to change, one relay at a time.
   return { ok: true, status: 200, name: id.name };
 }
 

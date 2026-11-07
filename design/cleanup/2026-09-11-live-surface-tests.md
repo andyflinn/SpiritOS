@@ -4,6 +4,11 @@
 specifically to make sure public https connections behave, and also to
 hammer our dear little spirit-3 with stress."***
 
+> Status 2026-11-07 (goal/G43.23): the live suite this asked for exists as
+> `spirit/test/liveRelay.js`, run by hand and not in the harness. The device
+> enrolment, its held request and `device.html` are gone (goal/G16.2), so
+> the rows below about them are history.
+
 ---
 
 ## What the harness actually proves

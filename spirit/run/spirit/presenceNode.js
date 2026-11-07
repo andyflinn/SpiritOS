@@ -5,7 +5,7 @@
 // relay it holds a row on, merged into one table, published to the shell
 // as a permanent job.
 //
-// A third permanent job beside fs-watcher and server-stats, and for the
+// A permanent job like fs-watcher and server-stats, and for the
 // same reason those are jobs: long-lived node state whose updates the
 // shell already receives. `/api/events` carries it as `job-updated`, so
 // NO NEW SHELL-FACING CHANNEL EXISTS AT ALL — which is the whole reason
@@ -75,9 +75,8 @@ function createPresence(opts) {
   // somebody's patience.
   //
   // The invariant was stated here in a comment and enforced nowhere, which
-  // held while server.js was the only caller. A relay is about to be the
-  // second one (AGENT.md, Comms) and must not be able to construct half an
-  // interface. Andy: "the post mechanism has to be tied to a reply-by-
+  // held while server.js was the only caller; now no caller can construct
+  // half an interface. Andy: "the post mechanism has to be tied to a reply-by-
   // stream... it obviously must provide the matching post mechanism."
   const router = opts.router;
   if (!router || typeof router.onReply !== 'function' || typeof router.onRequest !== 'function') {
@@ -288,7 +287,7 @@ function createPresence(opts) {
   // what makes this self-healing: update the code, restart, and the card
   // is there. Decided with Andy over the alternative of the relay asking:
   // a relay cannot know when a card CHANGED, and rotation (cycle 10's
-  // this same cycle R13 needs this push anyway.
+  // R13) needs this push anyway (handOverCardEverywhere, below).
   //
   // FIRE AND FORGET, deliberately. A refusal here is not this node's
   // business to retry: the next reconnection sends it again, and a relay
@@ -339,8 +338,8 @@ function createPresence(opts) {
     // `gone` teaches nothing and is not noted: the relay has said it no
     // longer holds a row for this key, so it is in no position to say
     // where they live. A row already in the shadow is left alone — it may
-    // hold a route from another relay, and it ages out on its own terms
-    // (cycle R4).
+    // hold a route from another relay, and it leaves on the shadow's own
+    // terms (node.db's cap sheds by lastSeen; nodeStore.js).
     //
     // THE ROUTE ONLY, for everybody. The proof of presence is written
     // further down by say(), for the IDs this node draws (goal/G2.9).
@@ -506,13 +505,12 @@ function createPresence(opts) {
             try { recordReport(url, msg.data); }
             catch (e) { /* a witness, never a participant */ }
           }
-          // AND THE PAGE IS NUDGED TO REDRAW (cycle 1). A Governor's lever
-          // move arrives only as a fresh report, and a monitor that
-          // redrew only on membership events would sit frozen through the
-          // very shed it exists to show. The nudge carries no report — the
-          // screen asks for what is true, as it always has — and it goes
-          // down this node's own page channel, not the relay wire: no new
-          // word in the protocol register.
+          // AND THE PAGE IS TOLD (cycle 1). A monitor that redrew only on
+          // membership events would sit frozen through a report's change.
+          // The nudge carries the latest report itself (nudgeStatus above,
+          // goal/G41.32), and it goes down this node's own page channel
+          // (onRelayEvent), not the relay wire: no new word in the protocol
+          // register.
           //
           // PACED, at most one a second per relay. A stress run pushes a
           // report on every member connect — hundreds a minute — and a

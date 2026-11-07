@@ -6,7 +6,7 @@ this node may.
 
 ## Requirements
 
-- A shell element of its own: it adds `changeMyLabel.create(host, { api })` to `window.spirit.elements`, and
+- A shell element of its own: it adds `changeMyLabel.create(host, { api })` to `window.spirit.element`, and
   answers `{ set(value), destroy() }`.
 - **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
 - **Its form is a rowForm** (goal/G41.27; Andy: *"Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the
@@ -15,6 +15,9 @@ this node may.
   and it draws no Save of its own; its bytes left and its message stand below the bubble, not in it.
 - **Its input is marked with its rule** (rule/12): `data-field="label"`, held at the name rule's byte limit by
   `fieldInput.attach(input, 'name')`, with the bytes left beside it, counted in bytes as typed (`fieldRules.MAX_BYTES`).
+- DISCREPANCY WITH ANDY's RULES: goal/G41.27's box (v8) says *"character counters outside a form go: a field is limited
+  by fieldRules.js as it is typed, so a counter says nothing"*; this element still draws the bytes left below the
+  bubble, outside the form, and its test asserts it.
 - `set(value)` puts what the node stored in the field.
 - **Save is refused while the rule says no** (`fieldRules.problem`), and the field says why; nothing goes on the wire.
 - **Save asks the node**, `node.setName` with the field as typed, and then shows what the node stored (rule/19), says

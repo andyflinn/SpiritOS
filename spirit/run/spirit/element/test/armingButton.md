@@ -18,7 +18,7 @@ gets a container and appends itself"*).
 
 - `label` what it says unarmed (for `attach`, by default the button's own text); `armedLabel` what it says armed, by default `<label>? Press again`.
 - `run()` what the second press does.
-- `api` the app's api: its `armUntilElsewhere` is the shell's hook (spirit/client/shell.js, shell/boot.js).
+- `api` the app's api: its `armUntilElsewhere` is the shell's hook (spirit/client/shell.js, spirit/shell/boot.js).
 - `title`, `className` put on the button as they are.
 
 ## Requirements

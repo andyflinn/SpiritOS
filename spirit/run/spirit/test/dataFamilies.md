@@ -7,7 +7,7 @@ Andy, box: *"we rename it spirit/data.js and it IS the the spirit.data object."*
 ## Requirements
 
 - `spirit/data.js` stands and the old module is gone.
-- All 19 families, Andy: *"yes, of course all 19"*: each has a `data.js`, a node family at `spirit/<name>/data.js`, a server at `process/js/<name>/data.js` (Andy: *"process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"*), and the old file is gone.
+- All 19 families, Andy: *"yes, of course all 19"*: each has a `data.js`, a node family at `spirit/<name>/data.js`, a server at `process/js/<name>/data.js`, or at `spirit/app/<name>/data.js` when its folder is there, as `agent`'s is (Andy: *"process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"*), and the old file is gone.
 - *"with the SAME pattern"*: each `data.js` calls one and the same helper of `spirit.data` with the family's own name, and rolls no guard, no attach and no write on `spirit` of its own.
 - *"instead of spirit.<name>Data"*: no code in the run tree reads a `spirit.<name>Data`, or names the old file or module. Comments are not judged, since a comment may quote Andy.
 - On a page, the first level of `spirit` holds no `<name>Data`.

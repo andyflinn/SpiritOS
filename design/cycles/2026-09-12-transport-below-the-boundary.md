@@ -1,5 +1,7 @@
 # 2026-09-12 — transport, below the node boundary
 
+Status 2026-11-07 (goal/G43.23): a record. Moved paths are corrected (`spirit/run/js/` is `spirit/run/spirit/` since goal/G40.2); line anchors are as measured then. Gone from the tree since: `relayConsole.js` (R7, 8b6f7eb1) and the `relayLabPing` process (R1, 452e78d6); the Relay Chat app (f589d46d, 2026-09-25) and Natter (goal/G30.7), so the `relayChat.js` and `natter.js` lines name nothing; `inboxSig.js` (R8, 3b1c468a); the device, `deviceAuth.js` and `spirit/test/devicePeers.js` (goal/G16.2); `nodeApps.js` (goal/G13.2); `client/chatLog.js` (8a4f4efe); the suites `chatSession.js` and `chatPeople.js`. R19 moved on: new traffic rows go into node.db's `traffic` table (`spirit/run/spirit/trafficLog.js:110-131`, transport/R19.3), and `traffic.jsonl` is only read, and written only when node.db cannot be opened; its items live in Desk, and `spirit/test/requirements/transport-R19.json` was never tracked. The count in the header predates R19: the file holds 19 requirements.
+
 **Status: OPEN — 18 requirements, 15 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
@@ -210,21 +212,21 @@ that way.
 ### R3 — the node has an arrival interface at all
 > I'd rather see apps breaking than apps faking
 
-`peerPost` has an `onArrival` hook ([peerPost.js:90](../../spirit/run/js/peerPost.js#L90))
+`peerPost` has an `onArrival` hook ([peerPost.js:90](../../spirit/run/spirit/peerPost.js#L90))
 whose only caller in the tree is `spirit/test/frontDoor.js:72`.
 `server.js` builds `createPeerPost` with `answer`, `admit`, `remember`
 and `traffic`, and no `onArrival`. So an app packet arriving over the
 router is answered with a bare receipt by
-[`answerRelay.answer`](../../spirit/run/js/answerRelay.js#L184) — which
+[`answerRelay.answer`](../../spirit/run/spirit/answerRelay.js#L184) — which
 handles `device-offer` and returns `''` for everything else — and
 dropped. Nothing above the boundary can ever see it.
 
 Wants `onArrival` wired, and a carrier to the browser. `/api/events`
 already exists as an SSE for Jobs
-([server.js:335](../../spirit/run/js/server.js#L335)); a `packet` event on
+([server.js:335](../../spirit/run/spirit/server.js#L335)); a `packet` event on
 it needs no new route.
 
-Built as [`arrivals.js`](../../spirit/run/js/arrivals.js) — a seam, not a
+Built as [`arrivals.js`](../../spirit/run/spirit/arrivals.js) — a seam, not a
 feature: peerPost's front door has already decided who may be heard, and
 the shell decides which app wants it, so this holds subscribers, decodes
 the envelope once, and hands each of them the same message. `server.js`
@@ -233,7 +235,7 @@ subscribes from `handleSseConnection` (a `packet` event on the
 `createPeerPost`.
 
 `decorateWithPacket` moved from `hub.js` into
-[`packet.decorate`](../../spirit/run/js/client/packet.js) on the way, so the
+[`packet.decorate`](../../spirit/run/spirit/client/packet.js) on the way, so the
 ring and the router build `message.packet` with one function rather than
 two that can drift.
 
@@ -244,7 +246,7 @@ stranger reaches no app at all — the front door binds before the seam"
 
 ### R4 — the shell's packet fan-out has a source of its own
 The shell already routes on `packet.app` into `packetHandlers`
-([shell.js:1647](../../spirit/run/js/client/shell.js#L1647)). It has no
+([shell.js:1647](../../spirit/run/spirit/client/shell.js#L1647)). It has no
 source. Its source is **Relay Chat's poll**
 ([relayChat.js:597](../../spirit/run/app/relayChat/relayChat.js#L597)),
 which hands its catch to `api.deliverPackets` for the shell to fan out.
@@ -264,7 +266,7 @@ in Node with no Relay Chat present at all
 **Status:** DONE
 
 ### R5 — `api.sendMessagePacket` posts on the router
-[`shell.js:1274`](../../spirit/run/js/client/shell.js#L1274) is already
+[`shell.js:1274`](../../spirit/run/spirit/client/shell.js#L1274) is already
 the single point for apps — they never name an HTTP path and never see a
 signature. It points at `/api/hub/send`. Pointing it at `/api/hub/post`
 moves every well-behaved app at once.
@@ -302,7 +304,7 @@ box, to try again or copy out".
 
 ### R6 — `/api/hub/post` has a handler like every other hub route
 The only `/api/hub/*` route implemented inline in `server.js`
-([1127-1160](../../spirit/run/js/server.js#L1127)). Roughly 35 lines, and
+([1127-1160](../../spirit/run/spirit/server.js#L1127)). Roughly 35 lines, and
 they are not plumbing: they decide whether this node is attached to a
 relay, **which relay to send through** (`presence.relaysNaming(to)`,
 first match, `via` override), and what "unreachable" means. That rule
@@ -354,21 +356,21 @@ check and the *"that one is the owner's"* refusal exist to protect **one
 word**.
 
 Deleting: [`relayConsole.js`](../../spirit/run/js/relayConsole.js) (208
-lines), `consoleExchange` ([relay.js:489](../../spirit/run/js/relay.js#L489),
+lines), `consoleExchange` ([relay.js:489](../../spirit/run/spirit/relay.js#L489),
 56 lines), `spirit/test/relayConsole.js` (64 checks), and `relay` as an
 addressable **destination**
-([relay.js:237](../../spirit/run/js/relay.js#L237),
-[678](../../spirit/run/js/relay.js#L678)).
+([relay.js:237](../../spirit/run/spirit/relay.js#L237),
+[678](../../spirit/run/spirit/relay.js#L678)).
 
 **Two things that must survive, and they are not the same rule.** `relay`
 stays reserved as a **claimable name**
-([relay.js:301](../../spirit/run/js/relay.js#L301),
-[relayAuth.js:308](../../spirit/run/js/relayAuth.js#L308)) and as an
-**invite label** ([relay.js:450](../../spirit/run/js/relay.js#L450)).
+([relay.js:301](../../spirit/run/spirit/relay.js#L301),
+[relayAuth.js:308](../../spirit/run/spirit/relayAuth.js#L308)) and as an
+**invite label** ([relay.js:450](../../spirit/run/spirit/relay.js#L450)).
 Those are namespace rules and have nothing to do with the console.
 
 **Carries a simplification:** the `toConsole` carve-out in the device
-confinement ([relay.js:645](../../spirit/run/js/relay.js#L645)) goes with
+confinement ([relay.js:645](../../spirit/run/spirit/relay.js#L645)) goes with
 it, leaving that rule as plainly *a device may only reach its own
 identity* — one clause shorter. R7 of
 the device cycle must still pass
@@ -409,7 +411,7 @@ made observable. *A relay survives and earns its keep* — and today there
 is no way to learn whether it is surviving except an SSH session.
 
 **Cheaper than it looks, for one reason:**
-[`presentNow.send(id, event, data)`](../../spirit/run/js/presence.js#L108)
+[`presentNow.send(id, event, data)`](../../spirit/run/spirit/presence.js#L108)
 is already targeted — only `broadcast` is unfiltered. So an owner-only
 push needs **no change to `presence.js`**, and none of the
 recipient-aware work R11 will need. The relay already holds the owner's
@@ -420,7 +422,7 @@ nothing on anyone's behalf. But it is a second kind of traffic on a
 stream that has carried only peer traffic, and the owner's node must be
 free to ignore it.
 
-Built as [`relayStatus.js`](../../spirit/run/js/relayStatus.js) (the
+Built as [`relayStatus.js`](../../spirit/run/spirit/relayStatus.js) (the
 report, pure) plus `relay.statusToOwner()` (the delivery). The split is
 deliberate: the rule that must never be got wrong lives next to the key
 it depends on, and the part that formats numbers is testable without a
@@ -469,7 +471,7 @@ makes the system worse. That is not a reason to keep the ring; it is a
 reason this has to be answered first.
 
 The bytes are not actually lost —
-[`trafficLog`](../../spirit/run/js/trafficLog.js) already keeps every
+[`trafficLog`](../../spirit/run/spirit/trafficLog.js) already keeps every
 packet that crossed the WAN for 24 hours, payload included. What is
 missing is delivery: what counts as already-seen, and by whom, when a
 page opens. That is a design question and it has not been asked yet.
@@ -809,7 +811,7 @@ must be red before wsl pulls the implementation, and green after"*).
 **The direction, Andy's, 2026-09-27:** the traffic log *"belongs into the
 database, which also allows log access to be optimized"*. Today it is
 `spirit/state/traffic.jsonl`, one append-only file that every read scans
-whole (`spirit/run/js/trafficLog.js:108`), beside `node.db`.
+whole (`spirit/run/spirit/trafficLog.js:108`), beside `node.db`.
 
 **Decided (2026-09-28, Andy):**
 
@@ -997,9 +999,9 @@ two green checkmarks, a false positive dressed as precision and signed.
 What is missing is the third state's mechanism, and it has the same shape
 as the arrival gap R3 closed:
 
-- [`deliverPackets`](../../spirit/run/js/client/shell.js) **discards the
+- [`deliverPackets`](../../spirit/run/spirit/client/shell.js) **discards the
   handler's return value**, so an app has no way to say anything back.
-- [`answerRelay.answer`](../../spirit/run/js/answerRelay.js) returns `''`
+- [`answerRelay.answer`](../../spirit/run/spirit/answerRelay.js) returns `''`
   for everything that is not a `device-offer`, so the reply is always the
   bare receipt.
 
@@ -1028,12 +1030,12 @@ hash matches no command the owner sent is refused.
 
 **~~The relay as an addressable post target.~~ Agreed 2026-09-13 — see
 R18.** Today `routePost` resolves a
-destination through [`deviceIdentity`](../../spirit/run/js/relay.js#L827),
+destination through [`deviceIdentity`](../../spirit/run/spirit/relay.js#L827),
 which knows the owner and peer rows and nothing else; the relay's own
 identity is neither, so posting to it is `404 no such peer`. And
 `presentNow.isPresent` would refuse anyway — a relay holds no stream to
 itself, which [routeReply names as *"the one asymmetry in the whole
-arrangement"*](../../spirit/run/js/relay.js#L1206).
+arrangement"*](../../spirit/run/spirit/relay.js#L1206).
 
 If it were a target, `/api/relay/invite`, `/api/relay/remove-peer` and
 the console collapse into the one interface, **and the mint-replay hole
@@ -1044,7 +1046,7 @@ That hole, measured: `mintMessage` is `'mint\n<label>\n<days>[\n<token>]'`
 — no clock and no relay identity, unlike `remove-peer` which carries a
 minute. So a mint signature never expires, is valid on every relay where
 you are the owner, and each replay mints a *new working token* because
-[`invites.add`](../../spirit/run/js/invites.js#L81) generates a fresh one
+[`invites.add`](../../spirit/run/spirit/invites.js#L81) generates a fresh one
 and pushes unconditionally. **A signature that names no recipient is a
 bearer token for every recipient.**
 
@@ -1052,7 +1054,7 @@ bearer token for every recipient.**
 on. It is the bootstrap and stays outside.
 
 **Recipient-aware presence.** `presence.broadcast(event, data)`
-([presence.js:116](../../spirit/run/js/presence.js#L116)) writes one
+([presence.js:116](../../spirit/run/spirit/presence.js#L116)) writes one
 payload to every sink; there is no predicate and no per-recipient
 payload. Required by R11 anyway — *"the connected device must only appear
 on the census for its owning node"* makes `who()`, `streamRoster()` and
@@ -1060,12 +1062,12 @@ on the census for its owning node"* makes `who()`, `streamRoster()` and
 relay's own row must not read as an ordinary peer.
 
 **The owner-key lookup is copy-pasted four times** —
-[419](../../spirit/run/js/relay.js#L419),
-[454](../../spirit/run/js/relay.js#L454),
-[832](../../spirit/run/js/relay.js#L832),
-[1063](../../spirit/run/js/relay.js#L1063). One `ownerKey()` collapses it.
+[419](../../spirit/run/spirit/relay.js#L419),
+[454](../../spirit/run/spirit/relay.js#L454),
+[832](../../spirit/run/spirit/relay.js#L832),
+[1063](../../spirit/run/spirit/relay.js#L1063). One `ownerKey()` collapses it.
 The *messages* must stay separate, and
-[the comment at 426](../../spirit/run/js/relay.js#L426) says why: a
+[the comment at 426](../../spirit/run/spirit/relay.js#L426) says why: a
 `status` signature replayed into mint would read as *"mint me a token for
 any label, for any number of days."* Subsumed by the above if it happens.
 
@@ -1078,7 +1080,7 @@ inventories only obstacles reads as larger than the job.
 
 - The relay makes **no outbound HTTP call at all**. Nothing to untangle.
 - A device **already** cannot open a stream
-  ([relay.js:1273](../../spirit/run/js/relay.js#L1273)) and **already**
+  ([relay.js:1273](../../spirit/run/spirit/relay.js#L1273)) and **already**
   does not appear in the census — `devicePublicKey` lives on the owning
   row and `who()` drops it. The negative half of R11 is structurally true.
 - `peerPost` **is** the protocol. Nothing needs rewriting, only wiring.

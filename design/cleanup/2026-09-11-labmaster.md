@@ -4,6 +4,14 @@
 
 *2026-09-11. Verified against the tree at the commit this landed on.*
 
+> Status 2026-11-07 (goal/G43.23): the server is `spirit/server.js` under a
+> run folder (was `js/server.js`, goal/G40.2; `spirit/test/labMaster/labMaster.js:626`).
+> A relay's owner is `spirit/state/owner.json`, not `allow.json` (cleanup/G1.7),
+> written at install, never by a first claim (goal/G16.8). The device files
+> (`device.json`, `session.json`) went with the device (goal/G16.2), and
+> Natter, whose `relays.json` and `minted.json` are named below, with
+> goal/G30.7; `install-public-relay.js` is long gone.
+
 labMaster runs fake SpiritOS nodes on your machine so there is something to look
 at. It is the visual half of the pair described in
 [A scenario is a scenario](2026-09-11-scenarios-and-suites.md): the fast suites

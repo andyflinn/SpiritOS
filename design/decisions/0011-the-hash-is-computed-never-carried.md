@@ -20,7 +20,7 @@ Three parties compute the same value independently:
 | who | where | from what |
 |---|---|---|
 | the sender | `peerPost.js`, `post()` | `requestHash(message)` — the message it just signed |
-| the relay | `relay.js`, three sites | `requestHash(signed)` — reconstructed locally |
+| the relay | `relay.js`, three sites at `dcb0c3c` (two today, `relay.js:3276, 3356`) | `requestHash(signed)` — reconstructed locally |
 | **the destination** | `peerPost.js`, arrival | `requestHash(verified)` — rebuilt from the bytes that arrived |
 
 The post body is `{from, to, text, sig}`. There is no hash on it, and there is

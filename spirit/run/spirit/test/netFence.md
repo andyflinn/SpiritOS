@@ -2,7 +2,7 @@
 
 The fence that keeps net.fetch off this machine (goal/G29.20; Andy, 2026-10-18: *"fetch will not be able to reach
 ports on this machine, and agents may use it."*). The node asks `isThisMachine` of the target's hostname as `new URL`
-gives it (`spirit/server.js:557`), before anything is sent; a name is checked again on the address it resolves to, at
+gives it (`spirit/server.js:585`), before anything is sent; a name is checked again on the address it resolves to, at
 connect (`netFence.lookup`).
 
 ## Requirements
@@ -17,8 +17,9 @@ connect (`netFence.lookup`).
 - **Another machine stays reachable**: an internet address, a name, an IPv6 internet address, and an IPv4-mapped
   address of another machine.
 
-Not here, and not decided: the LAN (RFC1918), link-local and the cloud metadata address stay open by today's design
-(*"other machines on the LAN stay open"*, `netFence.js:24`).
+Not here: the LAN (RFC1918), link-local and the cloud metadata address stay open (Andy: *"ok, we block only loopback
+on the same machine."*, `netFence.js:7`). This machine's own interface addresses are refused too (`netFence.js:22`), but
+this test does not ask them.
 
 ## What its test must try to break
 

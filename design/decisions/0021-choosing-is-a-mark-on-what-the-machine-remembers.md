@@ -2,6 +2,17 @@
 
 **Decided 2026-09-21 by Andy. Measured against `b5c4c34`.**
 
+**Status 2026-11-07 (goal/G43.23):** the paths and verbs below are at
+`b5c4c34`. Today the contacts are rows in node.db's one table (goal/G40.11;
+no `contacts.json`), the Contacts app is
+`spirit/run/spirit/app/contact/contact.js` (goal/G43.14), and the family's
+verbs are `contact.search`, `.get`, `.block`, `.unblock`, `.accept`,
+`.label`, `.forget` and `.own` (`spirit/run/spirit/contact/api.js:7-19`).
+`contact.senders` and `contact.setSenders` are gone (goal/G43.17), so there
+is no *Ignore* / *List them* choice: the front door answers `known` for a
+key in the book and `drop` for a stranger or a blocked key (`hub.js:430-450`,
+`frontDoor`).
+
 > **Andy:** *"the peer-list is a "choice" now … the implication is: the
 > user has no direct say in what the machine remembers, ignoring means
 > only: mark this row as "ignored"."*

@@ -2,8 +2,9 @@
 
 // spirit/run/spirit/test/appServerMount.js
 // The tests of the node starting a server from spirit/app/<name>/ (spec: ./appServerMount.md; goal/G43.12). Andy: "JUST loading
-// functional server and associating the <name> as "familiy" name, in the new namespace". No app has a server yet, so a real node on
-// a scratch copy of the tracked files gets a throwaway one, nothing kept in the repo (Andy, Q10: "then write the test"), and the old
+// functional server and associating the <name> as "familiy" name, in the new namespace". A real node on a scratch copy of the
+// tracked files gets throwaway apps planted in that copy (probe, quiet, always), nothing kept in the repo (Andy, Q10: "then write
+// the test"); the tree's own server app (agent, node.mount true) is not what it judges. The old
 // process/js servers are asked on the same node. Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');

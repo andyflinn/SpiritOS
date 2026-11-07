@@ -51,10 +51,9 @@
     return isNaN(d.getTime()) ? String(iso) : d.toISOString().slice(0, 16).replace('T', ' ');
   }
 
-  // THE RESERVED WORDS IN COLOUR (goal/G43.4; Andy, the box: "display folders and path elements in a bright green if their
-  // names match a reserved word AND the browsers spirit object contains the corresponding javascript Object at that path.",
-  // and "in a bright red if folders and the browser spirit object disagree."; "the colors will follow word.json changes
-  // live."). Each element of a path under spirit/: its name up to the first dot against the word system, its object on
+  // THE RESERVED WORDS IN COLOUR (goal/G43.4; Andy, the box: a path element coloured "if their names match a reserved word
+  // AND the browsers spirit object contains the corresponding javascript Object at that path.", another colour "if folders
+  // and the browser spirit object disagree."; "the colors will follow word.json changes live."). Each element of a path under spirit/: its name up to the first dot against the word system, its object on
   // the spirit object at that path. spirit itself always holds; a name that is no reserved word has no colour.
   // A word that holds is light blue (goal/G43.18; Andy: "file app: please change the green colored paths/files in light blue instead.").
   // Where the folders and the spirit object disagree it is light purple, not red (goal/G43.18; Andy: "ONLY REPLACE RED WITH
@@ -84,7 +83,7 @@
   }
 
   function known(p) { var F = fsReads(); return F ? F.file(p) : null; }
-  // A write to data.files, by path, to the rows that show that path; its release answered to the index, which lets it go
+  // A write to the fs family's files, by path, to the rows that show that path; its release answered to the index, which lets it go
   // with the kind's last row (rowElement.index).
   // Made once the fs family's manager is on the page; let go at once if the index lets it go first.
   function dispatch(idx) {

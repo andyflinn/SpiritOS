@@ -1,4 +1,5 @@
 Code review: SpiritOS
+Status 2026-11-07 (goal/G43.23): a review of 2026-09-05, kept as written; its line numbers are of that day. Findings 1 and 2 are answered in today's tree (a malformed escape is caught at the entry, spirit/run/spirit/serveCommon.js:353-387; both gates take one canonical path, fileSystem.js gatePath). /api/proxy (4) is gone: net.fetch carries no key fill and never reaches this machine (goal/G29.20). The relay inbox (5) went with the ring (transport R8, 2026-09-15). The rest were not rechecked here.
 I read the server, kernel, jobs, relay/hub/auth, the client shell, and the host scripts, and verified the significant findings by running them rather than reasoning from the source. Four are confirmed end-to-end.
 
 1. Unauthenticated remote crash on the public relay

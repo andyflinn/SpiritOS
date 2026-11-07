@@ -36,7 +36,7 @@ opened at `/DEBUG/spirit/element/test/busyButton-pressed.html` on a scratch node
 
 ## First users
 
-Ask in the agent's Update model list (`process/js/agent/table/model/updatePanel.js`) and Grant in the grants panel
+Ask in the agent's model table (`spirit/app/agent/table/model/elementTable.js`) and Grant in the grants panel
 (`spirit/element/grantsPanel.js`), each tested in its own folder: it loads the busyButton itself, its button is attached, and
 the request it hands the button waits until the server has answered. The other apps' own busy flags move onto it later
 (box).

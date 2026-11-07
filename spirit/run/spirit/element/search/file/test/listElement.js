@@ -6,7 +6,7 @@
 // search element is a recorder in its place, so this tests the list and not the search under it; the row element and
 // the file viewer are stand-ins; the page's data set is real, and so is the fs family's data.js (goal/G41.28),
 // loaded as a page's spirit.cacheManager('fs') loads it, the page's node known as spirit.start makes it known
-// (spirit.node.key, then data.home). The node's fs family is the spirit object's.
+// (spirit.node.key, then data.homeNode). The node's fs family is the spirit object's.
 
 const fs = require('fs');
 const path = require('path');
@@ -68,7 +68,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
 
   test.subHeading('it loads what it uses itself (rule/26), and no data script');
   ok(['spirit/element/search/file/rowElement.js', 'spirit/element/search.js', 'spirit/element/fstat.js'].every(function (p) { return required.indexOf(p) !== -1; }), 'it requires its row element, the search element and the file viewer', 'required: ' + short(required));
-  // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the row element's.
+  // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": what the stream means for the file tree is the fs family's cache manager's (goal/G41.28).
   ok(!required.some(function (p) { return /data\.js$/.test(p); }), 'and no data script: the file tree\'s stream is its row element\'s', 'required: ' + short(required));
   ok(managers.indexOf('fs') !== -1 && F && typeof F.file === 'function', 'it loads the fs family\'s cache manager, which puts ((spirit.data || {}).fs || {}).data on the page', 'managers: ' + short(managers));
   if (!F || typeof F.file !== 'function') return;

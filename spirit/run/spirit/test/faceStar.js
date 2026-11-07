@@ -2,8 +2,7 @@
 
 // spirit/run/spirit/test/faceStar.js
 // THE STAR, END TO END (goal/G41.30; Andy: "why does no test assert the fix?", "wsl? do it."; "your face on a relay you
-// own gets everything back, jobs, files, grants, puppets, under your login as it is now. On a relay you do not own, the
-// limits stay until G42."; "so this button will put the star on relays and puppets. AND take it away."). spirit/test/
+// own gets everything back, jobs, files, grants, puppets, under your login as it is now."; "so this button will put the star on relays and puppets. AND take it away."). spirit/test/
 // faceHome.js stands in for "did this node set a face" and "is this relay starred"; here nothing of the node is stood in.
 // A real scratch node joins real scratch relays by their mail, sets a face and logs in, and every call is what a page
 // sends: POST /face/call with its cookie, its Origin and json. Only the relay's mailer keeps its mail. A step that could
@@ -184,9 +183,9 @@ test.startTest('faceStar.js: the star on a real node, a real relay and a real fa
     ok(refused(back), 'the star put back opens nothing: the face is gone, not hidden', 'the star back on, node.card through the old face: ' + back.status + ' ' + short(back.text));
 
     // ── GOAL/G41.33, ON THE REAL STREAM ──
-    // "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay"; "for a face(relay)
-    // without star, the restrictions today stay in place"; "NO RESTRICTIONS AT ALL, except changing stars"; "Pressing the
-    // star sends no catch-up". What a page reads from /face/stream, with its cookie, unsealed as a page that cannot seal.
+    // "anything andy gets on his loopback screen, he can get on his face, if he "stars" any relay"; "NO RESTRICTIONS AT
+    // ALL, except changing stars"; "Pressing the star sends no catch-up". Without the star the face gets nothing (box v29,
+    // above). What a page reads from /face/stream, with its cookie, unsealed as a page that cannot seal.
     test.subHeading('the real stream: without the star it carries nothing; with it, a job, a bundle and the join steps');
     const S = await scratchFaceRelay({ members: [] });
     relays.push(S);

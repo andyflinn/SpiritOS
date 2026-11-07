@@ -1,9 +1,11 @@
 'use strict';
 
-// Shared by relay.js (verify) and hub.js (sign). Node crypto only.
+// Shared by the relay (relay.js, relayServer.js: verify) and the node (peerPost.js, hub.js, nodeCard.js and
+// others: sign and verify). Node crypto only.
 // Files live on that process's spirit/run home, never in git:
 //   spirit/state/owner.json     { "owner" }, or absent = no owner
-//   spirit/state/identity.json  { "name", "publicKey", "privateKey" }
+//   spirit/state/identity.json  { "name", "publicKey", "privateKey", "sealPublicKey", "sealPrivateKey",
+//                                 "description" }
 
 const fs = require('fs');
 const path = require('path');
@@ -83,7 +85,8 @@ function claimMessage(name) {
 // owner signed `status` constantly, for every roll, so a captured
 // signature was always lying around — and what a STREAM opens is a
 // standing grant rather than a single read, which makes it the better
-// prize. Same reason deviceGate gave `device-take` its own bytes.
+// prize. Same reason the device design (removed by goal/G16.2) gave
+// `device-take` its own bytes.
 //
 // `status` is gone (R3, 2026-09-15) and the rule outlived it, which is
 // the ordinary way of these: one verb, one format, no signature that
@@ -273,7 +276,7 @@ function receiptSignatureOk(publicKey, hash, text, sig, atMs) {
 // encoding: the thing signed is then the thing that arrives, and nothing can
 // be re-ordered between signing and sending.
 //
-// FIELD ORDER AND TAG FOLLOW postMessage (:135) RATHER THAN THIS AGENT'S FIRST
+// FIELD ORDER AND TAG FOLLOW postMessage (above) RATHER THAN THIS AGENT'S FIRST
 // CUT, which put the minute last and tagged it 'owner-command'. wsl-claude was
 // right that a signed format must not fork: every one on this wire is a
 // tagged, structured string with the minute in the same position, and a second
@@ -522,8 +525,8 @@ function setDescription(rootDir, text) {
   const next = String(text == null ? '' : text).trim();
   // REFUSED, NEVER CUT (Andy, 2026-10-03, goal/G4.16: "too-long
   // refused"). Too long keeps nothing and hands back what is stored, so a
-  // caller that reports what was stored reports the truth; the verb
-  // (nodeCard.setDescription) refuses it out loud before it gets here.
+  // caller that reports what was stored reports the truth; nodeCard.setDescription
+  // refuses it out loud (fieldRules.describeProblem) before it gets here.
   if (Buffer.byteLength(next, 'utf8') > DESCRIPTION_MAX) return id;
   id.description = next;
   saveIdentity(rootDir, id);
@@ -680,8 +683,8 @@ function nameIdentity(rootDir, name) {
 //   asking "is this the owner's signature" asked it of both strings.
 //   allow.json in keys mode is the owner record, so a device key there
 //   was a full copy of the owner's authority — the decision, not an
-//   oversight. Reversed on 2026-09-12: checkOwner below takes the HOUSE
-//   KEY ONLY, and a relay holds no device key at all now (the device
+//   oversight. Reversed on 2026-09-12: checkOwner (gone, see below) took
+//   the HOUSE KEY ONLY, and a relay holds no device key at all now (the device
 //   enrolment itself was removed by goal/G16.2).
 //
 //   A KEYLESS RELAY HAS NOTHING TO CHECK AGAINST. open and names mode

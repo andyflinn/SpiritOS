@@ -1,6 +1,6 @@
 'use strict';
 
-// One door for every app (ARCHITECTURAL-CONCERNS.md, packet 1).
+// One door for every app.
 //
 // The relay carries `{ from, to, text }` and signs
 // `send\n<from>\n<to>\n<text>`. None of that changes here, and that is
@@ -30,9 +30,10 @@
 // is a key).
 
 // limits.js IS dual target — the relay and server.js read it too, which is
-// why it stays up in js/ while this file does not. Required from one
-// directory up on the node, read off `window.spirit.limits` in the page.
-// index.html loads limits.js before packet.js for exactly that reason.
+// why it stays up in spirit/ while this file sits in spirit/client/. Required
+// from one directory up on the node, read off `window.spirit.limits` in the
+// page. index.html, and the face's boot.js, load limits.js before packet.js
+// for exactly that reason.
 var limits = (typeof process !== 'undefined' && process.versions && process.versions.node)
   ? require('../limits.js')
   : (typeof window !== 'undefined' ? window.spirit.limits : null);
@@ -64,7 +65,7 @@ var PACKET_VERSION = 1;
 // IT SAID 1024 AND THE RELAY SAID 16384 — the same measurement of the
 // same string, disagreeing by 16×, with this comment claiming to mirror
 // a number it undercut. Every app was capped at a sixteenth of what the
-// relay would take. One rule, one place: js/limits.js.
+// relay would take. One rule, one place: spirit/limits.js.
 // PLAINTEXT_MAX since cycle 10's R6: an app composes a packet and the node
 // seals it afterwards, so what an app may build is the plaintext bound.
 // Against the wire figure every app would be told it has 22 KB and be
@@ -117,7 +118,7 @@ function byteLength(s) {
 // contributed fewer than its 32 bits.)
 //
 // 128 bits rather than 64 because it is the same line of code and the
-// envelope has a cap far larger than this (js/limits.js), so sixteen more
+// envelope has a cap far larger than this (spirit/limits.js), so sixteen more
 // characters cost nothing. That cap was 1024 when this was written and is
 // 16384 now; the sentence was true of the number rather than of the
 // reason, which is why it is stated as the reason here.
@@ -217,12 +218,12 @@ function packetEncode(app, body, opts) {
   // (ROUTER.md §2: no hash is ever sent).
   //
   // NOT the route table's key in any live sense. That entry is swept
-  // after 20 seconds (router.js DEFAULT_TTL_MS), which is the window a
-  // sender stands waiting for a reply. This outlives it by as long as
+  // after at most five seconds (router.js DEFAULT_TTL_MS), which is the
+  // window a sender stands waiting for a reply. This outlives it by as long as
   // somebody keeps the packet: "regarding the thing you said on Tuesday"
   // is a new post that NAMES an old one, not an answer to a request still
   // in flight. Those are different mechanisms and conflating them would
-  // give threading a twenty-second memory.
+  // give threading a five-second memory.
   //
   // OMITTED WHEN ABSENT, so a packet that regards nothing is byte-for-byte
   // what it was before this field existed.

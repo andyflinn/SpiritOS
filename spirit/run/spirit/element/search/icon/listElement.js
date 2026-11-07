@@ -1,6 +1,6 @@
 // spirit/run/spirit/element/search/icon/listElement.js
 // THE ICONS LIST, A DROP-IN SHELL ELEMENT (goal/G30.21): the system set (spirit/iconSet.json, each glyph with
-// the keywords it is found by) on the standard list-tool (spirit/element/search.js), each row an iconElement. The
+// the keywords it is found by) on the standard list-tool (spirit/element/search.js), each row an icon row element (./rowElement.js). The
 // Icons app draws it as a pane; the Apps panel's icon field as a dropdown. Words are matched against the glyph and its
 // keywords. A
 // pick hands over the glyph itself, never a key into a table.
@@ -9,7 +9,6 @@
 //
 //   set() -> the set, { glyph: [keywords] }, as the page holds it; the icon selector offers the same one
 //   create(host, opts) -> the list (value, row, words(), refresh(), redraw(), destroy(), reload())
-//     opts.api           the app's shell api (verb), to read the set
 //     opts.face          'pane' or 'dropdown'
 //     opts.placeholder, opts.all, opts.empty
 //     opts.pick(row, glyph)   an icon chosen; row { glyph, keywords }

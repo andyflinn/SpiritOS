@@ -21,7 +21,7 @@
     container.appendChild(box);
     parts.then(function () {
       if (gone) return;
-      // As appMigration draws it (Andy: "it should look like the latest thing we had using appMigration"): tiles, with the toggle.
+      // As appMigration draws it (Andy: "it should look like the latest thing we had using appMigration", an app gone since 64e2d054): tiles, with the toggle.
       // And never itself (Andy: "the shell should exclude itself completely from the app-list, haha...").
       made = window.spirit.elements.appSelector.create(box, { face: 'tiles', toggle: true, hide: ['shell'] });
     }, function () { box.textContent = 'The shell could not be loaded.'; });

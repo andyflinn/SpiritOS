@@ -149,7 +149,9 @@ if (isNode()) {
   const crypto = require('crypto');
   const http = require('http');
   // A process the node started holds an IPC channel to it (jobs.js, launch).
-  // The channel closes when the node dies however it dies: the process goes too.
+  // The channel closes when the node dies however it dies: a process that
+  // loaded this file goes too. No node process loads it any more (below);
+  // appServer.serve does the same for a server.
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
   // Pinned to this file's own location, not process.cwd() — kernel.js
   // always lives at spirit/run/spirit/kernel.js, so spirit/run/ is always
@@ -250,10 +252,9 @@ if (isNode()) {
   // the UI thread for the round trip. Deliberately left as-is (review #9,
   // 2026-09) rather than converted to async: doing it properly means every
   // call site becoming promise-aware, not just these two functions. Known
-  // synchronous call sites as of this writing, if this is ever revisited:
-  //   - shell.js: renderFileInfoBubble, discoverDynamicApps, declareDynamicApp
-  //   - index.html: Text File Launcher's mount (loadFile for file content),
-  //     maybeRenderJobForm (loadFile for manifest JSON)
+  // synchronous call sites today, if this is ever revisited: shell.js
+  // (discoverDynamicApps, the manifest read beside declareDynamicApp, and
+  // its other spirit.core.fs.loadFile calls).
   // Current read: low real-world pain (Media Launcher never goes through
   // loadFile — media loads via a plain <img>/<video src>, already async/
   // streamed by the browser; what's left is small text/JSON reads), so
@@ -316,7 +317,7 @@ if (isNode()) {
   };
 
   // Sync, same as loadFile/statFile — "More Information" data any tool has
-  // recorded about this file via annotateFace (kernel.js's Node side; the face part, the one part since goal/G41.1), via
+  // recorded about this file via annotateFace (spirit/fileSystem.js on the node; the face part, the one part since goal/G41.1), via
   // the fs.annotations verb (no direct filesystem access from the
   // browser). Always resolves to an object — {} both when nothing's been
   // recorded and when the request itself fails — so callers never need a
@@ -372,7 +373,8 @@ if (isNode()) {
   // its own folder. This is an accident-prevention convenience, not a
   // security boundary: anything in the same page can still reach the raw
   // spirit.core.fs.* functions directly. The real boundary is server-side
-  // (saveFile/deleteFile there reject anything outside ROOT_DIR/shell/).
+  // (saveFile/deleteFile there reject whatever fileWritable refuses, in
+  // spirit/fileSystem.js: a core file, a node's state, a root-level file).
   spirit.core.fs.createScopedFs = function(appName) {
     let appRoot = 'shell/' + appName + '/';
 
@@ -404,9 +406,9 @@ if (isNode()) {
     };
   };
 
-  // spirit.core.jobs: browser-side API for the jobs subsystem — wraps
-  // EventSource for live updates and XHR for the request/response calls,
-  // so a page never has to hand-roll either.
+  // spirit.core.jobs: browser-side API for the jobs subsystem — XHR and
+  // spirit.core.ask for the request/response calls, so a page never has to
+  // hand-roll them. Live updates are spirit.js's stream (below).
   // spirit.core.relays STOOD HERE (puppets/G2): relay.status rebuilt over relay.search. relay.search went with
   // goal/G40.11, and the one spirit object's spirit.relay.status (the relay family's api.js) is what the screens ask.
 
@@ -552,7 +554,7 @@ spirit.core.const.ICON = {
     GROUP: '👥',
     // A card index: the address book, and distinct from GROUP, which is
     // the app that manages app groups. Two apps may not resolve to the
-    // same glyph — see the check in spirit/test/natterIntrinsic.js.
+    // same glyph.
     // Emoji 1.0 (2010), so it renders everywhere without a fallback.
     ROLODEX: '📇',
     // Waiting for a person to decide, not refused by anybody. The one

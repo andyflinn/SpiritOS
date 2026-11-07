@@ -13,23 +13,23 @@ Andy, box v22: *"elementRow.js (a panel element, to maintain and edit one row of
   (`./tableElement.js`, `spirit.elements.agentDetail`), which it loads itself as part of its tree (rule/26).
 - **Unconfigured** (`agentRow.create(box, {})`, as the general test mounts every element by itself), it says it is not
   configured and throws nothing; its `destroy` empties the box (goal/G41.19, box v23), as the table does.
-- **A row's editor**, `agentRow.create(container, { api, table, id, added, look, fields })`:
+- **A row's editor**, `agentRow.create(container, { api, table, id, added, look, fields, required })`:
   - Its row is the one at `<node>/agent/<table>/<id>` in spirit.data. It asks `{ op: 'get', id }` as it opens, whatever the
     branch holds, and puts the answer there: a search answers only what a list shows, so a row in the branch may be
     slim (goal/G41.18; Andy: *"that exactly what GET is for, to bring in the rest for detail panels etc..."*).
   - Its title row says Add while the row is new, and Change once saved or when opened from the list.
   - The icon is its first field (*"the detail panel's first input will be the icon i choose for that row"*). It is
-    chosen with the shell's icon selector, `iconSelector.create(the icon field, …)` (the shell's element shape,
-    goal/G41.19), on the table's icon while the row has none.
+    chosen with the shell's icon selector, `spirit.element.search.icon.create(the icon field, …)`
+    (`spirit/element/search/icon.js`, the shell's element shape, goal/G41.19), on the table's icon while the row has none.
   - Each field shows the row: a line its value, a bool its tick, a list its words split by commas. A secret is an
     empty password box that says only whether it is set.
   - **It follows its row by itself** (Andy: *"make sure that all element LISTEN to what needs listening to, by
     themselves, automatically"*): a row written to its path shows at once, and a row deleted there says `Deleted.`
   - **The page only proposes (rule/19):**
-    - Save calls `{ op: 'set', id }` with only what changed. An empty secret and an unchanged field are not sent, and
-      a typed secret is.
+    - A field changed sends the whole row, `{ op: 'set', id, ...every field it shows }` (goal/G41.21, below). An empty
+      secret is not sent, and a typed secret is.
     - The row changes only by the stream, never by what was typed.
-    - A Save taken says `Saved.` and Change. A refused one says `Not saved: <the server's reason>`.
+    - A save taken says `Saved.` and Change. A refused one says `Not saved: <the server's reason>`.
     - Delete calls `{ op: 'delete', id }`.
   - `destroy` empties its box, and it hears its row no more.
 
@@ -101,7 +101,7 @@ Andy: *"persona detail: the bundle picker doesn not let me change values! (actua
 
 - agentTable registered by this file; the shared element not loaded by it; an unconfigured row that throws, or draws
   an editor instead of saying it is not configured.
-- A Save that sends the whole row, an empty secret, or draws what was typed before the stream says it.
+- A save that sends an empty secret, or draws what was typed before the stream says it.
 - An editor that does not follow its row in spirit.data, or keeps hearing it after destroy.
 - A narrowed pick searching the whole table, or shown with nothing to pick; a bundle field drawn as a pane, or not saved.
 - A bundle the node no longer has left unsaid.

@@ -1,5 +1,7 @@
 # 2026-09-12 — app-building removed
 
+Status 2026-11-07 (goal/G43.23): a record of 2026-09-12 to 2026-09-26. Moved paths are corrected (`spirit/run/js/` is `spirit/run/spirit/` since goal/G40.2); line anchors are as measured then. Gone from the tree since: `spirit/test/natterIntrinsic.js` (R3's second specimen), with Natter, at goal/G30.7; AI Manager, AI Chat and `app/shared/claudeModels.json` left for their own repos on 2026-09-26 (68122539), so the `aiManager.js` link names nothing here; `preferences.json` and every line reading it went at goal/G43.17 (`spirit/run/spirit/test/noPreferences.js`). `spirit/run/shell/shared/ask.js` stays; today its callers are `spirit/run/process/js/starter/starter.html` and suites, not `appServer.js`.
+
 **Status: CLOSED.** Four requirements built and verified; R5 superseded by Andy, 2026-09-26. The header said "all five built and verified" while R3 and R5 both still read OPEN — R3 because its status line was never updated after the work landed, and the AI-apps one because it was never built. Neither was a lie anybody told on purpose, and both are the reason a status line has to be cheap to correct.
 
 Implements [decision 0008](../decisions/0008-app-building-is-out-of-scope.md)
@@ -17,15 +19,15 @@ crosses the browser/node boundary.
 
 | # | file | what goes |
 |---|---|---|
-| 1 | `server.js` | 2 dispatch entries ([1204-1212](../../spirit/run/js/server.js#L1204)), 2 handler functions ([477-502](../../spirit/run/js/server.js#L477)), 5 branches of `writeFsResult` ([435-459](../../spirit/run/js/server.js#L435)) |
-| 2 | `kernel.js` node side | `saveAppScript` ([347](../../spirit/run/js/kernel.js#L347)), `saveAppManifest` ([379](../../spirit/run/js/kernel.js#L379)) |
-| 3 | `kernel.js` browser side | two XHR wrappers ([702](../../spirit/run/js/kernel.js#L702), [721](../../spirit/run/js/kernel.js#L721)) |
+| 1 | `server.js` | 2 dispatch entries ([1204-1212](../../spirit/run/spirit/server.js#L1204)), 2 handler functions ([477-502](../../spirit/run/spirit/server.js#L477)), 5 branches of `writeFsResult` ([435-459](../../spirit/run/spirit/server.js#L435)) |
+| 2 | `kernel.js` node side | `saveAppScript` ([347](../../spirit/run/spirit/kernel.js#L347)), `saveAppManifest` ([379](../../spirit/run/spirit/kernel.js#L379)) |
+| 3 | `kernel.js` browser side | two XHR wrappers ([702](../../spirit/run/spirit/kernel.js#L702), [721](../../spirit/run/spirit/kernel.js#L721)) |
 | 4 | `app/appBuilder/` | the only production caller ([733-734](../../spirit/run/app/appBuilder/appBuilder.js#L733)) |
 
 **Two of those `writeFsResult` branches are already dead.**
 `app-entry-script-protected` and `app-manifest-protected` are handled at
-[server.js:435](../../spirit/run/js/server.js#L435) and
-[:445](../../spirit/run/js/server.js#L445) and **nothing in the tree
+[server.js:435](../../spirit/run/spirit/server.js#L435) and
+[:445](../../spirit/run/spirit/server.js#L445) and **nothing in the tree
 produces them** — the checks moved behind `fileWritable` when it was
 extracted as a shared predicate, and `saveFile` has answered every
 refusal with plain `forbidden` ever since.
@@ -33,10 +35,10 @@ refusal with plain `forbidden` ever since.
 that, so it was known and the branches were left. They go with the rest.
 
 **What stays.** `APP_ENTRY_SCRIPT_PATTERN` and `MANIFEST_PATTERN`
-([kernel.js:204, 215](../../spirit/run/js/kernel.js#L204)) are used by
-`fileWritable` ([266-267](../../spirit/run/js/kernel.js#L266)) — the
+([kernel.js:204, 215](../../spirit/run/spirit/kernel.js#L204)) are used by
+`fileWritable` ([266-267](../../spirit/run/spirit/kernel.js#L266)) — the
 absolute refusal — and by the manifest lookup at
-[329-330](../../spirit/run/js/kernel.js#L329). The patterns are how the
+[329-330](../../spirit/run/spirit/kernel.js#L329). The patterns are how the
 system knows what an app's own code *is*; only their use inside the two
 save functions goes.
 
@@ -153,7 +155,7 @@ shape as [andyflinn/relayChat](https://github.com/andyflinn/relayChat) before th
 word — *"you make the repos, like with relay chat, all authorized, just get
 them out of here."* Each holds its entry script, its manifest and a README
 saying what it needs; `app/shared/claudeModels.json` travelled with AI
-Manager because it is that app's data. `app/shared/ask.js` STAYED — it is
+Manager because it is that app's data. `spirit/run/shell/shared/ask.js` STAYED — it is
 used by `appServer.js`, `starter/starter.html` and three suites.
 
 **Nothing had to be unwired**, which is the part worth recording: discovery

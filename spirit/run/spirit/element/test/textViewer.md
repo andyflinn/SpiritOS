@@ -1,5 +1,9 @@
 # spirit/element/textViewer.js
 
+**The module is gone**: `spirit/element/textViewer.js` was deleted in faaf2b1b ("kill!", 2026-11-07). This spec and
+`./textViewer.js` describe a module that is no longer in the tree; the test fails as it reads it. The old shell's
+`spirit/shell/index.html` still names it. What follows is what the module did.
+
 A text file, shown (goal/G30.16), on the file viewer's frame: read-only, its search words marked, the first in view,
 or at a line. Since goal/G41.7 it draws with the codeMirror shell element (`spirit/element/codeMirror.js`) in read mode;
 `textView.js` and its own CodeMirror loader (`ensureCodeMirror`, which read the old shell's `index.html`) are gone.

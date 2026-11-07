@@ -47,7 +47,7 @@
   //   selector)", and the tree it reads: "the shell's api tree is a
   //   straight copy of the node's owner-api-tree ?" — "yes". So it fills
   //   itself from the verb api on the flat apiDoor (goal/G30.6), and lists
-  //   spiritApiTreeIndex.servers(tree): sorted, a server that did not
+  //   spirit.apiTreeIndex.servers(tree): sorted, a server that did not
   //   answer left out (apiTreeIndex.js decides; this paints).
   //   SINCE goal/G30.4 that answer is the whole flat table, the node's own
   //   families (fs, jobs, relay ...) beside the apps', so the picker lists
@@ -138,11 +138,10 @@
 // and nothing inside shell.js. Its root element is the control: it carries
 // .value and fires one bubbling `change` when the value is set.
 //
-// It was apiBranchSelector.js (goal/G41.14; Andy: "apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is
-// the proper name for it"), and keeps its verb half: "apiFamiliySelector.js will use apiVerbSelector as part of itself,
-// because the verb selector NEEDs the family selector to have any meaning at all." Built from its two halves, which it
-// loads itself (goal/G41.5): the family dropdown, the app-server selector, and the verb dropdown, apiVerbSelector. It
-// only puts them side by side and joins their choices into one path.
+// It keeps its verb half (goal/G41.14; Andy: "apiFamiliySelector.js will use apiVerbSelector as part of itself,
+// because the verb selector NEEDs the family selector to have any meaning at all."). Built from its two halves
+// (goal/G41.5): the family dropdown, the app-server selector above, and the verb dropdown, search/api/verb.js, which it
+// loads itself. It only puts them side by side and joins their choices into one path.
 
 (function () {
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its two halves, the app-server half

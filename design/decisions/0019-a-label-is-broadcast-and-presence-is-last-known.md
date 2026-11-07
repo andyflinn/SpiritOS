@@ -2,6 +2,17 @@
 
 **Decided 2026-09-21 by Andy. Measured against `17db255`.**
 
+**Status 2026-11-07 (goal/G43.23):** the line numbers below are at
+`17db255`. The relay half is built: a rename on a relay is told to the owner
+(`ownerEvent('peer-renamed')`) and to every member (`announceMember`),
+`spirit/run/spirit/relay.js:2009-2011`. The owner-to-relays half is no
+longer in the tree: `infoPush` and Info's table of what each relay calls
+this node went at goal/G41.6 (4e9100ec) by Andy's ruling on that item's box
+(Q1: the section *"is dropped, its code deleted with it and tested gone
+(Andy, 2026-10-27)"*); Info's name field (`element/changeMyLabel.js`)
+writes only `node.setName`. The Contacts app named here as `contacts.js` is
+`spirit/run/spirit/app/contact/contact.js` since goal/G43.14.
+
 > **Andy:** *"add public Label change to broadcast, at all levels. A user
 > changes a public label, it goes to all relays, a relay receives a
 > label-change-post, it is broadcast to members."*

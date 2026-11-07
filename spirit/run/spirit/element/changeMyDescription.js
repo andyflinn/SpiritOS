@@ -1,7 +1,7 @@
 // spirit/run/spirit/element/changeMyDescription.js
 // THE NODE'S DESCRIPTION, CHANGED (goal/G41.6; Andy, Q1: Info's two blocks "become shell elements of their own, each
 // with its test folder"). One field, its Save and the bytes left: the second of the two things this node answers to
-// anybody who asks (js/nodeCard.js). Info draws it.
+// anybody who asks (spirit/nodeCard.js). Info draws it.
 //
 //   changeMyDescription.create(host, { api }) -> { set(value), destroy() }
 //
@@ -41,6 +41,9 @@
       said.textContent = text || '';
       said.className = isError ? 'job-start-error' : 'job-manifest-note';
     }
+    // DISCREPANCY WITH ANDY's RULES: goal/G41.27's box (v8) says "character counters outside a form go: a field is limited
+    // by fieldRules.js as it is typed, so a counter says nothing"; this element still writes the bytes left below the
+    // rowForm's bubble, outside the form, and its test asserts that counter.
     // THE COUNTDOWN IS IN BYTES, because the cap is: a counter of characters would say there was room where the node
     // refuses.
     function count() {

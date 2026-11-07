@@ -42,9 +42,9 @@
   // an alias that is not even at the head of its line. The cost is that
   // arrow keys, Enter, Escape and click-outside are ours now.
   //
-  // The value is the GLYPH, not the key, because the one consumer today
-  // is setAppOverride, which stores a literal glyph in
-  // preferences.appOverrides. A manifest names its icon as the glyph too
+  // The value is the GLYPH, not the key: setAppOverride (spirit/client/shell.js)
+  // stores a literal glyph in preferences.appOverrides, and the agent table's
+  // icon field (spirit/app/agent/table/rowElement.js) keeps one in its row. A manifest names its icon as the glyph too
   // (goal/G41.1: no icon table on the face).
   //
   // The root element is the control: it carries .value, it fires a

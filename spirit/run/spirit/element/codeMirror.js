@@ -2,8 +2,9 @@
 // THE CODEMIRROR SHELL ELEMENT (goal/G41.7): a file's text on CodeMirror 5, in read mode or edit mode.
 //
 //   Andy, Q1: "make codeMirror a shell element by the same name. and make sure that it supports both read and edit-mode,
-//   and that the text viewer uses that new element as well." It replaces spirit/element/textView.js, which is gone; the text
-//   viewer (spirit/element/textViewer.js) and the TextEditor app draw with it.
+//   and that the text viewer uses that new element as well." It replaces spirit/element/textView.js, which is gone. The text
+//   viewer (spirit/element/textViewer.js) is gone too (faaf2b1b); the text element (spirit/app/text/text.js) edits with it,
+//   and deskDetails, introSpector, jobsDetails and the agent tables' rows draw with it.
 //
 // THE ONLY DOOR TO THE LIBRARY (goal/G43.5; Andy: "only access to codeMirror library is through the element!"): no page loads it
 // beside this. IT LOADS THE LIBRARY ITSELF, once, from its local copy (spirit/element/codeMirror/), never by reading

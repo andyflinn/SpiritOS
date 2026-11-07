@@ -3,8 +3,10 @@
 // transport/R19.1's proof is a restore, not a copy (wsl-claude: "a backup
 // nobody has restored from is a hope"). So this unpacks into a NEW folder,
 // never over a live relay-state, and runs SQLite's integrity check on every
-// database it finds. Putting the result in place of a node's relay-state is
-// a person's decision, done by hand with the node stopped.
+// database it finds. Putting the result in place of a node's state is
+// a person's decision, done by hand with the node stopped. The archive's
+// folder is named relay-state, as backup.js writes it; a node's own files
+// live in spirit/run/spirit/state/ since goal/G43.8.
 //
 //   node restore.js <backup.tgz.enc> <empty folder> [--passphrase-file <file>]
 

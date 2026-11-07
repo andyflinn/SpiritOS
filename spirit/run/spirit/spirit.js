@@ -1,16 +1,15 @@
 // spirit/run/spirit/spirit.js (goal/G43.18: moved from the run root, served at /spirit.js as before)
 // THE SPIRIT OBJECT (goal/G32.1): the node api for face apps, one file. face.html loads it first, by a script tag, from
 // the relay or the home node (goal/G41.19); the home node's index.html loads it; a server process requires it.
-// AT THE RUN ROOT, THE ONE DOOR (goal/G40.1). Andy: spirit.js sits in "the run-root, the nodes root of its own fs
-// scope", and every script that is not the node or a relay server installs it first, as the global spirit, "and then
-// use[s] that object properly". The node and the relay build spirit themselves (kernel.js): they are its embodiments.
+// THE ONE DOOR (goal/G40.1; at the run root until goal/G43.18, in spirit/ since, line 1). Every script that is not the
+// node or a relay server installs it first, as the global spirit, "and then use[s] that object properly" (Andy). The node and the relay build spirit themselves (kernel.js): they are its embodiments.
 // Andy: "a spirit face-app needs a damn spirit object, that packages all neccessary loopback calls on the home node into
 // something easy to use", and "the whole node api (not appServer API's) must be provided in JavaScript form, as an
 // asyncFunction set."
 //
 // WHAT IT IS
 //   - The core: the transport, the checks, the helpers (error, formatBytes, escapeHtml) and the assembling.
-//   - The rest comes from the api.js every family folder holds (js/fs/api.js, js/contact/api.js ...; a server's in
+//   - The rest comes from the api.js every family folder holds (spirit/fs/api.js, spirit/contact/api.js ...; a server's in
 //     its family folder, familyPath(name)), written to this file's standard: module.exports = { verbs: { <verb>:
 //     { <argument>: '<rule>' } }, functions: { <verb>: '<its function>' }, names(call, tools) }. One member per family: spirit.fs.load({path}),
 //     spirit.contact.label({...}) ..., every verb an async function answering the reply's body; a dotted verb is also
@@ -27,7 +26,7 @@
 //
 // THE RULES (the standard a family's api.js writes to; '?' after a rule makes the argument optional):
 //   text        any string                      flag      '' or 'yes'
-//   name        a label by js/fieldRules.js     number    a finite number
+//   name        a label by fieldRules.js        number    a finite number
 //   description a description by fieldRules    bool      true or false
 //   paragraph   a paragraph by fieldRules       object    a plain object
 //   key         a peer's public key             list      an array
@@ -71,7 +70,7 @@
   }
 
   // ── THE CHECKS ──────────────────────────────────────────────────────────────────────────────────────────────────
-  // The field rules are js/fieldRules.js, the one definition both sides of the wire use.
+  // The field rules are fieldRules.js beside this file, the one definition both sides of the wire use.
   function fieldRules() {
     if ((root.spirit || {}).fieldRules) return (root.spirit || {}).fieldRules;
     if (isNode()) { try { return require('./fieldRules.js'); } catch (e) { return null; } }
@@ -149,7 +148,9 @@
   //
   // THIS VM'S NODE (Andy: "in the browser the node address is implicit from the first page get. for node.js processes,
   // the host is always 127.0.0.1 and the port is fetched from \relay-state\environment.json"; "anytime a node.js process
-  // requires(spirit) spirit itself fetches the port from environment.json"). On a page the page's own origin, or the
+  // requires(spirit) spirit itself fetches the port from environment.json"). The file is spirit/state/environment.json
+  // since goal/G43.8 moved relay-state's own files there (Andy: "we move just the remaining files to spirit/state/").
+  // On a page the page's own origin, or the
   // face's link to its home node when one is set; in node 127.0.0.1 and the PORT read below as this file is required.
   // No port, no node: never a default.
   // THE RUN ROOT, the folder every run path starts at: one up from this file, since it moved into spirit/ (goal/G43.18; Andy:
@@ -373,8 +374,8 @@
   // folder is process/js/<name>/family/; appServer.js hands out this same function. No other file writes the path.
   function familyPath(name) { return 'process/js/' + String(name || '') + '/family/api.js'; }
   // A FAMILY'S data.js, FOUND BY ITS NAME (goal/G41.28; Andy: "the shell can introspect to find and download their
-  // clientCacheManagers."): data.js in the family's own folder, a node family's (spirit/<name>/) or a
-  // server's (process/js/<name>/; Andy: "process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"). cacheManager(name) loads it once through the one loader, the data set first; it stands
+  // clientCacheManagers."): data.js in the family's own folder, a node family's (spirit/<name>/), an app's
+  // (spirit/app/<name>/, asked last, in node) or a server's (process/js/<name>/; Andy: "process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"). cacheManager(name) loads it once through the one loader, the data set first; it stands
   // at spirit.data.<name>. A family with none answers not-found.
   function managerPaths(name) {
     var n = String(name || '');

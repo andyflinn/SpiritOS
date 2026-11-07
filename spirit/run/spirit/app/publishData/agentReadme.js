@@ -12,13 +12,13 @@
 // 'Measurements' comes that little table". "The number of node servers running" means the SpiritOS node processes on
 // that machine, not every node.js process.
 //
-// THE MEMBERS FIGURE IS THE RELAY'S OWN RULE (Andy chose it, box v11): js/relay.js's allowanceFor at 512 MB, less the
+// THE MEMBERS FIGURE IS THE RELAY'S OWN RULE (Andy chose it, box v11): spirit/relay.js's allowanceFor at 512 MB, less the
 // relay's memory at rest as this agent's set measured it (relayAtRestRss), in seats of SEAT_STREAMS streams. The peers
 // figure is 512 MB of disk over the measured bytes of a peer a node can reach (perReachablePeerBytes).
 //
 //   write(out, agent, machine?)   writes out/README.md and out/summary.json from out/capacity.json and the files there;
 //                                 machine defaults to machineOf(), this machine now
-//   summaryOf(capacity)           { members, ramMB, streams, perMember, peers, measuredAt, commit } or null
+//   summaryOf(capacity)           { members, ramMB, perMember, streams, peers, diskMB, measuredAt, commit } or null
 //   machineOf()                   the facts of this machine for Machine Description
 
 const fs = require('fs');
@@ -28,7 +28,7 @@ const { spawnSync } = require('child_process');
 
 const RAM_MB = 512;
 const DISK_MB = 512;
-// What each of a member's streams is for (js/relay.js, SEAT_STREAMS: "a member with an open face holds its home node's
+// What each of a member's streams is for (spirit/relay.js, SEAT_STREAMS: "a member with an open face holds its home node's
 // stream, its face's stream and its home node's upload feeding that face").
 const STREAM_NAMES = ['its home node\'s stream', 'its face\'s stream', 'its home node\'s upload feeding that face'];
 

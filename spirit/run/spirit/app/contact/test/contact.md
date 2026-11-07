@@ -1,6 +1,6 @@
 # spirit/app/contact/contact.js
 
-Contacts in `spirit/app/contact/`, as Andy sees it (goal/G43.14). Its test is `./contact.js`: the tree read as it is, then a real node on a scratch copy of the tracked files, and real clicks in a real Chrome on the appSelector, made as appMigration makes it, on the face shell Andy uses, `/face.html`.
+Contacts in `spirit/app/contact/`, as Andy sees it (goal/G43.14). Its test is `./contact.js`: the tree read as it is, then a real node on a scratch copy of the tracked files, and real clicks in a real Chrome on the appSelector, made as the shell app (`spirit/app/shell/shell.js`) makes it, on the face shell Andy uses, `/face.html`.
 
 Andy: *"the new contact app will be exactly the same as the old, merely placed where it now belongs."*
 

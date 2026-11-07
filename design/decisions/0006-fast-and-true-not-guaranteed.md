@@ -2,6 +2,16 @@
 
 **Decided 2026-09-11. Against `babf22b`. Not yet implemented.**
 
+**Status 2026-11-07 (goal/G43.23):** implemented. The ring, `GET
+/api/relay/inbox`, `inboxMessage`, `checkInboxKey` and `resolveParty` are
+gone (transport R8, 2026-09-15; `spirit/run/spirit/relay.js:35-45, 987`,
+`relayAuth.js:61, 675`); `inboxSignatureFrom` is `streamSignatureFrom`
+(`relay.js:4549`). The owner record is `spirit/state/owner.json`, not
+`allow.json` (cleanup/G1.7); claimed peers and invites are tables in
+`relay.db` (`relayStore.js`), not `routingTable.json` and `invites.json`.
+The device browser is gone (goal/G16.2, 391de42b), so the device paragraphs
+below are history. The table below is the relay as it was at `babf22b`.
+
 > If a relay cannot immediately relay, it returns an error immediately.
 
 ## The decision
@@ -119,6 +129,6 @@ already drifting this way; this names it.
 
 ## Status
 
-Decided. Superseded by nothing. Implementation unscheduled — see
-[../relay/EVENT-STREAM.md](../relay/EVENT-STREAM.md) for the transport this
-depends on, which must land first.
+Decided. Superseded by nothing. Implemented with the transport cycle
+(transport R8, 2026-09-15) — see [../relay/EVENT-STREAM.md](../relay/EVENT-STREAM.md)
+for the transport it depended on.

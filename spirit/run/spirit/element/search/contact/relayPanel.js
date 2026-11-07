@@ -9,38 +9,23 @@
 // reads once, when it is drawn; after that its row from the contact family's cache, and its report from the relay event. Each
 // panel holds its own state, so two never collide. It stops when destroyed.
 //
-// One relay from the Natter list, as its own screen.
+// One relay of the contacts, as its own panel, opened over the list that
+// mounted it (search/contact/rowElement.js, openDetails). It shows that
+// relay and nothing else; nothing is handed back, since what it changes
+// reaches every view on the stream.
 //
-// The second DIALOG, and the same reasoning as the first
-// (app/contactsDetails): a dialog is a hidden app a table pushes for one
-// row. It shows that row and nothing else, it cannot launch anything,
-// and the only way out is back to the table it came from. What it wants
-// to happen elsewhere it RETURNS, and the app underneath acts on it.
-//
-// Why a screen and not the expanding row it replaces — the same three
-// reasons Contacts had, and one more that is this app's own:
+// Why a panel and not the expanding row it replaces:
 //
 //   - the table keeps its shape. A four-fact strip, an invite form and a
 //     paragraph of prose lived inside a colspan="3", so the widest thing
 //     on the page sat inside the narrowest;
-//   - the table keeps its scroll and its place. Panes are hidden, never
-//     destroyed, so the list is where you left it;
 //   - one thing on screen, rather than one mailbox's panel with other
 //     mailboxes listed above and below it;
-//   - THE REPAINT PROBLEM GOES AWAY. The row expansion lived inside a
-//     tbody that natterRenderList rebuilds wholesale, so anything that
-//     repainted took the Invite fields with it, under whoever was typing
-//     in them. The device panel polled every two seconds and that
-//     constraint shaped a lot of code — the poll is gone now, but the
-//     Invite form is still a form inside a list that repaints.
+//   - the Invite fields no longer sit inside a list that repaints under
+//     whoever is typing in them.
 //
-// A sibling folder, not a child: discovery is flat and stays flat
-// (app/<name>/<name>.js). The cost is that api.fs here is scoped to
-// app/natterDetails/ — NOT to Natter's folder — so this app writes
-// nothing locally. It does not need to: every verb here is a hub call,
-// and the one file Natter keeps about minting (minted.json, the labels
-// it is watching the roll for) belongs to the list. A mint made here
-// is RETURNED, and Natter records it.
+// It writes nothing locally: every verb here is the node's (options.api's
+// verb) or a peerPost to the relay's key.
 
 (function () {
 // What it draws with, it loads itself (rule/26): the join and face forms (goal/G41.3; Andy: "bug: "A face name" doesn't show the
@@ -66,14 +51,13 @@ function ndIconHtml(glyph) {
 }
 
 // WHAT A LABEL MAY BE, asked before a round trip is spent on it. The
-// rule is js/fieldRules.js, loaded by index.html, and the relay enforces
+// rule is spirit/fieldRules.js (spirit.fieldRules), and the relay enforces
 // the same one — this only saves the hop and says what is wrong while
 // the cursor is still in the box.
 //
-// If that script did not load there is no rule here and every label is
-// let through to the relay, which decides as it always did. Losing a
-// courtesy is a nuisance; inventing a second opinion about what a label
-// may be would be worse. Same shape as natterCanRemove in Natter.
+// If that rule is not on the page every label is let through to the
+// relay, which decides as it always did. Losing a courtesy is a nuisance;
+// inventing a second opinion about what a label may be would be worse.
 // ── HOW THIS SCREEN ADDRESSES THE RELAY IT IS ────────────────────────
 //
 //   Andy: "I'm aiming to close all post-path doors on node"
@@ -114,10 +98,10 @@ var ndKey = '';         // the relay's row this panel is configured with
 var ndUrl = '';         // which mailbox this screen is
 var ndBadge = null;     // what that relay last said about itself
 var ndRows = [];        // every configured relay's row — see ndLoad, and kept by ndHearRow
-var ndLabel = '';       // this node's own name, needed to sign a status ask
-var ndMinted = '';      // a label minted while this screen was open
-var ndChanged = false;  // has anything happened the list must repaint for?
-var ndRelayLabel = '';  // what the LIST calls this relay, for the title
+var ndLabel = '';       // this node's own name, handed to relay.status (options.label; none is handed now)
+var ndMinted = '';      // a label minted while this screen was open; nothing reads it now
+var ndChanged = false;  // has anything happened? Nothing reads it now: the list repaints from the stream
+var ndRelayLabel = '';  // what the LIST calls this relay, for the title (options.relayLabel; none is handed now)
 var ndRelayNamed = '';  // the public label the relay just confirmed, until the node's next read of its card says it
 
 // WHICH ONE PANEL IS OPEN. '' means none, and none is how the screen
@@ -135,7 +119,7 @@ var ndRelayNamed = '';  // the public label the relay just confirmed, until the 
 // being a list; the screen goes back to being scrolled and the choosing
 // stops meaning anything.
 //
-// Reset on open(), because the default is the default: arriving at a
+// Reset in open(), because the default is the default: arriving at a
 // relay with a panel already open would be this screen deciding what the
 // question is before it has been asked.
 var ndOpenPanel = '';
@@ -197,15 +181,11 @@ function ndPanel(id, mark, title, inner, extraClass) {
 // spinner's face. See ndReportHtml.
 var ndAsked = false;
 
-// THE NODE ANSWERED, AND THIS RELAY IS NOT ON ITS LIST (goal/G16.3). Not a
-// failure: Natter's Add opens this screen for a relay the node does not
-// list yet, because a claim that succeeds is what lists it — there is no
-// verb that adds one. So this screen offers the claim, and says why.
+// THE NODE ANSWERED, AND THIS RELAY IS NOT ON ITS LIST (goal/G16.3), or its
+// row left the contacts while the panel was open. Not a failure: a claim
+// that succeeds is what lists it. So this screen offers the claim, and says
+// why.
 var ndUnlisted = false;
-
-// This relay's answer to "add newcomers to my contacts". Handed in by
-// Natter, which showed the relay list; absent reads as ON, because an owner
-// who wrote an invite already decided they want to reach that person.
 
 // ONE DOOR, AND THE VERB IS THE ARGUMENT. This took a path until
 // 2026-09-15, which was a fair shape while there were five of them and
@@ -234,12 +214,12 @@ function ndBody() { return ndContainer.querySelector('[id="nd-body"]'); }
 
 // ---- what this mailbox says about itself -----------------------------
 
-// Re-asked by URL, never handed over in params.
+// Re-asked, never handed over in the options.
 //
-// params carries the URL and nothing else, on purpose. A badge captured
-// at launch would sit here going stale while you read it, and the
-// message count is the half most likely to move. The URL is the only
-// part of a row that cannot change.
+// The options carry the relay's KEY and nothing else of its row, on
+// purpose. A badge captured at launch would sit here going stale while
+// you read it. The badge is the row of relay.status whose key is ndKey,
+// and its url becomes ndUrl.
 // ── AN UNBOUND NODE ASKS TOO, AND IT IS THE ONE THAT MUST ────────────
 //
 // This began `if (!ndLabel) { ndRender(); return; }` and that guard made
@@ -667,20 +647,14 @@ function ndGovernorFacts(report) {
 //   not bound yet, it shows up in natter, instead of natterDetails for
 //   spirit.andyflinn.com"
 //
-// Rename shows when this key holds a row here; this shows when it does
-// not. One of the two is always on a relay's screen and never both, so
-// the screen answers "what is my standing here, and what can I do about
-// it" without the list having to know.
+// This shows when this key holds no seat here (and the relay is not
+// owned), so the screen answers "what is my standing here, and what can
+// I do about it" without the list having to know.
 //
 // It could not live here until hub.handleClaim learned to take a url
 // (ownerBadge.chooseUrl, the same switch invite and rename use). A Claim
 // button on spirit-3's panel that quietly claimed on the lab row would
 // have been worse than no button at all.
-//
-// NOT OFFERED TO A RELAY THAT DID NOT ANSWER. A claim posted at a relay
-// that is down fails at the router with nothing learned, and a form that
-// invites that is a form that wastes a person's time. `status` is the
-// same "did it answer" test natterCheckBinding uses.
 function ndClaimHtml() {
   // An unlisted relay has no badge — the node probes only what it lists —
   // and the claim is the one way onto the list (goal/G16.3), so it is
@@ -713,7 +687,7 @@ function ndClaimHtml() {
     // (design/cycles/2026-09-15-labels-are-not-identities.md). The word
     // that travels is "Invite name" on both screens now.
     // JOIN WITH YOUR EMAIL, FIRST (goal/G30.2): the one thing a new user types. The relay mails a link to this node;
-    // opening it takes the seat (shell.js joinFromLink). The invite form below stays for an invite somebody gave you.
+    // opening it takes the seat (spirit/shell/boot.js joinFromLink). The invite form below stays for an invite somebody gave you.
     // The form is the shell element joinForm (goal/G30.1, box v33), bound once on nd-body at mount.
     (joinByMail && ndJoinForm() ? '<div class="nd-join-form"></div>' : '') +
     '<div class="start-job-form card">' +
@@ -760,7 +734,7 @@ function ndFaceHtml() {
   return ndPanel('face', '🌐', 'A face name', '<div class="nd-face-form"></div>', 'natter-face');
 }
 
-// THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): spirit/element/joinForm.js, loaded by index.html.
+// THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): spirit/element/joinForm.js, which this file loads itself (iconReady).
 function ndJoinForm() { return (window.spirit && window.spirit.element && window.spirit.element.joinForm) || null; }
 
 // ── WHAT IS OUTSTANDING, AND TAKING ONE BACK ─────────────────────────
@@ -924,21 +898,6 @@ function ndOwnerGroupHtml(inner) {
     '</div>';
 }
 
-// ── WHAT HAPPENS WHEN SOMEBODY NEW TAKES A SEAT ─────────────────────
-//
-//   Andy: "when someone binds to the relay the owner may want to
-//   auto-add the new ID to his contacts. he issued an invite, so he must
-//   want to be connected with the new addition."
-//
-// PER RELAY, which corrects my own proposal — I argued for node-wide,
-// beside the unknown-senders policy, and Andy was right that they answer
-// different questions. unknown-senders is about STRANGERS and is a
-// property of this node. This is about people YOU let onto THIS relay,
-// and you can own two relays for two purposes.
-//
-// RETURNED, NOT WRITTEN, like every other decision on this screen:
-// relays.json is Natter's file and api.fs here is scoped to this app's
-// folder. The screen says what was chosen; Natter records it.
 // ── TWO PANELS STOOD HERE, AND BOTH ARE GONE ─────────────────────────
 //
 //   Andy: "i, as a user: want to deal in natter with relays, not people
@@ -983,29 +942,6 @@ function ndOwnerGroupHtml(inner) {
 // on their own, and it never did anything.
 
 
-// ── WHO IS ENROLLED HERE ────────────────────────────────────────────
-//
-//   Andy: "Details must have a list bubble that allows the owner to
-//   remove enrollments, add one or all to contacts."
-//
-// The enrolment register, which costs no wire: `report.peers` is already
-// in hand from the relay-status the relay pushes its owner.
-//
-// BY KEY, ROW BY ROW. spirit-3 currently lists two peers called `jazz`
-// and two called `rock` — orphans from lab nodes whose identities were
-// wiped — and that is the case that proves the point:
-//
-//   Andy: "any search for enrollment row or peers or anything is really
-//   search-key-by-public-label"
-//
-// A label is a caption two people can wear. Every button below carries
-// the KEY, and the tail is shown precisely so a human can tell two rows
-// with one name apart.
-//
-// NO "ADD ALL". It is one press, ten consequences, and all of them on
-// YOUR node rather than the relay — the asymmetry that makes an undo
-// tedious. The policy above is how you say "all of them", in advance and
-// one at a time as they arrive.
 // ── WHAT THIS BOX CALLS ITSELF ──────────────────────────────────────
 //
 //   Andy: "the owner should be able to change the public label of his
@@ -1049,7 +985,7 @@ function ndSetRelayLabel(button) {
   }
 
   // Asked here first, so a space costs no round trip. Same rule object
-  // both sides (js/fieldRules.js), so the two cannot disagree.
+  // both sides (spirit/fieldRules.js), so the two cannot disagree.
   var badName = ndLabelProblem(wanted);
   if (badName) { say(badName, true); return; }
 
@@ -1173,6 +1109,7 @@ function ndAllocRestart(button) {
   ndAllocAsk({ restart: true }, button.closest('.natter-allocation').querySelector('.nd-alloc-out'));
 }
 
+// UNUSED since the enrolment list above went; kept as it was.
 // A DATE, NOT A DURATION. The invite panel next door says "in 6 days"
 // because an expiry is a countdown and what you want is how long you
 // have. An enrolment is a fact in the past and what you want is WHEN —
@@ -1188,31 +1125,6 @@ function ndWhen(iso) {
   return at.toLocaleDateString();
 }
 
-
-// RETURNED, NOT WRITTEN. relays.json is Natter's file and this app's
-// api.fs is scoped to its own folder, so the screen says what was chosen
-// and Natter records it against the relay this screen is.
-//
-// Repainted from the local value rather than from an answer, which is
-// the opposite of how the stranger policy works in Contacts — and the
-// difference is real: that one is applied by the NODE and read back from
-// it, this one is a line in a file Natter owns and will write.
-
-// ── ADDING ONE PERSON, BY KEY ───────────────────────────────────────
-//
-// `peer.acquire` is the same verb Contacts uses to confirm somebody
-// found by handle, and it verifies against the relay's roll before it
-// writes a row — so this cannot add a key the relay does not actually
-// carry, however stale this screen's copy of the list is.
-// ── REMOVING AN ENROLMENT, WHICH IS A POST LIKE EVERYTHING ELSE ─────
-//
-// `removePeer` addressed to the relay's own key. Two presses, because
-// this is the one control on this screen that destroys something
-// somebody else is relying on — the same arming the device rotate uses.
-//
-// IT TAKES THEIR INVITES WITH IT (relay.forgetPeer), which the answer
-// says out loud: un-inviting somebody while leaving their token working
-// would be a lie.
 
 // ── THE PARTNER RELAYS PANEL STOOD HERE ──────────────────────────────
 //
@@ -1249,10 +1161,9 @@ function ndWhen(iso) {
 // cache, ndLoadReach, ndReachHtml, ndPartnerList, ndEnsureReach and
 // ndReachPanel — and `relay.roster` itself, whose only caller this was.
 //
-// The question it answered is search's now. `peer.search` crosses
-// partnerships, ranks, bounds its answer, and marks each row with the
-// partner it came through (`vias`) — which is the same fact this
-// tabulated, asked for rather than downloaded.
+// The question it answered is search's now: contact.search, the one
+// table and the network search behind it (goal/G40.11), asked for rather
+// than downloaded.
 
 // ── ONE INVITE BLOCK ─────────────────────────────────────────────────
 //
@@ -1268,8 +1179,8 @@ function ndWhen(iso) {
 // failure mode this screen is most prone to, since every control here is
 // bound to the body and not to the button.
 //
-// ★ is the same mark the row carries for owning it, and this panel is
-// genuinely owner-only — see the note on the device panel, which is not.
+// ⭐ is the same mark the row carries for owning it, and this panel is
+// genuinely owner-only.
 function ndInvitePanel() {
   if (!ndBadge || !ndBadge.owned) return '';
   return ndPanel('invite', '⭐', 'Invites' + ndInviteCount(),
@@ -1301,22 +1212,9 @@ function ndInvitePanel() {
     'natter-mint natter-invites');
 }
 
-// "Take this relay off the list" stood here until 2026-09-13.
-//
-//   Andy: "the 'Take this relay off the list' should be gone for now.
-//   It's nothing that bites us until there is more than one known
-//   satellite in space…."
-//
-// With one real relay the control is a way to break your own node, and
-// with one real relay the explanation it showed instead ("this is the
-// last one, a node keeps at least one") is a paragraph answering a
-// question nobody asked.
-//
-// THE RULE IT ENFORCED IS NOT GONE. natterCanRemove and natterRemoveAt in
-// natter.js still hold "a node keeps at least one relay", and
-// spirit/test/natterLast.js still proves it. What went is the surface —
-// so when there is a second satellite, this is a panel to write again and
-// not a rule to rediscover.
+// TAKING THIS RELAY OFF THE LIST is ndRemoveHtml above, here since
+// goal/G30.7 (Natter retired), asking the same rule the node enforces:
+// ownerBadge.removalRefusal.
 
 // ---- painting --------------------------------------------------------
 
@@ -1325,12 +1223,10 @@ function ndInvitePanel() {
 //   Andy: "The Title of the entire Dialog should say 'Relay Details for
 //   <relay label>'"
 //
-// The shell titles a dialog with the app's NAME, which here is the least
-// useful word available — every one of these screens is "Relay Details",
-// and the question a person has is which relay. setScreenTitle is the
-// door contactsDetails already uses for exactly this, and it refuses a
-// write from an app that is not on screen, so a badge arriving late
-// cannot retitle whatever somebody went back to.
+// Every one of these screens would otherwise be "Relay Details", and the
+// question a person has is which relay. setScreenTitle is the door the
+// contact panel (detailElement.js) uses for exactly this; with the api the
+// contact row hands (spirit.shell.pageApi), it sets the panel layer's label.
 //
 // The label rather than the url: the url is on the row and in the device
 // link, and a title bar is one sticky line that a full https address
@@ -1347,7 +1243,7 @@ function ndInvitePanel() {
 // shorthand — so publishing a name changed a field nobody displayed.
 //
 // THE ORDER IS THE OPPOSITE OF A CONTACT'S, and the difference is real.
-// contactBook prefers MY label for a person: I chose it to tell two people
+// The contacts prefer MY label for a person: I chose it to tell two people
 // apart, and a peer must not be able to rename themselves on my screen.
 // A relay is not a peer I am distinguishing — it is a service, and this
 // is ITS screen. What it calls itself is the fact; my list shorthand is
@@ -1403,10 +1299,7 @@ function ndRender() {
     (name ? '<div class="panel-heading nd-name">' + ndEscapeHtml(name) + '</div>' : '') +
     ndReportHtml() +
     ndLocalHtml() +
-    // Claim renders only where this node holds no row. Its other half —
-    // the rename panel for a row it does hold — moved to Info, so this is
-    // now a panel that is either there or absent rather than one of a
-    // pair. See ndClaimHtml.
+    // Claim renders only where this node holds no seat. See ndClaimHtml.
     ndClaimHtml() +
     ndEmailHtml() +
     ndFaceHtml() +
@@ -1442,23 +1335,13 @@ function ndMountForms(body) {
   if (face && el.faceForm) el.faceForm.mount(face, { relays: [here], fixed: ndUrl, reload: function () { return Promise.resolve(); } });
 }
 
-// NOTHING REPAINTS THIS SCREEN ANY MORE except ndRender, and ndRender
-// runs only when something was pressed.
-//
-// There was a two-second poll here, and a paint function careful enough
-// not to destroy the Invite fields under whoever was typing in them, and
-// a visibility check so it stopped when this screen was not the one on
-// screen. All of it existed to keep one sentence true — "listening,
-// last pass 12s ago" — about a timer that no longer runs.
-//
-// The panel below states no fact that can go stale while it is read. That
-// is what made all of this deletable.
+// NOTHING REPAINTS THIS SCREEN except ndRender: on a press, when ndLoad
+// lands, when its row changes in the contact family's cache (ndHearRow)
+// and when the relay's report arrives on the stream (mount). There is no
+// timer: the two-second poll that stood here is gone.
 
 // ---- the two things this screen does ---------------------------------
 
-// One mint, on the mailbox this screen is. `ndUrl` rather than a picker
-// or relays.json[0]: the screen is which mailbox, and the hub still
-// checks that URL is one this node lists.
 // TAKING A SEAT ON THIS RELAY, and `url: ndUrl` is the whole reason this
 // can be here — the screen is which relay, so the claim is aimed rather
 // than landing on relays.json[0].
@@ -1466,11 +1349,6 @@ function ndMountForms(body) {
 // AND THE URL NEED NOT BE LISTED YET (goal/G16.3): the claim is what puts
 // a relay on the node's own list, so hub.handleClaim aims at a named url
 // whether or not the node lists it.
-//
-// RETURNED, NOT RECORDED, like the mint below:
-// session.json is Natter's file and api.fs here is scoped to this app's
-// own folder. The screen says what the relay agreed to; Natter writes it
-// down against this url.
 // THE JOIN BY EMAIL STOOD HERE (ndJoin, goal/G30.2): it is the shell element joinForm now (goal/G30.1, box v33),
 // bound on nd-body at mount, below.
 
@@ -1493,7 +1371,7 @@ function ndClaim(button) {
   //
   // The relay still decides — it writes the ledger — but there is no
   // reason to cross an ocean to be told about a character. Same rule
-  // object both sides (js/fieldRules.js), so the two cannot disagree.
+  // object both sides (spirit/fieldRules.js), so the two cannot disagree.
   // THE PUBLIC LABEL IS OPTIONAL AND FALLS BACK TO THE INVITE NAME.
   // Being called what the person who invited you called you is the
   // obvious default, and it is what the form imposed on everybody back
@@ -1545,19 +1423,8 @@ function ndClaim(button) {
     //   Andy: "when jazz (successfully btw) redeemed her invite, the UI
     //   didn't pop to full featured mode."
     //
-    // It could not, and the reason is the dialog contract rather than
-    // anything to do with claiming. What this screen decides it RETURNS
-    // — session.json is Natter's file and api.fs here is scoped to this
-    // app's folder — and a returned result is delivered WHEN THE DIALOG
-    // EXITS, because that is when callDialog's promise resolves.
-    //
-    // So jazz claimed, stayed on this screen to read the confirmation,
-    // and Natter never heard. No binding recorded, no session.json, no
-    // nodeLabelChanged, and a shell still painted for a node with no
-    // name — all of it waiting behind a Back press nobody had a reason
-    // to make.
-    //
-    // Claiming is also the one verb here that finishes the screen. Every
+    // So a claim closes the panel (closeDialog, the api's), back to what
+    // mounted it. Claiming is the one verb here that finishes the screen. Every
     // other one — rename, invite, revoke, rotate — leaves you with more
     // to do on this relay. Taking a seat is the end of the errand, and
     // the thing that comes next is the shell you could not use yet.
@@ -1628,9 +1495,7 @@ function ndRevoke(button) {
       ? 'revoked ' + n + (n === 1 ? ' invite for ' : ' invites for ') + label
       : 'nothing outstanding for ' + label + ' — it had already lapsed or been claimed';
     ndChanged = true;
-    // The hash rides back because this was a post. Returned with the
-    // result so the list — and a log reader one day — can name the
-    // transaction this press was (decision 0011). The row leaves when the relay's next report says so.
+    // The row leaves when the relay's next report says so.
   });
 }
 
@@ -1655,12 +1520,8 @@ function ndMint(button) {
   }).then(function (r) {
     var said = r.body;
     var token = (said && said.invite && said.invite.token) || '';
-    // RETURNED, NOT RECORDED. minted.json is Natter's file — api.fs here
-    // is scoped to this app's own folder — and the label is the only
-    // part worth carrying back: it is what Natter watches the roll for,
-    // so the person can be added as a contact the moment they turn up.
-    // Never the token. That is the secret, and it does not leave this
-    // screen.
+    // The label is kept in ndMinted, though nothing reads it now. Never
+    // the token. That is the secret, and it does not leave this screen.
     if (token) {
       ndMinted = label;
       ndChanged = true;
@@ -1682,8 +1543,8 @@ function ndMint(button) {
 
 var ndPage = ({
 
-  // Structure only. Everything about WHICH mailbox belongs in open(),
-  // which runs on every call — see below.
+  // Structure only, once per panel. Everything about WHICH mailbox
+  // belongs in open() — see below.
   mount: function (container, api) {
     ndApi = api;
     container.innerHTML = '<div id="nd-body" class="stack"></div>';
@@ -1694,36 +1555,10 @@ var ndPage = ({
     //   update. once the invite is successfully issued, that invite
     //   should be immediately visible in outstanding invites."
     //
-    // Once per pane, in mount rather than open, because the subscription
-    // outlives any one relay being looked at and there is nothing to
-    // tear down when the screen is left — a dialog is hidden, never
-    // destroyed, and subscribing in open() would stack a listener per
-    // visit.
-    //
-    // FILTERED TO THIS RELAY, by the key it publishes. Andy may own more
-    // than one, and a mint on the other one must not repaint this
-    // screen's list with rows that are not its own. An event with no
-    // relay named is taken — older relays did not say, and a missed
-    // repaint is worse than a redundant one.
-    //
-    // ndLoad(), not a local patch of the list: the event says something
-    // changed, and the screen already knows how to ask what is true. A
-    // handler that spliced the new invite in by hand would be a second
-    // opinion about the relay's ledger, which is the relay's to hold.
-    //
-    // WHICH MAKES THE ORDER WORTH KNOWING. The invites are not in this
-    // event — they ride a SECOND message, `relay-status`, which
-    // relay.ownerEvent sends immediately after this one (statusToOwner,
-    // at the foot of it) and which stops at the node in
-    // presenceNode.statusByRelay. ndLoad reads it back through
-    // relay.status.
-    //
-    // So the two are ordered frames on one already-open socket, and this
-    // screen's reaction to the first has to cross an SSE delivery, an
-    // HTTP request, and a roll fetch before it reads the second. The
-    // status has effectively always landed by then. It is not a formal
-    // guarantee, and it is the thing to suspect if an invite ever shows
-    // up exactly one beat late.
+    // In mount, once per panel, and let go by destroy (ndStops). The
+    // relay's report, the invites in it, arrives on the stream as a status
+    // event; FILTERED TO THIS RELAY by its url, it replaces the badge's
+    // report whole and repaints, with no further read.
     // ITS ROW, FROM THE ONE TABLE (goal/G40.11), THE CONTACT FAMILY'S CACHE (goal/G41.28): painted as it changes, with no
     // further read (goal/G41.32). Another relay's row is kept for the removal rule, and paints nothing. Its presence is
     // the dot's, so presence alone repaints nothing. The two forms in it watch the same rows themselves.
@@ -1837,19 +1672,16 @@ var ndPage = ({
     });
   },
 
-  // Every call, mounted or not — the shell guarantees it (switchTo). So
-  // this is where the subject arrives, and where everything about the
-  // last subject has to be let go of.
-  //
-  // The shell can promise that open() runs; it cannot know what is stale
-  // inside.
+  // Called once, right after mount, with the options ({ key, api }): this
+  // is where the subject arrives. ndUrl is the badge's url once ndLoad
+  // finds its row; url, label and relayLabel are read here too, though
+  // the contact row hands none of them.
   open: function (params) {
     ndKey = (params && params.key) || '';
     ndUrl = (params && params.url) || '';
     ndRelayNamed = '';
     ndLabel = (params && params.label) || '';
-    // The list's caption for this relay. It is the list's to know — this
-    // screen is handed one subject and never searches the relay list.
+    // The list's caption for this relay, if one was handed.
     ndRelayLabel = (params && params.relayLabel) || '';
     ndBadge = null;
     // Opening a second relay must show "asking" again, not the previous
@@ -1857,9 +1689,7 @@ var ndPage = ({
     ndAsked = false;
     ndMinted = '';
     ndChanged = false;
-    // A half-armed Remove must mean two presses about the SAME mailbox.
-    // Arming it for one and then opening another has to disarm — the
-    // shell can promise open() runs, it cannot know what is stale here.
+    // Every fold shut as the panel arrives.
     ndOpenPanel = '';
 
     ndSetTitle();

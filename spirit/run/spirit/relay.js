@@ -5,7 +5,7 @@ const path = require('path');
 const auth = require('./relayAuth');
 const invites = require('./invites');
 // One place decides how big a thing may be, and the browser reads the
-// same file (js/limits.js). A cap the client pre-checks must be the cap
+// same file (limits.js, beside this one). A cap the client pre-checks must be the cap
 // the relay enforces, or the pre-check is a lie.
 const limits = require('./limits.js');
 // The peer search's one ranker, on the probability modules (goal/G29.17), shared with the node.
@@ -53,7 +53,7 @@ const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 // is now one transport on this box and it is that one.
 //
 // What a routed request may carry — ONE number, shared with the browser
-// that pre-checks it (js/limits.js). It used to say 16384 here while
+// that pre-checks it (limits.js). It used to say 16384 here while
 // packet.js said 1024 about the identical string, so an app was refused
 // at a sixteenth of what this would have taken.
 //
@@ -109,7 +109,7 @@ var SEARCH_WORDS_MAX = 200;
 // KILLED. that's a decision."), and with it the relay posting as itself.
 // ── WHAT A LABEL MAY BE ──────────────────────────────────────────────
 //
-// The rule moved to js/fieldRules.js on 2026-09-15 and this requires it.
+// The rule moved to fieldRules.js on 2026-09-15 and this requires it.
 //
 //   Andy: "an input field should validate before taxing the wire. the
 //   reason to have it there is to make it uniformely avalable to all
@@ -175,8 +175,8 @@ var STRANGER_BAN_START_MS = 1000;
 // Measured 2026-09-17: `rateOk` had exactly two call sites, `claim` and
 // device enrolment. `routePost` — the thing that actually moves bytes —
 // had none, so nothing counted posts per minute and a member could post
-// as fast as they could open sockets. The "30 sends per minute per key" a
-// few lines below reads like a live rule and is a comment about `send`,
+// as fast as they could open sockets. The "30 sends per minute per key" in the
+// note at `rateOk` below reads like a live rule and is a comment about `send`,
 // the ring route R8 deleted.
 //
 // HALF OF IT WAS ALREADY THERE, which is worth stating so this is not
@@ -266,8 +266,8 @@ function createRelay(rootDir, deps) {
   // rows: RAM holds the ACTIVE members (NODE-AND-RELAY §8). A member's row
   // is cached when their stream opens and dropped when it closes, so every
   // request from or to a connected member is answered here without a disc
-  // read. Bounded by the connection allowance — the lever the Governor
-  // moves — so the RAM spent on rows follows connections and is governed.
+  // read. Bounded by the connection allowance, fixed from the owner's RAM
+  // (cycle 8), so the RAM spent on rows follows connections and is bounded.
   // A member posting without a stream costs one indexed read, behind the
   // rate gate. Writes go to disc first, then refresh the cached copy.
   var activeRows = Object.create(null);
@@ -1000,9 +1000,9 @@ function createRelay(rootDir, deps) {
   // (goal/G19.11). A suite that wants the roll reads it off the disc
   // (test/rollOf.js); store.members.byKeys is what it read.
 
-  // THIS RELAY'S OWN KEY, not the owner's. The keypair is made once, on
-  // the first --relay boot (server.js), and lives in this process's own
-  // relay-state like any other identity.
+  // THIS RELAY'S OWN KEY, not the owner's. The keypair is made once, when
+  // relayAuth.js first loads (ensureIdentity), named `relay` by
+  // relayServer.js, and lives in this process's own state like any other identity.
   //
   // Public, deliberately: it names the relay the way a peer's key names
   // a peer, and it is the half that may be handed out.
@@ -1074,9 +1074,8 @@ function createRelay(rootDir, deps) {
   //
   // EMPTY IS A REAL ANSWER and reads as "this relay has not been named".
   // A box that ships without one must not invent a caption for itself —
-  // the list is the reader's to name until the owner says otherwise,
-  // which is what natterDetails' own relayLabel has always done locally.
-// globMatches AND matchRank MOVED to js/peerSearch.js, 2026-09-16; the ranking is js/peerRank.js since goal/G29.17.
+  // the list is the reader's to name until the owner says otherwise.
+// globMatches AND matchRank MOVED out of this file, 2026-09-16; the ranking is peerRank.js since goal/G29.17.
 //
 // They were the only judgement in this file about what a person meant by
 // a search, which is a question with no settled answer — Andy: "quality-
@@ -1095,8 +1094,8 @@ function createRelay(rootDir, deps) {
 
   // ── WHO RUNS THIS BOX ────────────────────────────────────────────
   //
-  // Two fields, both public: the owner's key and label, from allow.json —
-  // the one place ownership lives. They were once also on every roll row
+  // Two fields, both public: the owner's key, from owner.json — the one
+  // place ownership lives (relayAuth.loadOwner) — and the label of his row. They were once also on every roll row
   // as `owner: true`; the roll went, and on 2026-09-19 so did the mark on
   // the row ("a row in the roll doesn't know who the owner is"). This is
   // how they are ASKED FOR, without asking for any membership.
@@ -1118,10 +1117,10 @@ function createRelay(rootDir, deps) {
 
 
   // Owner-only, and enforced by the caller: this is reached from
-  // answerSelf's `owner` branch, which has already verified the post
-  // against the row marked owner in allow.json.
+  // answerSelf's owner gate (OWNER_VERBS), which has already verified the
+  // post against the key in owner.json.
   //
-  // THE SAME RULE AS ANY OTHER PUBLIC LABEL (js/fieldRules.js). A relay's
+  // THE SAME RULE AS ANY OTHER PUBLIC LABEL (fieldRules.js). A relay's
   // caption goes in the same lists, next to the same peers, and an
   // invisible character is the same impersonation here as anywhere.
   function setRelayLabel(next, hash) {
@@ -1188,8 +1187,8 @@ function createRelay(rootDir, deps) {
       // `messages: messages.length` STOOD HERE and went with the ring.
       // A relay stores nothing on anyone's behalf (0006), so there is no
       // count to report — the honest number is not zero, it is that the
-      // question no longer applies. relayStatus.js and natterDetails
-      // read the absence rather than a 0.
+      // question no longer applies. relayStatus.js still reports
+      // `messages`, as 0 when the snapshot carries none.
     };
   }
 
@@ -1444,9 +1443,9 @@ function createRelay(rootDir, deps) {
     // alive beside `publicLabel`.
     //
     // It was unreachable in practice anyway: the first claim on an open
-    // box takes the owner path, which demands a key and writes
-    // allow.json — so `open` with peers already on it requires somebody
-    // to have deleted allow.json by hand. A recovery state, not a way in.
+    // box took the owner path, which demanded a key and wrote the owner
+    // file — so `open` with peers already on it required somebody to have
+    // deleted that file by hand. A recovery state, not a way in.
     //
     // Refused rather than migrated. A keyless row cannot open a stream,
     // cannot post, cannot be posted to, and cannot be told apart from
@@ -1516,8 +1515,8 @@ function createRelay(rootDir, deps) {
 
     var peer = {
       // ONE LABEL. `name` stood here carrying the same string, and went
-      // on 2026-09-15 — see loadRoutingTable for the migration and
-      // relayStore.js for what a member row holds now.
+      // on 2026-09-15 — see relayStore.js for the one-time import (D8)
+      // and for what a member row holds now.
       publicLabel: n,
       publicKey: publicKey,
       // THE ENROLMENT LEDGER'S ONE DATE. Written once, never rewritten:
@@ -1823,9 +1822,9 @@ function createRelay(rootDir, deps) {
   // Nothing was migrated. Andy inspected what spirit-3's ring was holding
   // first — 77 entries, 15 of them telemetry from a console that no
   // longer exists — and ruled: "they are all noise"
-  // (design/andy/relayStorage.md). loadRoutingTable reads `messages` and
-  // drops it, so a relay upgrading in place sheds its mail on the first
-  // persist().
+  // (design/andy/relayStorage.md). The one-time import (relayStore.js,
+  // D8) does not carry `messages`, so a relay upgrading in place shed its
+  // mail there.
   //
   // consoleExchange went before them, on 2026-09-13: 56 lines reached
   // THROUGH send(), and not peer transport at all. See relayStatus.js for
@@ -1992,19 +1991,11 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 409, error: 'name reserved by a live invite' };
     }
 
-    // THE OWNER'S LABEL LIVES IN TWO PLACES, and this is the whole of
-    // why that matters.
-    //
-    // `allow.json` identifies the owner by NAME — `ownerName()` is its
-    // first key, and every owner check on this box resolves through it.
-    // An owner whose peer row said `bob` while allow.json still said
-    // `andy` would be locked out of its own relay: not refused, simply
-    // not recognised.
-    //
-    // So the two move together or neither does. Written FIRST, because a
-    // failed write to allow.json must not leave a renamed row behind —
-    // the other order strands the owner, and this order costs at worst a
-    // rename that did not happen.
+    // THE OWNER'S LABEL ONCE LIVED IN TWO PLACES: allow.json named the
+    // owner by NAME, so a rename had to move both or lock him out. The
+    // owner is a KEY now, in owner.json (relayAuth.loadOwner), which a
+    // rename does not touch; his label is his row's, so the row is the
+    // one write.
 
     var was = labelOf(row);
     store.members.put({
@@ -2055,12 +2046,12 @@ function createRelay(rootDir, deps) {
 
   // FORGETTING SOMEBODY — the act, with no opinion about who asked.
   //
-  // Split out of removePeer so the two ways in can prove themselves
-  // differently and then do the identical thing. The public route still
-  // checks a signature (see removePeer below); a post from the owner was
-  // already proved by the post's own signature before it reached here,
-  // and a second check there would be a second place to decide who the
-  // owner is.
+  // Split out of the old public removePeer route so the two ways in could
+  // prove themselves differently and then do the identical thing. That
+  // route is gone (see the note after this function); both ways in are now
+  // the `removePeer` verb, already proved by the post's own signature
+  // before it reaches here, and a second check would be a second place to
+  // decide who the owner is.
   //
   // BY KEY, and only ever by key.
   //
@@ -2078,10 +2069,9 @@ function createRelay(rootDir, deps) {
 
     // The owner's own row is not removable. NOT an auth check — it is a
     // safety invariant, which is why it lives with the act rather than
-    // with either gate: no way in may reach past it. It is the only row allow.json
-    // holds, ownerName() reads it, and a relay that forgot its owner
-    // could never be administered again — first-claim would hand the box
-    // to whoever asked next.
+    // with either gate: no way in may reach past it. It is the row of the
+    // key owner.json names, the one account that administers the box and
+    // the label ownerLabel() reads.
     if (ownerKey && key === ownerKey) {
       return { ok: false, status: 403, error: 'the owner cannot be removed' };
     }
@@ -2197,19 +2187,20 @@ function createRelay(rootDir, deps) {
   // of this exchange from any other. That is the point of making the
   // relay a peer rather than giving it a second kind of door.
   //
-  // Everything it can be asked is an owner verb, and the owner's identity
-  // was proved by the post's own signature before this ran. There is no
-  // second gate here and there must not be: two places deciding who the
-  // owner is, is one place to get it wrong.
+  // The caller's identity was proved by the post's own signature before
+  // this ran, and which verbs it may ask is the one table MEMBER_VERBS /
+  // OWNER_VERBS (goal/G30.3). There is no second gate and there must not
+  // be: two places deciding who the owner is, is one place to get it wrong.
   // WHO MAY ASK FOR WHAT, and it is per verb now.
   //
   // Every verb below is reached by the same door — a post addressed to
   // this relay's own key — and they do not all want the same proof. Two
   // kinds:
   //
-  //   OWNER VERBS      monitor, invite, revoke, removing SOMEBODY ELSE
+  //   OWNER VERBS      config, debug, invite, monitor, relayLabel, revoke,
+  //                    FS.*, removing SOMEBODY ELSE
   //                    the house key, and nothing else
-  //   OWN-ROW VERBS    removing YOURSELF
+  //   MEMBER VERBS     card, face, rename, search, removing YOURSELF
   //                    any identity with a row, acting on that row
   //
   // The proof in both cases is the same signature — the post's — checked
@@ -2284,8 +2275,8 @@ function createRelay(rootDir, deps) {
   // have the wire refuse a packet this relay wrote itself (cycle 10's R6).
   var MATCH_BUDGET = limits.PLAINTEXT_MAX - 512;
 
-  // Every owner verb that writes — minting, renaming, forgetting,
-  // partnering, reconfiguring — goes through here, so the disc guard sits
+  // Every verb that writes — minting, renaming, forgetting, a card,
+  // a face name, reconfiguring — goes through here, so the disc guard sits
   // on the outside once rather than on each of them. A relay whose disc
   // is full still answers its owner, and the answer says why.
   // ── A POST TO THE RELAY IS SEALED TOO (cycle 10, R5 and R9) ─────────
@@ -2622,7 +2613,7 @@ function createRelay(rootDir, deps) {
   //   below, a member the member verbs. Nothing is stored per member, and an asker learns nothing of why its answer
   //   is the one it gets ("for the relay the category question is 100% internal").
   //
-  // The relay's folder js/relaySelf/ (AGENTS.md and one description file per verb) is read through introSpector's FS
+  // The relay's folder relaySelf/, beside this file (AGENTS.md and one description file per verb) is read through introSpector's FS
   // verbs (goal/G30.4: the AGENTS verbs are gone). FS is an owner verb like the others below; members get nothing of
   // it (Andy, 2026-10-20: "don't build shit nobody asked for.").
   var MEMBER_VERBS = ['card', 'face', 'removePeer', 'rename', 'search'];
@@ -2657,7 +2648,7 @@ function createRelay(rootDir, deps) {
   //
   // The body 'api' answers { relay: { <verb>: { description, request, reply } } }, cut to the caller's category: a
   // member the member verbs, the owner every verb and the FS verbs. Each entry is read from the verb's file in
-  // js/relaySelf/; a file declares no reply, so reply is {}. FS itself stays the owner's (the gate below).
+  // relaySelf/; a file declares no reply, so reply is {}. FS itself stays the owner's (the gate below).
   function relayApi(owner) {
     var family = relaySelfFamily();
     var out = {};
@@ -2907,14 +2898,12 @@ function createRelay(rootDir, deps) {
     // NO REFUSAL FOR A LIVE RELAY. The design recommended refusing once the
     // roll holds members other than the owner; Andy reversed it, because a
     // relay with members showing hiccups is exactly when this earns its
-    // keep. And his second point retires the risk argument: it is only
-    // AFTER the first claim that this verb can be reached at all, since an
-    // owner verb needs the owner to be a member. The claim is the
-    // precondition, not the hazard.
+    // keep. And the risk is bounded by who can reach it: only the key
+    // owner.json names, which the install wrote (goal/G16.8).
     //
-    // The `owner` guard is the same one every verb in this block uses, so a
-    // non-owner is refused `not-owner` by the path below rather than by a
-    // second opinion written here.
+    // `debug` is in OWNER_VERBS, so a non-owner is refused by the gate at
+    // the top of this function (notGranted) rather than by a second
+    // opinion written here.
     if (body && body.debug && owner) {
       // Already proved, exactly as the monitor verb records: this arrived
       // signed by the owner over bytes that bind sender, recipient and this
@@ -2993,7 +2982,7 @@ function createRelay(rootDir, deps) {
     // OWNER ONLY, and it is the one verb here whose subject is the relay
     // rather than a row on it. `rename` above moves a PEER's own row and
     // every member holds it; this moves the box's own caption and only
-    // the key in allow.json may.
+    // the key in owner.json may.
     //
     // A packet, like everything else, and it needs no door for the
     // reason 0010 gives: the relay is a peer with a key, so the browser
@@ -3011,16 +3000,13 @@ function createRelay(rootDir, deps) {
     // The figures used to be reachable only by SSH, which meant the owner
     // of a relay in a datacentre could not answer "how many may join?"
     // without a terminal. This is that answer as a packet, signed by the
-    // key in allow.json, arriving down the same wire as every other owner
+    // key in owner.json, arriving down the same wire as every other owner
     // grant — no door, no console, no credential on the box.
     //
-    // WHAT IT DOES NOT DO: change anything that is live. The
-    // configuration is still read once, at boot (relayConfig.js), and
-    // this writes the FILE. A live ceiling that moved under a running
-    // relay would be a limit nobody could reason about, and cycle 1's
-    // scope says configuration is not a real-time tool. So the answer
-    // says what will apply at next start, and `restart` asks for that
-    // start to be now.
+    // It writes the FILE, and since goal/G30.15 a RAISED figure applies at
+    // once while a LOWERED one waits for the next start (reconfigure,
+    // above). The answer says which applies when, and `restart` asks for
+    // that start to be now.
     if (body && body.config && owner) {
       out = reconfigure(body.config);
     }
@@ -3045,7 +3031,7 @@ function createRelay(rootDir, deps) {
     }
 
     // MINTING AN INVITE, asked for the same way. The owner's name is not
-    // taken from the packet: it is read from allow.json here, because the
+    // taken from the packet: it is his row's label (ownerLabel), because the
     // only sender who reaches this line is the owner and a name the
     // caller supplied would be a second opinion about that.
     if (body && body.invite && owner) {
@@ -3086,7 +3072,7 @@ function createRelay(rootDir, deps) {
   //
   // So the walk is over `activeRows` — the rows of members whose stream is
   // open, cached at connect and dropped at close — and never the disc.
-  // Bounded by the connection allowance the Governor moves, so a search
+  // Bounded by the fixed connection allowance, so a search
   // costs what connections cost and no more. Discovery serves active
   // participants ("the most precious"); somebody offline is not found, and
   // a node that already holds their key still posts to them by key.
@@ -3600,12 +3586,11 @@ function createRelay(rootDir, deps) {
   //
   // RAM ONLY, AND THAT IS A FAIL-SAFE RATHER THAN A LIMITATION. A restart is
   // the off switch, nothing on disc can leave it on for a box nobody is
-  // watching, and it cannot be set before boot. It is also why relayConfig's
-  // rule survives: configuration is not changed while the relay runs, and
-  // DEBUG is not configuration.
+  // watching, and it cannot be set before boot. DEBUG is not configuration:
+  // nothing of it is written to relayConfig's file.
   //
   // NOT CLEARED WHEN THE OWNER LEAVES, deliberately, unlike `monitoring`
-  // below. Monitoring stops because there is nobody to send to; DEBUG only
+  // above. Monitoring stops because there is nobody to send to; DEBUG only
   // decides what a row CARRIES, and monitorEvent already refuses when the
   // owner is absent — so nothing leaks while the owner is away, and a
   // connection that blips does not silently disarm the instrument the owner
@@ -3753,9 +3738,9 @@ function createRelay(rootDir, deps) {
     // fires from inside it. So the hash is threaded through mint,
     // renameSelf and forgetPeer and arrives here as `cause`.
     //
-    // ABSENT ON A CLAIM, and that is honest rather than a hole: a claim
-    // arrives on an HTTP route, not as a post, so there is no hash in
-    // existence to name. Which gives the rule this file should be read
+    // ABSENT ON A CLAIM: claim() is handed no hash, although since
+    // goal/G22.6 a claim arrives as a post on the one door (answerPublic),
+    // so its notice carries no `cause`. Which gives the rule this file should be read
     // by — THE HASH IS THE JOIN KEY FOR ACTS SOMEBODY POSTED, not a key
     // for the log as a whole. An event this relay merely witnessed has
     // no hash and never will; its handle is the peer key and the time.
@@ -3792,7 +3777,7 @@ function createRelay(rootDir, deps) {
     // it, which is how this one came to be missing.
     //
     // A refused claim re-sends an unchanged report. That is bounded — the
-    // claim event only fires past the rate gate (see `seen.gate`) — and
+    // claim event only fires past the signature check (see `seen.gate`) — and
     // cheap, and the alternative is a flag threaded through five call
     // sites to save a message nobody would notice.
     statusToOwner();
@@ -3974,8 +3959,8 @@ function createRelay(rootDir, deps) {
 
     // 2. The signature, against THAT identity's own row key. Never the
     //    owner's house key — owning the relay is not owning a row — and
-    //    never a device key, for the reason deviceGate gives: a borrowed
-    //    phone must not open the wire its owner is on.
+    //    never a device key (device enrolment went with goal/G16.2): a
+    //    borrowed phone must not open the wire its owner is on.
     //    Over THIS relay's own key (goal/G16.12): a header signed for
     //    another relay is refused before anything is evicted.
     if (!auth.streamSignatureOk(who_.publicKey, who_.id, relayPublicKey(), sig)) {
@@ -4001,7 +3986,7 @@ function createRelay(rootDir, deps) {
     presentNow.broadcast('presence', { key: who_.id, present: true });
 
     // 5. And the owner learns what its box now looks like. Sent after the
-    //    roster so an owner opening its own stream gets the membership
+    //    presence broadcast so an owner opening its own stream gets the membership
     //    first and the condition second, and sent on every arrival
     //    because "who is connected" is half of what the report says.
     //    Silent when the owner is not here — see statusToOwner.
@@ -4016,7 +4001,7 @@ function createRelay(rootDir, deps) {
   // `governorTick` STOOD HERE (cycle 1): read the heap, let the Governor
   // move the allowance, close the idlest streams, tell the owner. Deleted
   // in cycle 8 — the allowance is fixed at boot, and the owner hears on
-  // every event instead of on a timer (ownerEvent, below).
+  // every event instead of on a timer (ownerEvent, above).
 
   // ── A READER THAT STOPPED READING, AND THE ROUTES IT LEAVES (R35) ────
   //
@@ -4093,18 +4078,19 @@ function createRelay(rootDir, deps) {
 
   // ── A NODE JOINS BY ITS USER'S EMAIL (goal/G30.2, "Onboarding a node onto a relay") ──────────────
   //
-  // Andy's design, 2026-10-19: the node sends a signed join request, the email and its port, its key the signer;
-  // the relay mails a link to the user's own node, http://127.0.0.1:<port>?join=<code>; the node sends the code
+  // Andy's design, 2026-10-19: the node sends a signed join request, the email and a link, its key the signer;
+  // the relay mails that link to the user's own node with join=<code> and relay=<its key> added (goal/G40.10:
+  // the caller's link, held to http://127.0.0.1, goal/G41.29); the node sends the code
   // back under the same key, and a right code within 10 minutes takes the seat at once. Only the key that asked can
   // finish, so a code is worth nothing to anyone else. join and joinConfirm are the two door posts for it, accepted
   // by Andy; this is what they call, as claim is for a claim.
   //
-  // KEPT IN MEMORY, 10 minutes: the pending join (email, port, a hash of the code, the card it came with). Nothing
+  // KEPT IN MEMORY, 10 minutes: the pending join (email, link, a hash of the code, the card it came with). Nothing
   // of it reaches the disc, and the email is never published: the seat's public label is the part before the @.
   var JOIN_MS = 10 * 60 * 1000;
   var JOIN_GAP_MS = 60 * 1000;
   var JOIN_PER_HOUR = 5;
-  var pendingJoins = new Map();      // publicKey -> { email, port, hash, until, card }
+  var pendingJoins = new Map();      // publicKey -> { email, url, hash, until, card }
   var joinAsks = new Map();          // 'key:<k>' or 'mail:<address>' -> [times]
   var sendMail = typeof deps.sendMail === 'function' ? deps.sendMail : null;
   function joinHash(code) { return require('crypto').createHash('sha256').update(String(code)).digest('hex'); }
@@ -4197,7 +4183,8 @@ function createRelay(rootDir, deps) {
   // verified email, which gets a mail with a token and a link, or the token itself, which logs in once within 10
   // minutes. Anything else gets the email's answer, so the page never says which it got. A login is a session in this
   // relay's memory, valid until 7 days after the last interaction ("the login expires after it is idle for 7 days");
-  // Log out ends it. NOT ON DISC: a stored shape would be new, so a relay restart logs faces out.
+  // Log out ends it. Since goal/G30.15 a login is also kept on the member's row (keepLogin, below), so a relay
+  // restart does not log faces out.
   //
   // THE DOMAIN is the owner's to say, in spirit/state/face.json {domain}, placed as mail.json is (bash/face-setup
   // writes it). Without it the relay serves no face.
@@ -4497,8 +4484,8 @@ function createRelay(rootDir, deps) {
     // another relay's answer.
     relaySealKey: relaySealKey,
     relayKeyStatement: relayKeyStatement,
-    // The other half of the pair. Read by server.js for the public
-    // roll; set through the `relayLabel` verb in answerSelf.
+    // The other half of the pair. Carried on the relay's card
+    // (relayCard); set through the `relayLabel` verb in answerSelf.
     relayLabel: relayLabel,
     // Who runs this box — key and label, part of the relay's card (the
     // answer to a card ask on the one door, goal/G22.6).
@@ -4513,10 +4500,9 @@ function createRelay(rootDir, deps) {
     // statusToOwner, below — and is not something anybody asks for.
     mint: mint,
     snapshot: snapshot,
-    // Pushed on every presence change from inside this file; server.js
-    // also calls it on a timer, because memory and uptime move when
-    // nothing else does — and a monitor that only updates when a peer
-    // connects would look frozen on a quiet relay.
+    // Pushed from inside this file on every stream open and close, every
+    // owner event and every monitor event. Nothing outside this file calls
+    // it on a timer; exported for the suites.
     statusToOwner: statusToOwner,
     // The fixed connection allowance (cycle 8), for the suites that check
     // it was set from the owner's RAM and nothing else.

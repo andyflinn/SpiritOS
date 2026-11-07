@@ -1,4 +1,6 @@
-> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay is to serve the face pages itself (not built). Passages below that describe those processes are history, kept as bones for the fold.
+> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay serves the face page itself (`relayServer.js`, `/face.html`, goal/G41.19). Passages below that describe those processes are history, kept as bones for the fold.
+
+> **Status 2026-11-07 (goal/G43.23): what else below no longer holds in the tree.** The core moved from `spirit/run/js/` to `spirit/run/spirit/` (goal/G40.2); `path:line` citations stay at `76b587a`. **The per-app `allow.json` and `allows()` are gone** (cleanup/G1.6, Andy: "remove stuff we KNOW is useless"), so §1's second gate, §2–§4 and the `readOnly: [allow.json]` guard are record only; so is the whole `fixList` app ("get rid of the whole thing"). **The node loads no app** (goal/G13.2): `nodeApps.js`, `faceServer.js`, `puppetOwner.js`, `puppetPost.js` and the `--app` mode are deleted; a server is a process `jobs.js` starts. `deviceAuth.js` went with device (goal/G16.2). `UNKNOWN_POLICIES` (§14) went in goal/G43.17: the node ignores a stranger, always (`hub.frontDoor`: `known` or `drop`). `net.fetch` keeps no keys and `proxy.json`'s allow list is gone (goal/G29.20). A puppet today is a node whose `spirit/state/owner.json` names another key (`puppetMode.js`; cleanup/G1.7 replaced `puppet.json`).
 
 # Puppets — what an app is, who may use it, and who may change that
 
@@ -416,12 +418,12 @@ the same reason.*
 
 ### G1 — a response bound exists, and both paths obey it
 
-**Status:** OPEN. Nothing built. Ruled by Andy 2026-09-25: *"good, so all
-searches are subject to the same return limit."*
+**Status:** OPEN. Ruled by Andy 2026-09-25: *"good, so all
+searches are subject to the same return limit."* *Since built in part: `limits.ANSWER_MAX` (`limits.js:261`) caps one server's answer and `appClient.js` refuses past it by name (not on the owner's loopback, goal/G41.28); `puppetsPending.js` goes red on G1 for that reason — the awaiting declaration wants its real assertion. Whether every node verb's answer on both paths obeys it is not asserted.*
 
 The argument and its measurements are in
 [`THE-REQUESTER-IS-RESPONSIBLE.md`](THE-REQUESTER-IS-RESPONSIBLE.md),
-*The enforcement point*. Nothing in `limits.js` bounds a response today.
+*The enforcement point*. *(Written when nothing in `limits.js` bounded a response; see the status above.)*
 
 **No paging: search, and the bucket.** Andy, 2026-09-27, in Desk: *"all the
 same rules apply, list-subsets can be retrieved by search, as always. and
@@ -446,6 +448,7 @@ hooks per collection, the rest inherited".*
 **Status:** OPEN. Nothing built, but the shape exists: `peer.search`
 already returns `{ rows, more }` (`spirit/run/js/hub.js:2242`) with the
 right shape and the wrong unit, bounding rows scanned rather than bytes.
+*Since: `peer.search` is gone (people are `contact.search`'s, goal/G30.19), the bucket is `probabilityBucket.js` (goal/G29.22), and `puppetsPending.js` checks that no verb answers with a list: each is search + get.*
 
 Shared rather than per-verb, because a per-verb implementation is the
 duplication the wire probe exists to catch. Bounded-and-truthful rather
@@ -592,6 +595,7 @@ replayed one re-executes.
 owner-only".*
 
 **Verify:** `spirit/test/puppetOwner.js` (8 checks, wsl-claude).
+*Since goal/G13.2: `puppetOwner.js` and `nodeApps.js` are deleted; the lock is now the node's own `spirit/state/owner.json` (`{ owner }`, read on every call by `puppetMode.puppetIn`), asserted in `spirit/test/ownerFile.js`.*
 **Status:** DONE (2026-09-27). Built at edbadff, verified by `puppetOwner.js`. Its
 mutation test takes `owner.json` off the read-only list, and then all four
 spellings get through and a puppet can plant itself as its own owner; the

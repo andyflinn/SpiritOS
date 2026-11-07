@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/shell/test/seal.js
-// The tests of shell/seal.js, and of no other module (spec: ./seal.md; goal/G41.3). The browser seal runs in node on
+// spirit/run/spirit/shell/test/seal.js
+// The tests of spirit/shell/seal.js, and of no other module (spec: ./seal.md; goal/G41.3). The browser seal runs in node on
 // node's own WebCrypto, held against the node's seal (spirit/seal.js): what one seals the other opens.
 
 const fs = require('fs');

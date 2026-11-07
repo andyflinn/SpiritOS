@@ -9,13 +9,15 @@
 // in between decides an idle connection is dead. That is the whole
 // protocol, so this is a parser and a reconnect loop and nothing else.
 //
-// WHY NOT `EventSource`. The browser has one and kernel.js already wraps
-// it for the shell. Node 24 has one behind --experimental-eventsource.
+// WHY NOT `EventSource`. The browser has one (the page's own stream,
+// spirit.js's events.subscribe, reads a fetch response instead). Node 24
+// has one behind --experimental-eventsource.
 // Neither is usable here, and the reason is a rule rather than a taste:
 // **EventSource cannot set request headers**, and the proof for a relay
 // read rides in X-Spirit-Sig and never the query string, because a query
 // string is written to every access log the request passes —
-// inboxSignatureFrom refuses a query `sig` outright. An EventSource
+// relay.js's streamSignatureFrom (inboxSignatureFrom once) refuses a
+// query `sig` outright. An EventSource
 // client could not authenticate to a relay without undoing that.
 // (design/relay/PRESENCE.md §4.)
 //
@@ -352,8 +354,7 @@ function connect(opts) {
       if (timer) { clearT(timer); timer = null; }
       if (controller) { try { controller.abort(); } catch (e) { /* gone */ } }
     },
-    // For tests and for the Jobs row: how far the backoff has walked.
-    // retryMs() STOOD HERE — a getter on the handle with no caller in
+    // retryMs() STOOD HERE (how far the backoff had walked) — a getter on the handle with no caller in
     // run/ or test/. A surface member nobody reads is a promise made to
     // nobody, and it is still a promise: the next person to touch the
     // backoff has to wonder who is watching it.
@@ -365,7 +366,8 @@ function connect(opts) {
 //   Andy: "that should be made true for the sseClient and peerPost
 //   interfaces."
 //
-// This exported five things. `connect` had one caller in run/; the other
+// This exported five things. `connect` is the one run/ calls (presenceNode.js,
+// and peerPost.js's answer stream); the other
 // four — parseChunk, FIRST_RETRY_MS, MAX_RETRY_MS, IDLE_MS — had ZERO, and
 // existed because presenceNode.js's suite read them. That is peerSearch's
 // `internal` bag in different clothes: a module widening its surface for a

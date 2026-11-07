@@ -5,7 +5,7 @@
 // ./rowElement.md). The browser file runs in node on a window of its own, over the shared rowElement.js and the
 // faceless layer it reads, with the contact family's data.js (goal/G41.28) loaded as a page's
 // spirit.cacheManager('contact') loads it, the page's node known as spirit.start makes it known (spirit.node.key, then
-// data.home); the node behind spirit.ready is a recorder.
+// data.homeNode); the node behind spirit.ready is a recorder.
 
 const fs = require('fs');
 const path = require('path');
@@ -183,8 +183,8 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
 
   // ── WHAT THE STREAM MEANS FOR CONTACTS, IN THE TYPE'S OWN ELEMENT (goal/G41.16; Andy: "get rid of thos FUCKING data.js
   // scripts, DIDN't WE INSIST on the PROPER way to do this shit?"). The contacts' translation, spirit/element/search/contact/data.js
-  // until now, is the row element's (G30.18: "rowElements carry the listeners and painters a subject needs for real-time
-  // updates"): loaded with it, no data script required.
+  // until then, was the row element's (G30.18: "rowElements carry the listeners and painters a subject needs for real-time
+  // updates"), and is since goal/G41.28 the contact family's cache manager's, which the row element loads: no data script required.
   test.subHeading('the type\'s own element takes the contacts\' stream: no data script');
   if (!required.some(function (p) { return /data\.js$/.test(p); })) test.check('the contact row element requires no data script');
   else test.fail('the contact row element still requires ' + required.filter(function (p) { return /data\.js$/.test(p); }).join(', '));

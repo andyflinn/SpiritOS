@@ -12,8 +12,15 @@
 //
 // Two pure pieces, no I/O, so each is driven by a test and not by a lab:
 //
-//   nameOf(host, faceDomain)        which name a visitor asked for
+//   nameOf(host, faceDomain)        which name a visitor asked for (relay.js)
+//   faceLabel(name)                 one face name by the host parser's rule (relay.js)
 //   createRouteCache(opts)          the puppet's memory of the owner's answers
+//
+// The appFaceApp that held the route cache went with goal/G30.1; nameOf and faceLabel are the relay's now, and
+// createRouteCache has no caller but spirit/test/faceRouteSuite.js.
+// DISCREPANCY WITH ANDY's RULES: Andy, 2026-10-12 (goal/G19.10, quoted below): "there shall be no test helpers inside
+// node." createRouteCache (and routeSignatureHolds, routeMessage) stay in this node module with a test as their only
+// caller.
 //
 // NO TEST HELPERS IN THE NODE (goal/G19.10). Andy, 2026-10-12: "there shall
 // be no test helpers inside node." answerRoute (the owner signing a route)

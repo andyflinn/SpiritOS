@@ -16,6 +16,8 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 // The box: "word.js will have hardcoded intitialized set of keys", "(this may change)". When it does, so does this line.
+// It has changed and this line has not: word.js hard-codes spirit, api, app, contact, data, element, job, node, state,
+// search, stream and test (Andy's commit 85fb4db6 added stream); identity is no longer among them.
 const HARD = ['spirit', 'app', 'element', 'identity', 'job', 'data', 'search'];
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

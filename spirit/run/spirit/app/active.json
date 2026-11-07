@@ -1,4 +1,4 @@
 {
-  "description": "Sets whether an app in this node's app folder is active, in spirit/state/<key>/node.json. The owner's alone. A key that is no app is refused. It answers no rows: the node publishes them on its 'apps' job.",
+  "description": "Sets whether an app in this node's app folder is active, in spirit/state/<key>/node.json. The owner's alone. A key that is no app is refused 404; an intrinsic app (always active) and one that is only run (nothing to activate) are refused 409. The node starts or stops its server, if it has one. It answers no rows: the node publishes them on its 'apps' job.",
   "parameters": "key is the app's folder name, active true or false."
 }

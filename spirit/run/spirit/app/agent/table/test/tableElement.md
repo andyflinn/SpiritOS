@@ -34,9 +34,8 @@ the table)"*.
   - Given `columns`, the list shows those in place of icon and label (goal/G41.18: the model table shows its provider's
     icon and its model name). A table that hands none keeps icon and label.
   - A row picked opens `row(box, key, false, row)` in the detail pane.
-  - Add calls `<table> { op: 'add', icon }` through the agent's interface, the new row taking its table's icon. It then
-    opens the new row's editor, added. A refused Add says `Not added: <the server's reason>` and opens nothing.
-  - Given `add(open)`, Add calls that instead and asks the server nothing (the grant table's).
+  - Add asks the server nothing: it opens an editor in Add mode, with no row of its own (goal/G41.21, below).
+  - Given `add(open)`, Add calls that instead and asks the server nothing (no table hands one since the grant table went).
   - Given `add: false`, no Add is drawn; its buttons and title row are (goal/G41.18: the model table's, whose rows come
     from the providers).
   - Given `buttons`, `[{ label, press }]`, each is drawn on the Add line by its label, Add kept, its id

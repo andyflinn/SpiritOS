@@ -1,7 +1,9 @@
 > **OUT OF DATE since goal/G30.1 (2026-10-19).** `bash/face-install`, the appFaceApp process, appFaceAppServer and
 > grantFace are deleted. A name now lives on the relay's own members row (a node asks for it with `relay.face`), and
-> the relay is to serve the face pages itself, which is not built yet. This page is kept as a bone for that fold, for
-> its Caddy and certificate parts; the steps below no longer run.
+> the relay serves its members' faces itself (goal/G30.9): `bash/face-setup` writes the relay's face domain
+> (`spirit/state/face.json`) and the Caddy site for `*.<domain>`, a certificate fetched on demand once the relay
+> answers `GET /face/allowed` with 200. This page is kept as the record of the face node; the steps below no longer
+> run.
 
 # The face on spirit-3: `*.face.spirit.andyflinn.com`
 

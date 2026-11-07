@@ -6,6 +6,18 @@ the idea is, what holds it up in the tree, and what would have to be true
 first. Filed 2026-09-22 on Andy's *"file it under 'considerations for early
 products'"*.
 
+> **Status 2026-11-07 (goal/G43.23):** parts of what this calls *already there* are gone,
+> and one precondition is built. Gone: the agents program (`process/js/agents`, ef85bc1f; Andy,
+> goal/G3: *"the agents APP is no longer permitted in this REPO"*), the proxy list and gate
+> (goal/G29.20, see `design/proxy/THE-PROXY.md`), `install.js` (goal/G16.8: a relay's owner is
+> written at install by `bash/install-units`), partner relays (goal/G22.6) and the phone device
+> (goal/G16.2). Built: §3's end-to-end sealing (cycle 10,
+> `design/cycles/2026-09-23-sealed-posts-cycle-10.md`; the relay cannot read a post,
+> `design/relay/PROVING-IT-CANNOT-READ.md`), and §5 step 3's any-language hello-world is
+> `design/protocol/examples/`. Joining a relay by email is the node verb `relay.join`
+> (goal/G40.10). The `spirit/run/js/` citations are at `78998f8`; that tree is
+> `spirit/run/spirit/` since goal/G40.2.
+
 ## 1. A VS Code plugin for developers far apart
 
 > **Andy, 2026-09-22:** *"woul this be attractive as a vscode plugin for node

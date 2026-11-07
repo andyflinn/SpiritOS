@@ -59,8 +59,9 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     await refusedCase('a process this node does not include', mark('notIncluded'), { command: process.execPath, args: ['process/js/zzNotIncluded/zzNotIncluded.js'] });
 
     test.subHeading('what this node may start still starts');
-    // A fix that closes these closes the node: the review's own wording names <name>/<name>.js; desk.js:2589 and
-    // deskClient.js:535 start a helper beside it the same way, by this node's executable and its whole path.
+    // A fix that closes these closes the node: the review's own wording names <name>/<name>.js; the desk starts a helper
+    // beside it the same way (goalShare.js, desk.js:2624), by this node's executable and its whole path. deskClient
+    // starts no helper any more; the check's text below still names its old line.
     plant('process/js/zzIncluded/zzIncluded.js', mark('included'));
     fs.writeFileSync(path.join(run, 'process/js/zzIncluded/zzIncluded.json'), JSON.stringify({ label: 'zz' }));
     const state = path.join(run, 'relay-state', 'process', 'zzIncluded');
@@ -70,7 +71,8 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     await sleep(WAIT_MS);
     ok(inc.status === 201 && fs.existsSync(mark('included')), 'an included process/js/<name>/<name>.js starts', 'an included process: answered ' + inc.status + ' ' + short(inc.text) + ', ran ' + fs.existsSync(mark('included')));
     const helper = plant('process/js/desk/zzHelper.js', mark('helper'));
-    // THE FILE VIEWER'S START JOB SENDS PLAIN node (spirit/element/textViewer.js:55): it names this node's own executable.
+    // A PAGE SENDS PLAIN node (the app detail's run, spirit/app/appSelector/detailElement.js:68; the file viewer that sent it
+    // too, spirit/element/textViewer.js, is deleted): jobs.js reads it as this node's own executable.
     const plainNode = await call({ command: 'node', args: ['process/js/zzIncluded/zzIncluded.js'] });
     ok(plainNode.status >= 200 && plainNode.status < 300, 'plain node with an included process starts, as Start Job sends it', 'node with an included process answered ' + plainNode.status + ' ' + String(plainNode.text || '').slice(0, 160));
     const help = await call({ command: process.execPath, args: [helper] });
@@ -108,7 +110,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
       const a = await door('jobs.create', { command: process.execPath, args: ['process/js/' + name + '/' + name + '.js'] });
       return a.status === 201 && a.body && a.body.id ? a.body.id : '';
     };
-    // A process job that completes deletes itself (jobs.js:119), so each here ends with an exit code of its own and stays to be read.
+    // A process job that completes deletes itself (jobs.js:120), so each here ends with an exit code of its own and stays to be read.
     const PUBLISH = 'const u = process.env.SPIRIT_CALLBACK_URL, id = process.env.SPIRIT_JOB_ID;'
       + 'fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ call: "events.publish", args: { id: id, logMessage: "zzPublishedLine" } }) })';
     noisy('zzNoisy', 'console.log("zzOutLine"); console.error("zzErrLine"); process.stdout.write("zzRawOut\\n"); process.stderr.write("zzRawErr\\n");'

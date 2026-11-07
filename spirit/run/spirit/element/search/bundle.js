@@ -2,11 +2,11 @@
 // ONE SHELL ELEMENT: the bundle selector, the bundle picker apps build their screens with (goal/G41.14; Andy, box:
 // "bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and selecting
 // bundle rows", "these shell elements must follow the design pattern of the contactSelector"). Its contract and its
-// test: ./test/bundleSelector.md and ./test/bundleSelector.js.
+// test: ./test/bundle.md and ./test/bundle.js.
 //
 // A THIN SELECTOR OVER ITS OWN LIST, spirit/element/search/bundle/listElement.js, WHICH IT LOADS ITSELF (rule/26: "every
 // shell element loads its own elements dynamically through the fucking apirit.require functionality"). The list draws
-// the node's bundles (auth.bundle search) and each row (bundleSelector/rowElement.js).
+// the node's bundles (auth.bundle search) and each row (bundle/rowElement.js).
 //
 //   spirit.element.search.bundle.create(container, options) -> root
 //     root.value   the chosen bundle's id, a number, '' while none is

@@ -1,5 +1,13 @@
 # Grok reviews — through the node, on a budget Andy grants
 
+> **Status 2026-11-07 (goal/G43.23):** the program this page describes is gone.
+> goal/G29.20 (62c1371e) deleted `process/js/grokReview/`, its test `spirit/test/grokReview.js`,
+> `js/envSecrets.js` and every `${ENV:NAME}` key fill, so the node no longer holds or fills
+> any key, and the allowlist app below will not be built (`design/proxy/THE-PROXY.md`).
+> `agents.js` went at ef85bc1f. What still holds is decided rule 1: a paid call to an outside AI
+> needs Andy's grant in words (`AGENT.md`, *Within a Go*). Rules 2 and 7, *How it is used* and
+> the *Open* items are the record of 2026-09-22.
+
 **What it is.** A review with Grok is agent work. Grok's findings go to the
 in-studio agent, who triages them and works out their consequences; Andy
 receives only the decisions, bundled, in plain English

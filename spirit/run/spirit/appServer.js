@@ -31,9 +31,9 @@ require('./spirit.js');
 //   Every error is {ok: false, code, error}, a code spiritErrors knows
 //   (D12: "our error-register should generate them"). So 'ok' can never be
 //   a verb name, and neither can 'api' (D13, D14).
-//   Nothing about the caller reaches a verb: the app knows no callers,
-//   only the node does (D4). Validation is here; authorization is the
-//   node's, and deferred (D9, D5).
+//   Validation is here; authorization is the node's (apiDoor.js, the
+//   gate of apiAuth/G1.2). Who asked reaches a verb as its second
+//   argument since apiAuth/G1.13, from the headers the node sets (below).
 //   The app never names its pipe. The node names it (appClient.pipePathFor)
 //   and hands it over as --pipe; serve() reads it (D15).
 
@@ -317,8 +317,8 @@ function shape(v) {
   return typeof v === 'string' ? "'" + v + "'" : String(v);
 }
 // PUBLISHING (desk/G2.3) is not here. It is shared by every spawned process, server or transient, so it lives in
-// spirit.core.jobs (kernel.js) with its size check, beside the job cycle (goal/G29.15); this file keeps only what
-// serving needs.
+// spirit.js (spirit.events.publish, spirit.jobs) with its size check, beside the job cycle (goal/G40.6); this file
+// keeps only what serving needs.
 
 // ── AGENTS: AN APP'S RULES FOR AGENTS, FROM A FILE (slim/G1.8) ────────
 //
@@ -329,7 +329,8 @@ function shape(v) {
 //   appServer", "there is a file-size-limit (MAX_PAYLOAD)".
 //
 // SINCE goal/G30.4 THERE IS NO AGENTS VERB: an app's AGENTS.md lives in its
-// family folder (<script>.family beside the script) and is read through the
+// family folder (process/js/<name>/family/, or ./api/ for an app of
+// spirit/app/, withAgents below) and is read through the
 // family's FS (FS.loadFile {path: "AGENTS.md"}), an edit being the next read.
 // (Andy, 2026-10-20: "cannot the agent simply use FS to retrieve the
 // AGENTS.md file of the verb.json files?")
@@ -425,6 +426,7 @@ const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
 // THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28; Andy, the box: "this way an appServer in client-mode can derive the
 // name of it's ./relay-state/<appServerName>/<server-public-key-in-base64url>.json"): the key as spirit.data names the node.
+// The folder is spirit/state/<appServerName>/ now (cacheDir), the name the key's, as he ruled.
 function cacheDir() { return path.join(RUN_ROOT, 'spirit', 'state', following.name); }
 function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '.json'); }
 // The sender's cache rules on this node, or null: none there, no cache. They are its family folder's
@@ -788,7 +790,8 @@ function withAgents(verbs, script) {
 
 // THE WHOLE OF AN APP SERVER'S START: verbs in, the node's pipe from argv.
 // Started by the node, it ends with the node (processes/G1.3).
-// opts: { fallback } as createAppServer takes it (apiAuth/G1.1: appFaceAppServer's pass-through).
+// opts: { fallback, codes, stream, publisher }: fallback as createAppServer takes it, codes as declareCodes, stream
+// and publisher as withStreamListener and withPublisher above.
 function serve(verbs, opts) {
   const argv = process.argv;
   const at = argv.indexOf('--pipe');

@@ -5,7 +5,7 @@
 // precisely the OLD way, the new family is called "app"", and "it provides a probabilitySearch, over the list of it's
 // "plugin" modules". Its contract and its test: ./test/app.md and ./test/app.js.
 //
-//   createApp({ rootDir, jobs }) -> { search(body), active(body) }
+//   createApp({ rootDir, jobs }) -> { search(body), active(body), label(body), icon(body) }
 //     search({ q })   the plugins the words fit, best first, as { key: the folder's name, label: the row as JSON }; no
 //                     words is every plugin. "it's minimum, no filters, just a search string."
 //     active({ key, active })  sets a plugin's active in spirit/state/<key>/node.json, publishes the rows, and the node starts or
@@ -21,7 +21,7 @@
 // WHO PAINTS, LISTENS (Andy, G41.32): the permanent job 'apps' holds every plugin's row, { apps: { key: row } }, published
 // whole as a plugin's file changes, so a connect's snapshot is the whole push a cache forgets for (spirit/data.js's forget).
 // The fs watcher hears the disk; nothing here watches it again. A face with no star keeps today's stream (goal/G41.33), so
-// it hears no such job: it asks again when a connect forgets (./app/appSelector/listElement.js).
+// it hears no such job: it asks again when a connect forgets (./app/appSelector/rowFormAppActive.js).
 
 const fs = require('fs');
 const path = require('path');
@@ -108,7 +108,8 @@ function createApp(opts) {
     return { ok: true, status: 200 };
   }
   // Andy: "on first activate, spirit/state/<name>/node.json should be initialized with the values from spirit/app/<name>/<name>.json",
-  // and Q7: "it just holds active (boolean), icon (glyph), label(string and shell (boolean)". What the node already chose stays.
+  // so a first activate writes active, label and icon (the shell field went with goal/G43.18, Q10). What the node already
+  // chose stays.
   function active(body) {
     const on = !!(body && body.active === true);
     const key = String((body && body.key) || '');

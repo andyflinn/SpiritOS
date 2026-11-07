@@ -5,17 +5,19 @@ no page, so it runs in node, where `require` answers the api.
 
 ## API
 
-- `data` is the tree: `type -> key -> value`.
-- `set(path, v)`, `merge(path, fields)` and `del(path)` write. A path is `'<node>/<family>/<branch>/<key>'` (goal/G41.28;
+- The tree is per family: `spirit.data.<family>.cache[node][branch][row] -> value` (goal/G43.7); the test reads it there.
+- `setPath(path, v)`, `mergePath(path, fields)` and `delPath(path)` write. A path is `'<node>/<family>/<branch>/<key>'` (goal/G41.28;
   Andy, the box: *"spirit.data.<server-public-key-in-base64url>.<api-family>...."*), node the serving node's key in
-  base64url (`nodeId(key)`), and a key may hold slashes. `at(node, family)` is a family's view: the same verbs, given
-  `'<branch>/<key>'`. The test writes and reads through one such view, its node a key holding a `+` and a `/`.
+  base64url (`nodeId(key)`), and a key may hold slashes. `viewAt(node, family)` is a family's view: `get`, `set`, `merge`,
+  `del`, `watch`, `rows`, `seat`, `ready`, `quietly` and `branch`, given `'<branch>/<key>'`. The test writes and reads
+  through one such view, its node a key holding a `+` and a `/`.
 - `get(path)` gives a value, or with a bare type the whole branch. `branch(type)` gives the branch; a missing one answers empty, for a read makes nothing (goal/G41.28).
 - `watch(path, fn)` returns its unwatch. `rows(type)` gives `[{ key, ...value }]`.
 - `seat(type, items)` merges a search answer's `{ key, label: json }` items.
-- `translate(t)` registers a type's translator. `take(job)` and `rename(d)` feed it by hand.
+- `addTranslator(t)` registers a type's translator. `takeJob(job)` and `takeRename(d)` feed it by hand.
 - `quietly(type, on)` and `ready(type, now?)` control a quiet fill.
-- `search({ text, branches, room })` gives `{ items: [{ key: <the row's whole path>, label, probability }], more }`.
+- `searchAll({ text, branches, room })` gives `{ items: [{ key: <the row's whole path>, label, probability }], more }`.
+- `forgetAll()`, `byteCap(n?)`, `allBranches()` and `branchAt(path)` are the cache's life, below.
 
 ## Requirements
 
@@ -34,16 +36,16 @@ no page, so it runs in node, where `require` answers the api.
 - **rows** gives one row per key, with the key added. It is a copy: changing a row does not change the tree.
 - **seat** merges each item whose label is a JSON object. A null item, an item with no key, or a label that is not a
   JSON object is skipped.
-- **translate**:
-  - `take(job)` calls each translator's `onJob(job, api)` for every job, data or none (the jobs family keeps them whole), never for `null`.
-  - `rename(d)` calls each translator's `onRename(d, api)`, and only when `d.key` is set.
+- **addTranslator**:
+  - `takeJob(job)` calls each translator's `onJob(job, api)` for every job, data or none (the jobs family keeps them whole), never for `null`.
+  - `takeRename(d)` calls each translator's `onRename(d, api)`, and only when `d.key` is set.
   - A translator that throws costs the others nothing. A non-object is not registered.
 - **quietly and ready**:
   - While `quietly(type, true)`, writes to that type land and tell nobody.
   - Other types still tell.
   - `ready(type, true)` sets the flag, ends the quiet, and tells the type's watchers once with `(type, undefined)`.
   - `ready(type)` reads the flag.
-- **search**:
+- **searchAll**:
   - Weighs every row of every branch, or of the branches named, against the text, and ranks the best first.
   - A row the text misses still comes back, with probability 0.
   - Without text, every row comes back with probability 0.
@@ -53,13 +55,13 @@ no page, so it runs in node, where `require` answers the api.
   - It writes nothing to the tree and tells no watcher.
 
 - **The cache's life** (goal/G41.3, Q2):
-  - `forget()` empties every branch and every ready flag, and tells each type's watchers once with `(type, undefined)`.
+  - `forgetAll()` empties every branch and every ready flag, and tells each type's watchers once with `(type, undefined)`.
   - On a page every snapshot is a connect: the cache forgets first, then takes the partner's whole push. A row a search
     seated is forgotten too.
   - On a page a translator registered late is handed every job as it now stands, each once, and every rename heard, so
     its branch is whole at once.
-  - In a process the cache has a byte cap (`cap()` reads it, `cap(n)` sets it). Past it the oldest writes go first,
-    each told as a delete, and a row written again is newest again. On a page `cap()` is `Infinity`: no cap (box v17).
+  - In a process the cache has a byte cap (`byteCap()` reads it, `byteCap(n)` sets it). Past it the oldest writes go first,
+    each told as a delete, and a row written again is newest again. On a page `byteCap()` is `Infinity`: no cap (box v17).
 
 ## What its test must try to break
 

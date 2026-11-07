@@ -2,6 +2,19 @@
 
 **Decided 2026-09-12 by Andy. Measured against `7734ecc`. Nothing removed yet.**
 
+**Status 2026-11-07 (goal/G43.23):** the decision holds and was carried
+out. App Builder, Type Designer, their doors and the suites below went at
+304f869a (2026-09-13). AI Chat and AI Manager no longer "stay": they left
+the repo at 68122539 (2026-09-26; Andy: *"AI manager and AI chat will be
+pushed to public repos outside of SpiritOS"*). `/api/proxy` no longer
+stays either: the outbound fetch is the `net.fetch` verb on the one door,
+with no env-secret fill and no allow list (goal/G29.20; Andy, 2026-10-18:
+*"remove all the env logic and allow-list crap from it at well"*,
+`spirit/run/spirit/server.js:515-519`). Manifests are no longer refused
+for every caller (goal/G30.21, see the note on 0003). The measurement
+below is the record as of `7734ecc`; its line links point at files that
+are gone or moved (`spirit/run/js/` is `spirit/run/spirit/` since G40.2).
+
 > all we ever will use for production code in the foreseeable future will
 > be done in vscode. i want to decide, officially, that this is not the
 > job of the basic SpiritOS system. It doesn't belong here right now.

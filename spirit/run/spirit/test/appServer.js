@@ -25,8 +25,8 @@ function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const tick = function (ms) { return new Promise(function (r) { setTimeout(r, ms || 20); }); };
 
-// The publisher's key, base64 as a node key is; the cache file names it in hex (box v15: cache-<sender key in hex>.json).
-// It holds a + and a /, as real keys do (goal/G41.28), so only base64url names its cache file and its branch.
+// The publisher's key, base64 as a node key is. It holds a + and a /, as real keys do (goal/G41.28), so only base64url
+// names its cache file and its branch (cacheFile below). PUBLISHER_HEX is left from the hex name of box v15; nothing reads it.
 const PUBLISHER = Buffer.from('KEY-DESK\xfb\xef\xbf\xfe', 'latin1').toString('base64');
 const PUBLISHER_HEX = Buffer.from(PUBLISHER, 'base64').toString('hex');
 const SELF = 'KEY-CLIENT';
@@ -34,7 +34,7 @@ const SELF = 'KEY-CLIENT';
 const FAMILIES = ['backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
 
 const TMP = CHILD ? String(process.argv[4]) : fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
-// A server name of the test's own, so its cache folder (relay-state/process/<name>/) is no real server's.
+// A server name of the test's own, so its cache folder (spirit/state/<name>/) is no real server's.
 const NAME = CHILD ? String(process.argv[5]) : 'streamProbe';
 let PIPE = path.join(TMP, NAME + '.sock');
 function post(verb, args, callerKey) {

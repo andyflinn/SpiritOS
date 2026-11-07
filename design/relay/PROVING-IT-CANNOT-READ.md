@@ -1,5 +1,13 @@
 # Proving the relay cannot read it, by trying to read it
 
+**Status 2026-11-07 (goal/G43.23): built.** `relay.debug` (owner only, reads
+and sets in one verb) and the monitor row that carries what the relay held
+(`held`, on the post's `monitorEvent('post', ...)` in relay.js) landed on
+2026-09-26 (4ead0ebd), and `spirit/test/relayCannotRead.js` is the proof
+(c5703903). "Nothing here is built" below is the record of the day it was
+approved. `cycle10Pending.js` is no longer in the tree. Line citations are
+pinned to the commit they were measured at.
+
 > **APPROVED by Andy on 2026-09-26. This is a SPECIFICATION, not a
 > proposal.** Every question it opened has been ruled. Nothing below is offered for decision except the one
 > section marked OPEN, which is empty.
@@ -23,13 +31,13 @@ Verified at `31826b7`. Nothing here is built.
 
 **The channel, the gate and the addressing already exist.**
 
-- `relay.js:4604` `monitorEvent(kind, from, to, extra)` is the one door
+- `relay.js:4604 @ c22712b` `monitorEvent(kind, from, to, extra)` is the one door
   events leave by.
-- `relay.js:4609-4611` refuses unless the caller is the OWNER and the
+- `relay.js:4609-4611 @ c22712b` refuses unless the caller is the OWNER and the
   owner is PRESENT — `auth.ownerName(allow)` then
   `presentNow.isPresent(ownerKey)`.
-- `relay.js:4626` sends the row to `ownerKey` and nobody else.
-- A post already reports ABOUT itself: `relay.js:2756` passes
+- `relay.js:4626 @ c22712b` sends the row to `ownerKey` and nobody else.
+- A post already reports ABOUT itself: `relay.js:2756 @ c22712b` passes
   `{ bytes: body.length, hash: innerHash, via: 'partner' }`.
 
 **So the only thing missing is the payload itself.** Today the row says
@@ -41,7 +49,7 @@ it also carries what the relay actually holds.
 Andy asked whether the owner node needs a DEBUG of its own to catch the
 proof packet. **No.** The owner node is already the subscriber: the row
 goes to it over the held connection it already keeps
-(`relay.js:4626`). A suite subscribes as the owner and reads the rows.
+(`relay.js:4626 @ c22712b`). A suite subscribes as the owner and reads the rows.
 
 ---
 
@@ -146,14 +154,14 @@ The original worry was that a relay shipping payloads to its owner hands
 over other members' traffic. It does, and the ruling accepts it on the
 grounds that WHAT IT HANDS OVER IS CIPHERTEXT, on a stream the owner
 already receives, gated to the owner and only while present
-(`relay.js:4609-4611`).
+(`relay.js:4609-4611 @ e20770e`).
 
 **SO THE SAFEGUARD IS NOT A REFUSAL. IT IS AN ASSERTION** — see 3, which
 is now the only thing standing between this switch and a plaintext leak.
 
 **2b. AND "IT ONLY CARRIES CIPHERTEXT" IS FALSE AS WRITTEN.**
 
-`peerPost.js:725` — `nodeCard.asks(text) ? '' : sealKeyFor(toKey)` — and
+`peerPost.js:725 @ e20770e` — `nodeCard.asks(text) ? '' : sealKeyFor(toKey)` — and
 `:731`, `if (!nodeCard.asks(text) && sealsPosts)`. **CARD TRAFFIC IS NOT
 SEALED.** With DEBUG on, a relay would stream other members' card
 requests and replies to its owner in plain.
@@ -195,7 +203,7 @@ gate closed, and on a relay that never saw the post at all.
 
 ## WHAT THIS UNBLOCKS, AND WHAT IT NEVER BLOCKED
 
-Measured against `cycle10Pending.js:165-181`, and the second half is the
+Measured against `cycle10Pending.js:165-181 @ e20770e`, and the second half is the
 part worth acting on:
 
 | proof | this instrument |
@@ -207,7 +215,7 @@ part worth acting on:
 | cycle 10's R7 the agents seal like everybody else | **NOT NEEDED** |
 
 **cycle 10's R12 IS PROVABLE TODAY, WITH DEBUG OFF.** The monitor row already
-carries the relay's hash — `relay.js:2756`, `:2894`, `:4166`. A suite
+carries the relay's hash — `relay.js:2756 @ e20770e`, `:2894`, `:4166`. A suite
 subscribing as owner can compare it against its own hash of the
 plaintext now, against today's tree.
 
@@ -238,7 +246,7 @@ distinction he is drawing is not pedantry — a board that closes a
 requirement when an INSTRUMENT lands has recorded a proof that was never
 run.
 - **Which of the five sealed-post proofs this retires.**
-  `cycle10Pending.js:165-181` lists them with reasons; spiritos-37 reads
+  `cycle10Pending.js:165-181 @ c22712b` lists them with reasons; spiritos-37 reads
   four as reachable through this. Not yet checked here.
 
 ---

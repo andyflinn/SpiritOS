@@ -64,7 +64,7 @@ function statFile(filePath) {
 
 // ONLY CORE FILES ARE WRITE-PROTECTED (goal/G30.21). Andy: "only "core" files are write-protected, manifests are no
 // longer core", "any non-core file is fair game", and "the notion that we dictate to a user how to organize his file
-// is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (js/coreFiles.js,
+// is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (spirit/coreFiles.js,
 // the commit check's own rule), relay-state/ at any depth, a sidecar's own path, and the node's root-level files,
 // every one of them: no root-level file is writable (goal/G43.17, the last one it named gone).
 
@@ -101,7 +101,7 @@ function isShellState(canonical) {
   return parts.length >= 4 && parts[0] === 'relay-state' && parts[1] === 'shell' && !!parts[2] && parts.lastIndexOf('relay-state') === 0;
 }
 
-// A CORE FILE, by the one rule the commit check reads (js/coreFiles.js): spirit/run/spirit/, spirit/run/spirit/element/, the
+// A CORE FILE, by the one rule the commit check reads (spirit/coreFiles.js): spirit/run/spirit/, spirit/run/spirit/element/, the
 // shell's frame and an intrinsic app's folder, never a manifest. The repo root is two folders above the run folder.
 function isCoreFile(canonical) {
   return require('./coreFiles').isCore('spirit/run/' + canonical, path.resolve(ROOT_DIR, '..', '..'));
@@ -199,11 +199,11 @@ function fileServable(filePath) {
   if (UNSERVABLE_FILES.indexOf(canonical) !== -1) return false;
   if (UNSERVABLE_FOLDERS.some(function (f) { return canonical.indexOf(f) === 0; })) return false;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false;
-  // AT ANY DEPTH, not only the node's own: every app server keeps its
-  // identity at app-state/<name>/spirit/state/identity.json
-  // (faceServer.js:614), and a top-level-only check served that private
-  // key to any shell app and to the static route (wsl-claude found it,
-  // 2026-09-27; Andy's "go." on the fix).
+  // AT ANY DEPTH, not only the node's own: relay-state/ and spirit/state/
+  // (NODE_STATE) are refused wherever they sit, because a top-level-only
+  // check once served a nested identity's private key (faceServer's,
+  // gone with goal/G13.2) to any shell app and to the static route
+  // (wsl-claude found it, 2026-09-27; Andy's "go." on the fix).
   if (isOwnState(canonical) || isShellState(canonical) || isShellFolder(canonical)) return true;
   if (canonical.split('/').indexOf('relay-state') !== -1 || NODE_STATE.test(canonical)) return false;
   return true;
@@ -302,7 +302,7 @@ function writeBucket(bucket, filePath, payload) {
   }
   if (!stat || !stat.isFile()) return { ok: false, reason: 'file-not-found' };
   const sidecar = readSidecar(filePath);
-  // INTRINSIC IS NO NODE'S TO WRITE: the coded list says it (js/coreFiles.js), so it is never kept in a sidecar.
+  // INTRINSIC IS NO NODE'S TO WRITE: the coded list says it (spirit/coreFiles.js), so it is never kept in a sidecar.
   const part = Object.assign({}, payload || {});
   if (bucket === 'face') delete part.intrinsic;
   sidecar[bucket] = part;

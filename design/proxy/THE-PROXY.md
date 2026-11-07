@@ -4,7 +4,19 @@
 Andy's *"come on! ... that's the same trust i mentionned before."* The shell
 half is deferred.
 
-**Built:** `spirit/run/js/proxyList.js` — the owner's list in
+> **Status 2026-11-07 (goal/G43.23): the gate and the keys are gone.** goal/G29.20
+> (62c1371e) deleted the owner's list (`proxyList.js`, `spirit/state/proxy.json`, the
+> `proxy.*` verbs), every `${ENV:NAME}` key fill (`envSecrets.js`), `grokReview` and both
+> imageCaptionClaude processes (`aiChat` and `aiManager` had gone on 2026-09-26, 68122539). What holds today: `net.fetch` is one verb
+> (`handleGenericProxy`, `spirit/run/spirit/server.js:566`) that carries no keys and has no
+> gate, and it cannot reach this machine (`netFence.js`; Andy, 2026-10-18, reversing goal/G19.9:
+> *"fetch will not be able to reach ports on this machine, and agents may use it."*). It
+> imposes no wait and no size limit, as ruled below, and since goal/G16.6 it hands the outside
+> reply on as it arrives instead of buffering it (Andy: *"agreed. no number at all."*,
+> `server.js:546-560`). The sections below are the record of 2026-09-22; where they describe
+> the list, the keys or the intrinsic app that keeps them, they no longer hold.
+
+**Built, then deleted at goal/G29.20:** `spirit/run/js/proxyList.js` — the owner's list in
 `spirit/state/proxy.json`, written from the old code list on first use, read
 on every call, and a broken file closes the gate. `proxy.list`, `proxy.allow`,
 `proxy.remove`, `proxy.close`, `proxy.open` (server.js) are the only way to

@@ -1,5 +1,14 @@
 # The relay doorbell — one held connection per identity
 
+**Status 2026-11-07 (goal/G43.23): built, kept as the record of why.** The
+held connection is `GET /api/relay/stream`, signed, members only
+(SURFACE.md); presence rides it (PRESENCE.md) and so do posts (ROUTER.md,
+TRANSPORT.md). The 2-second inbox poll is gone (TRANSPORT.md, *What it
+retired*) and so is the relay's 200-message ring (3b1c468a, 2026-09-15,
+"a relay keeps nothing on anyone's behalf"). Relay Chat, whose poll
+motivated this, left on 2026-09-25 (f589d46d), and devices were removed at
+goal/G16.2 (391de42b). Claims about the tree below are as of `babf22b`.
+
 **Status: arc, not scheduled. Opened 2026-09-11 against `babf22b`.**
 
 Replacing polling between a relay client (a personal node, or a device browser)

@@ -21,14 +21,14 @@ opens. So the editor names no description and no api-branch selector.
   `new` at its start is gone.
 - Add (Andy: *"the [add-Button] refused an empty or invalid label"*):
   - an empty label, or one the label's rule refuses, asks nothing;
-  - a valid one asks `auth.bundle { op: 'add', label }`, the label as `fieldRules.normalize` writes it, the
-    a user making node-owned bundles alone;
+  - a valid one asks `auth.bundle { op: 'add', label }`, the label as `fieldRules.normalize` writes it, and no owner:
+    a user makes node-owned bundles alone;
   - **what it adds, it listens for** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to make sure when it
     changes shit it listens to fucking update via the spirit object"*): it watches `spirit.data.auth.data.bundles`; once the
     bundle it asked for is there, the input is emptied for the next and the add is said. Another bundle arriving
     leaves the label as it is. It asks its pane to search nothing again: the pane is a view of that branch;
   - refused, the node's words are said in the panel and the label stays in the input.
-- Below it, filling the space left (a `fill` box, shell.css): `bundleSelector.create(its box, …)` (the shell's element
+- Below it, filling the space left (a `fill` box, shell.css): the bundleSelector, `spirit.element.search.bundle.create(its box, …)` (the shell's element
   shape, goal/G41.19), a pane, columns `label` and `owner` (goal/G41.25: the owner *"right after the bundles label"*), its labels shown only (goal/G41.26: *"the Label should now just be an output"*; no `editable`). What a row does is the row element's
   (`spirit/element/search/bundle/rowElement.js`).
 - `destroy()` empties its box, lets its watch on `spirit.data.auth.data.bundles` go and lets its bundle pane go.

@@ -63,6 +63,8 @@ test.startTest('rowForm.js: the one-row form, in a bubble');
     const css = fs.existsSync(CSS) ? fs.readFileSync(CSS, 'utf8') : '';
     const rule = shared.map(function (k) { const r = new RegExp('\\.' + k.replace(/[-]/g, '\\-') + '\\s*\\{([^}]*)\\}'); const h = r.exec(css); return h ? h[1] : ''; }).filter(function (b) { return /currentColor/i.test(b) && /transparent/i.test(b); })[0];
     ok(!!rule, 'its bubble and the search bubble of probabilitySearch carry one class, shell.css drawing it', 'form ' + short(one.rootClass) + ', search bubble ' + short(m.searchBubbleClass) + ', shared ' + short(shared));
+    // SEARCH names spirit/element/probabilitySearch.js, gone since goal/G43.18 (the search is spirit/element/search.js): this
+    // check reads nothing and passes whatever the search writes.
     const ps = fs.existsSync(SEARCH) ? fs.readFileSync(SEARCH, 'utf8').replace(/\/\/.*$/gm, '') : '';
     ok(!/background\s*:\s*transparent/i.test(ps), 'and probabilitySearch keeps no copy of the bubble\'s style of its own', 'probabilitySearch.js still writes a transparent background');
 

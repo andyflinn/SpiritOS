@@ -1,8 +1,9 @@
-# shell/seal.js
+# spirit/shell/seal.js
 
-The node's seal, in the browser (goal/G30.11), moved from face/seal.js unchanged (goal/G41.3). X25519, HKDF-SHA256 and
-AES-256-GCM through WebCrypto, byte for byte the node's own seal (spirit/seal.js): what one seals the other opens. The
-boot requires it onto `spirit.seal` once the face links to its home node.
+The node's seal, in the browser (goal/G30.11), moved from face/seal.js unchanged (goal/G41.3), and into spirit/shell/
+with the page's other files (goal/G43.18), served at `/shell/seal.js`. X25519, HKDF-SHA256 and
+AES-256-GCM through WebCrypto, byte for byte the node's own seal (spirit/seal.js): what one seals the other opens.
+spirit.js's link requires it onto `spirit.seal` once the face links to its home node.
 
 ## API
 
@@ -14,7 +15,7 @@ boot requires it onto `spirit.seal` once the face links to its home node.
 
 ## Requirements
 
-- It lives at `shell/seal.js`; `face/seal.js` is gone.
+- It lives at `spirit/shell/seal.js`; `face/seal.js` is gone.
 - It loads on `spirit.seal`, and is also a module, so a test holds it against the node's seal.
 - What it seals to a node's key, the node's seal opens, to the same text; what the node's seal seals to its key, it
   opens.

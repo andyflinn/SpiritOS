@@ -136,14 +136,14 @@
   //
   // One line per move, added in the same commit as the move — a map that
   // lands afterwards lands after prune has already thrown the overrides
-  // away. Stats, Jobs, Apps and Processes moved (CLEANUP-PLAN steps 5.1
-  // to 5.4); Files and Groups keep their index.html ids until they
-  // follow.
+  // away.
   //
-  // Entries stay forever.
+  // SINCE goal/G43.17 NOTHING IS KEPT PAST THE PAGE (preferences, above):
+  // every load starts from empty defaults, so at load this map finds
+  // nothing to rewrite. Of the ids it names only shell/jobs is still an
+  // app (Stats and Apps were deleted).
   // DEPRECATED(D7, expires: alpha) — preferences naming apps by their old
   // bare ids, rewritten to app/… at load.
-  // See design/DEPRECATIONS.md (decision 0014).
   var APP_ID_RENAMES = {
     stats: 'shell/stats',
     jobs: 'shell/jobs',
@@ -363,10 +363,9 @@
     }
     // Name and icon stay as shipped, for the same reason a built-in's
     // name is locked: an intrinsic app is what this node IS, and a
-    // renamed Natter is a mailbox list nobody can be told to open. It
-    // also has to hold before the five in index.html move — their lock
-    // today is `!app._scriptPath`, which dies the moment they get one
-    // (CLEANUP-PLAN step 1, AGENT.md).
+    // renamed one is an app nobody can be told to open. A built-in's
+    // lock is `!app._scriptPath`, which dies the moment it gets a folder,
+    // so this one is keyed on the manifest's flag (CLEANUP-PLAN step 1).
     if (patch.name !== undefined && app && app.intrinsic) {
       return { ok: false, reason: 'intrinsic-app-name-locked' };
     }
@@ -678,8 +677,7 @@
 
   // THE ELEMENT FACTORIES STOOD HERE (createIconSelector and the three
   // selectors of apiAuth/G1.7-G1.9). They live in spirit/run/spirit/element/, one
-  // file per element (goal/G2.12, G2.14) — Andy: "the shell-elements are better of being in 'spirit/run/shell/js/'",
-  // "there will be many" —
+  // file per element (goal/G2.12, G2.14) — Andy: "there will be many" —
   // loaded by index.html before this file, and
   // handed to apps below as api.ui.elements, unchanged. A host that loaded
   // this file without it (a fixture booting the shell alone) hands apps no
@@ -1286,9 +1284,10 @@
         },
       },
 
-      // An unscoped read, deliberately: the Process Browser lists files
-      // under process/, the Files app walks the whole tree, and neither
-      // is doing anything api.fs (scoped to app/<name>/) can express.
+      // An unscoped read, deliberately: it was made for the Process
+      // Browser and the Files app, both gone, and no app calls it today;
+      // a read like theirs is nothing api.fs (scoped to the app's own
+      // folder) can express.
       // Not a wider capability than the page already had — it is the
       // same request the shell itself makes, and the server still
       // refuses anything fileServable() refuses (relay-state, the node
@@ -1864,8 +1863,8 @@
   // ---- Packets (api.sendMessagePacket / api.onPacket) ----
   //
   // One door for every app. An app says who and what; the envelope, the
-  // signature and the route are the node's business
-  // (ARCHITECTURAL-CONCERNS.md). Relay Chat is the only client today,
+  // signature and the route are the node's business. No app calls this
+  // door today (Relay Chat, its first client, is gone),
   // and the point of the door is that Chess is not a different kind of
   // thing when it arrives — it is another `app` string.
   //
@@ -2508,7 +2507,7 @@
   // A handful of short facts as ONE reading rather than a list of rows,
   // in a bubble of their own so they are visibly not the controls beside
   // them. Used wherever a row has already supplied the heading: a
-  // mailbox report in Natter, a contact's row, an app's defaults.
+  // contact's row, an app's defaults.
   //
   // Label above value, and the label is the small bold half — you scan
   // the captions to find the one you want and then read the value at
@@ -2613,15 +2612,13 @@
   // observed directly via the fs-watcher. manifest.id, if a manifest still
   // has one, is simply ignored.
   // `intrinsic` is the manifest saying this app is part of how the node
-  // works, not something the operator installed: Natter is where a
-  // personal node learns of any public relay at all, so a shell with no
-  // way to reach it is a shell that cannot be pointed at a mailbox. An
+  // works, not something the operator installed. An
   // intrinsic app is always reachable, in the Spirit group (see
   // effectiveGroup) — a manifest that asks to be both intrinsic and
   // hidden is asking for two contradictory things, and being reachable
-  // wins. Only a hand-edited manifest can set the flag; saveAppManifest
-  // refuses to write one (kernel.js), so no app and no builder can make
-  // itself unremovable.
+  // wins. saveAppManifest is gone (kernel.js, decision 0008): a manifest
+  // under shell/ is written through fs.save like any other file there,
+  // and the shell reads the flag from whatever the manifest says.
   function declareDynamicApp(manifest, scriptPath) {
     var id = 'shell/' + scriptPath.match(/^shell\/([^/]+)\//)[1];
     var existing = apps[id];
@@ -2696,16 +2693,15 @@
   // Discovery is otherwise snapshot-driven, which is fine for installed
   // apps — an app nobody can see for a second is a nuisance. It is not
   // fine for the apps that ARE the node: a watcher that never reports,
-  // or a jobs stream that never connects, would leave Spirit empty and
-  // Natter unreachable, so a node with a broken watcher could not be
-  // pointed at a mailbox at all. Andy's decision for CLEANUP-PLAN step 4:
+  // or a jobs stream that never connects, would leave Spirit empty.
+  // Andy's decision for CLEANUP-PLAN step 4:
   // eager manifest list at boot, entry scripts still lazy.
   //
   // Only the manifest decides. A folder listed here whose manifest is
   // missing, unreadable, or not intrinsic is left to ordinary discovery —
   // this list cannot promote an app, only hurry one that is already
-  // intrinsic. Each of the five adds its line here in the same commit as
-  // its move, alongside its APP_ID_RENAMES entry.
+  // intrinsic. stats, apps, contacts and icons name no folder under
+  // shell/ today, so they are passed over.
   // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
   // introSpector (goal/G30.5; Andy, 2026-10-20: "I want an intrinsic app: introSpector").
   // Files moved to spirit/app/file/ (goal/G43.17).

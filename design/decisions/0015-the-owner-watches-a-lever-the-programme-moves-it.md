@@ -2,6 +2,16 @@
 
 **Decided 2026-09-20 by Andy. Measured against `af74fcd`.**
 
+**Status 2026-11-07 (goal/G43.23): superseded in cycle 8.** Andy: *"relay
+will self-manage within fixed/constant limits. i agree."*, and on levers
+*"as design pattern relay-internally, they still make sense to me"*, with
+the lever-control APIs scrapped (`spirit/run/spirit/lever.js:7-21`). The
+Governor (`governor.js`), the lever verb and its test (`leverVerb.js`), the
+`set` mutator and `levers.json` are gone (11dcb1e0, 2026-09-22). What holds
+now: nothing moves a bound at runtime, neither the programme nor the owner;
+a gauge is described once at boot and only read, and the owner's monitor
+draws it. The decision below is the record.
+
 > ## Corrected 2026-09-20, hours after writing, and the correction is the point
 >
 > **This decision first recorded that cycle 4.1 built against a decided

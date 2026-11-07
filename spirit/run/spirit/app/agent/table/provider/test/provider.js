@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/table/provider/test/provider.js
 // The tests of spirit/app/agent/table/provider/, its server.js, elementTable.js and elementRow.js, and of no other module
 // (spec: ./provider.md; goal/G41.4, goal/G41.18). What the tables share is tested in ../../test/. The server is made on
-// a scratch agent.db as agent.js makes it, with the model table beside it for ask, and the provider ask reaches is a
+// a scratch agent.db as nodeAgent.js makes it, with the model table beside it for ask, and the provider ask reaches is a
 // stand-in on 127.0.0.1; the plugins themselves are tested in ../../../provider/. The page files run in node on a window
 // of their own, the shared elements stubs that keep what they were handed.
 

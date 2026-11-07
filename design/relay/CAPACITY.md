@@ -1,5 +1,18 @@
 # A relay governs itself by what it can observe
 
+**Status 2026-11-07 (goal/G43.23): superseded, kept as the record.** The
+self-measuring governor this proposes was built and then deleted in cycle 8
+(11dcb1e0, "the Governor deleted; the relay keeps fixed limits"): the
+connection allowance is fixed at boot from the owner's RAM, 16 streams a
+megabyte (relay.js `STREAMS_PER_MB`, `allowanceFor`), and decision 0016 is
+what holds on capacity. Partnering, which the conduit section below
+assumes, was withdrawn at goal/G22.6 (PARTNERS.md); `partnerLink.js` went in
+cycle 8 (c4054152). The finding that there is no rate limit on posting no
+longer holds: a member gets `MEMBER_PER_MIN` (600) posts a minute (relay.js,
+checked on the post). `routingTable.json`, the roll, is the `members` table
+in relay.db (relayStore.js; relay.js, the note where it stood). Line
+citations are pinned to the commit they were measured at.
+
 **First cut, 2026-09-17. Nothing here is built.** Every claim about the tree
 was checked at `97e973e`. This is written to be argued with: *decided*,
 *recommended* and *open* are kept apart, and the one measurement that
@@ -32,7 +45,7 @@ concern "moves from consent to abuse" and owes a rate story. Andy:
 
 Correct, and it makes the point sharper than it was. The node-side floor is
 already global rather than per-sender — `unknownBytes` is **one array
-summed across everybody** ([peerPost.js:143](../../spirit/run/js/peerPost.js#L143))
+summed across everybody** ([peerPost.js:143 @ 97e973e](../../spirit/run/spirit/peerPost.js))
 — so the ceiling on what strangers can make a node write **does not move
 when the stranger population grows**. Ten thousand partner-members share
 the same 64 KB/min that two do. Widening reach cannot touch that number.
@@ -49,8 +62,8 @@ Measured by reading, at `97e973e`.
 
 | guard | value | where | scope |
 |---|---|---|---|
-| claim attempts | 10/min per caller | `relay.js:769` | per relay |
-| device enrolment | 10/min per identity, **named in the refusal** | `relay.js:1189` | per relay |
+| claim attempts | 10/min per caller | `relay.js:769 @ 97e973e` | per relay |
+| device enrolment | 10/min per identity, **named in the refusal** | `relay.js:1189 @ 97e973e` | per relay |
 | payload size | `PAYLOAD_MAX` 16384 | `limits.js` | per packet |
 | unknown sender, requests | 6/min **per stranger** | `peerPost.js` | per node |
 | unknown sender, payload | 65536/min **across all strangers** | `peerPost.js` | per node |
@@ -84,7 +97,7 @@ applies **only to senders it has never heard of**. Between two acquainted
 peers there is no rate limit anywhere in the system.
 
 The "30 sends per minute per key" that reads like a live rule
-([relay.js:259](../../spirit/run/js/relay.js#L259)) is a comment about
+([relay.js:259 @ 97e973e](../../spirit/run/spirit/relay.js)) is a comment about
 `send`, the ring route R8 deleted. The reasoning in it is worth keeping —
 *"keying on the claimed name made the limit meaningless: 30 per minute per
 made-up string, and rotating the string resets the budget"* — but the limit
@@ -917,7 +930,7 @@ being a tuning constant and becomes a property of the protocol.
 > *"It is NAMED in the refusal — the one thing this route ever says
 > precisely — because it is temporary and a page that knows it is
 > rate-limited waits rather than gives up. Everything else gets `not now`."*
-> — [relay.js:83](../../spirit/run/js/relay.js#L83)
+> — [relay.js:83 @ 97e973e](../../spirit/run/spirit/relay.js)
 
 So a member holding a stale value self-corrects on refusal, and the stream
 is the fast path rather than the only path. **Nothing has to be reliable.**
@@ -1044,7 +1057,7 @@ true.
   that grows without bound turns every send into refuse-then-retry, which
   costs more than the announcement it saved.
 - **Partner streams carry "request and reply, and nothing else"**
-  (`partnerLink.js:106` — *the file and partner streams were deleted
+  (`partnerLink.js:106 @ c405415` — *the file and partner streams were deleted
   2026-09-22, R13; a partner's answer is the response to its post*),
   deliberately. A limits event widens that. Defensible — it is the relay's
   own state, not anything about its members, so the roster rule is untouched
@@ -1088,7 +1101,7 @@ document alone.
 
 **Today the whole roll is resident.** `loadRoutingTable` runs once at boot
 and `var peers = loaded.peers`
-([relay.js:283-284](../../spirit/run/js/relay.js#L283-L284)) holds every
+([relay.js:283-284 @ db2cf52](../../spirit/run/spirit/relay.js)) holds every
 member object for the life of the process — a thousand members is a thousand
 objects, whether anyone is connected or not. RAM is a function of
 **enrolment**, which only ever grows.
@@ -1125,7 +1138,7 @@ This is the connection worth seeing, because it makes the two jobs one:
 returns the membership forces the membership into memory. Remove the scans
 and the roll can go cold.
 
-Six scans exist today ([relay.js](../../spirit/run/js/relay.js), `listPeers()`),
+Six scans exist today ([relay.js](../../spirit/run/spirit/relay.js), `listPeers()`),
 and after [SURFACE.md](SURFACE.md) §10 the shape is:
 
 | scan | what it wants | after |

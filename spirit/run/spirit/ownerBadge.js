@@ -1,20 +1,17 @@
 'use strict';
 
-// The owner badge, and nothing more: for each URL in this node's relay list,
-// does a signed GET /api/relay/status come back 200 with a report?
-//
-// That is the whole definition (DICTIONARY.md, "Owner badge"; CYCLE-A.md).
-// The mailbox already answers "is this key the owner here?" every time the
-// owner asks for a roll, so the badge gets no endpoint of its own: a
-// second, cheaper "am I owner?" route would be a second authority on the
-// same fact, and the two would drift.
+// The owner badge, and the relay list's rules: for each URL in this node's
+// relay list, does the relay's card name this node's key as its owner
+// (probe, ownedBy, below)? The signed GET /api/relay/status that once was
+// the badge was deleted by R3 (see where statusPath stood); the card is
+// the one authority on that fact, so the badge gets no endpoint of its own.
 //
 // Nothing here opens a socket. The caller passes a request function — the
 // hub passes the one that speaks HTTPS, tests pass one that answers from a
 // relay object in the same process.
 
 // Isomorphic, the way kernel.js is: the rules are shared, the filesystem
-// and the signing are node-only. Natter runs in the browser and has to
+// and the signing are node-only. The relay panel runs in the browser and has to
 // obey the same "how few mailboxes may this node be left with" rule the
 // node side knows, and a rule copied into a second file is a rule that
 // will be changed in one of them. Nothing below this line requires
@@ -75,29 +72,10 @@ function isPublicRelay(url) {
   return target.protocol === 'https:';
 }
 
-// ── WHY THIS STABILISES THE SYSTEM, FOR NOW (Andy, 2026-09-15) ───────
-//
-//   Andy: "for now spirit.andyflinn.com should be un-deletable, with a
-//   comment why that stabilizes our system, for now."
-//
-// It already is, and no hostname is written down to make it so. There is
-// exactly one public relay in the world this node can reach; the lab row
-// is loopback http, which `isPublicRelay` refuses on both counts. So the
-// rule below — a row may go only if another PUBLIC row survives — makes
-// spirit-3 un-deletable as a consequence of what it is rather than of
-// what it is called.
-//
-// WHAT IT IS PROTECTING, today: that relay carries the owner identity
-// this node signs as, it is where every enrolment lives, the harness
-// points at it, and `on-spirit-3.visual.json` builds against it. A node
-// that dropped it from its list would keep its key and its seat and lose
-// every way of reaching either — recoverable only by retyping a URL from
-// memory. One click, and no way back through the screen that did it.
-//
-// AND WHEN IT LAPSES, which is the half a pin by name could not express:
-// add a second public relay and this rule lets spirit-3 go, because by
-// then a public path genuinely survives without it. That is the right
-// moment for the protection to end, and it ends by itself.
+// THE RELAY KEPT BY NAME IS noderoutes.net (goal/G16.3, KEPT_RELAY below),
+// not spirit.andyflinn.com: spirit is neither seeded nor protected since
+// goal/G19.15 (Andy: "spirit.andyflinn.com is OURS"). The rule below also
+// keeps one PUBLIC row: a row may go only if another public row survives.
 // WHY A RELAY MAY NOT COME OFF THE LIST, or '' when it may (goal/G30.7). rows are the list's rows; a row may say owned
 // (this node owns that relay) and claimed (this node holds a seat there). Andy, 2026-10-20: "Owning a relay or holding a
 // seat there should block it from being removed", with the sentences below.
@@ -124,7 +102,7 @@ function removalRefusal(relays, url) {
 // It was the Natter app's file: writable through fs by any shell app, so
 // an app decided where this node claims, connects and searches, and a
 // node whose Natter folder was emptied quietly pointed at Andy's relay
-// again. It lives in relay-state now, beside identity.json, where the fs
+// again. It is the node's own state now (in node.db, below), which the fs
 // write gate refuses every app and every page. The node is its only
 // writer: ensureRelays seeds it, a successful claim adds to it (addRelay)
 // and relay.remove takes from it (removeRelay).
@@ -152,11 +130,9 @@ function configuredUrls(rootDir) {
   return loadRelays(rootDir).map(function (r) { return r.url; });
 }
 
-// ── A NODE WITH NO LIST AT ALL GETS ONE, ONCE, AT BOOT ───────────────
+// ── A NODE WITH NO LIST AT ALL GETS ONE, AT BOOT ─────────────────────
 //
-//   Andy: "for node boot. if relays.json doesn't exist, initialize with
-//   spirit.andyflinn.com only (where we auto-initialize description as
-//   well)."
+// The seed is noderoutes.net, asserted at every boot (goal/G19.15, below).
 //
 // THIS IS THE OTHER HALF OF UNTRACKING IT. relays.json used to ship in
 // git with two relays in it, and that is why `git reset --hard` reverted
@@ -323,7 +299,9 @@ function summarize(rows) {
   };
 }
 
-// ONE REQUEST PER RELAY, and it is the public roll.
+// ONE REQUEST PER RELAY. (What follows down to the next heading is its
+// history: the public roll it then read went on 2026-09-18, and the
+// request is the relay's card now, below.)
 //
 // It was two: a signed `GET /api/relay/status` to decide `owned`, and
 // then `GET /api/relay/who` for `claimed` on every relay the first one
@@ -395,7 +373,7 @@ function probe(rootDir, request, myKey) {
           url: relay.url,
           label: relay.label,
           // `status > 0` is what tells "answered" from "unreachable"
-          // downstream (natter.natterCheckBinding), and it still does.
+          // downstream.
           status: Number(answer && answer.status) || 0,
           owned: ownedBy(said && said.ownerKey, myKey),
         };
@@ -430,8 +408,7 @@ function probe(rootDir, request, myKey) {
             ownerKey: (said && said.ownerKey) || '',
             relayKey: (said && said.relayPublicKey) || '',
             relayLabel: (said && said.relayLabel) || '',
-            // What this box calls this node. natterDetails draws it as
-            // the "You" row, and it is the same fact as `claimedLabel`
+            // What this box calls this node: the same fact as `claimedLabel`
             // below — two names for one thing, which step 2 collapses.
             myLabel: relayKeys ? relayKeys.seatLabel(rootDir, relay.url) : '',
           };
@@ -460,11 +437,11 @@ function probe(rootDir, request, myKey) {
   })).then(summarize);
 }
 
-// Which mailbox a mint goes to. `wanted` is the URL the human picked; it
-// is honoured only if it is one this node actually lists, so a page (or a
-// stale tab) cannot aim an owner-signed mint at a URL that is not in
-// Natter. With nothing wanted there is a default only when there is no
-// choice to make — never relays.json[0] out of habit.
+// Which listed relay a call is aimed at (hub.withChosenRelay, a claim with
+// no url named; the mint doors it was written for are gone). `wanted` is
+// the URL the human picked; it is honoured only if it is one this node
+// actually lists. With nothing wanted there is a default only when there
+// is no choice to make — never the first row out of habit.
 function chooseUrl(urls, wanted) {
   var w = normalizeUrl(wanted);
   if (w) {
@@ -481,8 +458,9 @@ function chooseUrl(urls, wanted) {
 }
 
 // The node side gets everything. The browser gets the rules it has to
-// obey and nothing that would need a filesystem — Natter reads
-// window.spirit.ownerBadge, and if this script never loaded it finds no
+// obey and nothing that would need a filesystem — the relay panel
+// (element/search/contact/relayPanel.js) reads window.spirit.ownerBadge,
+// and if this script never loaded it finds no
 // helper and draws no Remove at all, which is the safe way to be wrong.
 if (isNode) {
   module.exports = {

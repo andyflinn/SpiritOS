@@ -1,5 +1,11 @@
 # Review — opening message (template)
 
+> Status 2026-11-07 (goal/G43.23): the message as sent, pinned to commit
+> a83f219d; every path below is read at that commit. In today's tree
+> `spirit/run/js/` is `spirit/run/spirit/` (goal/G40.2), `GROK.md` is gone,
+> `partnerAvailability.js` and partnering are gone (goal/G22.6), and
+> `process/js/agents/agents.js` is gone (ef85bc1f).
+
 You are reviewing **SpiritOS** (https://github.com/andyflinn/SpiritOS) at
 commit **a83f219d4767df40c07338c0128f61d6a6c25e1d**, for the changes since **566fa4c**.
 

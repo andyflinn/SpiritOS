@@ -1,5 +1,5 @@
 // spirit/run/spirit/app/agent/table/model/elementRow.js
-// ONE MODEL ROW IN THE PAGE (goal/G41.4): its fields to maintain and edit, Save and Delete, drawn from the server's
+// ONE MODEL ROW IN THE PAGE (goal/G41.4): its fields to maintain and edit, each saved as it changes (no Save), and Delete, drawn from the server's
 // answer and its stream only (rule/19). Built on the tables' row element (../rowElement.js).
 //   spirit.elements.modelRow.create(container, api, id, added, detail) -> { destroy }   added: just made by Add; detail: the
 //   page's detail pane, whose look(table) gives the title row its icon and name

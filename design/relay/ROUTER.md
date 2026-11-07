@@ -1,5 +1,10 @@
 # The relay as a router — a peer drops a packet on a peer and gets a receipt
 
+**Status 2026-11-07 (goal/G43.23).** Still the design of the relay's post
+and reply. Since it was written: the device arc it mentions was removed at
+goal/G16.2 (391de42b), and since cycle 10 posts are sealed, so the relay
+carries what it cannot read (`spirit/test/relayCannotRead.js`).
+
 **Status: BUILT, and carrying every direction of traffic in the system.
 Verified against `d087375` (2026-09-12).**
 

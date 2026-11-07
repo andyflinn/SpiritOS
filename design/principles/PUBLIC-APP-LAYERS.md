@@ -7,6 +7,8 @@ yet are marked.
 
 The argument is in that document. This one is the picture.
 
+*Status 2026-11-07 (goal/G43.23): `app/` became `shell/` (slim/G1.1), so a shell app is `spirit/run/shell/<name>/`; the core files moved to `spirit/run/spirit/` (goal/G40.2), and line anchors below are at `4b51f33` unless re-checked. `device.html` and `relay.html` are gone (§1). §8's bind is superseded by goal/G16.8: no owner invite, no `install.js`, no `becomeOwner`; `bash/install-units` writes the owner's key into `spirit/state/owner.json` at install, and the owner claims his own box without an invite. The face machinery (faceServer, appFaceApp) went in goal/G13.2 and goal/G30.1, and a relay serves the face page itself (`relayServer.js`, `/face.html`). `join` today is a hidden shell app (`spirit/run/shell/join/`, goal/G30.1) that walks a node from joining a relay to opening its face, not the public app node drawn here.*
+
 **This is overall code and network architecture, not one operator's
 notes** — it sits under `principles/` for that reason. Nothing in it is
 specific to a person, a domain or a box: every name below is a role, and
@@ -18,7 +20,7 @@ the one worked example is marked as one.
 
 One sentence, and the tree already uses the words:
 *"an intrinsic app is what this node IS"*
-([shell.js:478](../../spirit/run/js/client/shell.js#L478)).
+([shell.js:365](../../spirit/run/spirit/client/shell.js#L365)).
 
 ```
 a node
@@ -37,7 +39,7 @@ only its one door and its members' stream.)*
 not one yet. `AGENT.md:72`: *"Target: every app will live at
 `app/<appName>/<appName>.js` plus sibling manifest. Today nine ids still
 live in `index.html`."* The design is shaped by the unification and does
-not require that move.
+not require that move. *(That line of AGENT.md is gone; apps live at `spirit/run/shell/<name>/`, and the new namespace at `spirit/run/spirit/app/<name>/`.)*
 
 ---
 
@@ -74,7 +76,7 @@ takes, plus what its own app does.
 
 **The dialog rule travels with the dialogs.** One result slot, *"a dialog
 can only return"*
-([shell.js:1289](../../spirit/run/js/client/shell.js#L1289)). Moving the
+([shell.js:1096](../../spirit/run/spirit/client/shell.js#L1096)). Moving the
 painting alone would leave the rule behind with no shell to enforce it;
 in the optional layer, taking the dialogs takes the rule.
 
@@ -102,7 +104,7 @@ the one whose job is to fan out to others.
 contract — entry point, sibling manifest, which of `api.*` is available —
 and fixes nothing below it. `app/<name>/` is already both code and data:
 *"Writable roots for saveFile/deleteFile — `app/` (per-app data)…"*
-([kernel.js:171](../../spirit/run/js/kernel.js#L171)).
+([kernel.js:171](../../spirit/run/spirit/kernel.js#L171)).
 
 ---
 
@@ -167,7 +169,7 @@ of them in one evening.
 
 **And one latent defect from the same root.** The defaults assume *"an
 environment where relay is the only server (safety overhead)"* and say so
-twice ([relayLimits.js:8](../../spirit/run/js/relayLimits.js#L8), `:25`).
+([relayLimits.js:9](../../spirit/run/spirit/relayLimits.js#L9); twice at `4b51f33`).
 That stopped being true when `lab-install` made a second unit possible.
 
 ```
@@ -204,8 +206,8 @@ configured.
    the path itself is allowed"
 ```
 
-[kernel.js:758](../../spirit/run/js/kernel.js#L758),
-[server.js:432](../../spirit/run/js/server.js#L432), and the quotation is
+[kernel.js:758](../../spirit/run/spirit/kernel.js#L758),
+[server.js:432](../../spirit/run/spirit/server.js#L432), and the quotation is
 kernel.js's own at `:240`.
 
 So the server enforces *inside `app/`*, **not** *inside
@@ -244,6 +246,8 @@ never for being correct.
 
 ## 8. The bind — forced, not chosen
 
+*Superseded by goal/G16.8 (steps 2–3): the owner is written at install from `OWNER_KEY`, never minted an invite; record only.*
+
 ```
   1  owner node    exists, has an identity          ← it is the claimant
   2  relay         installed, UNCLAIMED             ← install.js mints the
@@ -257,10 +261,10 @@ never for being correct.
                    and binds                            before 3
 ```
 
-[relay.js:1586](../../spirit/run/js/relay.js#L1586),
-[:1575](../../spirit/run/js/relay.js#L1575),
-[:1763](../../spirit/run/js/relay.js#L1763),
-[:1050](../../spirit/run/js/relay.js#L1050).
+[relay.js:1586](../../spirit/run/spirit/relay.js#L1586),
+[:1575](../../spirit/run/spirit/relay.js#L1575),
+[:1763](../../spirit/run/spirit/relay.js#L1763),
+[:1050](../../spirit/run/spirit/relay.js#L1050).
 
 **Installed together; cannot be initialised together.** 1–3 are a human
 with SSH. **A public app server that boots before step 3 waits — it does

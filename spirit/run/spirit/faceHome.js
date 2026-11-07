@@ -3,11 +3,12 @@
 // spirit/run/spirit/faceHome.js
 // THE HOME NODE ANSWERS ITS FACE (goal/G30.13, step 2 of goal/G30.10). The box, Andy's:
 //   - The home node answers face requests through the same door a puppeteer uses on it: the local shell's whole
-//     interface, minus the email and face changes with the relay. Only the face and its connection are protected.
+//     interface. (Since goal/G43.18 a face is whole or none: only the star, contact.own, is refused; below.)
 //   - It streams to the face what it streams to its loopback shell.
 //   - faceStream has its own serializing queue, in priority order: 1. face requests, 2. the fs-watcher stream, 3. the
-//     presence stream, 4. the app servers' streams, 5. stats, dropped whenever the queue is busy; 6. the node-monitor
-//     is not sent at all for now. Route updates go only to the home node, never to the face.
+//     presence stream, 4. the app servers' streams, 5. stats, dropped whenever the queue is busy. (The node-monitor
+//     this box held back is sent since goal/G41.33, which overruled it: every job and relay event, at 4.) Route
+//     updates go only to the home node, never to the face.
 //   - One event a line. An answer to a face request goes out on its own, at once. All other events are bundled:
 //     whatever is waiting goes out together in the next write, each still its own whole line. Nothing is merged, the
 //     fs-watcher's events are never dropped, and a face that falls behind catches up in one write.
@@ -307,8 +308,9 @@ function createFaceHome(opts) {
     }, function (e) { json(res, 500, { ok: false, code: 'handler-failed', error: String((e && e.message) || e) }); });
   }
 
-  // What the loopback shell gets, sorted into the box's priorities; anything else (the node-monitor among it) is not
-  // sent. An app server is a process/js module publishing an app object (puppetStream's test of the same thing).
+  // What the loopback shell gets, sorted into the box's priorities; anything else answers 0, and its callers send it at
+  // the app servers' priority (goal/G41.33: every job reaches a face). An app server is a process/js module publishing
+  // an app object (puppetStream's test of the same thing).
   function priorityOf(job) {
     if (!job) return 0;
     if (job.type === 'fs-watcher') return FACE_PRIORITY.fs;
@@ -372,8 +374,8 @@ function createFaceHome(opts) {
     }, { packets: 'none' });
   }
 
-  // The face opened: one long upload, and first what a loopback shell gets on connect, the tree as commands (server.js
-  // handleSseConnection), presence peer by peer, the app servers' objects.
+  // The face opened: one long upload, and first what a loopback shell gets on connect, the tree as commands (the events
+  // family's subscribe, events/events.js), presence peer by peer, then every other job.
   // k is the face's key from face-open: given, every line is sealed to it; absent, the face could not seal.
   function open(url, k) {
     close(url);

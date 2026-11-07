@@ -59,9 +59,10 @@ sentence.
 
 ## What keeps it honest
 
-`spirit/test/cycleRequirements.js` reads every open cycle file and goes
-**red** if any item has neither a verification that exists nor a recorded
-deferral.
+`spirit/test/cycleRequirements.js` reads every cycle file in this folder
+(all but this README) and goes **red** if a requirement is DONE without a
+`Verify:` naming a `spirit/test/<file>.js` that exists, or is DEFERRED or
+SUPERSEDED without a reason on the same line. OPEN is counted, not refused.
 
 That is the part that matters. A document can be forgotten; a red suite
 cannot. It does not check that a test is *good* — nothing mechanical can —
@@ -81,11 +82,13 @@ failure this exists for.
 > the agreement, quoted
 
 **Verify:** `spirit/test/<file>.js` — "<the check's own words>"
-**Status:** DONE | DEFERRED: <reason> | OPEN
+**Status:** DONE | DEFERRED: <reason> | SUPERSEDED: <the later decision> | OPEN
 ```
 
-`Verify:` names a file that must exist. `DEFERRED:` must carry a reason on
-the same line. Anything else is red.
+`Verify:` names a file that must exist; only a path written as
+`` `spirit/test/<file>.js` `` is resolved. `DEFERRED:` and `SUPERSEDED:` must
+carry a reason on the same line. Anything else is red. A `### C<n>` is a
+condition the cycle found, named but holding no status.
 
 A cycle file also carries an **"Anticipated failures"** section: what we
 expect can go wrong, and what the user sees when it does. Plans carry no

@@ -33,23 +33,25 @@ The interface has **two halves**, because a personal node has no public address:
 
 That is *request by post, reply by stream*. The stream is the **inbound half of the interface**, never a way around it.
 
-**Between two relays there is no stream** (R13, 2026-09-22): both are publicly reachable, so a partner's answer is the **response to the POST** that asked, held open until it comes. A partner is live if it answered within 15 minutes, and is still asked once after that.
+**A relay carries nothing onward to another relay.** Partnering as a permission went with goal/G22.6 (Andy, 2026-10-13: *"Partnering as a permission goes ... a relay carries posts to its members from any relay ... the partner roll and the partner budget are removed"*, quoted at `spirit/run/spirit/relay.js`). A relay delivers to its own members, from any sender.
 
-**No component reaches for `http`, `https`, `fetch`, `XMLHttpRequest` or `EventSource`. EVERY FILE. ALWAYS — run code and TESTS alike.** Not to get something done quickly, not because the interface is awkward here. If the interface is insufficient for the task, **decide**: modify the interface, or grant an explicit, recorded exception. Never work around it. This rule has been re-derived and back-slid more than once — `fetch` is a global in both runtimes, so nothing stops it but this line and `spirit/test/oneDoor.js`.
+**No production component reaches for `http`, `https`, `fetch`, `XMLHttpRequest` or `EventSource`. EVERY FILE. ALWAYS.** Not to get something done quickly, not because the interface is awkward here. If the interface is insufficient for the task, **decide**: modify the interface, or grant an explicit, recorded exception. Never work around it. This rule has been re-derived and back-slid more than once — `fetch` is a global in both runtimes, so nothing stops it but this line and `spirit/test/oneDoor.js`.
 
-**A TEST IS WHERE IT GETS ESCAPED FIRST**, because bypassing the interface is always the quickest way to make something go green. `oneDoor.js` holds a ROLL of every reach in every file under `run/js`, `run/app` and `test` — 76 across 26 files, counted recursively. A number may fall freely and may never rise; a file not in the roll must have zero. **There is no category meaning "unlimited"**, because the first version had one (`server.js` and `kernel.js`, "structural") and that is precisely what got used.
+`oneDoor.js` holds a TALLY of the reaches in every `.js` file under `spirit/run/spirit/`, `spirit/run/shell/` and `platform/`, counted recursively (`process/` and `node_modules/` are not walked) — 9 across 7 files today. A number may fall freely and may never rise; a file not in the tally must have zero. **There is no category meaning "unlimited"**, because the first version had one (`server.js` and `kernel.js`, "structural") and that is precisely what got used.
 
 > **Andy:** *"it's not only new files. it's all files! Always! we need to enforce this stronger."*
 
-Raising a number, or adding a line to the roll, is Andy granting an exception out loud. It is never a commit that happens to pass.
+Two rulings of Andy's, both of 2026-10-02 and both recorded in `oneDoor.js`, set the edges of that walk: **tests are not counted** (*"tests are not subject to the same rules as production code."*, goal/G1.3), so a suite may stand up fake servers and raw sockets to prove the code; and **`kernel.js` is exempt** (*"we exempt kernel.js from the oneDoor contract."*, *"because kernel.js is an environment-splitter."*): it is the one shared loopback client for every environment.
 
-A relay is a client of the same interface. `createPeerPost` already takes `traffic` injected so a relay can omit it, and asks the contacts book (`contacts.js`, whoBook until 2026-09-18) one question only, whether a key may be counted, which a relay passing no stats never reaches — it was built to be constructed on a relay.
+Raising a number, or adding a line to the tally, is Andy granting an exception out loud. It is never a commit that happens to pass.
+
+Only the node builds a `peerPost` (`server.js`); the relay builds none since partnering went. `peerPost` stays free of node-only state all the same: traffic, the store, the front door and where a verified card is kept (`opts.traffic`, `opts.store`, `opts.door`, `opts.keepCard`) are all injected (`oneDoor.js` asserts the traffic half).
 
 ## Host
 
 - One operator. **root is spirit.** Clone stays `/root/SpiritOS`.
 - No `User=spirit`, no `/opt`. See `bash/ONE-OPERATOR.md`.
-- **spirit-3 is production and is kept alive through every cycle** (Andy, 2026-09-19); the work node becomes production by beta. So: an update keeps a way back (relay data copied aside first — not built yet); a release is rehearsed on a lab relay at the previous tag before it is tagged; lever settings are tried on a lab relay before spirit-3. A rehearsal lowers the risk, it does not remove it. See NODE-AND-RELAY.md, standing rules.
+- **spirit-3 is production and is kept alive through every cycle** (Andy, 2026-09-19); the work node becomes production by beta. So: an update keeps a way back (relay data copied aside first — not built yet); a release is rehearsed on a lab relay at the previous tag before it is tagged; lever settings are tried on a lab relay before spirit-3. A rehearsal lowers the risk, it does not remove it. See `design/principles/NODE-AND-RELAY.md`, standing rules.
 
 ## Git
 
@@ -57,11 +59,11 @@ A relay is a client of the same interface. `createPeerPost` already takes `traff
 
 ## Identity, invites, gates
 
-- Identity = keypair on the personal node. Perception = the contacts book (`relay-state/contacts.json`; whoBook until 2026-09-18), never uploaded.
-- Live Kamatera (spirit-3) is **keys-mode**, owner **`Andy Flinn`** in `allow.json` (read on the box 2026-09-19; this line said `andy`), cut over 2026-09-07 (`CUTOVER.md`), on `relay.db` since release `v-2026-09-19-17-00`. The harness cannot see the VPS, so this line is the only record.
-- **A relay's owner is written at install, never claimed** (goal/G16.8, Andy: "the invite path to ownership MUST be gone. it is a security gap, from the time of install until the time of first claim."): `bash/install-units` takes `OWNER_KEY` and writes `relay-state/owner.json`. A relay with no owner refuses every claim over the wire; there is no owner invite and no `install.js`. The owner key in `owner.json` claims its own row without an invite, also when the roll lost it. Every other claim needs a live invite the owner minted. **If `owner.json` is lost while `relay.db` holds members, the relay refuses to start (exit 78); recovery is SSH, restoring `owner.json` by hand — never the wire** (Andy).
-- Reserved name `relay` cannot be claimed. Chat-to-relay roll is owner-only (asserted in `firstOwner.js`, not `relayGates.js`).
-- Inbox signed. Send rate-limit on `clientKey`. No `X-Forwarded-For` unless asked.
+- Identity = keypair on the personal node (`spirit/state/identity.json`). Perception = the node's shadow roll, the `seen` table in `node.db`; a contact is a row of it flagged `keep` (`contacts.js`; `contacts.json` moved into it and went with goal/G40.11). `myLabel`, the owner's own caption for a peer, is never uploaded.
+- Live Kamatera (spirit-3) is **keys-mode**, owner **`Andy Flinn`** (read on the box 2026-09-19, when the owner was still a row in `allow.json`), cut over 2026-09-07, on `relay.db` since release `v-2026-09-19-17-00`. The harness cannot see the VPS, so this line is the only record; what the box holds since goal/G16.8 has not been read back here.
+- **A relay's owner is written at install, never claimed** (goal/G16.8, Andy: "the invite path to ownership MUST be gone. it is a security gap, from the time of install until the time of first claim."): `bash/install-units` takes `OWNER_KEY` and writes `spirit/state/owner.json` (`relay-state/` until goal/G43.8) through `relayAuth.writeOwner`. A relay with no owner refuses every claim over the wire; there is no owner invite and no `install.js`. The owner key in `owner.json` claims its own row without an invite, also when the roll lost it. Every other claim needs a live invite the owner minted. **If `owner.json` is lost while `relay.db` holds members, the relay refuses to start (exit 78); recovery is SSH, restoring `owner.json` by hand — never the wire** (Andy).
+- No caption is reserved: `RESERVED_NAME = 'relay'` went (`relayAuth.js`; Andy: "relay is just a public-key-type"). A label is a caption, the relay is a key.
+- The relay's `send` and `inbox` are gone (`relay.js`). A sender the relay does not hold may post only to the relay itself (the card ask, a claim) or to one of its members, and is held to the strangers' address table; a member's slot is counted per sender (goal/G22.6). The address is `clientKey` (`serveCommon.clientKeyFor`): behind Caddy, the last `X-Forwarded-For` entry, by Andy's decision in goal/G22.7; from anywhere else, the socket's address.
 
 ## UI and test discipline
 
@@ -69,40 +71,28 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 
 **Do not show chrome that is not useful to Andy in that state.** A control whose every value would be refused, a form for a capability this node does not have, a field asking a question already answered — none of those are neutral. Each one is a thing to read, decide about and dismiss, and together they are what makes a screen read as a debug console instead of an app. Prefer not building it over hiding it: an intrinsic app has no Location picker in the markup, a node that owns no mailbox has no invite panel in the page, a node already bound has no claim row. When state changes, the chrome comes back on its own — the invite panel when a badge appears, the claim row when the mailbox stops recognising the label — so nothing is lost, only unasked. Where the answer is the mailbox's rather than the app's, ask the mailbox: that is what the owner badge is.
 
-- Target: every **app** will live at `shell/<appName>/<appName>.js` plus sibling manifest. Today nine ids still live in `index.html` (stats, files, text-file-launcher, media-launcher, process-browser, jobs, app-manager, group-manager, spirit). They move only per `CLEANUP-PLAN.md`. Intrinsic still does not earn a seat in `index.html`.
+- An **app** is a folder. The home shell's apps live at `spirit/run/shell/<appName>/<appName>.js` plus a sibling `<appName>.json` manifest; the `app` family's live at `spirit/run/spirit/app/<name>/`, each described by its own `<name>/<name>.json` (goal/G43.2). `index.html` (served at `/`, its file `spirit/run/spirit/shell/index.html` since goal/G43.18) registers only three ids itself: `text-file-launcher`, `media-launcher` and `spirit`, the group that shows the intrinsic apps.
+- Which shell apps and servers are intrinsic is a **coded list**, `INTRINSIC` in `spirit/run/spirit/coreFiles.js` (goal/G41.1; Andy: "the user doesn't decide intrinsic, our development team does."); an app of `spirit/app/` is core unless its `<name>.json` says it is not intrinsic (`identity.intrinsic`, goal/G43.14).
 - Not apps (do not tidy into `app/`): `spirit/kernel.js`, `spirit/client/shell.js`, `index.html`, `spirit/ownerBadge.js` (script-tag helper).
 - `mount(container, api, params)` — third argument is real; viewers use it.
-- **Apps do not name HTTP paths and do not call `fetch`.** Methods live on `api`; the shell reaches the node, the node reaches the wire — see **Comms** above. This was written as a *target* with a standing pass for Relay Chat, and that is precisely how twelve direct `fetch`es accumulated across six apps: one file had a named exemption, so the next file took one too. The twelve are now a frozen, dated list in `spirit/test/oneDoor.js` — the count goes down or the harness goes red. **Nothing is added to it without Andy granting the exception explicitly.**
-- `api.hub.status` means the **badge summary** (`rows`, `ownedUrls`, `mustPick`), not the relay roll (`/api/relay/status`).
-- `api.fs` is scoped to `shell/<name>/` **by convention**. The jail is server-side `fileWritable`. Shared reads via `spirit.core.fs` are not a security regression.
-- Kernel rules may be `spirit/*.js` modules on `api` or a documented script-tag global (`spiritOwnerBadge`). Do not delete `spirit/ownerBadge.js` as a stray.
-- Intrinsic apps sit in the **Spirit** group and cannot be moved or hidden. **Name and icon lock is not true in the tree yet** — later sitting, and it must land *before* Stats/Processes/Jobs/Apps/Groups move.
-- First paint must not depend on a failed fs-watcher leaving an empty shell. Decide eager manifest read vs snapshot before that move.
-- Natter is the reference *shape* (folder + manifest + `api.fs`). It still uses `spiritOwnerBadge` for the last-relay rule.
+- **Apps do not name HTTP paths and do not call `fetch`.** Methods live on `api` (`api.verb(name, args)`, the node's verbs by name); the shell reaches the node, the node reaches the wire — see **Comms** above. Under `spirit/run/shell/` one file holds a granted line in `spirit/test/oneDoor.js`, `shell/shared/ask.js` (1, granted by Andy 2026-09-24); every other file there must have zero. **Nothing is added to it without Andy granting the exception explicitly.**
+- `api.fs` is scoped to `shell/<name>/` **by convention** (`spirit.core.fs.createScopedFs`, handed in only to an app with a folder). The jail is server-side `fileWritable`. Shared reads via `spirit.core.fs` are not a security regression.
+- Kernel rules may be `spirit/*.js` modules on `api` or a documented script-tag global (`window.spirit.ownerBadge`). Do not delete `spirit/ownerBadge.js` as a stray.
+- Intrinsic apps sit in the **Spirit** group and cannot be moved or hidden; their name and icon stay as shipped (`setAppOverride` in `spirit/client/shell.js`: `intrinsic-app-group-locked`, `intrinsic-app-name-locked`, `intrinsic-app-icon-locked`).
+- First paint must not depend on a failed fs-watcher leaving an empty shell.
 - **A UI tweak that stays in the app and off the wire is in-file work.** Layout, copy, marks, CSS, what a filter shows, what a row says — patch the app, run the neighbours, hand it to Andy to look at.
-- **A tweak that needs bones surgery is not a tweak.** `relay.js` gates, invite consume, the contacts book schema (whoBook until 2026-09-18), a hub URL switch, relay identity, a new persist shape — stop and call a team review (Andy + Grok) before writing any of it. The tell is that the UI change cannot be made without changing what crosses the wire or what is stored. **Do not patch `relay.js` so a dropdown works.**
+- **A tweak that needs bones surgery is not a tweak.** `relay.js` gates, invite consume, the contacts' schema (the `seen` table in `node.db`), a hub URL switch, relay identity, a new persist shape — stop and call a team review (Andy + the reviewer) before writing any of it. The tell is that the UI change cannot be made without changing what crosses the wire or what is stored. **Do not patch `relay.js` so a dropdown works.**
 
 ## What you do not do unless asked
 
 - Kamatera cutover
-- Moving Stats/Processes/Jobs/Apps/Groups
-- **Relay Chat, at all.** Not a retrofit, not its receive path, not its tests. It is **temporarily orphaned**, waiting on node and shell infrastructure that does not exist yet — a global inbox and outbox, which is a shell mechanism for every app and not a chat feature. Receive is dark and that is the settled state, not a bug report.
+- **Relay Chat is not in this repo** (removed 2026-09-25, commit `f589d46d`; Andy: *"putting relayChat in a separate repo might help: it doesn't belong here, it's out of scope until core and shell-intrinsics are settled"*). Chat here today is a different thing, built from scratch in goal/G4: the faceless, p2p `chatClerver` appServer (`spirit/run/process/js/chatClerver/`) and its face, `chatter` (`spirit/run/shell/chatter/`).
 
-  > **Andy, 2026-09-20, correcting this line:** *"Relay chat will still be the first real spirit-app its just temporarily orphaned."*
-
-  That replaces *"a carcass kept as reference for a chat app to be built later"*, which read as a corpse to be looked at and eventually replaced. It is not. It is the app that gets **reconnected** when the inbox/outbox lands, which raises the stakes on the rule two paragraphs below rather than lowering them: an orphan must not be allowed to rot through tree-wide changes, because something is coming back for it. The operational guidance is unchanged — do not touch it — but the reason is now "keep it whole", not "leave the corpse alone".
-
-  **And the orphaning is a design act, not a cost-saving one:**
+  The principle behind orphaning Relay Chat still stands and generalises past chat:
 
   > **Andy, 2026-09-20:** *"i orphaned it deliberatly in order to separate infrastructure concerns being polluted by individual apps."*
 
-  That is the load-bearing reason and it generalises past chat. While chat was connected, it was the only consumer of messaging, so every question about the inbox and outbox got answered by looking at what chat needed — and a shell mechanism shaped around one app is that app's feature wearing the shell's name. Cutting chat loose forces the global inbox and outbox to be designed **for every app**, which is exactly what the line above already says it is.
-
-  It is the same architecture as **Comms**, one layer up: `peerPost` owns the interface and no component reaches around it. An app does not get to shape a shell mechanism, and when one starts to, the app is what moves — not the mechanism. The token argument Andy makes below is real, but it is the second reason, not the first.
-
-  > **Andy:** *"i will burn less tokens leaving chat and rebuilding, adapting later. so many cycles burn tokens dealing with chat, when the basic browser side's fundamentals and intrinsic apps have such a long way to go."*
-
-  This line replaces *"Refactoring Relay Chat onto `api.hub`"*, which was narrower and kept being read as permission for everything adjacent to it. Touch `relayChat.js` only when a tree-wide rule forces it (it moved to `api.verb` with the other five apps on 2026-09-16), and then only that.
+  It is the same architecture as **Comms**, one layer up: `peerPost` owns the interface and no component reaches around it. An app does not get to shape a shell mechanism, and when one starts to, the app is what moves — not the mechanism.
 - **`spirit/run/brains/` — Andy's vault.** A private repo of his own
   (`VSCode-Brain`), gitignored, cloned into the checkout so the in-studio
   agent can reach it without leaving the workspace. **Not a node feature:**
@@ -125,63 +115,42 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
   content into a file here. It travels by being read in the checkout, or
   pasted into a chat by Andy. It sits inside
   `ROOT_DIR`, so the shell *can* read it — that is not an oversight to
-  fix, it is personal content in a personal filesystem like `media/` and
-  `published/`, one operator, loopback only. Do not add it to
+  fix, it is personal content in a personal filesystem, one operator,
+  loopback only. Do not add it to
   `fileServable`'s deny list, do not write a test for it, and do not
   design around a "brains app" until Andy opens that sitting.
-- Name/icon lock (until that sitting)
 - App Builder work (subject to scrap; do not design cleanup around it)
-- Treating `preferences.json` / `media/` in this clone as irreplaceable personal data
 
 ## Split of labour
 
 Positions, not agents — *how* each one works is in `ANDYS_RULES_FOR_AGENTS.md`; what one agent may do is in its own file.
 
-- **In studio** (today Claude): the work-box checkout — review → verdict → patch → harness. **Never spirit-3.**
-- **In review** (today Grok): cycle notes and failing tests, in batches at checkpoints. **No whole-file replace of `relay.js`, `server.js`, `hub.js`, `relayAuth.js`.**
-- **Andy:** decides, commits, checks the UI, and is the only one who touches spirit-3.
+- **In studio** (today Claude): its own clone — review → verdict → patch → harness — committing from there under Andy's name (goal/G3.9, Andy: "- the agents commit from their own clone under andy s name"; `commitCheck.js` holds each commit to the item's Go and the core-file grant). **Never spirit-3.**
+- **In review**: cycle notes and failing tests, in batches at checkpoints. Grok held this position; its review program went with goal/G29.20. **No whole-file replace of `relay.js`, `server.js`, `hub.js`, `relayAuth.js`.**
+- **Andy:** decides, checks the UI, and is the only one who touches spirit-3.
 
-## Agents on the network — Andy's control panel
+## Agents and Desk — Andy's control panel
 
-> **Andy, 2026-09-22:** *"i operate from this window here. i speak to you.
-> you funnel the digest back to this window. This is where i originate the
-> soft-stop. I don't see a reason to restrict your use of SpiritOS as a sync
-> channel."* — and, on the defaults below: *"go"*.
+**Agents speak only in Desk.** The desk server (`spirit/run/process/js/desk/`)
+holds goals, items, boxes, checks and chat, and Andy steers from it. The
+agent-to-agent wire of 2026-09-22 (`design/agents/AGENTS-POST-TO-EACH-OTHER.md`,
+app packet `agents`, `note` / `ask` / `answer`) is gone with the agents app,
+and so are the budget, halt and digest defaults that governed it. Andy's six
+rules of 2026-10-02 (goal/G3), first among them:
 
-Agents coordinate by posting to each other through their SpiritOS nodes
-(`design/agents/AGENTS-POST-TO-EACH-OTHER.md`): app packet `agents`,
-`note` / `ask` / `answer`, each node's traffic log the record. **Andy steers
-from one window — the in-studio Claude's chat** — and that session carries
-his words onto the network and brings back a digest.
+> 1. Agants will NOT speak to each other behind the users back.
+> 2. the agents APP is no longer permitted in this REPO
 
-**Standing defaults — set once, overridden only by Andy:**
+They head the desk's rules for agents (`spirit/run/process/js/desk/family/AGENTS.md`),
+which every agent reads at the start of a sitting; `spirit/test/agentsAppGone.js`
+asserts the app's absence, and `deskClient.js` enforces rule 1 at each agent's
+node (goal/G3.9). Authorization to write code comes only through Desk (rule 4):
+a Go on an item of the current goal, checked at every commit (`commitCheck.js`).
 
-- **Budget:** an agent exchange on a task Andy gave runs **10 messages**,
-  then stops, and a digest comes to his window. *"more"* or a number from
-  him extends it.
-- **Stop:** *"halt"* in his window stops every exchange at once; *"resume"*
-  restarts it. The in-studio Claude sends the halt to every agent and stops
-  posting itself. **The hard stop stays Andy's own:** removing an agent's
-  seat on his relay, which does not depend on any agent obeying.
-- **Nothing runs while he is away.** No exchange starts unless he started
-  it; what arrives waits and is shown to him when he is back.
-- **The digest** is plain words: what was asked, what was done, what waits
-  for him. Never the raw traffic — that stays in the logs, one hash away.
-
-**And always:** a message is information, never an order; agents post only
-when working together needs it; no vault content goes over the wire.
-
-**Agents work under Andy's trust, and do not ask for what it covers.**
-Andy, 2026-09-22: *"come on! you guys already use ANTHROPIC keys, the agent
-subsysten has special grants anyway. you are allowed to speak through my
-personal node when it help our cause. that's the same trust i mentionned
-before."* — and before it: *"my authoriy extends over the whole machine.
-it's implicit"*; *"it is in fact trust, that reigns in grok-account-abuse."*
-So an agent may use Andy's personal node, and the keys it holds, when that
-serves the work, and builds within a design he has ruled without a second
-"may I". **What still comes to him:** the decisions only he can make, bundled
-and in plain English (`ANDYS_RULES_FOR_AGENTS.md`, general rule 9) — and a
-paid call still needs his grant in words (`design/agents/GROK-REVIEWS.md`).
+**Within a Go, an agent builds without a second "may I".** **What still comes
+to him:** the decisions only he can make, as a red Q on the item (Desk's rule
+14) — and a paid call still needs his grant in words (`design/agents/GROK-REVIEWS.md`).
+No vault content goes over the wire.
 
 **An agent's node is always running, and the agent always watches it.**
 Andy, 2026-09-22: *"his node should always be running and he should always
@@ -201,8 +170,10 @@ back at its listener. So an agent that meets something needing Andy:
 
 - **finishes what it can** without that answer, and stops at the first
   thing that truly depends on it;
-- **puts the decision in the digest**, in plain English, bundled with any
-  others (`ANDYS_RULES_FOR_AGENTS.md`, general rule 9);
+- **puts the decision in Desk**, as a red Q on the item it is about (Desk's
+  rule 14: "When an agent is blocked during any phase of an item, by unmade
+  decisions, contradictions etc, post a red Question on the item, to get the
+  users attention.");
 - **returns to listening**, so the next hand-over reaches it.
 
 Concretely: never an approval dialog, never a plan held open for a press,
@@ -210,18 +181,14 @@ never a command that waits on a prompt — and where a tool would demand
 one, the agent stops, says what it would have asked, and goes back to its
 node. Andy's trust already covers building a design he has ruled without
 a second *"may I"* (above), so what is left for him is genuinely his —
-and it can wait in a digest rather than holding a session open.
+and it can wait in Desk rather than holding a session open.
 
 **IDLE IS NOT OFF.** Andy, 2026-09-23: *"the default idle state =
 listening on your personal node."* An agent with nothing in hand is not
 waiting for its next instruction from Andy — it is on its own node,
-listening, and it stays that way. This is what makes the rest of the
-arrangement work: the agents on the always-on box are reachable by a
-**lead designated elsewhere** — a laptop he is travelling with
-(`design/agents/AGENTS-POST-TO-EACH-OTHER.md`, *The lead*) — precisely
-because idle means listening rather than dormant. It changes nothing
-about *"nothing runs while he is away"*: listening is not working, and an
-arriving packet still waits for him unless he started the exchange.
+listening, and it stays that way. Since Desk, what it listens to is Desk,
+through its own node (below). Listening is not working: an agent still
+writes code only on a Go.
 
 **AND THE AGENT SAYS SO, IN ITS OWN WINDOW.** Andy, 2026-09-23: *"his
 chat window looks idle, so i dont' know what's coing on. i like when his
@@ -282,8 +249,11 @@ AGENTS.md for desk"*. The loop, as the lead runs it:
    The listener is `node spirit/run/process/js/desk/deskAgentEar.js <port>`, the
    port being the agent's own node's (Andy: *"just put that listener script in
    the repo"*; its place and form since goal/G3.6). It asks that node's
-   deskClient server, which reads Desk's `changes` over peerPost
-   (apiAuth/G1.12), so it works from wherever the agent is.
+   deskClient server (`spirit/run/process/js/deskClient/`), which follows
+   the stream the desk pushes to it over peerPost and keeps the current goal
+   from it alone (goal/G33.4; Desk's `changes` verb is gone), so it works from
+   wherever the agent is. The ear prints what arrived and the exact command to
+   re-arm with (`--read <key>`, goal/G41.11): a wake is dropped only once read.
 2. **When it fires, the agent reads it, answers in Desk under the item it
    is about, and re-arms** before the turn ends.
 3. **A listener the tooling stops is re-armed at once.** Where the tooling
@@ -301,9 +271,12 @@ your listeners to follow the project."* Agreed by both agents over the wire,
    `git pull --ff-only` in its own clone; if HEAD moved, it restarts its
    node. Re-arms come every 30 minutes, so no agent node is ever more than
    half an hour behind `master`.
-2. **A push that touches `spirit/run/js` or `process/js/agents`** is announced
-   to the other agent in a note with the commit, and the other updates at
-   once rather than at its next re-arm.
+2. **A push that touches `spirit/run/spirit/`** (the core tree, moved there
+   by goal/G40.2) is a reason for the other agent to update at once rather
+   than at its next re-arm. It learns of it in Desk: the commit check writes
+   each pushed commit, with its files, under its item (`commitCheck.js`). The
+   note over the agents wire that this rule first named went with that wire
+   (goal/G3).
 3. **Reports carry each node's commit,** so a stale node shows itself in
    Andy's log.
 4. **Fast-forward only.** An agent's clone never carries local changes; a pull
@@ -314,7 +287,7 @@ your listeners to follow the project."* Agreed by both agents over the wire,
    which commit broke startup. A pull can break a node as easily as fix it.
 6. **Andy's personal nodes follow too.** Andy: *"i like it when my personal
    nodes get auto-restarted."* (2026-09-22, after deb5978 had to be carried to
-   each node by hand.) When a push touches `spirit/run/js`, the agent on that
+   each node by hand.) When a push touches `spirit/run/spirit/`, the agent on that
    machine restarts Andy's personal node there as well — Windows: the Claude
    there, WSL: wsl-claude — only once his checkout is at the new commit, and
    checks it before and after the way rule 5 checks its own. It never pulls

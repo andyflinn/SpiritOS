@@ -5,7 +5,7 @@
 //
 //   spirit.elements.agent.create(container) -> { destroy() }
 //
-// AN ELEMENT, AS monitor.js IS (goal/G43.13): a tile hands it only its container. It keeps no state of its own: the tick
+// AN ELEMENT (goal/G43.13): it reads only its container, whatever options the appSelector's launch hands it. It keeps no state of its own: the tick
 // box that showed the server's DEBUG in the old shell's title went with that title (Andy: "yes, delete the tick box.").
 //
 // NO AGENTS TALK TO EACH OTHER THROUGH IT (goal/G41.1, Q1; the ruling of 2026-10-02, goal/G3.1, stands): each agent

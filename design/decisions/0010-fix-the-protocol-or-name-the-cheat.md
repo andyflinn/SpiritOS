@@ -206,12 +206,12 @@ door and `/api/version` closed, and the key and the claim are posts.
 **It applies to one thing: a new way of speaking on the wire.** In this
 tree that has exactly two shapes, and both are greppable:
 
-- a new `<verb>Message()` in `relayAuth.js`, `invites.js` or
-  `deviceAuth.js` — a new format of signed bytes
+- a new `<verb>Message()` in `relayAuth.js` or `invites.js` (`deviceAuth.js`
+  was the third until the device went, goal/G16.2) — a new format of signed bytes
 - a new `/api/relay/*` route — a new public door
 
-**It does not apply** to node-local work (`whoBook`, preferences, the
-traffic log), to anything in the browser (panels, layout, copy), or to
+**It does not apply** to node-local work (the contacts, `contacts.js`, once
+`whoBook`; the traffic log), to anything in the browser (panels, layout, copy), or to
 anything already expressible as a post. Most work is untouched by this.
 
 If you are adding either of those two things, you are extending the
@@ -364,8 +364,9 @@ already carries the key.
 arrives on a route rather than as a post — see the `cause` note in
 `relay.ownerEvent`.
 
-**`lever-set` is the owner's own act, and `closed` is why it is written
-down** (cycle 4.1, 2026-09-20). Every other row here records something
+**`lever-set` was the owner's own act, and `closed` was why it was written
+down** (cycle 4.1, 2026-09-20; deleted with the Governor, see the row above —
+this paragraph is its record). Every other row here records something
 that happened *to* the relay; this one records the owner reaching in. It
 is kept for the same reason as the rest — 0009, the record is the
 substrate — and because lowering an allowance below the present count
@@ -655,7 +656,8 @@ exist.
 - **`/api/relay/set-device` · `setDeviceMessage`** — deleted, with
   `handleSetDevice`. `relay.setDevice` became `installDevice(who, key)`,
   and `deviceTick` posts. The per-relay re-signing that format forced —
-  because it carried no recipient — went with it.
+  because it carried no recipient — went with it. (`installDevice` and
+  `deviceTick` went in turn with the device, goal/G16.2.)
 - **Whether a relay should be addressable by more than its owner** — YES,
   and it was one question of Andy's that settled it. See "Cheats, named"
   above; the answer emptied that list.
@@ -684,7 +686,7 @@ same cycle's neighbour.
    and drops it. Both signed formats went with the routes.
 
 The register is now the protocol, three granted exceptions, and
-history. There is no third category with anything in it.
+history. (Since goal/G22.6 one exception: the stream.) There is no third category with anything in it.
 
 Everything else on this relay is either the protocol, a granted
 exception, or gone.
@@ -710,7 +712,9 @@ So *What travels on the stream* is now a section above, and
 **What is still unregistered, named rather than left to be discovered
 again:**
 
-1. **The fields on a published response.** `/api/relay/who` answers
+1. **The fields on a published response.** (The census route named here
+   is gone since 2026-09-18, see "Cheats, named"; the gap stands for the
+   relay's card.) `/api/relay/who` answered
    `publicLabel`, `publicKey`, `claimedAt`, `owner`, `relayPublicKey` and
    `relayLabel`, and the register knows none of them. A rename there
    breaks every node and this document would not notice.

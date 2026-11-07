@@ -62,8 +62,9 @@ can start only what is listed.
   `~/.config/wsl-desktop/apps.json`, on his machine and out of git.
 - Counted in `spirit/test/oneDoor.js` at **2** — `require('http')` for its
   server, and the page's own `fetch` back to itself — with `platform/`
-  walked, like `agents.js` and `grokReview.js`: *"wsl may proceed with the
-  desktop project"* (Andy, 2026-09-22, relayed on the agent wire).
+  walked, as `agents.js` and `grokReview.js` were before they went (goal/G3.2,
+  goal/G29.20): *"wsl may proceed with the desktop project"* (Andy,
+  2026-09-22, relayed on the agent wire).
 
 ## Open
 

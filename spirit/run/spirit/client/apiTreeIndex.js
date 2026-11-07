@@ -28,8 +28,8 @@ function apiTreeServers(tree) {
 }
 
 // ONE SERVER'S VERBS (apiAuth/G1.9), sorted, for the verb dropdown. DEBUG is the owner's and never offered (Andy:
-// "DEBUG/... are owner only and will never be offered to peerPost clients."); AGENTS
-// is a verb like any other. A server the tree does not hold, or whose branch is an error, has no verbs.
+// "DEBUG/... are owner only and will never be offered to peerPost clients."). A server the tree does not hold, or
+// whose branch is an error, has no verbs.
 var API_TREE_OWNER_VERBS = ['DEBUG'];
 function apiTreeVerbs(tree, server) {
   if (apiTreeServers(tree).indexOf(server) === -1) return [];

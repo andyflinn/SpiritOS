@@ -132,8 +132,8 @@ function createPeerPost(opts) {
   // ── WHO WE HAVE ALREADY ASKED FOR A CARD ─────────────────────────────
   //
   // Needed because the caller may post to the same peer many times in a
-  // burst: the agents outbox flushes its whole file on every send, and
-  // without this a node with no card would ask once PER ROW. One ask per
+  // burst (the agents outbox, since removed, flushed its whole file on every
+  // send), and without this a node with no card would ask once PER POST. One ask per
   // peer per minute, remembered in RAM only — a card is fetched to make the
   // next post possible, not recorded as a decision, and a restart asking
   // again costs one packet.
@@ -141,7 +141,7 @@ function createPeerPost(opts) {
   // version kept only a time, so ten CONCURRENT posts to an uncarded peer gave
   // one ask and one delivery: the other nine saw the throttle, skipped the ask
   // and refused 428 while the answer was still in flight. Serial callers never
-  // saw it — the outbox flush is serial, which is why a live run delivered 37
+  // saw it — the outbox flush was serial, which is why a live run delivered 37
   // of 37 — but a burst would have lost nine posts to a race.
   //
   // So a loser AWAITS the ask already in flight and then looks again, which is
@@ -202,8 +202,8 @@ function createPeerPost(opts) {
   //   restarts (cycle R16).
   //
   // Given a store, every entry is written through as it changes and read
-  // back when the node starts. Given none — a RELAY's own peerPost, which
-  // has no node.db, and every suite that does not care — it behaves
+  // back when the node starts. Given none — every suite that does not care
+  // (server.js, the one builder, always passes one) — it behaves
   // exactly as before. That is not a second implementation: it is the
   // same queue with or without a place to write it down.
   var store = opts.store || null;
@@ -415,16 +415,14 @@ function createPeerPost(opts) {
   //
   // `oneDoor.js` caught the first draft of this, which wrote the contact
   // book from here: *"contactBook is inbound-only, so a relay may
-  // construct one."* A RELAY builds a peerPost too, for partner traffic,
-  // and a relay has no contact book — so a write on the outbound path
-  // would have made this module node-only and grown a second transport
-  // for partners to need.
+  // construct one."* A RELAY built a peerPost too then, for partner traffic,
+  // and a relay has no contact book. Partnering is gone (goal/G22.6) and
+  // only server.js builds a peerPost now, but the split stays.
   //
-  // Verifying is pure: keys and bytes, no node-only state, correct in a
-  // relay as in a node. Storing is the node's business, so it arrives the
-  // way everything else node-only does — injected (`opts.keepCard`,
-  // beside `opts.store` and `opts.door`). A relay passes none and simply
-  // gets the verdict.
+  // Verifying is pure: keys and bytes, no node-only state. Storing is the
+  // node's business, so it arrives the way everything else node-only does
+  // — injected (`opts.keepCard`, beside `opts.store` and `opts.door`). A
+  // caller that passes none simply gets the verdict.
   function keepCard(slot, answer) {
     if (!answer || !answer.ok || typeof answer.text !== 'string') return;
     var fields = nodeCard.verify(answer.text);
@@ -464,7 +462,7 @@ function createPeerPost(opts) {
   // Box v24: seated is "set by any post it carried or answered, cleared by a refusal as no member". A relay refuses
   // to carry a non-member's post (not-a-sender, rejectedBy below), so an answer to a post it carried to somebody
   // else is a seat. A post to the relay itself is not counted: a join or a card is answered for a stranger too.
-  // Node only, like the refusal: a relay's peerPost has no table.
+  // Only once holdStreams was called (presence set), like the refusal.
   function seatedBy(slot, answer) {
     if (!presence || !answer || !answer.ok || !slot.relayUrl) return;
     try {
@@ -533,10 +531,9 @@ function createPeerPost(opts) {
   //   relay" / "at the same point it writes to the relay-row".
   //
   // The one place it is recognised, for a post's answer and a reply's alike.
-  // Node only: the table and the streams exist where holdStreams was called,
-  // and a relay's own peerPost never calls it.
+  // Only where holdStreams was called: the table and the streams exist there.
   // The relay table is relayKeys.js's, keyed by relay key; a url is handed
-  // in for lookup. Required here, node only: a relay's peerPost never asks.
+  // in for lookup. Required lazily, here.
   function relayTable() { return require('./relayKeys'); }
   function plainUrl(url) { return relayTable().normalizeUrl(url); }
   // THE REFUSAL STANDS WHILE THE SEAT IS GONE (goal/G40.11: the refusal is not stored, seated is). What this process
@@ -673,10 +670,10 @@ function createPeerPost(opts) {
         // member's only slot for nothing — the asker blocking itself,
         // which looks exactly like the relay blocking it.
         if (res.status >= 200 && res.status < 300) {
-          // ANSWERED ON THE POST ITSELF (R13). A relay posting to a partner
-          // holds no stream there any more, so the partner keeps the post
-          // open and its reply IS the answer — the same signed packet a
-          // stream would have carried. It settles through onReply, so the
+          // ANSWERED ON THE POST ITSELF (R13). Built for a relay posting to a
+          // partner (partnering went with goal/G22.6); an answer that comes
+          // back on the post is the same signed packet a stream would have
+          // carried. It settles through onReply, so the
           // receipt is verified exactly as a streamed one is; nothing about
           // what counts as an answer changes, only which door it came in by.
           // UNDER THE HASH THIS NODE COMPUTED, NOT THE ONE THE WIRE SENT
@@ -859,28 +856,28 @@ function createPeerPost(opts) {
     // fallback hands everything to an attacker who can simply withhold a
     // card.
     // THE KEY MAY HAVE TO BE FETCHED, so this step is allowed to be
-    // asynchronous: a node reads it off a contact row and answers at
-    // once, while a RELAY may have to ask a partner for its published
-    // key. Resolved here, before anything is registered or queued, so
+    // asynchronous: sealKeyFor reads it off a contact row or a pinned
+    // relay key, and a missing one is fetched by a card ask (fetchCard
+    // below). Resolved here, before anything is registered or queued, so
     // the ordering everything below depends on — register, then forward
     // — is exactly as it was.
     // ── AND IF THERE IS NO CARD, ASK FOR ONE (found by wsl-claude) ────
     //
     // THE CIRCUIT WAS COMPLETE EXCEPT FOR THIS CALL. `nodeCard.asks`
     // recognises an ask, `answerCard` answers one, `askedCard` marks the
-    // slot, `keepCard` keeps the answer, and server.js:1265 records it with
-    // `cardVia: 'reply'` — whose own comment already says "This is us asking
-    // THEM: our own act, about a key we chose to look up". NOTHING ASKED.
+    // slot, `keepCard` keeps the answer, and server.js's keepCard writes it
+    // on that key's row (contacts.setCard) — whose own comment says "This is
+    // us asking THEM, our own act about a key we chose to look up". NOTHING ASKED.
     //
     // So the refusal above — "ask for their card first" — named an action no
     // code performed, and it cost 11,628 refused posts between 2026-09-23 and
     // 2026-09-26: every report either agent believed it had filed to the owner
     // node, and one agent's cycle review, which could not be sent at all.
     //
-    // THE ASK IS NOT A NEW FORMAT. `{ v: 1, body: { card: true } }` is what
-    // faceServer.js:811 already posts, and it travels plain because the card is
-    // how you learn the key to seal to — the one countable exception named
-    // twenty lines above.
+    // THE ASK IS NOT A NEW FORMAT. `{ v: 1, body: { card: true } }` is the
+    // card ask nodeCard.asks recognises (relayKey below posts the same), and it
+    // travels plain because the card is how you learn the key to seal to — the
+    // one countable exception named twenty lines above.
     //
     // IT IS AN ATTEMPT AND NOT A PROMISE. If no card arrives, the original
     // post still refuses with the same 428 it refused with before: a plaintext
@@ -890,7 +887,7 @@ function createPeerPost(opts) {
       .catch(function () { return ''; })
       .then(function (sealKey) {
         // Nothing to fetch: already sealed-able, or itself an ask, or a router
-        // that does not seal (the partner router, relayServer.js:1082).
+        // that does not seal (sealsPosts false; nothing in the tree sets it now).
         if (sealKey || nodeCard.asks(text) || !sealsPosts) return sealKey;
         return fetchCard(false, sealKey);
       })
@@ -1063,8 +1060,9 @@ function createPeerPost(opts) {
     // allows 5 s buys 5 s and a guarantee: the relay gives up first, and
     // this node never abandons a route the relay still holds.
     //
-    // A relay forwarding to a partner passes what is LEFT (relay.js,
-    // HOP_MARGIN_MS), which is what makes the chain tighten inward.
+    // A relay forwarding to a partner passed what was LEFT (relay.js,
+    // HOP_MARGIN_MS); that went with partnering (goal/G22.6), so the chain is
+    // one hop: node, relay, node.
     var budget = (how && typeof how.budgetMs === 'number' && isFinite(how.budgetMs))
       ? Math.max(0, how.budgetMs)
       : waitMs;
@@ -1341,8 +1339,8 @@ function createPeerPost(opts) {
     // accepting it would be the silent hole the condition exists to
     // close.
     //
-    // A NODE WITH NO STORE SKIPS THIS. A relay constructs a peerPost
-    // without one (see `opts.store`), and it has no app to protect.
+    // A PEERPOST WITH NO STORE SKIPS THIS (see `opts.store`): only a suite
+    // builds one without.
     // ONLY A SEALED POST CAN BE JUDGED. An unsealed one carries no
     // timestamp — `opened.at` is '' — and the index would read that as
     // 1970 and refuse it as older than this node remembers.
@@ -1398,8 +1396,8 @@ function createPeerPost(opts) {
     // was wired to the `inbox` path and nowhere else. Its own comment
     // said "the mailbox needs no exception here", which was true of a
     // path relay traffic never arrived on. This is not that path: a relay
-    // posts here in its own name for a device enrolment, so the exception
-    // the inbox did not need is one this door does.
+    // posts here in its own name, which is why hub.frontDoor also answers
+    // 'known' for a relay this node accepted (relayKeys.acceptedKeys).
     //
     // Andy: "no node, by protocol, should accept requests from unknown."
     // ── LEARNED BEFORE IT IS JUDGED ──────────────────────────────────
@@ -1444,16 +1442,13 @@ function createPeerPost(opts) {
       // floor and never before: an over-budget stranger leaves no trace
       // but a refusal in the log.
       //
-      // WHICH RELAY IT CAME DOWN goes with it. contactBook's `relays` is
-      // "mailboxes where you have seen this key", which is the only
-      // routing fact this node holds about a stranger — and it was the
-      // ring that recorded it until R8 (hub.acquireFromInbox). This path
-      // already knew the road; it is on the traffic-log row three lines
-      // up. It simply was not passing it on, which nothing caught while
-      // both transports were acquiring in parallel.
+      // WHICH RELAY IT CAME DOWN goes with it: hub.remember notes the road
+      // as a route in the shadow roll (seenPeers), the only routing fact
+      // this node holds about a stranger — and it was the ring that
+      // recorded it until R8 (hub.acquireFromInbox).
       // AND FOR A DROP TOO (0021): "ignoring means only: mark this row as
-      // ignored". A stranger turned away under Ignore is remembered as
-      // turned away — within budget only, like every other mark.
+      // ignored". A stranger turned away is marked ignored on its shadow
+      // row (hub.remember) — within budget only, like every other mark.
       if (remember) {
         try { remember(body.from, verdict, relayUrl); }
         catch (e) { /* the verdict stands */ }
@@ -1503,22 +1498,8 @@ function createPeerPost(opts) {
         admitted: true,
       });
 
-    // AND THE PEER'S OWN NUMBERS MOVE, on this transport as on the other.
-    //
-    // countInbound did this on the `inbox` path and nothing did it here,
-    // so a node moved onto the router would have stopped counting and
-    // said nothing — the figures Contacts shows would FREEZE rather than
-    // go to zero, and a stale number looks like the truth while a zero
-    // looks like a bug.
-    //
-    // Keyed by the request HASH rather than by a relay's message id. The
-    // id existed because a non-destructive poll could hand the same line
-    // twice; nothing re-delivers here, and the hash is over the exact
-    // bytes rather than being a number somebody else assigned.
-    //
-    // Per peer, never per app: the node keys on public keys, and a count
-    // of "chess packets from bert" would be this file doing the shell's
-    // reading.
+    // NO PER-PEER COUNT IS KEPT. The counting went with goal/G43.14
+    // (hub.js, where countInbound stood).
     //
     // APPS SEE KNOWN SENDERS ONLY. onArrival is app delivery — code running on somebody else's input — so a stranger
     // never reaches it.
@@ -1639,9 +1620,9 @@ function createPeerPost(opts) {
     // wrong thing.
     if (!auth.receiptSignatureOk(body.from, body.hash, body.text, body.sig)) return false;
     // SIGNED BY SOMEBODY OTHER THAN THE TARGET: the relay speaking (cycle
-    // 2). A relay that could not deliver, or whose partner refused, tells
-    // the asker down the chain with a reply for the same hash signed by
-    // itself (relay.relayErrorToAsker). It is never the target's answer
+    // 2). A relay that could not deliver tells the asker with a reply for
+    // the same hash signed by itself (relay.js replyAsRelay; relayErrorToAsker
+    // went with partnering, goal/G22.6). It is never the target's answer
     // and must not read as one: settled as a failure, with the relay's
     // reason, and marked `relayed` so an app can tell who said it.
     // ── AN ANSWER THAT CAME BACK AFTER WE STOPPED WAITING ───────────
@@ -2020,7 +2001,7 @@ function createPeerPost(opts) {
   // One door for everything the node exchanges with a relay: the stream
   // each relay pushes down is opened, kept and closed here, and what it
   // knows is asked of this object. The instance never leaves this file.
-  // A relay's own peerPost never calls holdStreams and holds none.
+  // A peerPost whose holdStreams was never called (a suite's) holds none.
   var presence = null;
   // Each relay's stream, as the opener handed to presenceNode returned it,
   // by relay url: what closes exactly the one stream a refusal names.
@@ -2114,7 +2095,6 @@ function createPeerPost(opts) {
 }
 
 module.exports = {
-  // DEFAULT_WAIT_MS went with it, for the same reason: exported, and
-  // read by nothing in run/ or test/.
+  // DEFAULT_WAIT_MS is not exported: read by nothing in run/ or test/.
   createPeerPost: createPeerPost,
 };

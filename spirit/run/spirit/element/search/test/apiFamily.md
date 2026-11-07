@@ -3,17 +3,17 @@
 The family selector (goal/G41.14): a family of an api tree, and a verb of it, side by side. It was `apiBranchSelector.js`,
 renamed (Andy: *"apiBranchSelector.js will be RENAMED apiFamilySelector.js, which is the proper name for it."*), its
 verb half kept (Andy: *"apiFamiliySelector.js will use apiVerbSelector as part of itself, because the verb selector
-NEEDs the family selector to have any meaning at all."*). Its test is `./apiFamilySelector.js`.
+NEEDs the family selector to have any meaning at all."*). Since goal/G43.18 it is in `spirit/element/search/api.js`, beside the app-server selector. Its test is `./apiFamily.js`.
 
 ## Requirements
 
 - `spirit/element/search/api.js` is there and `spirit/element/apiBranchSelector.js` is not; the rename leaves no copy.
-- It registers `apiFamilySelector.create(container, options)`, and `createApiFamilySelector` and
+- It registers `spirit.element.search.api.create(container, options)`, and `createApiFamilySelector` and
   `createApiBranchSelector` no more. The control is appended to the container and answered (box v23: *"every element
   gets a container and appends itself"*).
 - Nothing of `shellCreateListSearch` (goal/G40.8).
-- It loads its two halves itself (rule/26): the family dropdown, `spirit/element/search/api.js`, and the verb selector,
-  `spirit/element/search/api/verb.js`. Two probabilitySearch dropdowns.
+- It is built from its two halves: the family dropdown, the app-server selector in the same file, and the verb selector,
+  `spirit/element/search/api/verb.js`, which it loads itself (rule/26). Two probabilitySearch dropdowns.
 - Its families are the tree's; one that did not answer is left out. `options.all` is what the family half reads
   unchosen.
 - Its root carries `family`, `verb` and `value`:

@@ -18,8 +18,8 @@ Andy, box: *"we build a skeleton core-api-family, not a separate server, precise
 
 Andy, box: *"spirit.app gains a verb: "active"."* Peer review: wsl, yes.
 
-- *"app.active { key, active } sets it; only the owner may."* `api.js` names it with both arguments, and it has `active.json`.
-- *"The user sets active, so Monitor and server start off."* Neither is active before a press, in the file or in a row.
+- *"app.active { key, active } sets it; only the owner may."* `api.js` names it with both arguments, and it has `active.json`. Who may call it is the gate's (all APIs are the owner's until granted); this test calls as the owner and does not assert it.
+- *"The user sets active, so Monitor and server start off."* Monitor is intrinsic since then (below), so always on: the test judges the Agent and server, neither active before a press, in the file, and no row active before a press but an intrinsic app's.
 - *"The node writes spirit/state/<key>/node.json."* True and false both land there.
 - Writing it also starts or stops the app's server, if it has one (goal/G43.12). Only this verb does that: a hand edit of the file counts at the next boot. Specified in `./appServerMount.md`.
 - *"A key not in spirit/app is refused, so no path can be written through it."* Unknown keys, `..`, a path, `appSelector`, `test` and empty are refused, and write nothing.
@@ -45,5 +45,6 @@ The first activate, Andy: *"on first activate, spirit/state/<name>/node.json sho
 - `app.active` with false does not switch it off.
 - Before any press, no row says active but an intrinsic app's.
 - goal/G43.15: an app's row carries `intrinsic`, true or false. `app.active` on an intrinsic app is refused by name, not 200, with a code, and writes nothing.
+- Not asserted by this test (`spirit/app.js` does it; no test asserts it yet): the two G43.21 lines below.
 - goal/G43.21: an app's row carries `run`, its `<name>.json`'s `node.run`, true or false.
 - goal/G43.21: and `runOnly`, true when its `<name>.json` says `node.run` and neither `node.mount` nor `shell.mount`. Andy: *"and the node should know it, too."*: `app.active` on such an app is refused by name, `app-run-only`, 409, and writes nothing.

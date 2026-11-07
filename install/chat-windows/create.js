@@ -1,22 +1,24 @@
-// Builds the "microscopic" installer: a plain .zip of the shippable
-// product (spirit/, minus spirit/test/) that needs nothing but Node.js
-// to run — spirit/run's core (kernel.js/server.js/jobs.js) has zero
-// external npm dependencies, so a zip + Node really is a complete
-// install path, with git only needed for developing, not running.
+// Builds the "chat-windows" installer (release/chat-windows_v<version>.zip):
+// the microscopic installer's zip of the shippable product (spirit/,
+// minus spirit/test/), with start.cmd, start.ps1 and README.txt at its top, that needs nothing but Node.js
+// to run — spirit/run needs no npm install: its one third-party package,
+// chokidar (jobs.js), is tracked under spirit/run/node_modules and ships
+// in the zip, so a zip + Node really is a complete install path, with
+// git only needed for developing, not running.
 //
 // File list comes from `git ls-files`, not a raw directory walk — that
-// gets test/ exclusion AND every gitignored runtime file (media/,
-// aiStatus.json, logs...) excluded for free, with no
+// gets test/ exclusion AND every gitignored runtime file (the node's
+// state, aiStatus.json, logs...) excluded for free, with no
 // duplicated exclusion list to maintain. As a side effect the zip ends
 // up containing exactly what a fresh `git clone` would give you, plus
-// one install-specific file (README.txt) injected from this same
-// install/microscopic/ folder rather than tracked inside spirit/ itself
+// three install-specific files (start.cmd, start.ps1, README.txt) injected
+// from this same install/chat-windows/ folder rather than tracked inside spirit/ itself
 // — a README describing an already-installed, standalone product would
 // be lying about its surroundings if it lived in the source tree.
 //
 // Zip writer is hand-rolled (fs/path/zlib/child_process only, no npm
 // package, no shelling out to zip/tar/Compress-Archive) — consistent
-// with spirit/run's own zero-dependency core. This is a build-time tool
+// with spirit/run, which needs no npm install. This is a build-time tool
 // run on the maintainer's machine (git required there), unrelated to
 // what an end user installing the product needs.
 
@@ -64,8 +66,8 @@ function toDosDateTime(date) {
 // wrapping run/ — exactly what server.js's verifyStartupCwd() requires
 // (cwd's parent must be literally named "spirit"). fullPath is where
 // this build actually reads the bytes from, which isn't always the
-// same place — e.g. install/microscopic/README.txt is injected at
-// spirit/README.txt, since a README describing an already-installed,
+// same place — e.g. install/chat-windows/README.txt is injected at
+// the zip's top as README.txt, since a README describing an already-installed,
 // standalone product would be inaccurate sitting inside the source
 // tree itself (it's only true once it's the top level of an unzipped
 // copy).

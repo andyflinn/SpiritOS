@@ -1,12 +1,13 @@
 // Builds the "microscopic" installer: a plain .zip of the shippable
 // product (spirit/, minus spirit/test/) that needs nothing but Node.js
-// to run — spirit/run's core (kernel.js/server.js/jobs.js) has zero
-// external npm dependencies, so a zip + Node really is a complete
-// install path, with git only needed for developing, not running.
+// to run — spirit/run needs no npm install: its one third-party package,
+// chokidar (jobs.js), is tracked under spirit/run/node_modules and ships
+// in the zip, so a zip + Node really is a complete install path, with
+// git only needed for developing, not running.
 //
 // File list comes from `git ls-files`, not a raw directory walk — that
-// gets test/ exclusion AND every gitignored runtime file (media/,
-// aiStatus.json, logs...) excluded for free, with no
+// gets test/ exclusion AND every gitignored runtime file (the node's
+// state, aiStatus.json, logs...) excluded for free, with no
 // duplicated exclusion list to maintain. As a side effect the zip ends
 // up containing exactly what a fresh `git clone` would give you, plus
 // one install-specific file (README.txt) injected from this same
@@ -16,7 +17,7 @@
 //
 // Zip writer is hand-rolled (fs/path/zlib/child_process only, no npm
 // package, no shelling out to zip/tar/Compress-Archive) — consistent
-// with spirit/run's own zero-dependency core. This is a build-time tool
+// with spirit/run, which needs no npm install. This is a build-time tool
 // run on the maintainer's machine (git required there), unrelated to
 // what an end user installing the product needs.
 

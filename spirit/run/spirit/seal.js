@@ -86,8 +86,8 @@ function privFrom(b64) {
 // THE RELAY IS DELIBERATELY NOT IN HERE, and this is the one line most
 // likely to be "fixed" by a later session, so it is argued rather than
 // asserted. Putting the carrying relay in the AAD would bind a message to
-// one route — and a message may legitimately arrive by another: a partner
-// carries it, a peer is reached on a different relay, a queued post goes
+// one route — and a message may legitimately arrive by another: a peer
+// is reached on a different relay, a queued post goes
 // out after the sender's relay list changed. It would make store-and-
 // forward a routing promise, which is exactly what this design refuses to
 // make.

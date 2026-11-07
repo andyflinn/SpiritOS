@@ -1,12 +1,14 @@
 # appSelector.js
 
-`spirit/run/spirit/app/appSelector.js` is the app selector (goal/G43.2), following `spirit/element/search/bundle.js`: a thin selector over its own list, which it loads itself. Its test is `./appSelector.js`, in a real browser on a scratch node.
+`spirit/run/spirit/app/appSelector.js` is the app selector (goal/G43.2), following `spirit/element/search/bundle.js`: a thin selector over the app list, `spirit/element/search/app.js`, which it loads itself. Its test is `./appSelector.js`, in a real browser on a scratch node.
 
     spirit.elements.appSelector.create(container, options) -> root
       root.value   the chosen app's key, '' while none is
       root.row     the chosen app, null while none is
       one bubbling `change` on a pick
-      options.face 'pane' is the list itself; the default is the dropdown
+      options.face 'pane' is the list itself, 'tiles' the apps as tiles; the default is the dropdown
+      options.toggle true: a pane or tiles flips between the two
+      options.hide   the app keys left out of every face
 
 ## Requirements
 
@@ -28,7 +30,8 @@
 - Row 2: *"if inactive: [🔴] "Activate <app-label> "face" "and" "server" [🟢]"*, *"if active: [🟢] "Deactivate <app-label> "face" "and" "server" [🔴]"*. *"face"* only if `shell.mount`, *"server"* only if `node.mount`, *"and"* only if both.
 - Row 3, the Allow row, is gone (goal/G43.18, box v29: "the Allow row of the app detail and its element, spirit/app/appSelector/rowFormAppShell.js, are deleted"): no row says Allow or Don't allow as shell, and <name>.json alone says whether an app may be a shell.
 - *"in :tiles mode, only activated apps will appear."* Reached by the toggle or from the start; an app made active appears and one made inactive leaves, no search asked.
-- *"in :tiles mode, appSelector icons will 'launch'"*: Andy left "(or mount?)" open and raised no objection to today's behaviour, so a tile opens its app inside through `spirit.app.<name>.createApp`, and the close icon brings the tiles back.
+- *"in :tiles mode, appSelector icons will 'launch'"*: Andy left "(or mount?)" open and raised no objection to today's behaviour, so a tile opens its app inside through `spirit.app.<name>.createApp` where the app has one (monitor), else
+  `spirit.elements.<name>.create`, and the close icon brings the tiles back.
 
 ## The app it switches (goal/G43.15)
 

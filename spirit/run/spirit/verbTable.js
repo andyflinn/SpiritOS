@@ -48,7 +48,7 @@
 // The alternative — modules self-registering when required — makes load
 // order load-bearing and invisible, which this tree has already been
 // bitten by. And `handlePost`'s deps, peerRouter and presence,
-// are built at the FOOT of server.js: a module claiming at require time
+// are built in server.js's boot block: a module claiming at require time
 // would be claiming before the things it needs exist. That is the same
 // shape as the ReferenceError that killed the node on its first mint.
 //
@@ -80,7 +80,7 @@ function createVerbTable() {
   //
   // The GROUPING is by subject, because that is what a client
   // understands (Andy: "from the clients views understandable
-  // distinctions") — `peer.*`, `contact.*`, `device.*`. Uniformity is
+  // distinctions") — `peer.*`, `contact.*`, `jobs.*`. Uniformity is
   // what lets both be true at once: `peer.post` and `contact.block` are
   // in different groups for a reason a client feels, not because one of
   // them writes a file.

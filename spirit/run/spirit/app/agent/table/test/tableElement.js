@@ -143,8 +143,8 @@ test.startTest('tableElement.js: what the tables\' elements share');
   const AD = E.agentDetail || {};
   ok(['titleRow', 'fieldLine', 'search', 'branchOf', 'whyOf'].every(function (k) { return typeof AD[k] === 'function'; }) && typeof AD.stretch === 'string',
     'and spirit.elements.agentDetail { titleRow, fieldLine, stretch, search, branchOf, whyOf }, every pane\'s look in one place', 'agentDetail: ' + short(Object.keys(AD)));
-  // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": each table's row element takes its own rows from the
-  // stream; the shared element loads no data script.
+  // goal/G41.16, Andy: "get rid of thos FUCKING data.js scripts": the shared element requires no data script; the agent
+  // family's data.js (spirit/app/agent/data.js, goal/G41.28) takes the rows from the stream, asked for by cacheManager.
   ok(!w.required.some(function (p) { return /data\.js$/.test(p); }), 'it requires no data script: each table\'s row element takes its own rows from the stream (goal/G41.16)', 'required: ' + short(w.required));
   if (!E.agentTable || !AD.titleRow) return;
 
@@ -225,8 +225,8 @@ test.startTest('tableElement.js: what the tables\' elements share');
   ok(own.length === 1 && typeof own[0] === 'function' && w.calls.length === 0, 'given add(open), Add calls it and asks the server nothing', 'add called ' + own.length + ', calls ' + short(w.calls));
 
   test.subHeading('a table may hand its own buttons, and its own columns (goal/G41.18)');
-  // The model table's button row holds "provider models" (box v17), and its list shows "[icon] \"model-name\"", the
-  // provider's icon: what a table hands, the shared element draws.
+  // A table's own buttons (the model table once held "provider models", box v17) and its columns (the model's "[icon]
+  // \"model-name\"", the provider's icon): what a table hands, the shared element draws.
   const pressed = [];
   const left3 = box('left3');
   const COLS = [{ field: 'icon', from: 'providerIcon', label: '' }, { field: 'label', from: 'modelName', label: 'Model', sort: 'text' }];

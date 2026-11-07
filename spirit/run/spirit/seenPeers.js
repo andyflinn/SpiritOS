@@ -20,37 +20,18 @@
 // whose key this node had pinned. A contact could arrive with an address
 // in `relays` and NOTHING in `routes`.
 //
-// ── WHY NOT IN THE CONTACT BOOK ──────────────────────────────────────
+// ── THE CONTACTS ARE ROWS OF THIS ONE TABLE (goal/G40.11) ────────────
 //
-// Because a search result is not a contact, and the book says so in the
-// one rule that keeps it honest: a relay may improve what this node knows
-// about its own contacts and may never add to them. (`learnRoute` enforced
-// that until 2026-09-21; routes left the book entirely with 0018, so it is
-// structural now — there is nowhere in a row for a route to go.) Writing forty
-// strangers into the book because somebody typed three letters would make
-// a search a way to fill another person's address book.
+// contacts.json went into this table with goal/G40.11 (contacts.js: Andy's
+// box, v24: "seen, the shadow in node.db, is the one table."). A contact is
+// a row here flagged `keep`; a search or an arrival writes a row and never
+// keeps it — only the owner's act does (contacts.js, `set` below). Routes
+// are their own rows (0018), never a field of the person's.
 //
-// So this is a different thing with a different lifetime: not who you
-// know, but who you have lately been told about.
+// ── ONE BOUND, SPACE ─────────────────────────────────────────────────
 //
-// ── BOUNDED BY BOTH, FOR THE REASON 0016 GIVES ───────────────────────
-//
-// A space bound alone leaves a cache frozen when there is room, and an
-// age bound alone leaves it unbounded when there is not. Neither
-// substitutes for the other, which is the same argument that put two
-// bounds on a relay's rolls.
-//
-// DECLARED, NOT MEASURED, and marked so nobody reads them as evidence.
-//
-// AND THE AGE IS UNDER DISPUTE BY THE RULE ABOVE. This said "nothing a
-// person saw an hour ago is still worth acting on without asking again",
-// which fits a search somebody is still looking at and contradicts
-// Andy's "the user may forget all search results, the node must not". An
-// hour is what the cache can afford while it lives in RAM and loses
-// everything at a restart anyway; it is not what the rule wants. The
-// number is open with the store (gap cycle R26) and should be read as a
-// consequence of having no store rather than as a decision about
-// forgetting.
+// 0016 argued for a space bound and an age bound together; the age bound
+// went with 0021 (NO AGE LIMIT, below), so space is the only eviction.
 
 // ── WHAT THIS IS, SAID PLAINLY ───────────────────────────────────────
 //
@@ -87,8 +68,9 @@
 // is not. What exposing this would leak is not a relay's membership: it
 // is WHOSE BUSINESS THIS NODE HAS BEEN DOING. Give it a verb, an app
 // surface or a route and the node's own dealings become readable by
-// whoever asks. There is no reader here but the node's own acquisition
-// path, and that is a boundary rather than an omission.
+// whoever asks. Its readers are the node's own: the acquisition path, the
+// owner's contact acts (contacts.js) and the owner's search of the listed
+// rows, and that is a boundary rather than an omission.
 
 // ── THE SPACE BOUND IS BYTES, BECAUSE THAT IS WHAT AN OWNER SPENDS ──
 //
@@ -264,9 +246,9 @@ function createSeenPeers(opts) {
   //   Andy: "a shadow route must not be dropped when a contact is
   //   deleted."
   //
-  // `contactBook.forget` says the same thing about itself: it "forgets
-  // YOUR side of a relationship, and a relay's roll is not yours to
-  // edit". Deleting a row is a statement about an address book, not about
+  // contacts.js's `forget` says the same thing about itself: it "takes
+  // YOUR side of a relationship: not kept, no name of yours. The row
+  // stays in the table". Deleting a contact is a statement about an address book, not about
   // what this node was told — so the shadow survives, and re-adding
   // somebody gets their route back without a search.
   //
@@ -276,8 +258,8 @@ function createSeenPeers(opts) {
   // should be permanent. period." — Andy). A cache that expires on its
   // own schedule holds strictly less than the record beside it.
   //
-  // `forget` exists for a caller that has finished with a row, not for
-  // the contact book. Nothing in run/ calls it.
+  // This `forget` removes the row itself and is not what a contact's
+  // Remove calls (that is contacts.js's). Nothing in run/ calls it.
   function forget(publicKey) { rows.forget(String(publicKey || '').trim()); }
 
   // ── THE FLAGS, AND THE ROOM THEY NEED (0021, goal/G40.11) ──────────────

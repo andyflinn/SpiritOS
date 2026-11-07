@@ -1,5 +1,14 @@
 # The Relay Monitor — what an owner watches, and what he may not touch
 
+**Status 2026-11-07 (goal/G43.23).** The Relay Monitor is
+`spirit/run/shell/relayMonitor/relayMonitor.js` (it was `app/relayMonitor/`
+until app/ became shell/, 33e2a82f); it draws the lever report, and no
+scrolling pane of live relay events or its filter is in it. The batch tools
+below are gone: `agents.js chatter` with the agents app (ef85bc1f,
+2026-10-02) and `process/js/monitorDrill/` with goal/G3.2 (6823d3bb). The
+jobs app it borrows from is `spirit/run/shell/jobs/jobs.js`. Line citations
+are pinned to the commit they were measured at.
+
 **APPROVED by Andy, 2026-09-23**, including both open items — *"Open for
 Andy: 1 + 2, yes."* He opened it with *"of monitor was already designed, it
 is stale now."* and closed it with *"if yes let's all approve the monitor
@@ -33,9 +42,9 @@ a value would make him an owner writing into his own training set (0009).
   is gone (cycle 8); the allowance is fixed at boot from the owner's RAM.
 - **No lever is named in its code.** A lever invented next month draws
   itself, because the app draws what the report carries
-  (`spirit/run/app/relayMonitor/relayMonitor.js:15-21`, held by
+  (`spirit/run/shell/relayMonitor/relayMonitor.js:15-21 @ e65ad5b`, held by
   `test/monitorApp.js`).
-- **Facts, never payloads.** `relay.js:3352`, `:3712`. The monitor shows
+- **Facts, never payloads.** `relay.js:3352 @ e65ad5b`, `:3712`. The monitor shows
   counts, states and figures; message text never reaches it.
 - **The relay reports; the node decides what matters.** Grading, ranking
   across relays and "what is critical" are the node's.
@@ -80,7 +89,7 @@ same curve is the evidence when growth outruns sponsorship.
 > app"*
 
 A scrolling pane of the relay's live events, modelled on the jobs app's log
-panel (`spirit/run/app/jobs/jobs.js`) — which already solves the two things
+panel (`spirit/run/shell/jobs/jobs.js`) — which already solves the two things
 that make a live feed usable: a render throttle for bursts, and sticky
 scroll that pins to the bottom while you watch and holds position when you
 have scrolled up.
@@ -88,7 +97,7 @@ have scrolled up.
 - **The feed exists**: `post`, `reply`, `refused`, each with from, to, bytes
   and hash (`relay.js`, `monitorEvent`).
 - **Filtering happens AT THE RELAY** — `kinds` and `peer`
-  (`relay.js:3969-3975`) — so only matching lines cross the wire.
+  (`relay.js:3969-3975 @ e65ad5b`) — so only matching lines cross the wire.
 - **`All` merges owned relays by time**, and one member's traffic across
   every owned relay is the same `peer` filter sent to each.
 - **Live and forgotten.** Memory only; nothing written. The record (2) is

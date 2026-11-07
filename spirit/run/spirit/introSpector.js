@@ -4,8 +4,8 @@
 // ONE FAMILY FOLDER, READ AND WRITTEN BY ITS OWNER (goal/G10.5, made FS alone by goal/G30.4).
 //
 //   A family folder holds AGENTS.md and one description file per verb (<verb>.json), and whatever its consumers
-//   place there (verb.design.md, README.md, <verb>.warning.txt). It never holds code: the node's families are
-//   js/<family>/, an app's is its family folder beside its <module>.js (spirit.familyPath).
+//   place there (verb.design.md, README.md, <verb>.warning.txt). It never holds code: a process server's is
+//   process/js/<name>/family/ (spirit.familyPath), an app of spirit/app/<name>/ has ./api/ (appServer.withAgents).
 //
 //   family(folder) answers the folder's FS verbs, FS.<name> with the kernel's fs names and a search, scoped to the
 //   folder. The AGENTS verbs that stood here (AGENTS, AGENTS.introspect, AGENTS.<verb>) are gone: an agent reads
@@ -63,13 +63,11 @@ function readFolder(dir, declared, manifest) {
 }
 
 // THE FAMILY OF ONE FOLDER, in the declaration form {request, reply, handler}.
-// opts: { declared: [stem...], manifest, prefix, declarations }
+// opts: { declared: [stem...], manifest, prefix }
 //   prefix        '' on a process server, 'fs.' on the node: it goes before
 //                 every verb name the family answers and lists
-//   declarations  {verb: {request, reply}} on the node, joined into the
-//                 per-verb answer; a process server's file answers as is
-// Answers { verbs: {name: declaration}, stale: [fileName] }; no AGENTS.md,
-// no verbs at all, and nothing is said of the folder.
+// Answers { verbs: {name: declaration}, stale: [fileName] }: the FS verbs
+// (fsVerbs, below) on every folder, AGENTS.md or not.
 // ── FS: THE FAMILY FOLDER, TO ITS OWNER (goal/G30.4) ─────────────────────
 //
 //   Andy, 2026-10-20: "introSpector will ALWAYS supply the following owner-VERB: FS: it will be a spirit.fs object,
@@ -78,9 +76,8 @@ function readFolder(dir, declared, manifest) {
 //   section, scoped to the family folder in the same way that the kernel equivalents are scoped to spirit/run/", and
 //   on listing, "then put a search in there."
 //
-// One owner verb, multiplexed as AGENTS is: FS.<name>, with the kernel's own names. A path is inside the folder or
-// refused; nothing above it is ever reached. A family folder holds no code (an app's is its family folder beside its
-// <module>.js), so the folder needs no fence of its own. Annotations are the node's sidecars, so those two go
+// One owner verb, multiplexed as AGENTS was: FS.<name>, with the kernel's own names. A path is inside the folder or
+// refused; nothing above it is ever reached. A family folder holds no code, so the folder needs no fence of its own. Annotations are the node's sidecars, so those two go
 // through fileSystem.js, for a folder under spirit/run.
 function fsVerbs(dir, prefix) {
   const root = path.resolve(String(dir || ''));

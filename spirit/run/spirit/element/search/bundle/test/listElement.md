@@ -1,4 +1,4 @@
-# bundleSelector/listElement.js
+# spirit/element/search/bundle/listElement.js
 
 `spirit/run/spirit/element/search/bundle/listElement.js` is the bundle list (goal/G41.14), as
 `spirit/element/search/contact/listElement.js` is the contacts list: the probabilitySearch the bundle selector draws, pane or
@@ -6,26 +6,27 @@ dropdown. Its test is `./listElement.js`.
 
 Andy, box: *"bundleSelector.js and bundleSelector/ folder, featuring a pane mode and a dropdown mode for displaying and
 selecting bundle rows."* Since goal/G41.14 it is a view of the node's bundles (since goal/G41.28 the auth family's cache manager's,
-`spirit.data.auth.data.bundles.branch`), kept current by the node's stream, which its row element takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
+`spirit.data.auth.data.bundles.branch`), kept current by the node's stream, which the auth family's cache manager takes in (no data script, Andy: *"NO FUCKING DATA SCRIPT"*, *"THAT FUCKING ELEMENTS carry THEIR FUCKING DESCRIPTIONS"*), so every
 list of bundles on a page shows the same rows (Andy: *"EVERY FUCKING element MUST FUCKING LISTING to anything that changes
 their data set"*).
 
 ## Requirements
 
-- It loads what it uses itself (rule/26): `spirit/element/search.js` and `spirit/element/search/bundle/rowElement.js`.
-- It registers `spirit.element.bundleList.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
+- It loads what it uses itself (rule/26): `spirit/element/search.js` and `spirit/element/search/bundle/rowElement.js`,
+  and the auth family's cache manager (`spirit.cacheManager('auth')`).
+- It registers `spirit.element.search.bundle.listElement.create(host, opts)`, answering `{ list, refresh(), destroy() }`.
 - It draws one probabilitySearch into `host`, and fills it as soon as it is drawn.
 - `opts.face`, `opts.placeholder`, `opts.all` and `opts.pick(row, key)` are handed on, as probabilitySearch's.
 - Its search asks `auth.bundle { op: 'search', text }` through the spirit object, the text trimmed, and answers as a
   reply, `{ items, more }`. An empty answer is an empty list.
 - It hands its search no `matched()`: the whole row is matched (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and search the whole row, as cached in spirit.data."*).
-- Each row is a `bundleElement` of that bundle, `{ id, label }`.
+- Each row is a `spirit.element.search.bundle.rowElement` of that bundle, `{ id, label, owner }`.
 - By default its columns are the label, then the owner (goal/G41.25, Andy: *"the bundleSelector's list will gain a
   new column \"owner\", displayed right after the bundles label"*). `opts.columns` names the row's fields it shows, in order (the bundle editor:
   `label`, `owner`). No row edits its label: `editable` is no option (goal/G41.26, Andy: *"the Label should now just be an output"*), so a list asked for it hands its rows none.
 - `refresh()` and `destroy()` reach the search element; `.list` is it.
 
-- Its probabilitySearch's `data` is `bundles`: the search's answers are seated there, and a row the stream changes redraws
+- Its probabilitySearch's `data` is `spirit.data.auth.data.bundles.branch`: the search's answers are seated there, and a row the stream changes redraws
   the list.
 
 - A picked bundle is shown by its label, never its number (the list's `name(row)`; Andy: *"the bundleSelector shows a

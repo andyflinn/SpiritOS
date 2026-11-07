@@ -14,7 +14,7 @@
 //   boundaries, for default, and the installer computes the abuslute max
 //   through those platform-specific formulas."
 //
-// TWO CALLERS, ONE ARITHMETIC. The installer proposes figures before a
+// TWO CALLERS, ONE ARITHMETIC. The installer (bash/install-units) proposes figures before a
 // relay exists; a relay with no `config.json` writes its own. If each
 // measured the box its own way they would disagree on the same machine,
 // and the disagreement would show up as a relay refusing to start on the
@@ -55,8 +55,8 @@ var RAM_MARGIN_MB = 25;
 // considering temp folder accumulation etc". It is the larger of a
 // gigabyte and a twentieth of the partition, and it is defending against
 // everything on the box EXCEPT the relay: journald, Caddy's access log,
-// apt caches, /tmp. The relay's own database is members, invites and
-// partners and is small; a full disc, by contrast, takes down journald,
+// apt caches, /tmp. The relay's own database is members and invites
+// and is small; a full disc, by contrast, takes down journald,
 // the access log and SQLite's rollback journal at once.
 var DISC_MARGIN_MB = 1024;
 var DISC_MARGIN_SHARE = 0.05;
@@ -297,7 +297,7 @@ function measure(rootDir, deps) {
   }
 
   // THE PARTITION THE RELAY ACTUALLY WRITES TO, not the one it was
-  // started from: `relay-state/` is where the database, the keys and the
+  // started from: `spirit/state/` is where the database, the keys and the
   // config live, and on a box with a mounted data volume that is a
   // different disc from the checkout.
   try {

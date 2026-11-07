@@ -97,7 +97,7 @@ function labelRefusal(text) {
 
 // ── packet.js IS BACK, AND THE DELETION IT LOOKS LIKE UNDOING STANDS ──
 //
-// `:862-871` below records that `decorateWithPacket` was deleted as "the
+// The note where `decorateWithPacket` STOOD, below, records that it was deleted as "the
 // last thing in the node that read an app envelope", under Andy's
 // *"nothing in node and relay should know about apps"*, and that it was
 // "the only reason hub.js required packet.js at all". That require is
@@ -121,7 +121,7 @@ function labelRefusal(text) {
 const packet = require('./client/packet');
 
 // isLoopbackHost, assertRelayUrl and relayRequest MOVED to
-// js/relayRequest.js on 2026-09-16. They were the node's outbound socket
+// spirit/relayRequest.js on 2026-09-16 (assertRelayUrl on to relayUrl.js, below). They were the node's outbound socket
 // living inside the node's hub, which meant a relay could not reach the
 // one interface AGENT.md says everything must use without requiring the
 // node's machinery — and the only ways out of that are to reach for `http`
@@ -181,9 +181,9 @@ function markMine(rootDir, text) {
   return JSON.stringify(parsed);
 }
 
-// Claim, send and inbox still speak to the first listed relay: one browser,
-// one session, one mailbox at a time. Minting is the call that had to stop
-// doing that — see handleInvite.
+// The first listed relay. Claim, send and inbox once all spoke to it; send,
+// inbox and the mint doors are gone, a claim is aimed (withClaimRelay), and
+// handleContact is the one caller left, when no url is named.
 function loadRelayUrl(rootDir) {
   var urls = ownerBadge.configuredUrls(rootDir);
   return urls.length ? urls[0] : null;
@@ -259,7 +259,7 @@ function bytesHeldByPeer(rootDir) {
 // 2026-09-19 with the rest of the roster readers — Andy: "nothing is
 // allowed to return a roster." What a contact is doing now is the
 // presence table's (presenceNode.js), fed by broadcasts and searches;
-// who owns a relay is allow.json's, never a row's.
+// who owns a relay is what that relay's owner report says (router.relayStatus), never a row's.
 // ── THE BOOK'S LABEL AND ITS SEARCH, PURE (contact.search, puppets/G2) ─
 //
 // Module level and exported so a suite's fake node answers with exactly
@@ -410,7 +410,7 @@ function listenSet(rootDir) {
 // ── THE FRONT DOOR, FOR THE ROUTER PATH ──────────────────────────────
 //
 // listenSet above is the same question, and for a long time it was asked
-// on one transport only: hub.js:389, the `inbox` read. peerPost.onRequest
+// on one transport only: the `inbox` read, gone with the ring (R8). peerPost.onRequest
 // — where packets actually arrive now — checked that a signature matched
 // the sender it claimed and that the packet was addressed here, and
 // nothing else. A signature proves possession of a key; it proves nothing
@@ -467,10 +467,10 @@ function frontDoor(rootDir, from) {
   // Itself and everyone it has acquired — the same set the inbox uses,
   // asked here for the first time.
   //
-  // "Acquired" is narrower than "on record", deliberately: contactBook's
-  // ACQUIRED_LISTENING is ['message', 'invite', 'handle'], so somebody
-  // merely SEEN in a relay's roll is not somebody this node agreed to
-  // hear. Having noticed a stranger exists is not an introduction.
+  // "Acquired" is narrower than "on record", deliberately: only a row
+  // flagged keep or mine, and not blocked, is listened to (contacts.listens),
+  // so somebody merely SEEN in the shadow is not somebody this node agreed
+  // to hear. Having noticed a stranger exists is not an introduction.
   if (listenSet(rootDir)[key]) return 'known';
 
   // A RELAY THIS NODE ACCEPTED is known, and only one it accepted. The
@@ -485,20 +485,16 @@ function frontDoor(rootDir, from) {
 // by peerPost after the budget allowed it, never before — so a flood
 // leaves no rows behind.
 //
-// `'message'` is the acquisition route, the same one acquireFromInbox
-// used for the same event on the old transport: this person wrote. It
-// matters because ACQUIRED_LISTENING contains 'message' and not 'roll',
-// so writing is what makes somebody heard next time.
+// IT KEEPS NOBODY. Since goal/G43.17 a stranger who writes is only
+// marked ignored (below); nothing here makes a row kept, so writing is
+// not what makes somebody heard next time.
 //
 // `relayUrl` IS WHICH ROAD THEY CAME DOWN, and it is here because R8
-// would otherwise have quietly taken it. contactBook's `relays` means
-// "mailboxes where you have seen this key" — a fact this node holds
-// about how to reach somebody, and the only one it has. acquireFromInbox
-// passed it; peerPost has had it all along (it is already on every
-// traffic-log row) and simply was not handing it over, which nothing
-// noticed while the ring was still acquiring in parallel.
+// would otherwise have quietly taken it: the one routing fact this node
+// holds about a stranger, noted as a route in the shadow (below).
+// peerPost has had it all along (it is already on every traffic-log row).
 //
-// Optional, so a caller with no road to name still writes the row rather
+// Optional, so a caller with no road to name still marks the row rather
 // than refusing to.
 //
 // NOT THE LABEL, and that one really is gone. acquireFromInbox read
@@ -601,17 +597,13 @@ function remember(rootDir, from, verdict, relayUrl) {
 //
 // The counting it did went too, with goal/G43.14 (Andy: "KILL those fields in shadow-roll, KILL the functionality, KILL it!").
 //
-// Grok's three skips survive in peerPost and contactBook, unchanged: our own
-// traffic is not somebody else's, a silent stranger gets no row and so no
-// count, and a blocked row's numbers freeze where they are.
-//
 // WHAT WAS LOST ON PURPOSE: the count of strangers. It is not gone from
 // the node: the traffic log keeps each refused id and its relay, without
 // the words, for as long as there is room (goal/G43.17).
 
 function createHub(rootDir) {
-  // A kept rename of a contact, on its way to every open page (server.js
-  // writes it on /api/events as contact.rename). The same seam shape as
+  // A kept rename of a contact, on its way to every open page (the events
+  // family's stream carries it as contact.rename). The same seam shape as
   // arrivals: the hub notes, the stream fans out, neither knows the other.
   var contactRenames = require('./arrivals').createFanOut();
   function fail(res, status, msg) {
@@ -1036,9 +1028,9 @@ function createHub(rootDir) {
     });
   }
 
-  // THE LOG, READ AS A TABLE. What arrived, oldest first, from a
-  // position — so a page that was shut can catch up with the same rows a
-  // live page was pushed.
+  // THE LOG, READ AS A TABLE, AS IT ONCE WAS (deleted, below). What arrived,
+  // oldest first, from a position — so a page that was shut could catch up
+  // with the same rows a live page was pushed.
   //
   //   Andy: "The node will provide client(s) with an api block that
   //   treats the log like a database file with the primary keys being
@@ -1106,17 +1098,15 @@ function createHub(rootDir) {
   // and because a door nobody knocks on is the same impurity as a verb
   // nobody can reach.
   //
-  // What is left of the ring goes together, because splitting it leaves a
-  // signed format guarding an unreachable function: relay.send,
-  // /api/relay/send (which the lab and live harness scripts still use to
-  // make traffic), sendMessage, checkSend, the `messages` array and
-  // inbox. That waits on Relay Chat's receive path moving off its poll.
+  // What was left of the ring went together, with R8 (2026-09-15), because
+  // splitting it leaves a signed format guarding an unreachable function:
+  // relay.send, /api/relay/send, sendMessage, checkSend, the `messages`
+  // array and inbox.
 
-  // The token is the relay's to generate, never this node's: a token
-  // invented here would not be in the relay's invites.json and would
-  // refuse the very claim it was made for. All the hub contributes is the
-  // owner's name and a signature over the label and duration it is asking
-  // for. The relay is what mints.
+  // OF THE MINT DOOR (handleInvite, gone with the post-path doors below):
+  // the token is the relay's to generate, never this node's: a token
+  // invented here would not be in the relay's invites and would refuse
+  // the very claim it was made for. The relay is what mints.
   //
   // Which mailbox is the caller's to say, not relays.json[0]'s to assume.
   // A node may own several; minting on the first one listed would put the
@@ -1172,10 +1162,9 @@ function createHub(rootDir) {
   //
   // peer.list answered the whole book at once. contact.search walks the
   // same book (buildPeople, sorted by caption, which is the scan order)
-  // and answers key/label pairs; it never asks a relay. Since goal/G29.6
-  // the label is json {name, owned, blocked} (contactLabel), the
-  // words are ranked by the probability modules, and owned and blocked
-  // are yes-filters beside q (searchPeople).
+  // and answers key/label pairs. Since goal/G29.6 the label is json
+  // (contactLabel) and the words are ranked by the probability modules;
+  // its fields and yes-filters are goal/G40.11's (below).
   //
   // ONE SEARCH OVER THE ONE TABLE (goal/G40.11; Andy: "yes. those names." to contact.search covering relays too). Tier
   // one, at once: the rows the owner's list holds (kept, owned, and blocked to be undone), people and relays alike,
@@ -1257,13 +1246,8 @@ function createHub(rootDir) {
   //
   // `handleMatches`, which this called, outlived it until goal/G19.11.
 
-  // POST /api/hub/contact — a human confirmed one of those candidates.
-  //
-  // The key is checked against the roll before it is written: a stale
-  // page, or a mistyped paste, must not put a contact in the book for
-  // somebody who is not there. The label comes from the mailbox rather
-  // than from the browser, for the same reason.
-  // Yes or no about a person. No mailbox call: whether this node listens
+  // contact.block, unblock, accept, label and forget (server.js's contact
+  // family): yes or no about a person. No mailbox call: whether this node listens
   // is its own business — the mailbox has no opinion and is not asked
   // for one.
   //
@@ -1670,6 +1654,8 @@ function createHub(rootDir) {
   // caption would take Natter's relay list down for a reason that has
   // nothing to do with the relays.
   // ── IS THIS PEER ELIGIBLE TO BE A PARTNER? ──────────────────────────
+  // (Of handlePartnerCheck, below. Partnering as a permission went with
+  // goal/G22.6; what that verb still answers is said there.)
   //
   //   Andy: "can peers get the public key of a relay's owner from the
   //   relay, if they are on its ledger? this would make handshake on
@@ -1698,6 +1684,7 @@ function createHub(rootDir) {
   // capture the RELAY's own key to pin for a later forward hop. On
   // spirit-3 those are …fXD+0c= and …bCAsCR4=.
   // ── WHO IS OVER THERE ────────────────────────────────────────────────
+  // (Of handleRoster, deleted 2026-09-17, below: nothing here reads a roll.)
   //
   //   Andy: "we want to prove that with a partnership more peer id's can
   //   be visible for every node bound to either partner."
@@ -1727,6 +1714,8 @@ function createHub(rootDir) {
   // the next time a caller looks like it needs a bigger answer.
 
   // ── EVERYBODY THIS NODE CAN SEE AND DOES NOT YET KNOW ────────────────
+  // (Of handleCandidates, deleted 2026-09-17, below. Since goal/G43.17 the
+  // network tier of contact.search streams such rows instead.)
   //
   //   Andy: "Natter, of course, will not be the place to add contacts,
   //   this must fit seamlessly into contacts itself, and the list there
@@ -1781,8 +1770,8 @@ function createHub(rootDir) {
   //   might better be call peerOwnerPost()", "it's more true."
   //
   // NAMED FOR WHAT IT IS, NOT FOR WHAT IT DOES. `proxy` already means one
-  // thing here — the outbound web fetcher, `net.fetch` at
-  // `server.js:1563`, marked `{ wire: true }` with "it reaches the
+  // thing here — the outbound web fetcher, `net.fetch` in
+  // server.js, marked `{ wire: true }` with "it reaches the
   // internet, so being offline fails it", and `spirit/state/proxy.json`
   // for which key may go to which website. That proxy points AT the
   // internet; this one points at a puppet. `peerOwnerPost` names by
@@ -1810,44 +1799,24 @@ function createHub(rootDir) {
   // correction, 2026-09-25). A hostile peer composes a no-app packet
   // perfectly well. What it cannot do is be an app AND a system packet at
   // once — so NO PUPPET CAN INTERCEPT OWNER TRAFFIC, which is the
-  // property this needs. Every puppet filters on its own name
-  // (`fixList.js:131`, `appFaceApp.js:143`) and therefore ignores this
-  // automatically.
+  // property this needs. Every app's reader filters on its own app name
+  // and therefore ignores this automatically.
   //
   // **THE OWNER-KEY COMPARISON AT THE RECEIVER IS THE WHOLE BOUNDARY.**
   // Nothing here authenticates anybody; `peerPost` signs every post with
   // this node's identity and the puppet decides whether that key is its
   // master's.
   //
-  // ── BUILT WITH `systemPayload`, AND THE REASON IS A DELETION ─────────
+  // ── BUILT WITH THE FACTORY, packet.encode ────────────────────────────
   //
-  // A first draft used `packet.encode('', …)` — the factory — and that
-  // would have re-required `packet.js` here. It was DELIBERATELY REMOVED
-  // from this file: `hub.js:862-871` records that `decorateWithPacket`
-  // was "the last thing in the node that read an app envelope", deleted
-  // under Andy's *"nothing in node and relay should know about apps"*,
-  // and that it "was the only reason hub.js required packet.js at all".
+  // A first draft used `systemPayload`, the hand-built `{v, body}` with no
+  // `id`, no bound and no refusal. The command is built with
+  // `packet.encode('', …)` now: the note at the packet.js require, at the
+  // top of this file, says why that undoes nothing (Andy, 2026-09-25:
+  // *"agreed. go."*). `systemPayload` stays for the relay search alone.
   //
-  // A SYSTEM PACKET IS NOT AN APP OBJECT — it is the one with no app —
-  // so building one is arguably not what that deletion forbade. But the
-  // require would reappear, and the next reader would see the deletion
-  // undone without the sentence explaining why it was not. So this uses
-  // the builder the file already has.
-  //
-  // THAT LEAVES A REAL QUESTION OPEN AND IT IS NOT MINE: `systemPayload`
-  // is a one-line hand-built `{v, body}` with no `id`, no bound and no
-  // refusal, where `packet.encode` validates and refuses — and Andy
-  // ruled this afternoon that anything posted comes from a factory that
-  // validates and (de)serialises. Either `systemPayload` becomes that
-  // factory for system packets, or system packets come from `packet.js`
-  // and the deletion above gets a second sentence. Both are defensible
-  // and neither is a thing to settle inside this function.
-  //
-  // SENDS ONLY. The stored owner key, the switch and the loopback shim
-  // are three separate requirements and none of them exists yet, so
-  // nothing receives this. That is correct rather than incomplete — a
-  // sender built against a receiver written the same hour is two halves
-  // agreeing with each other instead of with the design.
+  // THE RECEIVER IS puppetMode.puppetDoor (puppets/G7), the owner door a
+  // puppet runs: it verifies the owner's signature before a command runs.
   function peerOwnerPost(rootDir, router, relayUrl, toKey, verb, body) {
     const named = String(verb || '');
     if (!named) return Promise.resolve({ ok: false, status: 400, error: 'verb required' });
@@ -1972,9 +1941,10 @@ function createHub(rootDir) {
   // surface assertion and one stale comment, which between them made a
   // dead verb look alive.
   //
-  // Nothing replaces it. `peer.search` asks each relay who matches
-  // rather than downloading each relay, which is the same question with
-  // a bound on the answer.
+  // Nothing replaces it. contact.search's network tier (walkRelays, above;
+  // peer.search went with goal/G30.19) asks each relay who matches rather
+  // than downloading each relay, which is the same question with a bound
+  // on the answer.
 
   // PARTNERING AS A PERMISSION IS GONE (Andy's decision, goal/G22.6): no
   // relay keeps a partner roll any more, so what this answers promotes
@@ -2167,8 +2137,8 @@ function createHub(rootDir) {
     return ownerBadge.loadRelays(rootDir).map(function (relay) {
       var url = relay.url;
       var row = { url: url, label: relay.label, status: held[url] ? 200 : 0, owned: !!reports[url] };
-      // WHAT THE RELAY OFFERS (goal/G30.2), as its last card said, on every row, seated or not: Natter's claim screen
-      // shows the email field only where services.sendMail is true. Read from what peerPost already knows, never
+      // WHAT THE RELAY OFFERS (goal/G30.2), as its last card said, on every row, seated or not: the relay panel
+      // (element/search/contact/relayPanel.js) shows the email field only where services.sendMail is true. Read from what peerPost already knows, never
       // asked here (goal/G22.4: the relay list asks no relay).
       row.services = router && typeof router.servicesOf === 'function' ? router.servicesOf(url) : { sendMail: false, face: false };
       row.claimed = row.owned || !!seated[url];
@@ -2493,8 +2463,8 @@ function createHub(rootDir) {
   }
 
   return {
-    // THE OWNER'S COMMAND PATH. Sends only; nothing receives it until the
-    // stored owner key, the switch and the shim exist. PUPPETS.md G4.
+    // THE OWNER'S COMMAND PATH (PUPPETS.md G4); a puppet's owner door,
+    // puppetMode.puppetDoor, receives it.
     peerOwnerPost: peerOwnerPost,
     handleClaim: handleClaim,
     // The transport. handleSend and handleInbox stood beside it while
@@ -2502,7 +2472,7 @@ function createHub(rootDir) {
     // other one and this is what a node has.
     handlePost: handlePost,
     // The one place that decides where a post goes, shared with
-    // peerOwnerPost (ownerPost.js) rather than decided twice.
+    // ownerPost.js and puppetStream (server.js hands it) rather than decided twice.
     chooseRoute: chooseRoute,
     handleStatus: handleStatus,
     relayRemove: relayRemove,

@@ -11,6 +11,14 @@ row in one partner roll; a partner interface for self-management (§5).
 Routes are the node's, stored on contacts as relay IDs; the relay keeps no
 route cache (§9b). The owner does not duplicate member storage (§2).
 
+**Status 2026-11-07 (goal/G43.23): what of this note no longer holds in the tree.**
+- **The Governor is gone** (cycle 8, 2026-09-22, `11dcb1e`): the relay keeps fixed limits; the connection allowance is set once at boot from `ramLimitMB` (`relay.js` `allowanceFor`) and a lever is a read-only gauge. No lever is live-changeable and there is no `levers.json`.
+- **Partnering is gone** (goal/G22.6, 2026-10-13): the partner roll, injection, both-owners-sign, the partner budget and the partner verbs were removed; a relay carries posts to its members from any relay. Everything in §5–§6 and the Decided / Build sequence rows about partners is record only.
+- **Ownership never comes by invite** (goal/G16.8, 2026-10-11, Andy: *"the invite path to ownership MUST be gone. it is a security gap, from the time of install until the time of first claim."*): `install.js` and the owner invite are deleted; `bash/install-units` takes `OWNER_KEY` and writes `spirit/state/owner.json` (`{ owner }`, `relayAuth.js`); a relay with no owner refuses every claim over the wire. `allow.json` became `owner.json` (cleanup/G1.7).
+- **The node's log is not permanent** (goal/G30.19): node.db is capped at 16 MB and the oldest packets are shed (`nodeStore.js` `MAX_DB_BYTES`; Andy, 2026-10-21: "learn to throw out shit, or else my box is gonna grind to a hold very soon"). The §2 row "the log is permanent" no longer holds.
+- **Strangers have no policy** (goal/G43.17): `preferences.json`, `unknownPolicy` and `contact.setSenders` are gone; `hub.frontDoor` answers `known` or `drop`.
+- The core code moved from `spirit/run/js/` to `spirit/run/spirit/` (goal/G40.2); links below point there, but a line anchor is as of the commit the passage names and may no longer land on the cited text. `natterDetails` is gone (Natter retired, goal/G30.7); the monitor is `spirit/run/shell/relayMonitor/`.
+
 > **Andy:** *"The node is a digitisation of its owner's spirit — human
 > readable, the user-experience expression of the original SpiritOS
 > concept. It can afford no dependencies outside native node.js. Relays on
@@ -95,9 +103,11 @@ one. When the roll sweep went, a stranger who writes to you began arriving
 the node's own book in advance.
 
 That reads as a missing relay feature and is a node policy question already
-answered: `unknownPolicy` reads the node's own `preferences.json`, set by
-the person through `contact.setSenders`, and `frontDoor` acts on it — admit,
-acquire, hold, or drop.
+answered: `hub.frontDoor` decides from the sender's key — `known` (itself,
+someone it acquired, a relay it accepted) or `drop`. *Since goal/G43.17 there
+is no policy to set: `preferences.json`, `unknownPolicy` and
+`contact.setSenders` are gone, and the node ignores a stranger, always; the
+admit / acquire / hold rows below are record only.*
 
 **Naming follows the policy decision; it does not precede it.**
 
@@ -182,7 +192,7 @@ partners invites label expiresAt invitedBy memory rss heapUsed heapTotal uptimeS
 ```
 
 — against `Owner, Mode, Peers, Connected`
-([natterDetails.js:471-476](../../spirit/run/app/natterDetails/natterDetails.js#L471-L476)).
+(`natterDetails.js:471-476` at the time; Natter and natterDetails were retired in goal/G30.7 — the panel is now the Relay Monitor, `spirit/run/shell/relayMonitor/`).
 
 So "report, not files" is not a thing to build. **It is a thing to finish**:
 the wire half exists and the window does not. That inverts today's accident,
@@ -205,7 +215,7 @@ stranger, and no better for the owner than for them.
 
 **No lever moves today.**
 `partnerPerMin()` returns `PARTNER_FLOOR_PER_MIN`
-([relay.js](../../spirit/run/js/relay.js)) — it is a *function* rather than a
+([relay.js](../../spirit/run/spirit/relay.js)) — it is a *function* rather than a
 constant precisely so it can move, and it does not yet. Every cap is fixed,
 and `caps` reports the same two numbers forever.
 
@@ -227,7 +237,7 @@ moving the lever (§5, scope).*
 ### Active members, not enrolled
 
 `present` is `Object.keys(sinks)`
-([presence.js:143-145](../../spirit/run/js/presence.js#L143-L145)) — free,
+([presence.js:143-145](../../spirit/run/spirit/presence.js#L143-L145)) — free,
 and bounded by the connection cap. *This corrects the line as first
 written: there was no connection cap — nothing bounded the total number of
 held streams until cycle 1 built the connection allowance (2026-09-19).* `peers` is `who()` over the whole roll,
@@ -340,6 +350,8 @@ configuration is still read once, at boot.
 
 ## 5. Owner sets, relay decides
 
+*Superseded twice: the Governor was deleted in cycle 8 (the relay keeps fixed limits, nothing moves a lever), and partnering as a permission is gone since goal/G22.6. Of this section only "the configuration is read once, at boot" still holds. Kept as the record.*
+
 > **Andy:** *"An autonomous relay still serves its owner: an owner can
 > inject permissible/trusted relay-urls and revoke them. That's where the
 > partnership boundaries are governed, by a human. The other inputs are
@@ -374,6 +386,8 @@ a bound or the configuration at runtime is outside this design and marked
 where it appears.
 
 ### Superseded later the same day: each lever declares whether it is live
+
+*Superseded again in cycle 8 (`11dcb1e`): the Governor and the owner's lever verb are deleted; a lever is a frozen, read-only gauge and nothing writes `levers.json`.*
 
 > **Andy (2026-09-19):** *"The partner-to-partner API and the lever
 > configuration API on the relay are scaffolding too, even if they change
@@ -435,7 +449,7 @@ by injecting the reach the same way, and the allow-list gives the rule:
 > write down or keep current. So partner URLs now arrive from **members'
 > route hints**, and this rule cannot survive in that form.
 >
-> **What it was protecting is still real**, and `PARTNERS.md:463` named
+> **What it was protecting is still real**, and `PARTNERS.md:463` (at the time; that design is withdrawn since goal/G22.6 and the page is now its record) named
 > it while arguing the other way: *"A relay that fetches a URL is a relay
 > with an SSRF surface, a timeout budget and a retry policy, on a box
 > whose whole design is to do less."*
@@ -467,10 +481,12 @@ is not "relays can call out" — it is "relays can call out *to a list*".
 
 **Precedent exists for both halves.** Owner writes a file and the relay
 notices: `allow.json` plus `reloadAllow()`
-([relay.js:440-442](../../spirit/run/js/relay.js#L440-L442)), for members.
+([relay.js:440-442](../../spirit/run/spirit/relay.js#L440-L442)), for members.
 Relay reaches out without `relay.js` learning how: `askPartner`, injected.
 
 ### Injection is owner-only, and the relay may reject it
+
+*Superseded: partnering as a permission is gone since 2026-10-13 (goal/G22.6) — no partner roll, no injection, no partner budget, no partner verbs (`relay.js`, "THE PARTNER ROLL STOOD HERE"). Kept as the record.*
 
 > **Andy (2026-09-19):** *"The partners that can be injected by only the
 > owner, the relay must verify it's an actual relay and capable for
@@ -514,10 +530,12 @@ to say what it speaks. One answer can serve both.
 
 **Decided (Andy, 2026-09-19, accepting the recommendation):** a rejection reaches the owner with its reason,
 down the owner's stream as `partner-added` / `partner-removed` already do
-(`ownerEvent`, [relay.js](../../spirit/run/js/relay.js)) — otherwise the
+(`ownerEvent`, [relay.js](../../spirit/run/spirit/relay.js)) — otherwise the
 owner's one real-time tool fails silently.
 
 ### Both owners sign, and a proposal is answered by an injection
+
+*Superseded: partnering as a permission is gone since 2026-10-13 (goal/G22.6) — no partner roll, no injection, no partner budget, no partner verbs (`relay.js`, "THE PARTNER ROLL STOOD HERE"). Kept as the record.*
 
 > **Andy (2026-09-19):** *"It needs that owner's signature as well"* — and,
 > on the alternative of an owner-set acceptance policy, agreed that it is
@@ -568,6 +586,8 @@ signed.**
 
 ### The partner roll: one dataset, a status per row
 
+*Superseded: partnering as a permission is gone since 2026-10-13 (goal/G22.6) — no partner roll, no injection, no partner budget, no partner verbs (`relay.js`, "THE PARTNER ROLL STOOD HERE"). Kept as the record.*
+
 > **Andy (2026-09-19):** *"Can the minting request just be a status field on
 > the partner-roll, and get auto-flushed under the partner roll rules?"* —
 > agreed, with the condition below.
@@ -601,6 +621,8 @@ key, §6), with a status added.
 
 ### Revocation is silent
 
+*Superseded: partnering as a permission is gone since 2026-10-13 (goal/G22.6) — no partner roll, no injection, no partner budget, no partner verbs (`relay.js`, "THE PARTNER ROLL STOOD HERE"). Kept as the record.*
+
 > **Andy (2026-09-19):** *"B will no longer successfully handshake with A
 > (not known), mark its record. Courtesy is not in the scope of this doc."*
 
@@ -618,6 +640,8 @@ answering, and the far side finds out by trying. Courtesy — telling anyone —
 is outside this design.
 
 ### The first claim needs a token, from an installer
+
+*Superseded by goal/G16.8 (2026-10-11), Andy: "the invite path to ownership MUST be gone. it is a security gap, from the time of install until the time of first claim." `install.js`, the owner invite (`invitedBy: '(installer)'`), `becomeOwner` and the firstOwner branch are deleted. Today `bash/install-units` takes `OWNER_KEY` and writes `spirit/state/owner.json`; the owner named there claims his own box without an invite; an ownerless relay refuses every claim over the wire; members still join on an invite the owner minted. The exit-78 refusal still holds (`relayServer.js`). Kept as the record.*
 
 > **Andy (2026-09-19):** *"Relay currently goes keys mode on first claim. I
 > think that first claim should be protected by a token as well."* —
@@ -663,6 +687,8 @@ persistent disc and SSH.*
 
 ### Relays need a partner interface, defined for self-management
 
+*Superseded: partnering as a permission is gone since 2026-10-13 (goal/G22.6) — no partner roll, no injection, no partner budget, no partner verbs (`relay.js`, "THE PARTNER ROLL STOOD HERE"). Kept as the record.*
+
 > **Andy (2026-09-19):** *"Relays need a partner interface. It must be
 > defined with the objective to enable relays to self-manage
 > partnerships."*
@@ -701,11 +727,13 @@ drifted into.
 
 ## 6. Partner acquisition gets much simpler
 
+*Superseded: partnering as a permission is gone since 2026-10-13 (goal/G22.6) — no partner roll, no injection, no partner budget, no partner verbs (`relay.js`, "THE PARTNER ROLL STOOD HERE"). Kept as the record.*
+
 > **Andy:** *"It is also a simplification of partner acquisition."*
 
 **Today a partnership requires the other relay's owner to hold a peer row on
 your relay.** `setPartner` opens with `findByKey(peerKey)` and refuses
-`no such peer` ([relay.js](../../spirit/run/js/relay.js)), and the
+`no such peer` ([relay.js](../../spirit/run/spirit/relay.js)), and the
 partnership is stored **on that peer row** as `partner: { url, relayKey,
 since }`. So two operators who want to partner must first have one of them
 join the other as a member, be found in a picker, be verified as that
@@ -804,9 +832,9 @@ change, or something that says what a box speaks — and the relay's card
 **A relay reads no configuration at all today.** `--port` and the `PORT`
 env, and nothing else. Every limit is a constant compiled in —
 `ROUTE_WAIT_MS`, `DEVICE_PER_MIN`, `CLAIM_PER_MIN`, `MEMBER_PER_MIN`,
-`PARTNER_FLOOR_PER_MIN` ([relay.js](../../spirit/run/js/relay.js)),
-`PAYLOAD_MAX` ([limits.js](../../spirit/run/js/limits.js)), `DEFAULT_MAX`
-and `DEFAULT_PER_REQUESTER` ([router.js](../../spirit/run/js/router.js)).
+`PARTNER_FLOOR_PER_MIN` ([relay.js](../../spirit/run/spirit/relay.js)),
+`PAYLOAD_MAX` ([limits.js](../../spirit/run/spirit/limits.js)), `DEFAULT_MAX`
+and `DEFAULT_PER_REQUESTER` ([router.js](../../spirit/run/spirit/router.js)).
 `allow.json` is the only owner-written input and it is about members, not
 limits.
 
@@ -876,7 +904,7 @@ different number.
 *"On a 1 GB box"* appears in [PARTNERS.md](../relay/PARTNERS.md),
 [ROUTE-DISCOVERY.md](../relay/ROUTE-DISCOVERY.md),
 and twice in
-[relay.js](../../spirit/run/js/relay.js) — re-derived at each site rather
+[relay.js](../../spirit/run/spirit/relay.js) — re-derived at each site rather
 than referenced, which is how a later reader designs against something
 larger without noticing they have moved.
 
@@ -1027,7 +1055,7 @@ bug. Worth a warning at mint time rather than a surprise at redemption.
 An earlier draft filed them under part 1 as *self-bounding*, which
 understated them — they are bounded by a **life cycle**, and it is already a
 complete §10 lever in code
-([invites.js](../../spirit/run/js/invites.js), `normalizeDays`):
+([invites.js](../../spirit/run/spirit/invites.js), `normalizeDays`):
 
 ```js
 if (!isFinite(d) || d <= 0) return 7;   // default
@@ -1112,7 +1140,7 @@ differs, and it is structural rather than a matter of taste.
 The jiffie points at something the three-part model was missing. An invite's
 RAM cost is **work**, not state — it is over before anything could be held —
 and work is bounded by a **rate gate**, not an allotment.
-`CLAIM_PER_MIN = 10` ([relay.js](../../spirit/run/js/relay.js)) already caps
+`CLAIM_PER_MIN = 10` ([relay.js](../../spirit/run/spirit/relay.js)) already caps
 it, and that gate has been sitting outside this structure the whole time.
 
 **But that is only true of RAM.**
@@ -1491,7 +1519,7 @@ falls off because there is nowhere for it to go.
 
 **This is already true of the relay's most obvious store.** `trafficLog`
 writes nothing in relay mode — `if (relayMode …) return null`
-([trafficLog.js:283](../../spirit/run/js/trafficLog.js#L283)) — so *"the log
+([trafficLog.js:411](../../spirit/run/spirit/trafficLog.js#L411)) — so *"the log
 should be permanent. period."* is the **node's** rule and the relay was
 exempted from it before this note existed. The generalisation is not a new
 constraint; it is the one the relay already follows, extended to the tables
@@ -1557,7 +1585,7 @@ a header.**
 This relay permits a signature in exactly one place — `X-Spirit-Sig` — and
 refuses a query `sig` outright, because *a signature on a query string is
 already in an access log*
-([relay.js](../../spirit/run/js/relay.js), `streamSignatureFrom`). A browser
+([relay.js](../../spirit/run/spirit/relay.js), `streamSignatureFrom`). A browser
 following a download link sets no headers. So *"GET gated by owner key"* is
 not directly buildable: **the gate cannot ride where the rule requires it,
 and the one place a link can carry something is the place the rule
@@ -1721,7 +1749,7 @@ watching, and one that spends its owner's memory watching itself.
 
 **Half of this is already in the code, for one component.** `meterFloor`
 holds the meter to `METER_SLOTS_MIN` slots and a minimum span
-([relay.js:346-362](../../spirit/run/js/relay.js#L346-L362)), with the
+([relay.js:424-432](../../spirit/run/spirit/relay.js#L424-L432)), with the
 reason stated exactly: *"which is what stops 'smaller and slower' becoming
 'blind'."* It has a floor and no ceiling. Under this rule it would have
 both, and so would everything else the monitor keeps.
@@ -1778,12 +1806,12 @@ Partners live **inside the member roll** today, as a flag on a peer row, so
 every partner lookup is a scan of the membership:
 `partnerByRelayKey` calls `listPeers()` — which *allocates an array of every
 member* — and walks it for a handful of partners
-([relay.js:820-829](../../spirit/run/js/relay.js#L820-L829)).
+([relay.js:820-829](../../spirit/run/spirit/relay.js#L820-L829)).
 
 That is on the hot path. `partnerIdentity` is the fallback half of
 `deviceIdentity(token) || partnerIdentity(token)`, at both `routePost`
-([relay.js:2650](../../spirit/run/js/relay.js#L2650)) and `streamOpen`
-([relay.js:3275](../../spirit/run/js/relay.js#L3275)). And `deviceIdentity`
+([relay.js:2650](../../spirit/run/spirit/relay.js#L2650)) and `streamOpen`
+([relay.js:3275](../../spirit/run/spirit/relay.js#L3275)). And `deviceIdentity`
 itself falls back to scans: `findByKey` scans when the map misses,
 `findByLabel` always scans.
 
@@ -1829,7 +1857,7 @@ membership requirement *and* the scan, one change and two results.
 > names which partner holds the target… while **the question of how a node
 > tells a relay that stays open** (0012 says the node has the answer; a post
 > has no field for it).
-> — [relay.js:2629](../../spirit/run/js/relay.js#L2629)
+> — [relay.js:2629](../../spirit/run/spirit/relay.js#L2629)
 
 Three pieces designed separately turn out to be one mechanism:
 
@@ -1942,7 +1970,7 @@ ordering to the node and had the relay follow it.*
 
 **Already half in the tree.** Contact rows carry `relays: [...]`, and
 `learnRoute` stashes a route a relay has proven onto an existing row and
-never creates one ([contacts.js:411](../../spirit/run/js/contacts.js#L411)).
+never creates one ([contacts.js:411](../../spirit/run/spirit/contacts.js#L411)).
 The divergence: the tree stores relay **URLs**; this decision says relay
 **IDs**. *Resolved by cycle 2: contact rows gain `routes`, relay keys only,
 and `learnRoute` writes there; `relays` (URLs) is left as it was.*
@@ -1959,7 +1987,7 @@ and `learnRoute` writes there; `relays` (URLs) is left as it was.*
 **The gap, as it stood at `c386344`.** Cycle 2 teaches routes in one direction
 only: A, the asker's relay, broadcasts `('route', { key: N2, at: B })` once N2's
 signed reply comes back. B hands N2 the forwarded request as
-`{ from, to, text, sig }` ([relay.js:1931](../../spirit/run/js/relay.js#L1931))
+`{ from, to, text, sig }` ([relay.js:1931](../../spirit/run/spirit/relay.js#L1931))
 and says nothing about A. So N2's own request back to N1 goes out without
 hints.
 
@@ -1973,7 +2001,7 @@ hints.
     goes on the wire.
   - B does this on *any* signed reply. A reply has no status: every request
     gets a receipt, and whether N2 took it in shows only in the reply's
-    `text`, which the relay never reads ([peerPost.js:621](../../spirit/run/js/peerPost.js#L621)).
+    `text`, which the relay never reads ([peerPost.js:621](../../spirit/run/spirit/peerPost.js#L621)).
     Either way, the partnership carried the request both ways, so the route
     is proven.
 - **B still keeps no route cache.** The partner's key for a request is held
@@ -1992,11 +2020,11 @@ hints.
   non-minted. Within a tier, the node's order decides. That is the "to a
   degree": a live older route beats a newer one that is not live.
   `partnerFromHints` already takes hints in their given order within each
-  tier ([relay.js:2685](../../spirit/run/js/relay.js#L2685)).
+  tier ([relay.js:2685](../../spirit/run/spirit/relay.js#L2685)).
 
 **Evidence: the forward is the proof.** N1's post signature covers the minute
-([relayAuth.js:135](../../spirit/run/js/relayAuth.js#L135)) and is accepted
-within ±1 minute ([relayAuth.js:147](../../spirit/run/js/relayAuth.js#L147)).
+([relayAuth.js:135](../../spirit/run/spirit/relayAuth.js#L135)) and is accepted
+within ±1 minute ([relayAuth.js:147](../../spirit/run/spirit/relayAuth.js#L147)).
 A partner forwards only a post from its own member, enclosed whole. So a
 fresh packet from N1 that A carried shows that N1 is A's member and posted
 there just now. The only way round it is for A to replay a packet it got
@@ -2055,7 +2083,7 @@ partner; counting posts in flight needs none.*
 | **per partner row** (warm in RAM) | forwarded through that partner | its hash comes back on the stream, **or it expires** |
 | **per member** | the member posts | the same |
 
-**Already in the tree.** [router.js](../../spirit/run/js/router.js) holds
+**Already in the tree.** [router.js](../../spirit/run/spirit/router.js) holds
 `pending[hash]` with its requester and time, expires it, and caps it —
 `countFor(requester)` is the per-member count, capped at
 `DEFAULT_PER_REQUESTER 16` within `DEFAULT_MAX 256`. The per-partner count
@@ -2150,7 +2178,7 @@ partnerKey` would say who talks to whom, and that is a correspondence graph
 that survives restarts. The tree already refuses the same shape in the other
 direction, keeping route chatter out of a node's log because it *"would
 leave, on every member's disk, a lasting record of what a relay's members
-have been looking up"* ([server.js](../../spirit/run/js/server.js)).
+have been looking up"* ([server.js](../../spirit/run/spirit/server.js)).
 
 ### ~~This amends 0013's "never persisted"~~
 
@@ -2228,7 +2256,7 @@ Four more things follow:
 An earlier draft of this section read 0 as *off*, and had to carve out an
 exception for levers that must never reach zero. The tree has the case, and
 it is a deadlock rather than a preference
-([relay.js:162-178](../../spirit/run/js/relay.js#L162-L178)):
+([relay.js:162-178](../../spirit/run/spirit/relay.js#L162-L178)):
 
 > **IDLE MEANS FLOOR, NEVER ZERO** … a pool of zero is a bootstrap deadlock.
 > An unused partnership could never carry the first packet that would make
@@ -2278,8 +2306,8 @@ lever is a moving share, not a fixed number.*
 
 **What it condemns in the tree** — fixed per-sender caps, due to become
 derived shares: `DEFAULT_PER_REQUESTER 16` and `DEFAULT_MAX 256`
-([router.js](../../spirit/run/js/router.js)), `MEMBER_PER_MIN 600`
-([relay.js](../../spirit/run/js/relay.js)). And cycle 1's connection
+([router.js](../../spirit/run/spirit/router.js)), `MEMBER_PER_MIN 600`
+([relay.js](../../spirit/run/spirit/relay.js)). And cycle 1's connection
 allowance ceiling (`ramLimitMB × STREAMS_PER_MB`), which is still a fixed
 derivation rather than a share of what is left after the owner.
 
@@ -2356,7 +2384,7 @@ after the asker has gone. **Open:**
    below it, so no legitimate search is cut off while we learn.
 2. **Measure the worst ordinary case.** A search from N1 with no known routes,
    which A fans out to all *n* partners in parallel (`Promise.all`,
-   [relay.js:2614](../../spirit/run/js/relay.js#L2614)). It takes A's own walk,
+   [relay.js:2614](../../spirit/run/spirit/relay.js#L2614)). It takes A's own walk,
    plus the slowest partner's walk, plus the trips. So it grows with *n* and
    with the largest partner roll.
 3. **The hard-coded floor is that measurement + 1 s, or × 1.5**, whichever is
@@ -2556,6 +2584,8 @@ rolls; different roll sizes on the two relays; labMaster and lab relays on
 the workstation, never on spirit-3.
 
 ## Decided
+
+*Status 2026-11-07: the entries below on the Governor, live levers, injection, both-sign, the partner roll and the installer's owner invite are superseded (see the status at the top). The two frames, readability, the bounds and the owner not duplicating member storage still stand.*
 
 **The two frames.** A node is a person and is readable because of it; a
 relay is infrastructure and **owes its owner an account of itself, not an
@@ -2969,6 +2999,8 @@ written down. RAM binds first; disk is the backstop.
 
 ## Build sequence — scaffolding before optimization
 
+*Status 2026-11-07: cycle 5 (partner acquisition) and the Governor rows will not be built — partnering went in goal/G22.6, the Governor in cycle 8.*
+
 > **Andy (2026-09-19):** *"The migration of persistent datasets to SQLite
 > should happen early, since those things will change little before relay
 > ships as desired. So when we later mess with lever-inventions etc., a
@@ -3171,7 +3203,7 @@ none is mine to take.
   node and relay become separate startup modules** instead of one `server.js`
   with `--relay` — narrower than a repo split, and in line with reducing the
   relay's RAM and disc footprint: a relay stops loading node code at all.
-  **Built 2026-09-19 (cycle 0):** `js/relayServer.js` and `js/serveCommon.js`;
+  **Built 2026-09-19 (cycle 0):** `js/relayServer.js` and `js/serveCommon.js` (now `spirit/run/spirit/`);
   `node js/server.js --relay` hands off to the relay module before loading
   anything. Measured by booting each mode and reading `require.cache`: relay
   **30 → 22 modules**, node **32 → 26**. *This corrects the static count

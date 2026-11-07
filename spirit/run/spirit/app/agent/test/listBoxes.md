@@ -1,7 +1,7 @@
 # spirit/app/agent/agent.js, as one app: every list in a box of a stated size
 
 The agent app's lists, walked from each list to the app (goal/G41.18; rule/16). Its test is `./listBoxes.js`. The app
-runs on a small page (the one Desk's suite drives, copied) with the real workBench, table elements and grants panel. The
+runs on a small page (the one Desk's suite drives, copied) with the real workBench and table elements. The
 search element is a recorder that keeps the box each list was made in. The selectors and the agent server are
 stand-ins, the selectors in the shell's element shape, `<name>.create(container, options)` (goal/G41.19).
 
@@ -24,9 +24,8 @@ asks that of the app as a whole, the way Desk's does (`shell/desk/test/desk.md`,
 - The app mounts into a `fill` box of the whole app area.
 - Shown by its strip button, the list pane of each tool stands in a `fill` box, and so does every box from it up to the
   app:
-  - provider, model, persona and job: the table's list (`spirit/app/agent/table/tableElement.js`);
-  - grant: the grants panel's grant list (`spirit/element/grantsPanel.js`, `spirit/element/search/grant.js`).
-- Every list pane the app drew, five at least, meets the same rule. A list drawn as a dropdown stands inline, as every
+  - provider, model, persona and job: the table's list (`spirit/app/agent/table/tableElement.js`).
+- Every list pane the app drew, four at least, meets the same rule. A list drawn as a dropdown stands inline, as every
   picker in the tree does, and is not asked.
 
 ## Requirements (goal/G41.21, box v17)
@@ -55,7 +54,6 @@ item. no exceptions."*
 
 - Any box between a list and the app that is only as tall as its content. Mutated:
   - the workBench's side pane without `fill`;
-  - the table list's own box without `fill`;
-  - the grants list's box without `fill`.
+  - the table list's own box without `fill`.
 - A Models pane whose Ask row stands above its title row, or that draws its title twice.
 - A list pane handed no branch, or another table's.

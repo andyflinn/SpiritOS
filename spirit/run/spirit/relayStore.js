@@ -26,12 +26,12 @@
 // where it is, because stored data must stay readable and keep working
 // across the flag day (same decision).
 //
-// identity.json, allow.json and config.json stay files: constant, tiny,
+// identity.json, owner.json and config.json stay files: constant, tiny,
 // and the ones an owner may have to read or restore over SSH.
 //
 // ROLLBACK JOURNAL, NOT WAL. After every commit the data is in relay.db
 // and nowhere else, so a file-copy backup — or a test fixture copying
-// relay-state/ — cannot catch it half-written. WAL buys concurrent readers,
+// spirit/state/ — cannot catch it half-written. WAL buys concurrent readers,
 // and a relay is one process.
 //
 // `node:sqlite` is core from Node 22.5 and unflagged from 22.13. Only the
@@ -213,7 +213,7 @@ function open(rootDir) {
   //   Ownership is only determined by one identified key. The relay knows
   //   it."
   //
-  // That key is allow.json's (auth.ownerName), on the relay's card.
+  // That key is owner.json's (relayAuth.loadOwner), on the relay's card.
   // Cycle 3 created `members` with an `owner` column copied from it at
   // claim time; a relay.db that has one loses it here, once. Idempotent:
   // asked of the table, not assumed.
@@ -334,7 +334,7 @@ function build(rootDir, db, key) {
     //
     // The database and its rollback journal, which is the whole of what a
     // relay writes that grows: members and invites. No traffic, no
-    // payloads (relayServer.js, NO TRAFFIC LOG), so this number moves only
+    // payloads (relayServer.js loads no traffic log), so this number moves only
     // when membership does.
     //
     // MEASURED, NOT ESTIMATED. A per-member byte estimate would be a
@@ -364,7 +364,7 @@ function build(rootDir, db, key) {
       count: function () { return q.memberCount.get().n; },
       // `page` STOOD HERE: the roll a page at a time, which was how search
       // walked it. Search answers from the connected members only
-      // (relay.js walkRoll, 2026-09-19), so nothing on the relay walks the
+      // (relay.js, 2026-09-19), so nothing on the relay walks the
       // roll, and an enumerator with no caller is an invitation.
       //
       // The whole roll in one go, row by row. For suites and tools only
@@ -468,7 +468,7 @@ function importLegacy(rootDir, store) {
   // AN UNREADABLE FILE STOPS THE IMPORT, AND THE RELAY WITH IT. Reading a
   // torn routingTable.json as empty would open a relay that has quietly
   // forgotten its members — the same failure B4 refuses to start over
-  // (a relay with members but no allow.json). Nothing is renamed, so the
+  // (a relay with members but no owner.json). Nothing is renamed, so the
   // owner finds the file where it was, over SSH.
   let peers = {};
   let invites = [];

@@ -4,13 +4,13 @@
 //   - One search in two tiers. contact.search answers at once from the one table (goal/G40.11): the people and relays
 //     the owner keeps, owns or blocked; and starts a network search on the node, whose finds stream in, one row each,
 //     stored as nothing (goal/G43.17). All of it lands in
-//     data.contacts, the faceless layer (spirit/data.js, goal/G30.16), and this list is a view of it: every list
+//     the contact family's cache (spirit.data.contact.data, goal/G41.28), and this list is a view of it: every list
 //     of contacts on the page shows the same rows.
 //   - One list, cached by key: one row per ID, a relay as well as a person. One row of filters instead of two folds:
 //     all, my puppets, blocked, relays, and at its end a network toggle, off at first (box v8): on, the rows the owner
 //     has not decided about show as well. Columns: presence, status, label (sorts as text), and Add on a row
 //     the owner does not keep.
-//   - Each row is a contactElement and keeps itself current; this paints no presence.
+//   - Each row is a contact row element (./rowElement.js) and keeps itself current; this paints no presence.
 //   - Pressing a row opens it: Contact for a person kept, Relay Details for a relay. A row not decided about asks that
 //     node who it is and says so.
 //   - It fills as soon as it is drawn; an empty search answers like any other.

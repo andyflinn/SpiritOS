@@ -39,7 +39,10 @@ local port via which he can do secure p2p posting"*, and *"their apps will
 be users of 65432 like the shell is."*
 
 **This is the strongest differentiator and the least documented thing we
-have.** `design/protocol/` does not exist. A curious developer who
+have.** `design/protocol/` does not exist. *(It does since 2026-09-24:
+`design/protocol/THE-DOOR.md`, the door contract, with examples in Python
+and Bash under `design/protocol/examples/`. The rest of this paragraph is
+the state on the day of the assessment.)* A curious developer who
 believes the claim cannot act on it: there is no published verb list, no
 error codes, no size or rate limits, and no worked example that is not
 JavaScript. **Leading with this claim before that document exists would

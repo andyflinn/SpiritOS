@@ -4,6 +4,16 @@
 tell me the result"*. This is the cycle-report rule 15 requires to
 accompany a stop.
 
+> **Status 2026-11-07 (goal/G43.23):** the app server this cycle built is
+> gone. goal/G13.2 (013dc827; Andy, 2026-10-10: *"no "face" crap belongs
+> into node."*) deleted the `--app` mode, `faceServer.js`,
+> `appServerBoundary.js` and the booted node apps; goal/G30.1 (ba2f3b62)
+> deleted appFaceApp and grantFace. A server is now a process started by
+> `jobs.startNodeServers` and reached by its pipe (`appClient.js:23-28`), and
+> a member's face is served by its relay (`relayServer.js:472`, `faceDoor`).
+> `app/` became `spirit/run/shell/` at slim/G1.1 (33e2a82f). Kept as the
+> record of 2026-09-24.
+
 **The cycle ran the working agreement properly for the first time:** the
 suite was written from the document by wsl-claude, the source by Claude,
 and **neither read the other's artefact until this stop.**

@@ -11,7 +11,20 @@ sitting deleted it. What follows is the same page with that entry struck
 in place rather than rewritten, so the before and the after are both
 readable.
 
-A relay is `node js/server.js --relay`. Decision 0006 is the rule this
+> **Status 2026-11-07 (goal/G43.23):** this is a measurement of
+> 2026-09-15; the disk half no longer holds. State lives in
+> `spirit/run/spirit/state/` (not `relay-state/`). `routingTable.json` and
+> `invites.json` became the `members` and `invites` tables of `relay.db`
+> (cycle 3, `spirit/run/spirit/relayStore.js:183`, `:196`). `allow.json`
+> became `owner.json`, `{ owner }` (cleanup/G1.7, `relayAuth.js:441-442`).
+> `pending-owner.json` is gone: since goal/G16.8 the owner is written at
+> install and nothing over the wire makes one (`relayAuth.js:434-439`).
+> Devices (`deviceAuth.js`, `deviceHits`, `awaitingReply`) were removed at
+> goal/G16.2, and the claim and send rate buckets went with them. The
+> router's bounds changed too (`router.js`: ttl 5 s, `DEFAULT_TTL_MS`).
+> Paths below that name `js/` are now `spirit/run/spirit/` (goal/G40.2).
+
+A relay is `node spirit/server.js --relay`. Decision 0006 is the rule this
 page is measured against: *"A relay relays. It offers no sophisticated
 services, buffers nothing, and stores nothing on anyone's behalf."*
 

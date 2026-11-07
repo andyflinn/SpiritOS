@@ -1,7 +1,7 @@
 // spirit/run/spirit/element/fieldInput.js
 // AN INPUT STOPS AT ITS LIMIT (goal/G32.2; Andy: "field rules is already badly applied in the UI, the input tell you how
 // man characters you typed in excess of the limit instead of simply refusing to take more characters."). A field's
-// limit is its rule's in js/fieldRules.js, counted in bytes as the rule counts them, never characters. attach(input,
+// limit is its rule's in spirit/fieldRules.js, counted in bytes as the rule counts them, never characters. attach(input,
 // rule) refuses a keystroke or a paste that would take the text past it, before it lands; deleting always works. It
 // never says how far past the limit the text went: it simply does not get there.
 //

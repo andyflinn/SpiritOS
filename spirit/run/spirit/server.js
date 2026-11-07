@@ -22,8 +22,8 @@ if (process.argv.slice(2).includes('--relay')) {
 // A THIRD MODE STOOD HERE, `--app` (cycle 2): one process serving one page app, dispatched to
 // faceServer.js. Gone with goal/G13.2 (Andy, 2026-10-10: "no \"face\" crap belongs into node.",
 // "wh the fucdk does the node need a second fucking branch for opening a fucking process?").
-// Every server process is a process/js script started by jobs.startNodeServers, the face
-// (process/js/appFaceApp) and the face owner's answer (process/js/appFaceAppServer) included.
+// Every server process is started by jobs.startNodeServers: a process/js script that runs at home
+// (intrinsic, or by its sidecar; goal/G41.1), or a spirit/app one whose node.mount is true.
 
 const http = require('http');
 // For the proxy's outbound calls (handleGenericProxy) — with no 300-second
@@ -47,8 +47,9 @@ const contactBook = require('./contacts');
 // The keys this node has accepted for the relays it uses. Turning the URL
 // a packet arrived on into the relay KEY a route is made of.
 const relayKeys = require('./relayKeys');
-// Where this node keeps its mail. Required here for one call at boot:
-// a node with no relay list (spirit/state/relays.json) is given one.
+// The owner badge (ownerBadge.js). Required here for one call at boot:
+// a node with no relay is given the kept one (ensureRelays, a relay row
+// of node.db's one table through relayKeys).
 const ownerBadge = require('./ownerBadge');
 // Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
 // again later would report whatever is on disk now, which is the lie
@@ -143,7 +144,7 @@ const arrivals = require('./arrivals').createArrivals({
 
 // The small, fixed set of paths the page needs to boot at all, served
 // unconditionally by the static route below, checked before fileServable —
-// this is what lets spirit/kernel.js sit in kernel.js's UNSERVABLE_FILES
+// this is what lets spirit/kernel.js sit in fileSystem.js's UNSERVABLE_FILES
 // (blocking the *generic* read/list capability: loadFile, scanFolder, the
 // Files app, the fs-watcher) while still working as the page's own boot
 // script. relay.html stood beside index.html here until the brochure was
@@ -207,7 +208,7 @@ let peerRouter = null;
 // ── WHAT THE LOOPBACK CLIENT DOOR CAN BE ASKED ───────────────────────
 //
 // Declared here, filled at the foot of this file. Modules claim their
-// own namespace where their dependencies exist — see js/verbTable.js for
+// own namespace where their dependencies exist — see verbTable.js for
 // why claiming beats a table, and why it happens after boot rather than
 // on require.
 //
@@ -218,8 +219,9 @@ let nodeDoor = null;
 // This node's face (goal/G30.13), built on nodeDoor once it exists; presence hands it the relay's face events.
 let faceHome = null;
 // THE DECLARATION FORM (goal/G10.5), MOUNTED (goal/G30.4): each module's verbs are {request, reply, handler},
-// declared bare (stat, not fs.stat); loopbackVerbs.mount gives them their family name and adds the AGENTS family of
-// the folder js/<family>/. A module does not know the name it is mounted under (Andy, 2026-10-20).
+// declared bare (stat, not fs.stat); loopbackVerbs.mount gives them their family name and adds the system family
+// (<family>.FS.<name>) introSpector makes of the family's folder. A module does not know the name it is mounted under
+// (Andy, 2026-10-20).
 // `pinnedRelayKey` STOOD HERE, DELETED 2026-09-17 — assigned at boot and
 // read by nothing.
 //
@@ -494,7 +496,7 @@ function handleFsLoad(req, res) {
 // handleFsSaveAppScript and handleFsSaveAppManifest stood here until
 // 2026-09-13 (decision 0008); the unconditional refusal of an app's own
 // script and manifest that they were the exception to went on 2026-10-10
-// (goal/G14.8, kernel.js fileWritable).
+// (goal/G14.8, fileSystem.js fileWritable).
 
 function handleFsDelete(req, res) {
   readJsonBody(req).then((body) => {
@@ -576,8 +578,9 @@ function handleGenericProxy(req, res) {
       res.end(JSON.stringify({ error: 'url must be http or https' }));
       return;
     }
-    // Whatever host the outbound request will actually reach — the only
-    // thing that decides whether a secret is allowed into these headers.
+    // Whatever host the outbound request will actually reach, checked
+    // against this machine below. No secret goes into the headers here
+    // (goal/G29.20): they go as the caller gave them.
     const targetHost = target.hostname.toLowerCase();
     // NEVER THIS MACHINE (goal/G29.20; Andy, 2026-10-18: "fetch will not be able to reach ports on this machine, and
     // agents may use it."). A target written as an address is refused here, before anything is sent; a name is
@@ -688,8 +691,7 @@ function isValidHost(hostHeader) {
 // a request that names ANOTHER origin — or `null`, which is a sandboxed
 // frame or a file — is refused, and so is one the browser marks
 // cross-site. The node's own shell is same-origin and passes; a script on
-// this box (the agents program, grokReview) sends neither header and
-// passes. Nothing here names an app: it is where a request came from, which
+// this box sends neither header and passes. Nothing here names an app: it is where a request came from, which
 // the core can know.
 const OWN_ORIGINS = VALID_HOSTS.map(function (h) { return 'http://' + h; });
 // OPENING THE NODE IN A TAB IS NOT AN ACT (2026-09-22). A link clicked in
@@ -846,7 +848,7 @@ const server = http.createServer((req, res) => {
     // deps, and remembered.
     //
     // The browser addresses the relay by KEY through `peer.post` now,
-    // like any other peer (app/natterDetails).
+    // like any other peer.
     //
     // WHAT THIS MAKES TRUE, and it is the point of the whole exercise:
     // `peer.post` is the only verb on this node that puts anything on
@@ -934,7 +936,7 @@ const server = http.createServer((req, res) => {
     // knows — the same thing said twice, kept in step by remembering,
     // which is what the four post-path doors were.
     //
-    // Modules CLAIM a namespace instead (js/verbTable.js), at the foot of
+    // Modules CLAIM a namespace instead (verbTable.js), at the foot of
     // this file where their dependencies exist. So this dispatch knows
     // how to find an answer and nothing about what the answers are.
     if (pathname === '/api/spirit') {
@@ -1082,8 +1084,8 @@ catch (e) {
   settings.problems.forEach(function (why) { console.warn('spirit/state/node.json: ' + why); });
 }());
 
-// THE BOOK'S ROUTES AND MARKS WERE MOVED HERE AT BOOT (cycle R1, 0021) until goal/G40.11: contacts.json is a set of
-// rows of the one table now, moved in by nodeStore on the first start, and a row's flags are its marks.
+// THE BOOK'S ROUTES AND MARKS WERE MOVED HERE AT BOOT (cycle R1, 0021) until goal/G40.11: contacts are rows of the one
+// table now, and a row's flags are its marks. No old contacts.json is moved in (goal/G41.30, nodeStore.js).
 
 // THE PERSONAL NODE'S BOOT. It read `if (!relayMode)` until cycle 0; a
 // relay is booted by relayServer.js now, so this block always runs.
@@ -1156,9 +1158,14 @@ catch (e) {
   // relay list is what presenceNode dials, a few lines below.
   //
   // NODE STATE since goal/G16.3, so no app decides where this node talks;
-  // in node.db's relays table since goal/G19.15, where this asserts the one
-  // seed row, noderoutes.net, by key and moves any old relays.json and
-  // relayKeys.json in.
+  // a relay row of node.db's one table since goal/G40.11, where this asserts
+  // the one seed row, noderoutes.net, by key, and relayKeys moves any old
+  // relays.json and relayKeys.json in (relayKeys.importOld).
+  // DISCREPANCY WITH ANDY's RULES: goal/G41.30 (nodeStore.js, Andy: "let's get
+  // rid of those \"rescue operations\"", and in commit 83d07fa9: "delete the
+  // code that \"rescues an old json file\"") and the box of goal/G41.32 ("no
+  // \"old-data-rescue-missions\"") rule out moving old stores in; the code
+  // still does, relayKeys.importOld on every read of the table.
   try { ownerBadge.ensureRelays(ROOT_DIR); }
   catch (e) { /* nor a relay list */ }
 
@@ -1184,9 +1191,9 @@ catch (e) {
   // what is left when it does — a refusal nobody wrote down cannot be
   // told apart from nothing having been tried.
   //
-  // Built HERE rather than inside peerPost so the gate is visible at the
-  // one place that knows which kind of process this is. The block it
-  // sits in is personal-mode only, because the file it writes would hold
+  // Built in this file (trafficLog, near the top) rather than inside
+  // peerPost so the gate is visible at the one place that knows which kind
+  // of process this is. This file is personal-mode only, because the log would hold
   // everybody's messages on a relay — not metadata, the content — and that
   // is the worst thing in the system, not a softer version of the ring
   // 0006 deletes. A guard that only holds while the surrounding code stays
@@ -1505,18 +1512,12 @@ catch (e) {
     //   Andy: "when someone binds to a peer i own, it's because i want
     //   them in my network, so i want a contact auto-generated."
     //
-    // The fast path. Somebody claiming a seat is news the relay already
-    // pushes to its owner (relay.js, ownerEvent('claim')) and nothing
-    // was done with it but draw a line on a panel.
+    // Somebody claiming a seat is news the relay already pushes to its
+    // owner (relay.js, ownerEvent('claim')). It is done in onOwnerEvent,
+    // below: hub.adoptClaim acquires that one key, on the event itself; no
+    // roster sweep runs at boot any more.
     //
-    // A FULL RECONCILE RATHER THAN AN ACQUIRE OF THAT ONE KEY, and the
-    // extra probe is worth it: the event says a key claimed, it does not
-    // say on which of this node's relays, and a reconcile answers that
-    // from the roll — the same authority that runs at boot. One
-    // mechanism, exercised twice, rather than two that can disagree.
-    //
-    // Nothing waits on it and a failure is silent: this is a convenience
-    // on top of the sweep, never the only way a member is noticed.
+    // Nothing waits on it and a failure is silent.
     onRelayEvent: function (ev) {
       relayEvents.note(ev);
       if (ev && ev.kind === 'status') relayChanged(ev.relay);
@@ -1645,8 +1646,8 @@ catch (e) {
       // since goal/G43.18.
       return relayEvents.note(ev);
     },
-    // WHO EACH RELAY IS, pinned as its stream opens. relayKey fetches the
-    // roll, accepts a key never seen before, and refuses one that
+    // WHO EACH RELAY IS, pinned as its stream opens. relayKey asks the
+    // relay's card, accepts a key never seen before, and refuses one that
     // changed — so by the time any enrolment can be posted down that
     // stream, hub.frontDoor already knows whether to admit the relay as a
     // party.
@@ -1677,7 +1678,7 @@ catch (e) {
   // Inside the personal-node branch on purpose: a relay claims nothing,
   // because a relay does not serve this door.
   // THE SHAPES BELOW ARE WRITTEN BY HAND FROM EACH HANDLER (goal/G10.5, point 4 of the box): a prototype
-  // cannot say which keys are optional, so a verb's file in js/<namespace>/ carries that in words.
+  // cannot say which keys are optional, so a verb's file in spirit/<namespace>/ carries that in words.
   loopbackVerbs.mount('net', path.join(__dirname, 'net'), {
     // The target's own body and status come back, whatever they are.
     'fetch': { request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {}, handler: handleGenericProxy },
@@ -1861,9 +1862,7 @@ catch (e) {
     'setDescription': { request: { description: '' }, reply: { ok: true, status: 0, description: '' }, handler: function (rq, rs) {
       hub.handleNodeDescription(rq, rs, readJsonBody);
     } },
-    // THE OWNER'S RECORD, read a page at a time — trafficLog.history says
-    // what is in it, what never is, and why it pages by position. Local:
-    // the log is on this disk.
+    // THE OWNER'S RECORD (trafficLog) has no node verb: none is mounted here.
     // ROTATE THIS NODE'S CIPHER KEY (cycle-10/R13): nodeCard.rotate says
     // what changes and why there is no grace period. Then the new card goes
     // to every relay at once, and the owner is told in his own record, as
@@ -1930,19 +1929,13 @@ catch (e) {
   //
   // THE NODE'S RELATIONSHIP WITH A RELAY, which is a different subject
   // from what it says to a peer THROUGH one. `relay.claim` asks a relay
-  // for a row; `relay.status` asks every configured relay what it thinks
-  // of this node's key. Neither is addressed to a person, which is what
+  // for a row; none of these is addressed to a person, which is what
   // keeps them out of `peer.*` and `contact.*`.
   //
-  // WIRE, both of them, and uniformly — which is not an accident of who
-  // happened to land in the same group. `relay.claim` obviously reaches
-  // out. `relay.status` is less obvious and matters more: it LOOKS like
-  // a read of local configuration, and it is not. ownerBadge.probe
-  // asks every configured relay for its card (a card ask on its one door,
-  // goal/G22.6), so an offline
-  // box answers 502 and a caller that assumed otherwise draws an empty
-  // relay list and calls it the truth. That is exactly the confusion the
-  // wire flag exists to make impossible to arrive at by accident.
+  // WIRE, on the namespace: claim, add, face and join reach out, and an
+  // offline box fails them. (relay.status, which probed every configured
+  // relay through ownerBadge.probe, is gone; see relay.get below.) relay.get
+  // and relay.record read what the node holds, under the same flag.
   //
   // What a relay verb is NOT: a way to talk to the relay's owner. That
   // goes through peer.post like anybody else's — the relay names itself
@@ -1988,11 +1981,9 @@ catch (e) {
     // relay.join {url, email, code} (goal/G30.2, confirmed by Andy 2026-10-19): this node joins a relay by its user's
     // email. With an email it asks; with the code from the mailed link it takes the seat.
     'join': { request: { url: '', email: '', code: '', link: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.DEFAULT_SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) }); }) },
-    // WHAT A RELAY HAS SAID OVER TIME, beside what it says now —
-    // cycle 11's R6. `relay.status` probes; this reads what was already
-    // written as the reports arrived, so it reaches no network at all —
-    // which is why it is here and not marked `wire: true` like its
-    // neighbours.
+    // WHAT A RELAY HAS SAID OVER TIME — cycle 11's R6. This reads what was
+    // already written as the reports arrived, so it reaches no network at
+    // all, though the namespace it sits in is marked `wire: true`.
     'record': { request: { relay: '', from: 0, to: 0 }, reply: { ok: true, relay: '', from: 0, to: 0, series: [{}], more: false }, handler: function (rq, rs) {
       hub.handleRecord(rq, rs, readJsonBody, { rootDir: ROOT_DIR });
     } },
@@ -2003,12 +1994,10 @@ catch (e) {
   //   Andy: "The user sees it as contact: which is kind of what i
   //   prefer."
   //
-  // THIS NODE'S OWN ADDRESS BOOK, and nothing else. Every verb here is
-  // a contactBook write or a preferences read on this machine, so the group
-  // is uniformly local — which is what lets the roll reads live
-  // somewhere else even though a person would call them contact work
-  // too. `peer.list` and `peer.find` ask a RELAY who is out there;
-  // `contact.*` is what this node has decided to keep.
+  // THIS NODE'S OWN ADDRESS BOOK. Every verb here reads or writes the one
+  // table on this machine, so the group is marked local (`wire: false`);
+  // contact.search's network tier (goal/G30.19) is the one part that asks
+  // the relays. `contact.*` is what this node has decided to keep.
   //
   // FOUR VERBS WHERE THERE WAS ONE ROUTE AND AN `action` FIELD. That
   // field was a verb inside a body, under a route that was also a verb,
@@ -2027,8 +2016,6 @@ catch (e) {
     'label': { request: { publicKey: '', myLabel: '' }, reply: { publicKey: '', myLabel: '', caption: '' }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); } },
     'own': { request: { key: '', own: false }, reply: { key: '', own: false }, handler: function (rq, rs) { hub.handleOwn(rq, rs, readJsonBody); } },
     'forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget'); } },
-    // Read and write, told apart by name rather than by an HTTP method
-    // that no longer varies. See handleSendersRead.
   }, { wire: false, by: 'hub.js' });
 
   // ── STAGE 4d — peer (2026-09-15), and the fold is done ─────────────
@@ -2038,14 +2025,14 @@ catch (e) {
   // reason the flag is on the namespace.
   //
   //   peer.post     the only thing on this node that reaches router.post
-  //   peer.search   who is out there, across every relay (peer.list went
-  //                 to contact.search, the book on this disk, and peer.find
-  //                 went before it)
   //   peer.acquire  a human confirmed one of those keys
+  //
+  // (peer.list, peer.find and peer.search are gone: who is out there is
+  // contact.search, its network tier asking the relays.)
   //
   // WHY THESE ARE NOT `contact.*` even though a person doing them is
   // doing contact work: `contact.*` edits the book on this disk and
-  // cannot be unreachable. These three ask a RELAY. Grouping by what the
+  // cannot be unreachable. These two ask a RELAY. Grouping by what the
   // user calls it would have put a 502 and a file write in one namespace
   // and made the wire flag a lie for half of it.
   //
@@ -2055,7 +2042,7 @@ catch (e) {
   // does.
   //
   // peerRouter is handed in rather than reached for (and presence with it,
-  // since goal/G19.14 inside it): it is built at the foot of this file and hub.js must not hold state it
+  // since goal/G19.14 inside it): it is built in the boot block above and hub.js must not hold state it
   // cannot see created. That is not pedantry — /api/hub/invite was given
   // a name out of scope on 2026-09-13 and the first real mint killed the
   // node with every suite green.

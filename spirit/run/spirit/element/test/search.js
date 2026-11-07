@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/element/test/search.js
-// The tests of spirit/element/search.js, and of no other module (spec: ./probabilitySearch.md). The browser file runs
+// The tests of spirit/element/search.js, and of no other module (spec: ./search.md). The browser file runs
 // in node on a window of its own, ranking with the spirit's own probability files; the container is a stub that keeps
 // a node per id the list draws, and hears the list's listeners.
 

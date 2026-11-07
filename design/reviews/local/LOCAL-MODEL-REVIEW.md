@@ -6,6 +6,10 @@ and find jobs it can do, that help. smaller scope, much lower reasoning."*
 And on what happens next: *"then we let it rest until core is at that
 alpha level."*
 
+> Status 2026-11-07 (goal/G43.23): the files the run read, `spirit/run/js`,
+> are `spirit/run/spirit/` since goal/G40.2; the counts below are of that
+> night's tree.
+
 > **THE FIRST VERSION OF THIS PAGE UNDERCOUNTED THE RUN BY A FACTOR OF
 > SEVENTEEN** — it said 14 findings in 3 files. The real figure is **242
 > findings across 44 of 47 files**. The grep behind it anchored on a

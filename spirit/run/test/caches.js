@@ -43,7 +43,9 @@ test.startTest('caches: every family has a data.js, one code in the browser and 
 // ── 1. EVERY FAMILY ─────────────────────────────────────────────────────────────────────────────────────────────────
 // The api tree's families are their interfaces: an app's at spirit.familyPath(name), and the node's own,
 // spirit/<name>/api.js (spirit.js, interfaceName). A test folder's api.js is a test, not a family. Every family path is
-// spirit.familyPath's (the appServer test's rule: no file writes one by hand).
+// spirit.familyPath's (the appServer test's rule: no file writes one by hand). An app of spirit/app/<name>/ (its
+// interface at ./api/api.js, its manager at ./data.js, goal/G43.12) is found by neither pattern, so the agent app's
+// family is not among those counted here.
 test.subHeading('1. every family in the api tree has a data.js in its own folder');
 // An app's family is a process folder whose familyPath is tracked.
 tracked.forEach(function (f) { const m = /^process\/js\/([^/]+)\//.exec(f); if (m && tracked.indexOf(familyPath(m[1])) !== -1) appFamilies[m[1]] = true; });
@@ -96,7 +98,7 @@ const ROWS = [
 ];
 // The node that served the rows: a public key holding a + and a /, as real keys do. Andy, the box: "The RAM-CACHE-is
 // organized BY SERVER-NODE-ID at it's lowest level. IE: spirit.data.<server-public-key-in-base64url>.<api-family>....".
-// Both sides are told it the one way the data set offers, home(key): a page learns it from node.card, a process from
+// Both sides are told it the one way the data set offers, homeNode(key): a page learns it from node.card, a process from
 // the sender whose rows it takes.
 const SERVER = Buffer.from('KEY-CACHES\xfb\xef\xbf\xfe', 'latin1').toString('base64');
 const SERVER_ID = Buffer.from(SERVER, 'base64').toString('base64url');
@@ -168,9 +170,11 @@ managers.forEach(function (m) {
 // ── 7. NO OTHER WAY ─────────────────────────────────────────────────────────────────────────────────────────────────
 test.subHeading('7. nothing keeps node rows but spirit.data, and no file names another way');
 // Andy, the box: "anything not using the new spiritData.js and it's buddies clientCacheManager.js must do so in this
-// item. no exceptions." A client that takes the node's stream itself keeps rows outside spirit.data: only spiritData.js
+// item. no exceptions." A client that takes the node's stream itself keeps rows outside spirit.data: only spirit/data.js
 // takes it, for every client. boot.js is the face's own transport, before spirit (Andy: "boot.js MUST be an exception").
-// The node's own side (spirit/, kernel, events) serves the stream and is no client.
+// The node's own side (spirit/, kernel, events) serves the stream and is no client. The client list below names shell/
+// and shell/boot.js; goal/G43.18 moved boot.js and seal.js to spirit/shell/, which the list does not reach, so boot.js
+// stays out by its new place and spirit/shell/seal.js is not read; the apps left in shell/ still are.
 const clients = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && /^(shell|spirit\/element|process\/js)\//.test(f) && f !== 'shell/boot.js'; });
 const takers = clients.filter(function (f) { return /\bevents\.subscribe\(|\bev\.subscribe\(/.test(code(path.join(RUN, f))); });
 ok(!takers.length, 'no client takes the node\'s stream itself: spirit/data.js takes it for all', 'clients taking the stream themselves, their rows outside spirit.data: ' + short(takers));

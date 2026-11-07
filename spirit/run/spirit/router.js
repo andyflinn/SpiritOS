@@ -83,22 +83,16 @@ function capsFrom(given) {
 // How long a caller will wait, which is a UX number rather than a
 // protocol constant tuned against another machine's clock.
 //
-// ── TWO CLAIMS HERE ARE WRONG, MARKED 2026-09-21 ─────────────────────
+// ── WHAT THIS REPLACED, 2026-09-21 ───────────────────────────────────
 //
-// THIS SAID "the only timeout in the design". There are four, and they
-// are not in step: a node waits 8 s (`peerPost.js` DEFAULT_WAIT_MS), this
-// table holds 20 s, a relay's own post waits 15 s (`relay.js`
-// ROUTE_WAIT_MS), and a relay's hop to a partner waited 8 s again (that
-// hop went with partnering, goal/G22.6). The inner hop outliving the
-// outer waiter is what orphans a member's only slot for twelve seconds
-// once the ceiling is 1.
-//
-// AND THE NUMBER ITSELF IS SUPERSEDED. Andy, 2026-09-21: "the relay has
-// no business waiting for 15 seconds, if it doesn't have a reply or an
-// error in 5 seconds it's wasted time" — and "the willing to wait time in
-// a request is informational". So the ttl becomes PER ENTRY, granted as
-// min(what the requester asked, this box's 5 s ceiling), and this
-// constant becomes that ceiling rather than the answer.
+// This once said "the only timeout in the design" and held 20 s, while a
+// node waited 8 s (`peerPost.js` DEFAULT_WAIT_MS, 8 s still), a relay's
+// own post 15 s (relay.js's ROUTE_WAIT_MS, gone since), and a relay's hop
+// to a partner 8 s (that hop went with partnering, goal/G22.6). The inner
+// hop outliving the outer waiter orphaned a member's only slot once the
+// ceiling was 1. The ttl is PER ENTRY now, granted as min(what the
+// requester asked, this box's 5 s ceiling), and this constant is that
+// ceiling rather than the answer.
 //
 // ── SETTLED 2026-09-21: A CEILING, NOT AN ANSWER ────────────────────
 //
@@ -179,11 +173,9 @@ function createRouter(opts) {
     });
   }
 
-  // WITH NO `kind`, THIS COUNTS EVERY CLASS, and that is deliberate
-  // rather than a default falling out. Its other caller asks "is this
-  // identity busy?" to spare a live stream from eviction
-  // (relay.js:3413) — a question about the peer, not about a budget. An
-  // identity busy on relay-class work is just as busy.
+  // WITH NO `kind`, THIS COUNTS EVERY CLASS, a question about the peer
+  // ("is this identity busy?"), not about a budget. There is one class
+  // now (MEMBER), and relay.js calls this only through open().
   function countFor(requester, kind) {
     // Expired posts leave first: a reply that never came back must stop
     // counting as in flight (NODE-AND-RELAY §9b, "expiry must decrement
@@ -294,7 +286,7 @@ function createRouter(opts) {
       return { ok: false, status: 503, error: 'router full' };
     }
     // And per requester, so one peer cannot spend the table on everyone
-    // else's behalf — the same fairness B1 established for device slots.
+    // else's behalf.
     if (countFor(requester, cls) >= caps[cls]) {
       return { ok: false, status: 429, error: 'too many in flight', kind: cls };
     }
@@ -441,7 +433,7 @@ function createRouter(opts) {
     release: release,
     has: has,
     // Posts in flight for one requester — the per-member count (cycle 1).
-    // The Governor reads it to spare a busy stream from eviction.
+    // relay.js does not read it today (it calls open, answer, release, size).
     countFor: countFor,
     // How many are aimed at one member, and when the next slot frees.
     countForTarget: countForTarget,

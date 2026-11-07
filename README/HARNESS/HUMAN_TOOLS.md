@@ -20,6 +20,8 @@ output interleaves. To watch it bubble past in order:
 node spirit/test/runAll.js --serial
 ```
 
+The run takes every suite directly in `spirit/test/` and every product test folder under `spirit/run/` (`spirit/run/test/testModule.js`, `testsFor`); `--list` prints them and runs nothing.
+
 To run only some of it, give a bare word — it is a substring match on the
 filename, no flag:
 
@@ -28,16 +30,19 @@ node spirit/test/runAll.js relay      # every suite with "relay" in its name
 node spirit/test/runAll.js label
 ```
 
-The last line is the count: `63 suites, 1626 green, 2 red`.
+The last line is the count, e.g. `63 suites, 1626 green, 2 red` (on 2026-09-15).
 
-**Three suites are deliberately left out of that count** and only ever run
-by hand:
+**Two suites are deliberately left out of that count** (`spirit/test/notASuite.js`)
+and only ever run by hand:
 
 | file | why it is excluded |
 |---|---|
 | `testTemplate.js` | fails on purpose — it is the worked example of what red looks like |
 | `liveRelay.js` | opens sockets to spirit-3 and changes state on a box other people use |
-| `liveFrontDoor.js` | spawns a relay and three real nodes; seconds, not milliseconds |
+
+`liveFrontDoor.js` and the lab suites, which spawn real relays and nodes, are
+in the harness since 2026-09-15 (`runAll.js`, *THE LAB SUITES ARE IN THE
+HARNESS NOW*); `runAll.js` starts labMaster before the first lane.
 
 `visualScenarios.js` always runs last, on purpose: it reads the other
 suites off disk, so it should be answering for the tree as the run leaves
@@ -98,7 +103,7 @@ This is the one that bites at 2am. As the buttons stand **today**:
 
 | button | what it does |
 |---|---|
-| **Refresh** | new code, **same node** — copies the tracked tree over the top. Key, relay rows, device slot and session all survive. |
+| **Refresh** | new code, **same node** — copies the tracked tree over the top. Key, relay rows and session all survive. |
 | **Recycle** | wipes the home first, then copies. **The node's key is destroyed**, which takes it off every relay it was on and leaves rows behind that nobody holds a key for. |
 | **Delete** | the row goes and the home goes with it. |
 
@@ -131,9 +136,11 @@ enough, a commit is not required.
 
 ---
 
-## What is broken right now
+## What was broken on 2026-09-15
 
-Written down because a silent trap is worse than a red one.
+Written down because a silent trap is worse than a red one. Kept as that
+day's record: `natterIntrinsic.js` went with Natter (goal/G30.7), and the lab
+suites have run in `npm test` since that day (above).
 
 - **`natterIntrinsic.js` — 2 red** in `npm test`. Pre-existing; reproduces
   identically at `fbf9ebf`, before the current run of work started.
@@ -149,7 +156,8 @@ Written down because a silent trap is worse than a red one.
 ## Known gap
 
 **There is no button that removes a peer row from a relay you own.**
-`POST /api/hub/remove-peer` works and has no caller outside the tests and
-`labPopulate --down`. Natter's *Remove* is a different verb — it drops a
-relay from *your own* list; it does not touch the relay's ledger. So an
+The relay's `removePeer` verb (by key, `relay.js`) does it, and has no caller
+outside the tests and `labPopulate --down`; the `/api/hub/remove-peer` route
+it once went through is gone. Leaving a relay (`relay.leave`, goal/G40.10) is
+a different act: this node gives up its own seat and removes nobody else. So an
 orphaned lab row on spirit-3 currently has no broom.

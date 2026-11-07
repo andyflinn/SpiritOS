@@ -15,6 +15,10 @@
 //
 // THE GLOBAL EARLY: a module's first require is spirit.js, so spirit is a plain global before anything else is loaded.
 // spirit.js itself makes the global: it sets it before its first require.
+//
+// DISCREPANCY WITH ANDY's RULES: the rule above judges every module once (goal/G40.6); since goal/G43.18 moved spirit.js
+// to spirit/run/spirit/spirit.js, testModule.js finds no ./spirit.js beside this test folder and lists this file once
+// with no argument, so it judges nothing and goes red with "no module to judge" (./TEST_SYSTEM.md).
 
 const fs = require('fs');
 const path = require('path');

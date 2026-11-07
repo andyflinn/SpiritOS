@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/element/search/api/test/verb.js
-// The tests of spirit/element/search/api/verb.js, and of no other module (spec: ./apiVerbSelector.md; goal/G41.5). The browser
+// The tests of spirit/element/search/api/verb.js, and of no other module (spec: ./verb.md; goal/G41.5). The browser
 // file runs in node on a window of its own: probabilitySearch is a stub that keeps every list it was asked to make; the
 // tree index is the real one (spirit/client/apiTreeIndex.js).
 

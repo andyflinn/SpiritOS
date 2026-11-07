@@ -12,7 +12,9 @@
 // DEBUG.js (spirit/DEBUG.js and spirit/DEBUG/) is the one exception. Each call that breaks it is its own check, named
 // by its file and line.
 //
-// Given a file, it judges that one; given none, every tracked production .js file under spirit/run.
+// Given a file, it judges that one; given none, every tracked production .js file under spirit/run. Since goal/G43.18
+// moved spirit.js off the run root, testModule.js lists this file once with no file (./TEST_SYSTEM.md), so the whole
+// tree is read in that one run.
 
 const fs = require('fs');
 const path = require('path');

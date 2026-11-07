@@ -1,5 +1,12 @@
 # The data architecture behind a verified ping
 
+**Status 2026-11-07 (goal/G43.23).** The bytes below are as the code
+generated them at `6373630`. Since cycle 10 a post's text is sealed to its
+recipient (seal.js) and the relay cannot read it
+(`spirit/test/relayCannotRead.js`); the card ask is the one plaintext
+exception (SURFACE.md). So "the relay can read everything" below no longer
+holds; the signature and hash shape it explains does.
+
 **Reference, not rationale. Verified against `6373630` (2026-09-11).**
 
 [ROUTER.md](ROUTER.md) says *why*. This says *what*: every field that goes

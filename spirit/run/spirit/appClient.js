@@ -23,9 +23,9 @@
 // WHAT LEFT WITH goal/G13.2 (Andy, 2026-10-10, "no \"face\" crap belongs
 // into node."): readServers, the "serves" flag, startAll spawning
 // spirit/server.js --app for a face, and toLocalApp, the hop a booted app took
-// to a server by name. A face is a process/js server like any other now
-// (process/js/appFaceApp), started by startNodeServers, reached by its
-// pipe, and the node knows nothing of faces.
+// to a server by name. A server is started by startNodeServers (a
+// process/js server, or since goal/G43.12 an app of spirit/app/), reached
+// by its pipe, and the node knows nothing of faces.
 //
 // Every refusal is by name (spiritErrors.js), so whoever asked reads which
 // link failed, never a hang:
@@ -45,8 +45,8 @@ const errors = require('./spiritErrors');
 // name a pipe path.
 const APP_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
-// Under every wait a caller has (the face's SERVE_WAIT_MS, 18 s, under its
-// own 30 s), so each wait gives its own named answer.
+// Meant to sit under every wait a caller has, so each wait gives its own
+// named answer.
 const DOOR_WAIT_MS = 12000;
 
 // One answer's cap is limits.ANSWER_MAX; refused by name here, not cut.

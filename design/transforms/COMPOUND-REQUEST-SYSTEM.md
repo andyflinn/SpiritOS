@@ -5,8 +5,10 @@
 
 > **Status: not yet implemented.** Describes a request format for the
 > future `spirit.json` layer (see design/spirit-json/ROOT-STRUCTURE.md).
-> spirit/run/'s actual APIs (POST /api/fs/save, /api/jobs, etc.) are
-> simpler and don't yet implement this compound-request shape.
+> spirit/run/'s actual API is one verb per packet through the node's one
+> door (`fs.save`, `jobs.create`, … — the old `/api/fs/*` and `/api/jobs`
+> routes are gone, `spirit/run/spirit/server.js:924-926`); it is simpler
+> and doesn't implement this compound-request shape.
 
 ## Principle
 

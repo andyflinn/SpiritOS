@@ -1,8 +1,9 @@
 'use strict';
 
-// spirit/run/spirit/app/agent/test/agent.js
-// The tests of spirit/app/agent/agent.js, and of no other module (spec: ./agent.md; goal/G41.1). The server is started
-// as the node starts it, on a pipe of the test's own and a scratch --state folder, and asked through the pipe. It is
+// spirit/run/spirit/app/agent/test/nodeAgent.js
+// The tests of spirit/app/agent/nodeAgent.js, the agent server, and of no other module (spec: ./nodeAgent.md; goal/G41.1).
+// The server is started as the node starts it, through agent.js, on a pipe of the test's own and a scratch --state
+// folder, and asked through the pipe. It is
 // started without a job id, so what it publishes reaches no node.
 
 const fs = require('fs');

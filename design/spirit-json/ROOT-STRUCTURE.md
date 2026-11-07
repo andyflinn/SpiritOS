@@ -4,8 +4,10 @@
 **Author:** Andy Flinn
 
 > **Status: not yet implemented.** `spirit/run/` is the current, running
-> core — port 65432, no `spirit.json`, data organized as `app/`/`media/`/
-> `published/`/`process/` instead. This document describes a later
+> core — port 65432, no `spirit.json`, the tree organized as `spirit/`
+> (the core), `shell/` (apps), `process/` and `media/`/`published/`
+> instead, and machine state in `spirit/state/` (`node.db`, `relay.db`).
+> This document describes a later
 > `spirit.json` layer that hasn't been built on top of that core yet, not
 > what's running today.
 

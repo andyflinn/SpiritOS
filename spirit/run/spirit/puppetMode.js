@@ -80,7 +80,7 @@ function ownerCommandIn(arrival, opts) {
   const auth = o.auth;
 
   // Andy's mode gate. Absent means nobody: a puppet with no owner established
-  // takes no commands from anyone (the same shape as allow.json).
+  // takes no commands from anyone (the same shape as owner.json).
   if (!ownerKey) return { ok: false, status: 403, error: 'not a puppet' };
 
   const from = String((arrival && arrival.from) || '');
@@ -132,7 +132,7 @@ function ownerCommandIn(arrival, opts) {
 //     owner as a second packet carrying re = the command's hash
 //     (transport/R12: "where a hash must match").
 //
-// THE SHIM: a readable holding the body and a writable catching status and
+// THE SHIM (verbTable's call since goal/G30.4, below): a readable holding the body and a writable catching status and
 // body. It carries the two headers the shared body reader needs and no
 // socket, so a handler that reaches for the socket fails ALONE (G3): that
 // one command is refused, and the node and the next command are untouched.
@@ -142,7 +142,7 @@ function ownerCommandIn(arrival, opts) {
 // reads its body through serveCommon.readJsonBody, which begins with the
 // content-length header: it threw before parsing, so every command with a
 // body was answered 400 Invalid JSON body, found live from his node to his
-// puppet with an app server's ask. puppetCommands.js holds it; puppetDoor.js never saw
+// puppet with an app server's ask. spirit/test/puppetCommands.js holds it; spirit/test/puppetDoor.js never saw
 // it because its handlers read the stream by hand.
 function puppetDoor(opts) {
   const o = opts || {};

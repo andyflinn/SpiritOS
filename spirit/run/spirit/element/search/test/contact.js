@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/contact.js
-// The tests of spirit/element/search/contact.js, and of no other module (spec: ./contactSelector.md; goal/G41.13, Q2). The
+// The tests of spirit/element/search/contact.js, and of no other module (spec: ./contact.md; goal/G41.13, Q2). The
 // browser file runs in node on a BARE window (rule/26: "every shell element loads its own elements dynamically through
 // the ... spirit.require functionality", "there will be NOTHING pre-loaded after the relays-supplied boot scripts"): no
 // element is on the page until the selector requires it. The stand-in for probabilitySearch keeps what it was handed;

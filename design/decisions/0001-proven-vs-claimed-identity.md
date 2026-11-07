@@ -27,9 +27,9 @@ entity self-reports about its own identity.
 Concretely:
 
 - A dynamically-loaded app's `id` is derived from its own
-  `_scriptPath` (`app/<folder>/<folder>.js`, observed via the
-  fs-watcher), not read from `manifest.id`. `declareDynamicApp`
-  (`shell.js`) ignores a manifest's `id` field entirely if one is even
+  `_scriptPath` (`shell/<folder>/<folder>.js`, observed via the
+  fs-watcher; the id is `'shell/' + <folder>`), not read from `manifest.id`. `declareDynamicApp`
+  (`spirit/run/spirit/client/shell.js:2625`) ignores a manifest's `id` field entirely if one is even
   present.
 - `activateApp` takes no id argument at all (`activateApp(behavior)`,
   not `activateApp(id, behavior)`) — the app's own script has nothing
@@ -40,7 +40,9 @@ Concretely:
   its own `name` — the `name` is exactly the kind of user-editable,
   claimed label that must never double as an identifier. Renaming a
   group only ever changes `preferences.groups[id].name`; the id never
-  moves.
+  moves. (`client/shell.js:730`. Since goal/G43.17 those preferences
+  live in memory only, `client/shell.js:122-126`; there is no
+  `preferences.json` any more.)
 - `api.fs` (see 0002) is constructed by the shell from an app's own
   proven `_scriptPath`, never from a string the app supplies to a
   `createScopedFs(name)` call itself.

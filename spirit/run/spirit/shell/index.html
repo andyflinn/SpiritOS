@@ -9,12 +9,12 @@
     <!-- The spirit object (goal/G32.1): the node api, async and checked; its families start at once at home. -->
     <script src="/spirit.js"></script>
     <script>if (window.spirit && typeof window.spirit.start === 'function' && !window.spirit.transport) window.spirit.start();</script>
-    <!-- The isomorphic half of js/ownerBadge.js: the relay rules the
-         browser has to obey too (Natter's Remove asks it whether this
-         node may be left with fewer relays). Node-only code inside it
+    <!-- The isomorphic half of spirit/ownerBadge.js: the relay rules the
+         browser has to obey too (the relay panel's Remove asks it whether
+         this node may be left with fewer relays). Node-only code inside it
          never runs here. -->
     <script src="/spirit/ownerBadge.js"></script>
-    <!-- The isomorphic half of js/fieldRules.js: what a label may be.
+    <!-- The isomorphic half of spirit/fieldRules.js: what a label may be.
 
          Andy: "an input field should validate before taxing the wire."
 
@@ -35,7 +35,7 @@
     <script src="/spirit/probabilityStringMatch.js"></script>
     <script src="/spirit/probabilityStringObjectMatch.js"></script>
     <script src="/spirit/probabilityBucket.js"></script>
-    <!-- The isomorphic half of js/lever.js: what a lever is, what it may
+    <!-- The isomorphic half of spirit/lever.js: what a lever is, what it may
          be set to, and how it describes itself.
 
          Here for the same reason as fieldRules: the Relay Monitor checks a
@@ -47,7 +47,7 @@
          move a relay's value except by asking the relay. -->
     <script src="/spirit/lever.js"></script>
     <!-- One peer, one file, named by the peer's whole public key. Stays up
-         in js/ because hub.js names files with it too. -->
+         in spirit/ because hub.js names files with it too. -->
     <script src="/spirit/peerFile.js"></script>
     <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spirit.limits,
          so the size a page refuses is the size the relay refuses. -->
@@ -58,18 +58,16 @@
          NOT isomorphic any more, and that is the point. This said "the hub
          wraps with it in node, the apps read it here" — and the hub doing
          the wrapping was the node knowing what an app is (Andy: "nothing
-         in node and relay should know about apps"). No module under
-         run/js requires this file now, and the packet suite fails if one
-         does again.
+         in node and relay should know about apps"). The node requires it
+         only to carry envelopes: arrivals.js decodes every arrival with it,
+         hub.js and server.js encode with it, and none routes on `app`.
 
-         So it lives in js/client/ now, with the only layer that routes on
+         It lives in spirit/client/, with the only layer that routes on
          `app`: the shell composes an envelope on the way out and reads one
-         on the way in, and the node carries an opaque payload between
-         them. The directory is the statement — a file in js/ is one a
-         relay may end up loading. -->
+         on the way in, and the node carries the payload between them. -->
     <script src="/spirit/client/packet.js"></script>
     <!-- The owner's api tree read for choosing (apiAuth/G1.8): the names
-         of the servers in a jobs.api 'api' answer, a failed branch left
+         of the servers in the 'api' answer on /api/spirit, a failed branch left
          out. What the appServer selector chooses from. -->
     <script src="/spirit/client/apiTreeIndex.js"></script>
     <!-- The shell's look is one sheet, shell.css, which the face loads too (goal/G30.9). -->
@@ -90,8 +88,9 @@
     </div>
 
     <!-- The element factories apps build their screens from, one file per
-         element (goal/G2.14). Each adds itself to window.spirit.elements; the
-         shell hands them to apps as api.ui.elements. Before the shell, and
+         element (goal/G2.14). Each adds itself to window.spirit.element (or
+         window.spirit.elements, for those not yet moved, goal/G43.5); the
+         shell hands some of them to apps as api.ui.elements. Before the shell, and
          the app-server selector before the api-branch one built from it. -->
     <script src="/spirit/element/search/icon.js"></script>
     <script src="/spirit/element/appHeader/appHeader.js"></script>
@@ -142,16 +141,14 @@
         var updateGroup = spirit.shell.updateGroup;
         var deleteGroup = spirit.shell.deleteGroup;
 
-        // ---- Files app ----
-        // Moved to app/files/files.js + files.json (CLEANUP-PLAN). It is
-        // intrinsic now, so it is declared at boot from its manifest and
-        // its tile lives in the Spirit group; the two launchers below
-        // stay here, and Files opens them through api.launchApp.
+        // ---- Files app ---- STOOD HERE: Files moved to spirit/app/file/
+        // (goal/G43.17) and the old shell has none; the two launchers
+        // below stay here.
 
         // ---- The two launchers: the viewer elements (goal/G30.16) ----
         // The viewers are elements now (spirit/element/fstat.js, textViewer.js, and the media app's spirit/app/media/media.js,
         // goal/G43.17), so the face has them too; their inline bodies and the job form stood here. Only reachable via
-        // launchApp(id, { path }) from Open with or the Processes app — no desktop icon (hidden: true). A launcher, not a dialog: every one of
+        // launchApp(id, { path }) from Open with or a file row — no desktop icon (hidden: true). A launcher, not a dialog: every one of
         // its launches replaces its own stack entry (assertOneHiddenApp, shell.js). mount runs once; loadFile shows each
         // later file.
         var mediaShown = null;
@@ -190,12 +187,11 @@
         });
 
         // ---- Spirit app (launcher/grouping template) ----
-        // Hosts a sub-view of the machine-introspection apps (Stats,
-        // Processes, Jobs, Apps, Groups) — hidden from the real desktop
-        // below — using the same reusable icon-grid template user-created
-        // groups also build on (registerGroupApp, shell.js). Files stays a
-        // front-page icon: it's a content-facing app you use, not a
-        // system-introspection tool.
+        // Hosts a sub-view of the machine-introspection apps — hidden from
+        // the real desktop — using the same reusable icon-grid template
+        // user-created groups also build on (registerGroupApp, shell.js).
+        // Of its fixed members only shell/jobs still exists (Stats and Apps
+        // were deleted); renderAppGroup skips an id with no app.
         registerApp({
           id: 'spirit',
           name: 'Spirit',
@@ -207,13 +203,12 @@
             var grid = document.getElementById('spirit-group');
             if (!grid) return;
             // The fixed built-in members, plus every intrinsic app the
-            // shell discovered (Natter today). Intrinsic apps are part of
+            // shell discovered. Intrinsic apps are part of
             // how the node works rather than something installed, so this
             // is their launcher home and the only one — the Location
             // picker cannot move them out (setAppOverride, shell.js).
             //
-            // The two halves may overlap — they will, as the five below
-            // move into app/<name>/ and become intrinsic. renderAppGroup
+            // The two halves may overlap; renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
             renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps']

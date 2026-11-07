@@ -2,6 +2,14 @@
 
 **Decided 2026-09-17. Against `86b6fe2`. Widened 2026-09-18, amended 2026-09-19 — see below.**
 
+**Status 2026-11-07 (goal/G43.23):** the decision holds, and partnering is
+gone altogether: Andy's decision (goal/G22.6, 2026-10-13), *"Partnering as a
+permission goes ... a relay carries posts to its members from any relay ...
+the partner roll and the partner budget are removed"*
+(`spirit/run/spirit/relay.js:1110-1115`). There is no partner roll, no
+`partners.json` and no held partner stream; what is said below about
+partners is the record.
+
 > The get-complete-member-list could be dropped altogether. That's the slimmest
 > initial load guaranteed at startup, with no instant explosive growth. (Andy)
 

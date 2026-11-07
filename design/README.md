@@ -6,7 +6,7 @@ This directory contains the vision, principles, and architecture decisions for *
 
 - [The door — what a program may ask this node to do](protocol/THE-DOOR.md)
   — **the contract**, and the thing this project is actually for: a local
-  HTTP port that any language can post to. 36 verbs, the limits, the
+  HTTP port that any language can post to. Its verbs, the limits, the
   rates, and what the relay cannot do. Every figure on it is checked
   against the running tree by `spirit/test/doorContract.js`, and the page
   names its own gaps — the two worked examples beside it are not
@@ -47,7 +47,8 @@ This directory contains the vision, principles, and architecture decisions for *
   words: *"delieating all the mandatory and optional boundaries and
   layering, so our join-app doesn't have to be retro-fitted forever as
   the system evolves."* **Approval is not a packet** — a build needs its
-  own.
+  own. *The agents app it was for was deleted in goal/G3.2 (Andy, 2026-10-02:
+  "the agents APP is no longer permitted in this REPO").*
 - [A node and a relay are two different things](principles/NODE-AND-RELAY.md)
   — **co-design, nothing built.** The node is a person, readable and
   inspectable; the relay is infrastructure that owes its owner *an account
@@ -68,7 +69,10 @@ This directory contains the vision, principles, and architecture decisions for *
   token and installer, 4 the owner's visual monitor, 5 partner acquisition;
   shares, DISC and Governor tuning after. Open: version tolerance, what
   "capable of partnership" is checked against, recoverable expiry, the
-  group post, and the open lever bounds.
+  group post, and the open lever bounds. *Since then: the Governor was
+  deleted (cycle 8, fixed limits), partnering went (goal/G22.6), and the
+  owner is written at install, never by invite (goal/G16.8); the note says
+  so at its top.*
 - [The requester is responsible for the question](principles/THE-REQUESTER-IS-RESPONSIBLE.md)
   — *"the more specific my question, the more precise the answer."* A vague
   question earns a bounded answer or none, never everything. The reason
@@ -91,14 +95,20 @@ This directory contains the vision, principles, and architecture decisions for *
   as a real app outside the shell: `app: "agents"`, `note` / `ask` / `answer`,
   answers as new posts carrying `re`, both nodes' traffic logs as the record.
   Andy: *"connect through that."* Open: a node per agent, so the signature says
-  which agent spoke.
+  which agent spoke. *Superseded: the agents app was deleted in goal/G3.2
+  (Andy, 2026-10-02: "the agents APP is no longer permitted in this REPO");
+  agents speak in Desk.*
 - [Grok reviews — through the node, on a budget Andy grants](agents/GROK-REVIEWS.md) —
   **decided and built, 2026-09-22.** A review is agent work; Andy gets decisions.
   A thread per review with a message cap in his words; the node holds the key
   and fills it in for `api.x.ai` only; exact cost recorded per message.
+  *Gone since goal/G29.20: grokReview, the env key fill and the proxy verbs
+  were deleted.*
 - [The proxy — `net.fetch`, and the keys it carries](proxy/THE-PROXY.md) —
   **design sitting, opened 2026-09-22.** Who may use which key, where the rules live
   (an intrinsic app, Andy), how long and how big a call may be, and what it cost.
+  *Since goal/G29.20 `net.fetch` never reaches this machine: the env key fill,
+  the allow list and the proxy verbs are gone.*
 - [Considerations for early products](products/CONSIDERATIONS-FOR-EARLY-PRODUCTS.md) —
   **ideas, not plans (2026-09-22).** A VS Code plugin for developers far apart; developers
   joining spirit.andyflinn.com instead of running a relay; and end-to-end encryption
@@ -175,7 +185,9 @@ This directory contains the vision, principles, and architecture decisions for *
   the first claim needs the owner invite that `install.js` mints over SSH (0003
   amended), and a relay with members but no owner refuses to start (exit 78,
   reported by `bash/restart` and `bash/update`). `open` mode, pending-owner and
-  the Procfile are gone.
+  the Procfile are gone. *The owner invite and `install.js` went in goal/G16.8:
+  `bash/install-units` writes the owner from `OWNER_KEY`; the partner roll went
+  in goal/G22.6.*
 - [2026-09-22 — a relay bounded by its disc, and set over the wire](cycles/2026-09-22-relay-bounds-cycle-9.md)
   — **BUILT.** No relay runs on an implicit figure: the default is half the
   box capped at 256 MB, the ceiling is what the box can *give* at startup
@@ -210,6 +222,8 @@ This directory contains the vision, principles, and architecture decisions for *
   Files in the core indefinitely; a database is a plugin; an enterprise fork is
   where a different answer may live. Also records the gap it exists for — the log
   holds what crossed the WAN, and experience is larger than that.
+  *The node has since kept a SQLite store, `spirit/state/node.db`
+  (`nodeStore.js`, node:sqlite), for what is the machine's (0018).*
 
 - [0010 — If the protocol cannot carry it, stop](decisions/0010-fix-the-protocol-or-name-the-cheat.md)
   — no code until it is decided: fix the protocol, name the cheat, or do not do
@@ -257,7 +271,8 @@ This directory contains the vision, principles, and architecture decisions for *
   memory, never service — to the demanding node, never to a peer relay.*
   Exposes a live defect: `streamRoster` ships the full member list to every
   member on every connect, 19 KB past `PAYLOAD_MAX` at 190 members, and the
-  presence broadcast is `members × changes`. Carries the `about:[keys]`
+  presence broadcast is `members × changes` (*since cycle 3 Part A no roster
+  is served*). Carries the `about:[keys]`
   mechanism that answers routing and presence in one call, and the precise
   amendment 0012 needs.
 
@@ -278,6 +293,9 @@ This directory contains the vision, principles, and architecture decisions for *
   of badness an app that names no lever cannot know. Cycle 4.1's owner
   verb is kept dormant rather than deleted: a proven seam, not a
   temporary shape.
+  *Superseded in cycle 8: the Governor, the owner's lever verb and the
+  settable census were deleted; every lever is a fixed, read-only gauge
+  (`lever.js` still reports `settable: false`).*
 
 - [0016 — A relay's capacity is its membership](decisions/0016-a-relays-capacity-is-its-membership.md)
   — the request budget stops being chosen constants and becomes a

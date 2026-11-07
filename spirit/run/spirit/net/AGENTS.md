@@ -7,4 +7,5 @@ Described to agents since goal/G29.20. Andy, 2026-10-18, reversing goal/G19.9:
 "fetch will not be able to reach ports on this machine, and agents may use it."
 A target on this machine (loopback, localhost, 0.0.0.0, ::) is refused with
 403, code this-machine, checked on the address a name resolves to; nothing is
-sent. Secret keys go only where the owner's proxy list allows (namespace proxy).
+sent. The caller's headers go as given: no placeholder is filled and no list
+gates them (the proxy list and its verbs went with goal/G29.20).

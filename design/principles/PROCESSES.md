@@ -1,4 +1,4 @@
-> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay is to serve the face pages itself (not built). Passages below that describe those processes are history, kept as bones for the fold.
+> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay serves the face page itself (`relayServer.js` serves `/face.html` and `/spirit.js`, goal/G41.19). Passages below that describe those processes are history, kept as bones for the fold.
 
 # Processes — what a node runs besides itself
 
@@ -6,7 +6,8 @@
 
 The written spec of the node's process subsystem. Before 2026-09-28 it existed
 only as code (`spirit/run/js/jobs.js`, and `spirit.core.jobs` in
-`spirit/run/js/kernel.js`). It was written for public-app-server/G19.1. Andy,
+`spirit/run/js/kernel.js`; today `spirit/run/spirit/jobs.js`, and `spirit.jobs` in
+`spirit/run/spirit/spirit.js`). It was written for public-app-server/G19.1. Andy,
 2026-09-28, in Team: *"the process spec needs updating, including
 implementations of those updates"*, and *"the app-Servers must runn in the
 process-subsystem"*.
@@ -33,11 +34,11 @@ every status is live or final, so any job can be cancelled and then deleted.
 
 - **`SPIRIT_JOB_ID`**: its own row in the job table.
 - **`SPIRIT_CALLBACK_URL`**: its node's door, `http://localhost:<port>/api/spirit`.
-- **The spirit object.** It does `require('js/kernel.js')` and gets what a page
+- **The spirit object.** *(stale: nothing in node loads kernel.js any more, kernel.js:238-240; a process requires `spirit/run/spirit/spirit.js`, the one spirit object, and gets `spirit.jobs`, `spirit.events`, `spirit.peerPost` and every verb family, goal/G40.6)* It does `require('js/kernel.js')` and gets what a page
   gets at its lowest layer:
   - `spirit.core.fs.*`, which reads the node's run folder directly;
   - `spirit.core.jobs.report/log/complete/fail`, which reports to its own row;
-  - *(not built: kernel.js:647 defines ask only in the browser half, :613)* **`spirit.core.ask(verb, args)`**, which asks the node any verb a page can,
+  - *(built since: `spirit.core.ask(verb, args, base)` is in the kernel's shared space, kernel.js:66, and a process's calls go through spirit.js to the loopback door at the url it is given)* **`spirit.core.ask(verb, args)`**, which asks the node any verb a page can,
     with the page's answer shape `{ status, text, body }`. In a page, `ask`
     posts to `/api/spirit` on the page's own host. In a process, the same call
     goes to `SPIRIT_CALLBACK_URL`.
@@ -59,9 +60,9 @@ A `server` also gets:
 - **`SPIRIT_APP`** *(not built)* (its app's name) and **`SPIRIT_PIPE`** (the named pipe or
   socket file the node reaches it on). The node names the pipe; the app never
   chooses one.
-- **A heap cap**, `--max-old-space-size`, the way the node's own unit caps its
+- *(not built: jobs.js `launch` passes no heap flag)* **A heap cap**, `--max-old-space-size`, the way the node's own unit caps its
   memory.
-- **The shutdown verb.** Andy: *"a server process must implement a shutdown
+- *(not built: a stop is `child.kill()`, jobs.js)* **The shutdown verb.** Andy: *"a server process must implement a shutdown
   verb"*. The node sends `{ verb: 'shutdown' }` over the IPC channel, never
   over the pipe visitors come down. The server runs what it registered with
   *(not built)* `spirit.core.server.onShutdown(fn)` (at most 4 s) and exits. The node
@@ -92,7 +93,7 @@ A `server` also gets:
 
 The app's own manifest says so, and the node reads its own manifests at boot:
 
-- *(not built: today a server is a manifest with kind 'server' in process/js)* **`"server": "<file>.js"`** runs the app's own code, a file in its own
+- *(not built: today a server is a manifest with kind 'server' in process/js, or, in the new namespace, `node.mount` in `spirit/app/<name>/<name>.json`, started while `spirit/state/<name>/node.json` says `active`, goal/G43.12)* **`"server": "<file>.js"`** runs the app's own code, a file in its own
   folder, as its server job. The name is one plain file name; anything that
   could climb out of the folder is ignored. This is a faceless spirit app,
   answering the HTTP-equivalent requests its node hands it down its pipe.
@@ -110,7 +111,7 @@ until the node starts again.
 
 ## What the core knows
 
-*(stale: appServers.js is gone; the launcher is js/jobs.js and js/appClient.js)* The launcher (`spirit/run/js/appServers.js`) knows apps by name, their pipes
+*(stale: appServers.js is gone; the launcher is spirit/run/spirit/jobs.js and spirit/run/spirit/appClient.js)* The launcher (`spirit/run/js/appServers.js`) knows apps by name, their pipes
 and their jobs, and nothing else. Which app answers a visitor, and why, is the
 apps' own business. Andy: *"the core only knows about puppets"*. A suite
 checks that the launcher's code carries no face vocabulary.
@@ -126,8 +127,8 @@ checks that the launcher's code carries no face vocabulary.
 
 Andy's words, in Desk under desk/G2.1:
 
-- **Same contract, one launcher.** *"if a server is a process, it should get the perks of a process, that's no stretch."* Every process, one-shot or server, is started by one launcher (js/jobs.js) and gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL` and an IPC channel: *"the one shots should have that too, who wants dangeling processes"*; *"can those not collapse into one interface, that can't drift?"* Stopping goes through the IPC channel. Restart with backoff is an option for node-operated servers.
-- **No stdout, structured messages.** *"the servers should send explicit messages via an appServerFunction, so the ui gets structured information. drop the stdio/stderr outputs"*; *"we don't ship servers with typos."* Except: *"in DEBUG mode we can write to standard out"*.
+- **Same contract, one launcher.** *"if a server is a process, it should get the perks of a process, that's no stretch."* Every process, one-shot or server, is started by one launcher (`launch` in spirit/run/spirit/jobs.js) and gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL` and an IPC channel: *"the one shots should have that too, who wants dangeling processes"*; *"can those not collapse into one interface, that can't drift?"* Stopping goes through the IPC channel. Restart with backoff is an option for node-operated servers.
+- **No stdout, structured messages.** *"the servers should send explicit messages via an appServerFunction, so the ui gets structured information. drop the stdio/stderr outputs"*; *"we don't ship servers with typos."* Except: *"in DEBUG mode we can write to standard out"*. Built: a process's console goes to null unless DEBUG is on (jobs.js `launch`, goal/G41.33).
 - **Publishing.** appServer has one call taking a plain JS object: *"it calls with a js object. let the appServer to the work."* It is reported as the job's app object through `spirit.core.jobs.report`, and every open page gets it as `job-updated`. *"no pulling"*.
 - **Files.** *"servers should use the scope-constraints on the spirits fs utilities etc..."*; *"server by design get the whole spirit/run/ scope minus !fileServable()"*. A process's own `relay-state/process/<name>/` is the one exception, keyed on its name from its env: *"an easier fix would be in the exclusion rules for fileServable() and fileWritable() to give processes their writable space"*.
 - **DEBUG.** Open, for Andy: 2026-09-28 said *"per server, never node-wide"* (above); today the kernel's `DEBUG` becomes the switch. Each process loads its own kernel.js, so both hold if the owner flips `DEBUG` per process. *"the relay-stream upgrade was designed to change const DEBUG to let DEBUG, we even talked about restart setting it back to it's default DEBUG = false"*; 2026-09-26: *"DEBUG is Off by default, returned and set by owner-only api"*, *"DEBUG is not persisted. it lives in RAM only"*. The kernel's `DEBUG` becomes that switch; the relay's own `debugging` goes.

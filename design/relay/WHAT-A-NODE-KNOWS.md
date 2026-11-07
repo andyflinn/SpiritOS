@@ -1,5 +1,13 @@
 # What a node knows about a peer, and where it keeps it
 
+**Status 2026-11-07 (goal/G43.23).** The shadow described here is built and
+became more than a shadow: since goal/G40.11 the `seen` table in node.db is
+the one table for every known ID and the contacts are its rows flagged
+`keep` (Andy, goal/G40.11 box v24: *"seen, the shadow in node.db, is the one
+table."*). Where this note keeps the shadow apart from the contact book,
+that no longer holds; routes are still their own rows (`seen_routes`, 0018).
+`MAX_AGE_MS` is gone (seenPeers.js says so where it stood).
+
 **Planning note, 2026-09-21. Measured against `7806b3d`.**
 
 > **Andy:** *"I'm trying to go diligently through all instances where
@@ -52,10 +60,11 @@ row and growth is bounded by distinct people rather than by traffic.
 > just a shadow and by definition not a duplicate, because it tracks the
 > node's traffic with the contacts IT knows."*
 
-**Not the contact book**, because a search result is not a contact and
-the book never invents rows — *"a relay may improve what this node knows
-about its own contacts and may never add to them"*. Forty strangers from
-one search belong somewhere bounded.
+**And, since goal/G40.11, the contact book too**: the contacts are rows of
+this one table flagged `keep`, set only by the owner's act, and a search or
+an arrival writes a row and never keeps it (seenPeers.js; Andy, goal/G40.11
+box v24: *"seen, the shadow in node.db, is the one table."*). The table is
+bounded by its byte cap, shedding unkept rows first (nodeStore.js, `shedToCap`).
 
 **It may guess and may never assert.** A wrong hint costs one attempt;
 *"is X on relay R"* is the relay's answer. Not a roster, not a count, not

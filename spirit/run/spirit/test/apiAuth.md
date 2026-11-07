@@ -36,7 +36,8 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
   *"for bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\"
   field with \"node\", incoming or outgoing"*, and *"changes to the auth.bundle verb for the addition of the \"owner\"
   field are approved by andy and need no review."*
-  - An add with no owner is owned by `node`; with an app server's name, by that server.
+  - An add with no owner is owned by `node`. An add naming an app server is refused `not-node-owned` (goal/G41.32,
+    below): a server's bundle comes from its `Bundles.json` at boot alone.
   - A set never changes the owner.
   - Incoming: an add whose owner is not valid (empty, not a text, not a name) is owned by `node`, and the table keeps
     `node` for it.
@@ -96,8 +97,9 @@ auth.branch."*
 - Booted again: a kept key is its bundle, so nothing is added twice; a verb added to the key is added, one taken out is
   deleted, the bundle the same.
 - A key taken out of the file: its bundle and all its branch rows are deleted, and the key leaves the state file.
-- A bundle of the appServer's that a user deleted is made again at the next boot, its new id kept under the same key.
-- A bundle the user added for that appServer (the editor mounted for it, goal/G41.25) is under no key and left as it is.
+- A bundle of the appServer's gone from the table is made again at the next boot, its new id kept under the same key.
+  (A user cannot delete it since goal/G41.32; the test deletes it from `node.db` directly.)
+- A bundle the user added (node-owned since goal/G41.32) is under no key and left as it is.
 - A folder with no Bundles.json, or one that is not valid JSON, gets nothing; the others are written all the same.
 
 ### A family's FS group is the owner's (goal/G41.28)

@@ -6,12 +6,11 @@
 //   Andy, 2026-10-05, under goal/G5.1: "I run into the problem that you ran into while pushing measurements. happens
 //   often to me, that's why i want a unified approach that i can trigger from desk, separately from goalShare, so we
 //   want one unified shared approach, that ensures my commits go through."; "agreed. so it' just about sharing code
-//   among desk components."; "it must live in: spirit/run/process/js/pushOrigin/pushOrigin.js"; to how it starts:
-//   "Implicitly, by design, or via jobs-selector manually"; and the pattern reference "look at
-//   spirit\run\process\js\wordpressScanner\wordpressScanner.js".
+//   among desk components.". It lives in spirit/app/pushOrigin/ since goal/G43.21, and starts by its Run (below).
 //
 // Loaded as shared code by publishData and (eventually) goalShare: `const { pushOrigin } = require('.../pushOrigin.js')`.
-// Also runnable from the process-launcher: `node pushOrigin.js '{"repo":"/path/to/clone"}'`, which pushes that clone.
+// Also runnable by itself: `node pushOrigin.js '{"repo":"/path/to/clone"}'` pushes that clone; Run in the app detail
+// starts it with no argument (below).
 //
 // WHAT IT DOES, in order, for a repo path:
 //   0 on a detached HEAD there is no branch to push, and a rebase already in progress is the owner's: either way it

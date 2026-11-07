@@ -1,6 +1,6 @@
 # probabilitySearch, the face tiles
 
-The third face of `spirit/element/search.js` (goal/G43.6). Its test is `./probabilitySearchTiles.js`, in a real browser, with rows of its own. The other faces are `./probabilitySearch.js`'s.
+The third face of `spirit/element/search.js` (goal/G43.6). Its test is `./searchTiles.js`, in a real browser, with rows of its own. The other faces are `./search.js`'s.
 
 Andy, box: *"probabilitySearch gets a third face, 'tiles', beside 'pane' and 'dropdown': the same ranked rows, drawn as tiles. Any list can use it. No column headers or sorting; arrow keys also go left and right."*
 

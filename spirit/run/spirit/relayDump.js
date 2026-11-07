@@ -7,11 +7,11 @@
 // so `cat routingTable.json` no longer answers anything. This is what an
 // owner types instead:
 //
-//   node js/relayDump.js                 counts: members, invites
-//   node js/relayDump.js key <publicKey> one member
+//   node spirit/relayDump.js                 counts: members, invites   (from spirit/run)
+//   node spirit/relayDump.js key <publicKey> one member
 //
 // (Partners were counted here until the partner roll went, goal/G22.6.)
-//   node js/relayDump.js label <label>   who holds a label (at most 10)
+//   node spirit/relayDump.js label <label>   who holds a label (at most 10)
 //
 // NEVER A WHOLE-ROLL PRINT. The roll is not served to anybody (0012
 // widened), and a dump that printed it would be the member list back again
@@ -57,8 +57,8 @@ function run(rootDir, args, out) {
     if (verb === 'label' && args[1]) {
       const rows = store.members.byLabel(args[1], LABEL_LIMIT);
       if (!rows.length) { out('nobody holds that label'); return 1; }
-      // THE OWNER IS allow.json's ONE KEY, not a mark on a row (relayStore.js,
-      // 2026-09-19 — "a row in the roll doesn't know who the owner is").
+      // THE OWNER IS owner.json's ONE KEY (relayAuth.loadOwner), not a mark on a
+      // row (relayStore.js, 2026-09-19 — "a row in the roll doesn't know who the owner is").
       const ownerKey = ownerKeyOf(rootDir);
       rows.forEach(function (m) {
         out((m.publicKey === ownerKey ? 'owner  ' : 'member ') + m.publicLabel + '  ' + m.publicKey);

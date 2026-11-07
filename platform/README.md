@@ -16,9 +16,9 @@ the node runs or needs. `spirit/run/` stands alone and never reads this
 folder, and `bash/` is the relay host's scripts, not a desktop's.
 
 Each tool is plain Node with no dependencies, starts by hand, and answers
-only on `127.0.0.1`. A tool here that serves a page counts its one reach
-for `http` in `spirit/test/oneDoor.js`, the same as every other file
-(`AGENT.md`, *Comms*).
+only on `127.0.0.1`. A tool here that serves a page counts its reaches
+for `http` and `fetch` in `spirit/test/oneDoor.js`, which walks `platform/`
+like every other production tree (`AGENT.md`, *Comms*).
 
 ## Tools
 

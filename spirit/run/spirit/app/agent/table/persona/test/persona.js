@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/agent/table/persona/test/persona.js
 // The tests of spirit/app/agent/table/persona/, its server.js, elementTable.js and elementRow.js, and of no other module
 // (spec: ./persona.md; goal/G41.4). What the tables share is tested in ../../test/. The server is made on a scratch
-// agent.db as agent.js makes it; the page files run in node on a window of their own, the shared elements stubs that
+// agent.db as nodeAgent.js makes it; the page files run in node on a window of their own, the shared elements stubs that
 // keep what they were handed.
 
 const fs = require('fs');

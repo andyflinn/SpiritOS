@@ -6,11 +6,11 @@ Its test is `./rowTable.js`.
 
 ## Requirements
 
-- `rowTable(db, def, publish)` answers `{ verb, has, label, icon }`.
-  - `def` is `{ name, fields: { field: rule }, secret: [field], check(args, db), deleted(id) }`, each rule one of
-    spirit.js's.
+- `rowTable(db, def, publish)` answers `{ verb, required, has, label, icon }`, `required` a copy of `def.required`.
+  - `def` is `{ name, fields: { field: rule }, secret: [field], check(args, db), deleted(id), shows(row), listed: [field],
+    required: [field] }`, each rule one of spirit.js's.
 - The table is named `def.name`. It has `id`, the one primary key, then `privateKey`, `sealPublicKey` and
-  `sealPrivateKey`. Every table also has the common fields `icon`, `label` and `description`, then the fields `def`
+  `sealPrivateKey`. Every table also has the common fields `icon` and `label`, then the fields `def`
   names. A bool is kept as an INTEGER and a list as JSON text.
 - Every row is keyed as the shadow roll keys a peer (Andy, box v22: "keyed by ID same as the shadow-roll"; "the ID-key
   for each row of these tables is generated at \"add-row\", including the rest of the key-set stored on that table
@@ -31,8 +31,8 @@ Its test is `./rowTable.js`.
     best first. With no words it answers every row that fits.
   - **A search answers only what a list shows** (goal/G41.18; Andy: *"only the ID and the fields shown in a table,
     that's all it needs."*, and *"that exactly what GET is for, to bring in the rest for detail panels etc..."*): the
-    label is the id and the fields the table names in `def.shows`, by default `icon` and `label`. It still ranks by
-    every text field, so a word of a field it does not answer finds its row. `get` answers the whole row.
+    label is the id and the fields the table names in `def.listed`, by default `icon` and `label` (a narrowed search adds the fields
+    it was narrowed by). It still ranks by the whole row as get serves it, so a word of a field it does not answer finds its row. `get` answers the whole row.
 - Every change is published:
   - add and set publish `{ agent: { table, row } }`, the row as get shows it;
   - delete publishes `{ agent: { table, id, removed: true } }`.

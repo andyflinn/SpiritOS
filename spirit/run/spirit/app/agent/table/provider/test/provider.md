@@ -10,7 +10,7 @@ which will never reach the browser or any place outside of the agent process exc
 
 - It has `server.js`, `elementTable.js` and `elementRow.js`.
 - `server.js(ctx)` makes the `provider` table on `ctx.db` with the shared rowTable. Its columns are the key set, the
-  icon, label and description, then `url`, `apiKey` and `unusable` (goal/G41.18), and nothing else.
+  icon and label, then `url`, `apiKey`, `unusable` (goal/G41.18) and `model` (goal/G41.21), and nothing else.
 - `apiKey` is secret:
   - it is kept on the row;
   - no get, search or published row carries it, only `apiKeySet`.
@@ -34,10 +34,10 @@ which will never reach the browser or any place outside of the agent process exc
   - It answers `{ models: [{ modelName, label }], updated }`, the provider's list as the plugin gave it.
   - **When the list has models, the model table is updated, for that provider alone** (*"Updated means, unavailable
     models from that provider will be removed, also"*):
-    - a model not yet in the table is added, with the provider's id, the model name, and the provider's name of it as
-      label;
+    - a model not yet in the table is added, with the provider's id, labelled with its model name as the provider gives
+      it (goal/G41.21, below);
     - a model the provider no longer lists is removed;
-    - a model it still lists keeps its row, with the label and description as he set them;
+    - a model it still lists keeps its row;
     - another provider's models are not touched;
     - every row added or removed is published, so the lists follow.
     - The answer says `updated: true`.
@@ -58,7 +58,7 @@ which will never reach the browser or any place outside of the agent process exc
   - A row it opens is a `providerRow`.
 - `elementRow.js` registers `spirit.elements.providerRow.create(container, api, id, added, detail)`:
   - It builds on `agentRow` with the row's id, added, and the provider table's look.
-  - Its fields are the label (name), the description, the url, and the API key as a secret.
+  - Its fields are the label (name), the url, the API key as a secret, and the Model pick (goal/G41.21, below).
 
 - **elementRow.js loads the agent family's cache manager, which takes the provider table's rows from the stream** (goal/G41.16;
   Andy: *"get rid of thos FUCKING data.js scripts"*; goal/G41.28): its page files require no data script; the row element
@@ -70,7 +70,7 @@ which will never reach the browser or any place outside of the agent process exc
 ## Requirements (goal/G41.21, box v17)
 
 - **The provider table gains a field, model**: the id of one row of the model table, the provider's current model.
-  Eleven columns, nothing else.
+  Ten columns since the description went, nothing else.
 - **Its detail panel gets a Model field at the bottom**: a pick field of the model table, `of: 'providerId'`, so it
   offers only the models whose provider is this provider (../../test/tableElement.md).
 
@@ -117,7 +117,7 @@ The provider's ask adds each model with its label the model name exactly as the 
 - The API key shown as a plain text field in the editor.
 - Two rows with one url, a trailing slash aside.
 - ask through the wrong plugin, or with a label matched only in its own case.
-- ask removing another provider's models, or his label and description of a model kept.
+- ask removing another provider's models, or a model it still lists.
 - An empty or failed list that changes the model table; a failure that leaves the row unflagged.
 - No model column; a Model field that is not last, not a pick of the model table, or not narrowed to the provider.
 - A Model picker listing none of its provider's models with the search empty, listing another provider's models, or rows without the model's name.

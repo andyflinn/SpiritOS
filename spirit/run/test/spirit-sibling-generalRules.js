@@ -13,6 +13,10 @@
 // shouln't check general \"mountability\" of elements and apps?", "mount each element or app all by itself, to \"unit\"
 // tests?"; "add that test: shell-child-generalRules.js". Each file is its own test id; a rule a file breaks fails that
 // file's test.
+// DISCREPANCY WITH ANDY's RULES: the reach above runs once per file (goal/G41.19, goal/G43.2); since goal/G43.18 moved
+// spirit.js to spirit/run/spirit/spirit.js, testModule.js no longer counts this as a general test (./TEST_SYSTEM.md). It
+// is run once with no file, every() below finds no file in its reach, and it goes red with "testModule.js gives it no
+// file to judge" after its icon-loading checks.
 //
 // HOW: a scratch copy of spirit/run (the tracked files) on a node of its own, on a free port, its DEBUG switched on, so
 // neither Andy's node nor an agent's is touched. Headless Chrome, driven over its debugging port with node's own
@@ -50,7 +54,9 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 // THE AGENT TABLES' PAGES ARE ELEMENTS TOO (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element
 // (process/js/agent/table/tableElement.js), its row editor (rowElement.js, goal/G41.28) and each table's list and
 // editor (<table>/elementTable.js, elementRow.js).
-// Their servers beside them are not pages, and are not mounted.
+// Their servers beside them are not pages, and are not mounted. The agent tables now live in spirit/app/agent/table/
+// (goal/G43.12), which the process/js/agent/table/ pattern below no longer matches; there they are neither, and are not
+// mounted. spirit/app/agent/agent.js is an element by the new-folder rule.
 function kindOf(file) {
   const f = String(file || '');
   if (/^spirit\/element\/.+\.js$/.test(f)) return 'element';
@@ -65,7 +71,9 @@ function kindOf(file) {
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
-// as they are used, not refused.
+// as they are used, not refused. scratchNode writes a process/js/<name>/ server's face.home sidecar for it; agent is an
+// app of spirit/app/ now, run by active in spirit/state/agent/node.json (spirit/jobs.js), so that sidecar no longer
+// starts it.
 const SERVERS = { servers: ['agent'] };
 // A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
 // bare mount never has; its own test's check, by its words, stands for it here.
@@ -276,7 +284,9 @@ const { sleep, until, findChrome, scratchNode, chromePage } = require(path.join(
 // need special handling", then "narrow the rules so."): a shell script (no test, no vendor code) whose code, comments
 // left out, holds a pictograph (Unicode Extended_Pictographic) alone in a string or alone between two tags, or that
 // paints icons it is handed (named below, read by hand), loads spirit/element/icon.js. A glyph among words is text. Each is
-// its own check, named by its path.
+// its own check, named by its path. painters() reads only the files git tracks under shell/, so the spirit/ entries of
+// FROM_DATA and TEXT_ONLY are never read, and shell/boot.js (now spirit/shell/boot.js, goal/G43.18), shell/apps/apps.js
+// and shell/icons/icons.js are no longer in the tree.
 const FROM_DATA = ['shell/boot.js', 'shell/apps/apps.js', 'shell/icons/icons.js', 'spirit/app/contact/contact.js', 'spirit/element/search/icon/listElement.js',
   'spirit/element/search/icon/rowElement.js', 'spirit/element/search/icon.js', 'spirit/element/workBench.js'];
 // A pictograph, its variation selectors and joiners with it, alone in quotes or alone between > and <.
@@ -536,6 +546,7 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     // OUTSIDE goal/G41.28, AND STILL RED (Andy, G41.28: "WSL will drop Q23 from this item, and mark those two related reds as
     // outside it"): login fetches its steps file before the page has a link to its node, and the file viewer fetches a
     // file at home piece by piece. Each red names that it is outside the item; it is not met, so it is not green.
+    // shell/login/login.js is no longer in the tree; the file viewer's spirit/element/fstat.js is.
     const OUTSIDE = own.some(function (c) { return /^(shell\/login\/login|spirit\/element\/fstat)\.js$/.test(String(c.file || '')); }) ? ' (outside goal/G41.28, Andy: "WSL will drop Q23 from this item, and mark those two related reds as outside it")' : '';
     ok(!own.length, 'every call it puts on the wire goes through spirit (' + W.net.length + ' made)', own.length + ' made by itself: ' + short(own.map(function (c) { return c.kind + ' ' + c.url.replace(node.base, '') + ' from ' + (c.file || 'an unnamed script'); })) + OUTSIDE);
 

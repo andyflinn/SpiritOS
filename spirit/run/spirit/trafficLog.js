@@ -47,7 +47,7 @@
 // in and out, across every app that uses the router.
 //
 // That is the point rather than a side effect. It is also why the rules
-// it shares with contactBook and the peerfiles are absolute: local, never
+// it shares with the contacts (node.db's shadow roll) and the peerfiles are absolute: local, never
 // uploaded, and NEVER ON A RELAY. A node keeping its own traffic is a
 // machine keeping its own record. A relay keeping this same file would be
 // holding everybody's messages — not metadata, the content — which is a
@@ -58,46 +58,21 @@
 const fs = require('fs');
 const path = require('path');
 
-// ONE DAY, EXACTLY (Andy: "the logfiles should never contain anything
-// older that exactly one day"). A sliding window, not an entry cap and
-// not a byte cap: a count would have been a guess about traffic, and a
-// clock is a promise that can be stated exactly and checked exactly.
+// NO AGE LIMIT, AND A SIZE CAP (goal/G30.19).
 //
-// A window rather than a number of rows: this one keeps whole packets
-// because it is keeping a record.
-// PERMANENT.
+// No row ages out here, whether it was read, refused, ignored or sent;
+// this file sets no window. What bounds the log is node.db's file cap (not
+// the owner's cache cap, which counts only the shadow roll): Andy,
+// 2026-10-21: "cap in to 16 MB", "learn to throw out shit, or else my box
+// is gonna grind to a hold very soon". Past nodeStore.MAX_DB_BYTES the
+// table's oldest rows are shed (nodeStore.js, shedToCap), so the log keeps
+// the newest traffic that fits.
 //
-//   Andy: "the log should be permanent. period."
-//
-// There was a 24-hour sliding window here, and then a rule that exempted
-// undelivered mail from it. Both are gone: nothing in this file ages out,
-// whether it was read, refused, ignored or sent.
-//
-// The window was never a privacy measure — it was "certainly enough to
-// test concepts surrounding logfiles", from when this was new. What it
-// actually did was make the node's own record of its own traffic the one
-// thing in the system that forgot, in a design whose whole argument is
-// that durability belongs on the recipient's own hardware (0006).
-//
-// TWO THINGS FOLLOW, AND THEY ARE NOT OPTIONAL.
-//
-// 1. THIS FILE GROWS WITHOUT BOUND. That is the decision, not a bug. It
-//    is the owner's own disk, in a file they can look at, holding their
-//    own traffic — which is exactly what the ring on a public relay was
-//    not, on all three counts.
-//
-// 2. IT CANNOT BE REWRITTEN ON EVERY PACKET ANY MORE. It used to be
-//    read-all, push, write-all — correct and crash-safe while a window
-//    bounded it, and impossible once nothing ages: a node running for a
-//    year would rewrite a year of traffic every time a packet landed.
-//    So the store is APPEND-ONLY, one JSON object per line.
-//
-// A write is one line and O(1). A read is O(n) and always was; reads
-// happen when a page opens or asks, writes happen per packet, and that is
-// the right way round. When `n` makes reads hurt, the answer is the one
-// Andy named — a local-disc database behind this same api block — and
-// nothing above this file will notice, because nothing above it knows
-// the filename (spirit/test/storeOwnership.js).
+// IT IS NEVER REWRITTEN ON EVERY PACKET. A write adds one row and is
+// O(1): since transport/R19.3 a row into node.db's `traffic` table
+// (below), and only when node.db cannot be had, one JSON line appended
+// to traffic.jsonl. Nothing above this file knows where the rows live
+// (spirit/test/storeOwnership.js).
 
 // One JSON object per line. The extension says so, which matters for a
 // file somebody is meant to be able to open and read.
@@ -129,11 +104,11 @@ function legacyPath(rootDir) {
 //
 // Every new row goes into node.db's `traffic` table, which nodeStore.js
 // owns; this file still decides what a row is and is the only one that
-// reads it. The file (traffic.jsonl) is still READ, first, so a node that
-// has been running keeps its whole history until the migration
-// (transport/R19.5) imports it and retires the file. Nothing writes the
-// file any more unless node.db cannot be opened at all, and then the log
-// keeps working the old way rather than losing rows.
+// reads it. A traffic.jsonl still present is READ too and merged in; the
+// migration below (transport/R19.5) imports it into the table when a log
+// is opened and renames it .imported. Nothing writes the file unless
+// node.db cannot be opened at all, and then the log keeps working the old
+// way rather than losing rows.
 //
 // `create` is false for reads: asking what the log holds must never be
 // what brings a database into existence.
@@ -260,9 +235,9 @@ function append(rootDir, row) {
 
 // opts: { rootDir, relayMode, now }
 //
-// `now` is injectable. A retention rule
-// stated in hours that could only be tested by waiting hours is a rule
-// that would not be tested.
+// `now` is injectable, so the stamp below can be tested without waiting
+// on a real clock. (It was for a retention window; the log keeps
+// everything now.)
 // ── THE MIGRATION (transport/R19.5) ───────────────────────────────────
 //
 //   Andy, 2026-09-28: go on transport/R19.5, the last step of "Moving the node
@@ -347,7 +322,7 @@ function createTrafficLog(opts) {
   // two ahead of the wall clock, and if the system clock jumps backwards
   // it advances one millisecond per row until real time catches up. A
   // log whose order is trustworthy is worth more than one whose
-  // millisecond is, and 0009 keeps this file for ever either way.
+  // millisecond is.
   var lastMs = null;
 
   function highestWritten() {
@@ -370,8 +345,8 @@ function createTrafficLog(opts) {
   //
   // Each reader that wants a few rows asks node.db for exactly those, by
   // the partial index made for it, instead of reading every row and
-  // filtering. The file's rows are still merged in, because until the
-  // migration (transport/R19.5) a live node's history is partly there.
+  // filtering. A traffic.jsonl's rows are still merged in: one is there
+  // when its import failed or node.db could not be opened.
   // The answers are the same as filtering read(): its suite checks both.
   function sinceIso(ms) { return ms ? new Date(ms).toISOString() : ''; }
   function byTime(a, b) { return Date.parse(a.at) - Date.parse(b.at); }
@@ -503,8 +478,8 @@ function createTrafficLog(opts) {
       // problem similar to the HTTP endpoint issue" — a quantity measured in
       // the wrong unit under a name that claims otherwise.
       //
-      // HISTORIC ROWS CARRY THE OLD COUNT and nothing rewrites them: this log
-      // is permanent by design. A reader comparing a row written before
+      // HISTORIC ROWS CARRY THE OLD COUNT and nothing rewrites them (they
+      // leave only by the size cap's shedding). A reader comparing a row written before
       // 2026-09-26 against one written after will find ASCII rows agree and
       // non-ASCII rows differ by the UTF-8 overhead, which is the honest
       // state of a field that was wrong and was fixed.
@@ -547,10 +522,6 @@ function createTrafficLog(opts) {
     return row;
   }
 
-  // Pruned on read as well as on write, and persisted if the read changed
-  // anything — otherwise a node that went quiet would keep yesterday's
-  // traffic on disk indefinitely, and "never older than one day" would be
-  // true only of nodes that stayed busy.
   // WHAT A CLIENT HAS NOT SEEN YET, oldest first.
   //
   // `since` is an ISO timestamp — a position, not a filter on content.
@@ -599,8 +570,12 @@ function createTrafficLog(opts) {
 
   // EVERY ARRIVAL NOT YET TAKEN, oldest first (goal/G4.31): admitted inbound rows with no taken mark, what a stream
   // replays when it opens. It touches only those rows (the table's untaken query, through its indexes), never the
-  // whole log: arrivals.js once read() everything here, about a second per desk ask on a long-lived node. Rows still in
-  // a legacy file are folded in, their marks looked up as arrivals() does. The log itself stays permanent.
+  // whole log: arrivals.js once read() everything here, about a second per desk ask on a long-lived node. The table
+  // answers only the last day's (nodeStore BACKLOG_MS, goal/G30.19). Rows still in a legacy file are folded in, their
+  // marks looked up as arrivals() does.
+  // DISCREPANCY WITH ANDY's RULES: goal/G30.19 (nodeStore.js, the comment on traffic `untaken`: "I don't go clean a room
+  // my mother tld me to clean 60 years ago") makes an untaken packet older than a day no longer waiting work; the legacy
+  // file's rows below are folded in with no age limit, so an old untaken row still in traffic.jsonl is replayed.
   function untaken() {
     var fileRows = readFile(rootDir);
     var marks = takenSet(fileRows);
@@ -666,10 +641,9 @@ function createTrafficLog(opts) {
     return rows.length ? foldTaken([rows[rows.length - 1]], marks)[0] : null;
   }
 
-  // MARKED WHEN A LIVE PAGE WAS ACTUALLY HANDED IT. Andy's rule from this
-  // morning — the node keeps the mark, not the browser — and it is what
-  // lets the row start ageing like any other record. Before this, it is
-  // undelivered mail and has no clock.
+  // MARKED WHEN A LIVE PAGE WAS ACTUALLY HANDED IT. Andy's rule — the node
+  // keeps the mark, not the browser. A marked row is no longer replayed
+  // by untaken().
   // A MARK IS A ROW. Appending `{mark:'taken', hash, at}` rather than
   // editing the packet's own row is what keeps the file append-only — and
   // it means a delivery can never corrupt the thing it delivered.
@@ -712,17 +686,16 @@ function createTrafficLog(opts) {
     return marked;
   }
 
-  // What the log still holds, marks folded in. The log is not permanent (goal/G30.19, overruling 2026-09-13's
-  // "permanent. period."): node.db sheds its oldest rows past nodeStore.MAX_DB_BYTES.
+  // What the log still holds, marks folded in. node.db sheds its oldest rows past nodeStore.MAX_DB_BYTES (goal/G30.19).
   function read() {
     return historyOf(rootDir);
   }
 
   // HOW MANY BYTES THE LOG USES (transport/R19.2). Andy, 2026-09-28: "go."
   // on the log answering this itself, so nothing outside it has to know it
-  // is a file: measureCapacity used to stat traffic.jsonl directly, and the
-  // log is moving into node.db (transport/R19), where the answer becomes the
-  // table's pages. Callers ask the log; only the log knows where it lives.
+  // is a file: measureCapacity used to stat traffic.jsonl directly. The
+  // answer is the table's pages in node.db (transport/R19) plus any
+  // traffic.jsonl still there. Callers ask the log; only the log knows where it lives.
   function size() {
     var n = 0;
     try { n += fs.statSync(logPath(rootDir)).size; } catch (e) { /* no file: nothing from it */ }

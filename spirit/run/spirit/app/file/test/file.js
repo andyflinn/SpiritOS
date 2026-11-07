@@ -3,7 +3,7 @@
 // spirit/run/spirit/app/file/test/file.js
 // The tests of spirit/app/file/file.js, and of Files as Andy sees it (spec: ./file.md; goal/G43.17). Andy: "file should be the
 // same as files is. i don't want to loose all the nice stuff files has...". A real node on a scratch copy of the tracked files,
-// with a folder of planted files, and real clicks in a real Chrome on /face.html, on the appSelector as appMigration makes it.
+// with a folder of planted files, and real clicks in a real Chrome on /face.html, on the appSelector as the shell app makes it.
 // Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');

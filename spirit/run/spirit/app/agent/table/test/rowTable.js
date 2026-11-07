@@ -2,7 +2,7 @@
 
 // spirit/run/spirit/app/agent/table/test/rowTable.js
 // The tests of spirit/app/agent/table/rowTable.js, and of no other module (spec: ./rowTable.md; goal/G41.4). One keyed
-// table is made on a scratch agent.db, as agent.js makes each, with a table definition of the test's own, and its verb is
+// table is made on a scratch agent.db, as nodeAgent.js makes each, with a table definition of the test's own, and its verb is
 // called as the server calls it; what it publishes is kept.
 
 const fs = require('fs');

@@ -1,9 +1,11 @@
 'use strict';
 
-// spirit/run/shell/icons/test/icons.js
-// The tests of shell/icons/icons.js, and of no other module (spec: ./icons.md; goal/G41.27): its add row, a rowForm.
+// spirit/run/spirit/app/icons/test/icons.js
+// The tests of spirit/app/icons/icons.js, and of no other module (spec: ./icons.md; goal/G41.27): its add row, a rowForm.
 // Asked of a real browser, the real rowForm composed: ./icons-laid.html, on a scratch node with its DEBUG on, mounts the
 // app in a box, the rowForm's create kept as it is called.
+// The app moved here from shell/icons/ unchanged (64e2d054): the code below still takes RUN three folders up (which is
+// spirit/run/spirit/ from here), and still addresses /DEBUG/shell/icons/test/icons-laid.html and shell/icons/icons.js.
 
 const fs = require('fs');
 const path = require('path');

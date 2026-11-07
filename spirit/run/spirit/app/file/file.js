@@ -1,7 +1,6 @@
 // spirit/run/spirit/app/file/file.js
 // FILES, AN ELEMENT (goal/G43.17; Andy: "file should be the same as files is. i don't want to loose all the nice stuff files
-// has..."). The old shell's Files app, moved: a tile hands it only its container. Its contract and its test: ./test/file.md and
-// ./test/file.js.
+// has..."). The old shell's Files app, moved. Its contract and its test: ./test/file.md and ./test/file.js.
 //
 //   spirit.elements.file.create(container, { open }) -> { destroy() }
 //     open(key, spec): the stack file was opened in, handed by its mounter, so a file covers ALL of file, its bar too (Andy:

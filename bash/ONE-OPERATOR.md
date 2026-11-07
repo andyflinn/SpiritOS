@@ -10,7 +10,7 @@ There is no second Unix account to “manage” the first.
 - `spirit-relay.service` runs as root.
 - `./bash/install-units` does **not** create a `spirit` user and does
   **not** refuse `/root`.
-- `relay-state/` stays mode `700` on disk. It is still gitignored.
+- The relay's own files, `spirit/run/spirit/state/` (`relay-state/` until goal/G43.8), stay mode `700` on disk (`install-units`). They are gitignored.
 - Caddy may use the package’s `caddy` user. That is the TLS helper,
   not a second you.
 

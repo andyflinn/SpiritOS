@@ -2,8 +2,8 @@
 
 // spirit/run/spirit/element/search/test/valued.js
 // The tests of spirit/element/search/valued.js, and of no other module (spec: ./valued.md; goal/G43.6). Andy, box: "It will be
-// spirit.element.search.valued, on disc and in spirit", "It is searchable (probabilitySearch), over rows it already holds, with no node
-// verb." A real Chrome on a scratch node's page, the element mounted by itself, rows of the test's own.
+// spirit.element.valued, on disc and in spirit", "It is searchable (probabilitySearch), over rows it already holds, with no node
+// verb." Since goal/G43.18 (Q5) it is spirit.element.search.valued. A real Chrome on a scratch node's page, the element mounted by itself, rows of the test's own.
 
 const fs = require('fs');
 const path = require('path');

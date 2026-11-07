@@ -12,7 +12,8 @@ is the appServer serializes the cache to disk."*
 
 1. **Every family in the api tree has a data.js**: each family's interface, `process/js/<name>/family/api.js`
    (`spirit.familyPath`) and the node's own `spirit/<name>/api.js`, has `data.js` in its own folder, `process/js/<name>/` or `spirit/<name>/`. Each family
-   is its own check, named by the family.
+   is its own check, named by the family. An app of `spirit/app/<name>/` (interface `./api/api.js`, goal/G43.12; the
+   agent app today) matches neither pattern and is not counted.
 2. **One code**:
    - the data set is one file, `spirit/data.js`: `spirit.js` brings it to a page, appServer requires the
      same file;
@@ -22,7 +23,7 @@ is the appServer serializes the cache to disk."*
      manager.
 3. **The same rows make the same cache**: the desk's `data.js` and the data set, run in node as appServer
    runs them (required, on the process's global) and in a page's window as a page runs them (plain scripts,
-   no module), are told the same serving node (`home(key)`, a key holding a `+` and a `/`) and handed the same rows (two
+   no module), are told the same serving node (`homeNode(key)`, a key holding a `+` and a `/`) and handed the same rows (two
    goal pushes, an item as a JSON string, a rule), and end with the same `spirit.data.desk.cache`. Its top level is that node
    alone, its key in base64url (Q5 of goal/G43.7: *"yes."*).
 4. **The one difference is the disk**: no `data.js` requires `fs` or `path`, writes or reads a file, or
@@ -45,8 +46,10 @@ is the appServer serializes the cache to disk."*
 7. **No other way** (Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js
    must do so in this item. no exceptions."*, and *"any notion that there is an alternative approach must disappear
    from all documentation and all comments and all code and tests in the entire repo."*):
-   - no client file (under `shell/` or `process/js/`, but `shell/boot.js`, the face's own transport) takes the node's
-     stream itself (`events.subscribe`): only `spirit/data.js` takes it, for every client;
+   - no client file (under `shell/`, `spirit/element/` or `process/js/`, but `shell/boot.js`, the face's own transport)
+     takes the node's stream itself (`events.subscribe`): only `spirit/data.js` takes it, for every client. Those paths
+     are the test's; `boot.js` and `seal.js` have been in `spirit/shell/` since goal/G43.18, which the list does not
+     reach, so `spirit/shell/seal.js` is not judged; the apps left in `shell/` are;
    - no file of the repo (`.js`, `.md`, `.html`, `.json`; the desk's `currentGoal.json` and Andy's vault aside) names a
      replaced way: a page or client that runs `uncached`, the desk's two-level
      branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;

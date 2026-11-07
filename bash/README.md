@@ -7,10 +7,10 @@ It is **not** labMaster. labMaster stays on the coordinator laptop
 (`http://127.0.0.1:65420`) and only ever spawns local lab nodes.
 
 The public relay is a small machine (about 1 GB RAM). It runs the relay
-(`--relay`) behind Caddy, and, since 2026-09-27, ONE face node beside it
-(`/root/face/SpiritOS`, unit `spirit-face`, see [FACE.md](FACE.md)). Nothing
-else. Andy's "yes" to the relay plus one face node on this box, and
-nothing more.
+(`--relay`) behind Caddy, and nothing else. The relay serves its members'
+faces itself since goal/G30.9 (`./bash/face-setup`); the separate face node of
+2026-09-27 (`/root/face/SpiritOS`, unit `spirit-face`, [FACE.md](FACE.md))
+lost its installer and its processes with goal/G30.1.
 
 ```
 ssh root@194.37.81.237
@@ -34,7 +34,7 @@ labMaster. Kill it.
   (`http://127.0.0.1:65432`). Browser talks only to that.
 - Public relay: Node listens on `127.0.0.1:65430` with `--relay`.
 - The world only sees `https://spirit.andyflinn.com` (Caddy on 80/443).
-- `relay-state/` is never deleted by update.
+- The relay's own files, `spirit/run/spirit/state/` (`relay-state/` until goal/G43.8), are never deleted by update.
 
 ## Commands
 
@@ -42,17 +42,17 @@ labMaster. Kill it.
 |---|---|
 | `./bash/help` | This map. |
 | `./bash/status` | Units, ports, git SHA, the relay's key — a signed card ask on its one door by `bash/card-ask.js` (goal/G22.6 closed `/api/relay/key`) — over HTTPS and on loopback. Warns if labMaster is running, or if the relay runs as anyone but root. |
-| `./bash/install-units` | Write the relay's owner (`OWNER_KEY`), keep `relay-state/` mode 700, and install the systemd unit from `bash/systemd/` with this clone's own paths filled in. Runs as root. |
+| `./bash/install-units` | Write the relay's owner (`OWNER_KEY`), keep `spirit/state/` mode 700, and install the systemd unit from `bash/systemd/` with this clone's own paths filled in. Runs as root. |
 | `./bash/start` `stop` `restart` | The relay Node process only. |
 | `./bash/boot-on` `boot-off` | Start relay at boot, or not. |
-| `./bash/update` | `git fetch` + hard reset to `origin/master` + restart **only if SHA changed**. Leaves `relay-state/` alone. |
+| `./bash/update` | `git fetch` + hard reset to what the clone follows (the newest tag on `origin/master` by default; `SPIRIT_TRACK=master` in its `.env` for master) + restart **only if SHA changed**. Leaves the relay's state alone. |
 | `./bash/cron-install` | Every 10 minutes, run `update`. |
 | `./bash/cron-remove` | Take that cron line out. |
 | `./bash/firewall` | Publish 22, 80, 443. Do not publish 65430. |
 | `./bash/tls` | Install Caddy + site file for `$SPIRIT_RELAY_DOMAIN`. |
+| `./bash/face-setup` | The relay's face domain (`spirit/state/face.json`) and a Caddy site for `*.<domain>`, a certificate per face on demand once the relay says the name is a face (goal/G30.9). |
 | `./bash/face-tls` | Caddy site for `face.<domain>` and `*.face.<domain>`, certificates on demand. Kept as a bone for the fold of relay and face: `face-install` and the appFaceApp it ran are gone (goal/G30.1). |
 | `./bash/http-to-https` | Move Node off public :80 onto localhost :65430, enable TLS + redirect. |
-| `./bash/logs` | Last 100 lines of the relay unit. |
 
 Run any script with no args. They print what they are about to do.
 
@@ -70,7 +70,7 @@ OWNER_KEY=<the owner node's public key, MCow...> ./bash/http-to-https   # runs i
 
 One operator: **root is spirit** ([ONE-OPERATOR.md](ONE-OPERATOR.md)). The
 clone stays in `/root/SpiritOS` (`CLONE_DIR` in `lib.sh`), the unit runs as
-root, and there is no second Unix account. `relay-state/` is gitignored and
+root, and there is no second Unix account. `spirit/state/` is gitignored and
 mode 700, so nothing else holds a copy of `identity.json`.
 
 ## Environment knobs

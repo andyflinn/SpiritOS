@@ -2,6 +2,15 @@
 
 **Review only. Against `26205fe` (2026-09-12). Nothing was built.**
 
+> Status 2026-11-07 (goal/G43.23): every file and line below is at `26205fe`.
+> Since then `spirit/run/js/` is `spirit/run/spirit/` (goal/G40.2);
+> `whoBook.js` is `contacts.js` with its rows in node.db, not `who.json`
+> (e537880b, goal/G40.11); `peerStats.js` (goal/G43.14), `chatLog.js`,
+> `devicePeers.js` and the device (goal/G16.2), Relay Chat (f589d46d) and
+> Natter with `natter.json` and `natterDetails.json` (goal/G30.7) are gone;
+> the owner is `owner.json`, not `allow.json`; the roll and invites are in
+> `relay.db`; `relay.html` is gone (goal/G22.6).
+
 Andy:
 
 > our new world view: nodes are people, relays are satellites, and we are

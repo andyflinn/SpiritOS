@@ -2,11 +2,11 @@
 
 The verb dropdown (goal/G41.5; Andy: "the Dropdowns for family and verb MUST be new or updated shell elements for those
 data types. including test folders."): one shell element, the verbs of one family of an api tree. Since goal/G41.14
-it is the verb half of the family selector, `apiFamilySelector.js`.
+it is the verb half of the family selector, `spirit/element/search/api.js`.
 
 ## Requirements
 
-- A shell element of its own: it adds `apiVerbSelector.create(container, options)` to `window.spirit.elements`, and
+- A shell element of its own: it adds `create(container, options)` at `window.spirit.element.search.api.verb`, and
   `createApiVerbSelector` no more. The control is appended to the container and answered (box v23: *"every element gets
   a container and appends itself"*).
 - **Built on probabilitySearch**, as a dropdown (`face: 'dropdown'`); nothing of `shellCreateListSearch` (goal/G40.8).

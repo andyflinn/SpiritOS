@@ -1,7 +1,7 @@
 # spirit/app/agent/chatPane.js
 
 The chat with a persona, in the Agent app's centre (goal/G41.26). The Agent app opens it when a persona is picked in
-its 💬 Select Persona panel (`./agent.md`). Its test is `./chatPane.js`.
+its 💬 Select Persona panel (`./browserAgent.md`). Its test is `./chatPane.js`.
 
 Andy, box: *"the chat pane shows up in the center pane of workBench, titled: \"💬 Chat with
 <selected-persona-label>\". The title is pinned to the top of the center pane."*, *"pinned to the bottom or that pane is

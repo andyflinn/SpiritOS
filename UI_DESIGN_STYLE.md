@@ -4,6 +4,8 @@ Working notes, not a spec. A rule lands here **after** it has been decided on a 
 
 `AGENT.md` owns the product rules. This file owns the look. Where they overlap (chrome that is not useful), `AGENT.md` wins and this file points at it.
 
+**Many of the examples below name apps that have since left the tree:** Relay Chat (2026-09-25), Natter (goal/G30.7), Stats and Apps (2026-11-07), and Processes, Groups and Contacts as `index.html` or `shell/` apps. The rules were decided on those screens and stand; where an example names one of them, read it as the case the rule was found on, not as a screen to look at. The classes and shell mechanisms named here (`.start-job-form`, `.stat-tile`, `.fact-row`, `is-dialog`, `callDialog`, `armUntilElsewhere`, `assertOneHiddenApp`) are still in `spirit/run/spirit/shell/shell.css` and `spirit/run/spirit/client/shell.js`.
+
 ---
 
 ## 1. Show only what can do something
@@ -114,15 +116,14 @@ That is deliberately **the opposite way round from `.stat-tile`**, where a 22px 
 
 ### A viewer steps out of its own way, and nothing else does
 
-Three callers pass `{replace: true}` to `launchApp`, and every one is a launcher finishing with the file it was showing:
+Two callers pass `{replace: true}` to `launchApp` today, both in `spirit/client/shell.js`, and each is a launcher finishing with the file it was showing (a third, Start Job, left with the launchers' job form, goal/G30.16):
 
 | where | you leave for |
 |---|---|
 | Open with | another handler for the same file |
 | Open ⟨app⟩ | the app whose source you were reading |
-| Start Job | the job the form on that script just started |
 
-So Back returns to whatever opened the launcher — Processes, or Files — rather than to a file you are done with. **Everything else pushes**, and a group screen pushing is exactly what makes Back *into* it mean going back to where you were. A test counts the three across `shell.js` and `index.html`, so a fourth has to be a decision rather than a habit.
+So Back returns to whatever opened the launcher rather than to a file you are done with. **Everything else pushes**, and a group screen pushing is exactly what makes Back *into* it mean going back to where you were. A third has to be a decision rather than a habit.
 
 ### A row that needs more than a row gets a screen
 
@@ -140,14 +141,14 @@ Every app now declares which of three it is, and the shell reads the declaration
 
 **Why a separate app id and not a second view.** Panes are one per app id and are hidden, never destroyed. A separate id means the table's pane — and its scroll position — survives untouched behind the dialog. A second view of the same app would share one pane, and preserving scroll would become every table's own problem to solve.
 
-**Discovery stays flat** (`app/<name>/<name>.js`), so a dialog is a *sibling* folder, not a child. The cost is real and worth stating: `api.fs` is scoped to the folder the script lives in, so a dialog cannot write its parent's files. It does not need to — a dialog **reads anything (`api.readProject`) and writes only its own folder; anything that changes the parent's data goes through a hub verb.** Contacts Details writes nothing at all.
+**Discovery stays flat** (`shell/<name>/<name>.js`), so a dialog is a *sibling* folder, not a child. The cost is real and worth stating: `api.fs` is scoped to the folder the script lives in, so a dialog cannot write its parent's files. It does not need to — a dialog **reads anything (`api.readProject`) and writes only its own folder; anything that changes the parent's data goes through a hub verb.** Contacts Details writes nothing at all.
 
 **A dialog modifies data in real time.** Nothing is staged and there is no OK/Cancel: press Return on a label and it is on disk before the panel repaints. The result a dialog returns is not a commit — it is news for a stale cache, or an instruction the parent must act on.
 
 **A dialog is *called*, not launched**, and the answer is a return value:
 
 ```js
-api.callDialog('app/contactsDetails', { key: k })
+api.callDialog('shell/contactsDetails', { key: k })
    .then(function (result) { if (result && result.changed) refresh(); });
 ```
 
@@ -169,7 +170,7 @@ Collecting the result only from an explicit `closeDialog()` was the first attemp
 
 1. `api.launchApp` **throws** for a dialog. Not a silent return: a dialog reaching for it means somebody added a button that should not exist, and a quiet no-op ships a button that does nothing.
 2. `assertOneHiddenApp` complains on every push if two hidden apps would sit on the stack — and complains rather than refuses, because a wrong stack entry is a slightly wrong Back while a refused navigation is a dead button.
-3. A test counts it: no `launchApp` in any dialog's source, and `spirit.shell.launchApp` keeps its one named caller outside the shell (`stats`).
+3. A test counts it: no `launchApp` in any dialog's source. (`spirit.shell.launchApp` had one named caller outside the shell, Stats, which left the tree on 2026-11-07.)
 
 **At most one hidden app is open, and it is always the top.** That is not a rule of its own — it is what the other two produce. A hidden app is only ever entered from a visible one, and a launcher only ever leaves by replacing itself. It is *asserted* rather than assumed because the return path leans on it: the result goes to the entry directly beneath, which is the right app only while this holds.
 
@@ -193,7 +194,7 @@ Relay Chat is the first caller with no table of its own. When the open conversat
 Two things it settles that a second table never would have:
 
 - **The answer does real work.** In a table, `{changed:true}` repaints a list. In chat, the person whose card you just changed is the one sitting in the **To** control: only the re-read turns 📇 back into *Block here*, drops the mark from the row, and gives the composer back. The return value is the mechanism earning its keep, not tidying up after itself.
-- **Opening a screen is not gaining authority.** Blocking at the node level is the node's decision and chat may not make it (`AGENT.md` — a mere app must not reach a node-global switch). It still cannot: the dialog does its own write, from its own screen, exactly as when Contacts opened it. Chat points; it does not press. That distinction is a comment in `relayChat.js`, because the next reader will see chat apparently opening a blocking screen and reasonably try to undo it.
+- **Opening a screen is not gaining authority.** Blocking at the node level is the node's decision and chat may not make it (`AGENT.md` — a mere app must not reach a node-global switch). It still cannot: the dialog does its own write, from its own screen, exactly as when Contacts opened it. Chat points; it does not press. That distinction was a comment in `relayChat.js` (gone with Relay Chat), because the next reader will see chat apparently opening a blocking screen and reasonably try to undo it.
 
 The key rides **on the button**, not read from the control beside it at click time — the strip is repainted on every list paint and the click is delegated, so what the press opens must be what the button was *drawn for*. The same reason the two-press Block carries its key.
 
@@ -234,7 +235,7 @@ That suite also checks the **handle** each app guards on actually exists. A sile
 
 **Use `<details name="…">`.** The browser does it: same `name` on siblings and it closes the others itself. No JS, no state, no listener per app. On anything too old to know the attribute the folds stay independent, which is exactly today's behaviour — the fallback is the status quo, so it cannot break a screen.
 
-**Names are the app's id prefix, not its app id.** App ids are folder-derived and have moved before (`app-manager` → `app/apps`; `APP_ID_RENAMES` carries the overrides). A fold group named from one would silently regroup on the next folder move, and nothing asserts which folds are a group. The `rc-` / `contacts-` / `natter-` prefixes are hand-written, stable, and already name every element in their app:
+**Names are the app's id prefix, not its app id.** App ids are folder-derived and have moved before (`app-manager` → `app/apps` → `shell/apps`; `APP_ID_RENAMES` in `spirit/client/shell.js` carries the overrides). A fold group named from one would silently regroup on the next folder move, and nothing asserts which folds are a group. The `rc-` / `contacts-` / `natter-` prefixes are hand-written, stable, and already name every element in their app:
 
 | app | fold group |
 |---|---|
@@ -248,7 +249,7 @@ That suite also checks the **handle** each app guards on actually exists. A sile
 
 Two things this rule does not do:
 
-- **A tree is not an accordion.** `app/files/files.js` builds a `<details>` per folder. Exclusive folders would mean never having two open, and every step down would collapse the path you came by. The tree is already delicate about open state — it tracks `isOpen` by hand, because a rebuilt `<details>` is a closed one.
+- **A tree is not an accordion.** Files built a `<details>` per folder (`app/files/files.js`; since goal/G43.17 Files is `spirit/app/file/`, which draws no `<details>`). Exclusive folders would mean never having two open, and every step down would collapse the path you came by. That tree was already delicate about open state — it tracked `isOpen` by hand, because a rebuilt `<details>` is a closed one.
 - **The shell does not stamp `name` automatically.** It knows whose container it is mounting, so it is tempting — but the tree's folder folds live in that same container, and "direct children only" stops being true the day someone wraps their panels in a div. One attribute, written where the fold is written.
 
 ## 4. One row type, one voice
@@ -323,7 +324,7 @@ The exception is a row the handle does not identify — nobody claimed one, or s
 
 ## 7. Test the relationship, not the number
 
-CSS regressions are invisible until somebody looks. Where a rule is a *relationship* — an info row is the size of the titlebar; Open with sits the same distance below the bubble as the preview does below it — assert that, not the pixel value. Changing both deliberately then stays green; changing one does not. See `spirit/test/natterIntrinsic.js`.
+CSS regressions are invisible until somebody looks. Where a rule is a *relationship* — an info row is the size of the titlebar; Open with sits the same distance below the bubble as the preview does below it — assert that, not the pixel value. Changing both deliberately then stays green; changing one does not. (`spirit/test/natterIntrinsic.js` was the example; it went with Natter, goal/G30.7.)
 
 **A source check must not be able to match its own comment.** Four of these in one sitting: a fold count that found the sentence in `files.js` explaining why a rebuilt `<details>` comes back closed; a "chat never calls `/api/hub/peer`" check that found the comment saying it does not; a "Last log is gone" check that found the comment naming the column it removed. Every one is a check that can fail — or pass — for a reason nobody meant.
 

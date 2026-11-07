@@ -4,7 +4,7 @@
 // PUBLISHDATA AS AN APP OF ITS OWN (goal/G43.21; spec: ./publishData.md). Andy: "spirit/app/publishData/publishData will be
 // fixed to point at the correct files/folders", and "the Andy user on each box will run those scripts when he feels like
 // it, that will take the running of those scripts out of the agents hands." The tree read as it is, and the script run
-// once against a port nobody listens on, from a scratch git folder: it measures nothing and commits nothing.
+// once against a port nobody listens on, from a scratch folder that is no git clone: it measures nothing and commits nothing.
 
 const fs = require('fs');
 const os = require('os');

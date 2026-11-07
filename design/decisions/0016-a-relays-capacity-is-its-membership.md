@@ -2,6 +2,12 @@
 
 **Decided 2026-09-20 by Andy. Measured against `2e6d6e5`.**
 
+**Status 2026-11-07 (goal/G43.23):** the partner half below is gone with
+partnering (goal/G22.6, 2026-10-13: *"the partner roll and the partner
+budget are removed"*, `spirit/run/spirit/relay.js:1110-1115`), and so is the
+Governor (cycle 8, 11dcb1e0) with `levers.json`. The member half stands; the
+box's figures come from `relayLimits.js` and `config.json`.
+
 > **Andy:** *"for relay this means MAX_REQUESTS_IN_FLIGHT =
 > MAX_MEMBER_ROLL_SIZE.... all equations simplified. many ceilings
 > implicit constants."*

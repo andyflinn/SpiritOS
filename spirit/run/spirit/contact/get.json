@@ -1,3 +1,3 @@
 {
-  "description": "One person of the address book by public key (key): {ok, key, person: {publicKey, tail, publicLabel, caption, myLabel, acquiredVia, blocked, bytesHeld}}; 404 when there is none."
+  "description": "One row of the one table that contact.search searches, by public key (key): {ok, key, person: {publicKey, publicLabel, caption, myLabel, keep, mine, relay, blocked, seated, present, url, bytesHeld, ambiguous?}}; 400 without a key, 404 when there is none."
 }

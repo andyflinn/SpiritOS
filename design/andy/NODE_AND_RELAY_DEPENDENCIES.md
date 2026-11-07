@@ -10,6 +10,17 @@ Re-derive with the method in §7.
 
 Feasibility and shape only. Nothing here is a plan to build.
 
+> **Status 2026-11-07 (goal/G43.23):** the separation this measured is done.
+> Since cycle 0 (Andy, 2026-09-19, §6 below) `spirit/run/spirit/server.js` hands
+> `--relay` to `relayServer.js` before it requires any node module
+> (`server.js:1-20`), so a relay no longer loads `hub.js`, `jobs.js` or the fs
+> watcher, and Recommended 1-3 are moot. Several modules named here are gone:
+> `deviceAuth.js` (goal/G16.2), `labelRule.js` (into `fieldRules.js`, goal/G4.16),
+> `whoBook.js` (renamed `contacts.js`), `peerStats.js` (goal/G43.14), `relay.html`
+> (goal/G22.6), and the relay's `claim`, `device` and `who` routes. The core
+> tree moved from `spirit/run/js/` to `spirit/run/spirit/` at goal/G40.2; the
+> `server.js#L` links below point at lines of `e647e60`.
+
 ---
 
 ## 1. The short answer
@@ -24,7 +35,7 @@ Feasibility and shape only. Nothing here is a plan to build.
 
 **Separation is already nine-tenths done and is not expressed anywhere.** The
 relay's whole public surface is 8 API paths and 4 files
-([server.js:801-850](../../spirit/run/js/server.js#L801-L850)), and everything
+([server.js:801-850](../../spirit/run/spirit/server.js#L801-L850)), and everything
 behind it is reachable from one module. What stops the two being two products
 is not entanglement; it is that `server.js` is a single 1,738-line file that
 boots either, and that a `--relay` process therefore loads the node's half and
@@ -93,7 +104,7 @@ Loaded by a `--relay` process, reached by nothing on it:
 
 | module | lines | note |
 |---|---|---|
-| `hub.js` | 1,521 | every use is inside `if (!relayMode)`, [server.js:1377-1696](../../spirit/run/js/server.js#L1377-L1696) |
+| `hub.js` | 1,521 | every use is inside `if (!relayMode)`, [server.js:1377-1696](../../spirit/run/spirit/server.js#L1377-L1696) |
 | `trafficLog.js` | 531 | **see below** |
 | `ownerBadge.js` | 481 | the node's view of relays it uses |
 | `jobs.js` | 327 | **see below** |
@@ -106,7 +117,7 @@ Loaded by a `--relay` process, reached by nothing on it:
 | `peerFile.js` | 124 | the node's own files |
 
 **`trafficLog.js` is the one to look at.** Its own header
-([trafficLog.js:50-57](../../spirit/run/js/trafficLog.js#L50-L57)) says it
+([trafficLog.js:50-57](../../spirit/run/spirit/trafficLog.js#L50-L57)) says it
 holds messages themselves, in and out, and that a relay keeping this file
 "would be holding everybody's messages — not metadata, the content — which is
 a far worse thing than the ring 0006 deletes". It ends: *"the only thing
@@ -120,8 +131,8 @@ decision 0006 is the reason that matters. Separation turns a runtime promise
 into an absence.
 
 **`jobs.startFsWatcherJob(ROOT_DIR)` runs unconditionally.**
-[server.js:178](../../spirit/run/js/server.js#L178) sits above every mode gate,
-and `startFsWatcherJob` ([jobs.js:139](../../spirit/run/js/jobs.js#L139)) has
+[server.js:178](../../spirit/run/spirit/server.js#L178) sits above every mode gate,
+and `startFsWatcherJob` ([jobs.js:139](../../spirit/run/spirit/jobs.js#L139)) has
 no relay check. So a public relay scans its entire root directory, builds a
 file list, creates a permanent job and installs an `fs.watch` — for the Files
 app, which a relay never serves. Verified by reading; not a hypothetical.
@@ -138,7 +149,7 @@ This is the coupling worth the most attention, and the first version of this
 document got it wrong — it said the relay carried the kernel for a single
 constant in `relay.js`. It does not. `server.js:4` requires it unconditionally
 and reads `ROOT_DIR`, `MIME_TYPES` and `DEFAULT_SPIRIT_PORT` from it
-([server.js:87-105](../../spirit/run/js/server.js#L87-L105)) before any mode
+([server.js:87-105](../../spirit/run/spirit/server.js#L87-L105)) before any mode
 branch exists. A relay needs those.
 
 What a relay never touches is the other half. All seventeen `spirit.` uses in
@@ -149,9 +160,9 @@ What a relay never touches is the other half. All seventeen `spirit.` uses in
 - **`core.fs.*`** — `statFile`, `saveFile`, `deleteFile`, `annotateFile`,
   `getAnnotations`, `fileServable`. Every call site is a `fs.*` verb behind the
   loopback door, i.e. node-only. The one apparent exception,
-  `fileServable` at [server.js:1124](../../spirit/run/js/server.js#L1124), is
+  `fileServable` at [server.js:1124](../../spirit/run/spirit/server.js#L1124), is
   short-circuited on a relay: its four static files are all in `BOOT_ASSETS`
-  ([server.js:175](../../spirit/run/js/server.js#L175)), which is tested first,
+  ([server.js:175](../../spirit/run/spirit/server.js#L175)), which is tested first,
   and anything else is already 404 by then.
 
 So the split of `kernel.js` is along a line that is already visible in the API:
@@ -159,13 +170,13 @@ a relay wants the constants, and must not be given the filesystem capability
 surface at all. That is a more interesting separation than moving a module.
 
 **`relay.js` → `kernel.js` is still a redundant edge.**
-[relay.js:2112](../../spirit/run/js/relay.js#L2112) is the file's only
+[relay.js:2112](../../spirit/run/spirit/relay.js#L2112) is the file's only
 reference — `require('./kernel').core.const.VERSION` — and `buildStamp.js` is
 already the module for "what build is this" and already on both sides. Cutting
 it does not unload anything today (see above), but it means the *relay product*
 would not name the kernel at all.
 
-**`hub.js` → `invites.js` is dead.** [hub.js:9](../../spirit/run/js/hub.js#L9)
+**`hub.js` → `invites.js` is dead.** [hub.js:9](../../spirit/run/spirit/hub.js#L9)
 binds it and the binding is never used — the only other mentions in the file
 are two comments. Delete the line and `invites.js` is relay-only with nothing
 else to decide.
@@ -186,7 +197,7 @@ one function. It is a split along lines that exist, not a rewrite.
 
 **Not a smaller attack surface on the wire.** The relay already refuses
 everything outside `isRelayPublicPath` with a 404 before any handler runs
-([server.js:895](../../spirit/run/js/server.js#L895)). Removing the modules
+([server.js:895](../../spirit/run/spirit/server.js#L895)). Removing the modules
 removes code that is loaded, not code that is reachable.
 
 **Not a second implementation of anything.** Three shared modules is small
@@ -207,7 +218,9 @@ it survives — as a build flag, a second entry point, or not at all.
 **Decided** (recorded elsewhere, not by this document)
 - A relay stores nothing on anyone's behalf — decision 0006.
 - One operator; root is spirit — `bash/ONE-OPERATOR.md`.
-- The log is permanent, and it is the *node's* — decision 0009.
+- The log is the *node's* — decision 0009. (No longer permanent: since
+  goal/G30.19 node.db sheds its oldest rows past its cap; Andy: *"learn to
+  throw out shit"*, `nodeStore.js:31-33`.)
 
 **Recommended** (cheap, correct whether or not anything is ever separated)
 

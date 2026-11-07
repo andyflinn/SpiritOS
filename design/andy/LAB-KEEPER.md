@@ -4,6 +4,17 @@
 `C:\Users\Andre\OneDrive\repo\lab\SpiritOS`, owning the public relay at
 `lab.andyflinn.com`.
 
+> **Status 2026-11-07 (goal/G43.23):** parts of this no longer match the
+> tree. `bash/lab-install` was deleted at cleanup/G1.8 (73b7f44a).
+> Partnering, and with it `setPartner`, is gone since goal/G22.6, so the
+> partnership purpose below is moot. A relay takes no claim over the wire
+> since goal/G16.8 (Andy: *"the relays should do first-claim, it should
+> happen at install time. that's the only \"safe\" way."*): its owner is
+> written at install, as `owner.json`. Natter is gone (goal/G30.7), and the
+> contacts and relay list live in `spirit/run/spirit/state/node.db` since
+> goal/G40.11. The node is started with `node spirit/server.js` from
+> `spirit/run` (`package.json`, `start`).
+
 > **Andy:** "I wanted you to have a normal personal node on this machine
 > at `C:\Users\Andre\OneDrive\repo\lab\` so that you can be an owner of a
 > public relay for the time being. It's way more useful to the development

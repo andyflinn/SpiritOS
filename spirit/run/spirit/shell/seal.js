@@ -1,6 +1,6 @@
-// spirit/run/shell/seal.js (goal/G41.3: moved from face/seal.js unchanged)
+// spirit/run/spirit/shell/seal.js (goal/G41.3: moved from face/seal.js unchanged)
 // THE NODE'S SEAL, IN THE BROWSER (goal/G30.11). Andy's box: "The seal is the node's own (X25519, HKDF-SHA256,
-// AES-256-GCM), done in the browser with WebCrypto." Byte for byte js/seal.js: ephemeral-static X25519, HKDF-SHA256
+// AES-256-GCM), done in the browser with WebCrypto." Byte for byte spirit/seal.js: ephemeral-static X25519, HKDF-SHA256
 // salted with the ephemeral and the recipient's keys and bound to the pair (from, to) under the label, AES-256-GCM with
 // the same pair as associated data, the plaintext { at, text }, the tag after the ciphertext. What one seals the other
 // opens; the keys are SPKI DER in base64, as the node's are.
@@ -8,8 +8,8 @@
 // The face makes one key for its session (newKey) and keeps the private half in memory only, so it is lost with the
 // session. A browser whose WebCrypto lacks X25519 answers supported() false and the face runs unsealed, warned.
 //
-// Every call is a promise (WebCrypto is asynchronous). Served by the relay beside face.html and loaded by the face shell
-// through spirit.require onto spirit.seal; also a module, so the suites can hold it against js/seal.js.
+// Every call is a promise (WebCrypto is asynchronous). Served by the relay beside face.html and loaded by spirit.js's
+// link (requireOne) onto spirit.seal; also a module, so the suites can hold it against spirit/seal.js.
 
 (function (root) {
   'use strict';
@@ -59,7 +59,7 @@
     });
   }
 
-  // Sealed to the recipient's seal key, as js/seal.js seal(toSealKey, fromKey, toKey, text).
+  // Sealed to the recipient's seal key, as spirit/seal.js seal(toSealKey, fromKey, toKey, text).
   function seal(toSealKey, fromKey, toKey, text) {
     return subtle.generateKey(X, true, ['deriveBits']).then(function (eph) {
       return subtle.exportKey('spki', eph.publicKey).then(function (spki) {
@@ -75,7 +75,7 @@
     });
   }
 
-  // Opened with the face's own key, as js/seal.js open(mySealPrivate, fromKey, toKey, value); null when it does not open.
+  // Opened with the face's own key, as spirit/seal.js open(mySealPrivate, fromKey, toKey, value); null when it does not open.
   function open(myPrivate, myPublicB64, fromKey, toKey, value) {
     var v = value;
     if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { return Promise.resolve(null); } }

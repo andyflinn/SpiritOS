@@ -19,7 +19,9 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 const { sleep, scratchNode } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
-// The app servers turned on at home on the scratch node, as their owner turns them on (face.home).
+// The app servers turned on at home on the scratch node, by the face.home sidecar scratchNode writes for each. That turns
+// on a process of process/js only; agent is an app of spirit/app/ now (goal/G43.12), whose server the node starts by
+// active in spirit/state/agent/node.json, which scratchNode does not write.
 const SERVERS = ['agent', 'desk', 'deskVerify', 'backup', 'chatClerver'];
 // A throw is answered within this, or it hung; the plain call after a batch within PLAIN_MS.
 const ASK_MS = 10000;
@@ -351,7 +353,7 @@ let actedOn = null;
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     test.subHeading('/api/spirit: every verb that acts takes the whole garbage, on a throwaway node, without crashing or hanging');
     actedOn = await actingRun(actingAsks, actingVerbs);
-    // RELAY: owed, see the spec.
+    // THE RELAY'S DOOR is thrown at by relayGarbage.js now; the comment line below, saying it is owed, is stale.
     test.comment('the relay\'s door is not thrown at yet: owed, see garbage.md');
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }

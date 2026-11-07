@@ -1,18 +1,20 @@
-# shell/boot.js
+# spirit/shell/boot.js
 
 The face's boot (goal/G41.3): face/shell.js moved into shell/ as shell/boot.js, and the rest of face/ with it, under the
-same names. spirit.js loads it on a face page. It boots only itself, the stream, its parts and the shell the node names
+same names; since goal/G43.18 they are in spirit/shell/, served at the addresses they always had (spirit/serveCommon.js,
+PAGE_FILES). spirit.js loads it on a face page. It boots only itself, the stream, its parts and the shell the node names
 (goal/G43.18); every face app loads its own components, as a tree, through spirit.require.
 
 ## Where it lives, and what moved with it
 
-- `shell/boot.js` is there; `face/shell.js` is gone, and so is every other file of face/: `shell/seal.js`,
-  `shell/face.css` and `shell/favicon.svg` are there instead.
+- `spirit/shell/boot.js` is there; `face/shell.js` is gone, and so is every other file of face/: `spirit/shell/seal.js`,
+  `spirit/shell/face.css` and `spirit/shell/favicon.svg` are there instead, with face.html, index.html, shell.css and
+  ghost.svg, and spirit.js is in spirit/; none of them is left at the run root or in shell/.
 - `shell/login/` is gone (goal/G43.18, box v29: *"The login is spirit.login, in spirit.js, no app ... shell/login/ and its
   login.json go."*).
 - spirit.js loads `shell/boot.js` on a face page (its FACE list): at home from the node; on a face, logged in, over the
   link spirit.js made.
-- face.html, which stays at the run root, links `/shell/favicon.svg` and no sheet (box v29: *"boot.js, shell.css, face.css
+- face.html, served at `/face.html`, links `/shell/favicon.svg` and no sheet (box v29: *"boot.js, shell.css, face.css
   and every other part of the shell come from the home node over that link"*).
 - boot names no old `face/` path and no login app. (The relay's routes `/face/allowed`, `/face/call`, `/face/file`,
   `/face/stream` and `/face/api` are routes, not files, and stay.)
@@ -47,6 +49,9 @@ same names. spirit.js loads it on a face page. It boots only itself, the stream,
   serves files from the run tree, de-duped, and an empty set of elements: what it needs it asks for, and what it asks
   for loads what it needs. The loader is spirit.js's: what a component requires while it runs is waited for before its
   own require answers, so an app that awaits its components has their whole tree. Mounting it throws nothing, and nothing it starts fails for a component it did not load.
+- The test looks for these under `shell/<name>/<name>.js`, where only info still stands (the others were deleted, or moved
+  under spirit/app/ as Files and Icons did); the check that all of them are there fails until the test's list is brought
+  up to date.
 
 ## What its test must try to break
 

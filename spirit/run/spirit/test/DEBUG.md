@@ -21,7 +21,7 @@ Andy, on G41.19:
 - `spirit/run/shell/mount.html` is gone: the page is made from the address.
 - **No mount files at all** (box v23: *"no manifests at this point, because special cases can be handled by the
   elements own test script"*): no `<module>-headLessBrowser.json` is left in `spirit/run`, the grants panel's included.
-- Neither `DEBUG.js` nor its `DEBUG/` folder can be fetched by a browser, DEBUG on or off.
+- Neither `DEBUG.js` nor its `DEBUG/` folder can be fetched by a browser (the test asks them with DEBUG on).
 
 ### The address
 
@@ -31,7 +31,8 @@ the module's name without extension; the generator script's name without `.js`, 
 
 ### DEBUG off
 
-- The address is never asked of `DEBUG.js`, and answers exactly what any address of no route answers: the same status
+- `DEBUG.js` is still handed the request first, and answers nothing, so the address answers exactly what any
+  address of no route answers: the same status
   and the same body as the same address under another first folder.
 
 ### DEBUG on: what it answers

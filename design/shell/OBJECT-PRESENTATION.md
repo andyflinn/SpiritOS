@@ -5,6 +5,12 @@ the source material for a future `UI_DESIGN_STYLE.md` §11 — that document is
 Andy's, enforced by section number in ~20 tests, and is not amended from
 here without his word.
 
+> **Status 2026-11-07 (goal/G43.23):** the Job Selector cited below
+> (`shell/process-browser`) was deleted at goal/G29.13 (870bf604), and
+> `imageCaptionClaude.json` went at goal/G29.20 (62c1371e). The tree's
+> examples are as of `967d294`. `createIconSelector` is in
+> `spirit/run/spirit/client/shell.js` today.
+
 ## The gap
 
 `UI_DESIGN_STYLE.md` decides **fragments**: a row (§4), a label (§5), a

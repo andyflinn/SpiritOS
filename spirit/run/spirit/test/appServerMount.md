@@ -1,6 +1,6 @@
 # appServerMount
 
-The node starts a server from `spirit/app/<name>/` (goal/G43.12). Its test is `./appServerMount.js`. A real node runs on a scratch copy of the tracked files, with a throwaway app planted in that copy, because no app has a server yet. Nothing is kept in the repo.
+The node starts a server from `spirit/app/<name>/` (goal/G43.12). Its test is `./appServerMount.js`. A real node runs on a scratch copy of the tracked files, with throwaway apps planted in that copy (`probe`, `quiet` with `node.mount` false, `always` intrinsic). The tree's own server app (`agent`) is not what it judges. Nothing is kept in the repo.
 
 Andy: *"JUST loading functional server and associating the <name> as "familiy" name, in the new namespace"*.
 

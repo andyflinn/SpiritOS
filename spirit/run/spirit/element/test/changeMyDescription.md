@@ -6,7 +6,7 @@ its test folder"): one shell element, the Description field, its Save and the by
 ## Requirements
 
 - A shell element of its own: it adds `changeMyDescription.create(host, { api })` to
-  `window.spirit.elements`, and answers `{ set(value), destroy() }`.
+  `window.spirit.element`, and answers `{ set(value), destroy() }`.
 - **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
 - **Its form is a rowForm** (goal/G41.27; Andy: *"changeMyDescription:\n\n[✏️][Description-input][Save]"*): it loads
   `spirit/element/rowForm.js` itself and makes one rowForm in its host, its icon ✏️ and its button Save; its span holds the
@@ -15,6 +15,9 @@ its test folder"): one shell element, the Description field, its Save and the by
 - **Its input is marked with its rule** (rule/12): `data-field="description"`, held at the description rule's byte
   limit by `fieldInput.attach(input, 'description')`, with the bytes left beside it (`fieldRules.describeRemaining`),
   counted in bytes as typed.
+- DISCREPANCY WITH ANDY's RULES: goal/G41.27's box (v8) says *"character counters outside a form go: a field is limited
+  by fieldRules.js as it is typed, so a counter says nothing"*; this element still draws the bytes left below the
+  bubble, outside the form, and its test asserts it.
 - `set(value)` puts what the node stored in the field.
 - **Save is refused while the rule says no** (`fieldRules.describeProblem`), and the field says why; nothing goes on
   the wire.

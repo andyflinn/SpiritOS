@@ -1,6 +1,6 @@
 # spirit/element/search/icon.js, what it offers
 
-What the icon selector offers (goal/G43.11). Its test is `./iconSelector.js`.
+What the icon selector offers (goal/G43.11). Its test is `./icon.js`.
 
 Andy: *"run://spirit/iconSet.json IS the system set now."* The box: *"So the icon selector reads it too"*, and *"A page reads the file once"*.
 

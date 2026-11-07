@@ -2,6 +2,8 @@
 
 > 2026-10-13 (goal/G22.6): `POST /api/relay/claim`, named below, is closed. A claim is a post on the relay's one door, sealed to its key; the fields described here travel inside it unchanged.
 
+Status 2026-11-07 (goal/G43.23): moved paths are corrected (`spirit/run/spirit/`, goal/G40.2); line anchors are as measured then. Gone since: `spirit/test/devicePeers.js` with the device (goal/G16.2) and `spirit/test/natterBind.js` with Natter (goal/G30.7). `relays.json` is now relay rows of node.db's one table (`spirit/run/spirit/relayKeys.js:58`, goal/G19.15 and G40.11); `allow.json` is `spirit/state/owner.json`, `{ owner }` (cleanup/G1.7, `spirit/run/spirit/relayAuth.js:442`); census is roll (cycle 10, R18).
+
 **Status: CLOSED. Four requirements, all done, 2026-09-15.**
 
 Opened by Andy, reading the R8 commit. The thread ran from a loose end I
@@ -73,21 +75,21 @@ relay publishes it to the world.**
 The chain is forced, with no step optional:
 
 1. `mint` writes the owner's label onto the invite row —
-   [relay.js:1048-1050](../../spirit/run/js/relay.js#L1048-L1050), where
+   [relay.js:1048-1050](../../spirit/run/spirit/relay.js#L1048-L1050), where
    `ask.label` comes straight from the owner's post body.
 2. `match` refuses any claim whose name is not that exact label —
-   [invites.js:138](../../spirit/run/js/invites.js#L138).
+   [invites.js:138](../../spirit/run/spirit/invites.js#L138).
 3. So the peer row is written `{name: n, publicLabel: n}` with `n`
    **necessarily** the invite's label —
-   [relay.js:442-447](../../spirit/run/js/relay.js#L442-L447).
+   [relay.js:442-447](../../spirit/run/spirit/relay.js#L442-L447).
 4. `/api/relay/who` publishes `publicLabel` to anyone, unsigned, no
-   credential — `isRelayPublicPath`, [server.js:693](../../spirit/run/js/server.js#L693).
+   credential — `isRelayPublicPath`, [server.js:693](../../spirit/run/spirit/server.js#L693).
 5. Nothing can change it afterwards. There is no rename verb; `publicLabel`
    is written once at claim and never again.
 
 Andy's parenthetical — *phone/email* — is what makes this sharp rather
 than merely untidy. Run against `NAME_RE`
-([relay.js:65](../../spirit/run/js/relay.js#L65)):
+([relay.js:65](../../spirit/run/spirit/relay.js#L65)):
 
 ```
 refused   email        bella@example.com
@@ -118,7 +120,7 @@ first. It is spoken down a phone, like its sibling the token already is —
 
 Andy's countermeasures are expiry and purge, and both are already built:
 `normalizeDays` caps at **15 days**
-([invites.js:71-77](../../spirit/run/js/invites.js#L71-L77)), a claimed
+([invites.js:71-77](../../spirit/run/spirit/invites.js#L71-L77)), a claimed
 invite is deleted rather than stamped, expired rows are swept at four
 touches, and `forgetPeer` is reachable as a signed post. Only the purge
 UI is missing.
@@ -150,10 +152,10 @@ security work. Andy:
 
 He is right, and the reason is the speakable path. A DEFAULT token is
 `crypto.randomBytes(16)` — 128 bits, unguessable
-([invites.js:62-64](../../spirit/run/js/invites.js#L62-L64)) — and
+([invites.js:62-64](../../spirit/run/spirit/invites.js#L62-L64)) — and
 against that the label adds nothing. A SPOKEN token is only held to
 `NAME_RE`, `^[A-Za-z0-9._-]{1,32}$`, with **no minimum length and no
-entropy floor** ([relay.js:498](../../spirit/run/js/relay.js#L498)). An
+entropy floor** ([relay.js:498](../../spirit/run/spirit/relay.js#L498)). An
 owner may mint `saint-bernard`, or `dog`, or `a`.
 
 An invite is keyless — the token is the whole credential — so on the
@@ -208,10 +210,10 @@ keeping honest.
 
 **Blast radius:** `claim()` takes one more argument and stops writing the
 invite label to the peer row
-([relay.js:340](../../spirit/run/js/relay.js#L340),
-[:442-447](../../spirit/run/js/relay.js#L442-L447));
+([relay.js:340](../../spirit/run/spirit/relay.js#L340),
+[:442-447](../../spirit/run/spirit/relay.js#L442-L447));
 `/api/relay/claim` carries one more field
-([server.js:1042](../../spirit/run/js/server.js#L1042)). `invites.match`
+([server.js:1042](../../spirit/run/spirit/server.js#L1042)). `invites.match`
 and `redeem` are UNCHANGED. `claim` is bootstrap and already outside the
 post protocol, so nothing else moves.
 
@@ -332,7 +334,7 @@ fact.
 > **Andy:** They should go to the log. […] of the owner only.
 
 **This is a known hazard, already written down, now applying to a new
-event.** [relay.js:1428-1434](../../spirit/run/js/relay.js#L1428-L1434):
+event.** [relay.js:1428-1434](../../spirit/run/spirit/relay.js#L1428-L1434):
 
 > `presentNow.send(id, …)` addresses ONE sink. The mistake to avoid is
 > `broadcast()`, which walks every sink and cannot express a recipient at
@@ -356,8 +358,8 @@ status report, for exactly this reason. The new notice needs the same
 assertion of its own — a shared comment is not a shared test.
 
 Today a `relay-event` goes relay → `presenceNode` → `relayEvents.note` →
-straight out to an open browser ([server.js:386](../../spirit/run/js/server.js#L386),
-[:1350](../../spirit/run/js/server.js#L1350)). **Nothing persists it.**
+straight out to an open browser ([server.js:386](../../spirit/run/spirit/server.js#L386),
+[:1350](../../spirit/run/spirit/server.js#L1350)). **Nothing persists it.**
 Close the tab and it never happened. `relay-status` is worse — overwritten
 per relay, *"kept, not acted on"*.
 
@@ -412,17 +414,17 @@ of time — *may this browser draw the create-invitation panel?* — because
 It is redundant three ways:
 
 1. **The census already says so.** `who()` publishes `owner: true|false`
-   per row ([relay.js:260-270](../../spirit/run/js/relay.js#L260-L270)),
+   per row ([relay.js:260-270](../../spirit/run/spirit/relay.js#L260-L270)),
    unsigned, to anyone. And `claimedFrom` **already fetches and parses
    that exact list**, matching on `publicKey`
-   ([ownerBadge.js:171-179](../../spirit/run/js/ownerBadge.js#L171-L179))
+   ([ownerBadge.js:171-179](../../spirit/run/spirit/ownerBadge.js#L171-L179))
    — it has the `owner` flag open in a variable and does not read it.
 2. **`statusToOwner` only reaches the owner.** Receiving a `relay-status`
    *is* the badge: the relay sends it to one key and no other, on stream
    open and on presence change, carrying more than the GET returns.
 3. **The relay already gates per verb.** `answerSelf` decides
    `isOwner(who)` from the post's own signature
-   ([relay.js:997-1050](../../spirit/run/js/relay.js#L997-L1050)).
+   ([relay.js:997-1050](../../spirit/run/spirit/relay.js#L997-L1050)).
 
 Deleting it retires `statusPath`, its query-string signature, the signed
 GET, `readBadge`, and `statusMessage` — **and `/api/relay/status` loses

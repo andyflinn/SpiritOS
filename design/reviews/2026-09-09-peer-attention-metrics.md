@@ -3,8 +3,15 @@
 **Date:** 2026-09-09
 **From:** Andy, written up by Claude
 **To:** Grok
-**Touches:** `spirit/run/js/hub.js`, `spirit/run/js/whoBook.js`, `spirit/run/js/peerFile.js`
-**Does not touch:** `spirit/run/js/relay.js`, spirit-3, or anything on the wire
+**Touches:** `spirit/run/spirit/hub.js`, `spirit/run/js/whoBook.js` (now `spirit/run/spirit/contacts.js`), `spirit/run/spirit/peerFile.js`
+**Does not touch:** `spirit/run/spirit/relay.js`, spirit-3, or anything on the wire
+
+> Status 2026-11-07 (goal/G43.23): the counters this asked for were built
+> (`peerStats.js`) and then removed at goal/G43.14 (94a60a95). Andy: *"KILL
+> those fields in shadow-roll, KILL the functionality, KILL it!"*: peerPost
+> counts nothing, and no contact row or detail carries them. The contacts are
+> rows in node.db (goal/G40.11), not `who.json`. The request below is the
+> record.
 
 ---
 

@@ -1,10 +1,10 @@
 'use strict';
 
 // spirit/run/spirit/element/search/test/bundle.js
-// The tests of spirit/element/search/bundle.js, and of no other module (spec: ./bundleSelector.md; goal/G41.14). The browser
+// The tests of spirit/element/search/bundle.js, and of no other module (spec: ./bundle.md; goal/G41.14). The browser
 // file runs in node on a BARE window (rule/26: "every shell element loads its own elements dynamically through the ...
 // spirit.require functionality"): no element is on the page until the selector requires it. Its list,
-// bundleSelector/listElement.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
+// search/bundle/listElement.js, is a stand-in that keeps what it was handed; it is tested in its own folder.
 
 const fs = require('fs');
 const path = require('path');
@@ -80,7 +80,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('goal/G41.25: mounted for an app server');
   // Andy, box: "the bundleSelector can be optionally configured with an <AppServerName> (family) at mount-time", and "if
   // the bundleSelector IS configured for an appServer, then it will only list bundles \"owned\" by that Appserver". The
-  // listing is its list's (./bundleSelector/listElement.js), so the family is handed to it.
+  // listing is its list's (search/bundle/listElement.js), so the family is handed to it.
   made.create(element('div'), { family: 'agent' }); await settle();
   const forAgent = lists[2] && lists[2].o;
   ok(forAgent && forAgent.family === 'agent', 'create(container, { family }) hands the family to its list', 'list: ' + short(forAgent));

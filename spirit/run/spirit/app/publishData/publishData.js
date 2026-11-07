@@ -3,12 +3,10 @@
 // spirit/run/spirit/app/publishData/publishData.js (it was process/js/deskClient/publishData.js until goal/G43.21)
 // ONE MEASUREMENT RUN PER AGENT, ITS DATA IN agents/<agent>/ — goal/G4.33.
 //
-//   Andy, 2026-10-04: "so one single script for all of you puts the data into the repo"; "this is desk stuff."; "it
-//   will be automated under deskClient. so the deskClient scripts calls - spirit/test/measurePlatform.js?";
-//   "publishData.js?"; "automated publishing will have a standing grant, attached to the script in deskClient"; to N:
-//   "that's a fine number" (20). The box of goal/G4.33 holds every line.
+//   Andy, 2026-10-04: "so one single script for all of you puts the data into the repo"; to N: "that's a fine number"
+//   (20). The box of goal/G4.33 holds every line. It is no longer automated under deskClient: it is run by hand (below).
 //
-// Run by the agent in its own clone, with its own node up (the node runs from <clone>/spirit/run):
+// Run in a clone, with that clone's node up (the node runs from <clone>/spirit/run):
 //
 //   node spirit/run/spirit/app/publishData/publishData.js [<port>] [--asks N] [--only packets] [--out <dir>]
 //
@@ -219,7 +217,7 @@ async function main() {
   // 4. COMMIT AND SAY SO, unless this was only a look.
   if (packetsOnly || outArg) end(0, 'publishData: written to ' + out);
   // ZERO POSTS IS PUBLISHED TOO (Andy, to Q16, whether a run counting 0 posts should refuse: "publish it anyway. that's
-  // what happened."). The figures say what the run met; it only says so aloud.
+  // what happened."). The figures say what the run met.
   if (!packets.posts) say('the desk asks counted 0 posts; published as measured (is the node\'s deskClient answering?)');
   const rel = path.relative(clone, out).split(path.sep).join('/');
   // ITS ONE FOLDER AND NOTHING ELSE STAGED (goal/G19.6; Andy, 2026-10-12: "agreed to the whole thing as stated", the

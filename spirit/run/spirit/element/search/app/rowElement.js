@@ -2,7 +2,7 @@
 // ONE APP, AS A ROW ELEMENT (goal/G43.2), as spirit/element/search/bundle/rowElement.js is one bundle. rowElement.js does the
 // shared work; this file says what an app is. Its contract and its test: ./test/rowElement.md and ./test/rowElement.js.
 //
-//   appElement.create(row) -> a rowElement of kind app; row { key, label, icon }
+//   spirit.element.search.app.rowElement.create(row) -> a rowElement of kind app; row { key, label, icon }
 //
 // WHO PAINTS, LISTENS (Andy, G41.32): one watch on spirit.data.app.data for every app row on the page, each change to the rows
 // of that key. A row asks nothing of its own; what it shows is what the stream said.

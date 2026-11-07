@@ -14,6 +14,11 @@ spirit/run/test/spirit-sibling-generalRules.js instead of shell-child. No page m
 agent tables alike."*). It was `shell/test/boot-sibling-generalRules.js`, whose reach was `shell/` and hung on
 `shell/boot.js`.
 
+DISCREPANCY WITH ANDY's RULES: `spirit.js` has been at `spirit/run/spirit/spirit.js` since goal/G43.18, so
+`testModule.js` no longer treats this file as a general test (`./TEST_SYSTEM.md`). It is run once with no file, finds
+no file in its reach, and goes red with "testModule.js gives it no file to judge" after its icon-loading checks; no page
+is mounted. The example above, `shell/agent/agent.js`, is no longer in the tree either.
+
 Each file is its own test id. A rule a file breaks fails that file's test, not the item that brought the test.
 
 **What is mounted is known by its path** (goal/G41.19, box v17; Andy: *"the test knows bloody fucking well if a scripts
@@ -25,9 +30,13 @@ is an app (from the path pattern), why the fuck would would it need manifests fo
   (`process/js/agent/table/tableElement.js`), its row editor (`rowElement.js`, goal/G41.28) and each table's list
   and editor (`<table>/elementTable.js`, `elementRow.js`). Their servers beside them are not pages (goal/G41.27; Andy, Q5: *"it covers them, too"*). Like
   every module, each is judged once it has its own test (`TEST_SYSTEM.md`, opting in): today `tableElement.js` alone;
-  the tables' lists and editors share their table's test, and Q6, which asked whether they get one each, was cleared;
-- anything else in its reach (`shell/boot.js`, `shell/seal.js`, a Desk plugin, `shell/shared/js/`) is neither, is not
-  mounted, and its run says so.
+  the tables' lists and editors share their table's test, and Q6, which asked whether they get one each, was cleared.
+  The tables have been in `spirit/app/agent/table/` since goal/G43.12, and the test's pattern still names
+  `process/js/agent/table/`, so today none of them is counted as an element;
+- also an element: `spirit/app/appSelector.js` and the files of `spirit/app/appSelector/` (goal/G43.2), and an app of
+  the new folder, `spirit/app/<name>/<name>.js` (goal/G43.2);
+- anything else in its reach (`shell/shared/js/`, and any other module) is neither, is not mounted, and its run says
+  so.
 
 **Given no file, it judges every app and element in its reach** (goal/G41.19): an item's suite row names no file, so a
 run of this test alone takes every shell module `testModule.js` gives it that is an app or an element, on one scratch
@@ -56,7 +65,9 @@ Andy, on G41.18:
   agent's is touched. A working-tree change to a tracked file is in the copy; a new file is in it once git knows it.
 - **The agent server is turned on there** (goal/G41.28), as its owner turns it on: its sidecar's face part,
   `face.home`, is written before the node starts. The agent tables' pages draw the agent family's cache, which is there
-  only while that server runs, so they are judged as they are used, not refused.
+  only while that server runs, so they are judged as they are used, not refused. That sidecar is a `process/js/`
+  server's switch; agent is an app of `spirit/app/` now, run by `active` in `spirit/state/agent/node.json`
+  (`spirit/jobs.js`), so the sidecar the test writes no longer starts it.
 - Headless Chrome, found where the machine keeps it (by name on Linux, in its usual folders on Windows, or
   `SPIRIT_CHROME`). It is driven over its debugging port with node's own WebSocket: no package.
 - Its node's DEBUG is switched on (`node.debug { debug: { on: true } }`), and it opens the node's **DEBUG page** for
@@ -127,7 +138,9 @@ box is its own check, named by the element's path and the box's id chain."*
   icon selector, the workBench), names `spirit/element/icon.js`, or hands them to the one-row form, `spirit/element/rowForm.js`,
   which paints them through the icon element and loads it itself (goal/G41.27). Each is its own check, named by its path. Three files whose lone glyph strings are drawn only
   before words are left out by hand (`TEXT_ONLY`, each with its reason): jobsDetails' status glyph, contactDetails'
-  blocked mark, and the contacts list's filter icons, drawn before their words.
+  blocked mark, and the contacts list's filter icons, drawn before their words. The files read are only those git
+  tracks under `shell/`: the `spirit/` entries of both lists are never read, and `shell/boot.js` (now
+  `spirit/shell/boot.js`), `shell/apps/apps.js` and `shell/icons/icons.js` are no longer in the tree.
 - **Every field stops at its limit** (goal/G41.27; Andy: *"in the general UI tests (headless browser), any input field
   must be checked for size-limits, and get a "red" if it violates that rule."*): every text field it draws (a textarea,
   or an input of type text, email, search, url, tel or password, shown and editable), after its tools are pressed, is
@@ -140,9 +153,11 @@ box is its own check, named by the element's path and the box's id chain."*
   and that all wire-stuff goes through spirit?"*): every fetch, XMLHttpRequest, WebSocket, EventSource and sendBeacon
   the page makes, watched from before its first script, is made by spirit's own code (`spirit.js`, its families,
   `spirit/client/`, the page's data set `spirit/data.js`), told by the file the call was made in. The one
-  exception is `shell/boot.js`, the face's own transport (Andy: *"boot.js MUST be an exception to the rules."*).
+  exception is `boot.js`, the face's own transport, now `spirit/shell/boot.js` (Andy: *"boot.js MUST be an exception to
+  the rules."*).
   **Two reds outside goal/G41.28, still red** (Andy: *"WSL will drop Q23 from this item, and mark those two related reds
-  as outside it"*): login fetching its steps file and the file viewer fetching a file at home. Each red says so.
+  as outside it"*): login fetching its steps file and the file viewer (`spirit/element/fstat.js`) fetching a file at
+  home. Each red says so. `shell/login/login.js` is no longer in the tree.
 - **What it changes, it listens for** (Andy: *"elements that change things, also subscribe to the changes they cause,
   since andy request an element generates would imply that it must listen for confirmation of the results"*): a module
   that sent a write (a call it made that is not the stream, not an interface, and carries no read op or read verb)
@@ -165,18 +180,6 @@ box is its own check, named by the element's path and the box's id chain."*
   design reasons."*): the probability search keeps rows of its own for introSpector's selectors over another node, so
   its own page, mounted bare, still makes one, and introSpector's own page makes two. Each red names the deferral; it is
   not met, so it is not green.
-- **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
-  make sure when it changes shit it listens to fucking update via the spirit object"*), judged twice:
-  - on the page: a module that sent a write holds a `spirit.data.watchPath` of its own making, its searches' included. A
-    subscription to the raw stream does not count: taken into a store of its own, it is how the Desk List kept rows
-    `spirit.data` never held;
-  - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a
-    row, a setting verb named as a string such as `'node.setName'`, a relay `join` or `face`, a `grant`, a `saveFile`)
-    holds a `.watch(` or makes a search on a `spirit.data` branch. The code rule is a net for what the page cannot reach,
-    not the whole judgement.
-- **Nothing judged is no pass** (Andy: *"You fucking fudge tests to get away with total fucking sloppyness!"*): a rule
-  that finds nothing to judge on a page (no field, no write, no search, no row drawn, no subscription) says *not judged
-  on this page* and counts as neither green nor red.
 - **What it changes, it listens for through spirit.data** (goal/G41.28; Andy: *"EVERY FUCKING ELEMENT is verified to
   make sure when it changes shit it listens to fucking update via the spirit object"*, and *"YOUR TEST WILL MAKE SURE THAT
   THE CACHING AND LISTENING IS DONE TO FUCKING SPEC AS GOOD AS YOU POSSIBLY CAN"*), judged three ways:
@@ -221,8 +224,6 @@ editor's scroller still is.
 - A glyph among the words of a label or a description counted as an icon.
 - A field nothing holds; a field held only by a rule not loaded on the page.
 - A fetch, XMLHttpRequest, WebSocket, EventSource or sendBeacon of its own.
-- A write sent by a module that listens to nothing, or only to the raw stream; a write in code with no watch beside it.
-- A rule that found nothing to judge counted as green.
 - A draw made after a press and before its write is answered; a press that sends no write judged all the same.
 - A subscription still held after destroy.
 - A write sent by a module that watches nothing in spirit.data, or only the raw stream; a write in code with no watch

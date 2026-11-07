@@ -7,11 +7,11 @@
 //   merges the relays' answers with the same modules."
 //
 // A relay ranks its connected members with it, and the node ranks what the relays and its memory answered with it, so
-// one name scores the same wherever it is ranked. A peer is matched on its public label and nothing else: a key is
-// not something a person types.
+// one name scores the same wherever it is ranked. A peer is matched on the whole row as it is served (goal/G41.28,
+// below), not on its label alone.
 //
 // rank(rows, q, slots) -> { rows, more }
-//   rows   the rows offered, untouched, best match first; a row whose label does not match is left out
+//   rows   the rows offered, untouched, best match first; a row that does not match is left out
 //   q      the words typed; '' or '*' is anyone, every row in the order given
 //   slots  how many come back at most; more when one was turned away
 

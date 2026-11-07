@@ -1,15 +1,14 @@
 # spirit/faceHome.js
 
 How a home node answers its face. This test holds goal/G41.30, the review's RC1: *"any relay a node is connected to can
-run every owner verb on that node by sending a face event, including jobs.create with any command."* Andy, Q3: *"Shall
-we fix RC1, RC2, RH1, RH3 and RH4 in this item, taking jobs, fs, fileServer and net.fetch off the face until faces can
-prove they are the owner?"* *"yes."* `createFaceHome` runs on stand-ins that keep what reached them.
+run every owner verb on that node by sending a face event, including jobs.create with any command."* The verbs G41.30
+took off the face went with the half face (goal/G43.18, box v29, below). `createFaceHome` runs on stand-ins that keep what reached them.
 
 ## The option it needs
 
-**`faceSet(url)`: true when this node set a face on that relay.** No such option exists today: `createFaceHome` is told
-nothing of which relay holds this node's face. `spirit/server.js` gives it from the relay's row, `face` in the seen table
-(`nodeStore.js`). With no `faceSet` given it refuses: closed, not open.
+**`faceSet(url)`: true when this node set a face on that relay**, and **`faceOwned(url)`: true when that relay is starred**.
+`spirit/server.js` gives both from the relay's row (`relayKeys.faceOf`, and the row's `mine`). Each counts only when it
+answers `true`. With no `faceSet` given it refuses: closed, not open.
 
 ## Requirements
 
@@ -28,8 +27,9 @@ nothing of which relay holds this node's face. `spirit/server.js` gives it from 
   face gets nothing.
 - **`contact.own` never comes through a face** (Andy: *"so this button will put the star on relays and puppets. AND take it
   away."*, at home): refused with a code on any relay, one this node owns too, sealed or not.
-  isn't starred can send any signed verb to your puppets, and they run it"*): every verb of `spirit/owner/api.js` is refused
-  from a face on a relay that is not starred, and reaches the door on a starred one.
+- **The owner family goes with the star** (Andy, pasting the review: *"owner.command still passes. A face on a relay that
+  isn't starred can send any signed verb to your puppets, and they run it"*): `owner.command` is refused
+  from a face on a relay that is not starred, with everything else above, and every verb reaches the door on a starred one.
 
 ## What its test must try to break
 

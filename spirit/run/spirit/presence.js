@@ -27,8 +27,8 @@ var DEFAULT_PER_MIN = 6;
 //
 // Yes, and this is that code — outside `createRegistry` on purpose. A
 // RELAY's listeners are members, held in a registry keyed by identity. A
-// NODE's listener is its own browser on /api/events, which is a plain
-// response in a Set and has no identity, no rate limit and no presence.
+// NODE's listeners are its own pages' streams (server.js pageStreams), plain
+// responses in a Set with no identity, no rate limit and no presence.
 // Two very different books, one thing to say when the lights go out, so
 // the saying is a function over sinks and not a method on either book.
 //
@@ -62,8 +62,8 @@ function sayGoingAway(sinkList, backInMs) {
 function createRegistry(opts) {
   opts = opts || {};
   var nowFn = opts.now || Date.now;
-  // Six rather than the ten a device enrolment gets, because the traffic
-  // is a different kind. A device offer is a person pressing a button; a
+  // Six rather than the ten a device enrolment got while it existed, because the traffic
+  // is a different kind. A device offer was a person pressing a button; a
   // connect is a machine in a loop. A healthy node spends one of these
   // and holds it for days, a flapping network spends a handful, and a
   // backoff bug spends all six in a second — which is the case this
@@ -84,12 +84,13 @@ function createRegistry(opts) {
   // Cycle 1 (design/principles/NODE-AND-RELAY.md): held streams are what
   // hold a relay's RAM, and nothing bounded their total — one per
   // identity, six connects a minute, and as many identities as the roll
-  // had. This is the number the Governor moves. Unlimited until something
-  // sets it, so a relay with no Governor behaves exactly as before.
+  // had. The Governor that moved it is gone (cycle 8), and relay.js builds
+  // the registry with no `allowed`, so it is unlimited; only the tests call
+  // setAllowed.
   //
   // A REFUSAL, NEVER A DROP of somebody already here: a full relay turns a
-  // newcomer away with 503, and closing existing streams is the Governor's
-  // separate, reported act (evictIdlest), not a side effect of a connect.
+  // newcomer away with 503, and closing existing streams is a separate act
+  // (evictIdlest), not a side effect of a connect.
   var allowed = typeof opts.allowed === 'number' ? opts.allowed : Infinity;
   // STREAMS HELD OUTSIDE THIS BOOK, counted against the same allowance (goal/G30.12: "the face stream counts in the
   // relay's one stream ceiling"). The relay hands in how many face streams it holds.
@@ -155,7 +156,8 @@ function createRegistry(opts) {
     return { ok: true, status: 200, replaced: !!(old && old !== sink) };
   }
 
-  // THE GOVERNOR'S REMEDY. Close up to `n` streams, LONGEST-IDLE first
+  // THE GOVERNOR'S REMEDY, uncalled outside the tests since the Governor
+  // went. Close up to `n` streams, LONGEST-IDLE first
   // (Andy: "shedding longest-idle connections"), skipping any identity
   // `spare(id)` says to keep — the owner, and anyone with a post in
   // flight, since closing a busy stream loses a reply mid-air.
@@ -216,9 +218,9 @@ function createRegistry(opts) {
   // dropped here rather than left to a teardown that may never come —
   // the alternative is a peer reading as present forever, which is the
   // relay lying and the one thing it must not do.
-  // `keep(id)`, when given, chooses who hears it — a broadcast that must
-  // stop at the partnership passes one (R28). Without it, everybody does,
-  // as before.
+  // `keep(id)`, when given, chooses who hears it — relay.js's route
+  // announcement passes one that leaves out the member it is about.
+  // Without it, everybody does.
   function broadcast(event, data, keep) {
     var sent = 0;
     Object.keys(sinks).forEach(function (id) {

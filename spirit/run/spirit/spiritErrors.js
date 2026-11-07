@@ -22,7 +22,8 @@
 //
 // So a node reading 503 learned nothing, and the only thing separating
 // "busy" from "unreachable" was free text. `busy` got a marker bolted on
-// because of it (targetBusy.js); "unreachable" never did.
+// because of it (the `busy` field classify reads below; targetBusy.js, where
+// it began, is gone); "unreachable" never did.
 //
 // ── WHY THIS CARRIES MEANING AND NOT JUST NAMES ──────────────────────
 //
@@ -60,8 +61,9 @@
 //
 // **An error nobody catalogued says nothing about presence.** `unknown`
 // has presence null, so a sentence added next month cannot quietly paint
-// somebody red. The suite (spirit/test/spiritErrors.js) scans the whole
-// tree for error sentences and fails on any this file does not know.
+// somebody red. The suite (spirit/test/spiritErrors.js) scans the .js files
+// directly in spirit/run/spirit/ (not its subfolders) for error sentences
+// and fails on any this file does not know.
 
 var TRUE = true;
 var FALSE = false;
@@ -258,9 +260,10 @@ define('too-big', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['too big'],
 });
-// A LINE THE DESK SERVER WILL NOT KEEP (slim/G1.2). Andy: "from now on the
-// MAX_PAYLOAD applies": a line that could never come back in one answer is
-// refused when it arrives, never stored to stall a read later.
+// A LINE THE DESK SERVER WILL NOT KEEP (slim/G1.2; `line-too-large`, below).
+// Andy: "from now on the MAX_PAYLOAD applies": a line that could never come
+// back in one answer is refused when it arrives, never stored to stall a
+// read later.
 // A PROCESS THIS NODE DOES NOT INCLUDE (slim/G1.3). Andy: "keep server
 // slim by default": Start Job on a process the node's list does not name is
 // refused before anything runs.
@@ -282,14 +285,14 @@ define('too-big-to-tunnel', {
   texts: ['too big to tunnel'], prefixes: ['too big to tunnel'],
 });
 // REFUSED BY THE COMPOSER, BEFORE ANYTHING IS SIGNED OR SENT.
-// `client/packet.js:215` is the only emitter: `encode` bounds what it
+// `client/packet.js:275` is the only emitter: `encode` bounds what it
 // builds and says so, so a caller learns its packet is too big without a
 // round trip and without a relay counting it against a rate limit.
 //
 // Catalogued although `client/` is outside the suite's scan — an error a
 // node hands back is a node's error wherever the sentence was composed,
-// and `hub.peerOwnerPost` returns this one unchanged rather than wording
-// it again.
+// and `hub.peerOwnerPost` returns this one unchanged (hub.js says
+// 'packet too long' only when encode gave no sentence).
 //
 // `fault: 'caller'`, `retry: 'no'`: the same packet will not fit next
 // time. The fix is to send less, or — for an owner command — to accept
@@ -381,6 +384,8 @@ define('not-a-sender', {
   prefixes: ['not sent: this relay refused this node'],
 });
 // proxy-closed AND proxy-list-broken STOOD HERE: the owner's list and its gate went with goal/G29.20.
+// proxy-no-entry and proxy-bad-entry (below) still stand, but nothing under spirit/run emits their
+// sentences any more: the proxy verbs went with the same list.
 // ── NET.FETCH NEVER REACHES THIS MACHINE (goal/G29.20) ───────────────
 define('this-machine', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
@@ -487,8 +492,9 @@ define('not-a-command', {
 });
 // RETRY 'after' SINCE THE RE-ASK (cycle-10/R13): a peer that rotated refuses
 // with this, and the sender now asks for its new card and posts again
-// (peerPost staleCard). As 'no', agents.js would destroy a queued report of
-// such a message, the same join as 6feb3e0 through a different refusal
+// (peerPost staleCard). As 'no', the agents outbox of the time (agents.js,
+// since removed from the tree) would destroy a queued report of such a
+// message, the same join as 6feb3e0 through a different refusal
 // (wsl-claude). Changed in the same commit as the re-ask, as agreed.
 define('will-not-open', {
   status: 400, presence: NONE, retry: 'after', fault: 'caller',
@@ -505,11 +511,9 @@ define('will-not-open', {
 // emitters now log `no-cipher-key`; anything reading that history has to know
 // the old string meant this entry.
 //
-// AND NOT ONLY THE HISTORY, UNTIL EVERY NODE IS UPDATED (spiritos-f6,
-// 2026-09-26): the agents node runs from its own clone, so it keeps writing
-// `no-seal-key` until this change is committed, pulled there and the node
-// restarted. A reader of the log must accept both names for now — which is
-// the ordinary shape of a rename on a live wire, and the reason the rename
+// Nothing in this tree writes `no-seal-key` any more (peerPost.js logs
+// `no-cipher-key`); only rows written before the rename reached every node
+// carry the old name, so a reader of an old log accepts both. The rename
 // went to the LOG string and not to the answer, which never changed. Found by wsl-claude joining the
 // agents outbox against this catalogue and getting `unknown` for the most
 // frequent refusal in the system — and an outbox that reads unknown as
@@ -517,12 +521,13 @@ define('will-not-open', {
 // RETRY 'after', NOT 'no', SINCE 780426a. It was 'no' while nothing in the
 // tree could obtain a card, which was true then. 780426a gave the card ask a
 // caller, so the refusal now means "the ask went unanswered THIS TIME" and a
-// later post can succeed. 'no' made agents.js:351 destroy a queued report
-// that the next flush would have delivered (spirit/test/agentsOutbox.js, C2).
+// later post can succeed. 'no' made the agents outbox of the time
+// (agents.js, since removed, with its suite agentsOutbox.js) destroy a queued
+// report that the next flush would have delivered.
 // Andy, 2026-09-26: "now we have get card we keep outqueue again".
 define('no-cipher-key', {
   status: 428, presence: NONE, retry: 'after', fault: 'caller',
-  // THE SENTENCES AS peerPost.js:748-749 ACTUALLY EMITS THEM. This
+  // THE SENTENCES AS peerPost.js ACTUALLY EMITS THEM (its no-cipher-key refusal). This
   // held shortened paraphrases of both — 'no cipher key for that
   // peer' and 'cipher key cannot be used' — so `classifyAnswer`
   // answered UNKNOWN for a condition that was fully catalogued, in
@@ -744,8 +749,8 @@ define('url-not-listed', {
   texts: ['url not in the relay list of this node'],
 });
 // relay.remove refusing the last public relay (goal/G16.3): the rule the
-// Natter screen always obeyed (ownerBadge.canRemoveRelay), asked by the node
-// too now that the node is the list's only writer.
+// Natter screen always obeyed, asked by the node (ownerBadge.removalRefusal)
+// now that the node is the list's only writer.
 define('last-public-relay', {
   status: 409, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['this node must keep one public relay'],
