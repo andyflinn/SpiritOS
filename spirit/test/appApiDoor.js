@@ -11,8 +11,7 @@
 // The shape, claude-windows' and agreed: a new js/apiDoor.js,
 // createApiDoor({servers, post, encode, isKnown, log}) returning
 // function(message), registered as an arrivals witness. isKnown(fromKey) is
-// the front door's 'known', minus its acquire branch (Andy: "why not just an
-// exemption for aquire?"): a stranger admitted only to acquire gets nothing. It reads packets of
+// the front door's 'known': a stranger gets nothing. It reads packets of
 // app 'api' only (app-less ones are puppetDoor's, nodeApps.js), asks
 // servers.ask(body) (appApi.js holds that half), and posts
 // encode('api', answer, {re: message.hash}) back to message.fromKey. A

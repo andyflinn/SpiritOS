@@ -2,14 +2,10 @@
 
 goal/G43.17. Its test is `./noPreferences.js`: the tree read as it is, and a real node on a scratch copy of the tracked files, asked at its loopback door.
 
-Andy: *"ignore or hold are enough, and safer that automatically adding a contact, this will be solved when we fix the filters in contact search"*, *"i want to remove that information and all the code that references it, gone."*, *"go do it!"*
+Andy: *"i want to remove that information and all the code that references it, gone."*, *"go do it!"*
 
 ## Requirements
 
 - No `preferences.json` is tracked, and no tracked code file (`.js`, `.html`, `.css`, `.json`), tests, install scripts and comments included, names `preferences.json` or the policy it held (`UNKNOWN_PREFS`, `unknownPolicy`). Andy: *"MAKE SURE the code referencing preferences.json will be gone from the codebase."* Only this suite and Desk's own data, `currentGoal.json`, are aside.
-- The contact family has no `senders` or `setSenders` (removal reviewed by wsl); the Contacts app asks neither and draws no choice for strangers.
-- On the node both are no verb, and the node writes no `preferences.json`.
+- The node writes no `preferences.json`.
 
-- Andy: *"so NO, we don't need a "held" "status""*: a refused id stays in the traffic log, *"for as long as there is space"*, and nowhere else waits for a yes: `contact.search` has no `held` filter, the remembered row (`nodeStore.js` SEEN_FLAGS) no `held` flag, and `spirit/contacts.js` no `hold`.
-- Andy: *"FIX the handling of "forget" and "held", removing data base fields to end the life of "held"."*: a `node.db` from before, its `seen` table holding a `held` column, opened by the node's own store (`nodeStore.open`), has no `held` column any more.
-- Andy: *"Didn't i say remove ALL code referencing "admit" and "hold". it was a hair-brained scheme, and it HAS TO GO."*: no tracked `.js` or `.html`, tests included, comments left out, says `'admit'`, `'hold'` or `'held'` (or `acquiredVia: 'hold'`). Aside, as not the scheme: `nodeStore.js`, whose drop of the old `held` column must name it, and `spirit/run/test/spirit.js`, a demo error code named held.

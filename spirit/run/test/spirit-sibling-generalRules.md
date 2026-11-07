@@ -127,7 +127,7 @@ box is its own check, named by the element's path and the box's id chain."*
   icon selector, the workBench), names `spirit/element/icon.js`, or hands them to the one-row form, `spirit/element/rowForm.js`,
   which paints them through the icon element and loads it itself (goal/G41.27). Each is its own check, named by its path. Three files whose lone glyph strings are drawn only
   before words are left out by hand (`TEXT_ONLY`, each with its reason): jobsDetails' status glyph, contactDetails'
-  blocked and held marks, and the contacts list's filter icons, drawn before their words.
+  blocked mark, and the contacts list's filter icons, drawn before their words.
 - **Every field stops at its limit** (goal/G41.27; Andy: *"in the general UI tests (headless browser), any input field
   must be checked for size-limits, and get a "red" if it violates that rule."*): every text field it draws (a textarea,
   or an input of type text, email, search, url, tel or password, shown and editable), after its tools are pressed, is

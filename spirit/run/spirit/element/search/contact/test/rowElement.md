@@ -9,7 +9,7 @@ in `spirit.data` under the serving node, `<node>/contact/contacts/<key>`), loads
 
 ## API
 
-`contactElement.create(row)`, row `{ key | publicKey, name, keep, mine, blocked, held, relay, present, url,
+`contactElement.create(row)`, row `{ key | publicKey, name, keep, mine, blocked, relay, present, url,
 publicLabel }` → a row element `{ kind: 'contact', key, row, fields, actions, cells(), mount(hosts), apply(changes),
 act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add`.
 
@@ -23,14 +23,14 @@ act(name, ctx), expandInfo(), destroy() }`, fields `presence, status, label, add
 - **It loads what it uses** (goal/G41.3): loading, it requires `spirit/element/rowElement.js` through `spirit.require`; `open`
   first requires the page it opens (`search/contact/detailElement.js`, `search/contact/relayPanel.js`), then opens it, as a
   layer of the mounter's panel stack (`options.open`, goal/G43.18), made with the shell's page api, its close the layer's.
-- **Cells**: presence 🟢 present, 🔴 absent, ⚪ not known; status ❌ blocked over ⭐ mine, else blank, and no ⌛ even on a row that says held (goal/G43.17, Andy: *"also remove the "held" marker in the contact row."*); label
+- **Cells**: presence 🟢 present, 🔴 absent, ⚪ not known; status ❌ blocked over ⭐ mine, else blank; label
   the name, HTML-escaped; add an Add button only on a row neither in the book nor a relay.
 - **Presence already known** in the contacts (`spirit.data.contact.data`) wins over the row's own `present` at create.
 - **Dispatch**: one watch on the contacts (`spirit.data.contact.data.watch`); a write to a key repaints every live row of that key, only the fields
   whose values (or `from` values) changed. A destroyed row is no longer repainted.
 - **Label editor**: normalizes and checks the name by `spirit.fieldRules` first; a refused name is answered
   `{ ok: false, error }` without asking; a good one asks `contact.label { publicKey, myLabel }`.
-- **expandInfo**: a row in the book asks `contact.get { key }` once and keeps the answer; a held row and a relay give
+- **expandInfo**: a row in the book asks `contact.get { key }` once and keeps the answer; a row not in the book and a relay give
   `null` and ask nothing.
 
 ## What its test must try to break

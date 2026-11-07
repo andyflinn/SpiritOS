@@ -285,7 +285,7 @@ const ALONE = /(['"`]|>)\s*(?:\p{Extended_Pictographic}[\uFE0F\u200D\u{1F3FB}-\u
 // (Andy: "glyphs are legal in labels and description true").
 const TEXT_ONLY = {
   'shell/jobsDetails/jobsDetails.js': 'its status glyph is drawn before the job\'s type and its status word',
-  'spirit/element/search/contact/detailElement.js': 'its blocked and held marks are drawn before the person\'s name',
+  'spirit/element/search/contact/detailElement.js': 'its blocked mark is drawn before the person\'s name',
   'spirit/element/search/contact/listElement.js': 'its filter icons are drawn before their words by the search element\'s chips',
 };
 function painters() {

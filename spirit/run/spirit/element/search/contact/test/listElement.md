@@ -11,17 +11,17 @@ goal/G41.28), drawn by `probabilitySearch`, each row a `contactElement` (`contac
 
 ## Requirements
 
-- **show**: choices `all`, then `mine` (⭐ my puppets), `blocked` (❌), `held` (⌛), `relay` (relays), each only when a
+- **show**: choices `all`, then `mine` (⭐ my puppets), `blocked` (❌), `relay` (relays), each only when a
   row of that kind is listed; buttons only when there is a kind; `all` or none passes every row, a kind only rows whose
   flag is exactly `true`.
-- **network** (a toggle, last): a held row with no other flag (not kept, mine, blocked or a relay) shows only when on;
+- **network** (a toggle, last): a row with no flag (not kept, mine, blocked or a relay) shows only when on;
   every other row always.
 - **named** (never a button): a row passes only with a name or as a relay; a bare presence is no row.
 - **create** hands `probabilitySearch` `data: spirit.data.contact.data.branch`, these filters, columns presence, status, label, add, and
   refreshes once at once. Its search asks `contact.search { q }` with the text trimmed and answers `{ status: 200,
   body: { ok, items, more } }`, an empty answer an empty list. Rows are `contactElement`s by key; a row matches on name
   and public label.
-- **Pressing a row**: kept → the element's `open`; held and undecided → `peerPost('', key, { card: true })`, saying
+- **Pressing a row**: kept → the element's `open`; any other → `peerPost('', key, { card: true })`, saying
   the card, or that a different key answered.
 - **A row's Add**: a click on a `[data-action]` inside a row runs that element's action, says `added <label>`, calls
   `onAdded`, searches again. A click on no button or a row the list did not make does nothing.
@@ -33,5 +33,5 @@ goal/G41.28), drawn by `probabilitySearch`, each row a `contactElement` (`contac
 
 ## What its test must try to break
 
-A flag that is truthy but not `true`; a held row that is also kept or a relay; a null row; an empty search answer; a
+A flag that is truthy but not `true`; a row that is both kept and a relay; a null row; an empty search answer; a
 card from the wrong key; stray clicks; a subscription of its own to the stream.

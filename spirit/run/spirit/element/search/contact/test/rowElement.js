@@ -61,13 +61,13 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
 
   test.subHeading('what a row offers depends on what it is');
   const kept = C.create({ key: 'K1', name: 'anna', keep: true }, { open: openLayer });
-  const held = C.create({ key: 'K2', held: true, publicLabel: 'bob' }, { open: openLayer });
+  const stranger = C.create({ key: 'K2', publicLabel: 'bob' }, { open: openLayer });
   const relay = C.create({ key: 'R1', relay: true, keep: true, url: 'wss://r.example' }, { open: openLayer });
   const blocked = C.create({ key: 'K3', blocked: true });
   if (names(kept) === 'open,block,unblock,remove' && names(blocked) === 'open,block,unblock,remove') test.check('a kept or blocked row: open, block, unblock, remove');
   else test.fail('kept: ' + names(kept) + ', blocked: ' + names(blocked));
-  if (names(held) === 'add') test.check('a held row: add, and only add');
-  else test.fail('held: ' + names(held));
+  if (names(stranger) === 'add') test.check('a row not in the book: add, and only add');
+  else test.fail('not in the book: ' + names(stranger));
   if (names(relay) === 'open') test.check('a relay: open, even when kept');
   else test.fail('relay: ' + names(relay));
   if (kept.kind === 'contact' && kept.key === 'K1' && kept.fields.join(',') === 'presence,status,label,add') test.check('kind contact, keyed by the public key, fields presence, status, label, add');
@@ -81,7 +81,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   if (!CD || typeof CD.contact !== 'function') { test.reportSuccessFailureCount(); return; }
 
   test.subHeading('the actions ask the node, and paint nothing');
-  await held.act('add');
+  await stranger.act('add');
   const add = asked.pop();
   if (add && add.verb === 'peer.acquire' && add.body.publicKey === 'K2' && add.body.publicLabel === 'bob') test.check('add asks peer.acquire with the key and the name it gave the relay');
   else test.fail('add asked: ' + JSON.stringify(add));
@@ -102,23 +102,21 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   if (required[0] === 'spirit/element/rowElement.js') test.check('the row loads the shared row element it is built on itself, through spirit.require');
   else test.fail('as it loaded, the row required: ' + JSON.stringify(required.slice(0, 1)));
   const before = asked.length;
-  const none = await held.act('block');
+  const none = await stranger.act('block');
   if (none === null && asked.length === before) test.check('an action the row does not offer asks nothing');
-  else test.fail('a held row\'s block asked ' + JSON.stringify(asked.slice(before)));
+  else test.fail('a row not in the book: its block asked ' + JSON.stringify(asked.slice(before)));
 
   test.subHeading('the cells');
   if (cell(kept, 'presence').indexOf('⚪') !== -1 && cell(C.create({ key: 'K4', keep: true, present: true }), 'presence').indexOf('🟢') !== -1
     && cell(C.create({ key: 'K5', keep: true, present: false }), 'presence').indexOf('🔴') !== -1) test.check('presence: 🟢 present, 🔴 absent, ⚪ not known');
   else test.fail('presence cells');
-  // goal/G43.17, Andy: "so NO, we don't need a "held" "status"", "also remove the "held" marker in the contact row.": a row that
-  // still says held shows no ⌛.
-  const statuses = { blocked: cell(blocked, 'status'), held: cell(held, 'status'), mineHeld: cell(C.create({ key: 'K6', mine: true, held: true }), 'status'), mine: cell(C.create({ key: 'K7', mine: true }), 'status'), kept: cell(kept, 'status') };
-  if (statuses.blocked === '❌' && statuses.held === '' && statuses.mineHeld === '⭐' && statuses.mine === '⭐' && statuses.kept === '') test.check('status: blocked ❌ over mine ⭐, a plain kept row blank, and no held ⌛, even on a row that says held');
+  const statuses = { blocked: cell(blocked, 'status'), stranger: cell(stranger, 'status'), mine: cell(C.create({ key: 'K7', mine: true }), 'status'), kept: cell(kept, 'status') };
+  if (statuses.blocked === '❌' && statuses.stranger === '' && statuses.mine === '⭐' && statuses.kept === '') test.check('status: blocked ❌ over mine ⭐, a plain kept row and a row not in the book blank');
   else test.fail('status cells: ' + JSON.stringify(statuses));
   if (cell(C.create({ key: 'K8', keep: true, name: '<b>x</b>' }), 'label') === '&lt;b&gt;x&lt;/b&gt;') test.check('the label is the name, escaped');
   else test.fail('label cell: ' + cell(C.create({ key: 'K8', keep: true, name: '<b>x</b>' }), 'label'));
-  if (cell(held, 'add').indexOf('data-action="add"') !== -1 && cell(kept, 'add') === '' && cell(C.create({ key: 'R2', relay: true }), 'add') === '') test.check('the Add button only on a row not in the book and not a relay');
-  else test.fail('add cells: ' + JSON.stringify([cell(held, 'add'), cell(kept, 'add')]));
+  if (cell(stranger, 'add').indexOf('data-action="add"') !== -1 && cell(kept, 'add') === '' && cell(C.create({ key: 'R2', relay: true }), 'add') === '') test.check('the Add button only on a row not in the book and not a relay');
+  else test.fail('add cells: ' + JSON.stringify([cell(stranger, 'add'), cell(kept, 'add')]));
 
   test.subHeading('the contacts repaint the rows that show that key, only the fields that changed');
   V.set('contacts/K10', { present: true });
@@ -179,9 +177,9 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   const gets = asked.slice(m).filter(function (x) { return x.verb === 'contact.get'; });
   if (gets.length === 1 && gets[0].body.key === 'K1') test.check('contact.get by key, once, the answer kept');
   else test.fail('contact.get asked ' + gets.length + ' times');
-  const nothing = [await held.expandInfo(), await relay.expandInfo()];
-  if (nothing[0] === null && nothing[1] === null && asked.length === m + 1) test.check('a held row and a relay expand to nothing, asking nothing');
-  else test.fail('held/relay expand: ' + JSON.stringify(nothing));
+  const nothing = [await stranger.expandInfo(), await relay.expandInfo()];
+  if (nothing[0] === null && nothing[1] === null && asked.length === m + 1) test.check('a row not in the book and a relay expand to nothing, asking nothing');
+  else test.fail('not in the book/relay expand: ' + JSON.stringify(nothing));
 
   // ── WHAT THE STREAM MEANS FOR CONTACTS, IN THE TYPE'S OWN ELEMENT (goal/G41.16; Andy: "get rid of thos FUCKING data.js
   // scripts, DIDN't WE INSIST on the PROPER way to do this shit?"). The contacts' translation, spirit/element/search/contact/data.js
@@ -209,8 +207,8 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   else test.fail('a bad entry wrote: ' + JSON.stringify({ c: row('KC'), d: row('KD') }));
 
   test.subHeading('peer-search seats the row the network found');
-  D.takeJob({ type: 'peer-search', data: { q: 'be', item: { key: 'KE', label: JSON.stringify({ name: 'bert', held: true }) } } });
-  if (row('KE') && row('KE').name === 'bert' && row('KE').held === true) test.check('the item\'s label is merged into its row, by key');
+  D.takeJob({ type: 'peer-search', data: { q: 'be', item: { key: 'KE', label: JSON.stringify({ name: 'bert', blocked: true }) } } });
+  if (row('KE') && row('KE').name === 'bert' && row('KE').blocked === true) test.check('the item\'s label is merged into its row, by key');
   else test.fail('the network row: ' + JSON.stringify(row('KE')));
   const seated = JSON.stringify(D.branchAt(CD.branch));
   D.takeJob({ type: 'peer-search', data: { q: 'be' } });
@@ -223,7 +221,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
 
   test.subHeading('a rename sets the name, and keeps the rest');
   D.takeRename({ key: 'KE', caption: 'Bertie' });
-  if ((row('KE') || {}).name === 'Bertie' && (row('KE') || {}).held === true) test.check('contact.rename sets name on the row, its other fields kept');
+  if ((row('KE') || {}).name === 'Bertie' && (row('KE') || {}).blocked === true) test.check('contact.rename sets name on the row, its other fields kept');
   else test.fail('after a rename: ' + JSON.stringify(row('KE')));
   D.takeRename({ key: 'KG', caption: 7 });
   if (row('KG') && row('KG').name === '7') test.check('a rename of a key never seen makes its row, the caption as text');

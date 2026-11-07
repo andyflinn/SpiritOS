@@ -211,7 +211,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
     { url: 'https://mine.example', owned: true, roll: { relayKey: 'RK1' } },
     { url: 'https://other.example', owned: false, claimed: true, roll: { relayKey: 'RK2' } },
   ];
-  const w = world({ key: KEY, publicLabel: 'bob', myLabel: '', blocked: false, held: false }, OWNED);
+  const w = world({ key: KEY, publicLabel: 'bob', myLabel: '', blocked: false }, OWNED);
   test.subHeading('it loads armingButton itself (goal/G41.3)');
   ok(w.required.indexOf('spirit/element/armingButton.js') !== -1, 'it requires spirit/element/armingButton.js through spirit.require', 'required: ' + short(w.required));
 
@@ -257,7 +257,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   }
 
   test.subHeading('a press on the drawn button asks nothing by itself');
-  const w2 = world({ key: 'K2', publicLabel: 'carl', blocked: false, held: false }, []);
+  const w2 = world({ key: 'K2', publicLabel: 'carl', blocked: false }, []);
   w2.open('K2');
   await settle();
   const drawn = w2.document.getElementById('cd-block') || (armingFor(w2, 'Block') || {}).button;
@@ -278,7 +278,7 @@ test.startTest('detailElement.js: its are-you-sure buttons are armingButtons (go
   // goal/G43.14, Andy: "KILL those fields in shadow-roll, KILL the functionality, KILL it!": a row that still carried them shows none.
   test.subHeading('the box: "a contact\'s detail no longer shows them"');
   {
-    const wc = world({ key: 'KC', publicLabel: 'carol', myLabel: '', blocked: false, held: false, unansweredInbound: 7, inboundPerDay: 3.5, outboundPerDay: 1.25 }, []);
+    const wc = world({ key: 'KC', publicLabel: 'carol', myLabel: '', blocked: false, unansweredInbound: 7, inboundPerDay: 3.5, outboundPerDay: 1.25 }, []);
     wc.open('KC');
     await settle();
     const shown = wc.box ? String(wc.box.textContent || '') : '';

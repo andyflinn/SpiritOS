@@ -71,7 +71,7 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   test.subHeading('the show filter: all, then each kind the list holds');
   const values = function (rows) { return F.show.choices(rows).map(function (c) { return c.value; }).join(','); };
   if (values([{ keep: true }]) === 'all' && values([{ mine: true }, { blocked: true }, { relay: true }]) === 'all,mine,blocked,relay')
-    test.check('only all over plain kept rows; mine, blocked, relays in that order when there are any, and no held (goal/G43.17)');
+    test.check('only all over plain kept rows; mine, blocked, relays in that order when there are any');
   else test.fail('choices: ' + values([{ mine: true }, { blocked: true }, { relay: true }]));
   if (F.show.when([{ keep: true }]) === false && F.show.when([{ relay: true }]) === true) test.check('its buttons show only when there is a kind to choose');
   else test.fail('show.when');
