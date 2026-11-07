@@ -137,7 +137,7 @@ async function main() {
   let core = null;
   try { core = require('../run/spirit/coreFiles.js'); } catch (e) { core = null; }
   const cases = [['spirit/run/spirit/jobs.js', true], ['spirit/run/spirit/client/shell.js', true], ['spirit/run/shell/deskDetails/deskDetails.js', false],
-    ['spirit/run/shell/info/info.js', true], ['spirit/run/shell/desk/desk.js', false], ['spirit/run/shell/chatter/chatter.js', false],
+    ['spirit/run/spirit/app/info/info.js', true], ['spirit/run/shell/desk/desk.js', false], ['spirit/run/shell/chatter/chatter.js', false],
     ['spirit/test/deskCoreGrants.js', false], ['design/README.md', false], ['spirit/run/process/js/desk/desk.js', false]];
   const wrong = core && typeof core.isCore === 'function' ? cases.filter(function (c) { return core.isCore(c[0]) !== c[1]; }) : cases;
   if (!wrong.length) test.check('isCore: run/spirit and the intrinsic apps\' folders (info) are core; deskDetails, desk, chatter, tests, design and process folders are not');

@@ -39,12 +39,12 @@ FAIL  ../run/shell/agent/test/listBoxes.js   9 ✅   1 ❌                  78ms
   ok  ../run/shell/desk/plugins/vision/test/vision.js  35 ✅                        124ms
   ok  ../run/shell/desk/test/desk.js  35 ✅                       9855ms
   ok  ../run/shell/deskDetails/test/deskDetails.js  76 ✅                      14735ms
-  ok  ../run/shell/grants/test/grants.js  50 ✅                      11939ms
+  ok  ../run/spirit/app/grants/test/grants.js  50 ✅                      11939ms
   ok  ../run/shell/icons/test/icons.js   6 ✅                       7987ms
-  ok  ../run/shell/info/test/info.js  22 ✅                         50ms
+  ok  ../run/spirit/app/info/test/info.js  22 ✅                         50ms
   ok  ../run/shell/join/test/join.js   8 ✅                         51ms
   ok  ../run/shell/login/test/login.js  17 ✅                         64ms
-  ok  ../run/shell/rotateKey/test/rotateKey.js  13 ✅                         63ms
+  ok  ../run/spirit/element/test/rotateKey.js  13 ✅                         63ms
   ok  ../run/shell/ruleDetails/test/ruleDetails.js  32 ✅                        135ms
   ok  ../run/shell/shared/js/test/deskChat.js  33 ✅                         60ms
   ok  ../run/shell/shared/js/test/deskDoorFields.js  55 ✅                         85ms
@@ -234,12 +234,12 @@ FAIL  ../run/test/spirit-sibling-generalRules.js shell/appMigration/appMigration
   ok  ../run/test/spirit-sibling-generalRules.js shell/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         56ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/desk/plugins/vision/vision.js   1 ✅                         60ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/deskDetails/deskDetails.js  11 ✅                      16340ms
-  ok  ../run/test/spirit-sibling-generalRules.js shell/grants/grants.js  17 ✅                      17259ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/grants/grants.js  17 ✅                      17259ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/icons/icons.js  15 ✅                      18305ms
-FAIL  ../run/test/spirit-sibling-generalRules.js shell/info/info.js  12 ✅   1 ❌                3037ms
+FAIL  ../run/test/spirit-sibling-generalRules.js spirit/app/info/info.js  12 ✅   1 ❌                3037ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/join/join.js  10 ✅                       2526ms
 FAIL  ../run/test/spirit-sibling-generalRules.js shell/login/login.js   9 ✅   1 ❌                2728ms
-  ok  ../run/test/spirit-sibling-generalRules.js shell/rotateKey/rotateKey.js  10 ✅                       2732ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/element/rotateKey.js  10 ✅                       2732ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/ruleDetails/ruleDetails.js  11 ✅                       2204ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/seal.js   1 ✅                         56ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/shared/js/deskChat.js   1 ✅                         47ms
@@ -348,12 +348,12 @@ FAIL  ../run/test/spirit-sibling-generalRules.js spirit/element/valued.js  12 �
   ok  ../run/test/spirit-sibling-searchRules.js shell/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         35ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/desk/plugins/vision/vision.js   1 ✅                         42ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/deskDetails/deskDetails.js   1 ✅                         39ms
-  ok  ../run/test/spirit-sibling-searchRules.js shell/grants/grants.js   1 ✅                         35ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/grants/grants.js   1 ✅                         35ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/icons/icons.js   1 ✅                         35ms
-  ok  ../run/test/spirit-sibling-searchRules.js shell/info/info.js   1 ✅                         35ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/info/info.js   1 ✅                         35ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/join/join.js   1 ✅                         40ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/login/login.js   1 ✅                         41ms
-  ok  ../run/test/spirit-sibling-searchRules.js shell/rotateKey/rotateKey.js   1 ✅                         36ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/element/rotateKey.js   1 ✅                         36ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/ruleDetails/ruleDetails.js   1 ✅                         39ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/seal.js   1 ✅                         42ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/shared/js/deskChat.js   1 ✅                         46ms
@@ -462,12 +462,12 @@ FAIL  ../run/test/spirit-sibling-generalRules.js spirit/element/valued.js  12 �
   ok  ../run/test/spirit-sibling-testReachRules.js shell/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         67ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/desk/plugins/vision/vision.js   1 ✅                         50ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/deskDetails/deskDetails.js   1 ✅                         64ms
-  ok  ../run/test/spirit-sibling-testReachRules.js shell/grants/grants.js   1 ✅                         59ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/grants/grants.js   1 ✅                         59ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/icons/icons.js   1 ✅                         52ms
-  ok  ../run/test/spirit-sibling-testReachRules.js shell/info/info.js   1 ✅                         70ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/info/info.js   1 ✅                         70ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/join/join.js   1 ✅                         60ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/login/login.js   1 ✅                         60ms
-  ok  ../run/test/spirit-sibling-testReachRules.js shell/rotateKey/rotateKey.js   1 ✅                         51ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/element/rotateKey.js   1 ✅                         51ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/ruleDetails/ruleDetails.js   1 ✅                         73ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/seal.js   1 ✅                         76ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/shared/js/deskChat.js   1 ✅                         68ms

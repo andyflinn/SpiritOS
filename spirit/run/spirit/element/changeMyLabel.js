@@ -2,7 +2,7 @@
 // THE NODE'S NAME, CHANGED (goal/G41.6; Andy, Q1: Info's two blocks "become shell elements of their own, each with its
 // test folder"). One field and its Save: what this node answers to anybody who asks (spirit/nodeCard.js). Info draws it.
 //
-//   changeMyLabel.create(host, { api }) -> { set(value), destroy() }
+//   changeMyLabel.create(host) -> { set(value), destroy() }
 //
 // The field is marked with its rule (rule/12, data-field="label") and held at the name rule's byte limit by fieldInput,
 // the bytes left beside it, counted in bytes as typed: an emoji costs four. Save asks here first and the wire is not
@@ -17,11 +17,12 @@
   if (root.spirit.require) root.spirit.require('spirit/element/rowForm.js');
 
   function rules() { return (root.spirit && root.spirit.fieldRules) || null; }
-  function esc(api, s) { return api && api.escapeHtml ? api.escapeHtml(s) : String(s); }
+  // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24; Andy: "every fucking element gets the interfaces it needs"): the spirit
+  // object's escapeHtml and the node family's setName, no api handed.
+  function esc(s) { return root.spirit.escapeHtml ? root.spirit.escapeHtml(s) : String(s); }
 
   function create(host, opts) {
     var o = opts || {};
-    var api = o.api;
     // Its blocks stacked 1em apart (rule/2): the shell's stack class.
     // A ROWFORM (goal/G41.27; Andy: "Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the changeMyLabel
     // element...."): ✏️, the word Name and the input in its span, Save its button; the bytes left and what Save did stand
@@ -32,7 +33,7 @@
       '<div data-label="said" class="job-start-error"></div></div>';
     var form = E.rowForm.create(host.querySelector('[data-label="form"]'), { icon: '✏️', button: 'Save' });
     form.span.innerHTML = 'Name' +
-      '<input type="text" data-field="label" placeholder="' + esc(api, 'what people see, everywhere') + '">';
+      '<input type="text" data-field="label" placeholder="' + esc('what people see, everywhere') + '">';
     var input = host.querySelector('[data-field="label"]');
     var left = host.querySelector('[data-label="left"]');
     var said = host.querySelector('[data-label="said"]');
@@ -58,7 +59,7 @@
       var R = rules();
       var bad = R ? R.problem(input.value) : '';
       if (bad) { say(bad, true); return Promise.resolve(); }
-      return Promise.resolve(api.verb('node.setName', { name: input.value })).then(function (r) {
+      return root.spirit.outcome(Promise.resolve(root.spirit.ready).then(function (s) { return s.node.setName({ name: input.value }); })).then(function (r) {
         var body = (r && r.body) || {};
         if (!body.ok) { say(body.error || 'could not save', true); return; }
         root.spirit.data.node.data.card.keep({ name: String(body.name == null ? '' : body.name) });

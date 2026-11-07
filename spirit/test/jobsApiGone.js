@@ -103,7 +103,7 @@ function walk(dir, out) {
     .map(function (f) { return path.relative(path.join(__dirname, '..'), f).split(path.sep).join('/'); });
   if (!namingAuth.length) test.check('nothing names jobs.auth* any more');
   else test.fail(OWED + namingAuth.length + ' files still name jobs.auth*: ' + short(namingAuth.slice(0, 12)));
-  if (/'auth\.grant'|auth\.FS\.loadFile|'auth\.' \+/.test(code('shell/grants/grants.js'))) test.check('the Grants app calls the auth family');
+  if (/'auth\.grant'|auth\.FS\.loadFile|'auth\.' \+/.test(code('spirit/app/grants/grants.js') + '\n' + code('spirit/element/grantsPanel.js'))) test.check('the Grants app calls the auth family');
   else test.fail(OWED + 'the Grants app does not call auth.*');
 
   test.reportSuccessFailureCount();

@@ -1,46 +1,49 @@
-# shell/grants/grants.js
+# spirit/app/grants/grants.js
 
-The Grants app (apiAuth/G1.6; goal/G41.5, G41.13, G41.14, G41.16): the owner's screen for who may call which api.
-Intrinsic, so it shows on every face, the loopback face's and a relay face's alike (Andy, Q1: "Of course on both, how
-else can i give someone access when i travel?"). Its test is `./grants.js`.
+The Grants app (apiAuth/G1.6; goal/G41.5, G41.13, G41.14, G41.16, G41.32, G43.24): the owner's screen for who may call
+which api. Intrinsic by its own `grants.json`, so it shows on every face, the loopback face's and a relay face's alike
+(Andy, Q1: *"Of course on both, how else can i give someone access when i travel?"*). Its test is `./grants.js`; its
+manifest, its tile and its opening in a real Chrome are judged in `spirit/app/test/infoGrants.js`.
 
-Since goal/G41.16 it is a wrapper (Andy: *"the shell app shell/grans/grants/ must be a wrapper for a new shell element: shell/js/grantsPanel.js"*): its Grants tab is the grants panel, which knows no table; this app configures it (*"the
-callers (Grants and agent shell apps should boody well know how to configure the damn grantsPanel element"*). What the
-panel draws and does is the panel's (`spirit/element/test/grantsPanel.md`).
+It is a wrapper (Andy: *"no i want those apps to basically be wrappers for spirit/element/ things...."*): its Grants tab is
+the grants panel, which knows no table of its own; this app configures it (*"the callers (Grants and agent shell apps
+should boody well know how to configure the damn grantsPanel element"*). The node's grants table, once this app's, is the
+panel's `grantsPanel.nodeGrants` since goal/G43.24, and what the panel draws and does is the panel's
+(`spirit/element/test/grantsPanel.md`).
 
 ## Requirements
 
-- It mounts through `spirit.shell.activateApp({ mount(container, api) })`.
-- Nothing of the old shell: no `shellCreateListSearch`, no `api.ui.elements`, no `apiBranchSelector`.
-- It loads what it uses itself (rule/26): `spirit/element/grantsPanel.js`, `spirit/element/tabContainer.js` and
-  `spirit/element/bundleEditor.js`. It draws nothing itself: no markup, no list, no selector of its own (by either shape,
-  `createContactSelector` or `contactSelector.create`), no data script.
-- Two tabs, one `tabContainer`: `grants`, the grants panel in its own box with the app's api; `bundles`, the bundle
-  editor with the app's api.
-- It configures the panel for contacts and the node's grants:
-  - `ids`: the contacts' table, `loopback://api/contact/search`;
-  - `grants`: the auth family's cache (`spirit.cacheManager('auth')`, its branch `spirit.data.auth.data.grants.branch`;
-    goal/G41.28), keyed `key`, labelled `label`;
-    - `search(text)` asks `auth.search { text }` and answers its `{ items, more }`, each found grant carrying whose it
-      is in the label field, `label` (auth.search says it as `name`; found live by cw, goal/G41.16);
-    - `grant(id, path)` asks `auth.grant { key, path }`, answering `{ ok: true }`, or a refusal as
-      `{ ok: false, code, error }` in the node's words (`already-granted` among them);
-    - `revoke(id, path)` asks `auth.revoke { key, path }`;
-    - `watch(fn)`: a grant the auth family's manager keeps is heard as `<key>\n<path>` with its row, and once revoked
-      with none; its release ends it. It has no `stream` of its own.
-
-## What its test must try to break
-
-- Anything the app draws or builds itself, or a data script.
-- A Grants tab that is not the panel, or a panel handed another ID table or grants table.
-- A grant, search or revoke asked of anything but the node's auth verbs; a refusal lost.
-- A table of its own beside the auth family's cache, or a watch that goes on after its release.
+- **Mounted the new shell's way** (Andy: *"box that these apps must mount in the new format of the new shell."*), as
+  `spirit/app/file/file.js` is: it sets `spirit.elements.grants = { create(container, opts) -> { destroy() } }`. No
+  `spirit.shell.activateApp`; nothing of the old shell (no `shellCreateListSearch`, no `api.ui.elements`, no
+  `apiBranchSelector`).
+- **A wrapper**: it loads `spirit/element/grantsPanel.js`, `spirit/element/tabContainer.js` and
+  `spirit/element/bundleEditor.js` through `spirit.require` (rule/26), and nothing else. It asks nothing itself (no verb,
+  no api, no auth verb, no cache of its own) and draws nothing itself (no markup, no list, no selector).
+- `create(container)` empties the container and makes one `tabContainer` in it with two tabs: `grants` (*Grants*), then
+  `bundles` (*Bundles*).
+  - The Grants tab is the grants panel, made in the tab's box: `ids` the contacts' table,
+    `loopback://api/contact/search`; `grants` the node's own, `grantsPanel.nodeGrants`; nothing else, no api.
+  - The Bundles tab is the bundle editor, made in the tab's box, handed this app's own tabContainer to open each
+    bundle's tab in (Andy: *"in the Grants app, this will be the grant app's tabContainer."*) and a `tabLabel` naming each
+    tab owner-bundle, `node` when no owner is said (Andy: *"Grants: <owner>-<bundle>."*); nothing else, no api.
+- An element refused, the container says *Grants could not be loaded.*
+- `destroy()` destroys the tabs and empties the container; destroyed before its elements load, nothing is made.
 
 ## goal/G41.32, in a real browser on a scratch node
 
-The box's bundle lines, judged by real clicks in the Grants app: no Edit or Delete in the pane; a row pressed opens a closable
-tab in the app's own tab row, named owner-bundle (Andy: *"the tabs should name owner-bundle"*), its close button small and on the tab's right; the same row again makes that tab active; the
-close button takes the tab away and the bundle stays. The branchEditor has a rowForm below the others: ❌, *"Delete
-<bundle-name> bundle and branches"*, an arming button: one press only arms, the second deletes and the tab closes. A bundle
-deleted at the door closes its tab. A server's bundle opens read-only, with no form and no Delete, and the node refuses its
-delete. With no tabContainer configured, as in the agent app for now, the pane has no Edit or Delete, and a press throws nothing.
+On a scratch copy of the tree's files, the Grants app opened from its tile in the shell app on `/face.html`, the box's
+bundle lines judged by real clicks: no Edit or Delete in the pane; a row pressed opens a closable tab in the app's own tab
+row, named owner-bundle (Andy: *"the tabs should name owner-bundle"*), its close button small and on the tab's right; the
+same row again makes that tab active; the close button takes the tab away and the bundle stays. The branchEditor has a
+rowForm below the others: ❌, *"Delete <bundle-name> bundle and branches"*, an arming button: one press only arms, the
+second deletes and the tab closes. A bundle deleted at the door closes its tab. A server's bundle opens read-only, with no
+form and no Delete, and the node refuses its delete. With no tabContainer configured, as in the agent app for now, the
+pane has no Edit or Delete, and a press throws nothing.
+
+## What its test must try to break
+
+- Anything the app asks, keeps or draws itself.
+- A Grants tab that is not the panel, a panel handed another ID table or grants table, or an api handed.
+- A Bundles tab whose tabs open elsewhere than this app's tab row, or are named otherwise than owner-bundle.
+- A mount through the old shell; something made after destroy.

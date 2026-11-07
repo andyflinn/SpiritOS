@@ -32,14 +32,14 @@ each(['spirit/run/shell/shared/ask.js', 'spirit/run/shell/shared/js/deskRunStatu
 each(['spirit/run/spirit/shell/index.html', 'spirit/run/spirit/spirit.js', 'spirit/run/spirit/shell/elements.css', 'spirit/run/spirit/shell/tokens.css', 'spirit/run/spirit/shell/shell.css', 'spirit/run/spirit/shell/ghost.svg'], true, 'the frame, in spirit/ since goal/G43.18');
 // goal/G41.30, Andy: "make the nav wrapper \"core\"": it moved out of spirit/element/ in G41.19, and no rule named it there.
 each(['spirit/run/shell/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.md'], true, 'the navigation wrapper, and its tests');
-each(['spirit/run/shell/apps/apps.js', 'spirit/run/shell/grants/grants.js', 'spirit/run/process/js/fileServer/fileServer.js'], true, 'an intrinsic app\'s code');
+each(['spirit/run/shell/apps/apps.js', 'spirit/run/spirit/app/grants/grants.js', 'spirit/run/process/js/fileServer/fileServer.js'], true, 'an intrinsic app\'s code');
 each(['spirit/run/shell/apps/notes.txt', 'spirit/run/shell/desk/desk.js', 'spirit/run/shell/chatter/chatter.js'], false, 'an intrinsic app\'s data, or an app not intrinsic');
 ok(core.intrinsic('shell/apps') && core.intrinsic('spirit/run/shell/apps/apps.js') && !core.intrinsic('shell/desk'),
   'intrinsic answers for a folder or a path inside one, with or without spirit/run/', 'intrinsic answered wrongly for shell/apps or shell/desk');
 
 test.subHeading('goal/G41.29: a core file\'s companion test files are core');
 each(['spirit/run/spirit/shell/test/boot.js', 'spirit/run/spirit/shell/test/boot.md', 'spirit/run/spirit/shell/test/seal.js', 'spirit/run/spirit/shell/test/seal.md'], true, 'the boot\'s companions');
-each(['spirit/run/shell/apps/test/apps.js', 'spirit/run/shell/apps/test/apps.md', 'spirit/run/shell/grants/test/grants.md', 'spirit/run/process/js/fileServer/test/fileServer.md'], true, 'an intrinsic app\'s companions');
+each(['spirit/run/shell/apps/test/apps.js', 'spirit/run/shell/apps/test/apps.md', 'spirit/run/spirit/app/grants/test/grants.md','spirit/run/process/js/fileServer/test/fileServer.md'], true, 'an intrinsic app\'s companions');
 each(['spirit/run/shell/desk/test/desk.js', 'spirit/run/shell/desk/test/desk.md', 'spirit/run/shell/chatter/test/chatter.md'], false, 'a test named after no core file');
 
 
@@ -91,5 +91,12 @@ test.subHeading('goal/G43.14: Contacts moved, so it comes off the coded list ("a
 ok(core.intrinsic('shell/contacts') === false, 'shell/contacts is not on the coded list', 'shell/contacts is still on it');
 ok(core.isCore('spirit/run/spirit/app/contact/contact.json') === true && core.isCore('spirit/run/spirit/app/contact/contact.js') === true,
   'in this tree spirit/app/contact/ is core, its json saying intrinsic true', 'contact.json ' + core.isCore('spirit/run/spirit/app/contact/contact.json') + ', contact.js ' + core.isCore('spirit/run/spirit/app/contact/contact.js'));
+
+test.subHeading('goal/G43.24: Info and Grants moved to spirit/app/, so they come off the coded list and say it in their own json');
+['info', 'grants'].forEach(function (name) {
+  ok(core.intrinsic('shell/' + name) === false, 'shell/' + name + ' is not on the coded list', 'shell/' + name + ' is still on it');
+  ok(core.appIntrinsic(path.resolve(RUN, '..', '..'), name) === true, 'spirit/app/' + name + '/' + name + '.json says intrinsic true',
+    'spirit/app/' + name + '/' + name + '.json says intrinsic ' + core.appIntrinsic(path.resolve(RUN, '..', '..'), name));
+});
 
 test.reportSuccessFailureCount();

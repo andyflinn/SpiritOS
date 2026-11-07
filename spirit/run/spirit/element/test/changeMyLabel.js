@@ -74,8 +74,17 @@ function world(answer) {
   win.spirit.node = { key: 'KEY+LABEL/NODE==' };
   win.spirit.data.homeNode(win.spirit.node.key);
   if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  w.api = { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); },
-    verb: function (name, args) { w.calls.push({ name: name, args: args }); return Promise.resolve(answer(name, args)); } };
+  // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24): no api is handed. The page's spirit object stands in: its escapeHtml, its
+  // outcome as spirit.js has it, and the node family's setName, which records every call and answers as the node would
+  // (its body, or a refusal thrown with its status and body).
+  win.spirit.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
+  win.spirit.outcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
+  win.spirit.node.setName = function (args) {
+    w.calls.push({ name: 'node.setName', args: args });
+    const a = answer('node.setName', args);
+    return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
+  };
+  win.spirit.ready = Promise.resolve(win.spirit);
   w.E = win.spirit.element; w.win = win;
   return w;
 }
@@ -93,7 +102,7 @@ test.startTest('changeMyLabel.js: the node\'s name, changed');
 
   test.subHeading('the field, marked with its rule (rule/12)');
   const host = node('host');
-  const el = w.E.changeMyLabel.create(host, { api: w.api });
+  const el = w.E.changeMyLabel.create(host);
   await settle();
   const input = host.querySelector('[data-field="label"]');
   const rf = w.forms[0];
@@ -151,7 +160,7 @@ test.startTest('changeMyLabel.js: the node\'s name, changed');
   test.subHeading('a refusal is said, and the field keeps what was typed');
   const r = world(function () { return { status: 200, body: { ok: false, error: 'name reserved' } }; });
   const h2 = node('host');
-  r.E.changeMyLabel.create(h2, { api: r.api });
+  r.E.changeMyLabel.create(h2);
   await settle();
   const i2 = h2.querySelector('[data-field="label"]');
   const s2 = r.forms[0] ? r.forms[0].button : h2.querySelector('[data-label="save"]');

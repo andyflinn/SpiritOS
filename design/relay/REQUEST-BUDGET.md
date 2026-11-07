@@ -12,7 +12,7 @@ partner path below (goal/G22.6, PARTNERS.md), the Governor and
 `routeHints.js` (goal/G22.6, 113d1327), `devicePeers.js` (goal/G16.2,
 391de42b) and `peerSearch.js` (goal/G29.17, ecda00ac; the search is
 peerRank now). The contacts are rows of node.db since goal/G40.11, and
-`info.js` is `spirit/run/shell/info/info.js`. Line citations are pinned to
+`info.js` is `spirit/run/spirit/app/info/info.js`. Line citations are pinned to
 the commit they were measured at.
 
 *Design note. Nothing here is built. Feasibility and shape only, measured

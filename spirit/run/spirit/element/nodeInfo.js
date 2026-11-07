@@ -1,0 +1,131 @@
+// spirit/run/spirit/element/nodeInfo.js
+// WHAT THIS NODE SAYS ABOUT ITSELF, AN ELEMENT (goal/G43.24, requirement 6; Q2, Andy: "nodeInfo is fine."). The Info app is
+// its wrapper (spirit/app/info/info.js). Its contract and its test: ./test/nodeInfo.md and ./test/nodeInfo.js.
+//
+//   Andy: "i want an intrinsic app info, in which, for now the user can maintain both fields in this file, more to come."
+//
+//   spirit.elements.nodeInfo.create(container, { open }) -> { destroy() }
+//     open(key, spec)  the stack its mounter opens layers in (the shell's, appSelector.js): the rotate key dialog opens over
+//                      all of Info there. Without one, nodeInfo keeps a stack over itself (panel.js), as file does.
+//
+// Top down:
+//   - the two things this node answers to anybody who asks (spirit/nodeCard.js), its name and its description: the elements
+//     changeMyLabel and changeMyDescription (goal/G41.6), each holding its field rule, its check as typed and its save. The
+//     card is read with node.card and kept in the node family's cache (goal/G41.28), from which each field draws itself.
+//   - the email form above the face form (joinForm, faceForm; goal/G30.1, G40.10), each over the relays this node holds a
+//     seat on, from relay.status: only a relay where this key holds a row (claimed, or owned) and whose own key is known.
+//     Andy, 2026-10-19: "for this a little section in the info-app will be enough." and "this UI section in info will have
+//     to address ONE relay specifically." The relays are a probe of every configured mailbox and land when they land; the
+//     fields do not wait for them.
+//   - the Rotate button, a rowForm (goal/G41.27; Andy: "[🆘] [Rotate this node's cipher key]"), which opens the rotate key
+//     dialog (spirit/element/rotateKey.js) as a layer over Info through panel.js (Andy: "it's just a panel that opens
+//     exactly overtop of the calling panel, new-shell-style.", "like fstat"); its ✕ shows Info again.
+// No key is shown (goal/G40.10, box v15; Andy: "remove ANY indication of keys from all user interfaces"). Nothing ticks:
+// nothing here changes without this element asking, and a repaint while somebody types takes the cursor out of the box.
+// WHAT IT NEEDS, IT GETS ITSELF (Andy: "every fucking element gets the interfaces it needs"): the spirit object's families,
+// no api handed.
+(function () {
+  var S = window.spirit = window.spirit || {};
+  // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
+  var parts = Promise.all(['spirit/element/changeMyLabel.js', 'spirit/element/changeMyDescription.js', 'spirit/element/joinForm.js',
+    'spirit/element/faceForm.js', 'spirit/element/rowForm.js', 'spirit/element/panel.js'].map(function (p) { return S.require(p); }));
+
+  function create(container, opts) {
+    var o = opts || {};
+    var gone = false;
+    var relays = [];
+    var stack = null;
+    var made = [];
+    container.innerHTML = '';
+    var box = document.createElement('div');
+    box.className = 'fill';
+    var page = document.createElement('div');
+    page.className = 'stack';
+    page.innerHTML =
+      '<div class="stat-tile wide stack">' +
+        '<div class="label">What this node says about itself</div>' +
+        // The one thing worth saying before two boxes: these are answered to anybody who asks, which is not obvious from a
+        // form and is the whole reason to think before typing in one.
+        '<div class="job-manifest-note">Anybody who asks this node is told these two ' +
+          'things, whether or not you have ever met. Nothing else about this box is ' +
+          'answered to a stranger.</div>' +
+        '<div data-info="name"></div>' +
+        '<div data-info="description"></div>' +
+        '<div data-info="said" class="job-start-error"></div>' +
+      '</div>' +
+      '<div class="stat-tile wide" data-info="email"></div>' +
+      '<div class="stat-tile wide" data-info="face"></div>' +
+      '<div data-info="rotate"></div>';
+    box.appendChild(page);
+    container.appendChild(box);
+    function slot(name) { return page.querySelector('[data-info="' + name + '"]'); }
+    function say(text) { var s = slot('said'); if (s) s.textContent = text || ''; }
+
+    // Only the relays this node holds a seat on are offered to the two forms: a relay this node merely LISTS has no seat to
+    // apply on.
+    function seats() {
+      return relays.filter(function (row) { return row && (row.claimed || row.owned) && row.roll && row.roll.relayKey; });
+    }
+    function drawForms() {
+      if (gone) return;
+      var E = S.element;
+      if (E.joinForm) E.joinForm.mount(slot('email'), { relays: seats(), pick: 'seated', escape: S.escapeHtml });
+      if (E.faceForm) E.faceForm.mount(slot('face'), { relays: seats(), reload: loadRelays, escape: S.escapeHtml });
+    }
+    function loadRelays() {
+      return S.outcome(Promise.resolve(S.ready).then(function (s) { return s.relay.status(''); })).then(function (r) {
+        var said = (r && r.body) || {};
+        relays = Array.isArray(said.rows) ? said.rows : [];
+      }).then(function () { return parts.then(drawForms, function () { /* a form missing is not drawn */ }); });
+    }
+
+    // THE ROTATE KEY DIALOG, A LAYER OVER INFO: through the mounter's stack, or nodeInfo's own.
+    function openRotate() {
+      var into = typeof o.open === 'function' ? o.open : function (k, spec) { return stack.open(k, spec); };
+      return into('rotateKey', { icon: '🆘', label: 'Rotate this node\'s cipher key', fill: function (pane, closed) {
+        return S.require('spirit/element/rotateKey.js').then(function () {
+          if (closed()) return null;
+          return S.elements.rotateKey.create(pane, {});
+        });
+      } });
+    }
+
+    var fields = parts.then(function () {
+      if (gone) return null;
+      var E = S.element;
+      if (typeof o.open !== 'function') stack = S.elements.panel.create(box, page);
+      made.push(E.changeMyLabel.create(slot('name')));
+      made.push(E.changeMyDescription.create(slot('description')));
+      var rotate = E.rowForm.create(slot('rotate'), { icon: '🆘', button: 'Rotate this node\x27s cipher key' });
+      rotate.button.addEventListener('click', function () { openRotate(); });
+      // THE CARD IS THE NODE FAMILY'S CACHE (goal/G41.28): node.card's answer is kept in spirit.data.node.data, and each of
+      // the two fields draws itself from it.
+      return S.cacheManager('node').then(function () {
+        return S.outcome(Promise.resolve(S.ready).then(function (s) { return s.node.card({}); }));
+      }).then(function (r) {
+        if (gone) return;
+        var card = r && r.body;
+        if (!card || !card.ok) { say((card && card.error) || 'node.card did not answer'); return; }
+        S.data.node.data.card.keep(card);
+      });
+    }, function () { say('Info could not be loaded.'); });
+    // TWO CALLS, NOT ONE AWAITING THE OTHER: the card is a file on this disk and lands at once; the relays take as long as
+    // the slowest of them.
+    loadRelays();
+
+    return {
+      ready: fields,
+      destroy: function () {
+        gone = true;
+        made.forEach(function (m) { try { if (m && m.destroy) m.destroy(); } catch (e) { /* its own */ } });
+        made = [];
+        if (stack) stack.destroy();
+        stack = null;
+        container.innerHTML = '';
+      },
+    };
+  }
+
+  S.elements = S.elements || {};
+  S.elements.nodeInfo = { create: create };
+}());

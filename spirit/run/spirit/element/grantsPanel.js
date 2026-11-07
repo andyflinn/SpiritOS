@@ -6,11 +6,13 @@
 // app its jobs and its grants by job. Its contract and its test: ./test/grantsPanel.md and ./test/grantsPanel.js.
 //
 //   grantsPanel.create(host, { ids, grants, api }) -> { destroy() }
+//   grantsPanel.nodeGrants   the node's own grants table, the one the Grants app picks (below)
 //     ids     the ID table, as the contact selector takes it (G41.13, Q2): { table, key, label }
 //     grants  the grants table those IDs are granted in, as the grant list and row take it: { branch, key, label,
 //             search(text), grant(id, path) -> { ok } or { ok: false, code, error }, revoke(id, path),
 //             watch(fn(id + newline + path, row)) -> its release }
-//     api     the app's shell api
+//     api     optional: handed on to the arming buttons of the grant rows (api.armUntilElsewhere). The panel asks its
+//             verbs through the spirit object itself (goal/G43.24; Andy: "every fucking element gets the interfaces it needs")
 //   Made without its ID table or its grants table, it throws nothing and draws only a note saying what is missing: it
 //   never falls back to one caller's setting.
 //
@@ -24,10 +26,61 @@
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT USES, IT LOADS ITSELF (rule/26): through spirit.require, each element bringing its own.
-  // And the jobs family's cache manager, the servers' jobs it follows (goal/G41.28).
+  // And the jobs family's cache manager, the servers' jobs it follows (goal/G41.28), and the auth family's, which nodeGrants
+  // (below) reads.
   var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
     'spirit/element/search/grant.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
-    .concat([window.spirit.cacheManager ? window.spirit.cacheManager('jobs') : null]));
+    .concat([window.spirit.cacheManager ? window.spirit.cacheManager('jobs') : null, window.spirit.cacheManager ? window.spirit.cacheManager('auth') : null]));
+
+  // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.ready holds it,
+  // or as spirit.require binds a server's family, answering { status, body } as a list reads it.
+  function ask(name, args) {
+    var S = window.spirit;
+    var n = String(name || '');
+    var dot = n.indexOf('.');
+    var fam = n.slice(0, dot);
+    return S.outcome(Promise.resolve(S.ready).then(function (s) { return s[fam] || S.require(S.familyPath(fam)); }).then(function (f) {
+      // A dotted verb is a path into the family, as spirit.js builds it: FS.loadFile is f.FS.loadFile.
+      var at = n.slice(dot + 1).split('.');
+      var owner = f;
+      for (var i = 0; i < at.length - 1; i++) owner = owner ? owner[at[i]] : null;
+      return owner[at[at.length - 1]](args || {});
+    }));
+  }
+
+  // THE NODE'S GRANTS, AS A GRANTS TABLE (goal/G43.24, moved here from the Grants app): kept by the auth family's cache
+  // manager (spirit.data.auth.data.grants, goal/G41.28), keyed by the peer's key, labelled by whose grant it is; each grant
+  // row arrives on the auth tables' job (table grant, gone when revoked, goal/G41.14). WHO ASKS FOR A CHANGE LISTENS FOR IT
+  // (goal/G41.27): what grant and revoke send comes back through watch. The panel still knows no table of its own (Andy,
+  // G41.16: "the callers ... should boody well know how to configure the damn grantsPanel element"): a caller picks this
+  // one by name, grants: grantsPanel.nodeGrants, as the agent app hands its own.
+  function answered(a) {
+    if (a && a.status === 200) return { ok: true };
+    var b = (a && a.body) || {};
+    return { ok: false, code: String(b.code || ''), error: String(b.error || b.code || 'refused') };
+  }
+  var nodeGrants = {
+    get branch() { return window.spirit.data.auth.data.grants.branch; },
+    // watch(fn): fn(id + newline + path, row) on every grant kept or let go; answers its release.
+    watch: function (fn) { return window.spirit.data.auth.data.grants.watch(fn); },
+    key: 'key',
+    label: 'label',
+    // auth.search answers whose grant it is as name, the stream as label: a found row carries it as label too, so the
+    // panel reads one field.
+    search: function (text) {
+      return ask('auth.search', { text: String(text || '') }).then(function (a) {
+        var b = (a && a.body) || {};
+        var items = (b.items || []).map(function (i) {
+          var r = null;
+          try { r = JSON.parse(i.label); } catch (e) { r = null; }
+          return r && typeof r === 'object' && r.label === undefined && r.name !== undefined ? { key: i.key, label: JSON.stringify(Object.assign({}, r, { label: r.name })) } : i;
+        });
+        return { items: items, more: !!b.more };
+      });
+    },
+    grant: function (id, path) { return ask('auth.grant', { key: id, path: path }).then(answered); },
+    revoke: function (id, path) { return ask('auth.revoke', { key: id, path: path }).then(answered); },
+  };
 
   function create(host, config) {
     var c = config || {};
@@ -56,7 +109,7 @@
     var said = '';            // what the panel says a press did
     var saidError = false;
     var gone = false;
-    function esc(text) { return api.escapeHtml(String(text == null ? '' : text)); }
+    function esc(text) { return window.spirit.escapeHtml(String(text == null ? '' : text)); }
     function refusal(body) { return (body && (body.error || body.code)) || 'refused'; }
 
     // The owner's api tree: what serves() judges against. Through the one spirit object, spirit.tree(), which answers on
@@ -140,7 +193,7 @@
         ? Object.keys((tree && tree[family]) || {}).filter(function (v) { return v.indexOf('AGENTS') !== 0 && v.indexOf('FS.') !== 0; })
         : [p.slice(dot + 1)];
       return Promise.all(verbs.map(function (verb) {
-        return api.verb(family + '.FS.loadFile', { path: verb + '.warning.txt' }).then(function (a) {
+        return ask(family + '.FS.loadFile', { path: verb + '.warning.txt' }).then(function (a) {
           var w = a && a.body && typeof a.body.text === 'string' ? a.body.text.trim() : '';
           return w ? family + '.' + verb + ': ' + w : '';
         }, function () { return ''; });
@@ -150,7 +203,7 @@
     // A BUNDLE'S PATHS, from its branches (goal/G41.14): auth.branch's search on that bundle, each branch family.verb, or
     // the family alone for the empty verb.
     function bundlePaths(bundle) {
-      return api.verb('auth.branch', { op: 'search', text: '', bundle: Number(bundle.id) }).then(function (a) {
+      return ask('auth.branch', { op: 'search', text: '', bundle: Number(bundle.id) }).then(function (a) {
         if (a.status !== 200) throw new Error(refusal(a.body));
         if (a.body && a.body.more) say('more branches than fit one answer: only the first are granted');
         return ((a.body && a.body.items) || []).map(function (i) {
@@ -283,5 +336,5 @@
     };
   }
 
-  E.grantsPanel = { create: create };
+  E.grantsPanel = { create: create, nodeGrants: nodeGrants };
 }());

@@ -26,8 +26,8 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
 // servers (spirit/jobs.js), and every face part the node hands out (spirit/fileSystem.js).
 const INTRINSIC = [
   'process/js/fileServer',
-  'shell/apps', 'shell/grants', 'shell/icons', 'shell/info',
-  'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/rotateKey', 'shell/stats',
+  'shell/apps', 'shell/icons',
+  'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/stats',
 ];
 // An app folder (shell/<name> or process/js/<name>), or a path inside one, is intrinsic.
 // Blind to case, as every gate (goal/G41.30): Shell/Apps is shell/apps on a disc that does not tell them apart.

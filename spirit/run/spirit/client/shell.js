@@ -2524,7 +2524,7 @@
   // needs a reload to be discovered, same as you'd already expect for
   // a new process manifest.
   //
-  // The id is derived from scriptPath's own folder (for example "shell/info"), not
+  // The id is derived from scriptPath's own folder (for example "shell/jobs"), not
   // read from manifest.id — an app's manifest can no longer claim to be
   // whatever id it likes; its identity is the one fact the shell already
   // observed directly via the fs-watcher. manifest.id, if a manifest still
@@ -2622,8 +2622,8 @@
   // box's item 13: stats, apps, contacts and icons went, and asked 404).
   // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
   // introSpector (goal/G30.5; Andy, 2026-10-20: "I want an intrinsic app: introSpector").
-  // Files moved to spirit/app/file/ (goal/G43.17).
-  var INTRINSIC_APP_FOLDERS = ['jobs', 'info', 'introSpector', 'join'];
+  // Files moved to spirit/app/file/ (goal/G43.17), Info and Grants to spirit/app/ (goal/G43.24).
+  var INTRINSIC_APP_FOLDERS = ['jobs', 'introSpector', 'join'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {

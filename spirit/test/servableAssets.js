@@ -118,21 +118,24 @@ expectLoads('spirit/peerFile.js', 'spirit/peerFile.js');
 // App Builder era's refusal is gone, and an intrinsic app is fenced by the
 // commit hook, not the gate. The verdict is asked; nothing is written.
 test.subHeading('App code, manifests and app data');
-expectLoads('shell/info/info.js (app entry script)', 'shell/info/info.js');
-expectNotWritable('shell/info/info.js (an intrinsic app\'s script is core, goal/G30.21)', 'shell/info/info.js');
-expectLoads('shell/info/info.json (manifest)', 'shell/info/info.json');
-expectWritable('shell/info/info.json (manifest, goal/G14.8)', 'shell/info/info.json');
+expectLoads('shell/jobs/jobs.js (app entry script)', 'shell/jobs/jobs.js');
+expectNotWritable('shell/jobs/jobs.js (an intrinsic app\'s script is core, goal/G30.21)', 'shell/jobs/jobs.js');
+expectLoads('shell/jobs/jobs.json (manifest)', 'shell/jobs/jobs.json');
+expectWritable('shell/jobs/jobs.json (manifest, goal/G14.8)', 'shell/jobs/jobs.json');
+// An app of spirit/app/ is intrinsic by its own <name>.json (goal/G43.14), Info since goal/G43.24: its script loads and is core.
+expectLoads('spirit/app/info/info.js (app entry script)', 'spirit/app/info/info.js');
+expectNotWritable('spirit/app/info/info.js (intrinsic by its info.json, goal/G43.24)', 'spirit/app/info/info.js');
 
 // An app's own data is ordinary scoped app data, written via api.fs, and
 // must stay both readable and writable. The node's relay list is node state
 // (refused to every app); captions.json is the specimen of app data.
 //
 // SERVABLE, NOT LOADED: the gate is what this asserts, and it is a
-// question about the path. The file is gitignored (a fresh clone has
-// none — see .gitignore), so loading it would pass only on a working copy
-// that happened to hold one (WSL, 2026-09-19).
-expectServable('shell/info/captions.json (app data)', 'shell/info/captions.json');
-expectWritable('shell/info/captions.json (app data)', 'shell/info/captions.json');
+// question about the path. No such file is tracked (a fresh clone has
+// none), so loading it would pass only on a working copy that happened
+// to hold one (WSL, 2026-09-19).
+expectServable('shell/jobs/captions.json (app data)', 'shell/jobs/captions.json');
+expectWritable('shell/jobs/captions.json (app data)', 'shell/jobs/captions.json');
 
 // ---- sidecars and relay state are invisible to every generic consumer ----
 test.subHeading('Sidecars and relay-state are invisible');

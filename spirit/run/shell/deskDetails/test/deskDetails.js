@@ -566,7 +566,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   test.subHeading('goal/G41.28: the verifier\'s run reaches the dialog through spirit.data');
   const RUNNING = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: [], verified: 'none', verifyRunning: true, blocked: [] };
   const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'process/js/deskVerify' }, o2); };
-  const RUN1 = { doing: 'run', suite: 'spirit/run/shell/info/test/info.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
+  const RUN1 = { doing: 'run', suite: 'spirit/run/spirit/app/info/test/info.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
   const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
   let v = ddWorld(RUNNING, [], { real: true }); await v.open();
   ok(v.required.indexOf(VERIFY_CCM) !== -1 && !!((v.win.spirit.data || {}).deskVerify || {}).data, 'it loads the verifier\'s cache manager itself, ' + VERIFY_CCM, 'required: ' + JSON.stringify(v.required));

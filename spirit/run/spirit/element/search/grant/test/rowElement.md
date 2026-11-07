@@ -12,7 +12,7 @@ grantsPanel element"*: the row knows no table.
 `spirit.element.search.grant.rowElement.create(row, { grants, serves, api })`, `grants` the caller's configuration of one grants table:
 
 - `branch`: the data branch its grants are kept in, a whole `spirit.data` path, node/family/branch (goal/G41.28): the
-  node's grants are the auth family's cache manager's (`spirit.data.auth.data.grants.branch`, as `shell/grants/grants.js`
+  node's grants are the auth family's cache manager's (`spirit.data.auth.data.grants.branch`, as `spirit/element/grantsPanel.js`, in the Grants app,
   configures them), another table names one of its own;
 - `key`, `label`: the fields of a grant row holding its ID and whose grant it is (`key`/`label`, `job_id`/`job`);
 - `revoke(id, path)`: how a grant is revoked;

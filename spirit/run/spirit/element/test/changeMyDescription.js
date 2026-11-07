@@ -74,8 +74,17 @@ function world(answer) {
   win.spirit.node = { key: 'KEY+DESCRIPTION/NODE==' };
   win.spirit.data.homeNode(win.spirit.node.key);
   if (fs.existsSync(FILE)) vm.runInContext(fs.readFileSync(FILE, 'utf8'), win, { filename: FILE });
-  w.api = { escapeHtml: function (s) { return String(s).replace(/</g, '&lt;'); },
-    verb: function (name, args) { w.calls.push({ name: name, args: args }); return Promise.resolve(answer(name, args)); } };
+  // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24): no api is handed. The page's spirit object stands in: its escapeHtml, its
+  // outcome as spirit.js has it, and the node family's setDescription, which records every call and answers as the node would
+  // (its body, or a refusal thrown with its status and body).
+  win.spirit.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
+  win.spirit.outcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
+  win.spirit.node.setDescription = function (args) {
+    w.calls.push({ name: 'node.setDescription', args: args });
+    const a = answer('node.setDescription', args);
+    return a && a.status === 200 ? Promise.resolve(a.body) : Promise.reject({ status: (a && a.status) || 0, body: a && a.body });
+  };
+  win.spirit.ready = Promise.resolve(win.spirit);
   w.E = win.spirit.element; w.win = win;
   return w;
 }
@@ -93,7 +102,7 @@ test.startTest('changeMyDescription.js: the node\'s description, changed');
 
   test.subHeading('the field, marked with its rule (rule/12)');
   const host = node('host');
-  const el = w.E.changeMyDescription.create(host, { api: w.api });
+  const el = w.E.changeMyDescription.create(host);
   await settle();
   const input = host.querySelector('[data-field="description"]');
   const rf = w.forms[0];
@@ -147,7 +156,7 @@ test.startTest('changeMyDescription.js: the node\'s description, changed');
   test.subHeading('a refusal is said, and the field keeps what was typed');
   const r = world(function () { return { status: 200, body: { ok: false, error: 'refused here' } }; });
   const h2 = node('host');
-  r.E.changeMyDescription.create(h2, { api: r.api });
+  r.E.changeMyDescription.create(h2);
   await settle();
   const i2 = h2.querySelector('[data-field="description"]');
   const s2 = r.forms[0] ? r.forms[0].button : h2.querySelector('[data-description="save"]');

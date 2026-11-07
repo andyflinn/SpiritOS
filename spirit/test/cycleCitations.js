@@ -75,7 +75,6 @@ const TALLY = {
   'design/relay/REQUEST-BUDGET.md': 1,
   'design/relay/WHAT-A-NODE-KNOWS.md': 1,
   'design/shell/OBJECT-PRESENTATION.md': 1,
-  'spirit/run/shell/info/info.js': 1,
   'spirit/run/spirit/client/shell.js': 2,
   'spirit/run/spirit/hub.js': 9,
   'spirit/run/spirit/nodeStore.js': 2,

@@ -6,7 +6,7 @@ this node may.
 
 ## Requirements
 
-- A shell element of its own: it adds `changeMyLabel.create(host, { api })` to `window.spirit.element`, and
+- A shell element of its own: it adds `changeMyLabel.create(host)` to `window.spirit.element`, and
   answers `{ set(value), destroy() }`.
 - **It loads fieldInput itself**, through `spirit.require` (goal/G41.3).
 - **Its form is a rowForm** (goal/G41.27; Andy: *"Info app:\n\n[✏️] \"Name\" [name-input] [Save]\n\nthis might be in the
@@ -20,7 +20,7 @@ this node may.
   bubble, outside the form, and its test asserts it.
 - `set(value)` puts what the node stored in the field.
 - **Save is refused while the rule says no** (`fieldRules.problem`), and the field says why; nothing goes on the wire.
-- **Save asks the node**, `node.setName` with the field as typed, and then shows what the node stored (rule/19), says
+- **Save asks the node**, `node.setName` with the field as typed, through the spirit object itself, no api handed (goal/G43.24), and then shows what the node stored (rule/19), says
   saved, and keeps the stored name in the node card. Enter in the field saves as Save does.
 - **What it changes, it listens for** (goal/G41.28): it loads the node family's cache (`spirit.cacheManager('node')`)
   and draws the field from `spirit.data.node.data.card.watch`; a name changed in the card from elsewhere redraws the field.

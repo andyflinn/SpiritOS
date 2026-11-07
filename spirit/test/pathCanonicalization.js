@@ -133,11 +133,12 @@ function expectEverySpellingWritable(label, canonical) {
 }
 // Only core files are protected (goal/G30.21): an intrinsic app's script is core, any other app's is not.
 test.subHeading('An intrinsic app\'s script is core and unwritable, another app\'s writable, in every spelling (goal/G30.21)');
-expectEverySpellingUnwritable('shell/info/info.js (intrinsic, core)', 'shell/info/info.js');
+expectEverySpellingUnwritable('shell/jobs/jobs.js (intrinsic, core)', 'shell/jobs/jobs.js');
+expectEverySpellingUnwritable('spirit/app/info/info.js (intrinsic by its info.json, core)', 'spirit/app/info/info.js');
 expectEverySpellingWritable('shell/textEditor/textEditor.js (not intrinsic)', 'shell/textEditor/textEditor.js');
 
 test.subHeading('App manifests are writable in every spelling (goal/G14.8)');
-expectEverySpellingWritable('shell/info/info.json', 'shell/info/info.json');
+expectEverySpellingWritable('shell/jobs/jobs.json', 'shell/jobs/jobs.json');
 
 test.subHeading('Sidecars stay unwritable in every spelling');
 expectEverySpellingUnwritable('a media sidecar', 'media/001.jpg.sidecar.json');
@@ -158,7 +159,7 @@ test.subHeading('Legitimate paths still work in non-canonical spellings');
   ['spirit/./client/shell.js', 'spirit/client/shell.js'],
   // A TRACKED app file, because this check loads it: an untracked one
   // would pass only on a working copy that happened to hold it.
-  ['shell/./info/info.json', 'shell/info/info.json'],
+  ['shell/./jobs/jobs.json', 'shell/jobs/jobs.json'],
 ].forEach(function (pair) {
   const variant = pair[0];
   const canonical = pair[1];

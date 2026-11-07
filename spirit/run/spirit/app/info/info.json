@@ -1,8 +1,18 @@
 {
-  "runs": ["home"],
-  "name": "Info",
-  "description": "What this node says about itself: one name, sent to every relay you are on, and the sentence it answers to anybody who asks.",
-  "icon": "ℹ️",
-  "hidden": false,
-  "owner": "system"
+  "identity": {
+    "icon": "ℹ️",
+    "label": "Info",
+    "intrinsic": true
+  },
+  "mount": {
+    "info.js":true
+  },
+  "shell": {
+    "true":false,
+    "mount":true,
+    "tile":true
+  },
+  "node": {
+    "mount":false
+  }
 }
