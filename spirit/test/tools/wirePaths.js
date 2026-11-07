@@ -208,10 +208,10 @@ const BOTTOMS = {
 // Each door becomes a row of BOTTOMS under doorKey(), so the probe in a child process, given the same key, rebuilds the
 // same row from the same file.
 //
-// THE LIST'S HOME IS THIS ONE CONSTANT, LIST_HOME, and one in the plugin (stackFrameChecks.js, LIST_HOME): moving the
-// list is those two lines. A run started by the plugin's Run (goal/G22.3) names the list it used in SPIRIT_STACKS_LIST,
-// so the runner and every probed child read that same list, a suite's scratch list included.
-const LIST_HOME = path.join(REPO, 'spirit', 'run', 'process', 'js', 'desk', 'plugins', 'js', 'stackFrameChecks', 'stackFrameList.json');
+// THE LIST'S HOME IS THIS ONE CONSTANT, LIST_HOME: spirit/test/stackFrameList.json, kept beside the stack-frame tests since
+// goal/G43.22. A run that names another list in SPIRIT_STACKS_LIST has the runner and every probed child read that list, a
+// suite's scratch list included.
+const LIST_HOME = path.join(REPO, 'spirit', 'test', 'stackFrameList.json');
 const LIST = process.env.SPIRIT_STACKS_LIST ? path.resolve(process.env.SPIRIT_STACKS_LIST) : LIST_HOME;
 const NODE_KINDS = {
   http: { mod: 'http', fn: 'request' },

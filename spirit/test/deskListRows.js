@@ -19,9 +19,9 @@
 //   4. item.suites.add / .remove / .search: one suite row a write; a red claim with no suite row is refused, one with a
 //      suite row and no suites of its own is taken, one that carries suites is refused.
 //   5. Reopen puts the item back into design mode.
-//   6. In the code (the plugin and the commit check need a checkout to run): stackFrameChecks serves paths.add/.remove/
-//      .search and suites.add/.remove/.search, and make/update take no paths or suites; commitCheck.js looks each staged
-//      core file up with item.files.search and its grants with item.checks.search, never a bare item.checks.
+//   6. In the code (the commit check needs a checkout to run): commitCheck.js looks each staged core file up with
+//      item.files.search and its grants with item.checks.search, never a bare item.checks. (The stackFrameChecks plugin's
+//      paths/suites verbs were asserted here too; the plugin went with goal/G43.22, Andy: "removal of plugin support".)
 
 const fs = require('fs');
 const os = require('os');
@@ -164,15 +164,7 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   await stop();
 
   // ── 6. IN THE CODE ───────────────────────────────────────────────────
-  test.subHeading('6. the doors\' tables and the commit check');
-  const sfc = code('process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js');
-  const want = ['paths.add', 'paths.remove', 'paths.search', 'suites.add', 'suites.remove', 'suites.search'];
-  const missing = want.filter(function (v) { return sfc.indexOf("'stackFrameChecks." + v + "'") === -1; });
-  if (!missing.length) test.check('stackFrameChecks serves paths.add/.remove/.search and suites.add/.remove/.search');
-  else test.fail(OWED + 'stackFrameChecks lacks ' + missing.join(', '));
-  const makeReq = (/'stackFrameChecks\.make':\s*\{\s*request:\s*(\{[^}]*\})/.exec(sfc) || ['', ''])[1];
-  if (makeReq && !/paths|suites/.test(makeReq)) test.check('stackFrameChecks.make takes no paths or suites: ' + makeReq);
-  else test.fail(OWED + 'stackFrameChecks.make still takes ' + short(makeReq));
+  test.subHeading('6. the commit check');
   const cc = code('process/js/desk/commitCheck.js');
   if (/'item\.files\.search'/.test(cc) && /'item\.checks\.search'/.test(cc) && !/desk\('item\.checks',/.test(cc))
     test.check('commitCheck.js looks files up with item.files.search and grants with item.checks.search, never a bare item.checks');

@@ -87,22 +87,6 @@ module.exports = {
     // in it; the desk's log hands what came after, or the desk pushes in full.
     subscribe: { family: 'id', run: 'text?', since: 'number?' },
     unsubscribe: {},
-    // goal/G33.7: the door list as a bounded search, and one door's read (stackFrameChecks.doors went).
-    'stackFrameChecks.door': { id: 'id' },
-    'stackFrameChecks.doors.search': { text: 'text' },
-    // goal/G40.3: a door from its gate and endpoint; its paths and suites one row a write (path: the request path, or the
-    // suite's file name of spirit/test), each its own search.
-    'stackFrameChecks.make': { gate: 'id', endpoint: 'id' },
-    'stackFrameChecks.paths.add': { id: 'id', path: 'text' },
-    'stackFrameChecks.paths.remove': { id: 'id', path: 'text' },
-    'stackFrameChecks.paths.search': { id: 'id', text: 'text' },
-    'stackFrameChecks.suites.add': { id: 'id', path: 'text' },
-    'stackFrameChecks.suites.remove': { id: 'id', path: 'text' },
-    'stackFrameChecks.suites.search': { id: 'id', text: 'text' },
-    'stackFrameChecks.remove': { id: 'id' },
-    'stackFrameChecks.run': { id: 'id' },
-    'stackFrameChecks.runState': { id: 'id' },
-    'stackFrameChecks.update': { id: 'id', gate: 'id', endpoint: 'id' },
     unblock: { id: 'id', blocks: 'id' },
     // why may be '': the desk words a rejection without one.
     'work.open': {},

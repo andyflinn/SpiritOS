@@ -42,6 +42,9 @@
 // deskFake.js (a desk server in memory) with the build.
 // SINCE goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them.") the server keeps no log of lines and
 // Desk reads and records none: T6 (server) went, and T5b and T3 hold that the old lines are neither read nor recorded.
+// SINCE goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database.") there is no Team tab and no
+// group chat goal/G0: T6 (scrolling Team) went, T5b holds that goal/G0 is never asked, and his typed Team line in T3
+// went with the tab.
 
 const fs = require('fs');
 const os = require('os');
@@ -111,14 +114,16 @@ async function serverPart(scratch) {
   }
   function stop(kid) { return new Promise(function (r) { if (kid.exitCode !== null) return r(); kid.once('exit', r); kid.kill(); }); }
 
+  // The goal whose seen is read: seen.json held the group chat's (goal/G0), which the desk no longer holds (goal/G43.22).
+  test.seedDesk(state, { goal: { id: 'goal/G100', title: 'A goal to be seen' }, items: [] });
   const kid = await start();
   test.subHeading('goal/G100.6: the server never reads Desk\'s old files in shell/desk');
-  // goal/G33.7: state.get went and seen is one value per item; the group chat's (goal/G0) is what seen.json held.
-  const sn = await call('seen.get', { id: 'goal/G0' });
+  // goal/G33.7: state.get went and seen is one value per item.
+  const sn = await call('seen.get', { id: 'goal/G100' });
   const voiceFile = path.join(state, 'voice.jsonl');
   const imported = /IMPORTED/.test(JSON.stringify(sn)) || !!sn.at || fs.existsSync(voiceFile);
   if (!imported && typeof sn.at === 'string') test.check('old log, state, seen and voice files planted; the server started with none of them');
-  else test.fail(G16 + 'seen of goal/G0 ' + JSON.stringify(sn).slice(0, 80) + ', voice file ' + fs.existsSync(voiceFile));
+  else test.fail(G16 + 'seen of goal/G100 ' + JSON.stringify(sn).slice(0, 80) + ', voice file ' + fs.existsSync(voiceFile));
   const planted = ['log/log.json', 'log/log-1.json', 'log/log-2.json', 'state.json', 'seen.json', 'voice/voice.jsonl', 'voice/voice-2.jsonl'];
   const gone = planted.filter(function (f) { return !fs.existsSync(path.join(app, ...f.split('/'))); });
   if (!gone.length) test.check('and deleted none of them');
@@ -193,8 +198,6 @@ async function deskPart() {
   log.push(row('andy', 'answer', 'closed.', 'goal/G101.2'));
 
   const fake = deskFake.create(log);
-  // An agent's line in the group chat: with no seen kept yet, Desk marks it seen at load and keeps that (seen.set).
-  fake.groupChat.push({ by: 'wsl-claude', at: new Date(T0).toISOString(), text: 'an agent in the group chat', taken: '' });
   fake.backup = { lastCheck: new Date(T0 + 10 * 60000).toISOString(), lastCopy: new Date(T0 + 9 * 60000).toISOString(), lastError: '' };
   const files = {};
   const saved = [];
@@ -206,43 +209,30 @@ async function deskPart() {
   if (!doc.loaded.some(function (f) { return /^log\//.test(f) || f === 'state.json' || f === 'seen.json'; })) test.check('no log, state or seen file was read from Desk\'s folder');
   else test.fail(OWED + 'Desk still read ' + JSON.stringify(doc.loaded));
 
-  // SINCE goal/G3.10 THE ALL TAB IS THE GROUP CHAT, the chat of the desk server's standing goal goal/G0. SINCE goal/G33.4
-  // the old lines under team/chat are read no more: log.search is gone.
-  test.subHeading('T5b: the old lines are never read; the group chat is the chat of goal/G0');
-  const team = doc.getElementById('desk-team').innerHTML;
-  const groupAsks = fake.calls.filter(function (c) { return c.server === 'desk' && c.verb === 'item.chat' && (c.args || {}).id === 'goal/G0'; });
+  // SINCE goal/G33.4 the old lines under team/chat are read no more: log.search is gone. SINCE goal/G43.22 there is no
+  // group chat: the page asks nothing of goal/G0 (until then the All tab drew goal/G0's chat).
+  test.subHeading('T5b: the old lines are never read; goal/G0 is never asked');
+  const groupAsks = fake.calls.filter(function (c) { return c.server === 'desk' && (c.args || {}).id === 'goal/G0'; });
   const logAsks = fake.calls.filter(function (c) { return c.verb === 'log.search' || c.verb === 'log.add' || c.verb === 'pending.get'; });
-  if (!logAsks.length && groupAsks.length === 1 && !/TEAMLINE-/.test(team)) test.check('no log verb asked, one item.chat for goal/G0; no team/chat line is drawn under All');
-  else test.fail('goal/G33.4: ' + logAsks.length + ' log verb asks, ' + groupAsks.length + ' item.chat asks for goal/G0; a team/chat line drawn: ' + /TEAMLINE-/.test(team));
+  if (fake.calls.length && !logAsks.length && !groupAsks.length) test.check('of ' + fake.calls.length + ' desk asks, no log verb and none naming goal/G0 (goal/G43.22)');
+  else test.fail('goal/G43.22: ' + fake.calls.length + ' asks, ' + logAsks.length + ' log verb asks, ' + groupAsks.length + ' asks naming goal/G0: ' + JSON.stringify(groupAsks).slice(0, 200));
 
-  test.subHeading('T6: scrolling Team to its top reads nothing more');
-  // The pager that filled older team/chat lines went with the team box (goal/G3.10): nothing draws them.
-  const teamEl = doc.getElementById('desk-team');
-  teamEl.scrollTop = 0;
-  teamEl.fire('scroll', { target: teamEl, currentTarget: teamEl });
-  await settleLong();
-  const older = fake.calls.filter(function (c) { return c.verb === 'log.search'; });
-  if (!older.length) test.check('no search for older team/chat lines is made');
-  else test.fail(OWED + 'after scrolling to the top: ' + older.length + ' searches with before, for lines nothing draws');
-
-  test.subHeading('T3: what arrives, what he types and what Desk decides go to the server, never to files');
+  test.subHeading('T3: what arrives and what Desk decides go to the server, never to files');
   if (doc.arrive) doc.arrive({ from: 'wsl-claude', kind: 'note', text: 'ARRIVED-LINE', todo: 'goal/G101.3' }, { hash: 'arrived-1', fromKey: WSL, sentAt: new Date().toISOString() });
-  const say = doc.getElementById('desk-team-say');
-  say.value = 'TYPED-BY-ANDY';
-  doc.getElementById('desk-team-send').fire('click', { preventDefault: function () {} });
   await settleLong();
   // goal/G33.4: the page no longer hears the agents app's packets, and records nothing of them.
   const added = fake.calls.filter(function (c) { return c.verb === 'log.add'; });
   if (!doc.arrive && !added.length) test.check('no agents packet is heard, and nothing goes to log.add (goal/G33.4)');
   else test.fail('goal/G33.4: the page still hears agents packets (' + !!doc.arrive + ') or asked log.add ' + added.length + ' time(s)');
-  // NO voice.add ANY MORE (goal/G2.1 note 8): his typed line is in the log; nothing is sent to a voice file.
-  if (!fake.voice.length) test.check('nothing of his typed line went to voice.add');
+  // NO voice.add ANY MORE (goal/G2.1 note 8). His typed Team line, which this once checked, went with the Team tab
+  // (goal/G43.22); the page still sends nothing to voice.add.
+  if (!fake.voice.length) test.check('nothing went to voice.add');
   else test.fail('OWED by goal/G2.1: the page still sends voice.add ' + JSON.stringify(fake.voice));
-  // goal/G33.7: state.set went; seen goes by seen.set {id, at}, one value per item (the group chat's on goal/G0).
-  const sets = fake.calls.filter(function (c) { return c.verb === 'seen.set' && c.args && c.args.id === 'goal/G0' && typeof c.args.at === 'string'; });
+  // goal/G33.7: state.set went. The seen it kept went by seen.set on the group chat goal/G0, gone with goal/G43.22.
+  const sets = fake.calls.filter(function (c) { return c.verb === 'seen.set' && c.args && c.args.id === 'goal/G0'; });
   const stateSets = fake.calls.filter(function (c) { return c.verb === 'state.set'; });
-  if (!saved.length && sets.length && !stateSets.length) test.check('seen went by seen.set {id: goal/G0, at}; no state.set; api.fs.saveFile was never called');
-  else test.fail(OWED + 'saveFile called for ' + JSON.stringify(saved) + '; seen sets ' + sets.length + ', state sets ' + stateSets.length);
+  if (!saved.length && !sets.length && !stateSets.length) test.check('no seen.set on goal/G0; no state.set; api.fs.saveFile was never called');
+  else test.fail(OWED + 'saveFile called for ' + JSON.stringify(saved) + '; seen sets on goal/G0 ' + sets.length + ', state sets ' + stateSets.length);
 
   // The red mark for "an item closed after the check" read Andy's "closed."
   // line, and a close is a press since desk/G2.6: that mark waits on the desk

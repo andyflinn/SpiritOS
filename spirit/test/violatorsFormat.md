@@ -1,7 +1,7 @@
-# process/js/desk/plugins/js/stackFrameChecks/violators.js
+# spirit/test/violators.js
 
 A door's run as one line per violator (goal/G22.3), for the Stacks tab's run dialog. Andy, 2026-10-13: "much better,
-gimme that when i press run:". Loaded by the stackFrameChecks plugin's server half; not a plugin of its own.
+gimme that when i press run:". Kept in spirit/test/ with the stack-frame tests since goal/G43.22.
 
 ## API
 

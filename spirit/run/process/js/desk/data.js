@@ -51,7 +51,6 @@
     function keep(id, fields) { if (id) V.merge(PARTS + '/' + id, fields); }
     function sameLine(a, b) { return a && b && a.at === b.at && a.by === b.by && a.text === b.text; }
     function goalOf(f) { return f.goal === '' ? f.id : f.goal; }
-    var GROUP = 'goal/G0';
 
     // A GOAL PUSHED (goal/G33.4, the box: "when a goal becomes current, the desk pushes it whole onto every desk client";
     // since box v46 its items' facts alone): it is the current goal from now on, and its items' facts are kept. Their
@@ -59,7 +58,7 @@
     // sends, every goal, no filtering on the client side"): another goal's rows stay; the cache's limit is the sender's
     // family's cache rules to keep (above, run by appServer).
     function rowOf(o, f) {
-      if (o.verb === 'goal.whole' && goalOf(f) !== GROUP) V.set(STATE + '/current', goalOf(f));
+      if (o.verb === 'goal.whole') V.set(STATE + '/current', goalOf(f));
       V.set(ITEMS + '/' + f.id, f);
     }
 
@@ -190,7 +189,7 @@
     // A PART READ WHEN NEEDED (goal/G33.4, box v46): the answer of item.box, item.chat (its newest lines), item.checks or
     // item.files (all of them) for an item of the current goal, kept from now on beside its facts. A read of anything
     // narrower (an older page of chat, files under a folder) is not a part and is not kept.
-    // A part is kept only for an item of the goal the stream pushed (or the group chat): what the push does not keep current
+    // A part is kept only for an item of the goal the stream pushed: what the push does not keep current
     // is never kept, so a client the stream does not reach asks the desk every time and is never stale.
     function took(verb, args, answer) {
       var id = String((args && args.id) || '');
@@ -199,7 +198,7 @@
       var current = V.get(STATE + '/current');
       if (!row || !current) return;
       var g = goalOf(row);
-      if (g !== current && g !== GROUP) return;
+      if (g !== current) return;
       if (verb === 'item.box' && typeof answer.box === 'string') keep(id, { box: answer.box, version: Number(answer.version) || 0 });
       else if (verb === 'item.chat' && Array.isArray(answer.chat) && !(args && args.before)) keep(id, { chat: answer.chat, chatMore: answer.chatMore === true });
       else if (verb === 'item.checks' && Array.isArray(answer.checks)) keep(id, { checks: answer.checks });

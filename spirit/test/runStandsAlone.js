@@ -117,9 +117,9 @@ const EXEMPT = { 'spirit/buildStamp.js': ':!spirit/test' };
 // Since goal/G22.3 THE stackFrameChecks DESK PLUGIN TOO, on the same ground: Andy's box has it make items whose file
 // lists name the stack-frame suites (the rerun item's oneDoorStacks.js, each new item's stackFrameTestItems.js), which
 // is what deskVerify runs for them. It names the paths as data on a desk item and loads nothing from the folder; with
-// the folder deleted the desk and the plugin run, and those items' verifies say so.
-const EXEMPT_WHOLE = { 'process/js/deskVerify/deskVerify.js': true, 'process/js/deskVerify/deskVerify.json': true,
-  'process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js': true };
+// the folder deleted the desk and the plugin run, and those items' verifies say so. The plugin and its exemption went
+// with goal/G43.22 (Andy: "removal of plugin support").
+const EXEMPT_WHOLE = { 'process/js/deskVerify/deskVerify.js': true, 'process/js/deskVerify/deskVerify.json': true };
 
 const files = walk(RUN_DIR, []);
 

@@ -7,7 +7,7 @@
 // (oneDoorStacks.js) puts its red here, and each test asserts that its item's door exists.
 //
 // DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to loosen: the stackFrameChecks plugin keeps the doors
-// in spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameList.json, and the stack-frame test reads it to
+// in spirit/test/stackFrameList.json (since goal/G43.22; it stood in the plugin before), and the stack-frame test reads it to
 // know which checks to run. THE GATE IS NARROW, one file::function: a whole module named as the gate is cheating. THE
 // ENDPOINT IS WIDE, a whole module, or Node's own bottom (node:http+https+fetch) filtered to paths.
 //
@@ -49,7 +49,7 @@ test.startTest('goal/G22: the doors wanted of the stack-frame test, one per item
 let doors = null;
 let why = '';
 try { doors = wirePaths.doors(); } catch (e) { why = (e && e.message) || String(e); }
-if (Array.isArray(doors)) test.check('the list reads: ' + doors.length + ' door(s) in the plugin\'s stackFrameList.json');
+if (Array.isArray(doors)) test.check('the list reads: ' + doors.length + ' door(s) in spirit/test/stackFrameList.json');
 else test.fail('OWED by goal/G22.3: the list of doors does not read: ' + (why || 'wirePaths has no doors()'));
 doors = Array.isArray(doors) ? doors : [];
 

@@ -385,7 +385,7 @@ function itemFor(st, a) {
 // each write is applied to S and written through, in the same step, to exactly the rows it changed, which are then
 // pushed (goal/G33.4: "the desk pushes each changed sub-element of a goal or item ... separately"). Nothing is replayed.
 //   items    (goal, item)                  the item's own fields as JSON; a goal's row (item 0) also its goal's (design,
-//                                          members, special, plugin); special marks the group chat and plugin goals
+//                                          members, special); special marks a standing goal kept in the data
 //   chat     (goal, item, seq)             one line, with at and creator (goal/G33.4: "keyed by goal, item, timestamp and
 //                                          the writer's id"; seq keeps two lines of one millisecond apart)
 //   box      (goal, item, version)         one row per version
@@ -480,8 +480,7 @@ const addRuleChat = db.prepare('INSERT INTO rule_chat (rule, seq, at, by, creato
 
 // EVERY RULE CHANGE IS PUSHED, BOTH WAYS (goal/G5.8). Andy: "then lets have deskServer push active rules upon every
 // rule-change.", and to a repo file, an ear line, or both: "both". The active rules, grouped by type, are written to
-// rules.md in this server's state and shared into the repo as currentGoal.json is; one line by desk in the group chat
-// names the rule, so every agent's ear hears it.
+// rules.md in this server's state and shared into the repo as currentGoal.json is.
 const RULES_STATE_FILE = path.join(STATE, 'rules.md');
 const RULES_PATH = 'spirit/run/process/js/desk/rules.md';
 function rulesChanged(key, what) {
@@ -493,48 +492,13 @@ function rulesChanged(key, what) {
     }).filter(Boolean)).join('\n') + '\n';
   try { fs.writeFileSync(RULES_STATE_FILE, text); } catch (e) { console.error('desk: the rules file was not written: ' + ((e && e.message) || e)); }
   if (GOAL_SHARED && GOAL_REPO) shareFile(RULES_PATH, RULES_STATE_FILE, 'rules.md, shared by the desk (goal/G5.8)');
-  try { write('chat.add', { id: GROUP_CHAT, text: 'rule ' + key + ' ' + what + '; the active rules are in ' + RULES_PATH, by: 'desk', key: '' }); } catch (e) { /* no group chat yet */ }
 }
 
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
 const LIVE_MS = 10 * 60 * 1000;
 
-// ── THE GROUP CHAT'S ANCHOR (goal/G3.10), GOAL 0 (goal/G33.4) ─────────
-//
-//   Andy, 2026-10-02: "This looks like a perfect team chat. Is it because it has a coal/item to anchor it?",
-//   then "when deskServer Starts up, it makes sure there is a closed goal with the id 'desk/G0.0', instead of
-//   the team-chat box, the 'all' tab displays the chat box for 'desk/G0.0'", and of its box: "the description
-//   box for that chat are the 6 rules i stated a while back. the chat there may change those rules over time."
-//   goal/G33.4, in the box: "Goal 0 is the group chat (desk/G0.0 today): chat that belongs to no other goal lives
-//   there, so every chat line has a goal."
-//
-// A goal the server makes at its first start (startState), marked special: no session makes it current, it is closed,
-// so it is on no List, offers no button and is not an open goal; and it stays closed. Its chat and box are an item's.
-const GROUP_CHAT = 'goal/G0';
-
-// ── THE MOUNTED PLUGINS, AND THE GOALS THEY GOVERN (goal/G22.3) ──────
-//
-//   Andy, 2026-10-13, in the item's box: "A gg plugin is a goal-governance plugin: for its type of goal it is the first
-//   to handle every desk event, and the mechanical controls it implements live there, not in desk.js.", "desk scans its
-//   plugin folder and mounts every plugin it finds", and "On its first mount the plugin gets its own private goal with a
-//   fixed key, and from then on that goal and the plugin live hand in hand".
-//   goal/G33.4, in the box: "Each special goal (each plugin goal such as Stacks, and the group chat) has a goal number of
-//   its own, minted like any goal; its goal row marks it special." So the fixed key is the plugin's name on its goal's
-//   row (plugin), and its id is goal/G<n> like any goal's.
-//
-// Filled by mountPlugins() before the desk serves, in mount order: { name, goal, refuses, handles, verbs }. A goal of a
-// plugin is a pluggable goal/G0 (his words: "a special goal that is always open while actually closed"): the desk holds
-// it like any goal, and its plugin decides what may happen to it.
-const PLUGINS = [];
-const PLUGIN_GOAL = Object.create(null);
-// ITS TAB UNDER APPS (goal/G22.3). Andy, 2026-10-13, in the item's box: a main desk tab Apps whose inner tabs are the
-// special goals, each plugin's private UI its inner tab. Named by the tab field of its .json, short (Stacks), else its
-// label, else its name; keyed by its goal, as PLUGIN_GOAL is.
-const PLUGIN_TAB = Object.create(null);
 // Whether an id is a goal's or one of its items, by the id alone: an item's id is goal/G<n>.<m>.
 function inGoalOf(goal, id) { const g = numbersOf(goal); const x = numbersOf(id); return !!g && !!x && g[0] === x[0]; }
-// THE GOAL A PLUGIN'S NAME HAS, '' before its first mount.
-function pluginGoalOf(s, name) { return Object.keys(s.goals).filter(function (gid) { return s.goals[gid].plugin === name; })[0] || ''; }
 
 // ── S: THE STATE AS THE TABLES HOLD IT ────────────────────────────────
 // agentWord: each agent's last word about itself, listening or working (goal/G2.3), one current value (goal/G33.4).
@@ -808,17 +772,13 @@ function loadState() {
 //   scope.set and the old lines table."
 //
 // The old `records` are walked once, in order, by the same apply every write uses, and what they come to is written into
-// the tables; then records and lines are dropped and the file compacted. goal/G<n> keeps n, desk/G0.0 becomes goal 0,
-// and every goal of another area (desk/, apiAuth/, plugin/) gets the next free number, its items keeping theirs. Only
+// the tables; then records and lines are dropped and the file compacted. goal/G<n> keeps n, and every goal of another
+// area (desk/, apiAuth/) gets the next free number, its items keeping theirs. Only
 // the newest box version is kept. A rule's chat lines (rule.chat records) become rows of rule_chat.
-const OLD_GROUP_CHAT = 'desk/G0.0';
 function migrate() {
   if (!tableExists('records')) return false;
   const t0 = Date.now();
   const s = newState();
-  s.goals[OLD_GROUP_CHAT] = { id: OLD_GROUP_CHAT, design: false, abandoned: false, members: [], special: true };
-  s.items[OLD_GROUP_CHAT] = blank(OLD_GROUP_CHAT, 'Group chat', '');
-  s.items[OLD_GROUP_CHAT].closed = true;
   const item = function (id) { return s.items[id] || null; };
   const goalOf = function (id) { const it = item(id); return it ? (it.goal ? s.goals[it.id] : s.goals[it.goalId]) : null; };
   const hasKey = tableHas('records', 'key');
@@ -843,11 +803,8 @@ function migrate() {
   let top = 0;
   Object.keys(s.goals).forEach(function (gid) { const m = /^goal\/G(\d+)$/.exec(gid); if (m) top = Math.max(top, Number(m[1])); });
   Object.keys(s.goals).forEach(function (gid) {
-    if (gid === OLD_GROUP_CHAT) map[gid] = GROUP_CHAT;
-    else if (/^goal\/G\d+$/.test(gid)) map[gid] = gid;
+    if (/^goal\/G\d+$/.test(gid)) map[gid] = gid;
     else map[gid] = idOf(++top, 0);
-    const p = /^plugin\/(.+)$/.exec(gid);
-    if (p) { s.goals[gid].plugin = p[1]; s.goals[gid].special = true; }
   });
   Object.keys(s.goals).forEach(function (gid) {
     const ng = numbersOf(map[gid])[0];
@@ -908,20 +865,11 @@ function migrate() {
 // THE OLD LINES TABLE ALONE (a file that never held records) goes too.
 if (!tableExists('records') && tableExists('lines')) db.exec('DROP TABLE lines');
 
-// AT START: the migration if an old file is here, the state read, and the group chat made on a fresh desk.
+// AT START: the migration if an old file is here, then the state read.
 function startState() {
   migrate();
   S = loadState();
   suitesFromFiles();
-  if (!S.goals[GROUP_CHAT]) {
-    S.goals[GROUP_CHAT] = { id: GROUP_CHAT, design: false, abandoned: false, members: [], special: true };
-    S.items[GROUP_CHAT] = blank(GROUP_CHAT, 'Group chat', '');
-    S.items[GROUP_CHAT].closed = true;
-    db.exec('BEGIN');
-    persistItem(S, S.items[GROUP_CHAT], { n: S.change, at: new Date().toISOString(), verb: 'start', by: 'desk', key: '' }, false);
-    persistDeskState(S);
-    db.exec('COMMIT');
-  }
 }
 
 // THE SUITES TABLE'S MIGRATION (goal/G33.4, box v44-45: "existing items get their suites from today's file list"):
@@ -968,7 +916,7 @@ function shed() {
   const s = S;
   const gone = [];
   while (usedBytes() > SHED_BYTES) {
-    const open = Object.keys(s.goals).filter(function (gid) { return gid !== s.current && !s.goals[gid].special && !PLUGIN_GOAL[gid] && gid !== GROUP_CHAT; });
+    const open = Object.keys(s.goals).filter(function (gid) { return gid !== s.current && !s.goals[gid].special; });
     if (!open.length) break;
     open.sort(function (a, b) { const x = touchedAt(s, a); const y = touchedAt(s, b); return x < y ? -1 : x > y ? 1 : 0; });
     const gid = open[0];
@@ -1548,8 +1496,6 @@ function apply(s, r, b, item, goalOf) {
       const gid = String(b.minted || '');
       if (!gid) return;
       if (!s.goals[gid]) s.goals[gid] = { id: gid, design: true, abandoned: false, members: [] };
-      // A PLUGIN'S GOAL IS SPECIAL (goal/G33.4): its row names the plugin and is marked special; it is always open.
-      if (b.plugin) { s.goals[gid].plugin = String(b.plugin); s.goals[gid].special = true; s.goals[gid].design = false; }
       const gi = s.items[gid] || (s.items[gid] = blank(gid, '', ''));
       if (!gi.made) gi.made = madeBy(r);
       gi.title = String(b.title || gi.title);
@@ -1835,7 +1781,7 @@ function emptiedByPress(a) {
   if (!it) return false;
   const gid = it.goal ? it.id : it.goalId;
   const g = st.goals[gid];
-  if (!g || g.emptied || gid === GROUP_CHAT) return false;
+  if (!g || g.emptied) return false;
   const members = g.members.filter(function (id) { const m = st.items[id]; return m && !m.leftOut; });
   if (!members.length) return false;
   if (!members.every(function (id) { const m = st.items[id]; return m.done || m.closed; })) return false;
@@ -1853,22 +1799,11 @@ function emptiedByPress(a) {
 //          more of an 'visibility' issue than a process issue"); the List hides it, the dialog arms it
 //   Go all on a goal while any of its items offers Go! (desk/G3.4, Andy: "i should
 //          have a go-all button for fixing rounds")
-//   Reopen alone once closed (goal/G4.20 point 2: Reopen takes back Done as well as Close); the group chat's
-//          anchor none, as it refuses bring-back (goal/G3.10)
-// A PLUGIN'S GOAL OFFERS NO BUTTON ITS PLUGIN REFUSES (goal/G22.3): the List, the dialog and the press read this one
-// list, so a refused press is never drawn. Delete is the verb item.delete, every other button a press.
+//   Reopen alone once closed (goal/G4.20 point 2: Reopen takes back Done as well as Close)
+// The List, the dialog and the press read this one list. Delete is the verb item.delete, every other button a press.
 function buttons(s, it) {
-  const out = buttonsOf(s, it);
-  if (!PLUGINS.length) return out;
-  return out.filter(function (what) {
-    const verb = what === 'delete' ? 'item.delete' : 'press';
-    const a = what === 'delete' ? { id: it.id } : { id: it.id, what: what };
-    return !PLUGINS.some(function (p) { return !!pluginRefusal(p, verb, a); });
-  });
-}
-function buttonsOf(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
-  if (it.closed) return it.id === GROUP_CHAT ? [] : ['reopen'];
+  if (it.closed) return ['reopen'];
   if (it.done) return ['close', 'reopen'];
   const out = [];
   // A GOAL NEVER OFFERS GO! (desk/G3.7): its items are gone, not the goal itself.
@@ -1882,7 +1817,7 @@ function buttonsOf(s, it) {
   // goal is out of it offers its End design (his alone, as the goal's is), so a new item can be built.
   if (!it.goal && it.design && g && !g.design) out.push('end-design');
   // DESIGN AT ANY TIME (goal/G40.12, box v7, first set 1: "You can turn design on for an item at any time.").
-  if (!it.goal && !it.design && it.id !== GROUP_CHAT) out.push('start-design');
+  if (!it.goal && !it.design) out.push('start-design');
   if (!it.goal && !claimed && g && !g.design && !it.design && !it.went && !blockers(s, it).length) out.push('go');
   // A GOAL OFFERS DONE AT ANY TIME, AND NEVER ON A CLAIM (goal/G33.6, replacing goal/G2.10's "only when all items are
   // done"). Andy: "just in the list, a goal offers no done or closed while items are not done or closed, the goal
@@ -1909,10 +1844,8 @@ function buttonsOf(s, it) {
   // MAKE CURRENT (goal/G2.19): on an open goal that is not the current one, so the dialog draws it as it draws every
   // button. Never on an item, which has no List of its own, and never on an abandoned goal, which is invisible. A
   // closed goal returns above with Reopen alone, which is the order his words give: "re-open and ... make current goal".
-  // A PLUGIN GOAL IS NEVER THE CURRENT GOAL (goal/G27.2, D6). Andy, 2026-10-17: Stacks, like Team, is a standing scope of
-  // the desk, never the current goal, and "that current goal change must be stopped for ALL plugin-goals", in the code
-  // common to plugins, not inside one.
-  if (it.goal && g && !g.abandoned && s.current !== it.id && !PLUGIN_GOAL[it.id]) out.push('make-current');
+  // A special goal is never the current goal (goal/G27.2, D6).
+  if (it.goal && g && !g.abandoned && !g.special && s.current !== it.id) out.push('make-current');
   // PUSH GOAL (goal/G41.22; Andy: "the current goal and all its items, get a new button in the detail panel: "push
   // Goal""): offered on the current goal and each of its items; its press is the verb pushgoal, his alone.
   if (s.current && (it.id === s.current || it.goalId === s.current)) out.push('pushgoal');
@@ -1925,7 +1858,7 @@ function buttonsOf(s, it) {
   // HIS VERIFY (goal/G33.3), right next to Done (the box: "A Verify button on the item, right next to its Done
   // button"), on every open item and goal where a deskVerify answers on this node. It always tries; the answer is
   // shown on it, and holds nothing back.
-  if (hasDeskVerify() && it.id !== GROUP_CHAT) {
+  if (hasDeskVerify()) {
     const at = out.indexOf('done');
     if (at === -1) out.push('verify'); else out.splice(at + 1, 0, 'verify');
   }
@@ -2186,10 +2119,8 @@ function facts(s, it) {
     statusTone: !it.closed && !it.done && it.statusTone && it.toneWord === it.status ? it.statusTone : '',
     // goal/G33.4 (box v46): the box's version, so a client answers item.get from the facts the push brought.
     with: it.with, version: Number(it.version) || 0, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
-    // THE CODE TOGGLE, OFFERED OR NOT (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
-    // items." The dialog draws its Code toggle from this: an item (never a goal or sub-goal) whose plugin, if any, does
-    // not refuse the code press.
-    codeOffered: !it.goal && !PLUGINS.some(function (p) { return !!pluginRefusal(p, 'press', { id: it.id, what: 'code' }); }),
+    // THE CODE TOGGLE, OFFERED OR NOT (goal/G27.3): the dialog draws its Code toggle from this, on an item, never a goal.
+    codeOffered: !it.goal,
     // His Go on record (goal/G3.9): true once he pressed go or go-all on it; an agent's claim never sets it.
     go: it.go === true,
     // THE STAR IS GONE (goal/G4.20 point 8). Andy: "ha ha, the red star has no function anymore. take it out."
@@ -2248,12 +2179,8 @@ function facts(s, it) {
   if (it.goal) {
     const g = s.goals[it.id];
     const now = Date.now();
-    // THE PLUGIN THAT GOVERNS IT (goal/G22.3), by name, on a plugin's private goal alone, and the name of its inner tab
-    // under Apps (pluginTab): the face gives each plugin it finds that tab. Since Andy's Apps ruling (2026-10-13) the
-    // List draws the goal's title as plain text; "Apps replaces the label button".
-    if (PLUGIN_GOAL[it.id]) { f.plugin = PLUGIN_GOAL[it.id]; f.pluginTab = PLUGIN_TAB[it.id] || f.plugin; }
     f.design = g.design;
-    // goal/G33.4: the group chat's and every plugin's goal row is marked special, and is always open.
+    // goal/G33.4: a special goal's row is marked special.
     if (g.special) f.special = true;
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
       // goal/G24.9: delete is on offer on running items now, and offering it is not Andy being waited on.
@@ -2326,9 +2253,8 @@ function searchItems(a) {
   // its closed items ("Close makes item invisible"); an abandoned one stays invisible.
   const cur = s.current && s.items[s.current];
   const latest = !!(a.currentGoalOnly && !text && cur && cur.closed && s.goals[s.current] && !s.goals[s.current].abandoned);
-  // NO PLUGIN OR SPECIAL GOAL ON THE LIST (goal/G41.2; Andy: "plugin/special goals must never be show in the main list").
-  // A plugin reads its own goal's items by their ids (item.get), never through this search.
-  const goals = Object.keys(s.goals).filter(function (gid) { return (!a.currentGoalOnly || gid === s.current) && !PLUGIN_GOAL[gid] && !s.goals[gid].special; });
+  // NO SPECIAL GOAL ON THE LIST (goal/G41.2; Andy: "plugin/special goals must never be show in the main list").
+  const goals = Object.keys(s.goals).filter(function (gid) { return (!a.currentGoalOnly || gid === s.current) && !s.goals[gid].special; });
   goals.sort(function (x, y) { return x === s.current ? -1 : y === s.current ? 1 : 0; });
   goals.forEach(function (gid) {
     const ids = [gid].concat(a.goalsOnly ? [] : s.goals[gid].members);
@@ -2381,7 +2307,6 @@ function whyNotOffered(st, it, what, offered) {
     if (!it.goal && Object.keys(it.claims).length) return it.id + ' is claimed, so it offers Done, not Go';
   }
   if (what === 'make-current' && it.closed) return it.id + ' is closed; Reopen comes first';
-  if (what === 'make-current' && PLUGIN_GOAL[it.id]) return it.id + ' is a plugin goal, a standing scope of the desk, and is never made the current goal';
   return what + ' is not among the buttons of ' + it.id + ' now (' + (offered.length ? offered.join(', ') : 'none') + ')';
 }
 
@@ -2413,7 +2338,7 @@ function publishOne(o) {
 // appServer's streamPublisher (js/appServer.js, opts.publisher) keeps the subscribers: a deskClient subscribes as family
 // deskClient, the node's grants deciding who may; every publish goes to each of them, a line his to some agents to those
 // alone (the row's to, goal/G21.1). A new subscriber is handed the desk's bootstrap set: the current goal's row and its
-// items' rows, and the group chat's, their facts alone; everything published afterwards has a home in its data set
+// items' rows, their facts alone; everything published afterwards has a home in its data set
 // (box v8: "for the desk that may be no more than the bare goal row"). The desk never acts as a client of its clients
 // and keeps nothing from them; it follows no stream itself (box v42).
 const CLIENT_WAIT_MS = 10000;
@@ -2424,7 +2349,7 @@ const CLIENT_WAIT_MS = 10000;
 function deskBootstrap() {
   if (!S || !S.current || !S.goals[S.current]) return [];
   const rules = newestRules.all().filter(function (r) { return r.status === 'active'; }).map(function (r) { return { rule: r.key, row: ruleRow(r.key) }; });
-  const ids = [S.current].concat(S.goals[S.current].members, [GROUP_CHAT]).filter(function (id) { return !!S.items[id]; });
+  const ids = [S.current].concat(S.goals[S.current].members).filter(function (id) { return !!S.items[id]; });
   // goal/G41.12: one row each; appServer bundles what it hands.
   return rules.concat(ids.map(function (id) { return rowPublish(S, id, 'goal.whole', S.change); }));
 }
@@ -2436,8 +2361,8 @@ function rowPublish(s, id, verb, change) {
   if (inSpecialGoal(s, k)) o.special = true;
   return o;
 }
-// A ROW OF A SPECIAL GOAL (goal/G33.11): a plugin's goal, such as Stacks. Its rows say so, so a deskClient takes what
-// happens there as news, beside the current goal's. The group chat (goal 0) is in every client's view already.
+// A ROW OF A SPECIAL GOAL (goal/G33.11): its rows say so, so a deskClient takes what happens there as news, beside the
+// current goal's. Goal 0 is never one.
 function inSpecialGoal(s, k) {
   if (!k || !k[0]) return false;
   const g = s.goals[idOf(k[0], 0)];
@@ -2618,8 +2543,8 @@ function writeRuleChat(s, body, a) {
 // taken as yes); a line, a box, a claim or any other press leave it as it was. One object:
 // the two cursors as changes answers them at this moment (change, and line, 0 since the lines went with goal/G33.4),
 // the current goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts
-// as item.get gives them, its box and version, its checks and its chat lines {by, at, text}. The group chat goal/G0
-// is no item of the goal and is not in it. Written at the end of the write, after the publish, into this server's
+// as item.get gives them, its box and version, its checks and its chat lines {by, at, text}.
+// Written at the end of the write, after the publish, into this server's
 // own state folder, never the checkout; then goalShare.js commits it on the remote's master and pushes it, as a job
 // the node runs (goal/G4.21: an automation beside its owner, started through its own node's jobs.create, so Jobs
 // shows it under process/js/desk). A failure to write or to ask is said on stderr and fails no press.
@@ -2630,8 +2555,8 @@ function writeGoalFile(s, verb, a, change) {
   // switch that did not rewrite it would leave every reader, the agents and the brain, on the goal he just left.
   const his = verb === 'press' && ['go', 'go-all', 'done', 'reopen', 'close', 'make-current'].indexOf(a.what) !== -1;
   if (!his && verb !== 'session.set') return;
-  // ONLY THE CURRENT GOAL'S PRESSES (goal/G27.2, D6): a press on another goal or its items, a plugin goal's above all,
-  // leaves the file alone, so mucking about Stacks pushes no new currentGoal.json. A make-current is the switch itself.
+  // ONLY THE CURRENT GOAL'S PRESSES (goal/G27.2, D6): a press on another goal or its items leaves
+  // the file alone, so it pushes no new currentGoal.json. A make-current is the switch itself.
   const pressed = his ? s.items[String(a.id)] : null;
   if (pressed && a.what !== 'make-current' && pressed.id !== s.current && pressed.goalId !== s.current) return;
   const g = s.goals[s.current];
@@ -2711,8 +2636,8 @@ function shareFile(repoPath, fromFile, message) {
 // A goal is open while it is on the List. With none open, start-design (no id) makes goal/G<n>, n the next free.
 function newGoal(w) {
   const st = walkState();
-  // A plugin's goal is always open (goal/G22.3) and is no goal of his work: it never holds a new goal back.
-  const open = Object.keys(st.goals).some(function (gid) { const g = st.items[gid]; return g && !PLUGIN_GOAL[gid] && listed(st, g) && !g.closed; });
+  // A special goal is no goal of his work: it never holds a new goal back.
+  const open = Object.keys(st.goals).some(function (gid) { const g = st.items[gid]; return g && !st.goals[gid].special && listed(st, g) && !g.closed; });
   if (open) throw refusedWhy('bad-request', 'a goal is open already; close it before a new one starts');
   const id = nextGoalId(st);
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
@@ -2821,7 +2746,7 @@ function suitesFor(s, it) {
 // the work is scoped to the current goal (Andy, goal/G33.4), so a leftover claim in an older goal is never read.
 function waitingItems(s) {
   return Object.keys(s.items).map(function (id) { return s.items[id]; }).filter(function (m) {
-    if (!m || m.id === GROUP_CHAT || m.done || m.closed || m.leftOut) return false;
+    if (!m || m.done || m.closed || m.leftOut) return false;
     if (!s.current || !inGoalOf(s.current, m.id)) return false;
     if (m.goal) { const g = s.goals[m.id]; return !!g && !g.abandoned && g.members.length > 0 && g.members.every(function (id) { const x = s.items[id]; return x && (x.done || x.closed); }); }
     return Object.keys(m.claims).length > 0 || m.verified === true || m.status === WAITING;
@@ -2983,148 +2908,16 @@ function writerOf(caller) {
   return { by: label || caller.key, key: caller.key };
 }
 
-// ── MOUNTING THE PLUGINS (goal/G22.3) ────────────────────────────────
-//
-//   Andy, 2026-10-13, in the item's box: "Mount every plugin in desk's plugin folder, organized with the same pattern as
-//   shell apps and processes.", and "each plugin's server half at spirit/run/process/js/desk/plugins/js/<name>/<name>.js
-//   with its .json beside it".
-//
-// A plugin is the folder plugins/js/<name>/ holding <name>.js and <name>.json, as a process is process/js/<name>/: no
-// .json, no plugin. Mounted in name order, once, before the desk serves. A suite names a further folder in the
-// suite-only value pluginsMore (as it injects boxHoldMs), mounted after the desk's own.
-//
-// THE CONTRACT. <name>.js exports function (desk) -> { refuses, handles, verbs }, every part optional:
-//   refuses(verb, args, ids)        the plugin's word on a call, '' to let it pass, else why it is refused. Asked
-//                                   first, before the desk's own handler, for EVERY verb, and asked again for every
-//                                   button drawn (buttons()), so it must be quick and pure: ids are the item and goal
-//                                   ids the call names (idsOfCall).
-//   handles(verb, args, caller)     after no refusal: a reply to take the call itself, undefined to let the desk go on.
-//   verbs                           its own verbs, each named <name>.<verb>, served by the desk beside its own.
-// desk (pluginDesk) hands it its goal's key and the desk's own writes, never the database.
-// On its first mount the desk gives it its private goal, plugin/<name>, by one goal.add record written as desk; the
-// replay keeps it, so a later start finds it and mints nothing.
-const PLUGIN_DIRS = [path.join(__dirname, 'plugins', 'js')].concat(values.pluginsMore ? [path.resolve(String(values.pluginsMore))] : []);
-function pluginRefusal(p, verb, a, ids) {
-  if (typeof p.refuses !== 'function') return '';
-  return String(p.refuses(verb, a || {}, ids || idsOfCall(verb, a)) || '');
-}
-// The item and goal ids a call names: id, goal and blocks (session.set, which named many, went with goal/G33.7).
-function idsOfCall(verb, a) {
-  const out = [];
-  if (!a || typeof a !== 'object') return out;
-  ['id', 'goal', 'blocks'].forEach(function (k) { if (typeof a[k] === 'string' && a[k]) out.push(a[k]); });
-  return out;
-}
-// What a plugin is handed: its name and goal, and the desk's own writes and rules. write is the desk's write as the desk
-// itself (as the limbo line is written); writeAs writes as the caller the door forwarded. A check given to either runs
-// against the state as it stands, and may set fields of the body it was given before the record is kept (minted).
-// SINCE goal/G22.3's "RUN the show" (Andy, 2026-10-13): stateDir, the plugin's own folder under the desk's --state
-// (plugins/<name>/, never in git, as desk.db is not: D5 above), and publish(data), which says data on the desk's stream
-// as { plugin: <name>, data }: no change, no item, no rows, so the face's List never paints it, and only the plugin's
-// own UI, which subscribes itself, reads it.
-function pluginDesk(name, manifest, goal) {
-  return {
-    name: name, goal: goal, manifest: manifest,
-    stateDir: path.join(STATE, 'plugins', name),
-    publish: function (data) { return appServer.publish({ plugin: name, data: data }); },
-    state: walkState,
-    inGoal: function (id) { return inGoalOf(goal, id); },
-    write: function (verb, body, check) { body.by = 'desk'; body.key = ''; return write(verb, body, check); },
-    writeAs: function (verb, body, caller, check) { const w = writerOf(caller); body.by = w.by; body.key = w.key; return write(verb, body, check); },
-    writerOf: writerOf,
-    refused: refusedWhy,
-    fieldRules: require('../../../spirit/fieldRules.js'),
-    fieldWhy: fieldWhy,
-    nextItemId: nextItemId,
-    // goal/G33.4: an id written before the ids became numbers (plugin/<name>.<n>, as a plugin's own list may still hold
-    // it) read as this goal's: goal/G<k>.<n>. Any other id comes back as it is.
-    idOf: function (id) { const m = /^plugin\/([^.]+)(?:\.(\d+))?$/.exec(String(id || '')); return m && m[1] === name ? (m[2] ? goal + '.' + m[2] : goal) : String(id || ''); },
-    // SINCE goal/G22.3 (Andy, 2026-10-13: "every run here should report to deskVerify."): one verb of this node's
-    // deskVerify, by its verbs on the node's flat apiDoor, as lookForDeskVerify asks the node; only a port its own node named,
-    // never the kernel default (goal/G8.3). Resolves deskVerify's answer, rejects with its why.
-    verify: askDeskVerify,
-  };
-}
-function mountPlugins() {
-  const seen = Object.create(null);
-  PLUGIN_DIRS.forEach(function (dir) {
-    let names = [];
-    try { names = fs.readdirSync(dir).sort(); } catch (e) { return; }
-    names.forEach(function (name) {
-      const js = path.join(dir, name, name + '.js');
-      const json = path.join(dir, name, name + '.json');
-      if (seen[name] || !/^[A-Za-z][A-Za-z0-9_-]{0,47}$/.test(name) || !fs.existsSync(js) || !fs.existsSync(json)) return;
-      let manifest = null;
-      try { manifest = JSON.parse(fs.readFileSync(json, 'utf8')); } catch (e) { console.error('desk: plugin ' + name + ': its .json does not parse; not mounted'); return; }
-      seen[name] = true;
-      try {
-        // ITS PRIVATE GOAL, ON ITS FIRST MOUNT: the next goal number, the title its manifest gives, its row naming the
-        // plugin and marked special (goal/G33.4); a later mount finds it by that name.
-        let goal = pluginGoalOf(walkState(), name);
-        if (!goal) {
-          const args = { title: String((manifest && (manifest.goal || manifest.label)) || name), plugin: name, by: 'desk', key: '' };
-          write('goal.add', args, function (st) { args.minted = nextGoalId(st); args.rules = autoAttachKeys(); });
-          goal = args.minted;
-        }
-        PLUGIN_GOAL[goal] = name;
-        PLUGIN_TAB[goal] = String((manifest && (manifest.tab || manifest.label)) || name).slice(0, 32);
-        const made = require(js)(pluginDesk(name, manifest, goal)) || {};
-        const verbs = made.verbs && typeof made.verbs === 'object' ? made.verbs : {};
-        Object.keys(verbs).forEach(function (v) { if (v.indexOf(name + '.') !== 0) throw new Error('its verb ' + v + ' is not named ' + name + '.<verb>'); });
-        PLUGINS.push({ name: name, goal: goal, refuses: made.refuses, handles: made.handles, verbs: verbs });
-      } catch (e) {
-        console.error('desk: plugin ' + name + ' was not mounted: ' + ((e && e.message) || e));
-      }
-    });
-  });
-}
-// EVERY VERB SEEN FIRST BY THE PLUGINS (goal/G22.3), in mount order: a refusal names the plugin and its goal, and is
-// the desk's not-offered with its why, as every refused press is; a plugin that takes the call answers it. Then the
-// desk's own handler. The plugins' verbs join the table; one that would shadow a desk verb stops the start.
 // HIS LINES JOINED TO A PHASE HOLDER'S ANSWERS (goal/G29.10, point 2) WENT WITH goal/G33.7. Andy: "why? my lines are
 // streamed to deskClient without any further assistance", and "the desk should answer what it was asked. period.
 // don't get fancy, it always backfires." Every verb answers what it was asked; his lines reach the agent on the stream.
-function withPlugins(verbs) {
-  const all = {};
-  Object.keys(verbs).forEach(function (verb) {
-    const v = verbs[verb];
-    all[verb] = Object.assign({}, v, { handler: function (a, caller) {
-      // A PLUGIN'S GOAL BY ITS FIXED KEY (goal/G22.3: "its own private goal with a fixed key"): since goal/G33.4 the goal
-      // is numbered, and plugin/<name> (or plugin/<name>.<n>, one of its items) names it still, so the page finds a
-      // plugin's goal by the plugin's name.
-      if (a && typeof a === 'object') {
-        ['id', 'goal', 'blocks'].forEach(function (k) {
-          if (typeof a[k] !== 'string') return;
-          const m = /^plugin\/([^.]+)(?:\.(\d+))?$/.exec(a[k]);
-          const gid = m ? Object.keys(PLUGIN_GOAL).filter(function (g) { return PLUGIN_GOAL[g] === m[1]; })[0] : '';
-          if (gid) { a = Object.assign({}, a); a[k] = m[2] ? gid + '.' + m[2] : gid; }
-        });
-      }
-      const ids = idsOfCall(verb, a);
-      for (const p of PLUGINS) {
-        const no = pluginRefusal(p, verb, a, ids);
-        if (no) throw refusedWhy('not-offered', 'the ' + p.name + ' plugin governs ' + p.goal + ': ' + no);
-        const took = typeof p.handles === 'function' ? p.handles(verb, a, caller) : undefined;
-        if (took !== undefined) return took;
-      }
-      return caller === undefined ? v.handler(a) : v.handler(a, caller);
-    } });
-  });
-  PLUGINS.forEach(function (p) {
-    Object.keys(p.verbs).forEach(function (v) {
-      if (all[v]) throw new Error('desk: plugin ' + p.name + ' declares ' + v + ', which the desk has already');
-      all[v] = p.verbs[v];
-    });
-  });
-  return all;
-}
-// AT START (goal/G33.4): the state read from its tables (the migration first, once), the plugins mounted, the database
-// shed to its size; the current goal is pushed whole once the desk serves (below).
+
+// AT START (goal/G33.4): the state read from its tables (the migration first, once), the database shed to its size; the
+// current goal is pushed whole once the desk serves (below).
 startState();
-mountPlugins();
 shed();
 
-appServer.serve(withPlugins({
+appServer.serve({
   // log.add, log.search AND pending.get WENT WITH goal/G33.4 (Andy: "log.add, log.search and pending.get: delete
   // them."): the old lines table they read and wrote was dumped at the migration. Do not bring them back.
   // changes WENT WITH goal/G33.4 (Andy, on it: "isn't that what this item does? implement the push/broadcast concept?"):
@@ -3261,9 +3054,9 @@ appServer.serve(withPlugins({
       return { chat: chat, chatMore: chat.length < it.chat.length };
     },
   },
-  // A SEARCH ON AN ITEM'S CHAT LINES (goal/G3.11), for the agents. Andy: "a search on the chat lines of
-  // 'desk/G0.0'", "with time boundaries etc.... just for you agents", then "why dont you generalize the search so
-  // you can do it to the chat lines for any item in desk?" — so id names the item, the group chat among them.
+  // A SEARCH ON AN ITEM'S CHAT LINES (goal/G3.11), for the agents. Andy: "with time boundaries etc.... just for you
+  // agents", then "why dont you generalize the search so you can do it to the chat lines for any item in desk?" — so
+  // id names the item.
   // The filters are the four he asked wsl-claude to name: text (found in the line, whatever the case), by (who
   // wrote it), since (from that time on), before (earlier than that time); one left empty filters nothing.
   // The newest lines that match, through the same bucket, in half an answer (SEARCH_ROOM). NOTHING PAGES AND
@@ -3359,9 +3152,8 @@ appServer.serve(withPlugins({
         if (!st.goals[gid] || !st.items[gid]) throw refused('no-such-item');
         // AN AGENT ADDS UNDER HIS WORDS (goal/G29.21), decided by Andy: see addGrantOf.
         if (w.by !== 'andy' && !(st.addGrant && st.addGrantGoal === gid)) throw refusedWhy('not-granted', 'an agent adds an item only while Andy\'s newest line, written in this goal, says "add item" (one) or "add items" (several); propose it to him instead');
-        // A NEW ITEM IS CODE (goal/G29.21), unless its plugin refuses the code press (a vision item). Carried in the
-        // record, so the items added before this replay as they were.
-        args.code = !PLUGINS.some(function (p) { return !!pluginRefusal(p, 'press', { id: gid, what: 'code' }); });
+        // A NEW ITEM IS CODE (goal/G29.21). Carried in the record, so the items added before this replay as they were.
+        args.code = true;
         if (args.blocks) {
           const b = st.items[args.blocks];
           // Its own goal, or one of that goal's items: an item never blocks across goals.
@@ -4113,7 +3905,7 @@ appServer.serve(withPlugins({
   },
   // state.get and state.set WENT WITH goal/G33.7 (the approved verb list: nothing calls them).
   // SEEN, ONE ROW PER ITEM (goal/G33.7, the approved list: "one row per item, not one growing document"): the arrival
-  // time of the newest thing he has looked at under the item (the group chat's is goal/G0's), kept in the item's row.
+  // time of the newest thing he has looked at under the item, kept in the item's row.
   'seen.get': {
     request: { id: '' }, reply: { at: '' },
     handler: function (a) { return { at: String(itemFor(walkState(), a).seenAt || '') }; },
@@ -4132,8 +3924,7 @@ appServer.serve(withPlugins({
       return { change: write('seen.set', { id: it.id, at: String(a.at), by: w.by, key: w.key }).change };
     },
   },
-// goal/G22.3: the table closes here, and withPlugins hands every verb of it to the plugins first.
-}),
+},
 
 // ── THE DESK'S OWN REFUSALS (goal/G16.11) ───────────────────────────
 //
@@ -4183,8 +3974,6 @@ function pressCheck(a) {
     // without 'go' on record", "the actual contract is consumed between 'go' and 'done'". It replaces
     // goal/G2.13's "a claim consumes the Go" for that case. A goal takes the press as before (goal/G2.10).
     if (a.what === 'claim-done' && !it.goal && !it.go) throw notOffered('no Go is on record for ' + it.id + ', so nothing is claimable');
-    // The group chat's anchor stays closed (goal/G3.10): nobody brings it back onto the List.
-    if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw notOffered('the group chat never comes back onto the List');
   };
 }
 

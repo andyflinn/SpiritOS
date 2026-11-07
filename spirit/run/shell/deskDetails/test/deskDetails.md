@@ -78,8 +78,8 @@ vertically"*.
   - Its **left** tools are today's panels, `DD_PANELS`, each by its key and glyph, in order. A left icon shows that
     panel in the left pane.
   - Its **right** side has no tool: it is blank until a desk plugin app gives it one.
-  - Its **centre** is the chat: the chat search (`dd-chat-find`) on top, the lines (`dd-chat`), the input (`dd-say`) at
-    the bottom.
+  - Its **centre** is the chat: the lines (`dd-chat`), the input (`dd-say`) at the bottom. No chat search since goal/G43.22
+    (Andy: *"take out the chat-search do, it's not actually usable."*).
 - **The button row** (`dd-name-row`) stands above the workBench, outside it, the whole width.
 - **The input** resizes up and down only (`resize: vertical`).
 - **Newest at the bottom**: the lines read oldest to newest, top to bottom. A new line from the stream goes in at the
@@ -113,7 +113,7 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 - An appHeader left; the title bar missing the id, the title or the status.
 - No workBench, or two; a panel missing from the left strip, or out of order; a tool on the right.
 - The button row inside the workBench, or below it.
-- The chat, its search or its input outside the centre, or out of order; an input that resizes sideways.
+- The chat or its input outside the centre, or out of order; a chat search drawn after all; an input that resizes sideways.
 - The newest line on top; a new line put in on top; a chat not scrolled to its newest line; a line drawn again.
 - In the browser: a chat stopped short of its end, the newest line cut off; a left pane empty at open; a box a third of
   its pane; a list as tall as nothing, cut off unseen, or the pane scrolling instead of the list; grant buttons that
@@ -162,7 +162,7 @@ object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept 
 
 ## goal/G43.3: the box panel, who asked, the rules panel
 
-- *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers, the panel has a search field, and a word typed there marks its match in the text on screen and puts it in view. No server is asked. Going into the box takes it, and leaving it changed writes his text on the version it read, as the textarea did.
+- *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers. Since goal/G43.22 there is no search field beside it (Andy: *"take out your search of the items text, the codeMirror search works better for editing purposes."*). No server is asked. Going into the box takes it, and leaving it changed writes his text on the version it read, as the textarea did.
 - *"above the box i want to see the the last-stored version number of the box."* The version the desk answered stands above the box.
 - *"red Q's should indicate who posted them."* The Qs panel shows the question and who placed it.
 - *"when i add a rule to an item or goal, it will not immediately display in the rule-list."* With the rules panel open on an item or a goal, a row naming a new rule shows it at once, with no read asked.

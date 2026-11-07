@@ -85,18 +85,7 @@ window.boxView = function () {
     out.above = above;
     var find = Array.prototype.filter.call(panel.querySelectorAll('input'), function (i) { return !box.contains(i) && i.getClientRects().length; })[0];
     out.find = !!find;
-    if (!find) return JSON.stringify(out);
-    find.value = 'needle';
-    find.dispatchEvent(new Event('input', { bubbles: true }));
-    return wait(800).then(function () {
-      var marks = panel.querySelectorAll('.text-view-match');
-      out.marks = marks.length;
-      var box2 = rect(box);
-      var m = marks.length ? rect(marks[0]) : null;
-      out.markShown = !!m && m.top >= box2.top && m.bottom <= box2.bottom;
-      out.markText = marks.length ? marks[0].textContent : '';
-      return JSON.stringify(out);
-    });
+    return JSON.stringify(out);
   });
 };
 // The take on that box, as he goes in and out of it: going in takes it, leaving with a change writes it.

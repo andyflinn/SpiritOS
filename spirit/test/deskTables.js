@@ -12,8 +12,10 @@
 //   - The desk keeps state only: the log of writes goes. An agent's listening or working is one current value per
 //     agent, never a row per word.
 //   - Design mode on goal AND item level; a new item always arrives in design mode.
-//   - Goal 0 is the group chat. Each special goal (a plugin's, the group chat) has a goal number of its own, its goal
-//     row marks it special, and it is always open.
+//   - Goal 0 was the group chat. Each special goal (a plugin's, the group chat) had a goal number of its own, its goal
+//     row marked special, always open. SINCE goal/G43.22 the desk makes neither (Andy, the box, Q5: "G0 goes, from ui and
+//     server, kept in database."; "the apps and plugin system goes."): a fresh desk holds no goal 0 and no special goal,
+//     and a special goal kept in a database is still never shed.
 //   - Migration, once: each id string becomes its two numbers; records with no goal or item (agent.state, scope.set,
 //     the old lines table) are dumped.
 //   - The desk database sheds by itself past one constant (16 MB): whole goals, the one untouched the longest first,
@@ -38,7 +40,7 @@
 // OPEN SHAPES, asserted by their outcome only:
 //   - how the desk learns that a client was away: asserted on the one case the desk itself sees, its own restart, after
 //     which every client is one that was away.
-//   - the group chat's id string: goal/G0, goal/G0.0 and desk/G0.0 are tried; its rows must be goal 0.
+//   - the group chat's id string: goal/G0, goal/G0.0 and desk/G0.0 are tried; since goal/G43.22 each must be refused.
 // NOT ASSERTED HERE, OWED ELSEWHERE:
 //   - the client data set's own bound (about 132 MB, one SpiritOS-wide constant, culling its oldest entries) is a
 //     shell-wide feature of spirit.data, managed by no app and no server: it needs its own item.
@@ -352,36 +354,32 @@ async function freshDesk() {
   if (took(go) && fx1 && fx1.design === false && fy1 && fy1.design === true && (fy1.buttons || []).indexOf('go') === -1) test.check('one item ends its design and goes while the other of the goal stays in design, with no Go');
   else test.fail(OWED + 'the go answered ' + short(go.body) + '; the built item reads design ' + short(fx1 && fx1.design) + ', the other design ' + short(fy1 && fy1.design) + ' and buttons ' + short(fy1 && fy1.buttons));
 
-  test.subHeading('4. goal 0 is the group chat; special goals have numbers of their own and stay open');
-  let groupAt = '';
+  // UNTIL goal/G43.22 goal 0 was the group chat and each plugin had a special goal with a number of its own. Andy, the
+  // box of goal/G43.22, Q5: "G0 goes, from ui and server, kept in database."; and "the apps and plugin system goes."
+  test.subHeading('4. no group chat and no plugin goal: a fresh desk makes no goal 0 and no special goal (goal/G43.22)');
+  const groupTook = [];
   for (const id of ['goal/G0', 'goal/G0.0', 'desk/G0.0']) {
     const r = await A.call('chat.add', { id: id, text: 'TABLES-GROUP-LINE' }, ANDY);
-    if (took(r)) { groupAt = id; break; }
+    if (took(r)) groupTook.push(id);
   }
   const group = withDb(A, function (db) {
     const t = tablesOf(db);
     const chat = roleTable(t, 'chat');
     const items = roleTable(t, 'items');
     return { chat: chat ? db.prepare('SELECT * FROM ' + q(chat.name) + ' WHERE ' + q(chat.goal) + ' = 0').all() : null,
-      zero: items ? rowsAt(db, items, 0, 0) : null, special: items ? items.special : '' };
+      zero: items ? rowsAt(db, items, 0, 0) : null, special: items ? items.special : '',
+      specials: items && items.special ? Number(db.prepare('SELECT COUNT(*) AS c FROM ' + q(items.name) + ' WHERE ' + q(items.special) + ' <> 0').get().c) : null,
+      goalRows: items ? Number(db.prepare('SELECT COUNT(*) AS c FROM ' + q(items.name) + ' WHERE ' + q(items.item) + ' = 0').get().c) : null };
   });
-  const inZero = group && Array.isArray(group.chat) && group.chat.some(function (r) { return JSON.stringify(r).indexOf('TABLES-GROUP-LINE') !== -1; });
-  if (groupAt && inZero) test.check('a line in the group chat is a chat row of goal 0');
-  else test.fail(OWED + 'the group chat line went to ' + short(groupAt || 'no id taken') + '; goal 0\'s chat rows are ' + short(group && (group.error || group.chat)));
-  if (group && group.special && Array.isArray(group.zero) && group.zero.length === 1 && group.zero[0][group.special]) test.check('goal 0\'s row is marked special');
-  else test.fail(OWED + 'goal 0\'s row reads ' + short(group && (group.error || group.zero)) + (group && group.special ? '' : ' (no special column)'));
+  if (!groupTook.length && group && Array.isArray(group.chat) && !group.chat.length) test.check('a line to goal/G0, goal/G0.0 or desk/G0.0 is refused, and no chat row of goal 0 is written');
+  else test.fail('goal/G43.22: the group chat line was taken by ' + short(groupTook) + '; goal 0\'s chat rows are ' + short(group && (group.error || group.chat)));
+  // The desk holds goals of its own by now (sections 1 to 3), so an empty count below is not an empty table.
+  if (group && Array.isArray(group.zero) && !group.zero.length && group.special && group.specials === 0 && group.goalRows > 0) test.check('the fresh desk holds ' + group.goalRows + ' goal row(s), none of them goal 0 and none marked special');
+  else test.fail('goal/G43.22: goal 0\'s rows read ' + short(group && (group.error || group.zero)) + ', rows marked special ' + short(group && group.specials) + (group && group.special ? '' : ' (no special column)') + ', goal rows ' + short(group && group.goalRows));
   const goals = await A.search({ goalsOnly: true, includeClosed: true });
-  const plugins = goals.filter(function (x) { return x && x.plugin; });
-  const badIds = plugins.filter(function (x) { const n = numbersOf(x.id); return !n || n[0] === 0 || n[1] !== 0; }).map(function (x) { return x.id; });
-  if (plugins.length && !badIds.length) test.check('each plugin goal has a goal number of its own: goal/G<n>, n not 0');
-  else test.fail(OWED + 'the plugin goals read ' + short(plugins.length ? badIds : 'none found'));
-  const closedSpecial = plugins.filter(function (x) { return x.status === 'closed'; }).map(function (x) { return x.id; });
-  const specialRows = withDb(A, function (db) {
-    const items = roleTable(tablesOf(db), 'items');
-    return items && items.special ? plugins.map(function (x) { const n = numbersOf(x.id); return n ? rowsAt(db, items, n[0], 0).filter(function (r) { return r[items.special]; }).length : 0; }) : null;
-  });
-  if (plugins.length && !closedSpecial.length && Array.isArray(specialRows) && specialRows.every(function (k) { return k === 1; })) test.check('each plugin goal\'s row is marked special, and it stays open');
-  else test.fail(OWED + 'plugin goals closed: ' + short(closedSpecial) + '; their special rows ' + short(specialRows));
+  const plugins = goals.filter(function (x) { return x && (x.plugin || x.special); }).map(function (x) { return x.id; });
+  if (goals.length && !plugins.length) test.check('of the ' + goals.length + ' goals the desk answers, none is a plugin\'s or special');
+  else test.fail('goal/G43.22: the goals answered ' + short(goals.length ? plugins : 'none'));
 
   test.subHeading('8. push: each changed row on its own under PAYLOAD_MAX, a box past its bound refused, a current goal whole');
   let n0 = published.length;
@@ -473,7 +471,7 @@ async function migration() {
     let all = '';
     Object.keys(t).forEach(function (k) { db.prepare('SELECT * FROM ' + q(k)).all().forEach(function (r) { all += JSON.stringify(r) + '\n'; }); });
     return { names: Object.keys(t), goal: at('items', 7, 0), one: at('items', 7, 1), two: at('items', 7, 2), box: at('box', 7, 1), chat: at('chat', 7, 1),
-      group: at('chat', 0, 0), checks: at('checks', 7, 1), files: at('files', 7, 1), claims: at('claims', 7, 2),
+      group: at('chat', 0, 0), zero: at('items', 0, 0), checks: at('checks', 7, 1), files: at('files', 7, 1), claims: at('claims', 7, 2),
       // goal/G33.4 (box v44-45): the suites table, its migration seeded from the file list's spirit/test/ entries.
       suites: (function () { try { return db.prepare('SELECT path FROM suites WHERE goal = 7 AND item = 1').all().map(function (r) { return r.path; }); } catch (e) { return null; } }()),
       typed: items ? db.prepare('SELECT typeof(' + q(items.goal) + ') AS g, typeof(' + q(items.item) + ') AS i FROM ' + q(items.name) + ' WHERE ' + q(items.goal) + ' = 7 AND ' + q(items.item) + ' = 1').get() : null,
@@ -489,8 +487,10 @@ async function migration() {
   if (len(seen.box) >= 1 && boxText.indexOf('MIGRATED-BOX-V3') !== -1) test.check('the newest box version is a row of (7, 1)');
   else test.fail(OWED + 'the box rows of (7, 1) are ' + short(seen.box));
   const chatText = JSON.stringify(seen.chat || []);
-  if (chatText.indexOf('MIGRATED-ANDY-LINE') !== -1 && chatText.indexOf('MIGRATED-AGENT-LINE') !== -1 && JSON.stringify(seen.group || []).indexOf('MIGRATED-GROUP-LINE') !== -1) test.check('the chat lines kept their item, the group chat\'s went to goal 0');
-  else test.fail(OWED + 'the chat rows of (7, 1) are ' + short(seen.chat) + '; of goal 0 ' + short(seen.group));
+  // goal/G43.22: the old group chat desk/G0.0 is no goal of the desk any more, so its line makes no goal 0 (until then it
+  // went to goal 0, the group chat; Andy: "G0 goes, from ui and server, kept in database.").
+  if (chatText.indexOf('MIGRATED-ANDY-LINE') !== -1 && chatText.indexOf('MIGRATED-AGENT-LINE') !== -1 && len(seen.group) === 0 && len(seen.zero) === 0) test.check('the chat lines kept their item; the old group chat\'s line made no goal 0');
+  else test.fail(OWED + 'the chat rows of (7, 1) are ' + short(seen.chat) + '; of goal 0 ' + short(seen.group) + ', its goal row ' + short(seen.zero));
   if (len(seen.checks) >= 1 && len(seen.files) >= 1 && len(seen.claims) >= 1) test.check('the Q, the file and the claim kept their items');
   else test.fail(OWED + 'checks ' + short(seen.checks) + ', files ' + short(seen.files) + ', claims ' + short(seen.claims));
   if (Array.isArray(seen.suites) && seen.suites.join() === 'spirit/test/deskTables.js') test.check('goal/G7.1\'s suites table holds the spirit/test/ entry of its file list, and nothing else (goal/G33.4, box v44-45)');
@@ -579,23 +579,30 @@ async function shedding() {
   if (aThere && bGone) test.check('goal A, touched since, stays: shedding stops once one goal is enough');
   else test.fail(OWED + 'A ' + (aThere ? 'stays' : 'is gone') + ', B ' + (bGone ? 'is gone' : 'stays'));
   await X.stop();
-  // A bound nothing fits under: every goal but the current one and the special ones goes.
+  // A bound nothing fits under: every goal but the current one and the special ones goes. SINCE goal/G43.22 the desk
+  // makes no special goal (no group chat, no plugin goal), but one kept in a database stays (Andy: "G0 goes, from ui and
+  // server, kept in database."): so the old group chat's goal row is planted as such a database keeps it, goal 0, special.
+  const planted = (function () {
+    const db = new DatabaseSync(X.db);
+    try {
+      db.prepare('INSERT INTO items (goal, item, creator, special, at, data, change) VALUES (0, 0, ?, 1, ?, ?, 0)').run('desk', '2026-10-01T00:00:00.000Z',
+        JSON.stringify({ title: 'Group chat', closed: true, goalState: { design: false, abandoned: false, members: [], special: true } }));
+      return true;
+    } catch (e) { return 'the special goal could not be planted: ' + e.message; } finally { db.close(); }
+  }());
+  if (planted !== true) { test.fail('the world: ' + planted); return; }
   if (!await X.start({ shedBytes: 1 })) { test.fail(OWED + 'the desk did not start with shedBytes 1: ' + short(X.err)); return; }
-  const before = await X.search({ goalsOnly: true, includeClosed: true });
-  const specials = before.filter(function (x) { return x && x.plugin; }).map(function (x) { return x.id; });
   await X.call('chat.add', { id: C.iid, text: 'a write past every bound' }, ANDY);
   let aGone = false;
   for (let k = 0; k < 25 && !aGone; k++) { await sleep(200); aGone = !(await X.facts(A.gid)); }
   const box = await X.call('item.box', { id: C.iid }, ANDY);
-  const left = await X.search({ goalsOnly: true, includeClosed: true });
-  const specialsLeft = specials.filter(function (id) { return left.some(function (x) { return x.id === id; }); });
   const zero = rowsOfGoal(X, 0);
   if (aGone && rowsOfGoal(X, an) === 0) test.check('with a bound nothing fits under, goal A goes too');
   else test.fail(OWED + 'with shedBytes 1 goal A ' + (aGone ? 'is gone from the verbs but holds ' + short(rowsOfGoal(X, an)) + ' rows' : 'is still there'));
   if (took(box) && box.body.version === VERSIONS / 2 && rowsOfGoal(X, cn) > 0) test.check('the current goal is never shed, past the bound or not');
   else test.fail(OWED + 'the current goal\'s item answered version ' + short(box.body && box.body.version) + ', its rows ' + short(rowsOfGoal(X, cn)));
-  if (specials.length && specialsLeft.length === specials.length && typeof zero === 'number' && zero > 0) test.check('the special goals are exempt: every plugin goal and goal 0 stay');
-  else test.fail(OWED + 'special goals before ' + short(specials) + ', after ' + short(specialsLeft) + '; rows of goal 0 ' + short(zero));
+  if (aGone && typeof zero === 'number' && zero > 0) test.check('the special goal kept in the database is exempt: goal A went, goal 0 stays (' + zero + ' row(s))');
+  else test.fail(OWED + 'with shedBytes 1 goal A ' + (aGone ? 'went' : 'stayed') + '; rows of the planted special goal 0 ' + short(zero));
   await X.stop();
 }
 

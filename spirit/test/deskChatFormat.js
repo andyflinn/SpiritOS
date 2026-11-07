@@ -12,9 +12,12 @@
 //
 // THE CONTRACT (wsl-claude's, for claude-windows' build): the drawn markup
 // of every chat, not a helper's name (claude-windows plans one shared
-// formatter). Every chat: the dialog's (deskDetails), and Desk's Team (All),
-// an agent's tab, and Musings. A time is the local HH:MM (this suite runs
-// with TZ=UTC). What is drawn is still escaped: text is never markup.
+// formatter). Every chat: the dialog's (deskDetails). Desk's Team (All) and
+// an agent's tab were judged too until the Team tab and its group chat
+// goal/G0 went with goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and
+// server, kept in database."); Musings went with goal/G27.3, and the vision
+// app that replaced it with goal/G43.22. A time is the local HH:MM (this suite
+// runs with TZ=UTC). What is drawn is still escaped: text is never markup.
 
 process.env.TZ = 'UTC';
 
@@ -23,9 +26,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/spirit/kernel.js');
 
-const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
-const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
 const OWED = 'OWED by desk/G1.10: ';
 
 function fakeElement(id) {
@@ -54,20 +55,10 @@ function load(script, doc) {
 function settle() {
   return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); });
 }
-function clickOn(container, attr, value) {
-  const target = { getAttribute: function (n) { return n === attr ? value : null; }, parentNode: null };
-  container.fire('click', { target: target, currentTarget: container });
-}
 
 // One note that carries everything under test, and the minute it came.
 const AT = '2026-09-29T05:49:12.000Z';
 const NOTE = 'first line\nsecond line\n- item one\n- item two\nrun `node x.js` now <b>not bold</b>';
-let n = 0;
-function row(dir, from, kind, text, todo) {
-  n += 1;
-  return { key: 'k' + n, at: AT, dir: dir, peer: dir === 'in' ? LEAD : LEAD, outcome: dir === 'in' ? 'received' : 'sent',
-    from: from, kind: kind, text: text, todo: todo };
-}
 
 // What every chat must show for NOTE.
 function checks(where, html) {
@@ -109,46 +100,6 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
   report(checks('dialog', ddChat), ddChat);
   // T4 in the dialog went with desk/G2.7: a session is the desk server's record, never a chat line.
 
-  // ── Desk ────────────────────────────────────────────────────────────
-  const log = [
-    row('in', 'claude-windows', 'note', NOTE, ''),
-    row('out', 'andy', 'musing', 'note to self: ' + NOTE, ''),
-  ];
-  // TEAM (ALL) IS THE GROUP CHAT SINCE goal/G3.10: the chat of the desk server's standing goal goal/G0, read
-  // with item.chat, no longer the packets this page recorded under team/chat. So the note under test is a line of
-  // that chat, answered here as the desk server answers it.
-  const deskFake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
-  const deskVerb = function (name, body) {
-    const asked = name === 'desk.item.chat' && body;   // the desk's verb by name (goal/G30.6)
-    if (asked && asked.id === 'goal/G0') return Promise.resolve({ status: 200, body: { chat: [{ by: 'claude-windows', at: AT, text: NOTE, taken: '' }], chatMore: false } });
-    return deskFake.verb(name, body);
-  };
-  const doc = fakeDocument();
-  load(DESK, doc).mount(fakeElement('container'), {
-    fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : f === 'seen.json' ? JSON.stringify({ rows: {}, team: 0, agents: {} }) : null; },
-      saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: spirit.core.util.escapeHtml,
-    verb: deskVerb,
-    onPublished: function () {}, onPacket: function () {},
-    peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
-    callDialog: function () { return new Promise(function () {}); },
-  });
-  await settle();
-  const tabs = doc.getElementById('desk-tabs');
-  const agents = doc.getElementById('desk-agent-tabs');
-  clickOn(tabs, 'data-tab', 'team');
-
-  test.subHeading('Desk, Team (All)');
-  const team = doc.getElementById('desk-team').innerHTML;
-  report(checks('Team', team), team);
-  // T4 in Team went with goal/G3.10, as it went from the dialog with desk/G2.7: a session is the desk server's
-  // record, and the group chat holds chat lines only, never a session post.
-
-  test.subHeading("Desk, the lead's own tab");
-  clickOn(agents, 'data-agent', 'claude-windows');
-  const direct = doc.getElementById('desk-team').innerHTML;
-  report(checks('agent tab', direct), direct);
-
-  // DESK, MUSINGS STOOD HERE: the tab went with goal/G27.3 (Andy: "musings" tab replaced by desk-app "vision");
-  // a vision item's chat is drawn by the shared chat element, as every item chat.
+  // DESK'S OWN CHATS STOOD HERE: Team (All), the group chat goal/G0, and the lead's own tab, drawn into #desk-team. They
+  // went with goal/G43.22 (no Team tab, no group chat); Musings with goal/G27.3, and vision, its desk app, with goal/G43.22.
 })().catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () { test.reportSuccessFailureCount(); });

@@ -66,10 +66,12 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // goal/G19.13 added claim {id, phase, commit}: a claim carries the commit it was made at, and deskVerify waits for it.
 // goal/G21.4 added item.release {id}: an agent lets go of the one task it holds (its own suite is deskChatFlowOneTask.js).
 // Since goal/G22.3: the desk mounts every plugin in process/js/desk/plugins/js/ and serves their verbs beside its own;
-// the stackFrameChecks plugin brings stackFrameChecks.make {gate, endpoint} (its own suite is deskPluginsGg.js), and
+// the stackFrameChecks plugin brings stackFrameChecks.make {gate, endpoint} (its own suite was deskPluginsGg.js), and
 // since its list of doors (goal/G22.3) the list read back, since goal/G33.7 as stackFrameChecks.doors.search (bounded, more) and stackFrameChecks.door (one door); since Andy's "RUN the show"
 // (goal/G22.3, 2026-10-13) make takes {gate, endpoint, paths, suites}, and update, remove, run and runState join; stop
 // went when the runs became deskVerify's (Andy, 2026-10-13: "every run here should report to deskVerify.").
+// SINCE goal/G43.22 no plugin is mounted and no stackFrameChecks.<verb> is served (Andy: "the apps and plugin system
+// goes."); the verbs below are the desk's own.
 // SINCE goal/G30.4 the AGENTS family is gone: every server carries its family folder's FS verbs instead (FS.loadFile,
 // FS.search ...; introSpector.js), the verb files read through them. So the verbs are compared without the FS set, and
 // the FS set is checked to be exactly introSpector's, nothing more.
@@ -77,9 +79,9 @@ const FS_VERBS = ['FS.annotateFile', 'FS.deleteFile', 'FS.fileExists', 'FS.getAn
 function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') !== 0; }).sort(); }
 function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') === 0; }).sort().join(',') === FS_VERBS.join(','); }
 // goal/G40.3: one row a write on every list table: item.files.remove, item.suites.add/.remove, and the doors'
-// stackFrameChecks.paths.add/.remove/.search and .suites.add/.remove/.search; make and update take {gate, endpoint} only.
+// stackFrameChecks.paths.add/.remove/.search and .suites.add/.remove/.search (gone with the plugin, goal/G43.22).
 // goal/G33.7: items.find, rule.history, session.set, state.get and state.set went; every table has its search.
-const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'agents.search', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.box.search', 'item.chat', 'item.checks', 'item.checks.search', 'item.claims.search', 'item.delete', 'item.files', 'item.files.add', 'item.files.remove', 'item.files.search', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.suites.add', 'item.suites.remove', 'item.suites.search', 'item.take', 'items.search', 'line.take', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'signoff', 'stackFrameChecks.door', 'stackFrameChecks.doors.search', 'stackFrameChecks.make', 'stackFrameChecks.paths.add', 'stackFrameChecks.paths.remove', 'stackFrameChecks.paths.search', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.suites.add', 'stackFrameChecks.suites.remove', 'stackFrameChecks.suites.search', 'stackFrameChecks.update', 'subscribe', 'unblock', 'unsubscribe', 'work.open'];
+const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'agents.search', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.box.search', 'item.chat', 'item.checks', 'item.checks.search', 'item.claims.search', 'item.delete', 'item.files', 'item.files.add', 'item.files.remove', 'item.files.search', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.suites.add', 'item.suites.remove', 'item.suites.search', 'item.take', 'items.search', 'line.take', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'signoff', 'subscribe', 'unblock', 'unsubscribe', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');
@@ -88,6 +90,9 @@ const pipe = process.platform === 'win32'
   ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process')
   : path.join(scratch, 'door.sock');
 const kids = [];
+
+// The goal whose seen is written and read (goal/G43.22: no standing goal/G0 any more), seeded before the first start.
+test.seedDesk(state, { goal: { id: 'goal/G100', title: 'A goal to be seen' }, items: [] });
 
 function start() {
   if (!fs.existsSync(SCRIPT)) return null;
@@ -159,15 +164,17 @@ function freePort() {
   else test.fail(OWED + (fs.existsSync(SCRIPT) ? 'desk.db named in ' + namers.join(', ') : 'no process/js/desk/desk.js'));
 
   // Seen, voice. goal/G33.7: state.get and state.set went (nothing called them), and seen is one value per item: the
-  // arrival time of the newest thing he looked at under it, the group chat's on goal/G0.
+  // arrival time of the newest thing he looked at under it. It was asked of the group chat goal/G0 until goal/G43.22
+  // (Andy: "G0 goes, from ui and server, kept in database."); now of an ordinary goal the desk is seeded with.
   const SEEN = '2026-10-23T05:00:00.000Z';
+  const SEEN_ID = 'goal/G100';
   const sGone = up ? [await call('state.set', { json: '{}' }), await call('state.get', {})] : [];
   // A write needs its writer (apiAuth/G1.13): his own seen, written as the owner.
   const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskServerTestOwnerAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
-  const n1 = up ? await client.ask({ desk: { 'seen.set': { id: 'goal/G0', at: SEEN } } }, ANDY).then(function (r) { return r.body || {}; }) : {};
-  const ng = up ? await call('seen.get', { id: 'goal/G0' }) : {};
+  const n1 = up ? await client.ask({ desk: { 'seen.set': { id: SEEN_ID, at: SEEN } } }, ANDY).then(function (r) { return r.body || {}; }) : {};
+  const ng = up ? await call('seen.get', { id: SEEN_ID }) : {};
   if (sGone.length && sGone.every(function (r) { return r.code === 'no-such-verb'; }) && typeof n1.change === 'number' && ng.at === SEEN) {
-    test.check('state.get and state.set are no-such-verb; seen of goal/G0 is saved and read back as the time given');
+    test.check('state.get and state.set are no-such-verb; seen of ' + SEEN_ID + ' is saved and read back as the time given');
   } else {
     test.fail(OWED + 'state/seen answered ' + JSON.stringify(sGone.concat([n1, ng])));
   }
@@ -186,7 +193,7 @@ function freePort() {
   await stop(kid);
   kid = start();
   const again = kid ? await waitFor(function () { return ask('api').then(function (r) { return r.body && r.body.desk && r.body.desk.ok !== false; }); }) : false;
-  const sAgain = again ? await call('seen.get', { id: 'goal/G0' }) : {};
+  const sAgain = again ? await call('seen.get', { id: SEEN_ID }) : {};
   if (again && sAgain.at === SEEN) test.check('after a restart its seen is still there');
   else test.fail(OWED + 'after a restart: search ' + again + ', seen ' + JSON.stringify(sAgain));
 
@@ -206,7 +213,7 @@ function freePort() {
     log: function () {},
   });
   // The envelope arrives read, as arrivals.js hands it to a witness (goal/G16.5).
-  const ask4 = packet.encode('api', { desk: { 'seen.get': { id: 'goal/G0' } } }).text;
+  const ask4 = packet.encode('api', { desk: { 'seen.get': { id: SEEN_ID } } }).text;
   if (door) await door({ text: ask4, envelope: arrivals.envelopeOf(ask4), fromKey: 'MEMBER', hash: 'H4' });
   await waitFor(function () { return posted.length > 0; }, 4000);
   const r4 = posted[0] ? packet.decode(posted[0].text) : null;
@@ -216,7 +223,7 @@ function freePort() {
   // ── T3 ──────────────────────────────────────────────────────────────
   test.subHeading('T3: desk.<verb> on the loopback door reaches it');
   const flat = require('../run/spirit/verbTable.js').createVerbTable().door(client);
-  const shared = flat && typeof flat.call === 'function' ? await flat.call('desk.seen.get', { id: 'goal/G0' }) : null;
+  const shared = flat && typeof flat.call === 'function' ? await flat.call('desk.seen.get', { id: SEEN_ID }) : null;
   if (shared && shared.status === 200 && shared.body && shared.body.at === SEEN) test.check('the flat door /api/spirit runs (door.call(desk.seen.get)) reached the desk server');
   else test.fail(OWED + 'door.call ' + (flat && flat.call ? 'answered ' + JSON.stringify(shared) : 'is missing'));
   await stop(kid);
@@ -228,6 +235,9 @@ function freePort() {
   plantRun.plantRunTree(home);
   // It starts the desk server only if it includes it (its manifest runs it at home, goal/G30.20).
   require('./tools/runsHome.js')(home, 'process/js/desk');
+  // Its desk starts empty, so it is asked a search, which answers on an empty desk: until goal/G43.22 it was asked the
+  // seen of the standing goal/G0, which every desk held from its start (Andy: "G0 goes, from ui and server, kept in database.").
+  const SEARCH = { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false };
   const port = await freePort();
   const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(node);
@@ -243,14 +253,14 @@ function freePort() {
   };
   let whole = null;
   await waitFor(function () {
-    return flatAsk({ call: 'desk.seen.get', args: { id: 'goal/G0' } }).then(function (r) { whole = r; return r.status === 200 && r.body && typeof r.body.at === 'string'; });
+    return flatAsk({ call: 'desk.items.search', args: SEARCH }).then(function (r) { whole = r; return r.status === 200 && r.body && Array.isArray(r.body.items); });
   }, 15000);
   const listed = await flatAsk({ call: 'api', args: {} }).catch(function () { return null; });
-  if (whole && whole.status === 200 && whole.body && typeof whole.body.at === 'string' &&
+  if (whole && whole.status === 200 && whole.body && Array.isArray(whole.body.items) &&
       listed && listed.body && listed.body.desk && verbsOf(listed.body.desk).join(',') === VERBS.join(',') && familyNamesVerbs(listed.body.desk)) {
-    test.check('a planted node started its desk server; the verb api listed its verbs and desk.seen.get answered');
+    test.check('a planted node started its desk server; the verb api listed its verbs and desk.items.search answered');
   } else {
-    test.fail(OWED + 'desk.seen.get answered ' + JSON.stringify(whole) + ' / api ' + JSON.stringify(listed && listed.body) + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : ''));
+    test.fail(OWED + 'desk.items.search answered ' + JSON.stringify(whole) + ' / api ' + JSON.stringify(listed && listed.body) + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : ''));
   }
   if (fs.existsSync(path.join(home, 'relay-state', 'process', 'desk', 'desk.db'))) test.check('its desk.db is in the planted node\'s relay-state/process/desk');
   else test.fail(OWED + 'the planted node has no relay-state/process/desk/desk.db');

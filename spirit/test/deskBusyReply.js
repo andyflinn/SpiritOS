@@ -9,10 +9,9 @@
 //   1. ITEM CHAT: his chat.add under an item taken by an agent the server holds as working (goal/G2.3) is recorded
 //      as always, and the desk server adds its own line right after it, by 'desk', "message delivered, <agent>
 //      busy" — after every such message, never when the agent is listening or the item is nobody's.
-//   2. TEAM CHAT: his line to one agent in Team goes to the agent as always (peerPost, the queue is the agent's
-//      record); when the goal row says that agent is working, the page adds a line from 'desk', "message
-//      delivered, <agent> busy", to that agent's chat and logs it (log.add) like every line. Nothing goes to
-//      the agent for it.
+//   2. TEAM CHAT: gone. The page's half went with the direct tabs (goal/G3.12), and the Team tab and its group chat
+//      goal/G0 with goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database."); the desk
+//      server's own reply (1) is the busy reply that remains.
 //   3. COUNTED BY BEING KEPT: those lines are kept like any other, by 'desk', so a search finds them later (chat.search;
 //      `changes` went with goal/G33.4).
 
@@ -22,65 +21,15 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const appClient = require('../run/spirit/appClient.js');
-const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G2.5: ';
 const RUN = path.join(__dirname, '..', 'run');
 const SERVER = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
-const DESK = path.join(RUN, 'shell', 'desk', 'desk.js');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskBusyReplyTestPeerCWAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskBusyReplyTestOwnerAAAAAAAAAAAAAA=', label: 'andy' };
 const BUSY = /message delivered, claude-windows busy/;
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
-async function settled() { for (let i = 0; i < 8; i++) await settle(); }
-
-// ── THE PAGE, MOUNTED ON FAKE ELEMENTS (as deskWorking.js mounts it) ─────────
-function fakeElement(id) {
-  let html = '';
-  const el = {
-    id: id, value: '', textContent: '', hidden: false, style: {}, listeners: {}, placeholder: '',
-    addEventListener: function (type, fn) { (el.listeners[type] = el.listeners[type] || []).push(fn); },
-    fire: function (type, event) { (el.listeners[type] || []).forEach(function (fn) { fn(event || {}); }); },
-    querySelectorAll: function () { return []; }, querySelector: function () { return null; },
-    getAttribute: function () { return null; }, setAttribute: function () {}, focus: function () {},
-  };
-  Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
-  return el;
-}
-function mount(answers) {
-  const byId = {};
-  const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, all: byId };
-  let b = null;
-  new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))(
-    { shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, {});
-  const writes = [];   // every desk verb the page sent, { verb, args }
-  const posted = [];   // every peerPost the page sent, { to, body }
-  b.mount(fakeElement('c'), {
-    escapeHtml: kernel.core.util.escapeHtml,
-    verb: function (name, body) {
-      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
-      const ask = (test.foldAsk({ call: name, args: body || {} }) || {}).desk;
-      const v = ask && Object.keys(ask)[0];
-      if (v) writes.push({ verb: v, args: ask[v] });
-      return Promise.resolve({ status: 200, body: answers[v] || { change: 1, added: true } });
-    },
-    onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
-    peerPost: function (app, to, body) { posted.push({ to: to, body: body }); return Promise.resolve({ ok: true, hash: 'sent-' + posted.length }); },
-    callDialog: function () { return new Promise(function () {}); },
-    setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {}, armUntilElsewhere: function () {},
-    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
-  });
-  return { doc: doc, writes: writes, posted: posted };
-}
-function goalRow(working) {
-  return { id: 'goal/G100', title: 'Round', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false,
-    design: false, waiting: 0, live: ['claude-windows'], working: working };
-}
-function line(key, from, peer) {
-  return { key: key, at: '2026-10-02T01:00:00.000Z', dir: 'in', from: from, peer: peer, kind: 'note', text: 'hello', todo: 'team/chat' };
-}
 
 test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
 
@@ -146,23 +95,6 @@ test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
   }
 
-  // ── 2: the page, Team tab ─────────────────────────────────────────────
-  // THE PAGE'S HALF STOOD HERE: a Team line to one working agent, answered by the page with the desk's busy line.
-  // It went with the direct tabs (goal/G3.12): Team is the group chat, a line there is one chat.add on goal/G0
-  // and reaches no single agent; the desk server's own reply (part 1 above) is the busy reply that remains.
-  test.subHeading('2. a Team line is the group chat\'s, posted to no agent');
-  const page = mount({
-    'items.search': { items: [{ key: 'goal/G100', label: JSON.stringify(goalRow(['claude-windows'])) }], more: false },
-    'log.search': { items: [{ key: 'l1', label: JSON.stringify(line('l1', 'claude-windows', CW.key)) }], more: false },
-  });
-  await settled();
-  page.doc.getElementById('desk-team-say').value = 'are you there?';
-  page.doc.getElementById('desk-team-send').fire('click', { preventDefault: function () {} });
-  await settled();
-  const added = page.writes.filter(function (w) { return w.verb === 'chat.add'; });
-  if (added.length === 1 && added[0].args.id === 'goal/G0' && !page.posted.length) {
-    test.check('the line went as one chat.add on goal/G0; nothing was posted to the agent and no busy line was made by the page');
-  } else test.fail('the Team line: chat.add ' + JSON.stringify(added.map(function (w) { return w.args; })) + ', posted ' + page.posted.length);
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 200);

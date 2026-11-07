@@ -11,8 +11,6 @@ module.exports = {
     'chores.run': {},
     // The current run's console from byte `from` (0 when left out).
     console: { from: 'number?' },
-    // A door run by the plugin, recorded: id the plugin's own door id (d<n>), verdict {ran, green, around, of, ...}.
-    'door.record': { id: 'id', verdict: 'object' },
     now: {},
     // One test's outcome, as a suite reports it: outcome 'red' or 'green'; failure the text a red printed.
     record: { suite: 'id', title: 'id', outcome: 'id', failure: 'text?' },

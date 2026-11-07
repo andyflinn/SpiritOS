@@ -5,8 +5,8 @@
 //
 // Andy, 2026-10-13, on the Stacks tab's run dialog: "much better, gimme that when i press run:", and the lines he wants,
 // one per distinct violator, e.g. "hub.js:300 sealedClaim (from handleClaim) ---> GET /api/relay/key, bypassing
-// createPeerPost". The stackFrameChecks plugin turns a run's raw paths (oneDoorStacks.js's verdict.paths) into those
-// lines with its formatter, violators.js beside its server half, and the run dialog shows them.
+// createPeerPost". violators.js turns a run's raw paths (oneDoorStacks.js's verdict.paths) into those
+// lines.
 //
 // Fed the paths the tree measured on 2026-10-13 for two doors gated by peerPost.js::createPeerPost: the relay
 // (node:http+https+fetch on /api/relay/) and the request library (relayRequest.js). The expected lines are Andy's,
@@ -16,11 +16,8 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 
-const PLUGIN_DIR = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'plugins', 'js', 'stackFrameChecks');
-const FORMATTER = path.join(PLUGIN_DIR, 'violators.js');
-const SERVER_HALF = path.join(PLUGIN_DIR, 'stackFrameChecks.js');
-// The run's view: since goal/G27.2 (D1) the door's own dialog, shell/stackFrameCheckDetail, no longer the Stacks pane.
-const UI = path.join(__dirname, '..', 'run', 'shell', 'stackFrameCheckDetail', 'stackFrameCheckDetail.js');
+// THE FORMATTER, kept beside this test since goal/G43.22 (the Stacks plugin and its run dialog went).
+const FORMATTER = path.join(__dirname, 'violators.js');
 const REPO = path.join(__dirname, '..', '..');
 
 test.startTest('Stack-frame checks: a run\'s paths as one line per violator');
@@ -145,19 +142,5 @@ DOORS.forEach(function (d) {
   if (got.length && !extra.length && !twice.length) test.check(title);
   else test.fail(title, 'OWED by goal/G22.3: lines beyond these, or one said twice: ' + JSON.stringify(extra.concat(twice)) + (got.length ? '' : ' (no lines at all)'));
 });
-
-test.subHeading('the run dialog shows them');
-(function () {
-  let server = '';
-  let ui = '';
-  try { server = fs.readFileSync(SERVER_HALF, 'utf8'); } catch (e) { server = ''; }
-  try { ui = fs.readFileSync(UI, 'utf8'); } catch (e) { ui = ''; }
-  const t1 = 'the server half formats a run\'s paths with violators.js and its runState verdict carries violators';
-  if (/require\('\.\/violators\.js'\)/.test(server) && /violators: \[''\]/.test(server)) test.check(t1);
-  else test.fail(t1, 'OWED by goal/G22.3: the server half does not require ./violators.js, or its runState verdict declares no violators');
-  const t2 = 'the run dialog draws the violators, the raw paths folded under a details of their own';
-  if (/v\.violators/.test(ui) && /<details/.test(ui)) test.check(t2);
-  else test.fail(t2, 'OWED by goal/G22.3: the run dialog does not draw v.violators with the raw paths folded away');
-})();
 
 test.reportSuccessFailureCount();

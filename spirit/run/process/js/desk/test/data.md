@@ -28,15 +28,15 @@ parts read so far, `current()` the goal last pushed whole, `change()` the newest
 
 - **A row** (`item`, an object or a JSON string, with an id) is kept as the item's facts (`item(id)`); facts without an id, broken
   JSON and non-objects are dropped.
-- **A goal pushed whole** (`verb: 'goal.whole'`) of a goal other than the group chat (`goal/G0`) becomes
-  `current()`, and nothing kept of other goals goes, rows or parts (goal/G41.12, box v15: *"The cache keeps
-  everything the server sends, every goal, no filtering on the client side"*). The group chat never becomes current.
+- **A goal pushed whole** (`verb: 'goal.whole'`) becomes `current()`, and nothing kept of other goals goes, rows or parts
+  (goal/G41.12, box v15: *"The cache keeps everything the server sends, every goal, no filtering on the client side"*). No
+  goal is treated apart since goal/G43.22 (Andy: *"G0 goes, from ui and server, kept in database."*).
 - **A removed row** deletes the item's facts and its parts.
 - **The change number** is raised, never lowered; a change that is not a number is not taken.
 - **A bundle is appServer's**: it opens it and hands the rows in one by one, so the translator takes one row at a time
   and knows nothing of bundling (goal/G41.24, Andy: *"i think the translator has no business knowing anything about
   \"bundling\""*, and his decision: *"the three bundle checks go, and the other three assert my G41.12 words."*).
-- **took** keeps a part only for an item that has a row, of the current goal or the group chat, once a goal was
+- **took** keeps a part only for an item that has a row, of the current goal, once a goal was
   pushed: `item.box` `{box, version}` (version a number), `item.chat` `{chat, chatMore}` (not an older page, `before`),
   `item.checks` `{checks}`, `item.files` `{files, filesMore}` (not files `under` a folder). Anything else keeps
   nothing and throws nothing.
@@ -52,7 +52,7 @@ parts read so far, `current()` the goal last pushed whole, `change()` the newest
 
 ## What its test must try to break
 
-- A goal pushed whole that drops another goal's rows or parts, or the group chat.
+- A goal pushed whole that drops another goal's rows or parts.
 - A change number lowered.
 - A box or chat line the stream brings left out; a part kept for an item of another goal, or for a narrower read.
 - A late file losing its mark, or a mark appearing on a row that had none.

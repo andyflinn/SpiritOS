@@ -10,7 +10,7 @@ the handlers (Andy, 2026-10-22: "request validation worth a damn?").
 - It exports `{ verbs }` and nothing else: it names no family of its own.
 - Each verb's arguments are a plain object; each rule is one of spirit.js's rules (`spirit.rules`), with `'?'` optional.
 - DEBUG is appServer's, not listed.
-- **Every verb listed is served**: a handler in desk.js's verb table, in its stackFrameChecks plugin, or appServer's
+- **Every verb listed is served**: a handler in desk.js's verb table or appServer's
   streamPublisher (`subscribe`, `unsubscribe`).
 - An argument is required wherever the handler needs it, optional only where the handler lets it be left out; the rule
   is the tightest every value the handler takes still passes:

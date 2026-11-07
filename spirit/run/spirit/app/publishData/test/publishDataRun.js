@@ -180,10 +180,9 @@ test.startTest('publishData.js: one measurement run per agent');
   ok(['packets.json', 'packets.md', 'platform.md', 'README.md'].every(function (f) { return files.indexOf('agents/' + AGENT + '/' + f) !== -1; }), 'packets, platform and README among them', 'committed ' + short(files));
   ok(git(CLONE, ['diff', '--cached', '--name-only']).out === 'his-staged.txt', 'what he had staged stays staged, and uncommitted', 'staged ' + short(git(CLONE, ['diff', '--cached', '--name-only']).out));
   ok(git(ORIGIN, ['rev-parse', 'refs/heads/master']).out === head, 'pushed: the origin is at its commit', 'origin ' + git(ORIGIN, ['rev-parse', 'refs/heads/master']).out);
+  // goal/G43.22, Andy: "publishData summary is no longer needed, i only check on github.": nothing is posted to the desk.
   const post = w.asks.filter(function (a) { return a.args.name === 'chat.add'; });
-  let pb = null;
-  try { pb = JSON.parse(post[0].args.json); } catch (e) { pb = null; }
-  ok(post.length === 1 && pb && pb.id === 'goal/G0' && pb.text.indexOf('published ' + AGENT + ' at ' + COMMIT + ': wait 0/0 ms, flight 0/0 ms over 0 posts; agents/' + AGENT + '/') === 0, 'one summary line posted to Desk, under goal/G0', 'posted ' + short(post));
+  ok(w.asks.length > 0 && post.length === 0, 'no summary line posted to Desk', 'posted ' + short(post));
   fs.rmSync(TMP, { recursive: true, force: true });
 }());
 

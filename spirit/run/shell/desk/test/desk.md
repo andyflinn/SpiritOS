@@ -1,6 +1,6 @@
 # shell/desk/desk.js
 
-The Desk app's page: the List of goals and items, the rules, the group chat. This test covers what goal/G41.1
+The Desk app's page: the List of goals and items, the rules (no group chat since goal/G43.22). This test covers what goal/G41.1
 (box v19-v20) requires of it.
 
 ## Requirements (goal/G41.1)
@@ -43,15 +43,10 @@ the arming desk.js hand-rolled.
   or red (found verifying goal/G41.9 on a real page). Their colour comes from a class of each that shell.css paints only
   while the button is not armed (`.<class>:not([data-armed])`).
 
-- **Team keeps what it shows** (Andy: "in ALL the chats, new lines are no added, THE WHOLE FUCKING THING IS REDRAWN,
-  killing my attempted copies"): a new line of the group chat is put in at the top (newest first), and every line already
-  shown stays the same element, through that line and through any other repaint of the page (a new List row), so a
-  selection survives. Team is drawn whole again only when it is read again (a reconnect).
-
-## What its test must try to break (goal/G41.11)
-
+- **No Team and no Apps** (goal/G43.22; Andy: *"G0 goes, from ui and server, kept in database."*): the page draws no Team chat,
+  no Team tab and no Apps tab.
 - An inline `style` background left on either design button; a class whose colour shell.css paints armed or not.
-- A Team line drawn again by a new line, or by a repaint of the page around it.
+- A Team chat, a Team tab or an Apps tab drawn after all.
 
 ## goal/G41.11: every list in a box of a stated size (rule/16)
 

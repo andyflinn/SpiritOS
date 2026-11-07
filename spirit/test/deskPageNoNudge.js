@@ -14,7 +14,8 @@
 //   1. A press from a row goes to the server as press {id, what} and posts no packet to anybody.
 //   2. A press in the item dialog goes to the server and posts no packet.
 //   3. Ticking a check in the dialog (check.set) posts no packet either: every write nudged, every one stops.
-//   4. Andy's direct line to an agent still leaves as an agents packet: only the nudge goes.
+//   4. Andy's direct line to an agent still leaves as an agents packet: only the nudge goes. (The direct line went
+//      with goal/G3.12, and the Team line that replaced it, the group chat goal/G0's, with goal/G43.22.)
 //   5. The source of the page and the dialog carries no 'changed' packet: no `kind: 'changed'`, no ddNudge.
 // Not asserted (the builder's): whether deskLiveAgents and the dialog's `agents` parameter stay for anything else.
 // deskList.js asserted the old nudge (its point "after the server answered, the agent got one bare changed packet");
@@ -184,18 +185,8 @@ test.startTest('goal/G3.8: the Desk page stops nudging; the desk server does it 
   else test.fail(OWED + 'after check.set the dialog posted ' + JSON.stringify(d.posted));
 
   // 4 STOOD HERE AS "his direct line to an agent still leaves as a packet": the one packet this item kept. The
-  // direct line itself went with goal/G3.12 (Team is the group chat), so the page now posts no packet at all.
-  test.subHeading('4. a Team line is the group chat\'s: no packet leaves the page for anything');
-  l.click('desk-tabs', { 'data-tab': 'team' });
-  await settled();
-  l.doc.getElementById('desk-team-say').value = 'for the team';
-  l.posted.length = 0;
-  const asksBefore = l.asked.length;
-  l.doc.getElementById('desk-team-send').fire('click', {});
-  await settled();
-  const line = l.asked.slice(asksBefore).filter(function (a) { return a.verb === 'chat.add' && a.args.id === 'goal/G0' && a.args.text === 'for the team'; });
-  if (line.length === 1 && !l.posted.length) test.check('one chat.add on goal/G0; no packet to anybody');
-  else test.fail('his Team line: asked ' + JSON.stringify(l.asked.slice(asksBefore)) + ', posted ' + JSON.stringify(l.posted));
+  // direct line itself went with goal/G3.12 (Team was the group chat), and Team with its group chat goal/G0 with
+  // goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database."): there is no line of his to send.
 
   test.subHeading('5. the source carries no changed packet');
   const pageSrc = code(DESK);

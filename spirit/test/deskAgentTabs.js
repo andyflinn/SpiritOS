@@ -11,7 +11,8 @@
 //   own button, never from the note box.
 //
 // THE CONTRACT this holds desk.js and deskDetails.js to:
-//   - #desk-tabs has data-tab list, team and musings, and no lead.
+//   - #desk-tabs has data-tab list, team and musings, and no lead. (Musings went with goal/G27.3; Team, and Apps that
+//     held it, with goal/G43.22: Andy, the box, Q5: "G0 goes, from ui and server, kept in database.".)
 //   - #desk-agent-tabs, drawn under the tabs, has a button data-agent="*"
 //     (All) and one data-agent="<name>" per agent heard from; the lead's
 //     carries data-lead="1".
@@ -102,16 +103,18 @@ load(DESK, doc).mount(root, {
 test.startTest('desk/G1.2: one tab per agent inside Team, the lead marked');
 settle().then(function () {
   const tabs = doc.getElementById('desk-tabs');
-  clickOn(tabs, 'data-tab', 'team');
+  // Until goal/G43.22 the suite clicked Team first; there is no Team tab any more, so the strip is read as drawn.
   const strip = root.innerHTML + tabs.innerHTML;
 
   // T1, T2, T6, T3 AND T4 STOOD HERE: All and one tab per agent inside Team, the lead's marked, the unseen star on an
   // agent's tab, a line typed in a tab to that agent alone, the lead's direct chat in its tab. All of it went with
   // goal/G3.12: Team is the group chat, the agents show as bubbles in the tab row (deskFrontPage.js). What stands
   // from desk/G1.2 here: no Lead top tab, the List count, Rename as its own button.
-  test.subHeading('T1: Lead is no longer a top tab, and no agent tab stands in its place');
-  if (!/data-tab="lead"/.test(strip) && !/data-agent=/.test(root.innerHTML + tabs.innerHTML)) test.check('no Lead top tab, no agent tab');
-  else test.fail('top Lead tab ' + /data-tab="lead"/.test(strip) + '; agent tabs: ' + /data-agent=/.test(root.innerHTML));
+  test.subHeading('T1: Lead is no longer a top tab, and no agent tab stands in its place; no Team or Apps tab (goal/G43.22)');
+  if (/data-tab="list"/.test(strip) && !/data-tab="lead"/.test(strip) && !/data-agent=/.test(root.innerHTML + tabs.innerHTML)) test.check('no Lead top tab, no agent tab');
+  else test.fail('top Lead tab ' + /data-tab="lead"/.test(strip) + '; agent tabs: ' + /data-agent=/.test(root.innerHTML) + '; list tab drawn ' + /data-tab="list"/.test(strip));
+  if (/data-tab="list"/.test(strip) && !/data-tab="team"/.test(strip) && !/data-tab="apps"/.test(strip)) test.check('no Team tab and no Apps tab');
+  else test.fail('goal/G43.22: the strip still holds ' + (strip.match(/data-tab="(team|apps)"/g) || ['no list tab']).join(', '));
   return settle().then(function () {
     test.subHeading('T5: the List tab carries the count of rows waiting on Andy');
     const listLabel = (tabs.innerHTML.match(/data-tab="list"[^>]*>([^<]*(?:<[^>]*>[^<]*)*?)<\/button>/) || ['', ''])[1];

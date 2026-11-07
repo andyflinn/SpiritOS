@@ -144,12 +144,8 @@ function settle() {
     .then(function () { return new Promise(function (r2) { setImmediate(r2); }); });
 }
 
-// THE LEAD'S TAB INSIDE TEAM WENT (goal/G3.12): a line typed under Team is the group chat's, one chat.add on
-// goal/G0, posted to nobody. What he types there is no longer a log line of the page's.
-function sayInTeam(desk, text) {
-  desk.doc.getElementById('desk-team-say').value = text;
-  desk.doc.getElementById('desk-team-send').fire('click');
-}
+// THE LEAD'S TAB INSIDE TEAM WENT (goal/G3.12), and Team itself, the group chat goal/G0, with goal/G43.22 (Andy, the
+// box, Q5: "G0 goes, from ui and server, kept in database."): the page has no line of his to type, and sayInTeam went.
 
 function logged(files) {
   try { return JSON.parse(files['log/log.json']); } catch (e) { return null; }
@@ -181,8 +177,8 @@ test.subHeading('Desk and its dialog name only their servers\' verbs (desk/G2.7)
 
 function arrivalsAndSendsAreLogged() {
   // SINCE goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them.") the page keeps no log of the agents
-  // app's packets: an arrival is recorded nowhere, and his Team line is the group chat alone.
-  test.subHeading('An arrival is recorded nowhere; a sent line is the group chat line; a remount reads it back');
+  // app's packets: an arrival is recorded nowhere. His Team line, the group chat's, went with goal/G43.22.
+  test.subHeading('An arrival is recorded nowhere; a remount reads the board from the server alone');
   const files = {};
   const desk = mountDesk({ files: files });
   desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
@@ -191,32 +187,20 @@ function arrivalsAndSendsAreLogged() {
     const asked = desk.fake.calls.filter(function (c) { return c.verb === 'log.add'; });
     if (!rows.length && !asked.length) test.check('the arrival is recorded nowhere: no log row, no log.add (goal/G33.4)');
     else test.fail('goal/G33.4: after one arrival the log holds ' + JSON.stringify(rows) + ' and log.add was asked ' + asked.length + ' time(s)');
-    sayInTeam(desk, 'hello team');
-    return settle();
-  }).then(function () {
-    // HIS LINE TO THE LEAD STOOD HERE, posted as a packet and logged as an out row. Since goal/G3.12 a Team line is
-    // one chat.add on the group chat: no packet, no out row of the page's.
-    const rows = logged(files) || [];
-    const out = rows.filter(function (r) { return r.dir === 'out'; });
-    const added = desk.fake.calls.filter(function (c) { return c.verb === 'chat.add'; });
-    if (!desk.posts.length && !out.length && added.length === 1 && added[0].args.id === 'goal/G0' && added[0].args.text === 'hello team') {
-      test.check('his Team line went as one chat.add on goal/G0: no packet, no out row');
-    } else {
-      test.fail('posts ' + JSON.stringify(desk.posts) + ' out rows ' + JSON.stringify(out) + ' chat.add ' + JSON.stringify(added.map(function (c) { return c.args; })));
-    }
+    if (!desk.posts.length) test.check('nothing was posted as a packet');
+    else test.fail('posts ' + JSON.stringify(desk.posts));
     if (!desk.verbs.length) test.check('the node was asked nothing but its servers\' verbs by name');
     else test.fail('verbs asked: ' + desk.verbs.join(', '));
 
     const again = mountDesk({ files: files });
     return settle().then(function () {
-      // The remount reads the group chat (item.chat on goal/G0) and draws it; the fake holds his line there.
-      const chat = again.doc.getElementById('desk-team').innerHTML;
+      // Until goal/G43.22 the remount read the group chat (item.chat on goal/G0) and drew it; nothing asks goal/G0 now.
       const top = again.doc.getElementById('desk-top').innerHTML;
-      const groupRead = again.fake.calls.some(function (c) { return c.verb === 'item.chat' && c.args.id === 'goal/G0'; });
-      if (groupRead && /hello team/.test(chat) && /Search/.test(top)) {
-        test.check('a fresh mount draws the board and the group chat from the server\'s record alone');
+      const groupRead = again.fake.calls.some(function (c) { return c.args && c.args.id === 'goal/G0'; });
+      if (!groupRead && /Search/.test(top)) {
+        test.check('a fresh mount draws the board from the server\'s record alone, and asks nothing of goal/G0');
       } else {
-        test.fail('remount read the group chat: ' + groupRead + '; drew chat ' + chat.slice(0, 120) + ' / top ' + top.slice(0, 120));
+        test.fail('remount asked goal/G0: ' + groupRead + '; drew top ' + top.slice(0, 120));
       }
     });
   });
@@ -238,34 +222,13 @@ function unreachableIsSaid() {
 // THE DIALOG'S OLD FLOW (a thread handed over, sends by peerPost, the result logged by Desk) went with
 // desk/G2.7: the dialog reads item.get and writes to the desk server (spirit/test/deskDialog.js).
 
-function voiceHoldsWhatHeTyped() {
-  test.subHeading('what he typed goes to the desk server\'s voice, and nothing else');
-  const files = {};
-  const desk = mountDesk({ files: files });
-  desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
-  desk.arrive({ from: 'claude-windows', kind: 'ask', text: 'go?', todo: 'goal/G100' }, { hash: 'h-in-3', fromKey: LEAD, sentAt: '2026-09-27T05:03:00Z' });
-  return settle().then(function () {
-    sayInTeam(desk, 'typed by andy');
-    return settle();
-    // WHAT HE TYPES IN A DIALOG goes by chat.add since desk/G2.7; the dialog no
-    // longer hands its lines back for Desk to record, so this checks Desk's own.
-  }).then(function () {
-    // From desk/G1.4 to goal/G2.1 the server kept it (voice.add), a plain file in its state folder that he
-    // moved himself. NO LONGER (goal/G2.1 note 8): the log line is the record, the brain reads it through the
-    // desk api, and the vault's own tool keeps his corpus. Nothing goes to voice.add.
-    if (!desk.fake.voice.length) {
-      test.check('his typed line went to the log alone, nothing to voice.add');
-    } else {
-      test.fail('OWED by goal/G2.1: the page still sends voice.add ' + JSON.stringify(desk.fake.voice));
-    }
-  });
-}
-
+// voiceHoldsWhatHeTyped STOOD HERE: his line typed under Team went to the log alone, nothing to voice.add. Team went
+// with goal/G43.22, so the page has no line of his to type; voice.add is gone from the server (deskServer.js).
 
 // teamGoesToEveryAgent STOOD HERE: his team line posted to every agent as a packet under team/chat, and an
 // agent's packet line shown once in Team. That mechanism is gone with goal/G3.10: the All tab is the chat of the
-// desk server's standing goal goal/G0, written with chat.add and posted to nobody. deskGroupChat.js holds what
-// replaced it, including that no packet is posted and no team/chat packet line is drawn there.
+// desk server's standing goal goal/G0, written with chat.add and posted to nobody, which went in turn with
+// goal/G43.22 (and deskGroupChat.js, its suite, with it).
 
 function unseenIsMarked() {
   // Andy: "... indicating that new stuff has arrived for that item". SINCE
@@ -287,7 +250,6 @@ function unseenIsMarked() {
 
 arrivalsAndSendsAreLogged()
   .then(unseenIsMarked)
-  .then(voiceHoldsWhatHeTyped)
   // twoTabsKeepBoth and failedSendsStayApart stood here: two Desk tabs' lines to the lead both kept, and two failed
   // sends two rows. The page sends no line as a packet since goal/G3.12, so there is nothing of the kind to log.
   .then(unreachableIsSaid)

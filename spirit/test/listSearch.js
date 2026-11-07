@@ -98,7 +98,8 @@ function config(api, extra) {
   return Object.assign({
     api: api,
     server: 'desk',
-    verb: 'fallout.reds',
+    // The verb is an example a fake answers (it was Fallout's fallout.reds until the plugin went with goal/G43.22).
+    verb: 'rows.search',
     args: function (text, filters) { return { text: text, outcome: filters.outcome }; },
     filters: [{ name: 'outcome', choices: [{ value: 'red', icon: '❌', word: 'fail' }, { value: 'green', icon: '✅', word: 'success' }, { value: '', word: 'both' }],
       test: function (row, value) { return !value || row.outcome === value ? 1 : 0; } }],
@@ -159,7 +160,7 @@ test.startTest('goal/G29.4: shellCreateListSearch, the list with its search');
   const t0 = Date.now();
   typeInto(box, el.text, '');
   const first = api.asked[0];
-  if (first && first.name === 'desk.fallout.reds' && first.server === 'desk' && first.verb === 'fallout.reds' && first.args && first.args.text === '' && first.args.outcome === 'red' && first.at - t0 < 5) test.check('the first character asks api.verb(desk.fallout.reds, args(text, filters)) at once, no typing pause');
+  if (first && first.name === 'desk.rows.search' && first.server === 'desk' && first.verb === 'rows.search' && first.args && first.args.text === '' && first.args.outcome === 'red' && first.at - t0 < 5) test.check('the first character asks api.verb(desk.rows.search, args(text, filters)) at once, no typing pause');
   else test.fail(OWED + 'asked ' + short(api.asked));
   await sleep(40);
   if (rowsShown(el.list) === 1 && /the relay answers its key/.test(el.list.innerHTML) && !/a door stays shut/.test(el.list.innerHTML)) test.check('rows are painted by paint(row), the ❌ filter testing each one: r1 shown, the green r2 left out');
@@ -238,9 +239,9 @@ test.startTest('goal/G29.4: shellCreateListSearch, the list with its search');
   const el5 = parts(p, box5);
   if (list5 && typeof list5.ask === 'function') {
     typeInto(box5, el5.text, 'x');
-    const lent = list5.ask('fallout.reds', { total: 'yes' });
+    const lent = list5.ask('rows.search', { total: 'yes' });
     const got = await lent;
-    if (lend.maxInFlight === 1 && lend.asked.length === 2 && lend.asked[1].server === 'desk' && lend.asked[1].verb === 'fallout.reds' && got && got.total === 7) test.check('list.ask(verb, args) waits for the list\'s request, goes to the same server, and answers the body');
+    if (lend.maxInFlight === 1 && lend.asked.length === 2 && lend.asked[1].server === 'desk' && lend.asked[1].verb === 'rows.search' && got && got.total === 7) test.check('list.ask(verb, args) waits for the list\'s request, goes to the same server, and answers the body');
     else test.fail('OWED by goal/G29.5: in flight ' + lend.maxInFlight + ', asked ' + short(lend.asked.map(function (a) { return a.verb + ' ' + JSON.stringify(a.args); })) + ', answered ' + short(got));
   } else test.fail('OWED by goal/G29.5: the list lends no ask(verb, args)');
 

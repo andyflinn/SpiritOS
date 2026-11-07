@@ -27,14 +27,15 @@ const ROOM = appClient.ANSWER_MAX - 512;
 
 function create(rows) {
   const lines = (rows || []).map(function (r) { return typeof r === 'string' ? JSON.parse(r) : r; });
-  // goal/G33.7: the docs table and state went; seen is one value per item. The fake keeps the group chat's (goal/G0)
-  // as the page's own seen document, {team}, so a suite that plants seen.json goes on working.
+  // goal/G33.7: the docs table and state went; seen is one value per item. docs.seen is the seen.json a suite planted
+  // (fromFiles), kept as it was planted: since goal/G43.22 no group chat goal/G0 reads or writes it (Andy: "G0 goes,
+  // from ui and server, kept in database.").
   const docs = { seen: '' };
   const voice = [];
   const calls = [];
   const held = [];
   let holding = null;
-  const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' }, pending: {}, items: [], groupChat: [] };
+  const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' }, pending: {}, items: [] };
 
   // As the real server walks (desk.js walked, slim/G1.2): one bucket,
   // '**', a line too big to be sent alone skipped and said by `more`.
@@ -53,26 +54,16 @@ function create(rows) {
   const desk = {
     // log.add, log.search and pending.get went with goal/G33.4, as on the real server.
     // state.get and state.set went with goal/G33.7, as on the real server; seen is seen.get {id} -> {at}, seen.set {id, at}.
-    'seen.get': function (a) {
-      if (a.id !== 'goal/G0') return { at: '' };
-      let held = null; try { held = JSON.parse(docs.seen || 'null'); } catch (e) { held = null; }
-      return { at: held && Number(held.team) > 0 ? new Date(Number(held.team)).toISOString() : '' };
-    },
-    'seen.set': function (a) {
-      if (a.id === 'goal/G0') docs.seen = JSON.stringify({ team: Date.parse(a.at) || 0 });
-      return { change: calls.length };
-    },
+    'seen.get': function () { return { at: '' }; },
+    'seen.set': function () { return { change: calls.length }; },
     'voice.add': function (a) { voice.push({ text: a.text, day: a.day }); return { added: true }; },
     // The List's two verbs (desk/G2.6): the facts, and a press the server takes.
     'items.search': function () { return walked(fake.items, function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
     'press': function () { return { change: calls.length }; },
-    // The group chat (goal/G3.10): the real server holds the standing goal goal/G0 (goal/G33.4: goal 0) from its start, so the
-    // fake does too. fake.groupChat: its lines, oldest first; a chat.add on it is his line.
-    'item.chat': function (a) { return { chat: a.id === 'goal/G0' ? fake.groupChat.slice() : [], chatMore: false }; },
-    'chat.add': function (a) {
-      if (a.id === 'goal/G0') fake.groupChat.push({ by: 'andy', at: new Date().toISOString(), text: String(a.text), taken: '' });
-      return { change: calls.length };
-    },
+    // The group chat goal/G0 (goal/G3.10) the real server held from its start went with goal/G43.22, and so did the
+    // fake's: an item's chat answers empty, a chat.add is only recorded in calls.
+    'item.chat': function () { return { chat: [], chatMore: false }; },
+    'chat.add': function () { return { change: calls.length }; },
   };
   const backup = { 'status.get': function () { return Object.assign({}, fake.backup); } };
   const servers = { desk: desk, backup: backup };

@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/desk/plugins/js/stackFrameChecks/violators.js
-// A DOOR'S RUN AS ONE LINE PER VIOLATOR (goal/G22.3), for the Stacks tab's run dialog.
+// spirit/test/violators.js (it stood in the stackFrameChecks folder of the desk until goal/G43.22, kept here with the stack-frame tests)
+// A DOOR'S RUN AS ONE LINE PER VIOLATOR (goal/G22.3).
 //
 // Andy, 2026-10-13, on the run dialog: "much better, gimme that when i press run:", with the lines he wants, one per
 // distinct violator, e.g.
@@ -9,7 +9,7 @@
 //   hub.js:2784 relaySummary (from relayGet and relaySearch, via ownerBadge probe) ---> GET /api/relay/key, bypassing createPeerPost
 //   offboard.js:78 main ---> GET /api/relay/key by plain fetch, bypassing createPeerPost and relayRequest
 // The stack-frame runner's verdict carries each path around the gate raw ("<what it reached> from <frame> < <frame>
-// ..."); this turns them into those lines. Loaded by the plugin's server half; it is not a plugin of its own (no .json).
+// ..."); this turns them into those lines. Its tests: ./violatorsFormat.js and ./stackFrameViolators.js.
 //
 // A FRAME is "spirit/run/<file>.js:<line>[:<function>][ in <outer>]...": its function is its own name, or, when the
 // line sits in an anonymous function, the first function it is written inside.

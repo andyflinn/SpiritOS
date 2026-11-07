@@ -22,7 +22,7 @@
 //   3  the test state: testState.json and testState.md, from this node's verify.db (the newest row of each test its
 //      deskVerify keeps), no suite re-run
 //   4  unless --only packets or --out: commits agents/<agent>/ (the commit check's standing grant takes a commit whose
-//      files all lie there) and posts one summary line to Desk
+//      files all lie there); no summary goes to Desk (goal/G43.22)
 // The agent is the name Andy set in its profile (profile.get). The traffic log is read from a copy of
 // <clone>/spirit/run/spirit/state/node.db, read only: the node holds the file open, and no verb reads that log.
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
@@ -236,7 +236,7 @@ async function main() {
   const pushed = await pushOrigin({ repo: clone });
   // pushOrigin's reason says what went wrong, the push itself or putting the clone's unsaved edits back (goal/G19.6).
   if (!pushed || !pushed.ok) end(1, 'publishData: pushOrigin did not finish: ' + ((pushed && pushed.reason) || 'unknown'));
-  await desk('chat.add', { id: 'goal/G0', text: 'published ' + agent + ' at ' + commit + ': wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms over ' + packets.posts + ' posts; agents/' + agent + '/' });
+  // NO SUMMARY TO THE DESK (goal/G43.22; Andy: "publishData summary is no longer needed, i only check on github.").
   end(0, 'publishData: published agents/' + agent + '/');
 }
 

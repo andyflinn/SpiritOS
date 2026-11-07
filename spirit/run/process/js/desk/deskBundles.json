@@ -184,58 +184,6 @@
       },
       {
         "family": "desk",
-        "verb": "stackFrameChecks.door"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.doors.search"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.make"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.paths.add"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.paths.remove"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.paths.search"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.remove"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.run"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.runState"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.suites.add"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.suites.remove"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.suites.search"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.update"
-      },
-      {
-        "family": "desk",
         "verb": "subscribe"
       },
       {
@@ -454,58 +402,6 @@
       {
         "family": "desk",
         "verb": "signoff"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.door"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.doors.search"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.make"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.paths.add"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.paths.remove"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.paths.search"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.remove"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.run"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.runState"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.suites.add"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.suites.remove"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.suites.search"
-      },
-      {
-        "family": "desk",
-        "verb": "stackFrameChecks.update"
       },
       {
         "family": "desk",

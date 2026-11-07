@@ -28,7 +28,8 @@
 //      `changes` gone, what was written after it carries a later number on the desk's stream); `goal`, the current goal's id;
 //      `items`, every item of the current goal INCLUDING the goal's own row and the closed ones, each with its facts
 //      (as item.get gives them: id, title, status, buttons, go, ...) and its `box`, `version`, `checks` and `chat`
-//      (the lines as item.chat gives them: by, at, text). The group chat goal/G0 is not in it.
+//      (the lines as item.chat gives them: by, at, text). No other goal's item is in it (this named the group chat
+//      goal/G0 until goal/G43.22 took it from the server; Andy: "G0 goes, from ui and server, kept in database.").
 //   4. THE FILE IN THE REPO. spirit/run/process/js/desk/currentGoal.json is tracked by git (committed at birth,
 //      so the lab suites, which refuse an untracked file under spirit/, keep running) and parses as that object.
 //   5. A read is a read: the finds, the chats and item.get write nothing to it (its bytes stay as they were).
@@ -49,7 +50,7 @@ const DESK_DIR = path.join(RUN, 'process', 'js', 'desk');
 const DESK = path.join(DESK_DIR, 'desk.js');
 const MANIFEST = path.join(DESK_DIR, 'desk.json');
 const REPO_FILE = path.join(DESK_DIR, 'currentGoal.json');
-const GROUP = 'goal/G0';
+const OTHER = 'goal/G102.1';   // an item of another goal (goal/G0, the group chat, until goal/G43.22)
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskGoalFileTestDeskNodeAAAAAAAAAAAAA=', label: 'andy' };
@@ -137,7 +138,7 @@ async function main() {
   await d.call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
   await d.call('box.write', { id: 'goal/G101.1', text: 'THE-BOX-OF-FIRST', version: 0 }, CW);
   await d.call('chat.add', { id: 'goal/G101.1', text: 'a line under first', by: 'claude-windows' }, CW);
-  await d.call('chat.add', { id: GROUP, text: 'a group line, not of the goal' }, ANDY);
+  await d.call('chat.add', { id: OTHER, text: 'a line of another goal, not of this one' }, ANDY);
   await d.call('press', { id: 'goal/G101.3', what: 'close' }, ANDY);
   await sleep(200);
   const beforeGo = readJson(file);
@@ -163,16 +164,16 @@ async function main() {
   if (goAll.status === 200 && afterGoAll && afterGoAll.change === goAll.body.change) test.check('his go-all writes it: change ' + afterGoAll.change);
   else test.fail(OWED + 'after go-all: ' + JSON.stringify(afterGoAll).slice(0, 160) + '; go-all answered ' + JSON.stringify(goAll.body));
 
-  test.subHeading('4. what it holds: the whole goal, closed items too, boxes and chats; not the group chat');
+  test.subHeading('4. what it holds: the whole goal, closed items too, boxes and chats; no other goal\'s');
   const doc = afterGoAll || {};
   const items = Array.isArray(doc.items) ? doc.items : [];
   const byId = {};
   items.forEach(function (it) { if (it && it.id) byId[it.id] = it; });
   const ids = Object.keys(byId).sort();
   if (ids.join() === ['goal/G101', 'goal/G101.1', 'goal/G101.2', 'goal/G101.3'].join()) test.check('items: the goal\'s row and its three items, the closed one included');
-  else test.fail(OWED + 'items in the file: ' + JSON.stringify(ids) + (byId[GROUP] ? ' (the group chat is in it)' : ''));
-  if (!byId[GROUP] && JSON.stringify(doc).indexOf('a group line, not of the goal') === -1) test.check('the group chat goal/G0 and its line are not in it');
-  else test.fail(OWED + 'the file carries the group chat');
+  else test.fail(OWED + 'items in the file: ' + JSON.stringify(ids) + (byId[OTHER] ? ' (another goal\'s item is in it)' : ''));
+  if (!byId[OTHER] && JSON.stringify(doc).indexOf('a line of another goal, not of this one') === -1) test.check('another goal\'s item, ' + OTHER + ', and its line are not in it');
+  else test.fail(OWED + 'the file carries another goal\'s item or its line');
   const first = byId['goal/G101.1'] || {};
   const facts = first.status === 'done' && Array.isArray(first.buttons) && first.go === true && first.title === 'First';
   const chat = Array.isArray(first.chat) && first.chat.some(function (l) { return l && l.text === 'a line after the Go' && l.by === 'andy' && typeof l.at === 'string'; });

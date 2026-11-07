@@ -109,7 +109,8 @@ function stateOf(id) {
 test.startTest('desk/G1.12: Desk layout and buttons');
 settle().then(function () {
   const tabs = doc.getElementById('desk-tabs');
-  tabs.fire('click', { target: clickTarget(tabs, { 'data-tab': 'team' }), currentTarget: tabs });
+  // Until goal/G43.22 the suite opened Team first; the Team tab went then (Andy, the box, Q5: "G0 goes, from ui and
+  // server, kept in database."), so the face is read as it opens, on the List.
 
   test.subHeading('T1: the tab rows are pinned, and the design button is last');
   const shell = root.innerHTML;
@@ -152,9 +153,10 @@ settle().then(function () {
   // deskFrontPage.js asserts them on the List tab).
   test.subHeading('T14: the tab row is one row on every tab');
   const tabTo = function (name) { tabs.fire('click', { target: clickTarget(tabs, { 'data-tab': name }), currentTarget: tabs }); return tabs.innerHTML; };
-  const rows = [tabTo('list'), tabTo('rules'), tabTo('team')];
-  // Since goal/G22.3: Team is Apps' first inner tab (Andy, 2026-10-13); the one row holds Apps where Team stood.
-  if (rows.every(function (h) { return /data-tab="apps"/.test(h) && !/data-agent=/.test(h); })) test.check('List, Rules, Team under Apps: the one tab row, no agent tab on any');
+  const rows = [tabTo('list'), tabTo('rules')];
+  // Since goal/G22.3 Team was Apps' first inner tab; since goal/G43.22 Apps and Team are gone ("the apps and plugin
+  // system goes."): the one row holds List and Rules, and no Apps or Team tab.
+  if (rows.every(function (h) { return /data-tab="list"/.test(h) && /data-tab="rules"/.test(h) && !/data-tab="apps"/.test(h) && !/data-tab="team"/.test(h) && !/data-agent=/.test(h); })) test.check('List and Rules, no Apps or Team: the one tab row, no agent tab on any');
   else test.fail(OWED + 'the tab row across the tabs: ' + JSON.stringify(rows.map(function (h) { return h.slice(0, 80); })));
 
   test.subHeading('T2: design mode ends only on the second press');
@@ -179,10 +181,8 @@ settle().then(function () {
   if (/\bblocking\b/.test(s1) && /\bblocked\b/.test(s2)) test.check('goal/G100.1 reads blocking, goal/G100.2 (waiting on it) reads blocked');
   else test.fail(OWED + 'goal/G100.1 reads ' + JSON.stringify(s1) + ', goal/G100.2 reads ' + JSON.stringify(s2));
 
-  test.subHeading('T5 in Desk: the bubble shows the goal by its title, nothing more');
-  const bubble = doc.getElementById('desk-session').innerHTML;
-  if (/Goal/.test(bubble) && !/GOAL-TEXT/.test(bubble) && !/RULE-TEXT/.test(bubble)) test.check('the bubble shows the goal\'s title line only');
-  else test.fail(OWED + 'the bubble on first open: ' + bubble.replace(/\s+/g, ' ').slice(0, 200));
+  // T5 IN DESK STOOD HERE: #desk-session, the goal bubble, showed the goal by its title alone. It sat in the Team pane,
+  // which went with goal/G43.22; T5 in the dialog stands below.
 
   // T8 (the goal banner folding) was dropped by O3's answer: the banner stays
   // one line, and the goal overview lives only in the goal's dialog (G1.14).
@@ -197,18 +197,8 @@ settle().then(function () {
   if (tds.length > 2 && !hasIcon(tds[0]) && hasIcon(tds[1])) test.check('column 1 carries no type icon; column 2 carries it');
   else test.fail(OWED + 'first two cells ' + JSON.stringify(tds.slice(0, 2)));
 
-  test.subHeading('T6: chat boxes take several lines, and Return sends nothing');
-  const shell = root.innerHTML;
-  const say = doc.getElementById('desk-team-say');
-  // The Musings box went with goal/G27.3; the Team box is the face's own chat textarea.
-  const areas = ['desk-team-say'].filter(function (id) { return new RegExp('<textarea[^>]*id="' + id + '"').test(shell); });
-  posted.length = 0;
-  say.value = 'first thought';
-  say.fire('keydown', { key: 'Enter', repeat: false, preventDefault: function () {} });
-  return settle().then(function () {
-    if (areas.length === 1 && posted.length === 0) test.check('the Team box is a textarea; Return in it sent nothing');
-    else test.fail(OWED + 'textareas ' + JSON.stringify(areas) + ', sent on Return ' + posted.length);
-  });
+  // T6 STOOD HERE: the Team box was a textarea and Return in it sent nothing. The Musings box went with goal/G27.3 and
+  // the Team box, the face's last chat box, with goal/G43.22.
 }).then(function () {
   // ── The dialog ──────────────────────────────────────────────────────
   // Since desk/G2.7 the dialog paints the desk server's item.get: the rulings below stand, on the new parts

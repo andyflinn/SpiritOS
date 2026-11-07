@@ -70,9 +70,6 @@ w.job({ verb: 'goal.whole', item: JSON.stringify(it('goal/G9', '')) });
 ok(w.item('goal/G9') && w.current() === 'goal/G9', 'an item as a JSON string is read; a goal (goal \'\') is its own goal', short(w.item('goal/G9')));
 w.job({ verb: 'goal.whole', item: { title: 'no id' } }); w.job({ verb: 'goal.whole', item: '{broken' }); w.job(null); w.job('text');
 ok(w.ids().length === 2, 'facts with no id, broken JSON, a non-object: nothing kept', short(w.ids()));
-w.job(whole(it('goal/G0', '')));
-w.job({ verb: 'item.row', item: it('goal/G0.3', 'goal/G0') });
-ok(w.current() === 'goal/G9' && w.item('goal/G0') && w.item('goal/G0.3'), 'the group chat\'s rows are kept, and never make it current', 'current ' + w.current());
 w.job({ verb: 'item.row', item: it('goal/G7.1', 'goal/G7') });
 ok(w.current() === 'goal/G9' && w.item('goal/G9.1') && w.item('goal/G7.1'), 'a row that is not goal.whole is kept and drops nothing', 'current ' + w.current());
 
@@ -83,7 +80,7 @@ w.X.took('item.box', { id: 'goal/G9.1' }, { box: 'the box', version: 3 });
 w.job(whole(it('goal/G8.1', 'goal/G8')));
 ok(w.current() === 'goal/G8' && !!w.item('goal/G9.1') && !!w.item('goal/G9') && !!w.part('goal/G9.1') && w.part('goal/G9.1').box === 'the box' && !!w.item('goal/G7.1'), 'it is current, and goal/G9\'s rows and parts stay, and so does another goal\'s row: every goal is kept',
   short(w.ids()));
-ok(w.item('goal/G0') && w.item('goal/G0.3') && w.item('goal/G8.1'), 'the group chat and its items stay; the new goal\'s row is kept', short(w.ids()));
+ok(!!w.item('goal/G8.1'), 'the new goal\'s row is kept', short(w.ids()));
 w.job({ verb: 'item.row', item: it('goal/G6.1', 'goal/G6') });
 w.job(whole(it('goal/G6', '')));
 ok(w.current() === 'goal/G6' && w.item('goal/G6.1') && w.item('goal/G6'), 'a row of the new goal that came before it was pushed stays', short(w.ids()));
@@ -109,7 +106,6 @@ ok(wb.item('goal/G9.3'), 'a single row is taken as it comes', short(wb.ids()));
 test.subHeading('took: a part read for an item of the current goal is kept');
 const wt = world();
 wt.job(whole(it('goal/G9.1', 'goal/G9')));
-wt.job(whole(it('goal/G0', '')));
 wt.job({ verb: 'item.row', item: it('goal/G5.1', 'goal/G5') });
 wt.X.took('item.box', { id: 'goal/G9.1' }, { box: 'B', version: '4' });
 ok(wt.part('goal/G9.1').box === 'B' && wt.part('goal/G9.1').version === 4, 'item.box: { box, version } as a number', short(wt.part('goal/G9.1')));
@@ -118,8 +114,6 @@ ok(wt.part('goal/G9.1').chat.length === 1 && wt.part('goal/G9.1').chatMore === t
 wt.X.took('item.checks', { id: 'goal/G9.1' }, { checks: [{ number: '1', state: 'open' }] });
 wt.X.took('item.files', { id: 'goal/G9.1' }, { files: [{ path: 'b.js', by: 'cw', core: false, grant: '' }], filesMore: true });
 ok(wt.part('goal/G9.1').checks.length === 1 && wt.part('goal/G9.1').files.length === 1 && wt.part('goal/G9.1').filesMore === true, 'item.checks and item.files are kept too', short(wt.part('goal/G9.1')));
-wt.X.took('item.chat', { id: 'goal/G0' }, { chat: [] });
-ok(wt.part('goal/G0') && Array.isArray(wt.part('goal/G0').chat), 'the group chat\'s part is kept though it is not the current goal', short(wt.part('goal/G0')));
 wt.X.took('item.box', { id: 'goal/G5.1' }, { box: 'no' });
 wt.X.took('item.box', { id: 'goal/G4.4' }, { box: 'no' });
 ok(!wt.part('goal/G5.1') && !wt.part('goal/G4.4'), 'an item of another goal, or one with no row, keeps nothing', short([wt.part('goal/G5.1'), wt.part('goal/G4.4')]));

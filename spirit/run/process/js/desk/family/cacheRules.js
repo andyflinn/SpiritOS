@@ -9,12 +9,12 @@
 // cache, it knows the default cache limit, IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE". The client's
 // appServer keeps the rows the desk sends and hands them here, oldest first; the newest row is the one last touched.
 //   keep(rows, row)          row placed last, the row of the same thing it makes old taken out: an item's facts, one
-//                            side row (its table, item and own key), a rule, a plugin's word
+//                            side row (its table, item and own key), a rule
 //   shed(rows, limit, bytes) the rows that stay once bytes(rows), the cache file's size, is past limit
 // THE SHED ORDER IS ANDY'S (Q2): "FIRST YOU shed the longest untouched goal, lock, stock and barrel / when there is
 // only one goal, then you shed the longest untouched item, LOCK, stock and barrel, / when there is only one goal with
 // one item you shed the oldest chat line." A goal's own row is no item, so it stays with its goal. Rows of no goal (the
-// rules, a plugin's) are never shed.
+// rules) are never shed.
 module.exports = function rules(N) {
   var ITEMS = N.items;
   var PARTS = N.parts;
@@ -40,7 +40,6 @@ module.exports = function rules(N) {
     if (row.table) { var k = sideKey(row); return k === null ? '' : 'side ' + row.table + ' ' + String(row.id || '') + ' ' + k; }
     if (row.item && row.item.id) return 'item ' + row.item.id;
     if (row.rule) return 'rule ' + row.rule;
-    if (row.plugin) return 'plugin ' + row.plugin;
     return '';
   }
   // A PUSH GOAL REPLACES (goal/G41.22; Andy, the box: "pushgoal replaces each agent's copy of the current goal whole, no

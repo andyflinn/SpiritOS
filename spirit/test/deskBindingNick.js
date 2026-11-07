@@ -366,13 +366,8 @@ async function thePage() {
   const pageHtml = function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n') + container.innerHTML; };
   if (/Claude Windows/.test(byId['desk-list'] ? byId['desk-list'].innerHTML : pageHtml()) && !/<td>claude-windows<\/td>/.test(pageHtml())) test.check('the List names the taker by name');
   else test.fail(OWED + 'the List: ' + short((/<td>[^<]*claude[^<]*<\/td>/i.exec(pageHtml()) || [''])[0]));
-  const team = node('button');
-  team.setAttribute('data-tab', 'team');
-  doc.getElementById('desk-tabs').appendChild(team);
-  bubble(team, { type: 'click', bubbles: true, currentTarget: doc.getElementById('desk-tabs'), preventDefault: function () {}, stopPropagation: function () {} });
-  await settled();
-  if (/<b>Claude Windows<\/b>/.test(pageHtml())) test.check('the group chat line shows the name');
-  else test.fail(OWED + 'the group chat: ' + short((/<b>[^<]*<\/b>[^<]*<span[^>]*>[^<]*<\/span> hello team/.exec(pageHtml()) || ['no line'])[0]));
+  // THE GROUP CHAT LINE'S NAME, under Team, STOOD HERE: Team and its group chat goal/G0 went with goal/G43.22 (Andy, the
+  // box, Q5: "G0 goes, from ui and server, kept in database."). An item chat line's name is the dialog's (deskDetails).
   const t = node('button');
   t.setAttribute('data-tab', 'agent:claude-windows');
   doc.getElementById('desk-tabs').appendChild(t);

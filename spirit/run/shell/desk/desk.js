@@ -62,9 +62,9 @@ function deskIdOrder(a, b) {
   return 0;
 }
 // A row the toggles let onto the List: Goals Only, goal rows alone; Current Goal Only, the current goal and its items;
-// Include Closed off, no closed row. The group chat's goal is on no List (goal/G3.10).
+// Include Closed off, no closed row.
 function deskRowShown(row) {
-  if (!row || !row.id || row.id === DESK_GROUP) return false;
+  if (!row || !row.id) return false;
   if (deskFilter.goalsOnly && row.goal !== '') return false;
   if (!deskFilter.includeClosed && row.status === 'closed') return false;
   var K = deskKept();
@@ -85,7 +85,7 @@ var deskFilter = { text: '', currentGoalOnly: true, goalsOnly: false, includeClo
 var deskError = '';
 // THE LEGACY AGENTS-PACKET LOG WENT WITH goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them."): the page
 // no longer records arrivals of the agents app's era nor reads them back; the desk server knows the agents by their keys
-// (the goal row's agents), and the group chat is goal/G0's chat.
+// (the goal row's agents).
 
 // ── DESK'S RECORD IS THE DESK SERVER'S (desk/G1.4) ──────────────────
 //
@@ -152,51 +152,13 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // goal/G33.8 (box v13; Andy: "it's enough to put a red ! next to the item"): the mark stands beside the item's title and
 // id; the row keeps its colour.
 var DESK_ALERT = '<span data-alert-mark="1" style="color:#d00;font-weight:bold" title="needs your eye: brought back, or a line from the agent holding it">!</span>';
-var deskSeen = { team: 0, agents: {} };
+// The main tab the page opens on, and falls back to: the List.
 var deskTab = 'list';
-// THE DIRECT TABS ARE GONE (goal/G3.12). Team is the group chat alone; there is no chat inside Team to pick, no
-// line to one agent and no direct line's unseen mark. Andy, 2026-10-03: "the The team tab will only show the team
-// chat interface (Chat of goal 'desk/G0.0')". deskSeen keeps its agents field so an older seen.json still parses.
 
-// The newest line of the group chat (goal/G0) not his own, as the page holds it (goal/G33.4: the legacy log went).
-function deskNewestTeamLine() {
-  var newest = 0;
-  (deskGroup || []).forEach(function (l) {
-    if (!l || l.by === 'andy') return;
-    var at = Date.parse(l.at) || 0;
-    if (at > newest) newest = at;
-  });
-  return newest;
-}
-function deskSaveSeen() {
-  if (!deskLoaded) return;
-  // goal/G33.7: seen is one value per item; the group chat's is goal/G0's, the arrival time of the newest line he saw.
-  if (deskSeen.team) deskAsk('seen.set', { id: DESK_GROUP, at: new Date(deskSeen.team).toISOString() }).catch(function () { /* only a marker */ });
-}
-function deskMarkTeamSeen() {
-  var newest = deskNewestTeamLine();
-  if (newest <= (deskSeen.team || 0)) return;
-  deskSeen.team = newest;
-  deskSaveSeen();
-}
-
-// Applied once at mount, after the first reads. Absent: all held is seen.
-function deskLoadSeen(raw) {
-  var held = null;
-  try { held = raw ? JSON.parse(raw) : null; } catch (e) { held = null; }
-  if (held && typeof held === 'object') {
-    deskSeen = { team: Number(held.team) || 0, agents: held.agents && typeof held.agents === 'object' ? held.agents : {} };
-    return;
-  }
-  deskSeen = { team: deskNewestTeamLine(), agents: {} };
-  deskSaveSeen();
-}
-
-// A tab button: the one showing is marked. spaced: 1em after itself, for a row that is no flex row with its own gap
-// (the inner tabs under Apps, goal/G22.3).
-function deskTabButton(attrs, on, label, spaced) {
+// A tab button: the one showing is marked.
+function deskTabButton(attrs, on, label) {
   return '<button type="button" ' + attrs + ' aria-selected="' + (on ? 'true' : 'false') + '" style="font-weight:' +
-    (on ? 'bold' : 'normal') + ';text-decoration:' + (on ? 'underline' : 'none') + (spaced ? ';margin-right:1em' : '') + '">' +
+    (on ? 'bold' : 'normal') + ';text-decoration:' + (on ? 'underline' : 'none') + '">' +
     deskEsc(label) + '</button>';
 }
 
@@ -337,21 +299,17 @@ function deskAgentProfileSave() {
   }, function (e) { deskAgentNote = 'Profile not saved: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 
-// Drawn whole, as markup: List | Apps | Rules, then the bubbles (Musings went with goal/G27.3, for Vision under Apps). SINCE goal/G22.3 Team is Apps' first inner
-// tab (Andy, 2026-10-13: "Team (today's Team tab, moved into Apps as its first special goal)"); Apps stands where Team
-// stood and shows as on while any of its inner tabs does. The inner row is drawn with it.
+// Drawn whole, as markup: List | Rules, then the bubbles. The Team tab, the Apps tab and its inner tabs went with
+// goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
   if (!strip) return;
   var waiting = deskWaitingOnAndy();
   var design = deskDesignOn();
-  deskDrawAppTabs();
   strip.innerHTML =
     deskTabButton('data-tab="list"', deskTab === 'list', 'List' + (waiting ? ' (' + waiting + ')' : '')) +
-    deskTabButton('data-tab="apps"', deskIsAppTab(deskTab), 'Apps') +
     deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
-    // THE MUSINGS TAB STOOD HERE, and went with goal/G27.3 (R1, Andy: "musings" tab replaced by desk-app "vision"):
-    // his thoughts for later are the Vision tab under Apps now, item by item, each with its chat.
+    // THE MUSINGS TAB STOOD HERE, and went with goal/G27.3.
     // WHERE MUSINGS STOOD, AND ONLY WHERE ONE RUNS (goal/G8.11): his words were "right after [musings]", and the tab
     // is absent on a node with no deskVerify, as the backup bubble is.
     (deskVerifier ? deskTabButton('data-tab="verifier"', deskTab === 'verifier', 'Verifier') : '') +
@@ -402,9 +360,6 @@ function deskDesignOn() {
   var g = deskGoalRow();
   return !!(g && g.design);
 }
-function deskLabels(r) {
-  return ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
-}
 // THE PROBABILITY SEARCH FRAMEWORK ON THE LIST (goal/G40.12; Andy: "ALL desk clients need to cache search results, the
 // same."): the rows the page holds are its cache, kept by id. With no words the desk's answer is the List as the toggles
 // have it; with words the answer only adds to the cache, and what is drawn is the cache ranked against the words as
@@ -436,7 +391,7 @@ function deskSearchItems() {
       var K = deskKept();
       if (forCurrent) ((r && r.items) || []).forEach(function (it) { try { var row = JSON.parse(it.label); if (row.goal === '' && !deskSearchedGoal) deskSearchedGoal = row.id; } catch (e) { /* not a row */ } });
       if (D && K && typeof D.seatRows === 'function') D.seatRows(K.branch, (r && r.items) || []);
-      deskNotePlugins(deskLabels(r)); deskDraw();
+      deskDraw();
       // The List may have drawn its own answer before this one named the goal.
       if (deskList) deskList.redraw();
       done();
@@ -484,60 +439,36 @@ function deskOnPublished(obj) {
   // the backup copies desk.db after a change. Until goal/G33.4 it followed the page's own log line.
   if (change && change > deskLastChange) deskAskBackup();
   if (change > deskLastChange) deskLastChange = change;
-  // A LINE OF THE GROUP CHAT IS DRAWN AS IT COMES (goal/G3.10): its goal is on no List, so it is no row. A JUMP IN
-  // CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record, published or not, so reading the chat again on
-  // every jump asked the desk once per row. A real gap is a reconnect, and the chat is read again then (deskLoad).
-  // EACH ROW ON ITS OWN (goal/G33.4): a side row of an item ({table, id, row}) is no List row; the group chat's line is
-  // drawn here, the rest is the dialog's and the kept items' (the desk family's data.js).
-  if (obj.table) {
-    if (obj.table === 'chat' && obj.id === DESK_GROUP && obj.row && !obj.removed) {
-      if (deskGroup) {
-        var at = -1;
-        deskGroup.forEach(function (l, i) { if (deskSameLine(l, obj.row)) at = i; });
-        if (at === -1) deskGroup.push(obj.row); else deskGroup[at] = obj.row;
-      }
-      // goal/G27.9: the team chat's own element repaints it; without the element the whole face is drawn, as before.
-      if (deskTeamElement) deskDrawTabs(); else deskDraw();
-    }
-    return;
-  }
+  // EACH ROW ON ITS OWN (goal/G33.4): a side row of an item ({table, id, row}) is no List row; it is the dialog's and
+  // the kept items' (the desk family's data.js).
+  if (obj.table) return;
   // A session's rows each come as their own publish (goal/G33.4): the List asks again once for the write. A jump in
   // change numbers is no gap (goal/G41.2), so it no longer searches the List again.
   if (obj.verb === 'session.set') { if (deskSearchedAt !== change || !change) { deskSearchedAt = change; deskSearchItems(); } return; }
   // ITS ONE ROW (goal/G33.4: every row a write changed is its own publish).
   var it = obj.item;
   if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
-  // The group chat's goal is on no List (goal/G3.10): its row publish draws nothing here.
-  if (!it || !it.id || it.id === DESK_GROUP) return;
-  // goal/G22.3: a plugin goal's row seen first on the stream gives it its tab under Apps.
-  deskNotePlugins([it]);
+  if (!it || !it.id) return;
   // THE LIST TAKES ADDITIONS FROM THE STREAM (goal/G24.6). Andy: "no pulling". The row is the cache manager's to keep
   // (its translator writes it into the desk's branch as the publish arrives); the List, a view of that branch, draws it
   // where the toggles and the goal's order put it (deskHeld). Nothing is placed here by hand.
   // ONE ROW CHANGED, ONE ROW REPAINTED (goal/G27.9, B; on the probability search since goal/G40.12): the List takes the
   // rows the store now holds, and a row that stays is repainted by its own element, the cells that changed alone. What
-  // sits outside the List and reads the rows (the tabs' count, Go-All, the session bubble) is redrawn too.
+  // sits outside the List and reads the rows (the tabs' count, Go-All) is redrawn too.
   if (!deskList) { deskDraw(); return; }
   deskList.redraw();
   deskDrawTabs();
   deskDrawGoAll();
-  var bubble = document.getElementById('desk-session');
-  if (bubble) bubble.innerHTML = deskSessionBubble();
 }
 
 // ── THE ELEMENTS THAT CARRY THEIR STREAM (goal/G27.9) ─────────────────
 //
 //   Desk rule 8 (Andy): "Shell and application elements, should bring their subscriptions with them, so that they're
-//   automatically subscribed to the events that update them." Each is made with the shared createDeskElement
-//   (shell/shared/js/deskElement.js): it subscribes itself and repaints only what it shows, from what this page holds.
-//   Without the shared element (a page that did not load it) none is made and the face is drawn whole, as before.
-var deskTeamElement = null;
-// THE SHARED ELEMENT, LOADED ON DEMAND (goal/G27.9). Andy, 2026-10-17, denying a line in index.html for it ("a core
-// element has to know about specific apps"), and choosing that the app loads it itself at mount: "it is ok for apps to
-// know about other apps and their shared elements. i like this solution." Once per page: a second app finds it there.
-var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
+//   automatically subscribed to the events that update them." Andy, 2026-10-17, on the shared parts: the app loads
+//   them itself at mount: "it is ok for apps to know about other apps and their shared elements. i like this solution."
+//   Once per page: a second app finds each there. The team chat's element went with goal/G43.22.
 // THE DESK'S TRANSLATOR (goal/G33.3): spirit.data keeps the current goal for this page and the item dialog, as
-// deskClient keeps it in node; loaded once by the app, as the shared element is. Since goal/G41.24 it is the desk
+// deskClient keeps it in node; loaded once by the app. Since goal/G41.24 it is the desk
 // family's data.js, from the node that served this page.
 var DESK_DATA = '/process/js/desk/data.js';
 // The verifier's cache manager, its own family's (goal/G41.28).
@@ -585,23 +516,13 @@ function deskForgetKept() {
   var K = typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).desk || {}).data;
   if (K && typeof K.forgetAll === 'function') K.forgetAll();
 }
-// THE RUN IN THE STATUS COLUMN (goal/G33.6): the shared rendering the dialog uses too, loaded once by the app, as the
-// shared element is; a page without it draws the status word alone.
+// THE RUN IN THE STATUS COLUMN (goal/G33.6): the shared rendering the dialog uses too, loaded once by the app; a page
+// without it draws the status word alone.
 var DESK_RUN_STATUS = '/shell/shared/js/deskRunStatus.js';
 function deskLoadRunStatus() {
   var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.deskRunStatus;
   if (typeof have === 'function') return;
   deskNeed(DESK_RUN_STATUS).then(function () { deskDraw(); }, function () { /* the status word alone */ });
-}
-function deskLoadSharedElement(done) {
-  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
-  if (typeof have === 'function') { done(); return; }
-  deskNeed(DESK_SHARED_ELEMENT).then(done, function () { /* no shared rows */ });
-}
-function deskMakeElement(o) {
-  var make = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskElement;
-  if (typeof make !== 'function' || !deskApi || typeof deskApi.onPublished !== 'function') return null;
-  return make(Object.assign({ subscribe: function (fn) { return deskApi.onPublished(fn); } }, o));
 }
 // The ids a publish changes rows of.
 function deskRowIdsOf(obj) {
@@ -609,17 +530,6 @@ function deskRowIdsOf(obj) {
   var it = obj.item;
   if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
   return it && it.id ? [it.id] : [];
-}
-// One element per row on the List, made again whenever the List is drawn.
-// The team chat and the rule list, made once at mount.
-function deskMountElements() {
-  deskTeamElement = deskMakeElement({
-    wants: function (obj) { return !!(obj && obj.table === 'chat' && obj.id === DESK_GROUP); },
-    paint: function () {
-      deskTeamSync();
-      if (deskTab === 'team') deskMarkTeamSeen();
-    },
-  });
 }
 function deskGoalOf(row) { return row.goal === '' ? String(row.id) : String(row.goal); }
 // A PRESS IS NOT A LINE. Andy: "a press shouldn't post a line, it is not
@@ -729,104 +639,6 @@ function deskRowCells(row, presses) {
     '<td>' + deskLinks((row.blocking || []).filter(function (b) { return goal || b !== row.goal; })) + '</td>' +
     '<td>' + deskLinks(row.blocked) + '</td>' +
     '<td style="width:16em">' + deskStatusCell(row) + '</td>');
-}
-// ── APPS: THE SPECIAL GOALS, EACH ITS INNER TAB (goal/G22.3) ─────────
-//
-//   Andy, 2026-10-13, in the item's box: a main desk tab Apps, whose inner tabs are the special goals: Team (the Team
-//   tab, moved into Apps as its first special goal) and Stacks (the stackFrameChecks plugin's private UI), more later.
-//   Apps replaces the label button in the List: a plugin goal's title there is plain text. Each plugin's private UI is
-//   its inner tab under Apps, and every plugin the desk mounts gets one.
-//
-// Team keeps its tab id, 'team', so everything that opens Team or asks whether it shows still works; a plugin's inner
-// tab is 'app:<name>'. Both put Apps on. The plugins are found on their goals' rows (plugin, and pluginTab, the name the
-// desk server takes from the plugin's .json): one search for the plugin goals at mount and after a gap, and any row the
-// List or the stream brings. A plugin's pane is made once, inside Apps, and its private UI is loaded the first time its
-// tab opens: one script, shell/desk/plugins/<name>/<name>.js, which registers window.spirit.deskPlugins[<name>] =
-// { open(container, ctx) }. ctx: goal (its goal's id), ask (this page's deskAsk), onPublished (the desk server's
-// stream, which the UI subscribes to itself, as every shell element does) and chat(container), which mounts its goal's
-// chat there, Team's own (deskMountChat). Switching tabs repaints nothing, so what is
-// typed in a plugin's pane survives.
-var DESK_PLUGIN_UI = 'shell/desk/plugins/';
-var deskApps = [];          // { name, tab, goal, opened } per plugin found, in found order
-var deskAppTab = 'team';    // the inner tab Apps opens on: the last one shown
-function deskIsAppTab(tab) { return tab === 'team' || String(tab).indexOf('app:') === 0; }
-// The inner tab row: Team first, then a tab per plugin; each button 1em after itself (the desk's UI rule).
-function deskDrawAppTabs() {
-  var strip = document.getElementById('desk-app-tabs');
-  if (!strip) return;
-  strip.innerHTML = deskTabButton('data-tab="team"', deskTab === 'team', 'Team', true) + deskApps.map(function (a) {
-    return deskTabButton('data-tab="app:' + deskEsc(a.name) + '"', deskTab === 'app:' + a.name, a.tab, true);
-  }).join('');
-}
-// Plugins named on rows: a new one gets its pane and its tab; one already held keeps them.
-function deskNotePlugins(rows) {
-  var added = false;
-  (rows || []).forEach(function (r) {
-    if (!r || !r.plugin || !/^[A-Za-z][A-Za-z0-9_-]*$/.test(String(r.plugin))) return;
-    if (deskApps.some(function (a) { return a.name === r.plugin; })) return;
-    var app = { name: String(r.plugin), tab: String(r.pluginTab || r.plugin), goal: String(r.id), opened: false };
-    deskApps.push(app);
-    var panes = document.getElementById('desk-app-panes');
-    if (panes && typeof document.createElement === 'function') {
-      var el = document.createElement('div');
-      el.id = 'desk-app-' + app.name;
-      el.setAttribute('data-app', 'app:' + app.name);
-      // A plugin's box fills the Apps pane (rule/16), so a list it mounts can fill it in turn.
-      el.className = 'fill';
-      el.hidden = deskTab !== 'app:' + app.name;
-      if (typeof panes.appendChild === 'function') panes.appendChild(el);
-    }
-    added = true;
-  });
-  if (added) deskDrawAppTabs();
-}
-// THE PLUGINS, FOUND BY THEIR FOLDER (goal/G29.5). Andy, 2026-10-17: "just search the plugin folder for subfolders,
-// THAT's the way you find them all." A ranked search for plugin/ lost Fallout's goal off a capped answer once its chat
-// grew long. So every shell/desk/plugins/<name>/<name>.js is a plugin, and its goal, plugin/<name>, is read for the
-// tab's name (pluginTab). A folder whose goal the desk has not mounted gets no tab.
-// THE SHELL'S TREE, NOT THE NODE (goal/G29.8). The item's box: "No new verb: an empty search is the whole tree, and the
-// one shared helper is the shell's tree read with no words"; "Desk's plugin finder keeps the rows
-// plugins/<name>/<name>.js". The paths are the ones api.onFiles last handed over.
-var deskFiles = [];
-function deskFindPlugins() {
-  return Promise.resolve().then(function () {
-    var names = deskFiles.map(function (f) { return String((f && f.relativePath) || ''); })
-      .map(function (k) { var m = /^shell\/desk\/plugins\/([^/]+)\/([^/]+)\.js$/.exec(k); return m && m[1] === m[2] ? m[1] : ''; })
-      .filter(function (n) { return /^[A-Za-z][A-Za-z0-9_-]*$/.test(n) && !deskApps.some(function (a) { return a.name === n; }); });
-    return Promise.all(names.map(function (n) {
-      return deskAsk('item.get', { id: 'plugin/' + n }).then(function (g) {
-        var facts = null;
-        try { facts = typeof g.item === 'string' ? JSON.parse(g.item) : g.item; } catch (e) { facts = null; }
-        return facts && facts.plugin === n ? facts : null;
-      }, function () { return null; });
-    })).then(function (rows) { deskNotePlugins(rows.filter(Boolean)); });
-  }).then(null, function () { /* the tabs stay as they are */ });
-}
-// The first time a plugin's tab opens, its private UI is loaded and opened in its pane; later it is only shown.
-function deskOpenPlugin(app) {
-  if (!app || app.opened) return;
-  var el = document.getElementById('desk-app-' + app.name);
-  if (!el) return;
-  app.opened = true;
-  var win = typeof window !== 'undefined' ? window : {};
-  var held = (win.spirit = win.spirit || {}).deskPlugins = win.spirit.deskPlugins || {};
-  var name = app.name;
-  var open = function () {
-    var ui = held[name];
-    if (!ui || typeof ui.open !== 'function') { el.textContent = 'The ' + name + ' plugin has no private UI at ' + DESK_PLUGIN_UI + name + '/.'; return; }
-    // goal/G22.3: chat(container) mounts its goal's chat there (deskMountChat), the shared chat element.
-    // goal/G22.3: onPublished(fn, server) takes another server's stream too.
-    // goal/G27.2 (D1): callDialog(app, params) is the shell's dialog, passed through, so a plugin opens its own detail
-    // (Stacks: shell/stackFrameCheckDetail) as Desk opens deskDetails.
-    // goal/G29.5: verb(name, body) is Desk's own call, so a plugin talks to the server it needs (Fallout to deskVerify
-    // only) and hands it to its probability search with onPublished as that list's api.
-    ui.open(el, { goal: app.goal, ask: deskAsk, verb: function (name, body) { return deskApi.verb(name, body); }, onPublished: function (fn, server) { return server ? deskApi.onPublished(fn, server) : deskApi.onPublished(fn); },
-      chat: function (container) { deskMountChat(container, app.goal); },
-      callDialog: function (dialog, params) { return deskApi.callDialog(dialog, params); } });
-  };
-  if (held[name]) { open(); return; }
-  el.textContent = 'Loading the ' + name + ' plugin…';
-  deskNeed(DESK_PLUGIN_UI + name + '/' + name + '.js').then(open, function () { app.opened = false; el.textContent = 'The ' + name + ' plugin\'s private UI could not be loaded from ' + DESK_PLUGIN_UI + name + '/.'; });
 }
 // THE STATUS BOX (goal/G18.5, back with goal/G33.6): while the verifier runs this item, its run; otherwise the server's
 // status word, green when it says passed, red when rejected or red. Andy: "why do i no longer see the verifier run in
@@ -949,8 +761,6 @@ function deskMountList() {
           var only = !(v && v.on) && !deskFilter.goalsOnly;
           return !only || deskGoalOf(row) === deskCurrentGoal() ? 1 : 0;
         } },
-        // The group chat's goal is on no List (goal/G3.10); no button.
-        { name: 'group', when: function () { return false; }, test: function (row) { return row && row.id !== DESK_GROUP ? 1 : 0; } },
         { name: 'goalsOnly', toggle: true, word: 'Goals Only', test: function (row, on) { return !on || row.goal === '' ? 1 : 0; } },
         { name: 'includeClosed', toggle: true, word: 'Include Closed', test: function (row, on) { return on || row.status !== 'closed' ? 1 : 0; } },
       ],
@@ -966,198 +776,14 @@ function deskMountList() {
   });
 }
 
-// The bubble at the top of Team: the goal, by title, and a line that opens it.
-function deskSessionBubble() {
-  var g = deskGoalRow();
-  if (!g) {
-    return '<div class="stat-tile wide"><div class="label">Design session</div>' +
-      '<div class="job-manifest-note">Blank. The lead fills in the goal as we talk.</div></div>';
-  }
-  return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
-    deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div></div>';
-}
-
-
-// ── THE DIRECT CHAT TO THE LEAD, BELOW THE LIST ─────────────────────
-//
-// What passed between Andy and the lead with NO row: his untagged lines to
-// the lead's key, and the lead's untagged lines to him. Board posts, claims
-// and reports are not conversation. Repainted on arrival, with the input
-// box outside the repainted part so his typing survives.
-// NEWEST FIRST, INPUT ON TOP. Andy, 2026-09-28: "i want my input at the top
-// if the chat log, and the log shows the last message at the top, the second
-// last shows second etc... then the most relevant chat entries will be at
-// the top". Every chat in Desk and its dialogs is drawn this way.
-// ── A CHAT LINE, DRAWN READABLY (desk/G1.10) ────────────────────────
-//
-//   Andy: "it would be nice if the chat log here would show some nicer
-//   formatting", then "yes, that would make it much more readable."
-//
-// Escaped FIRST, then formatted, so a line's text never becomes markup.
-// Line breaks kept; '- ' lines become a list; `backquoted` text is code; the
-// time is the local HH:MM; a session post is one line naming its goal, never
-// its JSON. Its twin is ddLineHtml in deskDetails.js: change both or neither.
+// The local HH:MM of an arrival time.
 function deskTime(at) {
   var d = new Date(at);
   if (isNaN(d.getTime())) return deskEsc(at);
   var two = function (n) { return (n < 10 ? '0' : '') + n; };
   return two(d.getHours()) + ':' + two(d.getMinutes());
 }
-function deskLineHtml(m) {
-  if (m && m.kind === 'session') {
-    var g = null;
-    try { g = JSON.parse(String(m.text)).goal; } catch (e) { g = null; }
-    return '<i>the goal record was updated' + (g ? ': ' + deskEsc(g.id) + ' — ' + deskEsc(g.title) : '') + '</i>';
-  }
-  var out = [];
-  var list = [];
-  var flush = function () { if (list.length) { out.push('<ul style="margin:2px 0 2px 18px">' + list.join('') + '</ul>'); list = []; } };
-  String(m && m.text || '').split('\n').forEach(function (raw) {
-    var line = deskEsc(raw).replace(/`([^`]+)`/g, '<code>$1</code>');
-    if (/^- /.test(raw)) { list.push('<li>' + line.slice(2) + '</li>'); return; }
-    flush();
-    out.push(line);
-  });
-  flush();
-  return out.join('<br>').replace(/<br>(<ul)/g, '$1').replace(/(<\/ul>)<br>/g, '$1');
-}
-
-// ── TEAM: THE GROUP CHAT, ANDY AND EVERY AGENT ──────────────────────
-//
-//   Andy, 2026-09-27: "so one more chat we need in the tabs, that's
-//   group-chat. there we can design and add requirements. just the group
-//   chat for me and the agents for now. no contract agreement tracking
-//   yet." — "call it "team"" — "so we don't pullute a requirement with
-//   out-of scope talks".
-//
-// The design-mode proposal (AGENTS-UI.md) cut down to what he asked for: a chat and nothing else. Since goal/G3.10 it
-// is the group chat's goal (goal/G0 since goal/G33.4); the old thread under team/chat went with the legacy log.
-
-// ── THE GROUP CHAT, UNDER ALL (goal/G3.10) ──────────────────────────
-//
-//   Andy, 2026-10-02: "This looks like a perfect team chat. Is it because
-//   it has a coal/item to anchor it?", then "when deskServer Starts up, it
-//   makes sure there is a closed goal with the id 'desk/G0.0', instead of
-//   the team-chat box, the 'all' tab displays the chat box for
-//   'desk/G0.0'", and "for now, we just show the chat box under all".
-//
-// The All tab is that goal's chat, held by the desk server: one record, in
-// one order, that he and every agent write with chat.add. It replaced the
-// team box, which drew the packets this page had recorded under DESK_TEAM
-// and posted his line to each agent as a packet; with the agents app gone
-// no agent could answer there. Read once (item.chat), then drawn from what
-// the server publishes ("no pulling").
-// goal/G33.4: goal 0, rendered from its two numbers.
-var DESK_GROUP = 'goal/G0';
-var deskGroup = null;   // its lines as the server holds them, oldest first; null until read
-function deskSameLine(a, b) { return a.by === b.by && a.at === b.at && a.text === b.text; }
-function deskAskGroup() {
-  return deskAsk('item.chat', { id: DESK_GROUP }).then(function (r) { deskGroup = Array.isArray(r.chat) ? r.chat : []; });
-}
-function deskGroupChat() {
-  return deskChatLogHtml(deskGroup, 'The group chat has not been read yet.', 'Nothing said yet. What you write here is read by every agent.');
-}
-// A GOAL'S CHAT LOG, newest first (goal/G22.3: Team's, taken out so a plugin's goal chat draws its lines the same way).
-function deskChatLogHtml(lines, unread, empty) {
-  if (lines === null) return '<div class="job-manifest-note">' + deskEsc(unread) + '</div>';
-  if (!lines.length) return '<div class="job-manifest-note">' + deskEsc(empty) + '</div>';
-  // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
-  // left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
-  // vertically be 1em space." His bubble black on white; everybody else's a filled bubble with the shell's radius.
-  return lines.slice().reverse().map(deskBubbleHtml).join('');
-}
-function deskBubbleHtml(l) {
-  var mine = l.by === 'andy';
-  var look = mine
-    ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
-    : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
-  // goal/G21.1: the writer's name, which the desk looked up by the line's key; its label where none is set.
-  return '<div' + look + '><b>' + deskEsc(mine ? 'you' : (l.name || l.by)) + '</b> <span class="job-manifest-note">' +
-    deskTime(l.at) + '</span> ' + deskLineHtml({ text: l.text }) + '</div>';
-}
-// TEAM IS NEVER DRAWN AGAIN WHOLE BY A PAINT (goal/G41.11; Andy: "in ALL the chats, new lines are no added, THE WHOLE
-// FUCKING THING IS REDRAWN, killing my attempted copies"): each bubble shown is kept by its line; a new line goes on top,
-// a changed one replaces only its own bubble, a line gone takes its bubble with it. A new frame draws it once, whole.
-var deskTeamShown = { host: null, items: [] };
-function deskTeamSync() {
-  var host = document.getElementById('desk-team');
-  if (!host) return;
-  var lines = deskGroup;
-  var want = lines && lines.length ? lines.slice().reverse().map(function (l) { return { k: String(l.at) + '|' + String(l.key || l.by), h: deskBubbleHtml(l) }; }) : [];
-  if (host !== deskTeamShown.host || !want.length || !deskTeamShown.items.length) {
-    host.innerHTML = deskGroupChat();
-    var kids = host.children || [];
-    deskTeamShown = { host: host, items: want.map(function (w, i) { return { k: w.k, h: w.h, node: kids[i] }; }) };
-    return;
-  }
-  var drawn = Object.create(null);
-  deskTeamShown.items.forEach(function (d) { drawn[d.k] = d; });
-  var wanted = Object.create(null);
-  want.forEach(function (w) { wanted[w.k] = true; });
-  deskTeamShown.items.forEach(function (d) { if (!wanted[d.k] && d.node && d.node.parentNode === host) host.removeChild(d.node); });
-  var next = [];
-  // From the oldest up: a kept bubble stays where it is; a changed one is replaced in place; a new one goes in just
-  // above the bubble under it (or last).
-  for (var i = want.length - 1; i >= 0; i--) {
-    var w = want[i];
-    var d = drawn[w.k];
-    if (d && d.h === w.h) { next.unshift(d); continue; }
-    var hold = document.createElement('div');
-    hold.innerHTML = w.h;
-    var node = hold.firstChild;
-    if (d && d.node && d.node.parentNode === host) host.replaceChild(node, d.node);
-    else host.insertBefore(node, next.length ? next[0].node : null);
-    next.unshift({ k: w.k, h: w.h, node: node });
-  }
-  deskTeamShown = { host: host, items: next };
-}
-// His line under All: one chat.add on the group chat's goal, and no packet to
-// anybody. The line is drawn when the server publishes it, like everybody's.
-function deskGroupSay() { deskChatSay(DESK_GROUP, 'desk-team-say', 'desk-team-error'); }
-// His line into a goal's chat, from the say box named (goal/G22.3: Team's send, taken out to take the goal).
-function deskChatSay(goal, boxId, errId) {
-  var box = document.getElementById(boxId);
-  var err = document.getElementById(errId);
-  var said = box ? String(box.value || '').trim() : '';
-  if (!said || deskSending[boxId]) return;
-  deskSending[boxId] = true;
-  if (err) err.textContent = 'Sending…';
-  deskAsk('chat.add', { id: goal, text: said }).then(function () {
-    deskSending[boxId] = false;
-    if (box) box.value = '';
-    if (err) err.textContent = '';
-  }, function (e) {
-    // What he typed stays in the box: an unkept line is his to send again.
-    deskSending[boxId] = false;
-    if (err) err.textContent = 'Not kept: ' + ((e && e.message) || e);
-  });
-}
-
-// ── A GOAL'S CHAT, MOUNTED IN A PLUGIN'S PANE (goal/G22.3) ───────────
-//
-//   Andy, 2026-10-13: "in Stack: the chat is missing, below the inputs, after what will be the list".
-//
-// Handed to a plugin's private UI as ctx.chat(container): the plugin says where, the face mounts the chat there. Since
-// goal/G27.2 the chat is the shared element (shell/shared/js/deskChat.js), which the Stacks door dialog mounts for a
-// door's item too: the say box and Send on top, then the log, read once with item.chat and drawn from what the server
-// publishes, its own subscription to the stream. Loaded on demand, as the shared row element (goal/G27.9).
-var DESK_SHARED_CHAT = '/shell/shared/js/deskChat.js';
-function deskMountChat(el, goal) {
-  if (!el) return;
-  var mount = function () {
-    var make = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskChat;
-    if (typeof make !== 'function') return;
-    make(el, { id: goal, ask: deskAsk, escape: deskEsc, time: deskTime, title: 'Chat of ' + goal, placeholder: 'to every agent, under ' + goal,
-      lineHtml: function (text) { return deskLineHtml({ text: text }); },
-      onPublished: function (fn) { return deskApi && typeof deskApi.onPublished === 'function' ? deskApi.onPublished(fn) : null; } });
-  };
-  var have = typeof window !== 'undefined' && window.spirit && window.spirit.elements && window.spirit.elements.createDeskChat;
-  if (typeof have === 'function') { mount(); return; }
-  deskNeed(DESK_SHARED_CHAT).then(mount, function () { /* no chat here */ });
-}
-
-// Ending design mode is his decision, said in Team: an `answer` with the
-// fixed words, which Desk reads back (deskDesignOn) and the agents obey.
+// Ending design mode is his decision: a press on the goal, which Desk reads back (deskDesignOn) and the agents obey.
 // NEITHER BY ACCIDENT (desk/G1.12). Andy: "re-arm both design on and off,
 // neither should be an accident." The first press arms the button and asks
 // "sure?"; only a second press fires it.
@@ -1165,7 +791,7 @@ function deskMountChat(el, goal) {
 // armingButton (spirit/element/armingButton.js), which the page loads itself. It arms, says so, and hands the shell its
 // disarm, so it disarms the moment he clicks anywhere else (AGENT.md); a button made one already is left as it is.
 var deskParts = Promise.resolve(typeof spirit !== 'undefined' && spirit.require
-  ? Promise.all([spirit.require('spirit/element/armingButton.js'), spirit.require('spirit/element/fieldInput.js')]) : null);
+  ? spirit.require('spirit/element/armingButton.js') : null);
 function deskArming(button, armedLabel, run) {
   if (!button) return;
   deskParts.then(function () {
@@ -1190,18 +816,6 @@ function deskEndDesign() { var g = deskGoalRow(); if (g) deskPress(g.id, 'end-de
 // With no goal on the List, Start design starts a new one (desk/G3.1): the server names it goal/G<n>.
 // A closed goal row (shown at startup, desk/G3.2) is not an open goal: Start design starts a new one.
 function deskStartDesign() { var g = deskGoalRow(); deskPress(g && g.status !== 'closed' ? g.id : '', 'start-design'); }
-// ONE recipient, so one row in his record per line: nothing to fold.
-// ONE SEND PER BOX AT A TIME. Andy's half-typed line reached the lead EIGHT
-// times in 1.6 s: eight distinct posts from this page, because a held or
-// repeated Enter fired again before the first send had cleared the box. So
-// key auto-repeat is ignored, and a box with a send in flight sends nothing
-// more until it settles.
-var deskSending = Object.create(null);
-// HIS DIRECT LINE TO ONE AGENT STOOD HERE (deskSend, with the desk's busy reply of goal/G2.5) and went with
-// goal/G3.12: the page posts no agents packet any more. What he says to the team is one chat.add on the group
-// chat (deskGroupSay); what he says about an item goes under the item. The desk server answers a line to a busy
-// agent itself (desk.js chat.add).
-
 // A ROW OPENS ITS OWN DIALOG. Andy: "we need a DeskDetails immediately,
 // with inputs specific to the item" — and the inline thread this replaced
 // erased his typing on every arrival ("also my typing gets erased,
@@ -1213,11 +827,6 @@ function deskDraw() {
   if (!el) return;
   var backup = document.getElementById('desk-backup');
   if (backup) backup.innerHTML = deskBackupHtml();
-  deskTeamSync();
-  var bubble = document.getElementById('desk-session');
-  if (bubble) bubble.innerHTML = deskSessionBubble();
-  // A chat on screen is being seen as it arrives.
-  if (deskTab === 'team') deskMarkTeamSeen();
   deskDrawTabs();
   var err = document.getElementById('desk-list-error');
   if (err) err.innerHTML = deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '';
@@ -1320,8 +929,7 @@ function deskRuleAdd() {
 }
 function deskOpenRule(key) { deskApi.callDialog('shell/ruleDetails', { key: key }).then(function () { deskRulesSearch(); }, function () {}); }
 
-// ONE ROW'S DIALOG, from the List or from the Team bubble. Andy: "i want to
-// be able to click on items in the bubble in team and see the details".
+// ONE ROW'S DIALOG, from the List.
 function deskOpenRow(id) {
   // THE DIALOG ASKS THE DESK SERVER ITSELF (desk/G2.7): Desk hands it the id.
   // It presses seen and writes its own chat, and nudges nobody (goal/G3.8).
@@ -1337,20 +945,15 @@ function deskOpenRow(id) {
 //   Andy: "desk loads down the dependency tree ... it skips closed items",
 //   "the list only loads key/title, and the rest lazy loads".
 //
-// The List is items.search's answer (deskSearchItems). The chats read their
-// newest page. The old lines under team/chat are read no more: they went with goal/G33.4.
+// The List is items.search's answer (deskSearchItems); an item's chat is its dialog's.
 var deskLoaded = false;
 function deskLoad() {
-  var seenRaw = '';
   var reads = [
-    deskAsk('seen.get', { id: DESK_GROUP }).then(function (r) { seenRaw = r.at ? JSON.stringify({ team: Date.parse(r.at) || 0 }) : ''; }, function () { seenRaw = ''; }),
-    deskAskGroup(),
     deskAskBackup(),
   ];
   return Promise.all(reads.map(function (p) { return p.catch(function (e) { deskError = 'Desk could not read: ' + ((e && e.message) || e); }); }))
     .then(function () {
       deskLoaded = true;
-      deskLoadSeen(seenRaw);
       deskDraw();
     });
 }
@@ -1681,7 +1284,6 @@ function deskHeader(api) {
 spirit.shell.activateApp({
   mount: function (container, api) {
     deskApi = api;
-    if (typeof api.onFiles === 'function') api.onFiles(function (files) { deskFiles = files || []; });
     // ── THE TABS ───────────────────────────────────────────────────
     //
     //   Andy: "could the be, at the top of the window a set of tabs that
@@ -1710,8 +1312,7 @@ spirit.shell.activateApp({
       // its container should have no margins and no padding." No goal bubble either: the List's goal row opens the
       // goal (his answer to G9.6 Q1).
       '<div id="desk-bars">' +
-        // GO ALL at the right of the tab bar, on the List tab only, as the design
-        // buttons are on Team's (desk/G3.4, Andy: "same as design buttons when team is active").
+        // GO ALL at the right of the tab bar, on the List tab only (desk/G3.4).
         '<div style="display:flex;align-items:center"><div id="desk-tabs" style="flex:1;display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
           '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
       '</div>' +
@@ -1734,22 +1335,6 @@ spirit.shell.activateApp({
           // face over items.search, its toggles the element's filters in the row above the box, each row a row element
           // (deskMountList). The error line above it.
           '<div id="desk-top" class="fill"><div id="desk-list-error"></div><div id="desk-list" class="fill"></div></div></div>' +
-        // APPS (goal/G22.3): its inner tab row, then one inner pane per special goal. Team's pane is the Team tab's, moved
-        // whole; a plugin's pane is made inside #desk-app-panes when its goal is found (deskNotePlugins).
-        '<div data-pane="apps" class="fill" hidden>' +
-          '<div id="desk-app-tabs" style="margin-top:1em"></div>' +
-          '<div id="desk-app-panes" class="fill" style="margin-top:1em">' +
-            '<div data-app="team">' +
-              '<div id="desk-session"></div>' +
-              '<div class="start-job-form card"><label class="field-label grow">Say' +
-                // SEVERAL LINES, AND RETURN IS A NEW LINE (desk/G1.12): only Send sends.
-                '<textarea id="desk-team-say" rows="3" placeholder="to every agent; design talk that belongs to no row"></textarea></label>' +
-              '<button type="button" id="desk-team-send">Send</button></div>' +
-              '<div id="desk-team-error" class="job-start-error"></div>' +
-              '<div class="stat-tile wide"><div class="label" id="desk-team-label">Team: you and every agent, newest first</div><div id="desk-team"></div></div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
         // THE RULES TAB (goal/G6.5): the new bubble, the search bubble, the list. #desk-rules takes every click and input.
         '<div data-pane="rules" class="fill" hidden><div id="desk-rules" class="fill">' +
           '<div class="start-job-form card">' +
@@ -1770,43 +1355,23 @@ spirit.shell.activateApp({
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
           '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
         '</div>' +
-        // THE PLUGIN PANE AND ITS BACK TO THE LIST STOOD HERE (goal/G22.3, opened from the label button in the List) and
-        // went with Andy's Apps ruling, 2026-10-13: "Apps replaces the label button". A plugin's UI is its tab under Apps.
       '</div>';
     deskHeader(api);
     // goal/G41.23: every icon that stands alone in the page, through the icon element (deskGlyph).
     deskWatchIcons(container);
-    // A CHAT LINE STOPS AT 1024 BYTES (goal/G41.27; Andy: "the desk should limit its chat line to 1024 bytes."): the team
-    // box held to fieldRules' line rule as it is typed, by fieldInput, which the page loads itself.
-    deskParts.then(function () {
-      var F = window.spirit && window.spirit.element && window.spirit.element.fieldInput;
-      var say = container.querySelector('#desk-team-say');
-      if (F && say) F.attach(say, 'line');
-    });
     function show(tab) {
-      // Apps opens on the inner tab last shown, Team the first time.
-      if (tab === 'apps') tab = deskAppTab;
-      var pane = tab.indexOf('agent:') === 0 ? 'agent' : deskIsAppTab(tab) ? 'apps' : tab;
-      Array.prototype.forEach.call(container.querySelectorAll('[data-pane]'), function (p) {
+      var pane = tab.indexOf('agent:') === 0 ? 'agent' : tab;
+      // A TAB THE PAGE DOES NOT HAVE (Team and Apps went with goal/G43.22) FALLS BACK TO THE LIST, its main tab.
+      var panes = container.querySelectorAll('[data-pane]');
+      if (!Array.prototype.some.call(panes, function (p) { return p.getAttribute('data-pane') === pane; })) { tab = 'list'; pane = 'list'; }
+      Array.prototype.forEach.call(panes, function (p) {
         p.hidden = p.getAttribute('data-pane') !== pane;
       });
       if (pane === 'agent') deskAgentOpen(tab.slice('agent:'.length));
-      // goal/G22.3: inside Apps one inner pane shows; a plugin's UI is loaded the first time its tab opens.
-      if (pane === 'apps') {
-        // LAZY, AS EVERY PANEL (Andy: "lazy load the panels when thy open"): the plugin goals are searched for when Apps
-        // opens, not at mount, so the List's one ask on open stays one (desk/G2.6).
-        if (!deskIsAppTab(deskTab)) deskFindPlugins();
-        deskAppTab = tab;
-        Array.prototype.forEach.call(container.querySelectorAll('[data-app]'), function (p) {
-          p.hidden = p.getAttribute('data-app') !== tab;
-        });
-        if (tab !== 'team') deskOpenPlugin(deskApps.filter(function (a) { return 'app:' + a.name === tab; })[0]);
-      }
       // HIGHLIGHTED, NOT DISABLED. Andy: "on the desk app, the current tab
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
       deskDrawGoAll();
-      if (tab === 'team') deskMarkTeamSeen();
       if (tab === 'rules') deskRulesSearch();
       // goal/G8.11: opening the tab reads what runs and the newest records; it is not pulled while it is closed.
       if (tab === 'verifier') { deskVerifyRefresh(); deskVerifyTicking(true); deskVerifyConsoleFit(); } else deskVerifyTicking(false);
@@ -1820,11 +1385,6 @@ spirit.shell.activateApp({
       return el && el !== e.currentTarget ? el : null;
     }
     document.getElementById('desk-tabs').addEventListener('click', function (e) {
-      var el = clicked(e, 'data-tab');
-      if (el && el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
-    });
-    // THE INNER TABS UNDER APPS (goal/G22.3): one listener on their row, which is redrawn.
-    document.getElementById('desk-app-tabs').addEventListener('click', function (e) {
       var el = clicked(e, 'data-tab');
       if (el && el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
     });
@@ -1892,28 +1452,16 @@ spirit.shell.activateApp({
       }
     });
     deskArming(document.getElementById('desk-go-all'), 'Go all: sure?', deskGoAll);
-    document.getElementById('desk-team-send').addEventListener('click', deskGroupSay);
-    // The bubble is repainted on every arrival, so one listener on its box.
-    document.getElementById('desk-session').addEventListener('click', function (e) {
-      var el = e.target;
-      while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
-      var id = el && el.getAttribute && el.getAttribute('data-open');
-      if (id) deskOpenRow(id);
-    });
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
     // what the desk server publishes. A shell whose api carries no onPublished (the face's) mounts it all the same,
     // without the live repaint (goal/G41.19: it mounts cleanly, "no throw even unconfigured").
     if (typeof deskApi.onPublished === 'function') deskApi.onPublished(deskOnPublished);
-    // goal/G27.9: the elements subscribe after the store, so each repaints from what the store has just taken; once
-    // the shared element is loaded, the List is drawn again so its rows are made as elements too.
-    deskLoadSharedElement(function () { deskMountElements(); deskDraw(); });
     deskLoadData();
     deskLoadRunStatus();
     // BACK AFTER A GAP (Andy: "this should work without a hickup"): what was
     // published or said while the stream was down was never heard, so the
-    // List and the chats are asked for again. Lines already held are not taken twice.
-    // goal/G22.3: the plugin goals again too, if Apps is showing; otherwise its next opening asks.
-    if (typeof deskApi.onReconnect === 'function') deskApi.onReconnect(function () { deskForgetKept(); deskSearchItems(); deskLoad(); if (deskIsAppTab(deskTab)) deskFindPlugins(); });
+    // List and the backup line are asked for again.
+    if (typeof deskApi.onReconnect === 'function') deskApi.onReconnect(function () { deskForgetKept(); deskSearchItems(); deskLoad(); });
     deskDraw();
     deskSearchItems();
     deskLoad();

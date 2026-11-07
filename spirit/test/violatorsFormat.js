@@ -1,15 +1,15 @@
 'use strict';
 
-// spirit/run/process/js/desk/plugins/js/stackFrameChecks/test/violators.js
-// The tests of process/js/desk/plugins/js/stackFrameChecks/violators.js, and of no other module (spec: ./violators.md;
+// spirit/test/violatorsFormat.js
+// The tests of spirit/test/violators.js, and of no other module (spec: ./violatorsFormat.md;
 // goal/G41.11). The module is pure: a door and its run's raw paths in, one line per violator out. Its read of a source
 // line is handed in (readLine), or read from a scratch tree of the test's own (root).
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '../../../../../../..');
+const RUN = path.resolve(__dirname, '..', 'run');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const FILE = path.join(__dirname, '..', 'violators.js');
+const FILE = path.join(__dirname, 'violators.js');
 const TMP = path.join(RUN, 'test', '_tmp_violators');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }

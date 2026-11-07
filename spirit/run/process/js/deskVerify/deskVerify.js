@@ -695,21 +695,6 @@ async function idleOnce() {
 const idler = setInterval(function () { idleOnce().catch(function () { /* next tick */ }); }, IDLE_CHECK_MS);
 if (idler.unref) idler.unref();
 
-// ── THE STACKS PLUGIN'S DOOR VERDICTS, RECORDED HERE (goal/G27.2) ─────
-//
-// DECIDED BY ANDY, 2026-10-17, in goal/G27.2's box, not this file's to take back: the Stacks subsystem stands alone (D9).
-// The plugin drives the stack checks exclusively and this server runs none of them. What stays is door.record: the
-// plugin hands each verdict here as a record only (D5), kept under this server's --state, doors/<id>.json, and said in
-// the console.
-const DOORS_DIR = path.join(STATE || path.dirname(DB_PATH), 'doors');
-const DOOR_ID = /^[A-Za-z0-9_-]{1,32}$/;
-const DOOR_PATHS_KEPT = 500;
-function doorIdOf(id) {
-  const s = String(id || '');
-  if (!DOOR_ID.test(s)) throw refusedWhy('a door is named by the plugin\'s own id (d<n>): letters, digits, _ and -, at most 32; not ' + JSON.stringify(s.slice(0, 40)));
-  return s;
-}
-
 // ITS VERBS.
 appServer.serve({
   // A RUN, HANDED OVER (goal/G33.3): the suites (spirit/test paths) and the commit the checkout must hold first ('' for
@@ -759,27 +744,6 @@ appServer.serve({
       if (choring) throw refusedWhy('the chores are running already');
       runChores().catch(function () { /* the idle line says what they did */ });
       return { started: true };
-    },
-  },
-  // A DOOR RUN BY THE PLUGIN ITSELF, RECORDED (goal/G27.2, D5). Andy, 2026-10-17: "i don't want verifier to block the
-  // design-a-door process", and "i don't mind if our test sends the verifier a result". The plugin runs a door being
-  // designed at once and hands the verdict here as a record only: kept under doors/<id>.json, and its line said in the
-  // console. Nothing is run.
-  'door.record': {
-    request: { id: '', verdict: {} }, reply: { recorded: true },
-    handler: function (a) {
-      const id = doorIdOf(a.id);
-      const v = a.verdict && typeof a.verdict === 'object' ? a.verdict : {};
-      const kept = { door: id, ran: v.ran === true, green: v.green === true, around: Number(v.around) || 0, of: Number(v.of) || 0,
-        paths: (Array.isArray(v.paths) ? v.paths : []).slice(0, DOOR_PATHS_KEPT).map(String), why: String(v.why || ''),
-        startedAt: String(v.startedAt || ''), endedAt: String(v.endedAt || ''), stopped: v.stopped === true, commit: String(v.commit || ''), by: 'plugin' };
-      fs.mkdirSync(DOORS_DIR, { recursive: true });
-      const out = path.join(DOORS_DIR, id + '.json');
-      fs.writeFileSync(out + '.tmp', JSON.stringify(kept));
-      fs.renameSync(out + '.tmp', out);
-      consoleAdd('\n=== door ' + id + ', run by the plugin: ' + (kept.ran ? (kept.green ? 'green, ' + kept.of + ' production call(s), every one through the gate'
-        : 'red, ' + kept.around + ' path(s) around the gate, of ' + kept.of + ' production call(s)') : 'no verdict, ' + kept.why) + ' ===\n');
-      return { recorded: true };
     },
   },
   // THE CONSOLE OF THE CURRENT RUN (goal/G22.3): its output from `from`, one answer's room at a time. `to` is where the

@@ -12,8 +12,9 @@
 //      whole line (a background, a full border, a border-radius or a box-shadow); a left bar alone is not one.
 //   C3 consecutive bubbles are 1em apart: each carries 1em of vertical margin (margin-top, margin-bottom, or the
 //      top or bottom of the margin shorthand).
-//   Drawn where: Desk's Team (the group chat, desk.js deskGroupChat) and the dialog's chat (deskDetails.js ddChatHtml),
-//   the two chats that draw his line right-aligned today (desk.js 731, deskDetails.js 250).
+//   Drawn where: the dialog's chat (deskDetails.js ddChatHtml). Desk's Team (the group chat, desk.js deskGroupChat) was
+//   judged too, until the Team tab and its group chat goal/G0 went with goal/G43.22 (Andy, the box, Q5: "G0 goes, from
+//   ui and server, kept in database.").
 // LEFT OPEN, not asserted: the colours. FACE.md names none for these bubbles; his lines black today is not ruled away.
 
 const fs = require('fs');
@@ -21,7 +22,6 @@ const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/spirit/kernel.js');
 
-const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
 const OWED = 'OWED by goal/G6.2: ';
 const AT = '2026-10-06T05:49:12.000Z';
@@ -110,23 +110,4 @@ test.startTest('goal/G6.2: chat entries left-aligned, everyone in bubbles 1em ap
   await settle(); await settle();
   judge('dialog', ddDoc.getElementById('dd-chat').innerHTML);
 
-  test.subHeading('Desk, Team (the group chat)');
-  const fake = require('./deskFake.js').fromFiles({ 'log/log.json': '[]', 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
-  const verb = function (name, body) {
-    const asked = name === 'desk.item.chat' && body;   // the desk's verb by name (goal/G30.6)
-    if (asked && asked.id === 'goal/G0') return Promise.resolve({ status: 200, body: { chat: LINES.slice(), chatMore: false } });
-    return fake.verb(name, body);
-  };
-  const doc = fakeDocument();
-  load(DESK, doc).mount(fakeElement('container'), {
-    fs: { loadFile: function (f) { return f === 'log/log.json' ? '[]' : f === 'seen.json' ? JSON.stringify({ rows: {}, team: 0, agents: {} }) : null; }, saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: spirit.core.util.escapeHtml, verb: verb, onPublished: function () {}, onPacket: function () {},
-    peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
-    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
-  });
-  await settle();
-  const tabs = doc.getElementById('desk-tabs');
-  tabs.fire('click', { target: { getAttribute: function (n) { return n === 'data-tab' ? 'team' : null; }, parentNode: null, closest: function () { return null; } }, currentTarget: tabs });
-  await settle();
-  judge('Team', doc.getElementById('desk-team').innerHTML);
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () { test.reportSuccessFailureCount(); });

@@ -1,6 +1,7 @@
 'use strict';
 
-// goal/G3.12: the front page of Desk re-arranged — the agent bubbles move up beside the tabs, Team is the group chat.
+// goal/G3.12: the front page of Desk re-arranged — the agent bubbles move up beside the tabs, Team is the group chat
+// (Team and its group chat gone since goal/G43.22).
 // Andy, 2026-10-03 (a musing, then "add the items" under goal/G3): "the main botton row now reads: [List] [Team]
 // [Musings], those are buttons, and Info [Agent1-status] [Agent2-status]... Where the Agent - bubbles are
 // highlighted with a red-blinking border when busy." and "the The team tab will only show the team chat interface
@@ -18,6 +19,8 @@
 //   2. STATE ONLY. A click on a bubble asks the server nothing, posts nothing and changes no tab.
 //   3. TEAM IS THE GROUP CHAT. No element with data-agent is drawn anywhere, on Team or elsewhere; what he types
 //      under Team is one chat.add on goal/G0 and no packet to anybody, with no tab to pick first.
+//      SINCE goal/G43.22 there is no Team at all (Andy, the box, Q5: "G0 goes, from ui and server, kept in
+//      database."; "the apps and plugin system goes."): no Team or Apps tab, no Team input, nothing asked of goal/G0.
 //   4. ONE PIECE OF CODE. shell/desk/desk.js has no deskDrawAgentTabs, no deskDirectChat, no deskSend, and draws
 //      no data-agent= attribute: the direct tabs are gone, not hidden.
 // Not asserted (the builder's): the look of a bubble, the word Info or its place, what becomes of the recorded
@@ -31,7 +34,7 @@ const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G3.12: ';
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
-const GROUP = 'goal/G0';
+const GROUP = 'goal/G0';   // the group chat, gone with goal/G43.22: nothing may ask it
 
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
 async function settled() { for (let i = 0; i < 8; i++) await settle(); }
@@ -117,17 +120,17 @@ test.startTest('goal/G3.12: the front page — agent bubbles beside the tabs, Te
   const p = page();
   await settled();
   const t0 = p.tabs();
-  // Since goal/G22.3: Team is Apps' first inner tab (Andy, 2026-10-13), so the row holds Apps where Team stood.
-  // Since goal/G27.3 the Musings tab is gone (Vision is under Apps): List, Apps and Rules.
-  const threeTabs = /data-tab="list"/.test(t0) && /data-tab="apps"/.test(t0) && /data-tab="rules"/.test(t0) && !/data-tab="musings"/.test(t0);
+  // Since goal/G22.3 Team was Apps' first inner tab, and since goal/G27.3 the Musings tab was gone (Vision under Apps).
+  // Since goal/G43.22 Apps, and Team in it, are gone too (Andy: "the apps and plugin system goes."): List and Rules.
+  const threeTabs = /data-tab="list"/.test(t0) && /data-tab="rules"/.test(t0) && !/data-tab="apps"/.test(t0) && !/data-tab="team"/.test(t0) && !/data-tab="musings"/.test(t0);
   const cw = bubble(t0, 'claude-windows');
   const wsl = bubble(t0, 'wsl-claude');
-  if (threeTabs && cw && wsl) test.check('List, Apps, Rules, then a bubble for each live agent, drawn on the List tab');
+  if (threeTabs && cw && wsl) test.check('List and Rules, no Apps, Team or Musings, then a bubble for each live agent, drawn on the List tab');
   else test.fail(OWED + 'the tab row: ' + JSON.stringify(t0.slice(0, 400)));
   if (wsl && /data-working="1"/.test(wsl) && cw && !/data-working="1"/.test(cw)) test.check('the working agent\'s bubble carries data-working="1", the other\'s does not');
   else test.fail(OWED + 'working marks: wsl ' + JSON.stringify(wsl) + ', cw ' + JSON.stringify(cw));
   const tabOrder = t0.indexOf('data-tab="rules"') < t0.indexOf('data-bubble=');
-  if (tabOrder) test.check('the bubbles come after the three tab buttons');
+  if (tabOrder) test.check('the bubbles come after the tab buttons');
   else test.fail(OWED + 'a bubble is drawn before the tab buttons');
   p.publish({ change: 20, verb: 'agent.state', item: JSON.parse(goalRow({ working: ['claude-windows'] })) });
   await settled();
@@ -146,19 +149,15 @@ test.startTest('goal/G3.12: the front page — agent bubbles beside the tabs, Te
   if (p.asked.length === asks && !p.posted.length && tabOn(p.tabs(), 'list')) test.check('a click on a bubble asks nothing, posts nothing and leaves the List tab on');
   else test.fail(OWED + 'the bubble click: asked ' + (p.asked.length - asks) + ', posted ' + p.posted.length + ', List on: ' + tabOn(p.tabs(), 'list'));
 
-  test.subHeading('3. Team is the group chat and nothing else');
+  test.subHeading('3. no Team: no tab, no input, nothing asked of the group chat (goal/G43.22)');
   p.click('desk-tabs', { 'data-tab': 'team' });
   await settled();
-  if (!/data-agent="/.test(p.html())) test.check('no agent tab is drawn under Team: no All, no direct tab');
-  else test.fail(OWED + 'Team still draws agent tabs: ' + JSON.stringify((p.html().match(/<[^>]*data-agent="[^>]*>/g) || []).slice(0, 4)));
-  p.doc.getElementById('desk-team-say').value = 'to the team';
-  p.posted.length = 0;
-  const before = p.asked.length;
-  p.doc.getElementById('desk-team-send').fire('click', {});
-  await settled();
-  const added = p.asked.slice(before).filter(function (a) { return a.verb === 'chat.add'; });
-  if (added.length === 1 && added[0].args.id === GROUP && added[0].args.text === 'to the team' && !p.posted.length) test.check('his line under Team is one chat.add on goal/G0 and no packet');
-  else test.fail(OWED + 'his line went as ' + JSON.stringify(p.asked.slice(before)) + ', posted ' + JSON.stringify(p.posted));
+  const drawn = p.html();
+  if (!/data-agent="/.test(drawn) && !/data-tab="team"/.test(p.tabs()) && !/desk-team/.test(drawn)) test.check('no Team tab, no agent tab and no Team chat or input is drawn, even after a press on a team tab');
+  else test.fail('goal/G43.22: still drawn: ' + JSON.stringify((drawn.match(/<[^>]*(data-agent="|data-tab="team"|desk-team)[^>]*>/g) || []).slice(0, 4)));
+  const groupAsks = p.asked.filter(function (a) { return a.args && a.args.id === GROUP; });
+  if (p.asked.length && !groupAsks.length && !p.posted.length) test.check('of ' + p.asked.length + ' asks none names goal/G0, and nothing was posted');
+  else test.fail('goal/G43.22: asks naming goal/G0 ' + JSON.stringify(groupAsks).slice(0, 200) + ', posted ' + JSON.stringify(p.posted).slice(0, 200));
 
   test.subHeading('4. one piece of code: the direct tabs are gone, not hidden');
   const src = code(DESK);

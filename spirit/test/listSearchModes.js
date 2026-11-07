@@ -191,9 +191,8 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   const sel = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact.js'), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   if (/mode:/.test(sel) && !/contact-selector-field/.test(sel) && !/font-weight:bold/.test(sel)) test.check('contactSelector passes the mode; its own dropdown button and bold name are gone');
   else test.fail(OWED + 'contactSelector still holds its own dropdown or bold name');
-  const fallout = fs.readFileSync(path.join(RUN, 'shell', 'desk', 'plugins', 'fallout', 'fallout.js'), 'utf8');
-  if (/details:\s*/.test(fallout) && !/press:\s*/.test(fallout)) test.check('Fallout opens a test\'s history through details');
-  else test.fail(OWED + 'Fallout still configures press');
+  // Fallout's check stood here (it opened a test's history through details, not press): the plugin went with
+  // goal/G43.22 (Andy: "the apps and plugin system goes.").
 
   test.reportSuccessFailureCount();
   process.exit(0);

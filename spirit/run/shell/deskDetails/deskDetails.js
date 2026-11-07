@@ -166,12 +166,9 @@ function ddFrame() {
       '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
       '<button type="button" id="dd-add">Add blocking item</button></div>' +
       '</div>' +
-      // THE CENTRE IS THE CHAT (goal/G41.22; Andy: "the chat has it's search at the top and it's input at the bottom, and
-      // scolls upward, not downward", "newest lines at the bottom, pinned to the bottom, and older lines above").
+      // THE CENTRE IS THE CHAT (goal/G41.22; Andy: "newest lines at the bottom, pinned to the bottom, and older lines above"),
+      // its input at the bottom. No search over it since goal/G43.22 (Andy: "take out the chat-search do, it's not actually usable.").
       '<div id="dd-centre" class="fill" style="min-height:0">' +
-        // THE CHAT SEARCH (goal/G18.5, G40.12): the probability search over chat.search, a dropdown; a line said in
-        // another item opens that item. In the frame, so it survives every repaint.
-        '<div class="start-job-form card" style="flex:none"><div id="dd-chat-find" style="flex:1"></div></div>' +
         '<div id="dd-chat" style="flex:1 1 auto;min-height:0;overflow:auto"></div>' +
         '<div id="dd-error" class="job-start-error" style="flex:none"></div>' +
         '<div class="start-job-form card" style="flex:none"><label class="field-label grow">Say' +
@@ -201,7 +198,7 @@ function ddMakeBench(n) {
       // box is there (Andy: "i want to see the panel content THE FIRST TIME i pop in a panel, NOT the second time").
       return { name: p.key, icon: p.icon, title: p.title, mount: function (box) { ddBenchBoxes[p.key] = box; if (ddPanelSel === p.key) ddShowLeft(p.key); } };
     }),
-    // goal/G41.22: blank until a desk plugin app gives it a tool.
+    // goal/G41.22: blank.
     right: [],
     changed: function (side, name) {
       if (side !== 'left' || !name) return;
@@ -315,9 +312,7 @@ function ddButtonsHtml() {
   }
   // CODE ✓ (goal/G9.5). Andy: "the item Detail dialog has a check/toggle button, [Code✓], in it's button bar, where the
   // user can set the Code-state of an item". Items only: a goal has no code state, and the server refuses a sub-goal.
-  // NOT WHERE IT IS NOT OFFERED (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
-  // items." The server says so in the facts (codeOffered false where the item's plugin refuses the code press).
-  if (f.goal !== '' && f.codeOffered !== false) {
+  if (f.goal !== '') {
     html += '<button type="button" id="dd-code">Code' + (f.code ? ' ✓' : '') + '</button>';
   }
   // MAKE CURRENT (goal/G2.19). Andy: "on any open goal i want a button \"make current goal\"". The server offers it on
@@ -455,12 +450,13 @@ function ddBoxMount() {
     if (ddBoxViewAsked === ddId) return;
     var id = ddId;
     ddBoxViewAsked = id;
-    ddNeed('spirit/element/codeMirror.js').then(function () { return ddNeed(DD_SEARCH); }).then(function () {
+    ddNeed('spirit/element/codeMirror.js').then(function () {
       var el = document.createElement('div');
       el.className = 'fill';
       el.style.cssText = 'min-height:0;height:100%;display:flex;flex-direction:column';
       el.innerHTML = '<div style="display:flex;gap:1em;align-items:center;margin-bottom:0.25em"><span class="job-manifest-note" data-box-version></span>' +
-        '<input type="text" data-box-find placeholder="find in this box" style="flex:1 1 auto"></div><div data-box-editor style="flex:1 1 0;min-height:0;position:relative"></div>';
+        // No find field over the box since goal/G43.22 (Andy: "the codeMirror search works better for editing purposes.").
+        '</div><div data-box-editor style="flex:1 1 0;min-height:0;position:relative"></div>';
       return window.spirit.element.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
         // He went into the textarea meanwhile, or left the item: it stays as it is, and the next item asks anew.
         if (ddId !== id || ddBoxFocused) { ddBoxViewAsked = ''; return; }
@@ -468,9 +464,7 @@ function ddBoxMount() {
         view.cm.getWrapperElement().style.cssText += ';position:absolute;top:0;left:0;right:0;bottom:0;height:auto';
         view.cm.on('focus', ddBoxFocus);
         view.cm.on('blur', ddBoxBlur);
-        var find = el.querySelector('[data-box-find]');
-        find.addEventListener('input', function () { view.mark(find.value); });
-        ddBoxView = { id: id, el: el, view: view, find: find };
+        ddBoxView = { id: id, el: el, view: view };
         ddPaint();
       });
     }).catch(function () { /* the textarea stands */ });
@@ -480,7 +474,7 @@ function ddBoxMount() {
   host.innerHTML = '';
   host.appendChild(v.el);
   v.el.querySelector('[data-box-version]').textContent = 'version ' + ddVersion;
-  if (!ddBoxFocused && v.view.value() !== ddBox) { v.view.cm.setValue(ddBox); v.view.mark(v.find.value); }
+  if (!ddBoxFocused && v.view.value() !== ddBox) v.view.cm.setValue(ddBox);
   v.view.cm.refresh();
 }
 function ddBoxHtml() {
@@ -608,7 +602,7 @@ function ddLineHtml(text) {
 }
 // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
 // left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
-// vertically be 1em space." Same shape as desk.js' deskGroupChat (goal/G6.2): change both or neither.
+// vertically be 1em space." (desk.js' deskGroupChat had the same shape until the group chat went with goal/G43.22.)
 function ddBubble(l) {
   var his = l.by === 'andy';
   var look = his
@@ -698,8 +692,6 @@ function ddPaint() {
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
   ddBlinkIcons();
-  // The chat search stands in the frame; it is made once the frame is drawn (ddMountChatFind), never again by a paint.
-  if (!ddChatFind || ddChatFindHost !== document.getElementById('dd-chat-find')) ddMountChatFind();
   // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
   if (!(ddPanelSel === 'box' && ddBoxFocused)) { ddSet('dd-panel', ddPanelHtml()); if (ddPanelSel === 'box') ddBoxMount(); }
   // The add-blocking form stands in the frame, so what he types survives; it shows with the blocks panel only.
@@ -882,34 +874,6 @@ function ddSuitesHtml() {
 // The files panel's list, asked on its own (goal/G32.2), and again when a write changed it.
 function ddLoadFiles(id) {
   return ddAsk('item.files', { id: id }).then(function (f) { if (ddId !== id) return; ddFiles = f.files || []; ddFilesMore = !!f.filesMore; ddPaint(); }, function () { /* the panel says no files */ });
-}
-
-// THE CHAT SEARCH (goal/G18.5, on the probability search since goal/G40.12): chat.search for the item on screen; on a
-// goal (goal/G29.21) the scope is items, the goal's chat and its items' chats ranked together.
-var ddChatFind = null;
-var ddChatFindHost = null;   // as the rule dropdown: a frame drawn again is a new box, so it gets its own search
-function ddMountChatFind() {
-  var el = document.getElementById('dd-chat-find');
-  if (!el) return;
-  if (ddChatFind && ddChatFindHost === el) { ddChatFind.refresh(); return; }
-  if (ddChatFind && typeof ddChatFind.destroy === 'function') ddChatFind.destroy();
-  ddChatFind = null;
-  ddChatFindHost = el;
-  var make = function () {
-    var P = window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create ? window.spirit.element.search : null;
-    if (!P || typeof P.create !== 'function' || ddChatFindHost !== el || ddChatFind) return;
-    ddChatFind = P.create(el, {
-      api: ddApi, server: 'desk', verb: 'chat.search',
-      args: function (text) { return { id: ddId, text: text, by: '', since: '', before: '', scope: ddFacts && ddFacts.goal === '' ? 'items' : '' }; },
-      columns: [{ field: 'at', label: 'When', sort: 'date' }, { field: 'by', label: 'Who', sort: 'text' }, { field: 'text', label: 'Line', sort: 'text' }],
-      face: 'dropdown', placeholder: 'search the chat…',
-      pick: function (row) { if (row && row.item && row.item !== ddId) ddApi.closeDialog({ open: row.item }); },
-      empty: 'No lines found.',
-    });
-    ddChatFind.refresh();
-  };
-  if (window.spirit && window.spirit.element && window.spirit.element.search && window.spirit.element.search.create) { make(); return; }
-  ddNeed(DD_SEARCH).then(make, function () { el.textContent = 'The search could not be loaded.'; });
 }
 
 var ddSending = false;
@@ -1172,8 +1136,6 @@ spirit.shell.activateApp({
     ddFilesMore = false;
     ddChat = [];
     ddChatMore = false;
-    // The chat search reads the item on screen; its rows are asked again for it.
-    ddMountChatFind();
     ddPending = {};
     ddRowChange = {};
     ddRenaming = false;

@@ -27,8 +27,8 @@ deskClient"). Run by the agent in its own clone, with its own node up.
 - With `--only packets` or `--out` it stops there: exit 0, `written to <out>`, nothing committed, nothing posted.
 - **4, otherwise**: zero posts is published too, and said; `agents/<agent>/` alone is committed (`git commit --only`,
   so what the agent had staged stays staged and uncommitted), message `publish: <agent> at <commit> (agents/<agent>/,
-  the standing grant of goal/G4.33)`; pushed through pushOrigin; one line posted to Desk under goal/G0, `published
-  <agent> at <commit>: wait m/M ms, flight m/M ms over P posts; agents/<agent>/`; exit 0.
+  the standing grant of goal/G4.33)`; pushed through pushOrigin; nothing posted to Desk (goal/G43.22: Andy, *"publishData
+  summary is no longer needed, i only check on github."*); exit 0.
 
 ## What its test must try to break
 

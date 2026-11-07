@@ -461,16 +461,17 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   if (bench) { const qsIcon = panelIcon(wb, 'qs'); if (qsIcon) { wb.document.click(qsIcon); await settle(); } }
   ok(!!bench && bench.shown('left') === 'qs' && !!wb.document.querySelector('[data-qclear], #dd-panel') && inside(wb.document.querySelector('[data-qclear], #dd-panel'), bench.root),
     'a left icon shows its panel in the workBench\'s left pane', 'after the red Qs icon: ' + JSON.stringify({ shown: bench && bench.shown('left') }));
-  test.subHeading('goal/G41.22: the centre is the chat, its search on top and its input at the bottom');
+  // goal/G43.22, Andy: "take out the chat-search do, it's not actually usable.": the centre is the chat and its input, no search.
+  test.subHeading('goal/G41.22: the centre is the chat, its input at the bottom; goal/G43.22: no chat search');
   const centre = bench ? bench.center : null;
-  const find = wb.document.getElementById('dd-chat-find');
   const chatLog = wb.document.getElementById('dd-chat');
   const say = wb.document.getElementById('dd-say');
-  ok(!!centre && [find, chatLog, say].every(function (n) { return n && inside(n, centre); }), 'the chat search, the chat and its input are in the workBench\'s centre',
-    'in the centre: ' + JSON.stringify({ search: !!(find && centre && inside(find, centre)), chat: !!(chatLog && centre && inside(chatLog, centre)), input: !!(say && centre && inside(say, centre)) }));
+  ok(!!centre && [chatLog, say].every(function (n) { return n && inside(n, centre); }), 'the chat and its input are in the workBench\'s centre',
+    'in the centre: ' + JSON.stringify({ chat: !!(chatLog && centre && inside(chatLog, centre)), input: !!(say && centre && inside(say, centre)) }));
+  ok(!wb.document.getElementById('dd-chat-find'), 'goal/G43.22: there is no chat search', 'a chat search is still drawn');
   const order2 = walkAll(wb.document.root, []);
-  ok(!!find && !!chatLog && !!say && order2.indexOf(find) < order2.indexOf(chatLog) && order2.indexOf(chatLog) < order2.indexOf(say), 'top to bottom: the search, the chat, the input',
-    'positions: ' + JSON.stringify({ search: order2.indexOf(find), chat: order2.indexOf(chatLog), input: order2.indexOf(say) }));
+  ok(!!chatLog && !!say && order2.indexOf(chatLog) < order2.indexOf(say), 'top to bottom: the chat, the input',
+    'positions: ' + JSON.stringify({ chat: order2.indexOf(chatLog), input: order2.indexOf(say) }));
   const sayStyle = String((say && say.attrs && say.attrs.style) || '');
   ok(/resize\s*:\s*vertical/.test(sayStyle), 'the chat input can be sized up and down only (resize: vertical)', 'the input\'s style: ' + JSON.stringify(sayStyle));
 
@@ -621,9 +622,8 @@ const byId = function (w, id) { return function () { return w.document.getElemen
           try { v = JSON.parse(await page.evaluate('window.boxView()')); } catch (e) { v = null; }
           ok(!!v && v.codeMirror === true && v.numbers > 0, 'goal/G43.3: the box is a CodeMirror, showing line numbers', 'the box panel: ' + JSON.stringify(v));
           ok(!!v && /\b37\b/.test(String(v.above)), 'goal/G43.3: above the box stands its last stored version', 'above the box: ' + JSON.stringify(v && v.above));
-          ok(!!v && v.find === true, 'goal/G43.3: the panel has a search field beside the box', 'the box panel: ' + JSON.stringify(v));
-          ok(!!v && v.marks === 1 && v.markText === 'needle' && v.markShown === true, 'goal/G43.3: words typed in it mark the match in the text on screen, and it is put in view',
-            'the search marked: ' + JSON.stringify(v && { marks: v.marks, text: v.markText, shown: v.markShown }));
+          // goal/G43.22, Andy: "take out your search of the items text, the codeMirror search works better for editing purposes."
+          ok(!!v && v.codeMirror === true && v.find === false, 'goal/G43.22: no find field beside the box; the box is a CodeMirror, with its own search', 'the box panel: ' + JSON.stringify(v));
           let t = null;
           try { t = JSON.parse(await page.evaluate('window.boxTake()')); } catch (e) { t = null; }
           ok(!!t && t.took === 1, 'goal/G43.3: going into that box takes it, as the textarea did', 'going in: ' + JSON.stringify(t));

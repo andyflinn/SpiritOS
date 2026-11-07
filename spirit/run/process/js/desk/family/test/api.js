@@ -48,12 +48,12 @@ test.startTest('the desk family api.js: the desk server\'s interface');
   ok(names.indexOf('DEBUG') === -1, 'DEBUG is appServer\'s, not listed', 'listed: ' + short(names.filter(function (v) { return v === 'DEBUG'; })));
 
   test.subHeading('every verb it lists is one the server serves');
-  const source = ['process/js/desk/desk.js', 'process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js', 'spirit/appServer.js']
+  const source = ['process/js/desk/desk.js', 'spirit/appServer.js']
     .map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
   // A handler is a key of the verb table ('box.write': {, block: {), or appServer's all.<verb> = {.
   const unserved = names.filter(function (v) { return !new RegExp('[\'"]' + esc(v) + '[\'"]\\s*:|^\\s*' + esc(v) + '\\s*:|\\ball\\.' + esc(v) + '\\s*=', 'm').test(source); });
-  ok(unserved.length === 0, 'each is a handler of desk.js, of its stackFrameChecks plugin, or appServer\'s streamPublisher (subscribe, unsubscribe)', 'no handler for: ' + short(unserved));
+  ok(unserved.length === 0, 'each is a handler of desk.js or appServer\'s streamPublisher (subscribe, unsubscribe)', 'no handler for: ' + short(unserved));
 
   test.subHeading('a call is checked before it leaves');
   ok(refusedAs('item.get', { id: 'goal/G1.1', extra: 1 }) === 'no-such-argument', 'an argument the verb does not take is refused (no-such-argument)', 'answered ' + short(call('item.get', { id: 'goal/G1.1', extra: 1 })));
@@ -83,7 +83,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
   ok(refusedAs('items.search', { text: '', currentGoalOnly: 'true', goalsOnly: false, includeClosed: false }) === 'bad-request' && passes('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }), 'items.search: its three flags are true or false, all sent', 'a string flag ' + refusedAs('items.search', { text: '', currentGoalOnly: 'true', goalsOnly: false, includeClosed: false }));
 
   test.subHeading('one row a write (goal/G40.3)');
-  ['item.files.add', 'item.files.remove', 'item.suites.add', 'item.suites.remove', 'stackFrameChecks.paths.add', 'stackFrameChecks.suites.add'].forEach(function (v) {
+  ['item.files.add', 'item.files.remove', 'item.suites.add', 'item.suites.remove'].forEach(function (v) {
     ok(passes(v, { id: 'goal/G1.1', path: 'spirit/run/a.js' }) && refusedAs(v, { id: 'goal/G1.1', path: ['a', 'b'] }) === 'bad-request', v + ' takes one path, never a list', v + ' with a list: ' + refusedAs(v, { id: 'goal/G1.1', path: ['a', 'b'] }));
   });
   ok(passes('rules.search', { text: '', types: [], statuses: [] }) && refusedAs('rules.search', { text: '', types: 'a', statuses: [] }) === 'bad-request', 'rules.search: types and statuses are lists', 'types \'a\' ' + refusedAs('rules.search', { text: '', types: 'a', statuses: [] }));

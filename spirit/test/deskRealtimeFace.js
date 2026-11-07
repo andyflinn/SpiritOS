@@ -20,7 +20,8 @@
 // WHAT IS ASSERTED
 //   1. the shared element: subscribes itself, paints only what it wants, unsubscribes on destroy.
 //   2. Desk: a publish changing one row repaints that row alone: not the List, not the other row.
-//   3. Desk: a team chat line repaints the team chat alone, not the List.
+//   3. Desk: a team chat line repaints the team chat alone, not the List. GONE with goal/G43.22: no Team tab and no
+//      group chat goal/G0 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
 //   4. Desk: a rule's published row repaints the rule list without asking rules.search again.
 //   5. Desk: a change while another tab shows is there when the List shows again (C, a guard).
 //   6. Remote: a state whose pairs changed repaints the pairs alone; one whose models changed, the models alone.
@@ -141,15 +142,8 @@ async function deskHalf() {
   if (top.sets === marks.top && rowTwo.sets === marks.two) test.check('the List and the other row are not repainted');
   else test.fail(OWED + 'the List was set ' + (top.sets - marks.top) + ' times, the other row ' + (rowTwo.sets - marks.two));
 
-  test.subHeading('3. a team chat line repaints the team chat alone');
-  const team = doc.getElementById('desk-team');
-  const t0 = { top: top.sets, team: team.sets };
-  // goal/G33.4: the goal's row and the line are two publishes, one row each.
-  publish({ change: 101, verb: 'chat.add', item: row('goal/G0', 'Group chat', ''), listed: false, key: { goal: 0, item: 0 } });
-  publish({ change: 101, table: 'chat', goal: 0, item: 0, id: 'goal/G0', row: { by: 'andy', at: new Date().toISOString(), text: 'hello team', taken: '', key: '', name: '' } });
-  await settled();
-  if (team.sets > t0.team && top.sets === t0.top) test.check('#desk-team repainted, #desk-top not');
-  else test.fail(OWED + 'after a team line #desk-team was set ' + (team.sets - t0.team) + ' times and #desk-top ' + (top.sets - t0.top));
+  // 3, A TEAM CHAT LINE REPAINTING #desk-team ALONE, STOOD HERE: the Team tab and its group chat goal/G0 went with
+  // goal/G43.22.
 
   test.subHeading('4. a rule\'s row repaints the rule list without a search');
   doc.getElementById('container').fire('click', { target: target({ 'data-tab': 'rules' }) });

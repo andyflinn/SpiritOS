@@ -272,7 +272,7 @@ function keepWhole(facts) {
 // The lines of the goal in view since the agent's last wake (handOver), each once: { key, text }.
 // ALL THE NEWS SINCE THE LAST WAKE (goal/G33.8, box v15-16; Andy: "the desk client, when it wakes its agent, hands it
 // all the news since the last agent-wake, this is also why you never know about status changes etc... in the items or
-// goals"): every line of the goal in view and the group chat, whoever wrote it and wherever, and every change of an
+// goals"): every line of the goal in view, whoever wrote it and wherever, and every change of an
 // item's or the goal's state (its phase, holder, Go, claims, verified, done, closed, a check), as the stream brought
 // them, each once, in order. They are handed with the next wake (handOver) and wake nothing by themselves. A line or
 // change meant for the agent is handed as DESK (it is the agent's to act on); the rest as NEWS. Nothing is asked of
@@ -299,7 +299,7 @@ function shedNews() {
 }
 function inView(goal) {
   const cur = /^goal\/G(\d+)$/.exec(String(keptCurrent() || ''));
-  return goal === 0 || (!!cur && goal === Number(cur[1]));
+  return !!cur && goal === Number(cur[1]);
 }
 function lineKeyOf(id, l) { return String(id) + '#' + String(l.at) + '#' + String(l.key || l.by); }
 function news(key, text) {
@@ -316,14 +316,14 @@ function keepSinceWake(row) {
   if (row.table === 'chat') {
     if (!row.row || row.removed) return;
     const l = row.row;
-    if (!l.at || String(l.at) <= sinceNow || !(inView(row.goal) || row.special === true)) return;
+    if (!l.at || String(l.at) <= sinceNow || !inView(row.goal)) return;
     if (SELF_KEY ? l.key === SELF_KEY : l.by === SELF) return;
     if (Array.isArray(row.to) && row.to.length && row.to.indexOf(SELF_KEY) === -1) return;
     news(lineKeyOf(row.id, l), 'NEWS ' + l.by + ' chat.add ' + JSON.stringify({ id: String(row.id), text: String(l.text) }));
     return;
   }
   if (row.table === 'checks') {
-    if (!row.row || row.removed || !(inView(row.goal) || row.special === true)) return;
+    if (!row.row || row.removed || !inView(row.goal)) return;
     const c = row.row;
     const checkKey = 'check#' + row.id + '#' + c.number + '#' + c.state;
     const checkText = 'check.set ' + JSON.stringify({ id: String(row.id), check: String(c.number), kind: String(c.kind || ''), state: String(c.state || '') });
@@ -333,7 +333,7 @@ function keepSinceWake(row) {
   const f = row.item && typeof row.item === 'object' ? row.item : null;
   if (!f || !f.id || STATE_QUIET.indexOf(String(row.verb || '')) !== -1) return;
   const k = /^goal\/G(\d+)/.exec(String(f.id));
-  if (!k || !(inView(Number(k[1])) || row.special === true)) return;
+  if (!k || !inView(Number(k[1]))) return;
   const state = {};
   STATE_FIELDS.forEach(function (n) { if (f[n] !== undefined && f[n] !== '' && f[n] !== false && f[n] !== 0) state[n] = f[n]; });
   // Only a change of its state is news: a write that leaves those fields as they were (a box taken, a rename) is not.
@@ -413,12 +413,11 @@ function pressWake(row) {
 }
 // WHAT IS MEANT FOR ITS AGENT (box v37: "without constantly waking agents to read irrelevant messages"). A new line of
 // the stream's chat rows:
-//   - Andy's line addressed to its own agent (a line addressed to others is never taken here); or addressed to nobody, on the item it holds, on an item nobody holds or in
-//     the group chat (taken first: line.take, the desk's own rule of who may answer, goal/G27.12);
-//   - another agent's line, or the desk's, on the item it holds; the desk's in the group chat (a rule change, goal/G5.8);
+//   - Andy's line addressed to its own agent (a line addressed to others is never taken here); or addressed to nobody, on the
+//     item it holds or on an item nobody holds (taken first: line.take, the desk's own rule of who may answer, goal/G27.12);
+//   - another agent's line, or the desk's, on the item it holds;
 //   - never its own line, never the desk's busy replies, and never chat between others on an item another agent holds.
-// A commit line of another agent's pulls this clone beside the hand-over (goal/G5.8), and Andy's "publish" in the group
-// chat starts a publish (goal/G4.33), whichever agent it is meant for.
+// A commit line of another agent's pulls this clone beside the hand-over (goal/G5.8).
 const seenLines = new Set();
 // WHAT IS OLD (goal/G3.4: a first run starts at now; nothing is handed twice, a restart included). A line or box
 // version written at or before `since` is old, however often the stream brings it again (a goal pushed whole, to a
@@ -445,12 +444,11 @@ function moveSince() {
 function meantForAgent(row) {
   if (!row.row || row.removed) return null;
   // ONE GOAL IN VIEW (goal/G33.8): the desk publishes every goal's rows to its subscribers now, so what is meant for the
-  // agent is of the current goal or the group chat, or his line addressed to it, or on the item it holds.
+  // agent is of the current goal, or his line addressed to it, or on the item it holds.
   const cur = /^goal\/G(\d+)$/.exec(String(keptCurrent() || ''));
-  // WHAT HAPPENS IN A SPECIAL GOAL (goal/G33.11): a plugin's goal, such as Stacks, is in view too; the desk marks its
-  // rows special.
-  const inView = row.goal === 0 || (!!cur && row.goal === Number(cur[1])) || (Array.isArray(row.to) && row.to.indexOf(SELF_KEY) !== -1) ||
-    row.special === true || heldByMe(keptItem(String(row.id || '')));
+  // No team chat and no special goal since goal/G43.22 (Andy: "G0 goes, from ui and server, kept in database.").
+  const inView = (!!cur && row.goal === Number(cur[1])) || (Array.isArray(row.to) && row.to.indexOf(SELF_KEY) !== -1) ||
+    heldByMe(keptItem(String(row.id || '')));
   if (!inView) return null;
   // HIS LINE A PUSH GOAL HANDS AGAIN (goal/G41.22; Andy: "in that same wake hands the agent every line of Andy's
   // addressed to it that nobody took yet: nothing replayed, nothing lost"): the desk sends only lines nobody took, so its
@@ -487,7 +485,6 @@ function meantForAgent(row) {
   const facts = keptItem(id) || null;
   const held = heldByMe(facts);
   const nobodyHolds = !facts || !facts.with;
-  const group = id === 'goal/G0';
   if (l.by === 'andy') {
     // His line addressed to agents comes only to them, its row naming them (desk.js streamToClients).
     // His line addressed to this agent wakes it as its own with no take (the desk bound a nick line's take already; his
@@ -497,7 +494,7 @@ function meantForAgent(row) {
       entitled[id] = true;
       return { text: 'DESK andy chat.add ' + body, key: lineKeyOf(id, l) };
     }
-    if (held || nobodyHolds || group) return { text: 'DESK andy chat.add ' + body, take: id, key: lineKeyOf(id, l) };
+    if (held || nobodyHolds) return { text: 'DESK andy chat.add ' + body, take: id, key: lineKeyOf(id, l) };
     return null;
   }
   const said = String(l.text || '');
@@ -512,7 +509,7 @@ function meantForAgent(row) {
     entitled[id] = true;
     return { text: 'DESK desk chat.add ' + body, key: lineKeyOf(id, l) };
   }
-  if (held || (group && l.by === 'desk')) return { text: 'DESK ' + l.by + ' chat.add ' + body, key: lineKeyOf(id, l) };
+  if (held) return { text: 'DESK ' + l.by + ' chat.add ' + body, key: lineKeyOf(id, l) };
   return null;
 }
 // THE AGENT'S STATUS, KEPT IN RAM AND KEPT ALIVE WITH DESK (goal/G27.12): connected, busy, idle, or signed off.
@@ -618,7 +615,7 @@ function say(to, word) {
 
 // As many waiting lines as one answer holds, oldest first.
 // EVERY LINE SINCE THE LAST WAKE (goal/G33.8, box v15; Andy: "your desk client, when it wakes you, should give you all
-// the lines that happened since your last wake"): the wake hands over the current goal's and the group chat's lines the
+// the lines that happened since your last wake"): the wake hands over the current goal's lines the
 // stream brought since the agent's last wake, whoever wrote them and wherever, newest last, together with what was meant
 // for it (the waking line among them, once); as many as fill one answer, the oldest left out first, and more says so.
 // Nothing is asked of the desk: they are the rows the stream brought. A line not meant for the agent wakes nothing.

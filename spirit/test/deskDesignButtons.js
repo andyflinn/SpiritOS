@@ -24,8 +24,9 @@ const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G9.8: ';
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
-// The Musings tab went with goal/G27.3; the design button stands where it stood, right after Rules.
-const TABS = ['list', 'team', 'rules'];
+// The Musings tab went with goal/G27.3; the design button stands where it stood, right after Rules. The Team tab went
+// with goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database."): List and Rules remain.
+const TABS = ['list', 'rules'];
 
 function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 8; i++) await settle(); }

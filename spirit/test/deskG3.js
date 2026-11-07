@@ -112,7 +112,7 @@ function clickTarget(attrs) {
   });
   for (let i = 0; i < 6; i++) await settle();
   const tabs = doc.getElementById('desk-tabs');
-  tabs.fire('click', { target: clickTarget({ 'data-tab': 'team' }), currentTarget: tabs });
+  // Until goal/G43.22 Team was clicked first; the design button shows on every tab (goal/G9.8), the List's included.
   tabs.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs });
   tabs.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs });
   for (let i = 0; i < 6; i++) await settle();
@@ -131,7 +131,6 @@ function clickTarget(attrs) {
   });
   for (let i = 0; i < 6; i++) await settle();
   const tabs2 = doc.getElementById('desk-tabs');
-  tabs2.fire('click', { target: clickTarget({ 'data-tab': 'team' }), currentTarget: tabs2 });
   tabs2.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs2 });
   tabs2.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs2 });
   for (let i = 0; i < 6; i++) await settle();

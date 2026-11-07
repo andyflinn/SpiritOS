@@ -1,6 +1,8 @@
 'use strict';
 
-// goal/G3.11: a search on the chat lines of an item, the group chat's (goal/G0) first. Red on today's tree: the desk server has no verb chat.search;
+// goal/G3.11: a search on the chat lines of an item, the group chat's (goal/G0) first (since goal/G43.22 the group
+// chat is gone from the server: Andy, "G0 goes, from ui and server, kept in database."; the search is asked of an
+// ordinary item, as the generalized verb takes any). Red on today's tree: the desk server has no verb chat.search;
 // the group chat answers only its newest lines that fit one answer (item.chat), and an older line cannot be found.
 //   Andy, 2026-10-02: "a search on the chat lines of 'goal/G0'" — "nothing else". Earlier, of the same: "you may
 //   introduce a search() just for the records of 'goal/G0' s chat, if you like.", "with time boundaries etc....
@@ -43,7 +45,7 @@ const OWED = 'OWED by goal/G3.11: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
-const CHAT = 'goal/G0';
+const CHAT = 'goal/G100.2'; // the item searched; goal/G0 until goal/G43.22
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -54,7 +56,7 @@ const CW = { key: CW_KEY, label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskChatSearchTestPeerWSLAAAAAAAAAAAA=', label: 'wsl-claude' };
 const CW_OWNER = { owner: true, key: CW_KEY, label: 'claude-windows' };
 
-test.startTest('goal/G3.11: a search on the chat lines of goal/G0');
+test.startTest('goal/G3.11: a search on the chat lines of an item');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatsearch-'));
 const deskState = path.join(scratch, 'desk-state');
 const clientState = path.join(scratch, 'client-state');
@@ -128,7 +130,7 @@ async function main() {
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   // An ordinary goal with an item, whose chat must never be answered (goal/G33.7: session.set went; seeded before the
   // desk starts, which takes it in at start).
-  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'An ordinary goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
+  test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'An ordinary goal' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: CHAT, title: 'The searched item', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   const tree = await up('desk') || {};
@@ -144,11 +146,11 @@ async function main() {
   }
   test.check('chat.search {id, text, by, since, before} -> {items: [{key, label}], more}');
 
-  // Four lines in the group chat, each at its own moment.
+  // Four lines in the searched item's chat, each at its own moment.
   await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'alpha in another item' }, ANDY);
   const said = [[ANDY, 'alpha one'], [CW, 'alpha two'], [WSL, 'beta three'], [ANDY, 'beta four']];
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line, the team chat too (Andy:
-  // "follow the take rules."): claude-windows takes his line before it answers, wsl-claude holds the team chat.
+  // "follow the take rules."): claude-windows takes his line before it answers, wsl-claude holds the item.
   for (const s of said) {
     await sleep(25);
     if (s[0] === CW) await call('desk', 'line.take', { id: CHAT }, CW);
@@ -157,11 +159,11 @@ async function main() {
   }
   const held = (((await call('desk', 'item.chat', { id: CHAT }, ANDY)).body || {}).chat || []);
   const at = held.map(function (l) { return l.at; });
-  if (held.length !== 4 || new Set(at).size !== 4) { test.fail(OWED + 'the test desk holds ' + held.length + ' group chat lines at ' + new Set(at).size + ' moments; four of each are needed'); return; }
+  if (held.length !== 4 || new Set(at).size !== 4) { test.fail(OWED + 'the test desk holds ' + held.length + ' chat lines of ' + CHAT + ' at ' + new Set(at).size + ' moments; four of each are needed'); return; }
 
   test.subHeading('2. the chat lines of the item named and nothing else; 3. each line as {by, at, text}, the newest first');
   const all = await search({});
-  if (all.status === 200 && texts(all) === 'beta four | beta three | alpha two | alpha one' && all.more === false) test.check('with no filter: the four lines of the group chat, newest first, and not the other item\'s line');
+  if (all.status === 200 && texts(all) === 'beta four | beta three | alpha two | alpha one' && all.more === false) test.check('with no filter: the four lines of ' + CHAT + ', newest first, and not the other item\'s line');
   else test.fail(OWED + 'with no filter chat.search answered ' + all.status + ' ' + JSON.stringify(all.body).slice(0, 240));
   // Since goal/G21.1 each line also carries its writer's key and name ({by, key, name, at, text}).
   const shaped = all.lines.length === 4 && all.lines.every(function (l, i) { const h = held[3 - i]; return Object.keys(l).sort().join(',') === 'at,by,key,name,text' && l.by === h.by && l.at === h.at && l.text === h.text; });
@@ -172,7 +174,7 @@ async function main() {
   const otherAlpha = await search({ id: 'goal/G100.1', text: 'alpha' });
   const nowhere = await search({ id: 'goal/G101.9' });
   if (texts(other) === 'alpha in another item' && texts(otherAlpha) === 'alpha in another item' && nowhere.code === 'no-such-item') {
-    test.check('asked for another item, it answers the one line of that item and none of the group chat; an id no item has is refused no-such-item');
+    test.check('asked for another item, it answers the one line of that item and none of ' + CHAT + '; an id no item has is refused no-such-item');
   } else test.fail(OWED + 'asked for goal/G100.1 it gave [' + texts(other) + '], with text alpha [' + texts(otherAlpha) + ']; an unknown id answered ' + nowhere.status + ' ' + JSON.stringify(nowhere.body).slice(0, 120));
 
   test.subHeading('4. the four filters, alone and together');
