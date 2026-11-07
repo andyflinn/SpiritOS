@@ -662,7 +662,7 @@ async function dialogHalf() {
   if (busyButton && nextTo()) test.check('Verify sits right after Done in the dialog');
   else test.fail(OWED + 'the dialog\'s button bar reads ' + short(text(bar())) + ' (' + short(bar().slice(0, 300)) + ')');
   // No Verify shows the busy state (goal/G33.6; Andy: "please don't show verifier-busy an any verify button, i
-  // can check that for myself"); deskAdjustments.js asserts that. It stays never disabled.
+  // can check that for myself"). It stays never disabled.
   if (busyButton && !/\sdisabled/.test(busyButton)) test.check('with the switch busy the Verify button is not disabled: ' + short(text(busyButton)));
   else test.fail(OWED + 'the Verify button, verifier busy, reads ' + short(busyButton || bar()));
   let n0 = calls.length;
@@ -721,7 +721,7 @@ async function listHalf() {
   const row = function (id, extra) { return Object.assign({ id: id, title: id, goal: 'goal/G102', status: WAITING, with: '', buttons: ['done', 'verify'], blocking: ['goal/G102'], blocked: [], asks: 0, claims: 1, verifierBusy: false, verifyAnswer: '', verified: 'none', verifyFailures: [] }, extra); };
   fake.items = [
     { id: 'goal/G102', title: 'List', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['goal/G102.1', 'goal/G102.2'], live: [], working: [], waiting: 0 },
-    // A row draws one button, the next one wanted (goal/G33.6, deskAdjustments.js): with Verify offered it is
+    // A row draws one button, the next one wanted (goal/G33.6): with Verify offered it is
     // Verify, so the rows whose Done is drawn here offer Done alone.
     row('goal/G102.1', { verified: 'red', verifyFailures: [RED_LINE], buttons: ['done'] }),
     row('goal/G102.2', { verified: 'green', buttons: ['done'] }),

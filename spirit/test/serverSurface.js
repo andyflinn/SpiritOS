@@ -112,19 +112,13 @@ fs.writeFileSync(
   'utf8'
 );
 
-// ── THIS NODE MUST NOT KNOW ABOUT THE REAL RELAYS ────────────────────
+// ── THE NODE'S RELAYS ────────────────────────────────────────────────
 //
-// A unit suite must not depend on, or send traffic to, a live relay. This
-// writes spirit/state/relays.json with one row at 127.0.0.1:1, refused by
-// the kernel with no name lookup. The node's relays are rows of node.db's
-// one table; relayKeys.importOld moves a relays.json in when found, and
-// copies only a url with a pinned key, so this unpinned row lists none.
+// The node's relays are rows of node.db's one table; on boot it asserts the
+// one seed row, noderoutes.net (ownerBadge.ensureRelays). Nothing checked
+// below depends on a relay answering. An old relays.json is not read
+// (goal/G43.23), so none is planted.
 fs.mkdirSync(path.join(nodeRoot, 'spirit', 'state'), { recursive: true });
-fs.writeFileSync(
-  path.join(nodeRoot, 'spirit', 'state', 'relays.json'),
-  JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]),
-  'utf8'
-);
 
 let child = null;
 

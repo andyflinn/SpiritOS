@@ -8,9 +8,7 @@
 //
 // ASSERTED
 //   1  THE CORE TABLE: spirit/run/spirit/coreFiles.js isCore(repoPath): every file under spirit/run/spirit/, and the
-//      code of a shell app whose manifest says "intrinsic": true (coreFiles.js has more rules than these cases try).
-//      The case 'spirit/run/shell/files/files.js' expects core, but there is no spirit/run/shell/files/ app any more,
-//      so isCore answers false and this section fails.
+//      code of a shell app on the coded INTRINSIC list (goal/G41.1; coreFiles.js has more rules than these cases try).
 //   2  THE COMMIT CHECK: with Go on the item, a file anywhere in the repo is taken (no scope, goal/G10.8); a
 //      staged core file needs a granted G check on the item naming its path under spirit/run; refused without it. The
 //      refusal raises no grant of its own (goal/G32.2): it says to list the files with item.files.add, whose ONE grant
@@ -61,7 +59,7 @@ const kids = [];
 const call = function (app, verb, args, caller) { const q = {}; q[verb] = args; const b = {}; b[app] = q; return client.ask(b, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
 const desk = function (verb, args, caller) { return call('desk', verb, args, caller); };
 
-// The pretend node this agent's deskClient runs on, as deskRules.js builds it: a server's verb by name through the
+// The pretend node this agent's deskClient runs on: a server's verb by name through the
 // real flat apiDoor (verbTable's door, as /api/spirit runs it since goal/G30.6) as the owner (so the commit hook reaches
 // deskClient), the contact book (the other agent blocked), and peer.post into
 // the real desk as this agent.
@@ -135,14 +133,14 @@ async function main() {
   await desk('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await desk('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
 
-  test.subHeading('1. the core table: run/js and the intrinsic apps');
+  test.subHeading('1. the core table: run/spirit and the intrinsic apps');
   let core = null;
   try { core = require('../run/spirit/coreFiles.js'); } catch (e) { core = null; }
   const cases = [['spirit/run/spirit/jobs.js', true], ['spirit/run/spirit/client/shell.js', true], ['spirit/run/shell/deskDetails/deskDetails.js', false],
-    ['spirit/run/shell/files/files.js', true], ['spirit/run/shell/desk/desk.js', false], ['spirit/run/shell/chatter/chatter.js', false],
+    ['spirit/run/shell/info/info.js', true], ['spirit/run/shell/desk/desk.js', false], ['spirit/run/shell/chatter/chatter.js', false],
     ['spirit/test/deskCoreGrants.js', false], ['design/README.md', false], ['spirit/run/process/js/desk/desk.js', false]];
   const wrong = core && typeof core.isCore === 'function' ? cases.filter(function (c) { return core.isCore(c[0]) !== c[1]; }) : cases;
-  if (!wrong.length) test.check('isCore: run/js and the intrinsic apps\' folders (files) are core; deskDetails (intrinsic: false since 6698275a), desk, chatter, tests, design and process folders are not');
+  if (!wrong.length) test.check('isCore: run/spirit and the intrinsic apps\' folders (info) are core; deskDetails, desk, chatter, tests, design and process folders are not');
   else test.fail(OWED + (core ? 'isCore wrong on ' + short(wrong) : 'no spirit/run/spirit/coreFiles.js exporting isCore'));
 
   test.subHeading('2. the commit check takes any file with Go, and refuses a core file nobody granted');

@@ -13,7 +13,7 @@
 // carry `open` over, so the next callDialog showed the pane as it was, on the item opened before. declareDynamicApp
 // carries `open` over now (shell.js, goal/G24.7). Section 2 is Andy's sequence through that path.
 //
-// Driven the way listeningApp.js drives the real shell.js (small document, fs and jobs stubs, the script "load" fired
+// Driven through the real shell.js (small document, fs and jobs stubs, the script "load" fired
 // by hand), with the real deskDetails.js evaluated as the browser would evaluate the script the shell injected. The
 // desk app that opens the dialog is a stand-in doing what desk.js's deskOpenRow does: callDialog
 // shell/deskDetails with { id }, and open the row a result names. The desk server is a stand-in answering desk.<verb>

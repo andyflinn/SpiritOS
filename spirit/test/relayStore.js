@@ -231,46 +231,6 @@ if (relayStore.openReadOnly(empty) === null && !fs.existsSync(path.join(empty, '
   test.fail('openReadOnly created state on an empty home');
 }
 
-test.subHeading('A relay.db from cycle 3 loses the owner column, once');
-
-// A cycle-3 relay.db has `members` with an `owner` column; opening it drops
-// the column, keeping every row. Andy (2026-09-19): "a row in the roll doesn't know who the
-// owner is. Ownership is only determined by one identified key."
-{
-  const old = home();
-  fs.mkdirSync(path.join(old, 'spirit', 'state'), { recursive: true });
-  const sqlite = require('node:sqlite');
-  const file = path.join(old, 'spirit', 'state', 'relay.db');
-  const raw = new sqlite.DatabaseSync(file);
-  raw.exec(`CREATE TABLE members (publicKey TEXT PRIMARY KEY, publicLabel TEXT NOT NULL DEFAULT '',
-    labelNorm TEXT NOT NULL DEFAULT '', claimedAt TEXT NOT NULL DEFAULT '', owner INTEGER NOT NULL DEFAULT 0)`);
-  raw.exec("INSERT INTO members VALUES ('KO', 'andy', 'andy', '2026-09-01', 1), ('KM', 'bert', 'bert', '2026-09-02', 0)");
-  raw.close();
-
-  const cols = function () {
-    const db = new sqlite.DatabaseSync(file, { readOnly: true });
-    const names = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
-    db.close();
-    return names;
-  };
-  const st = relayStore.open(old);
-  if (cols().indexOf('owner') === -1 && st.members.count() === 2 && st.members.get('KO').publicLabel === 'andy') {
-    test.check('the column is gone and every row kept');
-  } else {
-    test.fail('columns ' + cols().join(',') + ' count ' + st.members.count());
-  }
-  st.members.put({ publicKey: 'KN', publicLabel: 'carol', claimedAt: '2026-09-03' });
-  relayStore.closeAll();
-  const back = relayStore.open(old);
-  if (back.members.count() === 3 && cols().indexOf('owner') === -1) {
-    test.check('and opening it again changes nothing — asked of the table, not assumed');
-  } else {
-    test.fail('second open: ' + back.members.count());
-  }
-  relayStore.closeAll();
-  try { fs.rmSync(old, { recursive: true, force: true }); } catch (e) { /* windows */ }
-}
-
 relayStore.closeAll();
 try { fs.rmSync(H, { recursive: true, force: true }); } catch (e) { /* windows */ }
 try { fs.rmSync(empty, { recursive: true, force: true }); } catch (e) { /* windows */ }

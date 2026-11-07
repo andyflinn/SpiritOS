@@ -96,7 +96,7 @@ async function deskHalf() {
     const G33 = 'OWED by goal/G33.2: ';
     const list = fs.readFileSync(path.join(RUN, 'shell', 'desk', 'desk.js'), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
     // goal/G33.8 (box v13; Andy: "it's enough to put a red ! next to the item"): a red ! beside the item, the row in its
-    // normal colour; drawn and asserted on the real rendering in deskAdjustments.js (f).
+    // normal colour; drawn and asserted on the real rendering in deskLog.js.
     if (/data-alert-mark/.test(list) && !/row\.alert \? ';color:#d00'/.test(list)) test.check('the List marks the item with a red ! beside it, not a red row');
     else test.fail('OWED by goal/G33.8: the List still draws a marked row red, or no red ! beside the item');
     if (!/deskVerifier\.queued/.test(list)) test.check('the Verifier tab shows no queue');

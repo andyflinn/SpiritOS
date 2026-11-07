@@ -31,7 +31,7 @@ function code(file) { try { return fs.readFileSync(file, 'utf8').replace(/\/\*[\
 
 test.startTest('goal/G29.8: Files on the shared list, the tree streamed with its stat, fs.search on words');
 
-// ── a small DOM, like contactSelectorPane.js's ──
+// ── a small DOM ──
 function node(tag) {
   let html = '';
   const e = { tagName: String(tag || 'div').toUpperCase(), id: '', value: '', textContent: '', className: '', style: {}, dataset: {},

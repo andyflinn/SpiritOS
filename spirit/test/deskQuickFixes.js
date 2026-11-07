@@ -72,7 +72,7 @@ async function open(caller) {
   const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const go3 = await call('press', { id: 'goal/G100.3', what: 'go' }, ANDY);
   if (!ok(ended) || !ok(go3)) { test.fail('the world: end-design ' + ended.status + ', Go ' + go3.status); return; }
-  // Two agents live, so the desk does not waive the phase rules itself (deskPhases.js).
+  // Two agents live, so the desk does not waive the phase rules itself (deskWaive.js).
   await call('item.take', { id: 'goal/G100.3' }, UBI);
   await call('chat.add', { id: 'goal/G100.3', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
   await call('item.release', { id: 'goal/G100.3' }, UBI);

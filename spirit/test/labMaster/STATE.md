@@ -14,8 +14,10 @@ The lab suites are in `spirit/test/`: [`labLifecycle.js`](../labLifecycle.js),
 
 ```
 node spirit/test/labMaster/labMaster.js        the panel on :65420
-node spirit/test/labPopulate.js                a whole world in one command
 ```
+
+(`labPopulate.js`, which built a whole world in one command, went as a
+stale test in goal/G43.23; nothing replaces it.)
 
 The suites do not need you to do that first —
 [`ensureMaster.js`](ensureMaster.js) starts labMaster if it is not
@@ -33,7 +35,7 @@ See [design/cleanup/2026-09-11-labmaster.md](../../../design/cleanup/2026-09-11-
 | | root | built from | wiped between runs |
 |---|---|---|---|
 | **a lab node** (this panel) | `lab/<name>` beside the checkout (`labPaths.LAB_ROOT`) | a **git clone**, updated `git fetch origin` and `git reset --hard origin/master` | never |
-| **a test fixture** (`labWorld`, `setupRelayFakes`, `labPersistence`, `liveRelay`) | `<os tmpdir>/spiritos-relay-fakes/<id>` (`labPaths.FIXTURE_ROOT`) | a copy of the **working tree** (`git ls-files`) | deliberately |
+| **a test fixture** (`labWorld`, `setupRelayFakes`, `labPersistence`) | `<os tmpdir>/spiritos-relay-fakes/<id>` (`labPaths.FIXTURE_ROOT`) | a copy of the **working tree** (`git ls-files`) | deliberately |
 
 > **Andy:** *"i want all my nodes on labMaster page to only be updated via
 > github, jazz's binding to spirit-3 keeps getting trashed."*

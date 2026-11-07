@@ -144,9 +144,8 @@ expectNotWritable('a media sidecar (only annotateFile writes one)', 'media/001.j
 // relay-state/ holds the mailbox and, on a real relay, identity.json with
 // a private key — never reachable through a file read, whatever else it
 // may come to contain later.
-expectUnservable('spirit/state/routingTable.json', 'spirit/state/routingTable.json');
-// Both names: a migrated relay keeps the old file beside the new one, so
-// there are two to keep unreadable rather than one.
+expectUnservable('spirit/state/relay.db', 'spirit/state/relay.db');
+// And any other file there, whatever its name.
 expectUnservable('spirit/state/mailbox.json', 'spirit/state/mailbox.json');
 expectUnservable('spirit/state/identity.json', 'spirit/state/identity.json');
 expectUnservable('spirit/state/allow.json', 'spirit/state/allow.json');
@@ -155,7 +154,7 @@ if (fileServable('relay-state') === false) {
 } else {
   test.fail('relay-state (the folder itself) — fileServable should be false');
 }
-expectNotWritable('spirit/state/routingTable.json', 'spirit/state/routingTable.json');
+expectNotWritable('spirit/state/relay.db', 'spirit/state/relay.db');
 expectNotWritable('spirit/state/mailbox.json', 'spirit/state/mailbox.json');
 
 // ---- the listing path, not just the read path ----

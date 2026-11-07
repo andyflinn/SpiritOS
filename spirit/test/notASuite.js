@@ -71,8 +71,7 @@ module.exports = [
   // A TOOL, NOT A SUITE. It spawns two servers, enrols 800 members, holds
   // 800 sockets and writes 11,000 rows — a minute of wall clock, and it
   // makes no pass/fail claim: it prints what a box holds
-  // (README/CAPACITY.md). The same split labPopulate has, for the same
-  // reason. Run it when the platform or the code moves.
+  // (README/CAPACITY.md). Run it when the platform or the code moves.
   'measureCapacity.js',
   // The orchestrator for the two above — runs the harness and the capacity
   // tool in sequence so one box contributes its whole story under one date

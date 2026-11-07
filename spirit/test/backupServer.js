@@ -69,7 +69,8 @@ function plantNode(label, extraConfig) {
   const pub = 'MCowBQYDK2VwAyEA' + crypto.randomBytes(24).toString('base64');
   // A decoy: if the backup read identity.json, node.json would name WRONG.
   fs.writeFileSync(path.join(top, 'identity.json'), JSON.stringify({ name: 'WRONG', publicKey: 'WRONG-KEY', privateKey: 'SECRET-' + label }));
-  fs.writeFileSync(path.join(top, 'relayKeys.json'), JSON.stringify({ key: 'SECRET-RELAY-' + label }));
+  // A second decoy where the node keeps its relays' keys (node.db, since goal/G19.15; relayKeys.json is not read).
+  fs.writeFileSync(path.join(top, 'node.db'), JSON.stringify({ key: 'SECRET-RELAY-' + label }));
   fs.writeFileSync(path.join(top, 'contacts.json'), '{}');
   if (extraConfig) fs.writeFileSync(path.join(top, 'config.json'), JSON.stringify(extraConfig));
   fs.writeFileSync(path.join(rs, 'process', 'desk', 'voice.jsonl'), JSON.stringify({ text: 'first', day: '2026-09-29' }) + '\n');
@@ -160,7 +161,7 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   } else test.fail(OWED + 'the copy holds ' + JSON.stringify(files));
 
   test.subHeading('T2: nothing outside relay-state/process/ is ever copied');
-  const leaked = listAll(path.join(HOME, '.SpiritOS')).filter(function (f) { return /identity\.json|relayKeys|contacts\.json|config\.json/.test(f); });
+  const leaked = listAll(path.join(HOME, '.SpiritOS')).filter(function (f) { return /identity\.json|node\.db|contacts\.json|config\.json/.test(f); });
   const secret = listAll(path.join(HOME, '.SpiritOS')).some(function (f) {
     try { return /SECRET-/.test(fs.readFileSync(path.join(HOME, '.SpiritOS', f), 'utf8')); } catch (e) { return false; }
   });

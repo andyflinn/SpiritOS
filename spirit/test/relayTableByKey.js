@@ -14,17 +14,15 @@
 //   - "we will pre-seed WITH keys, we know those key, after all."
 //   - SUPERSEDING "both keys ship": "No, now that we have it, we only list noderoutes.net, spirit.andyflinn.com is
 //     OURS." The install seeds noderoutes.net alone; spirit is neither seeded nor trusted from install, and a node
-//     that uses it claims there. A spirit row a node already has, keyed in the old files, is imported as usual.
-//   - "there will be only ONE relay table in node.db." The first boot copied every keyed row of relays.json and
-//     relayKeys.json into it and deleted both files (goal/G19.15); since goal/G40.11 that move lands in seen, each
-//     pinned url a relay row with its url a direct route.
+//     that uses it claims there.
+//   - "there will be only ONE relay table in node.db." Since goal/G40.11 it is seen, each pinned url a relay row
+//     with its url a direct route. relays.json and relayKeys.json, the stores before it, are not read (goal/G43.23;
+//     Andy, goal/G41.30: "let's get rid of those "rescue operations"").
 //   - noderoutes.net stays the floor that is never removed (goal/G16.3).
 //
 // WHAT IS ASSERTED
 //   1. node.db has no relays table: a relay is a row of seen, keyed by the relay key, flagged relay, its url a route.
 //   2. A boot on an empty relay-state yields exactly one seed row, noderoutes.net with its key; spirit is not seeded.
-//   3. A boot with the old files moves every pinned url into the table (kept where it was listed, under its label;
-//      seated), skips a listed relay with no pin, then deletes both files.
 //   4. A second boot changes nothing; a seed already present is neither duplicated nor overwritten.
 //   5. relayKeys and ownerBadge read and write through the table; neither file is ever written again.
 //   6. noderoutes.net still cannot be removed.
@@ -47,8 +45,6 @@ const SPIRIT = { url: 'https://spirit.andyflinn.com', key: 'MCowBQYDK2VwAyEAV2NF
 const ROUTES = { url: 'https://noderoutes.net', key: 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=' };
 
 const LAB = { url: 'http://127.0.0.1:4100', key: 'MCowBQYDK2VwAyEAlabrelaylabrelaylabrelaylabrelaylabrelay0=' };
-const GONE = { url: 'https://gone.example', key: 'MCowBQYDK2VwAyEAgonerelaygonerelaygonerelaygonerelaygone0=' };
-const NOPIN = 'https://nopin.example';
 const NEWR = { url: 'https://new.example', key: 'MCowBQYDK2VwAyEAnewrelaynewrelaynewrelaynewrelaynewrelay00=' };
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
@@ -155,39 +151,15 @@ test.subHeading('1. no relays table: a relay is a row of the one table, keyed by
   else test.fail(OWED + 'a fresh boot wrote the old files: ' + short(f));
 }
 
-// ── 3 + 4. THE OLD FILES MOVE INTO THE ONE TABLE; A SECOND BOOT CHANGES NOTHING ──
-test.subHeading('3. the first boot moves the old files into the table and deletes them; 4. a second boot changes nothing');
+// ── 4. A SEED ALREADY PRESENT STAYS; A SECOND BOOT CHANGES NOTHING ──────
+test.subHeading('4. a seed already present is kept as it is, and a second boot changes nothing');
 {
-  const root = freshRoot('import');
-  const rs = path.join(root, 'spirit', 'state');
-  fs.writeFileSync(path.join(rs, 'relays.json'), JSON.stringify([{ label: 'lab', url: LAB.url + '/' }, { label: 'never-reached', url: NOPIN }], null, 2));
-  fs.writeFileSync(path.join(rs, 'relayKeys.json'), JSON.stringify({
-    'http://127.0.0.1:4100': { publicKey: LAB.key, firstSeen: '2026-03-01T00:00:00.000Z', acceptedAt: '2026-03-02T00:00:00.000Z' },
-    'https://gone.example': { publicKey: GONE.key, firstSeen: '2026-04-01T00:00:00.000Z', acceptedAt: '2026-04-02T00:00:00.000Z' },
-  }, null, 2));
+  const root = freshRoot('again');
   // A seed already present, with the owner's own name for it.
   relayKeys.list(root, ROUTES.url, 'my-routes', ROUTES.key);
 
   let first = null;
   try { first = ownerBadge.ensureRelays(root); } catch (e) { first = { threw: String(e.message || e) }; }
-
-  const lab = rowOf(root, LAB.key)[0];
-  if (lab && lab.url === LAB.url && lab.myLabel === 'lab' && lab.keep === 1 && lab.seated === 1 && relayKeys.pinned(root, LAB.url) === LAB.key) {
-    test.check('a listed, pinned relay moves in as a kept, seated row under its label, its url a direct route');
-  } else {
-    test.fail(OWED + 'the lab row did not come across whole: ' + short(lab));
-  }
-  const gone = rowOf(root, GONE.key)[0];
-  if (gone && gone.url === GONE.url && gone.keep === 0 && relayKeys.pinned(root, GONE.url) === GONE.key) {
-    test.check('a pinned relay that was not listed moves in too, not kept: its pin is not forgotten');
-  } else {
-    test.fail(OWED + 'the pinned, unlisted row was lost: ' + short(gone));
-  }
-  if (tableRows(root).every(function (r) { return r.url !== NOPIN; })) test.check('a listed relay with no pin is not copied: nothing can key it');
-  else test.fail(OWED + 'the unpinned row was copied');
-  const f = oldFiles(root);
-  if (!f.relays && !f.keys) test.check('and both old files are deleted once the rows are in');
-  else test.fail(OWED + 'the old files are still there: ' + short(f));
 
   const routes = rowOf(root, ROUTES.key);
   if (routes.length === 1 && routes[0].myLabel === 'my-routes' && routes[0].url === ROUTES.url) {

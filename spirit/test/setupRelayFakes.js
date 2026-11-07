@@ -2,7 +2,7 @@
 // excluded, same as install/microscopic/create.js) into each fake node's
 // own folder under the OS temp dir (labPaths FIXTURE_ROOT), apart from the
 // checkout. Only ever writes tracked paths, so a target's own accumulated
-// local state (relays.json, ...) is never touched on rerun — each call
+// local state (spirit/state/node.db, ...) is never touched on rerun — each call
 // refreshes the product code, nothing else.
 'use strict';
 

@@ -22,7 +22,7 @@
 //      present. the other case already happened in a previous goal, and it worked"): whenever a phase is done and
 //      the goal's live agents (facts.live, LIVE_MS) are that one agent, the item is waived and the desk says so in
 //      the item's chat, by desk, so that one agent may take the next phase. Two agents live: nothing, his press as
-//      before. Suites that assert the phase rules (deskPhases.js) put a second agent in the room for that reason.
+//      before. Suites that assert the phase rules (deskPhaseRestart.js, deskQuickFixes.js) put a second agent in the room for that reason.
 //   3  shell/deskDetails: with 'waive' among the buttons the dialog shows #dd-waive, armed like Close (the first
 //      click arms, the second sends press {id, what: 'waive'}); without it, no such button.
 //

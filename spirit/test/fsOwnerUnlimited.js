@@ -138,7 +138,6 @@ function waitForBoot(port) {
   test.subHeading('3. fs.save and fs.load take and answer a file of any size, on a node of its own');
   const home = setupRelayFakes('fsOwnerUnlimited').andy;
   fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   const rel = 'shell/fsOwnerUnlimited/big.txt';
   try { fs.rmSync(path.join(home, 'shell', 'fsOwnerUnlimited'), { recursive: true, force: true }); } catch (e) { /* a first run */ }
   // Many times one request, and past the 64 pieces the face's join holds today.

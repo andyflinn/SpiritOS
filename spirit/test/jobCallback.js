@@ -65,7 +65,7 @@ function withJobsServer(fn) {
     var jobs; // set once we know the port we're actually listening on
     callbackServer.listen(0, '127.0.0.1', function () {
       const port = callbackServer.address().port;
-      jobs = require('../run/spirit/jobs.js')(spirit, port);
+      jobs = require('../run/spirit/jobs.js')(port);
       jobs.events.on('job-updated', function (j) { lastSeen[j.id] = JSON.parse(JSON.stringify(j)); });
       fn(jobs)
         .then(function (result) { callbackServer.close(); resolve(result); })

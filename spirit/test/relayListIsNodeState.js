@@ -20,7 +20,7 @@
 //      and a list planted in the app's folder is not read.
 //   3. NO NODE FILE REACHES INTO THE APP'S FOLDER for this list.
 //   4. THE TWO WIRE TEXTS NAME NO APP PATH, in the register both sides load.
-//   5. NO APP OR PAGE CAN REDIRECT THE NODE: the write gate refuses spirit/state/relays.json.
+//   5. NO APP OR PAGE CAN REDIRECT THE NODE: the write gate refuses spirit/state/node.db, where the list is.
 //   6. A CLAIM IS WHAT ADDS A RELAY, and ownership is not: nothing in the claim path writes an owner, and the
 //      list is written by the node when a claim succeeds.
 //   7. THE PEER COUNTERS ARE NODE STATE TOO: node bookkeeping is not written into the Contacts app's folder.
@@ -69,7 +69,7 @@ function nodeFiles(into) {
 test.startTest('The relay list is the node\'s own state, not an app\'s file (goal/G16.3)');
 
 // ── 1. THE LIST IS NODE STATE ───────────────────────────────────────────
-test.subHeading('1. the node seeds and reads spirit/state/relays.json, not the app\'s folder');
+test.subHeading('1. the node seeds and reads spirit/state/node.db, not the app\'s folder');
 {
   const root = freshRoot();
   const seeded = ownerBadge.ensureRelays(root);
@@ -149,7 +149,7 @@ test.subHeading('4. the refusals name no app path');
 test.subHeading('5. the write gate refuses the node\'s relay list');
 {
   const writable = spirit.core.fs.fileWritable;
-  ['spirit/state/relays.json', './spirit/state/relays.json'].forEach(function (p) {
+  ['spirit/state/node.db', './spirit/state/node.db'].forEach(function (p) {
     if (writable(p) === false) test.check('fs refuses to write ' + p);
     else test.fail(OWED + 'fs would write ' + p + ': an app could point this node anywhere');
   });

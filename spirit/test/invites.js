@@ -181,7 +181,7 @@ test.subHeading('The invite proves; the claimer names themselves');
   // itself is gone — consumed — and the owner's report is owner-only.
   const stored = JSON.stringify(invites.load(home));
   if (stored.indexOf(PHONE) === -1) {
-    test.check('nor in invites.json, which the claim consumed');
+    test.check('nor in the relay\'s invites, which the claim consumed');
   } else {
     test.fail('invite survived with its label: ' + stored);
   }
@@ -444,49 +444,6 @@ test.subHeading('A claim that is refused after the invite check does not spend i
     test.check('while the invite that did admit somebody is spent and gone');
   } else {
     test.fail('tok-bella survived a successful claim');
-  }
-}
-
-test.subHeading('A box upgrading in place does not resurrect spent tokens');
-
-// A relay that still holds spirit/state/invites.json imports it once into
-// relay.db (relayStore.js, importLegacy, DEPRECATED D8). A row stamped
-// `consumedAt` there was spent and is not imported, so a spent token
-// never works again; a live row is kept.
-{
-  const home = tmpHome();
-  fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
-  const soon = new Date(Date.now() + 86400000).toISOString();
-  const stale = new Date(Date.now() - 86400000).toISOString();
-  fs.writeFileSync(path.join(home, 'spirit', 'state', 'invites.json'), JSON.stringify([
-    // Spent under the old rules, and not yet expired: the dangerous one.
-    { token: 'spent', label: 'saint', expiresAt: soon, invitedBy: 'andy', consumedAt: stale },
-    // Never claimed, still good. Must survive all of this untouched.
-    { token: 'live', label: 'anna', expiresAt: soon, invitedBy: 'andy' },
-  ]));
-
-  const spent = invites.match(home, 'spent', 'saint');
-  if (!spent.ok && spent.error === 'invite not found') {
-    test.check('a token spent before the upgrade stays spent, and says only `not found`');
-  } else {
-    test.fail('legacy spent token: ' + JSON.stringify(spent));
-  }
-
-  const live = invites.match(home, 'live', 'anna');
-  if (live.ok) {
-    test.check('and an unclaimed row from the same file is untouched');
-  } else {
-    test.fail('legacy live token: ' + JSON.stringify(live));
-  }
-
-  // AND IT DRAINS. The stamped row goes on sight whatever its expiry
-  // says, so the old guestbook empties the first time anything writes.
-  invites.sweepExpired(home);
-  const left = invites.load(home);
-  if (left.length === 1 && left[0].token === 'live') {
-    test.check('the first sweep drops the old guestbook and keeps the waiting room');
-  } else {
-    test.fail('after sweep: ' + JSON.stringify(left));
   }
 }
 

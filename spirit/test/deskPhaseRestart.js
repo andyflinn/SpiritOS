@@ -15,7 +15,7 @@
 //   2  the new cycle runs to its end under the same item: build, then verify, then Done is offered again.
 //   3  once he presses Done no phase is offered or taken.
 //   4  his Reopen of a done item puts it back in design (goal/G40.3); after his End design and Go red is taken again.
-// Two agents, so the who-may-take rules of goal/G5.7 stay in force (deskPhases.js); the world is that suite's.
+// Two agents, so the who-may-take rules of goal/G5.7 stay in force (desk.js, who may take a phase); the world is that suite's.
 // rule/11: through testSupport only; its own folders; never 65432.
 
 const fs = require('fs');
@@ -84,7 +84,7 @@ async function cycle(redTaken) {
   const go1 = await call('press', { id: ID, what: 'go' }, ANDY);
   const go2 = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
   if (!ok(ended) || !ok(go1) || !ok(go2)) { test.fail('the world: end-design ' + ended.status + ', Gos ' + go1.status + ' ' + go2.status); return; }
-  // Two agents live, so the desk does not waive the phase rules itself (deskPhases.js).
+  // Two agents live, so the desk does not waive the phase rules itself (deskWaive.js).
   await call('item.take', { id: 'goal/G100.2' }, UBI);
   await call('chat.add', { id: 'goal/G100.2', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
   await call('item.release', { id: 'goal/G100.2' }, UBI);

@@ -7,7 +7,8 @@
 //   - pushOrigin puts back exactly its own stash, or says it could not; it refuses a detached HEAD; its header says
 //     what it does (retries).
 //   - deskClient pulls beside the call that hands an agent its lines, never inside it, and never aborts a rebase it
-//     did not start (spirit/test/deskClientPull.js, a suite of its own: it needs a deskClient running in a clone).
+//     did not start. Not asserted here: it needs a deskClient running in a clone, and its own suite,
+//     spirit/test/deskClientPull.js, went as a stale test in goal/G43.23 with nothing in its place.
 //   - The two lows go with it: goalShare's shared file without writtenAt, so an unchanged goal is not committed again;
 //     commitCheck keys a pending commit by more than its subject.
 //

@@ -201,8 +201,8 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/, an
     ok(rUp, 'the relay comes up', 'the relay did not come up');
     const rState = path.join(c.run, 'spirit', 'state');
     ['identity.json', 'owner.json', 'face.json', 'aFolder/a.json', 'unknown.txt'].forEach(function (f) { ok(fs.existsSync(path.join(rState, f)), 'spirit/state/' + f, 'not in spirit/state/: ' + f); });
-    // A relay imports these into its database at start and renames them, so either name will do; only not left at the old top.
-    ['invites.json', 'relays.json'].forEach(function (f) { ok(fs.existsSync(path.join(rState, f)) || fs.existsSync(path.join(rState, f + '.imported')), 'spirit/state/' + f + ' or its .imported', 'neither name in spirit/state/: ' + f); });
+    // Old stores a relay no longer reads (goal/G43.23): they move as any other file, under their own name, and nothing renames them.
+    ['invites.json', 'relays.json'].forEach(function (f) { ok(fs.existsSync(path.join(rState, f)) && !fs.existsSync(path.join(rState, f + '.imported')), 'spirit/state/' + f, 'not in spirit/state/ under its own name: ' + f); });
     ok((readJson(path.join(rState, 'identity.json')) || {}).publicKey === relayId.publicKey, 'it keeps its key', 'the relay\'s key: ' + short(readJson(path.join(rState, 'identity.json'))));
     ok((readJson(path.join(rState, 'owner.json')) || {}).publicKey === ownerId.publicKey, 'and its owner', 'the relay\'s owner: ' + short(readJson(path.join(rState, 'owner.json'))));
     const rTop = fs.existsSync(path.join(c.run, 'relay-state')) ? fs.readdirSync(path.join(c.run, 'relay-state')).sort().join() : '';

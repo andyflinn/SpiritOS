@@ -133,15 +133,12 @@ test.startTest('Cycle A — owner badge, mailbox picker, mint goes where it was 
     test.fail('label fallback: ' + JSON.stringify(rows[1]));
   }
 
-  const broken = tmpHome('broken');
-  // The node's relay list is node.db's relays table (relayKeys.listed, goal/G19.15); a relays.json found in
-  // spirit/state/ is the old store, moved in when it can be read (relayKeys.importOld).
-  fs.mkdirSync(path.join(broken, 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(broken, 'spirit', 'state', 'relays.json'), '{ not json');
-  if (ownerBadge.loadRelays(broken).length === 0 && ownerBadge.loadRelays(tmpHome('none')).length === 0) {
-    test.check('a broken or missing relays.json is no mailboxes, not a throw');
+  // The node's relay list is the kept relay rows of node.db's one table (relayKeys.listed); an old relays.json is not
+  // read (goal/G43.23).
+  if (ownerBadge.loadRelays(tmpHome('none')).length === 0) {
+    test.check('a home with no relay rows is no mailboxes, not a throw');
   } else {
-    test.fail('broken natter did not read as empty');
+    test.fail('a home with no relay rows did not read as empty');
   }
 }
 
@@ -489,7 +486,7 @@ function runHubOnLoopback() {
     const onSecond = invites.load(second.home).some(function (row) { return row.token === token; });
     const onFirst = invites.load(first.home).some(function (row) { return row.token === token; });
     if (token && onSecond && !onFirst) {
-      test.check('and the row is on the relay that was named, not on relays.json[0]');
+      test.check('and the row is on the relay that was named, not on the first one listed');
     } else {
       test.fail('token landed wrong: onFirst=' + onFirst + ' onSecond=' + onSecond);
     }

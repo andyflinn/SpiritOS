@@ -94,8 +94,8 @@ function createAnswerer(opts) {
   // node updated first cannot pin that relay, so the relay drops out of
   // search (listed `silent`) and off the front door's "this sender is a
   // relay" list. That is visible rather than
-  // quiet, which is the right shape for a version skew. `liveRelay.js`
-  // will say so first, being the one suite that talks to a real box.
+  // quiet, which is the right shape for a version skew. No suite talks
+  // to a real box (`liveRelay.js`, which did, went in goal/G43.23).
   // ── AND IT IS SIGNED NOW (cycle 10, R9) ────────────────────────────
   //
   // The paragraph above admits what this answer used to be worth: the

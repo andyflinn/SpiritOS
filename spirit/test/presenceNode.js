@@ -573,7 +573,7 @@ async function run() {
   // is not a contact's. Were the pin made lazily, by the code behind the
   // door, the door would refuse the first post for want of a pin, and the
   // code that pins would never run. A suite that drives each module cannot
-  // see that wiring between two (liveRelay.js calls answerRelay directly).
+  // see that wiring between two.
   //
   // So the check is about the WIRING: opening a stream pins the relay
   // first. It belongs here rather than being earlier-for-safety, because

@@ -214,7 +214,7 @@ function assemble(s) {
     },
 
     // A personal node's home for somebody in the cast: their identity on
-    // disk and a relays.json pointing at the world. What a node needs
+    // disk and node.db relay rows pointing at the world. What a node needs
     // before it can be a node, which several suites were assembling by
     // hand and one was getting wrong.
     nodeHome: function (name, urls) {

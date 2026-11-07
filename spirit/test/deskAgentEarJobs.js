@@ -72,7 +72,7 @@ const call = function (app, verb, args, caller) {
 };
 const desk = function (verb, args, caller) { return call('desk', verb, args, caller); };
 
-// THE PRETEND NODE deskClient runs on, as deskClientNext.js builds it: its peer.post goes into the real desk server as
+// THE PRETEND NODE deskClient runs on: its peer.post goes into the real desk server as
 // the agent's own ask, and the answer comes back down the event stream by re.
 const streams = [];
 const node = http.createServer(function (req, res) {
@@ -208,7 +208,7 @@ async function main() {
   if (!await up('deskClient')) { test.fail('the world: deskClient did not start from the planted clone'); return; }
   await call('deskClient', 'setDesk', { key: DESK_KEY }, OWNER);
   await next();
-  // THE WORLD HANDS LINES: his line on an item nobody holds reaches this agent (deskClientNext section 5), so a section
+  // THE WORLD HANDS LINES: his line on an item nobody holds reaches this agent, so a section
   // that waits for a line fails for the build, not for the world. goal/G33.4 (box v37): another agent's chat on the item
   // it holds is not this agent's, so the probe is his.
   await desk('chat.add', { id: 'goal/G100.1', text: 'probe from andy' }, ANDY);

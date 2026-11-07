@@ -182,8 +182,8 @@ function itemWith(text) {
 // ONE STORE, AND IT IS THE LOG.
 //
 // What is still waiting is read from the traffic log alone: an inbound
-// row carries `admitted`, and arrivals.js replays only rows that are
-// inbound, admitted and not yet taken.
+// row handed to an app says outcome `delivered`, and arrivals.js replays
+// only rows that are inbound, delivered and not yet taken.
 //
 //   Andy: "tests can read what they need to read, production code MUST
 //   read through the API."
@@ -195,11 +195,11 @@ function logAt(home) {
 
 // What peerPost writes before it calls onArrival: the row first, the fan
 // out second. Reproduced here so these checks drive the same order.
-function landed(log, hash, text, admitted) {
+function landed(log, hash, text, delivered) {
   log.note({
     dir: 'in', kind: 'request', peer: 'PEERKEY', relay: 'https://relay.example',
-    hash: hash, outcome: admitted === false ? 'ignored' : 'delivered',
-    payload: text, admitted: admitted !== false,
+    hash: hash, outcome: delivered === false ? 'ignored' : 'delivered',
+    payload: text,
   });
 }
 
@@ -270,7 +270,7 @@ function landed(log, hash, text, admitted) {
 })();
 
 (function theBacklogIsNotTheFirstPage() {
-  // The replay reads every untaken admitted arrival over the whole log,
+  // The replay reads every untaken delivered arrival over the whole log,
   // not the log's first 200, so a node past its 200th arrival still
   // replays a newer one.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-201-'));
@@ -317,15 +317,15 @@ function landed(log, hash, text, admitted) {
   const log = logAt(home);
 
   // A packet the front door ignored is in the log with its payload
-  // (admitted false) and must never be replayed to an app.
-  landed(log, 'admitted', packet.encode('chess', { move: 'e4' }).text, true);
+  // (outcome ignored) and must never be replayed to an app.
+  landed(log, 'delivered', packet.encode('chess', { move: 'e4' }).text, true);
   landed(log, 'ignored', packet.encode('chess', { move: 'e5' }).text, false);
 
   const got = [];
   arrivalsModule.createArrivals({ traffic: logAt(home) })
     .subscribe(function (m) { got.push(m); });
 
-  if (got.length === 1 && got[0].hash === 'admitted') {
+  if (got.length === 1 && got[0].hash === 'delivered') {
     test.check('a packet the front door ignored is in the log and is never replayed as backlog');
   } else {
     test.fail('replayed: ' + JSON.stringify(got.map(function (m) { return m.hash; })));
@@ -367,7 +367,8 @@ function landed(log, hash, text, admitted) {
 (function abrokenLogIsNotACrash() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlogjunk-'));
   fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'spirit', 'state', 'traffic.json'), '{ not json at all');
+  // traffic.jsonl, the file shape the log still reads (trafficLog.js readFile); traffic.json is not read at all.
+  fs.writeFileSync(path.join(home, 'spirit', 'state', 'traffic.jsonl'), '{ not json at all');
 
   let threw = false;
   const got = [];

@@ -45,7 +45,7 @@ let faceHome = null;
 try { faceHome = require('../run/spirit/faceHome'); } catch (e) { faceHome = null; }
 const made = !!(faceHome && typeof faceHome.createFaceHome === 'function');
 
-// The relay, as in faceStream.js: bert seated with a verified email, a face name, his node's stream kept, a login.
+// The relay: bert seated with a verified email, a face name, his node's stream kept, a login.
 const auth = require('../run/spirit/relayAuth');
 const plant = require('./plantIdentity.js');
 const relayStore = require('../run/spirit/relayStore');

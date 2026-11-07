@@ -90,7 +90,7 @@ test.subHeading('Ordinary content is left readable');
   ['an emoji app icon', '📁'],
   ['a plain filename', 'holiday-photo-01.jpg'],
   ['a name with spaces', 'Andy Flinn'],
-  ['a path', 'spirit/state/relays.json'],
+  ['a path', 'spirit/state/node.db'],
   ['an accented name', 'Bad Ragaz, Sankt Gallen'],
 ].forEach(function (row) {
   if (escapeHtml(row[1]) === row[1]) {

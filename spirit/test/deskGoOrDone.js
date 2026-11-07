@@ -9,7 +9,7 @@
 //   2. A CLAIM NEEDS HIS GO (goal/G3.9; Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item without
 //      'go' on record"): a claim before his Go is refused and changes nothing; the item is gone by his
 //      Go alone. After it, Done still leads to Close and Reopen, a Reopen offers no Go again, and an item that
-//      went by his Go offers neither Go nor, until a claim, Done. deskRules.js has the refusal in full.
+//      went by his Go offers neither Go nor, until a claim, Done.
 //   3. The press is refused where the button is gone: a Go pressed on an item that offers Done is refused as not
 //      offered (desk.js's press guard, not-offered).
 

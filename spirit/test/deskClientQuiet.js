@@ -64,7 +64,7 @@ const call = function (app, verb, args, caller) {
   return client.ask(b, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; });
 };
 
-// THE PRETEND NODE deskClient runs on, as deskClientNext.js builds it: its peer.post goes into the real desk as the
+// THE PRETEND NODE deskClient runs on: its peer.post goes into the real desk as the
 // agent's own ask, and the answer comes back down the event stream.
 const streams = [];
 const posts = [];

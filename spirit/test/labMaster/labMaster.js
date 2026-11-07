@@ -3,9 +3,10 @@
 // Local lab control plane. Always http://127.0.0.1:65420
 // Not copied into fake nodes (lives under spirit/test/).
 //
-// What it is, why each guard is here, the HTTP surface, and how
-// labPopulate builds a whole world from a scenario in one command:
+// What it is, why each guard is here and the HTTP surface:
 //   design/cleanup/2026-09-11-labmaster.md
+// (labPopulate, the one-command world builder that page also
+// describes, went as a stale test in goal/G43.23.)
 //
 // 127.0.0.1 only, no auth, deliberately. It spawns processes and deletes
 // directories on this machine; it has no business listening anywhere else.
@@ -43,7 +44,7 @@ const WORK_HOME = path.join(REPO_ROOT, 'spirit', 'run');
 //
 // ── THE TEST HARNESS DID NOT COME WITH IT ────────────────────────────
 //
-// setupRelayFakes.js, labWorld.js, labPersistence.js and liveRelay.js all
+// setupRelayFakes.js, labWorld.js and labPersistence.js all
 // still build under `os.tmpdir()/spiritos-relay-fakes`, and that is the
 // right place for them: a suite wants a throwaway tree it can wipe
 // between runs, and it must test the WORKING TREE rather than what is
@@ -906,8 +907,8 @@ function liveWorldPaths() {
   const run = path.join(WORK_HOME);
   return {
     identity: path.join(run, 'spirit', 'state', 'identity.json'),
-    // relays.json is the old relay list: the node keeps its relays in node.db, and relayKeys.js (importOld) moves a
-    // relays.json it finds into that table and deletes the file.
+    // relays.json is the old relay list: the node keeps its relays in node.db and does not read a relays.json at all
+    // (goal/G43.23), so what this tool writes there steers nothing.
     relays: path.join(run, 'spirit', 'state', 'relays.json'),
     session: path.join(run, 'shell', 'natter', 'session.json'),
     // The home itself, for the seat record — see liveWorldReport.
@@ -1055,9 +1056,8 @@ async function liveWorldReport(peerNode, peerName) {
   // information on boot."
   //
   // seatedAt below reads spirit/state/relayKeys.json, the old seat store:
-  // relayKeys.js keeps seats in node.db and moves a relayKeys.json it finds
-  // into that table and deletes the file, so once the node has run this
-  // finds no seat.
+  // relayKeys.js keeps seats in node.db and does not read a relayKeys.json
+  // (goal/G43.23), so this finds no seat the node holds now.
   // Reachable when it answers a card ask on its one door (goal/G22.6 closed
   // GET /api/relay/key).
   const up = !!(await require('../relayDoor').relayKeyOf(LIVE_RELAY).catch(function () { return null; }));
@@ -1142,15 +1142,12 @@ async function buildLiveWorld(body) {
   //
   // hub.loadRelayUrl takes the first of ownerBadge.configuredUrls, so
   // claim, send, invite and contact dial whatever sits at the front.
-  // That list is node.db's relays table; this writes relays.json, which
-  // relayKeys.js (importOld) moves into the table on the node's next read
-  // and deletes, copying only urls that carry a pin. Whether the order
-  // written here survives that move is not checked here.
+  // That list is node.db's relay rows; this writes relays.json, which the
+  // node does not read (goal/G43.23), so the order written here does not
+  // reach the list.
   //
-  // labPopulate does the exact opposite deliberately, and says so: the
-  // lab relay goes first when a LAB world is being built. The two are a
-  // pair, and pressing one undoes the other's ordering — which is right,
-  // because they are asking for different worlds.
+  // labPopulate, which put the lab relay first when a LAB world was
+  // built, went in goal/G43.23, so nothing undoes this ordering now.
   //
   // Nothing is dropped. The lab relay keeps its row, just not the front.
   const relays = readJson(paths.relays, []).filter(function (r) { return r && r.url; });
@@ -1241,8 +1238,8 @@ async function buildLiveWorld(body) {
   //
   // A row on spirit-3 and a stream to spirit-3 are different things, and
   // neither is "properly bound" on its own. This is the second.
-  // This writes the old relays.json, which the node moves into node.db's
-  // relays table (relayKeys.js, importOld); see the work node's step 2.
+  // This writes the old relays.json, which the node does not read
+  // (goal/G43.23); see the work node's step 2.
   const theirRelays = path.join(peer.home, 'spirit', 'state', 'relays.json');
   const theirRows = readJson(theirRelays, []).filter(function (r) { return r && r.url; });
   const theirOthers = theirRows.filter(function (r) { return r.url !== LIVE_RELAY; });

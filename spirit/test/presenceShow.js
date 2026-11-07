@@ -23,9 +23,9 @@
 //   node spirit/test/presenceShow.js --pace 15         slower
 //   node spirit/test/presenceShow.js --dry             read the script only
 //
-// WHAT IT DOES NOT DO: build the world. `labPopulate.js` does that, it
-// takes about a minute, and doing it from here would mean a wrong answer
-// at step 6 costs a rebuild. Run that first; this drives what is there.
+// WHAT IT DOES NOT DO: build the world. It drives the lab nodes already
+// in labMaster. `labPopulate.js`, which built them in one command, went
+// as a stale test in goal/G43.23, and nothing in the tree replaces it.
 //
 // It also never touches the live relay. Every step is against the lab
 // relay on loopback, because a demonstration that edits spirit.andyflinn.com
@@ -35,8 +35,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const scenarioGrammar = require('./scenario');
-// READ ONLY, and the same rule labPopulate carries at the top of itself:
-// the key in spirit/run/spirit/state/identity.json owns
+// READ ONLY: the key in spirit/run/spirit/state/identity.json owns
 // spirit.andyflinn.com. This file signs with it and never writes it.
 const auth = require('../run/spirit/relayAuth');
 
@@ -119,8 +118,8 @@ async function relayKeyOf(url) {
 
 // THE STEP THAT MAKES WHITE HAPPEN WHILE SOMEBODY IS WATCHING.
 //
-// labPopulate performs the scenario's `then` removals when it builds the
-// world, which leaves the right picture on screen and shows none of the
+// A builder that performs the scenario's `then` removals while building
+// the world (labPopulate did, until goal/G43.23) leaves the right picture on screen and shows none of the
 // change. Andy asked to see dots appear and disappear, so this does the
 // removal live — the same call, signed the same way, at a moment he is
 // looking at.
@@ -289,7 +288,7 @@ async function preflight(s) {
   if (!labs.length) {
     console.log('');
     console.log('  There is no lab world to look at. Build it first:');
-    console.log('    node spirit/test/labPopulate.js ' + wanted);
+    console.log('    (labPopulate.js, which built ' + wanted + ', is gone since goal/G43.23; build it in labMaster)');
     return false;
   }
   if (!work || !work.running) {

@@ -10,7 +10,8 @@
 //      answer-too-large, with extra.bytes and extra.max. Checked on a throwaway server, raw on its pipe.
 //   4. jobs.updateJob refuses an app object over MAX_PAYLOAD: the job is unchanged and no job-updated is emitted,
 //      so nothing oversized is ever written into a page's stream.
-//   (5, the shell handing on an oversized object, is in listeningApp.js.)
+//   (5, the shell handing on an oversized object, was asserted in listeningApp.js, which went as a stale test in
+//   goal/G43.23; no suite asserts it now.)
 
 const fs = require('fs');
 const os = require('os');

@@ -262,10 +262,9 @@ async function run() {
     // nothing exposes "configure this node's relays" from outside it, so
     // the file is written the way labWorld writes one.
     //
-    // The node's relay list is the relays rows of node.db now (ownerBadge.loadRelays
-    // reads relayKeys.listed); a relays.json found is moved into it on the next read
-    // (relayKeys importOld), and a listed url with no pinned key is not copied, so
-    // this file alone may list nothing.
+    // The node's relay list is the relay rows of node.db now (ownerBadge.loadRelays
+    // reads relayKeys.listed); a relays.json is not read at all (goal/G43.23), so
+    // this file lists nothing.
     fs.mkdirSync(path.join(avatarHome, 'spirit', 'state'), { recursive: true });
     fs.writeFileSync(
       path.join(avatarHome, 'spirit', 'state', 'relays.json'),

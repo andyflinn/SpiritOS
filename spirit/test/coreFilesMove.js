@@ -1,26 +1,23 @@
 'use strict';
 
-// goal/G6.7: THE CORE RULE FIXED. coreFiles.js moves to spirit/run/spirit/coreFiles.js (with no desk dependency),
-// and the rule it enforces reads as system-design-correct: core is what every app stands on, never one app
-// itself, except that an app with "intrinsic": true in its manifest is still part of the shipped shell and
-// so is core as well. index.html, shell/elements.css and shell/tokens.css are core too.
+// goal/G6.7: THE CORE RULE FIXED. coreFiles.js lives at spirit/run/spirit/coreFiles.js (with no desk dependency):
+// core is what every app stands on, never one app itself, except an app on the coded INTRINSIC list (goal/G41.1;
+// Andy: "the user doesn't decide intrinsic, our development team does. so i would agree on a "coded" intrinsic
+// list."), which is part of the shipped shell and so is core as well. The shell's frame is core too.
 //   Andy, 2026-10-05/06, under goal/G6.1 and G6.7: "i never saw coreFiles.js"; "well, we'll fix that, before
 //   anything else.";
-//   "1. coreFiles.js goes in \"spirit/run/spirit/coreFiles.js\", with NO dependencies on any desk stuff, and it is updated to include all files in spirit/run/shell/js";
-//   "2. remove the intrinsic mark
-//   in desk-related components"; to Q1 "apps in spirit/run/shell/<appname>/ are intrinsic (core) if the
-//   manifest says so."; to Q2 (index.html, elements.css, tokens.css core?): "yes."; to Q3 (agents' include
-//   lists): "leave it to each node, and correct AGENT_ONBOARDING accordingly."
+//   "1. coreFiles.js goes in \"spirit/run/spirit/coreFiles.js\", with NO dependencies on any desk stuff";
+//   "2. remove the intrinsic mark in desk-related components"; to Q2 (index.html, elements.css, tokens.css
+//   core?): "yes."; to Q3 (agents' include lists): "leave it to each node, and correct AGENT_ONBOARDING
+//   accordingly."
 //
 // SHAPES (the box's; the one Andy named is the file path spirit/run/spirit/coreFiles.js, every other check follows):
 //   A  coreFiles.js lives at spirit/run/spirit/coreFiles.js and exports isCore(file, top). The old path
 //      spirit/run/process/js/desk/coreFiles.js is gone (removed, not left as a stub).
 //   B  spirit/run/spirit/coreFiles.js require()s nothing under spirit/run/process/js/desk/.
-//   C  isCore returns true for: a file under spirit/run/spirit/; a file under spirit/run/spirit/element/;
-//      spirit/run/index.html; spirit/run/shell/elements.css; spirit/run/shell/tokens.css; a file in a
-//      spirit/run/shell/<app>/ whose <app>.json says "intrinsic": true. isCore returns false for a file in
-//      a shell/<app>/ whose manifest says "intrinsic": false (desk.json and deskDetails.json today) and for
-//      an ordinary non-core path (e.g. spirit/test/something.js).
+//   C  isCore returns true for a file under spirit/run/spirit/ (spirit/run/spirit/element/ among them, the shell's
+//      frame in spirit/run/spirit/shell/ too). It returns false for a shell/<app>/ that is not on the coded
+//      INTRINSIC list (desk and deskDetails today) and for an ordinary non-core path (e.g. spirit/test/something.js).
 //   D  commitCheck.js reads coreFiles.js from the new location (one require line); spirit/test/deskCoreGrants.js
 //      does the same (readers follow the file). This is checked by file text alone: the moved require path
 //      is present, the old one is absent.
@@ -64,14 +61,14 @@ if (fs.existsSync(NEW_PATH)) {
   test.fail(OWED + 'skipping dependency check until the file is at its new location');
 }
 
-test.subHeading('C. isCore reads: run/js, run/spirit/element, index.html, elements.css, tokens.css, intrinsic apps only');
+test.subHeading('C. isCore reads: run/spirit, run/spirit/element, the coded intrinsic apps only');
 if (core && typeof core.isCore === 'function') {
   const top = path.resolve(path.join(RUN, '..', '..'));
   const cases = [
-    { file: 'spirit/run/spirit/relay.js', want: true, why: 'under spirit/run/js' },
+    { file: 'spirit/run/spirit/relay.js', want: true, why: 'under spirit/run/spirit' },
     { file: 'spirit/run/spirit/element/appHeader/appHeader.js', want: true, why: 'under spirit/run/spirit/element' },
-    { file: 'spirit/run/shell/deskDetails/deskDetails.js', want: false, why: 'deskDetails manifest says intrinsic:false' },
-    { file: 'spirit/run/shell/desk/desk.js', want: false, why: 'desk manifest says intrinsic:false' },
+    { file: 'spirit/run/shell/deskDetails/deskDetails.js', want: false, why: 'deskDetails is not on the coded INTRINSIC list' },
+    { file: 'spirit/run/shell/desk/desk.js', want: false, why: 'desk is not on the coded INTRINSIC list' },
     { file: 'spirit/test/coreFilesMove.js', want: false, why: 'spirit/test/* is not core' },
   ];
   cases.forEach(function (c) {

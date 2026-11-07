@@ -36,8 +36,8 @@ The last line is the count, e.g. `63 suites, 1626 green, 2 red` (on 2026-09-15).
 hand: `testTemplate.js`, which fails on purpose — it is the worked example of
 what red looks like. It is named in `spirit/test/notASuite.js`, beside the
 helpers there that are not suites at all. (`liveRelay.js`, the suite that opened
-sockets to spirit-3, and `liveFrontDoor.js` were deleted as stale tests in
-goal/G43.23, 885f1ab5.)
+sockets to spirit-3, was deleted as a stale test in goal/G43.23, 885f1ab5.
+`liveFrontDoor.js`, deleted with it, was restored and runs in the harness.)
 
 The lab suites, which spawn real relays and nodes, are in the harness since
 2026-09-15 (`runAll.js`, *THE LAB SUITES ARE IN THE HARNESS*); `runAll.js`

@@ -121,7 +121,6 @@ test.startTest('goal/G40.2: the core code tree at spirit/run/spirit/');
   test.subHeading('6. a node of its own starts by node spirit/server.js and serves the kernel from /spirit/');
   const home = setupRelayFakes('runSpiritFolder').andy;
   fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   // The fakes keep files from earlier runs and only ever add (setupRelayFakes): a run before the move left the old tree
   // in this home, which would serve the old address. It goes, so the node serves what the repo holds now.
   if (fs.existsSync(path.join(RUN, 'spirit', 'server.js'))) { try { fs.rmSync(path.join(home, 'js'), { recursive: true, force: true }); } catch (e) { /* none */ } }

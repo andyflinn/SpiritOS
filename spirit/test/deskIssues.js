@@ -199,7 +199,7 @@ callback.listen(0, '127.0.0.1', async function () {
 
   test.subHeading('4. the two top lines stick below the title bar, not at the top');
   const desk = fs.readFileSync(DESK, 'utf8');
-  // SINCE goal/G6.1 the shell's app header sticks the block under the title bar (spirit/test/appHeader.js proves the
+  // SINCE goal/G6.1 the shell's app header sticks the block under the title bar (spirit/run/spirit/element/appHeader/test/appHeader.js proves the
   // offset): desk-bars carries no sticking of its own, and desk.js hands it to createAppHeader().
   const bars = (/id="desk-bars"[^>]*style="([^"]*)"/.exec(desk) || [])[1] || '';
   if (!/sticky/.test(bars) && /\.createAppHeader\(\)/.test(desk)) test.check('desk-bars is pinned by the shell\'s app header, below the title bar');

@@ -85,14 +85,15 @@ function expectEverySpellingUnwritable(label, canonical) {
 // depth (goal/G43.8, goal/G43.9).
 test.subHeading('relay-state/ is unreadable in every spelling');
 expectEverySpellingUnservable('spirit/state/identity.json', 'spirit/state/identity.json');
-expectEverySpellingUnservable('spirit/state/routingTable.json', 'spirit/state/routingTable.json');
+expectEverySpellingUnservable('spirit/state/relay.db', 'spirit/state/relay.db');
 // Every file in that folder, whatever its name, stays unreadable.
 expectEverySpellingUnservable('spirit/state/mailbox.json', 'spirit/state/mailbox.json');
 expectEverySpellingUnservable('spirit/state/allow.json', 'spirit/state/allow.json');
-// NESTED, TOO. An app server's identity lives at
-// app-state/<name>/spirit/state/identity.json, and a gate that refused
-// only the top-level folder would serve that private key to anyone who
-// could ask the node for a file.
+// NESTED, TOO. A spirit/state/ inside another folder (here an old
+// app-state/<name>/ tree, which nothing moves any more since goal/G43.23)
+// can hold an identity.json, and a gate that refused only the top-level
+// folder would serve that private key to anyone who could ask the node
+// for a file.
 expectEverySpellingUnservable('app-state/<name>/spirit/state/identity.json', 'app-state/someApp/spirit/state/identity.json');
 expectEverySpellingUnservable('a relay-state folder anywhere', 'shell/someApp/spirit/state/anything.json');
 

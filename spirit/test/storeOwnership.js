@@ -44,18 +44,11 @@ test.startTest('Store ownership — one module per store, and no way round it');
 // isomorphic module counts as the same owner.
 const STORES = [
   { file: 'traffic.jsonl', owner: 'trafficLog.js', what: "this node's WAN traffic, permanent, read back as a table" },
-  { file: 'traffic.json', owner: 'trafficLog.js', what: 'the whole-file shape it used to have, read once on the way in' },
   // THE RELAY'S DATA IS ONE DATABASE — members and invites (the partner
   // roll went with goal/G22.6) — and exactly one module opens it. This is the
   // substitution Andy anticipated at the top of this file: the format
   // changed and nothing above relayStore.js had to notice.
   { file: 'relay.db', owner: 'relayStore.js', what: 'a relay\'s members, invites and partner roll' },
-  // The files it replaced, read once by the one-time import (D8, see
-  // design/DEPRECATIONS.md) and renamed *.imported. Owned by the import.
-  { file: 'routingTable.json', owner: 'relayStore.js', what: 'a relay\'s peer rows before cycle 3, imported once' },
-  { file: 'invites.json', owner: 'relayStore.js', what: 'live invite tokens before cycle 3, imported once' },
-  // The relay records are node.db's (goal/G19.15); the old file is read once by the import (relayKeys.importOld).
-  { file: 'relayKeys.json', owner: 'relayKeys.js', what: 'pinned relay keys before goal/G19.15, moved into node.db once' },
   // THE BOOK IS ROWS OF node.db'S ONE TABLE (goal/G40.11), and nodeStore.js moves no old contacts.json in (goal/G41.30).
   // THIS ENTRY PASSES FOR THE WRONG REASON: no product file names contacts.json; the one file found is the suite
   // spirit/run/spirit/test/nodeStore.js, whose basename is the owner's, and files are compared by basename.
@@ -71,7 +64,29 @@ const RETIRED = [
   },
   {
     file: 'pendingArrivals.json',
-    why: 'the backlog folded into traffic.json — a row that is admitted and not yet takenAt IS the backlog',
+    why: 'the backlog folded into the traffic log — a row that is delivered and not yet takenAt IS the backlog',
+  },
+  // THE OLD STORES NOTHING READS ANY MORE (goal/G43.23, the box's item 7; Andy, goal/G41.30: "let's get rid of those
+  // "rescue operations""). A file of these names left on a node or a relay lies there unread.
+  {
+    file: 'traffic.json',
+    why: 'the traffic log\'s whole-file shape before traffic.jsonl; trafficLog.js no longer reads it',
+  },
+  {
+    file: 'routingTable.json',
+    why: 'a relay\'s peer rows before cycle 3; relayStore.js no longer imports it into relay.db (D8, eliminated)',
+  },
+  {
+    file: 'invites.json',
+    why: 'a relay\'s invite tokens before cycle 3; relayStore.js no longer imports it into relay.db (D8, eliminated)',
+  },
+  {
+    file: 'relayKeys.json',
+    why: 'pinned relay keys before goal/G19.15; relayKeys.js no longer moves it into node.db',
+  },
+  {
+    file: 'relays.json',
+    why: 'the relay list before goal/G19.15; relayKeys.js no longer moves it into node.db',
   },
   {
     file: 'mailbox.json',
@@ -93,8 +108,12 @@ function filesIn(dir, out) {
   return out;
 }
 
-// shellMove's suite lays out an old node: it names the stores as its fixture, and opens none (goal/G43.8).
-const files = filesIn(RUN_JS, []).filter(function (f) { return path.basename(f) !== 'shellMove.js' || path.basename(path.dirname(f)) !== 'test'; });
+// shellMove's suite lays out an old node: it names the stores as its fixture, and opens none (goal/G43.8). noRescue's
+// suite plants the old stores to assert nothing reads them (goal/G43.23): fixtures too.
+const SUITES_WITH_FIXTURES = ['shellMove.js', 'noRescue.js'];
+const files = filesIn(RUN_JS, []).filter(function (f) {
+  return SUITES_WITH_FIXTURES.indexOf(path.basename(f)) === -1 || path.basename(path.dirname(f)) !== 'test';
+});
 
 // Comments may name a store — several explain why a rule exists by
 // pointing at the file it protects. Only code counts.
@@ -127,8 +146,10 @@ STORES.forEach(function (store) {
 });
 
 RETIRED.forEach(function (gone) {
+  // The whole name, not a prefix of a longer one: traffic.json is retired, traffic.jsonl is live.
+  const whole = new RegExp(gone.file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w])');
   const named = files.filter(function (full) {
-    return codeOf(fs.readFileSync(full, 'utf8')).indexOf(gone.file) !== -1;
+    return whole.test(codeOf(fs.readFileSync(full, 'utf8')));
   }).map(function (full) { return path.basename(full); });
 
   if (!named.length) {

@@ -1,8 +1,9 @@
 # Bones — identity vs perception (lab only)
 
 Kept for the identity-vs-perception thinking it records. For how labMaster
-works see [design/cleanup/2026-09-11-labmaster.md](../../../design/cleanup/2026-09-11-labmaster.md),
-and `spirit/test/labPopulate.js` builds a lab world in one command.
+works see [design/cleanup/2026-09-11-labmaster.md](../../../design/cleanup/2026-09-11-labmaster.md).
+(`spirit/test/labPopulate.js`, which built a lab world in one command, went
+in goal/G43.23.)
 
 Not spirit-3. Not pretty UI.
 

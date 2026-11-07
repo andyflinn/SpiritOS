@@ -33,13 +33,6 @@ test.startTest('Every verb the node claims is called, and answers');
 
 const BOOT_TIMEOUT_MS = 10000;
 const root = setupRelayFakes('everyVerb').andy;
-// No real relay: a relays.json naming nowhere. relayKeys.js deletes it at
-// first read and copies only the urls it holds a pin for (none here), so the
-// node never reaches a production relay.
-fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
-fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'),
-  JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
-
 // For fs.search's gate: a private file the search must never name, and a
 // link inside a servable folder pointing at it, which the walk must not follow.
 fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });

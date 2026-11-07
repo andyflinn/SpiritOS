@@ -42,7 +42,7 @@ const ann = L.peer('ann');
 const bob = L.peer('bob');
 const ask = function (who, body) { return (world.ask(L.box, who, body) || {}).answer || {}; };
 // THE EMAIL IS ON FILE (box v30): relay.face is {url, name}; the relay pairs the name with the verified email it
-// holds for the calling key, which a confirmed join wrote (verifiedEmail.js drives that loop). Written here the way
+// holds for the calling key, which a confirmed join wrote. Written here the way
 // the confirm writes it.
 const verify = function (who, email) { require('../run/spirit/relayStore').open(L.box.rootDir()).members.setEmail(who.publicKey, email); };
 verify(ann, 'ann@example.org');

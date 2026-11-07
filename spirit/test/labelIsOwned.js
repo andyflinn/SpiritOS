@@ -98,41 +98,6 @@ test.subHeading('One field, on the row and on the wire');
 }
 
 // ---------------------------------------------------------------------
-test.subHeading('A row written by older code is read, not reconciled');
-// ---------------------------------------------------------------------
-
-{
-  // A relay upgrading in place has rows carrying the old field. The
-  // one-time import (relayStore.js importLegacy; D8, design/DEPRECATIONS.md)
-  // reads them, folding `name` into `publicLabel` on the way into relay.db —
-  // so this writes an old-style routingTable.json into a relay home that
-  // has never opened its store, and lets the import find it.
-  const oldHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-oldrows-'));
-  fs.mkdirSync(path.join(oldHome, 'spirit', 'state'), { recursive: true });
-  const olds = { andy: auth.generateIdentity('andy'), bert: auth.generateIdentity('bert') };
-  const doc = { peers: {} };
-  Object.keys(olds).forEach(function (label) {
-    const k = olds[label].publicKey;
-    doc.peers[k] = { publicKey: k, name: label, claimedAt: new Date().toISOString(), owner: label === 'andy' };
-  });
-  fs.writeFileSync(path.join(oldHome, 'spirit', 'state', 'routingTable.json'), JSON.stringify(doc));
-
-  const reopened = require('../run/spirit/relay').createRelay(oldHome);
-  const seen = rollOf(reopened).map(function (p) { return p.publicLabel; }).sort();
-  if (seen.join(',') === 'andy,bert') {
-    test.check('a row carrying only `name` comes back with its label intact');
-  } else {
-    test.fail('after reopen: ' + JSON.stringify(seen));
-  }
-
-  if (rollOf(reopened).every(function (p) { return p.name === undefined; })) {
-    test.check('and `name` does not survive the read');
-  } else {
-    test.fail('name survived: ' + JSON.stringify(rollOf(reopened)));
-  }
-}
-
-// ---------------------------------------------------------------------
 test.subHeading('The key may move its label; nobody else may');
 // ---------------------------------------------------------------------
 
@@ -231,12 +196,11 @@ test.subHeading('What a rename must not break');
 
   // AN EXPIRED ONE MUST NOT BLOCK A LIVING PERSON. Swept first, the same
   // "any attempt tidies up" rule redeem follows.
-  const rows = invites.load(L.home);
-  rows.push({
+  // Seeded into relay.db's invites through invites.add, which takes an expiresAt as given.
+  invites.add(L.home, {
     token: 'dead', label: 'ghosted', invitedBy: 'andy',
     expiresAt: new Date(Date.now() - 60000).toISOString(),
   });
-  fs.writeFileSync(path.join(L.home, 'spirit', 'state', 'invites.json'), JSON.stringify(rows));
   const overDead = world.ask(L.box, johnA, { rename: { label: 'ghosted' } });
   if (overDead.answer && overDead.answer.ok) {
     test.check('and an expired one is swept rather than obeyed');

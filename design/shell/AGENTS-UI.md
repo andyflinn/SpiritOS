@@ -22,7 +22,9 @@ Design only. Nothing here is built.
 > stacks. Design mode exists, per goal and per item (`desk.js:795`). No
 > `voice.jsonl` is written any more (goal/G2.1, `desk.js:2615`): the
 > vault's own tool reads his Desk lines through the desk server's api, so
-> decision 6 below is superseded too. The sections below are the record of
+> decision 6 below is superseded too. The board's suites (`boardRank.js`,
+> `edges.js`) and `listeningApp.js`, named below, went as stale tests in
+> goal/G43.23 (885f1ab5). The sections below are the record of
 > 2026-09-27.
 
 ## Vision, in his words

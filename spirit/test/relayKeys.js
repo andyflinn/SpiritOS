@@ -11,7 +11,6 @@
 // changed key must be reported as changed, and reading must never quietly
 // record what it saw.
 
-const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const relayKeys = require('../run/spirit/relayKeys');
@@ -165,32 +164,6 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
     test.check('and nothing else — a displaced key is not still trusted');
   } else {
     test.fail('set holds ' + Object.keys(keys).length + ': ' + JSON.stringify(Object.keys(keys).map(function (k) { return k.slice(-8); })));
-  }
-
-  test.subHeading('A file that cannot be read');
-
-  // FAILS SAFE, and in the one direction that matters: an old relayKeys.json is imported once into the table and then
-  // removed (relayKeys.importOld); one that does not parse imports nothing, so every relay looks new and has to be
-  // accepted again. The other direction — reading as a match — would trust a stranger because a file went bad.
-  const broken = world.tmpHome('relaykeys-broken');
-  fs.mkdirSync(path.join(broken, 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(broken, 'spirit', 'state', 'relayKeys.json'), '{ not json');
-  if (relayKeys.check(broken, URL_A, KEY_1) === 'new' &&
-      Object.keys(relayKeys.acceptedKeys(broken)).length === 0) {
-    test.check('an unreadable file reads as nothing pinned, never as a match');
-  } else {
-    test.fail('broken file: ' + relayKeys.check(broken, URL_A, KEY_1));
-  }
-
-  // A JSON array is valid JSON and is not a book. Shape is checked, not
-  // just parseability.
-  const wrong = world.tmpHome('relaykeys-wrong');
-  fs.mkdirSync(path.join(wrong, 'spirit', 'state'), { recursive: true });
-  fs.writeFileSync(path.join(wrong, 'spirit', 'state', 'relayKeys.json'), '["a","b"]');
-  if (relayKeys.check(wrong, URL_A, KEY_1) === 'new') {
-    test.check('and so does a file that parses but is the wrong shape');
-  } else {
-    test.fail('array file: ' + relayKeys.check(wrong, URL_A, KEY_1));
   }
 
   test.reportSuccessFailureCount();
