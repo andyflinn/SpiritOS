@@ -1,0 +1,19 @@
+{
+  "identity": {
+    "icon": "🚜",
+    "label": "Push Origin",
+    "intrinsic": false
+  },
+  "mount": {
+    "push.js":true
+  },
+  "shell": {
+    "true":false,
+    "mount":false,
+    "tile":false
+  },
+  "node": {
+    "mount":false,
+    "run":true,
+  }
+}
