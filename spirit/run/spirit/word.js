@@ -18,7 +18,7 @@
   var HARD = Object.create(null);
   ['spirit', 'api', 'app', 'contact',
      'data', 'element', 'job', 'node', 
-     'state', 'search', 'stream', 'test'].forEach(function (w) { HARD[w] = true; });
+     'state', 'search', 'test'].forEach(function (w) { HARD[w] = true; });
 
   function wordOf(word) { var w = String(word == null ? '' : word); return /^[A-Za-z]+$/.test(w) ? w.toLowerCase() : ''; }
   // The word.json of each level on the path, below the root: the box's "it would NOT check" run://spirit/word.json.
