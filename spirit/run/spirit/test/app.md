@@ -46,3 +46,4 @@ The first activate, Andy: *"on first activate, spirit/state/<name>/node.json sho
 - Before any press, no row says active but an intrinsic app's.
 - goal/G43.15: an app's row carries `intrinsic`, true or false. `app.active` on an intrinsic app is refused by name, not 200, with a code, and writes nothing.
 - goal/G43.21: an app's row carries `run`, its `<name>.json`'s `node.run`, true or false.
+- goal/G43.21: and `runOnly`, true when its `<name>.json` says `node.run` and neither `node.mount` nor `shell.mount`. Andy: *"and the node should know it, too."*: `app.active` on such an app is refused by name, `app-run-only`, 409, and writes nothing.

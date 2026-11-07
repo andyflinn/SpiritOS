@@ -27,7 +27,9 @@
     function paint() {
       if (gone) return;
       var r = row();
-      if (!r || r.intrinsic === true) { t.root.hidden = true; return; }
+      // goal/G43.21, Andy: "an app that only has node:run and no node:mount or shell:mount cannot be "activated" show rowForms
+      // should knows that.": the node says so on the row, runOnly, and the node refuses it too.
+      if (!r || r.intrinsic === true || r.runOnly === true) { t.root.hidden = true; return; }
       var on = r.active === true;
       t.set(on, [(on ? 'Deactivate' : 'Activate'), r.label].concat(parts.length ? [parts.join(' and ')] : []).join(' '));
       t.root.hidden = false;

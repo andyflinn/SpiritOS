@@ -691,6 +691,12 @@ define('app-intrinsic', {
   note: 'goal/G43.15: app.active on an app whose <name>.json says identity.intrinsic true. Its development team keeps it on; ' +
     'nothing is written.',
 });
+define('app-run-only', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['the app is only run: it has nothing to activate'],
+  note: 'goal/G43.21: app.active on an app whose <name>.json says node.run and neither node.mount nor shell.mount. It is ' +
+    'started by Run in its detail and ends; nothing is written.',
+});
 define('app-not-served', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no app by that name runs a server here'],

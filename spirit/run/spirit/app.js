@@ -46,6 +46,10 @@ function createApp(opts) {
     try { const s = JSON.parse(fs.readFileSync(stateFile(name), 'utf8')); return s && typeof s === 'object' ? s : {}; } catch (e) { return {}; }
   }
 
+  // node.run, and neither node.mount nor shell.mount: an app that is started by Run and ends, with no face and no server to switch on.
+  function runOnly(own) {
+    return !!(own && own.node && own.node.run === true && own.node.mount !== true && !(own.shell && own.shell.mount === true));
+  }
   // A plugin's row, or null when the folder has no file of its own, or one that says nothing readable.
   function rowOf(name) {
     let own = null;
@@ -61,7 +65,10 @@ function createApp(opts) {
       nodeMount: !!(own && own.node && own.node.mount === true),
       // RUN, NOT MOUNTED (goal/G43.21; Andy, the box: "spirit app search will list these jobs (node:run) only in pane mode", "the
       // app detail will show a run button."): its <name>.json's node.run.
-      run: !!(own && own.node && own.node.run === true) };
+      run: !!(own && own.node && own.node.run === true),
+      // ONLY RUN, NOTHING TO ACTIVATE (goal/G43.21; Andy: "an app that only has node:run and no node:mount or shell:mount cannot be
+      // "activated"", "and the node should know it, too."): its rows and the node both read it here.
+      runOnly: runOnly(own) };
   }
   function names() {
     try {
@@ -109,6 +116,11 @@ function createApp(opts) {
     // name (goal/G43.15; Andy: "And what's even worse, the server allows it!!!!").
     if (require('./coreFiles').appIntrinsic(path.resolve(o.rootDir, '..', '..'), key) === true && names().indexOf(key) !== -1) {
       return { ok: false, status: 409, code: 'app-intrinsic', error: 'app ' + key + ' is intrinsic: it is always active' };
+    }
+    // ONE THAT IS ONLY RUN HAS NOTHING TO ACTIVATE (goal/G43.21; Andy: "and the node should know it, too."): refused by name, and
+    // nothing is written, the page's hidden row notwithstanding.
+    if (names().indexOf(key) !== -1 && (rowOf(key) || {}).runOnly === true) {
+      return { ok: false, status: 409, code: 'app-run-only', error: 'app ' + key + ' is only run: it has nothing to activate' };
     }
     const row = on && names().indexOf(key) !== -1 ? rowOf(key) : null;
     return write(body, row ? { active: true, label: row.label, icon: row.icon } : { active: on });
