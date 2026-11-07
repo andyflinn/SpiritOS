@@ -382,6 +382,16 @@ test.startTest((full ? NAMED : 'every page module') + ': the general rules of an
     if (!writes) unjudged('its code sends no write');
     else ok(/\.watch\s*\(/.test(own) || /\bdata\s*:\s*(?:['"][\w.\/-]+['"]|[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)/.test(own), 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and watches spirit.data', 'it sends writes (' + writes[0].replace(/\s+/g, ' ') + ') and its code watches nothing in spirit.data');
   }
+  // WHAT IT NEEDS, IT REQUIRES ITSELF (goal/G43.24; Andy: "every element that accesses ANY api must require them
+  // themselves, (fast if an other element already required it), that way anybody can mount any element without knowing
+  // what it actually needs...."): its code takes no interface from what it is handed, no api.verb or api.escapeHtml and
+  // no api off its options; it reaches its verbs through spirit itself.
+  {
+    const own = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');
+    const handed = own.match(/\b(?:opts|options|o|op)\s*\.\s*api\b|\bapi\s*\.\s*(?:verb|escapeHtml)\b/g) || [];
+    test.subHeading(NAMED + ': ' + 'what it needs, it requires itself');
+    ok(!handed.length, 'it takes no api from what it is handed', 'it uses an api handed to it: ' + short(handed.filter(function (h, i) { return handed.indexOf(h) === i; })));
+  }
   const chrome = findChrome();
   if (!chrome) { test.fail('no Chrome on this machine (set SPIRIT_CHROME to its path): the UI rules cannot be judged'); return; }
   const node = await scratchNode(SERVERS);

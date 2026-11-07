@@ -168,6 +168,11 @@ box is its own check, named by the element's path and the box's id chain."*
 - **Its searches match the whole row** (goal/G41.28; Andy, box v15: *"All client side searches will be fixed, too, and
   search the whole row, as cached in spirit.data."*): judged in its code, no app or element but the search element
   itself hands a search a `matched(...)` of its own, a few fields in place of the whole row.
+- **What it needs, it requires itself** (goal/G43.24; Andy: *"every element that accesses ANY api must require them
+  themselves, (fast if an other element already required it), that way anybody can mount any element without knowing
+  what it actually needs...."*, *"wsl, you may as well add that to the general headless browser test."*): judged in its
+  code, it takes no interface from what it is handed (no `api.verb`, `api.escapeHtml`, nor an `api` off its options);
+  it reaches its verbs through the spirit object itself.
 - **Every search it makes ranks spirit.data** (box v15: *"every probabilitySearch on a page is made with a spirit.data
   branch (its data option), and draws only rows that branch holds. A list fed by its own rows() or by answers alone goes
   red."*): every probabilitySearch the page makes, watched as it is made, has a `data` branch and no `rows()` of its own.
