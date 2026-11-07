@@ -116,8 +116,11 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     // Andy: "the detail panel needs to open on top of the whole container", and the form he drew for it.
     test.subHeading('the panel: over the whole container');
     const openPanel = function () { return chrome.evaluate('(function () { var r = ' + rowOf(monitorLabel) + '; if (r) r.click(); return !!r; }())'); };
-    const panel = 'document.querySelector("#faces .app-container")';
-    const closePanel = async function () { await chrome.evaluate('(function () { var c = document.querySelector("#faces .app-container-close"); if (c) c.click(); return !!c; }())'); return until(function () { return chrome.evaluate('!' + panel); }, 4000); };
+    // THE PANEL IN VIEW. A closed layer is hidden, not destroyed (the box: "A closed layer is hidden, not destroyed ... The
+    // appSelector's ✕ hides too", Q3), so the one that counts is the one shown.
+    const panel = '[].filter.call(document.querySelectorAll("#faces .app-container"), function (p) { return p.style.display !== "none"; })[0]';
+    const inPanel = function (sel) { return '((' + panel + ') || document.createElement("div")).querySelector(' + JSON.stringify(sel) + ')'; };
+    const closePanel = async function () { await chrome.evaluate('(function () { var c = ' + inPanel('.app-container-close') + '; if (c) c.click(); return !!c; }())'); return until(function () { return chrome.evaluate('!' + panel); }, 4000); };
     await openPanel();
     const up = await until(function () { return chrome.evaluate('!!' + panel); }, 5000);
     ok(up, 'a pick in the pane opens it', 'a pick in the pane opened no panel: ' + short(await inFaces()));
@@ -125,8 +128,8 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(covers === 'covers', 'it covers the whole container, and the list is out of sight', 'the panel: ' + short(covers));
     // Each form of the panel, in order: its icon, its words, its input's value, its button.
     const clean = function (t) { return String(t).replace(/\s+/g, ' ').trim(); };
-    const forms = async function () { const j = await chrome.evaluate('JSON.stringify([].map.call([].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; }), function (f) { var sp = f.querySelector(".shell-row-form-span"); var bs = f.querySelectorAll("button"); var last = bs[bs.length - 1]; var inp = f.querySelector("input"); var ic = f.firstElementChild; return { icon: ic ? ic.textContent : "", words: sp ? sp.textContent : "", input: inp ? inp.value : null, button: last ? last.textContent : "", lastIsButton: !!last && f.lastElementChild === last }; }))'); return (JSON.parse(j) || []).map(function (x) { x.icon = clean(x.icon); x.words = clean(x.words); x.button = clean(x.button); return x; }); };
-    const press = function (n) { return chrome.evaluate('(function () { var f = [].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[' + n + ']; var b = f && f.querySelectorAll("button"); var last = b && b[b.length - 1]; if (last) last.click(); return !!last; }())'); };
+    const forms = async function () { const j = await chrome.evaluate('JSON.stringify([].map.call([].filter.call(((' + panel + ') || document.createElement("div")).querySelectorAll(".shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; }), function (f) { var sp = f.querySelector(".shell-row-form-span"); var bs = f.querySelectorAll("button"); var last = bs[bs.length - 1]; var inp = f.querySelector("input"); var ic = f.firstElementChild; return { icon: ic ? ic.textContent : "", words: sp ? sp.textContent : "", input: inp ? inp.value : null, button: last ? last.textContent : "", lastIsButton: !!last && f.lastElementChild === last }; }))'); return (JSON.parse(j) || []).map(function (x) { x.icon = clean(x.icon); x.words = clean(x.words); x.button = clean(x.button); return x; }); };
+    const press = function (n) { return chrome.evaluate('(function () { var f = [].filter.call(((' + panel + ') || document.createElement("div")).querySelectorAll(".shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[' + n + ']; var b = f && f.querySelectorAll("button"); var last = b && b[b.length - 1]; if (last) last.click(); return !!last; }())'); };
     const stateOf = function () { try { return JSON.parse(fs.readFileSync(stateFile('hearing'), 'utf8')); } catch (e) { return {}; } };
     const disk = path.join(node.root, 'spirit', 'run', 'spirit', 'app', 'hearing', 'hearing.json');
     const fileBefore = fs.readFileSync(disk, 'utf8');
@@ -134,7 +137,8 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
 
     test.subHeading('"titlebar rowForm: [app-icon] "<app-label> [x]"');
     let l = await forms();
-    ok(l.length === 5, 'the bar and four forms', 'forms in the panel: ' + short(l));
+    // Four: the Allow row went (goal/G43.18, box v29).
+    ok(l.length === 4, 'the bar and three forms', 'forms in the panel: ' + short(l));
     const none = { icon: '', words: '', button: '', input: null, lastIsButton: false };
     const bar = l[0] || none;
     ok(bar.icon.indexOf('🦻') !== -1 && bar.words === monitorLabel, 'the bar: the app\'s icon and label', 'the bar: ' + short(bar));
@@ -171,7 +175,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(!l.slice(1).some(function (x) { return /allow .* as shell/i.test(x.words || ''); }), 'no row says Allow or Don\'t allow as shell', 'a row still does: ' + short(l));
 
     test.subHeading('Q4: a changed label goes in node.json, and every row follows');
-    await chrome.evaluate('(function () { var f = [].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = "Renamed"; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
+    await chrome.evaluate('(function () { var f = [].filter.call(((' + panel + ') || document.createElement("div")).querySelectorAll(".shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = "Renamed"; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
     await press(2);
     const renamed = await until(function () { return Promise.resolve(stateOf().label === 'Renamed'); }, 5000);
     ok(renamed, 'Change writes label to spirit/state/hearing/node.json', 'node.json: ' + short(stateOf()));
@@ -180,7 +184,7 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     ok(inRow, 'the stream brings it to the row', 'the row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().hearing)')));
     const follows = await until(function () { return forms().then(function (x) { return !!x[0] && !!x[3] && x[0].words === 'Renamed' && x[3].words === 'Deactivate Renamed face'; }); }, 5000);
     ok(follows, 'the bar and the rows of the panel say it', 'the panel: ' + short(await forms()));
-    await chrome.evaluate('(function () { var f = [].filter.call(document.querySelectorAll("#faces .app-container .shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
+    await chrome.evaluate('(function () { var f = [].filter.call(((' + panel + ') || document.createElement("div")).querySelectorAll(".shell-row-form"), function (f) { return f.getBoundingClientRect().height > 0; })[2]; var i = f && f.querySelector("input"); if (!i) return false; i.value = ' + JSON.stringify(monitorLabel) + '; i.dispatchEvent(new Event("input", { bubbles: true })); return true; }())');
     await press(2);
     await until(function () { return Promise.resolve(stateOf().label === monitorLabel); }, 5000);
     await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows().hearing; return !!r && r.label === ' + JSON.stringify(monitorLabel) + '; }())'); }, 5000);
@@ -222,12 +226,12 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
 
     test.subHeading('the box: "in :tiles mode, appSelector icons will \'launch\'", "its open and close move into appSelector"');
     await chrome.evaluate('(function () { var t = ' + tileOf(monitorLabel) + '; if (t) t.click(); return !!t; }())');
-    const opened = await until(function () { return chrome.evaluate('(function () { var p = document.querySelector("#faces .app-container-pane"); return !!p && /Uptime|waiting/i.test(String(p.innerText)); }())'); }, 10000);
+    const opened = await until(function () { return chrome.evaluate('(function () { var p = ' + inPanel('.app-container-pane') + '; return !!p && /Uptime|waiting/i.test(String(p.innerText)); }())'); }, 10000);
     ok(opened, 'a tile opens its app inside, through spirit.app.monitor.createApp', 'a tile opened: ' + short(await inFaces()));
-    const launchedBar = await chrome.evaluate('(function () { var f = document.querySelector("#faces .app-container .shell-row-form"); if (!f) return "no form"; var b = f.lastElementChild; return b && b.tagName === "BUTTON" && String(f.textContent).indexOf(' + JSON.stringify(monitorLabel) + ') !== -1 ? "form" : f.innerHTML; }())');
+    const launchedBar = await chrome.evaluate('(function () { var f = ' + inPanel('.shell-row-form') + '; if (!f) return "no form"; var b = f.lastElementChild; return b && b.tagName === "BUTTON" && String(f.textContent).indexOf(' + JSON.stringify(monitorLabel) + ') !== -1 ? "form" : f.innerHTML; }())');
     ok(launchedBar === 'form', 'the box: "the title bar of all panels": a launched app\'s bar is the same rowForm', 'a launched app\'s bar: ' + short(launchedBar));
-    await chrome.evaluate('(function () { var c = document.querySelector("#faces .app-container-close"); if (c) c.click(); return !!c; }())');
-    const closed = await until(function () { return chrome.evaluate('!document.querySelector("#faces .app-container") && !!' + tileOf(monitorLabel)); }, 5000);
+    await chrome.evaluate('(function () { var c = ' + inPanel('.app-container-close') + '; if (c) c.click(); return !!c; }())');
+    const closed = await until(function () { return chrome.evaluate('!' + panel + ' && !!' + tileOf(monitorLabel)); }, 5000);
     ok(closed, 'its close icon brings the tiles back', 'after close: ' + short(await inFaces()));
     await chrome.evaluate('(function () { var c = document.getElementById("faces"); if (window.fs.destroy) window.fs.destroy(); if (c) c.remove(); return true; }())');
     }

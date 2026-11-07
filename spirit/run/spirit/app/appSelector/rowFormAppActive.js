@@ -37,16 +37,21 @@
         if (!gone) S.data.seatRows(S.data.app.data.branch, got.items);
       }, function () { /* the row comes with the stream */ });
     }
+    // WHAT IT MOUNTS, read from <name>.json, again each time the row changes: a closed panel is kept, not made anew (goal/G43.17,
+    // the box: "A closed layer is hidden, not destroyed"), so a read made once would show an old file when it is shown again.
+    function readParts() {
+      S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
+        var j = JSON.parse(String(text));
+        parts = (j.shell && j.shell.mount === true ? ['face'] : []).concat(j.node && j.node.mount === true ? ['server'] : []);
+        paint();
+      }).then(null, function () { /* a face that may not read the file: the words name no parts */ });
+    }
     // WHO PAINTS, LISTENS (G41.32); a connect forgetting what is kept asks again.
-    var offRow = S.data.app.data.watchApp(key, paint);
+    var offRow = S.data.app.data.watchApp(key, function () { paint(); readParts(); });
     var offAll = S.data.app.data.watch(function (k) { if (!k) ask(); });
     if (!row()) ask();
     paint();
-    S.ready.then(function (s) { return s.fs.loadFile('spirit/app/' + key + '/' + key + '.json'); }).then(function (text) {
-      var j = JSON.parse(String(text));
-      parts = (j.shell && j.shell.mount === true ? ['face'] : []).concat(j.node && j.node.mount === true ? ['server'] : []);
-      paint();
-    }).then(null, function () { /* a face that may not read the file: the words name no parts */ });
+    readParts();
     return { destroy: function () { gone = true; offRow(); offAll(); t.destroy(); } };
   }
 

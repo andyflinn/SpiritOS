@@ -17,7 +17,7 @@
   window.spirit.require('spirit/app/appSelector/changeAppLabel.js');
 
   // THE PANEL'S FORM (goal/G43.9, as Andy drew it), rowForms under the title bar. What the node chose comes on the row, and follows
-  // it; what <name>.json describes, whether it mounts a face or a server, is read as the panel opens, so it stays off the rows.
+  // it; what <name>.json describes, whether it mounts a face or a server, is read by the switch from the file, again each time its row changes, so it stays off the rows.
   function createPanel(host, row) {
     var S = window.spirit;
     var key = String(row.key || '');
