@@ -61,25 +61,10 @@
   ];
 
   // A PACKET TO A PEER, THROUGH THE SPIRIT OBJECT (goal/G43.24; Andy: "every element that accesses ANY api must require them
-  // themselves"): the node's peer.post, the body in its packet envelope (spirit/client/packet.js, required here), the
-  // answer read as the shell's peerPost read it, { ok, body, card, error }; the card a card ask brings is the node's
-  // verified one (spirit/peerPost.js, answer.card).
+  // themselves"): spirit.peerPost, which puts the body in its packet envelope, with the node's whole answer, { ok, body,
+  // card, error }; the card a card ask brings is the node's verified one (spirit/peerPost.js, answer.card).
   function peerPost(app, key, body) {
-    var S = window.spirit;
-    return Promise.all([S.require('spirit/client/packet.js'), S.ready]).then(function (got) {
-      var made = S.packet.encode(app, body);
-      if (!made.ok) return { ok: false, status: 400, body: null, error: made.error };
-      return Promise.resolve(got[1].peer.post({ to: String(key), text: made.text })).then(function (said) {
-        var text = said && typeof said.text === 'string' ? said.text : '';
-        var decoded = text ? S.packet.decode(text) : null;
-        var yes = !decoded || !decoded.body || decoded.body.ok === undefined || !!decoded.body.ok;
-        return { ok: !!(said && said.ok) && yes, status: 200, body: decoded ? decoded.body : null, card: (said && said.card) || null,
-          from: (said && said.from) || '', error: (said && said.error) || '' };
-      }, function (e) {
-        var b = (e && e.body) || {};
-        return { ok: false, status: (e && e.status) || 0, body: null, card: null, error: String(b.error || b.code || (e && e.message) || e) };
-      });
-    });
+    return window.spirit.peerPost(String(key), app, body, { answer: true });
   }
 
   function create(host, opts) {

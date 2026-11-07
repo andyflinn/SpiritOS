@@ -22,8 +22,8 @@ the probabilitySearch's own data source (`options.search`), and what it asks a p
   refreshes once at once. Its search asks `contact.search { q }` with the text trimmed and answers `{ status: 200,
   body: { ok, items, more } }`, an empty answer an empty list. Rows are contact row elements by key; a row matches on name
   and public label.
-- **Pressing a row**: kept → the element's `open`; any other → a card ask, `{ card: true }` in its packet envelope (`spirit/client/packet.js`, required
-  here) through the node's `peer.post` on `spirit.ready`, saying
+- **Pressing a row**: kept → the element's `open`; any other → a card ask, `{ card: true }` in its packet envelope, through
+  `spirit.peerPost` (goal/G43.24), which posts it with the node's `peer.post`, saying
   the card, or that a different key answered.
 - **A row's Add**: a click on a `[data-action]` inside a row runs that element's action, says `added <label>`, calls
   `onAdded`, searches again. A click on no button or a row the list did not make does nothing.

@@ -212,23 +212,11 @@ function ndPost(verb, body) {
   });
 }
 
-// A PACKET TO THE RELAY, THROUGH THE SPIRIT OBJECT (goal/G43.24): the node's peer.post, the body in its packet envelope
-// (spirit/client/packet.js, required as it posts), the answer read as the shell's peerPost read it:
-// { ok, status, body, error }, ok only when it reached and the relay did not refuse.
+// A PACKET TO THE RELAY, THROUGH THE SPIRIT OBJECT (goal/G43.24): spirit.peerPost, which puts the body in its packet
+// envelope, with the node's whole answer as a page reads it: { ok, status, body, error }, ok only when it reached and the
+// relay did not refuse.
 function ndPeerPost(app, key, body) {
-  return Promise.all([spirit.require('spirit/client/packet.js'), spirit.ready]).then(function (got) {
-    var made = spirit.packet.encode(app, body);
-    if (!made.ok) return { ok: false, status: 400, body: null, error: made.error };
-    return Promise.resolve(got[1].peer.post({ to: String(key), text: made.text })).then(function (said) {
-      var text = said && typeof said.text === 'string' ? said.text : '';
-      var decoded = text ? spirit.packet.decode(text) : null;
-      var yes = !decoded || !decoded.body || decoded.body.ok === undefined || !!decoded.body.ok;
-      return { ok: !!(said && said.ok) && yes, status: 200, body: decoded ? decoded.body : null, from: (said && said.from) || '', error: (said && said.error) || '' };
-    }, function (e) {
-      var b = (e && e.body) || {};
-      return { ok: false, status: (e && e.status) || 0, body: null, error: String(b.error || b.code || (e && e.message) || e) };
-    });
-  });
+  return spirit.peerPost(String(key), app, body, { answer: true });
 }
 
 // The same call when the answer is JSON and a failure is simply "the

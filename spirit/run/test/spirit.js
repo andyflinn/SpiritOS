@@ -187,10 +187,14 @@ function page() {
       fetched.push({ url: url, body: init && init.body });
       if (url === '/api/spirit') {
         const b = JSON.parse(init.body);
+        // peer.post as the node answers it: the packet read out of its envelope, the peer's reply in one (goal/G43.24: a
+        // page's spirit.peerPost sends its body in the packet envelope, as a process's does).
         if (isCall(b) && b.call === 'peer.post') {
-          const inner = JSON.parse(b.args.to ? b.args.text : '{}').body;
+          const P = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
+          const inner = P.decode(String(b.args.text || '')).body;
           const reply = inner && inner.api ? { interface: DEMO } : { said: 'hello page peer' };
-          return Promise.resolve({ status: 200, text: function () { return Promise.resolve(JSON.stringify(reply)); } });
+          const said = { ok: true, text: P.encode('api', reply).text, from: String(b.args.to || '') };
+          return Promise.resolve({ status: 200, text: function () { return Promise.resolve(JSON.stringify(said)); } });
         }
         const [status, out] = answer(b);
         return Promise.resolve({ status: status, text: function () { return Promise.resolve(typeof out === 'string' ? out : JSON.stringify(out)); } });
@@ -200,7 +204,7 @@ function page() {
       const there = fs.existsSync(file);
       return Promise.resolve({ status: there ? 200 : 404, headers: { get: function () { return ''; } }, arrayBuffer: function () { return Promise.resolve(there ? new Uint8Array(fs.readFileSync(file)).buffer : new ArrayBuffer(0)); } });
     },
-    TextDecoder: TextDecoder, console: console, Promise: Promise, URL: URL, setTimeout: setTimeout,
+    TextDecoder: TextDecoder, TextEncoder: TextEncoder, crypto: require('crypto').webcrypto, console: console, Promise: Promise, URL: URL, setTimeout: setTimeout,
   };
   window.window = window;
   // A page's document: a script appended runs in the page at once, as a browser runs it, an error in it the page's

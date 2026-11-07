@@ -9,9 +9,9 @@ This spec covers what goal/G41.9 asks of it: its four are-you-sure buttons are t
 
 **What it needs, it requires itself** (goal/G43.24; Andy: *"every element that accesses ANY api must require them themselves,
 (fast if an other element already required it), that way anybody can mount any element without knowing what it actually
-needs...."*): the node's verbs are `family.verb` on `spirit.ready`; a post to the relay is the node's `peer.post`, its
-body in its packet envelope (`spirit/client/packet.js`, required as it posts), the relay's answer read out of its
-envelope. It is handed no api: `layer` is only the layer it is drawn in, `close()` and `setTitle(text)`, the contact
+needs...."*): the node's verbs are `family.verb` on `spirit.ready`; a post to the relay is `spirit.peerPost`, which puts
+its body in its packet envelope and posts it through the node's `peer.post` (goal/G43.24), the relay's answer read out
+of its envelope; the panel encodes no packet of its own. It is handed no api: `layer` is only the layer it is drawn in, `close()` and `setTitle(text)`, the contact
 row's; its title goes there.
 
 ## Requirements (goal/G41.9)

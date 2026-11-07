@@ -31,6 +31,21 @@ window.spirit.ready = Promise.resolve({
 });
 // The packet envelope, the real one (spirit/client/packet.js), as the list requires it.
 window.spirit.packet = require(path.join(__dirname, '..', '..', '..', '..', 'client', 'packet.js'));
+Object.assign(window.spirit, {
+  // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
+  // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
+  peerPost: function (peer, app, body, how) {
+    const PK = window.spirit.packet;
+    const made = PK.encode(app, body);
+    return Promise.resolve(window.spirit.ready).then(function (f) { return f.peer.post({ to: String(peer), text: made.text }); }).then(function (said) {
+      const text = said && typeof said.text === 'string' ? said.text : '';
+      const got = text ? PK.decode(text).body : null;
+      const yes = !got || got.ok === undefined || !!got.ok;
+      if (how && how.answer === true) return { ok: !!(said && said.ok) && yes, status: 200, body: got, card: (said && said.card) || null, from: (said && said.from) || '', error: (said && said.error) || '' };
+      return got;
+    });
+  },
+});
 let made = null;
 window.spirit.element = nestSearch({
   'search': { create: function (host, o) {

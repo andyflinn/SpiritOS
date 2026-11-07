@@ -8,12 +8,12 @@
 // Nothing else is on the stack, and nothing is handed back through it: a page
 // changes things on the server, and every view hears it on the stream.
 //
-//   E.navigation.attach(frame)   the shell's frame, once: { title, content, shown(), empty(), apiFor(nav) }:
-//                                its title bar's text, the app area every page's box goes into, what to do when the
-//                                first page comes and when the last one goes, and the api a page is handed
+//   E.navigation.attach(frame)   the shell's frame, once: { title, content, shown(), empty() }:
+//                                its title bar's text, the app area every page's box goes into, and what to do when the
+//                                first page comes and when the last one goes. No api is handed to a page (goal/G43.24)
 //   E.navigation.push(page)      page: { title, mount(box, nav), unmount? }. The page gets a box of the whole app area
 //                                (space granted top-down: a fill box, shell.css) and draws into it alone; its title and
-//                                back are the frame's. Answers its nav: { close(), setTitle(text), isTop(), api }
+//                                back are the frame's. Answers its nav: { close(), setTitle(text), isTop() }
 //   E.navigation.back()          pops the top page: it is thrown away (unmount, its box removed), the one under it
 //                                shows again as it was
 //   E.navigation.home()          pops them all
@@ -54,7 +54,6 @@
       setTitle: function (text) { entry.title = String(text == null ? '' : text); if (top() === entry) frame.title.textContent = entry.title; },
       isTop: function () { return top() === entry; },
     };
-    nav.api = typeof frame.apiFor === 'function' ? frame.apiFor(nav) : null;
     entry.nav = nav;
     pages.push(entry);
     show();

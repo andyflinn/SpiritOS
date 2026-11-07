@@ -217,61 +217,14 @@
   // ── THE NAVIGATION FRAME (goal/G40.8) ───────────────────────────────────────────────────────────────────────────
   // shell/navigationWrapper.js, one of the parts from home: what still opens as a page, a contact's or a relay's details,
   // is pushed on it, under the title bar with Back and Home; with no page up, the shell's area shows.
-  var armed = null;
   function navigation() { return (window.spirit.elements && window.spirit.elements.navigation) || null; }
-  // THE API A PAGE IS HANDED, by its page on the navigation (nav): close, title and visibility are its page's.
-  function apiFor(page) {
-    var api = {
-      escapeHtml: spirit.escapeHtml,
-      // A page's call to its home node, over this link (goal/G40.7: no kernel on a face).
-      verb: function (name, args) { return ask(name, args); },
-      sendMessagePacket: function (packetApp, toId, body, opts) {
-        var envelope = window.spirit.packet || null;
-        if (!envelope) return Promise.resolve({ status: 0, text: '{"error":"spirit/client/packet.js is not loaded"}' });
-        var made = envelope.encode(packetApp, body, { re: (opts && opts.re) || '' });
-        if (!made.ok) return Promise.resolve({ status: 400, text: JSON.stringify({ error: made.error }) });
-        var args = { to: toId, text: made.text };
-        if (opts && Number(opts.patienceMs) > 0) args.patienceMs = Number(opts.patienceMs);
-        return ask('peer.post', args);
-      },
-      peerPost: function (packetApp, toId, body, opts) {
-        return api.sendMessagePacket(packetApp, toId, body, opts).then(function (r) {
-          var said = null;
-          try { said = JSON.parse(r.text); } catch (e) { said = null; }
-          var text = (said && typeof said.text === 'string') ? said.text : '';
-          var envelope = window.spirit.packet || null;
-          var decoded = (envelope && text) ? envelope.decode(text) : null;
-          var reached = r.status === 200 && !!(said && said.ok);
-          var answeredYes = !decoded || !decoded.body || decoded.body.ok === undefined || !!decoded.body.ok;
-          return { ok: reached && answeredYes, status: r.status, hash: (said && said.hash) || '', body: decoded ? decoded.body : null,
-            reply: text, from: (said && said.from) || '', error: (said && said.error) || (r.status === 200 ? '' : r.text) };
-        });
-      },
-      closeDialog: function () { page.close(); },
-      setScreenTitle: function (text) { page.setTitle(text); },
-      setScreenMark: function () {},
-      addTitlebarLink: function () {},
-      armUntilElsewhere: function (disarm) { if (typeof disarm === 'function') armed = { disarm: disarm, at: currentClick }; },
-      isVisible: function () { return page.isTop(); },
-      onFiles: function () { return function () {}; },
-      // What a relay the home node owns did, as the old shell hands it (goal/G30.15): Relay Details redraws on it.
-      onRelayEvent: function (fn) { return events({ onRelayEvent: fn }); },
-      ui: { elements: window.spirit.elements || {}, element: window.spirit.element || {} },
-    };
-    return api;
-  }
-  var currentClick = null;
-  // As the old shell does: the click is stamped on the way down, and an armed button is disarmed on the way up, after
-  // its own handler ran, by any click but the one that armed it. So the confirming press acts before the disarm.
-  document.addEventListener('click', function (e) { currentClick = e; }, true);
-  document.addEventListener('click', function (e) {
-    if (armed && armed.at !== e) { var a = armed; armed = null; try { a.disarm(); } catch (x) { /* harmless twice */ } }
-  }, false);
+  // NO API IS HANDED TO A PAGE (goal/G43.24; Andy: "every element that accesses ANY api must require them themselves"):
+  // what opens on the navigation reaches its verbs through the spirit object, and an arming button disarms itself.
   function shownFrame() { desktop.hidden = true; container.hidden = false; }
   function showShell() { container.hidden = true; desktop.hidden = false; }
   function attachNavigation() {
     var n = navigation();
-    if (n) n.attach({ title: title, content: content, shown: shownFrame, empty: showShell, apiFor: apiFor });
+    if (n) n.attach({ title: title, content: content, shown: shownFrame, empty: showShell });
   }
   document.getElementById('app-close').addEventListener('click', function () { if (navigation()) navigation().back(); });
   document.getElementById('app-home').addEventListener('click', function () { if (navigation()) navigation().home(); showShell(); });
@@ -326,10 +279,7 @@
         delete window.spirit.transport;
         waiting.forEach(function (h) { spirit.events.subscribe(h); });
       }
-      // THE PAGE API FOR A PANEL TOO (goal/G43.18; Andy: "the details of relays and contacts still mount with the green look at
-      // the bottom of the contact list instead of taking over the screen new-style...."): what a page is handed, for a layer
-      // that hands its own close, title and visibility, { close(), setTitle(text), isTop() }.
-      Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow, pageApi: apiFor });
+      Object.assign(window.spirit.shell = window.spirit.shell || {}, { factRow: factRow });
       attachNavigation();
       link.loaded = true;
       openStream(false);

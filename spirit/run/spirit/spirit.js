@@ -758,12 +758,37 @@
     return;
   }
 
-  // ON A PAGE: spirit.peerPost is the home node's peer.post, answered as peer.post answers it (the page hears no
-  // answer-post: the node's own peerPost waits on the node's server stream, which a page does not hold).
+  // ON A PAGE: spirit.peerPost is the home node's peer.post, the body in its packet envelope (spirit/client/packet.js),
+  // as the node's own peerPost sends it (goal/G43.24: it sent {app, body} unwrapped, so elements wrapped it themselves).
+  // It resolves what a process's peerPost resolves, the answer's body decoded, {ok: false, code, error} for a post that did
+  // not get through; never rejects. how.answer true resolves the node's whole answer read as a page needs it instead,
+  // { ok, status, body, card, from, error }: card is the node's VERIFIED card of the peer (spirit/peerPost.js, answer.card), ok
+  // only when it reached and the peer did not refuse. A page hears no answer-post: the node's own peerPost waits on the
+  // node's server stream, which a page does not hold, so peer.post's reply is the answer.
   // spirit.start() binds every family the node names on window.spirit, once, when the page can reach its node (the face
   // shell after its link is up; index.html at load); spirit.ready answers when they are there.
-  self.peerPost = function (peer, app, body) {
-    return post('peer.post', { to: String(peer), text: JSON.stringify({ app: app, body: body }) }).then(function (r) { return r && r.body; });
+  self.peerPost = function (peer, app, body, how) {
+    var whole = !!(how && how.answer === true);
+    // What it needs, it requires itself: packet.js on a page wants the limits before it (spirit/limits.js).
+    return Promise.resolve(requireOne('spirit/limits.js')).then(function () { return requireOne('spirit/client/packet.js'); }).then(function () {
+      var made = self.packet.encode(app, body);
+      if (!made || !made.ok) return whole ? { ok: false, body: null, card: null, from: '', error: (made && made.error) || 'the ask could not be encoded' }
+        : { ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' };
+      return post('peer.post', { to: String(peer), text: made.text }).then(function (r) {
+        var said = (r && r.body) || {};
+        var text = typeof said.text === 'string' ? said.text : '';
+        var decoded = text ? self.packet.decode(text) : null;
+        var got = decoded ? decoded.body : null;
+        if (whole) {
+          var yes = !got || got.ok === undefined || !!got.ok;
+          return { ok: r.status === 200 && !!said.ok && yes, status: r.status, body: got, card: said.card || null, from: said.from || '', error: said.error || '' };
+        }
+        if (r.status !== 200 || !said.ok) return { ok: false, code: 'not-posted', error: said.error || ('peer.post answered ' + r.status) };
+        return got;
+      });
+    }, function (e) {
+      return whole ? { ok: false, body: null, card: null, from: '', error: String((e && e.message) || e) } : { ok: false, code: 'not-posted', error: String((e && e.message) || e) };
+    });
   };
   var started = null;
   self.start = function () {

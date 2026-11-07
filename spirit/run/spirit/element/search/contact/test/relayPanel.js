@@ -195,6 +195,19 @@ function world(rows, relayStatus) {
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
     ready: Promise.resolve(families),
     packet: P,
+    // spirit.peerPost as spirit.js has it on a page (goal/G43.24): the body in its packet envelope, posted through the
+    // node's peer.post (the stand-in above); how.answer resolves the node's whole answer, { ok, status, body, card, from, error }.
+    peerPost: function (peer, app, body, how) {
+      const PK = P;
+      const made = PK.encode(app, body);
+      return Promise.resolve(families).then(function (f) { return f.peer.post({ to: String(peer), text: made.text }); }).then(function (said) {
+        const text = said && typeof said.text === 'string' ? said.text : '';
+        const got = text ? PK.decode(text).body : null;
+        const yes = !got || got.ok === undefined || !!got.ok;
+        if (how && how.answer === true) return { ok: !!(said && said.ok) && yes, status: 200, body: got, card: (said && said.card) || null, from: (said && said.from) || '', error: (said && said.error) || '' };
+        return got;
+      });
+    },
     relay: { status: function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); } },
     // The contact family's cache (goal/G41.28): its manager loads, and the page watches spirit.data.contact.data's rows.
     cacheManager: function (name) { w.managers = (w.managers || []).concat(name); ((win.spirit.data = win.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } }; return Promise.resolve(true); },
@@ -373,7 +386,10 @@ test.startTest('relayPanel.js: its are-you-sure buttons are armingButtons (goal/
   // needs...."): the node's verbs and its posts to the relay go through the spirit object; it is handed no api.
   test.subHeading('it asks through the spirit object, and is handed no api');
   ok(!/\bapi\b/.test(code) && !/ndApi/.test(code), 'its code names no api', 'its code still names an api');
-  ok(w.required.indexOf('spirit/client/packet.js') !== -1, 'a post to the relay requires the packet envelope itself (spirit/client/packet.js)', 'required: ' + short(w.required));
+  const panelCode = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact', 'relayPanel.js'), 'utf8').replace(/\/\/.*$/gm, '');
+  const viaPeerPost = /spirit\.peerPost\(/.test(panelCode);
+  const ownEncode = /packet\.encode\(/.test(panelCode);
+  ok(viaPeerPost && !ownEncode, 'a post to the relay goes through spirit.peerPost, which puts it in its envelope; the panel encodes no packet of its own', 'its code: peerPost ' + viaPeerPost + ', its own encode ' + ownEncode);
   ok(w.posts.length > 0 && w.posts.every(function (p) { return p.app === 'relay' && p.key === 'RK'; }), 'each post to the relay is a packet for it through peer.post, in its envelope', 'posts: ' + short(w.posts.map(function (p) { return { app: p.app, key: p.key }; })));
   ok(typeof w.title === 'string' && /^Relay Details/.test(w.title), 'its title goes to the layer it is drawn in (options.layer.setTitle)', 'title: ' + short(w.title));
 }()).then(function () { test.reportSuccessFailureCount(); },
