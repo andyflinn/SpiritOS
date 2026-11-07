@@ -1,19 +1,15 @@
 // A crude, periodic, ENCRYPTED backup of the files at the top of a node's
-// relay-state folder (--from, by default spirit/run/relay-state).
+// state folder (--from, by default spirit/run/spirit/state): its keys
+// (identity.json), node.db, relay.db and config.json. A process's own state
+// in the folders below is the backup server's (process/js/backup/backup.js).
 //
 // transport/R19.1. Andy: "it's required to pull this off safely and keep my
 // node safer" — the node log moves into node.db, and losing node.db is
 // covered by backups, not by a rebuild (his decision, 2026-09-28: "i'm ok
 // with that risk, i'd rather rely on backups, and not worry about it").
 //
-// DISCREPANCY WITH ANDY's RULES: his ruling above (2026-09-28, transport/R19.1)
-// is that losing node.db is covered by these backups. Since goal/G43.8 a
-// node's own files (identity.json, node.db and the rest) live in
-// spirit/run/spirit/state/ (shellMove.js, moveRelayStateTop), and relay-state/
-// keeps only its process/ and shell/ folders. This script still reads
-// spirit/run/relay-state by default and copies only the FILES at its top
-// (snapshot skips folders), so a default run backs up nothing of the node's
-// keys or node.db.
+// A node's own files live in spirit/run/spirit/state/ since goal/G43.8, so
+// that is the default (goal/G43.23, the box's item 5).
 //
 // Machine-side, not part of the product: nothing in spirit/run calls this.
 // Run it by hand or from Windows Task Scheduler (see README.txt).
@@ -28,7 +24,7 @@
 // it is written out with SQLite's `VACUUM INTO`, which reads one consistent
 // snapshot even while the node is writing. Journal files are skipped.
 //
-//   node backup.js [--from <relay-state>] [--to <folder>] [--keep <n>]
+//   node backup.js [--from <state folder>] [--to <folder>] [--keep <n>]
 //                  [--passphrase-file <file>]
 
 'use strict';
@@ -49,7 +45,7 @@ function arg(name, fallback) {
   return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 
-const FROM = path.resolve(arg('from', path.join(__dirname, '..', '..', 'spirit', 'run', 'relay-state')));
+const FROM = path.resolve(arg('from', path.join(__dirname, '..', '..', 'spirit', 'run', 'spirit', 'state')));
 const TO = path.resolve(arg('to', 'D:\\countinn@google.com\\SpiritOS-data-backup'));
 const KEEP = Math.max(1, Number(arg('keep', 24)) || 24);
 // OUTSIDE ANY SYNCED FOLDER, on purpose: the passphrase must never travel
@@ -128,14 +124,14 @@ function clearStale() {
 function main() {
   clearStale();
   const pass = readPassphrase();
-  if (!fs.existsSync(FROM)) throw new Error('no relay-state at ' + FROM);
+  if (!fs.existsSync(FROM)) throw new Error('no state folder at ' + FROM);
   fs.mkdirSync(TO, { recursive: true });
   const name = 'spirit-backup-' + stamp(new Date()) + '.tgz.enc';
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backup-'));
   try {
-    const count = snapshot(path.join(work, 'relay-state'));
-    const tgz = path.join(work, 'relay-state.tgz');
-    execFileSync(TAR, ['-czf', tgz, '-C', work, 'relay-state']);
+    const count = snapshot(path.join(work, 'state'));
+    const tgz = path.join(work, 'state.tgz');
+    execFileSync(TAR, ['-czf', tgz, '-C', work, 'state']);
     const sealed = seal(fs.readFileSync(tgz), pass);
     // Written under a temporary name and renamed, so a syncing folder never
     // uploads half a file.

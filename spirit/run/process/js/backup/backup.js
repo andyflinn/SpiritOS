@@ -8,18 +8,20 @@
 //   and "agreed on the short hash".
 //
 // WHAT IT DOES:
-//   - it copies the folder above its own state folder (SOURCE below), its
-//     own state folder left out; never a nested relay-state/ or
-//     spirit/state/, never an identity.json. The node's name and public key
-//     are handed over as --node (jobs.js nodeArgOf); this process never
-//     opens identity.json, which holds the private keys.
+//   - it copies the node's state, spirit/state/ (SOURCE below: the node
+//     hands --state as spirit/state/backup/data/, goal/G43.10), every
+//     process's state and the node's node.db with it (desk/G1, O2;
+//     goal/G43.23, the box's item 5). Its own folder, spirit/state/backup/,
+//     is left out; so are a nested relay-state/ or spirit/state/ and every
+//     identity.json. The node's name and public key are handed over as
+//     --node (jobs.js nodeArgOf); this process never opens identity.json,
+//     which holds the private keys.
 //   - the copy lands in <spiritHome>/backups/<12 hex of sha256(publicKey)>/
-//     relay-state/process/, with node.json naming the node. spiritHome is
-//     config.json's (read from the path spiritHome() builds), else
-//     <home>/.SpiritOS.
+//     spirit/state/, with node.json naming the node. spiritHome is
+//     spirit/state/config.json's, else <home>/.SpiritOS.
 //   - it runs once at start, then after each change under SOURCE once quiet
-//     for quietMs. Its own state folder is neither watched nor copied, or
-//     it would start itself.
+//     for quietMs. Its own folder is neither watched nor copied, or it
+//     would start itself.
 //   - ONE copy of each file (O8). A run compares first (size, then hash);
 //     unchanged copies nothing but still says it checked.
 //   - a database goes through SQLite's own backup, never as a plain file,
@@ -27,15 +29,6 @@
 //   - every run prints one line, here, in its Jobs console: what it wrote,
 //     with full paths and sizes (Andy: "any export can report the location
 //     of the exported file", "in jobs if it is a server").
-//
-// DISCREPANCY WITH ANDY's RULES: desk/G1 (O2) decided the backup copies
-// every process's state (once relay-state/process/). Since goal/G43.10 the
-// node hands --state as spirit/state/backup/data/, so SOURCE is
-// spirit/state/backup/ and the backup copies only its own folder, which it
-// leaves out: no other process's state is copied. spiritHome() reads
-// spirit/spirit/state/config.json, a path that does not exist, so a
-// spiritHome set in spirit/state/config.json is never used. The G43.10
-// commit says backup "is ported later, on his ruling".
 
 const fs = require('fs');
 const os = require('os');
@@ -61,16 +54,14 @@ if (!NODE || !NODE.publicKey) {
 const values = parsed(argv[2], {}) || {};
 const QUIET = Number(values.quietMs) > 0 ? Number(values.quietMs) : 5000;
 
-// SOURCE is the state folder's parent, RELAY_STATE its grandparent; with
-// --state spirit/state/backup/data/ those are spirit/state/backup/ and
-// spirit/state/ (see the DISCREPANCY above).
-const SOURCE = path.dirname(STATE);
-const RELAY_STATE = path.dirname(SOURCE);
-const OWN = path.basename(STATE);
+// With --state spirit/state/backup/data/, OWN is backup and SOURCE is
+// spirit/state/, the node's state.
+const SOURCE = path.dirname(path.dirname(STATE));
+const OWN = path.basename(path.dirname(STATE));
 fs.mkdirSync(STATE, { recursive: true });
 
 function spiritHome() {
-  const cfg = parsed(readText(path.join(path.dirname(RELAY_STATE), 'spirit', 'state', 'config.json')), {}) || {};
+  const cfg = parsed(readText(path.join(SOURCE, 'config.json')), {}) || {};
   return cfg.spiritHome ? String(cfg.spiritHome) : path.join(os.homedir(), '.SpiritOS');
 }
 function readText(file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { return ''; } }
@@ -151,7 +142,7 @@ async function run() {
   if (readText(path.join(dest, 'node.json')) !== nodeJson) fs.writeFileSync(path.join(dest, 'node.json'), nodeJson);
   for (const rel of sourceFiles()) {
     const src = path.join(SOURCE, rel);
-    const to = path.join(dest, 'relay-state', 'process', ...rel.split('/'));
+    const to = path.join(dest, 'spirit', 'state', ...rel.split('/'));
     const print = fingerprint(src);
     // A missing destination is a change (Andy, O5), so a new home copies all.
     if (seen[rel] === print && fs.existsSync(to)) continue;

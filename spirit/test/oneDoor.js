@@ -136,11 +136,20 @@ const TALLY = {
   // to that same server — and every file is counted, so platform/ is
   // walked and it is counted here rather than living outside the tally.
   'platform/wsl/desktop/desktop.js': 2,
+
+  // ── THE MODEL PROVIDERS — THE URL IS THE OWNER'S ────────────────────
+  //
+  //   Andy, goal/G43.23: "we're NOT going to fix some netFence thing for
+  //   the model-provider urls in "agent"". Only he sets those urls and
+  //   keys, so each provider asks the host he named, with one fetch.
+  'spirit/app/agent/provider/anthropic/anthropic.js': 1,
+  'spirit/app/agent/provider/openai/openai.js': 1,
 };
 
 // Not code this project ships or runs in a node: spawned scripts talking
-// to third parties, and dependencies.
-const SKIP = ['process', 'node_modules'];
+// to third parties, and dependencies. And every test/ folder: a module's
+// own suite sits beside it, and tests are not counted (Andy's ruling below).
+const SKIP = ['process', 'node_modules', 'test'];
 
 function walk(dir, prefix, out) {
   fs.readdirSync(dir).forEach(function (name) {
@@ -305,9 +314,9 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
   {
     const PRIMITIVES = /createCipheriv|createDecipheriv|diffieHellman|hkdfSync/;
     const owners = [];
-    // 'js' names spirit/run/js, which the tree no longer has (the code is in spirit/run/spirit/): this walk throws
-    // ENOENT there and the suite stops before its section 4.
-    ['js', 'shell', 'process'].forEach(function (rel) {
+    // The node's code is in spirit/run/spirit/ (prefixed spirit/, as seal.js is named below), the shell's and the
+    // servers' beside it.
+    ['spirit', 'shell', 'process'].forEach(function (rel) {
       walk(path.join(SPIRIT, 'run', rel), rel + '/', []).forEach(function (f) {
         if (PRIMITIVES.test(fs.readFileSync(f.full, 'utf8'))) owners.push(f.rel);
       });

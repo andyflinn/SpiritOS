@@ -14,10 +14,8 @@ spirit/run/test/spirit-sibling-generalRules.js instead of shell-child. No page m
 agent tables alike."*). It was `shell/test/boot-sibling-generalRules.js`, whose reach was `shell/` and hung on
 `shell/boot.js`.
 
-DISCREPANCY WITH ANDY's RULES: `spirit.js` has been at `spirit/run/spirit/spirit.js` since goal/G43.18, so
-`testModule.js` no longer treats this file as a general test (`./TEST_SYSTEM.md`). It is run once with no file, finds
-no file in its reach, and goes red with "testModule.js gives it no file to judge" after its icon-loading checks; no page
-is mounted. The example above, `shell/agent/agent.js`, is no longer in the tree either.
+`spirit.js` has been at `spirit/run/spirit/spirit.js` since goal/G43.18; `testModule.js` finds it there for the run
+root's test folder (`./TEST_SYSTEM.md`), so this file is a general test, run once per module it judges.
 
 Each file is its own test id. A rule a file breaks fails that file's test, not the item that brought the test.
 

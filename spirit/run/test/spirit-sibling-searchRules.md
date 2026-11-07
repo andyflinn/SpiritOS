@@ -9,9 +9,8 @@ The search rule of a module (goal/G41.28), judged in its code. It runs once per 
 `spirit/run/` and below that has its own test, a server and a page alike. Given no file, it judges every module
 `testModule.js` gives it, each its own check, named by its path.
 
-DISCREPANCY WITH ANDY's RULES: `spirit.js` has been at `spirit/run/spirit/spirit.js` since goal/G43.18, so
-`testModule.js` no longer treats this file as a general test (`./TEST_SYSTEM.md`): it is run once with no file, is
-given no module, and goes red with "testModule.js gives it no file to judge".
+`spirit.js` has been at `spirit/run/spirit/spirit.js` since goal/G43.18; `testModule.js` finds it there for the run
+root's test folder (`./TEST_SYSTEM.md`), so this file is a general test, run once per module it judges.
 
 Andy, box v15: *"the ServerSide of probability Search is NOT searching the whole row of the object."*, *"a probability
 search of a dataBase table must ALWAYS search the whole bloody ROW, as it is served through a single-row "get", using

@@ -5,10 +5,9 @@ file, with the exception of DEBUG.js."*
 
     node test/spirit-sibling-testReachRules.js [file]
 
-**Its name is its reach** (`./TEST_SYSTEM.md`): a `-sibling-` test beside `spirit.js` judges every production module in
-`spirit/run/` and below. Given a file it judges that one; given none, every tracked production `.js` file. Since
-`spirit.js` left the run root (goal/G43.18), `testModule.js` runs it once with no file (`./TEST_SYSTEM.md`), so it reads
-the whole tree in that one run.
+**Its name is its reach** (`./TEST_SYSTEM.md`): a `-sibling-` test named after `spirit.js` (at `spirit/spirit.js`, found
+there for the run root's test folder) judges every production module in `spirit/run/` and below. Given a file it judges
+that one; given none, every tracked production `.js` file.
 
 ## Requirements
 

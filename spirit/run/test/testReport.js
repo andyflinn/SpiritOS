@@ -98,16 +98,14 @@ function record(title, outcome, failure) {
     // is put back. A test's bare window is hidden too (goal/G41.16; found: under the verifier the files list and the
     // contacts row went red): spirit.js loads the data set, which puts itself on window.spirit when there is a window,
     // and wrote a fresh one over the data set the test runs on.
-    // DISCREPANCY WITH ANDY's RULES: G40.13 box v22 (this file's header) and G41.19 rule that a product test's results
-    // reach the verifier; the require below names spirit/run/spirit.js, which goal/G43.18 moved to
-    // spirit/run/spirit/spirit.js, so the require throws, the catch swallows it, and under --verify-port no record is
-    // sent at all (test/testReport.js goes red on every case for this reason).
+    // The spirit object is spirit/run/spirit/spirit.js (goal/G43.18 moved it there; goal/G43.23, the box's item 3,
+    // points this require at it again), so a product test's results reach the verifier (G40.13, G41.19).
     const own = globalThis.spirit;
     const ownWindow = globalThis.window;
     globalThis.spirit = undefined;
     globalThis.window = undefined;
     let real = null;
-    try { real = require(path.join(__dirname, '..', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
+    try { real = require(path.join(__dirname, '..', 'spirit', 'spirit.js')); } finally { globalThis.spirit = own; globalThis.window = ownWindow; }
     family = family || real.require(real.familyPath(name));
     inTheAir++;
     family.then(function (f) { return f[verb](rec); }).catch(function () { /* the records are a record, not the verdict */ }).then(landed);

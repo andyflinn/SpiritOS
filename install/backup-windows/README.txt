@@ -1,9 +1,9 @@
-SpiritOS - encrypted backup of a node's relay-state (Windows)
-=============================================================
+SpiritOS - encrypted backup of a node's state (Windows)
+=======================================================
 
 transport/R19.1. Machine-side: nothing in SpiritOS calls this. It
-copies spirit\run\relay-state (keys, contacts, node.db, the log)
-into ONE encrypted file per run, keeps the newest 24, and writes
+copies the files at the top of spirit\run\spirit\state (the keys,
+node.db, relay.db, config.json) into ONE encrypted file per run, keeps the newest 24, and writes
 them to D:\countinn@google.com\SpiritOS-data-backup, which syncs to
 Google Drive. Google holds files it cannot read.
 
@@ -47,7 +47,7 @@ To stop it:  schtasks /Delete /TN "SpiritOS backup" /F
 
 It unpacks into a NEW folder, never over a live node, and checks
 every database with SQLite's integrity check. Putting the result in
-place of a node's relay-state is done by hand, with the node stopped.
+place of a node's state is done by hand, with the node stopped.
 
-Options for all of the above: --from <relay-state> --to <folder>
+Options for all of the above: --from <state folder> --to <folder>
 --keep <n> --passphrase-file <file>

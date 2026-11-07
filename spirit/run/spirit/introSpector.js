@@ -79,12 +79,13 @@ function readFolder(dir, declared, manifest) {
 //   on listing, "then put a search in there."
 //
 // One owner verb, multiplexed as AGENTS was: FS.<name>, with the kernel's own names. A path is inside the folder or
-// refused; nothing above it is ever reached. The folder gets no fence of its own beyond that, its api.js included. Annotations are the node's sidecars, so those two go
-// through fileSystem.js, for a folder under spirit/run.
-// DISCREPANCY WITH ANDY's RULES: Andy (goal/G30.21, quoted in fileSystem.js): "only "core" files are write-protected".
-// On the node a family folder is spirit/<family>/, core files every one, and FS.saveFile, FS.saveJsonValue and
-// FS.deleteFile write it with fs.writeFileSync / unlink straight, never asking fileWritable: <ns>.FS.saveFile can
-// overwrite spirit/<ns>/api.js.
+// refused; nothing above it is ever reached. Annotations are the node's sidecars, so those two go through fileSystem.js,
+// for a folder under spirit/run.
+// A CORE FILE IS NOT WRITTEN (goal/G43.23, item 1; Andy, goal/G30.21, quoted in fileSystem.js: "only "core" files are
+// write-protected"): FS.saveFile, FS.saveJsonValue and FS.deleteFile ask fileSystem.fileWritable, the kernel's own gate,
+// for every path under spirit/run, and refuse what it refuses. On the node a family folder is spirit/<family>/, core
+// every file, so <ns>.FS.saveFile cannot overwrite spirit/<ns>/api.js; a process server's family folder takes its
+// non-core files.
 function fsVerbs(dir, prefix) {
   const root = path.resolve(String(dir || ''));
   function inside(p) {
@@ -103,10 +104,18 @@ function fsVerbs(dir, prefix) {
     return { rel: rel.split(path.sep).join('/') };
   }
   function read(full) { try { return fs.readFileSync(full, 'utf8'); } catch (e) { return null; } }
+  // The kernel's write gate, for a path under spirit/run: a core file, a node state file or a sidecar is refused.
+  function writable(full) {
+    const rel = path.relative(fileSystem.ROOT_DIR, full);
+    if (!rel || rel.indexOf('..') === 0 || path.isAbsolute(rel)) return full;
+    if (!fileSystem.fileWritable(rel.split(path.sep).join('/'))) throw refusal('bad-request', { why: 'a core file is not written: ' + rel.split(path.sep).join('/') });
+    return full;
+  }
   // A NAME THE FILE SYSTEM WILL NOT TAKE IS REFUSED, NEVER A HANDLER FAILED (goal/G41.30; the red: control characters or
   // <, > in a path made every FS save answer 500): Windows refuses what Linux takes, so the file system decides and its
   // refusal is said.
   function write(full, text) {
+    writable(full);
     try {
       fs.mkdirSync(path.dirname(full), { recursive: true });
       fs.writeFileSync(full, String(text == null ? '' : text), 'utf8');
@@ -117,7 +126,7 @@ function fsVerbs(dir, prefix) {
   v[prefix + 'FS.loadFile'] = { request: { path: '' }, reply: {}, handler: function (a) { return { text: read(inside(a.path)) }; } };
   v[prefix + 'FS.saveFile'] = { request: { path: '', content: '' }, reply: { saved: true }, handler: function (a) { return write(inside(a.path), a.content); } };
   v[prefix + 'FS.deleteFile'] = { request: { path: '' }, reply: { deleted: false }, handler: function (a) {
-    const full = inside(a.path);
+    const full = writable(inside(a.path));
     try { fs.unlinkSync(full); return { deleted: true }; } catch (e) { return { deleted: false }; }
   } };
   v[prefix + 'FS.statFile'] = { request: { path: '' }, reply: {}, handler: function (a) {

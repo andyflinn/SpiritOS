@@ -2,11 +2,10 @@
 //
 // transport/R19.1's proof is a restore, not a copy (wsl-claude: "a backup
 // nobody has restored from is a hope"). So this unpacks into a NEW folder,
-// never over a live relay-state, and runs SQLite's integrity check on every
-// database it finds. Putting the result in place of a node's state is
-// a person's decision, done by hand with the node stopped. The archive's
-// folder is named relay-state, as backup.js writes it; a node's own files
-// live in spirit/run/spirit/state/ since goal/G43.8.
+// never over a live node's state, and runs SQLite's integrity check on every
+// database it finds. Putting the result in place of a node's state
+// (spirit/run/spirit/state/) is a person's decision, done by hand with the
+// node stopped. The archive's folder is named state, as backup.js writes it.
 //
 //   node restore.js <backup.tgz.enc> <empty folder> [--passphrase-file <file>]
 
@@ -46,11 +45,11 @@ function main() {
   const pass = fs.readFileSync(passFile, 'utf8').trim();
   fs.mkdirSync(into, { recursive: true });
   if (fs.readdirSync(into).length) throw new Error(into + ' is not empty; restore only into an empty folder');
-  const tgz = path.join(into, 'relay-state.tgz');
+  const tgz = path.join(into, 'state.tgz');
   fs.writeFileSync(tgz, open(fs.readFileSync(file), pass));
   execFileSync(TAR, ['-xzf', tgz, '-C', into]);
   fs.unlinkSync(tgz);
-  const dir = path.join(into, 'relay-state');
+  const dir = path.join(into, 'state');
   const { DatabaseSync } = require('node:sqlite');
   const report = fs.readdirSync(dir).map(function (n) {
     if (!/\.db$/.test(n)) return n;

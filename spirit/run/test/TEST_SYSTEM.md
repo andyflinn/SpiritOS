@@ -29,14 +29,13 @@ A test that does not judge the one file it is handed is never a general test: a 
 module, 111 times (goal/G43.2; Andy: *"it looks to me like a lazy-funcking-ass placement of tests"*). A test that covers
 several modules end to end is a plain test in the `test/` folder of the module it is most about, and runs once.
 
-DISCREPANCY WITH ANDY's RULES: the run root's general tests (`spirit/run/test/spirit-child-generalRules.js`,
-`spirit-sibling-generalRules.js`, `spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`) are named after
-`spirit.js`, which goal/G43.18 moved from the run root to `spirit/run/spirit/spirit.js`. With no `./spirit.js` beside
-their test folder, `testModule.js` no longer counts them as general tests: each is listed once as a plain test, with no
-file, so no module is judged one by one as goal/G40.6 and goal/G43.2 rule. Run that way, the child rules and the
-sibling general and search rules each go red with "no module to judge" or "testModule.js gives it no file to judge";
-the test-reach rule scans the whole tree itself. Plain helpers in that folder (`headLessChrome.js`, `testModule.js`,
-`testReport.js`) are listed as tests too, since every `.js` in a `test/` folder is one.
+The run root's general tests (`spirit/run/test/spirit-child-generalRules.js`, `spirit-sibling-generalRules.js`,
+`spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`) are named after `spirit.js`, which goal/G43.18 moved
+from the run root to `spirit/run/spirit/spirit.js`. For the run root's own `test/` folder, `testModule.js` looks for the
+module one folder down, in the folder of its name, so they are general tests still (goal/G43.23): `-sibling-` judges every
+module of the run root with its own test, `-child-` judges `spirit/spirit.js` and `spirit/` below. Plain helpers in that
+folder (`headLessChrome.js`, `testModule.js`, `testReport.js`) are listed as tests too, since every `.js` in a `test/`
+folder is one.
 
 ## Opting in
 

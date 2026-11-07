@@ -9,9 +9,8 @@ Andy, on G41.19: *"RULE: The test names (what is sent to deskVerify) must ALWAYS
 test files went by 8 names (six were `rowElement.js`), and a red did not say which. (Fallout itself left the desk in
 goal/G43.22; the naming rule stays.)
 
-DISCREPANCY WITH ANDY's RULES: the reporter still loads `spirit/run/spirit.js`, which goal/G43.18 moved to
-`spirit/run/spirit/spirit.js`; the load throws, so under `--verify-port` nothing is sent, against G41.19's rule that
-results reach the verifier. This test's child plants its stand-in at the old path too, so every case below is red today.
+The reporter loads the spirit object from `spirit/run/spirit/spirit.js` (where goal/G43.18 put it) to send each record; this
+test's child plants its stand-in there.
 
 ## Requirements
 

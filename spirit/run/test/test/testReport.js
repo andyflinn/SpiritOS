@@ -14,13 +14,11 @@ const REPORTER = path.join(RUN, 'test', 'testReport.js');
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 
 // What the reporter sends when run as <file> (relative to spirit/run), with the arguments given: the records, or [].
-// The stand-in is planted at spirit/run/spirit.js, where the reporter still looks; spirit.js itself is at
-// spirit/run/spirit/spirit.js since goal/G43.18, and no file at the old path means the load throws and nothing is sent
-// (see the DISCREPANCY note in ../testReport.js).
+// The stand-in is planted at spirit/run/spirit/spirit.js, where the reporter loads the spirit object.
 function sent(file, args, verify) {
   const child = [
     'const path = require("path");',
-    'const spiritJs = path.join(' + JSON.stringify(RUN) + ', "spirit.js");',
+    'const spiritJs = path.join(' + JSON.stringify(RUN) + ', "spirit", "spirit.js");',
     'require.cache[spiritJs] = { id: spiritJs, filename: spiritJs, loaded: true, exports: {',
     '  familyPath: function (n) { return n; },',
     '  require: function () { return Promise.resolve({ record: function (r) { console.log("REC " + JSON.stringify(r)); } }); },',
@@ -56,8 +54,8 @@ const twins = CASES.slice(1, 3).map(function (c) { return suitesOf(sent(c[0], []
 ok(twins[0] && twins[1] && twins[0] !== twins[1], 'two test files of one name, rowElement.js, are two names', 'both rowElement.js tests went by ' + short(twins));
 
 test.subHeading('a general test, by the file it judges');
-const general = suitesOf(sent('test/spirit-sibling-generalRules.js', ['shell/agent/agent.js'], true));
-ok(general.length === 1 && general[0] === '/shell/agent/agent', 'spirit-sibling-generalRules.js judging shell/agent/agent.js is sent as /shell/agent/agent', 'it was sent as ' + short(general));
+const general = suitesOf(sent('test/spirit-sibling-generalRules.js', ['shell/desk/desk.js'], true));
+ok(general.length === 1 && general[0] === '/shell/desk/desk', 'spirit-sibling-generalRules.js judging shell/desk/desk.js is sent as /shell/desk/desk', 'it was sent as ' + short(general));
 
 test.subHeading('the rest of a record as before');
 const recs = sent('spirit/element/test/workBench.js', [], true);
