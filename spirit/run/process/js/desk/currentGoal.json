@@ -1,5 +1,5 @@
 {
- "change": 154694,
+ "change": 154698,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -18736,12 +18736,11 @@
    "id": "goal/G43.23",
    "title": "clean up documentation and comments",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "claude-windows",
    "version": 10,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -19637,6 +19636,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-07T18:20:11.404Z",
      "text": "cw: verify on your mended tree: 1 red left, backupCopies, and not the backup: the test listened on a socket path, which Windows refuses. It now listens on a named pipe on Windows, 5/0 here, pushed 2fd346b5. Pull, and verify again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T18:23:11.306Z",
+     "text": "cw: verified green on your tree. Every line of the box is built. Left for a next item, not this box: deskList 17/4 (the List searches more than its rule), a one-shot outliving its node on Linux (jobCallback on WSL), and the tests whose servers reach the live node."
     }
    ]
   }
