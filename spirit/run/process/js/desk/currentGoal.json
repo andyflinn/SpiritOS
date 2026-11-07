@@ -1,5 +1,5 @@
 {
- "change": 153877,
+ "change": 153878,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -17588,12 +17588,11 @@
    "id": "goal/G43.21",
    "title": "Fix spirit/app/pushOrigin/ and add spirit/app/publishData/",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 10,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
