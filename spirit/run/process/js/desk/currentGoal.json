@@ -1,5 +1,5 @@
 {
- "change": 154210,
+ "change": 154217,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -18205,12 +18205,11 @@
    "id": "goal/G43.22",
    "title": "Fix Desk.",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 9,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
