@@ -1,5 +1,5 @@
 {
- "change": 153878,
+ "change": 154096,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -153,9 +153,7 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -312,7 +310,8 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.19"
+    "goal/G43.19",
+    "goal/G43.22"
    ],
    "codeOffered": true,
    "go": false,
@@ -18194,6 +18193,486 @@
      "key": "",
      "at": "2026-11-07T11:20:27.897Z",
      "text": "not pulled: a test run is going on in the desk's checkout (goal/G43.21)"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:21:26.573Z",
+     "text": "wsl: verified dd4d07b6 (tree at 85fb4db6): nodeRun 22/0. With the two guards undone (the row hide, the app.active refusal) the six checks go red again."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.22",
+   "title": "Fix Desk.",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 9,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 71,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/29"
+    },
+    {
+     "key": "rule/26"
+    },
+    {
+     "key": "rule/1"
+    },
+    {
+     "key": "rule/2"
+    },
+    {
+     "key": "rule/19"
+    },
+    {
+     "key": "rule/16"
+    }
+   ],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    },
+    {
+     "key": "rule/29",
+     "version": 70
+    },
+    {
+     "key": "rule/26",
+     "version": 64
+    },
+    {
+     "key": "rule/1",
+     "version": 52
+    },
+    {
+     "key": "rule/2",
+     "version": 51
+    },
+    {
+     "key": "rule/19",
+     "version": 48
+    },
+    {
+     "key": "rule/16",
+     "version": 42
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-ubuntu": "claude-ubuntu",
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# changes in \"desk\"\n\n# Andy: \"in this item you will push past the commit hook\"\n\n- the apps and plugin system goes.\n\n# with that the folloing features will disappear:\n\n- team chat\n- fallout\n- musings\n- stacks\n- plugin support\n- plugin folders\n\nThese are no longer desks job, they're rarely used and fill be redone elsewhere.\n\n- the desk-api will shrink a bit.\n- there will only be goals, items and rules left, plus the verifier stuff can stay for now.\n\n# Decided\n\n- The goals of the plugins stay in desk.db with their items: G37 Stack-frame checks, G38 Vision, G39 Fallout. Only the code goes. Andy (Q2): \"we'll leave those goals in the database, that won't hurt.\"\n\n- The verifier's recording of the Stacks door verdicts goes (deskVerify.js:698-780), but the stack-frame tests do not. Andy (Q3): \"yes. but do not delete stack frame tests in the product tree.\"\n- The stack-frame tests stay in spirit/test/, where they are, kept even while nothing runs them: oneDoorStacks.js, oneDoor.js, stackFrameTestItems.js, stackFrameViolators.js and tools/wirePaths.js. Out of the plugin folder into spirit/test/ come the door list stackFrameList.json and the formatter violators.js, and the two paths that name them follow (tools/wirePaths.js:214, stackFrameViolators.js:19). Andy (Q4): \"can can just stash that test.js and test.json in spirit/test/ even if it's not used right now.....\"\n\n- The item's own two searches go from the item detail. Andy: \"take out your search of the items text, the codeMirror search works better for editing purposes.\", \"take out the chat-search do, it's not actually usable.\", \"box it.\"\n  - The \"find in this box\" field over the box editor (shell/deskDetails/deskDetails.js:463, its marking :471-473, its marking again on a repaint :483). The box editor's own CodeMirror search stays.\n  - The chat search over the item's chat (shell/deskDetails/deskDetails.js:174, :702, :889-912).\n\n- G0, the team chat, goes from the desk server and its face, and stays in desk.db. Andy (Q5): \"G0 goes, from ui and server, kept in database.\"\n- publishData posts no summary to the desk any more (publishData.js:239). Andy: \"publishData summary is no longer needed, i only check on github.\"\n- What the stack-frame tests reach of what goes, its valuable bits kept in spirit/test/ beside them: stackFrameViolators.js also reads shell/stackFrameCheckDetail/ (:22). Andy: \"stackFrame issues, just keep the valuable bits stashed in spirit/test/\".\n\n# What goes, in the tree (at 85fb4db6)\n\n- The three plugins, whole: their server halves, process/js/desk/plugins/js/fallout/, stackFrameChecks/, vision/; their faces, shell/desk/plugins/fallout/, stackFrameChecks/, vision/.\n- The desk server's plugin system: the mount and the plugin folders (desk.js:3006-3120), the refusal asked of each plugin on every call (desk.js:1866, :2192, :3364), the plugin goal ids (desk.js:537, :849-850, :1552, :2254, :2384).\n- The plugins' verbs on the desk api: stackFrameChecks.make, .update, .remove, .run, .runState, .door, and those of vision and fallout.\n- The team chat, goal/G0: GROUP_CHAT and its making at start (desk.js:513, :814-821, :916-921) and every place that treats it apart (desk.js:496, :1838, :1871, :1885, :1928, :2427, :2824, :4187); deskClient's wake on a G0 line (deskClient.js:490); the desk page cache's G0 parts (process/js/desk/data.js:54, shell/desk/desk.js:1051). A rule change is posted nowhere (desk.js:496).\n- The face's Apps tab with Team and the plugin tabs (shell/desk/desk.js:351, :736-830), and its team-seen marker (shell/desk/desk.js:155-191, :620).\n- Outside the desk: shell/stackFrameCheckDetail/, and the Stacks parts of shell/deskDetails/.\n- The tests that test the plugins and the team chat (about 20 in spirit/test: deskPluginsGg, deskFallout, deskVision, deskStacks* and others) go with them.\n\n# Stays\n\n- Goals, items and rules, and the verifier (deskVerify) for now.\n- codeMirror.js mark stays: the text app marks the words a file was found by with it (spirit/app/text/text.js:75).\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do the three plugin goals and their items in desk.db go too, or stay as plain closed goals (wsl-claude)",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-07T11:26:29.342Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "When the plugins go, do their goals G37, G38 and G39 stay as plain goals with their items (your Vision items among them), or go too?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T11:27:23.487Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "deskVerify records the Stacks door verdicts (deskVerify.js:698-780), used by nothing else: with Stacks gone, does that part of the verifier go too?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T11:32:16.975Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "The door list and violators.js leave the plugin folder so the stack-frame tests keep them: move them beside the tests in spirit/test/, or somewhere else?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T11:35:26.528Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "G0 stays closed in desk.db like G37-G39, and the rule-change and publishData lines it gets today are simply dropped?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T11:45:09.977Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:22:16.140Z",
+     "text": "all, ?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:23:09.042Z",
+     "text": "wsl: what that is in the tree, at 85fb4db6:\n- three plugins, fallout, stackFrameChecks, vision: their server halves in process/js/desk/plugins/js/ (16 files), their faces in shell/desk/plugins/ (9 files).\n- desk.js mounts them (:2988-3006), asks each for a refusal on every call (:1866), and gives each a special goal of its own (:849, :1551, :2384).\n- the desk face draws them under the Apps tab (shell/desk/desk.js:351, :741-786).\n- deskVerify records the Stacks door verdicts (deskVerify.js:698-780), with shell/stackFrameCheckDetail/.\n- about 20 desk tests in spirit/test name them (deskPluginsGg, deskFallout, deskVision, deskStacks*)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:23:16.843Z",
+     "text": "cw: what that is today:\n- Three plugins, each a server half (process/js/desk/plugins/js/<name>/) and a page half (shell/desk/plugins/<name>/): Stack-frame checks, Vision and Fallout.\n- Each owns a goal of its own in desk.db: G37 Stack-frame checks (5 items, 4 open), G38 Vision (6 items, 5 open: Puppeteering, Desk Stuff, UI general fixes, Core issues, Canonical version), G39 Fallout (none).\n- The page's Apps tab holds Team and one inner tab per plugin (shell/desk/desk.js:736-830); the server mounts them, gives them verbs and refusals (desk.js:3006-3120).\nWhat goes is code. What becomes of the three goals and their items is your call."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:26:13.847Z",
+     "text": "Q1: Do the three plugin goals and their items in desk.db go too, or stay as plain closed goals (wsl-claude)\n\nwe'll close them and leave them in the database."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:26:41.698Z",
+     "text": "wsl: understood: G37, G38 and G39 are closed and stay in desk.db, their items with them; only the code goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:27:01.776Z",
+     "text": "Q2: When the plugins go, do their goals G37, G38 and G39 stay as plain goals with their items (your Vision items among them), or go too?\n\nwe'll leave those goals in the database, that won't hurt."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:27:33.111Z",
+     "text": "cw: clear: the goals stay in desk.db, only the code goes. One more from your earlier line: \"team moves back to the main tabs\". With Apps gone, Team becomes a main tab of its own again; is that this item too?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:27:40.249Z",
+     "text": "all, what's missing?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:28:05.416Z",
+     "text": "cw: missing from the box:\n1. Your answer: G37, G38 and G39 stay in desk.db with their items; only the code goes.\n2. Team: a main tab again, with Apps gone (my open question).\n3. What goes with the plugins besides their folders: the desk server's mount, refusals and plugin goal ids (desk.js:849, :1552, :1866, :2384, :3006-3120); the face's Apps tab (shell/desk/desk.js:351, :736-830); deskVerify's recording of the Stacks verdicts (deskVerify.js:698-780) and shell/stackFrameCheckDetail/.\n4. The plugin verbs on the desk (stackFrameChecks.*, the vision and fallout ones) go with them.\n5. The tests that name them, about 20 in spirit/test, go or change."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:28:17.444Z",
+     "text": "wsl: missing from the box:\n- the team chat is goal/G0, and code leans on it: desk.js GROUP_CHAT (:513), deskClient wakes agents on any G0 line (deskClient.js:490). Does G0 close and stay, like G37-G39, and do your all lines then go only under items?\n- the desk api shrink names no verbs: the list of what goes, since deskClient and the ear call that api.\n- deskVerify keeps the Stacks door verdicts (deskVerify.js:698-780): with Stacks gone, that part goes too, or stays as verifier stuff?\n- outside desk: shell/stackFrameCheckDetail/ and the Stacks parts of shell/deskDetails/.\n- about 20 tests in spirit/test that test the plugins and the team chat go with them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:28:42.159Z",
+     "text": "cw, box the new rulings, revise the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:29:57.220Z",
+     "text": "cw: box revised (v3): your lines kept, the goals ruling under Decided, then what goes in the tree with file and line, and what stays."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:30:22.477Z",
+     "text": "all, what's missing?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:30:49.438Z",
+     "text": "cw: still open:\n1. Q3: the verifier's Stacks verdicts (deskVerify.js:698-780), go or stay.\n2. Goal G0 itself: stays in desk.db with its chat, like G37-G39, or goes?\n3. The desk posts to the team chat today when a rule changes (desk.js:496): with G0 gone, that line goes nowhere, or under the rule's own chat?\n4. Your all lines with no item: once G0 is gone, every line lives under an item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:30:58.784Z",
+     "text": "wsl: still missing in v3:\n- G0 itself in desk.db: closed and kept, like G37-G39, or not? Decided names only those three.\n- two more writers and readers of G0: publishData posts its summary there (spirit/app/publishData/publishData.js:239), and the desk page cache treats it apart (process/js/desk/data.js:54); also shell/desk/desk.js:1051.\n- deskVerify records the Stacks door verdicts (deskVerify.js:698-780): with Stacks gone that part has no caller, but Stays keeps the verifier whole.\n- musings is listed as a feature to go, with no line in the tree for it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:31:23.247Z",
+     "text": "Q3: deskVerify records the Stacks door verdicts (deskVerify.js:698-780), used by nothing else: with Stacks gone, does that part of the verifier go too?\n\nyes. but do not delete stack frame tests in the product tree."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:32:31.948Z",
+     "text": "cw: boxed Q3. A catch: the stack-frame tests (oneDoorStacks.js, stackFrameTestItems.js, stackFrameViolators.js) read the door list stackFrameList.json and the formatter violators.js from inside the stackFrameChecks plugin folder (tools/wirePaths.js:215, stackFrameViolators.js:19). Deleting the plugin takes their data with it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:33:44.650Z",
+     "text": "all, move the stack frame tests to the product folder at their appropriate position.\n\nis that no possible?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:34:19.960Z",
+     "text": "cw: possible, yes. They test the node's own modules (who may reach peerPost's gates), so their place is the node's test folder, spirit/run/spirit/test/:\n- oneDoorStacks.js, stackFrameTestItems.js, stackFrameViolators.js, and oneDoor.js which shares their tool;\n- tools/wirePaths.js beside them;\n- from the plugin: the door list stackFrameList.json, violators.js and its own test.\nTheir paths to each other follow. Nothing of the plugin's server, verbs or tab comes with them."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:34:24.491Z",
+     "text": "wsl: yes, possible. What is product and what is plugin:\n- product: the door list stackFrameList.json (gate peerPost.js::createPeerPost, endpoints presenceNode and others) and its two readers, spirit/test/oneDoorStacks.js and tools/wirePaths.js (:214, LIST_HOME). They test peerPost, so they belong beside it: spirit/run/spirit/test/, the list next to them. Its item field names plugin items (plugin/stackFrameChecks.3) and goes.\n- plugin only: stackFrameViolators.js tests the Stacks formatter violators.js and its dialog, and stackFrameTestItems.js the plugin items; both go with the plugin."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:34:59.307Z",
+     "text": "all,  .... can can just stash that test.js and test.json in spirit/test/ even if it's not used right now....."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:35:23.319Z",
+     "text": "wsl: that works, and it is small: the tests are in spirit/test/ already. Only stackFrameList.json and violators.js come out of the plugin folder into spirit/test/, and the two paths that name them change (tools/wirePaths.js:214, stackFrameViolators.js:19)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:35:32.471Z",
+     "text": "cw: yes, simpler: the stack-frame tests stay in spirit/test/ where they are, and the door list stackFrameList.json moves there from the plugin folder, kept even while nothing runs it; tools/wirePaths.js then reads it beside them. Shall I box it so?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:36:02.761Z",
+     "text": "cw, box it"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:36:46.758Z",
+     "text": "cw: boxed (v5): the stack-frame tests stay in spirit/test/; stackFrameList.json and violators.js come out of the plugin folder beside them, and their two paths follow."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:37:32.685Z",
+     "text": "all, while you're at it, take out your search of the items text, the codeMirror search works better for editing purposes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:38:10.134Z",
+     "text": "wsl: that is the find in this box field over the box editor, shell/deskDetails/deskDetails.js:463 (the input), :471-472 (its marking) and :483 (marking again on a repaint). codeMirror.js mark (:111) has no other user then, so it can go too, unless the file app wants it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:38:13.695Z",
+     "text": "cw: found it: the \"find in this box\" field above the box editor, in shell/deskDetails/deskDetails.js (:463 the field, :471-473 its listener, :483 the re-mark on each paint). It goes; the box editor's own CodeMirror search stays. The chat's search below it is another one and stays, unless you mean that too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:39:06.236Z",
+     "text": "take out the chat-search do, it's not actually usable."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:39:51.379Z",
+     "text": "cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:40:44.672Z",
+     "text": "cw: boxed (v6): the box find field and the chat search go from the item detail. codeMirror's mark stays: the text app uses it to mark the words a file was found by (text.js:75), so wsl's idea to drop it does not hold."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:41:14.127Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:41:43.067Z",
+     "text": "cw: not yet, one thing left: the team chat's own goal G0. Three writers still post to it: the desk on a rule change (desk.js:496), publishData's summary (publishData.js:239), and the page treats it apart (desk/data.js:54, shell/desk/desk.js:1051)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:41:53.000Z",
+     "text": "wsl: not green yet; cw is right on mark, I missed text.js:75. Open:\n- G0 itself: kept in desk.db like G37-G39, or not?\n- where the lines that go to G0 today go: a rule change (desk.js:496), publishData summary (publishData.js:239), your all lines with no item; and the page cache G0 parts (desk/data.js:54, shell/desk/desk.js:1051) are not in What goes.\n- stackFrameViolators.js, which stays, also reads shell/stackFrameCheckDetail/ (:22), which goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:44:25.734Z",
+     "text": "all, \n- G0 goes, from ui and server, kept in database.\n- publishData summary is no longer needed, i only check on github.\n- stackFrame issues, just keep the valuable bits stashed in spirit/test/"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:45:24.946Z",
+     "text": "cw: boxed (v7): G0 goes from server and face and stays in desk.db, its rule-change line and the page cache parts with it; publishData posts no summary; what the stack-frame tests reach of the Stacks dialog is kept in spirit/test/. Green from my side."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:46:14.441Z",
+     "text": "wsl, green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T11:46:47.064Z",
+     "text": "wsl: green; v7 holds every point I raised."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:46:57.986Z",
+     "text": "files"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:47:34.082Z",
+     "text": "cw?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T11:52:26.076Z",
+     "text": "all, i added to the box,\n\n- push past commit hook grant\n- removal of plugin support\n- removal of plugin folders."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:54:48.787Z",
+     "text": "cw: files on the item, 71:\n- to delete: the three plugins' 25 files in process/js/desk/plugins/ and shell/desk/plugins/, and shell/stackFrameCheckDetail/ (4)\n- to change: desk.js, desk/data.js, deskClient.js, deskVerify.js, shell/desk/desk.js, shell/deskDetails/deskDetails.js, publishData.js\n- new in spirit/test/: stackFrameList.json, violators.js\n- 33 tests that name the plugins, G0 or the two searches: to change or delete in the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T11:55:17.142Z",
+     "text": "cw: read v9: past the hook, plugin support and the plugin folders go. All covered by the file list; nothing left open from my side."
     }
    ]
   }
