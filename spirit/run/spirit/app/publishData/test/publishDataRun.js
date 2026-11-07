@@ -56,8 +56,11 @@ const STUB = [
 
 function publish(cwd, args, name) {
   try { fs.unlinkSync(LOG); } catch (e) { /* none */ }
+  // THE TEST'S OWN WORLD (goal/G43.21): run under a node, as the verifier runs it, this suite has the node's address and job in
+  // its env, which publishData would take for its own; the script is handed neither, only what each case gives it.
+  const ownWorld = function () { const e = Object.assign({}, process.env, { PD_LOG: LOG, PD_NAME: name === undefined ? AGENT : name }); delete e.SPIRIT_CALLBACK_URL; delete e.SPIRIT_JOB_ID; return e; };
   const r = spawnSync(process.execPath, ['-r', PRELOAD, FILE].concat(args), { cwd: cwd, encoding: 'utf8', windowsHide: true, timeout: 150000,
-    env: Object.assign({}, process.env, { PD_LOG: LOG, PD_NAME: name === undefined ? AGENT : name }) });
+    env: ownWorld() });
   let asks = [];
   try { asks = fs.readFileSync(LOG, 'utf8').trim().split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { asks = []; }
   return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim(), asks: asks.filter(function (a) { return a.verb; }), required: asks.filter(function (a) { return a.require; }) };
