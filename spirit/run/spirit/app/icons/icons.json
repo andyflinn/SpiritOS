@@ -1,8 +1,20 @@
 {
-  "runs": ["home"],
-  "name": "Icons",
-  "description": "The icons this node's face uses, each found by its keywords: add one, change its keywords, or remove it.",
-  "icon": "😄",
-  "hidden": false,
-  "owner": "system"
+  "identity": {
+    "icon": "😄",
+    "label": "Icons"
+  },
+  "mount": {
+    "icons.js":true
+  },
+  "shell": {
+    "true":false,
+    "mount":true,
+    "tile":true
+  },
+  "node": {
+    "mount":false
+  }
 }
+
+
+
