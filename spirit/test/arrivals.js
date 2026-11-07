@@ -336,23 +336,22 @@ function landed(log, hash, text, admitted) {
   removeHome(home);
 })();
 
-(function aHeldStrangerIsNotBacklog() {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-held-'));
+(function anIgnoredStrangerIsNotBacklog() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-ignored-'));
   const log = logAt(home);
 
   // THE REASON THE LOG COULD NOT BE USED BEFORE, now checked. A packet
-  // the front door held is in the log with its payload and must never be
-  // replayed to an app — a stranger waiting to be accepted is a decision
-  // a human makes, not a line an app is handed first.
+  // the front door ignored is in the log with its payload and must never
+  // be replayed to an app.
   landed(log, 'admitted', packet.encode('chess', { move: 'e4' }).text, true);
-  landed(log, 'held', packet.encode('chess', { move: 'e5' }).text, false);
+  landed(log, 'ignored', packet.encode('chess', { move: 'e5' }).text, false);
 
   const got = [];
   arrivalsModule.createArrivals({ traffic: logAt(home) })
     .subscribe(function (m) { got.push(m); });
 
   if (got.length === 1 && got[0].hash === 'admitted') {
-    test.check('a packet the front door HELD is in the log and is never replayed as backlog');
+    test.check('a packet the front door ignored is in the log and is never replayed as backlog');
   } else {
     test.fail('replayed: ' + JSON.stringify(got.map(function (m) { return m.hash; })));
   }

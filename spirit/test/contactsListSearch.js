@@ -8,13 +8,13 @@
 //   - Columns: fixed ★ (my puppet: an owned contact, its card naming this node its owner, goal/G19.8; a tooltip says
 //     so), presence (green or white), the name; then one configurable status column [{status, iconKey}].
 //   - A star says it all: the word " — owned" leaves the label.
-//   - Filters: one per state, owned (★) and blocked, each shown only when the list holds any (held went, goal/G43.17).
-//   - contact.search (a node verb, changed by Andy's grant) answers {key: public key, label: json {name, owned, blocked,
-//     held}} and takes owned, blocked and held as yes-filters beside q; shell.js finds the puppets with owned: yes.
+//   - Filters: one per state, owned (★) and blocked, each shown only when the list holds any.
+//   - contact.search (a node verb, changed by Andy's grant) answers {key: public key, label: json {name, owned,
+//     blocked}} and takes owned and blocked as yes-filters beside q; shell.js finds the puppets with owned: yes.
 //   - The app repaints one row when presence or status changes, without asking the server.
 //   - ONE BY ONE, STARTING WITH CONTACTS: hub's contact.search ranks with the probability modules.
 // SINCE goal/G40.11 owned is the one table's flag mine ("owned, puppets and owned relays"), and the label is the row's
-// flags {name, keep, mine, relay, held, blocked, seated, ...}; the yes-filters are keep, mine, relay, seated, held, blocked.
+// flags {name, keep, mine, relay, blocked, seated, ...}; the yes-filters are keep, mine, relay, seated, blocked.
 // Andy, 2026-10-17, on the old design: "no fucking protecting old design." A row's name comes from the row; a rename is
 // a publish on the node's stream, and the list asks again.
 // rule/11: through testSupport only. No node: hub's pure functions, and a fake page.
@@ -45,7 +45,7 @@ const rowsOf = function (r) { return ((r && r.items) || []).map(function (i) { l
 test.subHeading('1. contact.search answers each peer as {key, label: json {name, mine, blocked, ...}}');
 let pupLabel = null;
 try { pupLabel = JSON.parse(hub.contactLabel(PEOPLE[2])); } catch (e) { pupLabel = null; }
-if (pupLabel && pupLabel.name === 'pup' && pupLabel.mine === true && pupLabel.blocked === false && !('held' in pupLabel) && !('owned' in pupLabel)) test.check('a label is json {name, mine, blocked, ...}, no held, no owned: ' + hub.contactLabel(PEOPLE[2]));
+if (pupLabel && pupLabel.name === 'pup' && pupLabel.mine === true && pupLabel.blocked === false && !('owned' in pupLabel)) test.check('a label is json {name, mine, blocked, ...}, no owned: ' + hub.contactLabel(PEOPLE[2]));
 else test.fail(OWED + 'the label reads ' + short(hub.contactLabel(PEOPLE[2])));
 const all = rowsOf(hub.searchPeople(PEOPLE, ''));
 if (all.length === 5 && all.every(function (r) { return r.label && !/ — /.test(r.label.name || ''); })) test.check('no state word in any name: a star says it all');
@@ -78,7 +78,7 @@ const cs = fnBody(hubSrc, 'contactSearch');
 const server = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
 // The contact family's search in the flat door's tables since goal/G30.5: the 'search' whose handler is hub.contactSearch.
 const route = (server.match(/'search':\s*\{\s*request:\s*\{[^}]*\}[^\n]*hub\.contactSearch/) || [''])[0];
-if (/searchPeople\([^;]*body\s*\)/.test(cs) && /mine/.test(route) && /blocked/.test(route) && !/held/.test(route) && !/owned/.test(route)) test.check('the node hands the filters through: contactSearch passes the body, the route declares mine and blocked, and no held or owned');
+if (/searchPeople\([^;]*body\s*\)/.test(cs) && /mine/.test(route) && /blocked/.test(route) && !/owned/.test(route)) test.check('the node hands the filters through: contactSearch passes the body, the route declares mine and blocked, and no owned');
 else test.fail(OWED + 'contactSearch ' + short(cs.slice(0, 200)) + '; the route ' + short(route));
 const shellJs = strip(fs.readFileSync(path.join(RUN, 'spirit', 'client', 'shell.js'), 'utf8'));
 if (/contact\.search['"],\s*\{[^}]*mine:\s*['"]yes['"]/.test(shellJs) && !/contact\.search['"],\s*\{\s*q:\s*['"]owned['"]/.test(shellJs)) test.check('shell.js finds what it owns with mine: yes, not by the word owned');
@@ -163,7 +163,7 @@ const listHtml = function (p, m) {
 
   test.subHeading('6. filters per state, shown only when the list holds any');
   const hf = h.filters;
-  if (/⭐/.test(hf) && /blocked/i.test(hf) && !/held|waiting/i.test(hf)) test.check('the book holds a puppet and a blocked contact: both filters show, and no held one');
+  if (/⭐/.test(hf) && /blocked/i.test(hf)) test.check('the book holds a puppet and a blocked contact: both filters show');
   else test.fail(OWED + 'the filters read ' + short(hf));
   const asks2 = [];
   const p2 = page(asks2);

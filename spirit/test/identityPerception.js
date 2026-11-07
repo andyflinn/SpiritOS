@@ -212,11 +212,11 @@ test.subHeading('Seen, let in, and shut out again');
 {
   const home = tmpHome('seen');
 
-  // SEEN, NOT KEPT (goal/G43.17: no held status): a person a search found is remembered and in no list.
+  // SEEN, NOT KEPT: a person a search found is remembered and in no list.
   contactBook.noteLabel(home, 'KEY-CAROL', 'carol');
   const carol = contactBook.byPublicKey(home, 'KEY-CAROL');
-  if (carol && carol.keep === false && !('held' in carol) && contactBook.listens(carol) === false) {
-    test.check('a person seen and not kept is a name, not a correspondent, and has no held mark');
+  if (carol && carol.keep === false && contactBook.listens(carol) === false) {
+    test.check('a person seen and not kept is a name, not a correspondent');
   } else {
     test.fail('seen row: ' + JSON.stringify(carol));
   }

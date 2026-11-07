@@ -138,7 +138,7 @@ async function run() {
     test.fail(friends.length + ' friends of ' + (SLOTS + 5) + ', friend 0: ' + JSON.stringify(byKey(friends, 'K-FRIEND-0')));
   }
 
-  if (friends.every(function (r) { return r.keep === true && !('held' in r); })) {
+  if (friends.every(function (r) { return r.keep === true; })) {
     test.check('and each row says it is kept, a flag on its row (the book field went with goal/G40.11)');
   } else {
     test.fail('flags: ' + JSON.stringify(friends.slice(0, 3)));

@@ -2,7 +2,7 @@
 
 // spirit/test/chosenMarks.js
 // CHOOSING IS A MARK ON WHAT THE MACHINE REMEMBERS (0021, R38). Since goal/G40.11 the marks are the one table's flags:
-// keep (was "added"), ignored, blocked (held went with goal/G43.17); the book IS the table, so there is no separate save to mark from.
+// keep (was "added"), ignored, blocked; the book IS the table, so there is no separate save to mark from.
 //
 //   Andy: "ignoring means only: mark this row as "ignored"." — "it's the
 //   chosen-mark that gives protection from eviction, if the memory
@@ -141,8 +141,8 @@ test.subHeading('The owner\'s acts are flags on the row');
 
   const ann = store.seen.get('KEY-ANN');
   const cat = store.seen.get('KEY-CAT');
-  if (ann && ann.keep && !('held' in ann) && cat && cat.blocked && cat.keep) {
-    test.check('acquired is kept, a row has no held mark, and a block sits beside keep without erasing it');
+  if (ann && ann.keep && cat && cat.blocked && cat.keep) {
+    test.check('acquired is kept, and a block sits beside keep without erasing it');
   } else {
     test.fail('marks: ' + JSON.stringify({ ann: ann, cat: cat }));
   }

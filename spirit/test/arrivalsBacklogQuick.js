@@ -64,7 +64,7 @@ test.startTest('goal/G4.31: opening the event stream asks only for undelivered a
   landed(log, 'first', text);
   for (let i = 0; i < 300; i += 1) { landed(log, 'old' + i, text); taken.push('old' + i); sent(log, 'out' + i); }
   landed(log, 'middle', text);
-  landed(log, 'held', text, false);
+  landed(log, 'ignored', text, false);
   for (let i = 300; i < 600; i += 1) { landed(log, 'old' + i, text); taken.push('old' + i); }
   landed(log, 'newest', text);
   log.taken(taken);
