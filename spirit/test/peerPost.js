@@ -28,13 +28,9 @@ const nodeCard = require('../run/spirit/nodeCard');
 // different node's business besides — in the real world, a different
 // machine.
 //
-// These two assertions used to pass on an accident: post() returned a
-// chained promise ending in `return answered`, so the asker woke one
-// microtask later than it does now that a queue returns `answered`
-// directly. That slack was never designed, and a test resting on
-// interleaving between two simulated nodes would have broken eventually
-// on a slower machine — presenceWire's lesson, applied here before it
-// cost an afternoon.
+// So a test that reads the answerer's log waits for the row (settledRow)
+// rather than resting on interleaving between two simulated nodes, which
+// would break on a slower machine.
 async function settledRow(traffic, pick) {
   for (let n = 0; n < 50; n += 1) {
     const row = traffic.read().filter(pick)[0];
@@ -127,8 +123,7 @@ function fakeRelay() {
 
 // `more` carries the seams a particular test needs — a front door
 // (`door`), an app to deliver to (`onArrival`). Left off, a node knows
-// everybody and hands packets to nobody, which is what every test here
-// wanted before the card arrived.
+// everybody and hands packets to nobody.
 function nodeFor(name, relay, answer, more) {
   const home = tmpHome(name);
   const id = auth.loadIdentity(home);
@@ -284,15 +279,8 @@ async function whatCrossedIsWrittenDown() {
 
 // A NODE THAT ANSWERS, rather than only acknowledging.
 //
-// Until now `onRequest` sent an empty receipt and could send nothing
-// else: "a receipt is not a reply ... whether an app is home to compose
-// an answer is a different question", and this file answered it by never
-// asking. The reply's `text` has been on the wire from the start and has
-// always been ''.
-//
-// This is the first real use of it, and it is not about devices — an
-// answer is what a request is FOR. Devices are simply the first thing
-// that needs one.
+// `onRequest` answers with a reply `text`, not only an empty receipt: an
+// answer is what a request is FOR.
 async function aNodeCanAnswer() {
   test.subHeading('A request can be answered, not merely acknowledged');
 
@@ -406,15 +394,14 @@ async function aSwappedCardIsCaught() {
 
   // A THIRD PARTY CANNOT DO THIS, and the fake relay is right to refuse
   // it: `routes.answer` takes a reply only from the target. The one who
-  // CAN is the carrier itself, because it holds the bytes — and the
-  // receipt does not stop it. A reply's signature covers
-  // `receiptMessage(hash, text, minute)`: the hash, the reply text's sha256 and a clock minute, NOT the
-  // text (relayAuth.js). So a relay may replace the card in a reply it
-  // forwards and every existing check still passes.
+  // CAN try is the carrier itself, because it holds the bytes. A reply's
+  // signature covers `receiptMessage(hash, text, minute)`: the hash, the
+  // reply text's sha256 and a clock minute (relayAuth.js). So a relay
+  // that replaces the card in a reply it forwards breaks the signature.
   //
-  // That is the hole this cycle was opened for, reproduced here: the
-  // target answers honestly, the relay swaps in a card of its own, and
-  // the sender would then seal everything to the relay.
+  // The repro: the target answers honestly, the relay swaps in a card of
+  // its own, and the asker must not take it (else it would seal
+  // everything to the relay).
   const honest = fakeRelay();
   const carrier = nodeFor('carrier-swap', honest);
   const carrierCard = nodeCard.describe(carrier.home);
@@ -449,17 +436,12 @@ async function aSwappedCardIsCaught() {
 
   // ── AND SINCE goal/G16.1 THE SWAP DOES NOT GET THIS FAR ─────────────
   //
-  // These three checks used to assert the hole: that the swapped reply
-  // PASSED the receipt check, and that the carrier's card was then caught
-  // one layer up, by the key it was signed with. The receipt covers the
-  // reply text now (S1), so the swap fails at the signature and the reply
-  // is never handed up at all — there is no card to judge, refused or
-  // otherwise. The later layer still exists and is still right; it simply
-  // is not reached by a text swap any more.
-  //
-  // Inverted rather than deleted, because this is the repro of the defect
-  // the cycle was opened for and it is the one check that would notice the
-  // hole reopening.
+  // The receipt covers the reply text (S1), so the swap fails at the
+  // signature and the reply is never handed up at all — there is no card
+  // to judge, refused or otherwise. The later layer (the card judged by
+  // the key it was signed with) still exists; a text swap does not reach
+  // it. These checks are the one place that would notice the hole
+  // reopening.
   if (said.ok !== true && said.receipt !== true) {
     test.check('the swapped reply fails its receipt, so the carrier\'s text never reaches the asker (S1 closed)');
   } else {
@@ -669,11 +651,8 @@ async function run() {
   //
   //   Andy: "the hashing must sit outside of the cyphering."
   //
-  // This assertion used to read "and names the hash the caller could
-  // have computed itself", recomputing it from the plaintext. That is no
-  // longer true and the reason is the cycle: the seal is randomised per
-  // message, so nobody can derive this number from the words — not the
-  // caller, and not the relay.
+  // The seal is randomised per message, so nobody can derive this number
+  // from the words — not the caller, and not the relay.
   //
   // What it names is the BYTES THAT CROSSED. So it is checked against
   // what the relay actually registered, which is the only place the two
@@ -699,10 +678,9 @@ async function run() {
 
   // Signed by the recipient, so the relay in the middle could not have
   // manufactured it. This is what a receipt is worth.
-  // NO FALLBACK. This check first read `... || answer.receipt === true`,
-  // which is this module's own say-so — exactly the kind of assertion
-  // that looks like proof and is not. The signature has to be present,
-  // and it has to verify against the target's key.
+  // NO FALLBACK on `answer.receipt === true`, which is this module's own
+  // say-so. The signature has to be present, and it has to verify against
+  // the target's key.
   if (answer.sig && auth.receiptSignatureOk(john.id.publicKey, answer.hash, answer.text, answer.sig)) {
     test.check('the answer carries the target\'s own signature, not the relay\'s word');
   } else {
@@ -891,10 +869,9 @@ async function tooLittleTimeIsNotWorthRepeating() {
     },
   });
   // TWO SECONDS OF PATIENCE, NOT 300 MS. The assertion is "retried at all",
-  // and 300 ms made it a race against the machine: it failed once in a full
-  // harness run (claude-windows), and of 20 copies run side by side 19
-  // retried 15 times and one only twice, a single scheduling stall from
-  // red. Retries are 20 ms apart, so two seconds cannot be eaten by load.
+  // and 300 ms made it a race against a loaded machine (one scheduling
+  // stall from red). Retries are 20 ms apart, so two seconds cannot be
+  // eaten by load.
   await Q.post('http://relay', target.publicKey, '{"ping":1}', null, { patienceMs: 2000 });
   await new Promise(function (r) { setTimeout(r, 400); });
 

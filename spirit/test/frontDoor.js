@@ -3,20 +3,15 @@
 // spirit/test/frontDoor.js
 // Who a node will hear from, on the path packets actually arrive on.
 //
-// THE GAP THIS CLOSES, and it is the second of its kind. `listenSet`
-// ("everyone it has actually acquired, plus itself") existed, with a
-// considered policy for strangers behind it — and it was wired to the
-// `inbox` read and nowhere else. peerPost.onRequest checked that a
-// signature matched the sender it claimed and that the packet was
-// addressed here. That proves possession of a key. It proves nothing
-// about whether this node has ever heard of the holder.
+// A valid signature proves possession of a key, not that this node has
+// ever heard of the holder. peerPost.onRequest asks its `door`
+// (hub.frontDoor, which uses the same `listenSet` the inbox read uses:
+// everyone acquired, plus itself) before a packet reaches any app.
 //
 // Andy: "no node, by protocol, should accept requests from unknown."
 //
-// The first of its kind was the enrolment rate limit, which died with
-// deviceHandshake.js. Twice now a gate has lived on a transport being
-// retired and not been carried to the one replacing it — invisible both
-// times, because nothing fails when a check is merely absent.
+// A gate that is merely absent fails nothing, so this suite asserts the
+// door is there on the path packets actually arrive on.
 //
 // Two things are tested here and they are not the same thing:
 //
@@ -76,11 +71,9 @@ function nodeWith(opts) {
 async function theDefaultIsUnchanged() {
   test.subHeading('A router built without a door admits everybody');
 
-  // EVERY EXISTING CALLER GETS THIS, which is why the harness stayed
-  // green when the door was added: `door` is optional, and its absence
-  // is what this file did unconditionally until 2026-09-12. Stated as a
-  // check rather than assumed, because "the tests still pass" is exactly
-  // what an unwired gate looks like.
+  // `door` is optional in createPeerPost, and a router built without one
+  // admits everybody. Stated as a check rather than assumed, because "the
+  // tests still pass" is exactly what an unwired gate looks like.
   const N = nodeWith({ noDoor: true });
   const stranger = auth.generateIdentity('nobody');
   await N.router.onRequest(RELAY, arriving(stranger, N.me, 'hello'));
@@ -99,11 +92,10 @@ async function knownAndStranger() {
   const stranger = auth.generateIdentity('nobody');
 
   const N = nodeWith({});
-  // 'message' rather than a bare acquire: contactBook's ACQUIRED_LISTENING is
-  // ['message', 'invite', 'handle'], so a roll row is somebody merely
-  // SEEN and is deliberately not somebody this node hears. Having noticed
-  // a stranger exists is not an introduction, and a first draft of this
-  // suite failed for exactly that reason.
+  // Acquired, so kept: hub.frontDoor hears the rows contacts.contacts()
+  // lists (listenSet), and a row merely SEEN is not one of them. The
+  // third argument, 'message', is one contacts.acquire(rootDir, peer)
+  // no longer takes.
   contactBook.acquire(N.home, {
     publicKey: friend.publicKey, publicLabel: 'bella', relays: [RELAY],
   }, 'message');
@@ -133,9 +125,8 @@ async function knownAndStranger() {
   }
 
   // And the drop is written down, WITHOUT the line. That something was
-  // ignored is this node's own business to know; keeping the text of a
-  // line the operator asked not to keep would be the log contradicting
-  // the setting.
+  // ignored is this node's own business to know; the text of a stranger's
+  // line is not kept.
   const ignored = N.logged.filter(function (e) { return e.outcome === 'ignored'; });
   if (ignored.length === 1 && ignored[0].payload === undefined &&
       ignored[0].peer === stranger.publicKey) {
@@ -151,8 +142,7 @@ async function theRelayIsKnownIfAccepted() {
   // THE EXCEPTION THE INBOX PATH NEVER NEEDED. listenSet's own comment
   // says "the mailbox needs no exception here" — true of a path relay
   // traffic never arrived on. A relay that posts HERE in its own name is
-  // not a contact. (Its device-offer was removed by goal/G16.2; the
-  // front door's rule for an accepted relay stands.)
+  // not a contact, so hub.frontDoor knows a relay by relayKeys.acceptedKeys.
   const relayId = auth.generateIdentity('relay');
   const impostor = auth.generateIdentity('not-a-relay');
 

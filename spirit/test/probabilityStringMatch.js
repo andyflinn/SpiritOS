@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/probabilityStringMatch.js
-// goal/G18.2: probabilityStringMatch.js, the first of the probabilit* core modules. Red on today's tree (5ac318bc);
-// claude-windows wrote it and builds it. The item's box (v3), Andy, 2026-10-12:
+// goal/G18.2: probabilityStringMatch.js, the first of the probabilit* core modules. Andy, 2026-10-12:
 //   "result probability = probabilityStringMatch(A,B) where A and B must be strings." "if A or B are not of type
 //   string return 0.0; if A is EXACTLY equal to B return 1.0"; "shorterString = the shorter String of A and B,
 //   longerString = longer String of A and B; if they are of equal length, shorterString = A, longerString = B" (the rest
@@ -10,11 +9,12 @@
 //   of two string, no matter which one is the search string."
 //
 // WHAT IS ASSERTED
-//   1. the module exists in run/js and exports probabilityStringMatch(A, B).
+//   1. the module exists at spirit/run/spirit/probabilityStringMatch.js and exports probabilityStringMatch(A, B).
 //   2. not two strings: 0.0. Exactly equal: 1.0. Every answer a number from 0 to 1.
 //   3. no search string: the answer is the same either way round; * and ? are plain characters.
-//   4. its order holds: whole word over prefix over found inside over none (the old graded search's quality until goal/G29.1).
+//   4. its order holds: whole word over prefix over found inside over none.
 //   5, 6. goal/G29.1: case counts by 0.000001 a character; distance counts, proximity 0.35 over order 0.15.
+//   7. goal/G41.28: two tokens are compared with the shorter one first.
 // rule/11: through testSupport only.
 
 const path = require('path');
@@ -106,11 +106,11 @@ if (pRev > pOrd) test.check('side by side but reversed (' + pRev.toFixed(4) + ')
 else test.fail(OWED29 + 'reversed but close ' + pRev + ', in order but far ' + pOrd);
 
 test.subHeading('7. goal/G41.28: two tokens compared, the shorter one first');
-// Andy, box v15: "probabilityStringMatch MUST, when comparing tokens, use the shorter token as first argument. This
+// Andy, goal/G41.28: "probabilityStringMatch MUST, when comparing tokens, use the shorter token as first argument. This
 // overrules any previous ruling that disagrees." It overrules "if the result token is shorter, its obviously no match":
-// a query word longer than a field's word now counts by the shorter word's share of it.
+// a query word longer than a field's word counts by the shorter word's share of it.
 const OWED28 = 'OWED by goal/G41.28: ';
-// The rule is the tokens': where the whole search is not found at all (its rank), nothing is compared, as before.
+// The rule is the tokens': where the whole search is not found at all (its rank), nothing is compared.
 const both = psm('spiritos desk', 'spirit desk item');
 const deskOnly = psm('qqqqqqqq desk', 'spirit desk item');
 if (both > deskOnly) test.check('in a longer search it adds: "spiritos desk" (' + both.toFixed(4) + ') beats "qqqqqqqq desk" (' + deskOnly.toFixed(4) + ') against "spirit desk item"');

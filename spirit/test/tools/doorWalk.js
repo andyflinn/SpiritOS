@@ -22,20 +22,17 @@
 //
 // ── AND IT CHEATS TO GET THE LIST. NAMED, PER 0010 ──────────────────
 //
-// THE DOOR CANNOT BE ASKED WHAT IT CAN DO. `verbTable.js:144 verbs()`
-// exists for exactly that — "for a client to be told what this node can
-// do, which is the beginning of the answer to 'what is the API', asked
-// of the node rather than of a document that goes stale" — and its only
-// callers in the tree are its own unit suite, on tables that suite
-// builds itself. Nothing enumerates the LIVE table and no verb exposes
-// it.
+// This reads the claim blocks out of server.js's SOURCE rather than ask
+// the door. That is resemblance, not arrival; 0010 says fix the protocol
+// or name the cheat, and the cheat is named here. (The node's `api` verb
+// answers the tree of what it serves, which is the door describing
+// itself.)
 //
-// So this reads the claim blocks out of server.js's SOURCE. That is
-// resemblance, not arrival, and it is the thing this week has been
-// against. 0010 says fix the protocol or name the cheat; the cheat is
-// named here, and it is its own finding: A DOOR THAT CANNOT DESCRIBE
-// ITSELF CANNOT BE WALKED BY ANYBODY WHO DID NOT WRITE IT. The fix is
-// one verb returning what verbTable already computes.
+// IT NO LONGER FINDS ANYTHING: verbsFromSource looks for
+// `loopbackVerbs.claim('<ns>'`, and server.js mounts its families with
+// loopbackVerbs.mount('<family>', dir, {...}) and bare verb keys
+// (goal/G30.4), so the walk lists no verb. everyVerb.js reads the mount
+// blocks.
 
 const fs = require('fs');
 const net = require('net');
@@ -85,11 +82,9 @@ function freePort() {
   });
 }
 
-// Lifted from serverSurface.js's request(), which is the suite that
-// already drives this door over real HTTP. Said rather than silently
-// re-typed: a fourth copy of a fixture is the duplication this week's
-// SOP exists to catch, and if these two ever need to agree they should
-// share rather than resemble.
+// Lifted from serverSurface.js's request(), which drives this door over
+// real HTTP too; if these two ever need to agree they should share rather
+// than resemble.
 function post(port, body, waitMs) {
   return new Promise(function (resolve) {
     const payload = JSON.stringify(body);
@@ -130,10 +125,8 @@ function classify(r) {
     return { bucket: 'called', code: '', bytes: Buffer.byteLength(r.text) };
   }
   // A WIRE VERB SAYING "NOT REACHABLE" IS THE CONTRACT WORKING, NOT A
-  // FAULT. verbTable.js:73 — "wire can answer 'not reachable right now',
-  // and yields a hash". The first version of this tool counted those as
-  // `threw` and reported two failures that were two successes. A meter
-  // that miscounts is the thing this week is against.
+  // FAULT: a wire verb may answer "not reachable right now". Counting
+  // those as `threw` would report successes as failures.
   if (/not reachable|econnrefused|unreachable|no relay/i.test(String(code) + ' ' + String(r.text))) {
     return { bucket: 'wire-unreachable', code: String(code) || ('http ' + r.status) };
   }

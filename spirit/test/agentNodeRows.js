@@ -6,11 +6,8 @@
 //   Andy, 2026-09-23: "why does he access node starting through anything
 //   but labMaster?"
 //
-// He was asking about the agents, and nothing said they should: ANDY's
-// node has gone through labMaster since update rule 6, while an agent's
-// node was spawned directly by a platform start script. So the control
-// plane knew about every node on the box except the two that post to
-// each other all day.
+// So an agent's node is a labMaster row like Andy's own, and the control
+// plane knows about every node on the box.
 //
 // ── WHY IT IS WORTH A KIND OF ITS OWN ────────────────────────────────
 //
@@ -22,18 +19,15 @@
 //   it is never swept       — its port sits outside the lab range
 //   it is never destroyed   — recycle and delete refuse, as for the work row
 //
-// And the point that is not about tidiness: an agent stops SPAWNING
-// PROCESSES. It asks labMaster over HTTP like anything else, which
-// removes the capability rather than granting it — and with it the
-// auto-mode exception each agent needed to start its own node, which was
-// costing Andy a prompt every time.
+// And the point that is not about tidiness: an agent does not SPAWN
+// PROCESSES. It asks labMaster over HTTP like anything else, so it needs
+// no auto-mode exception to start its own node, and Andy no prompt.
 
 const path = require('path');
 const test = require('./testSupport.js');
 // A HARNESS labMaster, ALWAYS. handleCreate writes the table to disk, so
-// requiring the module on its default port would put a test row into
-// Andy's own labMaster — which this suite did exactly once, and the row
-// (agent-one, 45900) had to be swept out of his table by hand.
+// requiring the module on its default port would put a test row
+// (agent-one, 45900) into Andy's own labMaster table.
 process.env.LAB_MASTER_PORT = process.env.LAB_MASTER_PORT || '45420';
 const labMaster = require('./labMaster/labMaster.js');
 
@@ -100,9 +94,8 @@ if (typeof create !== 'function') {
     test.fail('an agent clone could be recycled: ' + JSON.stringify(recycled));
   }
 
-  // Deleting is the row, never the clone. The first version refused this
-  // too, which was the wrong half of the rule: a test row that leaked into
-  // the real table could then never be swept, and one did.
+  // Deleting is the row, never the clone: a test row that leaked into the
+  // real table can still be swept.
   if (deleted && deleted.status === 200 && deleted.wiped === false && deleted.kept) {
     test.check('delete removes the row and leaves the clone where it is');
   } else {

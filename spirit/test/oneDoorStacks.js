@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/oneDoorStacks.js
-// NOBODY BUT THE GATE HAS A PATH TO ITS ENDPOINT (goal/G19.14, THE DOORS FROM THE PLUGIN'S LIST SINCE goal/G22.3).
+// NOBODY BUT THE GATE HAS A PATH TO ITS ENDPOINT (goal/G19.14, the doors from a list since goal/G22.3).
 //
 //   Andy: "whe just want that a stack-frame test asserst nobody but
 //   peerPost has a path to it." — "the permitted door is peerPost (bottom
@@ -9,9 +9,10 @@
 //   simply generate a set of test id's by matching allowed door (peerPost)
 //   to endpoint (http, presenceNode etc)".
 //
-// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to loosen: the doors are the stackFrameChecks plugin's
-// list, spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameList.json, and this test reads it to know which
-// checks to run. THE GATE IS NARROW: one file::function, matched against a frame in that file whose function is that
+// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to loosen: the doors are a list, and this test reads
+// it to know which checks to run. The list is spirit/test/stackFrameList.json (tools/wirePaths.js LIST_HOME), kept here
+// since the desk's plugins went (goal/G43.22; Andy: "can can just stash that test.js and test.json in spirit/test/ even
+// if it's not used right now....."). THE GATE IS NARROW: one file::function, matched against a frame in that file whose function is that
 // one (tools/wirePaths.js, gateMatches). A whole module named as the gate is cheating. THE ENDPOINT IS WIDE: every
 // function a module exports and what an exported factory returns, or Node's own http, https and fetch filtered to paths.
 //
@@ -22,7 +23,7 @@
 // tests are not subject to production rules.
 //
 // AN EMPTY RUN FAILS. A probe pointed at suites that never reached the endpoint reports nothing, and nothing would read
-// as a clean door; a door the plugin has just added has no suites yet, and is red that way until an agent measures it.
+// as a clean door; a door just added to the list has no suites yet, and is red that way until an agent measures it.
 // A DOOR THAT FAILS SHOWS WORK, and is left red: Andy wants doors that fail to show it, fixed in an item of their own.
 
 const test = require('./testSupport.js');
@@ -143,14 +144,12 @@ test.subHeading('a frame carries what it is written inside');
   }
 })();
 
-// ── ONE DOOR ALONE, FOR THE PLUGIN'S RUN (goal/G22.3) ───────────────
+// ── ONE DOOR ALONE (goal/G22.3) ─────────────────────────────────────
 //
-// Andy, 2026-10-13, in goal/G22.3's box: "you will give me a run button/link for each one of them, or even better, a
-// run-dialog". Since Andy's "every run here should report to deskVerify." (2026-10-13), deskVerify runs this file for
-// the plugin (its door.run) with SPIRIT_STACKS_DOOR, the id of one door of the list (SPIRIT_STACKS_LIST, when set, names
-// another list for wirePaths to read): only that door is judged. Its verdict is written as JSON to
-// SPIRIT_STACKS_VERDICT, { door, green, around, of, paths, why }, every path around the gate in it, uncut: deskVerify
-// keeps it as the door's last verdict. Without SPIRIT_STACKS_DOOR the whole list is judged, as always.
+// With SPIRIT_STACKS_DOOR, the id of one door of the list (SPIRIT_STACKS_LIST, when set, names another list for
+// wirePaths to read), only that door is judged, and its verdict is written as JSON to SPIRIT_STACKS_VERDICT,
+// { door, green, around, of, paths, why }, every path around the gate in it, uncut. Nothing in spirit/run sets these
+// since the Stacks plugin went (goal/G43.22). Without SPIRIT_STACKS_DOOR the whole list is judged.
 const ONE = String(process.env.SPIRIT_STACKS_DOOR || '');
 const VERDICT_FILE = String(process.env.SPIRIT_STACKS_VERDICT || '');
 function verdict(door, green, around, of, paths, why) {

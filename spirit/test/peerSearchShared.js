@@ -1,20 +1,18 @@
 'use strict';
 
 // spirit/test/peerSearchShared.js
-// goal/G29.17: the peer search on the probability modules and the shared list, both halves. Red on today's tree;
-// claude-windows writes it and builds it (one agent). The item's box (v1):
+// goal/G29.17: the peer search on the probability modules and the shared list, both halves. The item's box:
 //   THE UI: the panel's own input, Search button and list go; the panel is the shared list.
 //   THE SEARCH: each relay ranks its members with the probability modules and answers a capped list; the old graded
 //   search goes. The node merges the relays' answers with the same modules.
 //   peer.search answers the shared shape {items: [{key, label}], more}. A wire change: every relay and node together.
-// NAMED HERE where the box names none (argued in Desk first if the build disagrees):
-//   - js/peerRank.js, the one ranker both use: rank(rows, q, slots) -> {rows, more}; a row is matched on its public
+// NAMED HERE where the box names none:
+//   - spirit/run/spirit/peerRank.js, the ranker the relay uses: rank(rows, q, slots) -> {rows, more}; a row is matched on its public
 //     label by probabilityStringObjectMatch, best first; q '' or '*' is anyone, in the order given; a row that does not
 //     match is left out; slots caps the answer and sets more.
 //   - peer.search's label is the row as the node built it, json {publicKey, publicLabel, tail, relay, relayLabel,
 //     present, acquiredVia, fromMemory, ...}; key is the public key. q, asked, remembered and silent stay beside items.
-//   - the old graded search stays while the other old searches still need it; peerSearch.js goes. (All of it is
-//     gone since goal/G29.22.)
+//   - peerSearch.js and the old graded search are gone (goal/G29.22).
 // SINCE goal/G30.19 peer.search is gone: the network search is tier two of contact.search, its rows the peer-search
 // job's updates in the same shape; Contacts' one list (contactSearch) is the panel. Sections 3 and 4 assert that.
 // rule/11: through testSupport only.
@@ -63,8 +61,8 @@ const hub = code('spirit/hub.js');
 // Since goal/G41.30 the relay ranks in slices, through peerRank.ranker, so a long search never stalls it.
 if (/require\('\.\/peerRank'\)/.test(relay) && /peerRank\.(rank|ranker)\(/.test(relay)) test.check('relay.js ranks its connected members with peerRank');
 else test.fail(OWED + 'relay.js does not rank with peerRank');
-// SINCE goal/G40.11 the node merges nothing: the network's finds land in the one table, held, and contact.search ranks
-// the table's listed rows with the probability modules (searchPeople). fromMemory, its peerRank caller, went.
+// SINCE goal/G40.11 the node merges nothing: the network's finds land in the one table, and contact.search ranks the
+// table's listed rows with the probability modules (hub.js searchPeople), with no peerRank of its own.
 const searchPeopleFn = (hub.match(/function searchPeople\([\s\S]*?\n\}/) || [''])[0];
 if (!/peerRank/.test(hub) && /probabilityStringObjectMatch\(/.test(searchPeopleFn)) test.check('hub.js ranks the one table with the probability modules, and needs no peerRank of its own');
 else test.fail(OWED + 'hub.js still requires peerRank, or searchPeople ranks without the probability modules');

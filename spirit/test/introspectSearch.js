@@ -1,18 +1,12 @@
 'use strict';
 
 // spirit/test/introspectSearch.js
-// goal/G29.19: introSpector on the new search, and only what the caller is granted. Red on today's tree; claude-windows
-// writes it and builds it (one agent). The item's box (v5):
-//   - AGENTS.introspect, on the node and on every process server, becomes a search: {text} -> {items: [{key: verb,
-//     label: name}], more}. Names only; the description, request and reply are AGENTS.<verb>'s.
-//   - With no words every verb with a file, in name order. With words each verb is ranked by the probability modules:
-//     its name weighs 2/3, its verb-description file 1/3; a verb matching neither is left out.
-//   - Cut by bytes to one answer through the probability bucket's serialize; no old graded search in introSpector.
-//   - deskAgent's tools ask it with text ''.
-//   - The node filters by the caller's grants: AGENTS.introspect lists only granted verbs, AGENTS.<verb> describes only
-//     a granted verb. The owner sees all. Per-persona and per-job grants are out of scope.
-// NAMED HERE where the box names none: the filter lives in apiDoor's gate (answer), the one way a member's ask reaches a
-// server; a member granted any path of an app may ask that app's AGENTS family, and is answered only its granted verbs.
+// goal/G29.19: introSpector's search over a family folder, and who may ask it.
+//   - Part 1: introSpector.family(dir) gives the folder an FS.search {q} -> {items: [{key, label}], more}, over its
+//     file names (<verb>.json and AGENTS.md), ranked by the probability modules; no words lists every file in name order.
+//   - Part 2 asserts that a member granted the app reaches its FS verbs. apiDoor.js makes every family's FS verbs the
+//     owner's (goal/G41.28), so a member is refused owner-only and part 2 fails.
+//   - Part 3 reads spirit/run/process/js/deskAgent/tools.js, which is not in the tree.
 // rule/11: through testSupport only; a temp folder; no node.
 
 const fs = require('fs');
@@ -28,8 +22,8 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 test.startTest('goal/G29.19: introSpector searches names and descriptions, and shows a caller only what it is granted');
 
 (async function () {
-  // SINCE goal/G30.4 the AGENTS verbs are gone and the search is the family folder's FS.search {q}, over its file
-  // names: a verb file is <verb>.json, and AGENTS.md is listed beside them.
+  // The search is the family folder's FS.search {q}, over its file names (goal/G30.4): a verb file is <verb>.json, and
+  // AGENTS.md is listed beside them.
   test.subHeading('1. FS.search {q}: names 2/3, descriptions 1/3');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-introspect-'));
   fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# a test family\n');
@@ -46,10 +40,8 @@ test.startTest('goal/G29.19: introSpector searches names and descriptions, and s
   const all = intro ? ask('') : null;
   if (all && keys(all).join() === 'AGENTS.md,item.get.json,search.json,tree.walk.json' && all.items.every(function (i) { return i.label === i.key; })) test.check('no words: every file of the folder, in name order, the name alone as label');
   else test.fail(OWED + 'no words answered ' + short(all));
-  // THE DESCRIPTION WEIGHTING IS GONE (goal/G30.4): AGENTS.introspect weighed a verb's description file 1/3 (Andy,
-  // 2026-10-18: "name 66% description 33%"). AGENTS.introspect went (Andy, 2026-10-20: "cannot the agent simply use FS
-  // to retrieve the AGENTS.md file of the verb.json files?"), and its replacement is FS.search over the folder's file
-  // names ("then put a search in there."). So a file is found by its name alone, never by what its description says.
+  // NAMES ALONE (goal/G30.4). Andy: "cannot the agent simply use FS to retrieve the AGENTS.md file of the verb.json
+  // files?", then "then put a search in there.". So a file is found by its name alone, never by what its description says.
   const tree = intro ? ask('tree') : null;
   if (tree && keys(tree).join() === 'tree.walk.json') test.check('tree: the file named so, and not search.json, whose description says it: names alone');
   else test.fail(OWED + 'tree answered ' + short(keys(tree)));
@@ -64,8 +56,8 @@ test.startTest('goal/G29.19: introSpector searches names and descriptions, and s
   else test.fail(OWED + 'introSpector still on searchBucket, or not on the probability modules');
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 
-  // SINCE goal/G30.4 apiDoor has no AGENTS special case: the folder's FS verbs are granted like any other verb, so a
-  // member reads a family's folder only when granted the app, or the exact FS verb, and nothing is cut from an answer.
+  // These checks expect the folder's FS verbs to be granted like any other verb. apiDoor.js refuses every FS verb to a
+  // member, granted or not (goal/G41.28, "owner-only"); only the refusals and the owner's checks still hold.
   test.subHeading('2. a member reaches the folder only as granted; the owner sees all');
   const door = require('../run/spirit/apiDoor.js');
   const FILES = ['AGENTS.md', 'item.add.json', 'item.get.json', 'rule.get.json'];

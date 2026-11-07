@@ -1,11 +1,11 @@
 'use strict';
 
-// Exercises the writable-root matrix (isWithinWritableRoot + the
-// app-entry-script and app-manifest protections, kernel.js) via the real
-// spirit.core.fs.saveFile/deleteFile API. Every negative case here is
-// verified to never touch disk (isWithinWritableRoot / the entry-script
-// and manifest checks all run before any fs write), so this is safe to run
-// against a live checkout. No root-level file is writable (goal/G43.17).
+// Exercises the write gate (fileWritable, spirit/run/spirit/fileSystem.js)
+// via the real spirit.core.fs.saveFile/deleteFile API. A path is writable
+// when it is in a folder and not a core file (coreFiles.js), the node's
+// own state or relay-state; no root-level file is writable (goal/G43.17).
+// Every refusal is decided before any fs write, so this is safe to run
+// against a live checkout.
 const fs = require('fs');
 const path = require('path');
 const spirit = require('../run/spirit/kernel.js');
@@ -28,13 +28,9 @@ function expectWritable(label, filePath) {
   }
 }
 
-// saveFile answers every refusal with the single reason 'forbidden' —
-// the entry-script and manifest checks moved behind fileWritable when it
-// was extracted as a shared predicate, so they no longer surface their own
-// distinct reason strings ('app-entry-script-protected' /
-// 'app-manifest-protected') to the caller. Which rule did the refusing is
-// pinned by the labels and by the sibling-file cases below, not by the
-// reason string.
+// saveFile answers every refusal with the single reason 'forbidden'
+// (fileSystem.js: fileWritable is the one predicate). Which rule did the
+// refusing is pinned by the labels, not by the reason string.
 function expectForbidden(label, filePath) {
   const saved = spirit.core.fs.saveFile(filePath, 'writableRoots.js probe');
   if (!saved.ok && saved.reason === 'forbidden') {
@@ -45,9 +41,8 @@ function expectForbidden(label, filePath) {
 }
 
 // deleteFile shares fileWritable with saveFile, so anything saveFile
-// refuses is equally undeletable through the public API — including the
-// entry scripts and manifests saveAppScript/saveAppManifest just wrote.
-// Those probes have to be cleaned up with a direct fs call instead.
+// refuses is equally undeletable through the public API; such a probe has
+// to be cleaned up with a direct fs call instead.
 function expectUndeletable(label, filePath) {
   const deleted = spirit.core.fs.deleteFile(filePath);
   if (!deleted.ok && deleted.reason === 'forbidden') {
@@ -65,7 +60,7 @@ function cleanUpDirectly(label, filePath) {
   }
 }
 
-// ---- the three writable roots ----
+// ---- files in the shell, media and published folders ----
 expectWritable('shell/ (top-level file)', 'shell/__writableRootsProbe__.json');
 expectWritable('media/ (top-level file)', 'media/__writableRootsProbe__.json');
 expectWritable('published/ (top-level file)', 'published/__writableRootsProbe__.json');
@@ -77,16 +72,11 @@ expectForbidden('spirit/ (the kernel itself)', 'spirit/__writableRootsProbe__.js
 
 // ---- app entry scripts and manifests are shell files like any other ----
 //
-// Until goal/G14.8 (2026-10-10) the two shapes <name>/<name>.js and
-// <name>/<name>.json were refused here even inside the writable shell
-// root: the App Builder era's guard, kept after decision 0008 deleted the
-// builder and its two exception doors (saveAppScript, saveAppManifest).
-// Andy closed it: "the whole story of protecting app sources came from a
-// time when we had the stupid AI app-builder, which is gone now"; "we
-// only protect intrinsic apps, and they are already gated by the commit
-// hooks as "core"". So an agent writes its own app's code through
-// saveFile, and an intrinsic app is fenced at the commit (coreFiles.js),
-// not at the gate. A never-created app folder, so nothing real is touched.
+// goal/G14.8, Andy: "we only protect intrinsic apps, and they are already
+// gated by the commit hooks as "core"". So an app's <name>/<name>.js and
+// <name>/<name>.json are written through saveFile like any file, and an
+// intrinsic app is fenced at the commit (coreFiles.js), not at the gate.
+// A never-created app folder, so nothing real is touched.
 expectWritable('an app entry script (shell/<name>/<name>.js, goal/G14.8)', 'shell/__writableRootsProbeApp__/__writableRootsProbeApp__.js');
 expectWritable('an app manifest (shell/<name>/<name>.json, goal/G14.8)', 'shell/__writableRootsProbeApp__/__writableRootsProbeApp__.json');
 expectWritable('a sibling file in the same app folder', 'shell/__writableRootsProbeApp__/data.json');
@@ -98,10 +88,9 @@ try {
   fs.rmdirSync(path.join(ROOT_DIR, 'shell', '__writableRootsProbeApp__'));
 } catch (e) { /* already gone or never created — fine either way */ }
 
-// THE RULE, STATED AS IT NOW STANDS. Written as its own check so the
-// absence above is a claim somebody made rather than a gap somebody
-// left: no function reachable from a browser writes an app's own entry
-// script or manifest, by any name.
+// No special door for an app's own entry script or manifest: decision
+// 0008 deleted saveAppScript and saveAppManifest, and this checks they
+// stay gone.
 (function noDoorsLeft() {
   const gone = ['saveAppScript', 'saveAppManifest'].filter(function (name) {
     return typeof spirit.core.fs[name] === 'function';

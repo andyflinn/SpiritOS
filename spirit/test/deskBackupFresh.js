@@ -1,17 +1,14 @@
 'use strict';
 
 // spirit/test/deskBackupFresh.js
-// DESK'S BACKUP LINE STAYS CURRENT — found live on Andy's node, written
-// FIRST, red on today's code.
+// DESK'S BACKUP LINE STAYS CURRENT — found live on Andy's node.
 //
 //   Andy, 2026-09-29: "Backup: last check 12:55, last copy 12:55; something
 //   was closed since the last check", while the backup had copied at 13:26.
-//   Desk asked backup's status.get once, at load, and never again.
 //
-// THE CONTRACT: after Desk records a line (an arrival, or what he sends), it
-// asks status.get again, so #desk-backup shows the backup's newest check.
-// SINCE goal/G33.4 the page records no line of its own (the legacy log went): a write the desk published is the line,
-// and the page asks status.get again once per such write.
+// THE CONTRACT: a write the desk published (goal/G33.4) makes the page ask
+// backup.status.get again (desk.js deskAskBackup), so #desk-backup shows the
+// backup's newest check without a reload.
 
 const fs = require('fs');
 const path = require('path');

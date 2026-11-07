@@ -11,17 +11,9 @@ const rollOf = require('./rollOf');
 //   Andy: "This entire panel should, of course, go through protocol."
 //
 // So there is no such api, and that is the point: both are posts to the
-// relay, which is an addressable peer for its owner (R18). The route and
-// the signed format this suite was first written against are gone —
-// decision 0010's first collapse — and every check below still holds
-// without them.
-//
-// ── WHAT THIS CORRECTS ───────────────────────────────────────────────
-//
-// R9 shipped a status push on a ten second timer that runs for ever,
-// watched or not. A relay spending cycles on telemetry nobody reads is
-// what decision 0007 says a relay must not do, and on-demand makes that
-// standing timer indefensible rather than merely wasteful.
+// relay, which is an addressable peer for its owner (R18). A relay
+// spending cycles on telemetry nobody reads is what decision 0007 says a
+// relay must not do, so the stream runs only on demand.
 //
 // ── WHAT IS LOAD-BEARING HERE ────────────────────────────────────────
 //
@@ -50,12 +42,8 @@ test.startTest('Relay monitor — activity, only while somebody watches');
 // A sink is handed a raw SSE chunk; presence.js formats the frame. Parsed
 // back so a check reads as "the owner got a relay-event carrying this"
 // rather than matching on punctuation.
-// THE FIXTURE MOVED OUT, and it is the same argument this suite family
-// makes about production code. cycle 10's R12 needs a claimed relay with
-// the owner watching — exactly what this file had built — and a second
-// copy would have been the fifth hand-rolled relay fixture in this
-// directory. Extracted to monitorWorld.js; nothing about the world
-// changed, only where it is written down.
+// The fixture (a claimed relay with the owner watching) is monitorWorld.js,
+// shared with the suites that need the same world.
 const { sinkFor, world, post, events, askMonitor } = require('./monitorWorld.js');
 
 
@@ -95,11 +83,8 @@ test.subHeading('Silent until asked');
   // FACTS, NOT PAYLOADS. A monitor carrying the text would make the
   // owner's screen a place everybody else's words pass through, which is
   // exactly what 0006 emptied off this box.
-  // AND THE SIZE IS THE SIZE OF WHAT TRAVELLED, which after cycle 10 is
-  // the sealed bytes — bigger than the words, and no longer a measure of
-  // them. This used to assert `bytes === 'again'.length`, which was a
-  // true statement about a relay that held the plaintext. That it is no
-  // longer true is the change working.
+  // AND THE SIZE IS THE SIZE OF WHAT TRAVELLED: the sealed bytes, bigger
+  // than the words and no measure of them.
   const row = seen[0].data;
   if (row.bytes > 'again'.length && JSON.stringify(row).indexOf('again') === -1) {
     test.check('carrying the size of the sealed packet and not the words — a monitor is not a mailbox');
@@ -115,8 +100,8 @@ test.subHeading('Silent until asked');
   const w = world();
   startMonitor(w);
   // FROM CARL, NOT BELLA: nobody answers this post, so it stays in flight,
-  // and a member has one request in flight (0016, the member cap is 1
-  // since 2026-10-02). Bella asks the relay itself further down; with this
+  // and a member has one request in flight (0016, the member cap is 1).
+  // Bella asks the relay itself further down; with this
   // post still hers, that ask would be refused `too many in flight` and
   // never reach the per-verb refusal this block is about.
   post(w, w.carl, w.owner, 'hello');
@@ -131,11 +116,10 @@ test.subHeading('Silent until asked');
       ', andy heard ' + events(w.heard.andy).length);
   }
 
-  // A NON-OWNER CANNOT TOUCH IT, and note where the refusal now lives.
+  // A NON-OWNER CANNOT TOUCH IT, and note where the refusal lives.
   //
-  // The relay IS addressable by a peer — the destination opened so that
-  // set-device and self-removal could stop being cheats — so the post
-  // itself succeeds and comes back 202 with a hash. What refuses is the
+  // The relay IS addressable by a peer (a member's own-row verbs are asked
+  // of it), so the post itself succeeds and comes back 202 with a hash. What refuses is the
   // VERB: monitor is an owner verb, and answerSelf checks that per verb.
   //
   // Asked as a STOP, because the owner's is already running here: the
@@ -144,7 +128,7 @@ test.subHeading('Silent until asked');
   const theirs = askMonitor(w, w.bella, false);
   const bellaHeard = w.heard.bella.filter(function (m) { return m.event === 'reply'; });
   let refused = null;
-  // OPENED: a relay seals its answers now (cycle 10, R5).
+  // OPENED: a relay seals its answers (cycle 10, R5).
   try { refused = openBody(w.bella, w.box.relayPublicKey(), bellaHeard[bellaHeard.length - 1].data.text); }
   catch (e) { refused = null; }
 
@@ -179,14 +163,10 @@ test.subHeading('Stopping, both ways');
     test.fail('after stop: ' + events(w.heard.andy).length + ' vs ' + before);
   }
 
-  // THE FLAG IS IN THE SIGNED BYTES, and this is the check that used to
-  // justify monitorMessage having a verb of its own — a captured `start`
-  // must not be replayable as a `stop`, or the other way round.
-  //
-  // It still holds, and now nothing here arranges for it: postMessage
-  // binds sender, recipient and the exact text, so the flag was covered
-  // the moment the packet became the request. The hand-rolled format was
-  // buying a property the transport already had.
+  // THE FLAG IS IN THE SIGNED BYTES: a captured `start` must not be
+  // replayable as a `stop`, or the other way round. Nothing here arranges
+  // for it: postMessage binds sender, recipient and the exact text, so the
+  // flag is covered because the packet is the request.
   const onText = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true, filter: null } } });
   const offText = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: false, filter: null } } });
   const relayKey = w.box.relayPublicKey();
@@ -333,11 +313,9 @@ test.subHeading('The relay as a peer, for its owner');
 //   Andy: "The relay must be an addressable peer for the owner… This
 //   entire panel should, of course, go through protocol."
 //
-// R18. The narrowing is what makes it safe, and NOT because it hides
-// anything: the relay's key is published unsigned in /api/relay/who.
-// postedToSelf is the only gate on everything answerSelf can do — four
-// owner verbs that verify nothing themselves, because the post's
-// signature is their proof.
+// R18. postedToSelf is the gate on everything answerSelf can do: the
+// owner verbs verify nothing themselves, because the post's signature is
+// their proof.
 
 (function theOwnerCanPostToIt() {
   const w = world();
@@ -416,32 +394,14 @@ test.subHeading('The relay as a peer, for its owner');
     test.fail('a peer turned the monitor on');
   }
 
-  // ── AND IT IS IN EVERY MEMBER'S ROSTER (2026-09-15) ────────────────
+  // ── ANY MEMBER MAY ADDRESS THE RELAY ───────────────────────────────
   //
-  // THIS ASSERTED THE OPPOSITE — "in the OWNER's roster and in no
-  // peer's, a per-recipient roll, as agreed" — and the agreement was
-  // sound when everything answerSelf could be asked was an owner verb.
-  //
-  // It stopped being sound when `rename` arrived: a peer renaming ITSELF
-  // is an own-row verb, and so is giving up its own seat. Both are asked
-  // of the relay directly. They worked anyway only because hub.askRelay
-  // named a URL and posted to it, going around presence — and the moment
-  // the post-path doors close and a member addresses the relay by KEY,
-  // `presence.relaysNaming` answers from this roster. Owner-only would
-  // have meant a member cannot rename itself: a gate nobody decided,
-  // arrived at by omission.
-  //
-  // Nothing is given away by widening it. The key is already public at
-  // /api/relay/who to anyone who asks — see the roll check below, which
-  // is a DIFFERENT claim and still stands.
-  //
-  // THE ROSTER WAS DELETED IN CYCLE 3 (0012 widened: no member list served,
-  // by request or by broadcast). What this guarded survives without it: a
-  // node learns the relay's key from its pin (its card, a card ask on the
-  // one door since goal/G22.6, seeded by presenceNode), and what matters
-  // HERE is that the relay answers any member who addresses it by that key
-  // — not only its owner. (It asked `partners`, a verb that went with
-  // partnering; any member verb shows the same.)
+  // A member's own-row verbs (renaming itself, giving up its seat) are
+  // asked of the relay directly, so the relay answers any member who
+  // addresses it by its key — not only its owner. A node learns that key
+  // from its pin (its card, a card ask on the one door, goal/G22.6). And
+  // no roster is sent to anybody (0012: no member list served, by request
+  // or by broadcast).
   const bellaAsks = JSON.stringify({ v: 1, body: { search: { q: '' } } });
   const toRelay = w.box.routePost(w.bella.publicKey, relayKey, bellaAsks,
     auth.sign(w.bella.privateKey, auth.postMessage(w.bella.publicKey, relayKey, bellaAsks)));
@@ -471,16 +431,10 @@ test.subHeading('A post at a key nobody holds reaches the owner');
 // ---------------------------------------------------------------------
 
 (function unknownTargetIsReported() {
-  // Found screenless against the live relay, 2026-09-23: four posts
-  // deliberately aimed at a key on no roll produced NOTHING in the
-  // owner's feed. Every other refusal on that path reports itself
-  // ("minting incomplete", "peer not reachable"); this one returned in
-  // silence, so the shape most worth an owner's attention — somebody
-  // posting at addresses that do not exist — was the one he could not
-  // see.
-  //
-  // Andy: "you both verify screenless first, that's the procedure." This
-  // is the assertion that keeps the answer once a screen exists.
+  // A post aimed at a key on no roll reports itself to the owner like
+  // every other refusal on that path ("minting incomplete", "peer not
+  // reachable"): somebody posting at addresses that do not exist is the
+  // shape most worth an owner's attention.
   const w = world();
   startMonitor(w);
 

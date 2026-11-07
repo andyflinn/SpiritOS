@@ -2,12 +2,12 @@
 
 // spirit/test/jobsSearch.js
 // goal/G29.14: Jobs searched on the shared list, the shared progressBar, and Jobs Details as a live monitor of the
-// events a job publishes. Red on today's tree; claude-windows writes it and builds it (one agent). The item's box (v9):
+// events a job publishes. The item's box (v9):
 //   JOBS: the shared list, filters on row 1, the search on row 2, then the rows. Words match name, type, module and id;
 //   with no words the rows are sorted by id and stand still (box v10). Kind filter, one choice: all, node, servers,
-//   transient (node: the node's own jobs). Column headings are the shared list's own; a left-most column holds one green
-//   dot, on the most recent update. Status filter: one
-//   toggle per status the list holds, each in or out (a multi-toggle filter in listSearch.js, usable by every list).
+//   transient (node: the node's own jobs), and failed last (goal/G29.16, which took the status toggles away). Column
+//   headings are the shared list's own; a left-most column holds one green dot, on the most recent update. A
+//   multi-toggle filter in listSearch.js stays, usable by every list.
 //   Columns: rank bar, status, name (module, else type), kind, progress, updated.
 //   PROGRESS BAR: progressBar, one shared shell element drawn from (done, total, text); total 0 indeterminate; it knows
 //   nothing of processes. The shell app hooks it up: Jobs feeds it from each process's {job} events (goal/G29.15), and
@@ -17,9 +17,12 @@
 //   JSON line per event), the Extract/analyze box (1/3 of the height: the last event clicked, JSON.stringify(object,
 //   null, 2) in a read-only CodeMirror textView); the log and the box scroll inside themselves.
 //
-// NAMED HERE where the box names none (argued in Desk first if the build disagrees):
+// NAMED HERE where the box names none:
 //   - shell/shared/js/progressBar.js sets window.spirit.element.progressBar(done, total, text) -> html, handed to apps
 //     as api.ui.element.progressBar; index.html loads it.
+//   Sections 1 and 2 load shell/shared/js/progressBar.js and shell/shared/js/listSearch.js, neither of which is in the
+//   tree (spirit/run/shell/shared/js holds deskChat, deskElement and deskRunStatus); a progressBar now lives at
+//   spirit/run/spirit/element/progressBar.js.
 //   - a shared-list filter with multi: true is a row of toggles, every one on at the start; its choices may be a
 //     function of the rows held; test(row, off) gets the object of the values turned off.
 //   - Jobs hears each job event through api.onJobs(fn(jobsById, changed)), as Jobs Details does.
@@ -182,7 +185,7 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   else test.fail(OWED + 'node shows ' + short(order()));
   const all = kindValue('all');
   if (all) jobsBox.fire('click', { target: target(all) });
-  // THE STATUS TOGGLES WENT UNDER goal/G29.16 ("the last filter in the jobs search should be "failed""): a transient
+  // NO STATUS TOGGLES (goal/G29.16, "the last filter in the jobs search should be "failed""): a transient
   // job that ends is removed, so what is listed runs, or failed.
   const OWED16 = 'OWED by goal/G29.16: ';
   if (!/data-filter="status"/.test(jstrip())) test.check('no status toggles: what is listed runs, or failed');

@@ -8,8 +8,8 @@
 //   demand. good.", "the rotating node must hand its new card to every relay
 //   straight away when it rotates".
 //
-// Built by claude-windows at 0a2a90b. This is the tester's suite, from the
-// scheme agreed before a line was written. Two nodes and a relay from
+// The info app's Rotate key button opens the rotateKey dialog, whose verb
+// node.rotateCipher runs nodeCard.rotate (server.js); this suite drives nodeCard.rotate. Two nodes and a relay from
 // cardWorld.js, with the real contacts book: nothing planted that the code
 // under test did not have to fetch and verify.
 

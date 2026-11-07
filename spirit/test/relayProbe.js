@@ -47,8 +47,7 @@ const SURFACE = [
   // and a door that has been removed is the clearest possible signal
   // about which code a box is running.
   //
-  // The first four were collapsed into posts on 2026-09-13 (decision
-  // 0010), which is the day the register emptied. A relay still answering
+  // The first four are posts since decision 0010; a relay still answering
   // any of them is running code from before that.
   ['POST', '/api/relay/invite'],
   ['POST', '/api/relay/monitor'],
@@ -57,17 +56,13 @@ const SURFACE = [
   // The device enrolment's own door, removed by goal/G16.2.
   ['POST', '/api/relay/device'],
 
-  // And the ring, deleted 2026-09-15 (R8). These two moved from the live
-  // list above to this one on that day, which is the whole value of
-  // keeping both lists in one file: a relay answering either of them is
-  // still storing other people's mail.
+  // The ring's (R8): a relay answering either of them is still storing
+  // other people's mail.
   ['POST', '/api/relay/send'],
   ['GET', '/api/relay/inbox'],
 
-  // And the owner badge's route, deleted the same day (R3). It moved
-  // from the live list too. A relay still answering it is running code
-  // from before the badge was deleted — and is still accepting, on a
-  // query string, the one signature on this wire that could not expire.
+  // The owner badge's route (R3): a relay still answering it is still
+  // accepting, on a query string, a signature that could not expire.
   ['GET', '/api/relay/status'],
 ];
 
@@ -125,21 +120,12 @@ async function main() {
   reading.commit = version.status === 404 ? 'not public (goal/G22.6)'
     : version.status ? 'pre-G22.6 (still answers /api/version)' : 'unreachable';
 
-  // ── `members` STOOD HERE, AND IS NOT A THING TO REPORT ───────────
+  // ── NO `members` IN A READING ────────────────────────────────────
   //
-  // It read `GET /api/relay/who` and listed every member's label. That
-  // route was a public, unsigned, unbounded read of the membership —
-  // named a cheat in decision 0010 on 2026-09-17, deleted the next day —
-  // and 0012 says plainly that no party may ask for an enrolment list,
-  // including a probe belonging to the owner.
-  //
-  // What a deploy check actually needs is below: which doors answer, and
-  // how fast. Neither needs to know who is on the box.
-  //
-  // If a relay's operator wants its roster, that is the relay reporting
-  // to its owner over the owner's own stream (relay.statusToOwner) — a
-  // box telling the person who runs it, unasked, rather than a door
-  // anybody can knock on.
+  // 0012: no party may ask for an enrolment list, including a probe
+  // belonging to the owner. What a deploy check needs is below: which
+  // doors answer, and how fast. A relay's roster reaches its owner over
+  // the owner's own stream (relay.js statusToOwner), not through a door.
   // WHO IT IS: its card, asked on its one door (goal/G22.6).
   const said = await door.cardAsk(url);
   reading.relay = {};
@@ -180,9 +166,8 @@ async function main() {
     (reading.dirty ? '  DIRTY — running code that is in no commit' : '') +
     (reading.untracked ? '  (' + reading.untracked + ' file(s) missing from its copy)' : ''));
   console.log('uptime     : ' + (reading.uptimeSec == null ? '?' : reading.uptimeSec + 's'));
-  // `members` STOOD HERE and named everybody on the box. See the note
-  // where it was read: a probe does not get an enrolment list, and the
-  // owner's roster is the relay's report to its owner, not a route.
+  // No `members`: a probe does not get an enrolment list (see NO
+  // `members` IN A READING above).
   console.log('relay      : ' + ((reading.relay && reading.relay.label) || '(unlabelled)') +
     '  key …' + ((reading.relay && reading.relay.key) || '?') +
     '  owner ' + ((reading.relay && reading.relay.owner) || '(none)'));

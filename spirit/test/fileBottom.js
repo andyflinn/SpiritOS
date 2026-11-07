@@ -1,7 +1,7 @@
 'use strict';
 
-// fileTransfer goal/G1.1: the fileServer bottom level — pull, status, and the hash-verb's info.
-// Red on today's tree: fileServer.js (4fbf3201) serves push, fetch and delete; these three are owed.
+// fileTransfer goal/G1.1: the fileServer bottom level — pull, status, and the hash-verb's info
+// (spirit/run/process/js/fileServer/fileServer.js).
 //   Andy: "there is an oposite fucntion pullFile(destination) that copies a file back into the normal
 //   filing system." Ruled as pull { hash, path }, owner-only.
 //   Pull never overwrites (Andy, on a different file already at the path: "fail: already exists.";
@@ -9,11 +9,11 @@
 //   status { hash } was in the proposal he said yes to; the dataset is fileStatus.json's.
 //   The hash-verb's commands, G1.2 THE HASH-VERB'S COMMANDS: "info: answers { bytes, mime, name }
 //   (one name, the one shared)". Andy: "the provider delivers the info, and the chunks, nothing else".
-// Shapes this red fixes, argued in goal/G1.1 before building:
+// The shapes asserted (goal/G1.1):
 //   1. pull { hash, path } answers { copied: true }; the same bytes already at the path answer
 //      { copied: false, already: true } — said, not an error; a DIFFERENT file there is refused
-//      already-exists (a catalogue code this red names) and the file at the path is untouched.
-//   2. status { hash } answers fileStatus.json's dataset { hash, bytes, mime, name, at } (one name since goal/G5.2);
+//      already-exists and the file at the path is untouched.
+//   2. status { hash } answers fileStatus.json's dataset { hash, bytes, mime, name, at } (one name, goal/G5.2);
 //      a hash not held is refused no-such-file. Owner-only, like push, pull and delete.
 //   3. The hash-verb answers { command: 'info', data } with data the JSON text { bytes, mime, name },
 //      name the file's one name — to any caller the door let through: the grant is apiAuth's
@@ -116,7 +116,7 @@ async function main() {
     test.check('info echoes its command and delivers { bytes, mime, name } as JSON text in data');
   } else test.fail(OWED + 'info answered ' + info.status + ' ' + JSON.stringify(info.body));
 
-  // chunk was refused here until goal/G1.2 built it; an unknown command stands in.
+  // chunk is served (goal/G1.2), so an unknown command stands in for one the hash-verb refuses.
   const odd = await call(id, { command: 'erase', data: '' }, PEER);
   if (odd.status !== 200 && odd.body && odd.body.code) test.check('a command the hash-verb does not serve is refused by name');
   else test.fail(OWED + 'an unserved command answered ' + odd.status + ' ' + JSON.stringify(odd.body));

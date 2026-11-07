@@ -1,6 +1,6 @@
 'use strict';
 
-// fileTransfer goal/G1.3: what the node and appServer must offer before a fileServer can run. Red on today's tree.
+// fileTransfer goal/G1.3: what the node and appServer must offer before a fileServer can run.
 //   Andy: "let's make an item with the core modification needed. other items will depend on that".
 //   The no-rush scheme, G1.2: "agreed. scheme approved.", "same for responses.", "got it. so i agree on the same
 //   no-rush marker riding next the the fileServer replyPost".
@@ -9,7 +9,7 @@
 //   correct hash, your implying changes to the relay as well."
 //   Runtime verbs: no republished announce, "nah, files added or dropped are implicitly know to the user."
 //   And over all of it: "keep in mind. no adding unwanted junk without permission."
-// The contract the builder follows (the shapes this red fixes are argued in goal/G1.3 before building):
+// The contract (the shapes argued in goal/G1.3):
 //   A. peer.post takes an optional kind. 'background' reaches the scheduler as how.kind; without it nothing
 //      changes; any other value is refused before anything is posted.
 //   B. A verb declared with background: true has its answers marked: appServer's route answers kind 'background'
@@ -18,12 +18,12 @@
 //   C. createAppServer's server gains addVerb(name, {request, reply, handler}) and dropVerb(name). addVerb runs
 //      the whole start-up check and refuses a name it already has; the api answer shows the change at once;
 //      dropVerb removes only a verb added at runtime, never a fixed one, DEBUG or DEPENDENCIES.
-//   D. kernel.js's spirit object carries peerPost(peer, app, body, how): one post through the node's peer.post,
+//   D. the spirit object carries peerPost(peer, app, body, how): one post through the node's peer.post,
 //      then the answer-post whose re matches that post's hash, read off the node's event stream, resolves with
 //      its body. A refused post resolves {ok: false, code: 'not-posted'} at once; no answer within how.waitMs
 //      (default 30 s) resolves {ok: false, code: 'no-answer'}. how.node names the node, else the origin of
-//      SPIRIT_CALLBACK_URL; how.kind rides to peer.post.
-//   E. agents.js asks through spirit.peerPost: its own copy of the post-and-wait knot is gone.
+//      SPIRIT_CALLBACK_URL; how.kind rides to peer.post. PART D LOOKS FOR IT ON kernel.js, WHICH NO LONGER HAS IT:
+//      peerPost is spirit.js's (spirit/run/spirit/spirit.js; kernel.js says so where it stood), so D fails.
 
 const fs = require('fs');
 const os = require('os');
@@ -196,8 +196,6 @@ async function partD() {
     node.close();
   }
 }
-
-// Part E read agents.js (it asks through spirit.peerPost, its own knot gone); the agents app is gone (goal/G3.2).
 
 (async function () {
   await partA();

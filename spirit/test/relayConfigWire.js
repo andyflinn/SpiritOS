@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/relayConfigWire.js
-// CYCLE 9 ON A REAL PROCESS — the half the in-process suites cannot own.
+// A RELAY'S CONFIGURATION ON A REAL PROCESS — the half the in-process suites cannot own.
 //
 //   Andy, 2026-09-22: "and we test this in the harness?"
 //
@@ -11,9 +11,6 @@
 // measures its box, writes its own config.json, clamps a figure that no
 // longer fits instead of refusing to start, and that an owner's packet
 // arriving over HTTP actually changes the file on disc.
-//
-// Both were verified by hand, twice, on two operating systems. This is
-// the part that will still be true next month.
 //
 // NOT COVERED, and cannot be: systemd bringing the process back after an
 // asked-for restart. That is the unit's job (Restart=always). What is
@@ -39,7 +36,7 @@ const kids = [];
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 // A relay home with an owner already on it, and a run tree to start it
-// from — the shape presenceWire and partnerWire use, because a server
+// from — the shape presenceWire uses, because a server
 // must never be started on the working directory.
 function buildHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cfgwire-'));
@@ -64,8 +61,8 @@ function readConfig(w) {
 }
 
 // Started with its output kept, so a refusal to start is reported as a
-// refusal rather than as a port that would not answer — the lesson
-// presenceWire.js learned in this same cycle.
+// refusal rather than as a port that would not answer, as presenceWire.js
+// does.
 async function startRelay(w, port, args) {
   const said = [];
   const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'].concat(args || []),
@@ -95,8 +92,8 @@ function stopRelay(w) {
 // already has.
 function askOwner(w, bodyObj) {
   const relayKey = w.box.relayPublicKey();
-  // Sealed to the relay, like every owner verb (cycle 10, R9), and signed
-  // over the bytes that travel (cycle 10's R11).
+  // Sealed to the relay, like every owner verb, and signed over the bytes
+  // that travel.
   const text = sealFor(w.owner, w.box, JSON.stringify({ app: 'relay', v: 1, body: bodyObj }));
   const sig = auth.sign(w.owner.privateKey, auth.postMessage(w.owner.publicKey, relayKey, text));
   return new Promise(function (resolve, reject) {
@@ -109,7 +106,7 @@ function askOwner(w, bodyObj) {
       onEvent: function (msg) {
         if (answered || msg.event !== 'reply' || !msg.data) return;
         let back = null;
-        // Opened, because a relay seals its answers now (cycle 10, R5).
+        // Opened, because a relay seals its answers.
         back = openReply(w.owner, relayKey, msg.data.text);
         if (!back) return;
         answered = true;

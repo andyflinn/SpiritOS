@@ -7,7 +7,7 @@
 // "DEBUG verb is never allowed through peerPost()". "node.debug: yes."
 // The contract the builder follows:
 //   The kernel's DEBUG is a let, false at start, one per process; print() writes only while it is on.
-//   appServer gives every server a DEBUG verb, as it gives AGENTS: {} reads, {on: true|false} sets; both
+//   appServer gives every server a DEBUG verb: {} reads, {on: true|false} sets; both
 //   answer {debug: <boolean>} with the state that resulted. It flips that process's kernel DEBUG.
 //   apiDoor refuses a member's ask for a server's DEBUG and never passes it on; the owner's own call on /api/spirit
 //   (<server>.DEBUG through the flat door, goal/G30.6) reaches it.
@@ -127,7 +127,8 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   // ── THE NODE ────────────────────────────────────────────────────────
   test.subHeading('the node answers node.debug, off after a restart');
   const root = setupRelayFakes('debugSwitch').andy;
-  // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+  // A relays.json in spirit/state/ is the old relay list, moved into node.db's relays table on boot when found
+  // (relayKeys.importOld, goal/G19.15).
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   // Mounted since goal/G30.4: the node family's block declares its verbs bare ('debug'), the table names it node.debug.

@@ -1,14 +1,14 @@
 # shell/deskDetails/deskDetails.js
 
 An item's details page in the Desk app: the box, the suites, the red Qs, the blocks, the files and the rules, each a
-panel behind an icon on its left strip. This test covers what goal/G41.1 (box v19-v20), G41.9, G41.11 and G41.22 require
-of it.
+panel behind an icon on its left strip. This test covers what goal/G41.1 (box v19-v20), G41.9, G41.11, G41.22, G41.28,
+G43.3 and G43.22 require of it.
 
 ## Requirements (goal/G41.1)
 
-- **Icons are glyphs** (Andy: the icon set is the only source of icons on the face; `spirit/client/iconIndex.js`
-  deleted): each panel of `DD_PANELS` names its icon as the glyph itself, and the strip draws it as it is. Since
-  goal/G41.22 the strip is the workBench's, handed each glyph as it is; that is checked on what it is handed (below).
+- **Icons are glyphs** (Andy: the icon set is the only source of icons on the face): each panel of `DD_PANELS` names
+  its icon as the glyph itself. The strip is the workBench's (goal/G41.22), handed each glyph as it is; that is checked
+  on what it is handed (below).
 - It reads no icon table (`iconIndex`, `ICON`).
 
 ## What its test must try to break
@@ -60,16 +60,15 @@ first displayed."
 
 ## goal/G41.11: the rules panel scrolls inside its own box
 
-The upper half is fixed at 30vh with its overflow hidden; the box that bounds the rules panel scrolls (overflow auto), so
-a long list of rules is never cut off unseen. Its dropdowns stand inline, as every dropdown in the tree does.
+The left pane hides its overflow; the first box that bounds the rules panel scrolls (overflow auto), so a long list of
+rules is never cut off unseen. Its dropdowns stand inline, as every dropdown in the tree does.
 
 ## Requirements (goal/G41.22, box v15)
 
 Andy: *"the item panel drops appHeader"*, *"the items ID and title, including status is shown in the shells title bar
 like always"*, *"one row, the button row, at the top, using the whole width, like it is today"*, *"just use workBench"*,
 *"the left icons strip and panel, are what we have today"*, *"the center panel us the chat"*, *"the right panel, we
-leave blank, but will carry plugin-desk-apps"*, *"the chat has it's search at the top and it's input at the bottom"*,
-*"newest lines at the bottom, pinned to the bottom, and older lines above"*, *"the chat input can only be sized
+leave blank"*, *"newest lines at the bottom, pinned to the bottom, and older lines above"*, *"the chat input can only be sized
 vertically"*.
 
 - **No appHeader**: deskDetails.js names none. The id, title and status go to the shell's title bar
@@ -77,9 +76,9 @@ vertically"*.
 - **One workBench** (`spirit/element/workBench.js`, loaded through `spirit.require`), made inside the dialog's body.
   - Its **left** tools are today's panels, `DD_PANELS`, each by its key and glyph, in order. A left icon shows that
     panel in the left pane.
-  - Its **right** side has no tool: it is blank until a desk plugin app gives it one.
-  - Its **centre** is the chat: the lines (`dd-chat`), the input (`dd-say`) at the bottom. No chat search since goal/G43.22
-    (Andy: *"take out the chat-search do, it's not actually usable."*).
+  - Its **right** side has no tool: it is blank.
+  - Its **centre** is the chat: the lines (`dd-chat`), the input (`dd-say`) at the bottom. No chat search (goal/G43.22;
+    Andy: *"take out the chat-search do, it's not actually usable."*).
 - **The button row** (`dd-name-row`) stands above the workBench, outside it, the whole width.
 - **The input** resizes up and down only (`resize: vertical`).
 - **Newest at the bottom**: the lines read oldest to newest, top to bottom. A new line from the stream goes in at the
@@ -97,7 +96,7 @@ an item with 200 chat lines and a long box. The desk is a stand-in that answers 
 
 - The page does not scroll, nor the app area; the chat input's bottom is on screen.
 - The chat is scrolled to its end, and the newest line is its last, shown whole above the chat's bottom.
-- At open a left panel shows, as the details did before the workBench.
+- At open a left panel shows.
 - **Every left panel uses all the height** (Andy: *"the box must use the full vertical space"*, *"all left side panels
   must fucking use all available vertical space, especially the lists"*): the box, the red Qs (60), the files (150, with
   three open grants), the rules (60) and the suites (60), each shown in turn, the first time its icon is pressed (Andy:
@@ -132,7 +131,7 @@ Andy: *"the current goal and all its items, get a new button in the detail panel
 
 What the test assumes: the dialog decides nothing (its header), so the desk says where push Goal stands: `pushgoal` in
 the item's `buttons`, on the current goal and on each of its items, as `make-current` is offered on a goal that is not
-current (process/js/desk/desk.js, buttons). The facts carry no current-goal field today, and the test adds none. The
+current (spirit/run/process/js/desk/desk.js, buttons). The facts carry no current-goal field today, and the test adds none. The
 verb's arguments are the build's; the test asserts only the verb sent.
 
 ## What its test must try to break (goal/G41.22, box v22: push Goal)
@@ -162,7 +161,7 @@ object"*. The run of this item (goal/G33.6) is the verifier's own publish, kept 
 
 ## goal/G43.3: the box panel, who asked, the rules panel
 
-- *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers. Since goal/G43.22 there is no search field beside it (Andy: *"take out your search of the items text, the codeMirror search works better for editing purposes."*). No server is asked. Going into the box takes it, and leaving it changed writes his text on the version it read, as the textarea did.
+- *"i want the UI to allow me to search the box currently displayed: the exact content of the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?"* In a real browser: the box is a CodeMirror showing line numbers. There is no search field beside it (goal/G43.22; Andy: *"take out your search of the items text, the codeMirror search works better for editing purposes."*). No server is asked. Going into the box takes it, and leaving it changed writes his text on the version it read, as the textarea did.
 - *"above the box i want to see the the last-stored version number of the box."* The version the desk answered stands above the box.
 - *"red Q's should indicate who posted them."* The Qs panel shows the question and who placed it.
 - *"when i add a rule to an item or goal, it will not immediately display in the rule-list."* With the rules panel open on an item or a goal, a row naming a new rule shows it at once, with no read asked.

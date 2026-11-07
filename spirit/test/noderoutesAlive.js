@@ -7,9 +7,8 @@
 // alive."
 //
 // WHAT IS ASSERTED
-//   1. A signed card ask on https://noderoutes.net's one door is answered over a certificate node trusts. It was
-//      GET /api/relay/key until goal/G22.6 closed the relay's public door (Andy's decision: a relay answers a card ask
-//      from a key it does not know with its key, on its one door).
+//   1. A signed card ask on https://noderoutes.net's one door is answered over a certificate node trusts (goal/G22.6,
+//      Andy's decision: a relay answers a card ask from a key it does not know with its key, on its one door).
 //   2. It names the relay key recorded in goal/G19.16 (the key that ships with the install, goal/G19.15), so a box
 //      rebuilt under the same name with a new identity is caught, not taken for alive.
 //   3. Its owner is Andy's node key, as install-units wrote it.

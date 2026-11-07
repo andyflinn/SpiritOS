@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/peerPostWiring.js
-// ONE peerPost, THREE INSTANTIATIONS, AND EVERY OMISSION DECIDED.
+// ONE peerPost, ONE PRODUCTION INSTANTIATION (server.js), AND EVERY OMISSION DECIDED.
 //
 //   Andy, 2026-09-24: "so we again have multiple implementations of
 //   peerPost()?" — and, when told the answer was one implementation with
@@ -10,9 +10,8 @@
 //
 // ── WHY A GATE AND NOT A COMMENT ─────────────────────────────────────
 //
-// Because this tree has already lost packets to it, silently, for
-// months. Until 2026-09-13 `server.js` built its router WITHOUT
-// `onArrival`, and `arrivals.js` records what that cost: a packet posted
+// Because this tree has already lost packets to it, silently: a
+// `server.js` router built WITHOUT `onArrival` meant a packet posted
 // by a peer was *"admitted at the front door, written to the traffic
 // log, answered with a bare receipt, and dropped. Nothing above the node
 // boundary could ever see it."*
@@ -47,64 +46,24 @@ const RUN_JS = path.join(__dirname, '..', 'run', 'spirit');
 // ── THE DECLARED SHAPES ──────────────────────────────────────────────
 //
 // Production call sites only. A suite may build whatever router it needs
-// — that is a fixture, and fixtures are allowed to be peculiar; these
-// are the three a running system actually uses.
+// — that is a fixture, and fixtures are allowed to be peculiar; this is
+// the one a running system actually uses.
 const DECLARED = {
   // THE NODE. Everything, because a personal node does everything: it
-  // answers verbs, admits strangers, keeps a contacts book and a traffic log,
-  // and hands arrivals to whatever is watching above the node boundary.
+  // keeps a contacts book and a traffic log, and hands arrivals to whatever
+  // is watching above the node boundary. Only the factory's own options are
+  // listed: keys of a nested object passed to a hook are not.
   //
-  // AND THIS LIST WAS WRONG ON ITS FIRST RUN, which is the best argument
-  // for the gate. It was gathered with a loose grep that matched ANY
-  // `key:` line inside the call, so it picked up `at`, `via` and `rank`
-  // — keys of a NESTED object passed to one of the hooks, never options
-  // of the factory. The gate went red immediately and named the three.
-  // A declaration nobody checks is a declaration that drifts from the
-  // thing it describes, and this one drifted before it was committed.
-  //
-  // NO `answer` SINCE goal/G16.2: the only request a node answered itself
-  // was the relay's device offer, and device enrolment was removed, so the
-  // node wires no answer hook any more.
+  // NO `answer` (goal/G16.2): the node answers no request itself.
   'server.js': [
     'rootDir', 'request', 'store', 'checkTunnel', 'door',
     'keepCard', 'sealKeyFor', 'noteSeen', 'remember', 'onArrival',
     'traffic', 'stats',
   ],
 
-  // THE RELAY'S PARTNER ROUTER (relayServer.js: rootDir, request,
-  // sealsPosts) HAD AN ENTRY HERE; a relay builds no peerPost since
-  // partnering went (Andy's decision, goal/G22.6), so the node is the one
-  // production site.
-
-  // THE APP SERVER (cycle 2, js/faceServer.js) HAD AN ENTRY HERE, and the
-  // file is gone with goal/G13.2: a face is a process now and posts
-  // through its node (spirit.peerPost), building no router of its own.
-  // The reasoning that stood here is kept for the record, below.
-  //
-  // Each absence was a decision, argued where the router was built:
-  //   store       a durable queue would hold a post for an owner who is
-  //               asleep, and "refuse, never queue" is the rule for
-  //               exactly that state
-  //   answer      it answers no verbs; it posts
-  //   onArrival   it receives nothing
-  //   admit/remember/traffic  it persists nothing about anybody
-  //   keepCard    PRESENT since cycle 3. The app server must hold its
-  //               OWNER's card before it can seal anything to them, and a
-  //               card request is the one packet that travels unsealed
-  //               (Andy: "card is the only possible un-cyphered
-  //               peerPost"). Without it every reach was refused at 428
-  //               by this server before anything left the box — which
-  //               read as "the owner is asleep" and was not.
-  //   sealKeyFor  PRESENT since cycle 3, and it is the other half: read
-  //               per post rather than captured, so a card that arrives
-  //               or a key that rotates mid-run is seen. Empty means the
-  //               post is refused rather than sent plain.
-  //
-  // THESE TWO ARE A NARROWING, NOT A WIDENING, and that is why they are
-  // allowed here: the app server now holds exactly ONE contact row, its
-  // owner's, and G9's "acts on nothing" is a promise about STRANGERS. It
-  // still passes no store, no answer, no onArrival, no admit, no
-  // remember and no traffic.
+  // No other production site: a relay builds no peerPost (no partnering
+  // since goal/G22.6, Andy's decision), and a face is a process that posts
+  // through its node (spirit.peerPost, goal/G13.2).
 };
 
 // Reads the keys a call site passes, from the source. Deliberately
@@ -198,9 +157,7 @@ test.subHeading('THE ONE THING THIS DOES NOT CHECK, said so nobody reads more in
   // declared omission is still the right decision would need a reader
   // for each hook's meaning, which is a suite per hook rather than one
   // walk. Named here rather than pretended at.
-  // Three until goal/G13.2 took faceServer.js (2026-10-10): a face posts
-  // through its node now and builds no router of its own. Two until
-  // goal/G22.6 took the relay's partner router.
+  // One site: the node's (see DECLARED).
   const sites = Object.keys(DECLARED).length;
   if (sites === 1) {
     test.check('shape is compared, MEANING is not — ' + sites + ' sites, and a wiring that is ' +

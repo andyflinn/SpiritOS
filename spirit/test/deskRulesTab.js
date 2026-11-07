@@ -1,7 +1,10 @@
 'use strict';
 
 // goal/G6.5: the Rules tab in Desk: a new rule, a search with seven toggles, and the list of rules, each opening
-// ruleDetails (goal/G6.4). Red on today's tree; wsl-claude wrote it from G6.5's box and does not build it.
+// ruleDetails (goal/G6.4).
+// STALE ON TWO COUNTS: check 1 wants an Apps tab before Rules, and there is no Apps or Team tab since goal/G43.22 ("the
+// apps and plugin system goes."); and desk.js's mount asks spirit.require, which the fake spirit here does not give,
+// so the suite throws "no spirit.require on this page".
 //   The box: "A new tab "Rules" between "Team" and "Musings": 1. The new bubble: type, label, text and a new button:
 //   rule.add (the rule comes in proposed; agents may add one too). 2. The search bubble: a search box and 7 toggles
 //   (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}. 3. The list, a row per
@@ -9,7 +12,7 @@
 //   (goal/G6.4). A rule's text is a paragraph of up to 2048 bytes, line breaks kept (goal/G5.5)." Andy: "split as
 //   proposed"; his Go.
 //
-// THE CONTRACT (wsl-claude's picks where the box names no shape; the builder may argue them in Desk first):
+// THE CONTRACT (wsl-claude's picks where the box names no shape):
 //   - The tab is data-tab="rules" in #desk-tabs; its pane data-pane="rules" holds #desk-rules, which takes every click
 //     and input of the tab (one listener, as #dd-body does in deskDetails).
 //   - The new bubble: #desk-rule-type (its value one of ui, code, design, desk), #desk-rule-label, #desk-rule-text (a
@@ -101,13 +104,13 @@ test.startTest('goal/G6.5: the Rules tab: new rule, search with seven toggles, t
   test.subHeading('1. a Rules tab after Apps, and no Musings since goal/G27.3');
   const tabs = d.doc.getElementById('desk-tabs').innerHTML;
   const at = function (t) { return tabs.indexOf('data-tab="' + t + '"'); };
-  // Since goal/G22.3: Team is Apps' first inner tab (Andy, 2026-10-13), and Apps stands where Team stood.
+  // Looked for: Rules after an Apps tab (goal/G22.3), which goal/G43.22 removed.
   if (at('rules') !== -1 && at('apps') !== -1 && at('apps') < at('rules') && at('musings') === -1) test.check('#desk-tabs holds data-tab="rules" after apps, and no musings tab');
   else test.fail(OWED + 'tab positions: apps ' + at('apps') + ', rules ' + at('rules') + ', musings ' + at('musings'));
   const tabsEl = d.doc.getElementById('desk-tabs');
   tabsEl.fire('click', { target: target({ 'data-tab': 'rules' }), currentTarget: tabsEl });
   await settled();
-  // Counted here, before anything else can search (a rule.add may search again: found verifying 2cd2accb).
+  // Counted here, before anything else can search (a rule.add may search again).
   const openedAtTab = d.sent('rules.search').length;
   // The mount container holds the panes; each element the app fetched by id holds what it drew there.
   const all = function () { return [d.root.innerHTML].concat(Object.keys(d.doc.byId).map(function (k) { return d.doc.byId[k].innerHTML; })).join('\n'); };

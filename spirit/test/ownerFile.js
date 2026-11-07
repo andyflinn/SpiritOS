@@ -5,7 +5,7 @@
 // The contract the builder follows:
 //   relayAuth.loadOwner(rootDir) -> the key, '' when there is none; relayAuth.writeOwner(rootDir, key)
 //   the relay knows its owner by key only; its name comes from its member row
-//   a node is a puppet when spirit/state/owner.json names a key; carries is gone
+//   a node is a puppet when spirit/state/owner.json names a key other than its own
 
 const fs = require('fs');
 const os = require('os');
@@ -54,8 +54,8 @@ test.subHeading('one reader and one writer, in relayAuth');
   fs.rmSync(root, { recursive: true, force: true });
 }
 
-// goal/G16.8: owner.json is written at install (bash/install-units) and never by a claim. This said the first
-// owner claim wrote it; that path is gone, so the claim is shown refusing, and the install's file is what names him.
+// goal/G16.8: owner.json is written at install (bash/install-units) and never by a claim: a claim is shown refusing,
+// and the install's file is what names the owner.
 test.subHeading('the relay: no claim writes owner.json, the owner it names claims, and allow.json is never written');
 {
   const made = world.build(UNCLAIMED);
@@ -106,13 +106,13 @@ test.subHeading('a junk owner.json is no owner, on the relay too');
   else test.fail(OWED + 'junk owner.json read as ' + JSON.stringify({ loadOwner: HAS ? auth.loadOwner(home) : 'absent', ownerPublic: named }));
 }
 
-// The node's one reading of its owner is puppetMode.puppetIn (goal/G13.2: the booted app that once
-// read it through api.owner() is gone, and the node starts no servers differently for a puppet).
+// The node's one reading of its owner is puppetMode.puppetIn (goal/G13.2): the node starts no servers
+// differently for a puppet.
 test.subHeading('a node is a puppet when owner.json names a key');
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-node-'));
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
-  // Since goal/G22.5: a node's own root always holds its identity, and
+  // A node's own root always holds its identity (goal/G22.5), and
   // puppetIn reads it to tell itself from its owner.
   auth.saveIdentity(root, auth.generateIdentity('node'));
   const puppet = puppetMode.puppetIn(root, function () {});
@@ -130,7 +130,7 @@ test.subHeading('a node is a puppet when owner.json names a key');
 test.subHeading('a node may own itself: owner.json naming its own ID is not a puppet');
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-self-'));
-  require('./plantIdentity.js').ensureAt(root, 'self'); // since goal/G22.5, the way a node makes its own
+  require('./plantIdentity.js').ensureAt(root, 'self'); // the way a node makes its own (goal/G22.5)
   const self = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', 'identity.json'), 'utf8')).publicKey;
   const puppet = puppetMode.puppetIn(root, function () {});
   plantOwner(root, self);

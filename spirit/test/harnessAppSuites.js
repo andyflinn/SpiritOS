@@ -1,23 +1,22 @@
 'use strict';
 
-// goal/G4.23, Q19: the harness also runs the suites an app or a process keeps in its own test folder. Red on today's
-// tree; wsl-claude wrote it, claude-windows builds it.
+// goal/G4.23, Q19: the harness also runs the suites an app or a process keeps in its own test folder.
 //   Andy, 2026-10-04, under goal/G4.23: "I kind of like that the picker is bound by the repo: a user-app, for example
 //   should have it's tests in a test-subfolder, where they belong....", then to Q19 ("Should the harness also run
 //   them?"): "the harness should check in / process/js/<process-name>/test/ / shell/<appname>/test/ / for valid suites
 //   and run them if they exist."
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
+// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks):
 //   1  spirit/test/runAll.js discovers, beside spirit/test/*.js, every spirit/run/shell/<app>/test/*.js and
-//      spirit/run/process/js/<name>/test/*.js, by the same rule as today ("a suite is a file that reports": it calls
-//      startTest); anything else there is named as skipped, as today.
+//      spirit/run/process/js/<name>/test/*.js (through spirit/run/test/testModule.js, which names every test in any
+//      test/ folder of spirit/run/, goal/G40.6), by the same rule ("a suite is a file that reports": it calls
+//      startTest); anything else there is named as skipped.
 //   2  It runs them like any other suite; the filter (the first argument) narrows them as it narrows the others.
 //   3  runAll.js --list [filter] prints the suites it would run, one path per line relative to spirit/test, and runs
 //      nothing: no sweep, no record written. This test asks that, never a nested run, since a second harness inside the
 //      harness would sweep the temp folders of suites still running beside it.
 //
 // LEFT OPEN, not asserted: how such a suite finds testSupport.js (a relative require is what this test plants).
-// The generated board that would have grouped them by folder is gone (goal/G8.12).
 //
 // The test plants two small suites, one per kind of folder, runs the real harness filtered to their names, and
 // removes them again, whatever happens.

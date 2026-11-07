@@ -1,19 +1,18 @@
 'use strict';
 
-// goal/G2.5: a message to a busy agent is queued and answered. Red on today's tree. Depends on goal/G2.3.
+// goal/G2.5: a message to a busy agent is queued and answered. Depends on goal/G2.3.
 //   Andy: "if i type messages to busy agents, in a chat box, the app sends an-auto reply after sending the
 //   message the agents in-queue, saying \"message delivered, agents busy\".", "after every message",
 //   "it won't bother you", "and if desk keeps count of those interactions, we can track them later, if
 //   necessary.", "ie: measure how i act, and correct that as well."
-// The contract the builder follows (the shapes this red fixes, argued in goal/G2.5 before building):
+// The contract desk.js keeps (the shapes argued in goal/G2.5):
 //   1. ITEM CHAT: his chat.add under an item taken by an agent the server holds as working (goal/G2.3) is recorded
 //      as always, and the desk server adds its own line right after it, by 'desk', "message delivered, <agent>
 //      busy" — after every such message, never when the agent is listening or the item is nobody's.
-//   2. TEAM CHAT: gone. The page's half went with the direct tabs (goal/G3.12), and the Team tab and its group chat
-//      goal/G0 with goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database."); the desk
-//      server's own reply (1) is the busy reply that remains.
-//   3. COUNTED BY BEING KEPT: those lines are kept like any other, by 'desk', so a search finds them later (chat.search;
-//      `changes` went with goal/G33.4).
+//   2. TEAM CHAT: none. There is no Team tab and no group chat goal/G0 (goal/G43.22; Andy, the box, Q5: "G0 goes,
+//      from ui and server, kept in database."); the desk server's own reply (1) is the only busy reply.
+//   3. COUNTED BY BEING KEPT: those lines are kept like any other, by 'desk', so a search finds them later
+//      (chat.search).
 
 const fs = require('fs');
 const os = require('os');
@@ -43,8 +42,8 @@ test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const chatOf = async function (id) { const r = await call('item.chat', { id: id }, ANDY); return (r.body && r.body.chat) || []; };
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; since goal/G33.7 (session.set went)
-  // it is seeded before the desk starts, which takes it in at start.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; it is seeded before the desk
+  // starts, which takes it in at start (goal/G33.7).
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Round' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
@@ -80,8 +79,7 @@ test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
       test.check('an agent\'s own line, and his line under an item nobody holds, get no reply');
     } else test.fail(OWED + 'a reply went where none was due: goal chat ' + JSON.stringify(goalChat.map(function (l) { return l.by; })));
 
-    // goal/G33.4: `changes` is gone; the replies are kept as chat lines by desk, and a search over the goal's items
-    // finds and counts them later.
+    // The replies are kept as chat lines by desk, and a search over the goal's items finds and counts them later.
     test.subHeading('3. the replies are kept: a search finds them, by desk');
     const ch = await call('chat.search', { id: 'goal/G100', text: 'message delivered', by: 'desk', since: '', before: '', scope: 'items' }, ANDY);
     const recs = ((ch.body || {}).items || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return {}; } })

@@ -1,12 +1,11 @@
 'use strict';
 
 // spirit/test/appErrorCodes.js
-// goal/G16.11: app error codes leave the shared register (A3 of the review of 2026-10-10). Written first, red on
-// today's code, by claude-windows; the build is the other agent's.
+// goal/G16.11: app error codes stay out of the shared register (A3 of the review of 2026-10-10).
 //
-// THE HOLE: spiritErrors.js, loaded by node and relay alike, defines codes that belong to apps (the desk's taken,
-// box-moved, not-offered, no-such-item; deskClient's unblocked; chatClerver's peer-blocked; fileServer's pool-full,
-// no-such-file, already-exists), and an app cannot define its own because define throws 'already declared'.
+// WHY: spiritErrors.js is loaded by node and relay alike, so codes that belong to apps (the desk's taken, box-moved,
+// not-offered, no-such-item; deskClient's unblocked; chatClerver's peer-blocked; fileServer's pool-full,
+// no-such-file, already-exists) are not defined there; each app declares its own to appServer.
 //
 // DECIDED (Andy, 2026-10-11): "yes. get the bloody app error codes out of the core." and "and make sure their codes
 // start with \"appServerName: error text\" so the origin of the error is clear." The shape, as proposed and
@@ -14,7 +13,7 @@
 // refusal by the app's declaration first and the register second; the name in front is put there by appServer, never
 // typed by the app, so no app can wear another's name. Nothing on the wire changes: the same codes travel.
 //
-// THE DECLARATION THIS RED NAMES: appServer.serve(verbs, { codes: { '<code>': { status: <n>, text: '<text>' } } }).
+// THE DECLARATION: appServer.serve(verbs, { codes: { '<code>': { status: <n>, text: '<text>' } } }).
 // The app's name is the one appServer already knows when the node starts it: the server script's own name (a server
 // at .../probeApp/probeApp.js is probeApp).
 //

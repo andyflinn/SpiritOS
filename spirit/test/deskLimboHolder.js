@@ -1,14 +1,9 @@
 'use strict';
 
-// goal/G9.14: limbo reads the phase holder, not the agent's listening word. Red on today's tree; claude-windows wrote
-// it from G9.14's box and does not build it.
+// goal/G9.14: limbo reads the phase holder, not the agent's listening word.
 //   Andy, 2026-10-09, under goal/G9.10, to "Open an item to have limbo read the phase holder instead?": "yes"
 //
-// WHAT IS TRUE TODAY (read in the tree at 603a39bd): limboOf (process/js/desk/desk.js) counts a Go'd item as limbo
-// unless one of its takers has the word working; an agent that arms its listener says listening, so every item it
-// holds falls back into limbo, and the desk posts its limbo line under it again on the next write.
-//
-// THE SHAPE ASSERTED (wsl-claude's proposal he said yes to): an item whose phase somebody holds (phaseWith) is not
+// THE SHAPE ASSERTED (limboOf in spirit/run/process/js/desk/desk.js): an item whose phase somebody holds (phaseWith) is not
 // limbo, whatever that holder's word; an item whose phase nobody holds is, as before. The desk's limbo line follows
 // the same rule. Not asserted: a holder gone silent; the desk's own stale question (10 minutes) already covers that.
 

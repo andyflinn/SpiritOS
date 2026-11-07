@@ -1,16 +1,14 @@
 'use strict';
 
 // spirit/test/deskRealtimeServer.js
-// goal/G27.9, slice S1: every write that changes what a page shows publishes its row. Red on today's tree;
-// claude-windows wrote it and builds it (one agent). The item's box, strategy A: "every write that changes visible
+// goal/G27.9, slice S1: every write that changes what a page shows publishes its row. The item's box, strategy A: "every write that changes visible
 // state publishes a row-level event (item facts, row, checks, box, chat, rule row). log.add publishes its line; rule
 // writes publish the rule row."
 //
 // WHAT IS ASSERTED
-//   1. (log.add publishing its line went with log.add itself, goal/G33.4: "log.add, log.search and pending.get: delete
-//      them.")
+//   (No 1: log.add, whose line it was, is gone, goal/G33.4: "log.add, log.search and pending.get: delete them.")
 //   2. rule.add, rule.draft and rule.version publish {rule: <key>, row: <the rule as rule.get answers it>}.
-//   3. a guard: an item write still publishes its item's facts (as today).
+//   3. a guard: an item write still publishes its item's facts.
 // NOT ASSERTED: deskVerify's and deskAgent's own publishes (they publish whole objects already).
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 

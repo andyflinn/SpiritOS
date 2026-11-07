@@ -5,12 +5,13 @@
 // of the step after it. The forms are the shell elements: joinForm, contactList (Contacts' one list, goal/G30.19),
 // faceForm.
 //
-// DECIDED ONCE, IN THE SHELL (box v42; Andy: "Why, when the shell already figured out that the join-app must appear,
-// does the join app figure out AGAIN where the user stands?"). The shell hears the node's join-steps job, works out the
-// open step and which steps are done, and hands that to onSteps below: when this app mounts, when the job changes, and
-// when this app's own faceOpened changes. This app subscribes to nothing, decides nothing and asks the node nothing
-// about the steps; it draws what it is handed. Handed the same again, it draws nothing; handed something new while a
-// field in the list has focus, it waits until the focus leaves, so nothing he is typing is wiped.
+// TWO WAYS IN. Under the old shell (spirit/run/spirit/client/shell.js, the loopback page) the shell hears the node's
+// join-steps job, works out the open step and which steps are done (handSteps), and hands that to onSteps below: when
+// this app mounts, when the job changes, and when this app's own faceOpened changes. Where no old shell is on the page
+// (the face's boot loads this file itself at home), JOIN SHOWS ITSELF (joinShowsItself, below): it hears the job and
+// works the steps out with joinSteps.js. Either way the list draws what onSteps hands it. Handed the same again, it
+// draws nothing; handed something new while a field in the list has focus, it waits until the focus leaves, so
+// nothing he is typing is wiped.
 //
 // It goes exactly this far: the last step is a link to his face URL, ticked once he has opened it, kept as this app's
 // own state (faceOpened, relay-state/shell/join/state.json); the face answers once the face switch is built.
@@ -163,13 +164,16 @@ var joinBehavior = {
   // The shell's messages are not this app's news: it draws what onSteps hands it alone.
   render: function () {},
 };
-// THE OLD SHELL HANDS JOIN ITS STEPS (js/client/shell.js, goal/G30.1, box v42); in the green shell JOIN SHOWS ITSELF.
+// THE OLD SHELL HANDS JOIN ITS STEPS (spirit/run/spirit/client/shell.js, goal/G30.1, box v42); with no old shell on the
+// page, JOIN SHOWS ITSELF.
+// DISCREPANCY WITH ANDY's RULES: goal/G43.18, Q18 (Andy: "join. not the shells job."; "neither boot.js nor any shell
+// decides it"): the old shell, client/shell.js, still works out where the user stands (handSteps) and hands it here.
 if (window.spirit.shell && typeof window.spirit.shell.activateApp === 'function') window.spirit.shell.activateApp(joinBehavior);
 else joinShowsItself(joinBehavior);
 
 // JOIN SHOWS ITSELF (goal/G43.18, box v29, Q18; Andy: "join. not the shells job."): "Join shows a new user its steps on its
 // own, deciding by itself where and when; neither boot.js nor any shell decides it." It hears the node's join-steps job in the
-// jobs family's cache, works out the open step with joinSteps.js as the shell did (box v42: decided once, now here), and
+// jobs family's cache, works out the open step with joinSteps.js (box v42: decided once, here), and
 // while a step is open it stands as one button at the page's corner, named and marked by that step. Pressed, it opens over
 // the page in a pane of its own, its ✕ closing it. Its one fact, face opened, is its own state, read again as it changes.
 // The mailed join link (?app=join, spirit.shell.joinOpen) opens it at once.

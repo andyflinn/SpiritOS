@@ -2,9 +2,8 @@
 
 // spirit/test/tools/runsHome.js
 // A test node runs a server (goal/G30.20): where a module runs is its manifest's runs, so a suite that wants one of
-// its scratch node's servers started writes 'home' into that manifest. It replaces includeList.add, deleted with the
-// include list. Never the tree's own manifests: a scratch node whose folder is the checkout's spirit/run is refused,
-// unless its manifest already says home.
+// its scratch node's servers started writes 'home' into that manifest. Never the tree's own manifests: a scratch node
+// whose folder is the checkout's spirit/run is refused, unless its manifest already says home.
 //
 //   runsHome(root, 'process/js/desk')
 

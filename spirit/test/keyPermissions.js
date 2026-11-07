@@ -3,9 +3,9 @@
 // spirit/test/keyPermissions.js
 // THE PRIVATE HALF IS NOT A WORLD-READABLE FILE.
 //
-// `spirit/state/identity.json` holds the signing key and, since cycle 10,
-// the cipher key. It was written at whatever the umask gave — 644 on a
-// typical box — so every account on the machine could read both.
+// `spirit/state/identity.json` holds the signing key and the cipher key.
+// relayAuth.saveIdentity writes it 600 in a 700 directory, so another
+// account on the machine cannot read either.
 //
 // ── WHY THIS SUITE IS PLATFORM-AWARE, AND SAYS SO ────────────────────
 //

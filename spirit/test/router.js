@@ -158,11 +158,10 @@ function run() {
 
   test.subHeading('One budget, because there is one population');
 
-  // Decision 0016 kept a member's budget and a partner relay's apart. The
-  // partner budget went with partnering as a permission (Andy's decision,
-  // goal/G22.6); a stranger's post is held by the relay's address table and,
-  // here, by the same cap as a member's. (The RELAY class, for device
-  // offers, was removed by goal/G16.2.)
+  // One requester class, member: no partner class (partnering as a
+  // permission is gone, Andy's decision, goal/G22.6) and no RELAY class
+  // (goal/G16.2). A stranger's post is held by the relay's address table
+  // and, here, by the same cap as a member's.
   {
     const R = router.createRouter({ max: 100, maxPerRequester: { member: 1 } });
 
@@ -185,9 +184,7 @@ function run() {
 
   // THE NUMBER ITSELF, AS THE RELAY RUNS IT: 1 in, 1 out. Decision 0016:
   // "Caps of 1, in two directions. One in flight per member as requester;
-  // one per member as target." The target half was built 2026-09-21; the
-  // requester half stood at the unargued 16 until Andy, 2026-10-02, in
-  // Desk: "experiment 1: change relay on spirit-3 to be 1 <--> 1 no 16
+  // one per member as target." And Andy, 2026-10-02, in Desk: "experiment 1: change relay on spirit-3 to be 1 <--> 1 no 16
   // concurrent inputs ... you will chane 1 thing in the relay: and that's
   // 1 in 1 out." relay.js creates its router with no options, so the
   // defaults ARE the live relay's numbers and this block asserts them.
@@ -203,8 +200,6 @@ function run() {
       test.fail('OWED by Andy\'s experiment 1 (2026-10-02): default caps ' + JSON.stringify(R.caps)
         + ', second ' + JSON.stringify(second) + ', other ' + JSON.stringify(other));
     }
-    // The partner class's own budget stood checked here; it is gone with
-    // partnering (goal/G22.6).
     // The live relay passes only its own key (selfKey, goal/G16.2): no cap
     // option, so the defaults above are still the numbers it runs.
     const live = require('fs').readFileSync(require('path').join(__dirname, '..', 'run', 'spirit', 'relay.js'), 'utf8');
@@ -306,10 +301,8 @@ function run() {
     }
   }
 
-  // THE DEFAULT IS ONE (0016, landed 2026-09-21). It was "no tighter than
-  // the table" while a node could not queue; the node can queue now
-  // (postQueue.js), so the cap that needs no cooperation from anybody is
-  // on by default.
+  // THE DEFAULT IS ONE (0016). The node can queue (postQueue.js), so the
+  // cap that needs no cooperation from anybody is on by default.
   //
   //   Andy: "cap the requests for a specific target at one, respond with
   //   (not available), if this causes the calling node to keep the
@@ -393,10 +386,9 @@ function run() {
 
   test.subHeading('What a request holds expires with it');
 
-  // CYCLE 3. A forward's half-finished business — the partner's answer and
-  // the route back — lived in a map beside this table, emptied only by a
-  // reply. A member who never answered left it in RAM for good. It rides in
-  // the entry now, as `carry`, so one ttl bounds everything a request holds.
+  // CYCLE 3. What a request carries rides in its entry, as `carry`, so one
+  // ttl bounds everything a request holds: a member who never answers
+  // leaves nothing in RAM for good.
   {
     const time = clock();
     const R = router.createRouter({ ttlMs: 5000, now: time.now });

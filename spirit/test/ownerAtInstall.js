@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/ownerAtInstall.js
-// goal/G16.8: a relay's owner is set when the relay is INSTALLED, and in no other way. Written first, red on
-// today's code, by wsl-claude; the build is the other agent's.
+// goal/G16.8: a relay's owner is set when the relay is INSTALLED, and in no other way.
 //
 // WHY, in Andy's words (2026-10-11, answering Q1 of this item): "the invite path to ownership MUST be gone. it
 // is a security gap, from the time of install until the time of first claim." And under goal/G16.3, 2026-10-10:
@@ -10,25 +9,12 @@
 // first claim i mean"; "KILL the dead code / fallback. this type of stuff is always coming back to bite us.";
 // "yes. ownership CANNOT be achieved via invite."
 //
-// THE GAP, stated plainly: between the moment a public relay starts and the moment its owner's first claim
-// arrives, the box is ownable by whoever holds the token install.js printed. The token can be read over a
-// shoulder, left in a scrollback, or pasted into the wrong window, and the relay cannot tell. Writing the owner
-// file at install closes the window: there is never a moment when the relay is unowned and serving.
+// THE GAP, stated plainly: an owner token minted at install could be read over a shoulder, left in a scrollback,
+// or pasted into the wrong window, and whoever held it could own the box before its owner claimed. Writing the
+// owner file at install closes the window: there is never a moment when the relay is unowned and serving.
 //
-// TWO PREMISES OF THE ITEM'S BOX WERE WRONG, and this header records it so the next session does not re-derive
-// it. Verified at 0005e443:
-//   1. The box said "no install.js exists in the tree, so nothing mints one and the branch cannot be taken on a
-//      real box." install.js IS in the tree, at the repo root, and mints the owner invite (invites.mintOwner).
-//      It was already there at b355e36d, the commit the box was checked at. So the path is not dead code: it is
-//      today's only way a fresh public relay becomes owned, and install.js goes WITH the path, not before or
-//      after it. Andy's own answer settles the direction: install.js performs ownership by invite, which is the
-//      thing being killed.
-//   2. The box said the owner-invite suites are simply "retired from the list". They are not the whole of it.
-//      spirit/test/world.js (the in-process scenario builder) and spirit/test/labWorld.js both make EVERY relay
-//      they build owned by driving the first claim through the owner invite, via spirit/test/ownerClaim.js — and
-//      29 test files lean on those helpers. Left out, the deletion turns a few hundred suites red at once and
-//      none of it is a real fault. So the world builders own a relay by WRITING the owner file, which is what
-//      this suite's own fixture already does (relayWith, below) and proof that it needs no invite.
+// The world builders (spirit/test/world.js, spirit/test/labWorld.js, through spirit/test/ownerClaim.js) own a
+// relay by WRITING the owner file, as this suite's own fixture does (relayWith, below).
 //
 // WHAT IS ASSERTED
 //   1. NOTHING CAN BECOME AN OWNER OVER THE WIRE: a claim on a relay with no owner file is refused, and no
@@ -36,8 +22,8 @@
 //   2. THE MINT IS GONE: invites offers no owner kind — no mintOwner, no isOwnerInvite, no OWNER_INVITE — and
 //      relay.js has no becomeOwner, so nothing in the running code can write an owner from the wire.
 //   3. install.js IS GONE from the tree, because it exists only to mint that token.
-//   4. THE INSTALL WRITES THE OWNER: bash/install-units takes the owner's public key the way bash/face-install
-//      already does, writes spirit/state/owner.json from it, and refuses to install a relay without one.
+//   4. THE INSTALL WRITES THE OWNER: bash/install-units takes the owner's public key (OWNER_KEY), writes
+//      spirit/state/owner.json from it, and refuses to install a relay without one; bash/RELAY-HOST.md says so.
 //   5. AN ORDINARY MEMBER CLAIM STILL WORKS on an owned relay, with a member invite. The item takes nothing
 //      away from a person.
 //   6. THE REFUSAL TEXTS THAT NAME THE DEAD PATH ARE GONE: no 'owner invite required' anywhere under spirit/run.
@@ -79,8 +65,8 @@ function runFiles(rel, into) {
 }
 
 // A RELAY THAT IS OWNED BEFORE IT SERVES — which is the shape this item asks for, built here with no invite at
-// all. The owner's key is written into spirit/state/owner.json, exactly as bash/face-install does it for a face,
-// and the relay is owned from its first breath.
+// all. The owner's key is written into spirit/state/owner.json, as bash/install-units does, and the relay is
+// owned from its first breath.
 function ownedRelay() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ownerinstall-'));
   fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
@@ -107,9 +93,9 @@ test.subHeading('1. a claim on a relay with no owner is refused, and makes no ow
   const w = unownedRelay();
   const comer = auth.generateIdentity('stranger');
   const got = w.box.claim('stranger', auth.sign(comer.privateKey, auth.claimMessage('stranger')), comer.publicKey, '10.0.0.9');
-  // THE REFUSAL IS PINNED TO ITS OWN REASON, and that is not pedantry. Found while verifying 2010cbdb: with the
-  // no-owner refusal deleted, an unowned relay still refuses — 'invite required', further down the path — so a
-  // check that accepted any refusal passed while the gate it names was gone. The relay must turn a claim away
+  // THE REFUSAL IS PINNED TO ITS OWN REASON, and that is not pedantry: with the no-owner refusal deleted, an
+  // unowned relay still refuses — 'invite required', further down the path — so a check that accepted any refusal
+  // would pass while the gate it names was gone. The relay must turn a claim away
   // BECAUSE it has no owner, before the invite question is reached at all.
   if (got && got.ok === false && /no owner/.test(String(got.error))) {
     test.check('a claim on an unowned relay is refused for having no owner: ' + short(got.error));
@@ -123,12 +109,9 @@ test.subHeading('1. a claim on a relay with no owner is refused, and makes no ow
   else test.fail(OWED + 'the claim wrote spirit/state/owner.json: ' + short(read(ownerFileOf(w.home))));
 }
 
-// The same attempt, now with a token in hand. This is the gap Andy named: today a minted owner invite turns this
-// exact refusal into ownership.
-//
-// The attempt is driven EXACTLY as spirit/test/ownerClaim.js drives it today — the token, the spoken label and
-// the owner's card — so that this check is red on today's code for the right reason. A claim that merely failed
-// to present a well-formed invite would pass it while the gap stood wide open.
+// The same attempt, with a token in hand if invites still minted one: the gap Andy named, an owner invite turning
+// this exact refusal into ownership. The attempt carries the token, the spoken label and the owner's card, so a
+// claim that merely failed to present a well-formed invite cannot pass it.
 {
   const w = unownedRelay();
   const comer = auth.generateIdentity('andy');
@@ -171,9 +154,8 @@ test.subHeading('3. install.js is gone, because minting that token was all it di
 
 // ── 4. THE INSTALL WRITES THE OWNER FILE ────────────────────────────────
 //
-// Asserted on the text of the script, which is how spirit/test/hostHardening.js already judges bash/ — these are
-// root-only scripts and a suite cannot run them. bash/face-install is the model: it takes <OWNER_KEY> as its
-// first argument and writes owner.json from it.
+// Asserted on the text of the script, which is how spirit/test/hostHardening.js judges bash/ — these are
+// root-only scripts and a suite cannot run them.
 test.subHeading('4. bash/install-units takes the owner key and writes the owner file');
 {
   const units = read(path.join(BASH, 'install-units'));
@@ -194,9 +176,8 @@ test.subHeading('4. bash/install-units takes the owner key and writes the owner 
       test.fail(OWED + 'install-units does not refuse without an owner key');
     }
 
-    // The document must say it in the one place an operator reads before installing, and say it of the install
-    // — today it mentions owner.json only as state that is not in git, which tells an operator nothing about
-    // where it comes from.
+    // The document must say it in the one place an operator reads before installing, and say it of the install,
+    // so an operator knows where owner.json comes from.
     const doc = read(path.join(BASH, 'RELAY-HOST.md'));
     if (/\bOWNER_KEY\b/.test(doc) || /install-units[^\n]*owner/i.test(doc)) {
       test.check('RELAY-HOST.md says the install is given the owner key and writes the owner file');

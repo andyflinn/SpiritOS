@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskTakeToAnswer.js
-// goal/G18.8: Desk: an agent answers only a line it has taken. Red on today's tree (3e1fc72a); claude-windows wrote it
-// and builds it (one agent). The item's box (v4), Andy, 2026-10-12: "answering a chat line is a "take" item, i will
+// goal/G18.8: Desk: an agent answers only a line it has taken. The item's box (v4), Andy, 2026-10-12: "answering a chat line is a "take" item, i will
 // solicit contributions after that, from specific agents."; "no agent should answer without taking. too much chatter
 // otherwise."; and, to an agent posting its own work notes on an item it holds: "yes.", with "We need to secure desk a
 // little better again chatterboxes like Levant/OpenAI".
@@ -57,8 +56,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desktaketoanswer-'
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'desk', 'win32', 'process') : path.join(root, 'door.sock');
   const client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
-  // (goal/G33.7: session.set went).
+  // goal/G29.21: an agent creates no goal, so the owner writes the world, seeded before the desk starts.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Takes' }, items: [{ id: 'goal/G100.1', title: 'Asked', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Held', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });

@@ -1,11 +1,9 @@
 'use strict';
 
 // spirit/test/fieldRules.js
-// goal/G4.16: every label and description validated at one point, js/fieldRules.js. RED on today's tree: the file is
-// js/labelRule.js, a label is capped at 256 bytes and 48 characters, a long description is cut, and your own name for
-// a peer and a peer's label added or held by hand are checked nowhere.
+// goal/G4.16: every label and description validated at one point, spirit/run/spirit/fieldRules.js.
 //
-//   Andy, 2026-10-03, his go-all on goal/G4; the rulings stand verbatim in the box of goal/G4.16: "labelRule.js should
+//   Andy, 2026-10-03; the rulings stand verbatim in the box of goal/G4.16: "labelRule.js should
 //   be corrected to specify a max in term of bytes only."; "this rule applies for all text fields in node from now
 //   on."; "all occurrences of label and description must validate at a central point, the already misnamed
 //   labelRule.js is the place. this cleanup gets its own item, and the permission to touch the core relates to that
@@ -14,11 +12,10 @@
 //   labels."; "description 128 bytes is alright."
 //
 // THE CONTRACT (the box of goal/G4.16).
-//   1. THE NAME: js/labelRule.js becomes js/fieldRules.js; nothing under spirit/run or spirit/test names labelRule or
-//      its browser global spiritLabelRule any more; index.html loads /js/fieldRules.js; in a browser the file sets
-//      window.spirit.fieldRules (the old global, renamed with the file).
-//   2. A LABEL: at most 64 bytes, counted after normalising; no character count (MAX_GRAPHEMES gone). The invisible
-//      stays refused, as now.
+//   1. THE NAME: the file is spirit/fieldRules.js and there is no spirit/labelRule.js; nothing under spirit/run or
+//      spirit/test names labelRule or spiritLabelRule; spirit/shell/index.html loads /spirit/fieldRules.js; in a
+//      browser the file sets window.spirit.fieldRules.
+//   2. A LABEL: at most 64 bytes, counted after normalising; no character count. The invisible stays refused.
 //   3. A DESCRIPTION: at most 128 bytes, refused when over, never cut: by the rule (describeProblem), by the node's
 //      store (relayAuth.setDescription keeps nothing), and by the verb (node.setDescription answers a refusal).
 //   4. YOUR OWN NAME FOR A PEER (contact.label, hub.js handlePeer): checked by the rule; a bad one is refused and
@@ -26,9 +23,8 @@
 //   5. A PEER'S LABEL GIVEN BY HAND: on contact.block of a key with no row, and on peer.acquire, a publicLabel the
 //      rule refuses is refused, nothing written. Empty stays allowed (a pasted key has no label yet).
 //   6. THE SHELL INPUT checks before it asks: contactsDetails' My Label field posts no contact.label for a name the
-//      rule refuses.
-// NOT ASSERTED, the builder's: the wording and codes of the refusals; how a screen shows one; the suites that name
-// 48 or 256 (fileCap, labRefusals, playPopulate) move with the change.
+//      rule refuses. (It mounts shell/contactsDetails/contactsDetails.js, which is no longer in the tree.)
+// NOT ASSERTED: the wording and codes of the refusals; how a screen shows one.
 
 const fs = require('fs');
 const os = require('os');

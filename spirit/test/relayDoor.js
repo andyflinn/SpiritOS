@@ -12,7 +12,7 @@
 // learnt). Both are answered on the post itself, as a reply packet the relay
 // signs over the hash the asker computed.
 //
-// Strangers are held by the relay's table of requesting ADDRESSES, ban time
+// Strangers are paced by the relay's table of requesting ADDRESSES, ban time
 // starting at 1000 ms and doubled for an address that asks again too early.
 // Every suite knocks from 127.0.0.1, so every stranger request a suite makes
 // goes through here: paced past the first ban, and waiting out any ban the

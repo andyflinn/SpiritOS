@@ -2,9 +2,8 @@
 
 // spirit/test/oneDecoder.js
 // goal/G16.5: one decoder in the node layer, and a guard that sees it (N1, N3, N5 of the review of 2026-10-10).
-// Written first, red on today's code, by claude-windows; the build is the other agent's (Andy, 2026-10-11: "THERE
-// ARE TWO AGENTS HERE"). Andy's rulings on the item: "Q5: Add it? yes"; on the three inline readers, "yes. we fix
-// redundant code now." The rule checked is NODE-AND-RELAY.md's: the node decodes the envelope and nothing inside.
+// Andy's rulings on the item: "Q5: Add it? yes"; on the three inline readers, "yes. we fix redundant code now."
+// The rule checked is design/principles/NODE-AND-RELAY.md's: the node decodes the envelope and nothing inside.
 //
 // WHAT IS ASSERTED
 //   1. THE ONE DECODER: arrivals.js exports envelopeOf(text): for a packet, { app, re, body } read from its envelope
@@ -12,15 +11,15 @@
 //      reads an envelope.
 //   2. THE WITNESSES ARE HANDED IT: a witness's message carries `envelope`, the same reading, so no witness decodes;
 //      a page's (subscriber's) message does not (pages keep the text as signed and decode it themselves).
-//   3. THE GUARD (replacing nodeKnowsNoApps.js, whose control fails today): in spirit/run/js, kernel.js aside (its
-//      decode is the loopback clients' shared one, Andy 2026-10-02), no file but arrivals.js names decode, decorate
+//   3. THE GUARD: in spirit/run/spirit (the top-level .js files only), kernel.js aside (its decode is the loopback
+//      clients' shared one, Andy 2026-10-02), no file but arrivals.js names decode, decorate
 //      or isEnvelope in code (a TextDecoder's decoder.decode is bytes, not an envelope); and in peerPost.js, nodeCard.js
 //      and answerRelay.js every JSON.parse is of a relay's HTTP answer (res.text, r.text) or the node's own stored row
 //      (row.body), never of a packet's text.
 //   4. N3: peerPost's refusal reader takes a reply that carries an app as the app's answer, not as a node refusal: its
 //      refusal check reads the envelope through envelopeOf and requires no app.
-//   5. THE CONTROL the old guard lost: the shell's own decode is found where it now lives (window.spirit.packet), so a
-//      green here is about code that exists; nodeKnowsNoApps.js is retired.
+//   5. THE CONTROL: the shell's own decode is found where it lives (spirit/client/shell.js, through
+//      window.spirit.packet), so a green here is about code that exists; and nodeKnowsNoApps.js stays retired.
 // rule/11: through testSupport only; no node, no ports.
 
 const fs = require('fs');

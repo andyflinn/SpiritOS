@@ -1,7 +1,7 @@
 # spirit/test/violators.js
 
-A door's run as one line per violator (goal/G22.3), for the Stacks tab's run dialog. Andy, 2026-10-13: "much better,
-gimme that when i press run:". Kept in spirit/test/ with the stack-frame tests since goal/G43.22.
+A door's run as one line per violator (goal/G22.3). Nothing in the product calls it: the desk's stacks went in
+goal/G43.22, and the formatter is kept in spirit/test/ with its tests, `violatorsFormat.js` and `stackFrameViolators.js`.
 
 ## API
 

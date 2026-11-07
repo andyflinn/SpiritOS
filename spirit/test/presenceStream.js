@@ -88,12 +88,11 @@ function run() {
   if (j && j.ok) test.check('and so does another');
   else test.fail('john open: ' + JSON.stringify(j));
 
-  // NO ROSTER ON CONNECT, since cycle 3 — 0012 widened: no member list is
-  // served, not by request and not by broadcast. This asserted the
-  // newcomer's first roster named itself present; the node now seeds its
-  // own presence and the relay's from the pinned relay key (presenceNode's
-  // seedRelay), and learns everyone else from broadcasts it filters by its
-  // own contacts. The relay broadcasts, the node filters.
+  // NO ROSTER ON CONNECT (cycle 3, 0012 widened): no member list is served,
+  // not by request and not by broadcast. The node seeds its own presence
+  // and the relay's from the pinned relay key (presenceNode's seedRelay),
+  // and learns everyone else from broadcasts it filters by its own
+  // contacts. The relay broadcasts, the node filters.
   if (!johnSink.last('roster')) {
     test.check('the newcomer is sent no roster — no member list is served');
   } else {
@@ -109,10 +108,8 @@ function run() {
 
   test.subHeading('An absent member is never named to a newcomer');
 
-  // This section asserted the opposite until cycle 3: that the roster named
-  // the absent, with labels, so white and red did not collapse. Red versus
-  // white is now the node's distinction, made against its own contacts —
-  // the relay does not tell one member who else is on the roll.
+  // Red versus white is the node's distinction, made against its own
+  // contacts — the relay does not tell one member who else is on the roll.
   const namesAndy = johnSink.lines.some(function (chunk) {
     return chunk.indexOf(L.owner.publicKey) !== -1;
   });
@@ -175,14 +172,9 @@ function run() {
 
   test.subHeading('The gate');
 
-  // The replay this verb exists to prevent, asked with whatever other
-  // signed format the tree still has.
-  //
-  // It has outlived two of them now. Written against an INBOX signature —
-  // one the owner made every two seconds — which R8 deleted; moved to
-  // `status`, which an owner signed for every roll, which R3 deleted a
-  // few hours later. `claim` is what is left, and the claim is unchanged:
-  // bytes signed for one verb must not open another.
+  // The replay this verb exists to prevent, asked with another signed
+  // format the tree has, `claim`: bytes signed for one verb must not open
+  // another.
   const wrongVerb = L.box.streamOpen(
     bert.publicKey,
     auth.sign(bert.privateKey, auth.claimMessage(bert.publicKey)),
@@ -220,13 +212,11 @@ function run() {
   // verify, that alone would evict him. Knocking any peer offline would
   // cost one bad request.
   //
-  // A FRESH identity, and that detail is not cosmetic. Written first
-  // against bert, this passed while the ordering was wrong — bert's
-  // connect budget was already spent by the gate checks above, so the
-  // forged connect was refused by the rate limit before it ever reached
-  // the registry, and the test was green for a reason it was not
-  // testing. A rate limit is not an authorisation check and must never
-  // be mistaken for one.
+  // A FRESH identity, and that detail is not cosmetic: bert's connect
+  // budget is already spent by the gate checks above, so a forged connect
+  // naming him would be refused by the rate limit before it ever reached
+  // the registry, green for a reason it is not testing. A rate limit is
+  // not an authorisation check and must never be mistaken for one.
   const zoe = L.peer('zoe');
   const zoeLive = fakeSink();
   openFor(L.box, zoe, zoeLive);
@@ -284,17 +274,10 @@ function run() {
 
   test.subHeading('Presence work puts nothing but presence on the wire');
 
-  // THE FENCE MOVED, deliberately and once. PRESENCE.md §6 scoped this
-  // wire to presence alone, and this check asserted it — so that a later
-  // cycle could not put a message on it by accident. ROUTER.md is that
-  // cycle, and it does so on purpose: `request` and `reply` now travel
-  // here too.
-  //
-  // What this still guards, and it is worth keeping: PRESENCE operations
-  // emit presence events and nothing else. A connect or a disconnect that
-  // started carrying a body would fail here, which is the accident the
-  // original fence was really about. `roster` left the allowed list with
-  // cycle 3: its return would be a member list served, and fails here.
+  // THE FENCE: `request` and `reply` travel on this wire too (ROUTER.md),
+  // but PRESENCE operations emit presence events and nothing else. A
+  // connect or a disconnect that started carrying a body would fail here.
+  // `roster` is not on the allowed list: it would be a member list served.
   const seen = {};
   bertSink.events().concat(johnSink.events()).forEach(function (e) {
     if (e.event) seen[e.event] = true;

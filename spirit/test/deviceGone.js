@@ -7,7 +7,7 @@
 // Scope, as posted on the item: media and published content are Andy's and are left alone, and so are brains and
 // the suite itself, which names the word to find it.
 //
-// WHAT IS ASSERTED (red on today's code)
+// WHAT IS ASSERTED
 //   1. the folder spirit/run/spirit/device is absent.
 //   2. no file in the code, shell, process, test or documentation trees mentions "device" (case-insensitive).
 

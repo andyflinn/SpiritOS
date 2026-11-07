@@ -1,13 +1,15 @@
 'use strict';
 
 // spirit/test/processBrowserGone.js
-// goal/G29.13: the Job Selector (shell/process-browser) is gone. Red on today's tree; claude-windows writes it and
-// builds it (one agent). The item's box, Andy's words first: "Nothing, absolutely NOTHING can be done with this shell
-// app, that cannot be done through the "files" shell app. So this app need s to go. Completely. Utterly. Gone. dead."
+// goal/G29.13: the Job Selector (shell/process-browser) is gone. The item's box, Andy's words first: "Nothing,
+// absolutely NOTHING can be done with this shell app, that cannot be done through the "files" shell app. So this app
+// need s to go. Completely. Utterly. Gone. dead."
 //   WHAT GOES: the app itself (its script and manifest); every mention that keeps it alive: its place in the Spirit
-//   group (index.html), its entry in the shell's intrinsic apps and its old-id rename (js/client/shell.js); its tests
-//   turn into checks that it is gone.
-//   WHAT STAYS: starting a program, from the file viewer's start form for a script under process/.
+//   group (index.html), its entry in the shell's intrinsic apps and its old-id rename (spirit/run/spirit/client/shell.js);
+//   its tests turn into checks that it is gone.
+//   WHAT STAYS (point 4): starting a program, from the file viewer's start form for a script under process/. Point 4
+//   looks for maybeRenderJobForm in spirit/run/spirit/shell/index.html; the form left index.html for the text viewer
+//   (goal/G30.16), and that viewer is gone too, so no start form is in the tree and point 4 is red.
 // rule/11: through testSupport only.
 
 const fs = require('fs');

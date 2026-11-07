@@ -105,8 +105,8 @@ const DOORS = [
 
 // THE SOURCE THE PATHS WERE MEASURED AGAINST. The formatter reads a violator's own source line to say "by plain
 // fetch"; these paths were measured on 2026-10-13, and goal/G22.6 has since moved every one of these callers onto
-// peerPost — offboard.js:78 no longer fetches. So the formatter is handed a root holding the tree as it is, with
-// offboard.js as it stood when measured (its line 78, the plain fetch), rather than reading lines that moved.
+// peerPost, and offboard.js is gone from the tree. So the formatter is handed a root holding the other files as they
+// are, with an offboard.js written as it stood when measured (its line 78, the plain fetch).
 const MEASURED_ROOT = (function () {
   const os = require('os');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-violators-'));

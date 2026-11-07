@@ -9,6 +9,8 @@
 //   the far right. With a dialog on top the shell hides #app-close (display none) and shows #app-dialog-close; a
 //   click on it does what Back did (goBack: the dialog pops and its caller's promise settles). With an app on top,
 //   #app-close shows as before and #app-dialog-close is hidden. Home is not touched.
+// The fake spirit below gives core.jobs.subscribe; shell.js now subscribes through spirit.events.subscribe
+// (goal/G40.6), which the fake lacks, so loading shell.js throws.
 
 const fs = require('fs');
 const path = require('path');

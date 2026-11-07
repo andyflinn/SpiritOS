@@ -4,11 +4,11 @@
 // Andy: "I want one box only." "All other text-output-boxes are removed." "no pulling". "a press shouldn't post a
 // line, it is not textual information." The yellow strip "should only be offered when the agents claim 'done'".
 // The goal's abandon: "a red, arming-button ... with are-you-sure", "at the very right of the button row".
-// The contract the builder follows:
+// The contract deskDetails.js keeps:
 //   open({id}) asks the desk server item.get {id} once, through api.verb('desk.item.get', {id}) (goal/G30.6), and
 //   paints its answer. After that it asks nothing: it repaints from api.onPublished objects,
 //   {change, verb, item: <facts>} plus, for a box write, {box, version}, and for a chat line, {chat: {by, at, text}}.
-//   (The desk server publishes box and chat that way; its half is part of this item.)
+//   (The desk server publishes box and chat that way.)
 //   Buttons come from item.buttons only. A press goes to the server as press {id, what} (no by since apiAuth/G1.13: the desk takes the owner from his caller); the screen
 //   does not change until the server publishes. A C check is ticked by pressing it: check.set {id, check, state:
 //   'passed'}. The yellow strip that showed the C checks while item.buttons offered 'done' is gone (goal/G30.8): the
@@ -116,13 +116,14 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   else test.fail(OWED + 'the dialog still has #dd-blurb or #dd-decide');
   if (!d.published.length) test.fail(OWED + 'the dialog does not subscribe with api.onPublished');
   else test.check('it listens with api.onPublished');
-  // Found live on Andy's node (wsl-claude): the shell hands a server's changes to the app of its own name, so the
-  // dialog must name the desk server, or it never hears a change.
+  // The shell hands a server's changes to the app of its own name, so the dialog must name the desk server, or it
+  // never hears a change.
   if (d.servers.indexOf('desk') !== -1) test.check('it listens to the desk server by name');
   else test.fail('the dialog listens as itself, so the desk server changes never reach it: ' + JSON.stringify(d.servers));
 
-  // SINCE goal/G30.8 the yellow strip is gone: the C checks are the red Qs' panel's (❌), drawn into #dd-panel when its
-  // icon is pressed, and the item opens on its box.
+  // goal/G30.8: no yellow strip; the C checks are the red Qs' panel's (❌), drawn into #dd-panel when its icon is
+  // pressed, and the item opens on its box. The icon press here reaches no panel since the workBench draws the strip
+  // (goal/G41.22), so this check fails, and the fake document lacks createElement for the bench.
   test.subHeading('buttons come from item.buttons; the C checks are in the red Qs\' panel');
   if (p0.indexOf('id="dd-done"') !== -1 && p0.indexOf('id="dd-go"') === -1) test.check('buttons [done]: Done shows, Go! does not');
   else test.fail(OWED + 'with buttons [done] the page has done ' + (p0.indexOf('id="dd-done"') !== -1) + ', go ' + (p0.indexOf('id="dd-go"') !== -1));

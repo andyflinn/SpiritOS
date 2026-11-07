@@ -1,15 +1,12 @@
 'use strict';
 
-// goal/G9.7: an arm-able Delete in the item button bar while in design mode. Red on today's tree; claude-windows
-// wrote it from G9.7's box and does not build it.
+// goal/G9.7: an arm-able Delete in the item button bar.
 //   Andy, 2026-10-07: "the button bar of items will offer an arm-able [delete] while in design mode.", and on Q1 (close
 //   or erase): "close is enough. that essentially leaves them as \"musings\" on the record."
+//   Since goal/G24.9 (Andy, 2026-10-14: "i have no delete option for this item") delete is offered whatever the design
+//   mode; spirit/test/deskDeleteOutsideDesign.js holds its exceptions.
 //
-// WHAT IS TRUE TODAY (read in the tree after 4115fbfb): nothing deletes an item; one a session leaves out is closed,
-// never deleted (goal/G4.24). There is no item.delete and no delete button.
-//
-// THE SHAPE ASSERTED (G9.7's box): item.delete {id}, his alone, taken only while the item's goal is in design mode,
-// never on a goal. It closes the item as a left-out one is closed: it stays on the record with its box, found by
+// THE SHAPE ASSERTED: item.delete {id}, his alone, taken only while the item's buttons offer it, never on a goal. It closes the item as a left-out one is closed: it stays on the record with its box, found by
 // Include Closed, and blocks nothing. The server offers `delete` in the item's buttons while it may be taken, so the
 // dialog draws it from buttons as every button (desk/G2.7), id dd-delete; the first click arms it, the second sends.
 
@@ -48,7 +45,7 @@ async function start() {
 }
 function stop() { return new Promise(function (r) { if (!kid) return r(); kid.once('exit', r); kid.kill(); setTimeout(r, 3000); }); }
 function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
-// A refusal counts only once the verb exists: today's no-such-verb refuses everything and proves nothing.
+// A refusal counts only once the verb exists: a no-such-verb refuses everything and proves nothing.
 function refusedByVerb(r) { return !took(r) && !(r.body && r.body.code === 'no-such-verb'); }
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
 async function listed(includeClosed) {
@@ -96,9 +93,8 @@ async function server() {
   if (((await facts('goal/G100.2')).blocked || []).indexOf('goal/G100.1') === -1) test.check('goal/G100.2 no longer waits on it');
   else test.fail(OWED + 'goal/G100.2 still waits on ' + short((await facts('goal/G100.2')).blocked));
 
-  // Until goal/G24.9 this section asserted the opposite: no delete out of design mode. Andy, 2026-10-14: "i have no
-  // delete option for this item", so delete is offered whatever the design mode (spirit/test/deskDeleteOutsideDesign.js
-  // holds its exceptions: a phase held, a claim open).
+  // goal/G24.9: delete is offered whatever the design mode (Andy, 2026-10-14: "i have no delete option for this
+  // item"); spirit/test/deskDeleteOutsideDesign.js holds its exceptions: a phase held, a claim open.
   test.subHeading('4. out of design mode delete is still offered (goal/G24.9)');
   await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   if ((await facts('goal/G100')).design === false) test.check('the world: design mode ended');

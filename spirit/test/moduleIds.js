@@ -2,8 +2,7 @@
 
 // spirit/test/moduleIds.js
 // THE NODE OWNS EVERY MODULE ID, BY PATH; A JOB IS AN INSTANCE OF ONE ID —
-// slim/G1.5, written FIRST, red on today's code (wsl-claude tests,
-// claude-windows builds).
+// slim/G1.5.
 //
 //   Andy, 2026-09-29: "it would be the node, who owns shell-element AND
 //   process ID's, what we see in jobs monitor are ID-instances, because some
@@ -16,11 +15,13 @@
 //      the module's own path (process/js/<name>)
 //   T2 two starts of one process are two jobs, two instances of one module
 //   T3 the node's own boot does the same: a node-operated server's job carries
-//      its module (a face is such a server since goal/G13.2)
+//      its module
 //   T4 the Jobs monitor's row names the module a job is an instance of
 //   T5 a job that is no module's (the node's own fs-watcher, stats, presence)
 //      carries none, rather than a made-up one
 // The module is job.module, beside job.type and job.kind.
+// T1 AND T2 START A SCRIPT PLANTED IN A SCRATCH RUN FOLDER, which jobs.js refuses since goal/G41.30 ("only this node's
+// own processes start": the script must be in the tree jobs.js itself runs from), so they fail on the refusal.
 
 const fs = require('fs');
 const os = require('os');
@@ -52,7 +53,10 @@ function plantNode() {
   // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
   const auth = require('../run/spirit/relayAuth.js');
   auth.saveIdentity(run, auth.generateIdentity('moduleids'));
-  // Run at home: this suite is about ids, not about where a module runs (goal/G30.20).
+  // Meant to run them at home (goal/G30.20); this suite is about ids, not about where a module runs.
+  // tools/runsHome.js writes runs: ['home'] into the manifest (goal/G30.20). jobs.js no longer reads that: a server runs
+  // when it is intrinsic or its node sidecar, relay-state/process/<name>/<name>.js.sidecar.json, says face.home (goal/G41.1),
+  // so this does not make the node start it.
   runsHome(run, 'process/js/counter');
   runsHome(run, 'process/js/keeper');
   return run;

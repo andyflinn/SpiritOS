@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskRealtimeFace.js
-// goal/G27.9, slices S2 to S4: the faces repaint from the stream, element by element. Red on today's tree;
-// claude-windows wrote it and builds it (one agent). The item's box:
+// goal/G27.9, slices S2 to S4: the faces repaint from the stream, element by element. The item's box:
 //   B. "one client repaint path ... Each element subscribes to the keys it shows and repaints only its own part. The
 //      face-wide deskDraw stays for layout only."
 //   C. "No tab gate: changes are applied to the store whether or not the tab shows; the tab repaints on show."
@@ -12,7 +11,7 @@
 //      pairs are all made from it."
 //   S4: "every remote element listens for itself and redraws only itself."
 //
-// THE SHAPES THIS RED NAMES (left to the builder by the box; named here so it can be run):
+// THE SHAPES ASSERTED (the box left them open):
 //   - spirit/run/shell/shared/js/deskElement.js sets window.spirit.elements.createDeskElement({subscribe, wants, paint}):
 //     subscribe(handler) is the stream (an app's onPublished) and answers its unsubscribe; the element subscribes
 //     itself when made; a published object it wants is painted, any other is not; destroy() unsubscribes.
@@ -20,12 +19,12 @@
 // WHAT IS ASSERTED
 //   1. the shared element: subscribes itself, paints only what it wants, unsubscribes on destroy.
 //   2. Desk: a publish changing one row repaints that row alone: not the List, not the other row.
-//   3. Desk: a team chat line repaints the team chat alone, not the List. GONE with goal/G43.22: no Team tab and no
-//      group chat goal/G0 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
+//   (No 3: the team chat it repainted went with goal/G43.22.)
 //   4. Desk: a rule's published row repaints the rule list without asking rules.search again.
 //   5. Desk: a change while another tab shows is there when the List shows again (C, a guard).
 //   6. Remote: a state whose pairs changed repaints the pairs alone; one whose models changed, the models alone.
 //   7. Desk and the Remote make their elements with createDeskElement.
+// The Remote (shell/deskAgentRemote/) is not in the tree any more, so 6 and the Remote's half of 7 no longer match it.
 // NOT ASSERTED: layout, words, the verifier tab and the musings (S3's rest), the reconnect pull (E, unchanged).
 // rule/11: through testSupport only; no node, no port.
 
@@ -142,8 +141,7 @@ async function deskHalf() {
   if (top.sets === marks.top && rowTwo.sets === marks.two) test.check('the List and the other row are not repainted');
   else test.fail(OWED + 'the List was set ' + (top.sets - marks.top) + ' times, the other row ' + (rowTwo.sets - marks.two));
 
-  // 3, A TEAM CHAT LINE REPAINTING #desk-team ALONE, STOOD HERE: the Team tab and its group chat goal/G0 went with
-  // goal/G43.22.
+  // No section 3: no Team tab or group chat since goal/G43.22.
 
   test.subHeading('4. a rule\'s row repaints the rule list without a search');
   doc.getElementById('container').fire('click', { target: target({ 'data-tab': 'rules' }) });

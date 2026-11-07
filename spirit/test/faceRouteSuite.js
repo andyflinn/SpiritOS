@@ -9,23 +9,21 @@
 //   puppet a signed reply, allowing the appFaceApp to cache that route in RAM
 //   for future use", and "at restart, the dance starts anew....".
 //
-// Built by claude-windows at 67af809 (spirit/run/spirit/faceRoute.js), against
-// the names declared at 2223a36. Real keys from relayAuth; a fake clock, so
-// "an hour" and "a minute" are tested without waiting for them.
+// Exercises spirit/run/spirit/faceRoute.js. Real keys from relayAuth; a fake
+// clock, so "an hour" and "a minute" are tested without waiting for them.
+// relay.js calls nameOf (and faceLabel); createRouteCache, the puppet's
+// memory, has no caller in the tree but this suite since appFaceApp went
+// (goal/G30.1, bash/FACE.md).
 
 const test = require('./testSupport.js');
 const auth = require('../run/spirit/relayAuth');
-// Beside the face since goal/G13.2: the cache is appFaceApp's own, not the node's.
 const fr = require('../run/spirit/faceRoute');
 
-// THE OWNER'S SIGNER IS THE TEST'S OWN SINCE goal/G19.10. Andy, 2026-10-12:
-// "there shall be no test helpers inside node." answerRoute had no caller in
-// the node, only here, so it lives here: it makes the signed routes the
-// cache is driven with. Its message is the one faceRoute's routeMessage
-// verifies, so a route signed here and kept by the cache proves the two agree.
-// routeIsSigned (the holding node's check) went with it and is not kept: a
-// check of a test's own copy asserts nothing about the node. The cache's
-// refusals below are the node's.
+// THE OWNER'S SIGNER IS THE TEST'S OWN (goal/G19.10). Andy, 2026-10-12:
+// "there shall be no test helpers inside node." answerRoute makes the signed
+// routes the cache is driven with. Its message is the one faceRoute's
+// routeMessage verifies, so a route signed here and kept by the cache proves
+// the two agree. The cache's refusals below are faceRoute.js's.
 const ROUTE_MS = fr.ROUTE_MS;
 function routeMessage(ownerKey, name, to, until, faceKey) {
   var NL = String.fromCharCode(10);
@@ -71,8 +69,7 @@ const FACE = 'face.spirit.example';
 
 // ── A ROUTE THAT IS NOT THE OWNER'S WORD IS NOT A ROUTE ──────────────
 //
-// Since goal/G19.10 asked of the node's own code, the cache (routeIsSigned,
-// which this once asked, left the node with answerRoute).
+// Asked of faceRoute.js's own code, the cache.
 const rows = { join: { to: owner.publicKey }, joe: { to: joe.publicKey } };
 const T0 = 1000000;
 function cacheAt(clock) {
@@ -168,19 +165,13 @@ function cacheAt(clock) {
   }
 }
 
-// THE NODE THAT HOLDS THE NAME, AND NO WEAK CHECK BY A FORGOTTEN ARGUMENT:
-// asserted of routeIsSigned until goal/G19.10 (wsl-claude's findings at
-// fab98e4 and 7bc92b7). It left the node, a test helper with no caller, and
-// its checks with it; they come back with the code, the day a member's node
-// takes a forwarded route.
-
 // ── THE OWNER'S PLAIN ANSWER: "THE OWNER OF THIS NAME IS <KEY>" ─────────
 //
 //   Andy: "the owner, of appFaceApp simple responds with the key of the
 //   subdomain owner, or an error", and of the face comparing keys: "why on
-//   earth would the appFaceApp actually need that knowledge for?". Since
-//   7d75563 the face takes route 'owner' on the owner's word and the
-//   question's hash, and forwards to that key, whoever it is. Filed under
+//   earth would the appFaceApp actually need that knowledge for?". The
+//   cache takes route 'owner' on the owner's word and the question's hash,
+//   and forwards to that key, whoever it is. Filed under
 //   the name it ASKED about (storeAs), so an answer naming another name
 //   cannot plant a route for it.
 {

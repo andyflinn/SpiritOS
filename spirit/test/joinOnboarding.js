@@ -2,8 +2,7 @@
 
 // spirit/test/joinOnboarding.js
 // goal/G30.2, "Onboarding a node onto a relay": a newly installed node joins a relay by its user's email; the only
-// thing typed is the email, once, in the shell. Red on today's tree; claude-windows writes it and builds it (one
-// agent). The item's box (v22), in short:
+// thing typed is the email, once, in the shell. The item's box, in short:
 //   - The node sends a signed join request to a relay: the email and its port; its key is the signer. The relay
 //     mails a link to the user's own node, http://127.0.0.1:<port>?join=<code>. The node sends the code back to that
 //     relay, signed by the same key; only that key can finish. A right code within 10 minutes takes the seat at once;
@@ -21,7 +20,11 @@
 //     relay.joinConfirm(publicKey, code) are what the two door posts call, as relay.claim is for a claim. join answers
 //     { ok } and never the code; joinConfirm answers { ok, status: 201, peer } like a claim.
 //   - A label that is taken still seats: two johns are allowed today, so john@a and john@b both become john.
-//   - The shell's own file (js/client/shell.js) asks relay.join, and reads ?join= on load.
+//   - The shell's own file (spirit/run/spirit/client/shell.js) asks relay.join, and reads ?join= on load.
+// Parts of this suite assert a shape the tree has left: relay.js's join is join(publicKey, email, url, card) and
+// refuses a link that is not http://127.0.0.1:<port>/<path>, so the calls here with a bare port are refused; the node's
+// relay.join (server.js) takes {url, email, code, link}; the join form is drawn by the join app
+// (spirit/run/shell/join/join.js), not by natterDetails, which is not in the tree.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -124,37 +127,36 @@ async function main() {
 
   test.subHeading('5. the node verb and the shell');
   const server = code('spirit/server.js');
-  // The relay family's verbs since the flat door (goal/G30.5): 'join' in the relay table, its handler hub.relayJoin.
+  // The relay family's verbs (goal/G30.5): 'join' in the relay table, its handler hub.relayJoin.
   if (/'join':\s*\{\s*request:\s*\{\s*url:\s*'',\s*email:\s*'',\s*code:\s*''\s*\}/.test(server)) test.check('server.js declares relay.join {url, email, code}');
   else test.fail(OWED + 'server.js declares no relay.join {url, email, code}');
-  // THE PORT THE NODE LISTENS ON (found live, 2026-10-19: a node on 11112 got a mail link to 65432). relay.join hands
-  // the hub the listening port first, never the stored default ahead of it.
+  // THE PORT THE NODE LISTENS ON: relay.join hands the hub the listening port first, never the stored default ahead of
+  // it, so a node on 11112 never gets a mail link to 65432.
   const joinLine = (server.split('\n').filter(function (l) { return /'join':\s*\{[\s\S]*hub\.relayJoin/.test(l); })[0]) || '';
   if (/port:\s*Number\(port\)\s*\|\|/.test(joinLine)) test.check('relay.join hands on the port this node listens on, before any stored default');
   else test.fail(OWED + 'relay.join hands on ' + short((/port:\s*[^,]+/.exec(joinLine) || [''])[0]) + ', not the listening port first');
   const shell = code('spirit/client/shell.js');
   if (/relay\.join/.test(shell) && /[?&]?join=|get\('join'\)/.test(shell)) test.check('the shell asks relay.join and reads ?join= on load');
   else test.fail(OWED + 'the shell neither asks relay.join nor reads ?join=');
-  // THE EMAIL, TYPED ONCE ON FIRST START: an unbound node opens Natter, which opens the claim screen of its relay
-  // (shell.js openBinderIfUnbound); the email field sits there and asks relay.join with the email.
+  // THE EMAIL, TYPED ONCE ON FIRST START: the email field of the shell element joinForm asks relay.join with the email
+  // (goal/G30.1). This check still reads natterDetails.js, which is not in the tree; the join app draws the form.
   const nd = code('shell/natterDetails/natterDetails.js');
-  // The form is the shell element joinForm since goal/G30.1 (box v33): natterDetails draws it, the element asks.
   const jf = code('spirit/element/joinForm.js');
   if (/spirit\.element\.joinForm/.test(nd) && /type="email"/.test(jf) && /\.relay\.join\(\{[^}]*email/.test(jf)) test.check('the first-run claim screen (natterDetails) draws the join form, whose email field asks relay.join with it');
   else test.fail(OWED + 'the first-run screen has no email field asking relay.join');
   const relayServer = code('spirit/relayServer.js');
-  // Through the driver loader since the box's v28 (no vendor in core).
+  // Through the driver loader (no vendor in core).
   if (/createRelay\.createRelay\([\s\S]{0,1500}sendMail/.test(relayServer) && /require\('\.\/sendMail'\)\.createSender/.test(relayServer)) test.check('relayServer hands the relay the sender sendMail.js made from mail.json');
   else test.fail(OWED + 'relayServer hands the relay no mailer');
 
   test.subHeading('6. the first round\'s pages are gone');
-  // goal/G30.9 brings a face login back by Andy's new design (relay.faceLogin, its suite spirit/test/faceLogin.js,
-  // sessions in the relay's memory). What stays gone is the first round's: its module and the login code it stored.
+  // The face login is goal/G30.9's (relay.faceLogin, its suite spirit/test/faceLogin.js, sessions in the relay's
+  // memory). What stays gone is the first round's: its module and the login code it stored.
   const gone = ['spirit/run/spirit/faceLogin.js'].filter(function (p) { return fs.existsSync(path.join(ROOT, p)); });
   if (!gone.length && !/keepCode|takeCode|loginHash/.test(code('spirit/relayStore.js'))) test.check('the first round\'s faceLogin.js and its stored login code columns are gone');
   else test.fail(OWED + 'still there: ' + short(gone.concat(/keepCode|takeCode|loginHash/.test(code('spirit/relayStore.js')) ? ['login code in relayStore'] : [])));
 
-  // ── 7. THE NODE STARTED WITH --email (the box, v26) ─────────────────────────────────────────────────
+  // ── 7. THE NODE STARTED WITH --email ─────────────────────────────────────────────────────────────────
   // The user starts the node with node spirit/server.js --email <address>. While the node holds no seat it asks its kept
   // relay to join with that email and the port it listens on; with a seat, --email does nothing. On stdout it prints
   // that a mail will arrive shortly, or why the join did not start (the relay named, what went wrong, what to do
@@ -246,8 +248,8 @@ async function main() {
   if (/node spirit\/server\.js --email /.test(readme) && /noderoutes\.net/.test(readme)) test.check('the README gives node spirit/server.js --email as the way onto noderoutes.net');
   else test.fail(OWED + 'the README does not give node spirit/server.js --email');
 
-  // ── 8. NO VENDOR IN CORE, AND THE CARD SAYS WHAT THE RELAY OFFERS (the box, v28) ─────────────────────
-  // js/sendMail.js reads spirit/state/mail.json and loads its driver from js/sendMail/<driver>.js, the name checked
+  // ── 8. NO VENDOR IN CORE, AND THE CARD SAYS WHAT THE RELAY OFFERS ────────────────────────────────────
+  // spirit/run/spirit/sendMail.js reads <home>/spirit/state/mail.json and loads its driver from sendMail/<driver>.js, the name checked
   // against that folder; mailgun.js is the first driver there and Mailgun is named nowhere else in core. mail.json
   // names its driver by hand; without one the relay sends no mail, no fallback. The relay card carries
   // services: { sendMail, face }; Natter shows the email field only when the card says sendMail; the --email start
@@ -289,7 +291,7 @@ async function main() {
   else test.fail(OWED + 'no driver gave ' + short(noDriver) + ', ../relay gave ' + short(climbs) + ', nosuch gave ' + short(unknown));
   try { fs.rmSync(mailHome, { recursive: true, force: true }); } catch (e) { /* busy */ }
 
-  // Mailgun is named nowhere in core outside js/sendMail/: code and comments alike.
+  // Mailgun is named nowhere in spirit/run/spirit outside sendMail/: code and comments alike.
   const named = [];
   (function walk(dir) {
     fs.readdirSync(dir, { withFileTypes: true }).forEach(function (d) {
@@ -312,9 +314,8 @@ async function main() {
     test.check('the relay card carries services: sendMail true with a mailer and false without; face true');
   else test.fail(OWED + 'the card with a mailer is ' + short(withMail && withMail.services) + ', without ' + short(without && without.services));
 
-  // THE ROW NATTER GETS (found live, 2026-10-19: an unseated onBoarder never showed the field against spirit-3 running
-  // this code). Natter's rows are relay.get's (kernel relays.status), built by hub.relaySummary from local state; the
-  // card's services must be on that row, claimed or not. The list asks no relay (goal/G22.4): it reads what peerPost
+  // THE RELAY ROW: relay.get's row, built by hub.relaySummary from local state, carries the card's services, claimed
+  // or not. The list asks no relay (goal/G22.4): it reads what peerPost
   // already knows from the cards it asked (the boot probe, relay.add), router.servicesOf(url).
   const rowHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-services-row-'));
   let mailRow = null;

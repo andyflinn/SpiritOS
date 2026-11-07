@@ -1,20 +1,19 @@
 'use strict';
 
 // spirit/test/deskWhileBackup.js
-// THE DESK SERVER KEEPS WRITING WHILE THE BACKUP COPIES desk.db — found live
-// on Andy's node, written FIRST, red on today's code.
+// THE DESK SERVER KEEPS WRITING WHILE THE BACKUP COPIES desk.db.
 //
 //   Andy, 2026-09-29, in Desk: "Desk could not keep its log: the handler
-//   failed". His desk.db is 11 MB in SQLite's default journal mode, where a
-//   reader copying the file holds it against a writer; the backup copies it
-//   after every change, so log.add meets a locked database.
+//   failed". A reader copying a desk.db in SQLite's default journal mode
+//   holds it against a writer, and the backup copies it after every change.
 //
 // THE CONTRACT: with the backup server copying the same node's desk.db over
 // and over, every write succeeds, and every copy the backup makes opens.
-// SINCE goal/G33.4 the writes are chat lines (the old lines table went), and the record is an old-shape desk.db the
-// desk migrates into its tables at start: 6000 chat lines of about 1.2 KB.
-// How (a journal mode that lets one write while another reads, a copy that
-// does not hold the file) is the build's.
+// The writes are chat lines, and the record is an old-shape desk.db (a
+// records table) the desk migrates into its tables at start: 6000 chat lines
+// of about 1.2 KB. desk.js runs its database in WAL, where a reader never
+// blocks the writer. Both servers sit under relay-state/process/ here, the
+// layout the backup copies (see backupServer.js on the node's own layout).
 
 const fs = require('fs');
 const os = require('os');

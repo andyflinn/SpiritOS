@@ -6,8 +6,8 @@ const auth = require('../run/spirit/relayAuth');
 const { claimOwner, installedRelay } = require('./ownerClaim');
 const invites = require('../run/spirit/invites');
 // A relay installed for its owner with nobody on its roll yet, which is the
-// only world in which the act of claiming can be watched happening. Since
-// goal/G16.8 the install names the owner (ownerClaim.installedRelay), so the
+// only world in which the act of claiming can be watched happening. The
+// install names the owner (goal/G16.8, ownerClaim.installedRelay), so the
 // owner's key is known before the box is built. The claims themselves stay
 // written out below: they are the subject of this file, and a helper that
 // made them would be a helper that hid them.

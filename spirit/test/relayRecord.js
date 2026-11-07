@@ -6,9 +6,7 @@
 //   Andy: "our alpha shape needs to monitor member count so, that RAM
 //   capacity can guarantee service."
 //
-// Written by wsl-claude under this cycle's agreement: the Windows Claude
-// built cycle 11 R1-cycle 11 R7 and deliberately wrote no assertions, so that the suite is
-// written from `design/cycles/2026-09-23-relay-record-cycle-11.md` rather
+// Written from `design/cycles/2026-09-23-relay-record-cycle-11.md` rather
 // than from the implementation. A suite written from the code can only
 // describe it; one written from the document can disagree with it.
 //
@@ -33,9 +31,7 @@ function home() {
 
 // CLOSE THE HANDLE BEFORE THE DIRECTORY GOES. Windows refuses to remove a
 // file SQLite still holds — EPERM — while Linux removes it and says
-// nothing, so this suite ran here and died at the first cleanup there.
-// Found by the Windows Claude on the first cross-platform run of this
-// file, which is the arrangement catching something about itself.
+// nothing, so without this the suite dies at the first cleanup on Windows.
 function closeAndRemove(w) {
   try { w.store.close(); } catch (e) { /* already closed */ }
   fs.rmSync(w.dir, { recursive: true, force: true });
@@ -153,8 +149,7 @@ test.subHeading('cycle 11 R4 — one row a minute, and a day older than ninety k
 
   // A FRESH HOME FOR THE SWEEP, because the minute rows above sit at ten
   // past the epoch and are themselves older than ninety days once "now"
-  // is day two hundred — which is a fixture mistake, not a defect, and it
-  // cost this suite two red assertions before anybody read the dates.
+  // is day two hundred, and would be swept with the rest.
   closeAndRemove(w);
   const s2 = home();
   const now = 200 * DAY;
@@ -343,17 +338,16 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
 // should be stated where the edges are documented, or the two kinds of
 // gap will be read alike again by whoever arrives next.
 //
-// BUILT BY claude-windows AT b736cc2, the writing half: record.edge takes
-// 'started' and 'stopped', the node marks 'started' at boot beside
-// ensureIdentity and 'stopped' first thing in its goodbye. Andy: "a re-start
+// THE WRITING HALF: record.edge takes 'started' and 'stopped'; server.js
+// marks 'started' at boot and 'stopped' in its goodbye. Andy: "a re-start
 // row documents the downtime?" / "... the end-of-a-downtime" / "and the
 // stopped row can't be guaranteed." / "... but should be part of \"graceful
 // shutdown\"".
 //
-// THE READING HALF IS NOT BUILT, and stays declared below, because it is
-// what his ruling was FOR: a started with no stopped before it is a death,
-// a stopped then started is a deliberate absence. Rows alone let nobody
-// tell the two apart; only a reader does.
+// THE READING HALF, record.gaps, is what his ruling was FOR: a started
+// with no stopped before it is a death, a stopped then started is a
+// deliberate absence. Rows alone let nobody tell the two apart; only a
+// reader does.
 {
   const w = home();
   w.store.record.edge(RELAY, 'stopped', 1000);
@@ -379,9 +373,7 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
     test.fail('cycle-11/C3: server.js does not mark started at boot and stopped in the goodbye');
   }
 
-  // THE READER, built by claude-windows at 728760a under the name agreed for
-  // the probe, record.gaps -- which is why that probe went red the moment it
-  // existed, as G7's guessed names never did. gaps(relay, from, limit) gives
+  // THE READER, record.gaps(relay, from, limit), gives
   // [{ kind: 'restart' | 'death', from, to }].
   function gapsOf(rows) {
     const g = home();
@@ -420,9 +412,9 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
 }
 // ── relay.record: A WINDOW, NEWEST FIRST, CUT IN BYTES (puppets/G2) ──
 //
-//   Andy, 2026-09-27: the G2 verb changes, including relay.record's series
-//   no longer paging. The hub's handler answers the NEWEST rows in the
-//   window that fit one answer, in time order, and says more.
+//   relay.record's series does not page: the hub's handler answers the
+//   NEWEST rows in the window that fit one answer, in time order, and says
+//   more.
 function askRecord(dir, body) {
   const hub = require('../run/spirit/hub').createHub(dir);
   return new Promise(function (resolve) {

@@ -1,10 +1,9 @@
 'use strict';
 
 // spirit/test/deskVerifyFixes.js
-// goal/G21.3: the Verifier's fixes. Red first on aa748c2a; claude-windows wrote it and builds it (one agent). Reshaped
-// by goal/G33.3, where deskVerify became a runner that knows nothing of the desk (Andy: "deskVerify has no fucking
-// clue about desk, desk goals or desk items", "the verifier only is busy or not."): a run is handed to it with
-// run {suites, commit}, its outcome is read through search, and its idle hour is its own clock.
+// goal/G21.3: the Verifier's fixes. deskVerify is a runner that knows nothing of the desk (goal/G33.3; Andy:
+// "deskVerify has no fucking clue about desk, desk goals or desk items", "the verifier only is busy or not."): a run
+// is handed to it with run {suites, commit}, its outcome is read through search, and its idle hour is its own clock.
 //
 // THE ITEM'S BOX, Andy's decisions, asserted one by one:
 //   1. The Verifier tab stays once the page has loaded; only the first ask at load decides whether a verifier runs

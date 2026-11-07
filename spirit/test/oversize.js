@@ -4,7 +4,7 @@
 //   Andy: "why can't the system cleanly reject oversized stuff? this must become a test.", and earlier "in the db
 //   yes, but in the sent messages ther MUST be a MAX_PAYLOAD", "what kind of app doesn't measure the sum of its
 //   packets?"
-// The contract the builder follows (wsl-claude's, agreed in team/chat):
+// The contract (agreed between the agents):
 //   Whatever a server accepts must come back whole in one answer. So every write that stores text refuses a value
 //   that could not, with a named refusal (a code ending in 'too-large', status 4xx), and stores nothing of it.
 //   At the edge: the largest value accepted comes back whole, and one character more is refused.

@@ -1,12 +1,12 @@
 'use strict';
 
 // goal/G2.3: the listener tells Desk what it does — listening when it arms, working when it hands over a line.
-// This suite holds the desk server's half (1 to 3). The listener's half (4) ran agents/deskAgentEar.js, which went with
-// the agents app (goal/G3.2); the listener that replaces it is held to its words by its own suite (goal/G3.4).
+// This suite holds the desk server's half (1 to 3). The listener's half is deskClient.js, which sends agent.state, and
+// is held to its words by its own suites.
 //   Andy (goal/G2.2 note 3, broken out): "every agents tab has a blinking border while it's working. it starts,
 //   when the agent stops listening to do a task, and it stops when the agent goes back to listening. the
 //   listening script can toggle those two?"
-// The contract the builder follows (the shape argued in goal/G2.3):
+// The contract desk.js keeps (the shape argued in goal/G2.3):
 //   1. The desk server takes agent.state { word }, word 'listening' or 'working', from the caller it is handed
 //      (the agent by its key, apiAuth/G1.13); any other word is refused bad-request; the agent itself remembers
 //      nothing: the ear says the word, every time.
@@ -69,7 +69,7 @@ const node = http.createServer(function (req, res) {
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  // The world, written by the owner (goal/G29.21), seeded before the desk starts (goal/G33.7: session.set went).
+  // The world, written by the owner (goal/G29.21), seeded before the desk starts (goal/G33.7).
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Ears' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],

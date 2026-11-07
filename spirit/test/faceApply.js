@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/faceApply.js
-// goal/G30.1: a node registers a face name and an email with one relay. Red on today's tree; claude-windows writes
-// it, wsl-claude builds it. Box v30 drops the email from the verb: relay.face is {url, name}, and the relay pairs the
+// goal/G30.1: a node registers a face name and an email with one relay. Box v30 drops the email from the verb: relay.face is {url, name}, and the relay pairs the
 // name with the verified email it holds for the calling key; sections 1 to 3 and 5 assert that. The box (v19), in short:
 //   - Relay: one more self verb, face {name, email}, answered with the pair signed, or refused; the members row gains
 //     faceName (unique when set) and faceEmail. The name is one DNS label by faceRoute.nameOf's rule, lowercased. It is
@@ -10,7 +9,7 @@
 //   - Node: a new verb relay.face {url, name, email}, owner only, beside relay.add; it keeps the signed answer whole in
 //     node.db on that relay's row (relays gains faceName, faceEmail, faceReply).
 //   - Shell app: one section in the info app, addressing one relay.
-//   - Deleted: grantFace, appFaceApp, appFaceAppServer, their own suites, bash/face-install; faceRoute.js moves to js/.
+//   - Deleted: grantFace, appFaceApp, appFaceAppServer, their own suites, bash/face-install; faceRoute.js sits in spirit/run/spirit/.
 // NAMED HERE where the box names none: a refusal answers status 400 (bad name or email) or 409 (name held), as
 // renameSelf does; an email is refused without an @; the answer on success carries ok, name and email.
 // rule/11: through testSupport only; its own scratch folders.

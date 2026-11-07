@@ -4,46 +4,23 @@
 // what a comment claims they gate.
 //
 //   1. claim is signature-gated in keys mode;
-//   2. so is POST — a packet is proved against the key the peer claimed
+//   2. so is post — a packet is proved against the key the peer claimed
 //      with, and refused outright if the target is not there to take it;
-//   3. rate limiting is keyed on the CALLER, not on the name the caller
-//      supplies, so rotating the name does not buy a fresh budget;
-//   4. a relay whose allow.json is missing says so at startup. It ran
-//      fully open until cycle 3 (any name, any claimer); since goal/G16.8
-//      it takes no claim at all, because the owner is written at install,
-//      and the announcement says UNOWNED and names install-units
+//   3. rate limiting is keyed on the CALLER's address, not on the name or
+//      key the caller supplies, so rotating them does not buy a fresh
+//      budget: the relay's address table at its one door (goal/G22.6);
+//   4. a relay with no owner in spirit/state/owner.json takes no claim at
+//      all (goal/G16.8, the owner is written at install), and says so at
+//      startup: the announcement says UNOWNED and names install-units
 //      (firstOwner.js asserts the refusal).
 //
-// All four were audit findings, fixed in 5c64b17/a1bbac6. 2 and 3 then
-// regressed when peers became key-addressed, and this file is the
-// regression guard, so it asserts the fixed behaviour rather than the bug.
-//
-// ── WHAT R8 CHANGED HERE (2026-09-15) ────────────────────────────────
-//
-// Points 2 and 3 were written against `send` and `inbox`, which are gone
-// with the ring. The QUESTIONS survive the transport and are asked of the
-// router instead:
-//
-//   "an unsigned write is refused"        was send, is now post
-//   "a forged signature is refused"       was send, is now post
-//   "a bare ?name= does not drain a       CANNOT BE ASKED ANY MORE.
-//    mailbox"                             There is no mailbox to drain.
-//                                         The finding it guarded is
-//                                         answered by deletion, which is
-//                                         the strongest form of a fix.
-//   "rotating the sender name does not    was send, then claim alone, and
-//    buy a fresh budget"                  since goal/G22.6 the relay's
-//                                         address table at its one door:
-//                                         `claimHits` went with it.
-//
-// Recorded rather than quietly re-pointed: a regression guard that
-// changes what it guards without saying so is how a closed finding gets
-// re-opened by somebody who trusts the file name.
+// This file is a regression guard: it asserts the fixed behaviour of
+// audit findings, so a change to what it guards must say so here.
 //
 // Runs relay.js out of an isolated fake node under the OS temp dir, never
-// the live checkout: createRelay() persists to
-// spirit/state/routingTable.json on every claim, and loadAllow reads
-// spirit/state/allow.json — this test writes both.
+// the live checkout: each phase writes the relay's spirit/state/ afresh
+// (its identity, and owner.json where the phase has an owner); the relay
+// keeps its data in a SQLite file there (relayStore.js).
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
@@ -63,10 +40,10 @@ const relayNode = targets.relay;
 const RELAY_STATE = path.join(relayNode, 'spirit', 'state');
 const createRelay = require(path.join(relayNode, 'spirit', 'relay.js')).createRelay;
 
-// createRelay() reads both files at construction, so each phase below gets
-// a clean slate written before it builds its own relay.
+// createRelay() reads the state folder at construction, so each phase
+// below gets a clean slate written before it builds its own relay.
 function resetState(ownerKey) {
-  // The relay's data is a SQLite file since cycle 3, and Windows will not
+  // The relay's data is a SQLite file (cycle 3), and Windows will not
   // delete a directory holding an open one: release it first.
   // The relay's own copy of the module — it runs out of the fake tree.
   require(path.join(relayNode, 'spirit', 'relayStore.js')).closeAll();
@@ -192,10 +169,8 @@ test.subHeading('Keys mode: what a signature is actually required for');
       ', delivered=' + bertSink.sawRequest());
   }
 
-  // THE GATE THE RING COULD NOT HAVE. `send` answered 201 for a peer who
-  // was not there, into a store that dropped it on overflow. A correctly
-  // signed post to somebody holding no stream is refused, at once, with a
-  // reason (decision 0006).
+  // A correctly signed post to somebody holding no stream is refused, at
+  // once, with a reason, never stored (decision 0006).
   const john = auth.generateIdentity('john');
   const mintedJohn = relay.mint('andy', 'john', 7);
   relay.claim(
@@ -219,10 +194,9 @@ test.subHeading('Keys mode: what a signature is actually required for');
 
 // ---- 3: claims are held by the caller's ADDRESS, not by name or key ----
 //
-// The per-address claim limit (ten a minute) stood here. Andy's decision,
-// goal/G22.6: strangers are held by one table of requesting addresses at
-// the relay's one door, and it "replaces the per-address claim limit". So
-// the flood is driven through the door, as claims from keys this relay does
+// Andy's decision, goal/G22.6: strangers are held by one table of
+// requesting addresses at the relay's one door, and it "replaces the
+// per-address claim limit". So the flood is driven through the door, as claims from keys this relay does
 // not hold, rotating both the name and the key, all from one address.
 test.subHeading('A claim flood from one address is held, whatever names and keys it rotates');
 {

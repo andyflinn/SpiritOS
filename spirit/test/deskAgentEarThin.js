@@ -1,33 +1,31 @@
 'use strict';
 
-// goal/G3.6: deskAgentEar.js becomes the few lines that wait. Red on today's tree: there is no
-// spirit/run/process/js/desk/deskAgentEar.js in the repo (each agent runs an uncommitted listener of its own), and the
-// prose still names the deleted agents app.
-//   Andy, 2026-10-02 (goal/G3.2, before the plan): "you move deskAgentEar to where it belongs, in the deskServer
-//   folder. and adapt it for use with your personal node only". Then, of its form: "node deskAgentEar.js <port>
-//   <js-path-to-api-verb> \"request-string-in-json\"", and later "i don't care much about the command form or
-//   js-based calling. i am ready to accept completely alternative design, if it achieves what todays deskAgentEar
-//   does". His Go on this item is his go-all on goal/G3 in Desk.
-// The contract the builder follows (the box of goal/G3.6; the forms are the agents', as he left them to us):
+// goal/G3.6: deskAgentEar.js, the few lines that wait (spirit/run/process/js/desk/deskAgentEar.js).
+//   Andy, 2026-10-02: "you move deskAgentEar to where it belongs, in the deskServer folder. and adapt it for use with
+//   your personal node only", and later "i don't care much about the command form or js-based calling. i am ready to
+//   accept completely alternative design, if it achieves what todays deskAgentEar does".
+// What this suite asserts (the box of goal/G3.6; the forms are the agents'):
 //   1. spirit/run/process/js/desk/deskAgentEar.js, one file, committed. Its first argument is the port of the agent's
 //      own node; none, or one that is no number, ends it with exit 2 and its usage. No default: Andy's door is
 //      never an agent's.
-//   2. THE WAIT, node deskAgentEar.js <port>: it asks its own node's deskClient.next again and again, each ask the verb
-//      by name on the node's flat apiDoor through the kernel's ask ({ call: 'deskClient.next', args: {} } to that port; goal/G30.6). An
-//      answer with lines is printed, one line each, and it exits 0: the exit wakes the agent. An answer without
-//      is asked again.
+//   2. THE WAIT, node deskAgentEar.js <port>: it asks its own node's deskClient.next again and again
+//      ({ call: 'deskClient.next', args: {} } to that port). An answer with lines is printed, one line each, and it
+//      exits 0: the exit wakes the agent. An answer without is asked again.
 //   3. A wait that cannot go on ends: a refusal of its node's (deskClient not running, no desk set) or a node
 //      that does not answer ends it with exit 1 and the reason on stderr. It does not ask on for ever.
-//   4. ONE ASK OF THE DESK, node deskAgentEar.js <port> <verb> [json]: deskClient.desk {name, json} on its own node (the argument was verb until goal/G30.6).
+//   4. ONE ASK OF THE DESK, node deskAgentEar.js <port> <verb> [json]: deskClient.desk {name, json} on its own node.
 //      The desk's answer is printed as it came, exit 0; a refusal of the desk's, or of deskClient's (a slow desk:
 //      no-answer with the record's id), is printed too and the exit is 1.
 //   5. ONE ASK OF ITS OWN deskClient, node deskAgentEar.js <port> deskClient.<verb> [json]: that verb with those
 //      args (setDesk, history.search), the answer printed, exit 0.
-//   6. Everything else of today's listeners is gone from it: no reading of the node's stream, no AGENTS_
-//      environment variable, no file read or written, no fetch or http of its own. Under 80 lines of code.
-//   7. The prose names this listener and no longer the deleted one: process/js/desk/AGENTS.md (the listener line
-//      and the three lines that read and wrote Desk through agents.js), CLAUDE.md and AGENT.md (the one
-//      listener line each).
+//   6. No reading of the node's stream, no AGENTS_ environment variable, no file read or written, no fetch or http
+//      of its own. Under 80 lines of code.
+//   7. The prose names this listener and not the deleted agents app's: process/js/desk's AGENTS.md, CLAUDE.md and
+//      AGENT.md.
+// STALE: deskAgentEar.js checks and prints the port but asks the node that this checkout's
+// spirit/state/environment.json names (through spirit.js, required from spirit/run/spirit/spirit.js), so 2 to 5 never
+// reach the pretend node below; check 6 looks for face/spirit.js, which the ear does not require; and check 7 reads
+// process/js/desk/desk.family/AGENTS.md, which is now process/js/desk/family/AGENTS.md.
 // Not asserted, the builder's: a pause between two empty answers; the wording of the usage and of the reasons.
 
 const fs = require('fs');
@@ -112,7 +110,7 @@ async function main() {
     asked.length = 0;
     const SEARCH = '{"text":"","currentGoalOnly":true,"goalsOnly":false}';
     const ANSWER = '{"items":[{"key":"a/G1","label":"x"}],"more":false}';
-    // Since goal/G4.19 deskClient.desk answers with the desk's answer itself, not a json string.
+    // deskClient.desk answers with the desk's answer itself, not a json string (goal/G4.19).
     script = [{ status: 200, body: JSON.parse(ANSWER) }];
     const read = await run([port, 'items.search', SEARCH]);
     const sent = asked[0] ? asked[0].body : {};
@@ -153,7 +151,7 @@ async function main() {
 
   test.subHeading('7. the prose names this listener, not the deleted one');
   const read = function (rel) { try { return fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch (e) { return ''; } };
-  const agentsMd = read('spirit/run/process/js/desk/desk.family/AGENTS.md'); // <module>.family since goal/G30.4
+  const agentsMd = read('spirit/run/process/js/desk/desk.family/AGENTS.md'); // STALE: the file is process/js/desk/family/AGENTS.md
   const claudeMd = read('CLAUDE.md');
   const agentMd = read('AGENT.md');
   const stale = [];

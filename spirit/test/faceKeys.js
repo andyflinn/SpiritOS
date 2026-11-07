@@ -1,16 +1,18 @@
 'use strict';
 
 // spirit/test/faceKeys.js
-// goal/G30.10, two fixes found on spirit-3 (Andy: "ok. go fix those things..."). The box:
+// goal/G30.10 (Andy: "ok. go fix those things..."). The box:
 //   - The face learns the home node's keys (its public key and seal key) from faceHome itself, by a face request
 //     answered before the door; node.card is not changed.
 //   - The face shell offers spirit.shell.factRow, the old shell's fact row, so Relay Details and Contact draw in the face.
-// What went wrong: the face read the seal key from node.card, which never carried one, so every face ran unsealed and
-// said its browser could not seal; faceSealed.js passed because its node.card was a stand-in that had the key. Here the
-// node is a real planted identity and nothing answers in its place.
+// The node here is a real planted identity and nothing answers in its place.
 // NAMED HERE where the box names none:
 //   - A face request { keys: 1 } is answered by faceHome with { publicKey, sealKey } from the node's own identity,
 //     without reaching the door (nodeDoor.call is not asked).
+// STALE: the face seal module is spirit/run/spirit/shell/seal.js (goal/G43.18); the require of ../run/shell/seal.js
+// below no longer resolves, so the suite throws before its first check. And faceHome.js now answers a face request
+// only from a relay where this node set a face (o.faceSet, goal/G41.30) and its owner starred (o.faceOwned,
+// goal/G43.18); the stand-in node below passes neither, so every request would be refused 403.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');

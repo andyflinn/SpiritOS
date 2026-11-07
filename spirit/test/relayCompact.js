@@ -1,20 +1,17 @@
 'use strict';
 
 // spirit/test/relayCompact.js
-// A RELAY'S FILE SHRINKS WHEN ITS ROLL DOES — cycle 9, after the fact.
+// A RELAY'S FILE SHRINKS WHEN ITS ROLL DOES (relayStore.compact).
 //
 //   Andy, 2026-09-22: "since disc space is such a cheap resource compared
 //   to the expected needs, compacting at restart sound like a good
 //   stop-gap-measure."
 //
-// The hole it fills: a deleted row frees a page and does not shorten the
-// file, and cycle 9 bounds the roll by `bytes()`. So an owner who removed
+// A deleted row frees a page and does not shorten the file, and the roll
+// is bounded by `bytes()`. Without compaction an owner who removed
 // members to make room would be refused the shrink he had just made room
 // for — "evict before shrinkage" defeated at the moment somebody follows
 // it (design/principles/LIMITED-RESOURCES.md).
-//
-// Measured while writing this: 20,000 members is 3.5 MB; removing 15,000
-// leaves the file at 3.5 MB; a VACUUM takes 20 ms and leaves 0.9 MB.
 
 const os = require('os');
 const fs = require('fs');

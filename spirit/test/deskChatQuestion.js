@@ -1,28 +1,14 @@
 'use strict';
 
-// SINCE goal/G21.2 THIS SUITE ASSERTS THE CONVERSION IS GONE. Andy, in G21.2's box: "A question mark in a chat line
-// never makes a red Q; only a deliberate Q check does." What follows is goal/G2.21's history, kept for the why.
+// goal/G21.2: AN AGENT'S QUESTION IN CHAT RAISES NO Q CHECK. Andy, in G21.2's box: "A question mark in a chat line
+// never makes a red Q; only a deliberate Q check does."
 //
-// goal/G2.21: a question never hides in chat. Red on today's tree; wsl-claude wrote it from G2.21's box and does
-// not build it.
-//   Andy, 2026-10-06, under goal/G2.18: "i want mechanical support in deskServer to make agents add red-question to
-//   the design", and "add G2.21". It came out of his own complaint the same day, when an agent's question sat in
-//   chat and lit nothing: "i see no Q's and it really bugs me."
+// WHAT THE DESK DOES (spirit/run/process/js/desk/desk.js): chat.add stores the line as it came, with no Q number; a Q
+// check exists only when somebody calls check.add, and an item waits on him (asks) for open Q checks alone.
 //
-// WHAT IS TRUE TODAY (read in the tree at 9ece24a8): chat.add stores the line and that is all (process/js/desk/
-// desk.js, the chat.add branch of the walk pushes {by, at, text, taken}); a Q check exists only when somebody calls
-// check.add, and his List's red icon is drawn from open checks alone (asksOf). So an agent's question in chat
-// raises nothing, which is the hiding this item ends.
-//
-// THE SHAPE (G2.21's box): an agent's chat line under an ITEM whose text ends in a question mark is stored as it
-// came AND the desk adds one open Q check on that item with the same words, by that agent. His own lines and the
-// desk's own are never converted; a line that does not end in a question mark passes as before; a rule's chat
-// (rule/N) is untouched, rules having no checks.
-//
-// ONE NAME IS THE BUILDER'S TO ARGUE, in Desk before building: the box says the line "stays in chat, marked with
-// its Q number", and this suite reads that mark as a `q` field on the stored line carrying the check's number
-// ('Q1'), because the line's own text must stay exactly as the agent wrote it for his quote-back to work. Whether
-// the dialog then draws that mark is not asserted here; what the page needs is the number on the line.
+// WHAT IS ASSERTED: 1-4, a line ending in a question mark, by one agent or two, raises no Q and is stored untouched;
+// 5, his own line raises nothing, and a deliberate check.add Q makes the item wait on him until check.set answers it;
+// 6, a question under a rule (rule/N) is stored as a rule line and raises nothing.
 
 const fs = require('fs');
 const os = require('os');

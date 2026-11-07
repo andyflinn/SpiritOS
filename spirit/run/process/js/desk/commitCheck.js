@@ -12,7 +12,7 @@
 //
 // WHAT IT IS. Three git hooks in an agent's OWN clone, never in Andy's checkouts: the clone tells an agent's commit
 // from his, since both carry his name. A commit must name, in its message, an item of the current goal that has
-// HIS Go on record (the desk's `go`) and is not done; else git refuses it and nothing is committed. A commit taken
+// HIS Go on record (the desk's press go) and is not done; else git refuses it and nothing is committed. A commit taken
 // is written under that item as one chat line ONCE THE REMOTE HOLDS IT (goal/G4.19, issue 6; Andy: "Push it is.";
 // goal/G4.27: a detached helper waits for the remote, since the pre-push hook runs before the server answers): its
 // hash as the remote holds it and each file it changed, one `- path` per line. A pull --rebase gives a commit a new
@@ -21,7 +21,7 @@
 // goes through the agent's own deskClient (by its verbs on its node), so it is counted with the rest; with the node not
 // answering, the commit is refused, not waved through.
 //
-//   node commitCheck.js install <port of the agent's own node>    in the clone's root: writes the two hooks
+//   node commitCheck.js install <port of the agent's own node>    in the clone's root: writes the three hooks
 //   node commitCheck.js check <port> <message file>                the commit-msg hook (git runs it)
 //   node commitCheck.js record <port>                              the post-commit hook (git runs it)
 //   node commitCheck.js push <port> <remote name>                  the pre-push hook (git runs it, refs on stdin)
@@ -174,16 +174,14 @@ function checkItems(ids) {
 
 // ── the core grants (goal/G4.23) ───────────────────────────────────
 // Andy: "it should refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a
-// grant request in the item?". A staged core file (spirit/run/spirit/coreFiles.js) needs a granted G check on the item
-// naming its path under spirit/run. Refused without it. SINCE goal/G32.2 THE REFUSAL RAISES NO GRANT OF ITS OWN: one G
-// check per file (64 on G32.2) outgrew the item's one answer and Desk refused his grants. It says to list the files
-// with item.files.add instead, whose one grant for all the core files (goal/G8.8: "all files that need a grant should
-// get one 'grant' button together") he grants once. A path is matched whole against a grant's comma list, as the full
-// repository path or under spirit/run, never as the end of a longer path.
-// NO SCOPE SINCE goal/G10.8: Andy, 2026-10-12, "all agents in desk have "/" file scope", the per-agent setting removed
-// from desk and commitCheck ("b"). Every agent commits anywhere in the repo; the core grants still hold.
+// grant request in the item?". A core file is one spirit/run/spirit/coreFiles.js's isCore names. The refusal raises
+// no grant of its own: it says to add the files with item.files.add, whose one grant for all the core files (goal/G8.8:
+// "all files that need a grant should get one 'grant' button together") he grants once.
+// NO SCOPE (goal/G10.8): Andy, 2026-10-12, "all agents in desk have "/" file scope". Every agent commits anywhere in
+// the repo; the list and the core grant still hold.
 // EVERY STAGED FILE ON THE LIST, CORE OR NOT (goal/G41.11). The item's whole kept list (item.files, filesMore false;
-// one cut short refused above) is the list: a staged file not on it is refused by name, core or not.
+// one cut short refused above) is the list: a staged file not on it is refused by name, core or not. A path is matched
+// whole, as the full repository path or the same path under spirit/run, never as the end of a longer path.
 // ONE GRANT FOR THE LIST (goal/G40.3). Andy: "yes to the commit-check making sure each file exists in the granted
 // list." A staged core file needs the list's one core grant standing granted (from the kept checks): a core file added
 // after his press voids it, so a granted one covers every core file on the list.
@@ -244,7 +242,7 @@ function writePending(list) { fs.writeFileSync(pendingFile(), list.map(function 
 // written under the first one's item and took its place. The patch is git patch-id --stable of the commit's diff: a
 // pull --rebase gives the commit a new hash but keeps its patch, so it is still found at the push; a rebase that had to
 // resolve a clash in it changes the patch, and that commit is then passed over as one with nothing pending. An entry
-// written before goal/G19.6 has no patch and is matched by its subject, as then.
+// with no patch is matched by its subject alone.
 function patchOf(hash) {
   const diff = spawnSync('git', ['show', '--format=', '-p', hash], { encoding: 'utf8', timeout: 30000, windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
   const id = spawnSync('git', ['patch-id', '--stable'], { input: String(diff.stdout || ''), encoding: 'utf8', timeout: 30000, windowsHide: true });

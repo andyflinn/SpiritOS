@@ -8,8 +8,8 @@
 //   reached in a post stranger goes NOT-green."
 //   Andy: "rule: presence is always last-known."
 //
-// And the refinement the error catalogue made possible (R36): "cannot be
-// reached" is not one thing. A busy refusal proves the person is THERE.
+// The error catalogue (spiritErrors.js classifyAnswer, which hub.learnPresence
+// reads) says "cannot be reached" is not one thing. A busy refusal proves the person is THERE.
 // Only the relay saying "peer not reachable" is an absence. Running out
 // of time says nothing — and writes nothing, so the last thing known stands.
 
@@ -45,7 +45,7 @@ test.subHeading('A failure says what the catalogue says it says');
   const H = home();
   const S = hub.shadow(H);
 
-  // THE CASE THAT MADE THE CATALOGUE NECESSARY. Busy is a refusal, and it
+  // BUSY. Busy is a refusal, and it
   // is PROOF of presence: the relay only reports busy for somebody whose
   // stream it holds.
   hub.learnPresence(H, P, { ok: false, status: 503, error: 'target is busy', busy: true });
@@ -98,7 +98,7 @@ test.subHeading('A failure that says nothing writes nothing');
     test.fail('a quiet failure changed presence: ' + JSON.stringify(S.get(P)));
   }
 
-  // AND ONE NOBODY CATALOGUED. The rule above all the others in R36: an
+  // AND ONE NOBODY CATALOGUED. The catalogue's rule (spiritErrors.js): an
   // unknown error cannot paint somebody red.
   hub.learnPresence(H, P, { ok: false, status: 503, error: 'a sentence nobody has written yet' });
   if (S.get(P).present === true) {

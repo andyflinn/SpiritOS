@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskChatFlowOneTask.js
-// goal/G21.4: Desk: the chat flow, and one task per agent. Red on today's tree (81ae239b); claude-windows wrote it and
-// builds it (one agent). The item's box, Andy's decisions:
+// goal/G21.4: Desk: the chat flow, and one task per agent. The item's box, Andy's decisions:
 //   "Each of Andy's lines is taken by one agent and answered by that agent alone; no other agent chimes in once it is
 //   taken." "An agent's answer is never takeable: no agent answers another agent. A second answer comes only when Andy
 //   asks for it by naming the agent." "An agent may post its own work notes (taking, built, claimed) on an item it
@@ -11,22 +10,21 @@
 //   is released, claimed or done." "Excluding an agent releases what it holds: its task and phase are free for another
 //   agent to take."
 //
-// THE RULES THIS BUILD CHOSE (the box names no mechanism; reported to Andy with the claim):
+// THE RULES desk.js KEEPS (the box names no mechanism):
 //   - The item an agent HOLDS is the one it is with now (item.take or phase.take): its posts there are work notes and
 //     are always taken, a take of another agent's standing or not.
-//   - An agent that took a phase of the item earlier (red, build, verify) and holds it no more posts its notes there
-//     only while Andy's latest line under it is not taken by another agent; after that line is taken, its post would be
-//     a second answer, and is refused.
+//   - An agent that took a phase of the item earlier (red, build, verify) and holds it no more posts its work notes and
+//     reports there at any time, before or after another agent takes Andy's latest line (goal/G27.10, R2).
 //   - Anybody else writes only with the take of his latest line.
 //   - line.take takes his latest line only; when that line is taken already, what follows it is an agent's answer, and
 //     the refusal says so. An item with no line of his: the refusal says only his lines are taken.
 //   - One task: item.take and phase.take are refused while the agent is with another open item. What frees it:
-//     item.release (new desk verb), phase.done, its own claim (claim-done, or claim of the build), done or close of
-//     that item, his exclusion of the agent, verify.reject / verify.regress (which already clear with).
+//     item.release, phase.done, its own claim (claim-done, or claim of the build), done or close of that item, his
+//     exclusion of the agent, verify.reject / verify.regress.
 //
 // WHAT IS ASSERTED
 //   1. the holder's work notes go while another agent holds the take of his line.
-//   2. once his line is taken and answered, an earlier phase holder's post is refused; before that, it goes.
+//   2. an earlier phase holder's post goes, before and after another agent takes and answers his line.
 //   3. line.take on an answered line, and under an item with agents' lines only, is refused with a why.
 //   4. a second item or phase is refused while the agent holds one; the same item again is no second.
 //   5. item.release, a claim, a finished phase, his close and his done each free the agent for another.
@@ -83,8 +81,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     { id: 'goal/G100.9', title: 'Done' }, { id: 'goal/G100.10', title: 'Excluded' }, { id: 'goal/G100.11', title: 'Code three', code: true },
     { id: 'goal/G100.12', title: 'Spare' },
   ].map(function (x) { return Object.assign({ blocks: ['goal/G100'] }, x); });
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded before the desk
-  // starts (session.set went), and the desk takes it in at start.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world, seeded before the desk starts
+  // (goal/G33.7), and the desk takes it in at start.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Chat flow' }, items: items });
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });
@@ -120,9 +118,9 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     if (landed(answer)) test.check('the taker answers his line');
     else test.fail(OWED + 'the taker\'s answer answered ' + short(answer));
 
-    // SUPERSEDED IN PART BY goal/G27.10, R2 (Andy, 2026-10-17, accepting the recommendation to keep R2): an agent that held
-    // a phase of the item earlier posts its work notes and reports at any time, so the red writer is no longer refused
-    // after another agent took and answered his line. The rest of this section stands.
+    // goal/G27.10, R2 (Andy, accepting the recommendation to keep R2): an agent that held a phase of the item earlier
+    // posts its work notes and reports at any time, so the red writer is not refused after another agent took and
+    // answered his line.
     test.subHeading('2. an earlier phase holder posts its notes, before and after a take (goal/G27.10)');
     const red = await call('phase.take', { id: 'goal/G100.2', phase: 'red' }, CW);
     // A red finishes only after its red claim, and a red claim needs a suite row (goal/G33.11; goal/G40.3: the suites

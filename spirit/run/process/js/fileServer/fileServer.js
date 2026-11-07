@@ -8,9 +8,9 @@ require('../../../spirit/spirit.js');
 //   Andy: "The basic file transfer design will be about one faceless app, the fileServer.
 //   internally files are identified by their hash, to avoid duplication."
 //
-// Started by the node like desk: [this file, '{}', --pipe <pipe>, --state <folder>]. The store is
-// the state folder the node names (relay-state/process/fileServer/); this process never works it
-// out itself.
+// Started by the node like desk: [this file, '{}', --pipe <pipe>, --state <folder>, --node <facts>]. The
+// store is the state folder the node names (spirit/state/fileServer/data/, goal/G43.10); this process
+// never works it out itself.
 //
 // ONE FOLDER PER FILE, NAMED BY ITS ID (goal/G1.1, goal/G1.3 THE FILE ID). The id is 'verb-' and
 // the file's sha256 in base64url: 48 characters, one string for the folder, the verb that serves
@@ -27,8 +27,9 @@ require('../../../spirit/spirit.js');
 // we'll find a method later to clean up that folder." The bound keeps every file's verb inside
 // one api answer; push and fetch at the bound are refused pool-full.
 //
-// push, fetch and delete are the owner's alone, whatever apiAuth grants (Andy: "the fileServer
-// will internally deny push and pull, no matter what apiAuth says.").
+// push, fill, fetch, pull, status and delete are the owner's alone, whatever apiAuth grants (Andy:
+// "the fileServer will internally deny push and pull, no matter what apiAuth says."); a file's own
+// verb is whoever apiAuth lets in, its pause and resume the owner's.
 
 const fs = require('fs');
 const path = require('path');
@@ -306,7 +307,7 @@ const server = appServer.serve({
       writeStatus(id, { hash: id, bytes: bytes.length, mime: mimeOf(a.path), name: a.slot, at: new Date().toISOString() });
       try { server.addVerb(id, hashVerb(id)); } catch (e) { /* already served */ }
       if (!old) return { hash: id };
-      // The new verb is served before its grant, or the node refuses it unknown-path (apiAuth.js 90).
+      // The new verb is served before its grant, or the node refuses it unknown-path (apiAuth.js).
       return moveGrants(old, id).then(function () {
         delete transfers[old];
         fs.rmSync(path.join(STORE, old), { recursive: true, force: true });
@@ -379,11 +380,10 @@ const server = appServer.serve({
   },
 // ── ITS OWN REFUSALS (goal/G16.11) ──────────────────────────────────
 //
-// These three were defined in the shared register, which the node and the
-// relay both load. Andy, 2026-10-11: "yes. get the bloody app error codes
-// out of the core." Declared here now, beside the code that enforces them;
-// appServer puts "fileServer: " in front of each text. The codes are
-// unchanged, so nothing on the wire moved.
+// Andy, 2026-10-11: "yes. get the bloody app error codes out of the core."
+// Declared here, beside the code that enforces them, not in the shared
+// register the node and the relay load; appServer puts "fileServer: " in
+// front of each text.
 }, { codes: {
   // Andy: "make the limit 32. that's enough. we'll find a method later to clean up that folder." The store holds
   // at most 32 files, complete or partial; a push or fetch past that is refused, never queued.
@@ -394,7 +394,7 @@ const server = appServer.serve({
 } });
 
 // Every grant on fileServer.<from> becomes one on fileServer.<to>, through the node's own loopback auth verbs
-// (server.js auth.search, auth.grant, auth.revoke), through the one spirit object of this process (goal/G40.6) on its own
+// (the auth family, spirit/auth/api.js: search, grant, revoke), through the one spirit object of this process (goal/G40.6) on its own
 // node; no auth verb of its own.
 function moveGrants(from, to) {
   // The node's answer, or its refusal's body.

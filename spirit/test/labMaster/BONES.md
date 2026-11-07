@@ -1,21 +1,16 @@
 # Bones — identity vs perception (lab only)
 
-> **Superseded, 2026-09-11, for the labMaster recipe below.** Ports, the
-> `install-public-relay.js` step and the "until peers are keyed by public key"
-> caveat are all out of date — peers have been keyed by public key since invite
-> cycle 4. See [design/cleanup/2026-09-11-labmaster.md](../../../design/cleanup/2026-09-11-labmaster.md)
-> for how labMaster actually works, and `labPopulate.js` for building this whole
-> world in one command.
->
-> Kept for the identity-vs-perception thinking it records, which still stands.
+Kept for the identity-vs-perception thinking it records. For how labMaster
+works see [design/cleanup/2026-09-11-labmaster.md](../../../design/cleanup/2026-09-11-labmaster.md),
+and `spirit/test/labPopulate.js` builds a lab world in one command.
 
 Not spirit-3. Not pretty UI.
 
 ## What this pack is
 
-- `spirit/run/spirit/contacts.js` — private contacts book on a personal node (`whoBook.js` until 2026-09-18)
+- `spirit/run/spirit/contacts.js` — the private contacts book on a personal node, rows of the one table `seen` in `node.db` (goal/G40.11)
 - `spirit/test/identityPerception.js` — two johns as two keys; captions stay local
-- labMaster recipe below — sticks, not a new framework
+- labMaster — sticks, not a new framework
 
 ## Unit test
 
@@ -23,34 +18,17 @@ Not spirit-3. Not pretty UI.
 node spirit/test/identityPerception.js
 ```
 
-## labMaster recipe (laptop)
+## labMaster (laptop)
 
 ```
 node spirit/test/labMaster/labMaster.js
 ```
 
-Panel: `http://127.0.0.1:65420`
+Panel: `http://127.0.0.1:65420` (`LAB_MASTER_PORT` names another; the harness uses 45420).
 
-Create:
-
-| name | type | port |
-|---|---|---|
-| lab-relay | relay | 65410 |
-| annie | avatar | 65411 |
-| john-a | avatar | 65412 |
-| john-b | avatar | 65413 |
-| jim | avatar | 65414 |
-
-Point each avatar `spirit/state/relays.json` (goal/G16.3) at `http://127.0.0.1:65410` (loopback HTTP is allowed).
-
-`node install-public-relay.js annie` against the **lab relay home**, not Kamatera.
-
-Claim annie first from her shell, then the others as distinct **claim strings** (`john-a`, `john-b`) until peers are keyed by public key. In each avatar’s `contacts.json` (`who.json` until 2026-09-18), both public labels can be `john`; annie sets `lovelyJohn` / `john-work`.
-
-## Not yet
-
-- Two claims of the literal string `john` on one mailbox
-- Title-bar rename UI
-- To dropdown
-
-Those wait until this test is boring and peer-by-key lands in `relay.js`.
+The idea, in lab terms: one lab relay and four avatars (annie, john-a,
+john-b, jim). Peers are keyed by public key: two avatars may both carry the
+public label `john` and are still two keys; annie's own captions for them
+(`lovelyJohn` / `john-work`) are her `myLabel`s and never leave her node.
+A relay's owner is written at install (`spirit/state/owner.json`,
+goal/G16.8), and every other claim needs an invite the owner mints.

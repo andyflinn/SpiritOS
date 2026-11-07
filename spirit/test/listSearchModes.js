@@ -1,8 +1,10 @@
 'use strict';
 
 // spirit/test/listSearchModes.js
-// goal/G29.9: THE SHARED LIST'S TWO MODES, AND WHAT EVERY LIST GETS FROM IT. Red on today's tree; claude-windows writes
-// it and builds it. The item's box (v8), WHAT IS NEW, in short:
+// goal/G29.9: THE SHARED LIST'S TWO MODES, AND WHAT EVERY LIST GETS FROM IT.
+// THE FILE THIS SUITE READS IS GONE: spirit/run/shell/shared/js/listSearch.js was deleted with goal/G41.28 (the lists
+// are spirit/run/spirit/element/search/'s), so the suite trips on ENOENT at once.
+// The item's box (v8), in short:
 //   - Two modes, pane and dropdown: rows 1 (filters) and 2 (search) always stand; row 3, the list, is a pane below them
 //     or a dropdown that opens under the search row when the box is focused or typed into, and closes on a pick or a
 //     click outside; in dropdown mode the chosen row's name stands in the box while closed.
@@ -110,7 +112,7 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   test.subHeading('4. keys and the current row');
   el.text.value = '';
   fire(box, 'input', el.text);
-  // AMENDED BY goal/G29.11 (Andy, 2026-10-18: every change of the words snaps the list to its top row): the words just
+  // goal/G29.11 (Andy, 2026-10-18: every change of the words snaps the list to its top row): the words just
   // changed, so c is pressed again after them. The press on c makes c the current row; two ups from it reach the top.
   press(box, 'c');
   const pressedCur = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
@@ -124,7 +126,7 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   const endKey = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
   fire(box, 'keydown', el.text, { key: 'Home' });
   const homeInBox = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
-  // AMENDED BY goal/G29.8 (Andy, 2026-10-18: "Give home and end to the list, same as up and down arrow keys."): home and
+  // goal/G29.8 (Andy, 2026-10-18: "Give home and end to the list, same as up and down arrow keys."): home and
   // end in the search box move the list, typed into or not.
   if (endKey === 'c' && homeInBox === 'a') test.check('end goes to the bottom; home in the search box goes to the top');
   else test.fail('OWED by goal/G29.8: end made ' + short(endKey) + ' current, home in the box ' + short(homeInBox));
@@ -191,8 +193,6 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   const sel = fs.readFileSync(path.join(RUN, 'spirit', 'element', 'search', 'contact.js'), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   if (/mode:/.test(sel) && !/contact-selector-field/.test(sel) && !/font-weight:bold/.test(sel)) test.check('contactSelector passes the mode; its own dropdown button and bold name are gone');
   else test.fail(OWED + 'contactSelector still holds its own dropdown or bold name');
-  // Fallout's check stood here (it opened a test's history through details, not press): the plugin went with
-  // goal/G43.22 (Andy: "the apps and plugin system goes.").
 
   test.reportSuccessFailureCount();
   process.exit(0);

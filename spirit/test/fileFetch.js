@@ -1,7 +1,6 @@
 'use strict';
 
 // fileTransfer goal/G1.2: the transfer itself — the receiver pulls the file stretch by stretch.
-// Red on today's tree: fetch answers but transfers nothing ("fetching from a peer is not built yet").
 //   Andy: "the fileServers will autonomously execute (unless interrupted), where the client must
 //   request subsets of the file, because our auth-scheme will only facilitate that direction."
 //   The no-rush scheme: "agreed. scheme approved." and "same for responses." A turn is an attempt:
@@ -10,13 +9,13 @@
 //   Resume: the receiver's own <start>-<length>.blob names are the resume state; the provider keeps
 //   no transfer state. Integrity: the hash the receiver asked for is the checksum; a match is one
 //   rename to complete.blob. Give-up: "how long a download may keep failing before it stops; 5
-//   minutes." — asserted here as the constant, since no red waits five minutes.
-// The world this red builds: a REAL provider fileServer on its own pipe, a REAL receiver fileServer
+//   minutes." — asserted here as the constant, since no suite waits five minutes.
+// The world this suite builds: a REAL provider fileServer on its own pipe, a REAL receiver fileServer
 // on another, and between them a pretend node (the receiver's SPIRIT_CALLBACK_URL): every peer.post
 // the receiver sends is routed into the provider's pipe as a member's ask and the answer returns by
 // re on the event stream — so fetch, info, chunking, parts, resume, pause, progress and the final
 // rename run on real files over the real shapes.
-// Shapes this red fixes, argued in goal/G1.2 before building:
+// Shapes, argued in goal/G1.2:
 //   1. fetch { id, from } answers { id } at once; the transfer runs on after it.
 //   2. The receiver asks { fileServer: { <id>: { command, data } } } through spirit.peerPost with
 //      kind background, ONE outstanding chunk-request at a time, round-robin over live downloads.

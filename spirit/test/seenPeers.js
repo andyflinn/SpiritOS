@@ -3,9 +3,8 @@
 // spirit/test/seenPeers.js
 // WHERE THIS NODE HAS BEEN TOLD PEOPLE LIVE.
 //
-// (It was "what a search learned" until 2026-09-21. It is fed from four
-// places now — a search, a packet arriving, a route announcement, and a
-// relay named at acquisition — and the narrower name hid the rule.)
+// It is fed from four places — a search, a packet arriving, a route
+// announcement, and a relay named at acquisition.
 //
 //   Andy: "in a search request, it is the node who already knows the via
 //   field at request time." — "so all search returns could be cached
@@ -13,11 +12,9 @@
 //   "I'm trying to go diligently through all instances where knowledge is
 //   thrown away blindly, and it costs the relay nothing."
 //
-// A search answer says where each person lives — `via` when the row came
-// from a partner, otherwise the relay that answered — and the node threw
-// it away, keeping only a URL. So a contact acquired from a search
-// arrived with an address in `relays` and nothing in `routes`, and the
-// first post to them carried no hint.
+// A search answer says where each person lives — the relay that answered —
+// and the node keeps it here, so a contact acquired from a search arrives
+// with a route and the first post to them carries a hint.
 
 const os = require('os');
 const fs = require('fs');
@@ -27,7 +24,7 @@ const seen = require('../run/spirit/seenPeers');
 
 // ── EVERY SHADOW GETS ITS OWN HOME (cycle R26) ───────────────────────
 //
-// The rows are on disc now (0018, nodeStore.js), so a shadow needs a
+// The rows are on disc (0018, nodeStore.js), so a shadow needs a
 // place to be. A fresh home per instance, because several of the checks
 // below run two of them at once with different bounds and a shared file
 // would make each one's evictions the other's business.
@@ -71,12 +68,10 @@ test.subHeading('It keeps where somebody lives, and hands it back');
     test.fail('a miss returned: ' + JSON.stringify(S.get('KEY-NOBODY')));
   }
 
-  // A ROW THAT TEACHES NOTHING IS NOT KEPT — and what counts as nothing
-  // narrowed when the rule became greedy (2026-09-21). This asserted that
-  // a label with no route was refused, on the reasoning that it could not
-  // answer the question the cache exists for. Andy: "the (updated) public
-  // labels must be part of it" — a name is something this node was told,
-  // and may be all it ever gets about somebody.
+  // A ROW THAT TEACHES NOTHING IS NOT KEPT. A label with no route is kept:
+  // Andy: "the (updated) public labels must be part of it" — a name is
+  // something this node was told, and may be all it ever gets about
+  // somebody.
   //
   // So nothing means nothing: no route, no address, no name.
   if (!S.note('KEY-EMPTY', {}) && S.get('KEY-EMPTY') === null) {
@@ -104,7 +99,7 @@ test.subHeading('Bounded by space alone (0021)');
     test.fail('an old row was forgotten with room to spare: ' + JSON.stringify(old));
   }
 
-  // THE SPACE BOUND IS BYTES NOW, so forcing it means writing enough to
+  // THE SPACE BOUND IS BYTES, so forcing it means writing enough to
   // fill a file rather than counting to four.
   //
   //   Andy: "why is the max for nodeStore not in Megabytes... we can
@@ -174,9 +169,9 @@ test.subHeading('Greedy means never blanking what it already knows');
   //
   // The callers do not all know the same things. A search knows the
   // label; an arriving packet knows only the road it came in on. Writing
-  // every field on every call meant a label learned from a search was
-  // destroyed the moment that person sent anything — greedy about
-  // forgetting, which is the opposite of the rule.
+  // every field on every call would destroy a label learned from a search
+  // the moment that person sent anything — greedy about forgetting, the
+  // opposite of the rule.
   const c = clock();
   const S = shadow({ now: c.now });
 
@@ -228,11 +223,6 @@ test.subHeading('It survives the process, which is what the store bought (R26)')
   // THE CLAIM THE WHOLE REQUIREMENT EXISTS FOR, made at the level that
   // matters rather than only at the store's.
   //
-  // Before this cycle the shadow was an object in memory, and its own
-  // comment said the age bound was a consequence of that: an hour is
-  // "what a cache can afford while it lives in RAM and loses everything
-  // at a restart anyway".
-  //
   //   Andy: "the user may forget all search results, the node must not."
   //
   // A node that forgot everything on every restart could not keep that
@@ -256,8 +246,7 @@ test.subHeading('It survives the process, which is what the store bought (R26)')
     test.fail('the shadow did not survive: ' + JSON.stringify(kept));
   }
 
-  // AND THERE IS NO AGE BOUND AT ALL (0021). It was an hour, then thirty
-  // days "declared, not measured"; now space is the only thing that
+  // AND THERE IS NO AGE BOUND AT ALL (0021): space is the only thing that
   // forgets.
   if (seen.MAX_AGE_MS === undefined) {
     test.check('and there is no age bound left — space is the only eviction');

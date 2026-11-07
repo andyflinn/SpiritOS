@@ -1,7 +1,7 @@
 'use strict';
 
 // One peer, one file, named by the peer's whole public key
-// (CYCLE-CHAT-5.1.md).
+// (spirit/run/spirit/peerFile.js).
 //
 // Three properties, and the third is the one that decides the encoding:
 //
@@ -11,8 +11,8 @@
 //      scheme that leaves letters as letters is injective on Linux and
 //      lossy on the laptop this is developed on.
 //
-// The predecessor took a TAIL of the key and called a caption `relay`.
-// Both are tested against here on purpose.
+// A tail of the key, or a caption such as `relay`, is no peer name;
+// both are tested against here on purpose.
 
 const test = require('./testSupport.js');
 const auth = require('../run/spirit/relayAuth');
@@ -83,8 +83,8 @@ test.subHeading('Injective — including where the filesystem folds case');
     test.fail('two keys collapsed to ' + peerFile.nameFromKey(a));
   }
 
-  // The bug the old scheme had: every Ed25519 SPKI key opens with the
-  // same header, so a prefix names one file for the whole mailbox, and a
+  // Why no prefix or tail: every Ed25519 SPKI key opens with the same
+  // header, so a prefix names one file for the whole mailbox, and a
   // tail is a bet that the ends differ.
   if (a.slice(0, 12) === b.slice(0, 12)) {
     test.check('and they share a long prefix, which is why no prefix or tail is used');
@@ -142,8 +142,8 @@ test.subHeading('Reversible — a folder of files can say whose they are');
     test.fail('filename round trip failed');
   }
 
-  // The prefix is optional on the way back in, so a file written before
-  // it existed is not orphaned by the change that added it.
+  // The prefix is optional on the way back in: a name without it
+  // still decodes.
   if (peerFile.keyFromFileName(peerFile.nameFromKey(key) + '.json') === key) {
     test.check('a name written without the prefix still decodes');
   } else {
@@ -171,8 +171,8 @@ test.subHeading('Long enough to be safe, short enough to be written');
 
 {
   const key = auth.generateIdentity('andy').publicKey;
-  // The deepest this project goes on Andy's laptop: a OneDrive clone,
-  // spirit/run/shell/relayChat/logs/. Windows' limit is 260.
+  // A deep per-app folder on a OneDrive clone, as peerFile.js measures it
+  // (app/<someApp>/logs/). Windows' limit is 260.
   const deepest = 'C:\\Users\\Andre\\OneDrive\\repo\\SpiritOS\\spirit\\run\\app\\relayChat\\logs\\';
   const full = deepest + peerFile.fileName(key);
   if (full.length < 260) {

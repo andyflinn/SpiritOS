@@ -23,12 +23,11 @@
 //   ./measurements/ubuntu-24.05/ so that our CAPACITY.md can illustrate
 //   the differences." — "or under README/CAPACITY/"
 //
-// Every figure here is the machine it was taken on. The relays that
-// matter run on Linux and the numbers in README/CAPACITY.md were taken on
-// Windows — so the document is honest about one box and silent about the
-// one people will deploy. `--save` writes a machine-readable drop beside
-// that document, named for the platform, so two boxes can be set next to
-// each other instead of one being assumed to speak for both.
+// Every figure here is the machine it was taken on. `--save --agent <name>`
+// writes the measuring agent's own folder, agents/<name>/ (goal/G4.33):
+// capacity.json, machine-readable, beside each other agent's, so two boxes
+// can be set next to each other instead of one being assumed to speak for
+// both.
 //
 // ── WHY THIS IS A TOOL AND NOT A SUITE ───────────────────────────────
 //
@@ -196,30 +195,20 @@ function discPerRow() {
 
   // ── AND THE ROW A MEMBER ACTUALLY HAS AFTER CYCLE 10 ───────────────
   //
-  // THE FIGURE ABOVE MEASURES A MEMBER THAT WILL NOT EXIST. It writes no
-  // `card`, so the column defaults to '' and the row costs ~199 bytes —
-  // which was the whole truth until cycle 10 and is the whole truth for
-  // nobody afterwards, because every claim carries a card (cycle 10's R20) and a
-  // relay that holds none cannot seal an answer at all.
-  //
-  // Found 2026-09-23 the hard way: `capacityFresh.js` was written to
-  // catch a published figure going stale, it correctly went red, this box
-  // re-measured, the gate went GREEN — and the number it certified was
-  // still 199 against a real 575. A freshness check cannot see that the
-  // measurement is asking the wrong question. That is the failure Andy
-  // named in the same hour: *"not-knowing is the deal breaker"*, and a
-  // green gate over a wrong number is not-knowing wearing a badge.
+  // THE FIGURE ABOVE MEASURES A MEMBER WITH NO CARD. It writes no `card`,
+  // so the column defaults to '' — and every claim carries a card (cycle
+  // 10's R20), since a relay that holds none cannot seal an answer at all.
+  // So the carded row is measured too.
   //
   // ONE REPRESENTATIVE CARD, REPEATED. A card's size is fixed by its
   // shape — two keys, a signature, a counter — and varies only with the
   // description, so 5,000 distinct keypairs would buy nothing and cost a
   // minute of keygen. SQLite stores each row's copy; nothing dedupes.
   //
-  // BOTH ARE REPORTED, and neither is quietly renamed. The uncarded
-  // figure is what every relay deployed today is actually running, so it
-  // stays measurable until the flag day lands; the carded one is what
-  // they become. A reader comparing an old capacity.json against a new
-  // one needs both or the jump looks like a measurement error.
+  // BOTH ARE REPORTED, and neither is quietly renamed
+  // (perMemberRowBytes, perMemberRowBytesUncarded): a reader comparing an
+  // old capacity.json against a new one needs both or the jump looks like
+  // a measurement error.
   const sampleId = auth.generateIdentity('member-name');
   sampleId.description = 'a node that belongs to a member with an ordinary description';
   const sampleCard = nodeCard.cardFrom(sampleId);
@@ -239,8 +228,8 @@ function discPerRow() {
   const afterCarded = fs.statSync(rfile).size;
   out.perMember = Math.round((afterCarded - beforeCarded) / M);
 
-  // A PARTNER ROW was measured here; the partner roll is gone (Andy's
-  // decision, goal/G22.6), so a relay holds members and invites only.
+  // A relay holds members and invites only: the partner roll is gone
+  // (Andy's decision, goal/G22.6).
   rstore.close();
 
   const nh = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cap-node-'));
@@ -253,13 +242,8 @@ function discPerRow() {
   // waiting to become useful. A peer you can actually reach costs that
   // plus a row in `seen_routes`.
   //
-  // THIS MEASURED THE FIRST AND REPORTED IT AS THE SECOND until
-  // 2026-09-21. Cycle 3 moved `at` and `url` out of the peer row into the
-  // routes table, and this loop kept passing them to `seen.put`, which
-  // now IGNORES them. Nothing failed: the figure simply fell from 222 to
-  // 157 bytes and every "N peers in X MB" claim on the page got quietly
-  // better. Found when Ubuntu and Windows agreed to the byte, which was
-  // the right answer to the wrong question.
+  // `at` and `url` live in the routes table, not the peer row (cycle 3),
+  // so the reachable figure is the peer row plus its route row.
   const S = 5000;
   for (let i = 0; i < S; i += 1) {
     nstore.seen.put(K + String(i).padStart(27, '0') + '=', {
@@ -309,9 +293,8 @@ function discPerRow() {
       hash: 'a'.repeat(64), bytes: 240, status: 200,
     });
   }
-  // ASKED OF THE LOG, NOT WEIGHED ON DISC (transport/R19.2): this statted
-  // traffic.jsonl itself; the log is moving into node.db (transport/R19), so
-  // it now answers its own size, wherever it lives.
+  // ASKED OF THE LOG, NOT WEIGHED ON DISC (transport/R19.2): the log
+  // answers its own size, wherever it lives (node.db since transport/R19).
   out.perLogEntry = Math.round(traffic.size() / E);
   try { fs.rmSync(th, { recursive: true, force: true }); } catch (e) { /* held */ }
 
@@ -551,7 +534,7 @@ async function main() {
     const named = argAfter('--as');
     const slug = named || ((process.platform === 'win32' ? 'windows' : 'linux') + '-' +
       String(os.release()).replace(/[^0-9.]/g, '').split('.').slice(0, 2).join('.'));
-    // THE AGENT'S FOLDER (goal/G4.33): agents/<agent>/, the agent named by --agent; README/CAPACITY/ is gone.
+    // THE AGENT'S FOLDER (goal/G4.33): agents/<agent>/, the agent named by --agent.
     const agent = argAfter('--agent');
     if (!agent) { console.log('--save needs --agent <your desk name>: it writes agents/<agent>/ (goal/G4.33)'); process.exit(2); }
     const dir = path.join(REPO, 'agents', agent);

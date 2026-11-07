@@ -7,18 +7,9 @@
 //   Andy: "when someone binds to a peer i own, it's because i want them in
 //   my network, so i want a contact auto-generated."
 //
-// ── WHAT THIS SUITE ASSERTED UNTIL 2026-09-19 ────────────────────────
-//
-// A roster sweep (hub.reconcileMembers, reconcileOrphans, syncMembers):
-// everybody on an owned relay's roll roster became a contact carrying
-// `memberOf`, everybody on no roster lost it, a key on no roll was marked
-// `missingSince`, and Forget refused while `memberOf` named a relay. The
-// roll went on 2026-09-18 and a roster may never be returned again — a
-// member list, which 0012 widened forbids, and one that breaks PAYLOAD_MAX.
-// The sweep then read [] for ever and pruned every member contact on every
-// probe, until it was found and deleted.
-//
-// Andy's rules for what replaced it:
+// No roster sweep: a relay returns no member list (0012), so nothing on a
+// node reconciles contacts against a roll, and a contact carries no
+// `memberOf` or `missingSince`. Andy's rules:
 //
 //   "Relays only provide one way to find nodes or relays: SEARCH. What is
 //   not found cannot influence decisions. We design to do the best with
@@ -28,8 +19,8 @@
 //   (passive)."
 //
 // So a new member is adopted from the claim event itself (a broadcast the
-// owner's node receives). Forget deletes the contact's row and touches no
-// relay (goal/G43.17).
+// owner's node receives). Forget clears the row's keep flag and label, the
+// row staying in the table, and asks about no seat or relay.
 
 const os = require('os');
 const fs = require('fs');
@@ -97,7 +88,7 @@ function aClaimAdopts() {
   const row = hub.adoptClaim({ kind: 'claim', key: 'K-CRUELLA', label: 'Cruella',
     invite: 'cruella', owner: false, relay: MINE });
   const held = contactBook.byPublicKey(home, 'K-CRUELLA');
-  // KEPT (goal/G40.11): the row's keep flag. How they came (acquiredVia 'member') went with the box.
+  // KEPT (goal/G40.11): the row's keep flag.
   if (row && held && held.keep === true) {
     test.check('the claimer is a contact: their row is kept');
   } else {
@@ -127,8 +118,8 @@ function aClaimAdopts() {
     test.fail('adopted what it should not have');
   }
 
-  // Andy: "membership can only expire, not be demoted." The ladder of ranks is gone (goal/G40.11); kept is kept, and
-  // acquiring a kept row again, found somewhere else, leaves it kept.
+  // Andy: "membership can only expire, not be demoted." Kept is kept (goal/G40.11): acquiring a kept row again, found
+  // somewhere else, leaves it kept, and contacts.js has no acquiredVia ladder of ranks.
   contactBook.acquire(home, { publicKey: 'K-CRUELLA', publicLabel: 'Cruella', relay: THEIRS });
   const again = contactBook.byPublicKey(home, 'K-CRUELLA');
   if (again && again.keep === true && contactBook.listens(again) && typeof contactBook.acquiredVia === 'undefined') {
@@ -170,8 +161,8 @@ async function forgetDoesNotAsk() {
 
 // ── 3. NO BOOK FILE TO CARRY OLD FIELDS ──────────────────────────────
 //
-// memberOf and missingSince fell away on a row's next write to contacts.json. That file is gone (goal/G40.11): the
-// book is rows of node.db's one table, which has no column for either.
+// The book is rows of node.db's one table (goal/G40.11), no contacts.json, and the table has no column for
+// memberOf or missingSince.
 
 function staleFieldsFallAway() {
   test.subHeading('The book writes no contacts.json, and the table has no seat fields');

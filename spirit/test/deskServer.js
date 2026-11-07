@@ -1,28 +1,23 @@
 'use strict';
 
 // spirit/test/deskServer.js
-// THE DESK SERVER THAT OWNS desk.db — desk/G1.3, written FIRST, red on
-// today's code.
+// THE DESK SERVER THAT OWNS desk.db — desk/G1.3.
 //
-//   Andy's go on desk/G1.3. Decided (Desk, desk/G1): the desk server owns
-//   desk.db (D5), in the process's state folder relay-state/process/desk/,
-//   never in git ("any appServer state is none of git's business"); his
-//   voice file was a plain file there until goal/G2.1; the local shell reaches
-//   it by its verbs on the loopback door (D4; desk.<verb> on the flat apiDoor
-//   since goal/G30.6), a member by an 'api' packet.
-//   Andy: "test suites need their own copy of node", so the node T3 boots
-//   is planted in a temp home, never the checkout.
+//   Decided (Desk, desk/G1): the desk server owns desk.db (D5), in the
+//   process's state folder relay-state/process/desk/, never in git ("any
+//   appServer state is none of git's business"); the local shell reaches it
+//   by its verbs on the loopback door (D4; desk.<verb> on the flat apiDoor,
+//   goal/G30.6), a member by an 'api' packet.
+//   Andy: "test suites need their own copy of node", so the node the last
+//   part boots is planted in a temp home, never the checkout.
 //
-// THE CONTRACT (claude-windows' shapes, agreed with wsl-claude before the
-// build; all keys strings unless marked, no reply uses 'ok'):
+// THE CONTRACT (all keys strings unless marked):
 //   process/js/desk/desk.{js,json}: kind 'server', operated 'node', built on
 //     appServer.js; started with --pipe <p> --state <dir> (the node names
 //     both; the server never works out its own folder).
-//   (log.add, log.search and pending.get went with goal/G33.4, Andy: "log.add, log.search and pending.get: delete
-//   them."; the old lines table they wrote and read was dumped at the migration. T2 holds that they are gone.)
-//   (state.get and state.set went with goal/G33.7, nothing called them; seen became one value per item.)
-//   seen.get   {id} -> {at};  seen.set  {id, at} -> {change}
-//   (voice.add, a line in <state>/voice.jsonl, left with goal/G2.1)
+//   seen.get   {id} -> {at};  seen.set  {id, at} -> {change}  (one value per item)
+//   log.add, log.search and pending.get (goal/G33.4, Andy: "log.add, log.search and pending.get: delete
+//   them."), state.get and state.set (goal/G33.7) and voice.add (goal/G2.1) are no-such-verb; T2 holds it.
 //   desk.<verb> POST /api/spirit {verb: 'desk.<verb>', ...args} -> appClient.ask's
 //              status and body, through verbTable's door (its in-process
 //              call is door.call); 'api' answers the flat table.
@@ -45,42 +40,16 @@ const OWED = 'OWED by desk/G1.3: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DIR = path.join(RUN, 'process', 'js', 'desk');
 const SCRIPT = path.join(DIR, 'desk.js');
-// pending.get joined with desk/G1.5; fresh.get with slim/G1.6; AGENTS with
-// slim/G1.8 (its AGENTS.md, which appServer.serve detects); DEBUG with desk/G2.5 (every server has it).
-// changes: apiAuth/G1.12, Andy's "yes on the verb" (its own suite is deskChanges.js).
-// DEPENDENCIES: apiAuth/G1.10, every appServer process answers it.
-// chat.search: goal/G3.11, the search on an item's chat lines (its own suite is deskChatSearch.js).
-// goal/G9.7 added item.delete, his alone, on an item of a goal in design mode.
-// goal/G8.8 added item.files.add: the files an agent touched, kept by the item.
-// goal/G8.3, goal/G8.10 and goal/G19.2 added verify.reject, verify.pass, verify.again and verify.regress; goal/G33.3 took
-// all four away (Andy's yes, "box this and continue"): deskVerify knows nothing of the desk, so nothing writes them.
-// goal/G9.3 added box.release: the holder lets a box go without writing it.
-// goal/G9.9 added goal.add and item.add: the desk names every goal and item id, and the same two verbs serve him and
-// the agents (Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.").
-// goal/G8.5 added signoff: a leaving agent is gone at once and its phases are freed.
-// goal/G10.5 added AGENTS.introspect beside AGENTS: the family every server with an AGENTS.md carries (introSpector.js);
-// the desk has no verb files yet, so no AGENTS.<verb> is listed.
-// THE VERBS, WITHOUT THEIR DESCRIPTIONS (goal/G19.12). Since goal/G10.8 the api also lists AGENTS.<verb> for every verb
-// an agent may use, each the description its verb file gives; frozen into this list they made it red with every verb
-// file added. So the verbs are compared exactly, and each AGENTS.<verb> is checked to name one of them.
-// goal/G19.13 added claim {id, phase, commit}: a claim carries the commit it was made at, and deskVerify waits for it.
-// goal/G21.4 added item.release {id}: an agent lets go of the one task it holds (its own suite is deskChatFlowOneTask.js).
-// Since goal/G22.3: the desk mounts every plugin in process/js/desk/plugins/js/ and serves their verbs beside its own;
-// the stackFrameChecks plugin brings stackFrameChecks.make {gate, endpoint} (its own suite was deskPluginsGg.js), and
-// since its list of doors (goal/G22.3) the list read back, since goal/G33.7 as stackFrameChecks.doors.search (bounded, more) and stackFrameChecks.door (one door); since Andy's "RUN the show"
-// (goal/G22.3, 2026-10-13) make takes {gate, endpoint, paths, suites}, and update, remove, run and runState join; stop
-// went when the runs became deskVerify's (Andy, 2026-10-13: "every run here should report to deskVerify.").
-// SINCE goal/G43.22 no plugin is mounted and no stackFrameChecks.<verb> is served (Andy: "the apps and plugin system
-// goes."); the verbs below are the desk's own.
-// SINCE goal/G30.4 the AGENTS family is gone: every server carries its family folder's FS verbs instead (FS.loadFile,
-// FS.search ...; introSpector.js), the verb files read through them. So the verbs are compared without the FS set, and
-// the FS set is checked to be exactly introSpector's, nothing more.
+// THE VERBS, WITHOUT THEIR DESCRIPTIONS (goal/G19.12): the desk's own verbs are compared exactly. DEBUG and
+// DEPENDENCIES every appServer process answers. No plugin is mounted, so no plugin verb is served (goal/G43.22, Andy:
+// "the apps and plugin system goes."). Beside its own verbs every server carries its family folder's FS verbs
+// (FS.loadFile, FS.search ...; introSpector.js), so the verbs are compared without the FS set, and the FS set is
+// checked to be exactly introSpector's, nothing more.
 const FS_VERBS = ['FS.annotateFile', 'FS.deleteFile', 'FS.fileExists', 'FS.getAnnotations', 'FS.loadFile', 'FS.loadJsonValue', 'FS.saveFile', 'FS.saveJsonValue', 'FS.search', 'FS.statFile'];
 function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') !== 0; }).sort(); }
 function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') === 0; }).sort().join(',') === FS_VERBS.join(','); }
-// goal/G40.3: one row a write on every list table: item.files.remove, item.suites.add/.remove, and the doors'
-// stackFrameChecks.paths.add/.remove/.search and .suites.add/.remove/.search (gone with the plugin, goal/G43.22).
-// goal/G33.7: items.find, rule.history, session.set, state.get and state.set went; every table has its search.
+// goal/G40.3: one row a write on every list table (item.files.remove, item.suites.add/.remove); every table has its
+// search (goal/G33.7).
 const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'agents.search', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.box.search', 'item.chat', 'item.checks', 'item.checks.search', 'item.claims.search', 'item.delete', 'item.files', 'item.files.add', 'item.files.remove', 'item.files.search', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.suites.add', 'item.suites.remove', 'item.suites.search', 'item.take', 'items.search', 'line.take', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'signoff', 'subscribe', 'unblock', 'unsubscribe', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
@@ -91,7 +60,7 @@ const pipe = process.platform === 'win32'
   : path.join(scratch, 'door.sock');
 const kids = [];
 
-// The goal whose seen is written and read (goal/G43.22: no standing goal/G0 any more), seeded before the first start.
+// The goal whose seen is written and read, seeded before the first start.
 test.seedDesk(state, { goal: { id: 'goal/G100', title: 'A goal to be seen' }, items: [] });
 
 function start() {
@@ -163,9 +132,8 @@ function freePort() {
   if (!namers.length && fs.existsSync(SCRIPT)) test.check('no code outside process/js/desk names desk.db');
   else test.fail(OWED + (fs.existsSync(SCRIPT) ? 'desk.db named in ' + namers.join(', ') : 'no process/js/desk/desk.js'));
 
-  // Seen, voice. goal/G33.7: state.get and state.set went (nothing called them), and seen is one value per item: the
-  // arrival time of the newest thing he looked at under it. It was asked of the group chat goal/G0 until goal/G43.22
-  // (Andy: "G0 goes, from ui and server, kept in database."); now of an ordinary goal the desk is seeded with.
+  // Seen, voice. state.get and state.set are no-such-verb (goal/G33.7), and seen is one value per item: the arrival
+  // time of the newest thing he looked at under it, here of an ordinary goal the desk is seeded with.
   const SEEN = '2026-10-23T05:00:00.000Z';
   const SEEN_ID = 'goal/G100';
   const sGone = up ? [await call('state.set', { json: '{}' }), await call('state.get', {})] : [];
@@ -178,13 +146,13 @@ function freePort() {
   } else {
     test.fail(OWED + 'state/seen answered ' + JSON.stringify(sGone.concat([n1, ng])));
   }
-  // voice.add IS GONE (goal/G2.1 note 8): it appended {text, day} to <state>/voice.jsonl, the hack Andy named;
-  // the brain reads his lines through the desk api now, and the vault's own tool keeps his corpus.
+  // voice.add is no-such-verb (goal/G2.1 note 8) and the desk writes no <state>/voice.jsonl; the brain reads his lines
+  // through the desk api.
   const v = up ? await call('voice.add', { text: 'typed by andy', day: '2026-09-29' }) : {};
   if (v.code === 'no-such-verb' && !fs.existsSync(path.join(state, 'voice.jsonl'))) test.check('voice.add is no-such-verb, and no voice.jsonl is written');
   else test.fail('OWED by goal/G2.1: voice.add answered ' + JSON.stringify(v) + ', file present ' + fs.existsSync(path.join(state, 'voice.jsonl')));
 
-  // Tightened after the mutation run: a seen of an item the desk does not hold is refused too.
+  // A seen of an item the desk does not hold is refused.
   const badSeen = up ? await client.ask({ desk: { 'seen.set': { id: 'goal/G999', at: SEEN } } }, ANDY).then(function (r) { return r.body || {}; }) : {};
   if (badSeen.ok === false) test.check('a seen of no item is refused, by an error');
   else test.fail(OWED + 'a seen of no item answered ' + JSON.stringify(badSeen));
@@ -235,8 +203,7 @@ function freePort() {
   plantRun.plantRunTree(home);
   // It starts the desk server only if it includes it (its manifest runs it at home, goal/G30.20).
   require('./tools/runsHome.js')(home, 'process/js/desk');
-  // Its desk starts empty, so it is asked a search, which answers on an empty desk: until goal/G43.22 it was asked the
-  // seen of the standing goal/G0, which every desk held from its start (Andy: "G0 goes, from ui and server, kept in database.").
+  // Its desk starts empty, so it is asked a search, which answers on an empty desk.
   const SEARCH = { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false };
   const port = await freePort();
   const node = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });

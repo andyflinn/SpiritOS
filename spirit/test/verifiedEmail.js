@@ -1,10 +1,8 @@
 'use strict';
 
 // spirit/test/verifiedEmail.js
-// goal/G30.1, "Negotiating face-name and email between node and relay", the part left (box v28): a member's (or the
-// owner's) verified email on a relay, added and changed through the join loop. Red on today's tree; claude-windows
-// writes it and builds it (one agent).
-// The box, in short:
+// goal/G30.1, "Negotiating face-name and email between node and relay": a member's (or the owner's) verified email on
+// a relay, added and changed through the join loop. What this suite asserts:
 //   - The join form in natterDetails is always there, for a seated member and the owner too, reading "Add email
 //     address" while the node holds none for that relay, "Change email address" once it does; the input shows the
 //     verified address held; after sending, it says an email in his inbox at the entered address holds a confirmation
@@ -13,15 +11,17 @@
 //     when the code is confirmed does it write the address on that member's row, verified (members.email and
 //     members.emailVerified); until then the old email stands. No seat, no rename, not refused for a full relay.
 //   - A first join writes the joined address on the new member's row the same way, verified.
-//   - joinConfirm brings the address and the flag back. SINCE goal/G40.11 THE NODE KEEPS NO EMAIL (box v24; Andy,
-//     2026-10-26: "the email address holds no value to the personal node, it is injected only for seating"): the
+//   - joinConfirm brings the address and the flag back. THE NODE KEEPS NO EMAIL (goal/G40.11; Andy, 2026-10-26: "the email address holds no value to the personal node, it is injected only for seating"): the
 //     relay holds it, and the node's form is never prefilled.
 //   - Info's face section loses its email field.
 // NAMED HERE where the box names none:
 //   - relayStore members rows answer email and emailVerified; members.setEmail(key, email) writes it verified.
 //   - The join and joinConfirm answers carry email and emailVerified.
-//   - relayKeys.keepEmail and emailOf stood here until goal/G40.11; relay.get's row carries no email.
+//   - relayKeys has no keepEmail or emailOf; relay.get's row carries no email.
 //   - natterDetails: a panel for a seated relay (ndEmailHtml), its input class nd-join-email, its button nd-join-go.
+// IT READS WHAT THE TREE NO LONGER HAS: shell/natterDetails/ is gone, and the relay now refuses a join without a link
+// to the asker's own computer ("a join needs a link to the asker's own computer"), which this suite's joins do not
+// send, and shell/join/join.json carries no intrinsic flag; so the join, form, mail and Join-app checks fail.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -119,8 +119,7 @@ else test.fail(OWED + 'peerPost drops the confirm\'s email');
 
 test.subHeading('5. the form, and Info');
 const nd = code('shell/natterDetails/natterDetails.js');
-// The confirmation-link sentence moved into the shared joinForm element (box v33, section 5d).
-// The words are the joinForm control's own since box v41 (joinForm.words); natterDetails asks it.
+// The confirmation-link sentence and the words are the shared joinForm element's (joinForm.words); natterDetails asked it.
 const jfWords = code('spirit/element/joinForm.js');
 if (/function ndEmailHtml/.test(nd) && /ndJoinForm\(\)\.words\(/.test(nd) && /Add email address/.test(jfWords) && /Change email address/.test(jfWords))
   test.check('natterDetails has the email panel for a seated relay, reading Add or Change email address');
@@ -140,7 +139,7 @@ const shellSrc = code('spirit/client/shell.js');
 if (/status:\s*said\.status === 200 \? 200 : 201/.test(relayJoinSrc) && /Email address verified/.test(shellSrc))
   test.check('the node passes the relay\'s 200 for a change on, and the page says Email address verified');
 else test.fail(OWED + 'relay.join hands no change apart from a new seat, or the page never says Email address verified');
-// Info's face form is the shell element faceForm since box v39.
+// Info's face form is the shell element faceForm (spirit/element/faceForm.js).
 const infoFace = /spirit\.element\.faceForm/.test(info) ? code('spirit/element/faceForm.js') : (info.split('function infoDrawFace')[1] || '');
 if (/emailVerified/.test(infoFace) && /Verify your email in Contacts/.test(infoFace) && /callDialog\('shell\/natterDetails'/.test(infoFace))
   test.check('Info draws no face form for a relay with no verified email, and offers its natterDetails instead');
@@ -193,7 +192,7 @@ const elementDone = sendIt().then(function (r) {
 });
 
 test.subHeading('6. a newly started node presents noderoutes.net as a contact');
-// Box v29: "A newly started node presents noderoutes.net as a contact already". Contacts' rows are contact.search's,
+// The box: "A newly started node presents noderoutes.net as a contact already". Contacts' rows are contact.search's,
 // relays among them since goal/G40.11 (relay.search went); a new node's list is what boot asserts (server.js calls
 // ownerBadge.ensureRelays). So a fresh home, the boot's call, and contact.search as Contacts asks it.
 const freshHome = home('fresh');

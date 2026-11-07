@@ -1,7 +1,6 @@
 'use strict';
 
-// goal/G4.19 issue 7: the capacity figure follows the rule. Red on today's tree; claude-windows wrote it, wsl-claude
-// builds it. Andy, 2026-10-04, the box of goal/G4.19: "wouldn't we fix what really needs fixing, the capacity
+// goal/G4.19 issue 7: the capacity figure follows the rule. Andy, 2026-10-04, the box of goal/G4.19: "wouldn't we fix what really needs fixing, the capacity
 // measurement, so it takes text field limits from fieldRules.js ?"; "what core grants are required to fix this
 // properly?"; "fix it properly then." DECIDED there: "a member row's worst size is computed from fieldRules.js (label
 // 64, description 128) plus its fixed parts, so the capacity figure follows the rule and never goes stale; the
@@ -9,21 +8,19 @@
 // require, G4.16). The two guards that trip on currentGoal.json (appClientName, runStandsAlone) skip that file. No
 // core file: test code and README/CAPACITY only."
 //
-// THE SHAPES, NAMED HERE where the box names none (claude-windows's picks; the builder may argue them in Desk first):
+// THE SHAPES, named here where the box names none:
 //   1  spirit/test/memberRowWorst.js (test code, no core file) exports worstBytes(): the most a relay's member row
 //      can cost on disc, computed from fieldRules (MAX_BYTES, DESCRIPTION_MAX_BYTES) read when it is called, plus
 //      the row's fixed parts. Raising either rule by k raises it by k at least.
 //   2  It is a true worst: member rows written into a real relayStore at the rule's maxima cost no more a row than
 //      it says. "At the maxima" means the worst a rule lets through: the name and the description are made of `"`,
 //      visible and allowed, which JSON escapes to two bytes inside the card.
-//   3  Every published README/CAPACITY/*/capacity.json's perMemberRowBytes is at most worstBytes().
+//   3  Every published agents/<agent>/capacity.json's perMemberRowBytes is at most worstBytes().
 //   4  capacityFresh.js keeps no git check: no merge-base and no MOVERS list in its code; it runs with no failure.
-//   5  appClientName.js and runStandsAlone.js name no failure in process/js/desk/currentGoal.json.
+//   5  appClientName.js and runStandsAlone.js name no failure in spirit/run/process/js/desk/currentGoal.json.
 //
 // LEFT OPEN, not asserted: whether README/CAPACITY.md prints the computed figure beside the measured one; how the
-// fixed parts are found (a constant, or measured from an empty-field row at run time). FOUND WHILE WRITING, not in
-// the decision: appClientName.js also trips on spirit/test/contactLabel.js, whose header quotes Andy on the apps'
-// namespace under the old name. His words are not changed; how that guard treats a quote is his to say.
+// fixed parts are found (a constant, or measured from an empty-field row at run time).
 
 const fs = require('fs');
 const os = require('os');

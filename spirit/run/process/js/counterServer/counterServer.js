@@ -13,13 +13,14 @@
 // probe for the process subsystem (processes/G1). It reads and writes no
 // file and requires nothing but Node's own http; its log is stdout.
 //
-// Started as the launch dialog starts a process: its arguments arrive as one
-// JSON string, `node counterServer.js '{"port":P}'`.
+// Its manifest (counterServer.json) makes it a user-operated server: it is
+// started as a job, its arguments as one JSON string,
+// `node counterServer.js '{"port":P}'`.
 
 const http = require('http');
 
-// Two ways in: the launch dialog's one JSON string, or by hand, the usual
-// way, `node counterServer.js --port <n>` (how Andy first started it).
+// Two ways in: one JSON string, or by hand, the usual way,
+// `node counterServer.js --port <n>`.
 let args = {};
 const argv = process.argv.slice(2);
 if (argv[0] && argv[0].trim().charAt(0) === '{') {

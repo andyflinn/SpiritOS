@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/appAgentsFile.js
-// AN APP SERVER WITH AN AGENTS.md ANSWERS AGENTS — slim/G1.8, written FIRST,
-// red on today's code (wsl-claude tests, claude-windows builds).
+// AN APP SERVER WITH AN AGENTS.md ANSWERS IT — slim/G1.8.
 //
 //   Andy, 2026-09-29: "the verb would be upper-case "AGENTS"", "the response
 //   to agents is a file on disc called AGENTS?"; 2026-09-30: "great idea!
@@ -11,15 +10,19 @@
 //   appServer".
 //
 // THE CONTRACT:
-//   T1 a server whose family folder (<script>.family) has an AGENTS.md lists
+//   T1 a server whose family folder has an AGENTS.md lists
 //      FS.loadFile in its api, and FS.loadFile {path: 'AGENTS.md'} answers
 //      the file (goal/G30.4: the AGENTS verb is gone, FS reads the folder)
 //   T2 read per ask: an edit to the file is the next answer, no restart
 //   T3 no AGENTS.md: still no AGENTS verb (asking it is no-such-verb), and
 //      FS.loadFile of AGENTS.md answers no text
 //   T4 bounded: a file too big for one answer is refused by name, never cut
-//   T5 the desk server has one (process/js/desk/desk.family/AGENTS.md), and
-//      answers it through FS.loadFile
+//   T5 the desk server has one, and answers it through FS.loadFile
+//
+// The family folder this file plants and reads is <name>.family. appServer.js
+// withAgents reads family/ beside the script since goal/G41.12 (api/ for an app
+// of spirit/app/), and the desk's is process/js/desk/family/AGENTS.md, so the
+// paths here no longer match the product.
 
 const fs = require('fs');
 const os = require('os');
@@ -44,7 +47,7 @@ function plant(name, agentsText) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, name + '.js'),
     'require(' + JSON.stringify(HELPER) + ').serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } });\n');
-  // The family folder is <module>.family beside the script since goal/G30.4.
+  // <name>.family beside the script, as goal/G30.4 named it; family/ since goal/G41.12.
   if (agentsText != null) { fs.mkdirSync(path.join(dir, name + '.family'), { recursive: true }); fs.writeFileSync(path.join(dir, name + '.family', 'AGENTS.md'), agentsText); }
   return dir;
 }
@@ -103,7 +106,7 @@ function ask(name, verb, args) { const b = {}; b[verb] = args || {}; const q = {
   } else test.fail(OWED + 'a too-big AGENTS.md answered ' + r4.status + ' ' + JSON.stringify(r4.body).slice(0, 120));
 
   test.subHeading('T5: the desk server has its AGENTS.md, and answers it through FS');
-  const deskFile = path.join(path.dirname(DESK), 'desk.family', 'AGENTS.md'); // <module>.family since goal/G30.4
+  const deskFile = path.join(path.dirname(DESK), 'desk.family', 'AGENTS.md'); // desk.family as goal/G30.4 named it; family/ since goal/G41.12
   const state = path.join(scratch, 'deskstate');
   fs.mkdirSync(state, { recursive: true });
   const up = await start('desk', DESK, ['{}', '--state', state]);

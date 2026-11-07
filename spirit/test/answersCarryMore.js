@@ -1,30 +1,21 @@
 'use strict';
 
 // spirit/test/answersCarryMore.js
-// goal/G4.19, issue 4: an answer may carry more than it declares; a request stays exact. RED on today's tree: the app
-// server refuses any reply with a key it did not declare (appServer.js matches, used for replies too), so
-// deskClient.desk hands the desk's answer back inside a JSON string, {json}, and the escaping pushes a big desk read
-// past the travel limit (app-answer-too-large, 8833 > 8377 on a changes read).
+// goal/G4.19, issue 4: an answer may carry more than it declares; a request stays exact.
 //
-//   Andy, 2026-10-04, the box of goal/G4.19: "4. a MAX_PAYLOAD pop is serious."; "ah, it's a check that say it' must
-//   have all the declared elements, but NO MORE! / the alternativeL it must have all the declared elements, or
-//   more...?"; "if the request shape is a complex object, will it be checked all the way to the leaf, of only the data
-//   type?"; "your recommendations, in english?"; "agreed."; "appServer. yes, you may correct that in appServer"; "i
-//   hereby grant the permission to modify, commit and push the core file appServer.js, to loosen constraints on reply
-//   shape."; then his Go on goal/G4.19.
+//   Andy, the box of goal/G4.19: "i hereby grant the permission to modify, commit and push the core file
+//   appServer.js, to loosen constraints on reply shape."
 //
-// THE CONTRACT (the box of goal/G4.19).
-//   1. THE APP SERVER (js/appServer.js, the one core file granted): a reply must carry every key its prototype
-//      declares, of the declared type, and may carry more, at every depth; a reply missing a declared key is still
-//      refused handler-failed. A request stays exact: a key more or less is refused no-such-argument, as today.
+// WHAT IS ASSERTED.
+//   1. THE APP SERVER (spirit/run/spirit/appServer.js, matches(proto, value, more)): a reply must carry every key its
+//      prototype declares, of the declared type, and may carry more, at every depth; a reply missing a declared key
+//      is refused handler-failed. A request stays exact: a key more or less is refused no-such-argument.
 //      A reply prototype {} therefore takes any object.
 //   2. deskClient.desk declares its reply {} and hands back the desk's answer as it is, an object: no json string.
 //   3. A desk read near the desk's room comes back whole through deskClient.desk: an item.chat read of a long chat
-//      is answered, not refused app-answer-too-large (goal/G33.7: changes went with goal/G33.4, item.chat is the read
-//      that fills the room).
+//      is answered, not refused app-answer-too-large.
 //   4. deskAgentEar prints the desk's answer as JSON and exits 0, a big read too.
-// NOT ASSERTED, the builder's: how deskClient.desk passes a desk refusal on (deskAgentEar must still exit 1 on one);
-// deskClientAsk.js, which reads today's {json} shape, moves with the change.
+// NOT ASSERTED: how deskClient.desk passes a desk refusal on (deskAgentEar must still exit 1 on one).
 
 const fs = require('fs');
 const os = require('os');

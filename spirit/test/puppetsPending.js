@@ -14,8 +14,8 @@
 //
 // ── WHAT GOES ON THIS BOARD, AND WHAT MUST NOT ───────────────────────
 //
-// The rule is wsl-claude's, 2026-09-25, and two of its three branches
-// are the ones an agent gets wrong:
+// The rule, and two of its three branches are the ones an agent gets
+// wrong:
 //
 //   DECIDED and the missing unit is NAMEABLE  -> awaiting, here
 //   DECIDED and not nameable                  -> the document, as a cost
@@ -50,21 +50,12 @@
 //
 // ── WHY `G<n>`, AND THE TWO GATES THAT DECIDED IT ────────────────────
 //
-// TWO DRAFTS WERE WRONG BEFORE THIS ONE, AND EACH WAS CAUGHT BY A
-// DIFFERENT GATE ON ITS FIRST RUN. Worth recording, because both
-// mistakes look like naming and neither is.
-//
-//   `R1`-`R7`: `R<n>` is the CYCLE requirement namespace, and
-//   `cycleCitations.js:176` counts a bare one as unresolvable —
-//   R19 names a different requirement in different cycles. Prefixing
-//   with `puppets/` does not help and should not: `\b` treats `/` as a
-//   boundary, so the id is still bare.
-//
-//   `P1`-`P7`: `runAll.js:357` joins a declaration to its heading by
-//   `<document>/<id>` and reads `^### ([RCG]\d+)`, so a `P` matches no
-//   heading anywhere. The board said so out loud — "NOT DECLARED IN A
-//   DOCUMENT — a suite waits on a requirement no document names" — which
-//   is the drift shown rather than hidden, aimed at me.
+// `R<n>` is the CYCLE requirement namespace, and `cycleCitations.js`
+// counts a bare one as unresolvable (R19 names a different requirement in
+// different cycles; a `puppets/` prefix does not help, since `\b` treats
+// `/` as a boundary). And `runAll.js` joins a declaration to its heading by
+// `<document>/<id>`, reading `^### ([RCG]\d+)`, so any other letter matches
+// no heading anywhere.
 //
 // So `G`, and it is not a workaround: these are GUARANTEES OF A DESIGN
 // rather than promises of a cycle, which is the same reason
@@ -121,16 +112,12 @@ test.subHeading('one return bound, both paths');
   // own :127 against its :146. The nameable unit is the shared helper
   // every collection verb answers through, because a per-verb
   // implementation is the duplication the probe exists to catch.
-  // SLICE 1 WAS BUILT at ff22e8c, a shared search helper, since replaced
-  // by the probability modules (goal/G29.22). What G2 still owes is the rest
-  // of Andy's order: "replace the getList interface flat-out , with
+  // G2 is Andy's order: "replace the getList interface flat-out , with
   // \"search\" and KILL the replaced verb".
   //
-  // READ FROM everyVerb.js's LISTS_TODAY, not from verb NAMES. It probed for
-  // any '*.list' verb, and flipped at e5b059d when the last one went, while
-  // relay.status, owner.boxes and relay.record still answer lists under
-  // other names (claude-windows' handover). LISTS_TODAY is what a live node
-  // actually answers, checked every run, so G2 is owed until it is empty.
+  // READ FROM everyVerb.js's LISTS_TODAY, not from verb NAMES: a verb can
+  // answer a list under any name. LISTS_TODAY is what a live node actually
+  // answers, checked every run.
   const everyVerbSrc = fs.readFileSync(path.join(REPO, 'spirit/test/everyVerb.js'), 'utf8');
   const listBlock = /const LISTS_TODAY = \[([\s\S]*?)\];/.exec(everyVerbSrc);
   const stillLists = listBlock ? (listBlock[1].match(/'([a-z]+\.[a-zA-Z]+)'/g) || []).map(function (q) { return q.slice(1, -1); }) : null;
@@ -154,9 +141,9 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   const server = read('spirit/run/spirit/server.js');
   // ── puppets/G4 IS BUILT: peerOwnerPost ────────────────────────────
   //
-  // Built by claude-windows at 8c8347c (ownerPost.js, verb owner.command);
-  // asserted in spirit/test/ownerPost.js end to end against a real
-  // puppetDoor. Only reachability here, as for G5, G6 and G7.
+  // ownerPost.js, verb owner.command; asserted in spirit/test/ownerPost.js
+  // end to end against a real puppetDoor. Only reachability here, as for
+  // G5, G6 and G7.
   if (/peerOwnerPost/.test(server) && typeof require('../run/spirit/ownerPost').createOwnerPost === 'function') {
     test.check('the sending end exists as a unit — ownerPost.createOwnerPost, wired as peerOwnerPost, '
       + 'asserted in ownerPost.js: signed, answered only by that puppet, once, within the wait');
@@ -170,10 +157,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   const puppetMode = read('spirit/run/spirit/puppetMode.js');
   // ── puppets/G5 IS BUILT, SO THE DECLARATION BECAME AN ASSERTION ──────
   //
-  // This suite told me so in those words — "puppets/G5 EXISTS NOW. It was
-  // declared as awaiting; write the assertion it was standing in for" — which
-  // is the handover an awaiting declaration exists to force. The behaviour is
-  // asserted in spirit/test/ownerCommand.js, ten checks; what is asserted HERE
+  // The behaviour is asserted in spirit/test/ownerCommand.js; what is asserted HERE
   // is only that the unit exists and is reachable, so this file keeps saying
   // what is owed and does not become a second copy of that suite.
   if (typeof require('../run/spirit/puppetMode').ownerCommandIn === 'function') {
@@ -187,16 +171,11 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
 
   // ── puppets/G6 IS BUILT, SO THE DECLARATION BECAME AN ASSERTION ──────
   //
-  // Andy's title: "Lock puppet out of Self-Ownership". Built by
-  // claude-windows at edbadff; this suite then said "puppets/G6 EXISTS NOW
-  // ... write the assertion it was standing in for", and it was written:
-  // spirit/test/puppetOwner.js, eight checks, mutation-tested against the
-  // read-only list. As with G5, only reachability is asserted here, so this
-  // file keeps saying what is owed and does not become a second copy.
-  // puppetOwner.js was retired at 013dc827 (goal/G13.2); since goal/G19.10
-  // this credits the suite that asserts the lock now, ownerFile.js.
-  // spirit/state/owner.json, { owner } (cleanup/G1.7)
-  // -- after Andy ruled "a node OWNED by another node's ID is a puppet".
+  // Andy's title: "Lock puppet out of Self-Ownership". The lock is asserted
+  // in spirit/test/ownerFile.js (goal/G19.10); as with G5, only
+  // reachability is asserted here. The owner is spirit/state/owner.json,
+  // { owner } (cleanup/G1.7) — Andy: "a node OWNED by another node's ID is
+  // a puppet".
   if (typeof require('../run/spirit/puppetMode').puppetIn === 'function' && /owner\.json/.test(puppetMode)) {
     test.check('the owner lock exists as a unit — puppetMode.puppetIn and the node\'s owner.json, asserted '
       + 'in ownerFile.js: owner.json { owner } makes a puppet, read on every call, a node owning itself is '
@@ -207,16 +186,10 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
 
   // ── puppets/G7 IS BUILT: THE OWNER DOOR ──────────────────────────────
   //
-  // Split from its second half at 3b30b1a. Andy, asking why it still led
-  // his list: "with verification is should dissappear", and "but once it
-  // freed all it can free, it's no longer relevant to me". Asserted in
-  // spirit/test/puppetDoor.js, 9 checks, mutation-tested.
-  //
-  // WHY IT NEVER WENT RED ON ITS OWN, unlike G5 and G6: its probe was
-  // /synthetic|shimReq|asLoopback/ -- names GUESSED for an implementation
-  // not yet written, and the one built used none of them. So the
-  // declaration could not see a built, tested door. A probe must name what
-  // was AGREED, which is why G10 below names puppetMode.faceDoor.
+  // Asserted in spirit/test/puppetDoor.js. Its second half is G10 below. A
+  // probe must name what was AGREED, never a name guessed for an
+  // implementation not yet written, which is why G10 names
+  // puppetMode.faceDoor.
   if (typeof require('../run/spirit/puppetMode').puppetDoor === 'function') {
     test.check('the owner door exists as a unit — puppetMode.puppetDoor, asserted in puppetDoor.js: the '
       + 'owner\'s signed command to a carried group runs and is answered, an uncarried group is refused by '
@@ -229,11 +202,9 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   //
   // The half of G7's approved shape that cannot start yet: visitors through
   // the face reach only the 'puppet' group, and the rest of the tree is not
-  // there for them. It needs join's route (public-app-server G17); G14, an
-  // app's declared commands, was also named here and turned out built
-  // (ac0c283, asserted in appServerBoundary.js), so it is dropped. The probe is the name
-  // AGREED with claude-windows for slice 2, puppetMode.faceDoor, so it goes
-  // red the moment the unit exists and asks for its assertions.
+  // there for them. It needs join's route (public-app-server G17). The probe
+  // is the name agreed for slice 2, puppetMode.faceDoor, so it goes red the
+  // moment the unit exists and asks for its assertions.
   test.awaiting('puppets/G10', 'the face door and the puppet group',
     typeof require('../run/spirit/puppetMode').faceDoor === 'function',
     'visitors through the face reach only the puppet group; a face request naming a node verb answers '
@@ -244,7 +215,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
 
 // ── THE SIBLING-PUPPET DIRECTION, WHICH ANDY'S MODE GATE DOES NOT REACH
 //
-//   Andy, 2026-09-26, closing most of the hole wsl-claude found: "only in
+//   Andy, 2026-09-26, closing most of the hole: "only in
 //   puppet mode can messages be passed as fake loopback, because they come
 //   from the owner, the reverse is not true, the owner is never in
 //   puppet-mode, to that gate closes automatically." Then, of what is left:
@@ -264,18 +235,16 @@ test.subHeading('A puppet can compose any envelope, which is what makes the sibl
 
 {
   // MEASURED, NOT ARGUED. The risk rests on one fact about the surface a
-  // puppet is handed, and that fact is checkable today even though the switch
-  // it threatens is not built. If this ever stops being true, the sibling
+  // puppet is handed, and that fact is checkable. If this ever stops being true, the sibling
   // requirement below stops mattering and should be closed rather than
   // carried.
   // Two facts rather than one regex across lines: the puppet's post takes the
   // packet text, and that text reaches the router unexamined.
   // NO REGEX. Two literal substrings from the surface itself, so the check
   // cannot fail on an escape and be read as the hole having closed.
-  // SINCE goal/G13.2 the surface is the loopback door's peer.post (the mounted puppet's post()
-  // seam left with nodeApps.mountAll): a process on this box hands the node raw text, and the
-  // node's router sends it signed by THIS node key. The basis of the sibling case stands.
-  // SINCE goal/G30.4 the peer family is mounted with bare verbs ('post' in loopbackVerbs.mount('peer', ...)), so the
+  // The surface is the loopback door's peer.post (goal/G13.2): a process on this box hands the
+  // node raw text, and the node's router sends it signed by THIS node key. The peer family is
+  // mounted with bare verbs ('post' in loopbackVerbs.mount('peer', ...), goal/G30.4), so the
   // declaration is looked for from the start of that mount on.
   const surface = read('spirit/run/spirit/server.js');
   const peerMount = surface.indexOf("loopbackVerbs.mount('peer',");
@@ -292,12 +261,6 @@ test.subHeading('A puppet can compose any envelope, which is what makes the sibl
   }
 }
 
-// THE REQUIREMENT ITSELF IS AWAITING AND NOT RED, deliberately. There is no
-// switch yet — puppets/G5 is the switch and it is unbuilt — so nothing exists
-// to accept or refuse, and a red assertion here would be asserting against
-// absent code and reporting the absence twice. What is owed is a property the
-// switch must have, and it cannot be met by checking the sender: the sender is
-// correct in the attack.
 // ── ANDY HAS GIVEN THE RULE, AND THE SECOND HALF IS THE LOAD-BEARING HALF
 //
 //   Andy, 2026-09-26: "a puppet always routes requests through its owner, the
@@ -312,14 +275,11 @@ test.subHeading('A puppet can compose any envelope, which is what makes the sibl
 // on the way out — and to a sibling puppet that node key IS the owner key.
 // The forger never signs anything; the router signs for it.
 //
-// What closes it is that the signature verified BEFORE LOOPBACK must be over
-// the COMMAND, not the transport. peerOwnerPost adds none today: hub.js:2169
-// encodes the packet and hands it to sendPacket, and the only signature on it
-// is the router's. So the owner must sign the command at composition, with the
-// identity key no puppet holds, and the switch must verify that before it
-// dispatches — which is also the only moment at which refusing costs nothing.
-// BUILT THE SAME SITTING IT WAS FOUND, so this is an assertion and not a
-// declaration. The behaviour is in ownerCommand.js; what is asserted here is
+// What closes it is that the signature verified BEFORE LOOPBACK is over the
+// COMMAND, not the transport: the owner signs the command at composition
+// (ownerPost.js, relayAuth.commandMessage), with the identity key no puppet
+// holds, and the switch verifies that before it dispatches — the only moment
+// at which refusing costs nothing. The behaviour is in ownerCommand.js; what is asserted here is
 // that the signed format exists and is distinct from the transport one, which
 // is the property the whole requirement rests on.
 {

@@ -27,8 +27,7 @@
 // What it cannot reach is the wiring: that peerPost actually consults the
 // queue before going, actually releases the slot when an attempt ends,
 // and actually lets the next one go. Those are three chances for a queue
-// to be perfect and unused — which is precisely how the tree found R8
-// built and R21 misdiagnosed three times. So every byte here crosses a
+// to be perfect and unused. So every byte here crosses a
 // loopback socket, and the targets are real members holding real streams.
 //
 // ── WHAT A GREEN RUN PROVES ──────────────────────────────────────────
@@ -46,10 +45,8 @@
 //
 // ── PATIENCE COMES FROM THE NODE, NOT FROM AN APP ────────────────────
 //
-// 0020: the scheduler is not a client surface. `hub.js` posts with no
-// options today, so the retry path is built and unreachable in a running
-// node, and the repair is an OWNER's setting rather than an argument
-// every caller must think about. This fixture therefore sets patience the
+// 0020: the scheduler is not a client surface: patience is an OWNER's
+// setting rather than an argument every caller must think about. This fixture therefore sets patience the
 // way a node will — once, for the whole run — and does not invent an
 // app-facing knob in order to test itself.
 
@@ -69,7 +66,7 @@ const sseClient = require('../run/spirit/sseClient');
 const peerPost = require('../run/spirit/peerPost');
 const { createRelay } = require('../run/spirit/relay');
 
-// Below 49152, outside Windows' ephemeral range — see presenceWire.js:41
+// Below 49152, outside Windows' ephemeral range — see presenceWire.js
 // for what a port inside it costs, and targetBusy.js for the neighbour.
 const PORT = 48783;
 
@@ -125,8 +122,8 @@ function plant(w) {
   w.runDir = runDir;
 }
 
-// stderr is kept, not ignored — partnerWire.js records what discarding it
-// cost: `listen EACCES` was invisible and read as a regression.
+// stderr is kept, not ignored: discarded, a `listen EACCES` is invisible
+// and reads as a regression.
 async function startRelay(w, port) {
   const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'],
     { cwd: w.runDir, stdio: ['ignore', 'ignore', 'pipe'] });
@@ -141,17 +138,11 @@ async function startRelay(w, port) {
       if (r.status === 200) {
         // ── IS THIS THE RELAY WE STARTED? ───────────────────────────
         //
-        // A 200 on the port is not the same question. Measured
-        // 2026-09-23: a relay leaked by an INTERRUPTED earlier run of
-        // this same suite was still holding the port, so the suite
-        // started its own relay (which could not bind), talked to the
-        // squatter, and every post came back "no such identity" —
-        // because the squatter had never heard of these members.
-        //
-        // That diagnosis cost a bisect across two commits and a wrong
-        // hypothesis about a production change. The port collision was
-        // reported as an identity failure, which is the least helpful
-        // true thing it could have said.
+        // A 200 on the port is not the same question: a relay leaked
+        // by an INTERRUPTED earlier run of this same suite can still hold
+        // the port, so the suite's own relay cannot bind, the suite talks
+        // to the squatter, and every post comes back "no such identity" —
+        // a port collision reported as an identity failure.
         //
         // So: the key is compared. A stranger on the port fails HERE,
         // by name, with the thing an operator has to do.
@@ -198,7 +189,7 @@ function member(w, identity, answers) {
 
       // ── THE HASH IS DERIVED, NEVER RECEIVED ──────────────────
       //
-      // relay.js:3123: "NO HASH IS SENT. The target derives it from the
+      // relay.js: "NO HASH IS SENT. The target derives it from the
       // bytes it holds, which is what makes it evidence rather than an
       // echo (ROUTER.md §2)."
       //
@@ -342,10 +333,8 @@ async function run() {
 
   test.subHeading('A target that says nothing does not keep the node');
 
-  // THE ATTEMPT ENDS ON ITS OWN BUDGET. Before R5 the relay held a route
-  // for 15s whatever the node asked, so a node that gave up at 8s left
-  // seven seconds of guaranteed refusal behind it. The node's own asking
-  // time is what bounds this now.
+  // THE ATTEMPT ENDS ON ITS OWN BUDGET: the node's own asking time, carried
+  // in the envelope (R5), is what bounds a route on the relay.
   const arrivals = stalls.reduce(function (n, m) { return n + m.arrived.length; }, 0);
   if (arrivals >= 3) {
     test.check('each stalled attempt released the slot and the next went — ' + arrivals + ' reached silent targets');

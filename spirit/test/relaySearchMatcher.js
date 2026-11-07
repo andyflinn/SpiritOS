@@ -4,15 +4,13 @@
 // goal/G19.17, carried into goal/G40.11: the node's relays are ranked with probabilityStringObjectMatch, as the desk
 // ranks its items.
 //
-// THE ITEM, AS FOUND (goal/G19.17): relay.search matched its own way, and a '*' never spanned the '/' of a url, so a
-// relay whose label is its url was left out; a claim lists a relay with its url as the label, so a relay just claimed
-// was missing from Natter's list although relay.get found it. ANDY'S DECISION: "we should have put in the new search
-// thinggie for relay's" ; "add it."
+// ANDY'S DECISION (goal/G19.17): "we should have put in the new search thinggie for relay's" ; "add it." So a relay
+// whose label is its url, as a claim lists it, is found like any other.
 //
-// SINCE goal/G40.11 relay.search is gone (Andy: "yes. those names."): contact.search covers the relays, one row each of
-// the one table, keyed by ID with the url on the label, and {relay: 'yes'} asks for them alone. It ranks as it always
-// did: words graded by probabilityStringObjectMatch over the names and the url, best first, a row that grades 0 left
-// out; no words is every row.
+// There is no relay.search (goal/G40.11; Andy: "yes. those names."): contact.search covers the relays, one row each of
+// the one table, keyed by ID with the url on the label, and {relay: 'yes'} asks for them alone. Words are graded by
+// probabilityStringObjectMatch over the names and the url, best first, a row that grades 0 left out; no words is every
+// row.
 //
 // WHAT IS ASSERTED
 //   1. A relay labelled by its url is listed, by '*' and by ''.
@@ -49,7 +47,7 @@ function freshRoot() {
 }
 function hubOf(root) { return require('../run/spirit/hub.js').createHub(root); }
 function keysOf(r) { return ((r && r.items) || []).map(function (i) { return i.key; }); }
-// The relays, by contact.search: synchronous on the node, answered as a promise so the chain reads as it did.
+// The relays, by contact.search: synchronous on the node, answered as a promise so the chain reads in order.
 function relays(hub, q) { return Promise.resolve(hub.contactSearch({ q: q, relay: 'yes' })); }
 
 test.startTest('contact.search ranks the node\'s relays with probabilityStringObjectMatch (goal/G19.17, goal/G40.11)');
@@ -88,7 +86,7 @@ Promise.resolve()
     relayKeys.list(root, 'http://127.0.0.1:7', 'natter lab', 'RELAYKEY-n');
     relayKeys.list(root, 'http://127.0.0.1:9', 'zulu', 'RELAYKEY-z');
     const hub = hubOf(root);
-    // contact.search ranks as it always did: a typo in one word of two still ranks by the word that is right, and a
+    // contact.search ranks: a typo in one word of two still ranks by the word that is right, and a
     // row every word grades 0 against is not in the answer.
     return Promise.all(['natter lab', 'natter lbb', 'zulu'].map(function (q) { return relays(hub, q); })).then(function (rs) {
       const k = rs.map(keysOf);

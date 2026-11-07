@@ -1,31 +1,22 @@
 'use strict';
 
-// goal/G3.12: the front page of Desk re-arranged — the agent bubbles move up beside the tabs, Team is the group chat
-// (Team and its group chat gone since goal/G43.22).
-// Andy, 2026-10-03 (a musing, then "add the items" under goal/G3): "the main botton row now reads: [List] [Team]
-// [Musings], those are buttons, and Info [Agent1-status] [Agent2-status]... Where the Agent - bubbles are
-// highlighted with a red-blinking border when busy." and "the The team tab will only show the team chat interface
-// (Chat of goal 'goal/G0')". His Go is his go-all on goal/G3 (2026-10-03).
-// The shape, named by claude-windows under goal/G3 and not contradicted: the bubbles beside Info show state only
-// (a click does nothing); the direct tabs and the direct line go; Team is the group chat alone.
-// In the tree today (e3506e6b): the tab strip is List, Team, Musings (shell/desk/desk.js deskDrawTabs); the agents
-// are tabs INSIDE Team (#desk-agent-tabs, deskDrawAgentTabs) with the busy blink on data-working (goal/G2.4); a
-// line typed in an agent's tab leaves as an agents packet (deskSend, goal/G1.2); All is the group chat (goal/G3.10).
-// The contract (wsl-claude's reading; shapes it fixes are named):
-//   1. THE BUBBLES. The tab row #desk-tabs holds, after the three tab buttons, one element per agent the goal row
+// goal/G3.12: the front page of Desk — the agent bubbles sit beside the tabs, and no direct agent tabs are drawn.
+// Andy, 2026-10-03: "the main botton row now reads: [List] [Team] [Musings], those are buttons, and Info
+// [Agent1-status] [Agent2-status]... Where the Agent - bubbles are highlighted with a red-blinking border when busy."
+// Since goal/G43.22 there is no Team or Apps tab and no group chat goal/G0 (Andy, the box, Q5: "G0 goes, from ui and
+// server, kept in database."; "the apps and plugin system goes."): the tab row is List and Rules (desk.js deskDrawTabs).
+// The contract:
+//   1. THE BUBBLES. The tab row #desk-tabs holds, after the tab buttons, one element per agent the goal row
 //      says is live (its `live`), each marked data-bubble="<name>" and carrying the name; one the goal row says is
 //      working (its `working`) also carries data-working="1", the mark the blink is declared on. They show on
 //      every tab, the List included, and follow the goal row's publish.
 //   2. STATE ONLY. A click on a bubble asks the server nothing, posts nothing and changes no tab.
-//   3. TEAM IS THE GROUP CHAT. No element with data-agent is drawn anywhere, on Team or elsewhere; what he types
-//      under Team is one chat.add on goal/G0 and no packet to anybody, with no tab to pick first.
-//      SINCE goal/G43.22 there is no Team at all (Andy, the box, Q5: "G0 goes, from ui and server, kept in
-//      database."; "the apps and plugin system goes."): no Team or Apps tab, no Team input, nothing asked of goal/G0.
+//   3. NO TEAM. No element with data-agent is drawn anywhere, no Team tab, chat or input, and nothing is asked of
+//      goal/G0.
 //   4. ONE PIECE OF CODE. shell/desk/desk.js has no deskDrawAgentTabs, no deskDirectChat, no deskSend, and draws
 //      no data-agent= attribute: the direct tabs are gone, not hidden.
-// Not asserted (the builder's): the look of a bubble, the word Info or its place, what becomes of the recorded
-// direct lines of the past and of the agents packet handler (onPacket), whether deskAgents stays for the keys.
-// deskAgentTabs.js (goal/G1.2) asserts the direct tabs; it is the builder's to retire or bring along.
+// Not asserted: the look of a bubble, the word Info or its place. deskAgentTabs.js (desk/G1.2) asserts the direct
+// tabs inside Team that this file holds are gone.
 
 const fs = require('fs');
 const path = require('path');
@@ -120,8 +111,7 @@ test.startTest('goal/G3.12: the front page — agent bubbles beside the tabs, Te
   const p = page();
   await settled();
   const t0 = p.tabs();
-  // Since goal/G22.3 Team was Apps' first inner tab, and since goal/G27.3 the Musings tab was gone (Vision under Apps).
-  // Since goal/G43.22 Apps, and Team in it, are gone too (Andy: "the apps and plugin system goes."): List and Rules.
+  // List and Rules: no Musings (goal/G27.3), no Apps or Team (goal/G43.22; Andy: "the apps and plugin system goes.").
   const threeTabs = /data-tab="list"/.test(t0) && /data-tab="rules"/.test(t0) && !/data-tab="apps"/.test(t0) && !/data-tab="team"/.test(t0) && !/data-tab="musings"/.test(t0);
   const cw = bubble(t0, 'claude-windows');
   const wsl = bubble(t0, 'wsl-claude');

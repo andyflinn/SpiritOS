@@ -3,10 +3,9 @@
 // spirit/test/tools/inspect.js
 // ASK THE TREE A QUESTION, WITH A COMMAND THAT NEVER CHANGES.
 //
-// NAMED inspect AND NOT ask, AFTER A VOCABULARY COLLISION. Both agents
-// created an ask.js within minutes: this one, and spirit/run/shell/shared/ask.js
-// — the app's door, ask(verb, args), which is G3's "ask has one home".
-// THAT ONE OWNS THE WORD. `ask` is the product's verb, in the dictionary and
+// NAMED inspect AND NOT ask: spirit/run/shell/shared/ask.js is the app's
+// door, ask(verb, args), which is G3's "ask has one home", and THAT ONE
+// OWNS THE WORD. `ask` is the product's verb, in the dictionary and
 // in the requirement; this is a dev tool that reads files. A collision in
 // vocabulary costs more than a duplicate implementation, because nothing
 // ever goes red — the two just quietly mean different things in the same
@@ -17,21 +16,15 @@
 //
 // ── THE LAST CATEGORY ───────────────────────────────────────────────
 //
-// Three sources of approval dialogs were found and cured today: the vault
-// guard (four defects), the messages between agents (every one a freshly
-// composed command), and the probes written to measure those. THIS IS THE
-// FOURTH AND IT IS THE ONE LEFT: reading the tree. Every grep, every
-// sed -n, every ls is a new string, so every one is a new dialog — and
-// inspection is what an agent does most.
-//
-// The cure is the same one, for the fourth time, which is why it is worth
-// stating as a rule rather than as a fix: WORK THAT WILL BE REPEATED
-// LIVES AT A PATH, NOT IN A STRING.
+// Reading the tree is what an agent does most, and every grep, every
+// sed -n, every ls is a new string, so every one is a new approval
+// dialog. The rule: WORK THAT WILL BE REPEATED LIVES AT A PATH, NOT IN A
+// STRING.
 //
 //     node spirit/test/tools/inspect.js
 //
-// The question lives in a file, the way say.js's message does. One
-// approval, once, for every question after it.
+// The question lives in a file. One approval, once, for every question
+// after it.
 //
 // ── IT READS AND NEVER WRITES ───────────────────────────────────────
 //
@@ -47,8 +40,8 @@ const path = require('path');
 
 const REPO = path.join(__dirname, '..', '..', '..');
 
-// The box says where its own askbox is, the same ordering say.js uses:
-// the environment, then the box file, then this file's last resort.
+// The box says where its own askbox is: the environment, then the box
+// file, then this file's last resort.
 function fromBoxFile(key) {
   try {
     const raw = fs.readFileSync(path.join(REPO, '.spiritbox'), 'utf8');

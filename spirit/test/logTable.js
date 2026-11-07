@@ -1,20 +1,15 @@
 'use strict';
 
 // spirit/test/logTable.js
-// THE NODE LOG AS A TABLE IN node.db — transport/R19.3, written FIRST.
-//
-//   Andy, 2026-09-28: "they must be red before wsl pulls the
-//   implementation, and green after he pull the implementation", and "on
-//   go, the tests should be run ASAP against the unmodified production code.
-//   if they are green then, they may be worth less". His go on transport/R19.3 came
-//   with that rule, so every check here is red until the table is built.
+// THE NODE LOG AS A TABLE IN node.db — transport/R19.3.
 //
 //   Decided (Andy: "i agree to the keys as well"): seq INTEGER PRIMARY KEY
-//   AUTOINCREMENT, every field a column, every row kept. The table is found
-//   by that key, not by a name, so the build may name it.
+//   AUTOINCREMENT, every field a column, every row kept. The table
+//   (nodeStore.js names it traffic; trafficLog.js reads and writes it) is
+//   found here by that key, not by its name.
 //
-//   T5, rule 1 ("nothing above trafficLog.js changes"), is a GUARD, not
-//   proof: storeOwnership.js holds it and must stay green throughout.
+//   That nothing above trafficLog.js changes is guarded by
+//   storeOwnership.js, not by this file.
 
 const fs = require('fs');
 const os = require('os');

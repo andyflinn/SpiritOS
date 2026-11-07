@@ -1,15 +1,17 @@
 'use strict';
 
 // spirit/test/jobsCleanUp.js
-// goal/G29.16: transient jobs remove themselves; only failed ones stay. Red on today's tree; claude-windows writes it
-// and builds it (one agent). The item's box:
+// goal/G29.16: transient jobs remove themselves; only failed ones stay. The item's box:
 //   Automatic, never opt-in per caller: every transient job is removed from the job system when it ends, unless it
 //   failed. A job the owner cancels is removed too. A failed job stays until the next node restart. The removeWhenDone
 //   argument goes from jobs.create, and with it the opt-in of goal/G4.34.
 //   THE JOBS LIST: the status toggles go; in their place one last filter, failed, that shows the failed jobs alone.
 // It replaces goal/G4.34's jobsRemoveWhenDone.js, whose opt-in it removes.
 // NAMED HERE where the box names none: a transient job is kind 'process'; the failed filter is the last choice of the
-// kind filter (all, node, servers, transient, failed), drawn in jobsSearch.js.
+// kind filter (all, node, servers, transient, failed) in shell/jobs/jobs.js, drawn in jobsSearch.js.
+// Sections 1 and 2 start scripts written into a scratch folder, which jobs.js now refuses (refuseOther, goal/G41.30:
+// only this node's own process/js/<name>/ scripts start), and says.js calls kernel.js's spirit.core.jobs.complete,
+// which kernel.js no longer has (the job's own complete is spirit.js's spirit.jobs).
 // rule/11: through testSupport only.
 
 const fs = require('fs');

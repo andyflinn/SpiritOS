@@ -9,7 +9,7 @@
 //   the version button." / "No older versions shown" / "The chat area, styled like deskDetails': chat.add and
 //   item.chat under rule/N; "this box does NOT have triggers like cap and split, because the text is edited by the
 //   user."" / "Where: a new shell app, shell/ruleDetails, beside shell/deskDetails."
-// The contract the builder follows (claude-windows's picks where the box names no shape):
+// The contract (where the box names no shape):
 //   - shell/ruleDetails/ruleDetails.js and ruleDetails.json (type dialog), opened as callDialog('shell/ruleDetails',
 //     {key}); open(params) reads params.key. The desk is asked as deskDetails asks it: api.verb('desk.<verb>',
 //     args), the verb by name on the flat apiDoor (goal/G30.6).

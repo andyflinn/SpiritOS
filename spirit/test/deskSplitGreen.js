@@ -1,27 +1,22 @@
 'use strict';
 
-// goal/G6.8: a sub-goal only by his split, and design-green tracked by the desk. Red on today's tree; wsl-claude wrote
-// it from G6.8's box and does not build it.
-//   Andy, 2026-10-06, in goal/G6: "an item becomes a sub-goal only when i say split, the box of that item must then only
-//   contain references to it's blockers, and it can no longer be marked as a coding item."; in goal/G6.8: "while you're
-//   in DeskServer: can you also make sure that in design mode as well, OPEN is help in red-questions?", "i want
-//   mechanical tracking of design-greens. Yes i want opens to light up my list with ERROR icons.", and "accepted." to
-//   the box's shape.
+// goal/G6.8: design-green tracked by the desk.
+//   Andy, 2026-10-06, in goal/G6.8: "while you're in DeskServer: can you also make sure that in design mode as well,
+//   OPEN is help in red-questions?", "i want mechanical tracking of design-greens. Yes i want opens to light up my list
+//   with ERROR icons.", and "accepted." to the box's shape.
 //
 // THE SHAPES (the box's):
-//   1  a session that adds a new item blocking an existing one marks nothing; session.set takes split: [id], and only
-//      the item it names is marked sub-goal. (Since goal/G33.7 session.set is gone: an add with blocks is the split.)
-//   2  the split clears that item's code mark, and a later session cannot mark it code again; the mark stays.
+//   1  a split (item.add naming the item it blocks) marks nothing: no sub-goal since goal/G33.4 (below).
+//   2  the split keeps the item's code mark.
 //   3  an item is design-green when it has no open red question: facts.green.
 //   4  a box.write with an OPEN section is refused.
 //   5  his End design is refused while any item of the goal is not design-green.
 //   6  a Go, and a go-all, are refused while an item in that scope is not design-green.
 //   7  no phase is taken while design is on, also on an item whose Go came before design was started again. Andy, in
 //      goal/G6.8: "no phases can be taken in an item while design mode is on.", and "yes." to Q2, adding it here.
-// THE NAMES that are wsl-claude's picks (the box names none): the fact is green (true | false); "an OPEN section" is a
+// THE NAMES where the box names none: the fact is green (true | false); "an OPEN section" is a
 // line of the box that starts with the word OPEN in capitals (OPEN:, OPEN on its own line, OPEN followed by a space).
-// LEFT OPEN, with the reason, not asserted here:
-//   - "its box holds only references to its blockers": the box says the desk does not police that text.
+// Not asserted here, with the reason:
 //   - the ERROR on a goal's own row in the List: it is the face's (shell/desk/desk.js), not the desk server's.
 //   - whether an item's Go is refused for an open question on ANOTHER item of the goal: "that scope" for a single Go
 //     is read here as the item itself, and only go-all is asserted over the goal.
@@ -101,7 +96,7 @@ function answer(id, check) { return call('check.set', { id: id, check: check, st
   test.subHeading('2. the split keeps the code mark (goal/G33.4)');
   if (before.code === true && split.code === true) test.check('goal/G100.5 was marked code before the split and still is after it');
   else test.fail(OWED + 'code mark across the split: ' + short({ before: before.code, after: split.code }));
-  // A later write on it (session.set went with goal/G33.7: his rename stands for the later session).
+  // A later write on it (no session.set since goal/G33.7: his rename stands for the later session).
   const again = await call('item.rename', { id: 'goal/G100.5', title: 'He split this one' }, ANDY);
   const later = await facts('goal/G100.5');
   if (later.subGoal === undefined && later.code === true) test.check('a later write leaves goal/G100.5 an item and code (rename answered ' + again.status + ')');

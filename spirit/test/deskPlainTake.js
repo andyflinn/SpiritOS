@@ -1,12 +1,9 @@
 'use strict';
 
-// goal/G6.9: a plain take never holds a phase, and the status shows the phase being worked. Red on today's tree;
-// wsl-claude wrote it from G6.9's box and does not build it.
+// goal/G6.9: a plain take never holds a phase, and the status shows the phase being worked.
 //   Andy, to G6 Q5 ("add an item to G6 so a plain item take never holds a phase (it blocked G6.1 and G6.6)?"): "add
 //   item to fix it."; then "add to this item: when an agent is with an item, update its status with the phase that is
 //   running at the time. the desk should do it, since it arbitrase phase-taking."; his Go.
-//   What went wrong (the box): item.take sets "with" (desk.js 464), the name phase.take sets (desk.js 467), and
-//   mayTake refuses every phase take while "with" is set (desk.js 658); the stale-holder Q fired on a plain taker.
 //
 // THE SHAPES (the box's):
 //   1  after a plain item.take on a code item, phase.take is open to whoever the phase rules allow.
@@ -54,7 +51,7 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); t
 function ok(r) { return r && r.status === 200; }
 
 (async function () {
-  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  // The world, seeded before the desk starts (goal/G33.7).
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Takes' }, items: [
     { id: 'goal/G100.1', title: 'Taken plainly, then phased', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.2', title: 'Taken plainly, then left', blocks: ['goal/G100'], code: true },

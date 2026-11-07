@@ -1,15 +1,11 @@
 'use strict';
 
 // goal/G9.11: the Add Goal bubble above the List's search, while [Goals Only] is on.
-//   Andy, 2026-10-07 (musing "Desk Improvement: User creates goals and items without agents present"): "In the list
+//   Andy: "In the list
 //   panel, when the [Goals Only] toggle button in the search bar is \"checked\" (on), a new bubble will appear directly
 //   above the search bubble for the list: \"Add Goal\" [Title String, subject to label rules] [add-button]. When the
 //   user presses the [add-button], the desk will add a goal with the entered title and a blank text box. The new goal
 //   will automatically become the current goal."
-// Red on today's tree; wsl wrote it from G9.11's box and does not build it.
-//
-// WHAT IS TRUE TODAY (read at 05620c37): goal.add {title} exists and answers the minted id (goal/G9.9), the List has
-// its search bubble and the three toggles, and nothing draws an Add Goal bubble.
 //
 // THE SHAPE ASSERTED, and the one reading it needs: goal.add does NOT make its goal current - deskIds.js holds it to
 // that, because an add must not move what he chose (goal/G9.13). His words here say the goal he adds by hand IS
@@ -20,9 +16,9 @@
 //   the desk enforces (fieldRules, goal/G9.10), so the shell sends it as typed.
 // NOT ASSERTED: that the new goal arrives in design mode (goal.add's own doing, already true) and the blank box
 // (nothing writes one).
-// SAID PLAINLY: three checks pass on today's tree because nothing is drawn at all - no bubble while Goals Only is off,
-// a blank title sending nothing, and the bubble gone when Current Goal Only takes over. They are here because they
-// bite once the bubble exists, not because they prove anything today; the five that are owed are the build.
+// The shell (spirit/run/shell/desk/desk.js) draws #desk-add-goal hidden in its markup. This file loads that script
+// on a page stub without spirit.require, which the shell now calls, so it throws "no spirit.require on this page"
+// before any check runs.
 
 const fs = require('fs');
 const path = require('path');

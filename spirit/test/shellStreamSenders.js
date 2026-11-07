@@ -6,23 +6,25 @@
 //   Andy, 2026-10-12: "The shell takes only streams from ID's that it explicitly or implicitly asks for. Implicit
 //   is: the own local node, and any puppet owned, including owned relays."
 //
-// A packet named published (a puppet's stream, goal/G14.5) used to reach every onPublished handler of its module
-// whatever key sent it, so any contact could push objects into the master's apps: a change:1e12 freezes the desk
-// view, a fake chat line names another peer. The shell now checks the sender ONCE, before any app sees it:
+// A packet named published (a puppet's stream, goal/G14.5) must not reach an app from any key that sent it, or any
+// contact could push objects into the master's apps: a change:1e12 freezes the desk view, a fake chat line names
+// another peer. The shell (spirit/run/spirit/client/shell.js) checks the sender ONCE, before any app sees it:
 //
-//   implicit   this node's own key (node.card), the key of every relay this node OWNS (relay rows with owned and
-//              roll.relayKey), and every contact marked owned (contact.search with owned: 'yes', owned read
-//              from each row's json label, goal/G29.6) - for every app;
+//   implicit   this node's own key (node.card), and everything this node owns, puppets and owned relays alike
+//              (shell.js asks contact.search { q: '', mine: 'yes' }, goal/G40.11) - for every app;
 //   explicit   a key an app names when it subscribes: api.onPublished(fn, server, { from: [key, ...] }) - for that
 //              handler only;
 //   anything else is dropped there, for every app, with one console line per dropped sender.
 //
 // THE OWNED PUPPET (Andy, 2026-10-12): "puppet is just a flag in the contact list", "or even better, with your
 // damned ownerBadge", "so the relays owner code and the puppets owner code should be the same." A puppet's signed
-// card names its owner (nodeCard, from owner.json); contacts.setCard marks the row owned through ownerBadge.ownedBy,
-// the one comparison probe makes for a relay's answer; contact.search's json label carries the mark (goal/G29.6).
-// Section 4 is the node side.
-// deskAgentRemote named its puppets to the shell before this; that fallback is gone (section 3).
+// card names its owner (nodeCard, from owner.json); contacts.setCard marks the row through ownerBadge.ownedBy,
+// the one comparison probe makes for a relay's answer; contact.search's json label carries the mark. Section 4 is
+// the node side.
+// STALE: this suite still fakes and asserts the goal/G29.6 shape (an owned: 'yes' filter, owned in the label, a
+// row's owned field), where hub.js and contacts.js now say mine (goal/G40.11: contactLabel {name, keep, mine, relay,
+// blocked, seated, ...}, SEARCH_FLAGS without owned); section 3 reads spirit/run/shell/deskAgentRemote/, which is not
+// in the tree; and the run breaks before its first check ("Cannot read properties of undefined (reading 'subscribe')").
 //
 // Driven as listeningApp.js drives the real shell.js: small document, fs and jobs stubs, a fake ask.
 
@@ -88,7 +90,8 @@ function bootShell() {
   const searches = [];            // the args of every contact.search the shell sent
   const book = { late: false };   // LATE's card arrives later in the test
   function answer(body) { return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body }); }
-  // The book as hub.js labels it since goal/G29.6: a JSON string {name, owned, blocked, held}, no words appended.
+  // The book's label as this fake makes it: a JSON string {name, owned, blocked, held} (the goal/G29.6 shape; hub.js
+  // contactLabel now writes {name, keep, mine, relay, blocked, seated, publicLabel, present, url}).
   function label(name, owned) { return JSON.stringify({ name: name, owned: owned, blocked: false, held: false }); }
   function rows() {
     return [{ key: PUPPET, label: label('pup', true) }, { key: NOT_OWNED, label: label('owned-by-someone', false) }]
@@ -100,8 +103,8 @@ function bootShell() {
       ask: function (verb, args) {
         asked.push(verb);
         if (verb === 'node.card') return answer({ ok: true, name: 'me', description: '', publicKey: OWN, descriptionMax: 0 });
-        // goal/G29.6: contact.search honours the owned: 'yes' filter beside q, as hub.searchPeople does; no word
-        // 'owned' to search for, and no contact.get to confirm a hit (this fake answers no contact.get at all).
+        // This fake honours an owned: 'yes' filter beside q (hub.searchPeople's flag is mine now); no word 'owned' to
+        // search for, and no contact.get to confirm a hit (this fake answers no contact.get at all).
         if (verb === 'contact.search') {
           searches.push(args || {});
           const owned = args && args.owned === 'yes';

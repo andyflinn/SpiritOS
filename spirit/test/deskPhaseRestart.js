@@ -1,13 +1,11 @@
 'use strict';
 
 // spirit/test/deskPhaseRestart.js
-// goal/G27.19: phases remain re-takable until done is pressed by the user. Red on today's tree; claude-windows writes it
-// and builds it (one agent). The item's box:
-//   An item's phases remain re-takable until the user presses Done: a verify pass does not end the cycle, and while Done
-//   is not pressed red is offered again, so a complaint about an item is answered inside that item, not with new items.
-//   Today mayTake in spirit/run/process/js/desk/desk.js offers red only while the phase is red or verify; after a verify
-//   pass the phase is empty and every phase.take is refused as not offered, even after Reopen or close and reopen.
-//   A new red on a verified item starts a fresh red, build, verify cycle under the same item, its Go standing.
+// goal/G27.19: phases remain re-takable until done is pressed by the user. An item's phases remain re-takable until the
+// user presses Done: a verify pass does not end the cycle, and while Done is not pressed red is taken again, so a
+// complaint about an item is answered inside that item, not with new items. mayTake in
+// spirit/run/process/js/desk/desk.js lets red be taken when the phase is empty (after a verify pass); a new red on a
+// verified item starts a fresh red, build, verify cycle under the same item, its Go standing.
 // Andy, 2026-10-17, in goal/G27.2's chat: "the desk should allow any restart of phases as long as 'done' is not
 // pressed", and "Just because 'Done' is offered doesn't mean it's fucking done....".
 //
@@ -75,8 +73,8 @@ async function cycle(redTaken) {
 }
 
 (async function () {
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; it is
-  // seeded before the desk starts, which takes it in at start.
+  // goal/G29.21: an agent creates no goal, so the owner writes the world, seeded before the desk starts, which takes it
+  // in at start.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Restart' }, items: [
     { id: ID, title: 'Code item', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.2', title: 'A decision', blocks: ['goal/G100'] },
@@ -96,7 +94,7 @@ async function cycle(redTaken) {
   if (first.some(function (s) { return s !== 200; }) || (v0.buttons || []).indexOf('done') === -1) { test.fail('the world: the first cycle answered ' + short(first) + ', buttons ' + short(v0.buttons)); return; }
   test.check('the world: one cycle ran to a verify pass, and Done is offered');
 
-  // goal/G29.10 replaced the hold of goal/G27.20: the item stays in code from his Go to his Done, so after a verify
+  // goal/G29.10: the item stays in code from his Go to his Done, so after a verify
   // pass its red is no job (work.open) and is taken again with no line of his (deskQuickFixes.js).
   test.subHeading('1. after a verify pass, before Done, red is taken again');
   const offered = await open(CW);
@@ -122,7 +120,7 @@ async function cycle(redTaken) {
   if (ok(done) && !ok(afterDone) && openDone.indexOf(ID + ':red') === -1) test.check('after his Done the red take is refused and not offered');
   else test.fail((ok(done) ? OWED : 'the world: ') + 'Done answered ' + done.status + ', red after it ' + afterDone.status + ', offered ' + short(openDone));
 
-  // goal/G40.3: Reopen now puts the item back into design mode (Andy: "oh, re-open should put an item back to design
+  // goal/G40.3: Reopen puts the item back into design mode (Andy: "oh, re-open should put an item back to design
   // mode."), so red waits for his End design and a fresh Go; after those it is taken again.
   test.subHeading('4. his Reopen puts it back in design; after his End design and Go red is taken again');
   const reopen = await call('press', { id: ID, what: 'reopen' }, ANDY);

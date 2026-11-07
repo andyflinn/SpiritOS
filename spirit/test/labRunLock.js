@@ -1,28 +1,24 @@
 'use strict';
 
-// goal/G8.9: test runs that cannot collide. Red on today's tree; wsl-claude wrote it from G8.9's box and does not
-// build it.
+// goal/G8.9: test runs that cannot collide.
 //   Andy, 2026-10-09, of two full runs sharing one machine's localhost: "This one is REAL. would it mean that:
 //   labMaster needs an upgrade, where multiple desk nodes must be able to have their very own range of ports and
 //   test-world-instances?", and then "so this goal needs an item that cleans up those specific suites that cause
 //   problems, before the rest of this goal becomes clearer?"
 //
-// WHAT IS TRUE TODAY (measured at c1fb4c77): most suites take a port from the OS (net.createServer().listen(0)).
-// Twenty-two files hold a literal port instead: the lab range 65400-65429 (labWorld 65425-65428, labLifecycle 65410,
-// labPersistence 65419, labServableStatic 65421, appServerWorlds 65422-65424 and their neighbours), hintWire's
-// 48761-48762, and the relay default 65430. Two runs on one host collide on exactly those, and WSL forwards its ports
-// onto Windows localhost, so one host means one machine whichever side a run is started from.
+// Most suites take a port from the OS (net.createServer().listen(0)); a suite that needs a lab port asks labPaths for
+// it. WSL forwards its ports onto Windows localhost, so one host means one machine whichever side a run is started
+// from.
 //
-// THE SHAPE ASSERTED, from the box, with the names named by wsl-claude so the builder has something to hold:
-//   1  A PER-RUN BASE. labPaths gains a port base, read from the environment as LAB_MASTER_PORT already is
-//      (labPaths.js: "LAB_MASTER_PORT (default 65420) lets a clone run its own labMaster"), so a second run shifts
-//      the whole lab range instead of fighting over it. No suite holds a literal lab port any more: each asks
-//      labPaths for it.
-//   2  THE OS WHERE NOTHING NEEDS A FIXED PORT. hintWire's pair is the only non-lab case left.
+// THE SHAPE ASSERTED, from the box:
+//   1  A PER-RUN BASE. labPaths has a port base, LAB_PORT_BASE read from the environment as LAB_MASTER_PORT is, so a
+//      second run shifts the whole lab range instead of fighting over it. No suite holds a literal lab port: each
+//      asks labPaths for it.
+//   2  THE OS WHERE NOTHING NEEDS A FIXED PORT: no suite holds a 4876x literal either.
 //   3  ONE RUN AT A TIME PER HOST. labMaster answers a claim for the run lock, holds it for one caller, refuses a
 //      second while it stands, and frees it when the holder says so.
-// The names (LAB_PORT_BASE, labPaths.portBase, /api/run/lock) are the red writer's, not Andy's; the builder may
-// argue them, and the assertions below hold the behaviour, not the spelling, wherever that was possible.
+// The names (LAB_PORT_BASE, labPaths.portBase, /api/run/lock) are not Andy's; the assertions below hold the
+// behaviour, not the spelling, wherever that was possible.
 // NOT ASSERTED: that two whole runs are started at once and neither fails. That is the goal of the item, not a unit
 // a suite can hold in a few seconds; the lock and the base are what make it true, and they are asserted here.
 
@@ -34,7 +30,7 @@ const OWED = 'OWED by goal/G8.9: ';
 const TEST_DIR = __dirname;
 const LAB_PATHS = path.join(TEST_DIR, 'labMaster', 'labPaths.js');
 const MASTER = path.join(TEST_DIR, 'labMaster', 'labMaster.js');
-// The lab's own range, as labPaths and labWorld describe it, plus hintWire's pair.
+// The lab's own range, as labPaths describes it, plus the 4876x ports a suite once held.
 const LAB_RANGE = /\b654(?:0\d|1\d|2\d)\b/;
 const HINT_PORTS = /\b4876[0-9]\b/;
 // Files that may name the range because they define or document it, not because they bind it.
@@ -85,9 +81,7 @@ if (labPaths && /portBase/.test(labPaths)) {
   else test.fail(OWED + 'the base reads ' + short({ withEnv: shifted, without: plain, threw: sub.threw }));
 } else test.fail(OWED + 'no port base to move the range with');
 
-// 2. THE ONE NON-LAB CASE, hintWire, STOOD HERE: it was deleted with the partner
-// carrying it tested (Andy's decision, goal/G22.6: partnering as a permission goes). What
-// it guarded — no 4876x port literal — is still held below, for every suite.
+// 2. No 4876x port literal is held below, for every suite.
 test.subHeading('2. no suite holds the old hintWire port pair');
 const hinted = fs.readdirSync(TEST_DIR).filter(function (f) {
   return /\.js$/.test(f) && f !== 'labRunLock.js' && HINT_PORTS.test(code(read(path.join(TEST_DIR, f))) || '');

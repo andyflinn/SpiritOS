@@ -1,11 +1,9 @@
 'use strict';
 
 // spirit/test/apiDoorNoOwnerName.js
-// goal/G16.4: the andy check leaves apiDoor (N2 of the review of 2026-10-10). Written first, red on today's code;
-// claude-windows wrote it and builds it. Andy, 2026-10-10: "an andy-door sounds bad. where is it exactly?", then
-// "remove it." The desk names the writer from the caller (desk.js writerOf), so a member's `by` in the arguments
-// guards nothing, and the check refused a member's search of the owner's lines. The app-name branch is NOT this
-// item's (its mark was dropped with goal/G16.10).
+// goal/G16.4: apiDoor holds no andy check (N2 of the review of 2026-10-10). Andy, 2026-10-10: "an andy-door sounds
+// bad. where is it exactly?", then "remove it." The desk names the writer from the caller (desk.js writerOf), so a
+// member's `by` in the arguments guards nothing, and the check refused a member's search of the owner's lines.
 //
 // WHAT IS ASSERTED
 //   1. A member's ask whose arguments carry by 'andy' (a chat.search filter, a chat.add) reaches the server; the

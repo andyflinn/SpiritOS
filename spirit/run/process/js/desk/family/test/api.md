@@ -1,4 +1,4 @@
-# process/js/desk/desk.family/api.js
+# process/js/desk/family/api.js
 
 The desk server's interface (goal/G32.3): every verb the desk serves, each argument with its rule, written to
 spirit.js's standard (`'?'` after a rule makes it optional). The node answers this text to `api {family}` and maps it to
@@ -20,7 +20,8 @@ the handlers (Andy, 2026-10-22: "request validation worth a damn?").
     included and cap.
   - `box.write` version is a number; `items.search`'s three flags are booleans; `rules.search` types and statuses lists.
   - `item.add` title and `profile.set` name pass the label rule; `rule.add` text the paragraph rule.
-  - One row a write (goal/G40.3): every `.add`/`.remove` of files, suites and paths takes one path, never a list.
+  - One row a write (goal/G40.3): every `.add`/`.remove` of files and suites takes its `path` as one path, never a
+    list; `item.files.add` may instead take `paths`, a list, for the desk only (goal/G41.11).
 - An argument a verb does not take is refused (no-such-argument).
 
 ## What its test must try to break
@@ -33,4 +34,5 @@ the handlers (Andy, 2026-10-22: "request validation worth a damn?").
 ## Found while reading, not asserted
 
 The other direction of "a verb added to the server is added here": desk.js serves `item.rules.add` and
-`item.rules.remove`, which this file does not list. The test does not assert it, since the current code would go red.
+`item.rules.remove`, which this file does not list, and its `rule.add` and `rule.version` take an optional
+`autoAttach` this file does not list. The test does not assert it, since the current code would go red.

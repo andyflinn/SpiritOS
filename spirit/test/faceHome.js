@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/faceHome.js
-// goal/G30.13, step 2 of goal/G30.10: the home node answers its face. Red on today's tree; claude-windows writes it
-// and builds it (one agent). The box, in short:
+// goal/G30.13, step 2 of goal/G30.10: the home node answers its face. The box, in short:
 //   - The home node answers face requests through the door a puppeteer uses on it: the local shell's whole interface,
 //     minus the email and face changes with the relay.
 //   - It streams to the face what it streams to its loopback shell.
@@ -13,7 +12,7 @@
 //     together in the next write, each its own whole line; nothing merged, nothing of the fs-watcher dropped.
 //   - Presence peer by peer: one event for each peer whose presence changed, not the whole table.
 // NAMED HERE where the box names none:
-//   - js/faceHome.js: createFaceHome({ call, serveFile, upload, identity, relayKey, jobs, log }) -> { request(url,
+//   - spirit/run/spirit/faceHome.js: createFaceHome({ call, serveFile, upload, identity, relayKey, jobs, log }) -> { request(url,
 //     data), open(url), close(url) }. call is the puppeteer's door (nodeDoor.call); serveFile(rel, res) is the node's
 //     own GET of a file; upload(url, path, headers) is a writable POST to that relay. A face request { get: path }
 //     is a file, any other { verb, ... } a verb.

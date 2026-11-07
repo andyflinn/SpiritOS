@@ -1,9 +1,9 @@
 'use strict';
 
 // spirit/test/storeSheds.js
-// goal/G30.19, box v9: THE NODE STORE SHEDS. Andy, 2026-10-21: "delete all but 16 MB ... and cap in to 16 MB", "learn
+// goal/G30.19: THE NODE STORE SHEDS. Andy, 2026-10-21: "delete all but 16 MB ... and cap in to 16 MB", "learn
 // to throw out shit, or else my box is gonna grind to a hold very soon", "make sure the code doesn't allow it to grow
-// anymore". Red on today's tree; claude-windows writes it and builds it (one agent).
+// anymore".
 //   - node.db never grows past 16 MB: past it, the packet log's oldest rows are deleted as new ones are written.
 //   - The replay memory keeps one day, not seven.
 //   - The backlog a page is handed is the untaken packets of the last day, never the whole log.

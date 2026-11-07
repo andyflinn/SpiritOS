@@ -23,27 +23,15 @@
 // The whole vocabulary. Anything outside it is refused rather than
 // ignored, because a field somebody added in good faith that silently
 // does nothing is worse than an error.
-// `messages` STOOD IN THIS LIST and was removed on 2026-09-15 with the
-// ring (R8). A scenario could declare mail — `{from, to, text}` — and
-// world.build seeded it into the relay's 200-entry store so a suite
-// about READING did not have to write its own first.
-//
-// There is no store. A relay delivers or refuses and keeps nothing
+// There is no `messages`: a relay delivers or refuses and keeps nothing
 // (decision 0006), so a world cannot be built with mail already sitting
 // in it: the only way a packet exists is that somebody was connected and
-// somebody posted. Leaving the field in and quietly ignoring it is the
-// one thing this list exists to prevent — "a field somebody added in
-// good faith that silently does nothing is worse than an error" — so it
-// is refused by name now, like any other word the builder cannot honour.
-//
-// WHAT WOULD BRING IT BACK: seeding the receiving NODE's traffic log
-// rather than the relay, which is where a node's own record of what
-// arrived actually lives. That is a real option and not this sitting's;
-// it needs the builder to construct node homes, which it does not.
+// somebody posted. So the word is refused by name, like any other word
+// the builder cannot honour.
 const TOP = [
   'title', 'why', 'covers', 'look',   // documentation, for the visual side
   'relays', 'owner', 'peers', 'knows', 'then',
-  // apiAuth/G1.0 (team meeting, both agents, Andy: "yes"): the owner's
+  // apiAuth/G1.0 (Andy: "yes"): the owner's
   // servers, and the cases a built world runs at its gate. `servers`
   // sits at the top because the owner is a name here, not an object;
   // the builder writes home into their manifests' runs (goal/G30.20), the one way a node is
@@ -176,11 +164,6 @@ function problems(input) {
       if (names.indexOf(n) === -1) found.push('`knows` names a stranger: `' + n + '`');
     });
   });
-
-  // The `messages` checks stood here — a message from a stranger, a
-  // message to a stranger, an unknown field on one. `messages` is not in
-  // TOP any more, so `unknown()` above refuses the whole field by name
-  // and these three can say nothing a reader needs.
 
   // The auth world's words (apiAuth/G1.0), held to the same standard as
   // every other: a stranger, a shapeless case or an outcome outside the

@@ -1,19 +1,16 @@
 'use strict';
 
-// goal/G2.22: the item dialog offers Waive, and the desk waives alone when one agent is present. Red on today's
-// tree; claude-windows wrote it from G2.22's box and does not build it.
+// goal/G2.22: the item dialog offers Waive, and the desk waives alone when one agent is present.
 //   Andy, 2026-10-06, under goal/G2.18: "there is no Waive in the G2.18 dialog"; under goal/G2.22: "add to 2.22 that
 //   the desk can waive the rule if only one agent is present." goal/G5.7 gave the server the press ("absolutely.
-//   with only one agent this must be waved"); the face never got the button, so a code item with one agent in the
-//   sitting stalls after its red: the red writer may not build, and nobody can press.
+//   with only one agent this must be waved"), so a code item with one agent does not stall after its red.
 //
 // WHEN THE BUTTON SHOWS IS HIS. Asked which of two readings he meant, 2026-10-06: "only when it's blocked on me",
 // choosing "only while the build is blocked on you, that is the red is done, the build untaken, the item unwaived".
-// That is the condition below, and it replaces an earlier reading of his "the waive shows whether the build runs or
-// not. it shows when it's needed." as "the taken build is no condition": his explicit choice governs.
+// That is the condition below (desk.js buttons(): phase 'build', no phaseWith, not waived).
 // Q4 on the item asks the one case these words leave out, a verify blocked the same way.
 //
-// THE SHAPE (G2.22's box, as settled while this red was written; the builder may argue names in Desk first):
+// THE SHAPE (G2.22's box):
 //   1  item.get's facts carry `waived` (true|false). The item's `buttons` offers 'waive' only while the build is
 //      blocked on him: a code item that has his Go, is not done or closed, is not yet waived, is in phase 'build',
 //      and has nobody holding that phase (desk.js keeps phaseWith, set on a take and cleared on a done). Never on a
@@ -25,8 +22,7 @@
 //      present. the other case already happened in a previous goal, and it worked"): whenever a phase is done and
 //      the goal's live agents (facts.live, LIVE_MS) are that one agent, the item is waived and the desk says so in
 //      the item's chat, by desk, so that one agent may take the next phase. Two agents live: nothing, his press as
-//      before. This stands over two older suites, deskPhases and deskRedWriterBuild, which assert the rule in a
-//      room the desk counts as empty, their second agent never writing; their own builder puts an agent in it.
+//      before. Suites that assert the phase rules (deskPhases.js) put a second agent in the room for that reason.
 //   3  shell/deskDetails: with 'waive' among the buttons the dialog shows #dd-waive, armed like Close (the first
 //      click arms, the second sends press {id, what: 'waive'}); without it, no such button.
 //
@@ -125,7 +121,7 @@ function answerFor(buttons) {
 }
 
 (async function () {
-  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  // The world is seeded before the desk starts, which takes it in at start.
   test.seedDesk(state, { goal: { id: 'goal/G101', title: 'Waive' }, items: [
     { id: 'goal/G101.1', title: 'One agent', blocks: ['goal/G101'], code: true },
     { id: 'goal/G101.2', title: 'His press', blocks: ['goal/G101'], code: true },

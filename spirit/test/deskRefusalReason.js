@@ -1,20 +1,16 @@
 'use strict';
 
-// goal/G9.17, change 3: a refused press names what blocks it. Red on today's tree; wsl-claude wrote it from
-// G9.17's box and does not build it.
+// goal/G9.17, change 3: a refused press names what blocks it.
 //   Andy, 2026-10-09, under goal/G9.17, after a press of his came back as "Not pressed: not-offered (that press is
 //   not offered for this item now)": "and it doesn't tell me why either." And to "shall a refused press name what
 //   blocks it, folded into this item?": "yes".
 //
-// WHAT IS TRUE TODAY (read in the tree at 5b40c186): refused(code) carries the code alone (desk.js:1128), so every
-// one of these refusals answers 409 {ok: false, code: 'not-offered', error: 'that press is not offered for this item
-// now', extra: {verb: 'press'}} - the same words whichever gate stopped it. The gates each know more: a press not
-// among the item's buttons (:2144), End design while an item or the goal carries an open red question (:2151), a Go
-// on an item with one (:2152), and the Go rule, which wants design mode off and no open blocker (:810).
+// The desk server (spirit/run/process/js/desk/desk.js) refuses such a press with the code not-offered and the reason in
+// extra.why (notOffered(why)), the way line-too-large carries its bytes and its room.
 //
 // WHAT IS ASSERTED: the refusal still refuses, and its answer names the particular thing that blocked it - the
-// blocking item, design mode, the item carrying the red question - the way line-too-large names its bytes and its
-// room (:105). The suite reads the whole answer, so where the reason lands (error text, extra) is the builder's.
+// blocking item, design mode, the item carrying the red question. The suite reads the whole answer, so it does not
+// depend on where in the answer the reason sits.
 
 const fs = require('fs');
 const os = require('os');

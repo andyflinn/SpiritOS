@@ -1,23 +1,18 @@
 'use strict';
 
-// goal/G4.24, point 2: the List's search also matches an item's chat lines and its box. Red on today's tree;
-// wsl-claude wrote it, claude-windows builds it.
+// goal/G4.24, point 2: the List's search also matches an item's chat lines and its box.
 //   Andy, 2026-10-04, under goal/G4.23 and goal/G4.24: "damn, my search still doesn't show old, closed items. i can't
 //   find it either."; "yes, same principle as the agent search, it searches the lines server-side, but only brings back
-//   handle/key and title, i'll have to go to details to fetch the rest."; "i'll keep this one active" (G4.24 open for
-//   this point, his Go on record).
-//   In the tree: searchItems (desk.js) matches the text against "(it.id + ' ' + it.title)" only; items.find, the
-//   agents' search (goal/G3.13), already matches chat lines.
+//   handle/key and title, i'll have to go to details to fetch the rest.".
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
-//   1  items.search's text matches an item's id and title, as today, and also any of its chat lines and its box, case
-//      ignored, server-side. Its filters stay as they are: currentGoalOnly, goalsOnly, includeClosed.
+// THE SHAPES ASSERTED:
+//   1  items.search's text matches an item's id and title, and also any of its chat lines and its box, case
+//      ignored, server-side; since goal/G18.5 the text ranks rather than filters (below). Its filters stay as they are: currentGoalOnly, goalsOnly, includeClosed.
 //   2  Its answer stays the List's rows ({key, label}, the label the item's facts): the key and title he asked for are
 //      in it, and the box and chat are never in it, so the dialog fetches them, as he said ("i'll have to go to details
 //      to fetch the rest").
 //
-// LEFT OPEN, not asserted: the order of the rows when lines match (items.find puts the newest matching line first);
-// whether the List marks why a row matched.
+// Not asserted: whether the List marks why a row matched.
 
 const fs = require('fs');
 const os = require('os');

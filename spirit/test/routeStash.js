@@ -8,27 +8,19 @@
 //   Andy, later: "the hints are removed from the users contacts. (let's
 //   admit it: they [are] not human-readable, in reality)"
 //
-// ── WHAT THIS SUITE USED TO BE, AND WHY IT CHANGED ───────────────────
-//
-// It was called "a relay may improve a contact row, it may never create
-// one", and it tested `contactBook.learnRoute`: a relay announced a route
-// it had proven, and every member holding a row for that key wrote it
-// down. A route for a stranger was DROPPED, because a relay that could
-// create rows could put people in somebody's address book.
-//
-// Two decisions took that apart, and both are Andy's:
+// Two of Andy's decisions shape it:
 //
 //   R25  the node must learn a route at EVERY opportunity — so a
 //        stranger's route is kept, in a place that is not the book
 //   0018 the route cache belongs to the machine, not the human — so
-//        routes leave the contact row entirely
+//        routes are not on the contact row at all
 //
-// **The old safety is now structural rather than enforced.** A relay
-// cannot write into the book because there is nowhere in the book for a
-// route to go; `learnRoute` is deleted. That is the same shift 0012 gave
-// the one-hop rule — a rule that cannot be broken needs nobody to police
-// it — and it is what this file asserts now. Since goal/G40.11 the book is the one table's kept rows: a route is a
-// row of seen_routes, never a field of a contact, and a stranger a relay names has a row that is not kept.
+// **The safety is structural rather than enforced.** A relay cannot write
+// into the book because there is nowhere in the book for a route to go:
+// contacts.js has no learnRoute. A route is a row of seen_routes (the
+// shadow, hub.shadow), never a field of a contact, and a stranger a relay
+// names has a row that is not kept (goal/G40.11: the book is the one
+// table's kept rows).
 
 const os = require('os');
 const fs = require('fs');
@@ -44,7 +36,7 @@ function freshRoot() {
 
 const KNOWN = 'MCowBQYDK2VwAyEA' + 'k'.repeat(27) + '=';
 const STRANGER = 'MCowBQYDK2VwAyEA' + 's'.repeat(27) + '=';
-// A RELAY KEY, not a URL (cycle 2): the relay announces `at` as the far
+// A RELAY KEY, not a URL: the relay announces `at` as the far
 // relay's key, and a route is made of keys.
 const AT = 'MCowBQYDK2VwAyEA' + 'r'.repeat(27) + '=';
 const AT2 = 'MCowBQYDK2VwAyEA' + 'q'.repeat(27) + '=';
@@ -58,10 +50,10 @@ test.subHeading('The book has nowhere to put a route, which is the safety');
   const root = freshRoot();
   contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'kim' });
 
-  // `learnRoute` IS GONE. Asserted rather than assumed, because the whole
-  // claim of this file is that the hazard was REMOVED rather than
-  // guarded: a relay cannot write a route into the book if the verb does
-  // not exist and the field is not written.
+  // NO `learnRoute`. Asserted rather than assumed, because the whole
+  // claim of this file is that the hazard is absent rather than guarded:
+  // a relay cannot write a route into the book if the verb does not exist
+  // and the field is not written.
   if (typeof contactBook.learnRoute === 'undefined') {
     test.check('there is no verb that writes a route onto a contact row');
   } else {
@@ -91,10 +83,9 @@ test.subHeading('A route goes to the shadow — for a contact and a stranger ali
     test.fail('contact route: ' + JSON.stringify(kept));
   }
 
-  // THE REVERSAL, AND IT IS THE POINT OF R25. This used to be dropped:
-  // "a route for a key nobody here knows costs one lookup and is thrown
-  // away". Andy: "the node must implicitly learn routes at EVERY
-  // opportunity" — so it is kept, and kept OUTSIDE the book.
+  // THE POINT OF R25. Andy: "the node must implicitly learn routes at
+  // EVERY opportunity" — so a stranger's route is kept, and kept OUTSIDE
+  // the book.
   shadow.note(STRANGER, { at: AT2, via: MINE, rank: seenPeers.PROVED });
   if (shadow.get(STRANGER) && shadow.get(STRANGER).at === AT2) {
     test.check('and a route about a STRANGER is kept now, where it used to be dropped');
@@ -102,8 +93,8 @@ test.subHeading('A route goes to the shadow — for a contact and a stranger ali
     test.fail('a stranger route was lost');
   }
 
-  // AND THE BOOK IS UNTOUCHED BY EITHER. The old rule's purpose survives
-  // its mechanism: a relay still cannot put anybody in the address book — its row is not kept.
+  // AND THE BOOK IS UNTOUCHED BY EITHER: a relay cannot put anybody in the
+  // address book — the stranger's row is not kept.
   const strangerRow = contactBook.byPublicKey(root, STRANGER);
   if (strangerRow && !strangerRow.keep && !contactBook.listens(strangerRow)) {
     test.check('while the address book gains nobody — a relay still cannot write into it');
@@ -173,9 +164,9 @@ test.subHeading('Deleting a contact does not reach into the shadow');
 test.subHeading('An old contacts.json moves into the table, and no route goes on a row (goal/G40.11)');
 
 {
-  // everyRouteHeld and the boot import STOOD HERE (R1): a book's `routes` field read out at hearsay at every boot since
-  // 2026-09-21, so any node that ran since holds them in the shadow. Since goal/G40.11 contacts.json itself moves into
-  // the table on the first start and is deleted; its `routes` field moves nowhere, and no contact row has one.
+  // This asserts that an old spirit/state/contacts.json moves into the table and is deleted, its `routes` field
+  // moving nowhere. That move is gone (nodeStore.js, goal/G41.30: "NO OLD STORE IS MOVED IN"; Andy: "let's get rid
+  // of those "rescue operations""), so both checks fail (no row comes of the file); contacts.js has no everyRouteHeld.
   const root = freshRoot();
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   const file = path.join(root, 'spirit', 'state', 'contacts.json');

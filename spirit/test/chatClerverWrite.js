@@ -2,17 +2,19 @@
 
 // spirit/test/chatClerverWrite.js
 // goal/G4.6 and goal/G4.7: the owner writes a line to a peer — the record begins, the peer is granted, a refusal is
-// kept and the line goes again, a blocked key is refused, a held key is released by the first line. RED on today's
-// tree: there is no process/js/chatClerver.
+// kept and the line goes again, a blocked key is refused.
 //
-//   Andy, 2026-10-03, his go-all on goal/G4 and then: "thanks for the diligence: i meant: build it now." The rulings
-//   stand verbatim in the boxes of goal/G4.6 and G4.7: "the writers keeps refusals, they are proof that contact was
-//   attempted."; "writing to a peer should automatically be a grant to accept an answer, writing to a blocked peer,
-//   (marker in peer-table?) should result in an error-peer is blocked, this implies that blocks are bidirectional.";
-//   "a node-level-block supersedes app level blocks"; "in this first, faceless version, the use (agents really) need
-//   to know the keys."; "release happens when the users sends a message to a held contact, since that will usually
-//   be when the chatClerver opens a history for the peer, it can call the node to remove a hold on the contact/peer";
-//   "i prefer no are-you-sure."
+//   The rulings stand verbatim in the boxes of goal/G4.6 and G4.7: "the writers keeps refusals, they are proof that
+//   contact was attempted."; "writing to a peer should automatically be a grant to accept an answer, writing to a
+//   blocked peer, (marker in peer-table?) should result in an error-peer is blocked, this implies that blocks are
+//   bidirectional."; "a node-level-block supersedes app level blocks"; "in this first, faceless version, the use
+//   (agents really) need to know the keys."; "i prefer no are-you-sure."
+//
+// STALE: (a) the pretend node below answers the flat form {verb, ...} on SPIRIT_CALLBACK_URL, but chatClerver.js asks
+// its node through the spirit object (onNode -> spirit.contact.get, spirit.auth.grant, spirit.peerPost) in the
+// { call, args } envelope (goal/G41.15), so the pretend node is never asked and every line answers refused.
+// (b) check 3 asserts the hold and its release by contact.accept, which goal/G43.17 removed (Andy: "Didn't i say
+// remove ALL code referencing "admit" and "hold". it was a hair-brained scheme, and it HAS TO GO.").
 //
 // THE CONTRACT (the boxes of goal/G4.6, G4.7, G4.2 and G4.8; the verbs as the agents agreed them under goal/G4).
 // process/js/chatClerver/chatClerver.js, an appServer its node starts (args, --pipe, --state, --node), no core module.
@@ -20,11 +22,10 @@
 //      to is the peer's key; re names the line answered, both fields empty for none, and travels as given.
 //   2. BLOCKED (G4.6): a key the node's book marks blocked (contact.get, person.blocked) is refused peer-blocked;
 //      nothing is granted and nothing is posted.
-//   3. HELD (G4.7): a key the book marks held (person.held) is first released by contact.accept {publicKey} on the
-//      writer's own node; a key not held is not.
+//   3. HELD (G4.7, removed by goal/G43.17, see STALE above): a held key first released by contact.accept.
 //   4. THE GRANT (G4.6): before the line leaves, the writer's node grants the peer chatClerver.line.receive
 //      (auth.grant {key, path}); already-granted is no error.
-//   5. THE POST (G4.2): one api packet to the peer's key (kernel.peerPost), body {chatClerver: {'line.receive':
+//   5. THE POST (G4.2): one api packet to the peer's key (spirit.peerPost), body {chatClerver: {'line.receive':
 //      {seq, at, text, re}}}; seq the writer's own number for this chat, 1, 2, 3 ... per peer; at the writer's UTC
 //      time (ISO). The answer {seq, outcome: 'sent'} once the peer kept it.
 //   6. REFUSALS ARE KEPT (G4.6): a peer that refuses (its door's not-granted, sealed) leaves the line in the record,
@@ -32,11 +33,9 @@
 //      again first, in their order, with their own seq and at, then the new one. The record is on disk: a restart of
 //      the chatClerver between loses nothing.
 //   7. ONE LINE, ONE PACKET (G4.2): a line too large to travel is refused line-too-large; nothing is posted or kept.
-// The refusal peer-blocked is a new code in spiritErrors.js (shared, not core), as goal/G3.9 added unblocked; until
-// it is defined, appServer answers handler-failed.
+// peer-blocked is the chatClerver's own code, declared to appServer (goal/G16.11).
 // Not asserted, the builder's: the order of the asks to the book; what outcome a no-answer gives; how the record is
 // laid out (G4.8's); what the publish carries.
-// Not proven: this suite has run only against today's tree (and a scratch stub of the verb, never committed).
 
 const fs = require('fs');
 const os = require('os');
@@ -218,6 +217,9 @@ async function main() {
   if (big.body && big.body.ok === false && big.body.code === 'line-too-large' && receives(PEER).length === beforeBig + 1 && five.body && five.body.seq === 5) test.check('a line too large is refused line-too-large; nothing posted, no number used');
   else test.fail(OWED + 'the large line answered ' + JSON.stringify(big.body).slice(0, 160) + '; the next seq was ' + JSON.stringify(five.body));
 
+  // DISCREPANCY WITH ANDY's RULES: goal/G43.17, Andy: "Didn't i say remove ALL code referencing "admit" and "hold".
+  // it was a hair-brained scheme, and it HAS TO GO." This check, and the pretend node's held rows and contact.accept
+  // above, still assert that a line releases a held key.
   test.subHeading('3. a held key is released by the first line (goal/G4.7)');
   const at1 = asked.length;
   const held = await write(HELD, 'to the one who knocked');

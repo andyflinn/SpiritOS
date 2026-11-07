@@ -1,14 +1,12 @@
 'use strict';
 
 // spirit/test/jobsApiGone.js
-// goal/G30.6, "Fix all modules in SpiritOS that still use jobs.api". Red on today's tree; claude-windows writes it and
-// builds it (one agent).
+// goal/G30.6, "Fix all modules in SpiritOS that still use jobs.api".
 // The item's box (v4), in short:
 //   - jobs is for launching and tracking appServer processes and other local (transient) processes; it is NOT an api
 //     hub. Every module that still calls jobs.api moves to the flat apiDoor on /api/spirit; then jobs.api is deleted.
 //   - A call becomes the verb itself on /api/spirit ({verb: desk.item.get, id}); the tree becomes {verb: api}.
-//   - The shell apps, the server processes, and what reaches through them (desk plugins, deskChat, the selectors,
-//     listSearch) all move.
+//   - The shell apps, the server processes, and what reaches through them (the selectors, listSearch) all move.
 //   - The owner door (puppetDoor) moves to the flat door too: an owner command names the verb itself
 //     (deskAgent.<verb>, api) and reaches the app that serves it.
 //   - The jobs api verb goes from server.js, with every mention of it in the core files and the suites.
@@ -100,6 +98,9 @@ function walk(dir, out) {
 
   // AUTH, ITS OWN NODE FAMILY (the box, v7; Andy, 2026-10-20: "move auth stuff into its own node family."): the
   // grant verbs leave jobs for auth, beside node, fs, jobs, peer and relay; jobs keeps jobs alone.
+  // THE VERB LISTS BELOW ARE G30.6's AND HAVE MOVED: server.js mounts auth with branch, bundle, grant, peer, query,
+  // revoke, search (goal/G41.14 added bundle and branch; no relabel), jobs with cancel, create, delete, get, search (no
+  // update), and spirit/jobs/ holds api.js, so the three checks of 5 fail.
   test.subHeading('5. auth is a node family of its own; jobs is jobs alone');
   const mountOf = function (fam) {
     const m = new RegExp("loopbackVerbs\\.mount\\('" + fam + "'[\\s\\S]*?\\}, \\{ wire: (?:true|false), by: '[^']*' \\}\\);").exec(server);

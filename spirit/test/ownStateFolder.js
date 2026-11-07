@@ -4,7 +4,7 @@
 // Andy: "server by design get the whole spirit/run/ scope minus !fileServable()", "an easier fix would be in the
 // exclusion rules for fileServable() and fileWritable() to give processes their writable space", and on keying it
 // by env: "that scared me" -> the name comes from where the running script lives ("good. accepted.").
-// The contract the builder follows:
+// What is asserted:
 //   In a process whose main script is process/js/<name>/<name>.js, spirit.core.fs.fileServable and fileWritable
 //   allow relay-state/process/<name>/ and nothing else under relay-state.
 //   Anywhere else (the node, a test, a script outside process/js) nothing under relay-state is allowed.

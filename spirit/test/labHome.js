@@ -2,15 +2,15 @@
 
 // spirit/test/labHome.js
 // A FIXTURE NODE THE labMaster STARTS NEVER WRITES INTO THE REAL HOME —
-// found verifying desk/G1.7, written FIRST, red on today's code.
+// found verifying desk/G1.7.
 //
 //   testHome.js holds the suites' own nodes. The lab suites ask the
 //   labMaster instead, and it spawns their nodes with its own environment:
 //   runAll starts it without testSupport, and on Andy's box it is his
-//   long-running one, so its fixture nodes (alfa, bravo, charlie, asbowner)
-//   backed up into the real ~/.SpiritOS on both machines.
+//   long-running one, so its fixture nodes could back up into the real
+//   ~/.SpiritOS.
 //
-// THE CONTRACT (claude-windows' fix, wsl-claude's test): labMaster.startNode
+// THE CONTRACT: labMaster.startNode
 // gives a node whose home is under the fixture root a HOME and USERPROFILE
 // inside its own folder, wiped with it; Andy's own and lab nodes keep the
 // real home. So a fixture node's backup lands under the fixture root, and
@@ -30,9 +30,8 @@ const { relayRequest } = require('../run/spirit/relayRequest.js');
 
 const OWED = 'OWED by the labMaster (desk/G1.7 finding): ';
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-// A lab port the labMaster accepts (65400-65429 but 65420) and no lane of
-// runAll uses (they take 65410-65419 and 65425-65428): the first free of
-// 65400-65409.
+// A lab port the labMaster accepts and no lane of runAll uses: the first
+// free one at offsets 0-9 from the lab base (labPaths.labPort, goal/G8.9).
 function isFree(port) {
   return new Promise(function (resolve) {
     const s = net.createServer();
@@ -41,8 +40,7 @@ function isFree(port) {
   });
 }
 // Free both ways: no socket on it, and no row of the labMaster's table
-// holding it. A stopped row keeps its port (claude-windows, on Andy's box:
-// jazz, sonny, claude and rock hold 65400-65405 while stopped).
+// holding it. A stopped row keeps its port.
 async function freePort() {
   const listed = await master('GET', '/api/nodes');
   const held = ((listed.body && listed.body.nodes) || []).map(function (n) { return Number(n.port); });

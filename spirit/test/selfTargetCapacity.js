@@ -2,13 +2,11 @@
 
 // spirit/test/selfTargetCapacity.js
 // goal/G16.2: a request addressed to the relay ITSELF does not compete for the one slot a member target gets
-// (S3 of the review of 2026-10-10). Written first, red on today's code, by wsl-claude; the build is the other
-// agent's.
+// (S3 of the review of 2026-10-10).
 //
 // THE REPRO, from the review: "the owner's partners and invite got 503 target is busy 100 ms after a member's
-// search." Every self-addressed request of every member and partner counts against ONE target — the relay — so
-// the second in flight anywhere on the box is refused, and one member searching locks the owner out of his own
-// relay.
+// search." Were every self-addressed request counted against ONE target — the relay — the second in flight anywhere
+// on the box would be refused, and one member searching would lock the owner out of his own relay.
 //
 // Andy's decisions on the shape (2026-10-10), which this asserts and does not revisit:
 //   Q1, A or B: "A" — a route whose target is the relay itself is not counted against the per-target ceiling at
@@ -23,8 +21,9 @@
 //      item widens nothing for a person.
 //   3. THE REQUESTER CAP STILL BINDS: a member's self-addressed requests are bounded by its own in-flight cap
 //      (0016, 429 'too many in flight'), which is what makes A safe without a second ceiling.
-//   4. THE DEVICE NAMES ARE GONE from spirit/run (his decision under this item: "device WILL be KILLED. that's
-//      a decision."), the node verbs device.info and device.rotate among them.
+//   4. (not asserted here) THE DEVICE NAMES ARE GONE from spirit/run (his decision under this item: "device WILL be
+//      KILLED. that's a decision."), the node verbs device.info and device.rotate among them.
+//   5. a post is charged to the sender only once its signature is proven (S4); 6. one verb per request.
 // rule/11: through testSupport only; an in-process relay, its own temp home, no ports and no node.
 
 const os = require('os');
@@ -152,9 +151,9 @@ test.subHeading('3. a member\'s own in-flight cap still bounds what it asks the 
 
 // ── 5. THE RATE IS CHARGED TO A PROVEN SENDER, NOT A CLAIMED ONE ────────
 //
-// The rate limit is charged before the post's signature is checked, so junk
-// carrying a member's public key spends that member's budget: anyone who
-// knows a key can rate-limit its owner off the relay. The charge belongs
+// A rate limit charged before the post's signature is checked would let junk
+// carrying a member's public key spend that member's budget: anyone who
+// knows a key could rate-limit its owner off the relay. The charge belongs
 // after the proof. Asserted on the order in the source, deterministically,
 // rather than by sending the 600 posts a minute the cap allows.
 test.subHeading('5. a post is charged to the sender only once its signature is proven (S4)');
@@ -194,9 +193,9 @@ test.subHeading('6. a request to the relay carries exactly one verb');
 
 // ── THE CLAIM LIMIT IS NOT ASSERTED, AND THAT IS A DECISION ─────────────
 //
-// A check stood here for S13: the claim rate limit is keyed on the connection
-// address, and behind Caddy every claimant shares one bucket. Andy dropped it,
-// 2026-10-11 — "drop it. with the explanation." — and the explanation is his:
+// S13 said a claim rate limit keyed on the connection address puts every
+// claimant behind Caddy in one bucket. Andy, 2026-10-11 — "drop it. with the
+// explanation." — and the explanation is his:
 // "a claimer is not a member yet., but by design there can be no claimer if
 // the capacity for members is exhausted. a member then must be ejected, before
 // a new claim can be satisfied."
@@ -205,9 +204,9 @@ test.subHeading('6. a request to the relay carries exactly one verb');
 // line "it's like member slots, you must evict before adding new ones"): free
 // seats are the allowance less the members held AND the invites still live, a
 // full relay refuses new claims and new invites, and nobody is evicted
-// automatically. So seats bound who can ever get in; the claim limit cannot
-// create a member, only stop somebody hammering the door, and one shared
-// bucket does that well enough.
+// automatically. So seats bound who can ever get in; a limit on the door
+// cannot create a member, only stop somebody hammering it. (The door's limit
+// is now the strangers' address table of goal/G22.6, relayStrangerDoor.js.)
 //
 // Re-keying was worse both ways, which is why it is not merely deferred: a
 // fresh key costs nothing, so per-key counting never stops a flood, and a

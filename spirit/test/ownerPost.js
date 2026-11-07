@@ -8,10 +8,10 @@
 //   "it's more true." And of what reaches a puppet: "not every group is
 //   supported in every context/environment".
 //
-// Built by claude-windows at 8c8347c. The far end is a REAL
-// puppetMode.puppetDoor with its own spirit/state/owner.json, so a command
-// is signed by ownerPost, checked by G5's rule and run by G7's shim --
-// the whole owner door, end to end, over an in-process relay.
+// The far end is a REAL puppetMode.puppetDoor with its own
+// spirit/state/owner.json, so a command is signed by ownerPost, checked by
+// the door's rule (puppets/G5) and run through the node's verbs
+// (puppets/G7) -- the whole owner door, end to end, over an in-process relay.
 //
 // A matching hash alone is not proof, so the answer is taken only from THE
 // puppet the command went to, once, within the wait.
@@ -39,7 +39,7 @@ const other = auth.generateIdentity('other-puppet');
 function puppetNode(id) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ownerpost-'));
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
-  // Since goal/G22.5: a node's root always holds its identity, and puppetIn reads it.
+  // A node's root always holds its identity (goal/G22.5), and puppetIn reads it.
   auth.saveIdentity(root, id);
   fs.writeFileSync(path.join(root, 'spirit', 'state', 'owner.json'),
     JSON.stringify({ owner: owner.publicKey }));

@@ -8,18 +8,15 @@
 //   "The window title should be the nodes damn name, not some stale shit [...]"
 //   The name is set in Info and propagated from there to every relay the node knows.
 //
-// WHAT THE TREE DOES TODAY (read at 4a655fef): the node holds two labels. nodeCard.setName writes the node NAME into
-// identity.json and nothing else; each relay seat carries its own label in relayKeys (node.db), written only by
-// peerPost.keepRename when a relay's answer to a rename parses as yes; Natter mirrors the seat label into
-// shell/natter/session.json, and the window title (js/client/shell.js readNodeLabel) reads THAT file and caches it.
-// So a rename the relay never confirmed leaves the old name in the title for good, across restarts.
+// THE FAULT IT GUARDS: with two labels for a node (its name in identity.json, and a label per relay seat), a window
+// title that read a seat's copy kept an old name for good when a relay never confirmed a rename.
 //
 // WHAT IS ASSERTED
 //   1. Setting the node name moves every seat label with it: after nodeCard.setName, relayKeys.seatLabel on each
 //      seated relay answers the new name, and nothing else is needed for the node to call itself that everywhere.
 //   2. A refused name changes nothing: identity and seat labels stay as they were.
-//   3. The window title reads the node's name, not shell/natter/session.json: shell.js's title code names the node
-//      card and no longer loads the Natter session file.
+//   3. The window title reads the node's name: shell.js's title code names the node card and loads no Natter
+//      session file.
 //   4. A relay's yes to a rename writes nothing of its own (goal/G40.11: nothing of a seat is stored, box v24): what
 //      every relay calls the node is the node's name, so there is no third label to drift (one label, two readers).
 

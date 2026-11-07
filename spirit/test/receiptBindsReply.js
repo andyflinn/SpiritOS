@@ -2,8 +2,7 @@
 
 // spirit/test/receiptBindsReply.js
 // goal/G16.1: the receipt binds the reply text, and a forwarded reply is verified before its route is announced (S1,
-// S2 of the review of 2026-10-10), with S7 and the 0011 hash low folded in. Written first, red on today's tree, by
-// claude-windows; the build is the other agent's. Andy, 2026-10-10: "flag day. we don't maintain backward compatibility
+// S2 of the review of 2026-10-10), with S7 and the 0011 hash low folded in. Andy, 2026-10-10: "flag day. we don't maintain backward compatibility
 // before alpha, maybe not even before beta, the data stored in the SpiritOS is never in danger." and "i agree on the
 // shape". The review's repro: "receipt verifies with forged text: true".
 //
@@ -18,6 +17,8 @@
 //      and a forwarded reply that settles nothing deletes its carrying entry (S7).
 //   5. peerPost.js: a reply answered on the post itself settles under the hash the asker computed, not one the wire
 //      supplied (decision 0011).
+// 3 and 4 read relay.js's deliverForwardedReply and carryToPartner, which went with partnering (goal/G22.6: a relay
+// carries nothing onward), so both now find no function and fail.
 // rule/11: through testSupport only; no node, no ports.
 
 const fs = require('fs');

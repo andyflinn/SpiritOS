@@ -6,42 +6,11 @@
 //   organized, too" — "my input will be queued, any agent can adress
 //   issues in the table, respons to me under that heading".
 //
-// A REAL APP, and only the app contract: what arrives comes through
-// `onPacket`, everything Andy writes leaves as an ordinary `agents` packet
-// through `peerPost`, and both are kept in Desk's OWN log, `log.json` in
-// its own folder (`api.fs`). The board and every thread are read from it.
-//
-// ── IT KEEPS ITS OWN LOG, BY RULING ───────────────────────────────────
-//
-//   Andy, 2026-09-27, when Desk read his node's record through a node
-//   verb added for it: "that's a boundary crossed that requires peer
-//   review AND my approval", then "they must keep their own logs" and
-//   "after correcting agents and desk, we will remove the new verb."
-//
-// So Desk asks the node for no record, and for nothing beyond what every
-// app has (onPacket, peerPost, its own folder). What passed
-// before this log existed, or while no Desk was mounted in an open page,
-// is not in it. That is the price of the ruling, not a bug to fix by
-// reaching into the node's record again.
-//
-// ── THE THREAD KEY IS THE FULL ID ────────────────────────────────────
-//
-// A row is keyed by `id` (`puppets/G6`), never by the handle it prints:
-// the handle is the shortest form unique today and can lengthen, which
-// would orphan a thread keyed on it. Andy never types either — the app
-// attaches the id to what he writes, which is what lets his text reach
-// voice.jsonl clean. Nothing here writes voice.jsonl, and nothing may:
-// Andy, 2026-09-27, "that hook into my voice.jsonl is a hack and will have
-// to be removed if the agents app is ever to ship."
-
-
-// A BUSY AGENT IS WAITED FOR, NOT BOUNCED. Andy's line came back
-// "(undelivered: target is busy)" because a post got one attempt. With
-// his go, peer.post takes a patience and the node retries a busy target
-// with backoff; Desk asks for a minute. What the log records is the final
-// outcome, after that minute, never the first refusal.
-// DESK_PATIENCE stood here: the minute the page gave a busy agent when it posted him a line. No line leaves the
-// page as a packet since goal/G3.12.
+// The face of the desk server (spirit/run/process/js/desk): three tabs, List, Rules and, where a deskVerify answers,
+// Verifier, then one bubble per agent the goal row names. Every read and every press is a desk.<verb> ask on the flat
+// apiDoor (deskAsk); what changes arrives as the desk server's publish, kept by the desk family's cache manager in
+// spirit.data.desk.data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
+// id (goal/G<n> or goal/G<n>.<m>) and opens the item's dialog (shell/deskDetails).
 
 var deskApi = null;
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the
@@ -76,29 +45,23 @@ function deskHeld() {
   var all = K ? K.items() : {};
   return Object.keys(all).map(function (id) { return all[id]; }).filter(deskRowShown).sort(deskIdOrder);
 }
-// The search bar and its two toggles. Andy: "When Desk opens: [Current Goal Only]
-// on, [Goals Only] off". "The server does the searching AND the filtering."
+// The search words and the List's three toggles. Andy: "When Desk opens: [Current Goal Only]
+// on, [Goals Only] off"; Include Closed opens off.
 var deskFilter = { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false };
-// THE ROW'S ICON (desk/G1.11): ❌ wherever Andy blocks ("the ERROR for
-// anything i NEED to deal with", "wherever i block"), 💻 on any other item.
+// THE ROW'S ICON (desk/G1.11): ❌ while something on the item asks Andy ("the ERROR for
+// anything i NEED to deal with", "wherever i block"), 💻 on any other item, 📁 on a goal.
 // ICONS ARE GLYPHS (goal/G41.1): written as they are, from no icon table.
 var deskError = '';
-// THE LEGACY AGENTS-PACKET LOG WENT WITH goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them."): the page
-// no longer records arrivals of the agents app's era nor reads them back; the desk server knows the agents by their keys
-// (the goal row's agents).
 
 // ── DESK'S RECORD IS THE DESK SERVER'S (desk/G1.4) ──────────────────
 //
-//   Andy: "desk creates a lot of file-clutter", "SpiritOS list.load rules
-//   are probably vialoated", "lazy-fill of pages seems appropriate", "the
+//   Andy: "desk creates a lot of file-clutter", "lazy-fill of pages seems appropriate", "the
 //   list only loads key/title, and the rest lazy loads".
 //
 // DECIDED (desk/G1, D5 and O9), not this file's to undo: Desk keeps nothing
-// in its own folder. Its log, what he typed, and its state and seen live in
-// the desk server (process/js/desk), reached by its verbs (desk.<verb>) on the loopback
-// door (D4; through the flat apiDoor since goal/G30.6). It reads only what it shows: the newest session, each open
-// item's own lines, a chat's newest page, never the whole log. Desk still
-// keeps only what it shows; the server is storage and bounded search.
+// in its own folder. The record lives in the desk server (spirit/run/process/js/desk, its state in
+// spirit/state/desk/data/desk.db), reached by its verbs (desk.<verb>) on the flat apiDoor. The page reads only what
+// it shows: the List's search, and each item's own facts and chat in its dialog.
 // Each id a link to its item, as the dialog's are (Andy: "the blocked and
 // blocks lists link to the respective items").
 function deskLinks(ids) {
@@ -119,38 +82,21 @@ function deskAsk(verb, args) {
 function deskRefusalText(body) {
   if (!body || !body.code) return body && body.error ? String(body.error) : '';
   var x = body.extra || {};
-  // THE WHY TOO (goal/G18.10): every refusal carries its reason since goal/G10.10, and the page showed the code alone.
+  // THE WHY TOO (goal/G18.10, goal/G10.10): every refusal carries its reason, and the page shows it.
   return body.code + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (x.why ? ': ' + x.why : '') + (body.error ? ' (' + body.error + ')' : '');
 }
 function deskWriteError(what) {
   return function (e) { deskError = 'Desk could not ' + what + ': ' + ((e && e.message) || e); deskDraw(); };
 }
 
-// WHAT ANDY TYPES IS NO LONGER SENT TO A VOICE FILE (goal/G2.1 note 8). The desk server kept a plain file of
-// his lines (desk/G1.4) for his vault; since apiAuth/G1's close the brain reads them through the desk api, and the
-// vault's own tool (claude/voiceFromDesk.js) keeps his corpus. Nothing here writes it, and nothing may.
-
 function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 
-// ── WHAT ANDY HAS NOT SEEN YET ────────────────────────────────────────
+// ── WHAT NEEDS ANDY'S EYE ─────────────────────────────────────────────
 //
-//   Andy, 2026-09-27: "list items in the list should show a red "news" in
-//   a unlabeled column, indicating that new stuff has arrived for that
-//   item, and the list, lead, and team tabls should also show a red "*"
-//   befor the tab title when new activity has taken place that I havent
-//   seen yet. (attention-direction)" — then "or use the red "*" do
-//   indicate "unseen changes have occured"". One mark, everywhere.
-//
-// Seen is kept per row and per chat by the desk server (seen.set, G1.4),
-// as the arrival time of the newest thing he has looked at: arrival times
-// rather than his clock, so a sender's skew cannot hide anything. A row is
-// seen when he opens it, a chat while its tab is showing. A Desk with no
-// seen.json yet counts all it holds as seen, so the first open is not a
-// wall of red. THE STAR IS GONE (goal/G4.20 point 8), from the rows and the tabs alike. Andy: "ha ha, the red
-// star has no function anymore. take it out." What waits on him is the row's ICON.ERROR (facts.asks).
-// A brought-back item's mark (goal/G2.1 note 6): "the attention-grabbing error icon"; his seen clears it.
-// goal/G33.8 (box v13; Andy: "it's enough to put a red ! next to the item"): the mark stands beside the item's title and
-// id; the row keeps its colour.
+// What waits on him is the row's ICON.ERROR (facts.asks). An item the desk server marks alert (brought back, or a line
+// from the agent holding it: goal/G2.1 note 6, "the attention-grabbing error icon") carries a red ! beside its title
+// and id (goal/G33.8, box v13; Andy: "it's enough to put a red ! next to the item"); the row keeps its colour. His
+// press seen, as the item's dialog opens, clears it.
 var DESK_ALERT = '<span data-alert-mark="1" style="color:#d00;font-weight:bold" title="needs your eye: brought back, or a line from the agent holding it">!</span>';
 // The main tab the page opens on, and falls back to: the List.
 var deskTab = 'list';
@@ -162,11 +108,10 @@ function deskTabButton(attrs, on, label) {
     deskEsc(label) + '</button>';
 }
 
-// THE AGENT BUBBLES, BESIDE THE TABS (goal/G3.12). Andy, 2026-10-03: "the main botton row now reads: [List]
-// [Team] [Musings], those are buttons, and Info [Agent1-status] [Agent2-status]... Where the Agent - bubbles are
-// highlighted with a red-blinking border when busy." One bubble per agent the goal row says is live, the working
-// one marked data-working (the blink is declared on that mark, goal/G2.4); state only, a click does nothing. They
-// follow the goal row's publish, nothing is pulled.
+// THE AGENT BUBBLES, BESIDE THE TABS (goal/G3.12). Andy, 2026-10-03: "Info [Agent1-status] [Agent2-status]... Where
+// the Agent - bubbles are highlighted with a red-blinking border when busy." One bubble per agent the goal row knows,
+// the working one marked data-working (the blink is declared on that mark, goal/G2.4); a click opens the agent's
+// profile pane (below). They follow the goal row's publish, nothing is pulled.
 function deskBubblesHtml() {
   var g = deskGoalRow();
   var live = g && Array.isArray(g.live) ? g.live.slice() : [];
@@ -179,7 +124,7 @@ function deskBubblesHtml() {
   // its bubble shows absent." The server names them in excluded and keeps them out of live.
   var excluded = g && Array.isArray(g.excluded) ? g.excluded : [];
   // EACH BUBBLE IS A TAB (goal/G4.23). Andy: "the red-bordered agent bubbles become tab-headers again, with their own
-  // pane for scope-configuration." data-tab="agent:<name>" opens that agent's pane (its profile since goal/G10.8); the bubble keeps its state.
+  // pane for scope-configuration." data-tab="agent:<name>" opens that agent's pane (its profile, goal/G10.8); the bubble keeps its state.
   // ITS NAME ON IT (goal/G21.1): the label stays the bubble's handle in the markup, the name is what he reads.
   return '<span class="job-manifest-note" style="margin-left:12px">Info</span>' + known.map(function (n) {
     var absent = excluded.indexOf(n) !== -1;
@@ -206,8 +151,8 @@ function deskNameOf(label, row) {
 
 // ── AN AGENT'S PANE: ITS PROFILE (goal/G4.23) ────────────────────────
 //
-//   The pane showed the agent's scope and set it until goal/G10.8. Andy, 2026-10-12: "all agents in desk have "/" file
-//   scope", the per-agent setting removed from desk and commitCheck ("b"). What stays is the profile, name and nick.
+//   Andy, 2026-10-12: "all agents in desk have "/" file scope": no per-agent scope is set here. The pane is the
+//   agent's profile: name and nick, and the toggles included and cap.
 var deskAgentName = '';
 var deskAgentProfile = null;
 var deskAgentNote = '';
@@ -299,8 +244,8 @@ function deskAgentProfileSave() {
   }, function (e) { deskAgentNote = 'Profile not saved: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 
-// Drawn whole, as markup: List | Rules, then the bubbles. The Team tab, the Apps tab and its inner tabs went with
-// goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
+// Drawn whole, as markup: List | Rules | Verifier (where one runs), the design button, then the bubbles. No Team or
+// Apps tab (goal/G43.22; Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
   if (!strip) return;
@@ -309,13 +254,10 @@ function deskDrawTabs() {
   strip.innerHTML =
     deskTabButton('data-tab="list"', deskTab === 'list', 'List' + (waiting ? ' (' + waiting + ')' : '')) +
     deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
-    // THE MUSINGS TAB STOOD HERE, and went with goal/G27.3.
-    // WHERE MUSINGS STOOD, AND ONLY WHERE ONE RUNS (goal/G8.11): his words were "right after [musings]", and the tab
-    // is absent on a node with no deskVerify, as the backup bubble is.
+    // THE VERIFIER TAB, ONLY WHERE ONE RUNS (goal/G8.11): absent on a node with no deskVerify, as the backup line is.
     (deskVerifier ? deskTabButton('data-tab="verifier"', deskTab === 'verifier', 'Verifier') : '') +
-    // ON EVERY TAB, WHERE MUSINGS STOOD (goal/G9.8). Andy: "The [Start/End design] buttons should be displayed always,
-    // not only when the team tab is active, and it should be placed right after the [Musings] tab header". Still its
-    // own colour, so it looms (Andy, earlier: "so it loooms over the proceedings").
+    // ON EVERY TAB, AFTER THE TAB HEADERS (goal/G9.8; Andy: "The [Start/End design] buttons should be displayed always").
+    // Its own colour, so it looms (Andy: "so it loooms over the proceedings").
     // ITS COLOUR IS shell.css's, AND ONLY WHILE UNARMED (goal/G41.9, box v3: armed is red): an inline colour won over the
     // shell's armed red.
     '<button type="button" id="desk-end-design" class="desk-design-end"' + (design ? '' : ' hidden') + '>End design mode</button>' +
@@ -326,10 +268,6 @@ function deskDrawTabs() {
   deskArming(document.getElementById('desk-end-design'), 'End design mode: sure?', deskEndDesign);
   deskArming(document.getElementById('desk-start-design'), 'Start design mode: sure?', deskStartDesign);
 }
-
-// THE AGENT TABS INSIDE TEAM STOOD HERE (desk/G1 D2, goal/G2.4) and went with goal/G3.12: one tab per agent, a
-// channel between Andy and that agent alone, drawn from packets of the agents app. The working blink moved to the
-// bubbles above; the direct line has no place on the page any more.
 
 // ── THE LIST, AS THE DESK SERVER SAYS IT (desk/G2.6) ──────────────────
 //
@@ -397,13 +335,10 @@ function deskSearchItems() {
       done();
     }, function (e) { done(); deskWriteError('read its list')(e); });
 }
-// A published row: {change, verb, item: <facts>, listed, key} (goal/G33.4: one publish per row). A new session
-// asks again, since it adds and drops whole rows. A row the List does not hold
-// is drawn from the publish since goal/G24.6 (below); only while text is in the
-// search box does it still ask again.
-// A MISSED PUBLISH IS NOTICED (desk/G3.10): every publish goes out since fileTransfer goal/G1.4, but one can still
-// go unseen here (an oversize drop notice, a stream reconnect); a change number that skips one means exactly that,
-// and the List asks once.
+// A published row: {change, verb, item: <facts>, listed, key} (goal/G33.4: one publish per row), or an item's side row
+// {table, id, row}. A session.set asks the List again once per write, since it adds and drops whole rows; any other
+// row is drawn from the publish (below). A dropped publish (too large) asks again; a jump in change numbers is no gap
+// (goal/G41.2) and asks nothing. deskLastChange is the newest write heard, for the backup line.
 var deskLastChange = 0;
 var deskSearchedAt = -1;
 // THE NEWEST CHANGE SEEN, PER ROW (goal/G33.8, box v11): an older version of a row never paints over a newer one, and an
@@ -435,15 +370,14 @@ function deskOnPublished(obj) {
   var rowKey = deskRowKeyOf(obj);
   if (change && deskRowChange[rowKey] && change < deskRowChange[rowKey]) return;
   if (change) deskRowChange[rowKey] = change;
-  // THE BACKUP LINE FOLLOWS THE RECORD (the stale-backup-line finding): read again once per write the desk made, since
-  // the backup copies desk.db after a change. Until goal/G33.4 it followed the page's own log line.
+  // THE BACKUP LINE FOLLOWS THE RECORD: read again once per write the desk made, since the backup copies desk.db after a
+  // change.
   if (change && change > deskLastChange) deskAskBackup();
   if (change > deskLastChange) deskLastChange = change;
   // EACH ROW ON ITS OWN (goal/G33.4): a side row of an item ({table, id, row}) is no List row; it is the dialog's and
   // the kept items' (the desk family's data.js).
   if (obj.table) return;
-  // A session's rows each come as their own publish (goal/G33.4): the List asks again once for the write. A jump in
-  // change numbers is no gap (goal/G41.2), so it no longer searches the List again.
+  // A session's rows each come as their own publish (goal/G33.4): the List asks again once for the write.
   if (obj.verb === 'session.set') { if (deskSearchedAt !== change || !change) { deskSearchedAt = change; deskSearchItems(); } return; }
   // ITS ONE ROW (goal/G33.4: every row a write changed is its own publish).
   var it = obj.item;
@@ -452,7 +386,7 @@ function deskOnPublished(obj) {
   // THE LIST TAKES ADDITIONS FROM THE STREAM (goal/G24.6). Andy: "no pulling". The row is the cache manager's to keep
   // (its translator writes it into the desk's branch as the publish arrives); the List, a view of that branch, draws it
   // where the toggles and the goal's order put it (deskHeld). Nothing is placed here by hand.
-  // ONE ROW CHANGED, ONE ROW REPAINTED (goal/G27.9, B; on the probability search since goal/G40.12): the List takes the
+  // ONE ROW CHANGED, ONE ROW REPAINTED (goal/G27.9, B; goal/G40.12): the List takes the
   // rows the store now holds, and a row that stays is repainted by its own element, the cells that changed alone. What
   // sits outside the List and reads the rows (the tabs' count, Go-All) is redrawn too.
   if (!deskList) { deskDraw(); return; }
@@ -466,10 +400,9 @@ function deskOnPublished(obj) {
 //   Desk rule 8 (Andy): "Shell and application elements, should bring their subscriptions with them, so that they're
 //   automatically subscribed to the events that update them." Andy, 2026-10-17, on the shared parts: the app loads
 //   them itself at mount: "it is ok for apps to know about other apps and their shared elements. i like this solution."
-//   Once per page: a second app finds each there. The team chat's element went with goal/G43.22.
-// THE DESK'S TRANSLATOR (goal/G33.3): spirit.data keeps the current goal for this page and the item dialog, as
-// deskClient keeps it in node; loaded once by the app. Since goal/G41.24 it is the desk
-// family's data.js, from the node that served this page.
+//   Once per page: a second app finds each there.
+// THE DESK'S TRANSLATOR (goal/G33.3, goal/G41.24): the desk family's data.js, from the node that served this page;
+// spirit.data keeps the current goal for this page and the item dialog, as deskClient keeps it in node. Loaded once.
 var DESK_DATA = '/process/js/desk/data.js';
 // The verifier's cache manager, its own family's (goal/G41.28).
 var DESK_VERIFY_DATA = '/process/js/deskVerify/data.js';
@@ -535,11 +468,9 @@ function deskGoalOf(row) { return row.goal === '' ? String(row.id) : String(row.
 // A PRESS IS NOT A LINE. Andy: "a press shouldn't post a line, it is not
 // textual information." It goes to the desk server; the row changes when the
 // server publishes. THE PAGE NUDGES NOBODY (goal/G3.8): the desk server nudges
-// each agent's deskClient itself on his writes (goal/G3.5), so the tiny
-// 'changed' packet the page posted to every live agent after a press is gone,
-// with the agents app it was addressed to.
+// each agent's deskClient itself on his writes (goal/G3.5).
 function deskPress(id, what) {
-  // No by since apiAuth/G1.13: the press is the owner's because it comes
+  // No by (apiAuth/G1.13): the press is the owner's because it comes
   // through the owner's door, and desk reads that from the caller.
   return deskAsk('press', { id: id, what: what }).then(function () { /* the server publishes, and nudges */ },
     function (e) { deskError = 'Not pressed: ' + ((e && e.message) || e); deskDraw(); });
@@ -561,12 +492,12 @@ function deskWarnWhy(row) {
 // will be marked with an ICON.SWORD (⚔️), indicating: \"There is a battle to be fought\"." His decision: the press
 // itself stays in the goal's Details (deskDetails), and the row only says there is one to make.
 // DELETE IS NEVER IN THE ROW (goal/G8.8). Andy, 2026-10-09: "oh, and the Delete button never should show in the
-// list. only in the detals." It was drawn in every row of a goal in design mode until then, which was G9.7's miss.
+// list. only in the detals."
 // goal/G33.4: an item's own End design is its Details' alone.
 var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current', 'delete', 'end-design'];
 var DESK_SWORD = deskGlyph('⚔️', 'There is a battle to be fought: make it the current goal in its Details');
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
-// the item detail". A done row keeps its Close as before.
+// the item detail". A done row keeps its Close.
 // THE GOAL ROW KEEPS ITS CLOSE (goal/G6.6): the goal's Close appears in the List too. It shows only once nothing under
 // the goal is open (deskNextPress), so it presses at once (goal/G41.9): an are-you-sure there could never fire.
 function deskInRow(row, what) {
@@ -613,10 +544,10 @@ function deskRowPresses(row) {
   }).join(' ');
 }
 // THE CELLS OF A ROW, each its own part, so the row's own element paints and repaints them one by one (goal/G27.9;
-// since goal/G40.12 the List is the probability search, and a row is its row element, deskListElement).
+// the List is the probability search, goal/G40.12, and a row is its row element, deskListElement).
 var DESK_LIST_FIELDS = ['mark', 'type', 'todo', 'with', 'yours', 'blocks', 'waits', 'status'];
 // THE GOAL ROW STANDS OUT (goal/G33.8, box v12; Andy: "it's really hard to tell the goal from it's items in the list"):
-// its icon cell holds the goal sign, and its to-do cell is bold (the row tag is the element's since goal/G40.12).
+// its icon cell holds the goal sign, and its to-do cell is bold (the row tag is the element's, goal/G40.12).
 function deskRowCellParts(row) {
   var parts = deskRowCells(row).replace(/^<td[^>]*>/, '').replace(/<\/td>$/, '').split(/<\/td><td[^>]*>/);
   if (row && row.goal === '' && parts[2] !== undefined) parts[2] = '<b>' + parts[2] + '</b>';
@@ -682,8 +613,8 @@ function deskAddGoal() {
 // repaints the cells that changed. A press in a row is the page's (data-press), a press on the row opens it.
 //
 // THE TOGGLES (goal/G9.2, goal/G4.20 point 1): Current Goal Only, on when Desk opens (a multi filter: on until pressed
-// off), Goals Only and Include Closed, off (toggles). Exclusive as before (Andy: "only one of the two buttons ... may be
-// selected at the same time"): Goals Only on means every goal's.
+// off), Goals Only and Include Closed, off (toggles). The first two exclude each other (Andy: "only one of the two
+// buttons ... may be selected at the same time"; below): Goals Only on means every goal's.
 var deskList = null;
 var deskListIndex = null;
 function deskListElement(row, key) {
@@ -835,16 +766,15 @@ function deskDraw() {
 
 // ── THE RULES TAB (goal/G6.5) ─────────────────────────────────────────
 //
-//   The box: "A new tab "Rules" between "Team" and "Musings": 1. The new bubble: type, label, text and a new button:
-//   rule.add (the rule comes in proposed; agents may add one too). 2. The search bubble: a search box and 7 toggles
-//   (ui, code, design, desk, test; proposed, active, deleted): rules.search {text, types, statuses}. 3. The list, a row per
-//   rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails
-//   (goal/G6.4)."
+//   The tab after List: 1. the new bubble: type, label, text, autoAttach and rule.add (the rule comes in proposed;
+//   agents may add one too). 2. The search: words, a type filter (ui, code, design, desk, test) and a status filter
+//   (proposed, active, deleted): rules.search {text, types, statuses}. 3. The list, a row per rule: status (proposed
+//   ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails (goal/G6.4).
 //
 // THE PROBABILITY SEARCH (goal/G40.12, box v7, first set 3: "all searches in desk are of the new probability variety"):
 // the list is spirit/element/search.js over rules.search, ranking as he types with the matched words marked, a type
 // filter and a status filter beside the words; a row opens ruleDetails. A rule's publish asks it again.
-// The test type since goal/G40.12 (box v7, first set 4), as the desk server's RULE_TYPES.
+// The types, the test type included (goal/G40.12, box v7, first set 4), as the desk server's RULE_TYPES.
 var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk', 'test'];
 var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
 var DESK_RULE_ICON = { proposed: '✏️', active: '🔒', deleted: '💀' };
@@ -957,9 +887,6 @@ function deskLoad() {
       deskDraw();
     });
 }
-// AN AGENT'S QUEUE IN ITS TAB STOOD HERE (desk/G1.5 D1, pending.get) and went with the agent tabs (goal/G3.12):
-// with no tab per agent there is no place that shows one agent's queue. His own queue is still the List.
-
 // ── THE BACKUP, SEEN FROM DESK (desk/G1.7, T7) ───────────────────────
 //
 //   Andy: "how can i trust the copy mechanist when i cant see it working".
@@ -995,19 +922,15 @@ function deskBackupHtml() {
 
 // ── THE VERIFIER TAB (goal/G8.11) ────────────────────────────────────
 //
-//   Andy, 2026-10-09: "shouldn't i have, if the desk verifier is mounted
-//   and running, a verifier tab in desk, right after [musings], that
-//   allows me to monitor a) status and progress of the running verifier,
+//   Andy, 2026-10-09: a verifier tab "that allows me to monitor a) status and progress of the running verifier,
 //   and if/when necessary, allow intervention?", then "add it".
 //
 // Drawn only where a deskVerify answers, as backup's status is: on a node
-// without one the tab is not there at all. SINCE goal/G33.3 it shows only
-// what runs now (the suite, since when), its console, and Stop (the box:
-// "The Verifier tab shows only what runs now, its console, and Stop."). A
-// run is started from the item: his Verify button there, or the desk itself.
+// without one the tab is not there at all. It shows what runs now (the suite, since when), the bar, its console, and
+// Stop the run, Chores now and Run the product tests (goal/G33.3: "The Verifier tab shows only what runs now, its
+// console, and Stop."). A run of an item is started from the item: his Verify button there, or the desk itself.
 var deskVerifier = null;
-// THE RE-VERIFY'S ANSWER (goal/G18.10). Andy: "verify, when idling, does not react to my attempts of pushing it's
-// re-verify button." The desk refused it and the page swallowed the refusal; now its outcome is said in the tab.
+// THE ANSWER TO A PRESS IN THE TAB (goal/G18.10), said in the tab, a refusal included.
 var deskVerifyNote = '';
 function deskVerifyAsk(verb, args) {
   return Promise.resolve(deskApi.verb('deskVerify.' + verb, args || {})).then(function (r) {
@@ -1018,8 +941,7 @@ function deskVerifyAsk(verb, args) {
 }
 // Asked once at mount and on every open of the tab: a node either runs one or does not.
 // THE TAB STAYS (goal/G21.3). Andy's box: "The Verifier tab stays once the page has loaded; only the first ask at load
-// decides whether a verifier runs here. A later missed answer keeps the tab and shows "not answering"." Any failed ask
-// set deskVerifier to null and redrew the tabs, so one slow answer made the tab vanish under him. Now a failed ask
+// decides whether a verifier runs here. A later missed answer keeps the tab and shows "not answering"." A failed ask
 // changes nothing while a verifier is known; it only marks it not answering until the next answer.
 var deskVerifyMissed = false;
 var DESK_STOP_NOTE = 'deskVerify answered: stop asked;';
@@ -1047,8 +969,7 @@ function deskVerifyAnswered(text) {
   deskVerifyNote = text;
   deskDrawVerifier();
 }
-// goal/G8.12: opening the tab reads what runs; the records list it used to fetch is gone with Andy's "only show the
-// latest status", so nothing here asks for rows any more.
+// goal/G8.12: opening the tab reads what runs, and asks for no rows (Andy: "only show the latest status").
 function deskVerifyRefresh() {
   deskVerifyTail();
   return deskAskVerifier();
@@ -1148,7 +1069,7 @@ function deskVerifyIdleMin() {
   var ms = deskVerifyRun && Number(deskVerifyRun.idleMs);
   return ms > 0 ? ms / 60000 : DESK_IDLE_MIN;
 }
-// WHAT THE CHORES DID (goal/G21.3): the idle hour is the verifier's own since goal/G33.3, counted from the last run
+// WHAT THE CHORES DID (goal/G21.3): the idle hour is the verifier's own (goal/G33.3), counted from the last run
 // handed to it, so the tab says what its chores did.
 function deskVerifyIdleSaid() {
   var r = deskVerifyRun || {};
@@ -1205,10 +1126,8 @@ function deskVerifyHtml(more) {
     ' <button type="button" id="desk-verify-chores"' + (!running && (!live || live.hasChores === true) ? '' : ' disabled') + '>Chores now</button>' +
     (more ? ' ' + more(running) : '') + '</div>' +
     '</div>';
-  // THE RECORDS LIST IS GONE (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
-  // latest status." It listed the dataset's newest rows, which read as a log beside a live run; the tab now shows the
-  // run and nothing else. records.search was a verb of deskVerify's until goal/G19.11, when it went for want of any
-  // caller but a suite; the dataset is read on his clone's disc (verify.db), never through the tab.
+  // NO RECORDS LIST (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
+  // latest status." The tab shows the run and nothing else; the dataset (verify.db) is never read through the tab.
   return out;
 }
 // THE FULL PRODUCT TEST TREE (goal/G40.13, box v22, point 9): a button in the tab's own row (Andy: "[Stop the run]
@@ -1286,26 +1205,17 @@ spirit.shell.activateApp({
     deskApi = api;
     // ── THE TABS ───────────────────────────────────────────────────
     //
-    //   Andy: "could the be, at the top of the window a set of tabs that
-    //   allow me to switch from the list display, to chat with lead, to
-    //   \"log musings\", so the vertical space here doesn't get annoying?"
-    //   and "tabs would be a more standard approach, methinks".
+    //   Andy: "tabs would be a more standard approach, methinks".
     //
     // Switching shows one pane and hides the others; nothing is repainted,
     // so a half-typed line in any pane survives a switch. The inputs live
-    // outside the repainted parts.
-    // THE YELLOW DESIGN BUBBLE STOOD FIRST HERE, and went with goal/G9.8. Andy: "get rid of the yellow bubble that
-    // says \"Design mode. Nothing is built until it ends, and it ends only in the Team tab.\". it is useless."
+    // outside the repainted parts. No design-mode banner (goal/G9.8; Andy: "it is useless.").
     container.innerHTML =
       // Drawn by deskDrawTabs.
-      // PINNED BELOW THE TITLE BAR (desk/G1.12; goal/G2.1 note 4). Andy: "the tabs should stick
-      // top the top like the title bar", then "they should leave the app or dialog visible, and stay
-      // sticky below those title bars". ONE sticky block holding both rows (claude-windows' review):
-      // two rows each stuck at top 0 slid the agent row under the main one. The shell's #app-header is
-      // sticky at the top of the same scroll, so this block sticks at its height, never at 0 where it covered Back and
-      // Home. Opaque, in the shell's own background. SINCE goal/G6.1 the shell's app header does the sticking: the
-      // block is moved into the shell's app header right after this markup lands (deskHeader).
-      // THE BLINK, DECLARED ONCE (goal/G2.4): a working agent's tab border blinks; the mark is data-working.
+      // PINNED BELOW THE TITLE BAR (desk/G1.12; goal/G2.1 note 4). Andy: "they should leave the app or dialog visible,
+      // and stay sticky below those title bars". The shell's app header does the sticking (goal/G6.1): this block is
+      // moved into it right after this markup lands (deskHeader).
+      // THE BLINK, DECLARED ONCE (goal/G2.4): a working agent's bubble border blinks; the mark is data-working.
       '<style>@keyframes desk-blink { 50% { border-color: transparent; } } ' +
         '#desk-tabs [data-bubble][data-working="1"] { animation: desk-blink 1s step-start infinite; }</style>' +
       // FLAT AND JOINED TO THE TITLE BAR (goal/G9.6). Andy: "the header area should not contain rounded corners. and
@@ -1317,7 +1227,7 @@ spirit.shell.activateApp({
           '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
       '</div>' +
       // EVERY LIST IN A BOX OF A STATED SIZE (goal/G41.11, rule/16): the List and the Rules list each in a fill box, and
-      // every box up to the app a fill box too, as the Apps and Icons face apps do.
+      // every box up to the app a fill box too.
       '<div id="desk-root" class="fill">' +
         // THE SEARCH BAR TOPS THE LIST (desk/G2.6). Andy: "all list displays in
         // the UI now must be topped by a search input bar", "The server does the
@@ -1350,7 +1260,7 @@ spirit.shell.activateApp({
         '</div></div>' +
         // THE VERIFIER TAB'S PANE (goal/G8.11): #desk-verifier takes the whole body and every click in it.
         '<div data-pane="verifier" hidden><div id="desk-verifier"></div></div>' +
-        // AN AGENT'S SCOPE (goal/G4.23), opened from its bubble.
+        // AN AGENT'S PROFILE (goal/G4.23), opened from its bubble.
         '<div data-pane="agent" hidden>' +
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
           '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
@@ -1361,7 +1271,7 @@ spirit.shell.activateApp({
     deskWatchIcons(container);
     function show(tab) {
       var pane = tab.indexOf('agent:') === 0 ? 'agent' : tab;
-      // A TAB THE PAGE DOES NOT HAVE (Team and Apps went with goal/G43.22) FALLS BACK TO THE LIST, its main tab.
+      // A TAB THE PAGE DOES NOT HAVE FALLS BACK TO THE LIST, its main tab.
       var panes = container.querySelectorAll('[data-pane]');
       if (!Array.prototype.some.call(panes, function (p) { return p.getAttribute('data-pane') === pane; })) { tab = 'list'; pane = 'list'; }
       Array.prototype.forEach.call(panes, function (p) {
@@ -1373,12 +1283,12 @@ spirit.shell.activateApp({
       deskTab = tab;
       deskDrawGoAll();
       if (tab === 'rules') deskRulesSearch();
-      // goal/G8.11: opening the tab reads what runs and the newest records; it is not pulled while it is closed.
+      // goal/G8.11: opening the tab reads what runs; it is not pulled while it is closed.
       if (tab === 'verifier') { deskVerifyRefresh(); deskVerifyTicking(true); deskVerifyConsoleFit(); } else deskVerifyTicking(false);
       deskDrawTabs();
     }
-    // The strips are redrawn, so one listener on each, and the click may
-    // land on the red * inside a button.
+    // The strip is redrawn, so one listener on it, and the click may
+    // land on a part inside a button.
     function clicked(e, attr) {
       var el = e.target;
       while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute(attr)) && !(el.id)) el = el.parentNode;

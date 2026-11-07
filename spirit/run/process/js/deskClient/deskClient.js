@@ -10,19 +10,18 @@
 //   agent/user appclication". Of the statistics: "so you can report facts, not fiction."
 //
 // DECIDED in Desk (goal/G3), not this file's to undo:
-//   - It asks through the kernel and nothing else (peerPost, the one copy of post-then-await), and takes nothing
-//     from the environment but what its node hands a process it starts. The agents app it replaces is not
-//     permitted in this repo.
+//   - It asks through the spirit object and nothing else (the desk family bound under the desk's key, over peerPost,
+//     the one copy of post-then-await), and takes nothing from the environment but what its node hands a process it
+//     starts. The agents app it replaces is not permitted in this repo.
 //   - Which node is the desk is TOLD, never guessed: nothing in a node's contacts marks one, so the owner sets the
 //     key once (setDesk) and it is kept.
 //   - A node gives a server 12 s (appClient.js DOOR_WAIT_MS), and a busy desk may hold a post longer. So an ask
 //     answers within 10 s: the desk's answer, or no-answer with the id of its record. The wait goes on behind it;
 //     nothing is sent twice unless the agent decides it, and the record says how it ended.
-//   - Its state is relay-state/process/deskClient/deskClient.db, named and handed over by the node as --state.
+//   - Its state is spirit/state/deskClient/data/deskClient.db (goal/G43.10), named and handed over by the node as --state.
 //   - WHO IT IS, name and key, is what its node hands a server it starts (--node, jobs.js): no ask and no file.
-//   - IT FOLLOWS THE DESK'S STREAM (goal/G33.4): the desk sends each changed row of its current goal to the deskClient
-//     of every agent it knows (appServer streamListener), so deskClient asks the desk nothing to learn what changed.
-//     changed, the desk's old nudge (goal/G3.5), went with goal/G33.7.
+//   - IT FOLLOWS THE DESK'S STREAM (goal/G33.4, goal/G33.8): it subscribes, and the desk publishes each changed row to
+//     every subscribed deskClient (appServer streamListener), so deskClient asks the desk nothing to learn what changed.
 //   - What is meant for its agent is selected and worded as the listener it replaces did (goal/G3.4, 5): Andy's
 //     records but his seen presses, another agent's chat, and the lines Desk keeps from Andy or an agent; never
 //     its own, never the desk's busy replies, never Andy's direct line to the other agent.
@@ -87,7 +86,7 @@ let PORT = 0;
 try { PORT = Number(new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).port) || 0; } catch (e) { PORT = 0; }
 
 const db = new DatabaseSync(path.join(STATE, 'deskClient.db'));
-// The backup copies this file while it is written, as it does desk.db: in WAL a reader never blocks the writer.
+// In WAL a reader never blocks the writer, so a backup can copy this file while it is written.
 db.exec('PRAGMA busy_timeout=5000');
 db.exec('PRAGMA journal_mode=WAL');
 db.exec(
@@ -185,17 +184,17 @@ function within(promise, ms) {
 // waiting: the lines meant for its agent, handed over by its next wait.
 const waiting = [];
 let said = '';
-// The waits a line or a nudge ends early.
+// The waits a line, a job or a wake ends early.
 const wakers = [];
 // Whether a job may have opened since the last ask of work.open: set by a row the stream brought that holds a phase
-// nobody holds, and by a nudge; a wait asks work.open only then, so a quiet wait asks nothing.
+// nobody holds (true at start); a wait asks work.open only then, so a quiet wait asks nothing.
 let jobsMaybe = true;
 
 // The data set: the server's spirit.data, which appServer fills from the stream through the desk's translator (box v41).
 // THE CACHE OUTLIVES A RESTART (goal/G41.11; Andy: "the client/receiver of a pushed peerPost stream must assume, no
-// disconnect ever happened"), and since goal/G41.12 it is appServer's: its cache switch (stream.cache, below) keeps the
-// desk's rows in relay-state/process/deskClient/cache-<desk key in hex>.json and reads them back at the start, before
-// any subscribe (box v15: deskClient's own cache file, "its save and restore ... go").
+// disconnect ever happened"), and it is appServer's (goal/G41.12): its cache switch (stream.cache, below) keeps the
+// desk's rows in spirit/state/deskClient/<the desk's node id>.json and reads them back at the start, before any
+// subscribe (box v15: deskClient's own cache file, "its save and restore ... go").
 const dataSet = appServer.data;
 const KEPT_READS = ['item.get', 'item.box', 'item.checks', 'item.chat', 'item.files'];
 // Known by its key (goal/G3.9: Andy may relabel an agent), by its name only where the row names no key.
@@ -279,7 +278,6 @@ function keepWhole(facts) {
 // the desk.
 // NO CAP DROPS NEWS (goal/G41.11; Andy: "why would the deskClient let an agent do anything until the agent has received
 // those notices?"): what came while the agent was busy is all handed over, over as many waits as it takes (handOver).
-// The cap that dropped the oldest past 200 lines, handed or not, is gone.
 // EVERY STORE SHEDS PAST A CAP (Andy's standing rule), SO THIS ONE DOES, BUT ONLY OF NEWS NEVER HANDED: a line handed
 // and not yet read (unread: true, put back by `next`) is the agent's already and is never shed, or a lost answer
 // would lose it. Past NEWS_MAX_BYTES of news never handed, the oldest of it goes, and the next wake says how many went.
@@ -486,7 +484,7 @@ function meantForAgent(row) {
   const held = heldByMe(facts);
   const nobodyHolds = !facts || !facts.with;
   if (l.by === 'andy') {
-    // His line addressed to agents comes only to them, its row naming them (desk.js streamToClients).
+    // His line addressed to agents comes only to them, its row naming them (desk.js sidePublish, appServer.publish).
     // His line addressed to this agent wakes it as its own with no take (the desk bound a nick line's take already; his
     // "all" line needs none, goal/G33.2), and entitles it to answer there (mayChat).
     if (Array.isArray(row.to) && row.to.length) {
@@ -520,12 +518,9 @@ let agentState = 'connected';
 // or already there.
 // BESIDE next, NEVER INSIDE IT (goal/G19.6; Andy, 2026-10-12: "agreed to the whole thing as stated", the box:
 // "deskClient pulls beside the call that hands an agent its lines, never inside it, and never aborts a rebase it did
-// not start."). The pull was a synchronous git pull with a 60 s timeout run while next read the desk, so a slow pull
-// held next past the node's 12 s door and the agent's listener timed out. Now a commit line only queues its hash; the
+// not start."). A pull inside next could hold it past the node's 12 s door, so a commit line only queues its hash; the
 // pulls run one at a time, as child processes, after the line is handed over, and what a pull has to tell joins the
-// lines waiting for the agent, handed over by the next wait (or the one under way). Its place is the desk's as read
-// so far, so handing it over moves the cursor no further back than it stood; a restart before it is handed over
-// loses that one note, never a desk line.
+// lines waiting for the agent, handed over by the next wait (or the one under way).
 // NOT INTO THE AGENT'S OWN REBASE: with a rebase already in progress in the clone it neither pulls nor aborts, and
 // says so; it aborts only a rebase its own pull left behind.
 function gitIn(args, cwd) {
@@ -633,8 +628,7 @@ function wakeWith(trigger) {
   wakers.splice(0).forEach(function (wake) { wake(); });
 }
 // THE WAKE OUTLIVES A RESTART (goal/G41.22; Andy, the box: "every wake not yet read comes back in one, none lost and none
-// twice, also after a node restart"). Found live: after a node restart the ear handed old lines back one per wake, and
-// lines a wake carried while nobody read it were lost, as both lived in this process alone. So the wake handed and not
+// twice, also after a node restart"). The wake handed and not
 // yet read (its key and lines) and the triggers waiting are kept in this server's settings as they change, and read back
 // at start: the next wait, naming the key the agent last read, hands them as it would have. Bounded like an answer: a
 // kept wake past WAKE_KEPT_BYTES keeps its newest lines.
@@ -727,8 +721,8 @@ function handOver(to, t0) {
   const rulesBefore = new Set(rulesHanded);
   // THE RULES NEVER COST THE WAKE ITS LINES (goal/G41.2). Andy: "WHAT ABOUT THE FUCKING WAKE-UP MANAGEMENT in
   // deskClient?", and "the deskClient is already supposed to have every fucking applicable rule in it's cache". The
-  // lines are taken off the queue above, so an answer later than the node's wait (12 s) lost them: a new rule's text was
-  // asked of the desk, over the relay, at 5 to 10 s each on 2026-10-27. The rules come from the stream now (rulesOfWake).
+  // lines are taken off the queue above, so an answer later than the node's wait (12 s) would lose them: the rules come
+  // from the stream (rulesOfWake), and nothing is asked of the desk for them.
   return rulesOfWake(to, lines).then(function (rules) {
     rulesHanded.forEach(function (tag) { if (!rulesBefore.has(tag)) flight.rules.push(tag); });
     const room = function (l) { return Buffer.byteLength(JSON.stringify({ lines: lines.concat([l]), more: true, key: flight.key }), 'utf8') <= ANSWER_ROOM; };
@@ -812,8 +806,10 @@ function mayChat(to, verb, args) {
 // best first, cut in bytes to one answer (probabilityBucket), so a row an earlier search brought is found again
 // without the desk holding it in its answer. With no words the desk's answer is passed on as it came. Kept in memory
 // for the life of this process, as the desk's pushes are.
-// ONE ANSWER IS WHAT appServer LETS LEAVE (goal/G41.3, found landing it): limits.ANSWER_MAX, measured on the whole body.
-// PLAINTEXT_MAX let the kept rows of 49 lookups come back at once, 8436 bytes, refused app-answer-too-large.
+// DISCREPANCY WITH ANDY's RULES: goal/G41.28, Andy: "a probability search of a dataBase table must ALWAYS search the
+// whole bloody ROW, as it is served through a single-row \"get\", using a probabilityStringObjectMatch." (quoted in
+// desk.js). This ranking matches only the string fields of a kept row's label (flat, below), not the whole row.
+// ONE ANSWER IS WHAT appServer LETS LEAVE (goal/G41.3): limits.ANSWER_MAX, measured on the whole body.
 const SEARCH_ROOM = limits.ANSWER_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
 const searchKept = new Map();
 function searchCached(name, args, got) {
@@ -847,9 +843,9 @@ const server = appServer.serve({
   // (appServer.js), so a big desk read is not escaped once more past the travel limit. Andy: "4. a MAX_PAYLOAD pop
   // is serious."
   'desk': {
-    // {name, json}: the desk verb's name and its arguments as JSON. The argument was verb until goal/G30.6, when calls
-    // went flat on /api/spirit and a verb argument collided with the name of the call (Andy, 2026-10-20: "yes").
-    // kept (goal/G41.11) may be left out: {name, json} is every other caller's ask, as before.
+    // {name, json}: the desk verb's name and its arguments as JSON; name, not verb, which would collide with the name of
+    // the call on /api/spirit (goal/G30.6, Andy, 2026-10-20: "yes").
+    // kept (goal/G41.11) may be left out: {name, json} is every other caller's ask.
     request: { name: '', json: '', kept: false }, reply: {},
     accepts: function (x) {
       if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
@@ -1020,8 +1016,8 @@ const server = appServer.serve({
       return { cleared: true, status: agentState };
     },
   },
-  // changed, the desk's nudge (goal/G3.5), WENT WITH goal/G33.7 (the approved verb list: "nothing sends it since the
-  // push"): the stream's own rows wake a wait.
+  // No changed verb (goal/G33.7, the approved verb list: "nothing sends it since the push"): the stream's own rows wake
+  // a wait.
   // THE STATISTICS. Each label is one record as JSON; the walk is ours (newest first), the text ranks each record by
   // its verb and outcome (goal/G29.21, probabilityStringObjectMatch), newest first among equals; the cut and `more`
   // are the probability bucket's. The record is bounded (historyMax), so every row is weighed.
@@ -1042,9 +1038,9 @@ const server = appServer.serve({
     },
   },
   // THE CACHE DUMP (goal/G41.11). Andy: "a cache-dump to to a fixed file  name in relay-state/process/deskClient/
-  // <fixedFileName>.json". Owner-only like every verb here: the cache as it stands, saved now, to its own file in
-  // relay-state/process/deskClient/ and nowhere else; it takes no path, so a caller cannot name one. Since goal/G41.12
-  // that file is appServer's cache of the desk (cache-<desk key in hex>.json), the one the cache is read back from.
+  // <fixedFileName>.json". Owner-only like every verb here: the cache as it stands, saved now, to appServer's cache file
+  // of the desk (goal/G41.12), spirit/state/deskClient/<the desk's node id>.json (goal/G43.8), the one the cache is read
+  // back from, and nowhere else; it takes no path, so a caller cannot name one.
   'cache.dump': {
     request: {}, reply: { file: '', bytes: 0 },
     handler: function (a, caller) {
@@ -1056,7 +1052,7 @@ const server = appServer.serve({
       return { file: saved[0].file, bytes: saved[0].bytes };
     },
   },
-// What a peer needs granted here (apiAuth/G1.10): the desk's node, the one verb it nudges with.
+// What a peer needs granted here: the desk's node, streamListener alone (deskClientBundles.json, goal/G41.24).
 //
 // ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
 // register the node and the relay load. appServer puts "deskClient: " in
@@ -1075,7 +1071,7 @@ const server = appServer.serve({
   'signed-off': { status: 409, text: 'this agent is signed off' },
 } });
 
-// SUBSCRIBED TO THE DESK (goal/G33.8): appServer's client half (js/appServer.js server.subscribe): the desk setDesk
+// SUBSCRIBED TO THE DESK (goal/G33.8): appServer's client half (spirit/appServer.js server.subscribe): the desk setDesk
 // named, from the start and whenever setDesk names one, as family deskClient of the desk's family.
 // WITH THE POSITION IT HOLDS (goal/G41.11; Andy: "(if it restarts or similar) it calls the "subscribe/(connect)" verb do
 // desk, (re-use that verb) with the position number as argument"): since goal/G41.12 appServer's own, the desk's run
@@ -1091,8 +1087,9 @@ function subscribeDesk(key) {
 // A QUIET STREAM IS SUBSCRIBED AGAIN, WITH ITS POSITION (goal/G41.12). Andy: "the client after getting nothing for a
 // while must resubscribe witha position real soon....", "resubscribe must ALSO FAIL SUPER-FAST, then wait for 10
 // soconds", and "just 10 SECONDS, NO POINT IN STAGGERING": QUIET_MS after the last row heard, and as long after the last
-// subscribe asked, it subscribes again with the newest change it heard; a subscribe that fails fast (appServer) is asked
-// again QUIET_MS later, every time the same. The desk hands what changed after the position, so nothing is lost.
+// subscribe asked, it subscribes again with its position (appServer's run and the number of the last row it took); a
+// subscribe that fails fast (appServer) is asked again QUIET_MS later, every time the same. The desk's stream hands what
+// came after the position, or pushes in full, so nothing is lost.
 const QUIET_MS = 10000;
 setInterval(function resubscribeQuiet() {
   const d = getSetting.get('desk');
@@ -1128,7 +1125,7 @@ function ignored(root, rel) {
 }
 // THE NODE'S OWN WATCHER COMPONENT (goal/G40.3). Andy: "you hand-rolled shit again!", "use that chokidar component then
 // on the whole repo.", and "you may as well add to the filename in the status (changed, deleted, added)". chokidar, as
-// the node's fs-watcher job uses it (js/jobs.js), on the whole checkout; the status word is the path and what happened
+// the node's fs-watcher job uses it (spirit/jobs.js), on the whole checkout; the status word is the path and what happened
 // to it, which the desk keeps as the file's name and that word.
 const WHAT = { add: 'added', change: 'changed', unlink: 'deleted' };
 // ONLY FILES OF THE PRODUCT TREE (goal/G41.2; Andy: "updates only for files in the product tree."): each status is a

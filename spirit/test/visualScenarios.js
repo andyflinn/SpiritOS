@@ -25,11 +25,9 @@ const test = require('./testSupport.js');
 const DIR = path.join(__dirname, 'visual');
 const SUITES = __dirname;
 
-// The vocabulary lives in scenario.js, with the builders that read it.
-// It was duplicated here, and a field list kept in two places is a field
-// list that agrees with itself until the day it matters: a scenario would
-// have passed this check and then been half-ignored by whichever builder
-// had not been told about the new field.
+// The vocabulary lives in scenario.js, with the builders that read it,
+// and only there: a field list kept in two places agrees with itself
+// until a builder half-ignores a field the other list knows.
 const scenario = require('./scenario');
 
 test.startTest('Visual scenarios — readable, and still true');

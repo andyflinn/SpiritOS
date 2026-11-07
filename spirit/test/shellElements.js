@@ -1,28 +1,19 @@
 'use strict';
 
-// goal/G2.12: the shell's element factories move out of the shell program into spirit/run/spirit/element/elements.js,
-// still handed to apps as api.ui.elements. Red on today's tree.
-//   RULING (Andy, 2026-10-02, verbatim, under goal/G2): "i want them to be available in the interface object that
-//   the shell passes to apps, as tools to build their interfaces, as element-factories." ... "the shell-elements
-//   are better of being in 'spirit/run/spirit/element/' since they should be UI-component-factories supplied in the
-//   interface passed to shell-apps during mount." — then "yes." to the move as an item.
-//   In the tree: createIconSelector (js/client/shell.js:762), createContactSelector (:915), createAppServerSelector
-//   (:963), createApiBranchSelector (:1002), closed over shell.js's helpers and handed out at shell.js:1634 as
-//   api.ui.elements; index.html loads /spirit/client/shell.js last (index.html:1366). No spirit/element/ folder exists.
-// AMENDED, the same day (Andy, verbatim, on the one elements.js the first build made): "why all in one?" — no
-// good reason, said back — "i can guarantee you: there will be many". So one file per element.
-// The contract the builder follows (the shape in goal/G2.12's box):
-//   1. One file per element in spirit/run/spirit/element/: iconSelector.js, contactSelector.js, appServerSelector.js,
-//      apiBranchSelector.js. Each defines its one factory and adds it to window.spirit.elements (created by
-//      whichever loads first), on the globals every shell script has (spirit, window.spirit.iconIndex,
-//      window.spirit.apiTreeIndex, document) and nothing inside shell.js or another element's closure; the
-//      api-branch selector reaches the app-server one through window.spirit.elements. elements.js is gone.
-//   2. index.html loads the four before /spirit/client/shell.js, appServerSelector.js before apiBranchSelector.js,
-//      and no longer loads elements.js.
-//   3. shell.js defines none of the four and hands spirit.elements.createXSelector under api.ui.elements — the api
-//      an app sees is unchanged.
-//   4. Loaded together the four expose four functions, and a contact selector still works as a control (root.value,
-//      one bubbling change on the root).
+// goal/G2.12 and goal/G2.14: the shell's element factories, one file per element, handed to apps as api.ui.elements.
+//   RULING (Andy, 2026-10-02, under goal/G2): "the shell-elements are better of being in 'spirit/run/spirit/element/'
+//   since they should be UI-component-factories supplied in the interface passed to shell-apps during mount.", and on
+//   one file for all: "i can guarantee you: there will be many". So one file per element.
+// What this suite asserts:
+//   1. spirit/run/spirit/element/ holds iconSelector.js, contactSelector.js, appServerSelector.js and
+//      apiBranchSelector.js, each defining its one factory and adding it to window.spirit.elements; no elements.js.
+//   2. index.html loads the four before /spirit/client/shell.js, appServerSelector.js before apiBranchSelector.js.
+//   3. shell.js defines none of the four and hands each under api.ui.elements as shellElements.createXSelector.
+//   4. Loaded with the probability modules and shell/shared/js/listSearch.js, the four expose four functions, and a
+//      contact selector works as a control (root.value, one bubbling change on the root).
+// IT READS WHAT THE TREE NO LONGER HAS: none of the four files, nor shell/shared/js/listSearch.js, exists. The
+// selectors are in spirit/run/spirit/element/search/ (icon.js, contact.js, api.js, branch.js), and shell.js hands
+// them as api.ui.elements.iconSelector, contactSelector, appServerSelector, apiFamilySelector. So it fails.
 
 const fs = require('fs');
 const path = require('path');
@@ -30,7 +21,7 @@ const vm = require('vm');
 const test = require('./testSupport.js');
 const spirit = require('../run/spirit/kernel.js');
 
-// The split was ruled after G2.12 closed on the one-file build; it is goal/G2.14's.
+// The one-file-per-element split is goal/G2.14's.
 const OWED = 'OWED by goal/G2.14: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DIR = path.join(RUN, 'spirit', 'element');

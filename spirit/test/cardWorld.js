@@ -3,9 +3,8 @@
 // spirit/test/cardWorld.js
 // TWO NODES AND A RELAY, WITH AN EMPTY CONTACT BOOK — the card fixture.
 //
-// EXTRACTED, NOT COPIED, on the day a second suite needed it. cardFetch.js
-// built it and said so: "Extract when a SECOND suite needs the empty-book
-// shape, not before." cardRotation.js is that suite.
+// Shared by cardFetch.js and cardRotation.js, the suites that need the
+// empty-book shape.
 //
 // NOT A SUITE. It asserts nothing; it builds the world and hands it over.
 // What makes it worth sharing is what it does NOT do: it plants no seal
@@ -25,13 +24,11 @@ const contacts = require('../run/spirit/contacts');
 
 // ── WHAT COUNTS AS "SENT" IS WHAT REACHED THE TRANSPORT ─────────────
 //
-// An earlier draft of this suite counted asks and hunted plaintext in the
-// node's own traffic log, and C7 went red on a payload that HAD NEVER
-// BEEN SENT: a post refused for a missing key is still recorded locally,
-// in clear, with `outcome: 'refused', code: 'no-cipher-key'` — the log
-// keeps payloads deliberately (trafficLog.js:14-17) and it is a record of
-// what this node did, not of what left it. Measured rather than assumed:
-// with the key absent the transport was called ZERO times.
+// Not the node's own traffic log: a post refused for a missing key is
+// still recorded there, in clear, with `outcome: 'refused', code:
+// 'no-cipher-key'` — the log keeps payloads deliberately (trafficLog.js,
+// PAYLOAD-AGNOSTIC) and it is a record of what this node did, not of what
+// left it. With the key absent the transport is called ZERO times.
 //
 // So the relay records `wire` — every body handed to it — and that is the
 // only surface these assertions read. A local log cannot make a suite
@@ -93,11 +90,11 @@ function nodeFor(name, relay) {
   const traffic = trafficLog.createTrafficLog({ rootDir: home });
   const P = peerPost.createPeerPost({
     rootDir: home, request: relay.request, waitMs: 800, traffic: traffic,
-    sealKeyFor: function (toKey) {                       // server.js:1281-6
+    sealKeyFor: function (toKey) {                       // server.js's sealKeyFor, its contact-row half
       const row = contacts.byPublicKey(home, toKey);
       return (row && contacts.sealKeyOf(row)) || '';
     },
-    // As server.js's keepCard since goal/G40.11: the card goes on that key's row of the one table, made when there is none.
+    // As server.js's keepCard (goal/G40.11): the card goes on that key's row of the one table, made when there is none.
     keepCard: function (toKey, cardText) {
       return contacts.setCard(home, toKey, cardText);
     },

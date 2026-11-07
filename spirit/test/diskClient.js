@@ -8,9 +8,8 @@
 //
 // The cheap measurement that proves it (NODE-AND-RELAY: first we only
 // measure cheap measurements): two relays, one holding 10,000 members and
-// one holding 10, built in this process. Until cycle 3 createRelay read the
-// whole roll into a map, and the big one would sit megabytes heavier. Now
-// the difference in JS heap must be noise.
+// one holding 10, built in this process. createRelay reads no roll into a
+// map, so the difference in JS heap must be noise.
 //
 // In-process rather than two spawned relays reading their owner reports:
 // the report's heapUsed is this same number taken from a process whose
@@ -19,8 +18,8 @@
 //
 // And the properties that make the heap flat without making the relay
 // wrong: search answers from the connected members' rows in RAM and reads
-// nothing off disc (since 2026-09-19 — it walked all 10,000 by cursor
-// before), and an unknown sender is refused by one keyed read, never a scan.
+// nothing off disc, and an unknown sender is refused by one keyed read,
+// never a scan.
 
 const os = require('os');
 const fs = require('fs');
@@ -39,8 +38,8 @@ const gc = vm.runInNewContext('gc');
 
 const BIG = 10000;
 const SMALL = 10;
-// Half a megabyte. Holding these 10,000 rows in a map, as relay.js did
-// before cycle 3, measured about 2.1 MB (2026-09-19) — four times this.
+// Half a megabyte. Holding these 10,000 rows in a map measured about
+// 2.1 MB (2026-09-19) — four times this.
 const MARGIN = 512 * 1024;
 
 function heap() {
@@ -166,12 +165,9 @@ async function run() {
 
   // Andy (2026-09-19): "Search should respond with active/online members
   // only. A node can reconcile with its contact list to conclude that a
-  // contact is offline." Until then this section asserted the opposite —
-  // "search still sees all of them", a ranked walk of all 10,000 rows off
-  // disc, and that a request arriving mid-walk was answered first. The
-  // walk is over the connected members' rows in RAM now (relay.js
-  // walkRoll), bounded by the connection allowance, so neither the disc
-  // walk nor its stall exists to measure.
+  // contact is offline." The walk is over the connected members' rows in
+  // RAM (relay.js, walkRoll), bounded by the connection allowance; nobody
+  // here holds a stream, so a search finds nobody.
   const answer = lastReply(B.bag, B.owner, B.box.relayPublicKey());
   if (answer && answer.ok && (answer.matches || []).length === 0) {
     test.check(BIG + ' members on the roll and none connected: a search finds nobody');
@@ -225,9 +221,8 @@ async function run() {
   test.subHeading('An unknown sender is refused');
 
   const stranger = auth.generateIdentity('stranger');
-  // A MEMBER VERB (rename). The `partners` verb these asked went with
-  // partnering (goal/G22.6); a stranger is still refused anything but the
-  // relay's public services.
+  // A MEMBER VERB (rename): a stranger is refused anything but the relay's
+  // public services.
   const refused = post(B.box, stranger, B.box.relayPublicKey(), { rename: { label: 'real' } });
   if (refused && refused.ok === false) {
     test.check('a key with no row is refused (' + refused.status + ')');
@@ -267,8 +262,8 @@ async function run() {
 
   test.subHeading('Every operation is by key');
 
-  // Andy, cycle 3: labels serve search and display only. Before cycle 3 a
-  // sender or a target could be named by label and resolved by a scan.
+  // Andy, cycle 3: labels serve search and display only; a sender or a
+  // target named by label is refused, never resolved by a scan.
   const asLabel = post(B.box, { publicKey: 'real', privateKey: big.real.privateKey },
     B.box.relayPublicKey(), { rename: { label: 'real' } });
   if (asLabel && asLabel.ok === false) {

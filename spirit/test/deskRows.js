@@ -2,16 +2,15 @@
 
 // desk/G3.10: a press repaints every row it changes.
 //   Andy: "i just pressed the Go-All button in the list. and the G3.9 go button didn't disarm."
-// The contract the builder follows (claude-windows's and wsl-claude's picks, agreed under desk/G3.10):
-//   Server  every write publishes one object: {change, verb, item, listed, ...} as before, plus `rows`, the facts of
-//           every row of the item's goal whose facts that write changed (the item itself included, the goal row too).
-//           One object, so the page never paints half a press (and no publish coalescing exists to lean on,
-//           fileTransfer goal/G1.4).
-//   SINCE goal/G33.4 ("the desk pushes each changed sub-element ... separately") each changed row is its own publish,
-//           every publish of one press under its one change number; `rows` went.
-//   List    replaces each row in `rows` (a row with listed false leaves). It keeps the last change number it saw; a
-//           publish whose change is not the last + 1 means one was dropped, so it asks items.search once.
-//   Dialog  the same gap asks item.get once.
+// What the code does now:
+//   Server  every row a write changed is its own publish, all of one press under its one change number (goal/G33.4:
+//           "the desk pushes each changed sub-element ... separately"); the item itself and the goal row included.
+//   List    (spirit/run/shell/desk/desk.js) repaints each published row; a row with listed false leaves.
+//   Dialog  (spirit/run/shell/deskDetails/deskDetails.js) repaints the open item from its published row.
+// STALE: the List and Dialog parts below still assert that a jump in change numbers asks items.search / item.get once.
+// Since goal/G41.2 a jump in change numbers is no gap and asks nothing (desk.js and deskDetails.js say so at their
+// publish handlers); a real gap is a reconnect, after which the page forgets what it kept. The List mount also needs a
+// spirit.require this fake page does not give it.
 
 const fs = require('fs');
 const os = require('os');
@@ -101,12 +100,12 @@ callback.listen(0, '127.0.0.1', async function () {
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('desk', pipe);
-  // Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+  // Writers are CALLERS (apiAuth/G1.13, spirit/test/deskWriterKey.js): the desk takes the writer from the caller.
 const CW = { key: 'MCowBQYDK2VwAyEAdeskRowsTestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskRowsTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskRowsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
-  // The world (goal/G33.7: session.set went), seeded before the desk starts: A blocks B; B blocks the goal.
+  // The world, seeded before the desk starts (goal/G33.7): A blocks B; B blocks the goal.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Round' }, items: [
     { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100.2'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
@@ -123,7 +122,7 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
     published.length = 0;
     await call('press', { id: 'goal/G100', what: 'go-all' }, ANDY);
     await sleep(400);
-    // goal/G33.4: every row the press changed is its own publish, all under the press's change number.
+    // Every row the press changed is its own publish, all under the press's change number (goal/G33.4).
     const goAll = published.slice();
     const rowsOf = function (list) { const by = {}; list.forEach(function (o) { if (o && o.item && o.item.id) by[o.item.id] = o.item; }); return by; };
     const r1 = rowsOf(goAll);
@@ -145,7 +144,7 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
       { key: 'goal/G100.1', label: JSON.stringify(lab({ id: 'goal/G100.1', title: 'Alpha', buttons: ['go'] })) },
       { key: 'goal/G100.2', label: JSON.stringify(lab({ id: 'goal/G100.2', title: 'Beta', buttons: ['go'] })) }], more: false } });
     await settled();
-    // goal/G33.4: one publish per row, all of one press under one change number.
+    // One publish per row, all of one press under one change number (goal/G33.4).
     [lab({ id: 'goal/G100', title: 'Round', goal: '' }), lab({ id: 'goal/G100.1', title: 'Alpha', status: 'running' }), lab({ id: 'goal/G100.2', title: 'Beta', status: 'running' })].forEach(function (row) {
       list.publish({ change: 10, verb: 'press', item: row, listed: true });
     });

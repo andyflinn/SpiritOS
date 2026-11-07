@@ -7,16 +7,16 @@
 // changeFile, never a create or a delete, and the tree is as it was (the shell then redraws no Files tree for it).
 //
 // It watches rootDir recursively, and rootDir is where the running node
-// keeps its own state: Relay Chat polls its inbox every two seconds and
-// every poll rewrites spirit/state/who.json. Each of those woke the
-// watcher, which rescanned and emitted a job-updated carrying a file
-// list byte-identical to the one before it — the payload holds name,
-// parentPath, fullPath, relativePath and kind, no mtime and no size, so
-// rewriting a file that already existed changes nothing in it.
+// keeps its own state, which its processes rewrite often. What the tree
+// holds of a file is name, parentPath, fullPath, relativePath and kind,
+// no mtime and no size, so rewriting a file that already existed changes
+// nothing in it.
 //
-// Everything downstream repainted on that: the Files tree rebuilt its
-// markup every two seconds, and a <details> built fresh is a <details>
-// that is closed, so folders collapsed under the user while they read.
+// Were a rewrite news, everything downstream would repaint on it: the
+// Files tree rebuilds its markup, and a <details> built fresh is a
+// <details> that is closed, so folders collapse under the user while they
+// read. (The rewritten file here is a state/who.json, a name from when a
+// polling app rewrote it every two seconds; any state file would do.)
 //
 // A real watcher on real files, because the thing under test is
 // fs.watch's behaviour as much as the code around it. It runs in its own
@@ -82,8 +82,8 @@ settle().then(function () {
 
   updates = 0;
   treeMoves = 0;
-  // What Relay Chat does every two seconds: the same file, written
-  // again, with content of its own that this list cannot see.
+  // A state file rewritten: the same file, written again, with content of
+  // its own that this list cannot see.
   fs.writeFileSync(path.join(home, 'state', 'who.json'), '[{"publicKey":"KEY","seen":2}]');
   return settle();
 }).then(function () {

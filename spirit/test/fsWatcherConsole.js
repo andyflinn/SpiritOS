@@ -1,24 +1,24 @@
 'use strict';
 
-// goal/G2.16: the fs-watcher's console shows the file events from the live stream. Red on today's tree.
+// goal/G2.16: the fs-watcher's console shows the file events from the live stream.
+// THIS SUITE NO LONGER RUNS: it mounts jobsDetails.js with kernel.js as the spirit object, and jobsDetails.js asks
+// spirit.cacheManager, which is spirit.js's (it throws "spirit.cacheManager is not a function"). Nor does the fs-watcher
+// publish data.lastEvent any more: jobs.js's watcher publishes data.command (commandOf(op, path, time, stat)) per change.
 //   RULING (Andy, 2026-10-02, verbatim, under goal/G2.11): "the only part that interests me is the data part. jobs
 //   don't need to write logs, logs should be consumed by an outside reader, if i want that. the watcher only needs
 //   to stream data", then "let's just make the consoles display the usefull data, the data in the live stream,
 //   we'll do it one item per job. let's make an item for fs-watcher."
-//   In the tree: fs-watcher sends, on each change it settles (jobs.js:183), a job-updated whose data is the whole
-//   file list plus lastEvent {eventType, filename}; it never writes a log line, so jobsDetails' console (which draws
-//   job.log) shows only "job created" while the Files app, reading data.files, moves.
-// The contract the builder follows (the shape in goal/G2.16's box; the arguable parts fixed here by name):
+// The contract (the shape in goal/G2.16's box; the arguable parts fixed here by name):
 //   1. NOTHING IN THE NODE CHANGES. The page does the work: jobsDetails, opened on the fs-watcher job, draws one
 //      console line per job event that carries a new data.lastEvent — the time (the job's updatedAt), the event
 //      (eventType) and the path (filename) — in arrival order, newest last.
 //   2. A repeated event is not a line: an update carrying the same lastEvent and the same updatedAt adds nothing.
-//   3. THE WINDOW IS ON THE PAGE, 256 LINES since goal/G29.14 (1,000 under goal/G2.16). Older lines fall off the top; nothing asks the node for history.
+//   3. THE WINDOW IS ON THE PAGE, 256 LINES (goal/G29.14). Older lines fall off the top; nothing asks the node for history.
 //      The window is kept for the page's life, so closing the dialog and opening it again on the same job shows
 //      the lines heard meanwhile.
 //   4. Escaped: a path is shown as text, never as markup.
-//   5. SUPERSEDED by goal/G29.14 (never stdout): another job shows what it publishes, never what it printed.
-// Not asserted, the builder's: the exact time format, the line's wording, sticky scroll.
+//   5. goal/G29.14: another job shows what it publishes, never what it printed.
+// Not asserted: the exact time format, the line's wording, sticky scroll.
 
 const fs = require('fs');
 const path = require('path');

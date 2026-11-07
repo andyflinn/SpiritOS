@@ -1,24 +1,15 @@
 'use strict';
 
 // spirit/test/deskFresh.js
-// DESK KEEPS ITS DISPLAYS FRESH BY ITSELF — slim/G1.6, written FIRST, red on
-// today's code (claude-windows tests, wsl-claude builds).
+// DESK KEEPS ITS DISPLAYS FRESH BY ITSELF — slim/G1.6.
 //
-//   Andy, after an explanation kept a line its item had dropped: "no use if
-//   these displays go stale", "is this programatically or do i have to rely
-//   on agents to remember?", "File this as an item, it affect us all
-//   immediately." His go on the wording: when an item's text changes, Desk
-//   marks its explanation stale and asks for a fresh one; when an item's
-//   status changes, Desk puts an update request on the items it blocks and
-//   that block it. And: "the blocked and blocks lists link to the
-//   respective items."
+//   Andy: "the blocked and blocks lists link to the respective items."
 //
-// THE CONTRACT (agreed with wsl-claude before the build):
-//   The desk server's fresh.get (S1, S2) was retired by desk/G2.1 for items.search.
-//   DESK (shell/desk/desk.js) marks no row 'update?' (L1),
-//   and its blocks and waits-on cells are links, data-open="<id>", as the
-//   dialog's lists are (L2).
-//   The dialog's half (D1 to D7) went with desk/G2.7 (spirit/test/deskDialog.js).
+// WHAT IS ASSERTED: DESK's List (shell/desk/desk.js) marks no row 'update?' (L1), and its blocks and waits-on cells
+// are links, data-open="<id>", as the dialog's lists are (L2). The desk server's fresh.get (S1, S2) was retired by
+// desk/G2.1 for items.search; the dialog's half (D1 to D7) is spirit/test/deskDialog.js's.
+// STALE: shell/desk/desk.js loads its parts through window.spirit.require (deskNeed) at mount, and load() below hands
+// it a window without one, so the mount throws "no spirit.require on this page" before L1.
 
 const fs = require('fs');
 const os = require('os');
@@ -72,7 +63,7 @@ test.startTest('slim/G1.6: Desk keeps its displays fresh by itself');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
 
 (async function () {
-  // THE DESK SERVER'S HALF (S1, S2) WENT WITH fresh.get: desk/G2.1 retired it for items.search
+  // The desk server's half (S1, S2) has no fresh.get to test: desk/G2.1 retired it for items.search
   // (spirit/test/deskState.js).
 
   // ── THE LIST ────────────────────────────────────────────────────────
@@ -110,8 +101,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
   } else test.fail(OWED + 'Gamma row ' + JSON.stringify(rowOf('Gamma').replace(/\s+/g, ' ').slice(0, 160)) +
     ' | Alpha row ' + JSON.stringify(rowOf('Alpha').replace(/\s+/g, ' ').slice(0, 160)));
 
-  // THE DIALOG'S HALF (D1 to D7: stale explanations, folds and acks, the Go decision handed over) went with
-  // desk/G2.7: one box, and the buttons are the desk server's (spirit/test/deskDialog.js).
+  // The dialog's half (D1 to D7) is spirit/test/deskDialog.js's: one box, and the buttons are the desk server's
+  // (desk/G2.7).
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   setTimeout(function () {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }

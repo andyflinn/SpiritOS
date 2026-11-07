@@ -1,21 +1,20 @@
 'use strict';
 
 // goal/G3.3: deskClient, a server on an agent's own node, passes one ask to Andy's desk and counts it.
-// Red on today's tree: there is no such server.
 //   Andy, 2026-10-02 (goal/G3.1): "i am ready to accept completely alternative design, if it achieves what todays
 //   deskAgentEar does, and statistics are kept somewhere you can access them easily.", then "accepted." to the proposal
 //   of a deskClient server, "you both chose verb name and all", and "a guarantee that no core modules are touched.
-//   this is a agent/user appclication". His Go on this item is his press in Desk.
-// The contract the builder follows (the box of goal/G3.3; the names are the agents', as he left them to us):
+//   this is a agent/user appclication".
+// The contract (the box of goal/G3.3; the names are the agents', as he left them to us):
 //   1. process/js/deskClient/deskClient.js and its manifest deskClient.json, kind server, operated by the node,
 //      as desk.json is: a node that includes it starts it.
-//   2. Its verbs: desk {name, json} (the argument was verb until goal/G30.6) -> {json}; setDesk {key} -> {set}; history.search {text} -> the standard
-//      search answer {items: [{key, label}], more}.
+//   2. Its verbs asserted here: desk {name, json} -> the desk's answer itself (goal/G4.19); setDesk {key} -> {set};
+//      history.search {text} -> the standard search answer {items: [{key, label}], more}.
 //   3. setDesk tells it the key of the node that runs Andy's desk. Only the node's owner may: a member is refused
 //      not-owner. Until it is set, desk is refused no-such-peer and nothing is posted.
 //   4. desk sends that ONE ask to the desk's node through the kernel (peerPost: one peer.post on its own node,
-//      app api, body {desk: {verb: args}}) and answers {json}: what came back, as JSON text. A refusal of the
-//      desk's ({ok: false, code}) comes back the same way: it is the desk's answer.
+//      app api, body {desk: {verb: args}}) and answers what came back. A refusal of the desk's ({ok: false, code})
+//      comes back the same way: it is the desk's answer.
 //   5. Every ask is recorded in its own state, <state>/deskClient.db, and history.search answers the records
 //      newest first, each label the JSON of {at, verb, ms, outcome, bytes, port}: when, the desk verb, the
 //      milliseconds it took, how it ended (answered: the desk said yes; refused: the desk said no), the bytes

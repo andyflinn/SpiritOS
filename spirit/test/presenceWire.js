@@ -1,14 +1,9 @@
 'use strict';
 
 // spirit/test/presenceWire.js
-// The only suite in this repo that uses a real socket.
-//
-// Everything else drives objects in process, which is right for logic and
-// is why the harness is fast. It is also why nothing here had ever proved
-// that the relay's SSE route and the node's hand-rolled reader agree —
-// two halves written a day apart, each tested against a fake of the
-// other, which is exactly how two mocks come to agree about a protocol
-// neither implements (design/cleanup/2026-09-11-live-surface-tests.md).
+// The relay's SSE route and the node's reader, proved against each other
+// over a real socket rather than each against a fake of the other
+// (design/cleanup/2026-09-11-live-surface-tests.md).
 //
 // So: a real relay process, real HTTP, real sockets, real socket deaths.
 //
@@ -36,15 +31,9 @@ const rollOf = require('./rollOf');
 // A port is CHOSEN AT RUN TIME, not written down, and the server is
 // waited for rather than slept at.
 //
-// It was a constant, 65435, and that is inside Windows' ephemeral range
-// (49152-65535) — where any outbound connection this machine makes can
-// take it first. It did: a browser's socket to Google held it, the spawn
-// failed to bind, `stdio: 'ignore'` swallowed the error, and the suite
-// reported five product failures for a server that was never listening.
-//
-// A test that can fail for a reason it does not name is worse than no
-// test, because it teaches you to distrust the ones that are telling the
-// truth.
+// The candidates sit below Windows' ephemeral range (49152-65535), where
+// any outbound connection this machine makes could take a port first, and
+// a relay that never comes up on any of them is named as that.
 let PORT = 0;
 let BASE = '';
 let BASE_KEY = '';
@@ -78,10 +67,8 @@ function buildRelayHome() {
   fs.cpSync(path.join(home, 'spirit', 'state'), path.join(runDir, 'spirit', 'state'), { recursive: true });
 
   // A COPY IS A TREE, NOT A REPOSITORY, so it cannot answer "which
-  // commit am I" by itself — it reported `unknown`, honestly, until this
-  // line. Stamped the way labMaster stamps its fakes, which is what lets
-  // the assertion below be the strong one: not "it said a commit" but
-  // "it is running the commit I am testing".
+  // commit am I" by itself; it is stamped with this checkout's commit the
+  // way labMaster stamps its fakes.
   const mine = buildStamp.fromGit(path.join(__dirname, '..', '..'));
   if (mine) buildStamp.write(runDir, mine);
 
@@ -92,17 +79,13 @@ function buildRelayHome() {
 // real probe over real HTTP, the real claimedUrls discovery, the real
 // openTo with its real signature and headers.
 //
-// An earlier version of this helper opened the stream by hand, and it
-// looked equivalent. It was not: openTo is where onClose is wired to
-// forget(), so hand-rolling it silently dropped the one behaviour the
-// last section of this suite exists to check, and the suite reported a
-// product bug that was really a gap in itself. A test that reimplements
-// the thing it is testing agrees with its own version and nothing else.
+// Not by hand: openTo is where onClose is wired to forget(), which the
+// last section of this suite checks.
 function nodeFor(id) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-wire-node-'));
   auth.saveIdentity(home, id);
-  // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by
-  // relay key: the relay under test, under the key its door answered.
+  // The node's relay list is node.db's relays table, keyed by relay key
+  // (goal/G19.15): the relay under test, under the key its door answered.
   relayKeys.list(home, BASE, 'wire', BASE_KEY);
   // AND THE SEAT. The claims above are made straight on the relay object
   // (`box.claim(...)`), which is the RELAY's half of a bind. A node keeps
@@ -120,8 +103,8 @@ function nodeFor(id) {
   // hub.relayRequest rather than a stand-in, and the pairing is the same
   // kind of claim: a reply arriving on the stream has to settle in the
   // table the post opened, so the two halves are paired here as peerPost
-  // pairs them. Since goal/G19.14 the node builds this inside its peerPost
-  // (holdStreams); the suite builds the component itself, which a test may.
+  // pairs them. The node builds this inside its peerPost (holdStreams,
+  // goal/G19.14); the suite builds the component itself, which a test may.
   // AND THE PIN, as server.js wires it: the stream header names the relay
   // it is for (goal/G16.12), so the node must know that relay's key before
   // the relay will open its stream.
@@ -145,7 +128,7 @@ function nodeFor(id) {
 
 // Every exit path closes the streams and kills the child. A suite that
 // leaves a socket open does not fail — it HANGS, and the runner reports
-// the last green line before it (natterBind.js, 618 seconds).
+// the last green line before it.
 function cleanup() {
   opened.forEach(function (s) { try { s.close(); } catch (e) { /* gone */ } });
   if (child) { try { child.kill(); } catch (e) { /* gone */ } child = null; }
@@ -157,14 +140,11 @@ test.startTest('Presence wire — a real socket, end to end');
 // TWELVE SECONDS, NOT FIVE, AND THE CHILD'S OWN WORDS IF IT NEVER COMES.
 //
 // The restart below reuses the port the killed relay had, so this waits
-// out both the old socket's lingering and the new process's start. Five
-// seconds was enough for one suite alone and not for the same suite in a
-// full harness run, where the box is doing a hundred other things —
-// cycle 9, where two more suites tipped it over.
+// out both the old socket's lingering and the new process's start, on a
+// box busy with a full harness run.
 //
-// `stdio: 'ignore'` hid the only thing worth knowing when it fails: a
-// relay that REFUSED to start looked exactly like a port that was held.
-// The output is kept and printed with the failure instead.
+// The child's output is kept and printed with the failure, so a relay
+// that REFUSED to start does not look like a port that was held.
 async function awaitRelay(runDir, port) {
   const said = [];
   const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'],
@@ -229,18 +209,17 @@ async function run() {
   await sleep(1000);
   let seen = A.P.table();
 
-  // No roster since cycle 3 (0012 widened). The node seeds itself and the
-  // relay from the pinned relay key when the stream opens, so seeing
-  // itself green is the proof that a real socket opened.
+  // No roster is served (0012). The node seeds itself and the relay from
+  // the pinned relay key when the stream opens, so seeing itself green is
+  // the proof that a real socket opened.
   if (seen[lab.bert.publicKey] && seen[lab.bert.publicKey].present === true) {
     test.check('the stream opens over a real socket and the node sees itself');
   } else {
     test.fail('stream never opened: ' + JSON.stringify(seen));
   }
 
-  // This asserted the opposite until cycle 3: that the roster carried the
-  // absent owner, marked absent. The relay names nobody who has not moved;
-  // an absent member is simply not asserted present.
+  // The relay names nobody who has not moved; an absent member is simply
+  // not asserted present.
   if (seen[lab.house.publicKey] !== true) {
     test.check('and an absent member is not asserted present — no roll is served');
   } else {
@@ -297,17 +276,12 @@ async function run() {
   //   re-establish connections? does this run properly through
   //   sseClient?" ... "the relay re-attachment is vital."
   //
-  // It was not. Three things were separately true and the gap between
-  // them was invisible: sseClient's retry loop is asserted against a fake
-  // fetch (presenceNode.js), a relay keeping its state across a restart is
-  // asserted with real processes (labPersistence.js), and the suite you
-  // are reading proved a relay DYING without a node dying with it — then
-  // stopped. Nothing had ever watched a node re-attach to a relay that
-  // came back.
+  // This watches a node re-attach to a relay that came back. A relay
+  // keeping its state across a restart is labPersistence.js's.
   //
   // WHY IT IS VITAL RATHER THAN TIDY. `bash/update` restarts a relay every
   // time it takes a tag, so this is a routine Tuesday and not an outage.
-  // And since the partner gate landed, a PARTNERSHIP is two long-lived
+  // And a PARTNERSHIP is two long-lived
   // streams between two machines that both get updated — so a reconnect
   // that silently did not happen would leave a partnership that looks
   // established and carries nothing.
@@ -345,17 +319,15 @@ async function run() {
   // RE-ATTACHED IS NOT THE SAME AS USABLE. A stream that reconnects but
   // whose node never re-enrols is a socket with nothing behind it, which
   // reads as healthy from every angle except asking it something.
-  // ── ASKED OF THE FILE, NOT A ROUTE (2026-09-18) ──────────────────
+  // ── ASKED OF THE FILE, NOT A ROUTE ──────────────────────────────
   //
-  // This read `GET /api/relay/who` and counted the rows. That route was a
-  // public, unsigned read of every member — named a cheat in 0010 and
-  // deleted the next day — and the claim being made here is about the
-  // relay's MEMORY, which is on disk.
+  // There is no public read of the members (0010); the claim being made
+  // here is about the relay's MEMORY, which is on disk.
   //
   // It has to answer as well, or a file on disk proves nothing about a
   // process: a card ask on its one door is what says the box came back up.
   const said = await require('./relayDoor').keyStatus(BASE);
-  // relay.db since cycle 3, read through the store the way suites read
+  // relay.db, read through the store the way suites read
   // the roll (rollOf.js), and closed so the tree can be removed on Windows.
   let rows = [];
   try { rows = rollOf(lab.runDir); } catch (e) { rows = []; }

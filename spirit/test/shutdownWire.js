@@ -8,9 +8,8 @@
 //
 // The pieces were each tested alone — goingAway on fake sinks
 // (presenceStream.js), sseClient reading `retry:` from a fake body
-// (presenceNode.js) — and the EFFECT never was: a real relay process
-// taking a real SIGTERM, with real clients and a real partner on the other
-// end. This is that.
+// (presenceNode.js). This tests the EFFECT: a real relay process taking a
+// real SIGTERM, with real clients and a second relay beside it.
 //
 // LINUX ONLY, AND IT SAYS SO. On Windows `child.kill()` is TerminateProcess:
 // the handler under test never runs, so a pass there would be a pass for
@@ -36,10 +35,8 @@ const relayStore = require('../run/spirit/relayStore');
 const { createRelay } = require('../run/spirit/relay');
 
 const REPO_RUN = path.join(__dirname, '..', 'run');
-// Below 49152, outside Windows' ephemeral range — see partnerWire.js and
-// presenceWire.js:41 for what a port inside it costs. This suite was
-// still green on 65485/65486 when the other three went red, which is
-// luck rather than a difference: the same reservation covers it.
+// Below 49152, outside Windows' ephemeral range — see presenceWire.js for
+// what a port inside it costs.
 const PORTS = [48771, 48772];
 // What relayServer.js's goodbye asks for. The floor sseClient would use
 // without it is FLOOR_MS, so the two cannot be confused.

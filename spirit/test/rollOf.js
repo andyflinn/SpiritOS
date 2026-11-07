@@ -3,14 +3,13 @@
 // spirit/test/rollOf.js
 // WHO IS ON A RELAY'S ROLL, READ OFF ITS DISC — for suites only.
 //
-// Until cycle 3 a suite asked `box.who()` for the whole roll. The relay no
-// longer answers that to anybody (0012 widened: no member list served, by
-// request or by broadcast), and putting it back for tests would leave the
-// forbidden read standing in the product as a temptation. So a suite reads
-// the relay's disc directly — the members table in spirit/state/relay.db —
-// exactly as suites used to read routingTable.json.
+// The relay serves no member list to anybody (0012: no member list served,
+// by request or by broadcast), and a test-only read would leave that
+// forbidden read standing in the product. So a suite reads the relay's disc
+// directly: the members table in <home>/spirit/state/relay.db, through
+// relayStore.open(home).
 //
-// Same shape `who()` answered, sorted by label.
+// Rows of { publicLabel, publicKey, claimedAt }, sorted by label.
 
 const path = require('path');
 

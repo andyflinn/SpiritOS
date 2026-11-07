@@ -16,9 +16,9 @@
 // every seat taken, an owner node that is not running, a relay answering
 // with the wrong key — and the app server is left entirely alone.
 //
-// Written by wsl-claude for cycle 2, under the working agreement: the
-// interface called here is G15's, read from design/shell/PUBLIC-APP-SERVER.md,
-// never from the other half's source.
+// A helper module, not a suite (notASuite.js lists it); nothing in the tree
+// requires it at present. The interface it builds against is G15's, read
+// from design/shell/PUBLIC-APP-SERVER.md.
 //
 // ── WHAT THIS REACHES PAST THE PROTOCOL TO DO, NAMED ────────────────
 //
@@ -162,11 +162,12 @@ async function unclaimedRelay() {
   if (!await require('./relayDoor').awaitRelayDoor(relay.url)) {
     return { ok: false, error: 'the unclaimed relay did not answer on ' + relay.url };
   }
-  // NOT CLAIMED, DELIBERATELY, AND CHECKED. "I did not claim it" is an
-  // absence, and an absence is exactly what a test must not assume: a
-  // recycled node that kept its allow.json would be owned, the world
-  // would be the wrong one, and the assertion built on it would pass or
-  // fail for a reason nobody could see.
+  // NOT CLAIMED, DELIBERATELY, AND MEANT TO BE CHECKED. "I did not claim
+  // it" is an absence, and an absence is exactly what a test must not
+  // assume: a recycled node that kept its owner would be owned, and the
+  // world would be the wrong one. The check asks GET /api/relay/who, which
+  // the relay no longer serves (relayServer.js: the roll was deleted), so
+  // `who` is null and this finds no owner on any relay.
   const who = await fetch(relay.url + '/api/relay/who').then(function (r) { return r.json(); }).catch(function () { return null; });
   const owned = !!(who && who.byName && Object.keys(who.byName).length);
   if (owned) {
@@ -177,11 +178,11 @@ async function unclaimedRelay() {
 
 // ── WORLD 2 — A CLAIMED RELAY, OPTIONALLY FILLED TO THE WALL ────────
 //
-// `members` is how many claims to add AFTER the owner. The owner holds
-// the first seat: a relay is not a relay until it is owned, and the
-// owner's claim is admitted regardless of capacity — `relay.js` exempts
-// the key named in owner.json at both the seat check and the disc
-// check, so the one account that can raise the limit can always get on.
+// `members` is how many claims to add AFTER the owner. The owner has a
+// seat from boot (goal/G30.7), and his claim is accepted regardless of
+// capacity — `relay.js` skips the seat check and the disc check for the
+// owner's claim (the key in owner.json), so the one account that can
+// raise the limit can always get on.
 // A recipe that forgets this sends a stranger one claim past the wall it
 // was meant to stop at.
 async function claimedRelay(opts) {
@@ -219,8 +220,7 @@ async function claimedRelay(opts) {
   // ── AND A RELAY CANNOT BE FILLED QUICKLY FROM ONE ADDRESS ─────────
   //
   // Every claim a suite makes comes from 127.0.0.1, one address. The
-  // per-address claim limit that held them to ten a minute is gone; the
-  // relay's strangers' address table holds them now (goal/G22.6): one
+  // relay's strangers' address table paces them (goal/G22.6): one
   // request a second from one address, the ban doubling if it asks early.
   // relayDoor paces every stranger request past that ban and waits out any
   // ban the relay names — no X-Forwarded-For, no second interface, no
@@ -358,11 +358,10 @@ async function otherRelay() {
 // fixture, they are thrown away with it, and they exist only to be wrong
 // in one named way each.
 //
-// AN APP IS A FOLDER PLUS A SIBLING MANIFEST — `shell/<name>/<name>.json`,
-// which `kernel.js` enforces (MANIFEST_PATTERN) and G15 inherits rather
-// than reinvents. These are built to that shape for the same reason the
-// contract uses it: a fixture that invented its own layout would be
-// testing a boundary nobody ships.
+// AN APP IS A FOLDER PLUS A SIBLING MANIFEST — here
+// `process/js/<name>/<name>.json` beside an index.html, the shape G15
+// uses: a fixture that invented its own layout would be testing a
+// boundary nobody ships.
 function plantApp(rootDir, name, manifest) {
   const dir = path.join(rootDir, 'process', 'js', name);
   fs.mkdirSync(dir, { recursive: true });
@@ -394,16 +393,10 @@ const WRONG_MANIFESTS = {
   'asb-elements-only': { posture: 'strict', surface: ['verb'], utilities: ['elements'] },
 };
 
-// AND THE REAL APP HAS TO BE ON THE BOX, which is the defect this
-// function exists to close. The four G11 worlds ran an app server with
-// `appName: 'starter'` against a fixture root that contained no starter —
-// so the contract came back empty, and every assertion about what the
-// sample does was made about an app that was not there.
-//
-// It was invisible because it looks exactly like the state where the
-// feature is unbuilt. THE CONTROL THAT FOUND IT was planting a manifest
-// this suite wrote itself and requiring the server to show it back: that
-// one WAS read, which proved the reader worked and the cupboard was bare.
+// AND THE REAL APP HAS TO BE ON THE BOX. An app server run with
+// `appName: 'starter'` against a fixture root that holds no starter
+// answers an empty contract, which looks exactly like an unbuilt feature.
+// So this copies spirit/run/process/js/starter into the fixture.
 //
 // Copying the app onto the box is what a deployment does — G12's whole
 // point is that code is replaced and state is not — so this is the real

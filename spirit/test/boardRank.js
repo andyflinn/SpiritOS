@@ -13,9 +13,9 @@
 // MOVES as work lands. If it never moves, the ranking is decoration.
 //
 // NOT A SUITE. Pure: it takes what the tree declares and answers an order
-// and a list of things it could not rank. runAll renders; boardRankSuite
-// asserts. Kept out of runAll.js so the graph can be tested on fixtures
-// instead of eyeballed on a rendered page.
+// and a list of things it could not rank. boardRankSuite.js asserts it;
+// runAll.js does not run it (notASuite.js lists it) and nothing renders it:
+// the board that read it is gone, and what waits on Andy is kept in Desk.
 //
 // ── WHAT IT READS ────────────────────────────────────────────────────
 //
@@ -263,12 +263,9 @@ function proposalGroups(owedList, rulings) {
 
 // ── IDS FOR THE ROWS THAT ARE NOT TO-DOS ─────────────────────────────
 //
-// A row's id is its thread key, and messages carry it as `todo`, which
-// agents.js refuses unless it is ONE area/number pair. The first ids here
-// spelled out their content — 'dependency/puppets/G7>puppets/G6,...',
-// 'question/puppets/G3' — and every one of them failed that rule, so no
-// agent could reply under a dependency or a question. Found by claude-
-// windows building Desk; boardRankSuite now holds the two files to one rule.
+// A row's id is its thread key: ONE area/number pair, 'dependency/<hash>'
+// or 'question/<hash>', never an id that spells out its content
+// ('dependency/puppets/G7>puppets/G6,...').
 //
 // A SHORT HASH OF WHAT THE ROW ASKS: the same tree gives the same id, and
 // a tree that grew is a NEW question with a new id — so an accept pressed

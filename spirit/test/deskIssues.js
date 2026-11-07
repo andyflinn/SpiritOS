@@ -1,25 +1,24 @@
 'use strict';
 
-// goal/G2.1: Desk issues, one item — eight of Andy's notes in his words (the box). Red on today's tree.
+// goal/G2.1: Desk issues, one item — eight of Andy's notes in his words (the box).
 // Note 2 (musings visually separated) is his to judge on sight and carries no assertion here.
-// The contract the builder follows (shapes fixed by this red, argued in goal/G2.1 before building):
-//   1. The box at the top of the dialog folds again: the dialog paints it with a data-fold="item" toggle
-//      and its folded state (ddFolded) survives a repaint, as before desk/G2.7 ("BIG complaint: the text
-//      bubble no longer folds.").
+// The contract (later items replaced some points, as marked):
+//   1. Asked first: the box at the top of the dialog folds ("BIG complaint: the text bubble no longer folds.").
+//      SUPERSEDED BY goal/G30.8: the box fills its panel and does not fold; section 1 asserts that.
 //   3. No red mark on his own lines ("when I'm the originator of a chat entry, no red mark should appear in the
 //      list."). goal/G4.20 point 8 took the star out altogether ("ha ha, the red star has no function anymore.
 //      take it out."), so neither line leaves one: the facts carry no star.
 //   4. The two top lines stay sticky BELOW the app or dialog title bar, not at top 0, so close and back
 //      stay visible ("stay sticky below those title bars").
-//   5. A goal offers Done once every item of it is closed, with no agent claim ("the done button should
-//      appear on the goal as soon as it is no longer blocked").
+//   5. A goal offers Done with no agent claim once its items are done ("the done button should appear on the goal
+//      as soon as it is no longer blocked"; goal/G2.10 and goal/G33.6, below).
 //   6. A brought-back item pops into view with an attention mark: after bring-back the row is listed, its
 //      publish says so, and its facts carry alert: true until he presses seen ("the row should immediately
 //      pop back into visibility, with the attention-grabbing error icon").
 //   7. Desk ignores an older update: a publish whose change is lower than the one shown changes nothing in
 //      the List, and the dialog guards the same ("let desk worry about its problems").
-//   8. Desk's own voice.jsonl writer goes: no voice.jsonl in desk.js, no voice.add verb, no voice.add call
-//      in the Desk app; its replacement (claude/voiceFromDesk.js) lives in the vault, outside this tree.
+//   8. Desk has no voice.jsonl writer: no voice.jsonl in desk.js, no voice.add verb, no voice.add call in the
+//      Desk app.
 
 const fs = require('fs');
 const os = require('os');
@@ -134,8 +133,8 @@ callback.listen(0, '127.0.0.1', async function () {
     else test.fail(OWED + 'star after the agent line ' + starred.star + ', after his own line ' + answered.star);
 
     test.subHeading('5. a goal offers Done once every item is done, no claim needed');
-    // Was "once every item is closed" here; goal/G2.10 moved the line to done (Andy: "the goal should only offer a
-    // done button when all items are done"), and deskGoalDone.js holds the whole rule. SINCE goal/G33.6 it holds in the
+    // goal/G2.10 (Andy: "the goal should only offer a done button when all items are done"); deskGoalDone.js holds
+    // the whole rule. SINCE goal/G33.6 it holds in the
     // List: the desk offers a goal's Done at any time for the detail panel, and the List holds it back while the goal's
     // blocked (its items still open) is not empty. Asserted here as the List reads it: one item done and one open
     // offers nothing; both done offers Done with no claim; closing them keeps it.
@@ -159,8 +158,8 @@ callback.listen(0, '127.0.0.1', async function () {
     await call('press', { id: 'goal/G100.1', what: 'bring-back' }, CW);
     await sleep(400);
     const back = await factsOf('goal/G100.1');
-    // The publish carries the item's facts as an object (desk.js write: out.item = facts(...)), a string only
-    // in older shapes; both are read.
+    // The publish carries the item's facts as an object (desk.js write: out.item = facts(...)); a string is read
+    // too.
     const idOf = function (p) { try { return (typeof p.item === 'string' ? JSON.parse(p.item) : p.item || {}).id || ''; } catch (e) { return ''; } };
     const pub = published.filter(function (p) { return p.verb === 'press' && idOf(p) === 'goal/G100.1'; }).pop() || {};
     if (pub.listed === true && back.alert === true) {

@@ -2,24 +2,15 @@
 // THE ONE `ask`, AND THE ONLY PLACE A PAGE NAMES THE DOOR.
 //
 //   G3, PUBLIC-APP-SERVER.md: "`ask` has one home, and the app server
-//   uses it. Fourteen lines, not `kernel.js` wholesale. Existing copies
-//   are not migrated in this cycle; no fourth is written."
+//   uses it."
 //
-// ── WHY ONE FILE AND NOT A COPY PER APP ─────────────────────────────
+// An ES module: ask(verb, args) posts { call, args } to the node's door,
+// `POST /api/spirit` (server.js), and answers what came back. One file and
+// not a copy per app, so the path is named once.
 //
-// Four copies of this existed by the end of cycle 2, and the fourth was
-// in `shell/starter` — the sample every stranger copies. A fork there does
-// not add one caller, IT TEACHES THE HABIT. That is the worst place a
-// duplicate can sit, and it was written by the agent enforcing the rule.
-//
-// ── THE SAME DOOR ON BOTH HOSTS, WHICH IS WHY ONE FILE CAN WORK ─────
-//
-// The node's own server answers `POST /api/spirit` (`server.js:921`) and
-// so does the app server (`faceServer.js`, the door). An app hosted by the
-// shell and the same app served by a public app server therefore speak to
-// the same path, and this file needs no idea which one it is on. That is
-// the layering claim made good rather than argued: the app contract does
-// not change when the host does.
+// Its one importer in the tree is spirit/run/process/js/starter/starter.html
+// (`import { ask } from './ask.js'`). No server in the tree names ask.js, so
+// nothing serves it at that address today.
 //
 // THE DOOR IS A NAMED CONSTANT and not a literal at the call. One place
 // knows the path, which is the whole point of there being one home.

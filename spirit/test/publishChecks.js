@@ -1,17 +1,18 @@
 'use strict';
 
 // desk/G2.3: publishing. A helper, not a suite: jobCallback.js runs these through its stand-in door
-// (oneDoor.js counts that door once, there). The shell's half is shellPublish.js.
+// (oneDoor.js counts that door once, there).
 // Andy: "the servers should send explicit messages via an appServerFunction, so the ui gets structured
 // information." "it calls with a js object. let the appServer to the work." "no pulling".
-// The contract the builder follows:
-//   jobs.update takes one small app object, `app`, beside status and log; updateJob keeps it on the job
-//   and emits 'job-updated' with it.
-//   appServer.publish(object) reports it through spirit.core.jobs.report. It caps size (a 1 MB object never
-//   arrives). It does not cap rate: fileTransfer goal/G1.4 removed desk/G2.3's coalescing, so every object
-//   published arrives. Order is not promised: "in order" was the agents' addition, never ruled, and desk orders its
-//   own updates by its change number (Andy: "let desk worry about its problems").
+// What it checks:
+//   updateJob keeps an `app` object on the job and emits 'job-updated' with it.
+//   fixtures/publishFixture.js publishes through appServer.spirit.core.jobs.publish, and the checks expect it on the
+//   job as `app`: a small object arrives, a 1 MB object does not, a burst of 200 arrives whole (fileTransfer
+//   goal/G1.4 removed desk/G2.3's coalescing). Order is not promised: "in order" was the agents' addition, never
+//   ruled (Andy: "let desk worry about its problems").
 //   appServer's announce is published the same way, not written to stdout.
+// The node no longer works this way: appServer.js exports no `spirit` (its one publish is appServer.publish(row),
+// out through spirit.events.publish, goal/G33.8), so the fixture's publish throws and these checks fail.
 
 const os = require('os');
 const path = require('path');

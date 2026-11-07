@@ -8,8 +8,8 @@
 //   relay broadcast all new info all the time." (0019, widened)
 //
 // A rename and a claim go out on the `route` event every node already
-// merges, carrying the whole row; they stop at the partnership, and never
-// go back to the member they are about.
+// merges, carrying the whole row; they reach only keys that hold a stream
+// on this relay, and never go back to the member they are about.
 
 const test = require('./testSupport.js');
 const { sealFor } = require('./openReply');
@@ -48,8 +48,8 @@ const relayKey = box.relayPublicKey();
 const bert = L.peer('bert');
 const john = L.peer('john');
 
-// A KEY THIS RELAY DOES NOT HOLD. It was a partner relay until partnering
-// went (Andy's decision, goal/G22.6); a stranger may ask the relay's door
+// A KEY THIS RELAY DOES NOT HOLD (no partner relays since goal/G22.6, Andy's
+// decision): a stranger may ask the relay's door
 // for its card and a claim, and may post to a member, but holds no stream —
 // so a broadcast has no way to reach it, checked below as a refusal.
 const partner = auth.generateIdentity('a-stranger');

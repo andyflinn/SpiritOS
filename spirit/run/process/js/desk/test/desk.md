@@ -1,7 +1,7 @@
 # process/js/desk/desk.js
 
-The desk server: Andy's goals and items, their boxes, chats, checks and file lists, written as records and published
-to his pages and to every subscribed deskClient. This spec holds what goal/G41.11 requires of it; the rest of the
+The desk server: Andy's goals and items, their boxes, chats, checks and file lists, written into its keyed tables
+(desk.db) and published to his pages and to every subscribed deskClient. This spec holds what goal/G41.11 requires of it; the rest of the
 module's behaviour is added here as its test folder grows (box v10: "The desk system scripts get their own test
 folders").
 
@@ -28,13 +28,11 @@ folders").
   below red offers nothing.
 
 - **Every push ends with its end entry**, `{ run, n, full: true, end: true }` (spirit/appServer.js, the stream
-  protocol of goal/G41.12, which replaced `{ bootstrapped: true }`), once, after its last row (Q5: the push has landed
-  whole).
-- **Gone** (goal/G41.22): *the position*, a subscribe with `since` = a desk change number, went with the one stream
-  protocol (74ac4c65, goal/G41.12: "the desk's bundled() and its change-number catch-up" removed; a position is the
-  publisher's `(run, since)` now). *A subscribe does not expire* went with 3ad44a6b (Andy: "take the 3 seconds out,
-  appServer.js calls peerPost in the most basic way"): a delivery left unanswered drops its subscriber, which subscribes
-  again when it is back. Their checks went with them.
+  protocol of goal/G41.12), once, after its last row (Q5: the push has landed whole).
+- **Not required, so not checked**: a catch-up from a desk change number (a subscribe's position is the publisher's
+  `(run, since)`, goal/G41.12), and a subscriber kept after a failed delivery (Andy: "take the 3 seconds out,
+  appServer.js calls peerPost in the most basic way": a delivery left unanswered drops its subscriber, which subscribes
+  again when it is back).
 
 ## Requirements (goal/G41.22, box v22)
 
@@ -46,7 +44,7 @@ folders").
   - Andy's alone: an agent calling it is refused `not-owner` (desk.js `ownerOnly`, as `item.rename` and his presses
     are), and nothing is pushed.
   - Called by Andy, it pushes the current goal whole, the goal's row and each of its items' as `goal.whole` facts rows
-    (desk.js `pushGoalWhole`, as at start and at make-current), to every subscribed deskClient; no other goal's.
+    (desk.js `pushGoalReplace`), to every subscribed deskClient; no other goal's.
   - Agreed in the box: "it moves each agent's read pointer to the newest change, never back to the start". On the wire:
     every entry it sends a subscriber is numbered at or past the newest that subscriber had taken.
   - Agreed in the box: "in that same wake hands the agent every line of Andy's addressed to it that nobody took yet:
@@ -69,22 +67,19 @@ folders").
 
 ### Owed, with the reason
 
-- **The replace mark of pushgoal.** Agreed: "pushgoal replaces each agent's copy of the current goal whole, no merge:
-  nothing stale survives." No mark on the wire says "replace" today: since goal/G41.15 a landed full push is placed
-  row by row through the family's keep and drops nothing (spirit/appServer.js `landed`), and `pushGoalWhole` sends plain
-  rows. Which mark tells a deskClient to drop its copy of the goal (a full push scoped to the goal, a row of its own, an
-  entry flag) is the build's shape to name, and a check written now would guess it. Nothing stale surviving is seen in
-  the deskClient (process/js/deskClient/test/deskClient.js), not here: an item gone from the goal, a stale box, gone
-  from its cache after the push.
+- **The replace mark of pushgoal is not checked here.** Agreed: "pushgoal replaces each agent's copy of the current
+  goal whole, no merge: nothing stale survives." desk.js `pushGoalReplace` marks every row of the push `replace: true`
+  with its `goal`, under one change, and ends it with a `replace`/`end` row; the desk family's `data.js` and
+  `family/cacheRules.js` drop what the push did not carry. That nothing stale survives is seen in the deskClient
+  (process/js/deskClient/test/deskClient.js): an item gone from the goal, a stale box, gone from its cache after the push.
 - **Its deskClient pointer.** The wire half is checked here; the deskClient's own read pointer (its place in
   `deskClient.db`) moving to the newest change is the deskClient's test's.
 - **The "push Goal" button** on the current goal and its items in the detail panel is the desk page's, not the server's.
 
-## The pretend node, brought up to date (goal/G41.22)
+## The pretend node
 
-It read `{ verb }` at the door and each bundle element as a row; since goal/G41.15 the door is `{ call, args }`, and
-since goal/G41.12 a bundle is entries `{ run, n, row }`. It reads both now: the same checks, which had gone red on the
-format alone.
+It reads the door's `{ call, args }` (goal/G41.15) and each delivery as a bundle of entries `{ run, n, row }`
+(goal/G41.12).
 
 ## What its test must try to break
 

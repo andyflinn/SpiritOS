@@ -9,15 +9,16 @@
 // ── THE APP IS DRIVEN AGAINST THE REAL NODE SIDE ─────────────────────
 //
 // `api.verb` here does not answer a fixture: it calls nodeCard against a
-// real identity.json in a temp directory, which is what the three loopback
-// verbs do. So "typing 200 characters and pressing Save leaves 128 on the
-// screen" is proven by the code that trims rather than by a stub somebody
-// remembered to make trim.
+// real identity.json in a temp directory, which is what the loopback
+// verbs do. So a refusal on the screen is the node's own rule (nodeCard,
+// fieldRules) refusing, not a stub.
 //
-// That is worth the extra ten lines because the trim is the one behaviour
-// here that is a SURPRISE — the node shortens prose rather than refusing
-// it — and a fixture agreeing with the app about a surprise proves nothing
-// at all.
+// THE SCREEN SECTIONS (2 to 5, and 8) DRIVE AN Info THAT IS GONE. Today's
+// spirit/run/shell/info/info.js loads its parts through spirit.require
+// (changeMyLabel, changeMyDescription, joinForm, faceForm, rowForm), which
+// this suite's stand-in spirit does not have; it shows no key (goal/G40.10)
+// and no relay table, and pushes no rename to the relays (goal/G41.6). The
+// ids, the table and the fan-out asserted below are the old screen's.
 
 const os = require('os');
 const fs = require('fs');
@@ -200,9 +201,8 @@ function theRules() {
     test.fail('fresh: ' + JSON.stringify(fresh));
   }
 
-  // EMPTY IS A LEGAL DESCRIPTION and an illegal name. (The device
-  // enrolment that once refused an empty name was removed by goal/G16.2;
-  // nodeCard.setName still refuses one.)
+  // EMPTY IS A LEGAL DESCRIPTION and an illegal name: nodeCard.setName
+  // refuses one.
   const cleared = nodeCard.setDescription(home, '');
   if (cleared.ok) {
     test.check('a description may be cleared — not having written one is an ordinary state');
@@ -293,10 +293,9 @@ function theScreen() {
       test.fail('loaded: ' + el(app, 'info-name').value + ' / ' + el(app, 'info-description').value);
     }
 
-    // THE KEY IS SHOWN AND IS NOT A FIELD. It is the identity and cannot
-    // be edited, so §1 says do not build a control for it — but a screen
-    // about your identity that hides the only part that IS the identity
-    // is coy about the wrong half.
+    // THE KEY AT THE FOOT: the old screen's. Info shows no key since
+    // goal/G40.10 (Andy: "remove ANY indication of keys from all user
+    // interfaces, like that footer on the info app").
     if (el(app, 'info-key').textContent === nodeCard.read(home).publicKey) {
       test.check('with the key at the foot, where there is nothing to do to it');
     } else {
@@ -422,9 +421,8 @@ function theScreen() {
 //   which 'relay' contains which 'label' of mine. i want this app to
 //   distribute my label to ALL relays I'm a member of."
 //
-// The screen could pass every check above while doing nothing at all on
-// the wire, because the local write was the whole of it. This is the half
-// that makes it a distribution.
+// The fan-out asserted here is gone from Info (goal/G41.6): a relay's name
+// for this node is Natter's to show and change, one relay at a time.
 
 function theFanOut() {
   test.subHeading('One name, sent to every relay this node has a seat on');
@@ -714,11 +712,11 @@ function theFirstDescription() {
 
   // ── THE BOOT HOOK FINDS A KEY AT BOOT ───────────────────────────────
   //
-  // Since goal/G22.5: a node's identity exists from its first boot, made
-  // by relayAuth.js on its first load and so before server.js reaches its
+  // goal/G22.5: a node's identity exists from its first boot, made by
+  // relayAuth.js on its first load and so before server.js reaches its
   // boot hook, and the hook describes the node on that first boot. Proven
-  // here as the sequence it now is: the identity relayAuth's first load
-  // makes (planted in the root, plantIdentity.js) is described at once.
+  // here as that sequence: the identity relayAuth's first load makes
+  // (planted in the root, plantIdentity.js) is described at once.
   const late = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-late-'));
   require('./plantIdentity.js').ensureAt(late);
   if (/^this node described for the first time /.test((require('../run/spirit/serveCommon').ensureFirstRun(late, { kind: 'node' }) || {}).description)) {
@@ -728,26 +726,15 @@ function theFirstDescription() {
   }
   fs.rmSync(late, { recursive: true, force: true });
 
-  // Since goal/G22.5: the check that a directory with no identity.json in it
-  // is left alone is gone with the branch it tested. A node's own root
-  // always holds its identity, so nodeCard no longer handles one without.
+  // A node's own root always holds its identity (goal/G22.5), so nodeCard
+  // handles no root without one.
 }
 
 // ── 7. A NODE WITH NO RELAY LIST AT ALL ──────────────────────────────
 //
-//   Andy: "for node boot. if relays.json doesn't exist, initialize with
-//   spirit.andyflinn.com only (where we auto-initialize description as
-//   well)."
-//
-// The second half of untracking relays.json. It used to ship in git, so
-// every `git reset --hard` reverted a node's own list — the complaint the
-// lab change came from — and untracking it left a fresh clone with no
-// relays at all.
-//
-// The two are not the same thing and the distinction is the whole point:
-// a list carried by git is code and comes back on every update; a list
-// written by the node is the node's own state, written once into a gap
-// and never touched again.
+// A node's relay list is its own state, node.db's relays table
+// (ownerBadge.js), never shipped in git. Boot seeds the kept relay,
+// noderoutes.net, by key into it (ensureRelays) and touches nothing else.
 function theFirstRelay() {
   test.subHeading('A node with no relay list writes itself one, once');
 
@@ -760,8 +747,8 @@ function theFirstRelay() {
   }
 
   const first = ownerBadge.ensureRelays(home);
-  // ONE since goal/G19.15 (Andy, 2026-10-12: "we only list noderoutes.net,
-  // spirit.andyflinn.com is OURS."), superseding goal/G16.3's two.
+  // ONE (goal/G19.15; Andy, 2026-10-12: "we only list noderoutes.net,
+  // spirit.andyflinn.com is OURS.").
   if (first.length === 1 && first[0].url === ownerBadge.KEPT_RELAY.url) {
     test.check('and boot gives it noderoutes.net, and only that');
   } else {
@@ -779,12 +766,11 @@ function theFirstRelay() {
   // ── AND NEVER AGAIN ─────────────────────────────────────────────────
   //
   // This runs on EVERY boot. A list somebody edited must survive a
-  // restart, or it would be a git-carried file wearing different clothes
-  // — which is the exact thing it was written to stop being.
+  // restart.
   //
-  // Since goal/G19.15 the list is node.db's relays table, keyed by relay
-  // key, and boot asserts the seed BY KEY, creating a row only when none
-  // exists (Andy, 2026-10-12). So the edit is made the way a node makes it
+  // The list is node.db's relays table, keyed by relay key, and boot
+  // asserts the seed BY KEY, creating a row only when none exists
+  // (goal/G19.15). So the edit is made the way a node makes it
   // — a relay claimed, another claimed and then removed — and a removed
   // relay stays removed because its row, and its pin, stay.
   ownerBadge.addRelay(home, 'https://dropped.example', 'gone', 'RELAYKEY-dropped');
@@ -797,9 +783,8 @@ function theFirstRelay() {
     test.fail('overwritten: ' + JSON.stringify(again));
   }
 
-  // AN EMPTY LIST STOOD HERE, "a state, not a gap", left empty by boot.
-  // goal/G16.3 made noderoutes.net unremovable and goal/G19.15 asserts it
-  // by key at every boot, so a list can no longer be empty at all.
+  // noderoutes.net is unremovable (goal/G16.3) and asserted by key at
+  // every boot (goal/G19.15), so a list is never empty.
 
   try { require('../run/spirit/nodeStore.js').open(home).close(); } catch (e) { /* not open */ }
   try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* busy */ }

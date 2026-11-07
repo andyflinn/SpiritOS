@@ -1,16 +1,13 @@
 'use strict';
 
 // goal/G24.9: Andy deletes an item that no longer serves him from its item details, without switching the goal into
-// design mode. Red on today's tree; claude-windows wrote it from G24.9's box.
+// design mode.
 //
-// WHAT IS TRUE TODAY: buttons() in desk.js offers delete only while the item's goal is in design mode (goal/G9.7), and
-// item.delete is refused whenever the button is not offered. So out of design mode nothing can be deleted.
-//
-// THE SHAPE ASSERTED (G24.9's box): delete is offered on any item that is not a goal, whatever the goal's design mode,
-// except while an agent holds a phase on it (red, build or verify), and except on an item claimed done and not yet
-// closed. The button and the verb share one rule. Delete erases nothing (goal/G9.7): the item is closed and left out,
-// keeps its box, checks and chat, blocks nothing, and Include Closed finds it. The armed button in the dialog exists
-// already (spirit/test/deskDelete.js covers it); only the server's rule changes.
+// THE SHAPE ASSERTED: buttons() in desk.js offers delete on any item that is not a goal, whatever the goal's design
+// mode, except while an agent holds a phase on it (red, build or verify), and except on an item claimed done and not
+// yet closed; item.delete is refused not-offered whenever the button is not offered, so the button and the verb share
+// one rule. Delete erases nothing (goal/G9.7): the item is closed and left out, keeps its box, checks and chat, blocks
+// nothing, and Include Closed finds it. The armed button in the dialog is spirit/test/deskDelete.js's.
 
 const fs = require('fs');
 const os = require('os');
@@ -56,7 +53,7 @@ async function listed(includeClosed) {
 
 async function server() {
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
-  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  // There is no session.set verb (goal/G33.7): the world is seeded before the desk starts, which takes it in at start.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Deletes out of design' }, items: [
     { id: 'goal/G100.1', title: 'No longer serves', blocks: ['goal/G100', 'goal/G100.5'] },
     { id: 'goal/G100.2', title: 'Red held', blocks: ['goal/G100'], code: true },

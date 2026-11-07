@@ -4,7 +4,7 @@
 //   Andy, 2026-09-30: "would have been diagnosed in an instant had the shell rejected the package", "and downstream
 //   who else didn't do their job. think!", "and , like i said, this needs a test".
 // The contract:
-//   spirit.core.jobs.publish (goal/G29.15: moved from appServer), given an object over its cap, publishes instead a small {dropped: {bytes, max}}, so every page
+//   spirit.core.jobs.publish, given an object over its cap, publishes instead a small {dropped: {bytes, max}}, so every page
 //   hears that an update was lost; the List asks items.search again and an open dialog reloads its item.
 //   A refusal reaches his screen by its name, size and limit: the dialog and the List show the code, and for a size
 //   refusal its bytes and max, never only "did not answer".

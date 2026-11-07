@@ -3,15 +3,15 @@
 // spirit/test/boardPost.js
 // WHETHER THE LEAD BOX POSTS THE BOARD TO ANDY'S NODE, AND WHY NOT.
 //
-// Decided in design/shell/AGENTS-UI.md (73fffcd): the lead posts
+// Decided in design/shell/AGENTS-UI.md: the lead was to post
 // SCOREBOARD.json to Andy's node as an agents packet of kind 'board',
-// ONLY WHEN IT CHANGED, and REFUSES LOUDLY when it is too big — a board
+// ONLY WHEN IT CHANGED, and REFUSE LOUDLY when it is too big — a board
 // that does not fit is never truncated, because a Desk showing part of a
 // list looks exactly like a Desk showing all of it.
 //
-// NOT A SUITE. Pure: no socket, no file. runAll reads the last posted
-// hash, asks this, sends, and writes the hash only after a send that
-// landed. boardPostSuite.js holds it to account.
+// NOT A SUITE. Pure: no socket, no file. NOTHING CALLS IT NOW: there is no
+// SCOREBOARD.json and no agents app, and runAll.js skips both this file
+// and boardPostSuite.js, the suite that holds decide() to account.
 //
 // `envelopeText` is what actually travels — the agents envelope around the
 // board, stringified — and it is measured with limits.fitsSealed, not by

@@ -6,12 +6,10 @@
 //   Andy: "then you need only one suite that makes every api call." And,
 //   on this shape, 2026-09-27: "go."
 //
-// The list of verbs is READ FROM server.js's claim blocks, never typed
-// here. That is the point: serverSurface.js keeps a hand list, and its own
-// completeness check matched only `'x.y': function`, so proxy.allow and
-// proxy.remove (claimed through proxyVerb(...)) were never called and it
-// stayed green. A verb added tomorrow is called here tomorrow, by
-// construction.
+// The list of verbs is READ FROM server.js's claim blocks (each
+// loopbackVerbs.mount family and its keys), never typed here: a hand list
+// can miss a verb and stay green. A verb added tomorrow is called here
+// tomorrow, by construction.
 //
 // Parsed rather than asked of the running node, for serverSurface's reason:
 // there is no verb that lists verbs, and adding one to satisfy a test would
@@ -35,9 +33,9 @@ test.startTest('Every verb the node claims is called, and answers');
 
 const BOOT_TIMEOUT_MS = 10000;
 const root = setupRelayFakes('everyVerb').andy;
-// No real relay: relays.json is tracked, so the fakes carry the production
-// list (serverSurface.js explains the cost of forgetting this).
-// goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+// No real relay: a relays.json naming nowhere. relayKeys.js deletes it at
+// first read and copies only the urls it holds a pin for (none here), so the
+// node never reaches a production relay.
 fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
 fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'),
   JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
@@ -53,8 +51,8 @@ try { fs.symlinkSync(path.join(root, 'relay-state'), path.join(root, 'shell', 'd
 catch (e) { linked = false; }
 
 const serverSrc = fs.readFileSync(path.join(root, 'spirit', 'server.js'), 'utf8');
-// doorContract.js's pattern: every claim line, whatever its value is. SINCE goal/G30.4 a family is mounted with its
-// verbs bare (loopbackVerbs.mount('fs', dir, {'stat': ...})), and the table names them fs.stat: so each mount block
+// doorContract.js's pattern: every claim line, whatever its value is. A family is mounted with its verbs bare
+// (loopbackVerbs.mount('fs', dir, {'stat': ...}), goal/G30.4), and the table names them fs.stat: so each mount block
 // gives its family, and each of its four-space keys a verb of that family.
 const VERBS = [];
 for (const block of serverSrc.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)',[\s\S]*?\n {2}\}, \{ wire:/g)) {
@@ -67,8 +65,8 @@ for (const block of serverSrc.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)'
 // ratchet, not a verdict: each verb here answers with an array today. When
 // one becomes search + get it must LEAVE this list, and a new verb that
 // answers with an array must be ADDED to it knowingly. Either way this
-// suite goes red until the list says what is true.
-// peer.search left it with goal/G30.19: the verb is gone, its question contact.search's tier two.
+// suite goes red until the list says what is true. It is empty: no verb
+// answers with a list.
 const LISTS_TODAY = [];
 
 function freePort() {
@@ -137,7 +135,6 @@ let said = '';
 (async function () {
   // ── THE LIST IS READ, AND IT IS THE REAL ONE ────────────────────────
   if (VERBS.length >= 30 && VERBS.indexOf('node.card') !== -1 && VERBS.indexOf('net.fetch') !== -1) {
-    // proxy.allow and proxy.remove, the two a hand list once missed, went with goal/G29.20.
     test.check(VERBS.length + ' verbs read from server.js\'s claim blocks, node.card and net.fetch among them');
   } else {
     test.fail('only ' + VERBS.length + ' verbs parsed out of server.js: the claim shape moved, and nothing below '
@@ -269,8 +266,6 @@ let said = '';
       test.fail('jobs.get on the watcher: ' + (got ? got.status + ', ' + got.bytes + ' bytes' : 'no watcher found in jobs.search'));
     }
   }
-  // proxy.close and proxy.open STOOD HERE: the proxy verbs went with goal/G29.20.
-
   // ── LISTS, UNTIL THEY ARE SEARCHES ──────────────────────────────────
   const lists = VERBS.filter(function (v) { return carriesList(answers[v].text); }).sort();
   const gone = LISTS_TODAY.filter(function (v) { return lists.indexOf(v) === -1; });
@@ -286,10 +281,9 @@ let said = '';
 
   // ── EVERY ANSWER FITS THE CAP, once the cap exists (puppets/G1) ─────
   //
-  // G1 is declared in puppetsPending.js. Until limits.js exports
-  // RESPONSE_MAX there is no number to hold answers to, and this section
-  // says so rather than inventing one. Measured at the time of writing, on
-  // a fresh node: jobs.list answered 42,570 bytes, over PLAINTEXT_MAX.
+  // G1 is declared in puppetsPending.js. limits.js exports no RESPONSE_MAX,
+  // so there is no number to hold answers to, and this section checks
+  // nothing until it does rather than inventing one.
   if (typeof limits.RESPONSE_MAX === 'number') {
     const over = VERBS.filter(function (v) { return answers[v].bytes > limits.RESPONSE_MAX; });
     if (!over.length) {

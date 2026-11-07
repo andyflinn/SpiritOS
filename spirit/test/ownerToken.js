@@ -7,14 +7,11 @@
 //   other than ssh" — a relay with members but no owner "refuse[s] to
 //   start, forcing the owner to ssh and investigate."
 //
-// THE OWNER'S FIRST-CLAIM TOKEN STOOD HERE: install.js, which minted an
-// owner invite over SSH, asserted to print it once, replace it on a second
-// run, and refuse an owned or broken relay. goal/G16.8 deleted install.js
-// and the owner invite with it. Andy: "the invite path to ownership MUST be
-// gone. it is a security gap, from the time of install until the time of
-// first claim." The owner is now written by bash/install-units from an
-// OWNER_KEY (ownerAtInstall.js asserts that); what is left here is the
-// relay's own refusal to start, which did not change.
+// (allow.json then; spirit/state/owner.json now.) No owner invite exists
+// (goal/G16.8; Andy: "the invite path to ownership MUST be gone. it is a
+// security gap, from the time of install until the time of first claim.");
+// the owner is written at install from an OWNER_KEY, which ownerAtInstall.js
+// asserts. This suite holds the relay's own refusal to start.
 
 const os = require('os');
 const fs = require('fs');

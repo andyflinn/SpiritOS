@@ -1,25 +1,25 @@
 'use strict';
 
-// apiAuth/G1.2: the decision sequence, apiAuth's gate in apiDoor, red on today's code.
+// apiAuth/G1.2: the decision sequence, apiAuth's gate in apiDoor.
 //   Andy: "apiAuth will enforce an active consent scheme: denial is the absence of authorization", "authorization may
 //   happen on an app basis, (ID<>app) or a verb basis (ID<>app.verb)", "apiAuth will strip the app.DEBUG verb the
 //   result of returned api trees, including all branches of the tree that don't have a match for the calling ID",
 //   "even an api-call will be rejected", "A refusal result in an error", "Where: apiDoor", "no special treatment for
 //   you guys!" (AGENTS is a verb like any other), DEPENDENCIES owner-only "like DEBUG", and on the caller, agreed:
 //   "the caller's key is handed in with every call, and a call from your own machine counts as you."
-// The contract the builder follows (G1.2's box, steps 0-6):
+// The contract apiDoor.js keeps (G1.2's box, steps 0-6):
 //   - createApiDoor(opts) takes opts.auth = { pathsOf(key) }: the paths granted to that key, each 'app' or
 //     'app.verb' (G1.3's table, read through G1.4's module); it throws when the store cannot be read.
 //   - answer(servers, ask, caller): caller { owner: true } for loopback and puppeteering (the flat door passes it),
 //     else { key, auth } for a member. The owner is never gated.
-//   0. A stranger gets no reply (unchanged: appApiDoor.js T6). A member writing as andy stays refused (unchanged).
+//   0. A stranger gets no reply (appApiDoor.js T6). A member writing as andy is refused.
 //   2. A member asking DEBUG or DEPENDENCIES on any server is refused not-owner, granted or not, and nothing is asked.
 //   4. A member's 'api' is the tree stripped to its grants: a granted app keeps its verbs but DEBUG and DEPENDENCIES;
 //      a granted verb keeps that verb alone; a member with no grant is refused not-granted, not handed {}.
 //   5. A member's call runs when its app or its app.verb is granted, exactly (no prefix, no case folding); otherwise
 //      refused not-granted, and the server is never asked. A granted app's missing verb is the server's to answer.
 //   6. pathsOf throwing: refused store-unavailable, nothing asked. The gate fails closed.
-//   appApiDoor.js builds its doors with no auth; once this lands its fakes grant 'alpha', or it reads as denied.
+//   appApiDoor.js's fakes grant 'alpha', or its member reads as denied.
 
 const test = require('./testSupport.js');
 const packet = require('../run/spirit/client/packet');

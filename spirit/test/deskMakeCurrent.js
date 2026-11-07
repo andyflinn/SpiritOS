@@ -1,21 +1,17 @@
 'use strict';
 
-// goal/G2.19: a press makes any open goal the current one. Red on today's tree; wsl-claude wrote it from G2.19's
-// box and does not build it.
+// goal/G2.19: a press makes any open goal the current one.
 //   Andy, 2026-10-06, under goal/G2.18: "i want to switch between goals at will, so the goals detail should give me
 //   re-open and and on any open goal i want a button \"make current goal\"", opening it after he reopened goal/G2
 //   by hand and an agent had to write a session to make it current again.
 //
-// WHAT IS TRUE TODAY (G2.19's box, read in the tree at 9ece24a8): the current goal moves for one reason only, a
-// session.set (process/js/desk/desk.js, the session.set branch of the walk: `s.current = gid`). Reopen takes a
-// closed goal back onto the List and leaves the current goal where it was. So switching goals needs an agent to
-// write a session, which is the thing he asked to stop doing.
+// Reopen takes a closed goal back onto the List and leaves the current goal where it was.
 //
 // THE SHAPE (G2.19's box): a press value, `make-current`, his alone (OWNER_PRESSES), taken on an open goal and
 // refused anywhere else; it sets the current goal and nothing else about either goal. The goal's `buttons` offers
 // it while the goal is open and not already current, so the dialog draws it as it draws every button
-// (desk/G2.7: "Buttons come from item.buttons only"). The dialog's own button is the builder's to add and is not
-// asserted here; what the page needs is the button in `buttons`.
+// (desk/G2.7: "Buttons come from item.buttons only"). The dialog's own button is not asserted here; what the page
+// needs is the button in `buttons`.
 
 const fs = require('fs');
 const os = require('os');
@@ -62,7 +58,7 @@ async function currentGoal() {
 }
 
 (async function () {
-  // TWO GOALS, the second written last, so it is the current one by today's only rule.
+  // TWO GOALS, the second written last, so it is the current one before any press.
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
   // two sessions are seeded before the desk starts, and the desk takes them in at start, the last one current.
   test.seedDesk(state, [
@@ -117,11 +113,9 @@ async function currentGoal() {
   if (took(afterReopen) && await currentGoal() === 'goal/G101') test.check('reopened, it takes make-current and becomes current');
   else test.fail(OWED + 'after Reopen make-current answered ' + afterReopen.status + ' ' + short(afterReopen.body) + '; current ' + short(await currentGoal()));
 
-  // GROWN IN THE VERIFY (goal/G5.7: "after an all-green build it's the verifier that extends the red"). The build
-  // rewrote currentGoal.json on a make-current and claude-windows said so itself, the red never having asked for it;
-  // removing that rewrite left this suite wholly green, so it was behaviour nobody held. It matters because the file
-  // names the current goal and carries THAT goal's items alone (desk.js writeGoalFile), so the agents and the brain
-  // would go on reading the goal he had just left.
+  // A make-current rewrites currentGoal.json (goal/G5.7: "after an all-green build it's the verifier that extends the
+  // red"). It matters because the file names the current goal and carries THAT goal's items alone (desk.js
+  // writeGoalFile), so without it the agents and the brain would go on reading the goal he had just left.
   test.subHeading('5. the switch rewrites currentGoal.json, which every other reader goes by');
   const defaults = (function () {
     const m = (function () { try { return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch (e) { return {}; } })();

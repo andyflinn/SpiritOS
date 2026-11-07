@@ -1,22 +1,17 @@
 'use strict';
 
-// goal/G9.9: the desk owns goal and item ids. Red on today's tree; claude-windows wrote it from G9.9's box and does
-// not build it.
+// goal/G9.9: the desk owns goal and item ids.
 //   Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.", and on Q1 (do agents keep naming ids):
 //   "why should the agents need to, they can use the same api's the user needs to create them."
 //
-// WHAT IS TRUE TODAY (read in the tree at 7cd6d633): the only way to create a goal or an item is session.set, and the
-// caller names every id in its json. There is no goal.add and no item.add.
-//
-// THE SHAPE ASSERTED, the red writer's reading of the box, for the builder to hold:
+// THE SHAPE ASSERTED (the desk family's goal.add and item.add):
 //   goal.add {title}         -> {id, change}   the next goal/G<n>, n one past the highest goal/G number the desk holds
 //   item.add {goal, title}   -> {id, change}   the next <goal>.<n>, n one past the highest member, closed ones counted
 // Nobody names an id: an `id` argument is refused. A new item blocks its goal (the List's plain case; G9.10 adds the
 // blocking-item form). The same verbs serve him and the agents. An add never moves the current goal (goal/G9.13).
-// Not asserted: whether session.set mints too; G9.9's box leaves the bulk call to rule/9.
-// goal/G33.7: session.set went, so the world is built by goal.add and item.add too. A fresh desk numbers its special
-// goals first, so the world's goal is the first free number, G below (goal/G13 in the old reading), and every id this
-// suite expects is counted from it: G+1, G+2 the goals added after it.
+// goal/G33.7: there is no session.set, so the world is built by goal.add and item.add too. A fresh desk numbers its
+// special goals first, so the world's goal is the first free number, G below, and every id this suite expects is
+// counted from it: G+1, G+2 the goals added after it.
 
 const fs = require('fs');
 const os = require('os');

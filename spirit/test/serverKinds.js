@@ -1,13 +1,12 @@
 'use strict';
 
 // spirit/test/serverKinds.js
-// TWO KINDS OF SERVER — processes/G1.3, written FIRST, red on today's code.
+// TWO KINDS OF SERVER — processes/G1.3.
 //
-//   Andy, 2026-09-28, go on processes/G1.3, under "they must be red before
-//   wsl pulls the implementation, and green after". Decided: a process
-//   manifest says 'kind': 'server' and 'operated': 'node' or 'user'.
-//   Node-operated: started at boot, restarted when it exits, gone with the
-//   node, no Cancel. User-operated: started from Processes (jobs.create),
+//   Decided: a process manifest says 'kind': 'server' and 'operated':
+//   'node' or 'user'. Node-operated: started at boot, restarted when it
+//   exits, gone with the node, no Cancel. User-operated: started by
+//   jobs.create,
 //   Cancel in Jobs ends it, a crash leaves it down and failed, and a node
 //   restart does not bring it back ("NO"). jobs.create may start one: Andy's
 //   yes on the verb, "YES it's the only existing user door to server launch".
@@ -15,6 +14,9 @@
 // The units this asks for: jobs.startJob (what jobs.create calls: a server
 // or a one-shot, by the script's manifest), jobs.startNodeServers(rootDir)
 // (the boot's scan of process/js), and the Jobs app's Cancel rule.
+// IT NO LONGER RUNS: its servers are planted in a temp home, and jobs.startJob
+// refuses a script outside this node's own tree since goal/G41.30 ("only this
+// node's own processes start"), so the run throws.
 
 const fs = require('fs');
 const os = require('os');
@@ -87,7 +89,9 @@ const has = function (name) { return typeof jobs[name] === 'function'; };
   const nodePort = await freePort();
   const userPort = await freePort();
   const root = home(nodePort, userPort);
-  // A test node includes what it runs, for this run (its manifest runs it at home, goal/G30.20).
+  // tools/runsHome.js writes runs: ['home'] into the manifest (goal/G30.20). jobs.js no longer reads that: a server runs
+  // when it is intrinsic or its node sidecar, relay-state/process/<name>/<name>.js.sidecar.json, says face.home (goal/G41.1),
+  // so this does not make the node start it.
   ['counterNode', 'counterUser'].forEach(function (n) { require('./tools/runsHome.js')(root, 'process/js/' + n); });
   const userScript = path.join(root, 'process', 'js', 'counterUser', 'counterUser.js');
 

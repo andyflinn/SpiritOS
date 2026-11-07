@@ -1,11 +1,15 @@
 'use strict';
 
 // spirit/test/counterLog.js
-// THE TEST SERVER'S LOG — processes/G1.4, written FIRST, red on today's code.
+// THE TEST SERVER'S LOG — processes/G1.4.
 //
 //   Andy, 2026-09-28, go on processes/G1.4: the test server writes its log
 //   to its Jobs console through existing interfaces. Nothing new on the wire:
 //   a line on stdout is what jobs.js already turns into a job log entry.
+//
+// IT NO LONGER RUNS: it starts counterServer.js from a copy in a temp home,
+// and jobs.startJob refuses a script outside this node's own tree since
+// goal/G41.30 ("only this node's own processes start"), so the run throws.
 
 const fs = require('fs');
 const os = require('os');
@@ -59,7 +63,9 @@ const pause = function (ms) { return new Promise(function (r) { setTimeout(r, ms
   // ── T1 ──────────────────────────────────────────────────────────────
   test.subHeading('T1: each GET / writes one line to the job log, with the new count');
   const port = await freePort();
-  // A test node includes what it runs, for this run (its manifest runs it at home, goal/G30.20).
+  // tools/runsHome.js writes runs: ['home'] into the manifest (goal/G30.20). jobs.js no longer reads that: a server runs
+  // when it is intrinsic or its node sidecar, relay-state/process/<name>/<name>.js.sidecar.json, says face.home (goal/G41.1),
+  // so this does not make the node start it.
   require('./tools/runsHome.js')(root, 'process/js/counterLog');
   const job = jobs.startJob('node', [script, JSON.stringify({ port: port })], { type: 'counterLog' });
   const up = await waitFor(function () { return isOpen(port); });

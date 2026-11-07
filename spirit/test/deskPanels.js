@@ -32,20 +32,19 @@ test.startTest('each panel of an item its own answer');
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('desk', pipe);
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
-  // (goal/G33.7: session.set went).
+  // goal/G29.21: an agent creates no goal, so the world is seeded into desk.db before the desk starts.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Panels' }, items: [] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    // Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+    // Writers are CALLERS (apiAuth/G1.13, deskWriterKey.js): desk refuses a by argument.
 const CW = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskPanelsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
     await call('box.write', { id: 'goal/G100', text: 'B'.repeat(6000), version: 0 }, CW);
     await call('check.add', { id: 'goal/G100', kind: 'C', words: 'look', test: '' }, CW);
-    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+    // goal/G18.8: an agent writes only where it holds the item or the take of his line.
     await call('item.take', { id: 'goal/G100' }, WSL);
     for (let i = 0; i < 30; i++) await call('chat.add', { id: 'goal/G100', text: 'LINE-' + String(i).padStart(2, '0') + ' ' + 'x'.repeat(300) }, WSL);
 

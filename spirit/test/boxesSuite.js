@@ -10,10 +10,10 @@
 //   memory: "the date is used on he spot to make decisions, and would
 //   immediately go stale on disc".
 //
-// Built by claude-windows at 39bce45: boxes.js, fed by arrivals, answered
-// as owner.boxes. Who counts as "his server" is spirit/state/servers.json,
-// owner-edited, read per report, absent means nobody -- agreed between the
-// agents so that nobody else can invent a box in his view or hide one.
+// boxes.js, fed by arrivals, searched as owner.boxSearch (server.js). Who
+// counts as "his server" is spirit/state/servers.json, owner-edited, read
+// per report and per look, absent means nobody -- so that nobody else can
+// invent a box in his view or hide one.
 
 const os = require('os');
 const fs = require('fs');
@@ -142,8 +142,7 @@ function box(fp, allotted, total, label) {
   }
 }
 
-// THE SERVER'S SIDE STOOD HERE: faceServer.boxReport, the four facts an app server reported about
-// its box at bind. faceServer.js is gone with goal/G13.2 and no process reports a box today; the
-// owner's view above keeps its shape for the day one does.
+// No process reports a box today (the reporter went with goal/G13.2); the owner's view above
+// keeps its shape for the day one does.
 
 test.reportSuccessFailureCount();

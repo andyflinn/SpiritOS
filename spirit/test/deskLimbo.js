@@ -2,39 +2,19 @@
 
 // goal/G5.4: an item whose Go is on record, with no Done offered, no open red
 // G or Q, and nobody working on it, sits in LIMBO — a state the desk marks and
-// agents are supposed to take. And a split (an agent writing new items that
-// block an existing one) makes that parent a SUB-GOAL: it offers Go once any
-// of its blockers does, and pressing Go on it is go-all over those blockers.
+// agents are supposed to take.
 //   Andy, 2026-10-05, under goal/G5.4: "limbo, when detected must be taken by
-//   an agent."; "items that are no-code branches, they really are sub-goals,
-//   and must offer 'Done' when it's blockers are done."; "when i say split,
-//   that becomes implicit/obvious and the item should be marked as sub-goal";
-//   "pressing 'Go' on a sub-goal presses go on it's blockers, where
-//   appropriate."; "it's like a scoped goal." claude-ubuntu wrote this red,
-//   claude-windows builds it.
+//   an agent."
 //
-// SHAPES (ubi's picks; argue them in Desk first if the build disagrees):
+// SHAPES:
 //   1  facts.limbo === true on an item that: has go on record, offers no
 //      Done, has no open G or Q check, and no live agent is working on it
 //      (nobody has item.take without having since answered); facts.limbo
 //      === false otherwise. Since goal/G29.10 the desk posts no line for
 //      it ("The limbo posts go.").
-//   2 and 3 WENT WITH goal/G33.4, which removed the sub-goal; their sections now hold that a split marks nothing.
-//   (goal/G33.7: session.set went; a split is item.add naming the parent in blocks, and the world is seeded.)
-//   2  A split sets facts.subGoal === true on the parent: a session.set
-//      that names the parent in split: [id] (goal/G6.8; before it, any
-//      new item blocking the parent marked it). The mark survives on
-//      later sessions as long as the parent still has non-done blockers.
-//   3  A sub-goal offers 'go' in facts.buttons once at least one blocker
-//      offers 'go' (today the server refuses, blockers.length > 0 kills
-//      Go in buttons()). Pressing 'go' on a sub-goal cascades: every
-//      blocker that itself offers 'go' is pressed (as goable does for a
-//      goal under 'go-all'); nothing else is touched.
-//
-// DRY-RUN NOTE: against today's tree the three sections fail by shape (no
-// limbo field, no subGoal field, Go refused on an item with blockers). The
-// first assertion of each section asks for the field by name, so the suite
-// is a clean red today and turns green on the build.
+//   2  No sub-goal (goal/G33.4, below): a split is item.add naming the parent
+//      in blocks, it marks nothing on the parent, and his Go on the parent
+//      presses none of its blockers.
 
 const fs = require('fs');
 const os = require('os');

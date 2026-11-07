@@ -1,8 +1,7 @@
 'use strict';
 
-// goal/G6.2: chat entries left-aligned, everyone's in bubbles 1em apart, in desk and deskDetails. Red on today's tree;
-// wsl-claude wrote it from G6.2's box and does not build it.
-//   Andy, FACE.md: "I want all my chat-log entries to be left-aligned, not right-aligned." / "i want chat log entries
+// goal/G6.2: chat entries left-aligned, everyone's in bubbles 1em apart, in deskDetails.
+//   Andy, andy/FACE.md: "I want all my chat-log entries to be left-aligned, not right-aligned." / "i want chat log entries
 //   for everybody to display in bubbles, separated vertically be 1em space." In goal/G6: "split as proposed"; his Go.
 //   The box: "the item chats of desk and deskDetails (shell/desk, shell/deskDetails); layout and CSS only".
 //
@@ -12,10 +11,9 @@
 //      whole line (a background, a full border, a border-radius or a box-shadow); a left bar alone is not one.
 //   C3 consecutive bubbles are 1em apart: each carries 1em of vertical margin (margin-top, margin-bottom, or the
 //      top or bottom of the margin shorthand).
-//   Drawn where: the dialog's chat (deskDetails.js ddChatHtml). Desk's Team (the group chat, desk.js deskGroupChat) was
-//   judged too, until the Team tab and its group chat goal/G0 went with goal/G43.22 (Andy, the box, Q5: "G0 goes, from
-//   ui and server, kept in database.").
-// LEFT OPEN, not asserted: the colours. FACE.md names none for these bubbles; his lines black today is not ruled away.
+//   Drawn where: the dialog's chat (deskDetails.js ddChatHtml), the one item chat left since the Team tab and its group
+//   chat goal/G0 went with goal/G43.22.
+// LEFT OPEN, not asserted: the colours. FACE.md names none for these bubbles; his lines black is not ruled away.
 
 const fs = require('fs');
 const path = require('path');

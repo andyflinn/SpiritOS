@@ -199,9 +199,9 @@ async function bootedNode() {
       test.fail('a restart changed the key');
     }
 
-    // THE CLAIM PATH. hub.signedClaim runs before the relay is asked
-    // anything, so a claim aimed at a port nobody holds walks the whole of
-    // the node's half and then fails at the wire.
+    // THE CLAIM PATH. The claim is built and sealed by peerPost.claim
+    // before the relay is asked anything, so a claim aimed at a port nobody
+    // holds walks the node's half and then fails at the wire.
     const dead = await freePort();
     const claimed = await post(two.port, { call: 'relay.claim', args: { url: 'http://127.0.0.1:' + dead, name: 'idboot-claim' } });
     const afterClaim = readIdentity(run);

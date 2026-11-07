@@ -1,12 +1,11 @@
 # shell/desk/desk.js
 
-The Desk app's page: the List of goals and items, the rules (no group chat since goal/G43.22). This test covers what goal/G41.1
-(box v19-v20) requires of it.
+The Desk app's page: the List of goals and items, the Rules, and the Verifier where one runs. This test covers what
+goal/G41.1 (box v19-v20), goal/G41.9, goal/G41.11, goal/G43.22 and goal/G43.3 require of it.
 
 ## Requirements (goal/G41.1)
 
-- **Icons are glyphs** (Andy: the icon set is the only source of icons on the face; `spirit/client/iconIndex.js`
-  deleted): every icon desk.js draws is written as the glyph itself: a goal's 📁, an item's ❌ while it asks Andy and
+- **Icons are glyphs** (Andy: the icon set is the only source of icons on the face): every icon desk.js draws is written as the glyph itself: a goal's 📁, an item's ❌ while it asks Andy and
   💻 otherwise, the battle mark ⚔️, and a rule's status (proposed ✏️, active 🔒, deleted 💀).
 - It reads no icon table (`iconIndex`, `ICON`) and has no lookup of a name into one (`deskIcon`).
 
@@ -39,12 +38,16 @@ the arming desk.js hand-rolled.
 ## Requirements (goal/G41.11)
 
 - **Armed is red, also on the design buttons.** Start design mode and End design mode carry no inline background: an
-  inline colour beats the shell's armed red (`#app-content button[data-armed]`, shell.css), so armed they stayed green
-  or red (found verifying goal/G41.9 on a real page). Their colour comes from a class of each that shell.css paints only
-  while the button is not armed (`.<class>:not([data-armed])`).
+  inline colour beats the shell's armed red (`#app-content button[data-armed]`, shell.css). Their colour comes from a
+  class of each that shell.css paints only while the button is not armed (`.<class>:not([data-armed])`).
 
-- **No Team and no Apps** (goal/G43.22; Andy: *"G0 goes, from ui and server, kept in database."*): the page draws no Team chat,
+## Requirements (goal/G43.22)
+
+- **No Team and no Apps** (Andy: *"G0 goes, from ui and server, kept in database."*): the page draws no Team chat,
   no Team tab and no Apps tab.
+
+## What its test must try to break (goal/G41.11, goal/G43.22)
+
 - An inline `style` background left on either design button; a class whose colour shell.css paints armed or not.
 - A Team chat, a Team tab or an Apps tab drawn after all.
 

@@ -6,7 +6,10 @@
 // the handler needs it, optional only where the verb's own accepts() lets it be left out; each rule is the tightest
 // that every value the handler takes still passes ('text' where '' is a real value, 'id' where it must name something,
 // the field rules where the handler applies them). The server checks everything again. A verb added to the server is
-// added here, in the same commit. DEBUG is appServer's, not listed here.
+// added here, in the same commit. DEBUG is appServer's, not listed here. item.rules.add and item.rules.remove, which
+// desk.js serves (goal/G40.12, his alone), are not listed here, so the spirit object has no checked call for them; nor
+// is the optional autoAttach that desk.js's rule.add and rule.version take, so a call through the spirit object that
+// sends it is refused before it leaves.
 module.exports = {
   verbs: {
     // Only listening or working; the server refuses any other word.
@@ -81,14 +84,14 @@ module.exports = {
     'seen.get': { id: 'id' },
     'seen.set': { id: 'id', at: 'text' },
     signoff: {},
-    // goal/G33.8: appServer's streamPublisher (js/appServer.js): the caller's key subscribes to the desk's rows, sent to
+    // goal/G33.8: appServer's streamPublisher (spirit/appServer.js): the caller's key subscribes to the desk's rows, sent to
     // its family of that name; unsubscribe stops it. Who may is the node's grant.
     // run and since (goal/G41.12): the subscriber's position, the run of the desk and the number of the last row it took
     // in it; the desk's log hands what came after, or the desk pushes in full.
     subscribe: { family: 'id', run: 'text?', since: 'number?' },
     unsubscribe: {},
     unblock: { id: 'id', blocks: 'id' },
-    // why may be '': the desk words a rejection without one.
+    // The jobs open to the caller; it takes nothing.
     'work.open': {},
   },
 };

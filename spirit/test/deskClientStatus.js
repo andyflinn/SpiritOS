@@ -3,11 +3,12 @@
 // spirit/test/deskClientStatus.js
 // goal/G27.12: deskClient manages its agent's status with desk on its own, persists only the signoff, holds one task in
 // RAM, takes only lines addressed to its own agent and only while it is idle, and confirms a signoff to desk.
-// Andy, 2026-10-16: the box of goal/G27.12 is the requirement; this suite asserts what it names.
+// The box of goal/G27.12 is the requirement; this suite asserts what it names, by reading deskClient.js's source.
 //
-// WHAT IS ASSERTED (red on today's code)
+// WHAT IS ASSERTED
 //   1. deskClient keeps each agent's status: connected, busy or idle.
-//   2. a signoff is persisted to spirit/run/process/deskClient/status.json, and only the signoff.
+//   2. a signoff is persisted to status.json in the state folder the node hands over as --state
+//      (relay-state/process/deskClient/), and only the signoff.
 //   3. a signoff is confirmed back to desk.
 //   4. deskClient takes a line only for its own agent, and only while the agent is idle.
 

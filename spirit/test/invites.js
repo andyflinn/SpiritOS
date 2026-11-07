@@ -16,22 +16,11 @@ function tmpHome() {
 
 test.startTest('Invites cycle 1 — consume on claim');
 
-// ── ON KEYS MODE, SINCE 2026-09-15 ───────────────────────────────────
+// ── CONSUME ON CLAIM, IN KEYS MODE ───────────────────────────────────
 //
-// These two blocks were written against a names-mode allow.json —
-// `{ "names": ["andy"] }` — because that is where invites were born: a
-// guest list of bare labels, with a token as the way an owner let
-// somebody in without SSH-editing the file.
-//
-// Names mode is gone. Nothing in the tree ever wrote one, and the two
-// gates that made it mean anything went with the ring in the same
-// sitting. Cycle 4 had already given keys mode its own invite lock, so
-// what these blocks assert — CONSUME ON CLAIM, an invite is a waiting
-// room and not a guestbook — simply moved doors.
-//
-// The fixture is one line longer for it: the owner has to claim first,
-// because keys mode is what a box becomes when somebody does. That is
-// not scaffolding, it is the world these rules live in.
+// An invite is a waiting room and not a guestbook: a claimed invite is
+// deleted (invites.js). The relay is keys mode from the install on, so
+// the owner claims first and every later key needs an invite.
 
 {
   const home = tmpHome();
@@ -136,11 +125,8 @@ test.startTest('Invites cycle 1 — consume on claim');
 //   owner will not be allowed to control the public label of any keyed
 //   peer."
 //
-// The invite's label used to BE the peer's name — `match` demanded they
-// be equal — so the owner chose what every peer was called, permanently,
-// and `who()` published it unsigned to anyone.
-//
-// The label keeps its OTHER job, and the block above still asserts it:
+// So the invite's label is not the peer's name: the claimer names
+// themselves. The label keeps its OTHER job, and the block above asserts it:
 // an invite is keyless, the token is the whole credential, and a spoken
 // token is held only to NAME_RE with no entropy floor. The label is the
 // second factor on that path.
@@ -182,9 +168,8 @@ test.subHeading('The invite proves; the claimer names themselves');
     test.fail('claim: ' + JSON.stringify(ok));
   }
 
-  // THE FINDING THIS CYCLE OPENED ON. Before R1 the peer row was written
-  // `{name: n, publicLabel: n}` with n forced equal to the invite label,
-  // and /api/relay/who hands publicLabel to anyone unsigned.
+  // The invite label (here a phone number) never becomes the peer's
+  // publicLabel, so it is nowhere in the roll.
   const roll = JSON.stringify(rollOf(box));
   if (roll.indexOf(PHONE) === -1) {
     test.check('and the phone number on the invite is nowhere in the roll');
@@ -207,11 +192,6 @@ test.subHeading('The invite proves; the claimer names themselves');
   //   Andy: "i dislike a relay supporting stale nodes at this point the
   //   nodes should break rather than STILL having code on a relay that
   //   support old crap"
-  //
-  // It DID fall back to the claimed name for a few hours after R1, and
-  // the check here read *"a claim that sends one name still works"*. It
-  // is inverted rather than deleted: the two together are the record of
-  // a decision reversed, which a deletion would hide.
   //
   // 400 and not 403, because a half-copied invite is a MALFORMED request
   // rather than a refused one — and the difference is what a person
@@ -275,13 +255,7 @@ test.subHeading('The invite proves; the claimer names themselves');
   ownHome(home, annie);   // as the install does (goal/G16.8)
   const box = createRelay(home);
   const first = claimOwner(box, annie, 'annie');   // named at install, claims with no invite (goal/G16.8)
-  // This block used to assert the opposite — that cycle 1 left keys-mode
-  // open. Cycle 4 closed it.
-  //
-  // It then guarded that the names-mode invite path and the keys-mode
-  // lock were two different doors, one of which admitted an allow-listed
-  // name with no token at all. Names mode went on 2026-09-15, so there is
-  // ONE door, and what this guards is that it is locked: a second key on
+  // There is ONE door, and this guards that it is locked: a second key on
   // a claimed box is refused by name — `invite required` — rather than by
   // a signature check that happens to fail. inviteLock.js covers the lock
   // itself.
@@ -305,9 +279,9 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
 //   should be cleaned up. anytime the UI askes for a list of pending
 //   invites, the list should be cleaned up before its returned."
 //
-// The expiry check always decided the claim. What nothing did was sweep:
-// sweepExpired ran only from removePeer, so a relay nobody administers —
-// which is most of them, most of the time — kept every dead row for ever.
+// The expiry check decides the claim, and relay.js runs sweepExpired on
+// every redeem of a token and whenever the owner's status is built, so a
+// relay nobody administers keeps no dead rows.
 //
 // Three moments, and the third is the one that makes it self-maintaining:
 // a relay whose owner merely LOOKS at it stays tidy.
@@ -323,16 +297,15 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
   function plantExpired(label, token) {
     // Written straight into the store: the mint verb never makes an
     // expired row, which is correct and makes one unmakeable through the
-    // door. (It was a hand-written invites.json until cycle 3 moved the
-    // waiting room into spirit/state/relay.db.)
+    // door. The store is <home>/spirit/state/relay.db (relayStore.js).
     require('../run/spirit/relayStore').open(home).invites.add({
       token: token, label: label, invitedBy: 'andy',
       expiresAt: new Date(Date.now() - 60000).toISOString(),
     });
   }
 
-  // 1. A FAILED ATTEMPT STILL TIDIES. The claim is refused on expiry —
-  //    that is the check that was already there — and the row goes.
+  // 1. A FAILED ATTEMPT STILL TIDIES. The claim is refused on expiry,
+  //    and the row goes.
   plantExpired('ghost', 'dead-token');
   const ghost = auth.generateIdentity('ghost');
   const refused = box.claim('ghost',
@@ -392,7 +365,7 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
 
 test.subHeading('A claim that is refused after the invite check does not spend it');
 
-// ── THE ORDER IS A GATE, AND NOTHING ASSERTED IT ─────────────────────
+// ── THE ORDER IS A GATE ──────────────────────────────────────────────
 //
 // claimAttempt reads the invite (`redeem`, which only MATCHES) well
 // before `findByKey(publicKey)` returns 409, and `consume` — the
@@ -400,8 +373,7 @@ test.subHeading('A claim that is refused after the invite check does not spend i
 // that can refuse this claim has already run, so a burn here is not
 // spent on a claim that then 409s."
 //
-// That comment was the whole of the protection. Move `consume` above the
-// 409 and every one of these burns the token and writes no row, which
+// Move `consume` above the 409 and every one of these burns the token and writes no row, which
 // leaves somebody holding a dead invite and no seat and no way to tell
 // which:
 //
@@ -477,14 +449,10 @@ test.subHeading('A claim that is refused after the invite check does not spend i
 
 test.subHeading('A box upgrading in place does not resurrect spent tokens');
 
-// THE ONE DAY THIS MATTERS is the day a running relay takes the code that
-// made `consume` delete instead of stamp — and it is the kind of hazard
-// nothing else would ever exercise, because no new row can have the field.
-//
-// Before the guard: a spent-but-unexpired row from the old world had its
-// `consumedAt` read by nobody, so `match` waved it through and every
-// token anyone had already used worked again. Checked against a real
-// spirit-3-shaped row, which is where the hazard was found.
+// A relay that still holds spirit/state/invites.json imports it once into
+// relay.db (relayStore.js, importLegacy, DEPRECATED D8). A row stamped
+// `consumedAt` there was spent and is not imported, so a spent token
+// never works again; a live row is kept.
 {
   const home = tmpHome();
   fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });

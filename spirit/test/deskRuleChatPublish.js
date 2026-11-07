@@ -1,20 +1,17 @@
 'use strict';
 
-// goal/G2.18: a rule chat line reaches the open rule dialog without a reload. Red on today's tree; claude-windows
-// wrote it from G2.18's box and does not build it unless Andy waives the phase (one agent in the sitting).
+// goal/G2.18: a rule chat line reaches the open rule dialog without a reload.
 //   Andy, 2026-10-06, rule/3 chat: "problem, your answers to this chat only appear after hard-refresh, so this
 //   dialog fails to listen to updates, or they are not streamed..." / "i need shit fixed fast."
 //
-// THE CAUSE (G2.18's box): a chat line under a rule is stored as a rule.chat record and published by the generic
-// write as {change, verb: 'rule.chat', item: null} (process/js/desk/desk.js, the publish after a write); rule.add,
-// rule.draft and rule.version publish {rule: key}. The rule dialog (shell/ruleDetails) repaints only on a publish
-// that names its rule, so a chat line waits for a reload.
+// THE CAUSE (G2.18's box): the rule dialog (spirit/run/shell/ruleDetails) repaints only on a publish that names its
+// rule, and a rule.chat write's publish once named none, so a chat line waited for a reload.
 //
-// THE SHAPE: the publish of a rule.chat write names its rule, `rule: 'rule/N'`, as the other rule verbs do. Server
-// only; the face is unchanged. Whatever else the object carries (change, verb) is not asserted here.
+// THE SHAPE: the publish of a rule.chat write names its rule, `rule: 'rule/N'`, as the other rule verbs do
+// (spirit/run/process/js/desk/desk.js, writeRuleChat's publishOne). Server only; the face is unchanged. Whatever else the object carries (change, verb) is not asserted here.
 //
 // HOW IT WATCHES: appServer.publish reports through spirit.core.jobs.report, a POST to SPIRIT_CALLBACK_URL with
-// {verb: 'jobs.update', id, app: <the object>} (kernel.js, jobCallback.js). The desk server is spawned with those two
+// {verb: 'jobs.update', id, app: <the object>} (kernel.js; spirit/test/jobCallback.js holds it). The desk server is spawned with those two
 // variables pointing at a throwaway HTTP door here, which keeps every object it is handed.
 
 const fs = require('fs');

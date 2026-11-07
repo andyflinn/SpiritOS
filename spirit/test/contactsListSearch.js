@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/contactsListSearch.js
-// goal/G29.6: THE PEER PICKER ON THE SHARED LIST, CONTACTS FIRST. Red on today's tree; claude-windows writes it and
-// builds it. The item's box (v10), in short:
+// goal/G29.6: THE PEER PICKER ON THE SHARED LIST, CONTACTS FIRST. The item's box (v10), in short:
 //   - contactSelector becomes a thin wrapper around shellCreateListSearch (goal/G29.4), for Contacts, chatter and every
 //     place a peer is picked.
 //   - Columns: fixed ★ (my puppet: an owned contact, its card naming this node its owner, goal/G19.8; a tooltip says

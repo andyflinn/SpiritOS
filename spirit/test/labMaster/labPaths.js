@@ -10,8 +10,7 @@
 // checkout. An agent's clone running the harness then REUSED it
 // (ensureMaster) — and a fixture is a copy of labMaster's OWN working
 // tree, so the lab suites tested Andy's commit, not the one under test,
-// and passed. A wrong green. Found by wsl-claude; settled between the
-// agents (ANDYS_RULES general rule 9):
+// and passed. A wrong green. So (ANDYS_RULES general rule 9):
 //
 //   - LAB_MASTER_PORT (default 65420) lets a clone run its own labMaster,
 //     outside the lab range 65400-65429 — 45420 by example.

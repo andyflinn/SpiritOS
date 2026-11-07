@@ -19,12 +19,12 @@ goal/G41.11 changes: a commit asks the desk nothing.
   - `item.checks` gives the item's checks, among them the list's `core grant: ` G check.
 - **Missing from the cache, it refuses and says why**: a kept read refused `not-kept`, or a file list cut short,
   refuses the commit, naming what was not in the cache; it asks nothing else.
-- **Every staged file must be on the item's list, core or not**, by its repository path; a file not on it is refused
-  by name. A staged core file also needs the list's core grant standing.
+- **Every staged file must be on the item's list, core or not**, by its repository path or the same path under
+  `spirit/run/`; a file not on it is refused by name. A staged core file also needs the list's core grant standing.
 - **A lagging desk refuses nothing it need not**: with the facts in the cache, a desk that does not answer does not
   stop the commit.
-- **The red writer's build**: whether this agent may commit on the item comes from the kept facts (its red writer
-  against `self`), not from the desk.
+- **The red writer's build**: whether this agent may commit on the item comes from the kept facts (its own open red Q,
+  design on the item or its goal, its red writer against `self`), not from the desk.
 
 ## What its test must try to break
 

@@ -1,20 +1,16 @@
 // spirit/run/shell/chatter/chatter.js
-// CHATTER: the face of this node's chatClerver (process/js/chatClerver), goal/G4.9 to G4.11.
+// CHATTER: the face of this node's chatClerver (spirit/run/process/js/chatClerver), goal/G4.9 to G4.11.
 //
-//   Andy, 2026-10-03: "the UI is out of scope, and might be called chatter (similar UI model to my desk, but a
-//   surface designed from scratch."; "chatter is the name."; "i didn't switch goals. i included UI in the scope now".
+// The chatClerver is faceless and knows keys only; chatter is everything a person sees. It asks its server by the
+// verb's name on the flat apiDoor (chatClerver.<verb>, args), and hears every kept line through the chatClerver
+// family's cache (spirit.data.chatClerver.data). It builds with the shell's elements: the peer pane is the contact
+// search (spirit/element/search/contact.js) in pane face, every name a contactLabel.
 //
-// The chatClerver is faceless and knows keys only; chatter is everything a person sees. It asks its server as Desk
-// does, by the verb's name on the flat apiDoor (chatClerver.<verb>, args), and hears every kept line by its publish, {line: {...}}. It
-// builds with the shell's elements: the peer pane and the new-chat dropdown are contactSelector, every name is a
-// contactLabel.
-//
-// TWO PANES (the objects pane on the right waits for file transfer, goal/G4.12):
-//   LEFT, the peers (G4.10): a search by name over the peers with a chat; ⌛ while a peer has unanswered lines,
-//   never the number (Andy: "the count is not allowed by 4.14"; the 🔴 he first chose became "use ICON:WAITING", since
-//   it read as a presence dot); a click opens that chat. A new chat begins by picking a
-//   contact from the node's book, a blocked one never offered (Andy: "a blocked contact should not be offered to the
-//   chatter user at all."), and its first line goes line.write {to}.
+// THREE PANES (the objects pane on the right is empty until file transfer, goal/G4.12):
+//   LEFT, the contacts (G4.10, goal/G29.9): every contact the contact family's cache keeps, less this node and every
+//   blocked one (Andy: "a blocked contact should not be offered to the chatter user at all."); ⌛ while a contact has
+//   unanswered lines, never the number in the pane ("use ICON:WAITING": a dot read as presence); a click opens that
+//   chat, and its first line goes line.write {to}.
 //   CENTRE, one chat (G4.11): its contact named in the pane's own title bar; lines placed by their data, never by
 //   arrival, a line published again updated in place; one current line, which an arrival becomes and a click or the
 //   arrow, Home and End keys move; a reply answers the current line and quotes it; the popular marks, ⏳ travelling,
@@ -75,12 +71,10 @@ function chSay(text) {
 // chats.search's rows carry the record as label: {peer, at, sent, seq, unanswered}. The pane is handed keys alone
 // (the label element names them); the record only decides the mark.
 //
-// ONE PANE, THE CONTACTS (goal/G29.9, goal/G41.28). Andy, 2026-10-18: "in chatter, why does the contact pane look
-// different from contacts? It fails to show proper columns for contacts, it should be all-pane mode there, that would
-// be enough." So the pane is the contact selector, a view of the contacts the contact family's cache keeps (Andy, Q25:
-// "WHY wouldn't chatter use the the contacts in spirit.data?"), less this node and every blocked contact (P5: never
-// offered), by one hidden filter ("Why can't chatter insert a hidden filter when it draws contacts?"); a new chat starts
-// from any of them.
+// ONE PANE, THE CONTACTS (goal/G29.9, goal/G41.28): the contact search in pane face, a view of the contacts the contact
+// family's cache keeps (Andy, Q25: "WHY wouldn't chatter use the the contacts in spirit.data?"), less this node and every
+// blocked contact, by one hidden filter ("Why can't chatter insert a hidden filter when it draws contacts?"); a new chat
+// starts from any of them.
 var CH_OFFERED = { name: 'offered', when: function () { return false; },
   test: function (row) { return row && row.key !== chSelf && row.blocked !== true ? 1 : 0; } };
 // THE ⌛ MARKS: the chats (chats.search, the record {peer, at, sent, seq, unanswered}), kept in the chatClerver family's
@@ -527,7 +521,7 @@ function chMount(container, api) {
     drag('ch-divider-left', 'peers', 1);
     drag('ch-divider-right', 'objects', -1);
 
-    // goal/G29.9: one pane over the book and the chats; the new-chat dropdown that stood here is gone.
+    // goal/G29.9: one pane over the book and the chats.
     // A LIST GETS A BOX OF A STATED SIZE (rule/16): a fill box in the peers pane, which fills the app's height, the list
     // scrolling inside it.
     var left = document.createElement('div');

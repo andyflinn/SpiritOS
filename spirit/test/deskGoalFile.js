@@ -2,7 +2,7 @@
 
 // spirit/test/deskGoalFile.js
 // goal/G3.14: the desk server writes the current goal into the repo, spirit/run/process/js/desk/currentGoal.json.
-// RED on today's tree: the desk server writes only into its state folder (desk/G1 D5); no such file exists.
+// It writes the file into its own state folder and shares it into the repo at goalPath (goal/G4.21, goalShare.js).
 //
 //   Andy, 2026-10-03, the musing (verbatim): "The desk server will produce a file
 //   "spirit/run/process/js/desk/currentGoal.json" it will contain the complete data set of the current goal,
@@ -13,29 +13,23 @@
 //   sees the file itself, and that is cheaper"; "please create an item with this all summarized." His Go is his
 //   press on goal/G3.14 (2026-10-03).
 //
-// THE CONTRACT (the box of goal/G3.14, both agents; the shapes wsl-claude fixes here are named). One file,
-// process/js/desk/desk.js and its manifest desk.json; no core module.
-//   1. THE ARGUMENT. desk.json carries one argument whose default names the file, `currentGoal.json`, a path
-//      relative to the desk folder (process/js/desk). The node hands that default when it starts the server
-//      (jobs.js), so Andy's desk writes beside desk.js; a server spawned with '{}' (every suite) has no value and
-//      writes no file anywhere. The shape fixed here: the value IS the path (empty: off), so this suite can point it
-//      into its scratch and the clone it runs in is never written. The argument's name is the builder's: this suite
-//      reads desk.json and hands the defaults over as the node would, with the file's path replaced by its own.
-//   2. WHEN. The file is written whole on his go, go-all and done, and on session.set (his open point, taken as
-//      yes unless he said no); a chat line, a box write, a claim or a press of another kind leave it as it was.
-//      Since goal/G33.7 session.set is gone: the switch to a goal (his make-current) writes it in its place.
-//   3. WHAT. One JSON object: `change`, the desk's change number at that moment (since goal/G33.4, with
-//      `changes` gone, what was written after it carries a later number on the desk's stream); `goal`, the current goal's id;
+// THE CONTRACT (the box of goal/G3.14). process/js/desk/desk.js and its manifest desk.json; no core module.
+//   1. THE ARGUMENT. desk.json's goalPath names the file's path in the repo (default
+//      spirit/run/process/js/desk/currentGoal.json). The node hands that default when it starts the server (jobs.js);
+//      a server spawned with '{}' (every suite) has no value and shares no file. This suite reads desk.json and hands
+//      the defaults over as the node would, with the file's place replaced by its own scratch.
+//   2. WHEN. The file is written whole on his go, go-all and done, and on the switch to a goal (his make-current);
+//      a chat line, a box write, a claim or a press of another kind leave it as it was.
+//   3. WHAT. One JSON object: `change`, the desk's change number at that moment (what was written after it carries a
+//      later number on the desk's stream, goal/G33.4); `goal`, the current goal's id;
 //      `items`, every item of the current goal INCLUDING the goal's own row and the closed ones, each with its facts
 //      (as item.get gives them: id, title, status, buttons, go, ...) and its `box`, `version`, `checks` and `chat`
-//      (the lines as item.chat gives them: by, at, text). No other goal's item is in it (this named the group chat
-//      goal/G0 until goal/G43.22 took it from the server; Andy: "G0 goes, from ui and server, kept in database.").
+//      (the lines as item.chat gives them: by, at, text). No other goal's item is in it.
 //   4. THE FILE IN THE REPO. spirit/run/process/js/desk/currentGoal.json is tracked by git (committed at birth,
 //      so the lab suites, which refuse an untracked file under spirit/, keep running) and parses as that object.
 //   5. A read is a read: the finds, the chats and item.get write nothing to it (its bytes stay as they were).
-// Not asserted, the builder's: the order of keys, pretty-printing, what else the file may carry (a written-at
-// time, the commit?), whether abandoned goals' files are kept.
-// Not proven: this suite has run only against today's tree, where every owed check is red.
+// Not asserted: the order of keys, pretty-printing, what else the file may carry, whether abandoned goals' files are
+// kept.
 
 const fs = require('fs');
 const os = require('os');
@@ -75,8 +69,8 @@ function fileArgName(defaults) {
   return Object.keys(defaults).filter(function (k) { return /currentGoal\.json$/.test(String(defaults[k])); })[0] || '';
 }
 
-// One desk server, with the arguments given; its door, its state. goal/G33.7 (session.set went): its world, seeded
-// before it starts, which it takes in at start.
+// One desk server, with the arguments given; its door, its state; its world seeded before it starts, which it takes
+// in at start (goal/G33.7).
 async function server(name, args, seed) {
   const state = path.join(scratch, name, 'state');
   fs.mkdirSync(state, { recursive: true });
@@ -107,7 +101,7 @@ async function main() {
   const repoBytesBefore = bytesOf(REPO_FILE);
 
   test.subHeading('2. a server with no value writes no file');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  // goal/G29.21: an agent creates no goal, so the world is seeded.
   const quiet = await server('quiet', {}, { goal: { id: 'goal/G100', title: 'Quiet' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] });
   await quiet.call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   await quiet.call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
@@ -117,12 +111,12 @@ async function main() {
   else test.fail(OWED + 'spawned with {} the server wrote ' + JSON.stringify(quietFiles) + '; repo file changed: ' + (bytesOf(REPO_FILE) !== repoBytesBefore));
 
   test.subHeading('3. written on Go, go-all, Done and the switch to a goal; left alone by a line');
-  // SINCE goal/G4.21 the desk writes the file into its own state folder, never the checkout, and goalShare.js
-  // commits it from there (goalShare.js holds that half). goalPath names its place in the repo; set, sharing is on.
+  // The desk writes the file into its own state folder, never the checkout, and goalShare.js commits it from there
+  // (goal/G4.21). goalPath names its place in the repo; set, sharing is on.
   const args = Object.assign({}, defaults);
   if (argName) args[argName] = 'spirit/run/process/js/desk/currentGoal.json';
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: seeded, goal/G101 and a
-  // second goal after it (so goal/G102 is current at start), and his make-current switches to goal/G101.
+  // goal/G29.21: an agent creates no goal, so the world is seeded: goal/G101 and a second goal after it (so goal/G102
+  // is current at start), and his make-current switches to goal/G101.
   const d = await server('written', args, [{ goal: { id: 'goal/G101', title: 'Written' }, items: [
     { id: 'goal/G101.1', title: 'First', blocks: ['goal/G101'] },
     { id: 'goal/G101.2', title: 'Second', blocks: ['goal/G101'] },
@@ -182,8 +176,8 @@ async function main() {
   if ((byId['goal/G101.3'] || {}).status === 'closed') test.check('goal/G101.3, closed and off the List, is in the file as closed');
   else test.fail(OWED + 'goal/G101.3 in the file: ' + JSON.stringify(byId['goal/G101.3'] || null).slice(0, 120));
 
-  // goal/G33.4: `changes` is gone (the desk streams each row it writes, with its change number). The file's change is
-  // still the desk's count at that moment: the next write is numbered right after it, and the file is not rewritten.
+  // The desk streams each row it writes, with its change number (goal/G33.4). The file's change is the desk's count
+  // at that moment: the next write is numbered right after it, and the file is not rewritten.
   test.subHeading('5. the file\'s change: the next write is numbered right after it');
   const later = await d.call('chat.add', { id: 'goal/G101.2', text: 'the line after the file' }, ANDY);
   await sleep(200);

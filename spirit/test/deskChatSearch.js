@@ -1,27 +1,20 @@
 'use strict';
 
-// goal/G3.11: a search on the chat lines of an item, the group chat's (goal/G0) first (since goal/G43.22 the group
-// chat is gone from the server: Andy, "G0 goes, from ui and server, kept in database."; the search is asked of an
-// ordinary item, as the generalized verb takes any). Red on today's tree: the desk server has no verb chat.search;
-// the group chat answers only its newest lines that fit one answer (item.chat), and an older line cannot be found.
-//   Andy, 2026-10-02: "a search on the chat lines of 'goal/G0'" — "nothing else". Earlier, of the same: "you may
-//   introduce a search() just for the records of 'goal/G0' s chat, if you like.", "with time boundaries etc....
-//   just for you agents". Of an item chat answering only its newest lines: "and that is as it should be. what's the
+// goal/G3.11: a search on the chat lines of an item: the desk server's chat.search, asked of an ordinary item.
+//   Andy, 2026-10-02, of an item chat answering only its newest lines: "and that is as it should be. what's the
 //   problem with having to be brief?" And of handing a full answer on in pieces: "no. none of this joing shit."
-//   His Go on this item is his press in Desk. Then, with the first red on master: "why dont you generalize the
-//   search so you can do it to the chat lines for any item in desk?" — so the search names its item (id), and
-//   this red is amended for it.
-// The contract the builder follows (the spec in the box of goal/G3.11, wsl-claude's; the four filters are the ones
-// Andy asked it to name):
-//   1. One verb on the desk server, chat.search {id, text, by, since, before} -> {items: [{key, label}], more}: what
-//      every search here answers.
-//   2. It searches the chat lines of the ONE item named by id and nothing else: asked for goal/G0, a line of
-//      another item's chat is never answered, and the other way round. An id no item has is refused
+//   Then: "why dont you generalize the search so you can do it to the chat lines for any item in desk?" — so the
+//   search names its item (id).
+// The contract (the box of goal/G3.11):
+//   1. One verb on the desk server, chat.search {id, text, by, since, before, scope} -> {items: [{key, label}],
+//      more}: what every search here answers.
+//   2. It searches the chat lines of the ONE item named by id and nothing else: a line of another item's chat is
+//      never answered. An id no item has is refused
 //      no-such-item.
 //   3. Each label is one line as JSON {by, at, text}; the newest first; the keys differ.
-//   4. The filters, one left empty filtering nothing: text, words in the line; by, who wrote it (andy, or an agent
-//      as the desk names it); since, lines from that time on; before, lines earlier than that time. Together they
-//      narrow: a line is answered when every filter given lets it through.
+//   4. text ranks (goal/G18.5, below): the lines holding the words come first. The filters, one left empty
+//      filtering nothing: by, who wrote it (andy, or an agent as the desk names it); since, lines from that time on;
+//      before, lines earlier than that time. Together they narrow.
 //   5. It is a read: it writes no record, and takes no by of its own (an argument it does not name is refused
 //      no-such-argument, as every verb here refuses one).
 //   6. It is brief. A chat too long for one answer comes back cut, newest first, and says more. And the fullest
@@ -45,7 +38,7 @@ const OWED = 'OWED by goal/G3.11: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
-const CHAT = 'goal/G100.2'; // the item searched; goal/G0 until goal/G43.22
+const CHAT = 'goal/G100.2'; // the item searched
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -149,7 +142,7 @@ async function main() {
   // Four lines in the searched item's chat, each at its own moment.
   await call('desk', 'chat.add', { id: 'goal/G100.1', text: 'alpha in another item' }, ANDY);
   const said = [[ANDY, 'alpha one'], [CW, 'alpha two'], [WSL, 'beta three'], [ANDY, 'beta four']];
-  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line, the team chat too (Andy:
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line (Andy:
   // "follow the take rules."): claude-windows takes his line before it answers, wsl-claude holds the item.
   for (const s of said) {
     await sleep(25);

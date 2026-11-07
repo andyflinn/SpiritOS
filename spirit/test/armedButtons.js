@@ -111,8 +111,8 @@ apps.forEach(function (name) {
 
 // ONE ELEMENT ARMS NOW (goal/G41.9; Andy: "create shell-element \"armingButton\""): every app's two-press button
 // is an armingButton, which asks the shell for the disarm and marks data-armed itself, so no app arms by hand.
-// deskAgentRemote is the one exception, left as it is (Andy, 2026-10-27: "add the deskAgentRemote exception to the
-// box."), and it still has to meet every check below.
+// deskAgentRemote is excused by name (Andy, 2026-10-27: "add the deskAgentRemote exception to the box.") and still
+// has to meet every check below; no shell/deskAgentRemote/ is in the tree today, so the exception matches nothing.
 const ELEMENT = path.join(RUN_DIR, 'spirit', 'element', 'armingButton.js');
 const element = fs.existsSync(ELEMENT) ? codeOf(ELEMENT) : '';
 if (/armUntilElsewhere/.test(element) && /data-armed/.test(element)) {
@@ -182,7 +182,7 @@ if (ghosts.length === 0) {
 // does not turn red is one that did not arm.
 test.subHeading('And an armed button is red without being read');
 
-// The shell's styles are shell.css since goal/G30.9 (they stood inline in index.html).
+// The shell's styles are spirit/run/spirit/shell/shell.css (goal/G30.9).
 const shellCss = fs.readFileSync(path.join(RUN_DIR, '..', 'run', 'spirit', 'shell', 'shell.css'), 'utf8');
 
 if (/button\[data-armed\][^{]*\{[^}]*background/.test(shellCss)) {

@@ -1,7 +1,6 @@
-// The second of the five to leave index.html (CLEANUP-PLAN step 5.2).
-// Its id changed with its folder, 'jobs' to 'shell/jobs' — see APP_ID_RENAMES and INTRINSIC_APP_FOLDERS in
-// js/client/shell.js — and the call sites that name it: the Spirit group's member list, the file viewer's "start and
-// go watch it", and the Stats app's Active jobs tile.
+// spirit/run/shell/jobs/jobs.js
+// THE JOB MONITOR: every job this node is running or has run. Its id is 'shell/jobs' (the old shell's APP_ID_RENAMES,
+// spirit/run/spirit/client/shell.js, maps the bare 'jobs' to it).
 //
 // ROWS ONLY (goal/G2.11). Andy, 2026-10-02: "the job monitor shell component. the folded "consoles" need to go into
 // jobsDetails", "the form on top should be gone." A row click opens shell/jobsDetails, and that is all a row does.
@@ -27,7 +26,7 @@ var STATUS_ICON = {
   stopped: '🟠',
   error: '⚠️',
 };
-// The canonical set lives in js/jobs.js, node-side; jobsDetails and app/stats keep the same copy.
+// The canonical set lives in spirit/run/spirit/jobs.js (TERMINAL_STATUSES), node-side; jobsDetails keeps the same copy.
 var JOBS_TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
 
 var jobsApi = null;
@@ -46,7 +45,7 @@ function jobsName(job) { return String(job.module || job.type || job.kind || job
 var jobsLatest = '';
 
 // THE KIND (goal/G29.14; Andy: "server-stats, relay-presence and fs-watcher are neither appServers nor transient"): the
-// node's own jobs (kind permanent in js/jobs.js) are node; appServers are servers; a process started for one run is
+// node's own jobs (kind permanent in spirit/run/spirit/jobs.js) are node; appServers are servers; a process started for one run is
 // transient.
 function jobsKind(job) { return job.kind === 'permanent' ? 'node' : job.kind === 'server' ? 'server' : 'transient'; }
 

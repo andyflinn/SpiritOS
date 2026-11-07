@@ -1,6 +1,6 @@
 'use strict';
 
-// A stand-in node for oneLauncher.js: it installs the real jobs module, starts one job of the kind asked for,
+// A stand-in node for launcherChecks.js: it installs the real jobs module, starts one job of the kind asked for,
 // and then waits to be killed. When it dies, its job's process must not outlive it.
 const path = require('path');
 const spirit = require('../../run/spirit/kernel.js');

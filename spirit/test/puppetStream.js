@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/puppetStream.js
-// goal/G14.5: the stream from a puppet to its master. Written first, red on today's code (ff2dfd3f); claude-windows
-// wrote it and builds it (one agent, Andy's word). The rulings are the item's box, Andy's of 2026-10-10:
+// goal/G14.5: the stream from a puppet to its master. The rulings are the item's box, Andy's of 2026-10-10:
 //
 //   "a puppet has a special, puppet command: stream (which starts a stream of posts to the master); the master
 //    that sends this to a puppet, then throws the streamed events into the node-broadcast for it's apps"

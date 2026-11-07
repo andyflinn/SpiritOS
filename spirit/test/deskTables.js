@@ -1,8 +1,8 @@
 'use strict';
 
 // spirit/test/deskTables.js
-// goal/G33.4: the desk keeps state only, in tables keyed by goal number and item number. Red on today's tree;
-// claude-windows writes it and builds it (one agent). The point of it all, the box's first line: narrowing the scope of
+// goal/G33.4: the desk keeps state only, in tables keyed by goal number and item number. The point of it all, the
+// box's first line: narrowing the scope of
 // work, traffic, wire and context to the current goal. The box, in short:
 //   - Two numeric main keys: the goal number, then the item number (0 for the goal itself). 'goal/G33.4' is rendered
 //     from them. No sub-goals: an item never becomes a goal, so two numbers always suffice.
@@ -12,10 +12,9 @@
 //   - The desk keeps state only: the log of writes goes. An agent's listening or working is one current value per
 //     agent, never a row per word.
 //   - Design mode on goal AND item level; a new item always arrives in design mode.
-//   - Goal 0 was the group chat. Each special goal (a plugin's, the group chat) had a goal number of its own, its goal
-//     row marked special, always open. SINCE goal/G43.22 the desk makes neither (Andy, the box, Q5: "G0 goes, from ui and
-//     server, kept in database."; "the apps and plugin system goes."): a fresh desk holds no goal 0 and no special goal,
-//     and a special goal kept in a database is still never shed.
+//   - No goal 0 and no special goal (goal/G43.22; Andy, the box, Q5: "G0 goes, from ui and server, kept in database.";
+//     "the apps and plugin system goes."): a fresh desk holds neither, and a goal row marked special that a database
+//     already keeps is never shed.
 //   - Migration, once: each id string becomes its two numbers; records with no goal or item (agent.state, scope.set,
 //     the old lines table) are dumped.
 //   - The desk database sheds by itself past one constant (16 MB): whole goals, the one untouched the longest first,
@@ -40,11 +39,12 @@
 // OPEN SHAPES, asserted by their outcome only:
 //   - how the desk learns that a client was away: asserted on the one case the desk itself sees, its own restart, after
 //     which every client is one that was away.
-//   - the group chat's id string: goal/G0, goal/G0.0 and desk/G0.0 are tried; since goal/G43.22 each must be refused.
+//   - the old group chat's id string: goal/G0, goal/G0.0 and desk/G0.0 are tried; each must be refused (goal/G43.22).
 // NOT ASSERTED HERE, OWED ELSEWHERE:
 //   - the client data set's own bound (about 132 MB, one SpiritOS-wide constant, culling its oldest entries) is a
 //     shell-wide feature of spirit.data, managed by no app and no server: it needs its own item.
-//   - "a client never grabs, never culls": the client side (spirit/element/desk/data.js, deskClient) is not driven here.
+//   - "a client never grabs, never culls": the client side (the translator, process/js/desk/data.js, and deskClient) is
+//     not driven here.
 //   - each side table's own probability search: asserted only as bounded by goal (section 6), not its ranking.
 //   - agent profiles keyed by agent, rules by rule number: no outcome of his names them yet.
 // rule/11: through testSupport only; its own folders, its own pipes, a pretend node on a port the OS picks, every
@@ -180,7 +180,7 @@ function bytesOf(pub) { return Buffer.byteLength(JSON.stringify(pub), 'utf8'); }
 function overMax(pubs) { return pubs.filter(function (p) { return bytesOf(p) > PAYLOAD_MAX || p.dropped; }); }
 async function settle(ms) { await sleep(ms || 900); }
 
-// ── AN OLD-SHAPE desk.db, as today's desk writes it: records, lines ────────────────────────────────────────────────
+// ── AN OLD-SHAPE desk.db, as the desk wrote it before goal/G33.4: records, lines ───────────────────────────────────
 // goal/G7 (current) with goal/G7.1 and goal/G7.2; goal/G8 with twenty items holding `elsewhere` of his lines; box
 // versions, a line of the agent's, a Q, a file, a claim, a line in the group chat; and the goal-less rows the migration
 // dumps: agent.state, scope.set, and one row of the old lines table, each with a marker found nowhere else.
@@ -203,8 +203,8 @@ function makeOldDesk(d, elsewhere) {
   rec('chat.add', AGENT, { id: 'goal/G7.1', text: 'MIGRATED-AGENT-LINE' });
   rec('chat.add', ANDY, { id: 'desk/G0.0', text: 'MIGRATED-GROUP-LINE' });
   rec('check.add', AGENT, { id: 'goal/G7.1', kind: 'Q', words: 'Is the migration whole?', test: '' });
-  // goal/G40.3: one path a record, the shape the walk replays since the whole-list {paths} write went (a log still
-  // holding the old {paths} shape now migrates to a row with path "undefined": the walk no longer reads it).
+  // goal/G40.3: one path a record, the shape the migration walk replays (a record of the whole-list {paths} shape
+  // migrates to a row with path "undefined": the walk does not read it).
   rec('item.files.add', AGENT, { id: 'goal/G7.1', path: 'spirit/test/deskTables.js' });
   rec('press', ANDY, { id: 'goal/G7', what: 'end-design' });
   rec('press', ANDY, { id: 'goal/G7.2', what: 'go', rules: {} });
@@ -327,7 +327,7 @@ async function freshDesk() {
   const sy = await A.call('item.add', { goal: sgid, title: 'Beside it' }, ANDY);
   const sxid = took(sx) ? String(sx.body.id) : '';
   const syid = took(sy) ? String(sy.body.id) : '';
-  // A split (goal/G33.7: session.set went) is an item.add blocking the item it was split from.
+  // A split is an item.add blocking the item it was split from.
   const so = await A.call('item.add', { goal: sgid, title: 'Split off', blocks: sxid }, ANDY);
   const soid = took(so) ? String(so.body.id) : '';
   const split = await A.facts(sxid);
@@ -354,8 +354,8 @@ async function freshDesk() {
   if (took(go) && fx1 && fx1.design === false && fy1 && fy1.design === true && (fy1.buttons || []).indexOf('go') === -1) test.check('one item ends its design and goes while the other of the goal stays in design, with no Go');
   else test.fail(OWED + 'the go answered ' + short(go.body) + '; the built item reads design ' + short(fx1 && fx1.design) + ', the other design ' + short(fy1 && fy1.design) + ' and buttons ' + short(fy1 && fy1.buttons));
 
-  // UNTIL goal/G43.22 goal 0 was the group chat and each plugin had a special goal with a number of its own. Andy, the
-  // box of goal/G43.22, Q5: "G0 goes, from ui and server, kept in database."; and "the apps and plugin system goes."
+  // No group chat (goal 0) and no plugin goal. Andy, the box of goal/G43.22, Q5: "G0 goes, from ui and server, kept in
+  // database."; and "the apps and plugin system goes."
   test.subHeading('4. no group chat and no plugin goal: a fresh desk makes no goal 0 and no special goal (goal/G43.22)');
   const groupTook = [];
   for (const id of ['goal/G0', 'goal/G0.0', 'desk/G0.0']) {
@@ -411,8 +411,8 @@ async function freshDesk() {
   const noPieces = after.every(function (p) { return p.piece === undefined && p.pieces === undefined; });
   if (took(wrote) && wholeBox.length === 1 && namesRow(wholeBox[0], N, M) && bytesOf(wholeBox[0]) <= PAYLOAD_MAX && noPieces && !overMax(after).length) test.check('a box just under the bound is taken and pushed whole, in one publish under PAYLOAD_MAX');
   else test.fail(OWED + 'the box just under the bound answered ' + short(wrote.body) + '; pushed whole ' + wholeBox.length + ' time(s), no pieces ' + noPieces + ', over the limit ' + overMax(after).length);
-  // A goal becoming current is pushed: every item's row, and since goal/G33.7 (box v46, Andy: "the box and other parts
-  // will come when needed and stay") none of its parts: no box, no chat line.
+  // A goal becoming current is pushed: every item's row, and none of its parts: no box, no chat line (goal/G33.7, box
+  // v46, Andy: "the box and other parts will come when needed and stay").
   const pg = await A.call('goal.add', { title: 'Pushed' }, ANDY);
   const pgid = took(pg) ? String(pg.body.id) : '';
   const p1 = await A.call('item.add', { goal: pgid, title: 'Pushed one' }, ANDY);
@@ -487,8 +487,8 @@ async function migration() {
   if (len(seen.box) >= 1 && boxText.indexOf('MIGRATED-BOX-V3') !== -1) test.check('the newest box version is a row of (7, 1)');
   else test.fail(OWED + 'the box rows of (7, 1) are ' + short(seen.box));
   const chatText = JSON.stringify(seen.chat || []);
-  // goal/G43.22: the old group chat desk/G0.0 is no goal of the desk any more, so its line makes no goal 0 (until then it
-  // went to goal 0, the group chat; Andy: "G0 goes, from ui and server, kept in database.").
+  // goal/G43.22: the old group chat desk/G0.0 is no goal of the desk, so its line makes no goal 0 (Andy: "G0 goes,
+  // from ui and server, kept in database.").
   if (chatText.indexOf('MIGRATED-ANDY-LINE') !== -1 && chatText.indexOf('MIGRATED-AGENT-LINE') !== -1 && len(seen.group) === 0 && len(seen.zero) === 0) test.check('the chat lines kept their item; the old group chat\'s line made no goal 0');
   else test.fail(OWED + 'the chat rows of (7, 1) are ' + short(seen.chat) + '; of goal 0 ' + short(seen.group) + ', its goal row ' + short(seen.zero));
   if (len(seen.checks) >= 1 && len(seen.files) >= 1 && len(seen.claims) >= 1) test.check('the Q, the file and the claim kept their items');
@@ -579,9 +579,9 @@ async function shedding() {
   if (aThere && bGone) test.check('goal A, touched since, stays: shedding stops once one goal is enough');
   else test.fail(OWED + 'A ' + (aThere ? 'stays' : 'is gone') + ', B ' + (bGone ? 'is gone' : 'stays'));
   await X.stop();
-  // A bound nothing fits under: every goal but the current one and the special ones goes. SINCE goal/G43.22 the desk
-  // makes no special goal (no group chat, no plugin goal), but one kept in a database stays (Andy: "G0 goes, from ui and
-  // server, kept in database."): so the old group chat's goal row is planted as such a database keeps it, goal 0, special.
+  // A bound nothing fits under: every goal but the current one and the special ones goes. The desk makes no special
+  // goal (goal/G43.22), but one kept in a database stays (Andy: "G0 goes, from ui and server, kept in database."): so
+  // the old group chat's goal row is planted as such a database keeps it, goal 0, special.
   const planted = (function () {
     const db = new DatabaseSync(X.db);
     try {
@@ -607,6 +607,8 @@ async function shedding() {
 }
 
 // ── 9. NO HAND-ROLLED MECHANISM (Andy: "if there's new hand-rolled shit in this new code, i'll be extremely MAD") ────
+// The translator is read at spirit/element/desk/data.js, a path that no longer exists (it is process/js/desk/data.js,
+// goal/G41.24), so this section throws on the read.
 // A client reaches the desk through the family interface over peerPost (spirit.js forPeer), the translator keeps
 // what it learns in spirit.data alone, and the desk publishes through appServer.publish alone, which reaches its pages
 // and its clients both (box v43): the desk itself calls no client.

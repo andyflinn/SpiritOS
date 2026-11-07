@@ -1,17 +1,17 @@
 'use strict';
 
-// apiAuth/G1.13, desk's half: desk tracks every writer by the key it is handed, and shows the label. Red on today's code.
+// apiAuth/G1.13, desk's half: desk tracks every writer by the key it is handed, and shows the label.
 //   Andy: "yes. the label will only be used for labeling in chat, and for referencing members, internally desk
 //   server will use keys for tracking.", "my key will at least confirm it came from my node...", and the team's
 //   settled shape: by: leaves desk's verbs.
-// The contract the builder follows:
-//   - desk's verbs take no by: a by argument is no-such-argument. The writer is the caller appServer hands the
-//     handler (forwardKey.js): a member { key, label }, the owner { owner: true, key, label }.
-//   - each record keeps the writer's key (records.key in desk.db) and shows its label (a chat line's by); the
+// The contract:
+//   - desk's write verbs take no by: a by argument is no-such-argument. The writer is the caller appServer hands the
+//     handler: a member { key, label }, the owner { owner: true, key, label }.
+//   - each row keeps the writer's key (a chat row's creator in desk.db) and shows its label (a chat line's by); the
 //     owner shows as andy.
 //   - a press that is the owner's (go, done, close, ...) is the owner's caller, never a by: andy; a member's is
 //     refused not-owner.
-//   - agents.js and the Desk page and dialog send no by.
+//   - the Desk page and dialog send no by (a read's empty filter aside, below).
 
 const fs = require('fs');
 const os = require('os');
@@ -105,7 +105,6 @@ function call(verb, args, headers) {
   const readFilter = /'(chat\.search|items\.find)'.*[{,]\s*by\s*:\s*''/;
   const lines = page.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); });
   const pageSends = sets.test(lines.filter(function (l) { return !readFilter.test(l); }).join('\n'));
-  // agents.js was read here too; the agents app is gone (goal/G3.2).
   if (!pageSends) test.check('the Desk page and dialog send no by, but a read\'s empty filter');
   else test.fail(OWED + 'still sending by: Desk page or dialog ' + pageSends);
   if (readFilter.test("ddAsk('chat.search', { id: id, by: '' })") && !readFilter.test("ddAsk('chat.search', { id: id, by: 'andy' })") && !readFilter.test("ddWrite('chat.add', { id: id, by: '' })")) test.check('the exception is narrow: a read with by \'andy\', or a write with any by, is not excused');

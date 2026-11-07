@@ -1,8 +1,7 @@
 'use strict';
 
 // The envelope every app's traffic travels in — inside the relay's own
-// `text` field, so no relay has to learn anything (packet 1,
-// ARCHITECTURAL-CONCERNS.md).
+// `text` field, so no relay has to learn anything (packet 1).
 //
 // Two properties this file exists to hold down:
 //
@@ -69,11 +68,9 @@ test.subHeading('Too big is refused here, not there');
   // MAX_TEXT is the relay's limit, checked there against the encoded
   // string — so an oversize packet would cost a signed round trip and a
   // rate-limit slot to be told what this node already knows.
-  // THE LIMIT IS ASKED FOR, NOT RESTATED. This asserted `=== 1024`, which
-  // was the number packet.js held while the relay held 16384 about the
-  // identical string — so the test agreed with the wrong half of a
-  // disagreement and made the gap look intentional. One source now
-  // (js/limits.js), and this checks the rule rather than the value.
+  // THE LIMIT IS ASKED FOR, NOT RESTATED: one source
+  // (spirit/run/spirit/limits.js), and this checks the rule rather than
+  // the value (see "HOW THE 16× GAP HAPPENED" below).
   const huge = packet.encode('relay-chat', 'x'.repeat(packet.MAX_TEXT));
   // SEALED_MAX, not PLAINTEXT_MAX, since 2026-09-26: the composer refuses on
   // escaped UTF-8 bytes rather than characters, because the wire counts bytes
@@ -146,7 +143,7 @@ test.subHeading('One number, in one place');
   // AND NOBODY ELSE DECLARES ONE. A literal here is how the gap comes
   // back: the next module needing a size writes its own, agrees with
   // itself, and disagrees with the wire.
-  // js/ AND js/client/: packet.js moved down there, and shell.js — which
+  // spirit/run/spirit/ AND ITS client/: packet.js sits there, and shell.js — which
   // refuses an oversized send before it posts — is exactly the file that
   // would grow a second number if this scan could not see it.
   const jsDir = path.join(__dirname, '..', 'run', 'spirit');
@@ -212,8 +209,8 @@ test.subHeading('Yesterday’s mail is still mail');
   const notPackets = [
     '{"app":"relay-chat"}',                       // no version, no body
     '{"app":"relay-chat","v":2,"id":"x","body":1}', // a version we do not know
-    // `{"v":1,"id":"x","body":"hi"}` STOOD HERE — "no app" — and it is a
-    // packet now, asserted below. See the block after this one.
+    // `{"v":1,"id":"x","body":"hi"}` ("no app") is a packet, asserted in
+    // the block after this one.
     '{"app":"","v":1,"id":"x","body":"hi"}',       // empty app: a claim to be
                                                   // an app, made badly
     '[1,2,3]',
@@ -246,10 +243,9 @@ test.subHeading('Yesterday’s mail is still mail');
 // and requiring one made the node and the box each invent the string
 // `relay` and write it into bytes neither of them ever parses.
 //
-// `{"v":1,"id":"x","body":"hi"}` was in the legacy list above until
-// 2026-09-16, on the rule that "anything short of a whole envelope reads
-// as legacy". The rule stands; what changed is what a whole envelope IS.
-// A version we know and a body still separate a packet from a chat line —
+// `{"v":1,"id":"x","body":"hi"}` is a whole envelope: "anything short of a
+// whole envelope reads as legacy", and a version we know and a body
+// separate a packet from a chat line —
 // a plain string is not JSON at all, and hand-typed JSON has neither.
 //
 // It also closes a hole rather than opening one. While every packet had
@@ -295,14 +291,11 @@ test.subHeading('A packet addressed to the box names no app');
 //
 //   Andy: "nothing in node and relay should know about apps."
 //
-// This drove `hub.decorateWithPacket`, which parsed an arriving payload
-// and hung `message.packet` on the row so a reader could tell whose
-// traffic it was. That reader is the SHELL, which loads this file
-// itself — so the node was decoding an app envelope for a layer above
-// it, and that was the only reason hub.js required packet.js.
-//
-// Gone. What is asserted now is the absence: the node exposes nothing
-// that reads an envelope, and decoding still works where it belongs.
+// The reader of an app envelope is the SHELL, which loads packet.js
+// itself, so the node decodes no app envelope for a layer above it. What
+// is asserted is the absence: the node exposes nothing that reads an
+// envelope (no hub.decorateWithPacket), and decoding still works where it
+// belongs.
 test.subHeading('The node exposes nothing that reads an envelope');
 
 {
@@ -315,9 +308,9 @@ test.subHeading('The node exposes nothing that reads an envelope');
   // AND NOTHING IN THE NODE REQUIRES packet.js. The rule is about the
   // dependency, not just the one function: a module about apps has no
   // business in a node, and through server.js it reached a relay.
-  // No exclusion needed: packet.js is not in this directory any more. It
-  // sits in js/client/ with the shell, which is the same rule written as
-  // a path rather than as a test.
+  // No exclusion needed: packet.js is not in this directory. It sits in
+  // spirit/run/spirit/client/ with the shell, which is the same rule
+  // written as a path rather than as a test.
   const nodeDir = path.join(__dirname, '..', 'run', 'spirit');
   const offenders = fs.readdirSync(nodeDir)
     .filter(function (f) { return f.endsWith('.js'); })
@@ -349,16 +342,11 @@ test.subHeading('The node exposes nothing that reads an envelope');
 }
 test.subHeading('Relay Chat keeps another app’s traffic out of its archive');
 
-// THE RULE THAT KEEPS A CHESS MOVE OUT OF A CHAT LOG was asserted here,
-// against relayChat.js, until 2026-09-25 — when that app left for its own
-// repo and the assertion went with it (its repo's
-// test/CARRIED-ASSERTIONS.md).
-//
-// IT IS NOT REPLACED BY AN ASSERTION ABOUT THE SUBSTITUTE, and that is
-// deliberate: it was about what ONE APP must not do with a packet name,
-// not about what any app does. Re-pointing it at textEditor would have
-// produced a check that passes because textEditor has no packets —
-// vacuous, and wearing the clothes of the thing it replaced.
+// NO ASSERTION UNDER THIS HEADING. The rule that keeps a chess move out of
+// a chat log was about what ONE APP (relayChat.js, now in its own repo,
+// with the assertion in its test/CARRIED-ASSERTIONS.md) must not do with a
+// packet name. Pointed at another app with no packets it would pass
+// vacuously, so it is not re-pointed.
 
 test.subHeading('relay.js did not have to change');
 

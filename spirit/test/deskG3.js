@@ -4,12 +4,12 @@
 //   G3.1  Andy: "start design mode should start a new project if nothing is in the list".
 //   G3.3  Andy: "why would the server not use bucket to give me the most recent stuff?" and "for these chats the
 //         server should search for "*" and find the most recent few entries easily".
-// The contract the builder follows (claude-windows's picks where the box names no shape):
-//   G3.1  press {what: 'start-design', id: '', by: 'andy'} while no goal is open creates a goal `goal/G<n>` (n the
+// The contract (the agents' picks where the box names no shape):
+//   G3.1  press {what: 'start-design', id: ''} from the owner while no goal is open creates a goal `goal/G<n>` (n the
 //         next free number), titled 'New goal', in design mode, and makes it the current goal; Andy renames it.
 //         With a goal open, an empty id is refused (bad-request). An agent's is refused like any owner press.
 //         The List's Start design, with no goal row, sends that press.
-//   G3.3  item.chat (item.get before the lazy panels) walks the chat newest first through the server's bucket, in the room the answer has left after
+//   G3.3  item.chat walks the chat newest first through the server's bucket, in the room the answer has left after
 //         the box and the facts: `chat` holds the newest lines that fit, oldest first as before, and `chatMore` is
 //         true when older lines were left out. The whole answer fits one answer (appClient.ANSWER_MAX).
 
@@ -37,7 +37,7 @@ const kids = [];
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });
 client.register('desk', pipe);
-// Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+// Writers are CALLERS (apiAuth/G1.13): desk refuses a by argument.
 const CW = { key: 'MCowBQYDK2VwAyEAdeskG3TestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskG3TestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskG3TestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
@@ -97,6 +97,8 @@ function clickTarget(attrs) {
   else test.fail('an agent\'s start-design with no id was taken');
 
   // The List: no goal row, Start design pressed twice (it arms first).
+  // STALE: shell/desk/desk.js loads its parts through window.spirit.require (deskNeed) at mount, and the window handed
+  // here has none, so the mount throws "no spirit.require on this page" and the rest of the suite does not run.
   const fake = require('./deskFake.js').create([]);
   fake.items = [];
   const byId = {};
@@ -112,7 +114,7 @@ function clickTarget(attrs) {
   });
   for (let i = 0; i < 6; i++) await settle();
   const tabs = doc.getElementById('desk-tabs');
-  // Until goal/G43.22 Team was clicked first; the design button shows on every tab (goal/G9.8), the List's included.
+  // The design button shows on every tab (goal/G9.8), the List's included.
   tabs.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs });
   tabs.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs });
   for (let i = 0; i < 6; i++) await settle();
@@ -139,14 +141,14 @@ function clickTarget(attrs) {
   else test.fail('with a closed goal row, Start design sent ' + JSON.stringify(pressed2 || null));
 
   test.subHeading('G3.3: an item with a long chat still opens, with its newest lines');
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; since goal/G33.7 (session.set went)
-  // through goal.add and item.add, the desk naming the ids.
+  // An agent creates no goal (goal/G29.21), so the owner writes the world through goal.add and item.add, the desk
+  // naming the ids.
   const G1 = String(((await call('goal.add', { title: 'The goal' }, ANDY)).body || {}).id || '');
   const I1 = String(((await call('item.add', { goal: G1, title: 'Talky' }, ANDY)).body || {}).id || '');
   if (!G1 || !I1) test.fail('the world: goal.add/item.add named no ids');
   await call('box.write', { id: I1, text: 'the box', version: 0 }, CW);
   const n = Math.ceil((appClient.ANSWER_MAX * 3) / 1000);
-  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+  // An agent writes only where it holds the item or the take of his line (goal/G18.8).
   for (const id of [I1, G1]) await call('item.take', { id: id }, WSL);
   for (let i = 0; i < n; i++) await call('chat.add', { id: I1, text: 'LINE-' + String(i).padStart(3, '0') + ' ' + 'x'.repeat(1000) }, i % 2 ? ANDY : WSL);
   const got = await whole(I1);

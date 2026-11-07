@@ -14,23 +14,8 @@ const rollOf = require('./rollOf');
 //
 // The two being the front door's "is this sender a relay?"
 // (hub.frontDoor) and search's "which key do I address this box as"
-// (hub.handleSearch). Both need a PIN, and the pin was derived from the
-// whole roll — once per relay, per node boot, at 151 bytes a member.
-//
-// ── WHY A NEW DOOR RATHER THAN A NARROWER QUESTION ───────────────────
-//
-// `?key=` cannot help here. It filters the PEERS; the relay's own key is
-// on the envelope, so narrowing to a key nobody holds would still be
-// asking the roll a question about its membership in order to read a
-// field beside it. A caller that wants one fixed fact should ask for one
-// fixed fact.
-//
-// And it is what makes the roll demotable. 0010 grants `who` a GET
-// exemption for exactly one reason — "it is where a node learns the
-// relay's KEY. You cannot post to an address you are still asking for" —
-// and while that is true of `who`, `who` can never require a signature,
-// because the first caller has nothing to sign with. Move key-learning
-// and the sentence moves with it.
+// (the network search). Both need a PIN, and a caller that wants one
+// fixed fact asks for one fixed fact, never the membership beside it.
 //
 // ── FIXED COST, WHICH IS WHAT EARNS THE EXEMPTION ────────────────────
 //
@@ -139,14 +124,11 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
 
   // ── 2. AND IT STILL RE-CHECKS, WHICH IS NOT THE SAME COST ──────────
   //
-  // A pin-first short-circuit was written here and backed out the same
-  // hour: returning the pinned key without asking makes steady state free
-  // and makes a REBUILT relay silent. A rebuilt box answers honestly with
-  // a new key, and the check is the only thing that notices — an attacker
-  // can echo the pinned key back, but an honest rebuild cannot.
-  //
-  // So the saving is the DOOR, not the skipping. What used to cost a
-  // whole roll now costs two fields, and the behaviour is unchanged.
+  // Returning the pinned key without asking would make steady state free
+  // and a REBUILT relay silent. A rebuilt box answers honestly with a new
+  // key, and the check is the only thing that notices — an attacker can
+  // echo the pinned key back, but an honest rebuild cannot. So the saving
+  // is the small answer, not the skipping.
 
   test.subHeading('And it still asks each boot — cheaply, not never');
 
@@ -171,16 +153,10 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
     //   Andy: "why not: the suite asserts the order — small door first,
     //   or else fail."
     //
-    // A roll fallback was written here and cut the same hour. Two
-    // reasons, and the second is the one that settles it: a fallback is a
-    // path nobody exercises (four such were deleted the day before), and
-    // **a fallback is a reader** — while anything reaches for `who`, the
-    // roll has a caller that is not a list and cannot be demoted to a
-    // signed post. It would have preserved the thing this door removes.
-    //
-    // The cost is a deploy order: relay before node. A node updated first
-    // simply cannot pin that relay, which is visible — search reports it
-    // `silent` — rather than quietly working at 300x the price.
+    // No fallback: a fallback is a path nobody exercises, and a fallback
+    // is a reader of whatever it falls back to. A relay that does not
+    // answer the card ask cannot be pinned, which is visible rather than
+    // quietly worked around.
 
     test.subHeading('And a relay without the door is refused, not worked around');
 
@@ -243,9 +219,9 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
 
       // ── 5. IT REVEALS NOTHING THE ROLL DID NOT ───────────────────
       //
-      // A new public door has to be argued for on what it hands out, not
-      // only on what it costs. This answers two fields that were already
-      // on a route open to anyone, and no third thing.
+      // A public answer has to be argued for on what it hands out, not
+      // only on what it costs. This answers the relay's own fields, and no
+      // membership.
 
       test.subHeading('And says nothing the roll did not already say');
 
@@ -263,11 +239,9 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
 
       // ── AND THE STATEMENT IS SIGNED (cycle 10, R9) ────────────────
       //
-      // The comment on `fetchKey` used to admit what this answer was
-      // worth: the re-check "compares against an UNSIGNED answer and so
-      // catches nothing an attacker could not forge". Fair while the
-      // answer was an identity to pin. Not fair once it carries the key
-      // every owner verb — invite tokens included — is sealed to.
+      // An unsigned answer would let the re-check catch nothing an attacker
+      // could not forge, and this answer carries the key every owner verb —
+      // invite tokens included — is sealed to.
       test.subHeading('What the relay says its keys are, it signs');
 
       {

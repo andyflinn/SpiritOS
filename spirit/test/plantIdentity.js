@@ -3,12 +3,12 @@
 // spirit/test/plantIdentity.js
 // An identity in a scratch root, made the way a node makes its own.
 //
-// Since goal/G22.5 relayAuth.js does not export ensureIdentity (Andy,
-// 2026-10-13): it ensures the identity of the spirit/run it sits in on its
-// FIRST LOAD, and nothing else may make one. So a suite that wants a
-// scratch root with an identity in it plants the code that makes one:
-// relayAuth.js and the one module it requires are copied into
-// <root>/js/, and requiring that copy runs its first load, which ensures
+// relayAuth.js does not export ensureIdentity (goal/G22.5): it ensures the
+// identity of the root it sits in on its FIRST LOAD, and nothing else may
+// make one. So a suite that wants a scratch root with an identity in it
+// plants the code that makes one: relayAuth.js and the two modules it
+// requires (fieldRules.js, shellMove.js) are copied into <root>/spirit/,
+// and requiring that copy runs its first load, which ensures
 // <root>/spirit/state/identity.json (keys, seal key, the machine name) and
 // keeps whatever whole identity is already there. A name, if given, is then
 // set through the one public naming call, relayAuth.nameIdentity, which

@@ -1,18 +1,17 @@
 'use strict';
 
 // spirit/test/deskItemAddGrant.js
-// goal/G29.21, its second part: an agent adds items only under Andy's words, and a new item is code. Red on today's
-// tree; claude-windows writes it and builds it (one agent). The item's box (v3), DESK: ITEM ADDS NEED HIS WORDS:
+// goal/G29.21, its second part: an agent adds items only under Andy's words, and a new item is code. The item's box,
+// DESK: ITEM ADDS NEED HIS WORDS:
 //   - Desk lets an agent add items only while Andy's newest Desk line holds the words "add item" (one item) or "add
 //     items" (several items) in sequence. The grant ends with his next line. Proposing items stays free.
 //   - A new item is kind code unless said otherwise.
 //   - The item grant holds only in the goal his line is in; "add goal" grants one more goal, no items; an agent's
-//     session.set creates no goal, and its new items count against the item grant. Since goal/G33.7 there is no
-//     session.set (the approved verb list: "its callers use goal.add and item.add"), so no bulk path goes around the
+//     session.set creates no goal, and its new items count against the item grant. There is no session.set
+//     (goal/G33.7, the approved verb list: "its callers use goal.add and item.add"), so no bulk path goes around the
 //     grant: every new item is an item.add, counted one by one.
 // NAMED HERE where the box names none: his newest line is his newest chat line anywhere in Desk; the words match
-// whatever the case; his own adds need no grant; "code" is the item's code mark (item.get's code), and an item whose
-// plugin refuses the code press (codeOffered false) is not marked.
+// whatever the case; his own adds need no grant; "code" is the item's code mark (item.get's code).
 // rule/11: through testSupport only; its own scratch folder and pipe.
 
 const fs = require('fs');
@@ -109,7 +108,7 @@ async function main() {
     if (took(hisGoal)) test.check('his own goal.add needs no grant');
     else test.fail('his own goal.add answered ' + hisGoal.status + ' ' + short(hisGoal.body));
 
-    // goal/G33.7: session.set went, so no bulk write goes around the grant; the grant counts item.add one by one.
+    // There is no session.set (goal/G33.7), so no bulk write goes around the grant; the grant counts item.add one by one.
     test.subHeading('6. no bulk path around the grant: session.set is gone, and the grant counts each add');
     await say(gid, 'add items, all of them');
     const bulk = await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G100', title: 'Bulk' }, items: [{ id: 'goal/G100.1', title: 'Bulk', blocks: ['goal/G100'] }] }) }, CW);

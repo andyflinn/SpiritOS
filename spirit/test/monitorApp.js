@@ -118,12 +118,10 @@ test.subHeading('What the app refuses to draw');
   //
   //   connections: { position: '12/12', allowed: 4096, floor: 1, ceiling: 4096 }
   //
-  // The first version of this test guessed what "older" looked like and
-  // guessed wrong in two ways: the real one carries its value under
-  // `allowed`, not `value`, and its label is `connections` with no
-  // iteration, which leverOk refuses. Both together made the app throw
-  // away four usable numbers and print "this node cannot read that
-  // lever" at an owner who was entitled to watch it.
+  // It carries its value under `allowed`, not `value`, and its label is
+  // `connections` with no iteration, which leverOk refuses. Read wrongly,
+  // the app throws away four usable numbers and prints "this node cannot
+  // read that lever" at an owner who is entitled to watch it.
   //
   //   Andy: "the test must account for version discrepancies, because
   //   that is established reality as soon as a certain level (alpha) is
@@ -270,8 +268,8 @@ test.subHeading('Where a relay’s key lives');
 // The second wiring bug of the same afternoon, and the same shape as the
 // first: a field invented rather than looked up. Apply answered "this
 // node does not hold that relay's key" about a relay the node owns,
-// because `row.relayKey` does not exist — natterDetails' ndRelayKey has
-// carried the real answer since cycle 3.
+// because `row.relayKey` does not exist. The key is the roll's copy, or
+// the owner's report (as relayPanel.js's ndRelayKey reads it).
 {
   const fromRoll = { roll: { relayKey: 'ROLL_KEY' } };
   const report = { key: 'REPORT_KEY' };
@@ -390,11 +388,8 @@ test.subHeading('The All Relays summary ranks the worst first');
 
 test.subHeading('The headline counts one thing, not two');
 
-// The first version of this sentence lied: with nothing redlining it
-// printed the size of the WHOLE FLEET as the relay count, while the
-// other branch printed relays that were actually redlining. Two
-// populations under one sentence, and a number that means something
-// different depending on which branch produced it.
+// One population under the sentence: the count is of relays redlining,
+// in both branches, never the size of the whole fleet.
 //
 //   Andy: "it should read: 0 on 0... I only want to direct attention to
 //   where it's needed."

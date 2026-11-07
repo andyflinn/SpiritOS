@@ -34,3 +34,10 @@ valuable if that can be extracted mechanically".
 - The model's thinking, tool calls or leaked reasoning posted to Desk.
 - A run with no answer posted as an empty line.
 - A refused listen hammered without its pause, or the loop ending.
+
+## Found while reading, not asserted
+
+- The loop listens without `--read <key>`, so deskClient's `next` hands the same wake again on the next listen
+  (`deskAgentEar.md`, goal/G41.11) and its lines come round once more.
+- It takes no line (`line.take`) before its `chat.add`; deskClient refuses that `not-taken` on an item the agent does
+  not hold (deskClient.js `mayChat`, goal/G27.6).

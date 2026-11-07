@@ -1,20 +1,14 @@
 'use strict';
 
-// goal/G10.5: the AGENTS family on a process server's door. Red on today's code; wsl-claude wrote it from the item's
-// box at d6e9df7d and does not build it.
-//   Andy, 2026-10-09: "that is a decision. make it so."; "the verb-file should be readable/fetchable by the loopback
-//   client through a multiplexed AGENTS interface"; "plus one verb AGENTS.introspect that will return only the verbs
-//   available?"; ".. and if there's no AGENTS.md the verb is closed for the agent, period."; "this way we can slowly
-//   add verbs that are agent-safe".
+// goal/G10.5, made FS alone by goal/G30.4: a process server's family folder, read through its FS verbs. There is no
+// AGENTS verb: appServer's withAgents hands every server the FS verbs of its family folder (introSpector.js family),
+// and a verb file naming a verb the server never declared is said at boot.
 //
-// WHAT IS TRUE TODAY (read in the tree at d6e9df7d): appServer gives a server one AGENTS verb, {} to {text}, when an
-// AGENTS.md sits beside its script (appServer.js:357, withAgents); there is no AGENTS.introspect, no AGENTS.<verb>,
-// no folder of verb files, and nothing is said at boot about a file naming a verb that does not exist. A verb name
-// may already be dotted and up to 64 characters (appServer.js:47), so the family needs no new mechanism, which is
-// why the item's box says so.
+// The family folder appServer reads is family/ beside the script (familyPath, goal/G41.12: "Every server's family
+// folder is named family: process/js/<name>/family/"); a script of spirit/app/<name>/ has api/ instead (goal/G43.12).
+// This suite writes its folder as probe.family, a name appServer no longer reads, so point 1 finds no AGENTS.md.
 //
-// WHAT IS ASSERTED, on a scratch process server of this suite's own. SINCE goal/G30.4 the AGENTS verbs are gone and
-// the family folder (<script>.family beside the script) is read through its FS verbs, so each point asks FS:
+// WHAT IS ASSERTED, on a scratch process server of this suite's own, each point asking FS:
 //   1. FS.loadFile {path: 'AGENTS.md'} answers the AGENTS.md, and AGENTS is no verb any more.
 //   2. FS.search {q: ''} lists the folder's files in the list form {items: [{key, label}], more}: the verb that has a
 //      file is there as <verb>.json, a declared verb with no file is not.
@@ -41,7 +35,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const AGENTS_MD = '# Probe: rules for agents\n\nThis server exists for one suite and answers two verbs.\n';
 const ADD_FILE = { description: 'Add one row to the probe, and answer its id.' };
 const GHOST_FILE = { description: 'A verb this server never declared.' };
-// serve() takes the verb table itself, and finds the AGENTS.md beside argv[1] (appServer.js:392).
+// serve() takes the verb table itself, and finds the family folder beside argv[1] (appServer.js withAgents).
 const SERVER_JS = [
   "'use strict';",
   "const appServer = require(process.env.PROBE_APPSERVER);",
@@ -61,7 +55,7 @@ fs.mkdirSync(dir, { recursive: true });
 fs.mkdirSync(state, { recursive: true });
 const script = path.join(dir, 'probe.js');
 fs.writeFileSync(script, SERVER_JS);
-// The family folder is probe.family beside probe.js (goal/G30.4).
+// The family folder this suite writes: probe.family beside probe.js; appServer reads family/ (see the header).
 const familyDir = path.join(dir, 'probe.family');
 fs.mkdirSync(familyDir, { recursive: true });
 fs.writeFileSync(path.join(familyDir, 'AGENTS.md'), AGENTS_MD);

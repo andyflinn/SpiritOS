@@ -1,9 +1,9 @@
 'use strict';
 
-// goal/G19.6: the git helpers touch only what they put there themselves. Red on today's tree.
+// goal/G19.6: the git helpers touch only what they put there themselves.
 //   Andy, 2026-10-12, to the findings of goal/G19.6: "agreed to the whole thing as stated in your last message." The
 //   box of goal/G19.6 holds the findings and the decision:
-//   - publishData commits its one file and nothing else staged.
+//   - publishData commits its one folder (agents/<agent>/) and nothing else staged.
 //   - pushOrigin puts back exactly its own stash, or says it could not; it refuses a detached HEAD; its header says
 //     what it does (retries).
 //   - deskClient pulls beside the call that hands an agent its lines, never inside it, and never aborts a rebase it
@@ -11,18 +11,22 @@
 //   - The two lows go with it: goalShare's shared file without writtenAt, so an unchanged goal is not committed again;
 //     commitCheck keys a pending commit by more than its subject.
 //
-// THE SHAPES (the builder's picks; the box names none):
+// WHAT IS ASSERTED (the box names no shapes):
 //   1  publishData: other work staged in the agent's clone before a publish is still staged after it, and neither the
 //      publish commit nor origin holds it. Run against a pretend node that answers every desk ask (profile.get names
 //      the agent gemma) and a traffic log with no rows, so the publish counts 0 posts and still commits (Q16).
-//   2  pushOrigin: on a detached HEAD it refuses with a reason and pushes nothing (today it pushes HEAD:HEAD, which
-//      makes a branch named HEAD on origin). Its stash is found by its label: a stash somebody else made while it ran
+//   2  pushOrigin: on a detached HEAD it refuses with a reason and pushes nothing (no branch named HEAD on origin).
+//      Its stash is found by its label: a stash somebody else made while it ran
 //      (a pre-push hook here) stays where it is, and the unsaved edit comes back. A stash it cannot put back answers ok
 //      false with a reason that says so, and the stash is kept, not lost.
 //   3  desk.js: the goal file it shares holds no writtenAt, so the same goal is the same bytes.
 //   4  commitCheck: a pending commit is known by its subject AND its patch (git patch-id), so a second commit with the
 //      same subject is not written under the first one's item, and a commit re-stacked by a pull --rebase (new hash,
 //      same patch) still is.
+// STALE, parts 1 and 4: publishData.js (spirit/run/spirit/app/publishData/) and commitCheck.js now ask their desk
+// verbs through the spirit object's deskClient family (goal/G32.3, goal/G40.6), which reaches the node the process
+// belongs to, not the pretend node on the port handed here. So the publish is named after the real node's profile
+// (not gemma) and commitCheck's chat.add is refused by the real deskClient (not-taken). Parts 2 and 3 pass.
 
 const fs = require('fs');
 const os = require('os');
@@ -39,7 +43,7 @@ const PUSH_ORIGIN = path.join(RUN, 'spirit', 'app', 'pushOrigin', 'pushOrigin.js
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
 const CW = { key: 'MCowBQYDK2VwAyEAgitHelpersTestPeerCWAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
-// goal/G29.21: the owner writes the world, since an agent's session creates no goal.
+// The owner writes the world, since an agent creates no goal (goal/G29.21).
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAgitHelpersTestOwnerAAAAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const ENV = Object.assign({}, process.env, { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' });
 
@@ -102,8 +106,9 @@ function runPush(repo) {
     function (e) { return { ok: false, reason: 'threw: ' + ((e && e.message) || e) }; });
 }
 
-// A PRETEND NODE: every POST answered {ok: true, name: 'gemma'}, which reads as the desk's answer to any desk ask
-// through deskClient (deskClient.desk by name, goal/G30.6), and as a node that took a jobs.create. Each body is kept.
+// A PRETEND NODE: every POST answered {ok: true, name: 'gemma'}, meant as the desk's answer to any desk ask through
+// deskClient (deskClient.desk by name, goal/G30.6), and as a node that took a jobs.create. Each body is kept. (The
+// helpers no longer reach it for their desk asks: see STALE above.)
 const heard = [];
 const node = http.createServer(function (req, res) {
   let raw = '';
@@ -226,8 +231,7 @@ test.startTest('goal/G19.6: the git helpers touch only what they put there thems
     const pipe = process.platform === 'win32' ? appClient.pipePathFor(d, 'desk', 'win32', 'process') : path.join(d, 'door.sock');
     const client = appClient.createAppClient({ rootDir: d });
     client.register('desk', pipe);
-    // The world (goal/G33.7: session.set went), seeded before the desk starts; his press on the current goal writes the
-    // goal file.
+    // The world, seeded before the desk starts (goal/G33.7); his press on the current goal writes the goal file.
     test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Same' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }] });
     const kid = spawn(process.execPath, [DESK, JSON.stringify({ goalRepo: scratch, goalPath: 'currentGoal.json' }), '--pipe', pipe, '--state', state], {
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + port + '/api/spirit' }),

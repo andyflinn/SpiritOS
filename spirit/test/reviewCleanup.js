@@ -1,52 +1,27 @@
 'use strict';
 
 // spirit/test/reviewCleanup.js
-// goal/G16.9: the findings of the review of 2026-10-10 (Andreas Thut, at e8f8ffd) that need no decision, done
-// together and last. Written first, red on today's code, by wsl-claude; the build is the other agent's.
-//
-// DECIDED: an item of this goal at Andy's word, 2026-10-10: "let's do it that way." — one cleanup item last and
-// three design items, each argued one at a time before it is built.
-//
-// EVERY PREMISE RE-CHECKED AGAINST THE TREE at d35aa3e6, because the box was checked at b355e36d and the tree has
-// moved twice since (goal/G16.2 and goal/G16.8 both deleted code it describes). What changed, so the next session
-// does not look for the old lines: the verb file is spirit/run/spirit/jobs/api.json, not process/js/jobs/api.json;
-// relayServer requires peerPost at 938, not 1053; the loopback subscription is kernel.js:753 and the SSE route
-// server.js:870. Every one of the six findings still holds, and each is asserted BY ITS BEHAVIOUR below rather
-// than by the line it lives on, so the build may move any of them.
+// goal/G16.9: the findings of the review of 2026-10-10 (Andreas Thut, at e8f8ffd) that needed no decision. Each is
+// asserted BY ITS BEHAVIOUR below rather than by the line it lives on.
 //
 // WHAT IS ASSERTED, one section per finding
-//   1. THE NODE'S VERB FILE NAMES NO APP. jobs/api.json tells the reader how to reach "the desk" by name. Andy:
-//      "nothing in node and relay should know about apps." A placement fault, and the plainest of the six.
-//   2. A RELAY DOES NOT DEMAND FOLDERS IT NEVER LOADS. serveCommon's start check requires shell/ and process/
-//      under the working directory; a relay spawns no jobs and loads neither.
-//   3. NO NODE CONTACT CODE LOADS ON A RELAY — and the box overstates this one, so it is corrected here rather
-//      than asserted as written. Measured at d35aa3e6: requiring peerPost pulls contacts.js, and NOT
-//      nodeStore.js, and node:sqlite is never loaded. contacts.js requires nodeStore LAZILY, inside the call
-//      that marks a book seen (contacts.js:214), so a relay carries the node's contact code but opens no
-//      database unless that path runs — and the box's own words were "whether any contacts path runs on a relay
-//      is not confirmed". So what is owed is the load, which is real and measurable; the sqlite half was not
-//      happening. Against serveCommon's stated aim that a relay loads no node code.
-//   4. A LOOPBACK SERVER'S POST DOES NOT EAT THE BACKLOG (S11, and the one with teeth). arrivals.subscribe marks
-//      the WHOLE waiting backlog taken and hands it over, which is right for a page catching up. But
-//      spirit.peerPost opens /api/events for every post, and the desk, chatClerver and fileServer post that way
-//      with no browser open — so each loopback post consumes and discards everything waiting, and the owner's
-//      next page open replays nothing. Asserted as behaviour, not as an API, because the box leaves the shape
-//      open ("a loopback server subscribes as a server and marks nothing taken, OR the mark is the page's
-//      alone"): whichever is built, what must be true is that a server reading the stream leaves the page's
-//      backlog alone. TWO OF THAT SECTION'S CHECKS ALREADY HOLD and are controls, not work owed: arrivals
-//      already offers witness(), which takes nothing (goal/G16.5). The fault is one seam above it — peerPost
-//      coming in through the page's door — and that is the check that is red.
-//   5. SEATS REACH THE OWNER. relay.js builds a seats block for one reply, but the owner's live report is called
-//      without it, so relayStatus's `seats: o.seats || undefined` is always undefined and the one number that
-//      says the relay is full never arrives.
-//   6. THE RELAY'S IDENTITY SURVIVES A CRASH MID-WRITE. saveIdentity writes identity.json in place, so a crash
-//      part-way leaves a file ensureIdentity cannot read, and it mints a NEW relay key — every member's allow
-//      entry then names a relay that no longer exists.
+//   1. THE NODE'S VERB FILE NAMES NO APP. Andy: "nothing in node and relay should know about apps." It reads
+//      spirit/run/spirit/jobs/api.json, which the tree no longer has (the jobs family's interface is
+//      spirit/run/spirit/jobs/api.js), so this check fails on a missing file.
+//   2. A RELAY DOES NOT DEMAND FOLDERS IT NEVER LOADS. serveCommon's start check must not require shell/ and
+//      process/ of every server; a relay spawns no jobs and loads neither.
+//   3. NO NODE CONTACT CODE LOADS ON A RELAY: requiring peerPost pulls neither nodeStore.js nor contacts.js.
+//   4. A LOOPBACK SERVER'S POST DOES NOT EAT THE BACKLOG (S11). A page catching up through arrivals.subscribe gets
+//      the waiting backlog and marks it taken; a server reading the stream takes none of it and is handed no
+//      backlog, and spirit.peerPost does not open the page stream to await its reply.
+//   5. SEATS REACH THE OWNER. relayStatus carries `seats` when handed them, and relay.js hands them to the
+//      owner's live report.
+//   6. THE RELAY'S IDENTITY SURVIVES A CRASH MID-WRITE. saveIdentity writes a temporary file and renames it over
+//      identity.json, so a crash never leaves a file ensureIdentity cannot read (it would mint a NEW relay key, and
+//      every member's allow entry would name a relay that no longer exists).
 //
-// LEFT ALONE ON PURPOSE, and not owed here: hub.js's read of the Contacts app's old prefs file, a known
-// deprecation that expires at alpha; and the DEBUG monitor copying pass-through text to the owner, which is his
-// decision of 2026-09-26 and stays. (Named by what it says rather than by its number in the review: a bare
-// requirement number is ambiguous across cycles, and spirit/test/cycleCitations.js is right to refuse one.)
+// LEFT ALONE ON PURPOSE, and not asserted here: the DEBUG monitor copying pass-through text to the owner, which is
+// his decision of 2026-09-26 and stays.
 //
 // rule/11: through testSupport only; in-process modules, a child process for the require graph, temp homes of
 // this suite's own, no ports and no node.
@@ -85,8 +60,7 @@ test.subHeading('1. the node\'s own api description names no app');
 
 // ── 2. A RELAY DOES NOT DEMAND FOLDERS IT NEVER LOADS ───────────────────
 //
-// Asserted on the behaviour: a directory holding only what a relay needs passes the check. A grep for the
-// folder names would pass the moment somebody renamed the list.
+// Read off serveCommon.js: its REQUIRED_DIRS must not list both 'shell' and 'process'.
 test.subHeading('2. a relay starts from a folder with no shell/ and no process/');
 {
   const common = read(path.join(JS, 'serveCommon.js'));
@@ -101,13 +75,13 @@ test.subHeading('2. a relay starts from a folder with no shell/ and no process/'
 
 // ── 3. NO NODE STORE LOADS ON A RELAY ───────────────────────────────────
 //
-// The require GRAPH, asked of a real child process rather than read off the page: requiring relayServer must not
-// pull the node's contact store, and nothing on a relay may open node:sqlite through it.
+// The require GRAPH, asked of a real child process rather than read off the page: requiring peerPost must not
+// pull the node's contact store (nodeStore.js, contacts.js).
 test.subHeading('3. requiring the relay server loads no node store');
 {
-  // peerPost IS THE DOOR, and it is what relayServer requires (relay.js's partnerRouter, relayServer.js:938).
-  // relayServer itself cannot be required here: its own start check refuses any cwd but spirit/run and exits,
-  // which is finding 2 above getting in the way of finding 3.
+  // peerPost is probed alone. relayServer no longer requires it (a relay posts to nobody since partnering went,
+  // goal/G22.6), and relayServer itself cannot be required here: its own start check refuses any cwd but
+  // spirit/run and exits.
   const probe = 'require(' + JSON.stringify(path.join(JS, 'peerPost.js')) + ');'
     + 'console.log(Object.keys(require.cache).filter(function (p) { return /nodeStore\\.js$|contacts\\.js$/.test(p); }).join("|"));';
   let loaded = null;
@@ -205,7 +179,7 @@ test.subHeading('4. a server reading the stream leaves the page\'s backlog alone
 // ── 5. SEATS REACH THE OWNER ────────────────────────────────────────────
 //
 // relayStatus is a pure function from facts to a report, so the fault is in what it is HANDED. Asserted both
-// ways: the report carries seats when given them (it does today), and the relay actually gives them.
+// ways: the report carries seats when given them, and the relay actually gives them.
 test.subHeading('5. the one number that says a relay is full reaches its owner');
 {
   const seats = { held: 3900, outstanding: 200, allowance: 4096, free: -4 };
@@ -217,10 +191,10 @@ test.subHeading('5. the one number that says a relay is full reaches its owner')
   }
 
   // THE CALL ITSELF. Read from relay.js, because no in-process fixture can make the live report without a
-  // relay, and this is the fault: the owner's report is built without seats.
+  // relay: the owner's report must be built with seats.
   const relaySrc = read(path.join(JS, 'relay.js'));
-  // Balanced, not matched: the report's own argument holds nested objects, and a lazy regex stops at the first
-  // inner brace — which made this check say "cannot judge" on a call that is plainly there.
+  // Balanced, not matched: the report's own argument holds nested objects, and a lazy regex would stop at the
+  // first inner brace.
   function argumentOf(src, marker) {
     const at = src.indexOf(marker);
     if (at === -1) return null;

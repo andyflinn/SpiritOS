@@ -1,18 +1,16 @@
 'use strict';
 
 // goal/G2.20: a Go carries the rules active at that moment, a reopened goal's new items with it, and a rule of type
-// design reaches every item. Red on today's tree; claude-windows wrote it from G2.20's box and does not build it.
+// design reaches every item.
 //   Andy, 2026-10-06, under goal/G2.18: "new added items in a re-opened current goal should consider all decision
 //   made in the mean time."
 //   On what the type design should mean, answering Q1 on the item: "every item".
 //
-// WHAT IS WRONG TODAY, found while this was written and checked live on his node: his Go recorded an empty rule set
-// on goal/G2.18 while rule/3 was active, and again on all three of goal/G2's items at his Go-all. The reopening is
-// not the cause. A Go stamps the rules whose type the item's box asks for (desk.js rulesFor and typesOf), and
-// typesOf yields only 'desk', plus 'code' or 'ui' for the paths the box names, while a rule may be of type 'design'
-// (desk.js RULE_TYPES). So a design rule matched nothing at all, on any item, ever.
+// The desk no longer stamps rules at a Go from the paths a box names: since goal/G40.12 each goal and item carries a
+// list of attached rules (desk.js, the comment above autoAttachKeys: "each goal and item gets a list of attached
+// rules"), and typesOf and rulesForGo are gone. This suite still asserts the stamp at Go, so it fails on that.
 //
-// THE SHAPE (G2.20's box):
+// THE SHAPE IT ASSERTS (G2.20's box):
 //   1  A rule of type 'design' applies to every item, as a 'desk' rule does: whatever paths its box names, and
 //      whether or not its goal is in design mode.
 //   2  His Go stamps the rules active at that moment on the item, and item.get answers them as [{key, version}].
@@ -68,11 +66,10 @@ async function activeRule(type, label, text) {
   if (key) await call('rule.version', { key: key, text: text, status: 'active' }, ANDY);
   return key;
 }
-// A session naming the goal and its items; the box of each decides which paths it names.
 
 (async function () {
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; it is
-  // seeded before the desk starts, which takes it in at start.
+  // goal/G29.21: an agent creates no goal, so the owner writes the world, seeded before the desk starts, which takes it
+  // in at start.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Rules at Go' }, items: [
     { id: 'goal/G100.1', title: 'A plain item', blocks: ['goal/G100'] },
     { id: 'goal/G100.2', title: 'A face item', blocks: ['goal/G100'] },
@@ -89,7 +86,7 @@ async function activeRule(type, label, text) {
   if (gone) await call('rule.version', { key: gone, text: 'This one is deleted.', status: 'deleted' }, ANDY);
   if (!design || !desk || !code || !ui || !gone || !(proposed && proposed.key)) { test.fail('the world: the rules were not made, ' + short([design, desk, code, ui, gone, proposed])); return; }
 
-  // The box is what names the paths a type is drawn from, so each item gets one before his Go.
+  // Each item gets a box before his Go: one names no path, one a face path (the G2.20 shape drew types from them).
   await call('box.write', { id: 'goal/G100.1', version: 0, text: 'A decision, no path named at all.' }, CW);
   await call('box.write', { id: 'goal/G100.2', version: 0, text: 'Where: spirit/run/shell/chatter/chatter.js' }, CW);
   await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
@@ -119,7 +116,7 @@ async function activeRule(type, label, text) {
   const late = await activeRule('design', 'Plain english', 'Plain english is always preferred by this user.');
   if (!late) { test.fail('the world: the late rule was not made'); return; }
   await call('press', { id: 'goal/G100', what: 'reopen' }, ANDY);
-  // goal/G33.7: an item added as item.add adds it (session.set went).
+  // The owner adds the item with item.add.
   const added = await call('item.add', { goal: 'goal/G100', title: 'Added after the reopening' }, ANDY);
   if (!took(added) || added.body.id !== 'goal/G100.3') { test.fail('the world: item.add answered ' + short(added.body)); return; }
   await call('box.write', { id: 'goal/G100.3', version: 0, text: 'Added while the goal was closed and reopened.' }, CW);

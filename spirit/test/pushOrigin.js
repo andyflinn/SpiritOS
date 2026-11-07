@@ -1,29 +1,27 @@
 'use strict';
 
 // goal/G5.1: pushOrigin, one process that sends commits already made to GitHub, even when the clone is behind origin.
-// Red on today's tree (pushOrigin.js is Andy's three-line stub, 1818d97f); wsl-claude wrote it, claude-windows builds it.
 //   Andy, 2026-10-05 (G5.1's box holds every line verbatim): "I run into the problem that you ran into while pushing
 //   measurements. happens often to me, that's why i want a unified approach that i can trigger from desk, separately
 //   from goalShare, so we want one unified shared approach, that ensures my commits go through."; to how it starts:
-//   "Implicitly, by design, or via jobs-selector manually"; "it  must live in:
-//   spirit/run/process/js/pushOrigin/pushOrigin.js"; "agreed. so it' just about sharing code among desk components.";
-//   "look at spirit\run\process\js\wordpressScanner\wordpressScanner.js"; his go-all on goal/G5.
+//   "Implicitly, by design, or via jobs-selector manually"; "agreed. so it' just about sharing code among desk
+//   components.". Since goal/G43.21 it is the app spirit/run/spirit/app/pushOrigin/.
 //
-// THE SHAPES (the box's; where it names none, wsl-claude's picks, the builder may argue them in Desk first):
+// THE SHAPES (the box's, and where it names none, the agents'):
 //   1  pushOrigin.js loads as shared code without running anything, and exports pushOrigin({ repo }) -> (a promise
-//      of) { ok, reason }. Since goal/G43.21 it is an app of spirit/app/ that is run, not mounted: pushOrigin.json says
-//      node.run. (The export's name and the argument's name are wsl-claude's picks.)
+//      of) { ok, reason }. It is an app of spirit/app/ that is run, not mounted: pushOrigin.json says node.run
+//      (goal/G43.21).
 //   2  BEHIND ORIGIN: it fetches, re-stacks the clone's own commits on origin's newest, and pushes; ok true.
 //   3  UNSAVED EDITS are put aside and back: a modified tracked file is still modified, with the same text, after.
 //   4  A CLASH (both sides changed the same line) stops it: ok false with a reason; the clone is left as it was (same
 //      HEAD, no rebase in progress, the unsaved edit still there) and origin is unchanged.
 //   5  FROM JOBS: started as a job of spirit/app/pushOrigin/ (goal/G43.21: no activation asked of a node.run app), with
 //      its arguments as ONE JSON string after the script, it pushes.
-//   6  publishData loads it in place of its own pull-and-push loop (publishData.js 183-192 today).
+//   6  publishData (spirit/app/publishData/publishData.js) loads it in place of a pull-and-push loop of its own.
 //   4b A RACE: someone pushes after the rebase and before the push lands; pushOrigin itself tries again and its
 //      commit lands on top. Andy, to Q7 (move the retry into pushOrigin itself, as the box says): "yes". Staged with a
 //      pre-push hook in the clone that, on its first run only, pushes another clone's commit to origin, so the first
-//      push is refused for certain. Found checking 1e973fc7: the retry sat only in publishData.
+//      push is refused for certain.
 // LEFT OPEN, not asserted: how many tries.
 
 const fs = require('fs');

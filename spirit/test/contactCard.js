@@ -116,8 +116,8 @@ test.subHeading('THE SWAP: a card that verifies, as somebody else');
   }
 
   // NOTHING OF IT IS KEPT (goal/G40.11, box v24: "A card is valid only signed by the row's ID; any other is refused
-  // and nothing of it kept"). cycle 10's cardDisputed, the refused card kept as evidence, went with that ruling; the
-  // refusal names who signed it, which is what the caller is told.
+  // and nothing of it kept"). No cardDisputed is kept as evidence; the refusal names who signed it, which is what
+  // the caller is told.
   if (row.card !== stolen && !('cardDisputed' in row)) {
     test.check('and nothing of the refused card is kept on the row');
   } else {
@@ -137,11 +137,9 @@ test.subHeading('THE ROLLBACK: a card that verifies, and is old');
   const fresh = auth.generateIdentity('john');
   rotated.sealPublicKey = fresh.sealPublicKey;
   rotated.sealPrivateKey = fresh.sealPrivateKey;
-  // THE COUNTER IS NO LONGER SET BY HAND HERE. It used to read
-  // `rotated.cardAt = 2`, which was the suite supplying the one thing the
-  // tree never did — describe() now advances it because the seal key
-  // changed. Asserting the RELATION rather than the literal is also the
-  // honest test: what cycle 10's R13 needs is strictly-greater, not the number 2.
+  // THE COUNTER IS NOT SET BY HAND HERE: describe() advances cardAt because
+  // the seal key changed. The RELATION is asserted rather than a literal:
+  // what cycle 10's R13 needs is strictly-greater, not a particular number.
   auth.saveIdentity(john.dir, rotated);
   const after = nodeCard.describe(john.dir);
 
@@ -174,8 +172,8 @@ test.subHeading('THE ROLLBACK: a card that verifies, and is old');
   }
 }
 
-// FIRST SIGHTING (cardVia: invite, reply or roll, recorded once) STOOD HERE. It went with acquiredVia in goal/G40.11
-// (box v24: "Gone: ... cardVia, cardDisputed"): a row says what its card is, verified on every read, not how it came.
+// NO FIRST SIGHTING IS RECORDED (goal/G40.11, box v24: "Gone: ... cardVia, cardDisputed"): a row says what its card
+// is, verified on every read, not how it came.
 test.subHeading('No record of how a card arrived');
 
 {
@@ -211,7 +209,7 @@ test.subHeading('What never reaches the row');
   }
 
   // The card goes in through setCard and its signature check, and no other path: acquire takes named fields, so a
-  // card handed to it is dropped — the intended answer, not an oversight. (upsert, the old door, is gone.)
+  // card handed to it is dropped — the intended answer, not an oversight.
   contactBook.acquire(me, { publicKey: mallory.id.publicKey, publicLabel: 'mallory', card: nodeCard.describe(john.dir) });
   const row = contactBook.byPublicKey(me, mallory.id.publicKey);
   if (contactBook.cardOf(row).publicKey === mallory.id.publicKey && typeof contactBook.upsert === 'undefined') {

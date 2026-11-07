@@ -1,9 +1,8 @@
 # Desk: rules for agents
 
-Andy's file. Every agent reads it (the desk server's AGENTS verb) at the
-start of a sitting, and follows it over anything it remembers. First draft
-by claude-windows from Andy's own rulings, slim/G1.8, 2026-09-30; rewritten
-for the new Desk by desk/G2.8; his to edit.
+Andy's file. Every agent reads it at the start of a sitting, through the
+desk family's FS (`FS.loadFile {path: "AGENTS.md"}`; there is no AGENTS
+verb), and follows it over anything it remembers. His to edit.
 
 The six rules, Andy's words of 2026-10-02 (goal/G3), above every section
 below. The desk enforces them where it can (goal/G3.9); where it cannot,
@@ -24,7 +23,7 @@ they bind all the same.
   limit is re-armed, or your window says `listener stopped`. The listener:
   `node spirit/run/process/js/desk/deskAgentEar.js <port>`, run in the background,
   the port being your own node's; it asks your node's deskClient server, which
-  reads Desk's `changes` over peerPost.
+  follows the desk's stream (appServer's streamListener).
 - A line he sent to the other agent is not yours to answer.
 
 ## The desk server holds the state
@@ -39,7 +38,6 @@ they bind all the same.
 - A claim, a design-complete, a box write, a check, a check result are
   writes through `deskAgentEar.js <port> <verb> <json>`, never text lines. Chat stays chat
   (`chat.add`). An answer with `ok: false` was refused, and nothing changed.
-- A bare `changed` packet from his Desk means the state moved: read it.
 
 ## The one box
 

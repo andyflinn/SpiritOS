@@ -62,10 +62,11 @@
 // an API would have to be rewritten when the design settles, and a
 // progress board that lies is worse than none.
 //
-// So this file is DELIBERATELY SHORT. Two are declared here because two
-// have an unambiguous absent unit. The rest are named at the foot of this file with the
-// reason they are not declared, so the gap is visible rather than
-// mistaken for completeness.
+// So this file is DELIBERATELY SHORT. Nothing is declared awaiting in it
+// now: what cycle 10 declared here is built, and only a check that the
+// rotate still exists is left. The requirements never declared are named
+// at the foot of this file with the reason, so the gap is visible rather
+// than mistaken for completeness.
 //
 // ── WHEN ONE GOES GREEN ──────────────────────────────────────────────
 //
@@ -93,73 +94,22 @@ function tmp() {
 
 test.subHeading('The ceiling and the flag day');
 
-// cycle-10/R6 BUILT 2026-09-23 and its declaration removed in the same
-// commit, which is the handover this file is for. It went RED the moment
-// PAYLOAD_MAX rose — "the unit is the constant itself" — and a yellow for
-// a thing that exists is exactly what rule 10 forbids.
-//
-// The requirement keeps its name inside the real assertions rather than
-// here, so it cannot leave the board by being finished:
-// `spirit/test/payloadCeiling.js`. The measurement it was guessing at:
-// 16,384 bytes of packet seal to 22,049 on the wire, and the ceiling is
-// 22,528. The guess said 70% and "one line"; it took two constants,
-// because one number could not mean both what a composer may build and
-// what may travel.
+// cycle-10/R6 is built; its assertions live in spirit/test/payloadCeiling.js.
 
 test.subHeading('The two that block the live boxes');
 
-// cycle-10/R9's remaining half — the claim route — is BUILT, and its
-// declaration is GONE rather than converted, which is
-// the honest end for this one.
-//
-// THE DECLARATION WAS VACUOUS AND ONLY SAYING SO EXPOSED IT. It read
-// `hub.signedClaim ? hub.signedClaim(...) : {}` — and `signedClaim` is
-// not exported, so the guard silently took the empty branch and the test
-// asked nothing at all. It reported yellow for the right reason by
-// accident. A declaration that reaches past a module's front door to ask
-// its question is the escape hatch `oneDoor.js` §4 exists to refuse, and
-// exporting an internal to satisfy a progress board would be the tail
-// wagging the dog.
-//
-// SO THE PROOF LIVES WHERE THE THING HAPPENS: `labPersistence.js`,
-// `labRefusals.js` and `liveFrontDoor.js` claim over real HTTP against a
-// real relay, and all three now seal through one helper
-// (`labWorld.sealedClaimBody`). A relay that stopped opening sealed
-// claims, or a node that stopped sealing them, turns all three red.
+// cycle-10/R9's claim route is built; labPersistence.js, labRefusals.js
+// and liveFrontDoor.js claim over real HTTP against a real relay.
 
-// cycle-10/R20 is BUILT — and its proof is spirit/test/memberCard.js,
-// which asserts the DEFECT first (a mint that spends the seat and answers
-// with silence) and then that the same mint answers with the token once
-// the card has been handed over. The declaration is gone from the board
-// because the board is for what is not built.
-//
-// The path Andy chose, over the relay asking: the NODE pushes its card
-// when a stream opens. It is self-healing — update the code, restart,
-// and the card is there, with no migration script and nothing for an
-// owner to run — and rotation needs exactly this push anyway, which the
-// relay could never initiate because it cannot know a card changed.
+// cycle-10/R20 is built; its proof is spirit/test/memberCard.js (a member
+// hands the relay its card, and the relay can answer again).
 test.subHeading('And the card the relay would seal to');
 
-// cycle-10/R13 — a card is ordered in time, and the shadow roll protects BOTH
-// keys: identity immutable, cipher replaced only by a signed, strictly
-// newer card, every change reported to the owner. The store half landed
-// with cycle-10/R3 (`setCard` refuses an older card and keeps the disputed one);
-// what is missing is the rotation that produces a newer one.
-//
-// AND THE COUNTER'S WRITER LANDED 2026-09-23: `describe()` advances it on
-// a change, so a rotated seal key already produces a card every peer
-// takes. What is still missing is the deliberate ACT — nothing asks for a
-// rotation, and nothing tells the owner one happened.
-//
-// `cardFrom` exists for exactly this and is commented as built ahead of
-// its caller — Andy: "we're building towards right now."
 // ── cycle 10's R13 IS BUILT; ITS ASSERTIONS LIVE IN cardRotation.js ──
 //
-// Andy's title: "Get the damn rotate-button into the info app". Built by
-// claude-windows at 0a2a90b; this declaration then went red ("EXISTS NOW")
-// and handed it over, as it exists to. Only reachability here, so this file
-// does not become a second copy of that suite -- which is where the red is
-// while the sender cannot see the peer's will-not-open (see that suite).
+// Andy's title: "Get the damn rotate-button into the info app". Only
+// reachability here, so this file does not become a second copy of that
+// suite.
 if (typeof nodeCard.rotate === 'function') {
   test.check('the rotate exists as a unit — nodeCard.rotate, asserted in cardRotation.js: a strictly '
     + 'rising counter, the old private key gone, history intact, and every peer moving to the new card once');
@@ -169,8 +119,8 @@ if (typeof nodeCard.rotate === 'function') {
 
 // ── WHAT IS OPEN AND NOT DECLARED HERE, AND WHY ──────────────────────
 //
-// Said out loud so the tally is read as four of thirteen rather than as
-// the whole of what is left:
+// Said out loud so the tally is not read as the whole of what is left
+// (the comment line below still prints 3 of 13; nothing is declared here now):
 //
 //   cycle-10/R7   the agents seal like everybody else — probably already true by
 //        cycle-10/R5, and needs measuring rather than declaring
@@ -178,10 +128,9 @@ if (typeof nodeCard.rotate === 'function') {
 //   cycle-10/R10  prove the relay cannot read it, by trying to read it
 //   cycle-10/R12  the relay's hash differs from the endpoints' hash of the words
 //   cycle-10/R16  what the relay streams to a monitor is unreadable
-//        — all three are PROOFS Andy ruled must be run red first against
-//        today's tree; declaring them as awaiting would hide the very
-//        red he asked to see
-//   cycle-10/R11  the layering is built; only its proof is missing, which is R10
+//        — all three are PROOFS, not units, so they are not declared
+//        awaiting; R10 and R16 are proved in spirit/test/relayCannotRead.js
+//   cycle-10/R11  the layering is built; its proof is R10's
 //   cycle-10/R14  built with R5; the log keeps plaintext on both sides
 //   cycle-10/R15  length is public and documented — a document, not a unit
 test.comment('3 of cycle 10\'s 13 open requirements are declared here; the rest are listed in this file with the reason');

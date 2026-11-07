@@ -1,9 +1,10 @@
 'use strict';
 
 // spirit/run/shell/deskDetails/test/deskDetails.js
-// The tests of shell/deskDetails/deskDetails.js (spec: ./deskDetails.md; goal/G41.1): its panel icons are glyphs, drawn
-// as they are, with no icon table. Read from the module's own code: DD_PANELS and the strip that draws them. And
-// goal/G41.9: every are-you-sure it draws is an armingButton, driven on a page of its own.
+// The tests of shell/deskDetails/deskDetails.js (spec: ./deskDetails.md). goal/G41.1: its panel icons are glyphs, drawn
+// as they are, with no icon table, read from the module's own code. goal/G41.9: every are-you-sure it draws is an
+// armingButton, driven on a page of its own. Then goal/G41.11, G41.22 (the workBench, push Goal, and in a real browser
+// ./deskDetails-opened.html), G41.28 (the verifier's run through spirit.data), G43.3 and G43.22.
 
 const fs = require('fs');
 const path = require('path');
@@ -27,7 +28,7 @@ const keyed = (panels || []).filter(function (p) { return !p.icon || KEY.test(p.
 ok(panels && !keyed.length, 'every panel names its icon as the glyph itself', 'panels naming a key: ' + keyed.join(', '));
 test.subHeading('the strip draws them as they are, from no table');
 ok(!/iconIndex|\bICON\b/.test(code), 'deskDetails.js names no icon table', 'deskDetails.js still names iconIndex or ICON');
-// That the strip is handed each panel's glyph as it is, the workBench's since goal/G41.22, is asserted there: "the left
+// That the strip, the workBench's (goal/G41.22), is handed each panel's glyph as it is, is asserted there: "the left
 // strip is today's panels, each its icon, in order", on what the workBench is given, not on the source.
 
 // ── THE PAGE THESE TESTS DRIVE (goal/G41.9) ─────────────────────────────────────────────────────────────────────────
@@ -408,7 +409,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   // Andy, box v15: "the item panel drops appHeader", "the items ID and title, including status is shown in the shells
   // title bar like always", "one row, the button row, at the top, using the whole width, like it is today", "just use
   // workBench", "the left icons strip and panel, are what we have today", "the center panel us the chat", "the right
-  // panel, we leave blank, but will carry plugin-desk-apps".
+  // panel, we leave blank"
   const walkAll = function (n, out) { out.push(n); (n.children || []).forEach(function (c) { walkAll(c, out); }); return out; };
   const inside = function (n, box) { for (let p = n; p; p = p.parentNode) { if (p === box) return true; } return false; };
   // goal/G43.3: Andy: "red Q's should indicate who posted them."
@@ -510,8 +511,8 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   ok(afterOther.length === 3 && afterOther[0] === before[0] && afterOther[1] === before[1] && afterOther[2] === afterLine[2],
     'a change that is no chat line (a check) repaints the panel and leaves every chat line as it was', 'drawn again by a check');
   test.subHeading('goal/G41.11: the rules panel scrolls inside its own box, the frame never cuts it off');
-  // Andy: "the rules list is NOT placed properly in a size-limited container". The upper half is fixed at 30vh with its
-  // overflow hidden; what bounds the rules is a box of its own that scrolls, so a long list is never cut off unseen.
+  // Andy: "the rules list is NOT placed properly in a size-limited container". The left pane hides its overflow; what
+  // bounds the rules is a box of its own that scrolls, so a long list is never cut off unseen.
   const rf = ddWorld(Object.assign({}, ITEM, { id: 'goal/G9.6', rules: Array.from({ length: 30 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) }), []);
   await rf.open();
   const icon = panelIcon(rf, 'rules');
@@ -585,8 +586,8 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   ok(!/verifying/.test(runShown(v)), 'a publish saying no doing draws nothing', 'the run: "' + runShown(v) + '"');
 
   // ── goal/G41.22: OPENED ON AN ITEM, IN A REAL BROWSER ─────────────────────────────────────────────────────────────────
-  // The page above has no layout, so what fills and what scrolls is asked of Chrome (wsl's verify of 3929879b found the
-  // chat 44 pixels short of its bottom, no left panel at open, and the box a third of its pane, all green here):
+  // The page above has no layout, so what fills and what scrolls is asked of Chrome (a chat short of its bottom, no left
+  // panel at open, or a box a third of its pane, pass the page above):
   // ./deskDetails-opened.html, on a scratch node with its DEBUG on, opens the panel in the home page's app area on an item
   // with 200 chat lines and a long box.
   const OPENED = '/DEBUG/shell/deskDetails/test/deskDetails-opened.html';
@@ -616,8 +617,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
             'the newest line: ' + JSON.stringify(m.newest) + ', the chat ends at ' + JSON.stringify(m.chat));
           ok(!!m.leftShown && m.panelAtOpen > 0, 'at open a left panel shows (' + m.leftShown + '), as the details did before the workBench',
             'at open no left panel shows: ' + JSON.stringify({ shown: m.leftShown, height: m.panelAtOpen }));
-          // goal/G43.3: the box on screen is a CodeMirror with line numbers, its last stored version above it, and a search of
-          // exactly that text.
+          // goal/G43.3: the box on screen is a CodeMirror with line numbers, its last stored version above it.
           let v = null;
           try { v = JSON.parse(await page.evaluate('window.boxView()')); } catch (e) { v = null; }
           ok(!!v && v.codeMirror === true && v.numbers > 0, 'goal/G43.3: the box is a CodeMirror, showing line numbers', 'the box panel: ' + JSON.stringify(v));

@@ -1,7 +1,6 @@
 'use strict';
 
-// goal/G9.4: a split adds only the explicit blocking relation. Red on today's tree; claude-windows wrote it from
-// G9.4's box and does not build it.
+// goal/G9.4: a split adds only the explicit blocking relation.
 //   Andy, 2026-10-07: "when splitting an item, only the new explicit blocking relationship is automatically added, the
 //   implicit blocking will not need to be specified, it clutters the list display with confusing \"blocks\" and
 //   \"waits on\" columns, and is not needed for a dependency graph."
@@ -9,16 +8,11 @@
 //   the current item are still blocked by the newly split item, because if theyre blocked by me, they are implicitly
 //   blocked by the newly created/split item." (rule/6 says the same.)
 //
-// WHAT IS TRUE TODAY (read in the tree at 7cd6d633): a split is a session.set naming split: [parent]; each item's
-// blocks are what the session sends, and an item sent without blocks blocks the goal (desk.js, the session.set
-// branch: `[x.blocks || gid]`). Nothing adds new-blocks-parent, and nothing keeps the implicit ones out.
+// A split is item.add naming the parent in blocks, one new item each (goal/G33.7: session.set is gone; "its callers
+// use goal.add and item.add").
 //
-// WHAT IS ASSERTED: an item new in a split session blocks exactly the parent, whether the session named the parent,
-// named nothing, or named the implicit ones too; the parent keeps what it blocked; what the parent blocks is not
-// told about the new item.
-// SINCE goal/G33.7 session.set is gone (the approved verb list: "its callers use goal.add and item.add"), so a split is
-// item.add naming the parent in blocks, one new item each; it names one item, so the session's other two ways (nothing
-// named, the implicit ones named too) have no form left. What G9.4 holds is asserted of the split as it is now made.
+// WHAT IS ASSERTED: an item new in a split blocks exactly the parent; the parent keeps what it blocked and waits on
+// its new items; what the parent blocks, and the goal, are not told about the new items.
 
 const fs = require('fs');
 const os = require('os');
@@ -64,8 +58,8 @@ const BASE = [
 ];
 
 (async function () {
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded before the desk
-  // starts, and the desk takes it in at start.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world, seeded before the desk starts
+  // (goal/G33.7), and the desk takes it in at start.
   test.seedDesk(state, { goal: { id: G, title: 'Split' }, items: BASE });
   if (!await start()) { test.fail('the desk server did not start'); return; }
   const p0 = await facts(P);

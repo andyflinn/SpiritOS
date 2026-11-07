@@ -9,17 +9,10 @@ const rollOf = require('./rollOf');
 //
 // design/cycles/2026-09-15-labels-are-not-identities.md
 //
-// ── WHAT WAS WRONG ───────────────────────────────────────────────────
-//
-// Every `relay-event` a relay could send was TRAFFIC — post, reply, two
-// refusals — which is the one thing decision 0006 says a relay must not
-// keep. Nothing at all fired for membership: `claim`, `forgetPeer`,
-// `mint` and `revokeInvite` all returned silently. Exactly inverted.
-//
-// And the traffic half was monitor-gated and live-only, so even that
-// vanished when a tab closed. A claim could happen, a slot could be
-// taken by somebody who was not meant to have it, and the owner would
-// learn nothing — not then, and not afterwards.
+// Membership — `claim`, `forgetPeer`, `mint`, `revokeInvite` — fires an
+// owner-event the owner's node keeps, so a slot taken by somebody who was
+// not meant to have it is something the owner learns, then and afterwards.
+// Traffic is the one thing decision 0006 says a relay must not keep.
 //
 // ── THE TWO CHANNELS, AND WHY THEY ARE TWO ───────────────────────────
 //
@@ -37,7 +30,7 @@ const rollOf = require('./rollOf');
 //      out-of-band handle for them, which R1 established may be a phone
 //      number. Broadcasting it publishes that to everyone connected.
 //   2. THE GATE BOUNDS IT. A claim reaches the relay's one door from
-//      anybody (goal/G22.6; it was the public POST /api/relay/claim), so a
+//      anybody (goal/G22.6), so a
 //      notice fired before the gate — the address table — lets a stranger
 //      drive the owner's stream as fast as they can send.
 //   3. NO PAYLOADS, EVER. Refused at both ends, so the rule holds even
@@ -151,7 +144,7 @@ const PHONE = '07700900123';
 
   // THE SAME RULE AS ANY PUBLIC LABEL. A relay's caption sits in the
   // same lists beside the same peers, so an invisible character is the
-  // same impersonation here as anywhere (js/fieldRules.js).
+  // same impersonation here as anywhere (spirit/fieldRules.js).
   const sneaky = box.setRelayLabel('and​y', 'H2');
   if (!sneaky.ok && sneaky.status === 400 && box.relayLabel() === 'Andy’s box') {
     test.check('while a label with an invisible character is refused, and changes nothing');
@@ -302,8 +295,7 @@ test.subHeading('A stranger cannot drive the owner’s stream');
 {
   // A claim arrives on the relay's one door from anybody (goal/G22.6), so a
   // notice fired before a gate would be unbounded. The gate is the relay's
-  // address table, which replaced the per-address claim limit (Andy's
-  // decision, goal/G22.6): one address is answered once and then held to
+  // address table (Andy's decision, goal/G22.6): one address is answered once and then held to
   // its ban, so a flood from it reaches the claim — and the notice — once.
   const L = world.build({ title: 'an owner alone', peers: [] });
   const box = L.box;
@@ -331,18 +323,11 @@ test.subHeading('A stranger cannot drive the owner’s stream');
   }
 
   // Before the gate: names the rule refuses outright. Neither is an
-  // attempt on a slot, and neither is rate-limited.
+  // attempt on a slot, and neither is rate-limited. Labels are Unicode
+  // and permissive (punctuation and spaces are fine), and there is no
+  // reserved word: a relay is addressed by key.
   //
-  // THESE FIXTURES HAD TO CHANGE TWICE ON 2026-09-15, and both times
-  // because the thing they relied on stopped being refused:
-  //
-  //   `!!!not a name` was malformed under NAME_RE. Labels are Unicode
-  //     and permissive now — punctuation and spaces are the point — so
-  //     it is a perfectly good caption and gets as far as the signature.
-  //   `auth.RESERVED_NAME` was the reserved word, and there is no longer
-  //     a reserved word: a relay is addressed by key.
-  //
-  // What is still refused before the gate is what the rule actually
+  // What is refused before the gate is what the rule actually
   // guards: the invisible, and the absurdly long. A zero-width space is
   // a character no reader can see, and 300 bytes is past the ledger
   // bound — neither can reach the rate limiter.
@@ -464,22 +449,13 @@ test.subHeading('And it goes to the log');
 
 // ── AND A POSITION IS NEVER HANDED OUT TWICE ─────────────────────────
 //
-// The check above failed about one run in five with `since: 1 of 3` and
-// passed on every re-run, so it was dismissed as harness noise twice
-// before anybody kept the output. It was not noise.
-//
-// `at` came from Date.now(), which repeats, and `since` is `at > since`.
-// Two rows in one millisecond and a reader who asks for everything after
-// the first never sees the second — silently, because a position cursor
-// cannot tell "nothing happened" from "it was skipped". Writes here are
-// a synchronous append, ~3ms apart on an idle box, which is why only the
-// parallel harness ever produced the tie.
-//
-// What it cost in practice is owner notices, and they cluster where they
-// matter: claims arrive in bursts and `claim-refused` is the one you
-// wanted. Fixed by making the stamp monotonic rather than by adding a
-// sequence field — the readers' stated rule was already "position", and
-// the persist shape is untouched.
+// `since` is `at > since`, and Date.now() repeats: two rows in one
+// millisecond and a reader who asks for everything after the first would
+// never see the second — silently, because a position cursor cannot tell
+// "nothing happened" from "it was skipped". Owner notices cluster where
+// they matter (claims arrive in bursts), so the stamp is monotonic rather
+// than a sequence field: the readers' rule is "position", and the persist
+// shape stays.
 //
 // FROZEN CLOCK, because the real one hides this. `now` was already
 // injectable for the retention rules.
@@ -509,7 +485,7 @@ test.subHeading('A position is never handed out twice, whatever the clock says')
     test.fail('rows ' + all.length + ', distinct ' + distinct);
   }
 
-  // THE READER'S WALK, which is the thing that was actually broken.
+  // THE READER'S WALK, which is what a tied stamp would break.
   let cursor = null;
   const seen = [];
   for (let guard = 0; guard < 100; guard++) {
@@ -561,9 +537,8 @@ test.subHeading('And the relay still keeps nothing');
 
   const dir = path.join(L.home, 'spirit', 'state');
   const files = fs.readdirSync(dir).sort();
-  // relay.db holds the roll, the invites and the partner roll since cycle 3.
-  // pending-owner.json left this list in cycle 3 (Part B): nothing writes
-  // it any more, so its return would be a file the relay grew.
+  // relay.db holds the roll and the invites (cycle 3). Nothing writes
+  // pending-owner.json, so its return would be a file the relay grew.
   const known = ['owner.json', 'identity.json', 'relay.db'];
   const unexpected = files.filter(function (f) { return known.indexOf(f) === -1; });
   if (!unexpected.length) {
@@ -591,18 +566,10 @@ test.subHeading('A membership change pushes the report it invalidated');
 //   Andy: "while trying to revoke all adam invites one by one, but the
 //   panel kept showing all, not behaving in an understandable way?"
 //
-// It was behaving correctly and reporting nothing. `statusToOwner` fired
-// on a stream opening, a stream closing, and monitor being switched on —
-// and on no membership change at all. So the invite panel, whose only
-// source is the pushed report, redrew four invites that had been revoked
-// three minutes earlier. The node's own log said so and the screen did
-// not:
-//
-//   06:59:52  invite-revoked  adam  revoked=4
-//   06:59:55  invite-revoked  adam  revoked=0
-//
-// The event and the report now travel together, out of ownerEvent, so a
-// verb added later cannot forget the second half.
+// The invite panel's only source is the pushed report, so a membership
+// change must push one too, not only a stream opening or closing. The
+// event and the report travel together, out of ownerEvent, so a verb
+// added later cannot forget the second half.
 {
   const L = world.build({ title: 'an owner alone', peers: [] });
   const box = L.box;
@@ -674,11 +641,9 @@ test.subHeading('An owner event names the post that caused it');
 //
 // One press writes three rows on the owner's node: the request it
 // posted, the reply that came back — joined by a hash — and the
-// owner-event the relay pushed, which shared no key with either. Same
-// act, three rows, one of them an orphan.
-//
-// The relay knew all along: answerSelf receives the hash of the post it
-// is answering, and every post-driven verb fires from inside it.
+// owner-event the relay pushed. answerSelf receives the hash of the post
+// it is answering, and every post-driven verb fires from inside it, so
+// the owner-event carries that hash as `cause` and joins the other two.
 {
   const L = world.build({ title: 'an owner alone', peers: [] });
   const box = L.box;
@@ -722,10 +687,9 @@ test.subHeading('An owner event names the post that caused it');
   }
 }
 
-// THE OTHER HALF OF THE RULE, and the reason it is written down: a claim
-// arrives on an HTTP route, not as a post, so no hash exists to name. An
-// absent `cause` is honest; inventing one would make the log claim a
-// transaction that never happened.
+// THE OTHER HALF OF THE RULE: box.claim takes no hash, so a claim's
+// owner-event names no cause. An absent `cause` is honest; inventing one
+// would make the log claim a transaction that never happened.
 {
   const L = world.build({ title: 'an owner alone', peers: [] });
   const box = L.box;
@@ -752,11 +716,9 @@ test.subHeading('An owner event names the post that caused it');
 test.subHeading('Partnership is gone — no partner-added, no partner-removed (goal/G22.6)');
 // ---------------------------------------------------------------------
 
-// THE PARTNERSHIP SECTION STOOD HERE: setPartner and clearPartner, the
-// `partner-added` and `partner-removed` notices, and the four things a
-// partnership could not be. Andy's decision (goal/G22.6, 2026-10-13):
-// "Partnering as a permission goes ... the partner roll and the partner
-// budget are removed". What is owed now is that it is gone.
+// No partner roll. Andy's decision (goal/G22.6): "Partnering as a
+// permission goes ... the partner roll and the partner budget are
+// removed".
 {
   const L = world.build({ title: 'a relay with no partner roll', peers: ['bella'] });
   const box = L.box;

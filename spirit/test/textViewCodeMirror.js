@@ -1,23 +1,18 @@
 'use strict';
 
 // spirit/test/textViewCodeMirror.js
-// goal/G29.12: the file display and the text editor on CodeMirror 5, the search words marked. Red on today's tree;
-// claude-windows writes it and builds it (one agent). The item's box, in short:
-//   - A file display and the text editor, both on CodeMirror 5: a file opens with given words, every match marked, the
-//     first in view; the text editor edits and saves on the same CodeMirror, its plain text area gone.
-//   - CodeMirror 5 is copied, licence included, into spirit/run/spirit/element/codeMirror/: served as any file
-//     (fileServable), kept out of the tree and Files as every node_modules is. No build step.
-//   - no .gitignore exception is needed there.
-//   - The text launcher takes the words with the path; every match is marked the way the shared list marks a match, and
-//     the first is scrolled into view.
-//
-// NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
-//   - one shell element, spirit/element/textView.js: window.spirit.elements.createTextView(container, { text, words,
+// goal/G29.12: the file display and the text editor on CodeMirror 5, the search words marked. What it checks:
+//   - CodeMirror 5, licence included, is committed in spirit/run/spirit/element/codeMirror/ and served (fileServable);
+//     only the element spirit/run/spirit/element/codeMirror.js loads it and its search add-ons, never index.html.
+//   - a text view, spirit/element/textView.js: window.spirit.elements.createTextView(container, { text, words,
 //     readOnly, path }) answers { value(), cm }, on window.CodeMirror; it marks each match with className
-//     'text-view-match' and scrolls the first into view. The launcher and the editor both make one.
-//   - the text launcher (index.html) passes params.words through; the editor (shell/textEditor) saves view.value().
+//     'text-view-match' (by the shared list's window.spirit.matchRanges) and scrolls the first into view.
+//   - the text launcher (index.html) and the editor (shell/textEditor) each make one; apps get it from shell.js.
 // No browser in the harness: the page is faked and window.CodeMirror is a stand-in that records what is asked of it,
-// so what is asserted is what textView asks CodeMirror to do. The real page is looked at by hand after the build.
+// so what is asserted is what textView asks CodeMirror to do.
+// STALE PATHS: spirit/run/spirit/element/textView.js, spirit/run/shell/textEditor/ and
+// spirit/run/shell/shared/js/listSearch.js are not in the tree (the editor was removed in 64e2d054, listSearch in
+// goal/G41.28), so the suite stops at part 2.
 // rule/11: through testSupport only; its own folders; never 65432.
 
 const fs = require('fs');
@@ -101,7 +96,7 @@ function fakeElement() {
   test.subHeading('2. textView marks every match and scrolls to the first');
   const CodeMirror = fakeCodeMirror();
   const win = { CodeMirror: CodeMirror };
-  // As index.html loads them: the shared list, whose marking rule the text view uses, then the text view.
+  // The shared list, whose marking rule the text view uses, then the text view (both files are gone; see the header).
   new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))({ getElementById: function () { return null; } }, win);
   if (fs.existsSync(VIEW)) new Function('window', 'document', 'spirit', fs.readFileSync(VIEW, 'utf8'))(win, { createElement: fakeElement }, { core: { util: { escapeHtml: kernel.core.util.escapeHtml } } });
   // Andy, 2026-10-18, to "both markers live in one shared function": "yes". The box: the shared list owns the rule.

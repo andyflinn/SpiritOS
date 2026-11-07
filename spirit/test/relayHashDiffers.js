@@ -15,14 +15,11 @@
 // changes is that the bytes the relay hashes become the bytes the
 // endpoints hold.
 //
-// ── IT NEEDS NO INSTRUMENT, WHICH IS WHY IT IS WRITTEN FIRST ─────────
+// ── IT NEEDS NO INSTRUMENT ───────────────────────────────────────────
 //
-// design/relay/PROVING-IT-CANNOT-READ.md is approved and its DEBUG
-// switch is being built by the other agent. THIS PROOF DOES NOT WAIT FOR
-// IT: the monitor row already carries the relay's own hash
-// (relay.js:2756, :2894, :4166), so the canary reads a stream that
-// exists today. Written before the instrument so that the fixture every
-// later proof depends on is exercised before anything depends on it.
+// design/relay/PROVING-IT-CANNOT-READ.md has its own DEBUG switch. THIS
+// PROOF DOES NOT NEED IT: the relay's monitor row carries the relay's own
+// hash (relay.js), so the canary reads a stream that exists anyway.
 //
 // ── THE COMPARISON IS THE SAME FUNCTION ON DIFFERENT BYTES ──────────
 //
@@ -32,7 +29,7 @@
 // to, plaintext))` — and asserts the real one is not that. A match means
 // the words travelled in clear, whatever else passed.
 //
-// The minute is not transmitted (relayAuth.js:60-65), so the check walks
+// The minute is not transmitted (relayAuth.js), so the check walks
 // ±1 exactly as `postSignatureFor` does, and a match at ANY minute is a
 // failure.
 
@@ -64,9 +61,8 @@ test.subHeading('a sealed post does not hash as its own words');
 {
   // CARL POSTS TO BELLA, not the other way round: the shared world opens
   // streams for the owner and bella only, and a post to a member with no
-  // stream is REFUSED before it is ever hashed — which the first run of
-  // this suite reported as "no monitor row carried a hash", correctly
-  // blaming the fixture rather than the relay.
+  // stream is REFUSED before it is ever hashed, and the suite would report
+  // "no monitor row carried a hash".
   const w = world();
   askMonitor(w, w.owner, true);
   const before = hashesFor(w).length;
@@ -100,16 +96,15 @@ test.subHeading('the control — an unsealed post DOES hash as its words');
   const w = world();
   askMonitor(w, w.owner, true);
   // A CARD ASK IS AN ENVELOPE WITH NO APP AND `card` IN THE BODY —
-  // nodeCard.asks() at :68-74 is the definition, and this is the shape it
+  // nodeCard.asks() is the definition, and this is the shape it
   // recognises. Built here rather than imported, because nodeCard
   // exports the RECOGNISER and not a builder.
   const card = JSON.stringify({ v: 1, body: { card: true } });
   const before = hashesFor(w).length;
   w.box.routePost(w.carl.publicKey, w.bella.publicKey, card,
-    // SIGNED BY THE SENDER. The first version signed as bella for a post
-    // FROM carl — a rename applied to the arguments and not to the key,
-    // so the signature did not verify, the post was refused, and the
-    // control reported "no monitor row" instead of "bad signature".
+    // SIGNED BY THE SENDER, carl: a post signed with another key does not
+    // verify, is refused, and the control would report "no monitor row"
+    // instead of "bad signature".
     auth.sign(w.carl.privateKey,
       auth.postMessage(w.carl.publicKey, w.bella.publicKey, card)));
   const got = hashesFor(w).slice(before);

@@ -9,11 +9,6 @@
 // share `scenario.js` and nothing else — which is what stops "the world I
 // tested" and "the world I looked at" from meaning two different things.
 //
-// It replaces a `lab()` helper that had been copied into six suites and
-// had already drifted between them: some minted invites, some did not,
-// some saved the owner's identity to disk and some forgot, and each had
-// its own quiet opinion about what a peer needs before it can be sent to.
-//
 // No sockets, no processes, no temp servers. A world here costs about a
 // millisecond, which is the whole point.
 
@@ -65,16 +60,10 @@ function assemble(s) {
   s.relays.forEach(function (name) {
     const home = tmpHome(name);
     homes[name] = home;
-    // THE MAILBOX'S OWN KEY, which is not the owner's. Since goal/G22.5
-    // relayAuth.js makes it on its first load and relayServer.js names it
-    // 'relay' (nameIdentity), done here the same way (plantIdentity.js);
-    // relay.js says so at relayPublicKey(): "the owner is a peer
-    // who claimed, the mailbox is the box."
-    //
-    // This file used to save the OWNER there instead, so every world it
-    // built had a relay whose key was its owner's — and any check that
-    // distinguishes the two would have passed without distinguishing
-    // anything. Made before createRelay, which reads the file.
+    // THE MAILBOX'S OWN KEY, which is not the owner's. relayAuth.js makes
+    // it on its first load (goal/G22.5) and relayServer.js names it
+    // 'relay' (nameIdentity), done here the same way (plantIdentity.js).
+    // Made before createRelay, which reads the file.
     keys[name] = require('./plantIdentity.js').ensureAt(home, 'relay');
     // owner.json, as bash/install-units writes it — the relay's file naming
     // its owner's key, not the owner's identity.
@@ -83,7 +72,7 @@ function assemble(s) {
   });
   const first = s.relays[0];
 
-  // A node's relay list. Since goal/G19.15 it is node.db's relays table, keyed by relay key: the i-th url is filed
+  // A node's relay list: node.db's relays table (goal/G19.15), keyed by relay key: the i-th url is filed
   // under the i-th relay's key, and a url with no relay of the world behind it under a fake key of its own.
   function listRelays(home, urls) {
     (urls || ['http://relay']).forEach(function (u, i) {
@@ -177,12 +166,8 @@ function assemble(s) {
     });
   });
 
-  // MAIL WAS SEEDED HERE, so a suite about reading did not have to write
-  // its own first. Deleted with the ring (R8, 2026-09-15), and the field
-  // that fed it is refused by name now — see scenario.js, which carries
-  // the reasoning and what would bring it back.
-  //
-  // The short version: there is nowhere to put it. A relay keeps nothing
+  // NO MAIL IS SEEDED (scenario.js refuses the field by name and says why).
+  // There is nowhere to put it: a relay keeps nothing
   // on anyone's behalf, so a world cannot be built with mail already
   // sitting in it. A packet exists because somebody was connected and
   // somebody posted — which is a thing a SUITE arranges, in the two lines
@@ -266,10 +251,8 @@ function assemble(s) {
         const who = cast[name] || { id: owner, label: s.owner };
         return auth.sign(who.id.privateKey, auth.claimMessage(who.label));
       },
-      // `inbox` STOOD HERE and went with the verb it signed (R8).
-      // `stream` below is the only signed GET left on a relay, and it
-      // signs a KEY rather than a label — which is the difference that
-      // outlived the ring: labels duplicate by design, so a proof naming
+      // `stream` is the only signed GET on a relay, and it signs a KEY
+      // rather than a label: labels duplicate by design, so a proof naming
       // one identifies nobody on a box holding two johns.
       stream: function (name) {
         const who = cast[name] || { id: owner, label: s.owner };

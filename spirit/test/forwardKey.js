@@ -1,11 +1,11 @@
 'use strict';
 
-// apiAuth/G1.13: the door forwards the caller's verified key, and its label, to the server. Red on today's code.
+// apiAuth/G1.13: the door forwards the caller's verified key, and its label, to the server.
 //   Andy: "ok, the verified key is forwarded to the appServer. i revise my ruling.", "it doesn't violate: "the
 //   node knows nothing about what apps do, or what apps packages contain."", "agreed." to the header shape,
 //   "my key will at least confirm it came from my node...", and "yes. the label will only be used for labeling in
 //   chat, and for referencing members, internally desk server will use keys for tracking."
-// The contract the builder follows (G1.13's box):
+// What is asserted (G1.13's box):
 //   - pipeRequest(pipe, method, path, body, opts) sends opts.headers with the request.
 //   - appClient.ask(body, caller): caller.key sets X-Spirit-Caller, caller.label X-Spirit-Label, caller.owner
 //     X-Spirit-Owner: 1. The body stays the app's ask, untouched.
@@ -15,7 +15,7 @@
 //   - apiDoor.answer passes the caller on: a member's ask goes to servers.ask(ask, { key, label }), the label read
 //     through auth.labelOf(key) (apiAuth.js, the peers row); the owner's to servers.ask(ask, caller) as handed
 //     (the flat door hands { owner: true, key: the node's own key, label: the owner's name }, goal/G30.6).
-//   Desk's half is deskWriterKey.js.
+//   Desk's half is spirit/test/deskWriterKey.js.
 
 const fs = require('fs');
 const os = require('os');

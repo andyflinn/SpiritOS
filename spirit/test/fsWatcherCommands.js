@@ -1,33 +1,32 @@
 'use strict';
 
-// goal/G4.25: the file watcher on chokidar streams tree commands, not the whole file list. Red on today's tree;
-// wsl-claude wrote it, claude-windows builds it.
-//   Andy, 2026-10-02 and 2026-10-04 (box of goal/G4.25, carried from goal/G2.17): "the current design is horrid. for
+// goal/G4.25: the file watcher on chokidar streams tree commands, not the whole file list.
+//   Andy (box of goal/G4.25, carried from goal/G2.17): "the current design is horrid. for
 //   lazy load the stream can send createDirectory run / createDirectory media / createFile index.html etc... just send
 //   \"commands up the stream to modify the tree.\""; the test: "monitor a scratch folder, and create a parallel folder
 //   with correct filename, and each file holds an x / once the duplicated tree has the exact same structure, we know
 //   that we re reading the fs-watch-data correctly"; "chokidar is the library"; "forget about batching"; "local copy it
-//   is"; his grants G1-G4 (jobs.js, server.js, js/client/shell.js, package.json) and his Go on goal/G4.25.
+//   is".
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
+// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks):
 //   1  THE LOCAL COPY: chokidar and readdirp committed under spirit/run/node_modules/ (each with its package.json and
-//      its licence file), so require('chokidar') resolves from spirit/run/js as for any package; .gitignore gains the
-//      exception that lets that one folder in. No npm step anywhere.
+//      its licence file), so require('chokidar') resolves from spirit/run/spirit as for any package; .gitignore holds
+//      the exception that lets that one folder in. No npm step anywhere.
 //   2  THE COMMANDS: every fs-watcher job-updated carries data.command {op, path, at}: op one of createDirectory,
 //      createFile, changeFile, deleteFile, deleteDirectory; path relative to the watched root, '/'-separated; at an ISO
 //      time. One command per message (no batching). data.files is gone from the job.
 //   3  THE TREE AT CONNECT: jobs.fsTreeCommands() answers the create commands for the tree as it stands (a
 //      createDirectory before anything inside it); the node writes those to a page that connects, each its own
 //      fs-watcher job-updated, after the snapshot, whose fs-watcher job no longer carries a file list.
-//      Files the kernel never lists (UNSERVABLE_FILES, kernel.js 297: spirit/server.js among them) are in no command, as
-//      they were in no file list (claude-windows's review of this red).
-//   4  ERADICATED: the hand-rolled fs.watch reader and its rescan, and every reader of data.files (jobs.js, server.js,
-//      nodeSearches.js, js/client/shell.js, shell/files, shell/process-browser). fs.search keeps answering, from the
-//      watcher's tree.
+//      Files never served (UNSERVABLE_FILES, fileSystem.js: spirit/server.js among them) are in no command.
+//   4  ERADICATED: the hand-rolled fs.watch reader and its rescan, and every reader of data.files (spirit/jobs.js,
+//      spirit/server.js, spirit/nodeSearches.js, spirit/client/shell.js, shell/files/files.js). fs.search keeps
+//      answering, from the watcher's tree. shell/files/files.js is no longer in the tree (no spirit/run/shell/files),
+//      so section 4 throws reading it.
 //
 // LEFT OPEN, not asserted: the shell's own tree and the API apps read it by (api.onFiles fed by commands, or a new
 // call), and whether the tree is drawn by a shell element now or in goal/G4.23; how Files draws one command (the
-// box's "draw only what a command touched"). Those are shapes still being argued under G4.25 and G4.23.
+// box's "draw only what a command touched").
 
 const fs = require('fs');
 const os = require('os');

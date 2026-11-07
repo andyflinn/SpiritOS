@@ -1,16 +1,14 @@
 'use strict';
 
-// fileTransfer goal/G1.6: the fileServer is intrinsic, it runs on every node. Red on today's tree.
+// fileTransfer goal/G1.6: the fileServer is intrinsic, it runs on every node.
 //   Andy (G1.1): "whether every node runs the fileServer by default; yes. its intrinsic and many apps can
-//   use it." Found unbuilt at the goal's close, since no red carried it; Andy: "fix it."
-// Since goal/G30.20 a server runs where its manifest's runs says, and an intrinsic one always runs at home; there is
-// no include list any more.
-// The contract the builder follows (the shape both agents gave in goal/G1.6):
-//   1. A server's manifest may say intrinsic: true, honoured like a shell element's: always included,
-//      never excluded, with nothing listed.
-//   2. The node starts it on a fresh node, with no runs in its manifest.
-//   3. spirit/run/process/js/fileServer/fileServer.json says intrinsic: true.
-//   A server without the word is untouched: not listed, not started (slim/G1.3).
+//   use it."
+// What this test checks (the goal/G1.6 contract):
+//   1. A server whose manifest says intrinsic: true is started on a fresh node; a plain one is not.
+//   2. spirit/run/process/js/fileServer/fileServer.json says intrinsic: true.
+// The node no longer reads that word: since goal/G41.1 intrinsic is the coded list INTRINSIC in
+// spirit/run/spirit/coreFiles.js (process/js/fileServer is on it), and jobs.js runsHome() asks only that list and the
+// server's sidecar, never the manifest. fileServer.json has no intrinsic field, so both checks fail.
 
 const fs = require('fs');
 const os = require('os');
@@ -42,7 +40,7 @@ const run = path.join(scratch, 'n', 'spirit', 'run');
     'require("fs").writeFileSync(' + JSON.stringify(path.join(marks, s[0])) + ', "ran");\nsetInterval(function () {}, 1000);\n');
 });
 fs.mkdirSync(path.join(run, 'spirit', 'state'), { recursive: true });
-// Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
+// goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
 require('../run/spirit/relayAuth.js').saveIdentity(run, require('../run/spirit/relayAuth.js').generateIdentity('n'));
 
 (async function () {

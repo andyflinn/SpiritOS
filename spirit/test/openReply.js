@@ -1,13 +1,13 @@
 'use strict';
 
 // spirit/test/openReply.js
-// READING WHAT A RELAY SAID, NOW THAT IT SEALS IT — cycle 10, R5.
+// READING WHAT A RELAY SAID, WHICH IT SEALS — cycle 10, R5.
 //
 //   Andy: "relay needs a cypher key too, because it has answerSelf()."
 //
 // Every answer a relay gives a member is sealed to the cipher key on that
-// member's card, in both directions — so a suite that used to do
-// `JSON.parse(reply.text)` has to open it first, exactly as a node does.
+// member's card, in both directions — so a suite cannot just
+// `JSON.parse(reply.text)`; it has to open it first, exactly as a node does.
 //
 // ONE HELPER, NOT TWENTY COPIES. Twenty suites parse relay replies, and
 // twenty hand-rolled opens would be twenty chances to quietly accept a

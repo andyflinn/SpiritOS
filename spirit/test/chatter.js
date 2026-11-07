@@ -2,7 +2,12 @@
 
 // spirit/test/chatter.js
 // goal/G4.10 and goal/G4.11: chatter, the app over the chatClerver: the peers on the left, one chat in the centre.
-// RED on today's tree: there is no shell/chatter.
+//
+// STALE: the fixture below loads shell/shared/js/listSearch.js, deleted in goal/G41.28, and wraps
+// spirit.elements.createContactSelector; chatter.js (spirit/run/shell/chatter/) now builds its peer pane with
+// spirit.element.search.contact.create and its chat search with spirit.element.search.create, and reads its lines
+// from the chatClerver family's cache (spirit.data.chatClerver.data), not api.onPublished. The contract below is the
+// one the boxes set; where it names createContactSelector, api.onPublished or api.onJobs it names the app as it was.
 //
 //   Andy, 2026-10-03, his go-all on goal/G4. The rulings stand verbatim in the boxes. G4.10: "A click on a row brings
 //   that rows chat into the center/chat pane."; "We need to pick and icon/status pair for \"new message(s)\" waiting.";
@@ -217,7 +222,9 @@ function mount(opts) {
     asked.push({ via: 'core', verb: verb, body: body || {} });
     if (verb === 'contact.search') {
       // By name, as the node's book answers (hub.js searchPeople); with nothing typed, the two the picker offers.
-      // goal/G29.6: each label is the node's json {name, owned, blocked, held}, no words appended to the name.
+      // goal/G29.6: each label is the node's json {name, owned, blocked}, no words appended to the name.
+  // DISCREPANCY WITH ANDY's RULES: goal/G43.17, Andy: "Didn't i say remove ALL code referencing "admit" and "hold".
+  // it was a hair-brained scheme, and it HAS TO GO." The label below still carries held.
       const book = [[PEER, 'Pete'], [QUIET, 'Quinn'], [NEWBIE, 'Newbie'], [BLOCKED, 'Blocky'], [STRANGER, 'Stan']];
       const label = function (b) { return JSON.stringify({ name: b[1], owned: false, blocked: b[0] === BLOCKED, held: false }); };
       const q = String(body.q || '').toLowerCase();
@@ -293,8 +300,8 @@ function mount(opts) {
   const load = function (file) {
     new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(file, 'utf8'))(sp, doc, win, Event, CustomEvent);
   };
-  // goal/G29.6: as index.html loads them, the probability modules and the shared list before the contact selector,
-  // which is now a thin wrapper around window.spirit.elements.shellCreateListSearch.
+  // The probability modules, then the shared list and the contact elements. STALE: listSearch.js (the old shared list,
+  // window.spirit.elements.shellCreateListSearch) was deleted in goal/G41.28, so this load throws.
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
     new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });
@@ -332,7 +339,7 @@ function mount(opts) {
 
 function pane(app) { const s = app.selectors.filter(function (x) { return x.options.face === 'pane'; })[0]; return s || null; }
 function picker(app) { return app.selectors.filter(function (x) { return x.options.face !== 'pane'; })[0] || null; }
-// THE SELECTOR'S LIST (goal/G29.6): shellCreateListSearch writes its parts as html into the selector's pane, ids
+// THE SELECTOR'S LIST (goal/G29.6, the deleted listSearch.js): shellCreateListSearch wrote its parts as html into the selector's pane, ids
 // listsearch-<n>-filters|text|clear|search|count|list, and finds them by document.getElementById; its rows are
 // <tr data-key> strings in the list part. listParts finds that pane and its parts for a selector's root; a row is read
 // from the list's html as a node whose events bubble to the pane, where the list listens.

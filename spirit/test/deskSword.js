@@ -1,14 +1,12 @@
 'use strict';
 
-// goal/G9.1: a sword marks make-current in the List; the button lives in the goal's Details. Red on today's tree;
-// claude-windows wrote it from G9.1's box and does not build it.
+// goal/G9.1: a sword marks make-current in the List; the button lives in the goal's Details.
 //   Andy, 2026-10-07: "the [make-current] button will not be displayed in the List, only in the goals Details. in the
 //   list, an item that has a [make-current] button, the item will be marked with an ICON.SWORD (⚔️), indicating:
 //   \"There is a battle to be fought\"."
 //
-// WHAT IS TRUE TODAY (read in the tree at 7cd6d633): the List draws every button the row's facts offer except Go all
-// and Reopen (shell/desk/desk.js deskInRow), so make-current is drawn as a button labelled with its own name. The
-// kernel's ICON already holds SWORD, and the Details dialog already draws "Make current goal" (deskDetails.js).
+// The List's row (shell/desk/desk.js deskInRow) draws DESK_SWORD where the row's buttons contain make-current, and no
+// make-current button; the kernel's ICON holds SWORD, and the Details dialog draws "Make current goal" (deskDetails.js).
 // THE SHAPE (G9.1's box): UI only. The row draws ICON.SWORD where buttons contains make-current; the press stays in
 // the goal's Details. No desk server change.
 

@@ -185,9 +185,8 @@ Promise.resolve()
   .then(function (r) {
     if (r.status === 404) test.check('GET /api/jobs 404');
     else test.fail('jobs → ' + r.status + ' ' + r.text);
-    // The loopback client door, which a relay must not answer at all.
-    // It was /api/proxy until 2026-09-15; the verb folded, the claim did
-    // not — a relay serves only isRelayPublicPath, and this is not on it.
+    // The loopback client door, which a relay must not answer at all: a
+    // relay serves only isRelayPublicPath, and this is not on it.
     return request(ORIGIN + '/api/spirit', 'POST', { call: 'net.fetch', args: { url: 'http://example.com' } });
   })
   .then(function (r) {
@@ -200,16 +199,13 @@ Promise.resolve()
     else test.fail('fs/stat → ' + r.status + ' ' + r.text);
     // THE NODE'S OWN STREAM, which is the one piece of loopback surface
     // that is NOT a verb and so is not covered by the /api/spirit check
-    // above.
+    // above. A relay serves /api/relay/stream, a held connection with a
+    // signature, and must not also serve the node's unsigned local one.
     //
-    // This slot asked for /api/hub/claim, then /api/hub/who, and both of
-    // those have since been deleted from the NODE as well — so each 404
-    // had quietly stopped saying anything about relays. A check whose
-    // subject no longer exists anywhere passes for free.
-    //
-    // /api/events is a relay's blind spot worth being exact about: it
-    // serves /api/relay/stream, a held connection with a signature, and
-    // must not also serve the node's unsigned local one.
+    // The node has no /api/events either since goal/G40.6 (its stream is
+    // the events family, server.js), so this 404 now passes for free and
+    // says nothing about relays: a check whose subject no longer exists
+    // anywhere.
     return request(ORIGIN + '/api/events', 'GET', null);
   })
   .then(function (r) {

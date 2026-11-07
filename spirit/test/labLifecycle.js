@@ -4,31 +4,17 @@
 // The lab control plane: make a node, start it, delete it, and leave the
 // one Andy works in alone.
 //
-// ── THIS WAS labMaster/relayPing.test.js ─────────────────────────────
+// Claims and posts are covered elsewhere: spirit/test/relayGates.js
+// drives signed and unsigned claims in process, and
+// spirit/test/liveFrontDoor.js posts between real nodes. Neither can say
+// whether labMaster can BUILD a node, which is this file's subject.
 //
-// Renamed because the name was describing the third of it that no longer
-// exists. Eleven checks: eight were labMaster's own lifecycle and three
-// were a "ping" — claim, send, inbox — across a transport that R8
-// deleted. The ping is gone; what is left is what the file was mostly
-// testing all along, which is why it is kept rather than deleted.
-//
-// The claim it used to make is covered better elsewhere and in the
-// harness: spirit/test/relayGates.js drives signed and unsigned claims
-// in process, and spirit/test/liveFrontDoor.js posts between real nodes.
-// Neither of those can say whether labMaster can BUILD a node, and
-// nothing else could either — which is this file's subject.
-//
-// ── AND IT IS IN THE HARNESS NOW ─────────────────────────────────────
-//
-// It sat in spirit/test/labMaster/, which runAll.js does not read, and
-// it assumed somebody had started labMaster by hand. Both are fixed:
+// It lives with the other suites, so runAll.js runs it, and
 // labMaster/ensureMaster.js brings the control plane up if it is not
-// already there, and the file lives with the other suites.
+// already there.
 //
 // Seconds, not milliseconds — it spawns real processes on real ports.
-// That is the cost of the thing it proves, and it is paid deliberately:
-// this suite and its two siblings went months without going red anywhere
-// precisely because nothing ran them.
+// That is the cost of the thing it proves.
 
 const fs = require('fs');
 const os = require('os');
@@ -104,7 +90,7 @@ async function run() {
     // NOT A PRODUCT FAILURE, and said as one line rather than as a dozen
     // red checks about relays. The lesson presenceWire paid for.
     //
-    // AND SINCE 2026-09-24 IT IS NOT A FAILURE AT ALL when the cause is
+    // AND IT IS NOT A FAILURE AT ALL when the cause is
     // a labMaster from another checkout: that is a fact about the
     // machine the developer can clear in one command, and reporting it
     // as red says the tree is broken when it is not. A labMaster that
@@ -220,9 +206,9 @@ async function run() {
   // seat her claim had just taken, so the node sat enrolled and
   // unconnected until somebody restarted it.
   //
-  // Since goal/G22.5: a node's identity exists from its first boot, before
-  // it listens (relayAuth.js on its first load), so the key is no part of
-  // this any more. What is asserted is that the key the node booted with
+  // A node's identity exists from its first boot, before it listens
+  // (goal/G22.5; relayAuth.js on its first load). What is asserted is
+  // that the key the node booted with
   // is the key it holds after the claim, and that the claim connects it.
   //
   // EVERY NEW NODE GOES THROUGH EXACTLY THAT SEQUENCE, which is why this
@@ -235,7 +221,8 @@ async function run() {
   // a row here" — a different question from "you are connected".
   test.subHeading('A node that claims after boot connects without a restart');
 
-  // `serving` asks /api/relay/who, which only a RELAY answers. A personal
+  // `serving` asks a card on the relay's one door (relayDoor.keyStatus),
+  // which only a RELAY answers. A personal
   // node is alive when its own door answers a verb — the same door every
   // caller uses.
   const relayUp = await serving(RELAY_PORT);
@@ -255,7 +242,7 @@ async function run() {
   if (!relayUp || !avatarUp) {
     test.fail('need both fixtures up: relay=' + relayUp + ' avatar=' + avatarUp);
   } else {
-    // Since goal/G22.5: the avatar, a fresh clone of the tree the way a new
+    // The avatar (goal/G22.5), a fresh clone of the tree the way a new
     // node arrives, has its key from its first boot, before it listens.
     // So it is asserted to HAVE one before the claim, and the claim below
     // is asserted to keep it.
@@ -275,18 +262,19 @@ async function run() {
     // nothing exposes "configure this node's relays" from outside it, so
     // the file is written the way labWorld writes one.
     //
-    // No restart needed: ownerBadge.loadRelays reads the file per call.
-    // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+    // The node's relay list is the relays rows of node.db now (ownerBadge.loadRelays
+    // reads relayKeys.listed); a relays.json found is moved into it on the next read
+    // (relayKeys importOld), and a listed url with no pinned key is not copied, so
+    // this file alone may list nothing.
     fs.mkdirSync(path.join(avatarHome, 'spirit', 'state'), { recursive: true });
     fs.writeFileSync(
       path.join(avatarHome, 'spirit', 'state', 'relays.json'),
       JSON.stringify([{ label: 'ping', url: 'http://127.0.0.1:' + RELAY_PORT }], null, 2)
     );
 
-    // And claim, exactly as Natter does — with an invite the relay's owner
-    // minted, written straight into its relay.db; the node carries it as
-    // `invite` and `inviteLabel`, the fields its claim screen fills. Until
-    // goal/G16.8 this was the owner invite; the relay is owned at install now.
+    // And claim with a member invite the relay's owner minted, written
+    // straight into its relay.db; the node carries it as `invite` and
+    // `inviteLabel`. The relay is owned at install (goal/G16.8).
     const memberInvite = invites.add(pingRelayHome, { label: 'pingandy', days: 1 });
     relayStore.open(pingRelayHome).close();
     const claimed = await hub(AVATAR_PORT, 'POST', '/api/spirit', {
@@ -298,7 +286,7 @@ async function run() {
     } else {
       test.fail('claim: ' + claimed.status + ' ' + JSON.stringify(claimed.body));
     }
-    // Since goal/G22.5: the claim names the node and never re-keys it.
+    // The claim names the node and never re-keys it (goal/G22.5).
     const afterKey = (auth.loadIdentity(avatarHome) || {}).publicKey || '';
     if (bootKey && afterKey === bootKey) {
       test.check('and the claim keeps the key the node booted with');
@@ -354,8 +342,7 @@ async function run() {
   // box. Checked every run, because "it cleans up after itself" and "it
   // cleans up after everybody" look identical until the day they don't.
   //
-  // AND ON A HARNESS labMaster THERE IS NO WORK ROW AT ALL (2026-09-22,
-  // labPaths.js): an agent's labMaster on another port must hold nothing
+  // AND ON A HARNESS labMaster THERE IS NO WORK ROW AT ALL (labPaths.js): an agent's labMaster on another port must hold nothing
   // that points at Andy's node, and must have no live world. So the check
   // turns round there — which makes it the test of that rule.
   const harness = require('./labMaster/labPaths').HARNESS;

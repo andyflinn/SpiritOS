@@ -265,12 +265,9 @@ test.subHeading('The unit template is one file, however many relays use it');
 //   spirit-relay: the live box, bounced every ten minutes on behalf of a
 //   directory it knows nothing about.
 //
-// THIS CORRECTS THE FIX, NOT THE DIAGNOSIS. The first answer was to put
-// the environment on the cron line. It shipped, and then the real fault
-// showed itself one level up — see "The clone decides, not the shell"
-// below. Cron's empty environment was never the hazard; an environment
-// that could be WRONG was, and a line carrying its own copy of it is a
-// line that can carry the wrong one. It did.
+// Cron's empty environment is not the hazard; an environment that could
+// be WRONG is, and a line carrying its own copy of it is a line that can
+// carry the wrong one — see "The clone decides, not the shell" below.
 // ── NO PIPELINE DECIDES ANYTHING, UNDER pipefail ─────────────────────
 //
 // `set -euo pipefail` is on for every script in bash/, and it turns a
@@ -594,17 +591,13 @@ test.subHeading('Two clones can each keep their own update cron');
     test.fail('cron-install still uses a marker both clones share');
   }
 
-  // THE LINE CARRIES NO ENVIRONMENT — REVERSED FROM WHAT THIS ASSERTED
-  // A DAY AGO, and the reversal is the point. It used to require
-  // `SPIRIT_UNIT_NAME=$UNIT_NAME` on the line "because cron has none".
-  // Then this got installed, from a shell that had sourced the lab's
-  // .env and walked back to the live clone:
+  // THE LINE CARRIES NO ENVIRONMENT. A line such as
   //
   //   */10 * * * * SPIRIT_UNIT_NAME=spirit-lab /root/SpiritOS/bash/update
   //
-  // Live clone's code, lab's service, every ten minutes, no error. A
-  // line that states its own unit is a line that can state the wrong
-  // one. lib.sh now derives it from the clone the script lives in, so
+  // runs the live clone's code against the lab's service, every ten
+  // minutes, with no error: a line that states its own unit can state the
+  // wrong one. lib.sh derives it from the clone the script lives in, so
   // the path IS the configuration and there is nothing to get wrong.
   // Comments stripped: the block above QUOTES the bad line on purpose,
   // and a scan that cannot tell code from the history of the code is a
@@ -649,22 +642,13 @@ test.subHeading('THE MEMORY CAP IS THE RELAY’S OWN FIGURE — asked, never re-
 {
   // ── WHY THIS IS A GATE AND NOT A COMMENT ───────────────────────────
   //
-  // The installer computed half of MemTotal in shell and told the
-  // operator it was capping "as the relay would". True when written;
-  // false from cycle 9, which gave the default a 256 MB ceiling. The
-  // sentence stayed. wsl-claude ran this script on Linux for the FIRST
-  // TIME on 2026-09-24 and measured the result: MemoryMax=32201M written
-  // in the same minute the relay under it logged "RAM limit 256 MB
-  // (default)".
-  //
-  // A factor of 125, on the one directive that makes ramLimitMB
-  // enforceable, on every fresh relay host, for as long as this script
-  // has existed. It survived because nothing could see it: the figure is
-  // correct arithmetic on a formula that had moved.
-  //
-  // So the repair is not a better formula. It is having only ONE, and
-  // this asserts that — the installer must ask `relayLimits.defaults()`
-  // and must not contain arithmetic that could disagree with it.
+  // A second copy of the relay's default in shell can drift from the
+  // relay's own: half of MemTotal written as MemoryMax=32201M under a
+  // relay that logged "RAM limit 256 MB (default)" (measured 2026-09-24),
+  // a factor of 125 on the one directive that makes ramLimitMB
+  // enforceable. So there is only ONE formula: the installer must ask
+  // `relayLimits.defaults()` and must not contain arithmetic that could
+  // disagree with it.
   const asks = /relayLimits/.test(installer) && /defaults\(/.test(installer);
 
   if (asks) {

@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskBlocks.js
-// goal/G27.5: blocking and blocked-by relationships in the desk. Red on today's code; claude-windows wrote it and builds
-// it. The item's box (v10):
+// goal/G27.5: blocking and blocked-by relationships in the desk. The item's box:
 //   R1/R2. block(A, B), A blocks B, between two items of one goal; unblock(A, B) unlinks it.
 //   R3. a block that would close a circle is refused: "error: circular blocking was asked".
 //   R4. an item blocking nothing else blocks the goal.
@@ -13,7 +12,7 @@
 //   R10. a block onto a running item (Go on record, not done or closed) is refused: "error: too late! this is already
 //       happening"; the drop-down leaves running items out.
 //
-// THE SHAPES THIS RED NAMES: verbs block {id, blocks} and unblock {id, blocks} (id is A, blocks is B, as item.add names
+// THE SHAPES: verbs block {id, blocks} and unblock {id, blocks} (id is A, blocks is B, as item.add names
 // what it blocks); block.targets {id} -> {items: [{key, label}], more}, the valid targets as a bounded search; the
 // goal fallback the gate placed (R4) goes once the item blocks something else, since it is then implied. In the
 // dialog: buttons data-unblock="<B>" on the item's own blocks, a select #dd-block-add filled from block.targets, and

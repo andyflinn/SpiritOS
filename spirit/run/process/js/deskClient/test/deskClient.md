@@ -9,7 +9,7 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 ## Requirements
 
 - **The cache dump** (Andy: "a cache-dump to to a fixed file  name in relay-state/process/deskClient/<fixedFileName>.json"):
-  since goal/G41.12 the cache is appServer's, `relay-state/process/deskClient/cache-<desk key in hex>.json`, and
+  the cache is appServer's (goal/G41.12), `spirit/state/deskClient/<the desk's node id in base64url>.json`, and
   deskClient keeps no file of its own. The verb `cache.dump`, owner-only, asks appServer to save its cache now
   (`saveCaches`) and answers appServer's file and its bytes. With no cache kept yet it is refused `not-saved`. It
   takes no path, and deskClient writes no file at all, `cache.json` or anywhere a caller names. A caller who is not the
@@ -55,8 +55,8 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - **The desk's line addressed to the cap agents** (its row's `to`, as his addressed lines) wakes the agent whose key
   it names as its own (DESK), with no take, and entitles it to answer there and take the box.
 - **Push goal replaces the copy whole** (goal/G41.22; Andy, the box: "pushgoal replaces each agent's copy of the
-  current goal whole, no merge: nothing stale survives."). The push, as the desk build must send it (today's whole-goal
-  rows carry no mark and no end, so a client cannot tell what the push lacks): every row under one change, the push's,
+  current goal whole, no merge: nothing stale survives."). The push, as the desk sends it (desk.js `pushGoalReplace`):
+  every row under one change, the push's,
   marked `replace: true`; the goal's facts and its items' (`verb: 'goal.whole'`, `key: { goal, item }`); then each of
   his lines addressed to an agent that nobody took yet, as the chat side row with its `to`; last its end,
   `{ change, verb: 'goal.whole', replace: true, end: true, key: { goal, item: 0 } }`. Once it has landed:
@@ -70,9 +70,8 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   it that nobody took yet: nothing replayed, nothing lost."): his addressed line the push carries that the stream never
   brought comes once; his line the agent already read does not come again.
 - **Every wake not yet read comes back in one, none lost and none twice, also after a node restart** (Andy, the box,
-  of the Desk Ear). Found live: after a node restart the ear handed old lines back one per wake; lines a wake carried
-  while nobody read it were lost. Within one run three wakes nobody read come in one answer, each line once, and reading
-  with the key acknowledges all (a guard: it holds today). After a restart on the same state folder, the data set read
+  of the Desk Ear). Within one run three wakes nobody read come in one answer, each line once, and reading with the key
+  acknowledges all (a guard). After a restart on the same state folder, the data set read
   back from appServer's cache: the next wait, naming the key the agent last read, hands once each the wake handed but
   never read and the line that waited, and nothing already read, even when the catch-up brings those rows again.
 

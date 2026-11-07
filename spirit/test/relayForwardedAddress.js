@@ -3,9 +3,8 @@
 // spirit/test/relayForwardedAddress.js
 // A STRANGER IS COUNTED BY ITS REAL ADDRESS BEHIND CADDY (goal/G22.7).
 //
-// Decided by Andy, 2026-10-14 (goal/G22.7's box): before the flag-day tag of goal/G22.6, a relay behind Caddy counts
-// a stranger by the address Caddy forwards (X-Forwarded-For), not by 127.0.0.1, so the address table holds one entry
-// per real address. The forwarded address may only be trusted when the request came from the local Caddy: anyone who
+// Decided by Andy, 2026-10-14 (goal/G22.7): a relay behind Caddy counts a stranger by the address Caddy forwards
+// (X-Forwarded-For), not by 127.0.0.1, so the address table holds one entry per real address. The forwarded address may only be trusted when the request came from the local Caddy: anyone who
 // reaches the relay directly could write the header themselves.
 //
 // The relay's one reader of a requester's address is serveCommon.clientKeyFor (relayServer.js hands it to the address

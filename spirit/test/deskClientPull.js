@@ -1,20 +1,18 @@
 'use strict';
 
 // goal/G19.6: deskClient pulls beside the call that hands an agent its lines, never inside it, and never aborts a
-// rebase it did not start. Red on today's tree.
-//   Andy, 2026-10-12, to the findings of goal/G19.6: "agreed to the whole thing as stated in your last message." The
-//   box: "deskClient pulls beside the call that hands an agent its lines, never inside it, and never aborts a rebase
-//   it did not start." Today pullClone (goal/G5.8) runs a synchronous git pull --rebase inside next, past the node's
-//   12 s door, and a failed pull runs git rebase --abort whatever rebase was in progress.
+// rebase it did not start.
+//   The box: "deskClient pulls beside the call that hands an agent its lines, never inside it, and never aborts a
+//   rebase it did not start." (A pull inside next would run past the node's 12 s door.)
 //
-// THE SHAPES (the builder's picks; the box names none):
+// THE SHAPES (the box names none):
 //   1  next hands over the commit line at once, while the pull it starts is still running (made slow here by a
 //      reference-transaction hook in the clone that sleeps 6 s once); what the pull has to tell comes on a later next,
-//      worded as today ("commit X landed; ... the pull clashed and was undone ...").
+//      worded as pullClone words it ("commit X landed; ... the pull clashed and was undone ...").
 //   2  A clashing pull it started is undone: the clone's HEAD is where it was, no rebase left in progress.
 //   3  A rebase already in progress in the clone (the agent's own) is not pulled into and not aborted: "commit X
 //      landed; a rebase is in progress in your clone, so it was not pulled."
-//   4  Unsaved edits are told as today: "commit X landed; your clone has unsaved edits, so it was not pulled."
+//   4  Unsaved edits are told: "commit X landed; your clone has unsaved edits, so it was not pulled."
 // deskClient finds its clone from its own folder (git rev-parse --show-toplevel), so this suite plants a run tree in a
 // fresh git clone and starts deskClient from there; nothing in the node or deskClient is a test helper.
 
@@ -148,9 +146,9 @@ async function main() {
 
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  // goal/G33.7: the world is seeded before the desk starts, which takes it in at start.
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Pulled' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'], code: true }] });
-  // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient (no `changes` to poll any more).
+  // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient.
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-pull-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   await up('desk');

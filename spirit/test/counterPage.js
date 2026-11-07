@@ -1,17 +1,16 @@
 'use strict';
 
 // spirit/test/counterPage.js
-// THE TEST SERVER — processes/G1.1, written FIRST.
+// THE TEST SERVER — processes/G1.1.
 //
 //   Andy, 2026-09-28: "the test server will be a dumb web server that serves
 //   one page with a server-side counter, that increments every time the
 //   server serves GET "/" and shows the increased counter on the page. the
-//   page will be assembeled by the server in ram". His go on processes/G1.1,
-//   under his rule: red before the implementation, green after.
+//   page will be assembeled by the server in ram".
 //
-// It is started the way the Processes app starts any process (index.html,
-// the launch dialog): `node <script> <one JSON string of the declared args>`,
-// here {"port": P} (processes/G1.2 declares that arg).
+// It is started the way jobs.js starts a process: `node <script> <one JSON
+// string of the declared args>`, here {"port": P} (counterServer.json
+// declares that arg).
 //
 // "In RAM" is held by the operating system, not by reading the code: the
 // server runs under Node's permission model, allowed to read its own script
@@ -114,9 +113,9 @@ if (!fs.existsSync(SCRIPT)) {
         }
       });
   }).then(function () {
-    // BY HAND, AS ANDY RAN IT. Andy, 2026-09-28: "node .\counterServer.js
-    // --port 44444", and it listened on nothing. A server takes the port on
-    // its command line too, not only as the launch dialog's JSON string.
+    // BY HAND, AS ANDY RAN IT: "node .\counterServer.js --port 44444". A
+    // server takes the port on its command line too, not only as the JSON
+    // string of its declared args.
     if (child && child.exitCode === null) child.kill();
     test.subHeading('T4: started by hand with --port P, it answers on P');
     return freePort().then(function (port) {

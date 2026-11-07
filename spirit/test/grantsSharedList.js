@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/grantsSharedList.js
-// goal/G29.7: Grants on the shared list. Red on today's tree; claude-windows writes it and builds it (one agent). The
-// item's box (v7), in short:
+// goal/G29.7: Grants on the shared list. The item's box (v7), in short:
 //   THE LINE: one line at the top, nothing stacked: [whose access] [choose a server] [choose a verb] [Grant]; the three
 //   selectors are dropdowns of the shared list (the server and verb selectors leave their native selects); the verb
 //   selector shows only once a server is chosen; the selectors are filters, one left unchosen meaning all; Grant grants
@@ -13,13 +12,17 @@
 //   auth.search moves to the new search: words ranked by the probability modules, each grant answered as a json
 //   label {name, key, path}; its old search goes.
 //
-// NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
+// NAMED HERE where the box names none:
 //   - auth.search answers {items: [{key: key + '\n' + path, label: json {name, key, path}}], more}.
 //   - createContactSelector({ all }) and createAppServerSelector({ all }) offer a first row with key '' named by all;
 //     createApiBranchSelector's root carries server and verb ('' for all) beside value (the path: 'app' when no verb
 //     is chosen, 'app.verb' when one is).
 //   - grants.js draws the line in an element with id gr-line, display flex, and the table in gr-list.
 // rule/11: through testSupport only; its own folders; never 65432.
+// STALE, part 2 and one check of part 1: the page part loads spirit/run/shell/shared/js/listSearch.js, deleted in
+// goal/G41.28 ("listSearch is gone"), and spirit/run/spirit/element/apiBranchSelector.js, which is no longer in the
+// tree, so the page never mounts and every page check fails. "The key itself is never matched" fails too: auth.search
+// now finds a grant by a cut of its key.
 
 const fs = require('fs');
 const os = require('os');
@@ -89,9 +92,8 @@ function page() {
   } catch (e) {
     test.fail(OWED + 'the store could not be searched: ' + (e && e.message || e));
   } finally { try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
-  // Since goal/G30.4 the jobs family is mounted with its verbs bare: authSearch inside loopbackVerbs.mount('jobs', ...).
+  // The grant verbs are the auth family's (goal/G30.6), mounted with their verbs bare: loopbackVerbs.mount('auth', ...).
   const server = code(path.join(RUN, 'spirit', 'server.js'));
-  // The grant verbs are the auth family's since goal/G30.6.
   const jobsMount = (/loopbackVerbs\.mount\('auth',[\s\S]*?\n {2}\}, \{ wire:/.exec(server) || [''])[0];
   if (/'search':\s*\{\s*request:\s*\{\s*text:\s*''\s*\},\s*reply:\s*LIST/.test(jobsMount)) test.check('server.js declares auth.search {text} answering LIST');
   else test.fail(OWED + 'server.js declares ' + short((/'search':[^\n]*/.exec(jobsMount) || [''])[0]));

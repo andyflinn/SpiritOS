@@ -3,10 +3,8 @@
 // spirit/test/relayKeys.js
 // Trust-on-first-use for a relay's identity, made durable.
 //
-// The gap this closes, found while answering Grok's review of the device design:
-// `answerRelay.js` pinned a relay's `relayPublicKey` in RAM for the
-// life of one process, and `relays.json` recorded no key at all. So a
-// relay swapped underneath a node between restarts was accepted in
+// A relay's key is pinned on disc, in node.db, so a relay swapped
+// underneath a node between restarts is reported, not accepted in
 // silence.
 //
 // What is checked hardest here is the SILENCE, not the happy path: a
@@ -19,7 +17,7 @@ const test = require('./testSupport.js');
 const relayKeys = require('../run/spirit/relayKeys');
 const world = require('./world');
 
-// The pins as they stand on disc, by url, read through a connection of this suite's own. Since goal/G40.11 a relay
+// The pins as they stand on disc, by url, read through a connection of this suite's own. A relay (goal/G40.11)
 // is a row of node.db's one table, seen, flagged relay, and its url a direct route in seen_routes (via empty, at the
 // relay's own key): the route is the pin.
 function disc(home) {
@@ -84,7 +82,7 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
 
   // The point of the whole module: this is on disc, not a variable. Read
   // through a connection of this test's own, so a passing check cannot be
-  // a cache answering. Since goal/G40.11 the disc is the one table: the relay's row, its url a direct route.
+  // a cache answering. The disc is the one table (goal/G40.11): the relay's row, its url a direct route.
   const onDisk = disc(home);
   if (onDisk[URL_A] && onDisk[URL_A].publicKey === KEY_1 && onDisk[URL_A].relay === true) {
     test.check('and it is on disk: a row flagged relay, its url a direct route');
@@ -123,7 +121,7 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
   }
 
   // WHO THE OLD KEY WAS DOES NOT CHANGE because a box was replaced (goal/G40.11): its row stays, and only the address
-  // it answered at moves to the new key. ("replaced" and "acceptedAt" went with the relays table, box v24.)
+  // it answered at moves to the new key.
   const oldRow = row(home, KEY_1);
   if (oldRow && oldRow.relay === 1 && !Object.keys(disc(home)).some(function (u) { return disc(home)[u].publicKey === KEY_1; })) {
     test.check('and the displaced key keeps its row, with no address of its own any more');
@@ -171,11 +169,9 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
 
   test.subHeading('A file that cannot be read');
 
-  // relayKeys.forget STOOD HERE until goal/G40.11; nothing in run/ called it, and a relay's row is the table's now.
-  //
-  // FAILS SAFE, and in the one direction that matters: a stray old file reads as nothing pinned, so every relay looks
-  // new and has to be accepted again. The other direction — reading as a match — would trust a stranger because a file
-  // went bad. Since goal/G40.11 relayKeys.json is not read at all.
+  // FAILS SAFE, and in the one direction that matters: an old relayKeys.json is imported once into the table and then
+  // removed (relayKeys.importOld); one that does not parse imports nothing, so every relay looks new and has to be
+  // accepted again. The other direction — reading as a match — would trust a stranger because a file went bad.
   const broken = world.tmpHome('relaykeys-broken');
   fs.mkdirSync(path.join(broken, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(broken, 'spirit', 'state', 'relayKeys.json'), '{ not json');

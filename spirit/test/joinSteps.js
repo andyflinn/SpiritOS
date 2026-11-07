@@ -1,13 +1,12 @@
 'use strict';
 
 // spirit/test/joinSteps.js
-// goal/G30.1, box v39: the Join app walks a new user from joining to his face link. Red on today's tree; claude-windows
-// writes it and builds it (one agent). The box, in short:
+// goal/G30.1, box v39: the Join app walks a new user from joining to his face link. The box, in short:
 //   - The app shows every step as a bullet in a to-do list, done ones ticked, the first open one expanded with its
 //     form; the tile shows the first open step's name and icon. Its manifest lists the steps in order, each with its
 //     name, icon and the fact that ends it. Join (until a seat); Find someone (until a first contact), optional, so it
 //     never blocks; Configure your node's remote control (until the node holds a face name on the relay it joined);
-//     the face link, https://<face name>.<relay host>, ticked once he has opened it (kept in the shell's preferences),
+//     the face link, https://<face name>.<relay host>, ticked once he has opened it (kept as the Join app's override),
 //     which ends the steps and takes the tile away.
 //   - The shell opens an app named in its address on load (?app=<folder>); the mail's link carries ?join=<code>&app=join.
 //   - Find someone on the network and Info's face form are shell elements; Contacts, Info and the Join app draw them.
@@ -16,14 +15,17 @@
 //     node keeps a permanent job, join-steps, with where the steps stand, and publishes it only when it changes; the
 //     shell's tile and the Join app hear that job and draw only when it changes. Nothing is asked on a shell message.
 // NAMED HERE where the box names none:
-//   - js/joinStepsJob.js: create(rootDir, jobs) -> { job, facts(), refresh(why) }. facts() reads the node's own records:
+//   - spirit/joinStepsJob.js: create(rootDir, jobs) -> { job, facts(), refresh(why) }. facts() reads the node's own records:
 //     seated (a relay row holds a seat), relayUrl (that relay, else the first listed), contact (the book holds anyone
 //     but this node and its relays), face (the face name kept on that relay's row), faceUrl. refresh publishes the job
 //     when the facts changed, and answers whether it did. server.js refreshes it after a relay, contact or peer verb.
 //   - spirit.element.joinSteps = { fromJob(data, opened), current(steps, facts), done(step, facts) }.
-//   - spirit.element.search.contact.listElement (spirit/element/search/contact/listElement.js; peerFind until goal/G30.19) and spirit.element.faceForm
+//   - spirit.element.search.contact.listElement (spirit/element/search/contact/listElement.js) and spirit.element.faceForm
 //     (spirit/element/faceForm.js).
 //   - The Join app keeps the opened link as its own override: setAppOverride('shell/join', { faceOpened: true }).
+// Paths are read under spirit/run/. Several no longer hold what is read: shell/natterDetails/natterDetails.js is gone,
+// the page is spirit/shell/index.html (read here as index.html), and join.js and faceForm.js now need spirit.require
+// and a fuller page than the fakes here give.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -50,7 +52,7 @@ try { manifest = JSON.parse(raw('shell/join/join.json')); } catch (e) { manifest
 const steps = (manifest && Array.isArray(manifest.steps)) ? manifest.steps : [];
 const find = steps.filter(function (s) { return s.until === 'contact'; })[0] || {};
 const face = steps.filter(function (s) { return s.until === 'face'; })[0] || {};
-// Box v41: step 1 ends once the node holds a seat with a verified email (until: 'email').
+// Box v41: step 1's fact is until: 'email'; a seat alone ends it, since the node keeps no email (goal/G40.11).
 if (steps.map(function (s) { return s.until; }).join(',') === 'email,contact,face,opened' && find.optional === true && /remote control/i.test(String(face.name || '')) && steps.every(function (s) { return s.name && s.icon; }))
   test.check('join.json lists Join, Find someone (optional), Configure your node\'s remote control and the face link, each with a name and an icon');
 else test.fail(OWED + 'join.json steps read ' + short(steps));
@@ -86,8 +88,8 @@ try {
   J.refresh('peer.acquire');
   r.contact = made.data.contact === true;
   r.afterContact = at();
-  // THE FACE NAME IS ANDY'S OPEN QUESTION ON goal/G40.11 (keep it on the relay's row as the node's own fact, or drop
-  // the face lines): nothing keeps a face until he answers, so this stays red rather than invent an answer.
+  // THE FACE NAME IS KEPT ON THE RELAY'S ROW (relayKeys.keepFace(rootDir, url, name); Andy: "Face name: keep it, on
+  // the relay's row, as the node's own fact, like myLabel.").
   if (typeof relayKeys.keepFace === 'function') relayKeys.keepFace(home, 'https://relay.example', 'harbour', 'carl@example.org', '{}');
   J.refresh('relay.face');
   r.faceUrl = made.data.faceUrl;
@@ -140,7 +142,7 @@ const index = raw('index.html');
 const contacts = code('spirit/app/contact/contact.js');
 const info = code('shell/info/info.js');
 const joinApp = code('shell/join/join.js');
-// SINCE goal/G30.19 Find someone is Contacts' one list, contactSearch: contact.search (the book, the shadow, the
+// Find someone is Contacts' one list (goal/G30.19), contactSearch: contact.search (the book, the shadow, the
 // network), Add by peer.acquire on its contactElement rows.
 const contactSearch = element('spirit/element/search/contact/listElement.js', 'contactList');
 const faceForm = element('spirit/element/faceForm.js', 'faceForm');
@@ -167,7 +169,8 @@ if (/apps\[id\]\.onSteps = behavior\.onSteps/.test(shell) && /\.onSteps\(/.test(
 else test.fail(OWED + 'the shell does not hand the steps to the app');
 
 test.subHeading('4b. one join control, and the face form on one line (box v41)');
-// joinForm.words({seated}) picks the control's words, so natterDetails and the Join app draw the same control: no seat
+// joinForm.words({seated}) picks the control's words, so its callers draw the same control (this reads natterDetails,
+// which is gone, and the Join app): no seat
 // Join; a seat Change, never prefilled (goal/G40.11: the node keeps no email, so a caller handing one changes nothing).
 const joinFormEl = element('spirit/element/joinForm.js', 'joinForm');
 let words = null;

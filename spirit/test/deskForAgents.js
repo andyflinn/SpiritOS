@@ -1,7 +1,6 @@
 'use strict';
 
-// goal/G2.2: Desk for the agents — notes 1, 2 and 6 of its box. Red on today's tree. (Note 4, an item in design
-// mode while the goal is not, has no shape yet and is not here; note 5 is deferred to the agent-management goal.)
+// goal/G2.2: Desk for the agents — notes 1, 2 and 6 of its box (notes 4 and 5 are not here).
 //   1. The box cap. Andy: "there will be no second box per item. absolutely not.", "orange at 50%, red at 75%",
 //      and the box's own words: the desk server marks an item by its box's share of one answer (ANSWER_MAX 8377);
 //      the dialog borders the box orange at 50% full, red at 75% full; nothing is refused below the answer limit;
@@ -9,9 +8,9 @@
 //   2. Taking his message. Andy: "an item can \"take\" my message and be the only one to answer after that, i then
 //      can solicit an answer from others." Shape: a take on his line, by program, first wins, the second refused
 //      taken; only the taker answers after that; the other agent can be asked for an opinion afterward.
-//   6. Team tabs from the goal row. wsl-claude, found live (Andy: "you're suggesting to fix this now? i agree."):
-//      the tabs come from the goal row's live (and working, for the blink); the lines only fill the chat.
-// The contract the builder follows (the shapes this red fixes, argued in goal/G2.2 before building):
+//   6. Agents from the goal row: the desk's tab row draws a bubble per agent from the goal row's live (and working,
+//      for the blink), not from chat lines.
+// The contract:
 //   1a. An item's facts carry half: true once its box, measured as its one answer (item.box), passes 50% of
 //       appClient.ANSWER_MAX, and full: true from 75%; both false below. Nothing is refused below the limit.
 //   1b. The dialog paints the box with a 2px solid border, orange while half and red while full, none otherwise.
@@ -20,10 +19,10 @@
 //       code). While it is unanswered, any other agent's chat.add under that item is refused taken; the taker's
 //       chat.add answers it and frees the item; his own lines are never refused. A take on an item with no line
 //       of his is refused no-row.
-//   6a. The goal row's facts carry agents: {name: key} for its live agents (the server knows every writer's key;
-//       wsl-claude's shape: one field, no new verb), beside live and working.
-//   6b. The Team strip has a tab for every agent in the goal row's live, lines or none; a line typed under that
-//       tab goes to the key the goal row gives for it; the log lines only fill the chat.
+//   6a. The goal row's facts carry live (the agents that wrote lately) and agents: {name: key} (one field, no new
+//       verb), beside working.
+//   6b. The desk's tab row (#desk-tabs) has a bubble for every agent in the goal row's live, lines or none, and no
+//       agent tab.
 
 const fs = require('fs');
 const os = require('os');
@@ -46,7 +45,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
 async function settled() { for (let i = 0; i < 8; i++) await settle(); }
 
-// ── FAKE ELEMENTS, AS deskDialog.js AND deskWorking.js MOUNT THE PAGES ─────────
+// ── FAKE ELEMENTS, AS spirit/test/deskDialog.js AND deskWorking.js MOUNT THE PAGES ─────────
 function fakeElement(id) {
   let html = '';
   const el = {
@@ -117,7 +116,7 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
   const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item); } catch (e) { return {}; } };
   const chatOf = async function (id) { const r = await call('item.chat', { id: id }, ANDY); return (r.body && r.body.chat) || []; };
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded before the desk
-  // starts (session.set went), and the desk takes it in at start.
+  // starts, and the desk takes it in at start.
   test.seedDesk(state, { goal: { id: 'goal/G101', title: 'Round' }, items: [
     { id: 'goal/G101.1', title: 'A', blocks: ['goal/G101'] }, { id: 'goal/G101.2', title: 'B', blocks: ['goal/G101'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
@@ -157,7 +156,7 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
     const other = await call('chat.add', { id: 'goal/G101.2', text: 'I will answer too' }, WSL);
     const himself = await call('chat.add', { id: 'goal/G101.2', text: 'and more from me' }, ANDY);
     const taker = await call('chat.add', { id: 'goal/G101.2', text: 'here is my answer' }, CW);
-    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: once freed, wsl-claude takes
+    // goal/G18.8: an agent writes only where it holds the item or the take of his line: once freed, wsl-claude takes
     // his newer line, a take the standing one would have refused taken, and answers.
     const freeTake = await call('line.take', { id: 'goal/G101.2' }, WSL);
     const freed = await call('chat.add', { id: 'goal/G101.2', text: 'my opinion, since you ask' }, WSL);
@@ -196,10 +195,9 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
     test.check('no border below half; an orange border at half; a red border at full');
   } else test.fail(OWED + 'the box wears: none ' + JSON.stringify(looks.none.slice(0, 100)) + ' | half ' + JSON.stringify(looks.half.slice(0, 100)) + ' | full ' + JSON.stringify(looks.full.slice(0, 100)));
 
-  // ── THE TEAM STRIP: 6a ─────────────────────────────────────────────────
-  // 6b STOOD HERE: a tab for every live agent, and a line under it to the key the goal row gives. The tabs and the
-  // direct line went with goal/G3.12; what 6a guards (an agent live through item chat alone is not lost) now shows
-  // as a bubble in the tab row, drawn from the goal row's live.
+  // ── THE TAB ROW: 6b ────────────────────────────────────────────────────
+  // What 6a guards (an agent live through item chat alone is not lost) shows as a bubble in the tab row, drawn from
+  // the goal row's live; there is no agent tab and no direct line (goal/G3.12).
   test.subHeading('6b. a bubble for every live agent, lines or none, from the goal row');
   const keys = {}; keys['claude-windows'] = CW.key; keys['wsl-claude'] = WSL.key;
   const p = mountPage(DESK, {

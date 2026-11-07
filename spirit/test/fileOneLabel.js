@@ -1,18 +1,16 @@
 'use strict';
 
-// goal/G5.2: fileServer, one label per hash. Red on today's tree; wsl-claude wrote it from G5.2's box, without reading
-// any build, and does not build it (claude-windows builds).
+// goal/G5.2: fileServer, one label per hash.
 //   Andy (andy/NOFACE.md): "1. There will be only one label (file-name) per verb-hash. All the label arbitration will
 //   disappear."; 2026-10-05 in Desk: "ah the same file added under a new name just replaces the labe.", "same is
 //   determined by hash."; to Q2 (status replies name in place of names): "yes."; his go-all on goal/G5.
 //
 // THE SHAPES (G5.2's box):
 //   1  status answers name, one string, and no names list; fileStatus.json holds name the same way.
-//   2  push of bytes already held under another name: the new name replaces the old one (today it is appended,
-//      fileServer.js 249-253), and info answers it too.
-//   3  the same name on other bytes is another file, by its hash, kept beside the first (as today).
+//   2  push of bytes already held under another name: the new name replaces the old one, and info answers it too.
+//   3  the same name on other bytes is another file, by its hash, kept beside the first.
 //   4  a folder already in the store with a names list is read as its last name, so nothing held is lost.
-//   5  the suites asserting the list change with it: fileBottom.js 98 and fileFetch.js 168 test a names array today.
+//   5  fileBottom.js and fileFetch.js test no names array.
 
 const fs = require('fs');
 const os = require('os');

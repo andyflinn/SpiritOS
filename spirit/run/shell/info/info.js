@@ -6,7 +6,7 @@
 //
 // The two fields are `name` and `description` in spirit/state/identity.json,
 // and they are the ONLY two things this node answers to a stranger who
-// asks (js/nodeCard.js). That is what makes them one screen rather than a
+// asks (spirit/run/spirit/nodeCard.js). That is what makes them one screen rather than a
 // row in a settings list: a person editing them is deciding what somebody
 // they have never met reads about them.
 //
@@ -15,9 +15,9 @@
 //
 // ── THE NAME STAYS HERE ──────────────────────────────────────────────
 //
-// The relay table is dropped (goal/G41.6; Andy, 2026-10-27): no list of the relays and the name each calls this
+// No relay table (goal/G41.6; Andy, 2026-10-27): no list of the relays and the name each calls this
 // node, no push of a saved name to every relay, no rename from here. A relay's name for this node is
-// Natter's to show and change, one relay at a time.
+// shown and changed in that relay's panel (spirit/element/search/contact/relayPanel.js), one relay at a time.
 //
 // ── TWO ELEMENTS, TWO FORMS, ONE BUTTON ──────────────────────────────
 //

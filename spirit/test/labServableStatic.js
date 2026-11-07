@@ -1,8 +1,8 @@
 'use strict';
 
 // The HTTP half of the read gate: server.js's generic static route must
-// refuse every Node-only module under js/ the same way loadFile does, with
-// BOOT_ASSETS as the one deliberate exception (js/kernel.js reaches the
+// refuse every Node-only module under spirit/ the same way loadFile does, with
+// BOOT_ASSETS as the one deliberate exception (spirit/kernel.js reaches the
 // browser as the page's own boot script even though fileServable says no).
 //
 // servableAssets.js already covers the in-process side of the same rule.
@@ -13,7 +13,11 @@
 // Deliberately an **avatar** node, not a relay: on a --relay node every
 // one of these paths 404s via isRelayPublicPath's allowlist, which would
 // make each row pass for a reason that has nothing to do with
-// fileServable (relaySurface.test.js is where that allowlist is tested).
+// fileServable (labRelaySurface.js is where that allowlist is tested).
+//
+// Two rows name the Natter app, /shell/natter/natter.js and natter.json,
+// which went with goal/G30.7: no spirit/run/shell/natter is tracked, so a
+// fake node's home has neither file.
 //
 //   node spirit/test/labServableStatic.js
 
@@ -47,15 +51,9 @@ const STATIC_ROUTES = [
   { path: '/relay.html', expect: 404, why: 'the relay brochure is gone (goal/G22.6)' },
   { path: '/favicon.svg', expect: 200, why: 'static asset' },
   { path: '/shell/natter/natter.js', expect: 200, why: 'the shell fetches app entry scripts' },
-  // relays.json STOOD HERE and is gone from a fake node's home: it stopped
-  // being tracked, because a node's own relay list is its own state and a
-  // tracked one is reverted by every `git reset --hard origin/master`
-  // (.gitignore says the whole of why). It joins media/ and relay-state/
-  // in the note above — absent from a git-built home, so a 404 on it would
-  // prove nothing about the route.
-  //
-  // The manifest is the better example anyway: it is app data the SHELL
-  // actually fetches, on every boot, for every app.
+  // An app's manifest: app data the SHELL fetches, on every boot, for
+  // every app. (A node's relay list is its own state and untracked, so
+  // absent from a git-built home, like media/ and relay-state/.)
   { path: '/shell/natter/natter.json', expect: 200, why: 'ordinary scoped app data' },
 ];
 
@@ -142,10 +140,10 @@ Promise.resolve()
   .then(function (up) {
     if (up) {
       test.comment('labMaster already on ' + require('./labMaster/labPaths').PORT);
-      // NEVER ANOTHER CHECKOUT'S labMaster (2026-09-22): its fixtures are its
+      // NEVER ANOTHER CHECKOUT'S labMaster: its fixtures are its
       // own tree, so this suite would test that tree and pass.
       return require('./labMaster/ensureMaster').checkout().then(function (c) {
-        // STOOD DOWN, NOT RED (2026-09-24). Another checkout's
+        // STOOD DOWN, NOT RED. Another checkout's
         // labMaster is a fact about this machine, cleared in one
         // command; a suite that reports it as a fault says the tree
         // is broken when it is not. `standDown` is marked on the

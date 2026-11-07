@@ -1,8 +1,8 @@
 # shell/shared/js/deskChat.js
 
-An item's chat, one copy for every page that shows one (goal/G27.2): lifted from the Desk face's chat mount when the
-Stacks door dialog needed the same chat (Andy, 2026-10-17: "the chat of the desk item that added the door ... the
-inherited component as in deskDetails"). Read from the module's code (goal/G41.11).
+An item's chat, one copy for every page that shows one (goal/G27.2), made for the Stacks door dialog (Andy,
+2026-10-17: "the chat of the desk item that added the door ... the inherited component as in deskDetails"). No page
+in the tree loads it now (the Stacks door went with goal/G43.22). Read from the module's code (goal/G41.11).
 
 ## API
 

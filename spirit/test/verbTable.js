@@ -9,7 +9,8 @@
 //   it?"
 //   Andy: "claim, not register: i agree."
 //
-// The claims themselves are made in server.js at boot. What is under test
+// The claims themselves are made in server.js at boot (loopbackVerbs.mount,
+// one family at a time, which claims through the table). What is under test
 // here is the thing that makes claiming safer than a table: the two
 // mistakes it turns into loud ones, and the one it must not.
 
@@ -132,9 +133,7 @@ test.subHeading('A namespace must say whether being offline can fail it');
   //   Andy: "wire or not is the most important distingtion, wire requires
   //   that the local box be online, others who knows."
   //
-  // It is the client's failure contract, not a maintainer's note — which
-  // is what it was mistaken for once, in the conversation that produced
-  // this. A wire verb can answer "not reachable right now" and yields a
+  // It is the client's failure contract, not a maintainer's note. A wire verb can answer "not reachable right now" and yields a
   // hash; a local one can do neither. A caller handles those differently,
   // so it must be answerable from the verb alone.
   const silent = threw(function () {
@@ -183,10 +182,9 @@ test.subHeading('The table can say what this node can do');
 // ---------------------------------------------------------------------
 
 {
-  // Not used yet, and here because it is the beginning of an answer to
-  // "what is this node's API" asked of the NODE rather than of a document
-  // that goes stale — which is what design/andy/spiritNodeAPI.md had done
-  // by three cycles this week.
+  // The beginning of an answer to "what is this node's API" asked of the
+  // NODE rather than of a document that goes stale (server.js reads
+  // namespaces() for the names it reserves).
   const table = createVerbTable();
   table.claim('net', 'server.js', { 'net.fetch': function () {} }, { wire: true });
   table.claim('jobs', 'jobVerbs', { 'jobs.create': function () {}, 'jobs.cancel': function () {} }, { wire: false });

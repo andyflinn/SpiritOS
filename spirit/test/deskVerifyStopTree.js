@@ -1,17 +1,18 @@
 'use strict';
 
 // spirit/test/deskVerifyStopTree.js
-// goal/G19.4: deskVerify: kill a suite's servers; normalise listed paths. Red on today's tree (eeb6cabb); claude-windows
-// wrote it and builds it (one agent). The item's box: Stop and the time limit kill the suite process only, so the
-// servers it started live on and the next suite collides on lab ports; a listed path like spirit/test/../../x.js
-// passes. Andy, 2026-10-12: "yes, a stopped suite must clean up after itself like any cleanly ended suite. we will not
-// support resume.", and "yes to the box as outlined."
+// goal/G19.4: deskVerify (spirit/run/process/js/deskVerify/deskVerify.js) kills a stopped suite's servers too, and
+// runs no listed path that leaves the tests. Andy, 2026-10-12: "yes, a stopped suite must clean up after itself like
+// any cleanly ended suite. we will not support resume.", and "yes to the box as outlined."
 //
 // WHAT IS ASSERTED
 //   1. Stop by hand ends the suite AND the server it started.
 //   2. The time limit ends the suite AND the server it started.
-//   3. A listed path that leaves spirit/test is not run, and the run's row says so (since goal/G33.3 a run of suites is
-//      handed to deskVerify with run {suites, commit}, and its outcome read through search).
+//   3. A listed path that leaves spirit/test is not run, and the run's row says so (a run of suites is handed to
+//      deskVerify with run {suites, commit}, goal/G33.3, and its outcome read through search).
+//      STALE WORDING: since goal/G40.13 deskVerify also runs product tests (a file in a test/ folder), and its why
+//      reads "the path is neither under spirit/test nor a product test, so it was not run"; the regex below looks for
+//      "outside / leaves / not under spirit/test" and fails on it.
 //   4. The desk refuses item.files.add of a path with a .. segment, saying why.
 // rule/11: through testSupport only; a fake node and its own desk; it kills only the processes this suite started.
 
@@ -68,8 +69,8 @@ async function verifyHalf() {
   const outside = path.join(__dirname, '..', '..', 'zzStopTreeOutside.js');
   const outsideMarker = path.join(scratch, 'outside-ran.txt');
   fs.writeFileSync(outside, "require('fs').writeFileSync(" + JSON.stringify(outsideMarker) + ", 'ran');\n");
-  // SINCE goal/G33.3 a run is handed to deskVerify (run {suites, commit}) and its outcome read through search; the
-  // node only answers its tree and the records a suite posts.
+  // A run is handed to deskVerify (run {suites, commit}, goal/G33.3) and its outcome read through search; the node
+  // only answers its tree and the records a suite posts.
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
       let b = '';
@@ -154,7 +155,7 @@ async function verifyHalf() {
 // ── 4. THE DESK ─────────────────────────────────────────────────────────
 async function deskHalf() {
   test.subHeading('4. the desk refuses a listed path with a .. segment');
-  // The world (goal/G33.7: session.set went), seeded where server() keeps the desk's state, before it starts.
+  // The world, seeded where server() keeps the desk's state, before it starts (goal/G33.7).
   test.seedDesk(path.join(scratch, 'desk', 'state'), { goal: { id: 'goal/G100', title: 'Paths' }, items: [{ id: 'goal/G100.1', title: 'Listed', blocks: ['goal/G100'] }] });
   const d = server(DESK, 'desk');
   try {

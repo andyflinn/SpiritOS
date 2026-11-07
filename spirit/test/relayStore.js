@@ -5,11 +5,10 @@
 //
 // Cycle 3 (design/cycles/2026-09-19-disc-and-owner-token-cycle-3.md): the
 // roll and the invites live in spirit/state/relay.db and RAM is their
-// client. (The partner roll lived there too until partnering went, Andy's
-// decision goal/G22.6; an old database that still holds the table opens
-// and keeps working.) This suite asserts the store's contract directly —
-// what relay.js and invites.js build on — and relayDump.js, the read-only
-// SSH view that replaced `cat routingTable.json`.
+// client. (There is no partner roll, Andy's decision goal/G22.6; an old
+// database that still holds the table opens and keeps working.) This suite
+// asserts the store's contract directly — what relay.js and invites.js
+// build on — and relayDump.js, the read-only SSH view of it.
 
 const os = require('os');
 const fs = require('fs');
@@ -36,8 +35,8 @@ s.members.put({ publicKey: 'K2', publicLabel: ' bert ', claimedAt: '2026-01-02' 
 s.members.put({ publicKey: 'K3', publicLabel: 'bert', claimedAt: '2026-01-03' });
 
 const k1 = s.members.get(K1);
-// `owner: true` is offered above, as a caller written before 2026-09-19
-// would, and does not stick: a row does not know who owns the relay.
+// `owner: true` is offered above and does not stick: a row does not know
+// who owns the relay.
 if (k1 && k1.publicLabel === 'andy' && !('owner' in k1)) {
   test.check('a row goes in and comes back by key — and carries no owner flag, offered or not');
 } else {
@@ -90,9 +89,8 @@ if (swept === 1 && s.invites.get('T1') === null && s.invites.get('T2')) {
   test.fail('sweep=' + swept + ' all=' + JSON.stringify(s.invites.all()));
 }
 
-// THE PARTNER ROLL'S CONTRACT (put, byOwner, touch and the `last` column,
-// R12 of cycle 8) STOOD HERE. The roll is gone with partnering (Andy's
-// decision, goal/G22.6); what stays owed is that old data keeps working.
+// There is no partner roll (Andy's decision, goal/G22.6); what stays owed
+// is that old data keeps working.
 test.subHeading('A relay.db that still holds a partner roll (goal/G22.6)');
 
 {
@@ -235,8 +233,8 @@ if (relayStore.openReadOnly(empty) === null && !fs.existsSync(path.join(empty, '
 
 test.subHeading('A relay.db from cycle 3 loses the owner column, once');
 
-// Cycle 3 created `members` with an `owner` column copied from allow.json
-// at claim time. Andy (2026-09-19): "a row in the roll doesn't know who the
+// A cycle-3 relay.db has `members` with an `owner` column; opening it drops
+// the column, keeping every row. Andy (2026-09-19): "a row in the roll doesn't know who the
 // owner is. Ownership is only determined by one identified key."
 {
   const old = home();

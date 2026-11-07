@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/faceSealed.js
-// goal/G30.11, step 3 of goal/G30.10: the sealed link and the face loading from its home node. Red on today's tree;
-// claude-windows writes it and builds it (one agent). The box, in short:
+// goal/G30.11, step 3 of goal/G30.10: the sealed link and the face loading from its home node. The box, in short:
 //   - The relay serves face.html and the login app, nothing else. After login the face sets up a sealed link with the
 //     home node (its key lost with the session) and loads everything else from the home node, lazily, in the home
 //     node's own version. In this item the face runs Contacts only, loaded from the start; Files comes later.
@@ -22,6 +21,10 @@
 //   - kernel.js takes window.spirit.transport { ask, events } when the face shell sets it.
 // The browser shell is checked by its code (there is no DOM here); the seal, the home node and the relay by running
 // them. rule/11: through testSupport only; its own scratch folders.
+// The face's seal is required from spirit/run/shell/seal.js and face.html read from spirit/run/face.html; both are
+// under spirit/run/spirit/shell/ (goal/G43.18), so faceSeal is null here and those checks fail. The login app
+// (shell/login/) went with goal/G43.18: the relay serves face.html, spirit.js (spirit.login), the seal and the icon
+// (relayServer.js FACE_FILES).
 
 const fs = require('fs');
 const os = require('os');

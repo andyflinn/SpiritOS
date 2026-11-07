@@ -8,22 +8,21 @@
 //   of the nodes state" and "any appServer state is none of git's business".
 //
 // DECIDED in Desk (desk/G1), not this file's to undo:
-//   D5  its state is relay-state/process/desk/: desk.db, never in git (his
-//       voice file lived there too until goal/G2.1). The node names that folder and hands it over as
+//   D5  its state is the folder the node names, spirit/state/desk/data/
+//       (goal/G43.10): desk.db, never in git. The node hands it over as
 //       --state, beside --pipe; this process never works it out itself, so
 //       a test hands it a temp folder and the live record is never touched.
 //   D4  the local shell reaches it by its verbs (desk.<verb>) on the loopback door, a known
 //       member by an 'api' packet; both end in appClient.ask.
 //   D12 no reply carries 'ok': that key is an error's (appServer.js).
 //
-// Free-form documents (the state, what Andy has seen, a log line) travel
-// as JSON text: the helper matches keys exactly (appPair D8), so an open
-// object could never match its prototype. A log line's searchable columns
-// are copied out of its text; the text itself is kept whole.
+// Free-form documents travel as JSON text (a desk verb's json, an item's
+// facts as item.get answers them): the helper matches keys exactly (appPair
+// D8), so an open object could never match its prototype.
 //
-// NEVER A LIST (Andy: every list is a search). log.search answers what
-// matches, ranked, newest first among equals, cut to fit one answer by the
-// probability bucket, and says so with more.
+// NEVER A LIST (Andy: every list is a search). Every *.search verb answers
+// what matches, ranked, newest first among equals, cut to fit one answer by
+// the probability bucket, and says so with more (tableSearch, below).
 
 // The spirit object first, as the global spirit (goal/G40.1).
 require('../../../spirit/spirit.js');
@@ -42,8 +41,8 @@ try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
 // THE CURRENT GOAL IN THE REPO (goal/G3.14). Andy, 2026-10-03: "The desk server will produce a file
 // \"spirit/run/process/js/desk/currentGoal.json\" it will contain the complete data set of the current goal, including
 // the commit-level agains which the file was generated. the file re-generation is triggered by 'Go' and 'Done
-// events' and the data includes items not visible to the user.", "it's the truth scoped by commit level." The path
-// SINCE goal/G4.21 THE DESK SHARES IT ITSELF, and never writes into the checkout again (Andy: "i generally only read
+// events' and the data includes items not visible to the user.", "it's the truth scoped by commit level."
+// THE DESK SHARES IT ITSELF (goal/G4.21), and never writes into the checkout (Andy: "i generally only read
 // the repo. i think we should make this automatic? agree?", "do it", "yes, that's the shape."). goalRepo is the repo to
 // share into (default: the checkout holding this file), goalPath the file's path in it; with neither (a server spawned
 // with {}, as every suite spawns one) nothing is shared, so no test pushes anywhere.
@@ -71,9 +70,8 @@ const db = new DatabaseSync(path.join(STATE, 'desk.db'));
 // wait covers what is left (a checkpoint). deskWhileBackup.js holds it.
 db.exec('PRAGMA busy_timeout=5000');
 db.exec('PRAGMA journal_mode=WAL');
-// THE OLD LINES TABLE WENT WITH goal/G33.4 (Andy, in the item's box: "Records with no goal or item are dumped at
-// migration: agent.state, scope.set and the old lines table."); migrate() below drops it. THE DOCS TABLE WENT WITH goal/G33.7:
-// state had no reader, and seen is one value per item (seen.set), so nothing grows as one document.
+// NO DOCS TABLE (goal/G33.7): seen is one value per item (seen.set), so nothing grows as one document; a docs table
+// an older desk.db still holds is dropped here. The old lines table is dropped by migrate() below (goal/G33.4).
 db.exec('DROP TABLE IF EXISTS docs;');
 
 // One answer must travel back as one packet (limits.ANSWER_MAX); the
@@ -86,10 +84,9 @@ const ANSWER_ROOM = limits.ANSWER_MAX - 512;
 //   "from now on the MAX_PAYLOAD applies".
 //
 // A line fits when an answer holding it alone fits the room, measured as
-// one answer is measured ({items: [{key, label}], more}). The
-// split at start, log.add's refusal and the searches' skip all use this one
-// test: a line the bucket could not send first would stop a read with
-// nothing in it, the stall found on Andy's desk.db (182 such lines).
+// one answer is measured ({items: [{key, label}], more}). chat.add's
+// refusal and the searches' skip use this one test: a line the bucket could
+// not send first would stop a read with nothing in it.
 function oneAnswerBytes(key, line) {
   return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(line) }], more: false }), 'utf8');
 }
@@ -198,8 +195,7 @@ function walked(walk, pairOf, room) {
 // every item against the search string, gets a probability as result, then drops the (probability,item) combination
 // into the bucket. at the end calls serialize, done."
 //
-// Until this the desk's searches graded nothing: a substring filter, then the graded bucket in the walk's order. With no
-// text every probability is 0 and the bucket keeps the walk's order, so the List reads as it did.
+// With no text every probability is 0 and the bucket keeps the walk's order.
 const probabilityStringMatch = require('../../../spirit/probabilityStringMatch.js').probabilityStringMatch;
 const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
@@ -658,8 +654,8 @@ function deleteRow(k, key) {
   else if (table === 'suites') DELETE.suites.run(k[0], k[1], parts.slice(1).join('|'));
 }
 // One item written through: every row of it that changed is written, every row it no longer has deleted. Answers what
-// changed, as { table, key, x (the row), removed } in row order. written: the item the write named, whose row always
-// takes the write's verb and writer, and, for a write of his that is no chat line, the record `changes` hands on.
+// changed, as { table, key, x (the row), removed } in row order. written: the item the write named, whose items row is
+// written even when unchanged, so it carries the write's change number.
 function persistItem(s, it, r, written, body) {
   const k = numbersOf(it.id);
   if (!k) return [];
@@ -1000,7 +996,7 @@ function holdsPhase(it, w) { return !!it.phaseWith && (it.phaseWithKey ? it.phas
 // blocked another agent from working." What the agent holds: every item it is with (item.take) or whose phase it holds
 // (phase.take) that is still on his List (listed: not done, not closed, its goal neither closed nor abandoned) and that
 // it has not claimed. So what frees it: item.release, phase.done, its own claim (claim-done, or the claim of a build),
-// his done or close, his exclusion of it, and verify.reject / verify.regress, which take with away themselves.
+// his done or close, his exclusion of it, and (old records, at the migration) verify.reject / verify.regress.
 // Decided by Andy, not by this file: do not let an agent hold a second task again.
 function heldBy(s, w) {
   return Object.keys(s.items).filter(function (id) {
@@ -1402,6 +1398,8 @@ function apply(s, r, b, item, goalOf) {
         it.status = it.verifyState === 'green' ? 'verified green' : it.verifyState === 'red' ? 'verified red' : it.status;
       }
       return;
+    // verify.pass, verify.reject, verify.again and verify.regress below are written by no verb today (goal/G33.3): they
+    // apply only as old records, at the migration.
     // AND ONLY deskVerify BRINGS THE BUTTON (goal/G8.3). Andy, 2026-10-09: "best is, if the done button doesn't show up
     // until deskVerify allows it.", and "the builders claim is registered, but only deskVerify brings the button." So
     // the agent's verify still records verified, and this is deskVerify's own word on top of it. A rejection, a new
@@ -1425,11 +1423,9 @@ function apply(s, r, b, item, goalOf) {
     // agent to pick the item up, raise red-questions if neccessary." It is the one thing deskVerify may do on his
     // node, and it writes as him; a rejected item goes back to build with the builder it had, so the agent who built
     // it picks it up, and Done is no longer offered. It presses nothing: "deskVerify will NOT press done or closed on
-    // my behalf". The line naming the reds is written beside this record by the verb.
-    // NOT A WORD ON A DONE OR CLOSED ITEM (goal/G8.10, found by claude-windows on the flood of 2026-10-09): a settled
-    // item is nobody's to re-open from the verifier's side. The guard is here as well as at the verb, and it is
-    // time-correct on a replay: a record written while the item was open still applies, and the thirty-four rejects
-    // that hit already-closed items apply to nothing, which takes their stray phase off his desk.
+    // my behalf".
+    // NOT A WORD ON A DONE OR CLOSED ITEM (goal/G8.10): a settled item is nobody's to re-open from the verifier's side,
+    // so a reject that hits a done or closed item applies to nothing.
     case 'verify.reject':
       if (!it || !it.code || it.verified !== true || it.done || it.closed) return;
       it.verified = false;
@@ -1455,8 +1451,7 @@ function apply(s, r, b, item, goalOf) {
     // A DONE TAKEN BACK BY A REGRESSION (goal/G19.2). Andy, 2026-10-12: "i said the verifier can not press done, i
     // never said that the verifier cannot undo a done/close...", "a done becomes unsettles when an associated suite
     // shows regression.", and "a regression must come back as a red." The verifier still presses nothing: this is its
-    // own word, as verify.reject is, written as him. When it is written (a red on a clean, pulled tree holding the
-    // item's commit) is deskVerify's to judge; what it does is here, so a replay agrees. On an item: done and closed
+    // own word, as verify.reject is, written as him. On an item: done and closed
     // go, with its pass, its verify and its claims, so Done waits for the work again and an agent's new claim starts
     // the check; a code item goes back to build as a rejected one does. On a goal: done and closed go, with its pass
     // and its emptied mark, so the item's next Done asks a new goal run. Nothing that was not settled is touched.
@@ -1560,8 +1555,7 @@ function apply(s, r, b, item, goalOf) {
     // FILES TOUCHED, ONE ROW A WRITE (goal/G40.3; goal/G8.8 for the list itself). Andy, 2026-10-24: "items are added
     // one-by one, and desk streams those items to its clients", and "same set of verbs for all sub-item-tables add,
     // remove, search." An add puts one path on the writer's own list and a remove takes one away, each one row on the
-    // stream; no write carries a list, so none can outgrow a request. (The whole-list write of goal/G8.8 stood here: it
-    // replaced the writer's list, and a late file added alone once dropped a listed red.)
+    // stream; a list (paths) is cut at one answer by the verb, so none can outgrow a request.
     case 'item.files.add': {
       if (!it) return;
       if (!it.files) it.files = Object.create(null);
@@ -1699,9 +1693,8 @@ function press(s, it, what, r, goalOf, b) {
   else if (what === 'end-design' && g) { g.design = false; g.members.forEach(function (id) { if (s.items[id]) s.items[id].design = false; }); }
   else if (what === 'abandon' && g) g.abandoned = true;
   // MAKE CURRENT (goal/G2.19). Andy, 2026-10-06: "i want to switch between goals at will, so the goals detail should
-  // give me re-open and and on any open goal i want a button \"make current goal\"". Until now the current goal moved
-  // for one reason only, a session.set, so switching meant an agent writing a session for him. It moves the goal and
-  // nothing else: no item's state, neither goal's design mode, nothing closed or opened.
+  // give me re-open and and on any open goal i want a button \"make current goal\"". It moves the goal and nothing
+  // else: no item's state, neither goal's design mode, nothing closed or opened.
   else if (what === 'make-current' && it.goal) s.current = it.id;
   // HIS CODE TOGGLE (goal/G9.5). Andy, 2026-10-07: "the item Detail dialog has a check/toggle button, [Code✓], in it's
   // button bar, where the user can set the Code-state of an item". Never on a goal; the handler refuses it, and this
@@ -1764,8 +1757,7 @@ function press(s, it, what, r, goalOf, b) {
 function blockers(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
   if (!g) return [];
-  // A CLOSED ITEM BLOCKS NOTHING (goal/G9.17): closed leaves the blockers as done does. Until then goal/G10 read
-  // blocked by its closed Configuration manager, and a Go would have stayed off behind a closed blocker.
+  // A CLOSED ITEM BLOCKS NOTHING (goal/G9.17): closed leaves the blockers as done does.
   return g.members.filter(function (id) {
     const o = s.items[id];
     return o && o.id !== it.id && !o.done && !o.closed && !o.leftOut && o.blocks.indexOf(it.id) !== -1;
@@ -1987,9 +1979,8 @@ function limboOf(s, it) {
   if (buttons(s, it).indexOf('done') !== -1) return false;
   if (it.checks.some(function (c) { return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q'); })) return false;
   // A HELD PHASE IS NOT LIMBO (goal/G9.14). Andy, 2026-10-09, to "Open an item to have limbo read the phase holder
-  // instead?": "yes". Until this, limbo read each taker's word, and an agent that arms its listener says listening, so
-  // every item it held fell back into limbo and the desk posted the line again on the next write. So the phase holder
-  // decides; a holder gone silent is the desk's stale question (10 minutes), not this.
+  // instead?": "yes". An agent that arms its listener says listening, so a taker's word cannot say it is working: the
+  // phase holder decides, and a holder gone silent leaves its item out of limbo too.
   if (it.phaseWith) return false;
   // A CLAIM WAITING ON THE VERIFIER IS NOT LIMBO (goal/G18.5). Somebody finished it and deskVerify is checking it; the
   // taker's word flipping between working and listening while it waits brought the limbo line again on every flip.
@@ -2195,11 +2186,9 @@ function facts(s, it) {
     // liveness, since an ear killed by its limit or a node restart says nothing (Andy: "while an agent is
     // working, i should leave it alone.").
     f.working = f.live.filter(function (a) { return s.agentWord[a] === 'working'; });
-    // ITS LIVE AGENTS' KEYS (goal/G2.2 note 6): the page draws the Team tabs from live and sends to these keys,
-    // so an agent working only through item chat keeps its tab (found live: "still can't see you on desk").
-    // SINCE goal/G4.29 EVERY AGENT THE DESK HAS SEEN, live or not (Andy: "can't reach it because ollama is gone", then
-    // "yes" to the pane opening for every agent the desk knows), so an agent with no listener keeps its pane; live
-    // still says who is here now.
+    // ITS AGENTS, label -> key: EVERY AGENT THE DESK SHOWS, live or not (goal/G4.29; Andy: "can't reach it because ollama
+    // is gone", then "yes" to the pane opening for every agent the desk knows), so an agent with no listener keeps its
+    // bubble and its profile pane (shell/desk/desk.js deskBubblesHtml, deskAgentKey); live still says who is here now.
     f.agents = {};
     Object.keys(shown).sort().forEach(function (a) { f.agents[a] = shown[a]; });
   }
@@ -2218,8 +2207,6 @@ function facts(s, it) {
   return f;
 }
 const FACTS_ROOM = ANSWER_ROOM - 512;
-
-// (matchesText, the substring filter of items.search, went with goal/G18.5: items are ranked, not filtered.)
 
 // The goal first, then its items in session order; the newest goal first.
 // WHAT THE LIST'S ROW HOLDS (goal/G43.3; Andy, the box: "the search needs only those fields of a row that it actually
@@ -2335,7 +2322,7 @@ function publishOne(o) {
 //   Andy: "What this replaces goes: the desk naming its own recipients (opts.streamTo.recipients, from the agents it
 //   knows) and deskClient being wired to the desk by hand at setDesk. A client subscribes; the desk only publishes."
 //
-// appServer's streamPublisher (js/appServer.js, opts.publisher) keeps the subscribers: a deskClient subscribes as family
+// appServer's streamPublisher (spirit/appServer.js, opts.publisher) keeps the subscribers: a deskClient subscribes as family
 // deskClient, the node's grants deciding who may; every publish goes to each of them, a line his to some agents to those
 // alone (the row's to, goal/G21.1). A new subscriber is handed the desk's bootstrap set: the current goal's row and its
 // items' rows, their facts alone; everything published afterwards has a home in its data set
@@ -2490,8 +2477,6 @@ function write(verb, a, check) {
   }
   // NO LIMBO LINE (goal/G29.10, point 1: "The limbo posts go."). Limbo stays a mark in the item's facts; the desk
   // posts nothing under the item when it enters it.
-  // THE STALE RED QUESTION (goal/G5.7) STOOD HERE, and is gone (Andy, 2026-10-26: "i delete that shit from my code.",
-  // "you go change that in my clone."): every clear was itself a write that raised the next one, 83 on one item.
   // THE CHANGE ITSELF TRAVELS (desk/G2.7, "no pulling"), one row at a time (goal/G33.4): the written item's facts and
   // whether it is still on the List, always; then every other row whose facts changed (desk/G3.10: a press changes more
   // than its own row), each its own publish; then each side row it changed.
@@ -2523,7 +2508,7 @@ function write(verb, a, check) {
   shed();
   return s;
 }
-// A LINE UNDER A RULE (goal/G5.5): a row of rule_chat, numbered like any write so `changes` hands it on; its publish
+// A LINE UNDER A RULE (goal/G5.5): a row of rule_chat, numbered like any write (the desk's change); its publish
 // names its rule, as rule.add, rule.draft and rule.version do: the open rule dialog repaints on it (goal/G2.18).
 function writeRuleChat(s, body, a) {
   const rule = ruleNumber(body.rule);
@@ -2541,8 +2526,7 @@ function writeRuleChat(s, body, a) {
 // THE FILE (goal/G3.14): written whole on his status changes, go, go-all, done, reopen and close (goal/G4.21: "a
 // re-open would be subject to the same rule?"), and on session.set (items appear and leave by it; his open point,
 // taken as yes); a line, a box, a claim or any other press leave it as it was. One object:
-// the two cursors as changes answers them at this moment (change, and line, 0 since the lines went with goal/G33.4),
-// the current goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts
+// the desk's change number at this moment, the current goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts
 // as item.get gives them, its box and version, its checks and its chat lines {by, at, text}.
 // Written at the end of the write, after the publish, into this server's
 // own state folder, never the checkout; then goalShare.js commits it on the remote's master and pushes it, as a job
@@ -2565,9 +2549,8 @@ function writeGoalFile(s, verb, a, change) {
       chat: it.chat.map(function (l) { return { by: l.by, key: String(l.key || ''), at: l.at, text: l.text }; }) });
   });
   // NO writtenAt (goal/G19.6; the box: "goalShare's shared file without writtenAt, so an unchanged goal is not
-  // committed again"): a clock in the file made every share new bytes, so goalShare's "same" never held. Nothing read
-  // it; the commit carries its own time, and change names the desk's moment (line, the log's cursor, went with the log in
-  // goal/G33.4).
+  // committed again"): a clock in the file would make every share new bytes, so goalShare's "same" would never hold. The
+  // commit carries its own time, and change names the desk's moment.
   const doc = { change: change, goal: s.current, items: items };
   try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
   shareFile(GOAL_PATH, GOAL_STATE_FILE, 'currentGoal.json, shared by the desk (goal/G4.21)');
@@ -2629,9 +2612,8 @@ function shareFile(repoPath, fromFile, message) {
   }).catch(function (e) { console.error('desk: the goal share was not asked: ' + ((e && e.message) || e)); });
 }
 
-// HIS VOICE IS NO LONGER WRITTEN HERE (goal/G2.1 note 8). The plain file of what he typed (D5, desk/G1.4) was
-// the hack he named on 2026-09-27; since apiAuth/G1's close the brain reads his Desk lines through this
-// server's api, and the vault's own tool (claude/voiceFromDesk.js) keeps his corpus. No app writes into the vault.
+// HIS VOICE IS NOT WRITTEN HERE (goal/G2.1 note 8): no voice file of what he typed; the brain reads his Desk lines
+// through this server's api. No app writes into the vault.
 
 // A goal is open while it is on the List. With none open, start-design (no id) makes goal/G<n>, n the next free.
 function newGoal(w) {
@@ -2689,7 +2671,7 @@ lookForDeskVerify();
 const verifyWatch = setInterval(lookForDeskVerify, 60000);
 if (verifyWatch && typeof verifyWatch.unref === 'function') verifyWatch.unref();
 
-// ONE VERB OF THIS NODE'S deskVerify, by its name on the node's flat apiDoor (goal/G22.3, goal/G33.3): only a port its
+// ONE VERB OF THIS NODE'S deskVerify, through the spirit object (goal/G22.3, goal/G33.3): only a port its
 // own node named, never the kernel default (goal/G8.3). Resolves deskVerify's answer, rejects with its why. The desk
 // hands runs only to the verifier on its own node (the box: "The desk hands runs only to the verifier on its own node").
 function askDeskVerify(verb, args) {
@@ -2725,8 +2707,8 @@ function askDeskVerify(verb, args) {
 //   - Only his Verify press hands a run over (an item's suites, or a goal's full check), whatever the switch says. Andy:
 //     "verifies on the desk-node get only triggered by MY verify button. NOTHING ELSE.", and "the desk has no business
 //     queuing verifications". A claim, an item coming to wait or a Done only reads the states.
-//   - Done is never refused for it: the page marks and arms a Done that is not verified green. The line the desk wrote
-//     under the item when Done went over a red or a missing run went with goal/G33.11. The desk keeps no arming.
+//   - Done is never refused for it: the page marks and arms a Done that is not verified green. The desk writes no line
+//     about it under the item (goal/G33.11) and keeps no arming.
 // Do not put a list of work or a result report into deskVerify for this: it is a runner, busy or not.
 const WAITING = 'waiting for deskVerify';
 function testFilesOf(it) {
@@ -2871,10 +2853,6 @@ function verifyEvent(id) {
   verifyEvents = next.catch(function () {});
   return next.catch(function () {});
 }
-// doneOver STOOD HERE: a Done that went over a red or a missing run said so in a line under the item. It went with
-// goal/G33.11 (Andy: "no auto-chat-lines from deskVerify, only status updates."); the page still marks a Done that is
-// not verified green.
-
 // THE NEXT ID THE DESK HANDS OUT (goal/G9.9), minted inside the write, from the state the write walked.
 // An item: one past the highest item number of its goal, closed and left-out ones counted, so an id is never handed
 // out twice.
@@ -2908,7 +2886,7 @@ function writerOf(caller) {
   return { by: label || caller.key, key: caller.key };
 }
 
-// HIS LINES JOINED TO A PHASE HOLDER'S ANSWERS (goal/G29.10, point 2) WENT WITH goal/G33.7. Andy: "why? my lines are
+// HIS LINES ARE NOT JOINED TO A PHASE HOLDER'S ANSWERS (goal/G33.7). Andy: "why? my lines are
 // streamed to deskClient without any further assistance", and "the desk should answer what it was asked. period.
 // don't get fancy, it always backfires." Every verb answers what it was asked; his lines reach the agent on the stream.
 
@@ -2918,10 +2896,9 @@ startState();
 shed();
 
 appServer.serve({
-  // log.add, log.search AND pending.get WENT WITH goal/G33.4 (Andy: "log.add, log.search and pending.get: delete
-  // them."): the old lines table they read and wrote was dumped at the migration. Do not bring them back.
-  // changes WENT WITH goal/G33.4 (Andy, on it: "isn't that what this item does? implement the push/broadcast concept?"):
-  // the desk streams each changed row to its subscribers (appServer.publish), and nothing is read back by a cursor.
+  // NO log.add, log.search, pending.get OR changes (goal/G33.4; Andy: "log.add, log.search and pending.get: delete
+  // them.", and of changes: "isn't that what this item does? implement the push/broadcast concept?"): the desk streams
+  // each changed row to its subscribers (appServer.publish), and nothing is read back by a cursor.
   // ── WHAT THE LIST AND THE DIALOG READ (desk/G2.1) ─────────────────
   // Andy: "nice verb names! can use them an many seaches. aprooved."
   // Each label is one item's facts as JSON; the goal's row also carries
@@ -2933,7 +2910,7 @@ appServer.serve({
   // EACH PANEL ITS OWN ANSWER. Andy: "what kind of app doesn't measure the sum of its packets?" and "lazy load the
   // panels when thy open". item.get is the item's facts; its box, checks and chat are asked for each on its own, so
   // no answer carries the sum of them and each fits one answer by itself.
-  // items.find WENT WITH goal/G33.7 (the approved verb list: "agents only; items.search covers it").
+  // No items.find (goal/G33.7, the approved verb list: "agents only; items.search covers it").
   'item.get': {
     request: { id: '' }, reply: { item: '', version: 0, change: 0 },
     handler: function (a) {
@@ -2952,7 +2929,7 @@ appServer.serve({
     },
   },
   // THE FILES TOUCHED, ITS OWN ANSWER (goal/G32.2), as item.chat is: { path, by, core } (goal/G8.8; core read from
-  // js/coreFiles.js, the one list commitCheck locks), core files first, then by path; as many as fit one answer, and
+  // spirit/coreFiles.js, the one list commitCheck locks), core files first, then by path; as many as fit one answer, and
   // filesMore says there were more. Nothing pages. under, when given, keeps the paths that start with it (deskVerify asks
   // spirit/test/ for an item's suites, which a long list of core files would push past the room).
   'item.files': {
@@ -3038,7 +3015,7 @@ appServer.serve({
     handler: function (a) {
       const st = walkState();
       let it = st.items[String(a.id)];
-      // A rule's chat (goal/G5.5) is read the same way, from its records.
+      // A rule's chat (goal/G5.5) is read the same way, from its rule_chat rows.
       if (!it && /^rule\/\d+$/.test(String(a.id)) && newestRule.get(String(a.id))) {
         const lines = ruleChatOf.all(ruleNumber(a.id)).map(function (r) { return { by: r.by, at: r.at, text: String(r.text), taken: '', key: r.creator === r.by ? '' : String(r.creator) }; });
         it = { chat: lines };
@@ -3105,12 +3082,13 @@ appServer.serve({
   // writer is the caller the door forwarded and appServer handed in,
   // so nobody names their own writer. A by argument fails the request
   // shape and is refused no-such-argument, which is the point.
-  // session.set WENT WITH goal/G33.7 (the approved verb list: "writes a whole goal at once; its callers use goal.add and
-  // item.add"). A goal is made by goal.add, its items by item.add (a split: item.add blocking the parent), one each.
+  // NO session.set VERB (goal/G33.7, the approved verb list: "writes a whole goal at once; its callers use goal.add and
+  // item.add"); only start-design with nothing open writes one inside the desk (newGoal). A goal is made by goal.add,
+  // its items by item.add (a split: item.add blocking the parent), one each.
   // ONE GOAL, ONE ITEM, AND THE DESK NAMES IT (goal/G9.9). Andy, 2026-10-07: "the desk owns (is in charge of) goal and
   // item ID's.", and "why should the agents need to, they can use the same api's the user needs to create them." So the
   // same two verbs serve him and the agents, the id comes back in the answer, and nobody sends one: an `id` argument is
-  // refused by the door as no-such-argument. Decided by Andy; the bulk session.set went with goal/G33.7.
+  // refused by the door as no-such-argument. Decided by Andy.
   // An add never moves the current goal (goal/G9.13).
   'goal.add': {
     request: { title: '' }, reply: { id: '', change: 0 },
@@ -3131,7 +3109,7 @@ appServer.serve({
   // WHAT IT BLOCKS, NAMED (goal/G9.10). Andy, 2026-10-07: "When the user presses the [add-button], The desk will add a
   // blocking item with the entered title and a blank text box." So item.add takes one more argument, optional: the id
   // the new item blocks, the goal itself or an item of that goal, and the goal when it is left out (goal/G9.9's case).
-  // The title obeys the label rules, as every label does (js/fieldRules.js).
+  // The title obeys the label rules, as every label does (spirit/fieldRules.js).
   'item.add': {
     request: { goal: '', title: '', blocks: '' }, reply: { id: '', change: 0 },
     accepts: function (x) {
@@ -3314,7 +3292,7 @@ appServer.serve({
         return { change: write('rule.chat', { rule: String(a.id), text: String(a.text), by: w.by, key: w.key }).change };
       }
       // MAX_PAYLOAD AT THE DOOR (desk/G3.3). Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD".
-      // A line that could not come back whole in one answer is refused here, as log.add refuses one; the sender slices it.
+      // A line that could not come back whole in one answer is refused here; the sender slices it.
       const st0 = walkState();
       const it0 = st0.items[String(a.id)];
       mayWrite(st0, w);
@@ -3337,8 +3315,7 @@ appServer.serve({
       //     not: the box exempts work notes from the flow;
       //   - an agent that took a phase of the item earlier (red, build, verify), or created it, posts its work notes and
       //     reports at any time (goal/G27.10, R2, Andy's Go 2026-10-17: "An agent that holds the item or a phase on it,
-      //     held a phase on it earlier, or created it, posts its work notes and reports under it at any time."). Until
-      //     then an earlier phase holder was refused once another agent took his line;
+      //     held a phase on it earlier, or created it, posts its work notes and reports under it at any time.");
       //   - anybody else takes his line first.
       // Decided by Andy, not by this file: do not let a second agent answer a taken line.
       if (it0 && w.by !== 'andy' && w.by !== 'desk' && !mine) {
@@ -3372,7 +3349,7 @@ appServer.serve({
       // A MESSAGE TO A BUSY AGENT IS ANSWERED (goal/G2.5). Andy: "the app sends an-auto reply after sending the
       // message the agents in-queue, saying 'message delivered, agents busy'", "after every message". His line
       // under an item an agent holds (item.take) while that agent's last word is working (goal/G2.3) gets the
-      // desk's own line right after it, by desk — a record like any other, so changes lists it and a search
+      // desk's own line right after it, by desk — a line like any other, so it is streamed and a search
       // counts it ("if desk keeps count of those interactions, we can track them later").
       if (caller.owner === true) {
         const it = after.items[String(a.id)];
@@ -3384,7 +3361,7 @@ appServer.serve({
       // Andy, in the item's box: "Andy clears them himself", and "When Andy clears a Q, the agent that placed it is
       // notified; a clear is a form of reply, so the agent updates its position on that question." So each Q goes to
       // cleared (it holds nothing any more and leaves the panel) by a record of his addressed to its placer's key: that
-      // agent alone is nudged and handed it in changes (addressedAway), as with his nick-addressed line. A Q the desk
+      // agent alone is handed it on the stream (the row's to), as with his nick-addressed line. A Q the desk
       // placed has no placer to tell. Decided by Andy, not by this file: an agent's own "Q:clear" clears nothing.
       cleared.forEach(function (c) {
         const placer = placerOf(st0, c);
@@ -3405,8 +3382,8 @@ appServer.serve({
   // open, in design mode or out of it. It is offered in the item's buttons, so the refusal and the button cannot drift
   // apart.
   // A VERB AND NOT A PRESS, BY HIS WORD. Asked which, Andy answered "press." on 2026-10-09 and then, on the same
-  // question: "make it a verb, plus the arm able delete button." The later word is the one in force; it was built as a
-  // press in between (417f150c) and reverted. Do not turn it back into a press without asking him again.
+  // question: "make it a verb, plus the arm able delete button." The later word is the one in force. Do not turn it
+  // back into a press without asking him again.
   'item.delete': {
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
@@ -3417,9 +3394,6 @@ appServer.serve({
       }).change };
     },
   },
-  // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
-  // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
-  // row with its working list, so the Team tab paints from the publish (goal/G2.4).
   // ── THE JOB QUEUE (goal/G5.7) ────────────────────────────────────
   // Andy: "shouldn't a coding item track on deskServer who took the red, when the red is done, the agent doing the red
   // is removed from the with field, then the item becomes takeable for coding, by somebody who didn't do the red, when
@@ -3599,7 +3573,7 @@ appServer.serve({
       return { key: r.key };
     },
   },
-  // rule.history WENT WITH goal/G33.7 (the approved verb list: nothing calls it).
+  // No rule.history (goal/G33.7, the approved verb list: nothing calls it).
   // THE LIST'S SEARCH (FACE.md): "searchable for deskClient and UI, with the type and status values as filters,
   // and label and text being searched. search results with bring back key, label, type and status."
   'rules.search': tableSearch({
@@ -3615,6 +3589,9 @@ appServer.serve({
       }).map(function (r) { return { key: r.key, row: ruleRow(String(r.key)) || r, label: { label: r.label, type: r.type, status: r.status } }; });
     },
   }),
+  // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
+  // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
+  // row with its working list, so the agent bubbles paint from the publish (goal/G2.4).
   'agent.state': {
     request: { word: '' }, reply: { change: 0 },
     handler: function (a, caller) {
@@ -3631,7 +3608,7 @@ appServer.serve({
       return { change: write('signoff', { by: w.by, key: w.key }).change };
     },
   },
-  // THE VERIFIER'S WORDS ON THE DESK WENT WITH goal/G33.3: verify.pass, verify.reject, verify.regress, verify.again.
+  // NO VERIFIER'S WORDS ON THE DESK (goal/G33.3): no verb for verify.pass, verify.reject, verify.regress, verify.again.
   // Andy's yes, "box this and continue": deskVerify knows nothing of the desk, so nothing would write them; the desk
   // reads the verifier's search itself and keeps the outcome in each item's facts (verifyEvent).
   // tone (goal/G33.11), optional: 'test' or 'code' when the word is a file the agent's checkout changed (its deskClient).
@@ -3653,8 +3630,8 @@ appServer.serve({
     },
   },
   // LETTING AN ITEM GO (goal/G21.4). Andy, in the item's box: "taking a second is refused by the desk until the first is
-  // released, claimed or done." A plain item.take was let go by nothing until this verb: the caller's with on the item,
-  // and its phase there if it holds one, go back to nobody. A caller holding neither is refused with a why.
+  // released, claimed or done." The caller's with on the item, and its phase there if it holds one, go back to nobody.
+  // A caller holding neither is refused with a why.
   'item.release': {
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
@@ -3664,9 +3641,8 @@ appServer.serve({
       }).change };
     },
   },
-  // NO AGENT SCOPES SINCE goal/G10.8. Andy, 2026-10-12: "all agents in desk have "/" file scope", the per-agent
-  // setting removed from desk and commitCheck ("b"). What fences an agent is the desk itself: Go, its item, the core
-  // grants.
+  // NO AGENT SCOPES (goal/G10.8). Andy, 2026-10-12: "all agents in desk have "/" file scope". What fences an agent is
+  // the desk itself: Go, its item, the core grants.
   // AGENT PROFILES (goal/G4.23). Andy: "so two more fields for repo-root-agents: name <agent-name> nick: <wc | wsl |
   // ubi>", "build them now.", "the profiles are for me, in desk. a dataset that deskServer stores for me and let's you
   // see." profile.set is his alone; profile.get answers any agent's ('' the caller). A name passes the label rule
@@ -3715,7 +3691,7 @@ appServer.serve({
       const w = writerOf(caller);
       // HE TAKES IT TOO (goal/G9.3). Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the
       // user. When the user activates that input area, the area is \"taken\" by the user, and not modifiable for
-      // agents." Until then box.take refused him by name.
+      // agents."
       const st = walkState();
       const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
@@ -3741,8 +3717,9 @@ appServer.serve({
   // THE FILES AN AGENT TOUCHED (goal/G8.8). Andy, 2026-10-09: "ideally written by the claiming agent. the coding agent
   // and the testing agent should be adding files they test/touch in a list that can be fetched per item.", "the list
   // should be owned by the item. so updates to it are available to all participants.", and "all files that need a
-  // grant should get one 'grant' button together." So: the caller's whole list, replacing its own entries; the list
-  // comes back in item.get; and if it holds core files, ONE open grant names them all. A desk verb, and his ruling of
+  // grant should get one 'grant' button together." So: each writer keeps its own list on the item; the list is
+  // item.files' own answer (item.get carries only fileCount); and if it holds core files, ONE core grant covers them
+  // all (coreGrantAfter). A desk verb, and his ruling of
   // 2026-10-09 is that a desk verb needs no grant of his "until i rule this app 'intrinsic'".
   // ONE ROW A WRITE (goal/G40.3; the verbs Andy approved: "yes to the named verbs"): item.files.add and .remove take one
   // path of the writer's own list; item.suites.add and .remove one suite of the item's. Each refuses a path already
@@ -3758,9 +3735,8 @@ appServer.serve({
   'item.rules.add': ruleRowVerb('item.rules.add', true),
   'item.rules.remove': ruleRowVerb('item.rules.remove', false),
   // LETTING IT GO WITHOUT A WRITE (goal/G9.3). Andy, 2026-10-07: "When the user clicks outside of that text box, and
-  // deactivates the input, also by leaving the details dialog, the box input is released from the take." A take was
-  // freed only by its holder's box.write until then, so leaving the box unchanged held it for good. Only the holder
-  // releases: another caller is refused taken, so nobody takes a box out of somebody's hands.
+  // deactivates the input, also by leaving the details dialog, the box input is released from the take." Only the
+  // holder releases: another caller is refused taken, so nobody takes a box out of somebody's hands.
   'box.release': {
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
@@ -3862,10 +3838,8 @@ appServer.serve({
   //   phase red    the red is claimed at that commit; deskVerify runs the item's suites and each must be red. No Done
   //                follows from it. Only on a code item with his Go.
   //   commit       7 to 40 hex characters; '' only for a plain item's build claim, which has no code to carry.
-  // An agent verb, told to the agents by claim.json beside this file. press claim-done stays for his pages and the
-  // callers that have no commit. Every refusal says why.
-  //   suites       goal/G33.4 (box v44-45, Andy's yes on the verb change): the red claim carries the item's suites, the
-  //                spirit/test/ paths a Verify of it runs; they fill its suites table. Optional; a build claim takes none.
+  // An agent verb, told to the agents by family/claim.json. press claim-done stays for his pages and the callers that
+  // have no commit. Every refusal says why.
   'claim': {
     // No suites of its own (goal/G40.3): a claim carrying them is refused; the item's suite rows are what a red names.
     request: { id: '', phase: '', commit: '' }, reply: { change: 0 },
@@ -3903,7 +3877,7 @@ appServer.serve({
       return { change: landed.change };
     },
   },
-  // state.get and state.set WENT WITH goal/G33.7 (the approved verb list: nothing calls them).
+  // No state.get or state.set (goal/G33.7, the approved verb list: nothing calls them).
   // SEEN, ONE ROW PER ITEM (goal/G33.7, the approved list: "one row per item, not one growing document"): the arrival
   // time of the newest thing he has looked at under the item, kept in the item's row.
   'seen.get': {
@@ -3928,12 +3902,11 @@ appServer.serve({
 
 // ── THE DESK'S OWN REFUSALS (goal/G16.11) ───────────────────────────
 //
-// These four were defined in the shared register, which the node and the
-// relay both load. Andy, 2026-10-11: "yes. get the bloody app error codes
-// out of the core." They are declared here now, beside the verbs that
-// raise them; appServer puts "desk: " in front of each text, so the origin
-// of a refusal is plain and no other app can wear this name. The codes
-// themselves are unchanged, so nothing on the wire moved.
+// Andy, 2026-10-11: "yes. get the bloody app error codes out of the core."
+// They are declared here, beside the verbs that raise them, not in the
+// shared register the node and the relay load; appServer puts "desk: " in
+// front of each text, so the origin of a refusal is plain and no other app
+// can wear this name.
 // goal/G33.8: the desk publishes (opts.publisher: its subscribers are deskClients, each handed deskBootstrap first), and
 // no opts.stream: the desk follows no stream (box v42).
 { publisher: { family: 'deskClient', bootstrap: function () { return deskBootstrap(); }, waitMs: CLIENT_WAIT_MS }, codes: {

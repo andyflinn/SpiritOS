@@ -1,20 +1,17 @@
 'use strict';
 
-// goal/G8.11: the verifier tab in Desk. Red on today's tree; claude-windows wrote it from G8.11's box and does not
-// build it.
+// goal/G8.11: the verifier tab in Desk.
 //   Andy, 2026-10-09: "So, i was thinking. shouldn't i have, if the desk verifier is mounted and running, a verifier
 //   tab in desk, right after [musings], that allows me to monitor a) status and progress of the running verifier, and
 //   if/when necessary, allow intervention?", then "i still don't see a verifier tab on my desk", and "add it".
 //
-// WHAT IS TRUE TODAY (read at 0aa6d159): deskVerify watches the desk and runs claim.check one item at a time
-// (goal/G8.10), but nothing outside it can see what it is running, read its records, or stop a run; the Desk face has
-// no such tab. The face already shows a server only while it answers - backup's status (desk/G1.7) is the pattern.
-//
-// THE SHAPE ASSERTED (reshaped by goal/G33.3, where deskVerify became a runner that knows no item, and the box: "The
-// Verifier tab shows only what runs now, its console, and Stop."):
+// THE SHAPE ASSERTED (goal/G33.3: deskVerify is a runner that knows no item, and the box: "The Verifier tab shows
+// only what runs now, its console, and Stop."):
 //   deskVerify: now {} -> {busy, running: {suite, since}, stopAsked}; stop {} -> {stopped}, ending the suite running
 //   now, the run kept as stopped, never green.
-//   THE FACE: a Verifier tab right after Musings, drawn only while deskVerify answers `now`. Its body, #desk-verifier,
+//   THE FACE: a Verifier tab after the List and Rules tabs (shell/desk/desk.js; the Musings tab went with goal/G43.22,
+//   so the "after Musings" check below finds no musings tab and passes on the verifier's place alone), drawn only while
+//   deskVerify answers `now`. Its body, #desk-verifier,
 //   shows the suite running now, no records and no waiting run; a Stop button (#desk-verify-stop) asks deskVerify stop,
 //   and nothing else: no re-verify (a run starts from the item now). Clicks are taken on #desk-verifier.
 // NOT ASSERTED: layout, colours and refresh timing - UI that is his to judge on his own node.
@@ -45,7 +42,7 @@ test.startTest('goal/G8.11: the verifier tab in Desk');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskverifytab-'));
 
 async function serverHalf() {
-  // Since goal/G33.3 a run is handed to deskVerify with run {suites, commit}; it asks the desk nothing.
+  // A run is handed to deskVerify with run {suites, commit} (goal/G33.3); it asks the desk nothing.
   test.subHeading('1. deskVerify: now and stop');
   fs.writeFileSync(path.join(__dirname, SLOW), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('tab slow probe');\nsetTimeout(function () { test.check('slow'); test.reportSuccessFailureCount(); process.exit(0); }, 8000);\n");
   const asks = [];
@@ -63,7 +60,6 @@ async function serverHalf() {
         else if (flatCall && flatCall.desk) {
           const verb = Object.keys(flatCall.desk)[0];
           const a = flatCall.desk[verb] || {};
-          // (Its answer to the desk's `changes` went with goal/G33.4: the verb is gone, and deskVerify never asked it.)
           {
             asks.push({ verb: verb, args: a });
             if (verb === 'item.files') out = { files: (({ id: a.id, goal: 'goal/G100', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }) || {}).files ? (({ id: a.id, goal: 'goal/G100', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }).files || []).filter(function (f) { return !a.under || String((f && f.path) || '').indexOf(a.under) === 0; }) : [], filesMore: false }; // goal/G32.2: the file list is its own answer
@@ -189,10 +185,9 @@ async function faceHalf() {
   const b = body.innerHTML;
   if (/zzRunning\.js/.test(b)) test.check('the tab shows what runs now: its suite');
   else test.fail(OWED + '#desk-verifier reads ' + short(b));
-  // THE RECORDS LIST WENT (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
-  // latest status." This section asserted the list until that word; it now asserts its absence, so a session that
-  // brings the log back goes red. (records.search, which still served the rows, went in goal/G19.11; the fake verifier
-  // above still offers a row so a tab that asked for one would draw it.)
+  // NO RECORDS LIST (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the latest
+  // status." Its absence is asserted, so a session that brings the log back goes red; the fake verifier above offers a
+  // row so a tab that asked for one would draw it.
   if (!/zzRecorded\.js/.test(b) && !/a record title/.test(b)) test.check('and no records list: the tab shows the run alone, never a log');
   else test.fail(OWED + 'the tab still draws the records list: ' + short(b));
   if (/id="desk-verify-stop"/.test(b) && !/data-reverify/.test(b) && !/desk-verify-full/.test(b)) test.check('with a Stop button, and no re-verify or full-run button (goal/G33.3)');

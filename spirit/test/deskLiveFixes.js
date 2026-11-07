@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskLiveFixes.js
-// goal/G18.5: fix desk limbo, search and verify etc. Red on today's tree (428416fc); claude-windows wrote it and builds
-// it. The item's box (v4), Andy, 2026-10-12: "your points accepted." (limbo: no limbo line while a claim waits on
+// goal/G18.5: fix desk limbo, search and verify etc. The item's box (v4), Andy, 2026-10-12: "your points accepted." (limbo: no limbo line while a claim waits on
 // deskVerify; search: the desk searches onto the probabilit modules); "when a search is run agains the goal or an
 // item, it takes the status box in the list using let's say 16em width, and shows progress there as well. the result
 // string shown will be green or red, depending on the outcome." ("search" there is "the verifier run"); and "the red
@@ -17,8 +16,8 @@
 //      however its taker's word flips.
 //   2. the checks travel: a write that changes an item's checks (item.files.add raising a core grant) publishes them,
 //      so an open dialog draws the red grant button without a reopen.
-//   3. the List status box: 16em wide; while deskVerify runs for a row it shows the run's progress there; the outcome
-//      reads green when passed, red when rejected.
+//   3. the List status box: 16em wide; the outcome reads green when passed, red when rejected. Since goal/G33.3 a
+//      run's progress is the Verifier tab's alone, and a row keeps its status word while deskVerify runs.
 //   4. the desk searches rank by probability: items by half title-and-box, half their chat lines; chat lines alone.
 //   5. the dialog's chat search: an input right above the chat input; typed, it sends chat.search and shows the ranked
 //      lines in place of the chat; emptied, the chat comes back.

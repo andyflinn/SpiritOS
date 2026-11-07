@@ -11,27 +11,19 @@
 //   only new files. it's all files! Always! we need to enforce this
 //   stronger."
 //
-// ── WHAT THE FIRST VERSION OF THIS FILE GOT WRONG ────────────────────
+// ── NO UNCOUNTED EXEMPT LIST ─────────────────────────────────────────
 //
-// It shipped this morning and was already too soft in two ways, both of
-// which let exactly the thing it exists to stop happen again the same day:
-//
-//   1. AN UNCOUNTED EXEMPT LIST. server.js and kernel.js were "structural"
-//      and therefore unbounded — they could grow any number of new reaches
-//      and this file would say nothing. Fourteen live in kernel.js. A
-//      ceiling nobody counts is not a ceiling.
-//
-//   2. IT NEVER LOOKED AT spirit/test/. Sixty-odd reaches, unwatched — and
-//      a test is where the rule gets escaped FIRST, because bypassing the
-//      interface is always the quickest way to make a thing go green. That
-//      is the "prototyping" exception Andy is refusing, and partnerGate.js
-//      is a live example: it drives B by calling B.box.routePost() rather
-//      than by reaching B the way anything real would.
+// A file that is "structural" and therefore unbounded could grow any
+// number of new reaches and this file would say nothing: a ceiling nobody
+// counts is not a ceiling. kernel.js is the one exemption, by Andy's
+// ruling (below).
 //
 // ── SO THERE IS ONE TALLY AND NOTHING SITS OUTSIDE IT ───────────────
 //
-// Every .js under run/js, run/js/client, run/app and test is counted. A
-// file's number may FALL freely and may never RISE. A file not in the
+// Every .js under spirit/run/spirit (kernel.js exempt), spirit/run/shell
+// and platform/ is counted; process/ and node_modules are skipped, and
+// spirit/test is not walked (Andy's ruling, below). A file's number may
+// FALL freely and may never RISE. A file not in the
 // tally must have zero. There is no category that means "unlimited",
 // because that category is what got used.
 //
@@ -59,7 +51,7 @@ const REACHES = [
   { what: 'XMLHttpRequest',    re: /\bnew\s+XMLHttpRequest\b/ },
 ];
 
-// ── THE TALLY, TAKEN 2026-09-16 ──────────────────────────────────────
+// ── THE TALLY ───────────────────────────────────────────────────────
 //
 // Every number here is a decision somebody has to defend. Lowering one is
 // ordinary work and needs no ceremony; RAISING one, or adding a line, is
@@ -84,66 +76,29 @@ const TALLY = {
   // THE SAME RULE FOR AN APP SERVED WITHOUT A SHELL — a new line, and so
   // an exception. GRANTED BY ANDY 2026-09-24, asked for out loud as this
   // tally requires: *"i grant ask.js (app/shared/ask.js), i approve of
-  // where it sits in the folder tree. go. it's a useful tool"*.
+  // where it sits in the folder tree. go. it's a useful tool"*. It sits at
+  // spirit/run/shell/shared/ask.js now.
   //
   // `kernel.js` above is here because a page cannot require a node
   // module. This is that sentence again for a page the shell never
   // serves: an app on a public app server loads no kernel, and peerPost
   // is node-side, so the browser needs one door of its own.
   //
-  // IT EXISTS TO MAKE THIS NUMBER SMALLER, NOT LARGER. G3 counted four
-  // raw callers and the fourth was in `shell/starter` — the sample every
-  // stranger copies, where a fork does not add one caller, IT TEACHES
-  // THE HABIT. One home means app pages stop writing their own.
+  // IT EXISTS TO MAKE THIS NUMBER SMALLER, NOT LARGER: a sample every
+  // stranger copies does not add one caller, IT TEACHES THE HABIT. One
+  // home means app pages stop writing their own.
   //
   // ONE REACH, AND THE NUMBER MAY ONLY FALL. The moment it is two, this
   // suite fails, which is what makes the grant safe to have given.
   'shell/shared/ask.js': 1,
 
-  // THE FORK DETECTOR, which has to touch the wire to watch the wire — a
-  // new line, and so an exception. GRANTED BY ANDY 2026-09-25, asked for
-  // out loud as this tally requires: he was given the argument and
-  // answered *"Yes."*
-  //
-  // The two are `require('http')` and `require('https')`, and it PATCHES
-  // them rather than calling them: it wraps `.request` to record which
-  // stacks in our own code reach it, and forwards every call untouched.
-  // It sends nothing and receives nothing.
-  //
-  // IT EXISTS TO MAKE THIS TALLY TRUE RATHER THAN MERELY KEPT. This
-  // suite gates which FILES may reach the wire; it cannot see which
-  // ROUTES do, because a fork has no reference for anything to follow.
-  // On its first real run it found `GET /api/relay/key` composed from
-  // three places — and the duplicate was a security defect, not
-  // untidiness: the app server pinned the relay's identity and then
-  // `sealedClaim` fetched it again and sealed an invite to whatever
-  // answered.
-  //
-  // TWO, AND THE NUMBER MAY ONLY FALL. It runs only when invoked
-  // (`node spirit/test/tools/wirePaths.js`) and instruments nothing
-  // during an ordinary harness run.
-  //
-  // ── 2 -> 0 ON 2026-09-25, AND THE REASON IS A BLIND SPOT IN THIS FILE
-  //
-  // The probe was generalised so its bottom is DATA — `{ mod: 'http', fn:
-  // 'request' }` — and patched with `require(b.mod)`. It reaches exactly
-  // as far as it did yesterday. THE LITERAL `require('http')` IS GONE, SO
-  // THIS SUITE CAN NO LONGER SEE IT.
-  //
-  // Lowering is ordinary and needs no ceremony, so the number falls. But
-  // the number is now WRONG IN THE HONEST DIRECTION, and the finding
-  // matters more than the entry: **`require(<variable>)` is invisible to
-  // every pattern in REACHES.** Anything wanting to bypass this gate can
-  // do it by not writing the module's name, and it would show as a file
-  // with a clean zero.
-  //
-  // FOUND BY ACCIDENT, by the tool built to find forks, while being made
-  // reusable. It is not fixed here: a regex cannot follow a variable, and
-  // what would close it is the probe itself — arrival rather than
-  // resemblance, which is the argument for the SOP that produced this
-  // change. Recorded so the zero is not read as "this file is clean".
-  // (wirePaths' own entry left with the rest of spirit/test, Andy's
-  // ruling below; the blind spot it found is this file's and stands.)
+  // THE FORK DETECTOR (spirit/test/tools/wirePaths.js) is not counted:
+  // it lives in spirit/test, which this walk does not enter (Andy's
+  // ruling below). What it found stands: **`require(<variable>)` is
+  // invisible to every pattern in REACHES.** Anything wanting to bypass
+  // this gate can do it by not writing the module's name, and it would
+  // show as a file with a clean zero. A regex cannot follow a variable;
+  // the probe itself, arrival rather than resemblance, is what sees it.
 
   // THE SERVER ITSELF: http.createServer, and fetchExternal, the gated
   // door apps ask for by verb rather than by URL.
@@ -153,11 +108,6 @@ const TALLY = {
   // and so an exception — GRANTED BY ANDY 2026-09-19 in the cycle 0 plan.
   // The reach is the one the relay always had; it now lives in its own file.
   'spirit/relayServer.js': 1,
-  // THE APP SERVER'S (js/faceServer.js, cycle 2) and THE FACE'S ENTRY POINT
-  // (js/puppetPost.js, G17 slice 1) stood here, 0 and 1. Both files are
-  // gone with goal/G13.2 (Andy, 2026-10-10: "no \"face\" crap belongs into
-  // node."): the face is process/js/appFaceApp, which opens its own
-  // listener from its own configuration, and process/ is not counted here.
   // THE SERVER-SIDE REQUEST ROUTER (appPair/G1.2): http.createServer once,
   // on the pipe the node names. RESTING ON ANDY'S "go." ON G1.2, 2026-09-29,
   // whose whole content is that listener, and told him the same hour
@@ -170,27 +120,9 @@ const TALLY = {
   //   (goal/G1.3, when the fileCore red's fake node was asked for as a
   //   granted line.)
   //
-  // So the walk no longer descends into spirit/test, and every granted
-  // test entry left with it — forwardKey's, the labs', the worlds'. This
-  // gate guards the production trees: a suite may stand up fake servers
+  // So the walk does not descend into spirit/test. This gate guards the
+  // production trees: a suite may stand up fake servers
   // and raw sockets to PROVE them, and needs nobody's grant to do it.
-
-  // The agents program held a granted exception here (Andy, 2026-09-22:
-  // "exception granted"), one reach. The app is gone, and its line with it
-  // (goal/G3.2; Andy: "the agents APP is no longer permitted in this REPO").
-
-  // ── THE GROK REVIEW PROGRAM — A GRANTED EXCEPTION ─────────────────────
-  //
-  //   Andy, 2026-09-22: "this is where the env-variable proxy-call in node
-  //   should come in" — "may as well excercise that aspect of the SpiritOS"
-  //
-  // It looks like a third-party script — it reviews with Grok — but it
-  // never calls Grok: it asks its OWN node's door (`net.fetch`), which
-  // holds the key and fills it in for api.x.ai only. So it is a client of
-  // the loopback door like agents.js, walked and counted, not skipped.
-  // 2 since 2026-09-22: require('http') and its one call — Node's fetch cut
-  // the script off from its own node at 300 s while Grok was still thinking.
-  // process/js/grokReview/grokReview.js STOOD HERE, granted 2: it went with goal/G29.20.
 
   // ── THE WSL DESKTOP — A PLATFORM TOOL, THE SAME KIND OF EXCEPTION ────
   //
@@ -243,7 +175,7 @@ const files = walk(path.join(SPIRIT, 'run', 'spirit'), 'spirit/', [])
   .filter(function (f) { return f.rel !== 'spirit/kernel.js'; })
   .concat(walk(path.join(SPIRIT, 'run', 'shell'), 'shell/', []))
   // spirit/test is not walked: tests are not subject to the same rules (Andy, 2026-10-02).
-  // The folders of process/ that are walked: the granted exceptions above.
+  // process/ is not walked (SKIP).
   // platform/ — tools for Andy's machines, beside spirit/ (platform/README.md).
   .concat(walk(path.join(SPIRIT, '..', 'platform'), 'platform/', []));
 
@@ -334,8 +266,8 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
     test.fail('peerPost reached for a socket; opts.request is the only way out');
   }
 
-  // THE PROPERTY THAT MAKES RELAY-TO-RELAY NEED NO NEW PROTOCOL. If this
-  // breaks, partner work silently grows a second transport.
+  // THE PROPERTY THAT LETS A RELAY CONSTRUCT A peerPost: traffic is
+  // injected, and contactBook is used inbound only.
   const trafficInjected = /opts\.traffic/.test(peerPost);
   const contactBookUses = (peerPost.match(/contactBook\./g) || []).length;
   if (trafficInjected && contactBookUses <= 2) {
@@ -345,9 +277,8 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
       trafficInjected + ', contactBook uses=' + contactBookUses);
   }
 
-  // AND THE TRANSPORT IS REACHABLE BY BOTH. It sat inside hub.js until
-  // 2026-09-16, which is why a relay had no way to obey the rule and the
-  // shortcut was available to take.
+  // AND THE TRANSPORT IS REACHABLE BY BOTH: relayRequest is its own
+  // module, so a relay can obey the rule as a node does.
   const wire = code('spirit/relayRequest.js');
   if (/function relayRequest/.test(wire) && !/contactBook|ownerBadge|peerStats/.test(wire)) {
     test.check('and relayRequest is its own module, with none of the node on it');
@@ -374,6 +305,8 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
   {
     const PRIMITIVES = /createCipheriv|createDecipheriv|diffieHellman|hkdfSync/;
     const owners = [];
+    // 'js' names spirit/run/js, which the tree no longer has (the code is in spirit/run/spirit/): this walk throws
+    // ENOENT there and the suite stops before its section 4.
     ['js', 'shell', 'process'].forEach(function (rel) {
       walk(path.join(SPIRIT, 'run', rel), rel + '/', []).forEach(function (f) {
         if (PRIMITIVES.test(fs.readFileSync(f.full, 'utf8'))) owners.push(f.rel);
@@ -393,20 +326,12 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
 //   interface helpers. that is the whole point of interfaces. they must be
 //   opaque. their internal mechanics shouldn't even be reachable."
 //
-// The reach that a `fetch` tally cannot see. I gave the old peer and
-// graded searches an `internal: {...}` bag holding eleven helpers, labelled
-// "for the suite alone" — an escape hatch with a note on it. Reachable is
-// reachable: a caller will eventually reach for the same reason a test
-// did, and a mechanic with a caller is a mechanic that cannot change,
-// which was the whole reason that module was separated out.
-//
-// WHAT IT COST TO CLOSE IT, which is the argument for closing it: two of
-// the thirteen assertions that went through the bag turned out to be
-// testing branches NO CALLER CAN REACH. `globMatches('abcd','abc')` is
-// false and irrelevant — a query with no wildcard never consults the
-// matcher. `tokenScore('two','twelve')` is 0.667 and unreachable — a
-// one-word query that is not a substring is not a result at all. An escape
-// hatch does not only permit bad calls; it hides which calls are possible.
+// The reach that a `fetch` tally cannot see: an `internal: {...}` bag of
+// helpers "for the suite alone" is an escape hatch with a note on it.
+// Reachable is reachable: a caller will eventually reach for the same
+// reason a test did, and a mechanic with a caller is a mechanic that
+// cannot change. An escape hatch does not only permit bad calls; it hides
+// which calls are possible.
 test.subHeading('No module offers a way past its own front door');
 
 {
@@ -418,10 +343,9 @@ test.subHeading('No module offers a way past its own front door');
       .split('\n')
       .filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); })
       .join('\n');
-    // THE WHOLE FILE, not just module.exports. A first draft looked only
-    // at the export block and missed four underscore hooks on the object
-    // presenceNode's FACTORY returns — which is a public surface too, and
-    // is where a hook is likeliest to be added because it feels private.
+    // THE WHOLE FILE, not just module.exports: the object a FACTORY
+    // returns is a public surface too, and is where a hook is likeliest to
+    // be added because it feels private.
     HATCHES.forEach(function (re) {
       if (re.test(src)) offenders.push(f.rel + ' (' + re.source + ')');
     });

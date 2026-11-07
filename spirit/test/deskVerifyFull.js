@@ -1,29 +1,15 @@
 'use strict';
 
-// goal/G8.12, folded in: the full run when the goal empties. Red on today's tree; claude-windows wrote it from G8.12's
-// box and does not build it.
+// goal/G8.12, folded in: the desk marks the goal that has emptied.
 //   Andy, 2026-10-09: "why, the run-all should be triggered by: \"no items left in the goal\", by the desk itself.",
-//   "will this be fixed now or not?", and "i did not say: \"add an item\", add it to this one." Ruled before in
-//   goal/G8.3's box: "When the last item of the goal closes, every copy starts its full run". And on goal/G8.7, that the
-//   full run reports to the goal chat and sends deskVerify its results: "both".
+//   "will this be fixed now or not?", and "i did not say: \"add an item\", add it to this one."
 //
-// WHAT IS TRUE TODAY (read at c74a915e): nothing starts a full run; a goal offers Done as soon as its last item is done
-// or closed and no grant is open.
-//
-// THE SHAPE ASSERTED, the red writer's reading, posted under goal/G8.12 for him to overrule:
-//   THE DESK: when the last open item of a goal becomes done or closed, it writes ONE record, verb goal.emptied
-//   {id: <goal>}. Where a deskVerify runs on its node (the G8.3 test), the goal's Done then waits for deskVerify's own
-//   verify.pass on the GOAL id - the box's default, "the goal's Done waits until that pass has come back".
-//   deskVerify: its watcher takes goal.emptied and runs every suite in its suites folder (the manifest value
-//   `suites`, default spirit/test; a suite hands a folder of two probes), one at a time, publishing doing 'full' with
-//   index/of as it goes; then it posts ONE report line in the goal's chat naming the reds, asks goal.check (so the reds
-//   outside the goal become the G8.7 grant), and asks verify.pass on the goal. One pass per goal: a second goal.emptied
-//   for the same goal runs nothing.
-// SINCE goal/G14.3 the deskVerify half lived in deskVerifyGoalRun.js, which went with goal/G33.3: nothing starts a run
-// from goal.emptied any more; the goal's run is his Verify on the goal, and its Done reads the verifier
-// (deskVerifyDriven.js). This file keeps the desk's half: the record, and the status words.
-// NOT ASSERTED: the report line's exact words, and what a full run does when a suite hangs (the time limit already
-// covers it).
+// THE SHAPE ASSERTED, the desk's half (spirit/run/process/js/desk/desk.js):
+//   when the last open item of a goal becomes done or closed, the desk writes ONE record, verb goal.emptied
+//   {id: <goal>}, and publishes it. Nothing starts a run from it since goal/G33.3: the goal's Done is offered once its
+//   items are, its press reading the verifier (deskVerifyDriven.js), and the goal's status claims no goal run. On an
+//   item, an agent's verify pass sets the status word to say it waits for deskVerify.
+// NOT ASSERTED: deskVerify itself; VERIFY below is named and not started.
 
 const fs = require('fs');
 const os = require('os');
@@ -115,12 +101,11 @@ async function deskHalf() {
     if (e.length === 1 && e[0].item && e[0].item.id === 'goal/G100') test.check('the last item closed: one goal.emptied row published, naming the goal');
     else test.fail(OWED + 'goal.emptied records: ' + short(e));
     const g = parse((await d.call('item.get', { id: 'goal/G100' }, ANDY)).body.item) || {};
-    // SINCE goal/G33.3 the goal's Done is offered once its items are, and the press itself reads the verifier
+    // goal/G33.3: the goal's Done is offered once its items are, and the press itself reads the verifier
     // (deskVerifyDriven.js); nothing starts from goal.emptied, so its status word stays as it was.
     if ((g.buttons || []).indexOf('done') !== -1 && !/goal run/i.test(String(g.status))) test.check('the emptied goal offers Done, its press to read the verifier, and claims no goal run');
     else test.fail(OWED + 'the emptied goal reads buttons ' + short(g.buttons) + ', status ' + short(g.status));
-    // The same for an item: an agent's verify pass sets the status word. (deskVerify's own words, verify.pass and
-    // verify.reject, went with goal/G33.3: the desk reads the verifier itself.)
+    // The same for an item: an agent's verify pass sets the status word; the desk reads the verifier itself.
     await d.call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
     await d.call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'goal/G101.1', what: 'go' }, ANDY);

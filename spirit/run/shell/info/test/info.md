@@ -2,7 +2,7 @@
 
 The Info app (goal/G40.10; goal/G41.6): what this node says about itself to anybody who asks, its name and its
 description; the two relay forms (an email, a face name on one relay); and the key rotation. Intrinsic, on the coded list
-in `spirit/coreFiles.js`, so every face shows it.
+in `spirit/run/spirit/coreFiles.js`, so every face shows it.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ in `spirit/coreFiles.js`, so every face shows it.
   (`spirit.cacheManager('node')`, then `spirit.data.node.data.card.keep`; goal/G41.28); each element draws itself from that
   card and holds its own rule, check, limit and save.
 - **"What each relay calls you" is dropped** (Andy, 2026-10-27): no table of relays and the name each calls this node,
-  no push of a saved name to every relay, no rename. Its code is deleted and tested gone.
+  no push of a saved name to every relay, no rename. Its code is tested gone.
 - **The two forms stay**: the email form and the face form, each over the relays this node holds a seat on
   (`spirit.relay.status`, a row claimed or owned whose roll names the relay's key), as it is drawn. A relay's row
   changing in the contact family's cache is the two forms' to follow, reading nothing (goal/G41.32).

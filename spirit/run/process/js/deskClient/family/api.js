@@ -7,7 +7,7 @@
 // here, in the same commit.
 module.exports = {
   verbs: {
-    // goal/G41.11: the whole cache to cache.json in its own state folder; it takes no path.
+    // goal/G41.11: the cache saved now, to appServer's cache file spirit/state/deskClient/<desk node id>.json; it takes no path.
     'cache.dump': {},
     // agent names the persona the desk lifts or gives the signoff for; the handler keeps one state, whoever is named.
     clearSignoff: { agent: 'text?' },
@@ -21,7 +21,7 @@ module.exports = {
     setDesk: { key: 'key' },
     signoff: { agent: 'text?' },
     // goal/G33.4 (box v40): the desk's stream, one row as the desk publishes it, JSON; appServer's verb for a server
-    // that follows a stream (js/appServer.js withStreamListener), heard from the key setDesk named alone.
+    // that follows a stream (spirit/appServer.js withStreamListener), heard from the key setDesk named alone.
     streamListener: { json: 'text' },
   },
 };

@@ -2,8 +2,7 @@
 
 // spirit/test/chatsSearch.js
 // goal/G29.18: chatClerver and chatter cleaned up — chats.search in place of peers.search, chat.search for one chat's
-// lines, both lists off the old graded bucket. Red on today's tree; claude-windows writes it and builds it (one agent).
-// The item's box (v3):
+// lines, both lists off the old graded bucket. The item's box:
 //   - peers.search becomes chats.search: which peers have a chat, the newest line, the unanswered count; keys and chat
 //     facts only. No arguments: text matched part of a key, and keys are never searched; since and before go. A chat
 //     is revived by finding the person by name (contact.search) and opening it; chat.read reads it from memory.db.
@@ -12,8 +11,12 @@
 //   - A new verb, chat.search {peer, text}: that chat's lines ranked by the probability modules, newest first on a
 //     tie, cut by bytes. The chat window searches with it. chatClerver no longer requires the old graded search.
 //   - chatter asks chats.search with no arguments; its chat window has a search over its own lines, through chat.search.
-// It replaces goal/G4.3's chatPeers.js, whose peers.search it removes: the row, the blocked rule, the bound and the
-// read are asserted here instead.
+// goal/G4.3's chatPeers.js is retired (check 0 asserts it is absent); its row, blocked rule, bound and read are
+// asserted here instead.
+// STALE in part: check 0's dropdown checks look for elements.shellCreateListSearch in chatter.js, which now builds its
+// chat search with spirit.element.search.create; and the pretend node answers the flat form {verb, ...}, while
+// chatClerver.js asks contact.get through the spirit object in the { call, args } envelope (goal/G41.15), so the
+// blocked key is never known blocked.
 // NAMED HERE where the box names none: chat.search answers {items: [{key: sent + ':' + seq, label: the line as json}],
 // more}, as chat.read does; a line that does not match is left out; the owner's alone.
 // rule/11: through testSupport only; its own scratch folder and pipe; never 65432.
@@ -55,6 +58,8 @@ const call = function (verb, args, caller) {
   return client.ask({ chatClerver: q }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; });
 };
 // The pretend node: its contact book alone, which marks BLOCKED blocked.
+// DISCREPANCY WITH ANDY's RULES: goal/G43.17, Andy: "Didn't i say remove ALL code referencing "admit" and "hold". it
+// was a hair-brained scheme, and it HAS TO GO." Its contact.get still answers a held field.
 const node = http.createServer(function (req, res) {
   let raw = '';
   req.on('data', function (c) { raw += c; });

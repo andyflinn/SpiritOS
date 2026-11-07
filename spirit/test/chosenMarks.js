@@ -1,8 +1,8 @@
 'use strict';
 
 // spirit/test/chosenMarks.js
-// CHOOSING IS A MARK ON WHAT THE MACHINE REMEMBERS (0021, R38). Since goal/G40.11 the marks are the one table's flags:
-// keep (was "added"), ignored, blocked; the book IS the table, so there is no separate save to mark from.
+// CHOOSING IS A MARK ON WHAT THE MACHINE REMEMBERS (0021, R38). The marks are the one table's flags (goal/G40.11):
+// keep, ignored, blocked; the book IS the table, so there is no separate save to mark from.
 //
 //   Andy: "ignoring means only: mark this row as "ignored"." — "it's the
 //   chosen-mark that gives protection from eviction, if the memory
@@ -120,8 +120,9 @@ test.subHeading('A full memory refuses the next add; letting somebody go makes r
     test.fail('an existing friend was refused');
   }
 
-  // "until eviction by blocking or ignoring": block a third of them. A block takes keep off (contacts.forget keeps the
-  // block), so the row is back in the line.
+  // "until eviction by blocking or ignoring": block a third of them, keep taken off with the block, as a forget of a
+  // blocked row leaves it (contacts.forget keeps the block; contacts.setBlocked alone leaves keep on), so the row is
+  // back in the line.
   for (let k = 0; k < Math.ceil(n / 3); k += 1) S.set(key('FRIEND', k), { keep: false, blocked: true });
   if (S.roomToAdd('SOMEBODY-NEW') && S.get(key('FRIEND', 0)) === null) {
     test.check('blocking some hands their rows back to the sweep, and there is room again');

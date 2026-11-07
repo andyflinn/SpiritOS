@@ -1,9 +1,9 @@
 // spirit/run/process/js/desk/family/cacheRules.js
 // THE DESK FAMILY'S CACHE RULES, FOR NODE ALONE (goal/G41.28): what a subscribing appServer keeps of the desk's rows, and
-// the reads deskClient answers from them. They stood in data.js; a page loads that file through the
-// family's own FS (spirit.<family>.FS.loadFile), and Andy, on G41.28: "the file has to fit into MAX_PAYLOAD." The
-// rules are node's only, so they live here, and the manager requires them in node. The branch names are the
-// manager's alone: it hands them in (rules({ items, parts, state })).
+// the reads deskClient answers from them. A page loads data.js through the family's own FS (spirit.<family>.FS.loadFile),
+// and Andy, on G41.28: "the file has to fit into MAX_PAYLOAD." The rules are node's only, so they live here: data.js
+// requires them in node and exports them as its cache, which appServer's stream listener runs (keep, shed). The branch
+// names are data.js's alone: it hands them in (rules({ items, parts, state })).
 //
 // THE DESK'S ROWS IN A CLIENT'S CACHE (goal/G41.12). Andy, Q2: "it sits at the receiving end of the stream, it owns the
 // cache, it knows the default cache limit, IT DOESN't HAVE ASK OR TELL ANYBODY HOW IT's JOB IS DONE". The client's

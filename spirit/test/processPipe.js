@@ -1,23 +1,22 @@
 'use strict';
 
 // spirit/test/processPipe.js
-// THE NODE NAMES A PIPE FOR ITS process/js SERVERS — desk/G1.6, written
-// FIRST, red on today's code.
+// THE NODE NAMES A PIPE FOR ITS process/js SERVERS — desk/G1.6.
 //
 //   Not a decision: appPair D15 ("only the node names a pipe, handed over
 //   as --pipe") applied where it did not reach. Andy's check: "A process/js
 //   server built on appServer.js starts with the node and answers api over
 //   its pipe." Per D11, process/js only; nothing new on the app/ path.
 //
-// THE CONTRACT (wsl-claude's, sent to claude-windows before the build; no
-// manifest field, claude-windows' proposal):
+// THE CONTRACT (no manifest field):
 //   - appClient.pipePathFor(root, name, platform, 'process'): off Windows
 //     <root>/relay-state/process/<name>/door.sock (the process's state
 //     folder, desk/G1 D5); on Windows a pipe name carrying the checkout and
 //     'process', so it never equals an app's pipe of the same name.
 //   - jobs.startNodeServers(root, client) starts each node-operated server
-//     with [script, values, '--pipe', pipe], its folder made, and calls
-//     client.register(name, pipe).
+//     with [script, values, '--pipe', pipe, ...], its folder made, and calls
+//     client.register(name, pipe). It starts only the servers that run at
+//     home by jobs.js's rule (see T1 below), so T1 and T3 fail here.
 //   - client.register(name, pipe): client.ask reaches it.
 
 const fs = require('fs');
@@ -74,7 +73,9 @@ function waitFor(fn, ms) {
   test.subHeading('T1: a node-operated process/js server is started with --pipe, its socket in its state folder');
   const client = appClient.createAppClient({ rootDir: root });
   let booted = [];
-  // A test node runs at home what it starts, for this run (goal/G30.20: its manifest says so).
+  // tools/runsHome.js writes runs: ['home'] into the manifest (goal/G30.20). jobs.js no longer reads that: a server runs
+  // when it is intrinsic or its node sidecar, relay-state/process/<name>/<name>.js.sidecar.json, says face.home (goal/G41.1),
+  // so this does not make the node start it.
   require('./tools/runsHome.js')(root, 'process/js/pinger');
   try { booted = jobs.startNodeServers(root, client) || []; } catch (e) { test.fail(OWED + 'startNodeServers threw: ' + e.message); }
   const job = booted[0] && jobs.getJob(booted[0].id);

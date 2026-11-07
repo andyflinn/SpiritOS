@@ -1,9 +1,10 @@
+// spirit/run/shell/jobsDetails/jobsDetails.js
 // One job of the Job Monitor, as its own screen (goal/G2.11).
 //
 //   Andy, 2026-10-02: "the job monitor shell component. the folded
 //   "consoles" need to go into jobsDetails", "the form on top should be gone."
 //
-// A dialog in the pattern of contactsDetails: hidden, pushed by the Jobs
+// A dialog (its manifest: hidden, type dialog), pushed by the Jobs
 // table for one row, showing that job and nothing else, launching nothing,
 // and the only way out is back to the table.
 //
@@ -31,7 +32,7 @@ var jdView = null;      // the Extract box's read-only text view
 var jdParts = Promise.resolve(spirit.cacheManager('jobs'));
 function jdData() { return ((window.spirit.data || {}).jobs || {}).data || null; }
 
-// The canonical set lives in js/jobs.js, node-side; shell/jobs/jobs.js and app/stats keep the same copy.
+// The canonical set lives in spirit/run/spirit/jobs.js (TERMINAL_STATUSES), node-side; shell/jobs/jobs.js keeps the same copy.
 var JD_TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
 
 var JD_STATUS_ICON = {
@@ -62,7 +63,7 @@ function jdLogHtml(job) {
   }).join('');
 }
 
-// The rule the row had, moved and unchanged: Cancel for a one-shot process
+// Cancel for a one-shot process
 // and for a user-operated server, never for a node-operated one, which
 // lives and dies with the node (Andy: "would allow cancel for servers -
 // user but not for servers - node"); Delete once the job is terminal.
@@ -135,7 +136,7 @@ spirit.shell.activateApp({
           '<div id="jd-extract" style="height:33vh;overflow:auto"></div></div>' +
       '</div>';
 
-    // THE EXTRACT BOX ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7: it replaced the text view), loaded by this app.
+    // THE EXTRACT BOX ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7), loaded by this app.
     var extract = document.getElementById('jd-extract');
     if (extract) {
       Promise.resolve(spirit.require('spirit/element/codeMirror.js')).then(function () {

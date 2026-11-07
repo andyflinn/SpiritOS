@@ -1,8 +1,7 @@
 // spirit/run/process/js/desk/data.js
 // WHAT THE DESK KNOWS OF ITS ROWS AT THE RECEIVING END, IN THE DESK'S OWN FOLDER (goal/G41.24; Andy: "where
 // clientCacheManager.js must work in both browser and an appServer that subscribes? and deskClient can get it form its own
-// disc?"). Two halves: the cache rules, which were api.js's and are now family/cacheRules.js (a node's alone),
-// and the translator. A page loads it from the node that served it (spirit.require); a subscribing appServer
+// disc?"). Two halves: the cache rules, family/cacheRules.js (a node's alone), and the translator. A page loads it from the node that served it (spirit.require); a subscribing appServer
 // requires it from its own run root, takes cache from module.exports, and runs the translator into its spirit.data.
 // It is read by peers through the family's FS verbs like anything in this folder: rules, never secrets.
 //
@@ -18,7 +17,7 @@
 //               its own read (took), and the side rows the desk pushes keep it current from then on.
 //   deskState/current  the goal the stream last pushed whole;  deskState/change  the newest change number heard
 // The rows come as jobs of module process/js/desk: in the page as the desk's publishes, in a server that follows the
-// desk's stream (deskClient) through appServer's streamListener (js/appServer.js), which hands each row in exactly so.
+// desk's stream (deskClient) through appServer's streamListener (spirit/appServer.js), which hands each row in exactly so.
 // One row each (goal/G33.4): an item's List row, or one side row (a chat line, the box, a check, a file, a claim); the
 // stream's bundles are appServer's, which hands their rows in one by one (goal/G41.12).
 // Every event ends in set, merge or del; it asks nothing and keeps nothing of its own.
@@ -168,8 +167,11 @@
       // A LINE SAID UNDER A RULE (rule.chat) comes without the line: the rule's chat read so far is dropped, so whoever
       // watches it reads it again.
       if (o.verb === 'rule.chat' && o.rule) { V.del(PARTS + '/' + String(o.rule)); return; }
-      // A STACK-FRAME DOOR CHANGED (the stackFrameChecks plugin's publish, { what, id }, carries no row): its run kept is
+      // A STACK-FRAME DOOR CHANGED (a publish naming plugin stackFrameChecks, { what, id }, carries no row): its run kept is
       // dropped, and for any change but a run the door kept too, so whoever watches them reads them again.
+      // DISCREPANCY WITH ANDY's RULES: goal/G43.22, Andy: "the apps and plugin system goes.", "removal of plugin support.".
+      // The stackFrameChecks plugin is gone and nothing publishes this any more, yet this branch, the deskDoors and
+      // deskDoorRuns branches and the doors/doorRuns reads below still stand for it.
       if (o.plugin === 'stackFrameChecks') {
         var door = o.data && o.data.id ? String(o.data.id) : '';
         if (!door) return;
@@ -221,8 +223,8 @@
     //   answer(verb, args, room)  a desk read answered from what is kept, or null
     //   rules.keep(row)  a rule as rule.get answered it;  rules.watch(key, fn)  fn(row) on every change of that rule
     //   parts.watch(id, fn)  fn(parts) on every change of an item's (or a rule's) parts, undefined once dropped
-    //   doors.keep(door), doorRuns.keep(id, run)  a stack-frame door and its run state as the plugin's reads answered
-    //   doors.watch(id, fn), doorRuns.watch(id, fn)  fn(row) on every change, undefined once the plugin said it changed
+    //   doors.keep(door), doorRuns.keep(id, run)  a stack-frame door and its run state (no reader left; see the
+    //   doors.watch(id, fn), doorRuns.watch(id, fn)  DISCREPANCY above): fn(row) on every change, undefined once dropped
     // Each watch answers its release.
     function rowTable(branch) {
       return {

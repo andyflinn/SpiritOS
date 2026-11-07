@@ -1,8 +1,8 @@
 'use strict';
 
 // spirit/test/deskLineTakeAddressed.js
-// goal/G21.6: Desk: line.take takes the newest line of Andy's that is the agent's to take. Red on today's tree;
-// claude-windows wrote it and builds it (one agent). The rules, Andy's decision in the item's box:
+// goal/G21.6: Desk: line.take takes the newest line of Andy's that is the agent's to take. The rules, Andy's decision
+// in the item's box:
 //   - line.take takes the newest of Andy's lines under the item that is addressed to the taking agent or to nobody, and
 //     not yet taken; not only his latest line.
 //   - A line addressed to another agent is never takeable (goal/G21.1).
@@ -18,7 +18,7 @@
 //   c. a line addressed to B alone is never A's, even when it is the only line of his not taken.
 //   d. an older line addressed to nobody, under a newer line B holds, is A's to take.
 //   e. his exclusion of A frees A's open take alone; B's stands, and a third agent takes the freed line.
-//   f. a restart of the desk replays the records to the same takes.
+//   f. a restart of the desk reads back the same takes from desk.db.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -72,7 +72,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desklinetake-'));
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) return true; } catch (e) { /* not yet */ } }
     return false;
   };
-  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  // The world is seeded before the desk starts, which takes it in at start (goal/G33.7).
   const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; });
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Line takes' }, items: items });
   let kid = start();

@@ -4,10 +4,12 @@
 // goal/G28.1: ADDING A RELAY. Andy, 2026-10-16: relay.add {url, label} is approved as the new node verb; Natter's Add
 // adds a row and opens nothing; a relay shows in the list whether or not this node is a member.
 //
-// WHAT IS ASSERTED (red on today's code)
+// WHAT IS ASSERTED
 //   1. the node declares relay.add, taking url and label.
 //   2. relay.add refuses an empty or invalid label, with a reason, and lists nothing.
 //   3. the Add handler (Natter's, in Contacts since goal/G30.7) opens no dialog: it calls relay.add, and the row appears.
+//      It reads shell/contacts/contacts.js, which is not in the tree any more (the Contacts app is
+//      spirit/run/spirit/app/contact/contact.js), so 3 now throws.
 
 const fs = require('fs');
 const path = require('path');
@@ -35,7 +37,7 @@ test.subHeading('2. relay.add refuses an empty label, and lists nothing');
   else test.fail(OWED + 'hub.js has no relayAdd that refuses an empty label');
 }
 
-// Natter retired (goal/G30.7): Add a relay is a panel in Contacts now, the same handler moved.
+// Natter retired (goal/G30.7): Add a relay is a panel in Contacts, read here at its old place shell/contacts/.
 test.subHeading('3. Add a relay (in Contacts) opens no dialog');
 {
   const contacts = stripComments(fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8'));

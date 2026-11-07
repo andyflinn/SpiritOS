@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/faceFixes.js
-// goal/G30.15: fixes to the new shell (the face), found using it on spirit-3. Red on today's tree; claude-windows writes
-// it and builds it (one agent). The box, in short:
+// goal/G30.15: fixes to the new shell (the face), found using it on spirit-3. The box, in short:
 //   - The owner's relay events (an invite minted, a claim, a rename) go to the face as they go to the local shell, so
 //     Relay Details shows a new invite at once; the relay monitor still does not.
 //   - The new shell's favicon.svg is 🤓, and the browser tab shows the ID's label after it.
@@ -15,8 +14,8 @@
 //   - Relay Details, for its owner, shows memory and disc (set, running, what the box can give), a field for each with
 //     the members that setting serves, says a change applies at the next restart, and offers Restart; it uses the
 //     relay's own config and restart.
-//   - peerFind fills as soon as its fold opens, and an empty search answers like any other. Since goal/G30.19 that is
-//     Contacts' one list, contactSearch, which fills as soon as it is drawn.
+//   - Contacts' one list (goal/G30.19; spirit/element/search/contact/listElement.js) fills as soon as it is drawn, and
+//     an empty search answers like any other.
 //   - bash/face-setup writes the face site without compression.
 //   - The login app's Log out is a two-press button.
 // NAMED HERE where the box names none:
@@ -25,6 +24,10 @@
 //     seatStreams: 3, members, membersPerMB }, and the owner's status report carries it as `capacity`.
 //   - faceHome.ownerEvent(ev) puts { event: 'relay-event', data: ev } on every open face stream; the face shell hands
 //     it to api.onRelayEvent and to the kernel's onRelayEvent. faceHome's { keys: 1 } answer carries the node's name.
+// Sections 4 and 5 read files at places that no longer exist: spirit/run/shell/boot.js, favicon.svg and
+// spirit/run/face.html are under spirit/run/spirit/shell/ (goal/G43.18); shell/natterDetails/ is gone (its screen is the
+// shell element spirit/element/search/contact/relayPanel.js, goal/G41.32); shell/login/ went with goal/G43.18. Those reads come
+// back empty, so their checks fail.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -162,9 +165,8 @@ const done = (async function () {
     test.check('owner events wired to the face, 🤓 and the tab title, at-rest measured at boot, the status parts and the allocation screen, the contact list filled when drawn, no gzip, Log out two-press, CAPACITY.md');
   else test.fail(OWED + 'missing: ' + missing.join(', '));
 
-  // Found on spirit-3 (box v16; Andy: "a do-nothing interface", "disc should be measured in GB"): the screen showed what
-  // the relay booted with, and Restart wrote those figures back over the Save. Now: raising applies at once, lowering at
-  // the next restart, what is set is read from the file, Restart only restarts, a refusal stays, disc in GB.
+  // Box v16 (Andy: "a do-nothing interface", "disc should be measured in GB"): raising applies at once, lowering at the
+  // next restart, what is set is read from the file, Restart only restarts, a refusal stays, disc in GB.
   // NAMED HERE: relay.reconfigure(ask) is exported (the owner's config verb, as its post reaches it), and createRelay
   // takes deps.readConfig, the file as it stands, beside writeConfig and restart.
   test.subHeading('5. the allocation screen does what it says');

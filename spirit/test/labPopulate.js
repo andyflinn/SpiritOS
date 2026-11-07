@@ -34,6 +34,14 @@
 // Everything else it touches is reversible: relays.json is backed up
 // before the lab row goes in front, and --down puts it back byte for
 // byte and deletes the lab nodes.
+//
+// The node files this tool writes and reads (spirit/state/relays.json,
+// spirit/state/contacts.json, shell/natter/session.json) are not where the
+// node keeps that state now: relays and contacts are rows of node.db's one
+// table, seen (goal/G40.11), and there is no shell/natter/. A relays.json
+// found is moved into that table on the node's next read and the file
+// goes (relayKeys.js importOld), so --down's byte-for-byte restore of the
+// file no longer takes the lab row back out.
 
 const fs = require('fs');
 const path = require('path');
@@ -45,7 +53,7 @@ const WORK_RUN = path.join(__dirname, '..', 'run');
 const WORK_PORT = 65432;
 const WORK_URL = 'http://127.0.0.1:' + WORK_PORT;
 const MASTER = require('./labMaster/labPaths').MASTER;
-// goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+// spirit/state/relays.json, the node's relay list as goal/G16.3 had it; node.db's seen since goal/G40.11.
 const RELAYS = path.join(WORK_RUN, 'spirit', 'state', 'relays.json');
 const BACKUP = path.join(WORK_RUN, 'spirit', 'state', 'relays.json.before-lab');
 
@@ -301,48 +309,16 @@ async function clearLive(me, known) {
   return { removed: removed };
 }
 
-// ~~GAP — NOTHING MAKES A NODE FORGET A PERSON.~~ — STRUCK 2026-09-21.
+// FORGET THE LAB CONTACTS: every row of spirit/state/contacts.json whose
+// label starts `lab-` is dropped, by editing the file with the work node
+// stopped. A contact verb exists (contact.forget), but a teardown runs
+// with the work node down. Every build mints NEW KEYS for the same names,
+// so without this a third run leaves three lab-bellas, two of them dead.
 //
-// It said: "contactBook offers block, unblock, accept and label. None of
-// them removes a row, and there is no route that does — so a contact,
-// once acquired, is in your address book for good."
+// The node keeps no contacts.json since goal/G40.11 (its contacts are rows
+// of node.db's seen), so the read finds nothing and this answers 0.
 //
-// **All three clauses are now false.** `contactBook.forget` exists
-// (contacts.js:442), `hub.handlePeer` answers the `forget` action
-// (hub.js:1354), and it is a verb a client calls — `contact.forget`
-// (server.js:1379), which contactsDetails already uses.
-//
-// SO THE CHEAT BELOW IS NO LONGER NECESSARY and should become the one
-// call this note predicted. It is left standing only because a teardown
-// runs with the work node STOPPED, and the verb needs it running — which
-// is an ordering problem, not a missing feature.
-//
-// That is why this reaches into the contact book directly, which is
-// exactly the kind of cheat labWorld's GAPS list exists to record. It
-// matters more than it looks: every build mints NEW KEYS for the same
-// names, so without this a third run leaves you with three lab-bellas,
-// two of them dead, and the colour beside each is an honest answer to a
-// question about somebody who no longer exists.
-//
-// The verb this wants is the sibling of remove-peer: owner-signed, by
-// key, on your own node. Once it exists, this function becomes one call.
-//
-// ── IT READ who.json UNTIL 2026-09-21, AND SO REMOVED NOTHING ────────
-//
-// The store was renamed on Andy's own instruction — "who.json should be
-// contacts.json" (contacts.js:146) — and this was not moved with it. The
-// read threw ENOENT, the catch answered 0, and every teardown since has
-// reported a count it never earned. A cheat that reaches past the API is
-// exactly the code that a rename cannot reach, which is the cost this
-// GAP note was already describing and the reason the verb is wanted.
-//
-// WHAT IT STILL CANNOT DO, said plainly rather than left to be
-// rediscovered: it matches on the `lab-` prefix, and a row that arrived
-// with NO LABEL AT ALL cannot be matched by a rule about labels. Those
-// are the rows that read as a key tail on screen — 19 of 33 on the work
-// node when this was found. Clearing them means matching on the lab
-// relay's address instead, which is deleting rows by inference from an
-// address book, and nobody has asked for that.
+// A row that arrived with NO LABEL cannot be matched by a rule about labels.
 function forgetLabContacts() {
   const file = path.join(WORK_RUN, 'spirit', 'state', 'contacts.json');
   let rows;
@@ -590,7 +566,7 @@ async function up(scenarioName) {
 
     // And their node learns about it, so it holds a stream there too and
     // shows up in everyone's presence rather than only in a roster.
-    // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+    // spirit/state/relays.json, the node's relay list as goal/G16.3 had it; node.db's seen since goal/G40.11.
     const theirRelays = path.join(peer.node.home, 'spirit', 'state', 'relays.json');
     let rows = [];
     try { rows = JSON.parse(fs.readFileSync(theirRelays, 'utf8')); } catch (e) { rows = []; }

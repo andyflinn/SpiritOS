@@ -1,26 +1,22 @@
 'use strict';
 
-// goal/G8.8: files touched per item, kept by the desk, approved by Andy with one grant. Red on today's tree;
-// claude-windows wrote it from G8.8's box and does not build it.
+// goal/G8.8: files touched per item, kept by the desk, approved by Andy with one grant.
 //   Andy, 2026-10-09: "ideally written by the claiming agent. the coding agent and the testing agent should be adding
 //   files they test/touch in a list that can be fetched per item.", "the list should be owned by the item. so updates
 //   to it are available to all participants.", "and that file list should be visible in desk ui per item, core files
 //   market as requiring grants.", "all files that need a grant should get one 'grant' button together.", and "oh, and
 //   the Delete button never should show in the list. only in the detals."
 //
-// WHAT IS TRUE TODAY (read at c32427af): the desk holds no file list per item and has no item.files.add; the List
-// draws every button an item offers except go-all, reopen and make-current (shell/desk/desk.js DESK_NOT_IN_ROW).
-//
-// THE SHAPE ASSERTED, from the box and the red writer's naming where the box leaves it open:
+// THE SHAPE ASSERTED, from the box and the names chosen where the box leaves it open:
 //   item.files.add {id, path}: one path onto the caller's own list for that item, leaving others'; item.files.remove
 //   {id, path} takes one away (goal/G40.3: one row a write; the whole-list write {id, paths} went).
-//   item.files {id} answers it as {files: [{path, by, core}], filesMore}, core read from js/coreFiles.js isCore (never a
+//   item.files {id} answers it as {files: [{path, by, core}], filesMore}, core read from spirit/run/spirit/coreFiles.js isCore (never a
 //   second list): its own answer since goal/G32.2, core files first, as many as fit one answer, filesMore saying there
 //   were more. The facts carry no files: 64 core grants and a 142-file list outgrew the item's one answer.
 //   A list holding any core file puts ONE open G check on the item for all of them, not one per file; since goal/G40.3
 //   its words name no path: "core grant: every core file on this item's list".
 //   The Details draws the list in its files panel (#dd-panel with 📂 pressed, goal/G30.8; #dd-files before it), a core
-//   path marked data-core="1". The List never draws Delete.
+//   path marked data-core="1". The List never draws Delete (spirit/run/shell/desk/desk.js DESK_NOT_IN_ROW).
 // NOT ASSERTED: a file added after the grant turning the grant red again (both agents proposed it, he has not ruled),
 // and Done waiting on every grant (goal/G8.5 builds that).
 

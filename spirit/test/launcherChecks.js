@@ -4,9 +4,9 @@
 // stand-in door (oneDoor.js counts that door once, there).
 // Andy: "if a server is a process, it should get the perks of a process, that's no stretch."
 // "can those not collapse into one interface, that can't drift?" "the one shots should have that too, who wants dangeling processes"
-// The contract: js/jobs.js spawns every process in one place; every process gets SPIRIT_JOB_ID,
+// The contract: spirit/run/spirit/jobs.js spawns every process in one place; every process gets SPIRIT_JOB_ID,
 // SPIRIT_CALLBACK_URL and an IPC channel; a process that loads the kernel exits when its node goes;
-// restart with backoff stays an option for servers. stdout only in DEBUG waits for desk/G2.5.
+// restart with backoff stays an option for servers. Output only in DEBUG (desk/G2.5) is jobs.js's, not asserted here.
 
 const fs = require('fs');
 const os = require('os');

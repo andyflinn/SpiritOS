@@ -1,15 +1,15 @@
 'use strict';
 
 // goal/G2.11: the Job Monitor keeps rows only; a job's console and its actions live in a jobsDetails dialog; the
-// start form is gone. Red on today's tree.
+// start form is gone.
+// THIS SUITE NO LONGER RUNS ON TODAY'S TREE: it loads spirit/run/shell/shared/js/listSearch.js, which is gone, and
+// mounts jobsDetails.js with kernel.js as the spirit object, while jobsDetails.js takes its jobs through
+// spirit.cacheManager('jobs') (spirit.js's), not api.onJobs; jobsDetails.json no longer says intrinsic.
 //   RULING (Andy, 2026-10-02, verbatim, under goal/G2): "next. the job monitor shell component. the folded
 //   \"consoles\" need to go into jobsDetails", "the form on top should be gone."
-//   In the tree: shell/jobs/jobs.js draws a start-job form at the top (id start-job-form, jobs.js:157) and folds
-//   each job's log under its row (job-log-row / job-log-panel, jobs.js:77), with Cancel and Delete in the row;
-//   there is no shell/jobsDetails.
-// The contract the builder follows (the shape in goal/G2.11's box; the arguable parts fixed here by name):
+// The contract (the shape in goal/G2.11's box; the arguable parts fixed here by name):
 //   1. THE LIST. shell/jobs/jobs.js mounts no form at all (no start-job-form, no input) and draws one row per job
-//      (data-job-row="<id>", as today) and nothing under it: no job-log-row, no job-log-panel, no Cancel or Delete
+//      (data-job-row="<id>") and nothing under it: no job-log-row, no job-log-panel, no Cancel or Delete
 //      in a row. A click on a row asks the shell for the dialog — api.callDialog('shell/jobsDetails', {id}) — and
 //      that is all it does: the list launches nothing and folds nothing.
 //   2. THE DIALOG, in the pattern of shell/contactsDetails. shell/jobsDetails/jobsDetails.json says type "dialog",
@@ -25,7 +25,7 @@
 //      spirit.core.jobs.cancel(id); Delete calls spirit.core.jobs.delete(id) and, when it succeeds, closes the
 //      dialog (api.closeDialog) — there is nobody left to show.
 //   5. A dialog launches nothing (the stub throws, as the shell does).
-// Not asserted, the builder's: the sticky scroll of the console, the screen title, the wording of the labels, and
+// Not asserted: the sticky scroll of the console, the screen title, the wording of the labels, and
 // registering the folder with the shell's intrinsic apps.
 
 const fs = require('fs');

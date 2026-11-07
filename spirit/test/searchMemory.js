@@ -1,16 +1,13 @@
 'use strict';
 
 // spirit/test/searchMemory.js
-// A SEARCH ASKS MEMORY TOO, BESIDE EVERY BOUND RELAY (R39, 0021). Since goal/G40.11 the memory it asks is the one
-// table's listed rows: the kept and the owned; a stranger the network finds is streamed and stored as nothing
-// (goal/G43.17), and one the shadow only heard of is not listed.
+// A SEARCH ASKS MEMORY TOO, BESIDE EVERY BOUND RELAY (R39, 0021). The memory it asks is the one table's listed rows
+// (goal/G40.11): the kept and the owned; a stranger the network finds is streamed and stored as nothing (goal/G43.17),
+// and one the shadow only heard of is not listed.
 //
 //   Andy: "thing is. if the userbox is offline, search can revert to
 //   memory....." — "in fact if search fans out to all bound relays first,
-//   why not to the memory also?" — "the relays result will take precedence
-//   until timeout()" — "When the wait times out, memory fills in the
-//   people no relay answered for, filtered exactly and prioritized exactly
-//   like search results." — "chosen ones should always be included."
+//   why not to the memory also?"
 //
 // The relay is a fake router answering the signed search; everything the
 // node does with the answer, and with its memory, is the real code.
@@ -35,7 +32,7 @@ function rowsOf(body) { return keyed(body); }
 function makeHome() {
   const H = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-searchmem-'));
   auth.saveIdentity(H, auth.generateIdentity('me'));
-  // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
+  // The node's relay list is node.db's relays table, keyed by relay key (goal/G19.15).
   relayKeys.list(H, RELAY, 'A', 'RELAYKEY-A');
   return H;
 }
@@ -52,9 +49,9 @@ function relayAnswering(rows) {
   };
 }
 
-// SINCE goal/G30.19 THE SEARCH IS contact.search, IN TWO TIERS: memory (the book and the shadow) answers at once, and the
-// relays' rows follow as the peer-search job's updates, noted in the shadow. So "the relays lead, memory fills in"
-// became "memory answers now, the relays' rows follow and are remembered". settle waits for the walk.
+// THE SEARCH IS contact.search, IN TWO TIERS (goal/G30.19, goal/G40.11): the table's listed rows answer at once, and the
+// relays' rows follow as the peer-search job's updates, each noted in the shadow and listed nowhere. settle waits for
+// the walk.
 function settle() { return new Promise(function (r) { setTimeout(r, 30); }); }
 function search(H, q, router) {
   const net = [];
@@ -116,7 +113,7 @@ async function run() {
   if (!liveAfter) test.check('and the next search does not list it: a find is streamed to the page and stored as nothing (goal/G43.17), under the name the relay gave');
   else test.fail('after the walk, the search holds K-LIVE as ' + JSON.stringify(liveAfter));
 
-  // NO STRANGERS FROM THE SHADOW (goal/G40.11; fromMemory went): somebody
+  // NO STRANGERS FROM THE SHADOW (goal/G40.11): somebody
   // the node has only heard of is not listed, absent or present.
   if (!byKey(m, 'K-MEM') && !byKey(m, 'K-GONE')) {
     test.check('somebody only the shadow knows, present or absent, is not listed');
@@ -178,8 +175,7 @@ async function run() {
   test.subHeading('The listed rows are read through their partial indexes');
 
   {
-    // THE NEWEST-FIRST CAP ON STRANGERS STOOD HERE (R39: "cap at 1000 rows compared"): no stranger is read since
-    // goal/G40.11. What is read is the kept and the owned, each through its own partial index.
+    // No stranger is read (goal/G40.11). What is read is the kept and the owned, each through its own partial index.
     const C = makeHome();
     contactBook.acquire(C, { publicKey: 'K-OLD-FRIEND', publicLabel: 'carl friend' });
     const T = hubModule.shadow(C);

@@ -16,15 +16,11 @@ const world = require('./world');
 
 // ── THE OWNER IS WRITTEN AT INSTALL, NOT CLAIMED (goal/G16.8) ─────────
 //
-// Until cycle 3 the first signed claim on an empty relay became its owner;
-// from cycle 3 the first claim presenting an owner invite install.js minted
-// did. goal/G16.8 removed that too. Andy: "the invite path to ownership
-// MUST be gone. it is a security gap, from the time of install until the
-// time of first claim." bash/install-units now writes spirit/state/owner.json
-// from the OWNER_KEY it is given, and a relay with no owner file takes no
-// claim at all. This file asserted the owner-invite path; it now asserts the
-// rule that replaced it, and everything after the owner is on the box is
-// unchanged.
+// No claim makes an owner, with an invite or without. Andy: "the invite
+// path to ownership MUST be gone. it is a security gap, from the time of
+// install until the time of first claim." bash/install-units writes
+// spirit/state/owner.json from the OWNER_KEY it is given, and a relay with
+// no owner file takes no claim at all.
 
 test.startTest('The owner is written at install; no claim makes an owner');
 
@@ -77,7 +73,7 @@ test.startTest('The owner is written at install; no claim makes an owner');
     test.fail('owner after the claim: ' + JSON.stringify(auth.loadOwner(home)));
   }
 
-  // ── `relay` IS AN ORDINARY LABEL NOW (2026-09-15) ────────────────
+  // ── `relay` IS AN ORDINARY LABEL ─────────────────────────────────
   //
   //   Andy: "relay is just a public-key-type. node is another one, none
   //   other exist yet, but will."
@@ -106,9 +102,6 @@ test.startTest('The owner is written at install; no claim makes an owner');
     test.fail('uninvited claim: ' + JSON.stringify(uninvited));
   }
 
-  // A LEFTOVER OWNER INVITE WAS REFUSED HERE. There is no owner kind of
-  // invite any more (goal/G16.8), so there is nothing left over to refuse.
-
   const groqInvite = installed.mint('andy', 'groq', 7);
   const invited = installed.claim(
     'groq',
@@ -132,12 +125,10 @@ test.startTest('The owner is written at install; no claim makes an owner');
     test.fail('snapshot: ' + JSON.stringify(snap));
   }
 
-  // THE ROLL DOES NOT SAY SO, AND MUST NOT (2026-09-19). This asserted
-  // "the roll marks that key as owner". Andy: "only one thing determines
-  // ownership of a relay. First claim. No fleeting roll with automatic
-  // memory loss can mark a row as 'owner'." Since goal/G16.8 that one
-  // thing is the install: the one key is owner.json's, and ownerPublic() —
-  // what /api/relay/key serves — names it.
+  // THE ROLL DOES NOT SAY SO, AND MUST NOT: no row of the roll is marked
+  // owner. One thing determines ownership, the install (goal/G16.8): the
+  // one key is owner.json's, and ownerPublic() — what the relay's card
+  // (relay.js relayCard) carries — names it.
   const rows = rollOf(box2);
   const named = box2.ownerPublic();
   const own = rows.filter(function (p) { return p.publicKey === id.publicKey; })[0];
@@ -177,11 +168,5 @@ test.startTest('The owner is written at install; no claim makes an owner');
     test.fail('unsigned first: ' + JSON.stringify(unsigned));
   }
 }
-
-// THE PENDING-OWNER BLOCK STOOD HERE: install-public-relay.js's name
-// reservation, asserted to block a stranger's name and to clear after the
-// first claim. Both the reservation and the file went in cycle 3 (Part B):
-// a name with no secret behind it is not a lock. The owner invite replaced
-// it, and the install-time owner file replaced that (goal/G16.8).
 
 test.reportSuccessFailureCount();

@@ -1,27 +1,19 @@
 'use strict';
 
 // spirit/test/deskAgentTabs.js
-// ONE TAB PER AGENT INSIDE TEAM — desk/G1.2, written FIRST, red today.
+// WHAT STANDS OF desk/G1.2's TABS. The agents show as bubbles in the tab row
+// (goal/G3.12, deskFrontPage.js), and Team and Apps are gone (goal/G43.22:
+// Andy, the box, Q5: "G0 goes, from ui and server, kept in database.").
 //
-//   Decided (Desk, desk/G1): D2 "the top level [lead] tab moves into [team]
-//   as [agent-name], karked as lead": clicking Team shows the team chat to
-//   every agent; clicking an agent's tab is a channel between Andy and that
-//   agent alone. D7 (Andy: "agreed."): the count of what waits on him on
-//   the List tab; an unread star on each agent tab; renaming a row by its
-//   own button, never from the note box.
+// WHAT IS ASSERTED of desk.js and deskDetails.js:
+//   - T1: #desk-tabs has data-tab list, and no lead, team or apps tab; no
+//     data-agent tab is drawn.
+//   - T5: the List tab's label carries "(n)", n the rows waiting on Andy.
+//   - T7: deskDetails draws no #dd-name box until #dd-rename is pressed.
 //
-// THE CONTRACT this holds desk.js and deskDetails.js to:
-//   - #desk-tabs has data-tab list, team and musings, and no lead. (Musings went with goal/G27.3; Team, and Apps that
-//     held it, with goal/G43.22: Andy, the box, Q5: "G0 goes, from ui and server, kept in database.".)
-//   - #desk-agent-tabs, drawn under the tabs, has a button data-agent="*"
-//     (All) and one data-agent="<name>" per agent heard from; the lead's
-//     carries data-lead="1".
-//   - With an agent's tab chosen, #desk-team-send posts #desk-team-say to
-//     that agent's key alone, as a line with no todo (today's Lead line).
-//   - #desk-tabs and #desk-agent-tabs are each drawn whole, as markup.
-//   - The List tab's label carries "(n)", n the rows waiting on Andy.
-//   - An agent tab with a line he has not seen shows the red *.
-//   - deskDetails draws no #dd-name box until #dd-rename is pressed.
+// The shell's desk.js now calls spirit.require, which the page stub below
+// does not give it, so the file throws "no spirit.require on this page"
+// before the checks run.
 
 const fs = require('fs');
 const path = require('path');
@@ -90,8 +82,8 @@ fake.items = [{ id: 'goal/G100', title: 'The goal', goal: '', status: '', with: 
 const doc = fakeDocument();
 const root = fakeElement('container');
 load(DESK, doc).mount(root, {
-  // A seen.json that has seen nothing: without one, Desk counts all it holds
-  // as seen on the first open (deskLoadSeen), and no star could ever show.
+  // A seen.json that has seen nothing. The shell's desk.js reads no files;
+  // the desk server's seen values come from deskFake (fromFiles above).
   fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : f === 'seen.json' ? JSON.stringify({ rows: {}, team: 0, agents: {} }) : null; }, saveFile: function () { return Promise.resolve(); } },
   escapeHtml: spirit.core.util.escapeHtml,
   verb: fake.verb,
@@ -103,13 +95,9 @@ load(DESK, doc).mount(root, {
 test.startTest('desk/G1.2: one tab per agent inside Team, the lead marked');
 settle().then(function () {
   const tabs = doc.getElementById('desk-tabs');
-  // Until goal/G43.22 the suite clicked Team first; there is no Team tab any more, so the strip is read as drawn.
+  // The strip as drawn: there is no Team tab to click first.
   const strip = root.innerHTML + tabs.innerHTML;
 
-  // T1, T2, T6, T3 AND T4 STOOD HERE: All and one tab per agent inside Team, the lead's marked, the unseen star on an
-  // agent's tab, a line typed in a tab to that agent alone, the lead's direct chat in its tab. All of it went with
-  // goal/G3.12: Team is the group chat, the agents show as bubbles in the tab row (deskFrontPage.js). What stands
-  // from desk/G1.2 here: no Lead top tab, the List count, Rename as its own button.
   test.subHeading('T1: Lead is no longer a top tab, and no agent tab stands in its place; no Team or Apps tab (goal/G43.22)');
   if (/data-tab="list"/.test(strip) && !/data-tab="lead"/.test(strip) && !/data-agent=/.test(root.innerHTML + tabs.innerHTML)) test.check('no Lead top tab, no agent tab');
   else test.fail('top Lead tab ' + /data-tab="lead"/.test(strip) + '; agent tabs: ' + /data-agent=/.test(root.innerHTML) + '; list tab drawn ' + /data-tab="list"/.test(strip));
@@ -130,8 +118,8 @@ settle().then(function () {
         fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
       if (dd.open) dd.open({ id: 'goal/G100.1', row: { id: 'goal/G100.1', title: 'Asks Andy' }, thread: [], agents: {}, session: [], rules: [] });
     } catch (e) { /* drawn below */ }
-    // The dialog draws its frame into #dd-body, not into the container; since
-    // desk/G1.12 the Rename row is redrawn into #dd-name-row on every draw.
+    // The dialog draws its frame into #dd-body, not into the container; the
+    // Rename row is redrawn into #dd-name-row on every draw (desk/G1.12).
     const html = ddDoc.getElementById('dd-body').innerHTML + ddDoc.getElementById('dd-name-row').innerHTML;
     if (!/id="dd-name"/.test(html) && /id="dd-rename"/.test(html)) test.check('no name box on opening, a Rename button instead');
     else test.fail('dialog on opening: name box ' + /id="dd-name"/.test(html) + ', rename button ' + /id="dd-rename"/.test(html));

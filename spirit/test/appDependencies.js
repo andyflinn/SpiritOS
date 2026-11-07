@@ -1,19 +1,14 @@
 'use strict';
 
-// apiAuth/G1.10: every appServer process says what a peer user needs, red on today's code.
-//   Andy: "an app knows it's requirements, it must provide owners with the bundle-info in an owner-only verb
-//   dependencies which returns a list ofminimum api-tree-paths, a peer user requires.", "dependencies format: a list
-//   of grant-shapes consisten of "appname.verb"", "the server hard-codes that reply internaly", "DEBUG and
-//   DEPENDENCIES, they are assumed to exist by the shell auth app. The harness will disallow appServer that don't
-//   fill these two requirements.", "Only appServer processes are retrofitted.", and on the split: "yes to shape and
-//   split" (the server hard-codes only its list; appServer builds the verb from it, as it does DEBUG).
-// The contract the builder follows:
-//   - appServer.serve(verbs, { dependencies: ['app' | 'app.verb', ...] }) adds DEPENDENCIES {} -> { paths: [...] },
-//     the list as given. A path not in that form stops the start: the process exits non-zero and says why.
-//   - Every appServer process under process/js (a node-operated server whose script requires appServer.js) answers
-//     DEBUG and DEPENDENCIES in its api, and its DEPENDENCIES paths are all in that form.
-//   Owner-only is the gate's (G1.2); this suite checks the verb exists and says the truth's shape.
-//   Not here: desk taking its writer from the caller's key (G1.10's desk retrofit) waits on a team meeting.
+// apiAuth/G1.10: every appServer process answers DEBUG and DEPENDENCIES.
+// STALE: goal/G41.24 removed DEPENDENCIES (Andy, box: "DEPENDENCIES will be killed, eradicated, from all code where
+// it appears, and from the desk folder itself."). appServer.js has no DEPENDENCIES verb and serve() takes no
+// dependencies option; an appServer's peer bundles come from process/js/<appServerName>/<appServerName>Bundles.json,
+// read by apiAuth.js. spirit/run/spirit/test/appServer.js checks that DEPENDENCIES is gone. What this suite asserts:
+//   - appServer.serve(verbs, { dependencies: [...] }) adds DEPENDENCIES {} -> { paths: [...] }, and a malformed
+//     path stops the start.
+//   - every appServer process under process/js (manifest kind "server", script requires appServer.js) answers
+//     DEBUG and DEPENDENCIES in its api.
 
 const fs = require('fs');
 const os = require('os');

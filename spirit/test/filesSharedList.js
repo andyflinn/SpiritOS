@@ -1,20 +1,20 @@
 'use strict';
 
 // spirit/test/filesSharedList.js
-// goal/G29.8: Files on the shared list, the tree streamed with its stat, the node's fs.search on words. Red on today's
-// tree; claude-windows writes it and builds it (one agent). The item's box, in short:
+// goal/G29.8: the tree streamed with its stat, the node's fs.search on words. The item's box, in short:
 //   THE STREAM: the watcher's updates each carry the stat, size and modified, for every create and change; a delete
 //   carries none. The first load is the same commands. The shell holds every path, its kind and its stat.
-//   FILES ON THE SHARED LIST: the file selector this suite drove was deleted by goal/G30.20; the files list element
-//   (spirit/element/search/file.js) took its place, asserted by listElements.js.
+//   FILES ON THE SHARED LIST: the files list element is spirit/run/spirit/element/search/file.js, tested in
+//   spirit/run/spirit/element/search/file/test/; this suite does not drive it.
 //   THE DROPDOWN: its field stands inline like any input control; only the pane pops up under it.
 //   THE NODE'S fs.search: stays, on the node's own tree; words ranked by the probability modules, best first; the
 //   patterns (* and ?) go.
-//   THE CORE'S FOLDER LISTINGS: no node search for them; Desk's plugin finder reads the shell's tree.
+//   THE CORE'S FOLDER LISTINGS: no node search for them; kernel.js's scanDirectory reads the shell's tree.
+// Part 6 still checks spirit/run/shell/desk/desk.js for a plugin finder, though desk plugins are gone (goal/G43.22).
 //
-// NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
+// NAMED HERE where the box names none:
 //   - a command's stat: size (bytes, a number) and modified (an ISO time) beside op, path and at; the shell's rows
-//   - one indent is an element of class file-selector-indent in the row.
+// Part 1 calls jobs.js as (spirit, 65432), but installJobs takes (port) only: the kernel lands in port.
 // rule/11: through testSupport only; its own folders; never 65432.
 
 const fs = require('fs');
@@ -33,7 +33,7 @@ function code(file) { try { return fs.readFileSync(file, 'utf8').replace(/\/\*[\
 
 test.startTest('goal/G29.8: Files on the shared list, the tree streamed with its stat, fs.search on words');
 
-// ── the small DOM of contactSelectorPane.js ──
+// ── a small DOM, like contactSelectorPane.js's ──
 function node(tag) {
   let html = '';
   const e = { tagName: String(tag || 'div').toUpperCase(), id: '', value: '', textContent: '', className: '', style: {}, dataset: {},

@@ -2,7 +2,7 @@
 
 // spirit/test/listSearch.js
 // goal/G29.4: THE LIST-SEARCH CONTAINER, a shell element: a list with its search, the same everywhere it is used.
-// Red on today's tree; claude-windows wrote it and builds it. The item's box (v8), in short:
+// The item's box (v8), in short:
 //   LAYOUT: [filters: icons, or word + icon] / [search input, its clear button inside it on the right] [search
 //   button] / [count line] / [list].
 //   CONFIGURATION: one plain object given at creation, callbacks in it, no registry:
@@ -19,6 +19,8 @@
 // server (api.verb('<server>.<verb>', args), the verb by name on the flat apiDoor since goal/G30.6, as Desk asks) and hears its stream
 // (api.onPublished(fn, server)), as deskElement takes the app's subscribe. Without it the element can reach nothing.
 //
+// The element's file this suite loads, shell/shared/js/listSearch.js, is not in the tree any more: the shell's one
+// list-tool is spirit/run/spirit/element/search.js (goal/G30.17), so the suite no longer reaches the product.
 // rule/11: through testSupport only. No server: the api is a fake that counts what it is asked.
 
 const fs = require('fs');
@@ -98,7 +100,7 @@ function config(api, extra) {
   return Object.assign({
     api: api,
     server: 'desk',
-    // The verb is an example a fake answers (it was Fallout's fallout.reds until the plugin went with goal/G43.22).
+    // The verb is an example a fake answers.
     verb: 'rows.search',
     args: function (text, filters) { return { text: text, outcome: filters.outcome }; },
     filters: [{ name: 'outcome', choices: [{ value: 'red', icon: '❌', word: 'fail' }, { value: 'green', icon: '✅', word: 'success' }, { value: '', word: 'both' }],

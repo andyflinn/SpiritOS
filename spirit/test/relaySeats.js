@@ -8,17 +8,17 @@
 //   relay could hold a few million CARDs on disk, members are strictly
 //   limited by RAM allotment."
 //
-// ── WHAT WAS MISSING, AND WHAT WAS NOT ───────────────────────────────
+// ── TWO BOUNDS ───────────────────────────────────────────────────────
 //
-// The disc bound (cycle 9) was correct and is untouched: it says how many
-// rows may EXIST. What did not exist was a bound on how many people may be
-// SERVED. So a relay configured at 256 MB admitted members up to its
-// ~111,000-row disc ceiling while only 4,096 could ever hold a stream.
-// Member 4,097 got a row, got a card, and then a 503 for ever.
+// The disc bound (cycle 9) says how many rows may EXIST. The seat bound
+// says how many people may be SERVED: without it a relay configured at
+// 256 MB would admit members up to its ~111,000-row disc ceiling while
+// only 4,096 could ever hold a stream, and member 4,097 would get a row,
+// a card, and then a 503 for ever.
 //
-// AND MINT HAD NO CAPACITY CHECK OF ANY KIND — an owner could hand out a
-// thousand tokens against three free seats, every one of them reading as
-// valid until the moment somebody tried to use it.
+// AND MINT COUNTS SEATS TOO — or an owner could hand out a thousand tokens
+// against three free seats, every one of them reading as valid until the
+// moment somebody tried to use it.
 //
 // ── WHY THE INVITE HALF IS NOT AN EXTRA ──────────────────────────────
 //
@@ -65,8 +65,8 @@ function relayWith(ramLimitMB) {
 // STREAMS_PER_MB is 16, so 1 MB buys 16 seats — and filling those by hand
 // runs straight into `CLAIM_PER_MIN = 10`, the claim rate governor, which
 // refuses the eleventh claim with 429 before the seat bound is ever
-// reached. A first draft did exactly that and reported a seat failure
-// that was really a rate failure.
+// reached, which would read as a seat failure that is really a rate
+// failure.
 //
 // So the fixture buys FOUR seats instead. The figure is derived rather
 // than typed, so this suite still asserts the real rule if STREAMS_PER_MB
@@ -74,8 +74,7 @@ function relayWith(ramLimitMB) {
 //
 // THE GOVERNOR IS NOT A NUISANCE HERE, it is a second and independent
 // protection: even without a seat bound a relay could not be filled
-// faster than ten members a minute. It is why over-admission was a slow
-// leak rather than an outage, and it is why nobody noticed.
+// faster than ten members a minute.
 // THREE STREAMS A SEAT since goal/G30.15 (a member with an open face holds its node's stream, its face's stream and
 // its node's feed upload), so the same four seats take three times the RAM: 0.75 MB is 12 streams.
 const RAM_MB = 0.75;
@@ -167,10 +166,8 @@ test.subHeading('An expired invite gives its seat back');
   const blocked = w.box.mint('andy', 'one-too-many', 7, '');
 
   // Age every invite past its expiry without touching the relay — which
-  // is what the clock does. IN THE STORE, not in a file: invites moved
-  // into relay.db in cycle 3, and a first draft of this suite rewrote
-  // `spirit/state/invites.json`, a path nothing has read since. The relay
-  // went on reporting fifteen live invites and the assertion caught it.
+  // is what the clock does. IN THE STORE, not in a file: invites live in
+  // relay.db (cycle 3).
   const before = invites.load(w.home).length;
   relayStore.closeAll();
   const { DatabaseSync } = require('node:sqlite');

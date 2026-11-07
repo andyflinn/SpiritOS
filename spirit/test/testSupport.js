@@ -18,9 +18,10 @@ let PAD_SPACES = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_SPACES += ' '
 // are synchronous and return nothing, so holding a run on a round trip would change every call site.
 //
 // ONLY WHEN DESKVERIFY STARTED THE RUN: `--verify-port <port>` names its node. A suite run by hand posts nothing and
-// costs exactly what it costs today, which is what keeps `node spirit/test/<suite>.js` the thing it has always been.
-// The suite's own file name is the other half of a test's key; a green carries no detail and no runtime values, and
-// since goal/G21.3 a red carries what fail printed as its failure text, beside the key and never part of it.
+// costs nothing more, which is what keeps `node spirit/test/<suite>.js` the thing it has always been.
+// The suite's own file name is the other half of a test's key (the place, goal/G27.14, below); a green carries no
+// detail and no runtime values, and a red carries what fail printed as its failure text, beside the key and never
+// part of it (goal/G21.3).
 const VERIFY_PORT = (function () {
   const at = process.argv.indexOf('--verify-port');
   const p = at !== -1 ? Number(process.argv[at + 1]) : 0;
@@ -28,13 +29,13 @@ const VERIFY_PORT = (function () {
 })();
 const SUITE = require('path').basename(String(process.argv[1] || ''));
 // The fetch that reports to deskVerify, taken when this loads: a suite that removes the global fetch to prove its own
-// code asks nobody (spiritDataSearch.js) must not take the verifier's reporting with it (goal/G33.7).
+// code asks nobody must not take the verifier's reporting with it (goal/G33.7).
 const send = typeof fetch === 'function' ? fetch : null;
 // WHAT HAS NOT COME BACK YET, so a suite that exits right after its report does not take its last records with it.
 const pending = new Set();
 // THE WHY OF A RED TRAVELS WITH IT (goal/G21.3): Andy's box, "deskVerify keeps, beside each failing test's outcome, its
 // failure text (capped), so the why is in the record." `failure` is what fail printed, title and detail; deskVerify
-// caps it, the one gate. The title alone is still the key.
+// caps it, the one gate. The key is the assertion's place (goal/G27.14), not its words.
 function record(title, outcome, failure) {
   if (!VERIFY_PORT || !title || !send) return;
   const rec = { suite: SUITE, title: String(title), outcome: outcome };
@@ -309,18 +310,13 @@ const test = {
         this.comment('STOOD DOWN: ' + String(why || '').replace(/\s+/g, ' ').trim() + ' ⏭');
     },
 
-    // THE TITLE IS THE KEY, THE DETAIL IS BESIDE IT (goal/G8.1). Andy, 2026-10-06, asked how a test is identified:
-    // "the individual tests in the harness have titles, don't they? so suite name/ID plus the title/label of the test
-    // should identify tests uniquely?", and "every test just has to output a detailed record."
-    // A failing assertion used to carry its runtime values inside the one sentence it printed, so the red and the
-    // green of one assertion shared no key and no history of flips was possible. So both take an optional second
-    // argument: the detail is printed after the title. Few suites took it up, so since goal/G27.14 the key is the place,
-    // below, and the words of both are what is printed.
+    // THE DETAIL IS BESIDE THE TITLE (goal/G8.1): check and fail take an optional second argument, printed after the
+    // title. The key is not the words but the place, below.
     // ONE TEST, ONE KEY, WHICHEVER WAY IT TIPS (goal/G27.14). Andy, 2026-10-17: "a passing test MUST BE stored under the
     // same fucking name as a failing test, how the fuck are we supposed to keep track of a tests tipping either way?",
     // and "that was the POINT when we conceived the fucking verifier?!?!??!". The suites mostly say a check in one
     // sentence when it passes and the failure in another when it fails, so their words were two keys and a test never
-    // flipped (goal/G8.1 left their retitling, some 9,000 sites, undone). So the key is the assertion's PLACE: its
+    // flipped. So the key is the assertion's PLACE: its
     // sub-heading (the suite's title before the first) and its number under it, the same for its check and its fail;
     // the words go beside it, a red's as its failure text. What is printed is unchanged.
     key: function () {
@@ -462,12 +458,11 @@ const test = {
     // suites hand shell.js a fake `fetch` as a Function() argument and
     // intercept there, so an `ask` closing over the real global would ask
     // the network and assert against a door nobody uses.
-    // THE PAGE KERNEL'S relays.status, for a suite that fakes the kernel
-    // (puppets/G2). The real one (kernel.js) asks relay.search and then
-    // relay.get per relay and puts the answers back into the old shape;
-    // that assembly is proven in relaySearch.js. A screen's suite is about
-    // the screen, so this answers the same shape from the suite's own
-    // fixture, which still speaks the old verb name inside the fake.
+    // relays.status, for a suite that fakes the page kernel (puppets/G2).
+    // The real relay.status (spirit/relay/api.js) reassembles its answer
+    // from contact.search and relay.get; that assembly is proven in
+    // relaySearch.js. A screen's suite is about the screen, so this asks
+    // the suite's own fixture for relay.status by name.
     browserRelays: function (ask) {
         return {
             status: function (name) { return ask('relay.status', { name: name || '' }); },
@@ -525,7 +520,7 @@ const test = {
     },
 
     // A PRETEND NODE'S api {family}, as a real node answers it (goal/G32.3): the family's interface, the text of its real
-    // api.js (js/<family>/ or the server's <family>.family/). A server on the spirit object asks it for each family it
+    // api.js (spirit/run/spirit/<family>/ or the server's process/js/<f>/<f>.family/). A server on the spirit object asks it for each family it
     // calls. body is what the pretend node read off /api/spirit ({verb, ...args}). Answers {status, body}, or null when
     // body asks anything else, the plain api tree included: what a pretend node answers to that stays its own.
     // A PRETEND PEER'S api {family} (goal/G33.4): what a far node's apiDoor answers the packet {api: {family}} that the
@@ -535,7 +530,7 @@ const test = {
     // seedDesk(stateDir, sessions): before a desk starts on stateDir, its desk.db holds the old record of each session
     // ({goal: {id, title}, items: [{id, title, blocks, code}]}, written by andy, in order), which the desk migrates into
     // its tables at start (desk.js migrate()): the goal and item ids stay as written, the last new goal is current, and
-    // the items are out of design (the goal's design mode is its own). Plugins' goals are numbered after them.
+    // the items are out of design (the goal's design mode is its own).
     seedDesk: function (stateDir, sessions) {
       const { DatabaseSync } = require('node:sqlite');
       require('fs').mkdirSync(stateDir, { recursive: true });

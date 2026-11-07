@@ -99,9 +99,7 @@ function run() {
   }
 
   test.subHeading('…and is clamped to the ceiling, never the other way about');
-  // A box with almost nothing to give: 200 available leaves 175 after the
-  // margin, which is less than the 256 cap, so availability decides. The
-  // disc is nearly full — 1200 free, the 1 GB margin leaves 176.
+  // A box with almost nothing to give.
   // RAM: 200 available leaves 175 after the margin, under both half
   // (512) and the cap (256), so availability decides. DISC: 1200 free,
   // margin held to 600, ceiling 600 — so the 256 cap is still the
@@ -152,10 +150,10 @@ function run() {
 
   test.subHeading('A unit\'s cap is at its OWN cgroup, not at the root');
 
-  // wsl-claude, reviewing cycle 9 on Linux: "under systemd a unit's limit
-  // is not there: it is at /sys/fs/cgroup/<path from /proc/self/cgroup>/
-  // memory.max… the root file reads 'max'." Which is our own case, since
-  // spirit-relay.service now sets MemoryMax.
+  // Under systemd a unit's limit is not at the cgroup root: it is at
+  // /sys/fs/cgroup/<path from /proc/self/cgroup>/memory.max, and the root
+  // file reads 'max'. Which is our own case, since spirit-relay.service
+  // sets MemoryMax.
   const v2dirs = limits.cgroupDirs('0::/system.slice/spirit-relay.service\n', false);
   if (v2dirs[0] === '/sys/fs/cgroup/system.slice/spirit-relay.service' &&
       v2dirs[1] === '/sys/fs/cgroup/system.slice' &&

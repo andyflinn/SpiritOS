@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/backupServer.js
-// A COPY OF relay-state/process/, NEVER THE NODE KEYS — desk/G1.7, written
-// FIRST, red on today's code.
+// A COPY OF relay-state/process/, NEVER THE NODE KEYS — desk/G1.7.
 //
 //   Andy's go on desk/G1.7, after O2 and O5-O8: a server process run by the
 //   node copies every process's state out of the node, into a .SpiritOS
@@ -10,13 +9,17 @@
 //   "how can i trust the copy mechanist when i cant see it working", "copies
 //   follow changes only", "1" copy, "agreed on the short hash".
 //
-// THE CONTRACT (wsl-claude's tests, sent to claude-windows before the build):
+// THE CONTRACT:
 //   process/js/backup/backup.{js,json}: kind server, operated node, on
-//   appServer.serve; started as the node starts it: [script, values JSON,
-//   --pipe p, --state <relay-state>/process/backup]. relay-state is --state's
-//   grandparent. The values JSON may carry quietMs (tests: 300).
-//   THE NODE'S PUBLIC FACTS ARE HANDED OVER, NEVER READ (claude-windows'
-//   objection): identity.json holds the private keys, so the backup never
+//   appServer.serve; started here as [script, values JSON, --pipe p,
+//   --state <relay-state>/process/backup]: backup.js copies --state's parent
+//   and reads config.json beside its grandparent. THE NODE NO LONGER STARTS
+//   IT SO: since goal/G43.10 jobs.js hands --state spirit/state/backup/data/
+//   (backup.js's own DISCREPANCY note), so this suite proves the copier on
+//   a layout the node does not give it. The values JSON may carry quietMs
+//   (tests: 300).
+//   THE NODE'S PUBLIC FACTS ARE HANDED OVER, NEVER READ: identity.json holds
+//   the private keys, so the backup never
 //   opens it. jobs.startNodeServers hands every server it starts
 //   --node '{"name","publicKey"}', and nothing private.
 //   Home: spirit/state/config.json spiritHome, else os.homedir(). The copy of
@@ -32,8 +35,7 @@
 //   Each run prints one line: an ISO time, then 'wrote <full path> <bytes>'
 //   for each file written, or 'checked, unchanged since <ISO time>', and
 //   'kept <full path>: new copy did not open' where a new copy failed.
-//   status.get {} -> {lastCheck, lastCopy, lastError}. (T7's Desk half, Desk
-//   showing these, lands with desk/G1.4, when Desk reaches its servers.)
+//   status.get {} -> {lastCheck, lastCopy, lastError} (T7's server half).
 
 const fs = require('fs');
 const os = require('os');
@@ -132,10 +134,10 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   const other = new DatabaseSync(path.join(A.rs, 'process', 'other', 'keep.db'));
   other.exec('CREATE TABLE t (v TEXT); INSERT INTO t VALUES (\'good\');');
   other.close();
-  // A PROCESS'S OWN KEY, where a process may keep one: relay-state/
-  // process/<name>/spirit/state/identity.json (wsl-claude, reviewing
-  // 17140917: the first restart copied a face's into the backup). Private
-  // keys stay out of any backup, so T2 must never find it.
+  // A PROCESS'S OWN KEY, where a process may keep one: here relay-state/
+  // process/someServer/relay-state/identity.json. Private keys stay out of
+  // any backup (backup.js skips nested relay-state/ and every
+  // identity.json), so T2 must never find it.
   const faceKeys = path.join(A.rs, 'process', 'someServer', 'relay-state');
   fs.mkdirSync(faceKeys, { recursive: true });
   fs.writeFileSync(path.join(faceKeys, 'identity.json'), JSON.stringify({ publicKey: 'FACE-PUB', privateKey: 'SECRET-FACE-KEY' }));
@@ -214,7 +216,7 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   else test.fail(OWED + 'after a change: ' + JSON.stringify(changed.slice(0, 160)) + ' after ' + waited + ' ms');
   // A LIVE DATABASE'S WRITE IS A CHANGE TOO: the desk server's rows land in
   // desk.db-wal until a checkpoint, so a watcher that ignores -wal would miss
-  // them (found proving these tests with a throwaway build).
+  // them.
   n = srv.lines.length;
   live.prepare('INSERT INTO t VALUES (?)').run('row5');
   const walRun = await runLine(srv, n, QUIET + 4000);
@@ -225,7 +227,7 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   fs.writeFileSync(path.join(A.rs, 'process', 'backup', 'own.json'), JSON.stringify({ touched: Date.now() }));
   const own = await runLine(srv, n, QUIET + 1500);
   // Judged only where changes start runs, or a backup that never runs passes
-  // it (found writing it: it passed on today's code).
+  // it.
   if (!own && changed) test.check('a change in the backup\'s own folder starts no run');
   else test.fail(OWED + 'its own folder started a run: ' + own.slice(0, 120));
 
@@ -276,7 +278,9 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   fs.writeFileSync(path.join(probeRun, 'process', 'js', 'probe', 'probe.js'),
     'require("fs").writeFileSync(' + JSON.stringify(argvFile) + ', JSON.stringify(process.argv.slice(2)));\n');
   const jobs = require('../run/spirit/jobs.js')(require('../run/spirit/kernel.js'), 65432);
-  // A test node runs at home what it starts, for this run (goal/G30.20: its manifest says so).
+  // tools/runsHome.js writes runs: ['home'] into the manifest (goal/G30.20). jobs.js no longer reads that: a server runs
+  // when it is intrinsic or its node sidecar, relay-state/process/<name>/<name>.js.sidecar.json, says face.home (goal/G41.1),
+  // so this does not make the node start it.
   require('./tools/runsHome.js')(probeRun, 'process/js/probe');
   const probeJobs = jobs.startNodeServers(probeRun) || [];
   let probeArgv = null;
@@ -292,10 +296,9 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
 
   // A NODE NOBODY HAS NAMED HANDS --node TOO. Since goal/G22.5 the identity
   // relayAuth makes on its first load is named by the machine (os.hostname()),
-  // and that name and the public key are what its servers are handed. (Found
-  // once on a fresh lab node with --node missing and the backup crash-looping;
-  // the identity now exists, named, before the node listens.) Made here the
-  // way a node makes it: relayAuth planted in the root (plantIdentity.js).
+  // and that name and the public key are what its servers are handed: the
+  // identity exists, named, before the node listens. Made here the way a
+  // node makes it: relayAuth planted in the root (plantIdentity.js).
   test.subHeading('A node nobody has named hands --node too: the machine name and its public key');
   const bareRun = path.join(scratch, 'bare', 'spirit', 'run');
   fs.mkdirSync(path.join(bareRun, 'process', 'js', 'probe'), { recursive: true });

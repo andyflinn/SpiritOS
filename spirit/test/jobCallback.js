@@ -1,14 +1,15 @@
 'use strict';
 
-// Exercises the actual SPIRIT_JOB_ID / SPIRIT_CALLBACK_URL contract
-// end-to-end: a real child process (fixtures/jobCallbackFixture.js) calling
-// spirit.core.jobs.log/complete/fail (kernel.js), POSTing over real HTTP to
-// a callback route that forwards straight into jobs.js's updateJob — the
-// same wiring server.js's handleJobUpdate uses for POST /api/jobs/:id. Runs
-// its own throwaway HTTP server on an OS-assigned port rather than booting
-// the real server.js, so it can't collide with an already-running dev
-// server and carries none of that file's other startup side effects
-// (fs-watcher, stats job, static serving).
+// Starts a real child process (fixtures/jobCallbackFixture.js) through
+// jobs.js's startProcessJob, which hands it SPIRIT_JOB_ID and
+// SPIRIT_CALLBACK_URL, and expects the child's log/complete/fail to reach
+// jobs.js's updateJob through a hand-written stub of POST /api/spirit
+// (verb jobs.update) on an OS-assigned port; it does not boot server.js.
+// The fixture calls spirit.core.jobs.log/complete/fail from kernel.js, which
+// kernel.js no longer has: the job's own report, log, complete and fail are
+// spirit.js's spirit.jobs, over the events family (goal/G40.6), and
+// server.js's jobs.update handler (handleJobUpdate) is gone, so the stub
+// stands in for a route that no longer exists.
 const http = require('http');
 const path = require('path');
 const spirit = require('../run/spirit/kernel.js');
@@ -39,19 +40,12 @@ function waitForTerminal(jobs, jobId) {
 
 function withJobsServer(fn) {
   return new Promise(function (resolve, reject) {
-    // ── THE DOOR THIS STANDS IN FOR (2026-09-15) ────────────────────
-    //
-    // This matched `/api/jobs/<id>` and read the id out of the path,
-    // because that is what SPIRIT_CALLBACK_URL carried. It carries
-    // `/api/spirit` now and the id travels as a field beside the verb —
-    // see spirit.core.jobs.report in kernel.js.
-    //
-    // WHY A STUB AT ALL, restated because it is the reason this had to
-    // change by hand: the suite deliberately does not boot server.js
-    // (see the header), so this is a hand-written copy of what that
-    // route does. A copy is a thing that can fall out of step, and this
-    // one just did — which is the cost of the isolation, paid honestly
-    // rather than hidden.
+    // THE DOOR THIS STANDS IN FOR: SPIRIT_CALLBACK_URL is
+    // `http://localhost:<port>/api/spirit` (jobs.js, launch), and the job
+    // id travels as a field beside the verb. A hand-written copy, since
+    // the suite does not boot server.js (see the header); it can fall out
+    // of step with the node, and it has: the node publishes a job's
+    // updates through events.publish now, not a jobs.update handler.
     const callbackServer = http.createServer(function (req, res) {
       const onDoor = req.url === '/api/spirit';
       let body = '';
@@ -61,7 +55,7 @@ function withJobsServer(fn) {
         try { sent = body ? JSON.parse(body) : {}; } catch (e) { /* malformed — treat as empty */ }
 
         // The verb and the id are the envelope; everything else is the
-        // patch, exactly as server.js's handleJobUpdate splits it.
+        // patch handed to updateJob.
         const patch = Object.assign({}, sent);
         const id = String(patch.id || '');
         delete patch.id;

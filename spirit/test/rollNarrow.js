@@ -8,31 +8,21 @@
 //   eliminate temptation."
 //
 // `GET /api/relay/who` was a public, unsigned, unbounded read of every
-// member of a relay: 151 bytes a row, ~147 KB at a thousand, answerable by
-// anyone as often as they liked. Named a cheat in decision 0010 on
-// 2026-09-17 and deleted on 2026-09-18.
-//
-// ── WHY THIS FILE STILL HAS THIS NAME ────────────────────────────────
-//
-// It was written for the INTERMEDIATE strategy — narrowing the roll with
-// `?key=` so callers could ask about somebody specific. That worked, moved
-// five callers, and was not what finished the job:
+// member of a relay, answerable by anyone as often as they liked. Named a
+// cheat in decision 0010 and deleted.
 //
 //   Andy: "callers of the roll have two choices: use other interfaces
 //   or die."
 //
-// Narrowing is how a cheat survives. 0012 says it plainly — *a narrower
-// cheat is a defended one* — so the parameter went with the route, and
-// this suite became the guard instead of the demonstration. The name is
-// kept so the history is findable; what it checks is the opposite of what
-// it checked.
+// Narrowing is how a cheat survives — 0012: *a narrower cheat is a
+// defended one* — so no narrowed roll (`?key=`) stands either. The file's
+// name is the narrowing it once demonstrated; it is the guard now.
 //
 // ── WHAT IT GUARDS ───────────────────────────────────────────────────
 //
 // Source-level, and deliberately: a relapse looks exactly like a caller
-// that never moved, and the harness has caught every one of them this way.
-// Eight readers went between 2026-09-17 and 2026-09-18 and NOT ONE needed
-// a replacement — the thing to defend is that nobody quietly adds a ninth.
+// that never moved. The thing to defend is that nobody quietly adds a
+// reader.
 
 const fs = require('fs');
 const path = require('path');
@@ -46,30 +36,16 @@ const RUN = path.join(__dirname, '..', 'run');
 // A FILE THAT VANISHED BETWEEN THE WALK AND THE READ IS SKIPPED, not
 // fatal. The suites run six at a time over ONE working tree, and
 // buildStamp.js writes `spirit/run/zz-copy-probe.js`, checks that it is
-// named as uncopied, and unlinks it in a finally (buildStamp.js:118-130).
-// Land the walk before that write and the read after that unlink, and
-// this threw ENOENT and took the whole suite with it — eight checks lost
-// to a file that was never anybody's code.
-//
-// Skipping cannot hide an offender: a file that no longer exists is not
-// calling anything. (Reported from the WSL checkout, 2026-09-21, where it
-// showed up once in three runs.)
-//
-// THIRD TIME THIS SHAPE HAS APPEARED IN ONE CYCLE — labMaster's
-// copyTrackedSpirit reads an index that lists deleted files, plantRun.js
-// copies a listing that can go stale mid-copy, and now this. Anything
+// named as uncopied, and unlinks it in a finally (buildStamp.js). A walk
+// landing before that write and a read after that unlink would throw
+// ENOENT for a file that was never anybody's code. Skipping cannot hide an
+// offender: a file that no longer exists is not calling anything. Anything
 // that walks and then reads has to tolerate the walk being out of date.
 //
-// THE GUARD WAS PARTIAL UNTIL goal/G19.11, three ways, each a place a
-// relapse could stand unseen:
-//   - `//.*` stripped from the first `//` on a line, so a url written out
-//     whole ('https://' + ... + '/api/relay/who' in one string) was read as
-//     a comment and never matched. A `//` right after a colon is a url now.
-//   - process/ was skipped as "spawned scripts that never speak to a relay";
-//     it holds the node's servers since slim/G1.4, and they may.
-//   - bash/ was never read, and bash/status asked /api/relay/who for two
-//     cycles after the route went. Its scripts are read now, `#` comments
-//     stripped the same way.
+// WHAT IS READ (goal/G19.11): a `//` right after a colon is a url, not a
+// comment, so a url written out whole is matched; process/ is read, since
+// it holds the node's servers; bash/'s scripts are read, `#` comments
+// stripped the same way.
 function stripJs(text) { return String(text).replace(/(^|[^:])\/\/.*$/gm, '$1'); }
 function codeOf(file, root) {
   try {
@@ -155,7 +131,7 @@ test.subHeading('And the relay does not serve it');
 // cycle 0 (node and relay as separate startup modules); a roll door
 // would have to be in one of the two.
 const server = codeOf(path.join('spirit', 'server.js')) + '\n' + codeOf(path.join('spirit', 'relayServer.js'));
-// AND EVERY OTHER FILE UNDER js/ (goal/G19.11): a route is a string any
+// AND EVERY OTHER FILE UNDER spirit/run/spirit/ (goal/G19.11): a route is a string any
 // module could match on, so the two startup modules were half the guard.
 const allJs = walk(path.join(RUN, 'spirit'), []).map(function (rel) { return codeOf(rel); }).join('\n');
 
@@ -165,8 +141,8 @@ if (!/['"]\/api\/relay\/who['"]/.test(server) && !/['"]\/api\/relay\/who['"]/.te
   test.fail('the route is still served');
 }
 
-// THE HANDLER AND ITS HELPER WENT TOO. A dead function is the next
-// person's starting point.
+// NO HANDLER AND NO HELPER either. A dead function is the next person's
+// starting point.
 if (!/handleRelayWho|expandKeys/.test(allJs)) {
   test.check('handleRelayWho and expandKeys are gone with it');
 } else {

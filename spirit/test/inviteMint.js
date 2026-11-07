@@ -2,27 +2,13 @@
 
 // relay.mint() — the owner, and only the owner, makes invite tokens.
 //
-// ── WHAT MOVED, AND WHAT THAT COST ───────────────────────────────────
+// A mint is a post to the relay (decision 0010) — which a relay is, for
+// its owner — so the label, the day count and the spoken token are inside
+// what postMessage signs: a post also names the recipient, carries a
+// minute, and has its hash registered before anything is answered. There
+// is no separate mint signature.
 //
-// This suite used to be about a signature. `invites.mintMessage(label,
-// days, token)` was the bytes an owner signed, deliberately not
-// auth.checkOwner's, so a signature captured from a status request could
-// not mint and a signature for one label could not mint another.
-//
-// That format is gone (decision 0010, the second collapse). A mint is a
-// post to the relay now — which a relay is, for its owner — so the label,
-// the day count and the spoken token are inside what postMessage already
-// signs, and they are bound harder than mintMessage bound them: a post
-// also names the recipient, carries a minute, and has its hash registered
-// before anything is answered.
-//
-// THE COLLAPSE ALSO CLOSED A HOLE. The mint signature carried no clock
-// and no relay identity: it never expired, it worked on every relay where
-// the signer was owner, and each replay minted a fresh token. None of
-// that survives the move, and it was not fixed separately — it went with
-// the format.
-//
-// So the file is in two halves, and the split is the honest one:
+// So the file is in two halves:
 //
 //   WHO MAY ASK is asked through a post, because that is the only way in
 //   WHAT MINT DECIDES is asked of mint() directly — the reserved name,
@@ -45,10 +31,7 @@ const scenario = require('./scenario');
 const { createRelay } = require('../run/spirit/relay');
 
 // A relay with an owner on it and nobody else, built from the scenario
-// every suite shares. It was four lines written out here, and the same
-// four written out in five other files — where two of them saved the
-// mailbox a key of its own and three forgot, so `relayPublicKey` was
-// null in some suites and not others for no reason anybody had chosen.
+// every suite shares, so every suite's mailbox has a key of its own.
 function ownedRelay() {
   const made = world.build(scenario.OWNER_ONLY);
   if (!made.ok) throw new Error(made.error);
@@ -60,8 +43,8 @@ function daysBetween(iso) {
 }
 
 // THE ONLY WAY TO ASK FOR AN INVITE. Signed as a post and nothing else —
-// there is no mint signature any more, and that is the point of the
-// helper being this short.
+// there is no mint signature, and that is the point of the helper being
+// this short.
 function askMint(r, who, label, days, token) {
   const relayKey = r.box.relayPublicKey();
   const text = JSON.stringify({
@@ -87,7 +70,7 @@ function heardBy(r, who) {
         const ev = /^event: (.+)$/m.exec(String(chunk));
         const da = /^data: (.+)$/m.exec(String(chunk));
         if (!ev || ev[1] !== 'reply' || !da) return;
-        // OPENED, because a relay seals its answers now (cycle 10, R5).
+        // OPENED, because a relay seals its answers (cycle 10, R5).
         try { said.push(openReply(who, r.box.relayPublicKey(), JSON.parse(da[1]).text)); }
         catch (e) { /* a malformed reply is no reply */ }
       },
@@ -118,9 +101,10 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
     test.fail('invite shape: ' + JSON.stringify(minted));
   }
 
-  // INVITEDBY IS NOT TAKEN FROM THE PACKET. The relay reads it out of
-  // allow.json, because the only sender who reaches that line is the
-  // owner and a name in the packet would be a second opinion about that.
+  // INVITEDBY IS NOT TAKEN FROM THE PACKET. The relay writes the owner's
+  // own label (ownerLabel(): the row of the key in owner.json), because
+  // the only sender who reaches that line is the owner and a name in the
+  // packet would be a second opinion about that.
   const onDisk = invites.load(r.home).find(function (row) {
     return row.token === minted.token;
   });
@@ -143,17 +127,14 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   // ── SEALED FIRST, THEN SIGNED (cycle 10, R5 and R11) ─────────────
   //
   // These four checks are about a signature binding what was asked. They
-  // would now ALL pass without that binding, because an unsealed post is
-  // refused before any signature is looked at — which would make them
-  // vacuous in exactly the way a suite must not be. So each variant is
-  // sealed like a real post, and the signature is over the bytes that
-  // travel.
+  // would ALL pass without that binding if a variant were unsealed,
+  // because an unsealed post is refused before any signature is looked
+  // at. So each variant is sealed like a real post, and the signature is
+  // over the bytes that travel.
   //
-  // WHAT THE BINDING IS MADE OF CHANGED, and it is worth saying: the
-  // label and the day count used to be inside the signed plaintext.
-  // They are inside the SEALED plaintext now, and the signature covers
-  // the sealed bytes — so altering either still cannot be done without
-  // breaking the signature, by a shorter argument than before.
+  // The label and the day count are inside the SEALED plaintext, and the
+  // signature covers the sealed bytes — so altering either cannot be done
+  // without breaking the signature.
   const relayKey = r.box.relayPublicKey();
   const sealedSaint = sealFor(r.owner, r.box, forSaint);
   const saintSig = auth.sign(r.owner.privateKey,
@@ -180,14 +161,8 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   }
 
   // A SIGNATURE FOR ANOTHER VERB IS THE REPLAY THIS GATE EXISTS TO
-  // REFUSE, and it is refused a layer earlier and for a broader reason
-  // than it used to be: it is not a post signature at all, so it never
-  // reaches anything that mints.
-  //
-  // The verb named here was `status`, because an owner signed one for
-  // every roll and it was therefore the most abundant credential to
-  // steal. R3 deleted that verb on 2026-09-15 along with the badge that
-  // spent it; `claim` is what is left to try.
+  // REFUSE: it is not a post signature at all, so it never reaches
+  // anything that mints. A claim signature is the one tried here.
   const otherVerb = auth.sign(r.owner.privateKey, auth.claimMessage('andy'));
   const replay = r.box.routePost(r.owner.publicKey, relayKey, sealedSaint, otherVerb);
   if (!replay.ok && replay.status === 403) {
@@ -196,10 +171,8 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
     test.fail('replay: ' + JSON.stringify(replay));
   }
 
-  // AND NEITHER CAN A MINT BE REPLAYED INTO ITSELF, which is the hole the
-  // old format had and could not have closed: mintMessage carried no
-  // clock, so one captured signature minted a fresh token every time it
-  // was sent. A post's hash is registered before it is answered.
+  // AND NEITHER CAN A MINT BE REPLAYED INTO ITSELF: a post's hash is
+  // registered before it is answered.
   // The same bytes again: a retry by the owner, which mints again.
   const again = r.box.routePost(r.owner.publicKey, relayKey, sealedSaint, saintSig);
   const twice = invites.load(r.home).filter(function (row) {
@@ -222,10 +195,8 @@ test.subHeading('Who may mint');
   const r = ownedRelay();
   const mallory = auth.generateIdentity('mallory');
 
-  // A STRANGER CANNOT EVEN ADDRESS THE BOX, which is a wider refusal than
-  // the old one and says less: `no such peer`, exactly what an unknown
-  // key gets. The mint gate used to answer 403 `bad mint signature`,
-  // which told a caller that this key mints for somebody.
+  // A STRANGER CANNOT EVEN ADDRESS THE BOX: the refusal is the one any
+  // unknown key gets, and tells a caller nothing about who mints here.
   const forged = askMint(r, mallory, 'saint', 7);
   // Since goal/G19.1 the refusal names the sender: "your id is not a valid sender here".
   if (!forged.ok && forged.status === 403 && forged.error === 'your id is not a valid sender here') {
@@ -235,10 +206,9 @@ test.subHeading('Who may mint');
   }
 
   // mallory may hold a properly invited, properly claimed key on this box
-  // — that is still not the owner key in allow.json. Since cycle 4 she
-  // needs an invite to get on at all, so mint her one: without it she
-  // would never become a peer and this check would pass for the wrong
-  // reason.
+  // — that is still not the owner key (owner.json). She needs an invite to
+  // get on at all, so mint her one: without it she would never become a
+  // peer and this check would pass for the wrong reason.
   const mInvite = r.box.mint('andy', 'mallory', 7);
   const mClaim = r.box.claim(
     'mallory',
@@ -251,8 +221,8 @@ test.subHeading('Who may mint');
     // WITH HER CARD, because a relay seals its answers to it
     // (cycle 10's R5) and a member with none is answered the fixed sentence
     // instead of the verb's refusal. This suite is about WHAT THE VERB
-    // SAYS, so the asker has to be reachable — which after the flag day
-    // every member is, since the claim carries a card (cycle 10, R20).
+    // SAYS, so the asker has to be reachable — which every member is,
+    // since the claim carries a card (cycle 10, R20).
     nodeCard.cardFrom(Object.assign({ name: 'mallory' }, mallory)));
   if (mClaim.ok) {
     test.check('an invited stranger becomes a peer');
@@ -261,14 +231,14 @@ test.subHeading('Who may mint');
   }
 
   // THE CHECK THE GATING RESTS ON. A peer on this box, properly claimed,
-  // signing correctly as herself — and she may ADDRESS the relay, because
-  // that door opened so that set-device and self-removal could stop being
-  // cheats. What refuses her is the verb: minting is an owner verb, and
-  // answerSelf decides that one verb at a time.
+  // signing correctly as herself — and she may ADDRESS the relay, which a
+  // member's own verbs (self-removal among them) need. What refuses her is
+  // the verb: minting is an owner verb, and answerSelf decides that one
+  // verb at a time.
   //
-  // Nothing about the relay's key was ever secret — it is published
-  // unsigned in /api/relay/who — so the refusal never protected it. It
-  // protects the four owner verbs, which check nothing themselves.
+  // The relay's key is no secret — its card is answered to anyone — so
+  // the refusal does not protect it. It protects the owner verbs, which
+  // check nothing themselves.
   const heard = heardBy(r, mallory);
   const before = invites.load(r.home).length;
   const claimedStranger = askMint(r, mallory, 'saint', 7);
@@ -282,19 +252,12 @@ test.subHeading('Who may mint');
       ' said: ' + JSON.stringify(said));
   }
 
-  // `mint without a signature is refused` stood here. There is no
-  // unsigned way to ask any more: routePost refuses a post with no
-  // signature before it knows what the packet contains, which is where
-  // that check now lives (routerPost.js).
+  // There is no unsigned way to ask: routePost refuses a post with no
+  // signature before it knows what the packet contains (routerPost.js).
 
-  // `the reserved name cannot be invited` STOOD HERE, asserting a 400 on
-  // `mint('andy', 'relay', 7)`. The reservation went on 2026-09-15 —
-  // a relay is addressed by key, so a caption never protected anything
-  // a packet could reach (relayAuth.js).
-  //
-  // Inverted rather than deleted, because the claim worth keeping is the
-  // new one: `relay` is a label like any other, and an owner may write
-  // it on an invite the same way they may write `saint`.
+  // `relay` is a label like any other: a relay is addressed by key, so no
+  // caption is reserved, and an owner may write it on an invite the same
+  // way they may write `saint`.
   const ordinary = r.box.mint('andy', 'relay', 7);
   if (ordinary.ok && ordinary.status === 201 && ordinary.invite.label === 'relay') {
     test.check('"relay" is an ordinary label an owner may invite');
@@ -309,10 +272,7 @@ test.subHeading('Duration is clamped, and clamped identically on both sides');
   const r = ownedRelay();
 
   // Asked of mint() directly: the clamp is its rule about what it will
-  // write, not a rule about who is calling. It used to be checked through
-  // the signature because a signature was the only way in — 99 signed and
-  // 15 stored would have failed as a bad signature rather than as a wrong
-  // number, which was a worse error message for the same bug.
+  // write, not a rule about who is calling.
   const long = r.box.mint('andy', 'far', 99);
   if (long.ok && daysBetween(long.invite.expiresAt) === 15) {
     test.check('99 days is clamped to 15');
@@ -365,12 +325,10 @@ test.subHeading('A mailbox with no owner key cannot mint');
     test.fail('names mint: ' + JSON.stringify(r));
   }
 
-  // A HAND-WRITTEN INVITE NO LONGER GETS ANYBODY IN HERE. This asserted
-  // that it did ("as in cycle 1"): a names-mode allow.json read as open,
-  // and the first claim through it — any invite, or none — became the
-  // box's owner. Cycle 3 (Part B) closed that, and goal/G16.8 closed the
-  // rest: a box with no owner key takes no claim at all, because the owner
-  // is written at install and never over the wire.
+  // A HAND-WRITTEN INVITE GETS NOBODY IN HERE: a box with no owner key
+  // takes no claim at all, because the owner is written at install
+  // (owner.json, goal/G16.8) and never over the wire. The allow.json this
+  // block writes is not what the relay reads for its owner.
   const token = invites.add(home, { label: 'saint', invitedBy: 'andy', days: 7 }).token;
   const saint = auth.generateIdentity('saint');
   const used = box.claim('saint', auth.sign(saint.privateKey, auth.claimMessage('saint')), saint.publicKey, '10.0.0.9', token, 'saint');
@@ -387,12 +345,10 @@ test.subHeading('Taking an invitation back');
 //
 // ── THE CASE THIS EXISTS FOR ─────────────────────────────────────────
 //
-// An outstanding invite could not be revoked AT ALL before this. The
-// function existed — `invites.revokeLabel` — but its only caller was
-// `removePeer`, and removePeer resolves its target with findByKey. An
-// unclaimed invite is by definition for somebody who has no key here
-// yet, so the one case that matters was the one case unreachable: mint
-// to the wrong person and it was live until it expired.
+// An unclaimed invite is for somebody who has no key here yet, so
+// removePeer, which resolves its target by key, cannot reach it: an invite
+// minted to the wrong person is taken back with revoke {label}
+// (invites.revokeInvite).
 //
 // BY LABEL, and it cannot be anything else. There is no key to name, and
 // the owner's report shows label, expiry and inviter and NEVER the token
@@ -455,9 +411,8 @@ function askRevoke(r, who, label) {
 }
 
 {
-  // NOBODY ELSE MAY. The peer CAN address the relay — that door opened so
-  // set-device and self-removal could stop being cheats — so the post
-  // lands and the VERB is what refuses. It answers `no such peer`, the
+  // NOBODY ELSE MAY. The peer CAN address the relay — a member's own verbs
+  // need it — so the post lands and the VERB is what refuses. It answers `no such peer`, the
   // same thing a verb nobody has heard of gets, so nothing about revoke
   // is discoverable by asking.
   const r = ownedRelay();

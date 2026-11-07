@@ -7,13 +7,11 @@
 //    loopback." — "the second half counts." — "so we must make sure in code,
 //    that the signature is verified in the pupped, else request is refused."
 //
-//  THE ATTACK THIS EXISTS FOR, found by wsl-claude before anything was built:
-//  server.js:1335 hands every mounted puppet a post() whose text is RAW and
-//  passes it straight to peerRouter.post, and peerPost.js:756 signs every
-//  outgoing post with the node's own identity key. So a puppet composes any
-//  envelope it likes and it travels signed by that key — which, to a SIBLING
-//  puppet under the same owner, IS the owner's key. The forger never signs
-//  anything; the router signs for it.
+//  THE ATTACK THIS EXISTS FOR: a node signs every outgoing post with its own
+//  identity key (peerPost.js), so a puppet that could hand the node a RAW
+//  post text would have any envelope it likes travel signed by that key —
+//  which, to a SIBLING puppet under the same owner, IS the owner's key. The
+//  forger never signs anything; the router signs for it.
 //
 //  So the sender check is necessary and nowhere near sufficient, and every
 //  assertion below is about what survives an attacker who is holding a
@@ -141,8 +139,7 @@ test.subHeading('Replay: a command is bound to one recipient and one envelope');
 {
   // (4) ADDRESSED TO B, RE-POSTED TO C. The owner really did sign these bytes,
   // so nothing about the signature is wrong — it is bound to a recipient that
-  // is not this one. Cheap now, expensive to retrofit once commands are in
-  // flight, which is why it is in the first cut.
+  // is not this one.
   const forPuppet = commandFor(puppet.publicKey, 'contact.forget', {});
   const atSibling = switchIn({ from: owner.publicKey, text: forPuppet.text },
     owner.publicKey, sibling.publicKey);
@@ -183,8 +180,7 @@ test.subHeading('Plain chat is not a command, which is a hole that was caught be
 
 {
   // An ordinary chat line decodes with no app, exactly as a system packet does.
-  // The envelope test is therefore separate from the app test — wsl-claude
-  // found this in the receiver rule before it was built, and it stays found.
+  // The envelope test is therefore separate from the app test.
   const chat = switchIn({ from: owner.publicKey, text: 'hello there' },
     owner.publicKey, puppet.publicKey);
   if (!chat.ok && /not a command/.test(chat.error)) {

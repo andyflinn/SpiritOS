@@ -2,21 +2,20 @@
 const rollOf = require('./rollOf');
 
 // spirit/test/worldBuilder.js
-// The thing every other suite now stands on.
+// The thing every other suite stands on.
 //
-// scenario.js and world.js replaced a lab() helper that had been copied
-// into a dozen files and had drifted in every one — and a shared fixture
-// with no tests of its own is worse than twelve that drift, because when
-// it is wrong it is wrong everywhere at once and quietly.
+// scenario.js and world.js are the one shared fixture — and a shared
+// fixture with no tests of its own is worse than twelve that drift,
+// because when it is wrong it is wrong everywhere at once and quietly.
 //
-// Two of the checks below are here because the builder HAD those bugs:
-// it wrote the owner's key into the relay's home (where relay.js keeps
-// the mailbox's own key, explicitly not the owner's), and it claimed
-// every peer from one address, so the eleventh peer in a scenario would
-// have been refused by a rate limit and the scenario blamed.
+// Two of the checks below guard bugs a builder can have: writing the
+// owner's key into the relay's home (where relay.js keeps the mailbox's
+// own key, explicitly not the owner's), and claiming every peer from one
+// address, so the eleventh peer in a scenario would be refused by a rate
+// limit and the scenario blamed.
 //
-// Neither would have shown up as a failure. Both would have shown up as
-// a suite passing for the wrong reason.
+// Neither would show up as a failure. Both would show up as a suite
+// passing for the wrong reason.
 
 const fs = require('fs');
 const path = require('path');
@@ -44,7 +43,7 @@ function run() {
     test.fail('peer default: ' + JSON.stringify(bare.peers[0]));
   }
 
-  // The distinction the whole device and router arc turns on.
+  // The distinction the router turns on: a label is a caption, a name is a key.
   const twins = scenario.normalize({ peers: [{ name: 'johnA', label: 'john' }, 'johnB'] });
   if (twins.peers[0].label === 'john' && twins.peers[1].label === 'johnB') {
     test.check('a label given is kept, a label omitted is the name — two johns, two keys');
@@ -66,12 +65,10 @@ function run() {
     hwhat: 1,
     peers: [{ name: 'a', colour: 'red' }, { name: 'a' }, { name: 'b', on: ['nowhere'] }],
     knows: [['a', 'ghost']],
-    // `messages` was one of these complaints — "a message is from a
-    // stranger" — until R8 (2026-09-15). The field itself is refused now,
-    // because a relay keeps nothing and a world cannot be born holding
-    // mail, so it is here as an UNKNOWN FIELD rather than a malformed
-    // one. That is the stronger complaint: the scenario is told the word
-    // means nothing, instead of being told its contents are wrong.
+    // `messages` is refused as an UNKNOWN FIELD (R8): a relay keeps
+    // nothing and a world cannot be born holding mail. That is the
+    // stronger complaint: the scenario is told the word means nothing,
+    // instead of being told its contents are wrong.
     messages: [{ from: 'nobody', text: 'hi' }],
     then: [{ remove: 'phantom', from: 'lab' }],
   });
@@ -90,9 +87,9 @@ function run() {
   if (scenario.valid({ peers: ['bert'] })) test.check('and a good one draws no complaint');
   else test.fail('good scenario complained: ' + scenario.problems({ peers: ['bert'] }).join('; '));
 
-  // A well-formed world with nobody in it is legal. It is what the whole
-  // device arc happens in, and refusing it would push every device suite
-  // back to building its own relay by hand.
+  // A well-formed world with nobody in it is legal, and refusing it would
+  // push every suite that needs one back to building its own relay by
+  // hand.
   if (scenario.valid(scenario.OWNER_ONLY) && scenario.valid(scenario.UNCLAIMED)) {
     test.check('an owner alone, and a relay nobody has claimed, are both well-formed');
   } else {
@@ -157,11 +154,9 @@ function run() {
     test.fail('the two johns are not two keys');
   }
 
-  // "AND THE MESSAGE THE SCENARIO DECLARED IS IN THE OWNER'S INBOX"
-  // stood here. A scenario cannot declare one any more (R8): there is
-  // nowhere on a relay to put it, and the field is refused by name.
-  //
-  // What a built world holds instead is asserted directly — nothing.
+  // A scenario cannot declare a message (R8): there is nowhere on a relay
+  // to put it, and the field is refused by name. What a built world holds
+  // instead is asserted directly — nothing.
   // Stated rather than assumed, because "no mail" and "a mail store this
   // suite forgot to look in" read identically from the outside.
   if (L.box.snapshot().messages === undefined && typeof L.box.inbox !== 'function') {
@@ -174,9 +169,9 @@ function run() {
   test.subHeading('The mailbox has a key of its own');
 
   // relay.js, relayPublicKey(): "the owner is a peer who claimed, the
-  // mailbox is the box." The builder used to save the OWNER's identity
-  // into the relay's home, so the two were the same key and any check
-  // that told them apart passed without telling anything apart.
+  // mailbox is the box." A builder that saved the OWNER's identity into
+  // the relay's home would make the two the same key, and any check that
+  // told them apart would pass without telling anything apart.
   const mine = L.box.snapshot().relayPublicKey;
   if (mine && mine !== L.owner.publicKey && mine === L.relayKey().publicKey) {
     test.check('the relay\'s own key is not its owner\'s — the two are different parties');
@@ -215,8 +210,8 @@ function run() {
   }
 
   // CLAIM_PER_MIN is 10, keyed on the address. One address for everybody
-  // meant the eleventh peer was refused by a rate limit — and the error
-  // would have named the scenario, which would have been innocent.
+  // would have the eleventh peer refused by a rate limit — and the error
+  // would name the scenario, which would be innocent.
   const names = [];
   for (let i = 0; i < 14; i++) names.push('p' + i);
   const crowd = world.build({ peers: names });
@@ -251,10 +246,9 @@ function run() {
 
   test.subHeading('And the builder Andy looks at reads the same scenarios');
 
-  // The lab has as many peers as it has ports. It used to clamp instead
-  // of refusing — Math.min(PEER_PORTS.length, wanted) — so a scenario
-  // with five peers built three and reported success, and the world on
-  // the screen was not the scenario anybody had asked for.
+  // The lab has as many peers as it has ports, and refuses rather than
+  // clamps: a scenario with five peers that built three and reported
+  // success would put on screen a world nobody had asked for.
   //
   // Checked here rather than in a lab suite because the refusal happens
   // before anything is spawned, which is the point of it.

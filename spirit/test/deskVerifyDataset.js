@@ -1,27 +1,21 @@
 'use strict';
 
-// goal/G8.1: deskVerify's dataset - verify.db, one row per test, and what identifies a test. Red on today's tree;
-// claude-windows wrote it from G8.1's box and does not build it.
+// goal/G8.1: deskVerify's dataset - verify.db, one row per test, and what identifies a test.
 //   Andy, 2026-10-06 (G8.1's box): a row per test, "suite, title, outcome, commit, dirty tree, UTC time"; "A record is
 //   written when that test has none yet, or when its outcome changes"; "An outcome is red or green, nothing else";
 //   "verify.db lives in deskVerify's process folder and is .gitignored"; the records arrive by its own verb, "the verb
 //   \"record\" that supplies candidates for the database"; and "records are never sent together".
 //   His rulings of 2026-10-09 (goal/G8.3): it runs in his clone and measures every incoming change.
 //
-// WHAT IS TRUE TODAY (read at c32427af): there is no process/js/deskVerify; testSupport's check(str) and fail(str) take
-// one string, and a failing assertion's sentence carries its runtime values, so its red and its green share no key.
-//
-// THE SHAPE ASSERTED. The box fixes the behaviour; these names are the red writer's, for the builder to argue:
+// THE SHAPE ASSERTED (the box fixes the behaviour; the names are this suite's):
 //   process/js/deskVerify/deskVerify.js, a node-run server; its argument `db` names the database file, verify.db in its
 //   own folder by default, and git ignores that file. Table `results`: suite, title, outcome, commit, dirty, at.
 //   record {suite, title, outcome} -> {written}: a row only for a test's first record or a change of outcome; commit,
 //   dirty tree and time stamped by deskVerify itself, never sent.
-//   testSupport: fail(title, detail) and check(title, detail) print both, but the title alone is the key. Given
-//   `--verify-port <port>`, every check and fail posts one record, {suite: the suite's file name, title, outcome}, to
-//   that node as deskVerify.record by name ({verb: 'deskVerify.record', suite, title, outcome}; goal/G30.6), one post each, landing even when the suite exits right after
-//   its report. Run without the argument, a suite posts nothing, as today.
-// NOT ASSERTED: retitling the harness's existing assertions so their titles stop carrying runtime values (wsl-claude
-// counted about 9,000 check and fail sites). This red asserts the mechanism; the retitling is its own work.
+//   testSupport: fail(title, detail) and check(title, detail) print both. Given `--verify-port <port>`, every check
+//   and fail posts one record, {suite: the suite's file name, title: its place (goal/G27.14), outcome}, to that node
+//   as deskVerify.record by name ({verb: 'deskVerify.record', suite, title, outcome}; goal/G30.6), one post each,
+//   landing even when the suite exits right after its report. Run without the argument, a suite posts nothing.
 
 const fs = require('fs');
 const os = require('os');
@@ -64,8 +58,8 @@ async function dataset() {
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('deskVerify', pipe);
   // ON HIS CLONE, where records are kept (goal/G8.2): its own run folder names a node that runs a desk and no
-  // deskClient. Without it, deskVerify falls back to the kernel's default port, 65432, and would ask whatever node is
-  // there, which made this suite's answer depend on the machine it ran on.
+  // deskClient (spirit/state/environment.json, PORT). Without it, deskVerify falls back to the kernel's default port,
+  // 65432, and would ask whatever node is there, so this suite's answer would depend on the machine it ran on.
   const deskNode = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) { req.resume(); req.on('end', function () { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"desk":{}}'); }); })
       .listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
@@ -153,7 +147,7 @@ function fakeNode() {
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, bodies: bodies, close: function () { s.close(); } }); });
   });
 }
-// GROWN IN THE VERIFY (claude-windows): a record counts only as a real node would take it, the verb by name
+// A record counts only as a real node would take it, the verb by name
 // (deskVerify.record) with the record's fields beside it, as kernel.core.ask sends it; a node answers a body without a verb "no such verb", so such a record never arrives.
 function recordsIn(bodies) {
   return bodies.map(function (b) { try { const f = test.foldAsk(JSON.parse(b)); return f && f.deskVerify && f.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
@@ -166,14 +160,14 @@ async function sender() {
     const printed = await runMini(['--verify-port', String(node.port)]);
     await sleep(300);
     const recs = recordsIn(node.bodies);
-    // SINCE goal/G27.14 a test's key is its place: its sub-heading (the suite's title before the first) and its number.
+    // A test's key is its place (goal/G27.14): its sub-heading (the suite's title before the first) and its number.
     const want = [{ suite: 'mini.js', title: 'mini #1', outcome: 'green' }, { suite: 'mini.js', title: 'mini #2', outcome: 'red' }];
     const got = recs.map(function (r) { return { suite: r.suite, title: r.title, outcome: r.outcome }; });
     if (JSON.stringify(got) === JSON.stringify(want)) test.check('two posts, {suite, title, outcome}, landing though the suite exits right after its report');
     else test.fail(OWED + 'the fake node received ' + short(node.bodies.slice(0, 3)));
     if (node.bodies.length === 2) test.check('one post per assertion, never grouped');
     else test.fail(OWED + node.bodies.length + ' posts for two assertions');
-    // Since goal/G21.3 the red's record carries what was printed for it as its failure text, beside the key and never
+    // goal/G21.3: the red's record carries what was printed for it as its failure text, beside the key and never
     // in it (Andy's box: "deskVerify keeps, beside each failing test's outcome, its failure text"); a green carries none.
     const beta = recs.filter(function (r) { return r.title === 'mini #2'; })[0] || {};
     const alpha = recs.filter(function (r) { return r.title === 'mini #1'; })[0] || {};
@@ -181,7 +175,7 @@ async function sender() {
       test.check('the detail is printed beside the title, and a red\'s record carries title and detail as its failure text, the place the key');
     } else test.fail(OWED + 'printed ' + short(printed.replace(/[*✅❌]+/g, '').replace(/[\r\n]+/g, ' | ').replace(/ {2,}/g, ' ')) + '; records ' + short(recs));
 
-    // GROWN IN THE VERIFY (claude-windows): the quick suite above exits before its own posts land, so only the
+    // The quick suite above exits before its own posts land, so only the
     // helper's re-sends reach the node. A suite that lingers lands its own posts first, and those must carry the verb.
     test.subHeading('4b. a suite that lingers: its own posts land, each as a real node takes it');
     const lingerNode = await fakeNode();

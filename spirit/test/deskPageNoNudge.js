@@ -3,23 +3,14 @@
 // goal/G3.8: the Desk page stops nudging; the desk server does it now.
 // The box: "the page s nudge to agents after a press (shell/desk/desk.js 448, packet name agents) is removed; the
 // desk server s nudge of G3.5 replaces it. A test asserts the page posts no changed packet." Check: "green when a
-// press reaches a listening agent with the page s nudge gone." Turn: wsl-claude writes the red, claude-windows builds.
-// In the tree today (3ca46cac): deskPress posts {kind: 'changed'} to every live agent once the server has answered
-// (shell/desk/desk.js 456-460), and the item dialog does the same after every write but seen, through ddNudge
-// (shell/deskDetails/deskDetails.js 50-57, 63); the page opens the dialog with `agents: deskLiveAgents()` for that
-// nudge alone (desk.js 813). The server's own nudge, one api packet {deskClient: {changed: {}}} to each agent heard
-// from, is asserted by deskClientPush.js (goal/G33.4: the desk's stream replaced the nudge of goal/G3.5): that is the "reaches a listening agent" half, already green.
-// The contract (wsl-claude's reading of the box; the dialog is the page's, opened by it and handed its agents only
-// for the nudge, so it is in):
+// press reaches a listening agent with the page s nudge gone." The desk tells agents itself: its stream reaches
+// deskClient (goal/G33.4).
+// The contract (the dialog is the page's, opened by it, so it is in):
 //   1. A press from a row goes to the server as press {id, what} and posts no packet to anybody.
 //   2. A press in the item dialog goes to the server and posts no packet.
-//   3. Ticking a check in the dialog (check.set) posts no packet either: every write nudged, every one stops.
-//   4. Andy's direct line to an agent still leaves as an agents packet: only the nudge goes. (The direct line went
-//      with goal/G3.12, and the Team line that replaced it, the group chat goal/G0's, with goal/G43.22.)
+//   3. Ticking a check in the dialog (check.set) posts no packet either.
 //   5. The source of the page and the dialog carries no 'changed' packet: no `kind: 'changed'`, no ddNudge.
-// Not asserted (the builder's): whether deskLiveAgents and the dialog's `agents` parameter stay for anything else.
-// deskList.js asserted the old nudge (its point "after the server answered, the agent got one bare changed packet");
-// that point is turned to this contract in the same commit.
+// (4, Andy's direct line to an agent, went with goal/G3.12 and goal/G43.22: there is no line of his to send.)
 
 const fs = require('fs');
 const path = require('path');
@@ -183,10 +174,6 @@ test.startTest('goal/G3.8: the Desk page stops nudging; the desk server does it 
   else test.fail('the tick did not reach the server: ' + JSON.stringify(d.asked));
   if (set && !changedPackets(d.posted).length) test.check('and no changed packet followed it');
   else test.fail(OWED + 'after check.set the dialog posted ' + JSON.stringify(d.posted));
-
-  // 4 STOOD HERE AS "his direct line to an agent still leaves as a packet": the one packet this item kept. The
-  // direct line itself went with goal/G3.12 (Team was the group chat), and Team with its group chat goal/G0 with
-  // goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database."): there is no line of his to send.
 
   test.subHeading('5. the source carries no changed packet');
   const pageSrc = code(DESK);

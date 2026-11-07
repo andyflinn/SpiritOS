@@ -1,19 +1,17 @@
 'use strict';
 
 // spirit/test/deskQuickFixes.js
-// goal/G29.10: quick desk fixes. Red on today's tree; claude-windows writes it and builds it (one agent). The item's box:
+// goal/G29.10: quick desk fixes. The item's box:
 //   1. The limbo posts go.
-//   2. A write an agent makes while holding a phase answered with Andy's lines typed since it took the phase; that join
-//      WENT WITH goal/G33.7 (Andy: "why? my lines are streamed to deskClient without any further assistance"), so a
-//      phase holder's writes now answer what was asked and nothing more.
+//   2. A phase holder's writes answer what was asked and nothing more: no join of Andy's lines typed since it took the
+//      phase (goal/G33.7; Andy: "why? my lines are streamed to deskClient without any further assistance").
 //   3. An item stays in the code phase from its Go until Andy presses Done; the agent's own claim that it is done (a
-//      verify pass) leaves it in code; within it red, build and verify run as often as needed, Andy's lines reach it
-//      without the hold, and the desk sends no JOB offer to take a red while the item is being worked on.
-// Point 4 (Levant's take landing) is deskAgent's and is asserted in its own suite.
+//      verify pass) leaves it in code; within it red, build and verify run as often as needed, and the desk sends no
+//      JOB offer to take a red while the item is being worked on.
 //
 // WHAT IS ASSERTED
 //   1  an item going into limbo is still marked limbo, but the desk posts no line under it.
-//   2  a phase holder's writes answer without any line of his (goal/G33.7; the stream brings them, deskClientPush.js).
+//   2  a phase holder's writes answer without any line of his (goal/G33.7; deskClient's stream brings them).
 //   3  after a verify pass and before his Done: work.open offers no red (no JOB), and the red is taken again without a
 //      line of his; Done is not offered while the new cycle runs.
 // rule/11: through testSupport only; its own folders; never 65432.
@@ -64,7 +62,7 @@ async function open(caller) {
 
 (async function () {
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
-  // (goal/G33.7: session.set went).
+  // (goal/G33.7).
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Quick fixes' }, items: [
     { id: 'goal/G100.1', title: 'Limbo, quietly', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.2', title: 'A code item', blocks: ['goal/G100'], code: true },

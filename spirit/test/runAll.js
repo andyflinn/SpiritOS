@@ -3,10 +3,9 @@
 // spirit/test/runAll.js
 // Every suite, one command, one number at the end.
 //
-// There was no runner. Fifty-two files each had to be named by hand, so
-// in practice a change got the four suites somebody remembered and the
-// other forty-eight found out weeks later — which is the slow half of
-// the development cycle Andy asked to shorten:
+// Without a runner each file has to be named by hand, so a change gets the
+// few suites somebody remembers and the rest find out weeks later — the
+// slow half of the development cycle Andy asked to shorten:
 //
 //   "i, visually can only run 1/1000 of the number of test you can run
 //    automatically, but we both can use the same scenario"
@@ -52,24 +51,15 @@ const DIR = __dirname;
 // hand, and a harness that ran them would simply hang.
 const NOT_A_SUITE = require('./notASuite.js');
 
-// ── THE LAB SUITES ARE IN THE HARNESS NOW (2026-09-15) ───────────────
+// ── THE LAB SUITES ARE IN THE HARNESS (2026-09-15) ───────────────────
 //
-// `liveFrontDoor.js` was excluded here, and five more sat in
-// spirit/test/labMaster/ which this file does not read at all. Between
-// them they went months without going red anywhere while six of the
-// seven rotted — the accounting is in labMaster/STATE.md.
-//
-// What it cost to find out: liveFrontDoor was reading a log file the
-// product had stopped writing, so seven of its checks were asserting
-// things about an empty array, and `relayAbuse` was defending a label
-// rule that had been deliberately removed. Neither is the kind of thing
-// a person notices by reading. Both are the kind a harness notices in
-// one run.
+// The lab suites (the ones that drive labMaster) and liveFrontDoor.js run here like any other: kept
+// out, they went without going red anywhere while they rotted
+// (labMaster/STATE.md), and a harness notices that in one run.
 //
 // THE PRICE, AND IT IS PAID ON PURPOSE. These spawn real relays and real
 // nodes on real ports: seconds each, against milliseconds for everything
-// else, and the harness goes from about 25s to about a minute and a
-// half. That is the trade Andy took — "more pain now, cleaner
+// else. That is the trade Andy took — "more pain now, cleaner
 // environment later" — on the argument that an opt-in tier is the same
 // silent trap wearing a flag.
 //
@@ -78,9 +68,7 @@ const NOT_A_SUITE = require('./notASuite.js');
 // they run in the ordinary lanes rather than needing a lane of their
 // own. labMaster itself is started by THIS RUNNER before any lane, and
 // stopped after the last suite — left alone if it was already up,
-// because somebody may be using theirs. (This said "started by whichever
-// of them gets there first" until 2026-09-19: that suite then stopped it
-// on its way out while other lanes were still using it — see main().)
+// because somebody may be using theirs (see main()).
 
 // Last, always. It reads the other suites off disk to check that every
 // visual scenario still points at one that exists, so it should be
@@ -96,17 +84,9 @@ const LANES = serial ? 1 : 6;
 
 // ── WHAT THE DISCOVERY RULE SKIPPED, SAID OUT LOUD ───────────────────
 //
-// The rule below is right — a suite is a file that reports — but it
-// FAILED SILENTLY, and that is a different thing from being wrong. A file
-// missing `startTest(` was skipped with no line of output, so it looked
-// exactly like a file that had passed.
-//
-// What that cost, found on 2026-09-17: `deviceAuth.js` reported through a
-// hand-rolled `ok()` and had never once been discovered. It spent four
-// days asserting `deviceByName`, `keysForName` and `checkOwner` — all
-// three deliberately deleted — and threw on the first of them, so seven
-// further checks had not run either. `iconIndex.js`, 31 green, was in the
-// same position for want of one line.
+// The rule below is right — a suite is a file that reports — but a file
+// missing `startTest(` skipped with no line of output would look exactly
+// like a file that had passed.
 //
 // So anything skipped is NAMED. A file that genuinely is not a suite goes
 // in NOT_A_SUITE, where it is a decision somebody wrote down; anything
@@ -400,12 +380,8 @@ function exitAfterPost(code) {
 
 // ── THE DECLARATIONS, PRINTED AND NOTHING ELSE (goal/G8.12) ─────
 //
-// A generated board file stood here from 2026-09-24 ("is the board a document i can keep in a window and gets
-// updated automatically as the cycles progress?") until 2026-10-09, when Andy had it removed: "get rid of that damn
-// board", which he had been deleting in every checkout a full run touched. Desk became the record on 2026-09-28, so
-// nothing read it any more.
-//
-// What it rendered is unchanged and still here: the console board above, printed from `byReq`, in the declarer's own
+// No board file is generated (Andy, 2026-10-09: "get rid of that damn board"; Desk is the record). What is printed is
+// the console board above, printed from `byReq`, in the declarer's own
 // words - the requirement's title, the unit, the note, the %-there and the cost note, never summarised or reworded -
 // and the awaiting figure in the tally, which is that same count. Nothing is generated into the tree.
 //
@@ -787,12 +763,8 @@ async function main() {
     (skipped.length ? ', ' + skipped.length + ' not run' : '') + '\n');
   // ── A FILTERED RUN STOPS HERE, AND KEEPS NO RECORD ───────────
   //
-  // Measured by spiritos-37 on 2026-09-26: `runAll.js payloadCeiling` printed "1 suites, 6 green, 0 red" and then
-  // rewrote the generated board to say nothing was broken and nothing was owed. The true state was 154 suites, 12
-  // red, 12 owed. A SUBSET CANNOT KNOW THE TALLY, and a subset lie is invisible where staleness is not.
-  //
-  // The generated file is gone (goal/G8.12), but the run log and DONE.md are written from the same measurement, so
-  // the guard stands: a filtered run appends nothing a later full run would compare against. Andy was told to expect
+  // A SUBSET CANNOT KNOW THE TALLY, and a subset lie is invisible where staleness is not. The run log and DONE.md are
+  // written from the full measurement, so a filtered run appends nothing a later full run would compare against. Andy was told to expect
   // frequent partial runs - "run the part of the harness, that verifies you made a positive change" - so this is the
   // precondition for that rule rather than a tidy-up.
   //
@@ -800,9 +772,9 @@ async function main() {
     console.log('--- nothing recorded: this was a filtered run (' + filter + '), and a subset ' +
       'cannot know the tally. Run without a filter for the owed list and the record.');
     exitAfterPost(unhappy.length ? 1 : 0);
-    // AND STOP HERE. exitAfterPost exits when the pending post settles, so without this return the run went on and
-    // appended a one-suite run to the log, which the next full run then compared against. Found building DONE.md,
-    // which would have recorded every row a subset did not run as finished.
+    // AND STOP HERE. exitAfterPost exits when the pending post settles, so without this return the run would go on
+    // and append a one-suite run to the log, which the next full run would compare against (and DONE.md would record
+    // every row the subset did not run as finished).
     return;
   }
 

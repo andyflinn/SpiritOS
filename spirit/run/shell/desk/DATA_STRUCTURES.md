@@ -1,95 +1,48 @@
 # Desk — data structures
 
-Desk keeps nothing in its own folder. Since desk/G1.4 its record is the desk
-server's (`process/js/desk`), in the node's state and never in git (desk/G1
-D5: "any appServer state is none of git's business"), and Desk reaches it by
-`jobs.api` on the loopback door (D4). Andy, 2026-09-28: *"this IS the
-official project governance. NOW."*
+Desk keeps nothing in its own folder. Its record is the desk server's
+(`spirit/run/process/js/desk/desk.js`), in the node's state and never in
+git (desk/G1 D5: *"any appServer state is none of git's business"*). The
+page reaches it by the server's verbs, `desk.<verb>`, on the flat apiDoor,
+and hears every change as the server's publish, which the desk family's
+cache manager (`spirit/run/process/js/desk/data.js`) keeps in
+`spirit.data.desk.data`. Andy, 2026-09-28: *"this IS the official project
+governance. NOW."*
 
 ## Where it lives
 
-In `spirit/run/relay-state/process/desk/`, the folder the node hands the desk
-server as `--state`:
+In `spirit/run/spirit/state/desk/data/desk.db`, the folder the node hands
+the desk server as `--state` (`spirit/run/spirit/jobs.js`, `runServer`).
+There is no log of writes: the keyed tables are the store (goal/G33.4).
+An id is two numbers, goal and item (0 for the goal itself), shown as
+`goal/G<n>` or `goal/G<n>.<m>`.
 
-| where | what | Desk reaches it by |
+| table, keyed by | what | Desk reaches it by |
 |---|---|---|
-| `desk.db`, tables `items`, `chat`, `box`, `checks`, `files`, `claims` | Since goal/G33.4 the desk's state, keyed by goal and item number, every row with its creator; the old table `lines` and its verbs (`log.add`, `log.search`, `pending.get`) are gone. | `items.search`, `item.get`, `item.box`, `item.chat`, `item.checks`, `item.files` and the writes |
-| `desk.db`, the item's row, `seenAt` | When Andy last saw the newest thing under the item (the group chat's on goal/G0), for the unseen marks; one value per item (goal/G33.7: the docs table and state went). | `seen.get {id}`, `seen.set {id, at}` |
-| `voice.jsonl` | Andy's own typed lines, `{text, day}`, one per line, a plain file he moves to his vault by hand. | `voice.add {text, day}` |
+| `items (goal, item)` | the item's own fields as JSON; a goal's row (item 0) also its goal's (design, members, special) | `items.search`, `item.get`, and the writes (`goal.add`, `item.add`, `item.rename`, `item.delete`, `press`, …) |
+| `chat (goal, item, seq)` | one chat line, with `at` and `creator` | `item.chat`, `chat.search`, `chat.add` |
+| `box (goal, item, version)` | one version of the item's box | `item.box`, `item.box.search`, `box.write` |
+| `checks (goal, item, number)` | one Q, G, C or T check | `item.checks`, `item.checks.search`, `check.add`, `check.set` |
+| `files (goal, item, holder, path)` | one file an agent listed, with its grant status | `item.files`, `item.files.search`, `item.files.add`, `item.files.remove` |
+| `claims (goal, item, claimer)` | one agent's claim | `item.claims.search`, `claim` |
+| `suites (goal, item, path)` | one suite a Verify of the item runs | `item.suites.search`, `item.suites.add`, `item.suites.remove` |
+| `agents (agent)` | by key: its label, its last write, its word, Andy's profile of it | `agents.search`, `profile.get`, `profile.set` |
+| `rules`, `rule_drafts`, `rule_chat` | every version of every rule (the newest row per rule is the rule), his draft between versions, a rule's chat | `rules.search`, `rule.get`, `rule.add`, `rule.draft`, `rule.version` |
+| `desk_state (k)` | the desk's own few values: the change number, the current goal, the grants | — |
 
-Desk reads only what it shows: the newest session, each open item's own
-lines, a chat's newest page (and older pages as he scrolls up). It never
-reads the whole log. What Desk once kept in `shell/desk/` (`log/`,
-`voice/`, `state.json`, `seen.json`) the server imports once at start and
-then removes; `desk.js` and `desk.json` (the app and its manifest) and this
-file stay.
+Every row carries its creator. Every write takes the next change number,
+stamped on each row it changed and on each row it publishes.
 
-## One log message
+## What Andy has seen
 
-```
-{ key, at, dir, peer, outcome, from, kind, text, todo }
-```
+An item's `seenAt`, in its row, and its `alert` mark (brought back, or a
+line from the agent holding it). The item's dialog presses `seen` as it
+opens an item marked alert, which clears it; `seen.get {id}` and `seen.set {id, at}` read
+and move `seenAt`.
 
-- `key` — the packet's hash (or a local key if nothing was sent). Unique; a
-  message is taken once.
-- `at` — ISO time. `dir` — `in` (from an agent) or `out` (Andy's).
-- `peer` — the other side's public key. `outcome` — `sent`, `received`, or
-  `undelivered: …`.
-- `from` — `andy` or the agent's name. `todo` — the item id it belongs to
-  (`team/chat` for the Team tab).
-- `kind` and `text`:
+## What the page holds
 
-| kind | text |
-|---|---|
-| `note` | talk |
-| `ask` | an agent's question; shows Go/No until Andy answers |
-| `answer` | Andy's decision: `go.`, `no.`, `done.`, `reopen.`, `closed.` (hides a done line), `retitle: <name>`, `start design mode.`, `end design mode.` |
-| `explain` | an agent's explanation of an item |
-| `session` | a design session, as JSON (below) |
-| `board` | the harness's old board, as JSON (retired 2026-09-28) |
-
-## A session (`kind: session`)
-
-```
-{ goal:  { id, title, description, check?, tests?[] },
-  rules: [ { id, text } ],
-  items: [ { id, title, description?, blocks?, check?, tests?[] } ] }
-```
-
-- `blocks` — an item id or a list of them; the goal when absent.
-- `check` — how Andy can check it himself. `tests` — what proves it.
-- The newest session is the board. It is hidden once Andy presses
-  **Start design mode** after it was posted.
-
-## The state (`state`)
-
-Andy: *"persist … 1) design mode 2) Andy's latest "done"! 3) Open question.
-4) andy's personal titles for items."* Every entry carries `at` and `key`,
-the log message that set it.
-
-```
-{ designMode:    { on, started, ended },
-  done:          { "<id>": { pressed: "done."|"reopen.", at, key, counts, claimed } },
-  openQuestions: { "<id>": { from, text, at, key } },
-  titles:        { "<id>": { title, at, key } },
-  closed:        [ "<id>", … ] }
-```
-
-`counts` is false for a Done pressed before any `READY TO CLOSE` claim.
-
-## How Desk works them out
-
-All four are PERSISTED in the server's `state` (above), which Desk rewrites (`state.set`) whenever one changes. The log is what they are worked out from:
-
-- **Design mode** — on while Andy's newest `start design mode.` is newer
-  than his newest `end design mode.`.
-- **Done** — Andy's latest `done.` / `reopen.` under an item. A `done.`
-  counts only after BOTH agents have each posted a note under that item
-  opening with `READY TO CLOSE` (or `<id> is READY TO CLOSE`).
-- **Closed** — Andy's `closed.` under a done line: gone from the List and
-  the Team bubble for good.
-- **Verified** — a note opening `VERIFIED` (or `IN PLACE VERIFIED`) under
-  an item; `UNVERIFIED` or `IN PLACE WITHDRAWN` takes it back. No Go shows
-  on an item until it is verified.
-- **Open question** — an agent's `ask`, until Andy's next `answer` there.
-- **Name** — Andy's latest `retitle:` for the item.
+Only what it shows: the List is `items.search`'s answer and the publishes
+seated in the desk's branch of `spirit.data`; an item's box, checks, files
+and chat are its dialog's (`shell/deskDetails`). The List's toggles are
+Current Goal Only (on when Desk opens), Goals Only and Include Closed.

@@ -1,10 +1,9 @@
 'use strict';
 
 // spirit/test/deskChatFollowsAddress.js
-// goal/G27.10: chat posts follow the address, not the newest line. Red on today's tree; claude-windows wrote it and
-// builds it (one agent). The item's box (v4) is the requirement:
+// goal/G27.10: chat posts follow the address, not the newest line. The item's box is the requirement:
 //   R1. a line of Andy's addressed to an agent gives that agent a standing right to post under that item until it has
-//       answered. This already holds in the desk: asserted here as a guard.
+//       answered. Asserted here as a guard.
 //   R2. an agent that holds the item or a phase on it, held a phase on it earlier, or created it, posts its work notes
 //       and reports under it at any time.
 //   R3. no second answer to a taken line: an agent that is none of these is still refused. A guard.

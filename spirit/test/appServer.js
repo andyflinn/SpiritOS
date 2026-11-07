@@ -1,13 +1,14 @@
 'use strict';
 
 // spirit/test/appServer.js
-// THE SERVER-SIDE REQUEST ROUTER — appPair/G1.2, written FIRST, red today.
+// THE SERVER-SIDE REQUEST ROUTER — appPair/G1.2.
 //
-//   Andy, 2026-09-28: "the appServer is the request-router server-side".
-//   Decided in the design session (Desk, appPair/G1): an app hands the
+//   Andy: "the appServer is the request-router server-side".
+//   Decided in appPair/G1: an app hands the
 //   helper its verbs; 'api' answers {verb: {request, reply}} (D3, D10);
 //   a call is {verb: {args}}, key-matched against the verb's request
-//   prototype (D8, D10); the reply is the verb's own, no wrapper (D11);
+//   prototype (D8, D10); the reply is the verb's own, no wrapper (D11),
+//   and may carry more keys than declared (goal/G4.19, answersCarryMore.js);
 //   every error is {ok: false, code, error} with a code spiritErrors
 //   knows (D12); 'api' and 'ok' are never verb names (D13, D14); the app
 //   never names its pipe, the node hands it over as --pipe (D15).
@@ -149,8 +150,7 @@ function tmpPipe(name) { const p = appClient.pipePathFor(fs.mkdtempSync(path.joi
   if (refusedNames.join(',') === 'api,ok') test.check('declaring a verb named api or ok throws at once');
   else test.fail(OWED + 'reserved names refused: ' + JSON.stringify(refusedNames));
 
-  // wsl-claude's review of 2e9e1850, Andy: "go for the proposed fix". A
-  // reply is the verb's declared shape or nothing (D11), and 'ok' is the
+  // A reply is the verb's declared shape or nothing (D11), and 'ok' is the
   // reserved reply key (D12), so no reply can pass for an error.
   test.subHeading('T8: a reply prototype with an ok key is refused when the verb is declared');
   let okRefused = false;
@@ -175,11 +175,8 @@ function tmpPipe(name) { const p = appClient.pipePathFor(fs.mkdtempSync(path.joi
   if (t9 && isError(t9.body, 'handler-failed')) test.check('a reply shaped like an error, not like its prototype, became handler-failed');
   else test.fail(OWED + 'a mismatched reply answered ' + JSON.stringify(t9));
 
-  // Andy, 2026-09-29, desk/G1.3: "after starting the listener, it should
-  // announce itself with its name, and a nicely formatted overview of it's
-  // api." Its stdout is its job's console (processes/G1.4).
-  // desk/G2.3 moved the announce from stdout to a published object (Andy: "drop the stdio/stderr outputs", and
-  // "Yes" to the announce moving). publishChecks.js checks it arrives; here, that stdout stays quiet.
+  // The announce is a published object, spirit.events.publish({announce}) in appServer.js (desk/G2.3; Andy: "drop
+  // the stdio/stderr outputs"). publishChecks.js checks it arrives; here, that stdout stays quiet.
   test.subHeading('T10: once listening, it prints nothing; its announce is published (desk/G2.3)');
   const dir10 = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appserver-say-'));
   const greeter = path.join(dir10, 'greeter.js');

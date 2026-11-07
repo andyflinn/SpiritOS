@@ -1,8 +1,8 @@
 'use strict';
 
 // spirit/test/fsOwnerUnlimited.js
-// goal/G33.10: the fs family is owner only, hard-coded, and its loadFile and saveFile have no size limit. Written first,
-// red on today's code, by wsl-claude, who does not build it. Andy, 2026-10-24: "would i allow a peer fs access, ever? it
+// goal/G33.10: the fs family is owner only, hard-coded, and its loadFile and saveFile have no size limit. Andy,
+// 2026-10-24: "would i allow a peer fs access, ever? it
 // could un-install apps from my face etc...", "i want fs to be hard-coded owner only, with no size limits on it's
 // loadFile and saveFile....", and on the work file: "it is understood, we will always copy, then delete the temp
 // file.... but that's what a temp folder is for, if garbage accidentally remains (node-restart etc) the garbage is where
@@ -15,8 +15,11 @@
 //   3. No size limit at the owner's door: on a node of its own (rule/11), fs.save of a file several times one request
 //      is taken and lands whole; fs.load answers it whole.
 //   4. The face's save in parts (named size, parts streamed to a work file in the system temp folder, copied to the
-//      target, then deleted; dropped after an hour without a part) is declared AWAITING: the box fixes what it does,
-//      not the wire shape of the sized save, which the builder names. Each goes red the moment its unit lands.
+//      target, then deleted; dropped after an hour without a part), driven on faceHome.js.
+// STALE, part 4: it reads spirit/run/shell/icons/iconSet.json, which is now spirit/run/spirit/iconSet.json, so the
+// suite throws there; faceHome.js now answers a face only from a relay where this node set a face and its owner
+// starred (o.faceSet, o.faceOwned; goal/G41.30, goal/G43.18), which the faceHome below is not handed; and the face's
+// uploadSave and UPLOAD_PART are in spirit/run/spirit/spirit.js (goal/G43.18), not in the boot.js read at the end.
 
 const fs = require('fs');
 const os = require('os');
@@ -172,8 +175,8 @@ function waitForBoot(port) {
   } finally { child.kill(); }
 
   // ── 4. THE FACE'S SAVE IN PARTS ──────────────────────────────────────
-  // The shape, named by the builder under the item: {upload: {id, n, of, size, path, bytes}}, each part sealed on its own
-  // and sent as its own call (shell/boot.js uploadSave, UPLOAD_PART bytes a part); the home node appends each part to
+  // The shape: {upload: {id, n, of, size, path, bytes}}, each part sealed on its own and sent as its own call
+  // (spirit.js uploadSave, UPLOAD_PART bytes a part); the home node appends each part to
   // os.tmpdir()/spirit-upload-<id>, answers 202 to each but the last, and on the last checks the size, copies the work
   // file to the target through o.saveFrom, then deletes it. Driven here on faceHome itself, its clock handed in.
   test.subHeading('4. the face\'s save in parts, streamed to a work file in the system temp folder');

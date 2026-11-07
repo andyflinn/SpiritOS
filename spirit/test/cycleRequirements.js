@@ -7,12 +7,12 @@
 //
 // On 2026-09-12 Grok returned six review findings as a numbered list. In
 // the same conversation Andy and Claude settled, in detail, that a relay
-// must confine a device's posts to its owner's node. Both were agreed.
+// must confine certain posts to their owner's node. Both were agreed.
 // Only one was a numbered list.
 //
 // The six were built and reported as "53 suites, 1426 green". Andy then
 // asked whether the confinement was implemented. It was not. It had been
-// written into the device design as a note — "these two must land in the same
+// written into a design document as a note — "these two must land in the same
 // cycle" — which is reading material rather than a worklist.
 //
 //   Andy: "we need to have a working method where that stuff doesn't get
@@ -64,8 +64,7 @@ function cycleFiles() {
 // It is held to less than a requirement on purpose: no Status is
 // demanded, because an unpromised thing has no delivery to report. What
 // it must do is exist by name, so a suite can cite it and the board can
-// resolve it. (wsl-claude, after a declaration citing cycle-11/C3 was
-// reported as naming nothing.)
+// resolve it.
 function conditionsIn(text) {
   const out = [];
   text.split(/\r?\n/).forEach(function (line) {

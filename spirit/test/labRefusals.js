@@ -3,32 +3,17 @@
 // spirit/test/labRefusals.js
 // What a real relay process refuses, over real HTTP.
 //
-// ── THIS WAS labMaster/relayAbuse.test.js ────────────────────────────
-//
-// Eight checks: three were labMaster's lifecycle (labLifecycle.js has
-// them now), one was a send rate limit that died with `sendHits`, and
-// one was a claim-flood limit that spirit/test/relayGates.js already
-// drives in process.
-//
-// Two subjects survive, and both are worth a real process:
+// Two subjects, both worth a real process:
 //
 //   THE LABEL RULE, enforced by the RELAY. labelShape.js drives the rule
-//   module; nothing asked whether the relay applies it, and a rule
-//   nobody enforces is a comment.
+//   module (fieldRules.js); this asks whether the relay applies it.
 //
-//   MAX_ROUTED_TEXT, which is asserted NOWHERE in this tree. relay.js
-//   checks it in four places and no test has ever sent a byte over it.
-//   That is the gap this file was closest to covering and missed,
-//   because it was aimed at MAX_TEXT — the ring's cap, now deleted.
+//   MAX_ROUTED_TEXT on the wire. relay.js sets it to limits.PAYLOAD_MAX
+//   and checks it on every routed text; this sends one byte over it.
 //
-// ── ONE CHECK IS DELETED RATHER THAN MOVED, AND IT MATTERS ───────────
-//
-// `slash name rejected` sent `../etc` and expected a 400. That label is
-// ACCEPTED now, deliberately: a public label is a caption, addressing is
-// by key, and there is nothing a label can traverse into. Had this suite
-// been in the harness when labels became Unicode it would have gone red
-// on a change that was correct — which is the other failure mode of an
-// unwatched test, and the reason this note is longer than the check was.
+// `../etc` is an ACCEPTED label, deliberately: a public label is a
+// caption, addressing is by key, and there is nothing a label can
+// traverse into.
 
 const test = require('./testSupport.js');
 const auth = require('../run/spirit/relayAuth');
@@ -63,8 +48,8 @@ async function post(pathname, body) {
 // never the gate.
 async function claim(label) {
   const id = auth.generateIdentity('probe');
-  // Sealed to the relay, like every claim now (cycle 10, R9), and a post on
-  // its one door (goal/G22.6) — so a 400 here is the LABEL rule refusing,
+  // Sealed to the relay, like every claim, and a post on its one door
+  // (goal/G22.6) — so a 400 here is the LABEL rule refusing,
   // never the seal check.
   return door.claimBodyOnDoor(ORIGIN, id, {
     name: label,
@@ -138,16 +123,15 @@ async function run() {
     test.fail('invisible label: ' + invisible.status + ' ' + invisible.text);
   }
 
-  // ACCEPTED, and this is the check that replaces `slash name rejected`.
-  // Unicode, spaces, punctuation and a path-looking thing are all just
+  // ACCEPTED. Unicode, spaces, punctuation and a path-looking thing are all just
   // captions — there is nothing to traverse into, because nothing on
   // this wire is addressed by label.
   //
   // THIS CLAIM IS ALSO THE SETUP for the section below: it is the first
   // claim this box has accepted, so `sender` now owns it and holds a
-  // row. That matters, and it cost a red line to learn — see there.
+  // row. The section below needs that row.
   //
-  // WITH NO INVITE since goal/G16.8: `sender` is the owner the install
+  // WITH NO INVITE (goal/G16.8): `sender` is the owner the install
   // named. The caption claimed is the one under test (labels are not
   // identities).
   const ordinary = await door.claimBodyOnDoor(ORIGIN, sender, {
@@ -163,19 +147,13 @@ async function run() {
 
   test.subHeading('And a packet has a size, which nothing else in this tree checks');
 
-  // THE SENDER HAS TO HOLD A ROW TO GET THIS FAR, and that is the whole
-  // lesson of this section. Written first with a freshly generated key,
-  // it read 403 "no such identity" — the relay judges WHO before it
-  // judges how much, so the cap was never reached and the check was
-  // measuring the wrong refusal.
+  // THE SENDER HAS TO HOLD A ROW TO GET THIS FAR: the relay judges WHO
+  // before it judges how much, so a freshly generated key is refused 403
+  // "no such identity" and the cap is never reached. The control below
+  // asserts the status the one-byte post must get, so it can fail.
   //
-  // Worse, the control below passed anyway: both calls got 403, and
-  // `!== 400` is true of 403, so a check written to prove the two
-  // answers DIFFER was satisfied by them being identical. A control is
-  // only a control if it can fail.
-  //
-  // AND THE RECIPIENT IS CHECKED TOO — a generated `to` answered 404
-  // "no such peer" for the same reason. So the destination here is THE
+  // AND THE RECIPIENT IS CHECKED TOO — a generated `to` is answered 404
+  // "no such peer". So the destination here is THE
   // RELAY'S OWN KEY: a relay is a peer to every member, it publishes
   // that key in its own roll, and posts addressed to it are answered
   // like anybody's. It is the one address guaranteed to exist on a box
@@ -183,9 +161,10 @@ async function run() {
   const relayKey = ((await door.relayKeyOf(ORIGIN)) || {}).relayPublicKey;
   if (!relayKey) { test.fail('the relay published no key of its own'); return; }
   const target = { publicKey: relayKey };
-  // One byte past the WIRE bound, derived. It was 16385 — one past a
-  // PAYLOAD_MAX that cycle 10's R6 raised to 22,528, at which point this
-  // "oversized" post was simply a legal one and the relay accepted it.
+  // One byte past the WIRE bound, derived from limits.PAYLOAD_MAX
+  // (22,528), which relay.js takes as MAX_ROUTED_TEXT. The check's message
+  // below still says "16385" and "16 KB": the numbers are the old cap's,
+  // the size sent is PAYLOAD_MAX + 1.
   const huge = 'x'.repeat(limits.PAYLOAD_MAX + 1);
 
   const over = await post('/api/relay/post', {

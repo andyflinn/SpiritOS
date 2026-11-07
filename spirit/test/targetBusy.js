@@ -3,42 +3,31 @@
 // spirit/test/targetBusy.js
 // ONE MEMBER, TWO PEOPLE ASKING — AND THE REFUSAL THAT SAYS SO, ON THE WIRE.
 //
-//   Andy: "also: cap the requests for a specific target at one, respond
-//   with (not available), if this causes the calling node to keep the
-//   request queued, nothing is lost."
-//   Andy: "two nodes overloading request to a third node will cover
-//   rejections by the relay."
-//
-// Decision 0016. The per-target cap is the one that needs no cooperation
-// from anybody: a per-requester cap is defeated by being many requesters,
-// and a Sybil farm can be — but it cannot be many TARGETS, because the
-// target is the person being bothered and there is only one of them.
+// The relay's cap is one request in flight per sender at a member
+// (goal/G22.6, router.js DEFAULT_PER_TARGET): "the member's one slot in
+// flight counted per sender ... so no stranger can keep a member busy".
 //
 // ── WHY THIS SUITE RUNS A PROCESS AND router.js DOES NOT SUFFICE ─────
 //
-// router.js tests the cap in memory and passes. It would have passed with
-// this shipped broken, because the bug was not in the router.
-//
-// relayServer.js builds a refusal body BY WHITELIST — `{ error, inFlight }`
-// — and a whitelist is right (a relay must not spray its internals at
-// anybody who can provoke an error) but it means a new field is invisible
-// until somebody adds it. The router refuses with `{ busy, retryAfterMs }`
-// and both were dropped on the floor. Over the wire that is 503 "target is
-// busy" reaching a node as a bare 503, indistinguishable from 503 "peer
-// not reachable" — the same status and the opposite situation.
+// router.js tests the cap in memory. relayServer.js builds a refusal body
+// BY WHITELIST — `{ error, inFlight, busy, retryAfterMs }` — and a whitelist
+// is right (a relay must not spray its internals at anybody who can provoke
+// an error) but it means a new field is invisible until somebody adds it.
+// Without `busy`, 503 "target is busy" reaches a node as a bare 503,
+// indistinguishable from 503 "peer not reachable" — the same status and the
+// opposite situation.
 //
 // So the claim this file makes is exactly the one a unit test cannot: the
 // marker SURVIVES THE TRIP. Every byte crosses a loopback socket.
 //
-// What a green run proves (since goal/G22.6 counted the slot per sender —
-// Andy's decision, taking M5 of the review of 2026-10-10):
+// What a green run proves:
 //   1. a relay a person would actually run — no configuration at all —
 //      allows one request per sender at a member at a time
 //   2. one request reaches the target and a second, from somebody else,
 //      reaches it too: no sender can keep a member busy for anybody else
 //   3. the sender's own next request is refused 429 while its first waits
 //   4. a refusal that says when to come back keeps its marker and
-//      `retryAfterMs` across the wire (the address table's, now that a
+//      `retryAfterMs` across the wire (the address table's, since a
 //      member never meets the target-busy one)
 //   5. when the target answers, the sender gets in again
 
@@ -55,8 +44,8 @@ const plantRun = require('./plantRun');
 const sseClient = require('../run/spirit/sseClient');
 const { createRelay } = require('../run/spirit/relay');
 
-// Below 49152, outside Windows' ephemeral range — see partnerWire.js and
-// presenceWire.js:41 for what a port inside it costs.
+// Below 49152, outside Windows' ephemeral range — see presenceWire.js
+// (A port is CHOSEN AT RUN TIME) for what a port inside it costs.
 const PORT = 48781;
 
 let kids = [];
@@ -103,8 +92,8 @@ function plant(w, config) {
   w.runDir = runDir;
 }
 
-// stderr is kept, not ignored — see partnerWire.js for what discarding it
-// cost. The server names its own refusal; this hands that to the failure.
+// stderr is kept, not ignored: the server names its own refusal, and this
+// hands that to the failure.
 async function startRelay(w, port) {
   const kid = spawn(process.execPath, ['spirit/server.js', '--port', String(port), '--relay'],
     { cwd: w.runDir, stdio: ['ignore', 'ignore', 'pipe'] });
@@ -178,10 +167,8 @@ async function run() {
   test.subHeading('A relay that allows one request per member at a time');
 
   const W = buildRelay(['alice', 'carol', 'bob', 'dave']);
-  // NO CONFIGURATION. The cap of 1 is a constant in router.js as of
-  // 2026-09-21 (R6/R7), so this suite no longer has to arrange the thing
-  // it is testing — which is the better state for it to be in: it now
-  // observes the relay a person would actually run.
+  // NO CONFIGURATION. The cap of 1 is a constant in router.js, so this
+  // suite observes the relay a person would actually run.
   plant(W, null);
   if (!(await startRelay(W, PORT))) {
     test.fail('the relay did not come up on ' + PORT +
@@ -237,9 +224,8 @@ async function run() {
 
   test.subHeading('A refusal that says when to come back survives the trip');
 
-  // relayServer builds the failure body by whitelist, and `busy` and
-  // `retryAfterMs` were once dropped there while the router's own tests
-  // passed. With the slot per sender a member never meets the target-busy
+  // relayServer builds the failure body by whitelist, so `busy` and
+  // `retryAfterMs` are proved across the wire. With the slot per sender a member never meets the target-busy
   // refusal (its own cap of one refuses it first), so the marker is proved
   // on the refusal a relay does send: the strangers' address table, a
   // second card ask from this one address inside its ban.

@@ -1,8 +1,8 @@
 'use strict';
 
 // spirit/test/probabilityStringObjectMatch.js
-// goal/G18.3: probabilityStringObjectMatch(string, object), the second probabilit* module. Red on today's tree
-// (a9a0c252); claude-windows wrote it and builds it. The item's box (v5), Andy, 2026-10-12:
+// goal/G18.3: probabilityStringObjectMatch(string, object), the second probabilit* module. The item's box,
+// Andy, 2026-10-12:
 //   "1. the input must be valid string and object, empty string will return 0", "2. We "measure" the object ... extracts
 //   every valid string from the object and places it in a table", "3. ... the shortest string in the object gets the
 //   highest weight, the longest string in the object gets the smallest weight, and all the weights of the string in the
@@ -14,14 +14,14 @@
 //   "dumb""; the weights (S - L) / S, corrected: "you formula-correction is accepted": divided by n - 1, one string 1.0.
 //
 // WHAT IS ASSERTED
-//   1. run/js/probabilityStringObjectMatch.js exports probabilityStringObjectMatch(string, object).
+//   1. spirit/run/spirit/probabilityStringObjectMatch.js exports probabilityStringObjectMatch(string, object).
 //   2. not a string, an empty string, not a plain object (null, an array, a string, a number): 0.0; an object with no
 //      string in it: 0.0.
 //   3. the table: keys and string values, nested plain objects in, empty strings out; the weights
 //      (S - L) / S / (n - 1), one string 1.0; the answer the weighted sum of probabilityStringMatch, checked against
 //      that computed here.
 //   4. a cycle in the object ends; every answer is a number from 0 to 1.
-//   5. goal/G41.28, box v15: numbers are matched as text; a true boolean's key is evaluated, a false boolean's key is
+//   5. goal/G41.28: numbers are matched as text; a true boolean's key is evaluated, a false boolean's key is
 //      not; arrays are scanned, each element a field (Andy: "probabilityStringObjectMatch can easily convert numbers in an
 //      object to strings, for matching", "same for booleans: if a boolean is true, then it's key serves as string to be
 //      evaluated. if the boolean is false, it's key will NOT be evaluated.", "probabilityStringObjectMatch will scan

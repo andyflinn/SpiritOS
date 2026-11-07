@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskListRows.js
-// goal/G40.3: file lists past MAX_PAYLOAD break no item. Written first, red on today's code, by wsl-claude, who does not
-// build it. The box (v13), Andy's words among it: "items are added one-by one, and desk streams those items to its
+// goal/G40.3: file lists past MAX_PAYLOAD break no item. The box (v13), Andy's words among it: "items are added one-by one, and desk streams those items to its
 // clients"; "same set of verbs for all sub-item-tables add, remove, search."; "a red claim will fail if no suite-rows
 // are registered with an item."; "i will get no single file grant checks anymore, just all in-one. and the grant request
 // doesn't have to list them"; "the grant is not valid if core files are added after the grant is issued"; "and make
@@ -20,8 +19,10 @@
 //      suite row and no suites of its own is taken, one that carries suites is refused.
 //   5. Reopen puts the item back into design mode.
 //   6. In the code (the commit check needs a checkout to run): commitCheck.js looks each staged core file up with
-//      item.files.search and its grants with item.checks.search, never a bare item.checks. (The stackFrameChecks plugin's
-//      paths/suites verbs were asserted here too; the plugin went with goal/G43.22, Andy: "removal of plugin support".)
+//      item.files.search and its grants with item.checks.search, never a bare item.checks.
+// STALE: 6 is replaced: commitCheck.js now reads the whole item.files and item.checks from deskClient's cache
+// (kept('item.files'), kept('item.checks'), checkItems), never a .search. Parts 1, 3 and 4 fail on the desk as it is:
+// a red claim needs a Go on record first, and suites are the red writer's to add or remove (desk.js).
 
 const fs = require('fs');
 const os = require('os');

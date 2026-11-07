@@ -1,22 +1,22 @@
 'use strict';
 
 // spirit/test/appApiDoor.js
-// THE MEMBER'S SIDE OF 'api' — appPair/G1.3, written FIRST, red on today's code.
+// THE MEMBER'S SIDE OF 'api' — appPair/G1.3.
 //
-//   Andy, 2026-09-29: go on appPair/G1.3. Decided: a member asks with an
-//   ordinary packet, app 'api' ("peerPost is the wire to the api
-//   introspection"); only members reach it, "the front door still holds"
-//   (T6); the answer is flat (D11).
+//   Decided: a member asks with an ordinary packet, app 'api' ("peerPost is
+//   the wire to the api introspection"); only members reach it, "the front
+//   door still holds" (T6); the answer is flat (D11).
 //
-// The shape, claude-windows' and agreed: a new js/apiDoor.js,
-// createApiDoor({servers, post, encode, isKnown, log}) returning
-// function(message), registered as an arrivals witness. isKnown(fromKey) is
-// the front door's 'known': a stranger gets nothing. It reads packets of
-// app 'api' only (app-less ones are puppetDoor's, nodeApps.js), asks
-// servers.ask(body) (appApi.js holds that half), and posts
+// The shape: spirit/run/spirit/apiDoor.js,
+// createApiDoor({servers, post, encode, isKnown, auth, log}) returning
+// function(message), registered as an arrivals witness (server.js).
+// isKnown(fromKey) is the front door's 'known': a stranger gets nothing. It
+// reads packets of app 'api' only (app-less ones are the owner door's,
+// puppetMode.puppetDoor), asks servers.ask(body) (the node's appClient;
+// spirit/test/appApi.js holds that half), and posts
 // encode('api', answer, {re: message.hash}) back to message.fromKey. A
 // non-member gets no reply at all. Driven with fakes and the real wire
-// encode/decode, the way ownerPost.js drives its door.
+// encode/decode, the way spirit/test/ownerPost.js drives its door.
 
 const path = require('path');
 const test = require('./testSupport.js');

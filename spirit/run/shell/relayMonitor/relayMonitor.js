@@ -15,28 +15,27 @@
 //
 // ── NO LEVER IS NAMED IN THIS FILE ───────────────────────────────────
 //
-// That is the whole claim, and `test/monitorApp.js` is what holds it: a
+// That is the whole claim, and `spirit/test/monitorApp.js` is what holds it: a
 // lever invented on a relay next month is drawn by this app as it stands,
-// because every lever describes itself (js/lever.js readOut) and this
+// because every lever describes itself (spirit/run/spirit/lever.js readOut) and this
 // draws whatever the report carries. The moment a lever's label appears
 // in this code, the generic promise is gone and the next lever needs an
 // app release.
 //
 // ── IT ASKS FOR NOTHING NEW ──────────────────────────────────────────
 //
-// `relay.status` already answers rows with `owned`, and hands over the
-// latest report per url under `relayStatus` — the same data natterDetails
-// has been reading. Cycle 4.1 adds no node verb: this is a second reader
-// of a report that already arrives on a stream this node already holds.
+// `spirit.relay.status` (the relay family's api.js) answers rows with
+// `owned`, and hands over the latest report per url under `relayStatus`.
+// No node verb of its own: this is a reader of a report that already
+// arrives on a stream this node already holds.
 //
 // ── WHAT IT DOES NOT DRAW ────────────────────────────────────────────
 //
 // Nothing gets a control. Decision 0015: the relay's limits are the
 // result of programming, the owner watches, and the record of what he
-// watched is what changes the programme. Since cycle 8 there is nothing
-// that could be set: the Governor is deleted and a lever is a read-only
-// gauge with no setter (lever.js) — so the meter IS the policy rather
-// than a control that has been disabled.
+// watched is what changes the programme. There is nothing that could be
+// set: a lever is a read-only gauge with no setter (lever.js) — so the
+// meter IS the policy rather than a control that has been disabled.
 //
 // A report with no `at` is drawn without a capture time rather than with
 // an invented one. A relay that has said nothing yet says so: "said
@@ -49,7 +48,7 @@
   // The lever rules, from the same file the relay uses. In the shell that
   // is the global index.html loads; in a suite it is the module, so the
   // pure half can be asserted without a browser. Same two-environment
-  // shape as js/lever.js and js/fieldRules.js, and for the same reason:
+  // shape as spirit/run/spirit/lever.js and fieldRules.js, and for the same reason:
   // one implementation, so the app and the relay cannot drift.
   //
   // Absent only if the page was built wrong, in which case the app still
@@ -256,10 +255,9 @@
     };
   }
 
-  // THE SENTENCE, out here rather than inside render, because the first
-  // version of it lied: the zero case counted the WHOLE FLEET while the
-  // other counted relays that were actually redlining. Two populations
-  // under one sentence.
+  // THE SENTENCE, out here rather than inside render, so the suite can
+  // assert it: both cases count relays that are actually redlining, never
+  // the whole fleet.
   //
   //   Andy: "it should read: 0 on 0... zero overall red-lining levers,
   //   and 0 relays with red-lining levers... I only want to direct
@@ -277,15 +275,13 @@
   // ── THE ENVELOPE IS NOT THE ANSWER ─────────────────────────────────
   //
   // `api.verb` answers { status, text, body } — the envelope — and not
-  // what the node said. natterDetails carries its own `ndAsk` that parses
-  // `text` for exactly this reason.
+  // what the node said. relayPanel carries its own `ndAsk` for the same
+  // reason (spirit/element/search/contact/relayPanel.js).
   //
-  // This cost a live run: reading `data.rows` straight off the envelope
-  // finds undefined, and the app then said, truthfully and uselessly,
-  // that it could see no owned relay while the node was holding two. It
-  // lives out here rather than inside mount so the suite can reach it —
-  // the pure/DOM split made the DRAWING assertable and left the WIRING
-  // untested, and the wiring is what broke.
+  // Reading `data.rows` straight off the envelope finds undefined, and the
+  // app would say it sees no owned relay while the node holds two. It
+  // lives out here rather than inside mount so the suite can reach it:
+  // the wiring is asserted, not only the drawing.
   function rmAnswerOf(r) {
     if (!r) return null;
     if (r.body && typeof r.body === 'object') return r.body;
@@ -294,11 +290,9 @@
 
   // ── WHERE A RELAY'S KEY ACTUALLY LIVES ─────────────────────────────
   //
-  // Not on the row. `row.relayKey` is a field this app invented, and the
-  // invention cost a live run: Apply answered "this node does not hold
-  // that relay's key" about a relay the node owns.
+  // Not on the row: there is no `row.relayKey`.
   //
-  // natterDetails' ndRelayKey has carried the real answer since cycle 3,
+  // relayPanel's ndRelayKey reads it the same way,
   // and the ORDER matters there for a reason that does not apply here but
   // is worth keeping anyway: `roll.relayKey` comes off the public
   // roll every probe already fetches, so a plain MEMBER has it, while
@@ -492,7 +486,7 @@
       }
 
       function load() {
-        // relay.status is gone (puppets/G2): see spirit.relay.status (the relay family's api.js).
+        // spirit.relay.status (the relay family's api.js, puppets/G2).
         return spirit.relay.status('')
           .then(function (r) {
             var data = rmAnswerOf(r);

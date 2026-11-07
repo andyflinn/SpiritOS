@@ -1,10 +1,10 @@
 'use strict';
 
 // spirit/run/shell/ruleDetails/test/ruleDetails.js
-// The tests of shell/ruleDetails/ruleDetails.js, and of no other module (spec: ./ruleDetails.md; goal/G41.9). The browser file runs in node
+// The tests of shell/ruleDetails/ruleDetails.js, and of no other module (spec: ./ruleDetails.md; goal/G41.9, goal/G41.28). The browser file runs in node
 // on a window of its own: the app's api records every verb; armingButton is a stub that keeps every button made or
 // attached with what it was handed, so each two-press button's run is driven here as its second press would. The page's
-// one data set and the desk family's cache manager are the real ones (spirit/data.js, process/js/desk/family/).
+// one data set and the desk family's cache manager are the real ones (spirit/run/spirit/data.js, process/js/desk/data.js).
 
 const FILE = require('path').join(__dirname, '..', 'ruleDetails.js');
 const fs = require('fs');

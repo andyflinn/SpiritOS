@@ -1,17 +1,13 @@
 'use strict';
 
-// goal/G2.13: an item that offers Done no longer offers Go. Red on today's tree.
+// goal/G2.13: an item that offers Done no longer offers Go.
 //   RULING (Andy, 2026-10-02, verbatim, under goal/G2.11): "how can there be a Go button AND a Done button on this
 //   item?", then "when Done is offered, Go may no longer be displayed."
-//   In the tree: desk.js buttons() offers Go while an item has not gone and nothing open blocks it (desk.js:426),
-//   and Done once an agent has claimed (desk.js:434) — two independent rules, so an item claimed without a Go
-//   press offers both.
-// The contract the builder follows (the shape in goal/G2.13's box; the arguable parts fixed here by name):
+// The contract desk.js keeps (the shape in goal/G2.13's box; the arguable parts fixed here by name):
 //   1. The one rule lives in buttons(), so the List and the dialog follow it alike: an item that offers Done does
 //      not offer Go. An item with no claim offers Go as before; once claimed it offers Done and no Go.
-//   2. THE CLAIM CONSUMED THE GO (Andy, 2026-10-02, under goal/G2.13: "When Done is offered, Go will be considered
-//      pressed/consumed") — REPLACED by goal/G3.9 (Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an
-//      item without 'go' on record"): a claim before his Go is refused and changes nothing; the item is gone by his
+//   2. A CLAIM NEEDS HIS GO (goal/G3.9; Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item without
+//      'go' on record"): a claim before his Go is refused and changes nothing; the item is gone by his
 //      Go alone. After it, Done still leads to Close and Reopen, a Reopen offers no Go again, and an item that
 //      went by his Go offers neither Go nor, until a claim, Done. deskRules.js has the refusal in full.
 //   3. The press is refused where the button is gone: a Go pressed on an item that offers Done is refused as not
@@ -44,7 +40,7 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const itemOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item) || {}; } catch (e) { return {}; } };
   const buttonsOf = async function (id) { return (await itemOf(id)).buttons || ['?']; };
-  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  // goal/G33.7: the world is seeded before the desk starts, which takes it in at start.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Round' }, items: [
     { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
@@ -64,7 +60,7 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     else test.fail('OWED by goal/G3.9: the claim before Go answered ' + JSON.stringify(early.body) + ', buttons ' + JSON.stringify(stillFresh));
     await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
-    // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
+    // goal/G33.3: Done is offered as soon as an agent claims done.
     const claimed = await buttonsOf('goal/G100.1');
     if (has(claimed, 'done') && !has(claimed, 'go')) test.check('gone by his Go and claimed: Done offered, Go no longer');
     else test.fail(OWED + 'goal/G100.1 gone and claimed: ' + JSON.stringify(claimed));
@@ -91,7 +87,7 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     if (!has(went, 'go') && !has(went, 'done')) test.check('an item that went offers neither Go nor, until a claim, Done');
     else test.fail('goal/G100.2 after Go: ' + JSON.stringify(went));
     await call('press', { id: 'goal/G100.2', what: 'claim-done' }, CW);
-    // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
+    // goal/G33.3: Done is offered as soon as an agent claims done.
     const wentClaimed = await buttonsOf('goal/G100.2');
     if (has(wentClaimed, 'done') && !has(wentClaimed, 'go')) test.check('and once claimed it offers Done');
     else test.fail('goal/G100.2 claimed after Go: ' + JSON.stringify(wentClaimed));
@@ -101,7 +97,7 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     await call('press', { id: 'goal/G100.1', what: 'end-design' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
-    // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
+    // goal/G33.3: Done is offered as soon as an agent claims done.
     const goAnswer = await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
     const after = await itemOf('goal/G100.1');
     const code = (goAnswer.body || {}).code || '';

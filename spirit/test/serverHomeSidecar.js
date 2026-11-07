@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/serverHomeSidecar.js
-// A SERVER RUNS AT HOME BY ITS OWN SIDECAR (goal/G41.1, box v13), written FIRST, red on today's code.
+// A SERVER RUNS AT HOME BY ITS OWN SIDECAR (goal/G41.1).
 //
 //   Andy, Q6 and Q7: "that clash comes from unauthorized decisions from agents to move the FUCKING manifest shit to a
 //   central list", "IMMEDIATELY, IN THIS ITEM.", "correct. go." The box: "a server's home switch is home: true in its own
@@ -17,8 +17,10 @@
 //   H4 the node starts a server when its sidecar is written home: true, and stops it when written home: false
 //   H5 the central list is gone: nodeSettings serves no server settings, jobs.js reads none, the G33.9 suite is gone
 //   H6 the tree: no process/js manifest names runs; the servers that ran at home say so in their sidecars
-//   H7 the Apps app shows a process's home switch as a checkbox and writes it into the face part; the text viewer's Start
-//      reads it from there too
+//   H7 the Apps app switches a server through the app installer, which writes home into the face part; the text viewer's
+//      Start reads it from there too. Parts of H3, H6 and H7 read what the tree no longer has: H3's hand start is a
+//      scratch script jobs.js refuses (refuseOther, goal/G41.30), H6's INTRINSIC list names shell/files, which
+//      coreFiles.js's list no longer has, and H7 reads shell/apps/apps.js and spirit/element/textViewer.js, both gone.
 
 const fs = require('fs');
 const path = require('path');
@@ -192,8 +194,8 @@ test.startTest('goal/G41.1: a server runs at home by its own sidecar');
 
   test.subHeading('H7. the Apps app writes it, the text viewer reads it');
   const apps = read('shell/apps/apps.js');
-  // A shell app still says where it runs in its manifest (goal/G30.20); only a server's switch moved. Since box v14 the
-  // switch is the app installer's button, no checkbox (its own test holds the rest: spirit/element/test/appInstaller.js).
+  // A shell app still says where it runs in its manifest (goal/G30.20); only a server's switch moved. The switch is the
+  // app installer's button, no checkbox (its own test holds the rest: spirit/run/spirit/element/test/appInstaller.js).
   const installer = read('spirit/element/appInstaller.js');
   eq(/appInstaller\.create\(/.test(apps) && /face\.home === true/.test(apps) && /isServer \? 'home' : 'app'/.test(installer), true,
     'the Apps app switches a server through the app installer, which writes home into its face part; it reads it from there', OWED + 'the Apps app has no installer writing home');

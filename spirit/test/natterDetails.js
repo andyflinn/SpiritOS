@@ -3,6 +3,10 @@
 // spirit/test/natterDetails.js
 // One mailbox, as its own screen.
 //
+// THE APP THIS SUITE DRIVES IS GONE: there is no spirit/run/shell/natterDetails/ (nor any Natter app) in the tree, so
+// APP_SCRIPT below names a missing file and nothing here runs against today's code. What follows describes the
+// natterDetails dialog as it was.
+//
 // The panel that used to unfold inside a Natter row is a dialog now
 // (app/natterDetails), pushed for the row it was opened from — the same
 // move Contacts made when its expanding row became app/contactsDetails.

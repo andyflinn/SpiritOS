@@ -1,17 +1,15 @@
 'use strict';
 
 // spirit/test/shellAppNeedsServer.js
-// goal/G27.16: a shell app shows only while its server runs. Red on today's tree; claude-windows wrote it and builds
-// it (one agent). The item's box (Andy, goal/G27.9 chat, 2026-10-17):
+// goal/G27.16: a shell app shows only while its server runs. The item's box (Andy, goal/G27.9 chat, 2026-10-17):
 //   R1. a shell app manifest may name the server it needs; the shell shows that app only while that server is
 //       installed and running; when the server is uninstalled or stopped, the app is not offered.
 //   R2. the link lives on the app side only.
 //   R3. an app that names no server always shows, as today.
 //   R4. the shell names no app and no server: it reads the field from each manifest.
 //
-// THE SHAPE THIS RED NAMES: the manifest field is `server`, the server's folder name under process/js (desk.json:
-// "server": "desk"; deskAgentRemote.json: "server": "deskAgent"). Running is a job of type server whose module is
-// process/js/<server> and whose status is running, or pending (a node-operated server between restarts, which comes
+// THE SHAPE: the manifest field is `server`, the server's folder name under spirit/run/process/js (desk.json:
+// "server": "desk"). Running is a job of type server whose module is process/js/<server> and whose status is running, or pending (a node-operated server between restarts, which comes
 // back by itself); failed, completed or no such job is not running. A server job is kind server; its type is its display name.
 // WHAT IS ASSERTED
 //   1. the manifests: Desk, its two dialogs and Chatter name their servers; the Remote names none (its server may be on a puppet); Text Editor names none.
@@ -19,6 +17,9 @@
 //   3. once a desk server job runs, Desk shows; the Remote, needing deskAgent, still does not.
 //   4. a server restarting (pending) keeps its app; a failed one, or one gone from the jobs, takes it away.
 //   5. shell.js names no app and no server for this (R4).
+// THE WORLD NAMES APPS THE TREE NO LONGER HAS: shell/textEditor and shell/deskAgentRemote are gone from
+// spirit/run/shell/, so their manifests read as {} and bootShell loads two missing scripts; the boot of
+// spirit/client/shell.js below throws before section 2 (reading 'subscribe' of undefined).
 // rule/11: through testSupport only; no node, no port.
 
 const fs = require('fs');
@@ -32,7 +33,7 @@ function readRun(rel) { return fs.readFileSync(path.join(RUN_DIR, rel), 'utf8').
 function manifest(rel) { try { return JSON.parse(readRun(rel)); } catch (e) { return {}; } }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
-// A shell in node, as natterIntrinsic.js boots it: only the browser things shell.js touches.
+// A shell in node: only the browser things shell.js touches.
 function fakeElement(tag) {
   let html = '';
   const listeners = {};

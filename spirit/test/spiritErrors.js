@@ -16,8 +16,8 @@
 // catalogue agrees with. A new sentence anywhere turns this red until
 // somebody decides what it means.
 //
-// That is the same shape as cycleRequirements.js and settableRoll.js:
-// the rule is not remembered, it is counted.
+// That is the same shape as cycleRequirements.js: the rule is not
+// remembered, it is counted.
 
 const fs = require('fs');
 const path = require('path');
@@ -49,8 +49,8 @@ test.subHeading('Every error sentence in the tree is catalogued');
     });
   });
 
-  // Guard against the scan itself silently finding nothing — the failure
-  // mode the R21 loop taught this tree to check for.
+  // Guard against the scan itself silently finding nothing: a check that
+  // judged nothing is no pass.
   if (found.length > 50) {
     test.check('the scan found ' + found.length + ' error sites across the tree');
   } else {

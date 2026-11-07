@@ -1,18 +1,18 @@
 'use strict';
 
 // spirit/test/stackFrameTestItems.js
-// THE DOORS WANTED OF THE STACK-FRAME TEST, ONE TEST PER ITEM (goal/G22, READ FROM THE PLUGIN'S LIST SINCE goal/G22.3).
+// THE DOORS WANTED OF THE STACK-FRAME TEST, ONE TEST PER ITEM (goal/G22, READ FROM spirit/test/stackFrameList.json).
 //
 // Decided by Andy, 2026-10-13 (goal/G22.2's box): an item whose purpose is to add a door to the stack-frame test
 // (oneDoorStacks.js) puts its red here, and each test asserts that its item's door exists.
 //
-// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to loosen: the stackFrameChecks plugin keeps the doors
-// in spirit/test/stackFrameList.json (since goal/G43.22; it stood in the plugin before), and the stack-frame test reads it to
-// know which checks to run. THE GATE IS NARROW, one file::function: a whole module named as the gate is cheating. THE
-// ENDPOINT IS WIDE, a whole module, or Node's own bottom (node:http+https+fetch) filtered to paths.
+// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to loosen: the doors are kept in a list,
+// spirit/test/stackFrameList.json (goal/G43.22), and the stack-frame test reads it to know which checks to run. THE GATE
+// IS NARROW, one file::function: a whole module named as the gate is cheating. THE ENDPOINT IS WIDE, a whole module, or
+// Node's own bottom (node:http+https+fetch) filtered to paths.
 //
-// So the hand entries are gone: ONE TEST PER ITEM NAMED IN THE LIST, asserting each of its doors has a gate of the
-// file::function form and an endpoint of a wide form. What a door then finds failing is oneDoorStacks.js's verdict.
+// ONE TEST PER ITEM NAMED IN THE LIST, asserting each of its doors has a gate of the file::function form and an
+// endpoint of a wide form. What a door then finds failing is oneDoorStacks.js's verdict.
 //
 // THE DOORS ALREADY ASKED FOR STAY ASKED FOR. An item in WANTED is tested whether the list names it or not, so a door
 // struck from the list goes red here rather than vanishing with its test.

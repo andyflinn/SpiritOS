@@ -1,16 +1,13 @@
 'use strict';
 
 // goal/G4.31: opening a node's event stream asks only for undelivered arrivals instead of reading the whole traffic
-// log. Red on today's tree; wsl-claude wrote it, claude-windows builds it.
-//   Found under goal/G4.30 (wsl-claude, measured 2026-10-04): every kernel.peerPost opens the node's /api/events, and
-//   on each open arrivals.subscribe asks waiting(), which calls traffic.read(), the whole log, to find the few rows not
-//   yet taken (arrivals.js 156-161). On wsl-claude's node: 112,192 rows back to 2026-09-22, read in 1,047 ms, and the
-//   stream's first byte came 1.0-1.25 s after the open, while any other request answered in 2-5 ms.
+// log. arrivals.js waiting() asks traffic.untaken() (trafficLog.js), which touches only the rows that can be waiting;
+// read() of the whole log took about a second on a long-lived node (goal/G4.30, measured 2026-10-04).
 //   Andy, 2026-10-04, to "on opening the stream, ask the traffic table only for undelivered arrivals ... instead of
 //   reading the whole log; the log stays permanent": "yes"; then his Go on goal/G4.31. The log stays permanent:
-//   "the log should be permanent. period." (peerPost.js 78-82).
+//   "the log should be permanent. period." (peerPost.js).
 //
-// THE SHAPES, NAMED HERE where the item names none (wsl-claude's picks; the builder may argue them in Desk first):
+// THE SHAPES ASSERTED:
 //   1  Subscribing never calls traffic.read(); what it replays comes from a query that touches only the rows that
 //      can be waiting (admitted, inbound, no taken mark).
 //   2  What it replays is unchanged: every untaken admitted inbound row, oldest first, the newest included (the 200-row
@@ -18,10 +15,9 @@
 //      and once handed over they are marked taken, so the next page gets none.
 //   3  It is cheap with a long log: subscribing over 20,000 taken rows costs under a fifth of reading them all.
 //
-// FOUND IN THE DRY RUN: the hash index is partial (nodeStore.js, traffic_hash ... WHERE hash <> ''), so a lookup by
-//   hash that does not repeat hash <> '' scans the table once per row: a NOT EXISTS written without it took 33 s here.
-// LEFT OPEN, not asserted: the name of the query on the log (untaken(), or arrivals with no cap); the legacy
-//   traffic.jsonl rows a node migrated, which arrivals() still reads from the file.
+// The hash index is partial (nodeStore.js, traffic_hash ... WHERE hash <> ''), so a lookup by hash that does not
+//   repeat hash <> '' scans the table once per row (a NOT EXISTS written without it took 33 s).
+// Not asserted: the rows of a legacy traffic.jsonl not yet imported, which untaken() folds in from the file.
 
 const os = require('os');
 const fs = require('fs');

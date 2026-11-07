@@ -94,8 +94,7 @@ test.subHeading('A requeue keeps its original place — the anti-starvation rule
 test.subHeading('A burst is all ties, which is why the order is a sequence');
 
 {
-  // contactsAskEveryone fires a whole contact list in one synchronous
-  // loop. The clock does not move, so wall-clock time gives no order at
+  // A caller may fire a whole contact list in one synchronous loop. The clock does not move, so wall-clock time gives no order at
   // all and the queue would sort differently on every run.
   const c = clock();
   const q = pq.createQueue({ now: c.now });
@@ -161,7 +160,7 @@ test.subHeading('A refusal and a silence are different evidence');
   const c = clock();
   const q = pq.createQueue({ now: c.now, backoffStartMs: 1000 });
 
-  // BUSY: the relay said the target is occupied. Since goal/G4.30 the wait
+  // BUSY: the relay said the target is occupied. The wait (goal/G4.30)
   // starts at 250 ms and grows (250, 500, 1000, 2000), never past the
   // relay's quote (Andy: "agreed."); postQueueBusyAdaptive.js holds the
   // steps. Here: 250, then the quote of 400 caps the 500 step.
@@ -234,10 +233,9 @@ test.subHeading('Patience bounds the whole intent, not one attempt');
   // caller had before a queue existed: one attempt, then the answer,
   // whatever it was. Retrying is opt-in.
   //
-  // BUT PATIENCE BOUNDS RETRYING AND NEVER THE FIRST ATTEMPT, which was a
-  // bug on the way here: with a busy relay a zero-patience entry is
-  // queued and instantly past its budget, so expiring it there would fail
-  // a post the old code would simply have sent.
+  // BUT PATIENCE BOUNDS RETRYING AND NEVER THE FIRST ATTEMPT: with a busy
+  // relay a zero-patience entry is queued and instantly past its budget,
+  // so expiring it there would fail a post that should simply be sent.
   const once = q.add({ relayUrl: 'R1', toKey: 'bella' });
   if (q.expired().length === 0) {
     test.check('an entry that has never been tried does not expire, whatever its patience');
@@ -293,13 +291,12 @@ test.subHeading('Patience bounds the whole intent, not one attempt');
 
 test.subHeading('Waiting on an event is not waiting on a clock');
 
-// THE DEFECT THIS PINS was shipped and found an hour later. A zero-patience
-// entry has `until` in the past, which the first nextWakeMs read as "wake
-// immediately" — so anything queued behind a busy relay made the caller
-// wake every millisecond, find nothing eligible, and sleep another
-// millisecond, for as long as the in-flight attempt lasted. Posting twice
-// to one relay burned a core for eight seconds. Nothing failed and nothing
-// was slow, which is exactly why a test says so now.
+// THE DEFECT THIS PINS: a zero-patience entry has `until` in the past, and
+// a nextWakeMs that read that as "wake immediately" would make anything
+// queued behind a busy relay wake the caller every millisecond, find
+// nothing eligible, and sleep another millisecond, for as long as the
+// in-flight attempt lasted — a core burned with nothing failing and
+// nothing slow.
 {
   const c = clock();
   const q = pq.createQueue({ now: c.now });

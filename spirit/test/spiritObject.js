@@ -1,21 +1,18 @@
 'use strict';
 
 // spirit/test/spiritObject.js
-// goal/G32.1: the spirit object, the node api for face apps. Red on today's tree; claude-windows writes it and builds it
-// (one agent). The box (v6), in short:
-//   - One hand-coded file, spirit.js: the relay serves it as the very first script, inline in face.html; the home
-//     node's index.html loads it; it runs in node too, for server processes.
-//   - Every family folder holds its api.js, written to the node's standard (one shape, the same checks); the object is
-//     assembled from them, one member per family: spirit.fs., spirit.jobs., spirit.contact. ... each verb asynchronous.
+// goal/G32.1: the spirit object, the node api for face apps. What this suite asserts:
+//   - One hand-coded file, spirit.js, which the face and the home node's index.html load, and which runs in node too.
+//   - Every family folder holds its api.js, written to the node's standard; the object has one member per family
+//     (spirit.fs., spirit.jobs., spirit.contact. ...), each verb asynchronous.
 //   - The fs family keeps the kernel's names (loadFile, loadDataUrl, statFile, getAnnotations, saveFile, deleteFile);
 //     error(), formatBytes(), escapeHtml() are the object's own.
-//   - The check is complete: every argument of every call checked before it goes out (shape and field rules, by
-//     js/fieldRules.js); a malformed call never leaves; a reply not 2xx refuses.
-// NAMED HERE: spirit.js exports createSpirit({ ask(verb, args) -> Promise<{status, body}> }) -> Promise<spirit>;
-// since goal/G32.3 the families are api's names and each interface is api {family}; a family's api.js is module.exports =
-// { verbs: { <verb>: { <arg>: '<rule>[?]' } },
-// names(call) }; a refusal is an Error with .code ('no-such-argument', 'bad-request') and .status for a reply;
-// serveCommon.inlineSpirit(html, runDir) puts spirit.js inline where face.html says <!-- spirit.js -->.
+//   - Every argument of every call is checked before it goes out; a malformed call never leaves; a reply not 2xx
+//     refuses, as an Error with .code ('no-such-argument', 'bad-request') and .status.
+// IT READS WHAT THE TREE NO LONGER HAS: spirit.js, face.html and index.html at spirit/run/ (they are
+// spirit/run/spirit/spirit.js and spirit/run/spirit/shell/), createSpirit(transport) (spirit.js exports its one
+// instance since goal/G40.6), and serveCommon.inlineSpirit (face.html loads spirit.js by a plain script tag since
+// goal/G41.19), so those checks fail.
 // rule/11: through testSupport only; nothing reaches a node.
 
 const fs = require('fs');

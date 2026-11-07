@@ -47,11 +47,8 @@ function fakeRelay(answer) {
   };
 }
 
-// THROUGH THE LOG, NOT ITS FILE (transport/R19.2). This read the file
-// traffic.jsonl itself; the log is moving into node.db (transport/R19),
-// and a test that opens the file would then read a file that no longer
-// grows, and pass or fail for the wrong reason. read() answers the same
-// rows wherever they live.
+// THROUGH THE LOG, NOT ITS FILE (transport/R19.2): the log lives in
+// node.db (transport/R19), and read() answers its rows wherever they live.
 function logLines(h) {
   try { return require('../run/spirit/trafficLog').createTrafficLog({ rootDir: h }).read(); }
   catch (e) { return []; }
@@ -95,7 +92,7 @@ async function run() {
     test.fail('queue rows: ' + JSON.stringify(rows));
   }
 
-  // SINCE goal/G4.30 a busy answer earns 250 ms first, never the relay's whole quote (Andy: "agreed." to 250, 500,
+  // goal/G4.30: a busy answer earns 250 ms first, never the relay's whole quote (Andy: "agreed." to 250, 500,
   // 1000, 2000, never past the quote), so the row is short; what this asserts is that it is written down at all.
   const pairs = store.backoff.all();
   if (pairs.length === 1 && pairs[0].untilWall > Date.now() - 5000 && pairs[0].untilWall <= Date.now() + 60000) {
@@ -103,7 +100,7 @@ async function run() {
   } else {
     test.fail('backoff rows: ' + JSON.stringify(pairs));
   }
-  // A LONG BACKOFF FOR THE RESTART TO RESPECT: set here, as the section after this does, since a busy one is 250 ms now
+  // A LONG BACKOFF FOR THE RESTART TO RESPECT: set here, as the section after this does, since a busy one is 250 ms
   // and would be over before the new process starts.
   store.backoff.put(RELAY, TO, Date.now() + 60000, 60000);
 
@@ -160,8 +157,8 @@ async function run() {
   test.subHeading('A message whose patience ran out while the node was down says so');
 
   {
-    // THE GAP THIS CLOSES, which had no name. A node that died mid-send
-    // left a "sent" entry in the permanent log with no outcome, for ever.
+    // A node that died mid-send must not leave a "sent" entry in the
+    // permanent log with no outcome: the restart logs its ending.
     const H3 = home();
     const store3 = nodeStore.open(H3);
     const body = { from: 'x', to: TO, text: '{"v":1}', sig: 'y' };
@@ -183,9 +180,7 @@ async function run() {
     }
 
     // THE LOG SAYS WHY, not only that it failed: `code` is the catalogue's
-    // (R36). An earlier draft of this check looked for the words "gave up"
-    // in the row and found none, because the log kept a status and no
-    // meaning — which is the retrofit this check now asserts.
+    // (R36), so a reader learns the meaning and not only a status.
     const gaveUp = logLines(H3).filter(function (l) { return l.hash === 'HASH-EXPIRED'; });
     const ending = gaveUp[gaveUp.length - 1];
     if (ending && ending.code === 'gave-up') {

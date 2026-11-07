@@ -1,20 +1,21 @@
 'use strict';
 
 // spirit/test/deskCoreGrants.js
-// The core grants of the commit check (goal/G4.23), kept when goal/G10.8 removed agent scopes. This was deskScopes.js;
-// its scope sections went with the mechanism. Andy, 2026-10-12: "all agents in desk have "/" file scope", the per-agent
-// setting removed from desk and commitCheck ("b"), "all in this item". What stays, his words of 2026-10-04: "it should
-// refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a grant request in the
-// item?", "the scope still has a grant-lock on core files.", "basicall run/js and intrinsics".
+// The core grants of the commit check (goal/G4.23). There are no agent scopes (goal/G10.8; Andy: "all agents in desk
+// have "/" file scope"). What stays, his words: "it should refuse to commit a core file that was not granted, and raise
+// an ERROR icon in my list, and a grant request in the item?", "the scope still has a grant-lock on core files.",
+// "basicall run/js and intrinsics".
 //
 // ASSERTED
-//   1  THE CORE TABLE: spirit/run/spirit/coreFiles.js isCore(repoPath): every file under spirit/run/spirit/, and every file in
-//      the folder of a shell app whose manifest says "intrinsic": true.
-//   2  THE COMMIT CHECK: with Go on the item, a file anywhere in the repo is taken (no scope since goal/G10.8); a
-//      staged core file needs a granted G check on the item naming its path under spirit/run; refused without it. Since
-//      goal/G32.2 the refusal raises no grant of its own, one per file (64 of them outgrew the item's answer): it says
-//      to list the files with item.files.add, whose ONE grant for all the core files (goal/G8.8) he grants once; granted,
-//      the same commit is taken. A path is matched whole in the grant's comma list, never as a part of a longer path.
+//   1  THE CORE TABLE: spirit/run/spirit/coreFiles.js isCore(repoPath): every file under spirit/run/spirit/, and the
+//      code of a shell app whose manifest says "intrinsic": true (coreFiles.js has more rules than these cases try).
+//      The case 'spirit/run/shell/files/files.js' expects core, but there is no spirit/run/shell/files/ app any more,
+//      so isCore answers false and this section fails.
+//   2  THE COMMIT CHECK: with Go on the item, a file anywhere in the repo is taken (no scope, goal/G10.8); a
+//      staged core file needs a granted G check on the item naming its path under spirit/run; refused without it. The
+//      refusal raises no grant of its own (goal/G32.2): it says to list the files with item.files.add, whose ONE grant
+//      for all the core files (goal/G8.8) he grants once; granted, the same commit is taken. A path is matched whole in
+//      the grant's comma list, never as a part of a longer path.
 
 const fs = require('fs');
 const os = require('os');
@@ -125,8 +126,8 @@ async function commitWith(cwd, file, text, message) {
 async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; goal/G33.7: seeded before the desk
-  // starts (session.set went), and the desk takes it in at start.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
+  // (there is no session.set verb, goal/G33.7), and the desk takes it in at start.
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Scopes' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));

@@ -60,12 +60,6 @@ const LAB_ROOT = labPaths.LAB_ROOT;
 // mean every node: it would have put every test fixture in repo/lab too,
 // cloned from GitHub, which is slow and tests the wrong code.
 //
-// Found the hard way, and worth recording because the failure was
-// invisible: a full green run came back AFTER this root moved, because
-// labMaster is a long-running server and the suites were still talking
-// to the copy started before the change. The harness only broke when the
-// server was restarted.
-//
 // So a node declares which it is:
 //
 //   kind 'lab'      repo/lab/<name>   a git clone, updated from GitHub,
@@ -86,12 +80,6 @@ const FIXTURE_KIND = 'fixture';
 //
 //   Andy, 2026-09-23: "why does he access node starting through anything
 //   but labMaster?"
-//
-// He was asking about the agents, and the answer was that nothing said
-// they should: an agent's node was spawned by a platform start script,
-// directly, while ANDY's node has gone through labMaster since update
-// rule 6. So the control plane knew about every node on the box except
-// the two that post to each other all day.
 //
 // An AGENT row is a node labMaster runs but did not make. Its home is the
 // agent's own clone — `D:\SpiritOS-agent-claude`, `~/SpiritOS-agent-wsl-
@@ -233,19 +221,13 @@ function findNode(id) {
 // better part of a second with the event loop stopped dead, and under the
 // full harness it is far worse.
 //
-// WHAT THAT COST, found 2026-09-21 after three wrong diagnoses. While
-// labMaster is blocked it cannot accept, its listen backlog fills, and
-// Windows answers a connection on a full backlog with RST where Linux
-// queues it. So labLifecycle failed as `start relay: 0 fetch failed
-// (ECONNRESET)` — Windows-only, load-dependent, and never reproducible on
-// the lab suites alone because they do not load the box enough.
+// While labMaster is blocked it cannot accept, its listen backlog fills,
+// and Windows answers a connection on a full backlog with RST where Linux
+// queues it: a suite then sees ECONNRESET.
 //
 // The cache is deliberately short: long enough to serve one response from
 // one subprocess, far too short to hold a stale answer across a person's
-// click. The file already carries this lesson one comment further down,
-// about a `git rev-parse` per node per poll being "a subprocess storm for
-// a string that only changes when a button is pressed". Same storm, two
-// calls earlier.
+// click.
 const PORT_SCAN_TTL_MS = 400;
 let portScan = { at: 0, text: '' };
 
@@ -270,9 +252,8 @@ function pidsOnPort(port) {
       // ONE column between the port and the state, not two. Windows
       // netstat prints `TCP  <local>  <foreign>  LISTENING  <pid>`, so
       // after the port there is exactly one non-space token before
-      // LISTENING. With two, this matched nothing at all — so `running`
-      // said no for every node labMaster had not started itself, and the
-      // panel quietly reported a healthy network as dead.
+      // LISTENING. With two, this would match nothing at all, and `running`
+      // would say no for every node labMaster had not started itself.
       const re = new RegExp('[:.]' + port + '\\s+\\S+\\s+LISTENING\\s+(\\d+)', 'gi');
       let m;
       while ((m = re.exec(out))) pids[m[1]] = true;
@@ -323,10 +304,7 @@ function publicNode(n) {
     // updated rather than asked here. The panel polls every three
     // seconds; a `git rev-parse` per node per poll is a subprocess
     // storm for a string that only changes when a button is pressed.
-    //
-    // It is the answer to the question this whole change created: a lab
-    // node runs published code now, so "is it behind?" is a real
-    // question and used not to be.
+    // A lab node runs published code, so "is it behind?" is a real question.
     commit: n.commit || '',
   };
 }
@@ -340,10 +318,8 @@ function publicNode(n) {
 // deletes directories on a developer's machine earns all three — and the
 // work node is a real checkout, not a copy.
 //
-// THEY MATTER MORE THAN THEY DID. This used to delete inside %TEMP%;
 // LAB_ROOT is `repo/lab`, a folder beside somebody's actual checkout and
-// inside their synced drive. The guards did not change because they were
-// already written for the worse case.
+// inside their synced drive.
 function homeRootFor(id, kind) {
   const slug = slugName(id);
   if (!slug) return null;
@@ -356,24 +332,18 @@ function homeRootFor(id, kind) {
 }
 
 // A NODE THAT IS RECREATED MUST BE CLEAN, and nothing else may call
-// this. The old copy path wrote tracked files over whatever was already
-// there, and relay-state, device.json, session.json and minted.json are
-// none of them tracked — so a "new" lab relay could boot owned by a
+// this. A node's state (relay-state and the rest) is untracked, so a
+// copy over an old home would let a "new" lab relay boot owned by a
 // previous run's key and be unclaimable by the suite that asked for it.
-//
-// That cost an afternoon of debugging a relay that remembered something
-// it should not have, and it is why Recycle wipes. It is also why Recycle
-// is not the bulk button: the same thoroughness that makes a new node
-// clean is what took Andy's bindings away.
+// That is why Recycle wipes, and why Recycle is not the bulk button.
 function wipeHome(id, kind) {
   const target = homeRootFor(id, kind);
   if (!target) return false;
   // A KILLED NODE IS NOT YET A DEAD ONE. stopNode's kill is asynchronous,
   // and on Windows the dying process still holds spirit/state/node.db open
-  // (SQLite since transport/R19), so a single rmSync failed on it and the "new" node
-  // booted on the last run's log: liveFrontDoor read yesterday's arrivals,
-  // every run, 2026-09-29. rmSync retries EBUSY/EPERM itself; a home that
-  // still survives is an error, never a quiet reuse.
+  // (SQLite), so a single rmSync can fail on it and leave the "new" node
+  // booting on the last run's log. rmSync retries EBUSY/EPERM itself; a home
+  // that still survives is an error, never a quiet reuse.
   try { fs.rmSync(target, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); }
   catch (err) { throw new Error('could not wipe ' + id + ' (' + (err.code || err.message) + '); is its old process still running?'); }
   return true;
@@ -384,31 +354,15 @@ function wipeHome(id, kind) {
 //   Andy: "i want all my nodes on labMaster page to only be updated via
 //   github, jazz's binding to spirit-3 keeps getting trashed."
 //
-// copyTrackedSpirit STOOD HERE. It ran `git ls-files` in the checkout and
-// copied each path into the node's home — and, unless asked to keep
-// state, `wipeHome` first. That is the whole of the complaint:
-//
-//   relay-state/ and session.json are GITIGNORED, so they were never in
-//   the copy and never came back. Recycle destroyed a node's key and its
-//   binding, and `Recycle all` was the only bulk button on the panel. A
-//   node bound to spirit-3 came back a stranger to itself.
-//
-// Both halves are answered by the same change, and it is a change to
-// something SIMPLER rather than something cleverer: a lab node is a git
-// clone, and it is updated the way the public relay updates itself
-// (install/kamerata/update.sh, running on a real box today):
+// A lab node is a git clone, and it is updated the way the public relay
+// updates itself (install/kamerata/update.sh):
 //
 //   git fetch origin
 //   git reset --hard origin/master
 //
 // `reset --hard` reverts tracked files and LEAVES UNTRACKED AND IGNORED
-// FILES ALONE. Every piece of a node's own state — relay-state/,
-// session.json, view.json, prefs.json, minted.json, the peerfiles — is
-// ignored, so an update cannot reach any of it. The binding problem stops
-// being a thing that is fixed and becomes a thing that cannot happen.
-//
-// relays.json was the one exception and is no longer tracked either; see
-// .gitignore, which says why at length.
+// FILES ALONE. A node's own state — relay-state/, spirit/state/ — is
+// ignored, so an update cannot reach any of it.
 //
 // ── AND IT IS GITHUB, NOT THIS WORKING TREE ──────────────────────────
 //
@@ -444,8 +398,7 @@ function isClone(targetRoot) {
 
 // ── A FIXTURE IS A COPY OF THE WORKING TREE ──────────────────────────
 //
-// What every lab node used to be, kept for the nodes that should be it:
-// the suites. `git ls-files` names the tracked tree and each path is
+// For the suites. `git ls-files` names the tracked tree and each path is
 // copied, so a fixture runs the code being written rather than the code
 // that has been published — which is the only thing a test may run.
 //
@@ -466,8 +419,7 @@ function copyTrackedSpirit(id, keepState) {
   // A TRACKED FILE THAT IS NOT ON DISK IS SKIPPED, not fatal. `git
   // ls-files` reads the INDEX, which happily lists a file that has since
   // been deleted from the working tree — a `git rm` not yet committed, or
-  // something staged by reflex. One of those made every node creation
-  // fail with an ENOENT about a path nobody recognised.
+  // something staged by reflex; copying it would fail with ENOENT.
   const absent = [];
   relativePaths.forEach(function (relPath) {
     const source = path.join(REPO_ROOT, relPath);
@@ -523,8 +475,8 @@ function cloneNode(id) {
 
 // NEW CODE, SAME NODE — and now that is all it can be.
 //
-// A home that is not a clone is one built by the old copy path. It is
-// adopted rather than refused: clone beside it, move its state across,
+// A home that is not a clone was built by copying. It is adopted rather
+// than refused: clone beside it, move its state across,
 // and it becomes an ordinary lab node. Doing that silently is right —
 // the alternative is telling somebody their node cannot be updated and
 // leaving them to move a directory by hand.
@@ -541,16 +493,13 @@ function updateNode(id) {
 // stated as paths because this has to MOVE them rather than merely not
 // overwrite them. Everything else in a home is code and comes from git.
 const NODE_STATE = [
-  // The relay list is in here since goal/G16.3 (spirit/state/relays.json).
+  // spirit/state holds node.db, whose relays table is the node's relay list (relayKeys.js).
   path.join('spirit', 'run', 'relay-state'),
   path.join('spirit', 'run', 'spirit', 'state'),
+  // shell/natter and shell/contacts are not in the tree any more; `carryState` skips what is not there, so these
+  // three entries are silent no-ops.
   path.join('spirit', 'run', 'shell', 'natter', 'session.json'),
   path.join('spirit', 'run', 'shell', 'natter', 'minted.json'),
-  // relayChat's entry stood here until 2026-09-25, when the app left for
-  // its own repo. `carryState` skips what is not there, so it would have
-  // gone on being a silent no-op — which is why it wanted removing
-  // rather than leaving: a list that tolerates a missing entry is a list
-  // nobody notices has gone stale.
   path.join('spirit', 'run', 'shell', 'contacts'),
   path.join('spirit', 'run', 'shell', 'shared'),
 ];
@@ -563,17 +512,14 @@ function carryState(fromRoot, toRoot) {
     const to = path.join(toRoot, rel);
     fs.mkdirSync(path.dirname(to), { recursive: true });
     // Over the top: a clone brings the app FOLDERS (manifests, scripts),
-    // so contacts/ already exists and only the files a node
-    // wrote into them are being added.
+    // so only the files a node wrote into them are being added.
     fs.cpSync(from, to, { recursive: true, force: true });
     carried.push(rel);
   });
   return carried;
 }
 
-// An old copy-built home becomes a clone, keeping its key. This is what
-// every existing lab node goes through once, and it is why the first
-// update after this change takes a moment longer than the rest.
+// A copy-built home becomes a clone, keeping its key.
 function adoptIntoClone(id) {
   const targetRoot = homeRootFor(id, LAB_KIND);
   if (!targetRoot) throw new Error('refusing to adopt outside the lab root: ' + id);
@@ -594,8 +540,7 @@ function adoptIntoClone(id) {
 }
 
 // WHICH COMMIT IS THIS NODE ON. A clone can answer for itself, so nothing
-// is stamped into it any more — build.json was only ever there because a
-// copied tree is not a repository and could not be asked.
+// is stamped into it.
 function commitOf(targetRoot) {
   try { return git('rev-parse --short HEAD', targetRoot).trim(); }
   catch (err) { return ''; }
@@ -779,11 +724,10 @@ function handleCreate(body) {
   if (port === WORK_PORT) return { status: 403, error: '65432 is the work node' };
   if (portTaken(port)) return { status: 409, error: 'port in use in table' };
 
-  // A NEW FIXTURE STARTS EMPTY (goal/G29.17, found digging liveFrontDoor's reds). ensureClone copies a fixture OVER its
-  // old home, which is right for a home that must exist and wrong for a node being created: a delete whose wipe failed
-  // (Windows still holding the dying node's node.db) left lw-alfa's home from 2026-10-15, and every create since booted
-  // on it, its node.db pinning a relay key three runs old, so its stream to the new lab relay never opened. A created
-  // fixture is wiped first, as Recycle wipes; a home that cannot be wiped is an error, never a quiet reuse.
+  // A NEW FIXTURE STARTS EMPTY (goal/G29.17). ensureClone copies a fixture OVER its old home, which is right for a home
+  // that must exist and wrong for a node being created: a left-over home would boot with an old node.db pinning a stale
+  // relay key. A created fixture is wiped first, as Recycle wipes; a home that cannot be wiped is an error, never a
+  // quiet reuse.
   let home;
   try { home = kind === FIXTURE_KIND ? copyTrackedSpirit(id) : ensureClone(id, kind); }
   catch (err) { return { status: 500, error: String(err.message || err) }; }
@@ -842,11 +786,6 @@ function handleStop(node) {
 //   Andy: "labMaster no longer offers me start or stop, one (re)start
 //   button would do."
 //
-// Start and Stop were a toggle, and a toggle shows you one half: with
-// every node running, every row said Stop and the table looked as though
-// it had lost a control. Worse, the thing wanted most often — put this
-// node back on its feet — took two presses and a wait in between.
-//
 // So: stop if it is up, then start. A node that was down is simply
 // started, which is why the label has the parenthesis in it.
 //
@@ -864,8 +803,8 @@ function handleRestart(node) {
 // START AGAIN AS A STRANGER. The home goes and a fresh clone takes its
 // place — new key, off every relay it was on, no conversation. It is the
 // rare thing to want and it stays per-row, behind its warning: the BULK
-// button is Update now, because a bulk gesture that destroys every
-// identity in the lab is how this whole sitting started.
+// button is Update, because a bulk gesture must not destroy every
+// identity in the lab.
 function handleRecycle(node) {
   if (node.permanent) return { status: 403, error: 'cannot recycle work node' };
   // An agent's clone is the agent's, not labMaster's to wipe.
@@ -885,11 +824,8 @@ function handleRecycle(node) {
 
 // UPDATE FROM GITHUB. Stop, fetch, reset to origin/master, start.
 //
-// Its key, its relay rows, its device slot, its session and its
-// conversations all survive — not because this is careful with them, but
-// because git has never had them. That is the difference between the old
-// refresh and this one: the old one was a copy that happened to miss the
-// state, and one wrong flag away from not missing it.
+// Its key, its relay rows and its conversations all survive — not because
+// this is careful with them, but because git has never had them.
 //
 // The work node is refused because it is Andy's checkout: a tool that
 // fetched and hard-reset somebody's working tree would throw away the
@@ -898,8 +834,8 @@ function handleRefresh(node) {
   if (node.permanent) return { status: 403, error: 'the work node is your checkout' };
   stopNode(node);
   try {
-    // A fixture is refreshed the way it always was — the working tree,
-    // copied over the top, state left where it is. Only a lab node goes
+    // A fixture is refreshed from the working tree, copied over the top,
+    // state left where it is. Only a lab node goes
     // to GitHub.
     node.home = (kindOf(node) === FIXTURE_KIND
       ? copyTrackedSpirit(node.id, true)
@@ -919,10 +855,8 @@ function handleDelete(node) {
   stopNode(node);
   // ── DELETING AN AGENT ROW REMOVES THE ROW, NEVER THE CLONE ──────
   //
-  // The guard here used to refuse outright, which was the wrong half of
-  // the rule: what must be protected is the agent CLONE, not labMaster's
-  // note about it. A test row that leaked into the real table could then
-  // never be swept, which is how this was found.
+  // What must be protected is the agent CLONE, not labMaster's note about
+  // it, so a test row that leaked into the real table can still be swept.
   if (kindOf(node) === AGENT_KIND) {
     nodes = nodes.filter(function (n) { return n.id !== node.id; });
     saveDesired(nodes);
@@ -958,13 +892,13 @@ function handleDelete(node) {
 //   - the work node's device slot: never written. A device enrolment is
 //     a person's phone, not a fixture.
 //   - the work node's relays.json: only ever ADDED to, and only if
-//     spirit-3 is missing from it.
+//     spirit-3 is missing from it. (The node's relays live in node.db;
+//     see liveWorldPaths.)
 //
 // What it does do: make sure a peer node exists and runs, get it a row
 // on spirit-3 through an owner-minted invite (the real join path, not a
 // hand-written file), point it at spirit-3, and introduce the two nodes
-// to each other through their own /api/hub/contact — the same route a
-// person uses.
+// to each other with peer.acquire on their own /api/spirit.
 const LIVE_RELAY = 'https://spirit.andyflinn.com';
 const LIVE_LABEL = 'spirit';
 
@@ -972,7 +906,8 @@ function liveWorldPaths() {
   const run = path.join(WORK_HOME);
   return {
     identity: path.join(run, 'spirit', 'state', 'identity.json'),
-    // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+    // relays.json is the old relay list: the node keeps its relays in node.db, and relayKeys.js (importOld) moves a
+    // relays.json it finds into that table and deletes the file.
     relays: path.join(run, 'spirit', 'state', 'relays.json'),
     session: path.join(run, 'shell', 'natter', 'session.json'),
     // The home itself, for the seat record — see liveWorldReport.
@@ -1009,11 +944,6 @@ function livePost(url, body) {
 // labMaster is a process, so it is that kind of client: no key, no
 // signing, one POST over loopback and the work node does the rest.
 //
-// It reached /api/hub/invite until 2026-09-15, one of four post-path
-// doors that closed. Each of them built a single packet body and handed
-// it to router.post, which is what a peerPost IS — so the door was a
-// second way of saying what the protocol already said.
-//
 // ADDRESSED BY KEY, which the roll publishes to anyone. The answer
 // arrives inside the envelope the relay replied in, and the body is what
 // a caller wants — the same shape api.peerPost hands a page.
@@ -1049,13 +979,9 @@ function napFor(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 // WAIT FOR THE NODE TO ACTUALLY ANSWER, rather than for a number of
 // milliseconds to pass.
 //
-// This was a fixed sleep and it cost two runs of the button. stopNode
-// kills by PID, which is asynchronous; a restart that slept 700ms
-// sometimes had the old process still holding the port, so the new child
-// died on EADDRINUSE and the next step failed with "fetch failed" — a
-// message about the wrong thing entirely, two steps later.
-//
-// A sleep is a guess about somebody else's machine. This asks.
+// stopNode kills by PID, which is asynchronous; a restart after a fixed
+// sleep can find the old process still holding the port, so the new child
+// dies on EADDRINUSE. A sleep is a guess about somebody else's machine. This asks.
 async function waitForNode(port, ms) {
   const until = Date.now() + (ms || 15000);
   while (Date.now() < until) {
@@ -1070,26 +996,11 @@ async function waitForNode(port, ms) {
 
 // spirit/run's own identity, read and never written. This is the owner of
 // spirit-3, which is what lets the mint below be signed at all.
-// WHAT MAKES THE SHELL OPEN NORMALLY, and it is not the relay.
-//
-// firstRun() in shell.js is decided by exactly one thing — a label in
-// app/natter/session.json — so a node with its identity, its contacts,
-// its relays and its mail all intact still opens to Natter alone and
-// behaves like a stranger to itself without it:
-//
-//   Andy: "it wont show the shell it bring me directly to natter,
-//   indicating to me that Im not hooked up with my satellite."
-//
-// It is gitignored, so no commit restores it, and untracked, so anything
-// that lays down a fresh tracked tree omits it — which is why a freshly
-// created lab node has never had one. labPopulate deliberately does not
-// WRITE this file, only back it up; that restraint is right for a tool
-// that reshapes an existing world, and wrong for a button whose whole job
-// is to produce a working one.
-//
-// A backup is preferred over an invention: the work node's own binding is
-// the true one, and re-inventing a label would be this tool deciding
-// somebody's name for them.
+// writeSession writes shell/natter/session.json with a label, restoring a
+// before-lab backup first when there is one. The Natter app is gone
+// (goal/G30.7) and shell.js no longer reads session.json: the node's name
+// is node.card's. So this file decides nothing in the shell now, and the
+// steps' words ("the shell will open its desktop now") overstate it.
 function writeSession(home, label, steps, who) {
   const dir = path.join(home, 'shell', 'natter');
   const file = path.join(dir, 'session.json');
@@ -1135,22 +1046,18 @@ function workIdentity() {
 async function liveWorldReport(peerNode, peerName) {
   const me = workIdentity();
   const relays = readJson(liveWorldPaths().relays, []);
-  // ── ASK EACH NODE, NOT THE RELAY (2026-09-18) ────────────────────
+  // ── ASK EACH NODE, NOT THE RELAY ─────────────────────────────────
   //
-  // This read `GET /api/relay/who` and looked for each key in the list.
-  // That route was a public, unsigned read of the whole membership —
-  // named a cheat in decision 0010 and deleted the next day — and 0012
-  // rules out any door that answers "who is on this box".
-  //
-  // The question was never really about the relay. "Does this node hold a
-  // row" is something the NODE knows: it records the seat when its claim
-  // is granted (relayKeys.seat, hub.handleClaim) and reads it at boot.
+  // Decision 0012 rules out any door that answers "who is on this box".
+  // "Does this node hold a row" is something the NODE knows: it records
+  // the seat when its claim is granted (relayKeys.seat) and reads it at boot.
   // Andy: "persist necessary information at claim time, re-use that
   // information on boot."
   //
-  // So this reads each node's own record, which is also more honest about
-  // what it is reporting — the lab shows what each node believes, and a
-  // node that believes wrongly is exactly the thing worth seeing.
+  // seatedAt below reads spirit/state/relayKeys.json, the old seat store:
+  // relayKeys.js keeps seats in node.db and moves a relayKeys.json it finds
+  // into that table and deletes the file, so once the node has run this
+  // finds no seat.
   // Reachable when it answers a card ask on its one door (goal/G22.6 closed
   // GET /api/relay/key).
   const up = !!(await require('../relayDoor').relayKeyOf(LIVE_RELAY).catch(function () { return null; }));
@@ -1170,8 +1077,8 @@ async function liveWorldReport(peerNode, peerName) {
       name: me ? me.name : '',
       onRelay: seatedAt(liveWorldPaths().home || WORK_RUN, LIVE_RELAY),
       inRelaysJson: relays.some(function (r) { return r && r.url === LIVE_RELAY; }),
-      // Whether the SHELL thinks this node is bound, which is a different
-      // question from whether the relay does — and the one a person sees.
+      // A label in shell/natter/session.json, which the shell no longer reads
+      // (see writeSession).
       boundInShell: !!(readJson(liveWorldPaths().session, {}) || {}).label,
     },
     peer: {
@@ -1197,14 +1104,9 @@ async function buildLiveWorld(body) {
   }
   steps.push('work node is ' + me.name + ', and its identity was read and not touched');
 
-  // 0. THE WORK NODE IS RUNNING. Assumed until now, and that assumption
-  //    cost three runs of this button: killing labMaster takes its
-  //    spawned children with it, so the node this world is built AROUND
-  //    was simply absent, and the failure surfaced two steps later as
-  //    "contacts: fetch failed" — a message about the wrong thing.
-  //
-  //    "Create a working environment" has to include the half you are
-  //    standing on.
+  // 0. THE WORK NODE IS RUNNING. Killing labMaster takes its spawned
+  //    children with it, so the node this world is built AROUND may be
+  //    absent; it is started here first.
   const workNode = findNode(WORK_ID);
   if (workNode && !portHasListener(WORK_PORT)) {
     handleStart(workNode);
@@ -1238,11 +1140,12 @@ async function buildLiveWorld(body) {
   // SPIRIT-3 GOES FIRST, and that turns out to be the whole of "properly
   // bound".
   //
-  // hub.loadRelayUrl takes relays[0] and nothing else, so claim, send,
-  // invite and contact all dial whatever sits at the front. This node's
-  // front entry was a lab relay on 65425 that was not running, so every
-  // one of those verbs was being refused by a dead box on loopback while
-  // the row on spirit-3 sat there unused.
+  // hub.loadRelayUrl takes the first of ownerBadge.configuredUrls, so
+  // claim, send, invite and contact dial whatever sits at the front.
+  // That list is node.db's relays table; this writes relays.json, which
+  // relayKeys.js (importOld) moves into the table on the node's next read
+  // and deletes, copying only urls that carry a pin. Whether the order
+  // written here survives that move is not checked here.
   //
   // labPopulate does the exact opposite deliberately, and says so: the
   // lab relay goes first when a LAB world is being built. The two are a
@@ -1263,9 +1166,8 @@ async function buildLiveWorld(body) {
     steps.push('work node already dials spirit-3 first');
   }
 
-  // 2b. And the shell's own idea of being bound. A row on a relay and a
-  //     label in session.json are different facts, and only the second
-  //     decides whether this node opens a desktop or opens Natter alone.
+  // 2b. A label in shell/natter/session.json (see writeSession: the shell
+  //     no longer reads it).
   const workBound = writeSession(WORK_HOME, me.name, steps, 'work node');
 
   // 3. The peer gets a row on spirit-3, the real way: the owner mints an
@@ -1304,20 +1206,13 @@ async function buildLiveWorld(body) {
     // displacing the first, which would knock his running node off the
     // relay this button exists to bind things to.
     //
-    // So the node mints, which is what Natter's own button does. One less
-    // thing this file does by hand, which is the direction the GAPS list
-    // has always pointed.
+    // So the work node mints, through postToRelayVia.
     const minted = await postToRelayVia(
       'http://127.0.0.1:' + WORK_PORT, LIVE_RELAY,
       { invite: { label: peerName, days: 7, token: '' } }
     );
-    // `{invite:{…}}` NOW, not the invite itself. The door used to unwrap
-    // the relay's answer and pass the inner object through; with the door
-    // gone, what arrives is what the relay actually said.
-    //
-    // `name: me.name` went too, and never mattered: the relay reads the
-    // owner's name out of allow.json, because the only sender who reaches
-    // that line IS the owner.
+    // What arrives is what the relay said: `{invite:{…}}`, not the invite
+    // itself.
     const token = minted.body && minted.body.invite && minted.body.invite.token;
     if (!minted.ok || !token) {
       return { status: 502, error: 'spirit-3 refused the invite: ' + minted.text };
@@ -1342,14 +1237,12 @@ async function buildLiveWorld(body) {
   //    there — a row without a stream is a name, not a presence.
   // THE SAME ORDERING, ON THE PEER, and it is not optional either.
   //
-  // A lab node's tree is copied from spirit/run, so it inherits the same
-  // relays.json — lab relay first. That is why the contact step below kept
-  // failing with ECONNREFUSED 65425 even after the work node was fixed:
-  // it was the PEER dialling a dead box, not the work node.
+  // A peer dialling a dead lab relay first fails the contact step below.
   //
   // A row on spirit-3 and a stream to spirit-3 are different things, and
   // neither is "properly bound" on its own. This is the second.
-  // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+  // This writes the old relays.json, which the node moves into node.db's
+  // relays table (relayKeys.js, importOld); see the work node's step 2.
   const theirRelays = path.join(peer.home, 'spirit', 'state', 'relays.json');
   const theirRows = readJson(theirRelays, []).filter(function (r) { return r && r.url; });
   const theirOthers = theirRows.filter(function (r) { return r.url !== LIVE_RELAY; });
@@ -1370,9 +1263,8 @@ async function buildLiveWorld(body) {
     steps.push(peerName + ' already dials spirit-3 first');
   }
 
-  // 4b. The work node is restarted if its order changed -- relays.json is
-  //     read at boot, so a reordering nobody restarted for is a file that
-  //     disagrees with the running process.
+  // 4b. The work node is restarted if its order changed, so the running
+  //     process reads the relays.json written above.
   if (!wasFirst) {
     const work = findNode(WORK_ID);
     if (work) {
@@ -1390,10 +1282,8 @@ async function buildLiveWorld(body) {
     }
   }
 
-  // 4c. The same for the peer, which has NEVER had one: session.json is
-  //     gitignored, so a clone cannot bring it, and a fresh lab
-  //     node therefore always opens to Natter alone until somebody claims
-  //     through the UI by hand.
+  // 4c. The same for the peer: a session.json label (see writeSession: the
+  //     shell no longer reads it).
   const peerBound = writeSession(peer.home, peerName, steps, peerName);
   if (peerBound) {
     handleStop(peer);
@@ -1495,11 +1385,8 @@ const server = http.createServer(function (req, res) {
 
   // WHICH RELAYS IS EACH NODE ACTUALLY HOLDING OPEN.
   //
-  // The table said id, name, type, port and running, and none of those
-  // answers the question the panel is usually being asked: is my little
-  // network actually talking to anything? Andy looked at it, saw no
-  // column for it, and reasonably concluded nothing was connected — when
-  // in fact every node was.
+  // The question the panel is usually being asked: is my little network
+  // actually talking to anything?
   //
   // Read from each node's own relay-presence job over loopback. A node
   // that is not running, or is running older code, simply reports
@@ -1508,13 +1395,12 @@ const server = http.createServer(function (req, res) {
   if (req.method === 'GET' && pathname === '/api/links') {
     Promise.all(nodes.map(function (n) {
       // The same test publicNode uses for `running`: a child we spawned,
-    // or a listener on the port. Asking only the second was how this
-    // column came back empty for every node while every node was up.
+    // or a listener on the port.
     const child = children[n.id];
     const alive = !!(child && child.exitCode == null) || portHasListener(n.port);
     if (!alive) return Promise.resolve([n.id, null]);
-      // jobs.list is gone (puppets/G2): find the presence job by search,
-      // then read it whole with jobs.get.
+      // Find the presence job by jobs.search, then read it whole with
+      // jobs.get (puppets/G2).
       const ask = function (body) {
         return fetch('http://127.0.0.1:' + n.port + '/api/spirit', {
           method: 'POST',
@@ -1617,13 +1503,11 @@ server.on('error', function (err) {
   process.exit(1);
 });
 
-// ── RUN IT, OR ASK IT (2026-09-23) ───────────────────────────────────
+// ── RUN IT, OR ASK IT ────────────────────────────────────────────────
 //
-// Started as a program it listens, as it always has. REQUIRED, it does
-// not: a suite asking what labMaster would DECIDE should not have to
-// take a port to find out, and a stray require would otherwise fight the
-// real one for 65420 — which is what happened the first time
-// agentNodeRows.js was run.
+// Started as a program it listens. REQUIRED, it does not: a suite asking
+// what labMaster would DECIDE should not have to take a port to find out,
+// and a stray require would otherwise fight the real one for 65420.
 if (require.main === module) {
 server.listen(MASTER_PORT, '127.0.0.1', function () {
   console.log('labMaster http://127.0.0.1:' + MASTER_PORT);

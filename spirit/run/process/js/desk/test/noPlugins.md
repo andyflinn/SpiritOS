@@ -13,3 +13,9 @@ Andy, the box: *"the apps and plugin system goes."*, *"there will only be goals,
 - Andy: *"take out your search of the items text"*, *"take out the chat-search do, it's not actually usable."*: the item detail has no find field over its box and no chat search.
 - Andy: *"publishData summary is no longer needed, i only check on github."*: publishData posts nothing to the desk.
 - Andy (Q4): *"just stash that test.js and test.json in spirit/test/"*: `stackFrameList.json` and `violators.js` are kept in `spirit/test/`, `tools/wirePaths.js` reads the list there, and `stackFrameViolators.js` reads nothing from what goes.
+
+## Found while reading, not asserted
+
+- DISCREPANCY WITH ANDY's RULES ("removal of plugin support."): `process/js/desk/data.js` still handles a publish
+  naming `plugin: 'stackFrameChecks'` and keeps the `deskDoors` / `deskDoorRuns` branches and their reads for it,
+  though nothing publishes it any more. This test reads data.js only for `goal/G0`.

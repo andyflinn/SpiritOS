@@ -1,14 +1,13 @@
 'use strict';
 
 // spirit/test/rootTestFolder.js
-// goal/G40.6: the root test folder, the first product tests inside spirit/run/. Written first, red on today's tree, by
-// wsl-claude, who does not build it. The box (v19), Andy's words among it: "this item will create only create 3 files"
+// goal/G40.6: the root test folder, the first product tests inside spirit/run/. The box (v19), Andy's words among it: "this item will create only create 3 files"
 // and then testModule.js and spirit-child-generalRules.js; "test module must find all /test/files.js in the run
 // tree."; "tests like generalRule.js ... obviously also must take a filename argument, and then create separate test
 // id's for every file called with that general-rule assertion...."; "just getting a first fail or success, that is a
 // success here."
 //
-// NAMED HERE where the box names none (the builder may argue them under the item first):
+// NAMED HERE where the box names none:
 //   - testModule.js exports testsFor(path, { root }) -> [{ test, file? }]: test a run-root path of a test file; file,
 //     on a general test only, the run-root path of the module it judges. root defaults to spirit/run/. With no path,
 //     every test the tree holds; with one, that file's blast radius. Run from the command line it prints the same.
@@ -21,6 +20,7 @@
 //      tests of the modules on its line upward with their -child- general tests; never a sibling branch; nothing twice.
 //   4. The new tests run and report in today's format (testSupport's "Test completed" line): spirit/run/test/spirit.js,
 //      and the general rule given spirit/run/spirit.js, its result naming that file. Pass or fail alike.
+//      spirit.js is spirit/run/spirit/spirit.js now, so the path handed here names no file.
 //   5. The harness reaches the run tree through testModule, and no test file of the run tree is run twice.
 //   6. spirit.md and TEST_SYSTEM.md say what the box says they hold.
 

@@ -3,9 +3,9 @@
 // spirit/test/deskFake.js
 // A DESK SERVER IN MEMORY, FOR THE SUITES THAT MOUNT DESK — desk/G1.4.
 //
-// From G1.4 Desk keeps nothing in its own folder: it asks the desk server
+// Desk keeps nothing in its own folder: it asks the desk server
 // (process/js/desk) by its verbs on the loopback door (D4), desk.<verb> on the
-// flat apiDoor since goal/G30.6. A suite that
+// flat apiDoor (goal/G30.6). A suite that
 // mounts Desk hands it this as `api.verb`, so it answers as the real server
 // does: the same verbs, the same shapes, the same bound (appClient.ANSWER_MAX
 // less 512, newest first, in the shared {items, more}), and it records every call so a
@@ -27,9 +27,8 @@ const ROOM = appClient.ANSWER_MAX - 512;
 
 function create(rows) {
   const lines = (rows || []).map(function (r) { return typeof r === 'string' ? JSON.parse(r) : r; });
-  // goal/G33.7: the docs table and state went; seen is one value per item. docs.seen is the seen.json a suite planted
-  // (fromFiles), kept as it was planted: since goal/G43.22 no group chat goal/G0 reads or writes it (Andy: "G0 goes,
-  // from ui and server, kept in database.").
+  // goal/G33.7: seen is one value per item. docs.seen is the seen.json a suite planted (fromFiles), kept as it was
+  // planted: no verb of the fake reads or writes it.
   const docs = { seen: '' };
   const voice = [];
   const calls = [];
@@ -40,7 +39,7 @@ function create(rows) {
   // As the real server walks (desk.js walked, slim/G1.2): one bucket,
   // '**', a line too big to be sent alone skipped and said by `more`.
   function walked(walk, pairOf) {
-    // goal/G29.22: the probability bucket, as desk.js walked() is now; probability 0 keeps the walk's order.
+    // goal/G29.22: the probability bucket, as desk.js walked(); probability 0 keeps the walk's order.
     const bucket = createProbabilityBucket(Infinity);
     let skipped = false;
     for (const obj of walk) {
@@ -52,16 +51,16 @@ function create(rows) {
     return { items: r.items, more: !!r.more || skipped };
   }
   const desk = {
-    // log.add, log.search and pending.get went with goal/G33.4, as on the real server.
-    // state.get and state.set went with goal/G33.7, as on the real server; seen is seen.get {id} -> {at}, seen.set {id, at}.
+    // seen is seen.get {id} -> {at}, seen.set {id, at}, as on the real server.
     'seen.get': function () { return { at: '' }; },
     'seen.set': function () { return { change: calls.length }; },
+    // voice.add is the fake's alone: desk.js has no such verb and writes no voice file (desk.js, HIS VOICE IS NOT
+    // WRITTEN HERE).
     'voice.add': function (a) { voice.push({ text: a.text, day: a.day }); return { added: true }; },
     // The List's two verbs (desk/G2.6): the facts, and a press the server takes.
     'items.search': function () { return walked(fake.items, function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
     'press': function () { return { change: calls.length }; },
-    // The group chat goal/G0 (goal/G3.10) the real server held from its start went with goal/G43.22, and so did the
-    // fake's: an item's chat answers empty, a chat.add is only recorded in calls.
+    // There is no group chat goal/G0 (goal/G43.22): an item's chat answers empty, a chat.add is only recorded in calls.
     'item.chat': function () { return { chat: [], chatMore: false }; },
     'chat.add': function () { return { change: calls.length }; },
   };
@@ -77,7 +76,7 @@ function create(rows) {
   }
   // api.verb(name, body) -> {status, body}, as the shell's is. A server's verb comes by name, '<server>.<verb>' with
   // its args as the body (goal/G30.6); the server is the part before the FIRST dot. Anything else (the tree, a node
-  // verb) is answered empty, as before.
+  // verb) is answered empty.
   fake.verb = function (name, body) {
     const n = String(name || '');
     const dot = n.indexOf('.');
@@ -99,10 +98,10 @@ function create(rows) {
   return fake;
 }
 
-// THE SUITES WRITTEN BEFORE G1.4 mounted Desk on a folder of files. This
-// builds the fake from such a folder (log/log.json, seen.json, state.json)
-// and keeps the folder in step with every call, so a suite that remounts
-// from it, or reads seen.json back, goes on working unchanged.
+// FOR SUITES THAT PLANT A FOLDER OF FILES. This builds the fake from such a
+// folder (log/log.json, seen.json) and writes log/log.json and seen.json
+// back after every call, so a suite that remounts from it, or reads
+// seen.json back, sees the same rows.
 function fromFiles(files) {
   let rows = [];
   try { rows = JSON.parse(files['log/log.json'] || '[]'); } catch (e) { rows = []; }

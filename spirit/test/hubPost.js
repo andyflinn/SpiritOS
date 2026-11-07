@@ -1,17 +1,11 @@
 'use strict';
 
 // spirit/test/hubPost.js
-// /api/hub/post, driven as a function.
+// hub.handlePost, the handler behind the node's peer.post verb
+// (server.js's 'post' verb calls it with { router: peerRouter }), driven
+// as a function.
 //
-// ── WHY THIS SUITE EXISTS AT ALL ─────────────────────────────────────
-//
-// Until 2026-09-13 this route was the only /api/hub/* one written out
-// inside server.js's route table. Every other hub verb named a handler
-// in hub.js and could therefore be called, and tested, as a function.
-// This one could only be reached by making an HTTP request — so the
-// rules it enforces were only ever exercised live, by hand.
-//
-// And they are rules, not plumbing. Three decisions live here:
+// It holds rules, not plumbing. Three decisions live here:
 //
 //   1. is this node attached to a relay at all
 //   2. WHICH relay to post through, and what `via` overrides
@@ -52,7 +46,7 @@ function bodyOf(obj) {
   };
 }
 
-// Since goal/G19.14 the router answers what presence knows (peerPost holds
+// The router answers what presence knows (goal/G19.14: peerPost holds
 // the streams), so a stand-in router carries these beside its `post`.
 function presenceNaming(map) {
   return {
@@ -100,8 +94,7 @@ function run() {
       return hub.handlePost({}, plain, bodyOf({ to: PEER, text: 'hello' }), deps)
         .then(function () {
           // THE ROUTING RULE, asserted rather than assumed. Two relays
-          // name this peer; the first is taken. Nothing in the system
-          // said so out loud before this check existed.
+          // name this peer; the first is taken.
           if (sent.length === 1 && sent[0].url === RELAY_A && sent[0].to === PEER) {
             test.check('with two relays naming the peer, the first is used and the app is not asked');
           } else {
@@ -213,30 +206,17 @@ function run() {
 // THE OTHER HALF OF THE CHOOSER — WHICH HINTS, IN WHICH ORDER.
 // ---------------------------------------------------------------------
 //
-// Written 2026-09-26 as the BEFORE/AFTER CONTROL for extracting the relay
-// chooser out of handlePost, which Andy approved: "yes, we want that
-// ortho- thinggie". spiritos-f6 asked the right question before starting
-// — whether any assertion pins WHICH relay and WHICH hints for a given
-// roll — and the honest answer was no.
-//
 // THE GAP THIS CLOSES. Everything above stubs presence as `relaysNaming`
-// alone, with no `detail()` and no shadow routes. So the hints branch
-// (hub.js:1223, `if (!where.length && !wanted)`) was only ever entered
-// EMPTY — which is why "a peer no relay names is refused at once" passes:
-// with no connected relay it falls through to the 503 below it. The whole
-// second half of the chooser was unexercised, and nothing else in the
-// tree reaches it: hubPost.js is the ONLY suite that calls handlePost, and
-// routeStash.js uses only hub.shadow. (routeHints.js, partnerAvailability.js
-// and hintWire.js went with partnering, goal/G22.6.)
-//
-// So an extraction preserving relaysNaming ordering and `via` — which the
-// checks above do pin — could change hint content, hint ORDER, or the
-// empty case, and the entire harness would stay green.
+// alone, with no shadow routes. So the second half of chooseRoute in
+// hub.js (no relay names the peer and no `via`: the shadow's hints and
+// the first connected relay) is only ever entered EMPTY there — which is
+// why "a peer no relay names is refused at once" passes: with no
+// connected relay it falls through to the 503.
 //
 // WHAT IT PINS, each one a thing a refactor could silently change:
 //   the relay is `connected[0]`, not one that merely names the peer
 //   the hints are the shadow's routes, best-ranked-first
-//   they arrive as router.post's FOURTH argument (sendPacket, hub.js:2085)
+//   they arrive as router.post's FOURTH argument (sendPacket, hub.js)
 //   and with no routes that argument is UNDEFINED, not an empty array
 //
 // A NOTE FOR WHOEVER COPIES THIS FIXTURE: the router above captures only
@@ -301,7 +281,7 @@ function theChooserAttachesHints() {
 
       // ── AND THE EMPTY CASE IS UNDEFINED, NOT [] ──────────────────────
       //
-      // `hints.length ? hints : undefined` (hub.js:1247). An empty array
+      // `hints.length ? hints : undefined` (hub.js, chooseRoute). An empty array
       // would put an empty `hints` field on the wire, which is a claim
       // that this node knows of no route — different from saying nothing.
       const bare = hubMod.createHub(fs.mkdtempSync(path.join(os.tmpdir(), 'hub-nohints-')));
@@ -328,17 +308,13 @@ function theChooserAttachesHints() {
 }
 
 // ---------------------------------------------------------------------
-// ONE DOOR, AND THE OTHER ONE HAS NO CALLERS LEFT.
+// ONE DOOR: NOTHING NAMES THE RING.
 // ---------------------------------------------------------------------
 //
-// The point of the contract: one way for an app to post to a peer. Every
-// well-behaved app goes through api.sendMessagePacket and names no path
-// at all, so this checks the two that reached for the wire directly —
-// Relay Chat and Natter — plus the shell's own door.
-//
-// Only the WRITE half. /api/hub/inbox is the ring's read half and it is
-// still wired, because retiring it is R8: chat's poll also drives contact
-// acquisition and peerStats, which the router path does not do yet.
+// One way for an app to post to a peer: peer.post. POST /api/hub/send and
+// GET /api/hub/inbox are gone with the ring (server.js says so where the
+// routes stood); this scans shell/ and spirit/ for any file that still
+// names /api/hub/send.
 function noAppNamesTheRing() {
   test.subHeading('No app reaches for the ring to write');
 
@@ -353,8 +329,8 @@ function noAppNamesTheRing() {
       if (e.isDirectory()) { if (depth > 0) scan(full, depth - 1); return; }
       if (!/\.(js|html)$/.test(e.name)) return;
       const rel = path.relative(RUN, full).split(path.sep).join('/');
-      // hub.js implements it and server.js routes it; both are the
-      // system layer and are R8's business, not an app's.
+      // hub.js and server.js still name the route in their comments
+      // about its removal; they are the system layer, not an app.
       if (rel === 'spirit/hub.js' || rel === 'spirit/server.js') return;
       looked.push(rel);
       if (fs.readFileSync(full, 'utf8').indexOf('/api/hub/send') !== -1) named.push(rel);

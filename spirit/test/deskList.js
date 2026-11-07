@@ -3,14 +3,17 @@
 // desk/G2.6: the List paints only what the desk server says.
 // Andy: "The server determines all the content to be drawn." "no pulling". "a press shouldn't post a line, it is not
 // textual information." "The server does the searching AND the filtering." "When Desk opens: [Current Goal Only] on,
-// [Goals Only] off". "Close makes item invisible? then Yes." Nudge: his pick (b), a bare 'changed' packet.
-// The contract the builder follows (wsl-claude's picks where the box names no shape):
+// [Goals Only] off". "Close makes item invisible? then Yes."
+// What is checked (wsl-claude's picks where the box names no shape):
 //   On mount the List asks items.search {text: '', currentGoalOnly: true, goalsOnly: false} once, through
 //   api.verb('desk.items.search', {...}) (the verb by name, goal/G30.6), and paints one row per label.
 //   Each button of a row's `buttons` is an element with data-press="<what>" data-id="<id>"; the row's blocking and
 //   blocked ids are data-open links.
-//   A click on a data-press element sends press {id, what, by: 'andy'}; the row does not change until the server
-//   publishes. Since goal/G3.8 the page posts no nudge: the desk server nudges the agents (goal/G3.5).
+//   A click on a data-press element sends press {id, what}, no `by` (apiAuth/G1.13); the row does not change until
+//   the server publishes. The page posts no nudge (goal/G3.8): the desk server nudges the agents (goal/G3.5).
+//   Go all (desk/G3.4) sits at the right of the bar while the goal offers it, armed on the first press.
+//   The page's mount now loads its data through window.spirit.require (shell/desk/desk.js deskNeed), which this
+//   suite's fake window does not give, so the run breaks at mount.
 //   It repaints from api.onPublished: {change, verb, item: <facts>} replaces that row; `listed: false` removes it.
 //   A published session.set (item null) is the one publish that asks items.search again.
 //   The search bar #desk-search (on 'input') and the toggles #desk-current-goal and #desk-goals-only (on click) ask
@@ -144,7 +147,7 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   else test.fail(OWED + 'Go! sent ' + JSON.stringify(pressed || null));
   if (/data-press="go"/.test(rowOf(l.page(), 'Alpha'))) test.check('until the server publishes, Alpha still shows Go!');
   else test.fail(OWED + 'the row changed before the server published');
-  // goal/G3.8: the page's nudge is gone; the desk server reaches the agents (since goal/G33.4 by its stream, deskClientPush.js). deskPageNoNudge.js has the rest.
+  // goal/G3.8: the page posts no nudge; the desk server reaches the agents by its stream (goal/G33.4). deskPageNoNudge.js has the rest.
   const nudge = l.posted.filter(function (p) { return p.body && p.body.kind === 'changed'; });
   if (!nudge.length) test.check('after the server answered, the page sent no changed packet: the server nudges (goal/G3.8)');
   else test.fail('OWED by goal/G3.8: the page still nudges: ' + JSON.stringify(nudge));
@@ -165,8 +168,7 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   else test.fail(OWED + 'Beta is still on the List after listed: false');
   if (l.searches().length === 1) test.check('no pulling: items.search was asked once, at open');
   else test.fail(OWED + 'items.search was asked again: ' + JSON.stringify(l.searches()));
-  // A NEW ITEM IS DRAWN FROM THE PUBLISH (goal/G24.6, Andy: "no pulling"). Until goal/G24.6 this asserted the opposite:
-  // an item the List did not hold made it ask items.search again. With the search box empty, a row of the current goal
+  // A NEW ITEM IS DRAWN FROM THE PUBLISH (goal/G24.6, Andy: "no pulling"). With the search box empty, a row of the current goal
   // the List does not hold is drawn from what the publish carries, after the last row of its goal, and nothing is asked.
   const before = l.searches().length;
   l.publish({ change: 14.5, verb: 'item.add', item: JSON.parse(label({ id: 'goal/G100.9', title: 'NEW-ON-THE-LIST' })), listed: true });
@@ -193,7 +195,7 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   l.click('desk-current-goal', { id: 'desk-current-goal' });
   await settled();
   const current = l.searches().slice(-1)[0] || { args: {} };
-  // Since goal/G9.2 the two are exclusive: Goals Only above turned Current Goal Only off, so this click turns it back
+  // The two are exclusive (goal/G9.2): Goals Only above turned Current Goal Only off, so this click turns it back
   // on and Goals Only off (deskExclusiveToggles.js holds the rule itself).
   if (current.args.currentGoalOnly === true && current.args.goalsOnly === false) test.check('Current Goal Only toggles back on, and Goals Only off');
   else test.fail(OWED + 'Current Goal Only asked ' + JSON.stringify(current));
@@ -201,7 +203,7 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   // desk/G3.4, Andy: "i should have a go-all button for fixing rounds", "the go all should be on the right side of
   // the button bar in list", then "same as design buttons when team is active": #desk-go-all at the right of the
   // tab bar on the List tab, never in a row. The goal row's buttons say when it is offered; it sends
-  // press {id: <goal>, what: 'go-all', by: 'andy'}.
+  // press {id: <goal>, what: 'go-all'}.
   test.subHeading('desk/G3.4: Go all sits at the right of the bar while the goal offers it');
   const G34 = 'OWED by desk/G3.4: ';
   l.publish({ change: 16, verb: 'press', item: JSON.parse(label({ id: 'goal/G100', title: 'The goal', goal: '', buttons: ['go-all'], blocking: [], blocked: [] })) });

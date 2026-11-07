@@ -1,7 +1,6 @@
 'use strict';
 
-// goal/G5.7: the job queue on the desk server, so Desk keeps all agents working in parallel. Red on today's tree;
-// wsl-claude wrote it from G5.7's capped box and does not build it.
+// goal/G5.7: the job queue on the desk server, so Desk keeps all agents working in parallel.
 //   Andy, 2026-10-05 (the box holds every line verbatim): "shouldn't a coding item track on deskServer who took the red,
 //   when the red is done, the agent doing the red is removed from the with field, then the item becomes takeable for
 //   coding, by somebody who didn't do the red, when the coding is done, the verifying can be taken by someone who didn't
@@ -10,8 +9,8 @@
 //   a red question."; Q8 "it's the verifier that extends the red"; "the red writer may be the verifier, no rule against
 //   that."; "ok:" to "the red's writer may never build that item"; his Go on goal/G5.7.
 //
-// THE NAMES are wsl-claude's picks (the box names none); the builder may argue them in Desk first:
-//   an item is marked code by code: true in session.set; facts carry phase ('red' | 'build' | 'verify' | ''), red,
+// THE NAMES (the agents' picks; the box names none):
+//   an item is marked code by code: true (seeded here; there is no session.set, goal/G33.7); facts carry phase ('red' | 'build' | 'verify' | ''), red,
 //   builder, verifier (who did each); phase.take {id, phase}; phase.done {id, phase, pass, why} (pass only for verify);
 //   work.open {} answers the open phases the caller may take, [{ id, phase }]; press {id, what: 'waive'}, his alone,
 //   lifts the who-may-take rule on that item.
@@ -76,8 +75,10 @@ async function open(caller) {
 }
 
 (async function () {
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
-  // session is seeded before the desk starts, and the desk takes it in at start.
+  // An agent creates no goal (goal/G29.21), so the world is seeded before the desk starts, and the desk takes it in
+  // at start.
+  // STALE: the code items are seeded with no file list, and since goal/G41.11 a code item with an empty file list
+  // holds back End design and Go (desk.js redWhy, notGreen), so end-design answers 409 and the suite stops here.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Queue' }, items: [
     { id: 'goal/G100.1', title: 'Code item', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.2', title: 'A decision', blocks: ['goal/G100'] },
@@ -85,22 +86,21 @@ async function open(caller) {
     { id: 'goal/G100.4', title: 'Goes stale', blocks: ['goal/G100'], code: true },
   ] });
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  // A NEW GOAL STARTS IN DESIGN, and Go is held back while it is on: end it first, as deskLimbo does. Found by
-  // claude-windows building against e4bd1acb.
+  // A NEW GOAL STARTS IN DESIGN, and Go is held back while it is on: end it first, as deskLimbo does.
   const ended = await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
   const gos = [];
   for (const id of ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
   if (ended.status !== 200 || gos.some(function (s) { return s !== 200; })) { test.fail('the world: end-design answered ' + ended.status + ', his Gos ' + short(gos)); return; }
 
-  // TWO AGENTS ARE HERE, so the phase rules below have something to bite on: since goal/G2.22 the desk waives an
+  // TWO AGENTS ARE HERE, so the phase rules below have something to bite on: the desk waives an
   // item itself the moment its red is done while ONE agent alone is live (Andy, 2026-10-06: "add to 2.22 that the
   // desk can waive the rule if only one agent is present."), and claude-ubuntu's refused takes are not writes, so
   // without this line it would never count as live and every rule below would be waived away.
-  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: claude-ubuntu says it
+  // An agent writes only where it holds the item or the take of his line (goal/G18.8): claude-ubuntu says it
   // under the decision item, which it takes, so no take lands on the code item whose phases are tested below.
   await call('item.take', { id: 'goal/G100.2' }, UBI);
   await call('chat.add', { id: 'goal/G100.2', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
-  // Since goal/G21.4 an agent holds one task at a time: claude-ubuntu lets the decision item go, so it may take a phase
+  // An agent holds one task at a time (goal/G21.4): claude-ubuntu lets the decision item go, so it may take a phase
   // of the code item below.
   await call('item.release', { id: 'goal/G100.2' }, UBI);
 
@@ -118,7 +118,7 @@ async function open(caller) {
   else test.fail(OWED + 'red takes answered ' + redCw.status + ' and ' + redUbi.status + '; facts ' + short({ red: a1.red, with: a1.with }));
 
   test.subHeading('3. a finished phase opens the next, for those who may take it');
-  // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+  // A red finishes only after its red claim with suites (goal/G33.11); the suite is a row added first, the claim names none (goal/G40.3).
   await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/test/deskPhases.js' }, CW); await call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1' }, CW);
   const redDone = await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, CW);
   const a2 = await facts('goal/G100.1');
@@ -154,7 +154,7 @@ async function open(caller) {
   else test.fail(OWED + 'growing the red: builder ' + growUbi.status + ', verifier ' + growCw.status + '; phase ' + short(a5.phase));
 
   test.subHeading('7. the verifier\'s pass offers his Done, no claims needed');
-  // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+  // A red finishes only after its red claim with suites (goal/G33.11); the suite is a row added first, the claim names none (goal/G40.3).
   await call('item.suites.add', { id: 'goal/G100.1', path: 'spirit/test/deskPhases.js' }, CW); await call('claim', { id: 'goal/G100.1', phase: 'red', commit: 'abcdef1' }, CW);
   await call('phase.done', { id: 'goal/G100.1', phase: 'red' }, CW);
   await call('phase.take', { id: 'goal/G100.1', phase: 'build' }, UBI);
@@ -168,7 +168,7 @@ async function open(caller) {
   test.subHeading('8. his waive lets one agent take every phase');
   const refusedBefore = await (async function () {
     await call('phase.take', { id: 'goal/G100.3', phase: 'red' }, WSL);
-    // A red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added first, the claim names none.
+    // A red finishes only after its red claim with suites (goal/G33.11); the suite is a row added first, the claim names none (goal/G40.3).
     await call('item.suites.add', { id: 'goal/G100.3', path: 'spirit/test/deskPhases.js' }, WSL); await call('claim', { id: 'goal/G100.3', phase: 'red', commit: 'abcdef1' }, WSL);
     await call('phase.done', { id: 'goal/G100.3', phase: 'red' }, WSL);
     return call('phase.take', { id: 'goal/G100.3', phase: 'build' }, WSL);
@@ -186,7 +186,7 @@ async function open(caller) {
   await stop();
   // TWENTY MINUTES AGO for every record of claude-ubuntu's: past LIVE_MS (desk.js, 10 minutes), as deskKnownAgents does.
   const db = new DatabaseSync(path.join(state, 'desk.db'));
-  // goal/G33.4: an agent's last write is its row of the agents table.
+  // An agent's last write is its row of the agents table (goal/G33.4).
   db.prepare('UPDATE agents SET at = ? WHERE label = ?').run(new Date(Date.now() - 20 * 60 * 1000).toISOString(), UBI.label);
   db.close();
   await start();

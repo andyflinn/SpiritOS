@@ -1,23 +1,23 @@
 'use strict';
 
-// DESK KEEPS ITS OWN LOG — design/shell/AGENTS-UI.md.
+// DESK'S RECORD IS THE DESK SERVER'S, AND THE NODE IS ASKED NOTHING ELSE.
 //
-//   Andy, 2026-09-27: "they must keep their own logs", and "after
-//   correcting agents and desk, we will remove the new verb."
+//   Andy, 2026-09-27, on node.history, a verb added to the node for one
+//   app without review: "after correcting agents and desk, we will remove
+//   the new verb."
 //
-// Desk read his node's record through node.history, a verb added to the
-// node for one app without review. This suite holds the correction:
+// What this suite holds:
 //
-//   - neither Desk nor DeskDetails asks the node for anything (no verb);
-//   - an arrival through onPacket, and a line Andy sends, land in Desk's
-//     own `log.json` through its scoped fs, and a remount reads them back;
-//   - two sends that never crossed are two rows, not one;
-//   - a log that does not parse is never overwritten;
-//   - what Andy sends from a row's dialog comes back to Desk as the
-//     dialog's result and is logged there.
+//   - neither Desk nor DeskDetails names a verb but its servers' (desk.,
+//     deskVerify., backup.), and neither names node.history;
+//   - an arrival of an agents packet is recorded nowhere (no log row, no
+//     log.add, goal/G33.4), nothing is posted, and a remount draws the
+//     board from the server's record alone, asking nothing of goal/G0;
+//   - a row's star is drawn only when the server says so;
+//   - a Desk whose server does not answer says it could not read.
 //
-// Driven the way contactsDetails.js is: the real scripts, loaded with
-// small document/api stubs, their real handlers fired.
+// Driven with the real scripts, loaded with small document/api stubs,
+// their real handlers fired.
 
 const fs = require('fs');
 const path = require('path');
@@ -83,7 +83,7 @@ function load(script, doc) {
   return behavior;
 }
 
-// SINCE desk/G1.4 DESK'S RECORD IS THE DESK SERVER'S: a mount gets the
+// DESK'S RECORD IS THE DESK SERVER'S (desk/G1.4): a mount gets the
 // in-memory one (deskFake.js), ONE per folder, so two tabs of one node share
 // one server as they do for real. The folder is kept in step with it.
 const deskFake = require('./deskFake.js');
@@ -144,22 +144,18 @@ function settle() {
     .then(function () { return new Promise(function (r2) { setImmediate(r2); }); });
 }
 
-// THE LEAD'S TAB INSIDE TEAM WENT (goal/G3.12), and Team itself, the group chat goal/G0, with goal/G43.22 (Andy, the
-// box, Q5: "G0 goes, from ui and server, kept in database."): the page has no line of his to type, and sayInTeam went.
-
 function logged(files) {
   try { return JSON.parse(files['log/log.json']); } catch (e) { return null; }
 }
 
-// A DESIGN SESSION, NOT THE OLD BOARD: Desk's List shows only a session since
-// the old tracking was retired (Andy, 2026-09-28: "this IS the official
-// project governance. NOW."). One item, goal/G100, as the board had.
+// A DESIGN SESSION: Desk's List shows only a session (Andy, 2026-09-28:
+// "this IS the official project governance. NOW."). One item, goal/G100.
 const BOARD = JSON.stringify({ goal: { id: 'puppets/G', title: 'Puppets' }, items: [{ id: 'goal/G100', title: 'Search' }] });
 
 test.startTest('Desk — its record, through the desk server, and nothing else asked of the node');
 
-// SINCE desk/G1.4 Desk reaches its record through its servers (D4), by each
-// verb's name on the flat apiDoor since goal/G30.6 (desk.<verb>, and beside it
+// Desk reaches its record through its servers (desk/G1.4, D4), by each
+// verb's name on the flat apiDoor (goal/G30.6: desk.<verb>, and beside it
 // deskVerify.<verb> and backup.<verb>), and those are the only verbs it may
 // name; the node's own history it never asks for.
 test.subHeading('Desk and its dialog name only their servers\' verbs (desk/G2.7), and never node.history');
@@ -176,8 +172,8 @@ test.subHeading('Desk and its dialog name only their servers\' verbs (desk/G2.7)
 });
 
 function arrivalsAndSendsAreLogged() {
-  // SINCE goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them.") the page keeps no log of the agents
-  // app's packets: an arrival is recorded nowhere. His Team line, the group chat's, went with goal/G43.22.
+  // goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them."): the page keeps no log of the agents
+  // app's packets: an arrival is recorded nowhere.
   test.subHeading('An arrival is recorded nowhere; a remount reads the board from the server alone');
   const files = {};
   const desk = mountDesk({ files: files });
@@ -194,7 +190,7 @@ function arrivalsAndSendsAreLogged() {
 
     const again = mountDesk({ files: files });
     return settle().then(function () {
-      // Until goal/G43.22 the remount read the group chat (item.chat on goal/G0) and drew it; nothing asks goal/G0 now.
+      // Since goal/G43.22 nothing asks goal/G0.
       const top = again.doc.getElementById('desk-top').innerHTML;
       const groupRead = again.fake.calls.some(function (c) { return c.args && c.args.id === 'goal/G0'; });
       if (!groupRead && /Search/.test(top)) {
@@ -207,9 +203,7 @@ function arrivalsAndSendsAreLogged() {
 }
 
 
-// A LOG THAT DID NOT PARSE is the server's to refuse now (deskOnServer.js,
-// the import). What Desk still owes: a record it cannot reach is said, and
-// never drawn as an empty board.
+// A record Desk cannot reach is said, and never drawn as an empty board.
 function unreachableIsSaid() {
   test.subHeading('A Desk whose server does not answer says so');
   const desk = mountDesk({ files: {}, dead: true });
@@ -219,20 +213,11 @@ function unreachableIsSaid() {
   });
 }
 
-// THE DIALOG'S OLD FLOW (a thread handed over, sends by peerPost, the result logged by Desk) went with
-// desk/G2.7: the dialog reads item.get and writes to the desk server (spirit/test/deskDialog.js).
-
-// voiceHoldsWhatHeTyped STOOD HERE: his line typed under Team went to the log alone, nothing to voice.add. Team went
-// with goal/G43.22, so the page has no line of his to type; voice.add is gone from the server (deskServer.js).
-
-// teamGoesToEveryAgent STOOD HERE: his team line posted to every agent as a packet under team/chat, and an
-// agent's packet line shown once in Team. That mechanism is gone with goal/G3.10: the All tab is the chat of the
-// desk server's standing goal goal/G0, written with chat.add and posted to nobody, which went in turn with
-// goal/G43.22 (and deskGroupChat.js, its suite, with it).
+// The dialog reads item.get and writes to the desk server: spirit/test/deskDialog.js.
 
 function unseenIsMarked() {
-  // Andy: "... indicating that new stuff has arrived for that item". SINCE
-  // desk/G2.6 A ROW'S STAR IS THE DESK SERVER'S: the label says it, and the
+  // Andy: "... indicating that new stuff has arrived for that item". A
+  // ROW'S STAR IS THE DESK SERVER'S (desk/G2.6): the label says it, and the
   // dialog presses seen when it opens a starred item (desk/G2.7, deskDialog.js).
   test.subHeading('A red * is drawn only when the server says so');
   const files = {};
@@ -244,14 +229,8 @@ function unseenIsMarked() {
   });
 }
 
-// THE LOG IN CHUNKS (Andy's "failed to save file: 413") is gone with the
-// files: the server keeps every line, and a read is bounded by bytes there
-// (deskServer.js, the byte cut; deskOnServer.js, T5b and T6).
-
 arrivalsAndSendsAreLogged()
   .then(unseenIsMarked)
-  // twoTabsKeepBoth and failedSendsStayApart stood here: two Desk tabs' lines to the lead both kept, and two failed
-  // sends two rows. The page sends no line as a packet since goal/G3.12, so there is nothing of the kind to log.
   .then(unreachableIsSaid)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {

@@ -2,8 +2,10 @@
 
 // spirit/test/contactLabel.js
 // goal/G4.13: the contact label, a shell element showing a contact's name by key, renamed where it appears and
-// redrawn wherever a rename happens. RED on today's tree: there is no spirit/element/contactLabel.js, and contact.label
-// announces nothing on the node's event stream.
+// redrawn wherever a rename happens.
+//   The shapes this file asserts are the ones of goal/G4.13. The product has moved on: the element is
+//   window.spirit.element.contactLabel.create(container, options) (goal/G41.19), and the page's one stream is
+//   spirit.events.subscribe (goal/G40.6), not spirit.core.jobs.subscribe, so sections 2 and 3 no longer match it.
 //
 //   Andy, 2026-10-03, his go-all on goal/G4; the rulings stand verbatim in the box of goal/G4.13: "the element has two
 //   modes, and it follows the style of its container / 1. display only, for insertion in a text flow, or labeling in a

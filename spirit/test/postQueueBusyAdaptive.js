@@ -1,24 +1,21 @@
 'use strict';
 
-// goal/G4.30: a sender told "busy" retries soon, not after the other request's whole route lifetime. Red on today's
-// tree; wsl-claude wrote it, claude-windows builds it.
-//   Found under goal/G4.30 (wsl-claude, 2026-10-04): a desk ask that met Andy's node busy with another agent's
+// goal/G4.30: a sender told "busy" retries soon, not after the other request's whole route lifetime.
+//   Found under goal/G4.30 (2026-10-04): a desk ask that met Andy's node busy with another agent's
 //   request waited ~5 s, because the relay's retryAfterMs is the time until that other route would EXPIRE
-//   (router.js 225-235, msUntilFreeFor: up to the 5 s ceiling), while it is answered in 0.2-0.5 s; postQueue.busy()
-//   sleeps the whole of it (postQueue.js 332-340). Trace: 1c8bb7 queued 20:10:41.934 behind a request answered at
+//   (router.js msUntilFreeFor: up to the 5 s ceiling), while it is answered in 0.2-0.5 s, and postQueue.busy()
+//   slept the whole of it. Trace: 1c8bb7 queued 20:10:41.934 behind a request answered at
 //   42.045, delivered to Andy's node at 47.297.
 //   Andy, 2026-10-04: to "what wait-time do you suggest? adaptive?" — first retry after 250 ms, then 500, 1000, 2000,
 //   never longer than the relay's own quote — "agreed."; "put up the red grant request." (G1, core grant:
-//   js/postQueue.js, granted); his Go on goal/G4.30 stands. The relay is unchanged: it still does not queue.
+//   spirit/run/spirit/postQueue.js, granted); his Go on goal/G4.30 stands. The relay is unchanged: it still does not queue.
 //
-// THE SHAPES (Andy's agreed numbers; the rest wsl-claude's picks, the builder may argue them in Desk first):
+// THE SHAPES (Andy's agreed numbers; postQueue.js busy()):
 //   1  Busy waits grow per pair (relay, target): 250, 500, 1000, 2000 ms, then stay at 2000.
 //   2  Never longer than the relay's retryAfterMs when it quotes one smaller than the step.
 //   3  A pair that was reached (reached()) starts again at 250.
 //
-// FOUND IN THE DRY RUN: postQueue.js's own suite asserts the old rule ("busy honours the relay's retryAfterMs and
-//   does not grow", 400 then 400); under this item it reads 250 then 400. That assertion is the builder's to move.
-// LEFT OPEN, not asserted: busy with no quote (retryAfterMs 0), today backoffStart (2000 ms).
+// LEFT OPEN, not asserted: busy with no quote (retryAfterMs 0), backoffStart (2000 ms).
 
 const test = require('./testSupport.js');
 const pq = require('../run/spirit/postQueue.js');

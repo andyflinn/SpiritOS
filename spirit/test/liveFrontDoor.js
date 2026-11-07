@@ -5,9 +5,9 @@
 //
 //   node spirit/test/liveFrontDoor.js
 //
-// NOT PART OF THE HARNESS. It spawns a relay and three nodes through
+// IN THE HARNESS, though it spawns a relay and three nodes through
 // labMaster, waits for streams to settle, and takes seconds rather than
-// milliseconds. Named in runAll's NOT_A_SUITE for it.
+// milliseconds (runAll.js, "THE LAB SUITES ARE IN THE HARNESS NOW").
 //
 // ── WHY THIS EXISTS, AND IT IS NOT REDUNDANT ─────────────────────────
 //
@@ -66,28 +66,11 @@ async function hub(port, method, pathname, body) {
 // What a node wrote down about its own WAN traffic. Missing reads as
 // nothing, which is the honest answer for a node that has had none.
 //
-// ── .jsonl, AND READING THE WRONG ONE COST THIS WHOLE FILE ───────────
-//
-// This read `traffic.json` and JSON.parse'd it whole. That file is the
-// READ-ONCE LEGACY SHAPE (trafficLog.legacyPath — "Never written
-// again"); the live log is traffic.jsonl, one object per line.
-//
-// So every read here returned [] — and an empty array is not an error,
-// it is an answer. Seven of this file's checks were asserting things
-// about a log they never saw: what bravo recorded, what it ignored,
-// what it refused, whether rationing held. They failed quietly as "0 of
-// 10 landed" while the posts had in fact all landed, and the checks
-// beside them went on passing, which is what made it look like rot
-// rather than one wrong filename.
-//
-// A malformed line is skipped rather than fatal, the same property
-// trafficLog itself is built on: a torn write at the end of the file
-// costs the row being written, never the history behind it.
-// THROUGH THE LOG, NOT ITS FILE (transport/R19.2). This read traffic.jsonl
-// line by line; the log is moving into node.db (transport/R19), and reading
-// a file that no longer grows is exactly the failure recorded above: checks
-// asserting about a log they never saw. read() answers the same rows
-// wherever they live (torn lines are the log's own business).
+// THROUGH THE LOG, NOT ITS FILE (transport/R19.2): the log lives in
+// node.db, and trafficLog's read() answers the same rows wherever they
+// live (torn lines of a legacy file are the log's own business). Reading
+// a file directly once made every read here an empty answer, so checks
+// asserted about a log they never saw.
 function traffic(home) {
   try { return require('../run/spirit/trafficLog').createTrafficLog({ rootDir: home }).read(); }
   catch (e) { return []; }
@@ -99,10 +82,11 @@ function inbound(home, fromKey) {
   });
 }
 
-// `contacts.json` since 2026-09-18 — it was `who.json`, which was the
-// roll's word for a file that exists precisely to not be the roll.
 // Read off disk rather than through the module because what this suite
 // checks is that a REAL node wrote a row, not that a function returns one.
+// The node keeps no contacts.json since goal/G40.11 (its contacts are rows
+// of node.db's seen), so this reads [] and the checks built on it no
+// longer see what the node wrote.
 function contactsOf(home) {
   try {
     return JSON.parse(fs.readFileSync(path.join(home, 'spirit', 'state', 'contacts.json'), 'utf8'));
@@ -225,7 +209,7 @@ async function run() {
       test.fail('search: ' + JSON.stringify(searched.body));
     }
 
-    // A BOOLEAN ON EVERY ROW. Not truthy, not absent: a bseenRowser that
+    // A BOOLEAN ON EVERY ROW. Not truthy, not absent: a browser that
     // cannot tell "absent" from "nobody said" draws the wrong dot, and
     // those are the two states the mark exists to keep apart.
     // A ROW A RELAY ANSWERED, that is: a row memory filled in (fromMemory, R39) says what was last known, and null
@@ -354,16 +338,11 @@ async function run() {
 
     // ── THE LOG, READ BACK AS A TABLE ─────────────────────────────────
     //
-    // This asked bravo over the wire, through GET /api/hub/arrivals. That
-    // door is gone: it had no caller, because catch-up was already solved
-    // one layer down — createArrivals.subscribe hands a page the un-taken
-    // backlog on the SAME live channel a new packet arrives on.
-    //
-    // So the questions move to the module that answers them, which is
-    // where they were always really being asked. What was being tested
-    // was never the route: it was that the log can be read as a table,
-    // that the table means ADMITTED, and that a row is addressable by its
-    // hash. All three still hold and all three still matter.
+    // Asked of the module that answers it (no route serves arrivals:
+    // createArrivals.subscribe hands a page the un-taken backlog on the
+    // same live channel a new packet arrives on). What is tested: the log
+    // can be read as a table, the table means ADMITTED, and a row is
+    // addressable by its hash.
     const log = require('../run/spirit/trafficLog').createTrafficLog({
       rootDir: homeOf(bravo),
     });
@@ -430,8 +409,8 @@ async function run() {
     }
 
     // AND THE STRANGER: charlie, whom bravo never accepted.
-    // Charlie fetches the card first, like any sender must (cycle 10,
-    // cycle 10 R5) — and note what that does NOT buy: holding somebody's card is
+    // Charlie fetches the card first, like any sender must (cycle 10 R5)
+    // — and note what that does NOT buy: holding somebody's card is
     // not being introduced to them, so every knock below is still
     // ignored and then refused outright. The floor is unchanged.
     await hub(portOf(charlie), 'POST', '/api/spirit',
@@ -472,8 +451,8 @@ async function run() {
     // Its card, asked on its one door (goal/G22.6 closed GET /api/relay/key).
     const said = await require('./relayDoor').relayKeyOf('http://127.0.0.1:' + relayPort);
     const relayKey = said && said.relayPublicKey;
-    // THE PIN LIVES IN node.db since goal/G19.15 (the relays table, keyed by relay key); relayKeys.json was its file
-    // before, and reading that file read nothing. Asked through relayKeys, the one reader.
+    // THE PIN LIVES IN node.db (goal/G19.15; the seen table since goal/G40.11), asked through relayKeys, the one
+    // reader.
     let pinnedKey = '';
     try { pinnedKey = require('../run/spirit/relayKeys').pinned(homeOf(bravo), 'http://127.0.0.1:' + relayPort) || ''; } catch (e) { pinnedKey = ''; }
 

@@ -6,18 +6,16 @@
 //   Andy: "is there one script that runs both in sequence and produces
 //   all platform specific measurements?"
 //
-// There was not. There were two commands and only one of them saved
-// anything: `runAll.js` printed 112 suites and forgot it, and
-// `measureCapacity.js --save` wrote a platform directory. So a box could
-// contribute its capacity and leave no record of whether the code even
-// passed on it — which is the more interesting half when the box is one
-// nobody has run on before.
+// This is it. `runAll.js` alone prints its result and keeps nothing, so
+// a box could contribute its capacity and leave no record of whether the
+// code even passed on it — which is the more interesting half when the
+// box is one nobody has run on before.
 //
-//   node spirit/test/measurePlatform.js
-//   node spirit/test/measurePlatform.js --as ubuntu-24.04-wsl2
+//   node spirit/test/measurePlatform.js --agent <name>
+//   node spirit/test/measurePlatform.js --agent <name> --as ubuntu-24.04-wsl2
 //
 // Runs the harness, then the capacity measurement, and writes both into
-// README/CAPACITY/<platform>/ under ONE date and ONE commit.
+// agents/<agent>/ (goal/G4.33) under ONE date and ONE commit.
 //
 // ── WHY BOTH, AND WHY TOGETHER ───────────────────────────────────────
 //
@@ -29,14 +27,6 @@
 // AND THEY MUST SHARE A TIMESTAMP. Taken an hour apart, a green harness
 // and a capacity figure can describe two different trees while looking
 // like one report. This runs them in sequence and stamps them once.
-//
-// ── WHY IT LIVES UNDER README/CAPACITY/ ──────────────────────────────
-//
-// Andy suggested README/HARNESS/REPORT for the harness half, and that is
-// the better name for it in isolation. It is here instead because two
-// agents committed to this path hours ago and one of them was on another
-// machine: moving it now would cost more than the name is worth. The
-// directory is "what this platform measured", and it holds both.
 
 const os = require('os');
 const fs = require('fs');
@@ -45,16 +35,14 @@ const { spawnSync, execSync } = require('child_process');
 
 const REPO = path.join(__dirname, '..', '..');
 
-// THE SAME SLUG measureCapacity.js COMPUTES. Duplicated in two lines
-// rather than shared through a module for two lines — and asserted
-// below, so if they ever drift this fails loudly instead of writing a
-// report into a directory nobody reads.
+// THE SAME SLUG measureCapacity.js COMPUTES, duplicated in two lines
+// rather than shared through a module. It titles platform.md; both tools
+// write to agents/<agent>/, and a missing capacity.json there is said
+// loudly below.
 //
 // `--as ubuntu-24.04-wsl2` when the kernel version is not what a reader
-// needs. Passed straight through to the capacity tool so both halves land
-// in one directory — the alternative was renaming by hand after every run,
-// which is a step that eventually gets skipped and leaves one machine with
-// two directories.
+// needs: it names the platform in the report's title, and is passed
+// straight through to the capacity tool.
 function namedAs() {
   const a = process.argv.slice(2);
   const i = a.indexOf('--as');
@@ -132,12 +120,9 @@ function main() {
   //   Andy, 2026-09-23: "publish the median and how many runs it's over
   //   AND the spread.... that's honest."
   //
-  // WHY, MEASURED. wsl-claude ran this tool three times at one commit on
-  // one box and got 48,916 / 44,524 / 42,691 bytes a held connection — a
-  // 14% spread — then corrected himself for having reported a single
-  // sample as a rate. The figure the README published was 42,691: the
-  // LOWEST of the three, and therefore the most flattering, which is the
-  // opposite of the standard applied to every other number on that page.
+  // WHY, MEASURED. Three runs at one commit on one box gave 48,916 /
+  // 44,524 / 42,691 bytes a held connection — a 14% spread — so a single
+  // sample is no rate, and the lowest is the most flattering.
   //
   // DEFAULT ONE, so nothing changes for a quick look and a single run is
   // reported honestly as a single run. `--runs 3` is what a published
@@ -185,7 +170,7 @@ function main() {
   // WRITTEN EVEN WHEN RUNS IS ONE. A drop that says `runs: 1, spread: 0`
   // is telling the truth about how much is known, and a reader can see
   // that a figure came from a single sample. Silence would let a single
-  // sample be read as a settled number, which is what happened.
+  // sample be read as a settled number.
   //
   // The figures that vary are the measured ones. `perMemberRowBytes` is
   // a SQLite row and came back identical to the byte across platforms,

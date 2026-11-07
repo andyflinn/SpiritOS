@@ -8,13 +8,11 @@
 //   much clearer." And on what may be reached: "the node api is orthogonal,
 //   however: not every group is supported in every context/environment".
 //
-// Built by claude-windows at 3feddc5. Driven here through
-// puppetMode.puppetDoor with the node's real packet codec and relayAuth, a
-// real spirit/state/owner.json on disc, and fake handlers standing in for
-// loopbackVerbs. The tester read the shim once, to learn the calling
-// convention a fake handler must follow (handler(req, res), req a readable
-// holding the body, res catching status and body) — said here because the
-// division of labour between the agents is Andy's rule.
+// Driven through puppetMode.puppetDoor with the node's real packet codec
+// and relayAuth, a real spirit/state/owner.json on disc, and fake handlers
+// standing in for loopbackVerbs. A fake handler follows the shim's calling
+// convention: handler(req, res), req a readable holding the body, res
+// catching status and body.
 
 const os = require('os');
 const fs = require('fs');
@@ -68,7 +66,7 @@ function world(puppetJson) {
     'contact.headers': function (req, res) { ran.push('contact.headers'); res.end(String(req.socket.remoteAddress)); },
     // Fails LATER, in its promise, as a handler reading its body would.
     'contact.later': function () { ran.push('contact.later'); return Promise.reject(new Error('failed after reading')); },
-    // Answers more than a packet can carry, as jobs.list does (42,570 bytes).
+    // Answers more than a packet can carry.
     'contact.huge': function (req, res) {
       ran.push('contact.huge');
       res.writeHead(200);
@@ -241,10 +239,9 @@ function world(puppetJson) {
 
   // ── AN ANSWER TOO BIG FOR A PACKET IS REFUSED BY NAME, NOT DROPPED ──
   //
-  // packet.encode refuses an oversize body, and reply() used to return on
-  // that refusal and send nothing, so the owner waited out the whole timeout
-  // and was told "no reply from puppet". Agreed with claude-windows,
-  // 2026-09-27: {ok:false, status:413, code:'answer-too-large', verb, bytes}.
+  // packet.encode refuses an oversize body; sending nothing would leave the
+  // owner waiting out the whole timeout, told "no reply from puppet". So the
+  // answer is {ok:false, status:413, code:'answer-too-large', verb, bytes}.
   {
     const w = world(OWNED);
     await w.arrive(owner.publicKey, command('contact.huge', {}));

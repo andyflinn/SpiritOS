@@ -38,12 +38,10 @@
 // ── WHAT IT CANNOT SEE, PRINTED IN THE OUTPUT AND NOT ONLY HERE ─────
 //
 // IT FINDS FORKS THAT CONVERGE. A fork that bypasses the bottom is
-// invisible to it: the raw `fetch` in `shell/starter/starter.html` ran in a
-// browser, never in node, and was found by a suite READING THE FILE. A
-// ranked list that does not say so reads as "these are all the ways this
-// tree reaches the wire", which is false — and it would quietly retire
-// the static check that caught the worst instance of the very thing this
-// tool exists for.
+// invisible to it: a raw `fetch` in a page runs in a browser, never in
+// node, and only a suite READING THE FILE (oneDoor.js) finds it. A ranked
+// list that does not say so reads as "these are all the ways this tree
+// reaches the wire", which is false.
 //
 // ── TWO MODES, ONE FILE ─────────────────────────────────────────────
 //
@@ -114,9 +112,8 @@ const BOTTOMS = {
   },
   // ── CRYPTO AND child_process ARE BOTTOMS. seal AND sign ARE NOT ─────
   //
-  // The first version of this list had `seal` and `sign` as bottoms, and
-  // wsl-claude's framing shows why that was wrong: THEY ARE THE
-  // CHOKEPOINTS, not the floor. The assertion worth making is not "which
+  // `seal` and `sign` are not bottoms: THEY ARE THE CHOKEPOINTS, not the
+  // floor. The assertion worth making is not "which
   // routes reach seal" — it is *every stack that reaches the PRIMITIVE
   // passes through a named SpiritOS chokepoint*, which asserts that the
   // funnel EXISTS rather than describing the contents of a list.
@@ -128,16 +125,11 @@ const BOTTOMS = {
   // an interface is probeable when it has a PLATFORM-IMPOSED BOTTOM that
   // every use must pass through AND every passage means the same thing.
   //
-  // THE DENOMINATOR IS PRODUCED BY ARRIVAL, NOT BY GREP, and this file
-  // of all files must not get that backwards. An earlier draft counted
-  // `require` sites with a pattern and said the answer was four. It was
-  // five: the pattern was `[a-z_]+` and a colon is not in it, so
-  // `node:sqlite` never appeared — and `relayStore.js:44` reaches disc
-  // through exactly that, which is why `relay.db` is absent from every
-  // fs reading. The deeper reason a pattern cannot do this is the one
-  // recorded against `oneDoor`: `require(<variable>)` is invisible to
-  // every pattern, so anything wanting to dodge the count only has to
-  // not write the module's name.
+  // THE DENOMINATOR IS PRODUCED BY ARRIVAL, NOT BY GREP. A pattern over
+  // `require` sites misses `node:sqlite` (a colon), which is how
+  // relayStore.js reaches disc, and `require(<variable>)` is invisible to
+  // every pattern (oneDoor.js), so anything wanting to dodge the count
+  // only has to not write the module's name.
   //
   // `process.moduleLoadList` records what the run actually loaded.
   // Filter to entries beginning `NativeModule ` and drop `internal/`.
@@ -180,12 +172,10 @@ const BOTTOMS = {
   },
 };
 
-// ── THE DOORS ARE THE PLUGIN'S LIST, NOT ROWS WRITTEN HERE (goal/G22.3) ──
+// ── THE DOORS ARE A LIST, NOT ROWS WRITTEN HERE (goal/G22.3) ──
 //
-// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to loosen: "The plugin keeps the doors in
-// spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameList.json, which the stack-frame test reads to know
-// which checks to run." The three doors once written here as rows (presenceNode and postQueue, goal/G19.14; the relay,
-// goal/G22.2) moved into it, their gates narrowed.
+// The doors are kept in the stack-frame list (LIST_HOME below), which the stack-frame tests read to know which checks
+// to run; their gates are narrow.
 //
 // ONE DOOR, ONE ENTRY: { gate, endpoint, paths?, suites, item }.
 //
@@ -200,16 +190,14 @@ const BOTTOMS = {
 //   suites    what drives it, MEASURED by an agent; empty until then, and an empty run is its red.
 //   item      the desk item that asked for it.
 //
-// THE SUITES OF THE THREE DOORS MOVED IN, as measured when they were rows: presenceNode and postQueue are driven
-// through a real node by serverSurface.js and everyVerb.js; the relay by agentOnboard.js (onboard.js and offboard.js
-// against a lab relay and a real node, all five relay routes, the fetch in offboard.js among them) and serverSurface.js
-// (hub.js asking a relay for its key at enrol); everyVerb.js reached nothing on a relay the two did not.
+// The list's doors name serverSurface.js, everyVerb.js and agentOnboard.js as their suites; spirit/test/agentOnboard.js
+// is not in the tree.
 //
 // Each door becomes a row of BOTTOMS under doorKey(), so the probe in a child process, given the same key, rebuilds the
 // same row from the same file.
 //
-// THE LIST'S HOME IS THIS ONE CONSTANT, LIST_HOME: spirit/test/stackFrameList.json, kept beside the stack-frame tests since
-// goal/G43.22. A run that names another list in SPIRIT_STACKS_LIST has the runner and every probed child read that list, a
+// THE LIST'S HOME IS THIS ONE CONSTANT, LIST_HOME: spirit/test/stackFrameList.json, beside the stack-frame tests
+// (goal/G43.22). A run that names another list in SPIRIT_STACKS_LIST has the runner and every probed child read that list, a
 // suite's scratch list included.
 const LIST_HOME = path.join(REPO, 'spirit', 'test', 'stackFrameList.json');
 const LIST = process.env.SPIRIT_STACKS_LIST ? path.resolve(process.env.SPIRIT_STACKS_LIST) : LIST_HOME;
@@ -242,7 +230,7 @@ function rowOf(d) {
 // A list that does not read leaves BOTTOMS without doors; oneDoorStacks.js and stackFrameTestItems.js say so in red.
 try { doors().forEach(function (d) { if (d && d.gate && d.endpoint) BOTTOMS[doorKey(d)] = rowOf(d); }); } catch (e) { /* said by the suites */ }
 // A DOOR MEASURED BEFORE IT IS LISTED (goal/G22.3): measure() given a door object passes it down as SPIRIT_WIRE_DOOR,
-// so an agent can say what a proposed gate or endpoint would read without writing the plugin's list, which is Andy's.
+// so an agent can say what a proposed gate or endpoint would read without writing the list, which is Andy's.
 try {
   if (process.env.SPIRIT_WIRE_DOOR) { const d = JSON.parse(process.env.SPIRIT_WIRE_DOOR); BOTTOMS[doorKey(d)] = rowOf(d); }
 } catch (e) { /* an unreadable door is measured as nothing, and its empty run says so */ }
@@ -513,8 +501,8 @@ function callStack() {
   const holder = {};
   // ── THE LIMIT IS THE DOMINANT COST ──────────────────────────────────
   //
-  // wsl-claude, refusing the first version: a per-call `new Error().stack`
-  // is one of the more expensive things V8 does, and it would land on
+  // A per-call `new Error().stack` is one of the more expensive things V8
+  // does, and it would land on
   // every call in timing-sensitive worlds — a claim limiter at ten a
   // minute, windows a suite waits on, "back in N ms against the M ms
   // members are told". Capturing 10 frames to keep 3 of ours is most of
@@ -766,13 +754,12 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
   //
   // A technique copied once per interface is exactly the thing the rule
   // exists to prevent. So the bottoms are DECLARED DATA in one place and
-  // the mechanism is inherited — the plugin pattern, for the third time
-  // this week.
+  // the mechanism is inherited.
   //
   // Each entry names the module and the function an interface funnels
   // into. Adding one is a line; writing a second probe would be a fork.
-  // THE PAIR, NOT A FUNCTION — wsl-claude's correction to the shape, and
-  // it is a fact about how the patch works rather than a preference: it
+  // THE PAIR, NOT A FUNCTION — a fact about how the patch works rather
+  // than a preference: it
   // replaces a PROPERTY on a required module (`mod[method] = ...`), so
   // `probe(require('fs'), 'writeFileSync')` works identically and
   // `probe(seal.seal)` does not exist as a shape at all.
@@ -781,10 +768,9 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
   //
   // The relay's door counts a request only when it is addressed to a relay. Not by host: a lab relay listens on
   // 127.0.0.1 exactly like a process's own node, so "not loopback" would miss every relay a suite starts. BY PATH:
-  // every route a relay answers for a member sits under /api/relay/ (key, stream, claim, post, reply; relayServer.js's
+  // every route a relay answers sits under /api/relay/ (stream, post, reply and the face routes; relayServer.js's
   // public table), and a node answers none of them (server.js: "A node no longer answers any relay route"), so a
-  // process asking its own node (/api/spirit, /api/events) is never counted. /api/version is answered by both and asks
-  // nothing of a relay's members, so it is left out.
+  // process asking its own node (/api/spirit, /api/events) is never counted.
   //
   // fetch is watched beside http and https because global fetch goes through undici and never through http.request:
   // without it a fetch to a relay is invisible here.
@@ -901,10 +887,8 @@ if (require.main === module) {
   //   Andy, 2026-09-24, to wsl-claude while this agent was building:
   //   "then you need only one suite that makes every api call."
   //
-  // THE FIRST VERSION INSTRUMENTED THE WHOLE HARNESS, and wsl-claude
-  // refused it on the grounds that it walked that sentence back. He is
-  // right, and the reason is not cost: HIS SENTENCE DELETED THE
-  // PERTURBATION PROBLEM rather than managing it. `NODE_OPTIONS` inherits
+  // HIS SENTENCE DELETES THE PERTURBATION PROBLEM rather than managing
+  // it. `NODE_OPTIONS` inherits
   // into every spawned child, so a whole-harness run instruments
   // labMaster's fixture relays and nodes too — and those are exactly the
   // timing-sensitive worlds: a claim limiter at ten a minute, `answering`
@@ -932,10 +916,9 @@ if (require.main === module) {
   const SURFACE = BOTTOMS[bottom].suites || [];
   const argv = process.argv.slice(2);
   const all = argv.indexOf('--all') !== -1;
-  // The value after `--bottom` is not a suite name. Without this it was
-  // taken as one, the runner looked for `spirit/test/fs-write`, found
-  // nothing, and reported "(no verdict)" with zero calls — a run that
-  // measured nothing and said so quietly.
+  // The value after `--bottom` is not a suite name: taken as one, the
+  // runner would look for `spirit/test/fs-write`, find nothing, and report
+  // "(no verdict)" with zero calls — a run that measured nothing.
   const named = argv.filter(function (a, i) {
     return a.indexOf('--') !== 0 && argv[i - 1] !== '--bottom';
   });
@@ -964,11 +947,9 @@ if (require.main === module) {
 
   // ── THE RUN'S OWN VERDICT IS NOT SWALLOWED ──────────────────────────
   //
-  // The first version printed only the last line and threw the rest away
-  // — so when the instrumented run went red where the clean one had been
-  // green, the tool could not say WHICH suite, and the one question the
-  // control exists to answer had no answer. An instrument that hides the
-  // failures of the run it observes is worse than no instrument.
+  // Every line is kept, so when the instrumented run goes red where the
+  // clean one was green, the tool can say WHICH suite. An instrument that
+  // hides the failures of the run it observes is worse than no instrument.
   const red = out.split('\n').filter(function (l) {
     return /^---\s|FAILURE|never reported/.test(l);
   });
@@ -1003,12 +984,9 @@ if (require.main === module) {
   //   Andy: "you filter the tools output two ways: 1) the stack-scope of
   //   the tested code, and the stack frames of the testING code."
   //
-  // THE FIRST VERSION SORTED WHOLE STACKS and it buried the finding.
-  // Measured: every production route looked like
-  // `relayRequest.js:67 < relayRequest.js:61 < <a different suite>`, so
-  // one route appeared as a dozen entries and the list ranked SUITES
-  // while claiming to rank code. All the variation was in the frames
-  // that are not the subject.
+  // Sorting whole stacks buries the finding: one production route reached
+  // from a dozen suites would appear as a dozen entries, and the list
+  // would rank SUITES while claiming to rank code.
   //
   // SO THE KEY IS THE TESTED SCOPE — the `spirit/run` frames alone. That
   // collapses those dozen into one row saying "this is how production

@@ -1,15 +1,14 @@
 'use strict';
 
-// goal/G8.5: the two changes the desk owes deskVerify - signoff, and Done waiting on every grant. Red on today's
-// tree; wsl-claude wrote it from G8.5's box and does not build it.
+// goal/G8.5: signoff, and Done waiting on every grant.
 //   Andy, 2026-10-06: "the signoff verb is \"signoff\"", for an agent that is going instead of being waited out, since
 //   absence is ten minutes of silence; and, 2026-10-09, when an agent is silent that long: "consider it gone. it would
 //   have taken up the task otherwise, wouldn't it?"
 //   Andy, 2026-10-09, under goal/G8.8: "'Done' needs all grants approved."
 //
-// WHAT IS TRUE TODAY (read at 7e4947f8): there is no signoff; an agent counts as live for ten minutes after its last
-// write (desk.js liveAgents) whether it is still here or not, and a phase it holds stays held. Done is offered in
-// buttons() with no regard for open grants, so an item with a core grant he has not pressed still offers Done.
+// An agent counts as live for a while after its last write (desk.js liveAgents, LIVE_MS); signoff (desk.js, case
+// 'signoff') ends that at once and frees its phases. Done is offered in buttons() only while no grant is open (desk.js,
+// "DONE WAITS ON EVERY GRANT").
 //
 // THE SHAPE ASSERTED:
 //   signoff {} -> {change}: the caller is gone at once - the goal's facts stop naming it live and working, and any
@@ -18,14 +17,12 @@
 //   Done: an item with any open G check offers no done, and offers it once every grant is granted. It reaches every
 //   item, not only the ones deskVerify touches.
 //
-// SAID PLAINLY: two of the green checks pass today only because nothing happens - "a write after a signoff makes it
-// live again" (it never stopped being live) and "granted, Done is offered again" (Done is always offered). They are
-// here because they bite once the build lands, and they are not evidence of anything now; the six reds are the work.
+// Two checks judge only together with the others: "a write after a signoff makes it live again" needs the signoff to
+// have ended liveness, and "granted, Done is offered again" needs Done to have been withheld while the grant was open.
 //
-// NOT ASSERTED, and why: the third change in the box, telling deskVerify when a status moves, needs nothing built.
-// Since goal/G33.4 deskVerify follows no desk: it asks the desk nothing, and the desk reads the verifier's results
-// through its search (`changes`, which this suite asserted here before, is gone). Nothing is owed, so this suite
-// asserts that rather than owing it.
+// Telling deskVerify when a status moves needs nothing: deskVerify follows no desk (goal/G33.4), it asks the desk
+// nothing, and the desk reads the verifier's results through its search. Part 5 asserts that, and that the desk serves
+// no `changes`.
 
 const fs = require('fs');
 const os = require('os');
@@ -66,8 +63,8 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
 
 (async function () {
-  // A goal with one code item, his Go on it, and both agents live by having written. goal/G33.7: session.set went; the
-  // world is seeded before the desk starts, which takes it in at start.
+  // A goal with one code item, his Go on it, and both agents live by having written. The world is seeded before the
+  // desk starts, which takes it in at start.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Signoff' }, items: [
     { id: 'goal/G100.1', title: 'A code item', blocks: ['goal/G100'], code: true },
     { id: 'goal/G100.2', title: 'Another', blocks: ['goal/G100'], code: true }] });

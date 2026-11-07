@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/faceAnnotations.js
-// THE FACE PART IS THE ONE PART, AND IT IS STREAMED (goal/G41.1, box v15), written FIRST, red on today's code.
+// THE FACE PART IS THE ONE PART, AND IT IS STREAMED (goal/G41.1).
 //
 //   Andy, Q10 and Q11: "the loopback door MUST NOT be compatible with the old shell.", "backward compatibility before
 //   alpha is a productivity killer."; and "it's the buttons that have to listen, too". The box: "the node's door writes a
@@ -45,7 +45,7 @@ test.startTest('goal/G41.1: the face part is the one part, and it is streamed');
   const viewer = read('spirit/element/fstat.js');
   eq(!!viewer && !/a && a\.client/.test(viewer), true, 'the file viewer, fstat since goal/G43.17, is there and reads no client part', OWED + 'fstat.js is missing or still reads the client part');
 
-  // box v16 and v17: a node's sidecars are its own state, at the mirror of its app's path; none beside the code counts,
+  // A node's sidecars are its own state, at the mirror of its app's path; none beside the code counts,
   // and intrinsic comes from the coded list (coreFiles.js INTRINSIC), never from a sidecar.
   test.subHeading('A2. a node\'s own sidecar written, its app\'s face part is published');
   const run = path.join(scratch, 'spirit', 'run');

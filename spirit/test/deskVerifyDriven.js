@@ -1,15 +1,15 @@
 'use strict';
 
 // spirit/test/deskVerifyDriven.js
-// goal/G33.3: the desk drives verification, and deskVerify knows nothing of the desk. Red first on 2272b8be, reworked
-// to the box's v21; claude-windows wrote it and builds it (one agent). The box ("The desk drives verification"), Andy's
+// goal/G33.3: the desk drives verification, and deskVerify knows nothing of the desk. The box ("The desk drives
+// verification", v21), Andy's
 // words in it among others: "the desk knows the state of all items. so it can send them when verifier is not busy, and
 // i get a fucking button on the ITEM, not the verifier, to trigger a verifier RUN.", "make sure in the box that
 // deskVerify has no fucking clue about desk, desk goals or desk items. the goal itself can compile a list of suites
 // from its items, to trigger a goal-verifier-run.", "the verifier only is busy or not.", and "the desk can damn well
 // read the fucking results from the fucking verifiers database, through the verifiers db-search interface."
 //
-// THE INTERFACE THIS ASSERTS (no node verb is added; deskVerify.run and the desk's press 'verify' are the new verbs):
+// THE INTERFACE THIS ASSERTS (no node verb; deskVerify.run and the desk's press 'verify'):
 //   deskVerify.run {suites, commit}   a run handed to deskVerify: suites the spirit/test paths to run, one at a time;
 //                                     commit '' or the hash its checkout must hold first. Never an item or a goal id.
 //                                     Answers { taken: true } or { busy: true }, and nothing else; it reports to no one.
@@ -32,10 +32,10 @@
 //                                     has no business queuing verifications"): a claim, an item coming to wait and a
 //                                     Done read the states and send no run.
 //                                     The switch, verify-busy, keeps the verifier's last answer (verifyAnswer 'taken' or
-//                                     'busy', verifierBusy true for either) in the facts; since goal/G33.6 no button
-//                                     shows it. It holds nothing back, and the
-//                                     answer travels to every client: the publish carries it (verifier) and every row
-//                                     whose facts it changed. Done is offered as soon as an agent claims done (or its
+//                                     'busy', verifierBusy true for either) in the facts; no button shows it
+//                                     (goal/G33.6). It holds nothing back, and the
+//                                     answer travels to every client: each row whose facts it changed is published,
+//                                     one publish a row (goal/G33.4). Done is offered as soon as an agent claims done (or its
 //                                     verifier passes a code item) and is never refused for verification; when it goes
 //                                     through on an item not verified green, the desk writes no line under the item
 //                                     (goal/G33.11: "no auto-chat-lines from deskVerify, only status updates.").
@@ -54,13 +54,13 @@
 //   0. deskVerify.js, its comments set aside, names no desk, no desk verb, no deskClient; no desk cursor, no agent and
 //      no list of work.
 //   1. a real desk and a real deskVerify on their own pipes, joined by a pretend node: an item coming to wait starts
-//      no run; his Verify hands it over as a run of its suites (no id); taken shows on the switch, and the publish
-//      carries the answer and the other rows it changed; Verify sits right after Done; his Done reads the search,
+//      no run; his Verify hands it over as a run of its suites (no id); taken shows on the switch, and each row the
+//      answer changed is published; Verify sits right after Done; his Done reads the search,
 //      green, goes through with no line and starts no run.
 //   2. two items coming to wait, a claim-done and a build claim read the states and start no run; his Verify, busy or
 //      not, asks deskVerify; the facts say busy, now says busy, run answers busy alone; once stopped, a Done starts no
 //      run, and an item answered busy runs on his next Verify; a Done over a missing run, over a stopped run and over a
-//      red run each goes through and leaves its one line (the red naming its failure); the facts say green, red with
+//      red run each goes through and posts no line (goal/G33.11); the facts say green, red with
 //      the failures, or none; a claim in a goal that is not current starts no run and is not read; the goal's Verify
 //      hands over its items' suites; a run answers taken alone and its outcome is read through search; deskVerify asks
 //      the desk nothing and the desk never asks now; the four verify verbs are gone; desk.js keeps no waiting order.
@@ -289,8 +289,8 @@ async function deskAndVerify() {
   const FILES = { 'goal/G100.1': [GREEN], 'goal/G100.2': [HANG], 'goal/G100.3': [GREEN3, 'spirit/run/spirit/kernel.js'], 'goal/G100.4': [RED], 'goal/G100.5': [GREEN4], 'goal/G100.6': [GREEN2], 'goal/G100.7': [GREEN], 'goal/G100.8': [GREEN], 'goal/G100.9': [GREEN2] };
 
   try {
-    // goal/G33.7: session.set went. Both goals are seeded before the desk starts (which takes them in at start), and his
-    // make-current stands where each session made its goal current.
+    // Both goals are seeded before the desk starts (which takes them in at start, goal/G33.7), and his make-current
+    // makes a goal current.
     test.seedDesk(path.join(scratch, 'desk', 'state'), [{ goal: { id: 'goal/G100', title: 'Driven' }, items: [
       { id: 'goal/G100.1', title: 'Checked when free', blocks: ['goal/G100'], code: true },
       { id: 'goal/G100.2', title: 'Hangs', blocks: ['goal/G100'], code: true },
@@ -473,7 +473,7 @@ async function deskAndVerify() {
     await done('goal/G100.7');
     await sleep(500);
     const fo = await get('goal/G101.1');
-    // goal/G33.4: `changes` is gone; what the desk wrote is what it published, one row per write (verb beside it).
+    // What the desk wrote is what it published, one row per publish (verb beside it, goal/G33.4).
     const states = published.filter(function (p) { return p.at >= otherAt && p.app && p.app.verb === 'verify.state' && p.app.item && p.app.item.id === 'goal/G101.1'; });
     if (!runsSent(otherAt).length && !states.length && fo.verified !== 'green') test.check('a claim in a goal that is not current: no run, its facts never rewritten (verified ' + short(fo.verified) + ')');
     else test.fail(OWED + 'the claim on goal/G101.1 (goal not current): asked ' + short(sentNames(otherAt)) + '; verify.state records ' + states.length + '; verified ' + short(fo.verified));
@@ -661,7 +661,7 @@ async function dialogHalf() {
   const busyButton = button('dd-verify');
   if (busyButton && nextTo()) test.check('Verify sits right after Done in the dialog');
   else test.fail(OWED + 'the dialog\'s button bar reads ' + short(text(bar())) + ' (' + short(bar().slice(0, 300)) + ')');
-  // SINCE goal/G33.6 no Verify shows the busy state (Andy: "please don't show verifier-busy an any verify button, i
+  // No Verify shows the busy state (goal/G33.6; Andy: "please don't show verifier-busy an any verify button, i
   // can check that for myself"); deskAdjustments.js asserts that. It stays never disabled.
   if (busyButton && !/\sdisabled/.test(busyButton)) test.check('with the switch busy the Verify button is not disabled: ' + short(text(busyButton)));
   else test.fail(OWED + 'the Verify button, verifier busy, reads ' + short(busyButton || bar()));
@@ -721,7 +721,7 @@ async function listHalf() {
   const row = function (id, extra) { return Object.assign({ id: id, title: id, goal: 'goal/G102', status: WAITING, with: '', buttons: ['done', 'verify'], blocking: ['goal/G102'], blocked: [], asks: 0, claims: 1, verifierBusy: false, verifyAnswer: '', verified: 'none', verifyFailures: [] }, extra); };
   fake.items = [
     { id: 'goal/G102', title: 'List', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: ['goal/G102.1', 'goal/G102.2'], live: [], working: [], waiting: 0 },
-    // SINCE goal/G33.6 a row draws one button, the next one wanted (deskAdjustments.js): with Verify offered it is
+    // A row draws one button, the next one wanted (goal/G33.6, deskAdjustments.js): with Verify offered it is
     // Verify, so the rows whose Done is drawn here offer Done alone.
     row('goal/G102.1', { verified: 'red', verifyFailures: [RED_LINE], buttons: ['done'] }),
     row('goal/G102.2', { verified: 'green', buttons: ['done'] }),

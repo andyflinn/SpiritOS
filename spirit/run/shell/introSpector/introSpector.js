@@ -148,7 +148,7 @@ function isMount(api) {
     line.appendChild(party);
     var branch = window.spirit.element.search.api.create(line, { familyPlaceholder: 'choose a family…', tree: function () { return isTreeOf(isParty); } });
     // THE PARTY: the contacts list as a dropdown (goal/G30.20, spirit/element/search/contact/listElement.js), the book and this
-    // node's relays; None is self.
+    // node's relays; no pick is self, this node.
     window.spirit.element.search.contact.listElement.create(party, {
       api: api,
       face: 'dropdown',
@@ -163,7 +163,7 @@ function isMount(api) {
         branch.load(function () { return isTreeOf(isParty); });
       },
     });
-    // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7: it replaced the text view), loaded with its parts.
+    // THE REPLY ON THE CODEMIRROR ELEMENT, READ MODE (goal/G41.7), loaded with its parts.
     Promise.resolve(window.spirit.element.codeMirror.create(document.getElementById('is-reply'), { mode: 'read', text: '', path: 'reply.json' }))
       .then(function (view) { isReply = view; }, function () { /* the reply stays unshown */ });
 

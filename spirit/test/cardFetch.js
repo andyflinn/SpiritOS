@@ -3,44 +3,29 @@
 // spirit/test/cardFetch.js
 // A NODE THAT HOLDS NO CARD MUST GET ONE, BEFORE A POST NEEDS IT.
 //
-//   The refusal has been naming the cure 11,628 times since 2026-09-23:
-//   "no cipher key for that peer — ask for their card first."
+//   Without a card the post is refused: "no cipher key for that peer —
+//   ask for their card first."
 //
-// Andy, 2026-09-26: "windows will implement the card fetch, and you will
-// test it" — under his standing rule that "we do best when we strictly
-// divide implementation from testing". So these assertions are written
-// BEFORE the caller exists and are red on purpose, to measure an
-// implementation against a contract it did not choose.
+// ── ASK, ANSWER AND KEEP ────────────────────────────────────────────
 //
-// ── ASK, ANSWER AND KEEP ARE THREE HALVES AND TWO OF THEM EXIST ─────
+//   peerPost.js fetchCard   posts the card ask when sealKeyFor comes back
+//                           empty, one in flight per peer, again on busy
+//   peerPost.js askedCard   marks the slot of an ask; keepCard(slot, answer)
+//                           stores the reply
+//   peerPost.js answerCard  we answer everybody ELSE's ask
+//   server.js keepCard      the keeper: setCard on that key's row of the one table (goal/G40.11)
 //
-//   peerPost.js:823   records `askedCard` on the slot when one was sent
-//   peerPost.js:411   keepCard(slot, answer) stores the reply
-//   peerPost.js:980   answerCard — we answer everybody ELSE's ask
-//   server.js keepCard  the keeper: setCard on that key's row of the one table (goal/G40.11)
+// ── THE FIXTURE IS THE POINT ────────────────────────────────────────
 //
-// Only the DECISION TO ASK is missing. That is why three days of total
-// reporting failure passed with a green board.
+// Other peerPost fixtures here seed the recipient's seal key before the
+// first post, so only the happy path is reachable through them.
 //
-// ── THE FIXTURE IS THE POINT, AND IT DID NOT EXIST ──────────────────
-//
-// Every other peerPost fixture here seeds the recipient's seal key into a
-// plain map before the first post. So EVERY SUITE THAT HAS EVER POSTED
-// HAS POSTED TO A PEER WHOSE KEY THE FIXTURE PLANTED, and only the happy
-// path was ever reachable.
-//
-// This one builds the FIELD state: `keepCard` and `sealKeyFor` are wired
-// to the REAL contacts book, copied from server.js rather than imitated,
-// and the book starts with no row for the peer at all. Nothing is
+// This one (cardWorld.js) builds the FIELD state: `keepCard` and
+// `sealKeyFor` are wired to the REAL contacts book, as server.js wires
+// them, and the book starts with no row for the peer at all. Nothing is
 // planted. If a seal key is ever held here, the code under test obtained
 // it — and it had to survive contacts.setCard's own verification to get
 // there, which is the check that makes the whole exchange worth anything.
-//
-// A SIXTH TWO-NODE RELAY FIXTURE, AND SAID OUT LOUD: peerPost.js,
-// answerRelay.js, queueRestart.js, appFaceGrant.js and monitorWorld.js
-// each hold one. This differs in the one way that matters — it plants
-// nothing — so sharing would mean giving all five a flag for the state
-// they exist to avoid. Extract when a SECOND suite needs the empty book.
 
 const os = require('os');
 const fs = require('fs');
@@ -55,7 +40,7 @@ const contacts = require('../run/spirit/contacts');
 
 test.startTest('A node with no card asks for one before it posts');
 
-// The fixture lives in cardWorld.js since cardRotation.js needed it too.
+// The fixture lives in cardWorld.js, shared with cardRotation.js.
 const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
 
 (async function () {
@@ -78,7 +63,7 @@ const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
   //
   // C3 and C4 count asks and expect none. If `asksSent` could never see
   // an ask, both would pass on any tree at all — the exact vacuity this
-  // suite exists to end. Two halves, neither needing the missing feature:
+  // suite exists to end. Two halves, neither needing the card fetch:
   {
     const shaped = JSON.stringify({ v: 1, id: 'x', body: { card: 'please' } });
     if (nodeCard.asks(shaped)) {
@@ -90,10 +75,9 @@ const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
 
     const detector = nodeFor('known-detector', relay);
     plantCardOf(detector, target);
-    // Deliberately the SAME words the asker will try to send. It makes
-    // C7 bite TODAY rather than only after the fix: this post really is
-    // sealed and really does reach the transport, so if these words turn
-    // up on the wire in clear, sealing is broken and C7 says so now.
+    // Deliberately the SAME words the asker will try to send: this post
+    // really is sealed and really does reach the transport, so if these
+    // words turn up on the wire in clear, sealing is broken and C7 says so.
     await detector.P.post('http://relay', target.id.publicKey, SAID);
     if (detector.wireFrom().length > 0) {
       test.check('and the wire records what a node sends, attributed to it — so the two halves '
@@ -106,19 +90,11 @@ const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
 
   // ── C1 / C2 / C4: THE FETCH ITSELF ─────────────────────────────────
   //
-  // DECLARED AS AWAITING RATHER THAN LEFT RED, and branched on the
-  // OUTCOME rather than on whether some function exists. Two reasons:
-  //
-  //   A red board costs every other agent their signal, and this suite is
-  //   written days before the code it measures. `awaiting` is what this
-  //   harness has for a unit that is not there yet.
-  //
-  //   ARRIVAL, NOT RESEMBLANCE. Probing for a named function would pass
-  //   the moment somebody writes one called the right thing. Probing for
-  //   a seal key the fixture never planted can only be satisfied by a
-  //   card that was actually asked for, answered, and verified — so the
-  //   real assertions below fire the DAY the caller lands, with no edit
-  //   from me, and nothing can be green by resembling the fix.
+  // Branched on the OUTCOME rather than on whether some function exists:
+  // a seal key the fixture never planted can only be held by a card that
+  // was actually asked for, answered, and verified. The awaiting branch
+  // is the old declaration from before peerPost.js fetchCard existed; it
+  // is reached only if the fetch stops working.
   const answer = await asker.P.post('http://relay', target.id.publicKey, SAID);
   const fetched = !!asker.sealKeyHeldFor(target.id.publicKey);
 
@@ -165,17 +141,11 @@ const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
 
   // ── C8: A BURST TO ONE UNCARDED PEER LOSES NOTHING ─────────────────
   //
-  // MEASURED AS A DEFECT FIRST, THEN ASSERTED. On 780426a the throttle
-  // remembered a TIMESTAMP, so ten concurrent posts to an uncarded peer
-  // gave one ask and ONE delivery: the first caller set `askedFor`, the
-  // other nine skipped the ask, found the key still absent, and refused
-  // 428. It was reported rather than asserted, because the only bursting
-  // caller — the agents outbox — flushes serially and could not reach it.
-  //
-  // spiritos-f6 fixed it at 742c5c1 by remembering the PROMISE instead of
-  // the timestamp, so the losers await the in-flight ask. Now that there
-  // is behaviour to protect, it is pinned: a timestamp throttle passes
-  // every other check in this file and fails this one.
+  // peerPost.js fetchCard remembers the in-flight ask's PROMISE
+  // (`asking[toKey]`), so concurrent posts to an uncarded peer await that
+  // one ask instead of skipping it and refusing 428. A throttle that only
+  // remembered a timestamp passes every other check in this file and
+  // fails this one.
   {
     const relay2 = fakeRelay();
     const many = nodeFor('burst', relay2);
@@ -218,11 +188,11 @@ const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
   //   "everything else is a missing feature; that one is a hole."
   //
   // A relay that answers our ask with its OWN card gets everything we
-  // ever send sealed to it. Both layers already refuse independently —
-  // peerPost.js codes it `card-wrong-key`, contacts.setCard refuses it and keeps nothing of it (goal/G40.11, box
-  // v24: "any other is refused and nothing of it kept") — and the fetch must not
+  // ever send sealed to it. Both layers refuse independently —
+  // peerPost.js codes it `card-wrong-key`, contacts.setCard refuses it and keeps nothing of it (goal/G40.11:
+  // "any other is refused and nothing of it kept") — and the fetch must not
   // route around either. Checked at the keeper, which is the layer the
-  // new caller will hand its answer to.
+  // fetch hands its answer to.
   {
     const victim = nodeFor('victim', relay);
     const impostor = nodeFor('impostor', relay);
@@ -266,11 +236,8 @@ const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
 
   // ── C5: A PEER THAT NEVER ANSWERS ──────────────────────────────────
   //
-  // GREEN TODAY FOR THE WRONG REASON, and said so rather than counted as
-  // cover: the missing key is noticed before reachability is, so this
-  // refuses 428 before any ask is attempted. It is here because AFTER the
-  // fix it is the real assertion — the ask goes out, nothing comes back,
-  // and the caller must get a status rather than a hang or a silent drop.
+  // The ask goes out, nothing comes back, and the caller must get a
+  // status rather than a hang or a silent drop.
   {
     const ghost = auth.generateIdentity('ghost');
     const r = await asker.P.post('http://relay', ghost.publicKey, 'into the void');
@@ -284,17 +251,11 @@ const { fakeRelay, nodeFor, plantCardOf } = require('./cardWorld.js');
 
   // ── C9: A BUSY TARGET IS A WAIT, NOT A REFUSAL ─────────────────────
   //
-  // FOUND LIVE, 2026-09-27, by this suite's author on his own node: the
-  // card ask to Andy's node was refused 503 target-busy by the relay —
-  // his node was already taking a request, as it often is with two agents
-  // and Desk posting to it — and the fetch gave up at once: no key, so the
-  // message was refused no-cipher-key 100 ms later instead of waiting the
-  // relay's retryAfterMs. The same ask a minute later was answered. An
-  // ordinary post already re-queues on busy (peerPost.js, queue.busy); the
-  // ask is the one post that does not.
-  //
-  // Nothing was lost — no-cipher-key is retry 'after' and the reports
-  // stayed queued — but a direct message to him failed outright.
+  // A card ask the relay turns away 503 target-busy (the target is already
+  // taking a request) is asked again after the relay's retryAfterMs, for
+  // at most CARD_ASK_PATIENCE_MS (peerPost.js fetchCard, askOnce), so the
+  // message behind it is not refused no-cipher-key. An ordinary post
+  // re-queues on busy too (peerPost.js, queue.busy).
   {
     const relay2 = fakeRelay({ busyAsks: 1 });
     const sender = nodeFor('busy-asker', relay2);

@@ -1,21 +1,22 @@
 'use strict';
 const rollOf = require('./rollOf');
 
-// Cycle A — create-invitation in Relay Chat.
+// Cycle A — the owner badge, the mailbox picker, and a verb aimed at a relay.
 //
 // Three claims are under test, and none of them is chrome:
 //
-//   1. The owner badge is a signed GET /api/relay/status that came back
-//      200 with a report. No second endpoint, no cheaper "am I owner?"
-//      — the roll already answers it (DICTIONARY.md, "Owner badge").
-//   2. The badge is asked of EVERY Natter row, so a node can own two
+//   1. The owner badge: ownerBadge.probe asks each listed relay for its
+//      card (request(url); since goal/G22.6 a card ask through the node's
+//      peerPost), and a relay is owned when the owner key its card names
+//      is this node's. It signs nothing (DICTIONARY.md, "Owner badge").
+//   2. The badge is asked of EVERY listed relay, so a node can own two
 //      mailboxes, one, or none, and the answer names which.
-//   3. A mint goes to the mailbox that was chosen. relays.json[0] is a
-//      habit, and on a node with two owned mailboxes it is a wrong one.
+//   3. A verb goes to the relay it names, by key, never to the first
+//      listed relay out of habit.
 //
-// The last section runs the real hub against two throwaway relays on
-// loopback, because "the hub sends the invite to the right URL" is not a
-// claim a stub can make on the hub's behalf.
+// The loopback section runs the real hub against two throwaway relays,
+// because "the hub sends the invite to the right relay" is not a claim a
+// stub can make on the hub's behalf.
 
 const fs = require('fs');
 const os = require('os');
@@ -51,9 +52,8 @@ function writeRelays(home, rows) {
 function ownedBox(id, name) {
   var home = tmpHome('box');
   // A KEY OF ITS OWN, which a relay needs to be addressable at all: the
-  // mint is a post to this box now, and a box with no identity cannot
-  // sign the answer. Before decision 0010's second collapse these fixtures
-  // never needed one, because minting arrived through a route.
+  // mint is a post to this box, and a box with no identity cannot sign
+  // the answer.
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   ownHome(home, id);
   var box = createRelay(home);
@@ -68,10 +68,9 @@ function askedWith(body) {
   return function () { return Promise.resolve(body); };
 }
 
-// `seats` names the urls this node has a row on. It used to be implied —
-// the roll listed the key, so probe found it — and a node keeps that
-// record itself now, so a fixture has to write it (relayKeys.seat, which
-// hub.handleClaim calls when a claim is granted).
+// `seats` names the urls this node has a row on. A node keeps that record
+// itself, so a fixture has to write it (relayKeys.seat, which the hub
+// calls when a claim is granted).
 //
 // Left OUT for a relay this node merely lists: that is the case
 // `owned:false, claimed:false` exists to describe, and it has to be
@@ -86,32 +85,13 @@ function nodeHome(id, urls, seats) {
   return home;
 }
 
-// Answers a status request out of a relay object in this process. Same
-// shape as the wire: the report itself on 200, { error } otherwise.
-// THE PUBLIC ROLL, which is the only thing probe() asks for now.
-//
-// It answered a SIGNED `GET /api/relay/status` until 2026-09-15 and
-// handed back the owner-only report, because that was how the badge was
-// decided. R3 deleted that route's only caller: `owner: true|false` is
-// on every roll row already, unsigned, and `probe` reads it by key.
-//
-// A stub that still served the old route would keep passing while the
-// thing it stands in for had stopped being asked — which is the failure
-// mode every stub in this tree is written against.
-// ── IT SERVES THE KEY DOOR NOW, NOT THE ROLL (2026-09-18) ─────────
-//
-// This answered `/api/relay/who` with `rollOf(box)` — the whole membership —
-// because that is how probe used to learn both who runs a box and whether
-// this node was on it.
-//
-// It learns the first from `GET /api/relay/key` (97 fixed bytes, no
-// membership term) and the second from its OWN RECORD of where it holds a
-// seat (relayKeys, written at claim). So this serves the key door, and
-// keeps rejecting everything else — the loud-stub rule below is what made
-// this change announce itself instead of passing quietly.
-// SINCE goal/G22.6 the probe asks `request(url)` for the relay's card — a
-// card ask on its one door, through the node's peerPost (hub.relayKeyAsk) —
-// and nothing else; GET /api/relay/key is closed. This answers that one ask.
+// THE RELAY'S CARD, as `request(url)` answers it to ownerBadge.probe:
+// since goal/G22.6 a card ask on the relay's one door through the node's
+// peerPost (hub.relayKeyAsk); GET /api/relay/key is closed. Answered out
+// of a relay object in this process as { status, text }, and refused for a
+// url with no box. Whether this node holds a seat is not asked of the
+// relay: the node keeps its own record of that (relayKeys, written at
+// claim).
 function rollAnswerer(boxes) {
   return function (url) {
     var box = boxes[url];
@@ -154,7 +134,8 @@ test.startTest('Cycle A — owner badge, mailbox picker, mint goes where it was 
   }
 
   const broken = tmpHome('broken');
-  // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+  // The node's relay list is node.db's relays table (relayKeys.listed, goal/G19.15); a relays.json found in
+  // spirit/state/ is the old store, moved in when it can be read (relayKeys.importOld).
   fs.mkdirSync(path.join(broken, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(broken, 'spirit', 'state', 'relays.json'), '{ not json');
   if (ownerBadge.loadRelays(broken).length === 0 && ownerBadge.loadRelays(tmpHome('none')).length === 0) {
@@ -166,24 +147,15 @@ test.startTest('Cycle A — owner badge, mailbox picker, mint goes where it was 
 
 test.subHeading('What counts as a badge');
 
-// THE BADGE IS A ROLL READ NOW, not a signed 200 (R3, 2026-09-15,
-// design/cycles/2026-09-15-labels-are-not-identities.md).
+// THE BADGE SIGNS NOTHING (R3, design/cycles/2026-09-15-labels-are-not-identities.md).
 //
 //   Andy: "i don't understand the ownerbadge concept at all: the relay
 //   knows its owner by key, and already filters requests by that."
 //
-// These four checks used to drive `readBadge`, which parsed the body of
-// a signed `GET /api/relay/status` and decided whether it was a real
-// report or a 200 from something that answers 200 to everything. That
-// route had no caller but this badge, and its signature was the only one
-// on this wire that could not expire.
-//
-// The question survives the mechanism: IS MY KEY THE OWNER'S? It was
-// answered off the public roll by `ownedFrom` — "my key carrying
-// owner:true" — until the roll went and then, on 2026-09-19, the mark
-// on the row ("a row in the roll doesn't know who the owner is"). The
-// relay names its owner's key at /api/relay/key, and `probe` compares:
-// runBadgeProbe below is where the badge is asserted now.
+// The question is IS MY KEY THE OWNER'S? The relay's card names its
+// owner's key, and `probe` compares: runBadgeProbe below is where the
+// badge is asserted. These checks hold that no roll parser and no
+// signature is left in ownerBadge.js.
 {
   if (typeof ownerBadge.ownedFrom === 'undefined' && typeof ownerBadge.censusFacts === 'undefined' &&
       typeof ownerBadge.claimedLabelFrom === 'undefined') {
@@ -192,14 +164,13 @@ test.subHeading('What counts as a badge');
     test.fail('a roll parser is still exported');
   }
 
-  // AND IT IS UNSIGNED. The point of R3: this question now costs no
+  // AND IT IS UNSIGNED. The point of R3: this question costs no
   // credential at all, so a node may ask it of every relay in its list
   // including ones it has no relationship with.
   const src = fs.readFileSync(
     path.join(__dirname, '..', 'run', 'spirit', 'ownerBadge.js'), 'utf8');
-  // Called, not merely named. The tombstone explaining what statusPath
-  // was has to stay readable, so a scanner that cannot tell a call from
-  // an epitaph would make the history undeletable.
+  // Called, not merely named: comment lines are dropped first, so a
+  // comment naming statusPath does not count as a call.
   const live = src.replace(/^\s*\/\/.*$/gm, '');
   const signs = live.indexOf('statusPath(') !== -1 || live.indexOf('auth.sign(') !== -1;
   if (!signs) {
@@ -237,14 +208,9 @@ function runBadgeProbe() {
       test.fail('mustPick with one owned row');
     }
 
-    // SOMEBODY ELSE'S RELAY ANSWERS PERFECTLY WELL. It used to come back
-    // 403 — the owner-only route refusing us — and the row was unbadged
-    // because the request failed. Since R3 the request is the public
-    // roll, which answers 200 to anyone, so the row is unbadged
-    // because OUR KEY IS NOT THE ONE MARKED OWNER.
-    //
-    // The better assertion, and the one that survives the relay being
-    // reachable: not owned, not claimed, and the roll read fine.
+    // SOMEBODY ELSE'S RELAY ANSWERS PERFECTLY WELL: its card answers 200
+    // to anyone, so the row is unbadged because OUR KEY IS NOT THE ONE
+    // IT NAMES AS OWNER. Not owned, not claimed, and the card read fine.
     const foreign = summary.rows.filter(function (r) { return r.url === urlTheirs; })[0];
     if (foreign && !foreign.owned && !foreign.claimed && foreign.status === 200) {
       test.check("someone else's relay answers us, and is still unbadged");
@@ -345,33 +311,12 @@ function relayServer(box) {
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(result.ok ? payload : { error: result.error }));
       }
-      // A `/api/relay/status` branch stood here, serving the owner-only
-      // report to a signed GET. R3 deleted that route on 2026-09-15 along
-      // with the badge that was its only caller, so a fake still offering
-      // it would be a fake more capable than the thing it stands in for.
-      //
-      // WHO THIS BOX IS, which probe() reads to answer "do I own this".
-      // "Do I have a row here" is no longer asked of the relay at all —
-      // the node keeps its own record of where it holds a seat
-      // (relayKeys, written at claim), so a fixture says so by writing
-      // the seat rather than by being listed in an answer.
-      //
-      // THE ROLL BRANCH STOOD HERE and served `rollOf(box)`. It was added
-      // because the fake did not serve it at first, so claimedFrom() saw
-      // a 404 in every test and answered false — a suite cannot notice a
-      // flag that is false because the question was never asked. The same
-      // hazard now lives at the seat: a fixture that forgets to write one
-      // gets `claimed: false` for a reason that has nothing to do with
-      // what it is testing.
-      //
-      // THE KEY DOOR STOOD HERE (GET /api/relay/key). It is closed on a
-      // relay since goal/G22.6; the node learns the card through its
-      // router (cardRouter below), so this fake serves no route at all.
-      // /api/relay/invite STOOD HERE and is gone from the wire entirely
-      // (decision 0010). A mint is a post now, and a post does not come
-      // back in the HTTP response — the relay answers on the owner's
-      // stream. So the seam this suite fakes moved from the transport to
-      // the router: see routerTo() below.
+      // A relay serves no route here: the node learns the relay's card
+      // through its router (cardRouter below, goal/G22.6), and a mint is a
+      // post whose answer comes on the owner's stream (routerTo below).
+      // Whether this node holds a seat is its own record (relayKeys), so a
+      // fixture writes the seat; one that forgets gets `claimed: false`
+      // for a reason that has nothing to do with what it is testing.
       res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end('{"error":"no such route"}');
     });
@@ -415,13 +360,12 @@ function cardRouter(boxes) {
   };
 }
 
-// THE ROUTER, faked at the seam hub.handleInvite actually uses now.
+// THE ROUTER, faked at the seam hub.handlePost uses.
 //
 // It does the two things peerPost does that this suite depends on: it
 // posts to the box the url names, and it hands back the reply that box
 // signed. The reply arrives on the owner's stream rather than in the
-// post's response — which is the one real consequence of the collapse,
-// and the reason this fake has to hold a sink at all.
+// post's response, which is why this fake has to hold a sink at all.
 //
 // Kept deliberately thin: what is under test is that the hub picks the
 // right mailbox, so this proves nothing about the transport and does not
@@ -438,7 +382,7 @@ function routerTo(boxes, owner) {
             const ev = /^event: (.+)$/m.exec(String(chunk));
             const da = /^data: (.+)$/m.exec(String(chunk));
             if (!ev || ev[1] !== 'reply' || !da) return;
-            // Opened: a relay seals its answers now (cycle 10, R5), so
+            // Opened: a relay seals its answers (cycle 10, R5), so
             // what the hub hands back is the plaintext a node would.
             try {
               const got = openReply(owner, box.relayPublicKey(), JSON.parse(da[1]).text);
@@ -459,13 +403,11 @@ function routerTo(boxes, owner) {
 }
 
 // Presence, at the seam handlePost uses to pick a road. On a real node
-// this is built from the rosters relays push; here it answers from the
-// boxes themselves, which is the same question asked of a fixture.
+// this is presenceNode.relaysNaming: the relays whose presence broadcasts
+// name the key as present. Here it answers from the boxes themselves.
 //
 // It is what makes "which relay" a NODE decision rather than a caller's:
-// a post names a KEY, and the node finds the relays that say they carry
-// that key. That is why the relay had to start naming itself in every
-// member's roster (relay.streamRoster).
+// a post names a KEY, and the node finds the relays that carry that key.
 function presenceFor(boxes) {
   return {
     relaysNaming: function (key) {
@@ -482,7 +424,7 @@ function presenceFor(boxes) {
 function hubPost(hub, to, body, deps) {
   const res = fakeRes();
   hub.handlePost({}, res, function () {
-    // THE CALLER COMPOSES THE PAYLOAD, as the client layer now does:
+    // THE CALLER COMPOSES THE PAYLOAD, as the client layer does:
     // a relay-directed call is a system payload with no app in it.
     return Promise.resolve({ to: to, text: JSON.stringify({ v: 1, body: body }) });
   }, deps);
@@ -504,31 +446,16 @@ function hubPost(hub, to, body, deps) {
 function runHubOnLoopback() {
   test.subHeading('A verb addressed to a relay key lands on that relay');
 
-  // ── THE DOORS ARE GONE, AND SO IS "WHICH URL" ────────────────────
+  // ── A VERB NAMES A RELAY KEY, NOT A URL ─────────────────────────
   //
   //   Andy: "I am aiming to close all post-path doors on node"
   //
-  // This section drove hub.handleInvite and hub.handleRemovePeer, and
-  // asserted that each picked the right mailbox out of relays.json by
-  // url. Both functions are deleted: what they did was build one packet
-  // body and hand it to router.post, which is what a peerPost IS.
-  //
-  // TWO OF THE OLD CLAIMS DISSOLVED RATHER THAN MOVED, and that is worth
-  // saying plainly rather than quietly dropping them:
-  //
-  //   "two mailboxes and no choice is refused, not guessed" — there is
-  //     no choice to fail to make. A post names a KEY, and two relays
-  //     owned by one person have two different keys. Ambiguity was a
-  //     property of aiming by url.
-  //
-  //   "a mint aimed off the Natter list never leaves the node" — aiming
-  //     at a key nothing carries is now the same refusal as aiming at a
-  //     peer who is not there: unreachable. Below.
-  //
-  // And one MOVED: "a delivered refusal is not a delivery" is the client
-  // layer's now, because that is where the two failures meet — see
-  // spirit/test/clientLayer.js. It was hub.askRelay's, and askRelay went
-  // with the doors it served.
+  // The hub has no invite or remove-peer door: a verb for a relay is one
+  // packet body posted through hub.handlePost to the relay's key. A post
+  // names a KEY, and two relays owned by one person have two different
+  // keys, so there is no "which url" to guess; a key no relay carries is
+  // unreachable, as for any peer. "A delivered refusal is not a delivery"
+  // is the client layer's (spirit/test/clientLayer.js).
 
   const owner = auth.generateIdentity('andy');
   const first = ownedBox(owner, 'andy');
@@ -557,9 +484,8 @@ function runHubOnLoopback() {
       test.fail('mint on second: ' + res.status + ' ' + res.text);
     }
 
-    // THE WHOLE POINT, unchanged in substance: the row exists on the box
-    // that was addressed, and not on the one that merely happens to be
-    // first in relays.json.
+    // THE WHOLE POINT: the row exists on the box that was addressed, and
+    // not on the one that merely happens to be listed first.
     const onSecond = invites.load(second.home).some(function (row) { return row.token === token; });
     const onFirst = invites.load(first.home).some(function (row) { return row.token === token; });
     if (token && onSecond && !onFirst) {
@@ -568,10 +494,8 @@ function runHubOnLoopback() {
       test.fail('token landed wrong: onFirst=' + onFirst + ' onSecond=' + onSecond);
     }
 
-    // A KEY NOTHING CARRIES. This replaces both of the old refusals —
-    // the unaimed one and the off-the-list one — because addressing a
-    // key makes them the same question, and it is the ordinary one every
-    // post already asks: is this peer reachable?
+    // A KEY NOTHING CARRIES: the ordinary question every post asks, is
+    // this peer reachable?
     return hubPost(hub, 'MCowBQYDK2VwAyEAnobody-carries-this-key=',
       { invite: { label: 'saint', days: 7, token: '' } }, deps);
   }).then(function (res) {
@@ -581,18 +505,13 @@ function runHubOnLoopback() {
       test.fail('unaimed: ' + res.status + ' ' + res.text);
     }
 
-    // ── THE VERB THAT HAD NO DOOR, AND NOW NEEDS NONE ───────────────
+    // ── REMOVING A PEER IS A PACKET TO THE RELAY ────────────────────
     //
     //   Andy: "api/hub/remove-peer must be the interface"
     //
-    // relay.removePeer worked, was signed and was thorough, and nothing
-    // under run/ could reach it — a verb with no interface, which is as
-    // much an impurity as a wrong one and harder to see.
-    //
-    // It got a door, and the door is now gone too. That is not the gap
-    // reopening: it is the gap becoming impossible. A verb the relay
-    // answers is reachable because the browser can address the relay,
-    // and there is no longer a place for a door to be missing from.
+    // There is no remove-peer door on the node: relay.removePeer is
+    // reached by a packet addressed to the relay's key, like any verb the
+    // relay answers.
     const victim = auth.generateIdentity('victim');
     const minted = second.box.mint('andy', 'victim', 7);
     second.box.claim('victim', auth.sign(victim.privateKey, auth.claimMessage('victim')),
@@ -612,13 +531,10 @@ function runHubOnLoopback() {
       });
   }).then(function () {
     // And the badge itself, over the same loopback: both mailboxes owned,
-    // so Relay Chat shows the panel and the picker. A READ, and reads did
-    // not move — you cannot post to an address you are still asking for.
-    // THE THIRD ARGUMENT IS readJsonBody, not a URL. It was a URL until
-    // `relay.status` folded onto /api/spirit on 2026-09-15, and the name
-    // now arrives in the body like every other loopback verb's argument.
-    // Handed the same shape server.js hands it, so a change to how the
-    // body is read fails here rather than being swallowed.
+    // so the answer asks for a pick. THE THIRD ARGUMENT IS readJsonBody:
+    // the name arrives in the body like every other loopback verb's
+    // argument, handed the same shape server.js hands it, so a change to
+    // how the body is read fails here rather than being swallowed.
     const res2 = fakeRes();
     hub.handleStatus({}, res2, askedWith({ name: 'andy' }), deps);
     return res2.wait();
@@ -632,8 +548,7 @@ function runHubOnLoopback() {
     }
     // And the label came back off the BODY. It is echoed rather than
     // used, which is exactly why it would go unnoticed if the read
-    // broke — the rows would still be right and Natter would draw a
-    // blank title.
+    // broke — the rows would still be right and the title blank.
     if (data.name === 'andy') {
       test.check('and it echoes the label it was asked with, read out of the body');
     } else {
@@ -645,26 +560,11 @@ function runHubOnLoopback() {
 
 
 
-// B2, and the half of it that never reached the browser.
+// B2: a node that is a member, not the owner, still sees its row: a
+// panel shows for every relay it either owns or is bound to.
 //
-// Andy: "now that we've got the one-device-for-all going, it would be
-// nice if the natter app would show a dropdown panel for every relay it
-// either owns or is bound to. this has not happened yet."
-//
-// It had not, and the reason was one argument. Natter decides whether a
-// row opens with `owned || claimed`, and `claimed` is computed by
-// ownerBadge.probe ONLY when it is handed a key to look for:
-//
-//     if (badge.owned || !myKey) return badge;
-//
-// handleStatus called it with three arguments, so every row came back
-// with `claimed` undefined and `owned || claimed` quietly became
-// `owned`. A peer saw no panel on any mailbox, and an owner saw panels
-// everywhere — which is exactly the shape of "it works for me".
-//
-// The device timer in the same file already carried the fix AND the
-// lesson — "the whole feature stopped at the owner for want of one
-// word" — so this is the same omission, made twice, caught once.
+// A row opens with `owned || claimed`, so handleStatus must compute
+// `claimed` for this node's key: claimed is owned, or seated (relayKeys).
 function boundNodeSeesItsRow() {
   test.subHeading('A node that owns no mailbox still knows which ones it is on');
 
@@ -688,8 +588,7 @@ function boundNodeSeesItsRow() {
     server = s;
     // Bert joined by `lab.box.claim(...)` above — the RELAY's half of a
     // bind. The node's half is its own record of the seat, which a real
-    // claim writes through hub.handleClaim and this fixture writes by
-    // hand for the same reason labWorld does (2026-09-18).
+    // claim writes through the hub and this fixture writes by hand.
     const hub = createHub(nodeHome(guest, [server.url], [server.url]));
     const res = fakeRes();
     const cards = {};
@@ -710,29 +609,17 @@ function boundNodeSeesItsRow() {
       test.fail('bert came back owning something: ' + res.text);
     }
 
-    // The flag Natter opens a panel on.
+    // The flag a row opens a panel on.
     if (row.claimed === true) {
       test.check('and the row says he is ON it — which is what opens the panel');
     } else {
       test.fail('claimed was ' + JSON.stringify(row.claimed) + ': ' + res.text);
     }
 
-    // WHAT THE PANEL ACTUALLY SHOWS once it opens. Without this the row
-    // opens onto the 403 from the owner-only status call — the words
-    // "not the owner" — which is the app telling somebody off for the
-    // ordinary case of being a member.
-    //
-    // ── "AND HOW MANY ARE ON IT" IS GONE (2026-09-18) ──────────────
-    //
-    // This asserted `facts.peers === 2` as well. The count came from the
-    // roll, and a count of the membership is a membership fact: the
-    // relay does not serve one, to anybody, and no screen in run/ ever
-    // read it. It was in the badge because censusFacts had the list in
-    // hand and reducing it was free.
-    //
-    // What the panel can still say is who runs the box and what it calls
-    // YOU — both off GET /api/relay/key and this node's own seat record,
-    // neither with a membership term in it.
+    // WHAT THE PANEL SHOWS once it opens: who runs the box and what it
+    // calls YOU — off the relay's card and this node's own seat record,
+    // neither with a membership term in it. No member count: the relay
+    // serves no membership fact, to anybody.
     const facts = row.roll || {};
     if (facts.owner === 'andy' && facts.myLabel === 'bert') {
       test.check('and the panel can say who runs it and what it calls you');
@@ -749,9 +636,8 @@ function boundNodeSeesItsRow() {
       test.fail('myLabel: ' + JSON.stringify(facts.myLabel));
     }
 
-    // Sent, not merely computed. summarize() has always produced this
-    // and handleStatus has always dropped it, so the browser had to
-    // infer the set and could not.
+    // Sent, not merely computed: handleStatus hands claimedUrls to the
+    // browser beside ownedUrls.
     if (Array.isArray(body.claimedUrls) && body.claimedUrls.indexOf(server.url) !== -1 &&
         (body.ownedUrls || []).length === 0) {
       test.check('and claimedUrls reaches the browser, with ownedUrls empty beside it');

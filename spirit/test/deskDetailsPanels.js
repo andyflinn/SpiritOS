@@ -1,8 +1,10 @@
 'use strict';
 
 // spirit/test/deskDetailsPanels.js
-// goal/G30.8, "Desk item details: icon strip, fixed halves, lazy panels". Red on today's tree; claude-windows writes it
-// and builds it (one agent).
+// goal/G30.8, "Desk item details: icon strip, fixed halves, lazy panels".
+// THE NAMES BELOW ARE NO LONGER deskDetails.js's: the strip and its panels are drawn by the workBench since
+// goal/G41.22 and G41.23 (deskDetails.js, "THE STRIP AND ITS PANELS"), with no #dd-upper, #dd-icons or data-panel
+// buttons, so the frame, strip, panel and remove checks below fail on markup the page does not have.
 // The item's box (v5), in short:
 //   - The header (the button bar) stays, minus the yellow bubble "How you check it: no checks written yet.", which goes.
 //   - Below it the upper half, about 30% of the page height, fixed: a strip of icons down its left edge, the wide

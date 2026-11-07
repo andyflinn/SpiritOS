@@ -1,11 +1,10 @@
 'use strict';
 
 // spirit/test/runSpiritFolder.js
-// goal/G40.2: the core code tree moves from spirit/run/js/ to spirit/run/spirit/. Written first, red on today's tree, by
-// claude-windows, who does not build it. The box (v4), Andy's words among it: "so to make spirit.js the first compliant
-// object, we need to make that simple folder move. no other changes. that one's big enough for an item. if we can pull
-// this off by only fixing require() statements through out we're on a winning path."; and to the relays' units: "teach
-// bash to re-install a changed unit."
+// goal/G40.2: the core code tree moved from spirit/run/js/ to spirit/run/spirit/. The box (v4), Andy's words among it:
+// "so to make spirit.js the first compliant object, we need to make that simple folder move. no other changes. that
+// one's big enough for an item. if we can pull this off by only fixing require() statements through out we're on a
+// winning path."; and to the relays' units: "teach bash to re-install a changed unit."
 //
 // WHAT IS ASSERTED
 //   1. The folder: spirit/run/spirit/ holds the tree (server.js, kernel.js, relayServer.js among it); spirit/run/js/ is
@@ -21,6 +20,8 @@
 //   6. On a node of its own (rule/11), started by node spirit/server.js: it boots, serves /spirit/kernel.js and answers
 //      404 for /js/kernel.js; index.html loads the kernel from /spirit/.
 //   7. labMaster looks for spirit/server.js under a home.
+// STALE PATHS: points 1 and 6 read spirit/run/spirit.js and spirit/run/index.html, which are now
+// spirit/run/spirit/spirit.js (requiring ./fieldRules.js, not ./spirit/...) and spirit/run/spirit/shell/index.html.
 
 const fs = require('fs');
 const net = require('net');
@@ -98,8 +99,8 @@ test.startTest('goal/G40.2: the core code tree at spirit/run/spirit/');
   if (units.every(function (u) { return / spirit\/server\.js /.test(u.exec); })) test.check('both unit templates start node spirit/server.js');
   else test.fail(OWED + 'the units start ' + short(units.map(function (u) { return u.f + ': ' + u.exec; })));
   const update = read('bash/update') || '';
-  // Since the first update to a moved start path runs the bash/update it started with, the re-install lives in lib.sh's
-  // unit_current, which bash/update and check_started both call (wsl-claude, building goal/G40.2).
+  // The first update to a moved start path runs the bash/update it started with, so the re-install lives in lib.sh's
+  // unit_current, which bash/update and check_started both call.
   const lib = read('bash/lib.sh') || '';
   const current = (/unit_current\(\)\s*\{[\s\S]*?\n\}/.exec(lib) || [''])[0];
   if (/install-units/.test(current) && /unit_current "\$UNIT_NAME"/.test(update) && /check_started\(\)\s*\{[\s\S]*?unit_current/.test(lib)) test.check('bash/update re-installs a changed unit (install-units, through lib.sh unit_current), and check_started does too');
@@ -113,7 +114,7 @@ test.startTest('goal/G40.2: the core code tree at spirit/run/spirit/');
     ['platform/windows/start-spirit.ps1', /spirit[\\/]server\.js/.test(read('platform/windows/start-spirit.ps1') || '') ? '' : 'no spirit/server.js'],
     ['platform/wsl/start-spirit.sh', /spirit\/server\.js/.test(read('platform/wsl/start-spirit.sh') || '') ? '' : 'no spirit/server.js'],
     // An installer's create.js only zips; the start path lives in the files it ships: chat-windows' start.ps1 and
-    // README.txt, microscopic's README.txt (wsl-claude, building goal/G40.2).
+    // README.txt, microscopic's README.txt.
     ['install/chat-windows/start.ps1', /spirit\\server\.js/.test(read('install/chat-windows/start.ps1') || '') && !/[^A-Za-z]js\\server\.js/.test(read('install/chat-windows/start.ps1') || '') ? '' : 'no spirit\\server.js'],
     ['install/chat-windows/README.txt', /node spirit\/server\.js/.test(read('install/chat-windows/README.txt') || '') ? '' : 'no spirit/server.js'],
     ['install/microscopic/README.txt', /node spirit\/server\.js/.test(read('install/microscopic/README.txt') || '') ? '' : 'no spirit/server.js']]

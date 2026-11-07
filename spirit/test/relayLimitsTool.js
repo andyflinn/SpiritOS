@@ -8,8 +8,9 @@
 //   support for adjusting remote relays limits?"
 //
 // The program is a client of the node's one door, like the shell and like
-// a developer's app: `relay.status` to find the relays this key owns, and
-// `peer.post` to send the owner-signed `{ config: … }` packet. It adds no
+// a developer's app: `contact.search` and `relay.get` to find the relays
+// this key owns, and `peer.post` to send the owner-signed `{ config: … }`
+// packet. It adds no
 // verb and no route — hub.js: a verb "would have been a third place to
 // shape one request".
 //
@@ -34,7 +35,8 @@ function doorSaying(answer, seen) {
   return function (verb, args) {
     const body = Object.assign({ verb: verb }, args);
     if (seen) seen.push({ verb: verb, body: body });
-    // relay.search, as the node answers it since relay.status went (puppets/G2): a row per relay, its label the row.
+    // relay.search: a row per relay, its label the row. The tool no longer asks it (it lists the relays by
+    // contact.search and relay.get, goal/G40.11), and no check here drives that listing, so this branch is never taken.
     if (verb === 'relay.search') {
       return Promise.resolve({ items: ROWS.map(function (r) {
         return { key: r.url, label: JSON.stringify({ url: r.url, owned: r.owned, relayLabel: r.label, relayKey: r.key }) };

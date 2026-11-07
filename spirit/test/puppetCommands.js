@@ -1,16 +1,14 @@
 'use strict';
 
 // spirit/test/puppetCommands.js
-// AN OWNER COMMAND REACHES A VERB THAT READS ITS BODY — goal/G14.1, written first, red on today's code.
+// AN OWNER COMMAND REACHES A VERB THAT READS ITS BODY — goal/G14.1.
 //
 //   Andy, 2026-10-10: "First we fix the puppet-issue", "all changes required to make puppeteering work".
 //
-// Found live the same day, from his node to his puppet on 11111: owner.command with an app server's ask came back on the
-// command's hash, as the door promises, and the answer was 400 bad-request, Invalid JSON body. The cause: the shim
-// in puppetMode.puppetDoor hands the verb a request stream with no headers, and every verb in the node reads its
-// body through the one shared reader, serveCommon.readJsonBody, which begins by reading content-length off the
-// headers and throws before it parses. puppetDoor.js never saw it because its handlers are fakes that read the
-// stream by hand. This suite drives the same door with handlers that read through the real reader.
+// Every verb in the node reads its body through the one shared reader, serveCommon.readJsonBody, which begins by
+// reading content-length off the headers; a request stream handed over with no headers fails there with 400
+// bad-request, Invalid JSON body. spirit/test/puppetDoor.js drives the door with fakes that read the stream by hand;
+// this suite drives the same door (puppetMode.puppetDoor) with handlers that read through the real reader.
 //
 // Held here: a command with a body is answered with what the body held, verb included; a command with no body
 // parses to the verb alone; the request the shim hands over carries the two headers the reader needs, content-type

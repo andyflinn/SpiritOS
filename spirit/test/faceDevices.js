@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/faceDevices.js
-// goal/G30.12, step 4 of goal/G30.10: one face stream per member. Red on today's tree; claude-windows writes it and
-// builds it (one agent). The box, in short:
+// goal/G30.12, step 4 of goal/G30.10: one face stream per member. The box, in short:
 //   - One face stream per member. A face opened while another device holds it warns: your face is open on another
 //     device; connecting here ends it there. Only its Connect here press moves the stream; the face it replaced gets a
 //     last event, taken by another device, and says so.

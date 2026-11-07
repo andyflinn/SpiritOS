@@ -14,7 +14,7 @@
 // relay exports its admission rule, so the figure is the relay's own rule applied to the measured relay at rest.
 //
 // WHAT IS ASSERTED, on fixtures (no measurement is run here; never lab* or measureCapacity):
-//   1. js/relay.js exports allowanceFor, SEAT_STREAMS and STREAMS_PER_MB.
+//   1. spirit/run/spirit/relay.js exports allowanceFor, SEAT_STREAMS and STREAMS_PER_MB.
 //   2. The agent README from a fixture set: title, then Machine Description (platform, total RAM, RAM used, node.js
 //      release and identity, SpiritOS node processes), Summary (three bullets in that order, the members figure being
 //      the relay's rule at 512 MB on the set's relayAtRestRss, the streams named, the peers per 512 MB of disk from

@@ -6,8 +6,8 @@ const auth = require('../run/spirit/relayAuth');
 const { claimOwner, installedRelay } = require('./ownerClaim');
 const invites = require('../run/spirit/invites');
 // A relay installed for its owner with nobody on its roll yet, which is the
-// only world in which the act of claiming can be watched happening. Since
-// goal/G16.8 the install names the owner (ownerClaim.installedRelay), so the
+// only world in which the act of claiming can be watched happening. The
+// install names the owner (goal/G16.8, ownerClaim.installedRelay), so the
 // owner's key is known before the box is built. The claims themselves stay
 // written out below: they are the subject of this file, and a helper that
 // made them would be a helper that hid them.
@@ -72,10 +72,9 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
     test.fail('redeem: ' + JSON.stringify(redeemed));
   }
 
-  // BURNED MEANS GONE, not marked. The row used to survive with a
-  // `consumedAt` stamp, which made invites.json a permanent record of who
-  // invited whom — and kept a spent token in the clear for ever. A
-  // claimed invite is deleted now; the label lives on the peer's row.
+  // BURNED MEANS GONE, not marked: a claimed invite is deleted from
+  // invites.json (invites.js consume), so it keeps no record of who invited
+  // whom and no spent token; the label lives on the peer's row.
   const rowAfter = invites.load(home).find(function (r) {
     return minted.invite && r.token === minted.invite.token;
   });
@@ -95,9 +94,8 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
     test.fail('roll: ' + JSON.stringify(rollOf(box)));
   }
 
-  // Cycle 4 shut this door. The mint-and-burn above is untouched; what
-  // changed is that arriving with no token at all is now refused rather
-  // than waved through.
+  // A keys-mode claim that brings no token at all is refused (the cycle 4
+  // lock): 403, 'invite required'.
   const john = auth.generateIdentity('john');
   const noToken = box.claim(
     'john',

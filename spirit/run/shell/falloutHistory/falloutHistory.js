@@ -4,11 +4,15 @@
 //   Andy, 2026-10-17: "i only want to see the latest, if you want to show the history of one test, use a dialog.", then
 //   "so we'll add a dialog for test-history, that shows us the flips."
 //
-// Opened from a line of the Fallout tab with { suite, heading }: the test file and the sub-heading its checks stand
-// under (since goal/G27.14 a check's key is "<heading> #<n>"), or one test's full key. It reads every flip with this
-// node's deskVerify search itself (goal/G29.5: "fallout talks to deskVerify only"), and draws one line per flip,
-// newest first: the check's number, ❌ fail or ✅ success, and when; the commit and the printed failure stay in
-// deskVerify, off the screen.
+// Opened with { suite, heading }: the test file and the sub-heading its checks stand under (a check's key is
+// "<heading> #<n>", goal/G27.14), or one test's full key. It reads every flip with this node's deskVerify search
+// itself (goal/G29.5: "fallout talks to deskVerify only"), and draws one line per flip, newest first: the check's
+// number, ❌ fail or ✅ success, and when; the commit and the printed failure stay in deskVerify, off the screen.
+// Nothing in the tree opens it (its manifest runs nowhere): the Fallout tab that did went with the desk's plugins.
+//
+// DISCREPANCY WITH ANDY's RULES: goal/G43.22's box says the apps and plugin system goes, "with that the folloing
+// features will disappear: ... - fallout"; this dialog of the fallout feature, and its rows in
+// process/js/deskVerify/data.js (seatFlips, flips), are still here.
 
 var fhApi = null;
 var fhBody = null;
@@ -39,7 +43,7 @@ spirit.shell.activateApp({
       '<div id="fh-note" class="job-manifest-note">Reading its flips.</div><div id="fh-rows" style="margin-top:1em"></div></div>';
     // THE FLIPS KEPT IN SPIRIT.DATA (goal/G41.28; Andy, the box: "If its rows are NOT cached in the proper place, with the
     // shells one and only spirit.data object, then that must be fixed, too."): the answer is seated by the verifier's own
-    // cache manager (process/js/deskVerify/data.js), and the lines are drawn from what it keeps.
+    // cache manager (spirit/run/process/js/deskVerify/data.js), and the lines are drawn from what it keeps.
     var V = null;
     return Promise.resolve(spirit.require('process/js/deskVerify/data.js')).then(function () {
       V = ((spirit.data || {}).deskVerify || {}).data;

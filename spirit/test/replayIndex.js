@@ -16,7 +16,7 @@
 // The recipient is the only party that sees every road, so the recipient
 // keeps the index.
 //
-// **wsl-claude's condition on cycle 10's R4, which is what this is for:**
+// **The condition on cycle 10's R4, which is what this is for:**
 // repeating a note is a duplicate line in a log; repeating something that
 // consumes, mints, spends or toggles is a bug with a credential in it. No
 // non-idempotent app verb ships before this.
@@ -129,9 +129,12 @@ test.subHeading('It rebuilds from the log, and answers identically');
   //   "a derived thing that cannot be rebuilt is a single point of silent
   //   weakening."
   //
-  // Losing node.db must cost a rebuild, not the protection. The rows are
-  // what a walk of traffic.jsonl yields: the hash it logged and the
-  // sender's sealed timestamp beside it.
+  // A damaged index costs a rebuild, not the protection. The rows are what
+  // a walk of the node log yields: the hash it logged and the sender's
+  // sealed timestamp beside it. Since transport/R19 the log is in node.db
+  // too, so a lost node.db takes both, by Andy's decision ("i'm ok with
+  // that risk, i'd rather rely on backups, and not worry about it");
+  // this rebuilds into a fresh node.db from rows handed in.
   const now = Date.now();
   const fromLog = [
     { hash: 'a1', at: now - 1000 },
@@ -143,7 +146,7 @@ test.subHeading('It rebuilds from the log, and answers identically');
   fromLog.forEach(function (r) { original.replay.remember(r.hash, r.at); });
   const before = fromLog.map(function (r) { return original.replay.seen(r.hash, r.at, now); });
 
-  // A DIFFERENT NODE.DB ENTIRELY — the loss this is insurance against.
+  // A DIFFERENT NODE.DB ENTIRELY, rebuilt from the same rows.
   const rebuilt = nodeStore.open(home());
   const n = rebuilt.replay.rebuild(fromLog);
   const after = fromLog.map(function (r) { return rebuilt.replay.seen(r.hash, r.at, now); });

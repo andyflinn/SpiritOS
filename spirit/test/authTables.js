@@ -1,16 +1,14 @@
 'use strict';
 
-// apiAuth/G1.3: where the allow-table lives — two tables in node.db.
-//   (Since goal/G40.11 the peers table is rows of seen; grants stays.) The box @ version read this sitting: peers(peer_id PRIMARY KEY, label) and
+// apiAuth/G1.3: where the allow-table lives — node.db.
 //   grants(peer_id, path) with PRIMARY KEY (peer_id, path), made the way nodeStore.js
-//   makes its tables (CREATE TABLE IF NOT EXISTS, nodeStore.js:212, 244-322), in
-//   node.db and nowhere else.
-//   A peers row lives exactly as long as its grants: Andy, on the last revoke —
-//   "it disappears."
+//   makes its tables (CREATE TABLE IF NOT EXISTS grants, nodeStore.js), in node.db and
+//   nowhere else. There is no peers table (goal/G40.11): the name a grant shows is the
+//   ID's row in seen, the one table, and a last revoke takes the access, not the row.
 //   And "the peer never sees our apiAuth data": the flat table a member's packet
 //   and the owner's verb api both read (desk/G1 D4; the flat apiDoor since goal/G30.6)
 //   must answer nothing that carries either table's content.
-// The auth family's verb shapes are jobsAuth.js's business (G1.4); this suite plants rows
+// The auth family's verb shapes are spirit/test/jobsAuth.js's business (G1.4); this suite plants rows
 // through them and looks at the DISK and the MEMBER SURFACE.
 
 const fs = require('fs');
@@ -38,7 +36,8 @@ test.startTest('apiAuth/G1.3: the allow-table is two tables in node.db, and no p
 
 const root = setupRelayFakes('authTables').andy;
 const DB = path.join(root, 'spirit', 'state', 'node.db');
-// goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+// A relays.json naming nowhere. relayKeys.js deletes it at first read and copies only the urls it holds a pin for
+// (none here), so the node starts with no relay.
 fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
 fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
@@ -46,7 +45,8 @@ fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
 ['node.db', 'node.db-wal', 'node.db-shm'].forEach(function (f) {
   try { fs.unlinkSync(path.join(root, 'spirit', 'state', f)); } catch (e) { /* first run */ }
 });
-// The desk server runs: the copied tree's manifest says home (goal/G30.20).
+// A contacts.json naming KEYA alice. NO NODE READS IT ANY MORE: nodeStore.js moves no old store in (goal/G41.30),
+// so the check below that finds alice on KEYA's row of seen rests on a file the node ignores.
 fs.writeFileSync(path.join(root, 'spirit', 'state', 'contacts.json'), JSON.stringify([{ publicKey: KEYA, myLabel: 'alice' }]), 'utf8');
 
 let child = null;
@@ -110,9 +110,9 @@ async function readDb(fn) {
     test.check('the owner\'s auth.query on the loopback door answers the table (allowed: true for the planted grant)');
   } else test.fail(OWED + 'auth.query answered ' + JSON.stringify(reach.body).slice(0, 220));
 
-  // ON DISK SINCE goal/G40.11 (box v24: "the peers table move[s] into" the one table; "The grants table stays its
+  // ON DISK (goal/G40.11, box v24: "the peers table move[s] into" the one table; "The grants table stays its
   // own, keyed by ID"): grants as decided, no peers table, and the name a grant shows is that ID's row in seen — here
-  // alice from the contacts.json this home was planted with, moved in at the node's first start.
+  // looked for as alice from the planted contacts.json, which the node no longer moves in (see above).
   test.subHeading('on disk: the grants table, and the name on the ID\'s row of the one table');
   await down();
   try {
@@ -153,7 +153,7 @@ async function readDb(fn) {
         a: db.prepare('SELECT publicKey FROM seen WHERE publicKey = ?').get(KEYA) || null,
       };
     });
-    // "it disappears." was the peers row; the access is what disappears now, and alice stays a contact.
+    // The last revoke takes the access; KEYA's row in seen stays.
     if ((gone.records || []).length === 0 && (still.records || []).length === 1 && after.grants.length === 1 && after.grants[0] === KEYB && after.a) {
       test.check('KEYA\'s last revoke took its access, its row in the one table stays; KEYB\'s grant stands');
     } else test.fail(OWED + 'after the revokes: ' + JSON.stringify({ gone: gone, grants: after.grants, a: after.a }).slice(0, 240));

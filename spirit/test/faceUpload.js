@@ -3,7 +3,6 @@
 // spirit/test/faceUpload.js
 // goal/G30.10, the gap left after its four steps: "The home node's face uploads go through relayRequest, the one
 // outbound door, as a streamed upload; faceHome reaches for no http of its own." Andy, on the oneDoor red: "do that."
-// Red on today's tree; claude-windows writes it and builds it (one agent).
 // NAMED HERE where the box names none:
 //   - relayRequest.relayUpload(relayUrl, pathname, headers) -> a writable request: what is written goes out as it is
 //     written (no length known, so chunked), the relay's answer is read and dropped; an address assertRelayUrl refuses

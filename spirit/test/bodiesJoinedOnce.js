@@ -1,21 +1,21 @@
 'use strict';
 
 // spirit/test/bodiesJoinedOnce.js
-// goal/G16.6: bytes copied, bytes counted (the review of 2026-10-10: chunks glued as text, sizes counted in characters, S10 and the proxy reply). Written
-// first, red on today's code; claude-windows wrote it and builds it. Andy's rule, 2026-10-10: "in a max_BYTE
+// goal/G16.6: bytes copied, bytes counted. Andy's rule: "in a max_BYTE
 // environment, BYTES must be copied. BYTES must be counted. that's a rule." His rulings on the readers: "4. yes. the
 // relayRequest must copy raw bytes only. if it doesn't fix it. now."; "3. serveCommon. yes. one single piece of shared
 // code must ensure that raw bytes are copied. precisely."; "2. same practise odered. ideally through a shared
 // kernel.js utility or similar."; on sizes counted in characters: "yes. just make sure it's fixed."
 //
 // WHAT IS ASSERTED
-//   1. kernel.js carries readBody(stream, {max}): raw chunks collected, decoded once; a four-byte character split
+//   1. kernel.js carries spirit.core.readBody(stream, {max}), which hands to serveCommon.readBody (goal/G40.6): raw
+//      chunks collected, decoded once; a four-byte character split
 //      across two writes comes back whole; past max it refuses by name (413, body-too-large) and stops reading.
 //   2. relayRequest resolves a split answer whole, refuses an answer over its cap by name, and gives up by name on
 //      a relay that never finishes (S10); serveCommon's readJsonBody parses a split request whole and still refuses a
 //      body one byte over its cap; jobs.report hands back a split answer whole.
-//   3. The proxy (net.fetch) passes an outside reply straight to the asker, unread and uncapped (Andy, 2026-10-11:
-//      "agreed. no number at all."), and relayRequest's cap is limits.BODY_MAX ("and answer from a relay is ALWAYS
+//   3. The proxy (server.js handleGenericProxy) passes an outside reply straight to the asker, unread and uncapped
+//      (Andy: "agreed. no number at all."), and relayRequest's cap is limits.BODY_MAX ("and answer from a relay is ALWAYS
 //      bounded by MAX_PAYLOAD").
 //   4. The relay counts a routed text in bytes: no `.length` of a text is compared against MAX_ROUTED_TEXT, and no
 //      reader in kernel.js, relayRequest.js or serveCommon.js glues chunks into a string.
@@ -98,7 +98,7 @@ async function suite() {
   const a1 = await rr.relayRequest(base, 'GET', '/split', null).catch(function (e) { return { text: 'threw ' + e.message }; });
   if (a1 && a1.text === '{"text":"x' + EMOJI + '"}') test.check('relayRequest resolves an answer split mid-character whole');
   else test.fail(OWED + 'relayRequest gave ' + short(a1 && a1.text));
-  // THE CAP IS BODY_MAX (Andy, 2026-10-11: "and answer from a relay is ALWAYS bounded by MAX_PAYLOAD. how the hell
+  // THE CAP IS BODY_MAX (Andy: "and answer from a relay is ALWAYS bounded by MAX_PAYLOAD. how the hell
   // could it be otherwise?"): exactly BODY_MAX bytes is accepted, one byte more is refused by name.
   const limitsMod = require('../run/spirit/limits.js');
   const atCap = await rr.relayRequest(base, 'GET', '/sized?n=' + limitsMod.BODY_MAX, null).then(function (a) { return { len: Buffer.byteLength(a.text) }; }, function (e) { return e; });
@@ -154,7 +154,7 @@ async function suite() {
   test.subHeading('3. the proxy caps an outside reply; 4. no chunk glue, no length against the routed cap');
   const serverSrc = fs.readFileSync(path.join(RUN, 'spirit', 'server.js'), 'utf8');
   const proxy = (serverSrc.split('function handleGenericProxy')[1] || '').split('\nfunction ')[0];
-  // NO NUMBER AT ALL (Andy, 2026-10-11: "agreed. no number at all."): the outside reply is passed straight to the
+  // NO NUMBER AT ALL (Andy: "agreed. no number at all."): the outside reply is passed straight to the
   // asker as it arrives, unread, so the node holds nothing and needs no cap.
   const proxyCode = stripComments(proxy);
   if (/\.pipe\(\s*res\s*\)/.test(proxyCode) && !/readBody\(|chunks\.push|Buffer\.concat|PROXY_REPLY_MAX/.test(proxyCode) && !/PROXY_REPLY_MAX/.test(stripComments(serverSrc))) test.check('handleGenericProxy pipes the outside reply straight to the asker, reads none of it and has no cap');

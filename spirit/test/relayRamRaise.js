@@ -2,15 +2,14 @@
 
 // spirit/test/relayRamRaise.js
 // goal/G40.4: raising a running relay's RAM limit is checked against the difference, and the relay moves its own
-// service cap to twice its limit. Written first, red on today's code, by wsl-claude, who does not build it. The box
-// (v8), Andy's words among it: "the relay calculates if there's room for a 512MB relay, when it is supposed to
+// service cap to twice its limit. Andy's words from the box: "the relay calculates if there's room for a 512MB relay, when it is supposed to
 // calculate if there's room for a relay that is 256MB larger than is occupied with it running a 256MB relay right
 // now. It needs to asses the difference^...."; "the relay raises its own service cap to exactly twice the amount of
 // RAM it uses for itself."; "FUCK, the twice is safe. decision. period."; "we stick with our own memory calculation,
 // and document what we know about the system overhead incurred, including the caddy's and we recommend the 256MB
 // figure for a 1GB RAM VPS."
 //
-// NAMED HERE where the box names none (the builder may argue them under the item first):
+// THE SHAPES (where the box names none):
 //   - relayLimits.measure reports hostAvailableMB beside availableMB: what the box itself has free (MemAvailable on
 //     Linux, os.freemem elsewhere), never cut by the relay's own service cap. availableMB stays the smaller figure.
 //   - createRelay takes deps.setServiceCap(mb), the call that moves the relay's own service cap (systemctl
@@ -24,7 +23,7 @@
 //      is refused, naming the difference; a lowering passes.
 //   3. A raise moves the cap at once to exactly twice the new limit; a lowering, which applies at the next start, leaves
 //      the cap at twice the limit the relay still runs on.
-//   4. install-units writes the cap at twice the limit (no more limit + 128).
+//   4. install-units writes the cap at twice the limit.
 //   5. The relay host documentation lists the overhead beside the relay (the system, Caddy, the kernel's socket
 //      buffers) and recommends 256 MB for a 1 GB VPS.
 
@@ -138,7 +137,7 @@ test.subHeading('2. the owner\'s raise is checked by the difference against what
   if (R.caps.length && R.caps[R.caps.length - 1] === 1024) test.check('the raise to 512 moved the cap to 1024');
   else test.fail(OWED + 'after the raise to 512 the cap was set to ' + short(R.caps));
   // A LOWERING APPLIES AT THE NEXT START (relay.js), so the cap stays twice the limit the relay still runs on until then:
-  // moved at once to twice the new limit, it would equal the running limit and leave no margin (cw, building goal/G40.4).
+  // moved at once to twice the new limit, it would equal the running limit and leave no margin.
   if (!R3.caps.length || R3.caps[R3.caps.length - 1] === 512) test.check('the lowering to 128 leaves the cap at twice the 256 the relay still runs on until its next start');
   else test.fail(OWED + 'after the lowering to 128, while it still runs on 256, the cap was set to ' + short(R3.caps));
   if (!R2.caps.length) test.check('a refused raise moves nothing');

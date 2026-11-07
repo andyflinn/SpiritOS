@@ -1,8 +1,7 @@
 'use strict';
 
 // goal/G5.8: deskAgentEar upgrades: arming the ear hands the agent a job, with the rules that apply; the rules pushed on
-// every change; the agent's clone pulled when a commit lands. Red on today's tree; wsl-claude wrote it from G5.8's box
-// and does not build it (claude-windows builds).
+// every change; the agent's clone pulled when a commit lands.
 //   Andy, 2026-10-05 (the box holds every line verbatim): "will the deskAgentEar return immediately with a job to do if one
 //   is available?"; "is this all of it? you don't need the rules?"; "if a job involves ui, there are rules of that type
 //   to considered"; "is there a mechanical way to attach applicable rules to an item before or when it's given a go?";
@@ -10,14 +9,14 @@
 //   "agreed." and "both"; "when the reds  landed, why doesn't deskClient pull the changes automatically?" / "or when the
 //   code lands?"; the desk server pulling his checkout: "oos"; "agreed." to the box as it stood; his Go (go-all).
 //
-// THE NAMES are wsl-claude's picks where the box names none; the builder may argue them in Desk first:
+// THE NAMES, where the box names none:
 //   the ear's job line starts JOB, then the item and the phase, then the keys of the rules that apply; the item's facts
 //   carry rules, [{ key, version }], recorded on his Go; the rules file is written in the desk's state folder (name
 //   matching /rules/i), to be shared as currentGoal.json is; a rule change is said by a desk line naming the rule's key.
 // THE SHAPES (the box's):
 //   1  next hands a job at once: a code item in red, open to this agent, comes back as a JOB line without waiting.
 //   2  on his Go the item records the active rules that apply: the desk rules always, plus the types its box's paths
-//      fall in (spirit/run/spirit/ and process/js/: code; spirit/run/shell/: ui); the JOB line names those rules.
+//      fall in (spirit/run/spirit/ and spirit/run/process/js/: code; spirit/run/shell/: ui); the JOB line names those rules.
 //   3  every rule change writes the active rules (only active ones) into the rules file, and puts a line before the
 //      agents naming the rule.
 //   4  a commit line landing while the agent listens and its clone is clean pulls the clone; with an unsaved edit the

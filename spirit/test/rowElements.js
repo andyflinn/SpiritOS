@@ -1,17 +1,17 @@
 'use strict';
 
 // spirit/test/rowElements.js
-// goal/G30.18: elements for a single file and a single contact, the rowElements. Red on today's tree; claude-windows
-// writes it and builds it (one agent). The box, in short:
+// goal/G30.18: elements for a single file and a single contact, the rowElements. The box, in short:
 //   - rowElements carry the listeners and painters a subject needs for real-time updates, wherever they are used: a
 //     list row and a details panel show the same element, so nothing has to keep the two in sync. The family:
-//     fileElement and contactElement now (spirit/element/rows/), jobElement and goalElement later.
+//     fileElement and contactElement now (spirit/element/search/file/ and search/contact/, rowElement.js each),
+//     jobElement and goalElement later.
 //   - spirit/element/rowElement.js does the shared work once: paints each field into its cell, registers the one listener,
 //     drops it on destroy, runs expandInfo and keeps its answer. rowElement.create(parts) builds an element from the parts
 //     fileElement or contactElement hands in.
 //   - The stream dispatch lives per kind, in the element's own file: one stream subscription for all rows of a kind and
 //     an index by path or key; a row registers on create and leaves on destroy.
-//   - Fields in order: name, fieldRule (js/fieldRules.js), painter, editor. A changed field repaints only itself. An
+//   - Fields in order: name, fieldRule (spirit/run/spirit/fieldRules.js), painter, editor. A changed field repaints only itself. An
 //     editor asks and never paints; the confirmed change on the stream repaints.
 //   - A rowElement carries its actions (add, block, remove, open). expandInfo fetches what is too large for a row.
 // NAMED HERE where the box names none:
@@ -125,6 +125,8 @@ const done = (async function () {
   let people = null;
   try {
     const before = subscribers.length;
+    // DISCREPANCY WITH ANDY's RULES: Andy, goal/G43.17: "Didn't i say remove ALL code referencing "admit" and "hold"."
+    // These two rows still carry a held field, and the contact rowElement.js it drives still names heldActions.
     const p = E.search.contact.rowElement.create({ key: 'KEY-P', name: 'Pia', owned: false, blocked: false, held: false });
     const q = E.search.contact.rowElement.create({ key: 'KEY-Q', name: 'Quin', owned: false, blocked: false, held: false });
     const hp = { presence: counted(), status: counted(), label: counted() };

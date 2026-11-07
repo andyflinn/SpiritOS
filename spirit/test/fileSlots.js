@@ -1,7 +1,7 @@
 'use strict';
 
-// goal/G5.3: fileServer, slots the node reserves for itself (PROFILE_PICTURE). Red on today's tree; wsl-claude wrote
-// it from G5.3's box, without reading any build, and does not build it (claude-windows builds).
+// goal/G5.3: fileServer (spirit/run/process/js/fileServer/fileServer.js), slots the node reserves for itself
+// (PROFILE_PICTURE).
 //   Andy (andy/NOFACE.md): "2. there will be slots in fileServer that are reserved by the node itself, like
 //   PROFILE_PICTURE."; in goal/G5.2: "reserved labels can be updated with any file, the label stays."; to Q1: "it's a
 //   fixed label: it may be neccessare that ading to the fileServer pool needs a new "verb" that allows to to replace
@@ -9,7 +9,7 @@
 //   PROFILE_PICTURE and add it to the pool..."; to Q2 (fill {slot, path}): "yes"; to Q3 (the old file): "deleted.";
 //   to Q4 (grants on the old file): "move the grants to the new file."; his go-all on goal/G5.
 //
-// THE SHAPES (G5.3's box):
+// WHAT IS ASSERTED (G5.3's box):
 //   1  push refuses a file named like a slot (PROFILE_PICTURE), and nothing is added to the pool.
 //   2  fill {slot, path}, owner only: the file takes the slot's label (status and info answer PROFILE_PICTURE); a
 //      member's fill is refused not-owner; a slot that is not reserved is refused.

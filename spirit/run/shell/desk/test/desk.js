@@ -1,9 +1,11 @@
 'use strict';
 
 // spirit/run/shell/desk/test/desk.js
-// The tests of shell/desk/desk.js (spec: ./desk.md; goal/G41.1): every icon it draws is a glyph written as it is, with
-// no icon table and no lookup of a name into one. Read from the module's own code. And goal/G41.9: every are-you-sure
-// it draws is an armingButton, driven on a page of its own.
+// The tests of shell/desk/desk.js (spec: ./desk.md). goal/G41.1: every icon it draws is a glyph written as it is, with
+// no icon table and no lookup of a name into one, read from the module's own code. goal/G41.9: every are-you-sure it
+// draws is an armingButton, driven on a page of its own. goal/G41.11: the design buttons' colour is a class, and every
+// list stands in a fill box. goal/G43.22: no Team and no Apps. goal/G43.3: the List's two filters, in a real browser
+// (./desk-opened.html).
 
 const fs = require('fs');
 const path = require('path');
@@ -284,9 +286,8 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   ok(!!close && sentClose.length === 1 && sentClose[0].args.what === 'close' && sentClose[0].args.id === 'goal/G8', 'one press closes a goal with nothing open', 'close button ' + !!close + ', sent ' + JSON.stringify(sentClose.map(function (s) { return s.args; })));
 
   // ── goal/G41.11: ARMED IS RED, ALSO ON THE DESIGN BUTTONS ─────────────────────────────────────────────────────────────
-  // Found verifying goal/G41.9 on a real page: Start and End design mode armed, but kept their own inline green or red,
-  // which beats the shell's armed red (shell.css, #app-content button[data-armed]). Their colour moves to a class that
-  // shell.css paints only while the button is not armed.
+  // An inline colour on Start or End design mode would beat the shell's armed red (shell.css, #app-content
+  // button[data-armed]). Their colour is a class that shell.css paints only while the button is not armed.
   test.subHeading('goal/G41.11: Start and End design mode turn the shell\'s red when armed');
   const css = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const wd = deskWorld(Object.assign({}, goal, { design: true }), []);
@@ -359,8 +360,8 @@ async function twoPress(w, find, armedSays, wantPress, what) {
   test.subHeading('goal/G41.11: every list of Desk stands in a box of a stated size (rule/16)');
   // Andy, on G41.11: "the rules list is NOT placed properly in a size-limited container.... is this the same everywhere
   // in desk?" rule/16: every probabilitySearch is mounted in a box that states its size, class fill, inside a pane that
-  // fills its app, as the Apps and Icons face apps do; never in a stat-tile or a box only as tall as its content. A list
-  // drawn as a dropdown stands inline, as every dropdown in the tree does (Grants, Icons), and is not asked here.
+  // fills its app; never in a stat-tile or a box only as tall as its content. A list
+  // drawn as a dropdown stands inline, as every dropdown in the tree does, and is not asked here.
   const wf = deskWorld(goal, [item]);
   const panes = [];
   const realCreate = wf.win.spirit.element.search.create;

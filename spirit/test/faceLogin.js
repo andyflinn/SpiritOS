@@ -1,18 +1,16 @@
 'use strict';
 
 // spirit/test/faceLogin.js
-// goal/G30.9: a member logs in on his face, served by the relay. Red on today's tree; claude-windows writes it and
-// builds it (one agent). The box (v12), in short:
+// goal/G30.9: a member logs in on his face, served by the relay. The box (v12), in short:
 //   - The relay serves face.html, the lazy-load version of the shell, at <face>.<relay host> to anyone, logged in or
 //     not, while that member has a verified email, a face name and his home node present. Logged out, the shell is
 //     empty but for the login app.
 //   - The login app is the counterpart of the node's Join app: a steps app on the same design.
 //   - Its one field takes the member's verified email or the token from the mail; the page never says which it got.
 //   - The relay decides the login and sends the mail: the token alone, and a link to <face>.<relay host>/?<token>.
+//     (Overruled by goal/G41.29: the mail carries no link; relay.js faceLogin.)
 //   - The token is used once and is good for 10 minutes, with the join's caps: one a minute, five an hour per face.
 //   - A login is a cookie for that face host, valid until 7 days after the last interaction; Log out ends it.
-//   - After login the login app says "waiting for plumbing". (Superseded by goal/G30.11: "After this item the face shell
-//     is no longer waiting for plumbing". The second step is the link to the home node, checked below as that.)
 //   - Certificates, DNS and Caddy on the relay box come from scripts in ./bash.
 // NAMED HERE where the box names none:
 //   - spirit/state/face.json { "domain": "<relay host>" }, placed by the owner as mail.json is (bash/face-setup writes
@@ -24,8 +22,15 @@
 //   - relayServer.js: a request whose Host is a face is answered by the face, before the 404: GET / is face.html (with
 //     ?<token> it logs in and sets the cookie spirit_face), POST /face/api { verb: login | state | logout }; GET
 //     /face/allowed?domain=<host> answers 200 for a face it serves, for Caddy's on-demand certificate.
-//   - spirit/run/face.html, spirit/run/shell/boot.js, spirit/run/shell/login/login.json (steps: login, plumbing) and
-//     login.js (onSteps), bash/face-setup.
+//   - spirit/run/spirit/shell/face.html, spirit/run/spirit/shell/boot.js, bash/face-setup.
+// STALE, the whole suite (3 of 14 pass). Parts 1 to 3: the join below hands relay.join a port (4242) where it now takes
+// the caller's link (goal/G40.10), so bert is never seated and no face exists; and since goal/G41.29 the login mail
+// carries the token alone with no link ("The login-email must not carry a link"), so the ?<token> read below finds
+// nothing. Parts 4 and 5: goal/G43.18 (box v29) replaced the login app with spirit.login in spirit.js ("The login is
+// spirit.login, in spirit.js, no app ... shell/login/ and its login.json go."), and the relay serves a logged-out face
+// face.html, spirit.js and seal.js only, face.html linking no sheet. spirit/run/shell/login/ is gone, and spirit.js,
+// index.html, shell.css, face.css and face.html now sit in spirit/run/spirit/ and spirit/run/spirit/shell/, not where
+// the reads below look. The relay login as it is now is asserted by spirit/run/spirit/test/faceLogin.js.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');

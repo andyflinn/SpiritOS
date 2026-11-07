@@ -1,16 +1,15 @@
 'use strict';
 
-// goal/G3.4: deskClient keeps the place and holds what is meant for its agent. Red on today's tree: deskClient
-// (goal/G3.3) passes an ask and counts it, and has no verb next.
+// goal/G3.4: deskClient keeps the place and holds what is meant for its agent.
 //   Andy, 2026-10-02 (goal/G3.1): "i am ready to accept completely alternative design, if it achieves what todays
 //   deskAgentEar does, and statistics are kept somewhere you can access them easily.", and of the polls that bring
-//   nothing: "empty polls can contribute statistically and discarded." His Go on this item is his press in Desk.
-// SINCE goal/G33.4 THE DESK'S STREAM REPLACES THE POLL (Andy, on `changes`: "isn't that what this item does? implement
+//   nothing: "empty polls can contribute statistically and discarded."
+// THE DESK STREAMS, deskClient DOES NOT POLL (goal/G33.4; Andy, on `changes`: "isn't that what this item does? implement
 // the push/broadcast concept?"): deskClient never asks the desk what changed; the desk streams each changed row to it
 // (appServer.publish to its streamListener), and what is meant for its agent is chosen from those rows (box v37: "without
-// constantly waking agents to read irrelevant messages"). Desk's kept lines (log.add) went with the same goal. So this
-// suite runs the desk on a pretend node of Andy's that hands its posts to deskClient, as deskClientPush.js does.
-// The contract the builder follows (the box of goal/G3.4, as goal/G33.4 left it):
+// constantly waking agents to read irrelevant messages"). So this suite runs the desk on a pretend node of Andy's that
+// hands its posts to deskClient.
+// The contract (the box of goal/G3.4, as goal/G33.4 left it):
 //   1. deskClient.json declares historyMax, a number. The node hands its value to the server as its first argument
 //      (jobs.js), so this suite hands it a small one.
 //   2. Verb next {} -> {lines: ['']}, the owner's alone (a member is refused not-owner); before setDesk it is
@@ -21,11 +20,12 @@
 //   5. What is meant for its agent: Andy's line on the item it holds or on an item nobody holds ('DESK andy chat.add
 //      <body>'), another agent's line on the item it holds; never its own line, his seen press, or chat between him
 //      and another agent on an item that agent holds.
-//   6. Each thing is handed over once, and a restart misses nothing written while it was down.
+//   6. Each thing is handed over once; after a restart nothing from before comes back and what follows reaches it
+//      (goal/G33.8: a line written while it was down may be missed).
 //   7. It tells Desk listening (agent.state) when its agent starts to wait, and working when it hands lines over.
 //   8. No poll is left: its history holds no `changes` record.
 //   9. The record of asks is bounded: the newest historyMax rows are kept, the oldest fall off.
-// Not asserted, the builder's: whether a line waits in memory or on disk between the row that brought it and the next
+// Not asserted: whether a line waits in memory or on disk between the row that brought it and the next
 // that hands it over; the desk's own busy replies (by 'desk'); what the listening and working posts look like in history.
 
 const fs = require('fs');
@@ -173,8 +173,8 @@ async function main() {
   await new Promise(function (r) { andysNode.server.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + agentsNode.server.address().port;
   const andysUrl = 'http://127.0.0.1:' + andysNode.server.address().port;
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; since goal/G33.7 (session.set went)
-  // it is seeded before the desk starts, which takes it in at start.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; since goal/G33.7 it is seeded
+  // before the desk starts, which takes it in at start.
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Heard' }, items: [{ id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],

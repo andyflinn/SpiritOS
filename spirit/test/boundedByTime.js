@@ -15,8 +15,8 @@ const rollOf = require('./rollOf');
 //
 // ── WHY A ROLL AND NOT A PASS/FAIL ─────────────────────────────────
 //
-// Three interfaces fail it today and are known to: the public roll, the
-// stream roster, and the presence broadcast. A suite that simply went red
+// Some interfaces fail it and are known to: the presence broadcast and the
+// claim announced on route. A suite that simply went red
 // would be red for ever, and a permanent red is noise nobody reads —
 // which is the opposite of a reminder.
 //
@@ -43,24 +43,24 @@ const { createRelay } = require('../run/spirit/relay');
 // Bytes (or events) added to one response for each additional member.
 // Measured, not guessed: run the suite and it prints what it found.
 //
-//   roll     the public /api/relay/who, fetched by nine callers
-//   roster     REACHED ZERO BY DELETION, 2026-09-19 (cycle 3): the whole
-//              roll pushed to every member on every stream open was a
-//              served member list (0012 widened). Gone from the allowance,
-//              so its return would be a new entry — and a failure.
+//   roll     the whole member list as the deleted GET /api/relay/who
+//            served it, now built from the relay's disc (rollOf.js): no
+//            interface serves it, so this number is the members table's
+//            size, kept as the ratchet's reference
+//   roster   not in the allowance: no member list is pushed on a stream
+//            open (0012), so its return would be a new entry — and a failure
 //   presence   one event per member per presence change (a COUNT, not
 //              bytes — the fan-out is the cost, not the payload)
+//   memberAnnounce   route events per claim, one per member
 const ALLOWANCE = {
-  // 150 until 2026-09-19, when `owner` came off every row ("a row in the
-  // roll doesn't know who the owner is") — the ratchet asked for this.
+  // No `owner` on any row ("a row in the roll doesn't know who the owner is").
   roll: 136,
   presence: 1,
-  // A NEW ENTRY, ARGUED FOR RATHER THAN DISCOVERED (R28, cycle 7). A claim
-  // is announced to every member on `route`, whole — "a member is added,
-  // broadcast it" (0012, 2026-09-18), built in R28 on Andy's ruling: "we
-  // ride route with the full row" and "we let relay broadcast all new info
-  // all the time" (0019, widened 2026-09-22). One event per member, per
-  // claim: rare by nature, which is the condition 0019 put on the rule.
+  // AN ENTRY ARGUED FOR RATHER THAN DISCOVERED (R28). A claim is announced
+  // to every member on `route`, whole — "a member is added, broadcast it"
+  // (0012), on Andy's ruling: "we ride route with the full row" and "we let
+  // relay broadcast all new info all the time" (0019). One event per member,
+  // per claim: rare by nature, which is the condition 0019 put on the rule.
   memberAnnounce: 1,
 };
 
@@ -104,11 +104,8 @@ function relayOf(n) {
     const name = 'm' + i;
     const id = auth.generateIdentity(name);
     const minted = box.mint('owner', name, 7, '');
-    // A DISTINCT clientKey PER CLAIM, and the first version of this suite
-    // passed null for all of them — which is one shared bucket and
-    // CLAIM_PER_MIN is ten, so a relay asked for sixty members quietly
-    // ended up with ten and every slope measured zero. The suite caught
-    // its own fixture, which is the right way round.
+    // A DISTINCT clientKey PER CLAIM, so no per-client pacing can cap the
+    // fixture below the members asked for and flatten every slope to zero.
     const claimed = box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)),
       id.publicKey, 'client-' + i, minted.invite.token, name);
     if (!claimed || !claimed.ok) {
@@ -133,10 +130,6 @@ function measure(n) {
     relayPublicKey: R.box.relayPublicKey(),
     relayLabel: R.box.relayLabel(),
   }).length;
-
-  // THE NARROWED ROLL (`?key=`, the relay's who(keys)) WAS MEASURED HERE.
-  // Its route went on 2026-09-18 and who() itself in goal/G19.11, with no
-  // caller left, so there is no narrowed answer to measure.
 
   // Everybody holds a stream, then one more arrives: how many writes does
   // that one arrival cause?
@@ -213,18 +206,10 @@ test.check('so at 1000 members: roll ' + Math.round(slope.roll * 1000 / 1024) +
   ' KB per fetch, presence ' + Math.round(slope.presence * 1000) +
   ' events per change');
 
-// ── THE NARROWED FORM STOOD HERE (`?key=`), measured flat ─────────
-//
-// It was what callers moved TO while the roll lost them. Every caller has
-// moved and the narrowed form went with them (goal/G19.11), so there is
-// nothing left to hold flat.
-
 // ── 2. THE RATCHET ──────────────────────────────────────────
 //
-// A number may fall, never rise. The roll line stays at 150 until the
-// LAST caller stops asking for the whole thing — one migration does not
-// move it, which is honest: the interface still has the per-member term,
-// and what changed is who pays it.
+// A number may fall, never rise: a slope above its allowance fails, and
+// one more than 1 below it asks for the allowance to come down.
 
 test.subHeading('And a number may fall, never rise');
 

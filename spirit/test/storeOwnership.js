@@ -20,11 +20,9 @@
 //
 // ── WHAT THIS CAUGHT ─────────────────────────────────────────────────
 //
-// It was written after `arrivals.js` grew its own
-// `spirit/state/pendingArrivals.json` beside the traffic log — two copies
-// of "what is still waiting", able to drift, and a commit message that
-// claimed the fold had already happened when it had not. A claim in prose
-// is not a check.
+// A module that grows its own store beside another's (arrivals.js's
+// `spirit/state/pendingArrivals.json` beside the traffic log once) makes two
+// copies of one fact, able to drift. A claim in prose is not a check.
 //
 // ── FALSE NEGATIVES ONLY ─────────────────────────────────────────────
 //
@@ -47,8 +45,8 @@ test.startTest('Store ownership — one module per store, and no way round it');
 const STORES = [
   { file: 'traffic.jsonl', owner: 'trafficLog.js', what: "this node's WAN traffic, permanent, read back as a table" },
   { file: 'traffic.json', owner: 'trafficLog.js', what: 'the whole-file shape it used to have, read once on the way in' },
-  // THE RELAY'S DATA IS ONE DATABASE SINCE CYCLE 3 — members, invites and
-  // the partner roll — and exactly one module opens it. This is the
+  // THE RELAY'S DATA IS ONE DATABASE — members and invites (the partner
+  // roll went with goal/G22.6) — and exactly one module opens it. This is the
   // substitution Andy anticipated at the top of this file: the format
   // changed and nothing above relayStore.js had to notice.
   { file: 'relay.db', owner: 'relayStore.js', what: 'a relay\'s members, invites and partner roll' },
@@ -56,14 +54,12 @@ const STORES = [
   // design/DEPRECATIONS.md) and renamed *.imported. Owned by the import.
   { file: 'routingTable.json', owner: 'relayStore.js', what: 'a relay\'s peer rows before cycle 3, imported once' },
   { file: 'invites.json', owner: 'relayStore.js', what: 'live invite tokens before cycle 3, imported once' },
-  // Since goal/G19.15 the relay records are node.db's; the old file is read once by the import (relayKeys.importOld).
+  // The relay records are node.db's (goal/G19.15); the old file is read once by the import (relayKeys.importOld).
   { file: 'relayKeys.json', owner: 'relayKeys.js', what: 'pinned relay keys before goal/G19.15, moved into node.db once' },
-  // THE BOOK IS ROWS OF node.db'S ONE TABLE SINCE goal/G40.11: the old file is read once by nodeStore's move and deleted.
+  // THE BOOK IS ROWS OF node.db'S ONE TABLE (goal/G40.11), and nodeStore.js moves no old contacts.json in (goal/G41.30).
+  // THIS ENTRY PASSES FOR THE WRONG REASON: no product file names contacts.json; the one file found is the suite
+  // spirit/run/spirit/test/nodeStore.js, whose basename is the owner's, and files are compared by basename.
   { file: 'contacts.json', owner: 'nodeStore.js', what: 'the address book before goal/G40.11, moved into the one table once' },
-  // The name it wore until 2026-09-18, renamed on first load. Listed so a
-  // node upgrading in place is a case somebody decided rather than a file
-  // that quietly stops being read — `who` was the roll's word, and this
-  // book exists precisely to not be the roll.
 ];
 
 // A store nobody should have any more. Named so its return would be a

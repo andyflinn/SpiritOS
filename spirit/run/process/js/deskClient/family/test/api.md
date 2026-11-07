@@ -1,8 +1,8 @@
-# process/js/deskClient/deskClient.family/api.js
+# process/js/deskClient/family/api.js
 
 The deskClient server's interface (goal/G32.3): every verb deskClient serves, each argument with its rule, written to
 spirit.js's standard (`'?'` optional). The spirit object checks every call against it before the call leaves
-(`spirit.check`); deskAgentEar and publishData reach deskClient only through it.
+(`spirit.check`); deskAgentEar, commitCheck and the publishData app reach deskClient only through it.
 
 ## Requirements
 
@@ -11,7 +11,7 @@ spirit.js's standard (`'?'` optional). The spirit object checks every call again
 - **Every verb listed is served**: a handler of deskClient.js, or `streamListener`, which appServer adds to a server that
   follows a stream (deskClient follows the desk's).
 - `next { read? }`: read, a text, the key of the wake the agent last read (goal/G41.11); nothing else.
-- `cache.dump {}`: takes no path (the file is fixed by the server).
+- `cache.dump {}`: takes no path (the file is appServer's cache file of the desk).
 - `desk { name, json?, kept? }`: the desk verb by name (an id, never `''`), its arguments as JSON text, `'{}'` when
   left out; kept a boolean.
 - `setDesk { key }`: the key of the node that runs the desk, a peer's public key, required.

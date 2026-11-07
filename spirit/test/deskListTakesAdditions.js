@@ -6,22 +6,16 @@
 //   is drawn from what the publish carries, in the order the server gives." "Test: a published new item appears as a
 //   row with no items.search asked; a published change replaces its row."
 //
-// WHAT THE SERVER PUBLISHES, READ AT 6503c0a6 (process/js/desk/desk.js):
-//   - after every write: { change, verb, item: facts(item), listed, checks?, rows } (desk.js:1633-1652). `rows` is
-//     changedRows (desk.js:1706-1715): the goal and those of its members whose facts or listed changed, in the order
-//     [goal].concat(g.members), each facts(...) plus listed.
-//   - facts() is exactly what items.search hands the List as each row's label (desk.js:1457, 2053-2057), so a published
-//     row carries everything deskRowHtml draws.
-//   - item.add appends the new id to its goal's members (desk.js:922, `g.members.push(id)`), and items.search with
-//     no text gives every item probability 0 (desk.js:334), so the List's order is the goal, then its members in
-//     session order (desk.js:1431-1460, ranked keeps the walk's order among equals, desk.js:339-342). An added item's
-//     place in that List is therefore after the last row of its goal: the publish names its goal (`goal`).
-//   - listed (desk.js:1227-1232) is false for a closed item; with Include Closed on, items.search still lists it
-//     (desk.js:1451-1452), so a closed row stays while the toggle is on.
+// WHAT THE SERVER PUBLISHES (process/js/desk/desk.js, above publishOne): every write publishes each row it changed on
+//   its own (goal/G33.4): { change, verb, item: <facts>, listed, key: {goal, item} } for the written item and for every
+//   other row of the goal whose facts it changed, and { change, table, goal, item, id, row } for each side row.
+//   listed is false for a closed item; with Include Closed on, items.search still lists it.
+// WHAT THE LIST DOES (shell/desk/desk.js, deskOnPublished): a side row ({table}) is no List row; an item publish
+//   replaces or adds its one row.
 //
-// WHAT THE LIST DOES TODAY (shell/desk/desk.js, deskOnPublished, :481-525): a row it holds is replaced (:520); a row
-//   whose listed is false is spliced out whatever Include Closed says (:519); a row it does not hold sets `unknown`
-//   and the List asks items.search again (:521-523): the pull the box names.
+// STALE: the stand-in below publishes the older shape ({ change, verb, item, listed, rows }), and the run breaks in
+//   bootPage before its first check: shell.js now subscribes through spirit.events (goal/G40.6), which the page fake
+//   here does not give ("Cannot read properties of undefined (reading 'subscribe')").
 //
 // Driven through the real shell.js (as deskDialogFollowsItem.js and listeningApp.js drive it) with the real Desk face,
 // shell/desk/desk.js, evaluated as the browser evaluates the script the shell injected; its server's publishes arrive
@@ -72,7 +66,7 @@ function fakeElement(tag) {
 }
 
 // ── THE DESK SERVER, STAND-IN ───────────────────────────────────────────
-// facts() as desk.js:1362-1427 shapes them, the fields the List draws.
+// facts() as desk.js facts() shapes them, the fields the List draws.
 function facts(it) {
   return { id: it.id, title: it.title, goal: it.goal, status: it.closed ? 'closed' : it.status, with: '', buttons: it.closed ? ['bring-back'] : [],
     blocking: it.blocking || [], blocked: it.blocked || [], go: false, alone: false, alert: false, claims: 0, boxTaken: '', limbo: false,
@@ -95,7 +89,7 @@ function deskStandIn() {
   };
   const factsOf = function (id) { return id === 'goal/G100' ? goalFacts() : facts(items[id]); };
   const listed = function (id) { return !items[id].closed; };
-  // items.search, as searchItems (desk.js:1432-1460) with no text: the goal, then its members in session order.
+  // items.search, as desk.js searchItems with no text: the goal, then its members in session order.
   function search(a) {
     const ids = ['goal/G100'].concat(a.goalsOnly ? [] : members).filter(function (id) { return listed(id) || a.includeClosed === true; });
     return { ok: true, items: ids.map(function (id) { return { key: id, label: JSON.stringify(factsOf(id)) }; }), more: false };
@@ -113,7 +107,7 @@ function deskStandIn() {
     if (verb === 'item.chat') return Promise.resolve({ ok: true, chat: [], chatMore: false });
     return Promise.resolve({ ok: true, items: [], more: false, json: '', chat: [], checks: [] });
   };
-  // One write, published as desk.js:1629-1652 publishes it: the item, listed, and every row of the goal it changed.
+  // One write, published in the older shape: the item, listed, and every row of the goal it changed, in one object.
   desk.write = function (verb, id, change) {
     const before = {};
     ['goal/G100'].concat(members).forEach(function (x) { before[x] = JSON.stringify([factsOf(x), listed(x)]); });
@@ -233,7 +227,7 @@ test.startTest('goal/G24.6: the List takes additions from the stream');
   else test.fail('a change made the List ask items.search ' + desk.searches.length + ' times');
 
   test.subHeading('2. a published new item appears as a row, in its place, with no search');
-  // An agent's item.add: the desk appends it to its goal's members (desk.js:922) and publishes it with its goal's row.
+  // An agent's item.add: the desk appends it to its goal's members and publishes it with its goal's row.
   const added = desk.write('item.add', 'goal/G100.3', function () {
     desk.items['goal/G100.3'] = { id: 'goal/G100.3', title: 'Added by an agent', goal: 'goal/G100', status: 'ready', blocking: ['goal/G100'] };
     desk.members.push('goal/G100.3');

@@ -4,11 +4,12 @@
 // "All client side searches will be fixed, too, and search the whole row, as cached in spirit.data". A page loads it from
 // the node that served it (spirit.require); it runs the translator into that page's spirit.data.
 //
-// THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the Desk's verifier pane and its List's run
-// status, the item dialog, the fallout plugin, falloutHistory) asks spirit.data.deskVerify.data (below), never a branch by name.
+// THE BRANCHES ARE THIS FILE'S, AND ONLY THIS FILE NAMES THEM: every reader (the Desk's verifier tab, falloutHistory,
+// deskClient's relay of a run) asks spirit.data.deskVerify.data (below), never a branch by name.
 //   verify      now -> what the verifier last published of itself (deskVerify.js say: doing, suite, index, of, tests,
 //               expected, line, since, stopAsked, idleMs, chores, hasChores, consoleRun, consoleTo, consoleEnded)
-//   verifyTests key -> a test's newest result, as the search over tests answers it (the fallout list's rows)
+//   verifyTests key -> a test's newest result, as the search over tests answers it (the fallout plugin's list rows;
+//               that plugin went with goal/G43.22, and no reader of testsBranch is left)
 //   verifyFlips suite + newline + title + newline + at -> one flip of a test, as the search over its history answers it
 //               (falloutHistory's rows)
 // The rows come as jobs of module process/js/deskVerify: the verifier's publishes. Every event ends in set; it asks nothing.

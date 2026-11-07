@@ -49,8 +49,7 @@ function readOr(file, fallback) {
 // What the tree actually has.
 // ---------------------------------------------------------------------
 
-// Signed formats. The files that mint bytes for somebody to sign
-// (deviceAuth.js went with the device enrolment, goal/G16.2).
+// Signed formats. The files that mint bytes for somebody to sign.
 const MESSAGE_FILES = ['relayAuth.js', 'invites.js'];
 const inTree = { messages: [], routes: [] };
 
@@ -62,8 +61,8 @@ MESSAGE_FILES.forEach(function (name) {
   });
 });
 
-// Both startup modules: the relay's routes moved to relayServer.js with
-// cycle 0, and a door the node still names must be counted too.
+// Both startup modules: the relay's routes are in relayServer.js, and a
+// door the node still names in server.js must be counted too.
 const server = readOr(path.join(RUN, 'server.js'), '') + '\n' + readOr(path.join(RUN, 'relayServer.js'), '');
 (server.match(/'\/api\/relay\/[a-z-]+'/g) || []).forEach(function (q) {
   const r = q.replace(/'/g, '');
@@ -72,10 +71,8 @@ const server = readOr(path.join(RUN, 'server.js'), '') + '\n' + readOr(path.join
 
 // ── AND WHAT TRAVELS ON THE ONE THAT IS A WIRE ───────────────────────
 //
-// THE REGISTER COUNTED DOORS, NOT PACKETS, and fell through that hole
-// twice. `GET /api/relay/stream` is one row, and seven different things
-// go down it — so an eighth (`owner-event`, 2026-09-15) was added and
-// nothing went red, because the door had not changed.
+// DOORS ARE NOT ENOUGH: `GET /api/relay/stream` is one row, and several
+// different things go down it, so a new one would add no door.
 //
 // A door is a way of speaking. So is a word said through it.
 //
@@ -97,17 +94,10 @@ inTree.events = [];
 //   no matter if natter is probing, we simply have not identified them
 //   formally."
 //
-// The register learned to count events instead of only doors. It still
-// counted `owner-event` as ONE row — and six different things go down
-// it. That is the blindness above, recursing: a door is a way of
-// speaking, a word said through it is another, and so is what the word
-// says.
-//
-// It matters more here than it looks. These are the only things a relay
-// ever tells its owner unprompted, they are the ones decision 0009 says
-// are KEPT, and until 2026-09-15 nothing in a browser received any of
-// them — so a seventh could be added and read by nobody, exactly as an
-// eighth stream event was.
+// `owner-event` is one stream event, and several kinds go down it: a
+// door is a way of speaking, a word said through it is another, and so
+// is what the word says. These are the only things a relay ever tells
+// its owner unprompted, the ones decision 0009 says are KEPT.
 //
 // Scanned off `ownerEvent(` the same way: the tree's own answer. The
 // ternary at the claim wrapper means one call site can name two kinds,
@@ -136,11 +126,8 @@ const registered = { messages: [], routes: [] };
 // of nowhere else. A name in a cell is an entry; the same name in a
 // paragraph is a mention.
 //
-// That distinction only became load-bearing when the first cheat
-// collapsed: the worked example has to be able to say which verbs were
-// deleted, by name, without those names reading as a claim that they are
-// still here. A scanner that read the whole file would have made the
-// register unable to describe its own history.
+// So the register can name verbs that were deleted, in its prose,
+// without those names reading as a claim that they are still here.
 const rows = doc.split('\n').filter(function (line) {
   return /^\s*\|/.test(line) && !/^\s*\|[\s|:-]*$/.test(line);
 });
@@ -250,9 +237,8 @@ test.subHeading('The register says what each one IS');
 // UNDER something — protocol, bootstrap, died, or cheat — because "we
 // wrote it down" is not a decision and the four words are.
 //
-// "Dying" became "Died" on 2026-09-15, when R8 carried the sentence out.
-// The section is kept and checked for although its table is now empty:
-// a register that silently loses the category a thing was deleted under
+// "Died with the ring" is kept and checked for although its table is
+// empty: a register that silently loses the category a thing was deleted under
 // cannot tell a later reader that the deletion was decided rather than
 // drifted into. An empty category is a record; a missing one is a gap.
 ['## The protocol', '### Bootstrap', '### Died with the ring', '### Cheats, named']

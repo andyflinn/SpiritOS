@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskChatFormat.js
-// CHAT LINES DRAWN READABLY — desk/G1.10, written FIRST, red on today's
-// code.
+// CHAT LINES DRAWN READABLY — desk/G1.10.
 //
 //   Andy, in a dialog: "it would be nice if the chat log here would show
 //   some nicer formatting", then "yes, that would make it much more
@@ -10,14 +9,10 @@
 //   (05:49); '- ' lines as a list, backquoted text as code; a session post
 //   as one line, not JSON. Only how a line is drawn; nothing on the wire.
 //
-// THE CONTRACT (wsl-claude's, for claude-windows' build): the drawn markup
-// of every chat, not a helper's name (claude-windows plans one shared
-// formatter). Every chat: the dialog's (deskDetails). Desk's Team (All) and
-// an agent's tab were judged too until the Team tab and its group chat
-// goal/G0 went with goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and
-// server, kept in database."); Musings went with goal/G27.3, and the vision
-// app that replaced it with goal/G43.22. A time is the local HH:MM (this suite
-// runs with TZ=UTC). What is drawn is still escaped: text is never markup.
+// THE CONTRACT: the drawn markup of every chat, not a helper's name. The
+// one chat the desk draws is the item dialog's (deskDetails); no Team tab or
+// group chat goal/G0 is left (goal/G43.22). A time is the local HH:MM (this
+// suite runs with TZ=UTC). What is drawn is still escaped: text is never markup.
 
 process.env.TZ = 'UTC';
 
@@ -98,8 +93,5 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
   await settle();
   const ddChat = ddDoc.getElementById('dd-chat').innerHTML;
   report(checks('dialog', ddChat), ddChat);
-  // T4 in the dialog went with desk/G2.7: a session is the desk server's record, never a chat line.
-
-  // DESK'S OWN CHATS STOOD HERE: Team (All), the group chat goal/G0, and the lead's own tab, drawn into #desk-team. They
-  // went with goal/G43.22 (no Team tab, no group chat); Musings with goal/G27.3, and vision, its desk app, with goal/G43.22.
+  // No session check in the dialog: a session is the desk server's record, never a chat line (desk/G2.7).
 })().catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () { test.reportSuccessFailureCount(); });

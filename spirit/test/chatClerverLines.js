@@ -2,18 +2,16 @@
 
 // spirit/test/chatClerverLines.js
 // goal/G4.2: the chat lines — a peer's line received, one chat read, every kept line published — and the writing half
-// made sound (line.write's three faults found in review of goal/G4.6). RED on today's tree: the chatClerver has
-// line.write only.
+// made sound (line.write's three faults found in review of goal/G4.6).
 //
 //   Andy, 2026-10-03 (the box of goal/G4.2, verbatim there): "the write is fine with me"; "can we keep the paging back
 //   in the chat window out of this level of design?"; "appServer.publish, two objects per arrival, the answered line
 //   FIRST, then the received line."; "yes. That's why the answered line and the received line must be streamed to the
 //   UI separately."; "and the chatClerver is the one who knows what an incoming message may miss, in terms of what it
-//   refers to."; and, the design ended, "i meant: build it now." His Go is his go-all on goal/G4. The three faults of
-//   line.write were found by claude-windows in review of goal/G4.6, confirmed by wsl-claude, and belong to G4.2's box,
-//   which decided the write (wsl-claude, under goal/G4).
+//   refers to."; and, the design ended, "i meant: build it now." The three faults of line.write belong to G4.2's box,
+//   which decided the write.
 //
-// THE CONTRACT (claude-windows's shapes where the box names none; wsl-claude builds). process/js/chatClerver, no core.
+// THE CONTRACT (the shapes where the box names none). process/js/chatClerver, no core.
 //   A. line.receive {seq, at, text, re: {writer, seq}} -> {kept}: called by a peer's chatClerver; the writer is the
 //      caller's key (a caller with no key is refused). The line is kept as received (sent 0, receivedAt this node's
 //      UTC time); the peer's row is born by its first line and keeps the highest seq received. The same line again (a
@@ -33,9 +31,8 @@
 //      2. Two writes to one peer at the same moment take two numbers.
 //      3. A node that does not answer the block check, or refuses the grant (already-granted aside), refuses the
 //         write: nothing is kept, nothing posted.
-// Not asserted, the builder's: the refusal codes in D3; the order of the two publishes; what a pending line's mark
-// reads while it waits.
-// Not proven: this suite has run only against today's tree.
+// Not asserted: the refusal codes in D3; the order of the two publishes; what a pending line's mark reads while it
+// waits.
 
 const fs = require('fs');
 const os = require('os');

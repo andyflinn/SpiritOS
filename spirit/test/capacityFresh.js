@@ -10,33 +10,18 @@
 //   all secure now is worth less when it reduces a relays capacity by a
 //   factor of 5...."
 //
-// ── THE DRIFT THIS EXISTS FOR, MEASURED BEFORE IT WAS CAUGHT ─────────
+// `measurePlatform.js` records each box's figures in
+// agents/<agent>/capacity.json. This suite NOTICES when the schema moves
+// underneath a published number: a figure nobody re-measures is a claim.
 //
-// `README/CAPACITY/*/capacity.json` publishes `perMemberRowBytes = 197` on
-// both platforms — Windows at `60e2610`, Ubuntu at `27374ee`. Cycle 10
-// then added a signed card to every member row. Measured at `7f66806`:
-// **575 bytes a member**, which is the published figure understated by
-// 2.9x, and a relay's roll at a fixed disc limit cut by 58%:
+// ── THE RULE, NOT GIT (goal/G4.19) ───────────────────────────────────
 //
-//     lab     1 MB    4,302 members  ->  1,822
-//     spirit  64 MB   275,361        ->  116,612
-//
-// Nothing was wrong with the measuring harness — `measurePlatform.js`
-// already records the figure. What was missing is anything that NOTICES
-// the schema moved underneath a published number. A figure nobody
-// re-measures is a claim, and this repo does not publish claims.
-//
-// ── SINCE goal/G4.19: THE RULE, NOT GIT ──────────────────────────────
-//
-// This gate was a git check: a figure measured before the last commit to
-// a list of files (relayStore, limits, seal, nodeCard, relayLimits) was
-// stale. It fired on G4.16, a renamed require that moved nothing, and a
-// gate that cries wolf is a gate nobody reads. Andy, 2026-10-04: "wouldn't
+// Andy, 2026-10-04: "wouldn't
 // we fix what really needs fixing, the capacity measurement, so it takes
 // text field limits from fieldRules.js ?", then "fix it properly then."
 // So a member row's worst size is computed from fieldRules
 // (memberRowWorst.js), and a published perMemberRowBytes above it is the
-// red: the README states a number the tree cannot produce.
+// red: the published file states a number the tree cannot produce.
 
 const fs = require('fs');
 const path = require('path');
@@ -46,7 +31,7 @@ const memberRowWorst = require('./memberRowWorst.js');
 test.startTest('Published capacity figures are within the worst the rule allows');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-// Each agent's folder (goal/G4.33): agents/<agent>/capacity.json; README/CAPACITY/ is gone.
+// Each agent's folder (goal/G4.33): agents/<agent>/capacity.json.
 const DIR = path.join(ROOT, 'agents');
 const WORST = memberRowWorst.worstBytes();
 
@@ -85,10 +70,9 @@ const WORST = memberRowWorst.worstBytes();
   //   noisy box. true. too bad, what we want to do is distinguish the
   //   flaky measurements from the computes ones"
   //
-  // Until now every figure was treated alike, so a busy laptop read as a
-  // regression and a real regression read as noise. `capacityKinds.js`
-  // declares which figures depend on the box; this asserts the ones that
-  // cannot.
+  // `capacityKinds.js` declares which figures depend on the box; this
+  // asserts the ones that cannot, so a busy laptop does not read as a
+  // regression.
   test.subHeading('Figures that cannot depend on the box are identical on every box');
 
   const kinds = require('./capacityKinds.js');
@@ -102,8 +86,7 @@ const WORST = memberRowWorst.worstBytes();
   //
   // "every box-independent figure agrees" is TRUE OF AN EMPTY LIST and
   // TRUE OF A SINGLE PUBLISHED BOX. Either would make this pass for ever
-  // while checking nothing, which is the shape that has cost this suite
-  // family three separate afternoons.
+  // while checking nothing.
   if (!kinds.SAME_ON_ANY_BOX.length) {
     test.fail('capacityKinds declares no box-independent figures, so the comparison below ' +
       'would pass while checking nothing');

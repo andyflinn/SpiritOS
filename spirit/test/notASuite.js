@@ -3,10 +3,8 @@
 // spirit/test/notASuite.js
 // THE FILES BESIDE THE SUITES THAT ARE NOT SUITES — one list, two readers.
 //
-// It lived inside runAll.js until goal/G8.12, when deskVerify began running the harness itself (the desk says a goal
-// has emptied, deskVerify runs every suite). Two readers of the same folder with two ideas of what a suite is would
-// have run testSupport.js, deskFake.js and runAll.js itself as suites - a whole harness nested inside the run, which
-// claude-windows caught verifying 4c7fcb76. So the list is here, and both read it.
+// runAll.js reads it (goal/G8.12), so the runner never takes testSupport.js, deskFake.js or runAll.js itself for a
+// suite; hygieneG19_11.js checks every name here is a file beside the suites.
 //
 // A suite is a file that REPORTS: it calls startTest(. Anything else beside them is a module somebody put there, and
 // running it proves nothing. A name belongs on this list only with the reason it is not a suite.
@@ -16,14 +14,13 @@ module.exports = [
   'testSupport.js', 'scenario.js', 'world.js', 'runAll.js',
   // The child testSupport runs to post its last records before a suite exits (goal/G8.1): a helper, not a suite.
   'verifyPost.js',
-  // NOT A HARNESS SUITE (goal/G27.2, D9, Andy, 2026-10-17: "the stacks plugin must drive the stack checks exclusively"):
-  // the one-door stack-frame suite is run by the Stacks plugin alone, a door at a time, never by runAll or deskVerify.
+  // NOT A HARNESS SUITE (goal/G27.2): the one-door stack-frame suite is never run by runAll. The Stacks plugin that ran
+  // it a door at a time is gone (goal/G43.22); the file is kept beside its list, run by hand.
   'oneDoorStacks.js',
-  // labMaster.js stood here; it lives in labMaster/, a folder the runner does not read (goal/G19.11).
   'labWorld.js', 'labPopulate.js', 'setupRelayFakes.js',
   'relayProbe.js', 'startTestAndy.js', 'startTestBert.js', 'startTestRelay.js',
   // A helper, not a suite: reads a relay's roll off its disc for the suites
-  // that inspect it (cycle 3).
+  // that inspect it.
   'rollOf.js',
   // The board's ranking graph. Pure, asserts nothing; boardRankSuite.js is
   // the suite that holds it to account.
@@ -52,9 +49,8 @@ module.exports = [
   // A COMPUTATION, NOT A SUITE: the most a member row can cost, from
   // fieldRules (goal/G4.19, issue 7). capacityFresh and capacityRule read it.
   'memberRowWorst.js',
-  // NOT A SUITE: a claimed relay with the owner watching, extracted from
-  // relayMonitor.js when cycle 10's R12 needed the same world. It
-  // asserts nothing and builds one.
+  // NOT A SUITE: a claimed relay with the owner watching, shared by
+  // relayMonitor.js and others. It asserts nothing and builds one.
   'monitorWorld.js',
   // A TOOL, not a suite: rewrites the front page's generated capacity
   // block from the Ubuntu measurement (Andy, 2026-09-23 — "the front page
@@ -62,7 +58,7 @@ module.exports = [
   // the ubuntu-relay capacity only"). It writes a file and makes no
   // pass/fail claim; `capacityFresh.js` is the suite that holds it honest.
   'publishCapacity.js',
-  // A helper, not a suite (cycle 10, R5): sealing a post to a relay and
+  // A helper, not a suite: sealing a post to a relay and
   // opening the answer, in one place so twenty suites cannot each grow
   // their own opinion about what a sealed reply looks like.
   'openReply.js',
@@ -73,25 +69,18 @@ module.exports = [
   // knocks on it — the card ask for readiness and the key, a stranger's
   // claim, paced past the relay's address table.
   'relayDoor.js',
-  // A BUILDER, not a suite (cycle 2): the four worlds an app server can
-  // find itself in — a relay nobody claimed, a relay with every seat
-  // taken, an owner node that is not running, a second relay with a
-  // different key. It makes no pass/fail claim; `appServerBoundary.js` is
-  // the suite that asserts against the worlds it builds.
-  //
-  // NAMED HERE RATHER THAN LEFT TO BE NOTICED, because this file family
-  // has form: two suites rotted for months because the runner could not
-  // see them, which is why this list carries a reason per entry instead
-  // of only a name.
+  // A BUILDER, not a suite: the four worlds an app server can find itself
+  // in — a relay nobody claimed, a relay with every seat taken, an owner
+  // node that is not running, a second relay with a different key. It
+  // makes no pass/fail claim. The suite named as its reader,
+  // appServerBoundary.js, is not in the tree.
   'appServerWorlds.js',
   // A helper, not a suite: copies the NON-IGNORED spirit/run into a
-  // fixture, for the suites that spawn a real server. Replaced a blind
-  // fs.cpSync that took the whole 143 MB tree — media, the brains vault
-  // and relay-state's private key with it (2026-09-20).
+  // fixture, for the suites that spawn a real server, so media, the
+  // brains vault and relay-state's private key stay out of it.
   'plantRun.js',
   // A helper, not a suite (goal/G22.5): an identity in a scratch root, made by
-  // planting relayAuth.js there and letting its first load make it, since
-  // relayAuth no longer exports ensureIdentity.
+  // planting relayAuth.js there and letting its first load make it.
   'plantIdentity.js',
   // A helper, not a suite: a desk server in memory, for the suites that
   // mount Desk once it keeps nothing in its own folder (desk/G1.4).
@@ -122,8 +111,7 @@ module.exports = [
   // at a time, slowly enough to be followed, and asks Andy what he sees —
   // so a harness that ran it would sit at a prompt for ever. Listed here
   // rather than left out by accident: it does not call startTest, and the
-  // discovery rule below would skip it silently, which is precisely how
-  // deviceAuth.js and iconIndex.js went unrun.
+  // runner's discovery rule would skip it silently.
   'presenceShow.js',
   // A FIXTURE, NOT A SUITE. It enrols a relay full of people named after
   // consecutive lines of a play, so a ranker is asked the kind of question

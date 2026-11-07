@@ -6,10 +6,10 @@
 //   all" on the question of whether Desk mounts at page load.
 //
 // The node counts a packet delivered once any page takes it
-// (arrivals.js), and the shell dropped a packet for an app that had not
-// mounted yet. So an app that keeps its own log (Desk) lost whatever came
-// before it was opened, the node's replayed backlog included. A manifest
-// may now say `"listens": ["agents"]`, and the shell:
+// (arrivals.js), so a packet dropped for an app that had not mounted yet
+// would be lost to an app that keeps its own log (Desk), the node's
+// replayed backlog included. A manifest may say `"listens": ["agents"]`
+// (spirit/client/shell.js), and the shell:
 //
 //   - loads that app's script at page load and mounts it into a hidden pane;
 //   - holds a packet for a listed name until the app's handler subscribes,

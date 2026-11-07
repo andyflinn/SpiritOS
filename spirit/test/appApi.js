@@ -1,25 +1,21 @@
 'use strict';
 
 // spirit/test/appApi.js
-// THE NODE'S 'api' — appPair/G1.3, written FIRST, red on today's code.
+// THE NODE'S 'api' (appPair/G1.3): appClient.js asks its app servers and
+// routes a call.
 //
-//   Andy, 2026-09-29: go on appPair/G1.3, under his rule "they must be red
-//   before wsl pulls the implementation, and green after".
-//
-// Decided (Desk, appPair/G1): only the node receives 'api' (D2); it asks
-// every appServer at once, 12 s each (O3), and answers {app: tree} (D2, D3);
+// Decided (appPair/G1): only the node receives 'api' (D2); it asks
+// every appServer at once, 12 s each (DOOR_WAIT_MS, O3), and answers {app: tree} (D2, D3);
 // a call is {app: {verb: {args}}} and the node hands {verb: {args}} to that
 // app (D10); the reply arrives as the verb returned it (D11); every error is
 // {ok: false, code, error} with a code the register knows (D12); a missing
 // app's branch is that error itself (O2); the node refuses only what it
 // cannot route (D9); no cache (D6).
 //
-// The contract tested (wsl-claude's, sent to claude-windows before the
-// build): createAppClient(...) returns ask(body) -> Promise<{status, body}>.
-// These drive ask() against real app servers built on appServer.js, on the
-// pipes the node names. The member's side (over peerPost, and a
-// non-member refused at the front door, T6) is added once the node's wiring
-// is named.
+// The contract tested: createAppClient(...) returns ask(body) ->
+// Promise<{status, body}>. These drive ask() against real app servers built
+// on appServer.js, on the pipes the node names. The member's side (over
+// peerPost, and a non-member refused at the front door) is not tested here.
 
 const fs = require('fs');
 const os = require('os');
@@ -105,10 +101,9 @@ let beta = start('beta', BETA1);
 
 Promise.all([up(alpha.pipe), up(beta.pipe)]).then(function (ready) {
   if (!ready[0] || !ready[1]) test.fail('setup: the sample app servers did not come up on their pipes');
-  // SINCE goal/G19.10, AS THE NODE DOES IT: a server is started one way
+  // AS THE NODE DOES IT: a server is started one way
   // (jobs.startNodeServers) and known by the pipe the node named for it
-  // (register). appClient.startAll left at 013dc827 and this call broke the
-  // run. gamma is registered and never started: the down app of T3.
+  // (register). gamma is registered and never started: the down app of T3.
   ['alpha', 'beta', 'gamma'].forEach(function (name) {
     client.register(name, appClient.pipePathFor(root, name, process.platform, 'process'));
   });

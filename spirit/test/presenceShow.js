@@ -105,16 +105,9 @@ async function labRelayUrl() {
   return row ? 'http://127.0.0.1:' + row.port : null;
 }
 
-// rosterOf STOOD HERE. It read `GET /api/relay/who` and handed back every
-// member, so this script could turn a LABEL into a key. The route is gone
-// — a public, unsigned read of the whole membership, named a cheat in
-// decision 0010 and eradicated the next day — and 0012 rules out any door
-// that answers "who is on this box", owner included.
-//
-// A LABEL WAS NEVER THE RIGHT HANDLE ANYWAY. A peer is a key; a label is
-// a caption, and two peers may wear one. Resolving one to the other by
-// downloading everybody is the pattern being removed, not an incidental
-// user of it.
+// NO ROSTER: decision 0012 rules out any door that answers "who is on
+// this box", owner included, so this script cannot turn a LABEL into a
+// key. A peer is a key; a label is a caption, and two peers may wear one.
 
 // A RELAY IS A PEER, AND A PEER IS A KEY. Off its card, a card ask on its
 // one door (goal/G22.6), which answers who a box is at fixed cost and tells
@@ -142,28 +135,18 @@ async function removeFromLab(label) {
   // Since goal/G22.5 a node's identity exists from its first boot, before it listens.
   if (!me || !me.privateKey) return 'your node\'s identity.json could not be read, so nothing can be signed';
 
-  // NAMED BY KEY, not by label. This looked the label up in the relay's
-  // roll; there is no such door, and the owner's view of its own roster
-  // is the relay's report to its owner (relay.statusToOwner), which does
-  // not carry one yet — design/relay/SURFACE.md §10, the improvement tier.
-  //
-  // Until it does, this scenario wants the key: paste the one Contacts or
-  // a search result shows, which is where a key comes from anyway.
+  // NAMED BY KEY, not by label: there is no door that looks a label up
+  // (design/relay/SURFACE.md §10). This scenario wants the key: paste the
+  // one Contacts or a search result shows.
   const row = /^[A-Za-z0-9+/=]{40,}$/.test(label) ? { publicKey: label } : null;
   if (!row) {
     return 'name them by KEY — the relay no longer publishes a roster to look a ' +
       'label up in (decision 0012). Copy the key from Contacts or a search result.';
   }
 
-  // Through this node's own door: the relay route is gone (decision
-  // 0010), and the post's answer comes back on the stream the node holds.
-  //
-  // AND THE NODE'S DOOR IS A VERB NOW. `POST /api/hub/remove-peer` was
-  // itself deleted when the post-path doors closed — it built one packet
-  // body and handed it to router.post, which is what a peerPost IS. So
-  // this addresses the RELAY BY KEY, like any other peer, and says
-  // `removePeer` in the body. A relay grows a verb and nothing here
-  // needs a door wired for it.
+  // Through this node's own door, as a peer.post (decision 0010): it
+  // addresses the RELAY BY KEY, like any other peer, and says `removePeer`
+  // in the body; the answer comes back on the stream the node holds.
   const relayKey = await relayKeyOf(url);
   if (!relayKey) return 'the lab relay has not said what its key is';
   const done = await post(WORK_URL + '/api/spirit', { call: 'peer.post', args: { to: relayKey, app: 'relay', body: { removePeer: { key: row.publicKey } } } });
@@ -227,7 +210,7 @@ function stepsFor(s) {
         const r = await post(MASTER + '/api/nodes/' + NODE_PREFIX + NAME_PREFIX + victim.name + '/start');
         return r.ok ? 'started ' + victim.name + "'s node again" : 'could not start it: ' + (r.error || r.status);
       },
-      // Longer: a node has to boot, read relays.json and get a stream
+      // Longer: a node has to boot, read its relay list and get a stream
       // open before the relay has anything new to say about it.
       settle: PACE + 6,
       ask: 'And now? Did it come back on its own, without you reloading anything?',

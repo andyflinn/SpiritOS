@@ -1,18 +1,15 @@
 'use strict';
 
 // spirit/test/deskFold.js
-// LARGE TEXT BOXES FOLD — desk/G1.8, written FIRST, red on today's code.
+// LARGE TEXT BOXES FOLD — desk/G1.8.
 //
 //   Andy, 2026-09-29: "the large text containers, especially the one at the
 //   top, should be foldable, in desk and details."
 //
-// THE CONTRACT (claude-windows, for wsl-claude's build):
-//   - Desk's session bubble (#desk-session) carries a toggle with
-//     data-fold="session". Folded, it shows its first line only (the goal's
-//     id and title) and the toggle: no description, no rules, no items.
-//   - The fold is remembered in seen.json as folds.session (per viewer, as
-//     what he has seen is), so it survives reopening Desk.
-//   The dialog's folded item record went with desk/G2.7 (one box).
+// WHAT IS ASSERTED: the top of Team (#desk-session) is one line, the goal's
+// id and title, which opens the goal (T1), and a reopened Desk shows the same
+// (T3). The Team tab went with goal/G43.22 and desk.js draws no #desk-session,
+// so both no longer match the product.
 
 const fs = require('fs');
 const path = require('path');
@@ -73,8 +70,7 @@ const doc = mountDesk(files);
 settle().then(function () {
   // SINCE desk/G1.14 THE TOP OF TEAM IS ONE LINE (Andy, O3: "the goal
   // overview i only want to see in the goal item"). Nothing there is long
-  // enough to fold, so T1 and T3 hold that instead; the goal's overview and
-  // its fold live in the goal's own dialog (deskExplainTop.js).
+  // enough to fold, so T1 and T3 hold that instead.
   test.subHeading('T1: the top of Team is the goal line alone, which opens the goal');
   const bubble = doc.getElementById('desk-session').innerHTML;
   if (/The goal title/.test(bubble) && /data-open="goal\/G100"/.test(bubble) && !/GOAL-DESCRIPTION-TEXT/.test(bubble) && !/ITEM-ONE-TITLE/.test(bubble)) {
@@ -88,5 +84,5 @@ settle().then(function () {
     if (/The goal title/.test(b2) && !/GOAL-DESCRIPTION-TEXT/.test(b2)) test.check('a fresh Desk opens with the same goal line, and no overview');
     else test.fail('reopened: ' + b2.slice(0, 160));
   });
-  // T2 (the dialog's item record folds) went with desk/G2.7: the dialog has one box and no folded record.
+  // No T2: the dialog has one box and no folded record (desk/G2.7).
 }).catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () { test.reportSuccessFailureCount(); });

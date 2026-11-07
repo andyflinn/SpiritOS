@@ -1,20 +1,18 @@
 'use strict';
 
 // goal/G4.29: the agent pane opens for every agent the desk knows, not only the live ones, so an agent without a
-// listener stays within reach. Red on today's tree; wsl-claude wrote it, claude-windows builds it.
+// listener stays within reach.
 //   Andy, 2026-10-04, goal/G0, after gemma's bubble went 10 minutes after its last line: "can't reach it because
 //   ollama is gone"; to "Let the agent pane open for every agent the desk knows, not only the live ones, as a new
 //   item? Today gemma drops out of reach 10 minutes after its last line.": "yes"; then his Go on goal/G4.29.
-//   In the tree: the goal row's agents map holds only the live agents' keys (desk.js facts, f.agents from f.live,
-//   LIVE_MS 10 minutes), the page draws a bubble per live agent (shell/desk/desk.js deskBubblesHtml) and its pane finds
-//   the key only in that map (deskAgentKey).
+//   In the tree: the goal row's live list is the agents heard inside LIVE_MS, 10 minutes (spirit/run/process/js/desk/
+//   desk.js); the page draws a bubble per agent (spirit/run/shell/desk/desk.js deskBubblesHtml) and its pane finds the
+//   key in the row's agents map (deskAgentKey).
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
+// THE SHAPES, named here where the box names none:
 //   1  THE GOAL ROW: agents maps every agent the desk has seen write (label to key), live or not; live stays as it is.
-//      Its other user, onboard.js, then blocks every known agent, not only the live ones, which closes the gap it
-//      left to the listener.
 //   2  THE PAGE: a bubble, and so a tab, for every agent in agents; one not in live carries data-away="1" and is not
-//      marked working. Opening it asks profile.get with its key, as for a live one (scope.get until goal/G10.8).
+//      marked working. Opening it asks profile.get with its key, as for a live one.
 //
 // THE WORLD: a real desk server with its own state; an agent that last wrote 20 minutes ago is made by rewriting the
 // at of its records in desk.db while the server is down (there is no clock to turn); then the page, fed that row.

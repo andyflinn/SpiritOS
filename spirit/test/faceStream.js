@@ -1,8 +1,12 @@
 'use strict';
 
 // spirit/test/faceStream.js
-// goal/G30.14, step 1 of goal/G30.10: the two relay additions, each approved by Andy (Q1, Q2, 2026-10-21). Red on
-// today's tree; claude-windows writes it and builds it (one agent). The box, in short:
+// goal/G30.14, step 1 of goal/G30.10: the two relay additions, each approved by Andy (Q1, Q2, 2026-10-21). Exercises
+// relay.js (faceCall, faceAnswer, faceOpen, faceFeed), relayAuth.js (faceMessage, faceSignatureOk) and relayServer.js.
+// STALE WORLD (3 of 8 pass): bert's seat and login below no longer happen. relay.join takes the caller's link where a
+// port (4242) is handed here (goal/G40.10), so bert is never seated, and the login mail carries the token alone with
+// no ?<token> link (goal/G41.29), so no session is made; every check that needs a login or bert's stream fails.
+// The box, in short:
 //   - The face request as a stream event: a request from the logged-in face goes into the member's stream as an event
 //     (no route, no in-flight slot), carrying an id.
 //   - faceStream: node-internal, the owner's node to the owner's face, the relay only shovelling bytes both ways. No

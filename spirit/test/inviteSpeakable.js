@@ -5,26 +5,14 @@
 // The whole cycle is one sentence: the spoken token is INSIDE what the
 // owner signs. Everything here is a consequence of that.
 //
-// ── WHAT CHANGED UNDERNEATH IT ───────────────────────────────────────
+// A mint is a post, and postMessage signs the WHOLE packet
+// (design/decisions/0010-fix-the-protocol-or-name-the-cheat.md) — so the
+// token is inside what was signed because everything is. The one check
+// about signing is under "the token is part of the request" below.
 //
-// The sentence is unchanged and the mechanism is gone. A2 built
-// `invites.mintMessage(label, days, token)` — a third field appended to
-// the signed bytes, with an elaborate rule that an absent, empty or blank
-// token had to produce the cycle-2 message byte for byte so that pre-A2
-// signatures kept verifying.
-//
-// Decision 0010's second collapse deleted that format. A mint is a post
-// now, and postMessage signs the WHOLE packet — so the token is inside
-// what was signed because everything is, and the byte-compatibility rule
-// has nothing left to be compatible with. Six checks about the shape of
-// those bytes went with them; what they were protecting is the one check
-// under "the token is part of the request" below.
-//
-// What survives is everything about the token itself, which was never
-// about signing: the trimming, the character rules, the hex fallback, and
-// the friend on the other end of the telephone claiming with the words.
-//
-// See CYCLE-A2.md. relay.js keeps minting hex when the field is empty.
+// The rest is about the token itself: the trimming, the character rules,
+// the hex fallback (invites.js mints hex when the field is empty), and the
+// friend on the other end of the telephone claiming with the words.
 
 const fs = require('fs');
 const os = require('os');
@@ -37,10 +25,7 @@ const world = require('./world');
 const scenario = require('./scenario');
 
 // A relay with an owner on it and nobody else, built from the scenario
-// every suite shares. It was four lines written out here, and the same
-// four written out in five other files — where two of them saved the
-// mailbox a key of its own and three forgot, so `relayPublicKey` was
-// null in some suites and not others for no reason anybody had chosen.
+// every suite shares.
 function ownedRelay() {
   const made = world.build(scenario.OWNER_ONLY);
   if (!made.ok) throw new Error(made.error);
@@ -75,8 +60,7 @@ test.subHeading('The token is part of the request');
   // picks the token" must not become "saint, 7 days, and the token is one
   // I chose".
   //
-  // A2 bought this with a third field and a compatibility rule. It is now
-  // free: the token is in the text, and the signature is over the text.
+  // The token is in the text, and the signature is over the text.
   // ── SEALED FIRST, THEN SIGNED (cycle 10, R5 and R11) ─────────────
   //
   // These three refusals are about a SIGNATURE binding what was asked.

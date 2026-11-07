@@ -1,18 +1,18 @@
 'use strict';
 
 // spirit/test/iconsAddKnown.js
-// goal/G40.5: Add on an icon already in the set opens that icon's edit view. Written first, red on today's tree, by
-// claude-windows. The box, Andy's words among it: "if add icon cannot add because the icon already exists, the open the
-// edit dialog for the existing icon." Today Add refuses with "open its row to change its keywords" and leaves the list
-// up; the edit view it should open is iconsPanel, the one a press on the icon's row opens.
+// goal/G40.5: Add on an icon already in the set opens that icon's edit view. The box, Andy's words among it: "if add
+// icon cannot add because the icon already exists, the open the edit dialog for the existing icon." The edit view is
+// the one a press on the icon's row opens.
 //
-// WHAT IS ASSERTED, on the Icons app as the shell mounts it (shell/icons/icons.js), with the set read and written
-// through the spirit object:
+// WHAT IS ASSERTED, on the Icons app as the shell mounts it, with the set read and written through the spirit object:
 //   1. Add with a glyph already in the set opens the edit view for it: the list hidden, the icon's view shown, holding
 //      that glyph and its keywords as the set has them.
 //   2. The same under another spelling (a variation selector), which the app already calls the same icon.
 //   3. Nothing is written: the set is not saved by an Add that adds nothing.
 //   4. A glyph not in the set is still added, and the list stays up.
+// STALE: the Icons app is spirit/run/spirit/app/icons/icons.js now; APP below still reads spirit/run/shell/icons/icons.js,
+// which is no longer in the tree, so the suite throws before its first check.
 
 const fs = require('fs');
 const path = require('path');
@@ -105,5 +105,5 @@ test.startTest('goal/G40.5: Add on an icon already in the set opens its edit vie
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the suite threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });
 
-// THE ELEMENT NAMES SINCE goal/G43.18: a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
+// THE ELEMENT NAMES (goal/G43.18): a stand-in keyed by its place, 'search.contact' and so on, nested where the page has it.
 function nestSearch(o) { Object.keys(o).forEach(function (k) { if (k !== 'search' && k.indexOf('search.') !== 0) return; var v = o[k]; delete o[k]; var ks = k.split('.'); var at = o; ks.slice(0, -1).forEach(function (p) { at = at[p] = at[p] || {}; }); var last = ks[ks.length - 1]; at[last] = Object.assign(at[last] || {}, v); }); return o; }

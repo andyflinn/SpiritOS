@@ -1,51 +1,27 @@
 'use strict';
 
 // spirit/test/deskOnServer.js
-// DESK READS AND WRITES THROUGH THE DESK SERVER; ITS FILES ARE IMPORTED ONCE
-// AND LEAVE THE APP FOLDER — desk/G1.4, written FIRST, red on today's code.
+// DESK READS AND WRITES THROUGH THE DESK SERVER, NEVER ITS APP FOLDER — desk/G1.4.
 //
-//   Andy's go on desk/G1.4, after O9: "desk creates a lot of file-clutter",
-//   "SpiritOS list.load rules are probably vialoated", "lazy-fill of pages
-//   seems appropriate", "the most recent 10 Kilobytes are very likely
-//   enough", and "desk loads down the dependency tree ... it skips closed
-//   items", "the list only loads key/title, and the rest lazy loads".
+//   Andy, on desk/G1.4: "desk creates a lot of file-clutter".
 //
-// THE CONTRACT (claude-windows' tests, agreed with wsl-claude before the
-// build; Desk walks and folds, the server is storage plus bounded search):
+// WHAT IS ASSERTED:
 //
 //   THE SERVER (process/js/desk/desk.js)
-//   - It never reads Desk's old files in shell/desk (goal/G100.6).
-//   - log.search gains two filters, both '' for any: kind, and before (only
-//     lines older than it); every caller sends all five keys (the helper
-//     matches keys exactly, D8). todo '-' means lines with no todo (an
-//     agent's direct chat). Still newest first, bounded, partial when cut (T6).
+//   - goal/G100.6: it never reads Desk's old files in shell/desk (log/, state.json, seen.json, voice/) and deletes
+//     none of them, and its script names no shell/desk.
 //
-//   DESK (app/desk/desk.js), through api.verb('desk.<verb>', args), the
-//   verb by name (goal/G30.6), and never api.fs for its record:
-//   - T5: it reads the newest session (log.search kind 'session') and draws
-//     every open item as id and title at once; each row then fills its
-//     state from log.search {todo: that id}, newest first, a next page only
-//     while its state is unknown. An item the newest session no longer
-//     names is closed, and is never searched.
-//   - T5b: the Team chat opens with one bounded log.search {todo:
-//     'team/chat'}: its newest lines; the whole log is never read.
-//   - T6: scrolling #desk-team to its top asks log.search {todo:
-//     'team/chat', before: <the oldest line shown>} and shows what comes.
-//   - T3: what arrives is recorded by log.add; what he types by voice.add;
-//     seen by seen.set {id, at} (goal/G33.7: state went); api.fs.saveFile is never
-//     called for any of them.
-//   - T7 (moved from G1.7): it asks backup's status.get and shows the last
-//     check and last copy in #desk-backup, marked job-start-error when an
-//     item was closed after the last check.
-//
-// The suites that mount Desk with a log/log.json fixture move onto
-// deskFake.js (a desk server in memory) with the build.
-// SINCE goal/G33.4 (Andy: "log.add, log.search and pending.get: delete them.") the server keeps no log of lines and
-// Desk reads and records none: T6 (server) went, and T5b and T3 hold that the old lines are neither read nor recorded.
-// SINCE goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database.") there is no Team tab and no
-// group chat goal/G0: T6 (scrolling Team) went, T5b holds that goal/G0 is never asked, and his typed Team line in T3
-// went with the tab.
-
+//   DESK (shell/desk/desk.js), through api.verb('desk.<verb>', args), never api.fs for its record:
+//   - T5: nothing is read from Desk's folder.
+//   - T5b: no log verb (log.search, log.add, pending.get: goal/G33.4, Andy: "log.add, log.search and pending.get:
+//     delete them.") and no ask naming the group chat goal/G0, which is gone (goal/G43.22).
+//   - T3: no agents packet is heard and nothing goes to log.add; nothing to voice.add; no seen.set on goal/G0, no
+//     state.set (goal/G33.7), and api.fs.saveFile is never called.
+//   - T7: it asks backup's status.get and shows the last check and last copy in #desk-backup.
+// The "names no shell/desk" check reads desk.js whole, comments included, and its comments name the face file
+// shell/desk/desk.js, so it fails on comments, not code.
+// STALE (the DESK half): shell/desk/desk.js loads its parts through window.spirit.require (deskNeed) at mount, and
+// load() below hands it a window without one, so the mount throws "no spirit.require on this page".
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -114,11 +90,11 @@ async function serverPart(scratch) {
   }
   function stop(kid) { return new Promise(function (r) { if (kid.exitCode !== null) return r(); kid.once('exit', r); kid.kill(); }); }
 
-  // The goal whose seen is read: seen.json held the group chat's (goal/G0), which the desk no longer holds (goal/G43.22).
+  // The goal whose seen is read: an ordinary goal, since the desk holds no group chat goal/G0 (goal/G43.22).
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'A goal to be seen' }, items: [] });
   const kid = await start();
   test.subHeading('goal/G100.6: the server never reads Desk\'s old files in shell/desk');
-  // goal/G33.7: state.get went and seen is one value per item.
+  // There is no state.get; seen is one value per item (goal/G33.7).
   const sn = await call('seen.get', { id: 'goal/G100' });
   const voiceFile = path.join(state, 'voice.jsonl');
   const imported = /IMPORTED/.test(JSON.stringify(sn)) || !!sn.at || fs.existsSync(voiceFile);
@@ -177,8 +153,8 @@ function mount(fake, files, saved) {
 }
 
 async function deskPart() {
-  // Two sessions: the older names goal/G101.1 and goal/G101.2; the newest names goal/G101.1
-  // and goal/G101.3, so goal/G101.2 is closed and must never be searched.
+  // The fake desk's log: two sessions and lines under items and team/chat. Since goal/G33.4 Desk reads none of it;
+  // the checks below hold that it is never asked for.
   const s1 = JSON.stringify({ goal: { id: 'goal/G101', title: 'The goal' }, rules: [], items: [
     { id: 'goal/G101.1', title: 'ITEM-ONE' }, { id: 'goal/G101.2', title: 'ITEM-TWO-CLOSED' }] });
   const s2 = JSON.stringify({ goal: { id: 'goal/G101', title: 'The goal' }, rules: [], items: [
@@ -191,26 +167,23 @@ async function deskPart() {
     row('claude-windows', 'ask', 'Go on one?', 'goal/G101.1'),
     row('wsl-claude', 'note', 'STATUS: coding', 'goal/G101.3'),
   ];
-  // Then a long Team chat, far more than one answer holds: an approach that
-  // read only the newest lines of everything would never see the ask above.
+  // Then a long Team chat, far more than one answer holds.
   for (let i = 0; i < 60; i++) log.push(row(i % 2 ? 'andy' : 'claude-windows', 'note', 'TEAMLINE-' + String(i).padStart(2, '0') + ' ' + 'x'.repeat(260), 'team/chat'));
-  // Andy closed goal/G101.2 after the backup's last check (T7).
+  // A close of goal/G101.2 after the backup's last check.
   log.push(row('andy', 'answer', 'closed.', 'goal/G101.2'));
 
   const fake = deskFake.create(log);
   fake.backup = { lastCheck: new Date(T0 + 10 * 60000).toISOString(), lastCopy: new Date(T0 + 9 * 60000).toISOString(), lastError: '' };
   const files = {};
   const saved = [];
-  // T5's List checks (drawn from the session, filled per item) retired with
-  // desk/G2.6: the List is items.search's answer, in deskList.js.
+  // The List is items.search's answer (desk/G2.6); its checks are not here.
   const doc = mount(fake, files, saved);
   await settleLong();
   test.subHeading('T5: nothing is read from Desk\'s folder');
   if (!doc.loaded.some(function (f) { return /^log\//.test(f) || f === 'state.json' || f === 'seen.json'; })) test.check('no log, state or seen file was read from Desk\'s folder');
   else test.fail(OWED + 'Desk still read ' + JSON.stringify(doc.loaded));
 
-  // SINCE goal/G33.4 the old lines under team/chat are read no more: log.search is gone. SINCE goal/G43.22 there is no
-  // group chat: the page asks nothing of goal/G0 (until then the All tab drew goal/G0's chat).
+  // log.search is gone (goal/G33.4), and there is no group chat (goal/G43.22): the page asks nothing of goal/G0.
   test.subHeading('T5b: the old lines are never read; goal/G0 is never asked');
   const groupAsks = fake.calls.filter(function (c) { return c.server === 'desk' && (c.args || {}).id === 'goal/G0'; });
   const logAsks = fake.calls.filter(function (c) { return c.verb === 'log.search' || c.verb === 'log.add' || c.verb === 'pending.get'; });
@@ -220,23 +193,21 @@ async function deskPart() {
   test.subHeading('T3: what arrives and what Desk decides go to the server, never to files');
   if (doc.arrive) doc.arrive({ from: 'wsl-claude', kind: 'note', text: 'ARRIVED-LINE', todo: 'goal/G101.3' }, { hash: 'arrived-1', fromKey: WSL, sentAt: new Date().toISOString() });
   await settleLong();
-  // goal/G33.4: the page no longer hears the agents app's packets, and records nothing of them.
+  // The page hears no agents packets, and records nothing of them (goal/G33.4).
   const added = fake.calls.filter(function (c) { return c.verb === 'log.add'; });
   if (!doc.arrive && !added.length) test.check('no agents packet is heard, and nothing goes to log.add (goal/G33.4)');
   else test.fail('goal/G33.4: the page still hears agents packets (' + !!doc.arrive + ') or asked log.add ' + added.length + ' time(s)');
-  // NO voice.add ANY MORE (goal/G2.1 note 8). His typed Team line, which this once checked, went with the Team tab
-  // (goal/G43.22); the page still sends nothing to voice.add.
+  // NO voice.add (goal/G2.1 note 8): the page sends nothing to it.
   if (!fake.voice.length) test.check('nothing went to voice.add');
   else test.fail('OWED by goal/G2.1: the page still sends voice.add ' + JSON.stringify(fake.voice));
-  // goal/G33.7: state.set went. The seen it kept went by seen.set on the group chat goal/G0, gone with goal/G43.22.
+  // There is no state.set (goal/G33.7) and no group chat goal/G0 to set a seen on (goal/G43.22).
   const sets = fake.calls.filter(function (c) { return c.verb === 'seen.set' && c.args && c.args.id === 'goal/G0'; });
   const stateSets = fake.calls.filter(function (c) { return c.verb === 'state.set'; });
   if (!saved.length && !sets.length && !stateSets.length) test.check('no seen.set on goal/G0; no state.set; api.fs.saveFile was never called');
   else test.fail(OWED + 'saveFile called for ' + JSON.stringify(saved) + '; seen sets on goal/G0 ' + sets.length + ', state sets ' + stateSets.length);
 
-  // The red mark for "an item closed after the check" read Andy's "closed."
-  // line, and a close is a press since desk/G2.6: that mark waits on the desk
-  // server saying when it last closed something.
+  // No red mark for "an item closed after the check" is asserted: a close is a press (desk/G2.6), and the desk
+  // server does not say when it last closed something.
   test.subHeading('T7: Desk shows the backup\'s last check and copy');
   const hhmm = function (iso) { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
   const bk = doc.getElementById('desk-backup').innerHTML;

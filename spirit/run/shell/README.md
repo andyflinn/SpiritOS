@@ -1,47 +1,44 @@
-# `shell/` — the optional layer, offered as files
+# `shell/` — apps of the loopback shell, and what they share
 
-**G4, `design/shell/PUBLIC-APP-SERVER.md`:** *"Elements and style
-adoption are separately optional. The provider is the shell's **folder**,
-not its process — every clone carries `shell/` whether or not
-anything launches it. 'Paints, never decides' is the condition of being
-offerable at all."*
+Each folder `shell/<name>/` is one app: `<name>.js` is its code and
+`<name>.json` its manifest (`runs`, `name`, `description`, `icon`,
+`hidden`, `type`, `server`, `owner`). The loopback page
+(`spirit/run/spirit/shell/index.html`) loads the old shell,
+`spirit/run/spirit/client/shell.js`, which reads these manifests, lists the
+apps that run at home and mounts one by its script path
+(`shell/<name>/<name>.js`). An app's own files are kept in its own folder
+through `spirit.core.fs.createScopedFs('<name>')` (`kernel.js`).
 
-## What is here
+| folder | what it is |
+|---|---|
+| `chatter/` | the face of this node's chatClerver (`spirit/run/process/js/chatClerver/`) |
+| `desk/`, `deskDetails/` | Andy's desk and one row of it, over the desk server (`spirit/run/process/js/desk/`) |
+| `falloutHistory/` | the flips of one tested thing (its manifest runs nowhere) |
+| `grants/` | who may call which api |
+| `info/` | the name and the sentence this node says about itself |
+| `introSpector/` | call what a party lets you call |
+| `jobs/`, `jobsDetails/` | the Job Monitor and one job |
+| `join/` | the steps a new node takes; the face's boot (`spirit/run/spirit/shell/boot.js`) loads `join.js` at home itself |
+| `relayMonitor/` | the relays this node owns |
+| `rotateKey/` | replacing this node's key |
+| `ruleDetails/` | one rule of the desk |
+| `shared/` | modules apps share: `ask.js`, and `shared/js/` the desk's elements (`deskChat`, `deskElement`, `deskRunStatus`) |
+| `test/` | `faceStarApps.js` |
 
-| file | utility | what taking it means |
-|---|---|---|
-| `tokens.css` | `tokens` | colours, spacing and faces as custom properties, and the dark answer as a redefinition of the same names |
-| `elements.css` | `elements` | opt-in classes that READ tokens with fallbacks, so they render without them |
+`navigationWrapper.js` is the shell's one stack of pages
+(`spirit.elements.navigation`); the face's boot loads it from home with
+its other parts.
 
-`dialogs` is the third name in the vocabulary (`faceServer.js`,
-`UTILITIES`) and **is not provided yet**. It is listed there because the
-grant is a contract decision and the file is a deployment fact — an app
-may declare it, and will be granted nothing until this folder offers it.
+## What is core
 
-## How an app takes it
+`spirit/run/spirit/coreFiles.js` decides it. Here: `navigationWrapper.js`,
+all of `join/`, and the code files of the folders on its coded `INTRINSIC`
+list (`grants`, `info`, `introSpector`, `jobs`, `jobsDetails`, `join`,
+`relayMonitor`, `rotateKey`). A manifest is never core. `shared/` holds
+no core file (Andy: *"no "core" files should reside in shell/shared/ since
+that folder was meant to be a place where non-intrinsic apps could share
+modules"*).
 
-In its manifest, and nowhere else:
-
-```json
-{ "surface": ["verb"], "utilities": ["elements"], "posture": "strict" }
-```
-
-**Declaring nothing is handed nothing.** Absent means nothing, because
-the permissive default would make the app contract a check that cannot
-fail.
-
-**And the two are separately optional**, which is asserted rather than
-promised: `appServerBoundary.js` plants an app that asks for `elements`
-alone and requires that `dialogs` does not arrive with it.
-
-## The rule this folder lives under
-
-**Paints, never decides.** A token or a class that carried a decision
-would make every app adopting it inherit that decision, and an app cannot
-refuse what it did not know it was taking. So: custom properties and
-opt-in class names. Nothing here selects a bare element, so linking a
-file cannot restyle a page that merely linked it.
-
-**This is a folder, not a process.** Nothing launches to make it
-available, nothing is running for an app to depend on, and a clone that
-never starts a shell still carries it.
+The shell's frame and its style sheets (`index.html`, `face.html`,
+`boot.js`, `tokens.css`, `elements.css`, `shell.css`) are not here: they
+are in `spirit/run/spirit/shell/`.

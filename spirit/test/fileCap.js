@@ -1,11 +1,11 @@
 'use strict';
 
-// fileTransfer goal/G1.5: the fileServer holds at most 32 files. Red on today's tree.
+// fileTransfer goal/G1.5: the fileServer holds at most 32 files.
 //   Andy: "i'd rather limit the number of files that can exist in fileServer. that number would be bounded by how
 //   many verb-hash records fit in MAX_PAYLOAD, and be done with this discussion, don't forget: a file inside of
 //   fileServer is otherwise useless to the owner, and takes up diskspace for who-knows-who?"
 //   Andy: "make the limit 32. that's enough. we'll find a method later to clean up that folder."
-// The contract the builder follows (paths and names this red fixes, argue them in goal/G1.5 before building):
+// The contract checked here:
 //   The server is spirit/run/process/js/fileServer/fileServer.js, started like desk: [file, '{}', --pipe, --state];
 //   its store lives under the node's state. push {path} answers {hash}, the hash being the file's id, one string
 //   everywhere: 'verb-' + sha256 base64url, 48 characters (goal/G1.3, THE FILE ID).

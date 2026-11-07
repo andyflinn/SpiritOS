@@ -5,11 +5,15 @@
 //   this never happen again. where the fixing you're trying is only for desk", "would have been diagnosed in an
 //   instant had the shell rejected the package. THE SHELL CHOKED", "and downstream who else didn't do their job.
 //   think!", "and , like i said, this needs a test".
-// The contract the builder follows (one limit, MAX_PAYLOAD, at every stage a payload passes):
+// The contract (one limit, MAX_PAYLOAD, at every stage a payload passes):
 //   1. appServer measures every reply before it leaves; one over the limit is refused by the server itself,
 //      answer-too-large, with extra.bytes and extra.max. Checked on a throwaway server, raw on its pipe.
-//   2. spirit.core.jobs.publish (moved from appServer, goal/G29.15) refuses an object over MAX_PAYLOAD (returns false) and says so on stderr, by name.
-//   3. The node's jobs.update door refuses a body over its limit by name (4xx), and the job keeps its old app.
+//   2. spirit.core.jobs.publish (goal/G29.15) refuses an object over MAX_PAYLOAD (returns false) and says so on stderr,
+//      by name. CHECKED ON kernel.js, WHICH NO LONGER HAS IT: spirit.core.jobs went to spirit.js (spirit.jobs, goal/G40.6;
+//      kernel.js says so), so 2 fails on a TypeError.
+//   3. The node's jobs.update door refuses a body over its limit by name (4xx), and the job keeps its old app. THE
+//      NODE HAS NO jobs.update VERB (server.js's jobs mount: search, get, create, cancel, delete), so 3 fails on
+//      "no such verb".
 //   4. jobs.updateJob refuses an app object over MAX_PAYLOAD: the job is unchanged and no job-updated is emitted,
 //      so nothing oversized is ever written into a page's stream.
 //   (5, the shell handing on an oversized object, is in listeningApp.js.)
@@ -36,8 +40,8 @@ function freePort() {
     const s = net.createServer().listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
   });
 }
-// A raw request on a server's pipe, written by hand on a socket (as agentsVerb.js's stand-in is), so what comes
-// back is the server's own answer, not a client's verdict, and this suite reaches for no http module.
+// A raw request on a server's pipe, written by hand on a socket, so what comes back is the server's own answer, not a
+// client's verdict, and this suite reaches for no http module.
 function rawAsk(pipe, body) {
   return new Promise(function (resolve) {
     const payload = JSON.stringify(body);
@@ -119,7 +123,8 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
   // ── 3. the node's jobs.update door ───────────────────────────────────
   test.subHeading('3. the node\'s jobs.update door refuses an oversized body by name');
   const root = setupRelayFakes('sharedLimit').andy;
-  // goal/G16.3: the node's relay list is node state, spirit/state/relays.json.
+  // A relays.json naming nowhere. relayKeys.js deletes it at first read and copies only the urls it holds a pin for
+  // (none here), so the node starts with no relay.
   fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'spirit', 'state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   const port = await freePort();

@@ -1,28 +1,24 @@
 'use strict';
 
-// goal/G8.12: the live verifier tab, with the watcher fix and the BOARD.md removal folded in. Red on today's tree;
-// claude-windows wrote it from G8.12's box and does not build it.
+// goal/G8.12: the live verifier tab, and no BOARD.md.
 //   Andy, 2026-10-09: "it should refresh by itself", "the new tab in desk should listen to real events from verifier,
 //   and what now is displayed as a log.. should be an updated status message underneath a progress bar, so i can see
 //   what verifier is testing, if it's on a full run, and for that run a progress bar, with running status messages one
 //   line at the time...", "and after all is done, it should count down idle time", "why can't you fold things into
 //   items where it's convenient to do it in one go?", and "get rid of that damn BOARD.md".
 //
-// WHAT IS TRUE TODAY (read at fec1be3e): the tab asks deskVerify `now` when opened and draws records as a list; nothing
-// is published; the watcher starts a read every watchMs without waiting for the last (one word gave four passes on his
-// node); runAll rewrites BOARD.md at the end of every full run.
-//
-// THE SHAPE ASSERTED, the red writer's reading, posted under goal/G8.12 for him to overrule:
-//   1 THE WATCHER went with goal/G33.3: deskVerify reads nothing of the desk; a run is handed to it (run {suites,
-//     commit}), so its section here went too.
-//   2 PUBLISH: deskVerify publishes (spirit.core.jobs.publish) one plain object every time its run changes:
+// THE SHAPE ASSERTED:
+//   1 deskVerify reads nothing of the desk (goal/G33.3); a run is handed to it (run {suites, commit}).
+//   2 PUBLISH: deskVerify publishes (deskVerify.js say, spirit.events.publish) one plain object every time its run
+//     changes:
 //       {doing: 'run' | 'idle', suite, index, of, tests, expected, line, since}
 //     index/of: which suite of how many; tests: assertions the running suite has printed so far; expected: how many
 //     tests that suite had in the dataset last time (0 when never seen); line: one status sentence. When the run ends
 //     it publishes doing 'idle', its since being when the last run was handed to it - what the countdown counts from.
 //   3 THE FACE: the tab subscribes with api.onPublished(fn, 'deskVerify') and repaints from each object: a progress bar
-//     and ONE status line under it, replaced by each event, never appended; idle, a countdown to idle time.
-//   4 BOARD.md: runAll no longer writes it.
+//     and ONE status line under it, replaced by each event, never appended; idle, a countdown to idle time, shown only
+//     on a verifier with chores (hasChores, goal/G33.6).
+//   4 BOARD.md: runAll does not write it.
 // NOT ASSERTED: layout, colours, the exact words of the line, the countdown's format beyond minutes.
 
 const fs = require('fs');
@@ -52,8 +48,7 @@ test.startTest('goal/G8.12: the live verifier tab, what deskVerify publishes as 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskverifylive-'));
 
 // A node that runs a desk, answers item.get with each item's test files, takes the job's reports (what
-// appServer.publish sends) and keeps every desk call. (Its pages of the desk's `changes` went with goal/G33.4: the verb
-// is gone, and deskVerify never asked it.)
+// appServer.publish sends) and keeps every desk call.
 function fakeNode(opts) {
   return new Promise(function (resolve) {
     const st = { asks: [], published: [], files: opts.files };
@@ -109,7 +104,7 @@ function startVerify(name, node, values) {
 async function publishHalf() {
   test.subHeading('1. deskVerify publishes its run as it goes');
   const node = await fakeNode({ files: { 'goal/G100.1': [SLOW, FAST] } });
-  // Since goal/G33.3 a run is handed to deskVerify with run {suites, commit}. No pull: the suite's own probes make the
+  // A run is handed to deskVerify with run {suites, commit} (goal/G33.3). No pull: the suite's own probes make the
   // tree dirty.
   const v = startVerify('publish', node, { suiteMs: 60000, pull: '' });
   try {
@@ -198,19 +193,19 @@ async function faceHalf() {
   else test.fail(OWED + 'the status lines in #desk-verifier: ' + short(b));
   if (/zzLiveA\.js/.test(b) && /suite 1 of 2/.test(b)) test.check('it says what it is testing: the suite, 1 of 2');
   else test.fail(OWED + 'no item or suite in #desk-verifier: ' + short(b));
-  // GROWN AFTER HIS LOOK (claude-windows): "i want that damn log display gone. and only show the latest status."
+  // Andy: "i want that damn log display gone. and only show the latest status."
   if (!/zzLogRow\.js|a logged title|Records, newest first/.test(b)) test.check('no records list: the log display is gone');
   else test.fail(OWED + 'the tab still draws the records list: ' + short(b.slice(b.indexOf('Records'))));
   if (!fake.calls.some(function (c) { return c.server === 'deskVerify' && c.verb === 'records.search'; })) test.check('and the tab asks for no records at all');
   else test.fail(OWED + 'the tab asked deskVerify records.search');
-  // GROWN AFTER HIS LOOK (claude-windows). Andy: "just gray out the progress bar so i can see the layout, and the
+  // Andy: "just gray out the progress bar so i can see the layout, and the
   // progress bar can show the countdown live, and only go gray when that's done. but the progress bar stays visible."
   // So ONE bar, always drawn, its phase readable as data-phase: run (a check running), countdown (idle, the hour not
   // yet over), done (the hour over, or nothing known yet): gray.
   const barOf = function (html) { const m = /<progress[^>]*>|<[^>]*role="progressbar"[^>]*>/.exec(html); return m ? m[0] : ''; };
   if (/data-phase="run"/.test(barOf(b))) test.check('during a run the bar says so: data-phase="run"');
   else test.fail(OWED + 'the bar during a run reads ' + short(barOf(b) || '(no bar)'));
-  // SINCE goal/G33.6 the countdown shows only on a verifier with chores (hasChores), and idle the bar stands grey: idle is
+  // The countdown shows only on a verifier with chores (hasChores, goal/G33.6), and idle the bar stands grey: idle is
   // no run (Andy: "The desk verifier still thinks 'idling' is a run").
   await send({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 18 * 60 * 1000).toISOString(), hasChores: true });
   const idle = body.innerHTML;

@@ -1,8 +1,8 @@
 'use strict';
 
 // spirit/test/deskItemsFind.js
-// goal/G3.13, as goal/G33.7 leaves it: finding items by their lines. items.find WENT WITH goal/G33.7 (the approved verb
-// list: "items.find (agents only; items.search covers it)"), so what this suite asserts is that items.search covers it.
+// goal/G3.13: finding items by their lines, through items.search. The desk serves no items.find (goal/G33.7, the
+// approved verb list: "items.find (agents only; items.search covers it)").
 //
 //   Andy, 2026-10-03 (goal/G3.13): "the item search should consider searching chat items, on the deskServer side, and
 //   the resulting item titles (or keys) should be returned", "Server-Side searches can expand to chat-lines without cost
@@ -16,8 +16,7 @@
 //      a closed item is answered when includeClosed asks for it.
 //   3. A search is a read: it writes no record; an argument it does not name is refused no-such-argument.
 //   4. Cut: with 90 items matching by a line, the answer fits one answer and says more, a filler first.
-// No longer asserted, with items.find gone: the line filters by, since and before over items (chat.search keeps them over
-// lines, deskChatSearch.js), and the order by the newest matching line.
+// Not asserted here: the by, since and before filters (chat.search has them over lines, deskChatSearch.js).
 
 const fs = require('fs');
 const os = require('os');
@@ -70,8 +69,7 @@ async function up() {
 async function changeNow() { const r = await call('item.get', { id: 'goal/G100' }, ANDY); return (r.body || {}).change; }
 
 async function main() {
-  // The world: one goal, four items, written by the owner (goal/G29.21), seeded before the desk starts (goal/G33.7:
-  // session.set went).
+  // The world: one goal, four items, written by the owner (goal/G29.21), seeded before the desk starts.
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Finding' }, items: [
     { id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] },
     { id: 'goal/G100.2', title: 'Rails for the List', blocks: ['goal/G100'] },

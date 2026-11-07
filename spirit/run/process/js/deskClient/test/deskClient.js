@@ -105,7 +105,8 @@ Module._load = function (request, parent, isMain) {
   if (request === 'chokidar') return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
   return realLoad.apply(this, arguments);
 };
-// resubscribeMs 1: any silence at all would count as expired, so a client that still expires its subscribe shows it.
+// resubscribeMs 1 is read by nothing: deskClient.js has no such value. It subscribes again after QUIET_MS (10 s) of
+// silence (resubscribeQuiet, goal/G41.12), so the 30 ms silence below never reaches that.
 process.argv = [process.argv[0], FILE, JSON.stringify({ historyMax: 1000, resubscribeMs: 1 }), '--state', STATE,
   '--node', JSON.stringify({ name: SELF, publicKey: SELF_KEY, ownerKey: '' })];
 
@@ -120,8 +121,8 @@ function push(row) {
   cacheRows = DESK_API.cache.keep(cacheRows, r);
   return Promise.resolve(served.opts.stream.onRow(r, DESK));
 }
-// A row of a push, as appServer's streamListener takes it (spirit/appServer.js): into the data set under noting, so a push
-// being renewed keeps what it wrote; the push's end, { bootstrapped: true }, is no row: the renewal ends there.
+// UNUSED: no case below calls pushNoted, and spirit/data.js has no noting or renewed for it to call; a push's end is
+// { full: true, end: true } since goal/G41.12, and appServer lands a push (spirit/test/appServer.js).
 function pushNoted(row) {
   if (row && row.bootstrapped === true) { curD.renewed(); return Promise.resolve(); }
   change += 1;
@@ -365,8 +366,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   const w4 = await next(w1.key);
   ok(has(w4, 'and then this') && !has(w4, 'read me first') && w4.key && w4.key !== w1.key, 'naming its key drops the wake: the next wait hands only what came after, under a new key', 'fourth wait: ' + short(w4));
 
-  // A delivery of several rows is appServer's bundle since goal/G41.12 (one JSON array, taken row by row before onRow);
-  // deskClient sees each row alone, so the old { change, rows } bundle is no part of it (spirit/test/appServer.js).
+  // A delivery of several rows is appServer's bundle (goal/G41.12: one JSON array, taken row by row before onRow);
+  // deskClient sees each row alone (spirit/test/appServer.js).
   const b1 = w4;
 
   test.subHeading('the desk\'s line addressed to the cap agents wakes them, with no take, and entitles them to the box');
@@ -383,6 +384,8 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
 
   // ── THE FLOOD (Andy, goal/G41.11: "and we MUST look more precisely at performance again"; "deskClient keeps it's cache
   // ... through new subscribes"; "subscribes over peerPost should NOT expire, at least not on the client-side") ──────
+  // The silence below is 30 ms, inside the 10 s after which a quiet stream is subscribed again (goal/G41.12: "the client
+  // after getting nothing for a while must resubscribe"), so this checks only that a short silence asks nothing.
   test.subHeading('a subscribe over peerPost does not expire on the client side');
   let readKey = (w4 && w4.key) || '';
   for (const k of [typeof c1 !== 'undefined' && c1 && c1.key, typeof b1 !== 'undefined' && b1 && b1.key]) if (k) readKey = k;
@@ -422,7 +425,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   delete desk.answers['agent.state'];
   if (s5 && s5.key) readKey = s5.key;
 
-  // ── 0ebb4abd: THE POSITION, THE SAVED CACHE AND THE SWEEP (goal/G41.11) ────────────────────────────────────────────
+  // ── THE POSITION, THE SAVED CACHE AND THE SWEEP (goal/G41.11) ──────────────────────────────────────────────────────
   // goal/G41.12: saving is appServer's (within 10 ms of each row, spirit/test/appServer.js); deskClient only switches it on.
   test.subHeading('the cache is appServer\'s: deskClient switches it on and saves nothing itself');
   ok(served.opts.stream && served.opts.stream.cache === true, 'deskClient follows the desk\'s stream with the cache switch on', 'stream: ' + short(served.opts.stream && { cache: served.opts.stream.cache }));
@@ -557,10 +560,9 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
 
   // ── goal/G41.22: EVERY WAKE NOT YET READ COMES BACK IN ONE, NONE LOST AND NONE TWICE, ALSO AFTER A RESTART ─────────────
   // Andy, the box (Desk Ear): "every wake not yet read comes back in one, none lost and none twice, also after a node
-  // restart." Found live: after a node restart the ear handed old lines back one per wake; lines a wake carried while
-  // nobody read it were lost.
-  // Within one run this half holds on the code it was written on (2fe2620d), so it is a guard, not a red:
-  // a break of it fails, its holding counts nothing. The restart below is the red.
+  // restart."
+  // Within one run this half is a guard: a break of it fails, its holding counts nothing. The restart below checks the
+  // wake kept in deskClient's settings (saveWake) and read back at start.
   test.subHeading('wakes nobody read come back in one, each line once (a guard within one run)');
   await push(line(ITEM4, 'wsl: wake A', at()));
   await settle();

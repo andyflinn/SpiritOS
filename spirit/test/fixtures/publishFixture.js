@@ -2,6 +2,8 @@
 
 // Spawned by publishChecks.js as a real app server (appServer.serve, a --pipe of its own).
 // argv[2] says what it publishes once it is up: 'small', 'big' or 'burst'.
+// It publishes through appServer.spirit.core.jobs.publish, which appServer.js no longer exports (spirit.js's
+// spirit.jobs since goal/G40.6), so the publish throws.
 const appServer = require('../../run/spirit/appServer.js');
 
 const mode = process.argv[2] || 'small';

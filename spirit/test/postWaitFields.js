@@ -1,30 +1,23 @@
 'use strict';
 
 // goal/G4.32: each post's closing traffic row records how long it waited in the queue (busy retries included) and how
-// many tries it took. Red on today's tree; wsl-claude wrote it, claude-windows builds it.
-//   Found under goal/G4.30 (2026-10-04): the "sent" row is written when a post ENTERS the queue (peerPost.js 977-980,
-//   note before queue.add), and a busy retry leaves no row, so a post that waited 5 s behind a busy target read as
-//   5 s of flight; wsl-claude and claude-windows both misread retries from it.
+// many tries it took, so a wait behind a busy target is not read as flight.
 //   Andy, 2026-10-04: "what could be proven: how much time is spent from entering the queue to actually being posted,
 //   an interesting stat could be had from that."; to Q7 (record it on the traffic row): "i'm for it: because it is a
 //   problem area, and a possible indicator for the ouside world (relay/peer) not keeping up anymore."; "i like to know
-//   every step of our dear little packets."; the grant for js/peerPost.js (G1, G2) and his Go on goal/G4.32.
+//   every step of our dear little packets."
 //
-// THE SHAPES (claude-windows's laying-out under goal/G4.30; the builder may argue them in Desk first):
+// THE SHAPES:
 //   1  The closing row of a post (receipted, refused, no-answer) carries waitMs: from entering the queue to the start
-//      of the attempt that finally left, busy waits included; and attempts: how many tries it took.
+//      of the attempt that finally left, busy waits included; and attempts: how many tries it took (peerPost.js).
 //   2  Its existing ms stays queued-to-end, so ms - waitMs is the flight.
-//   3  No schema change: the traffic table keeps fields it does not name in its extra column (nodeStore.js 116).
-//      BUT trafficLog.note() copies a fixed list of fields into the row (trafficLog.js, note: dir, kind, ... ms,
-//      payload), so the two new ones must be added there too: a second core file, js/trafficLog.js, with its grant.
-//
-// FOUND IN THE DRY RUN: patching peerPost.js alone left both fields off the row (note() dropped them); with
-//   trafficLog.js's note() copying waitMs and attempts as it copies ms, 5 of 5.
+//   3  No schema change: the traffic table keeps fields it does not name in its extra column (nodeStore.js), and
+//      trafficLog.note() copies waitMs and attempts onto the row as it copies ms.
 //
 // THE WORLD: a real peerPost with a real traffic log in a scratch home; its relay is a stand-in `request` that answers
 // "target is busy" twice (retryAfterMs 5000, as router.js quotes) and accepts the third, after which a receipt signed
-// by the target arrives, as the stream would carry it. With goal/G4.30's adaptive retry the two busy waits are 250 and
-// 500 ms.
+// by the target arrives, as the stream would carry it. postQueue's busy step (goal/G4.30) makes the two busy waits 250
+// and 500 ms.
 
 const os = require('os');
 const fs = require('fs');

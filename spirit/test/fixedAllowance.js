@@ -90,29 +90,21 @@ test.subHeading('It holds: the owner always, members up to the allowance');
   // ── BERT AND CARA ARE SEEDED, BECAUSE THIS STATE CAN NO LONGER
   //    HAPPEN — AND THAT IS THE POINT ────────────────────────────────
   //
-  // All three used to join through `member()`. Both doors into "more
-  // members than streams" are now shut:
+  // Both doors into "more members than streams" are shut:
   //
-  //   ADMISSION — since 2026-09-23 a claim past the RAM-derived seat
+  //   ADMISSION — a claim past the RAM-derived seat
   //   count is refused (Andy: "RAM cap and member cap go lock-step",
   //   "why admit a member when we cannot guarantee service for that
   //   member? that'd be horrible").
   //
-  //   SHRINKING — reconfigure already refused it, and has for longer:
-  //   "that RAM figure allows N connection(s) and this relay has M
-  //   member(s), so M-N could never connect. Remove members first —
-  //   nobody is evicted by a number." Andy: "the owner must evict before
+  //   SHRINKING — reconfigure refuses it (relay.js): "that RAM figure
+  //   serves N member(s) ... Remove members first — nobody is evicted by
+  //   a number." Andy: "the owner must evict before
   //   shrinking."
-  //
-  // A FIRST PATCH OF THIS BLOCK CLAIMED A SHRINK COULD LEAVE MEMBERS
-  // STRANDED and seeded the row on that basis. It cannot; the sentence
-  // was written before the reconfigure path was read. Corrected here
-  // rather than left, because a false reason in a comment outlives the
-  // person who wrote it.
   //
   // So the rows are written straight to the store to build a state the
   // relay will not produce, and the stream refusal below is tested as
-  // what it now is: DEFENCE IN DEPTH behind two closed doors, not a path
+  // what it is: DEFENCE IN DEPTH behind two closed doors, not a path
   // anybody travels. Deleting it would leave the guarantee resting on
   // those two doors alone.
   const store = relayStore.open(R.home);

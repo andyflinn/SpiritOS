@@ -1,148 +1,21 @@
 // ---------------------------------------------------------------------------
-//  spirit/test/blocking.js — WHAT AN AGENT IS WAITING ON ANDY FOR, RIGHT NOW.
+//  spirit/test/blocking.js — rows of what an agent waited on Andy for (2026-09-26).
 //
 //    Andy, 2026-09-26: "This is important. we can make more progress if i
 //    understand where I'm blocking progress" — and "as soon as i block, the
 //    board needs to show it."
 //
-//  ── WHY THIS FILE HAS TO EXIST, WHEN NOTHING ELSE ON THE BOARD DOES ───
-//
-//  The board's own rule is that blocked is a JOIN, NOT A FLAG (runAll.js,
-//  `blockedNote`): a requirement's document says what it waits on, and
-//  nothing an agent had to remember to set. That rule is right and it is
-//  kept everywhere it can be.
-//
-//  It cannot be kept here. A BLOCK IS AN EVENT. It happens mid-sitting, at
-//  the moment an agent stops and cannot go on, and there is nothing in the
-//  tree that has changed for a join to notice. Documents are written at
-//  sitting boundaries — hours or days later — so by the time a document
-//  could say "blocked on Andy", the sitting is over and the waiting is
-//  already spent. That is exactly the attention this page exists to save.
-//
-//  So it is a declaration, the same shape as `test.awaiting(...)`: an agent
-//  writes it, the board reads it, and the cost of forgetting is visible
-//  rather than silent.
-//
-//  ── THE RULES, SO IT CANNOT ROT ───────────────────────────────────────
-//
-//  1. AN AGENT THAT STOPS ON ANDY ADDS A ROW BEFORE IT ANSWERS HIM. Not at
-//     the end of the sitting, not in the close — at the moment of asking.
-//     A question put to him in chat and not written here is a block the
-//     board cannot show, which is the whole failure being fixed.
-//
-//  2. THE AGENT THAT ASKED REMOVES THE ROW, in the same commit as the work
-//     the answer unblocked. Nobody else removes it; nobody removes it
-//     because it looks old.
-//
-//  3. `asked` IS THE DATE HE WAS ASKED, not the date of the sitting. The
-//     board prints the age from it, so a row nobody cleared reads as "asked
-//     4 days ago" — loud, and cheaper than a flag that lies quietly.
-//
-//  4. ONE ROW IS ONE DECISION. "Look at the brains repo" is not a row;
-//     "which window holds the pen" is. If it cannot be answered yes/no or
-//     with a name, it is not ready to be asked.
-//
-//  5. `costs` NAMES WHAT IS WAITING, in English, because that is the thing
-//     he is deciding about. "the board cannot go green" is a cost;
-//     "gap R13" is not — and even a correctly cited id is not one,
-//     because a citation tells him where to look rather than what it
-//     costs him. (Cited properly here on purpose: cycleCitations reads
-//     this line as code and a bare number would go red, which is the
-//     prose-matched-as-code trap this suite family has now paid for
-//     three times.)
-//
-//  The rows below are real and open as of 2026-09-26.
+//  A data file, not a suite (notASuite.js lists it). It exported the rows the
+//  old board printed: each row asked, settled, who, decision, answer and owed.
+//  Nothing in the tree reads it now (runAll.js does not); what is waiting on
+//  Andy is kept in Desk, as Q checks under its items. The rows below
+//  are the ones left when the board stopped reading it.
 // ---------------------------------------------------------------------------
 
 'use strict';
 
-// ── AND A THIRD STATE: RULED, NOT BUILT ──────────────────────────────
-//
-//   Andy, 2026-09-26: "ok, it needs an hourglass" — of a decision he had
-//   answered whose code nobody had written yet.
-//
-// A row here used to have two states: on the board, or gone. So the moment
-// he ruled, the item vanished — and the WORK his ruling implied vanished
-// with it. That is the same dishonesty the owed list exists to prevent,
-// arriving through the one section that was meant to be about his
-// attention.
-//
-// So a row may carry `settled`: his answer, quoted, and what is still owed
-// because of it. It stops being something that needs him and becomes
-// something that needs us, and it keeps its place on the page under an
-// hourglass rather than disappearing. It leaves when the work lands.
-//
-// A settled row names `owed` and `who`. If nobody can be named, it is not
-// settled — it is abandoned, and it should say so.
-
 module.exports = [
-  // ANSWERED AND BUILT THE SAME SITTING, and the row should have gone when the
-  // work landed rather than waiting for Andy to say "already decided" — the
-  // third time in one day this board asked him for something already built.
-  // 780426a: the ask has a caller in peerPost.js, the format is
-  // faceServer.js:811's, one ask per peer, and on no answer the same 428 as
-  // before. LIVE PASS on spiritos-f6's agent node — one ask, the card
-  // returned, 37 queued reports delivered sealed, outbox drained to zero,
-  // cardVia 'reply' recorded. First reports to reach the owner node since
-  // 2026-09-23. wsl-claude's cardFetch.js is 10/10 green and its three
-  // awaiting assertions flipped with no edit.
 
-  // ANSWERED AND REMOVED. The DEBUG gate sat in ownerEvent, which carries no
-  // payload, while monitorEvent streamed every sealed post's bytes to the
-  // owner whatever the switch said. Moved at bf7bf3a by claude-windows.
-  // Verified by wsl-claude: spirit/test/relayCannotRead.js is 7 of 7, and
-  // relay.js from before that commit turns its control red again.
-  // ANSWERED AND REMOVED. Andy: "we deleted out-queue, kept inqueue, to see
-  // if it'd fix the no cet car implementation, but now we have get card we
-  // keep outqueue again" — then "u fix. go". Fixed in the CATALOGUE, not in
-  // agents.js: no-cipher-key is retry 'after' at 6feb3e0, because the card
-  // ask has a caller now and the refusal means "not this time". Verified by
-  // wsl-claude: spirit/test/agentsOutbox.js is 4 of 4, and putting 'no'
-  // back destroys all three queued reports again.
-  // ANSWERED AND BUILT THE SAME SITTING. It was claude's, and the row should
-  // have gone when the work landed rather than waiting for Andy to say "already
-  // decided" — the THIRD time in one day this board asked him for something
-  // already built. 780426a: the ask has a caller in peerPost.js, the format is
-  // faceServer.js:811's, one ask per peer per minute, and on no answer the same
-  // 428 as before. LIVE ACCEPTANCE TEST PASSED on spiritos-f6's agent node —
-  // exactly one ask, the card returned, 37 queued reports delivered sealed and
-  // receipted, outbox drained to zero, cardVia 'reply' recorded. First reports
-  // to reach the owner node since 2026-09-23. wsl-claude's suite is still the
-  // proof; a live pass is evidence and not an assertion.
-
-  // ANSWERED AND REMOVED BY THE ASKER, which is rule 2 and which I had left
-  // undone until wsl-claude pointed at it. Andy: "yes, we want that ortho-
-  // thinggie." chooseRoute is out of handlePost in 742c5c1, and wsl-claude's
-  // hubPost.js control ran 13/13 on the BEFORE tree and 13/13 on the AFTER —
-  // a real before-and-after rather than a control agreeing with itself.
-
-  // ANSWERED AND REMOVED. Andy, 2026-09-26: "the payload cap is BYTES. that's
-  // the design, and the attitude, of node and relay." So the name was right
-  // and the value was wrong, everywhere — not just where `held` exposed it.
-  // Fixed at relay.js:3002, :4280 and trafficLog, on top of the three post
-  // rows. Historic traffic rows keep the old count and nothing rewrites them,
-  // because that log is permanent by design.
-  //
-  // And he answered the objection nobody had raised yet: "Kanji is denser in
-  // meaning than roman script." A byte cap gives a Japanese writer fewer
-  // CHARACTERS and comparable MEANING, because a kanji carries what a word
-  // carries rather than what a letter carries — so the character count was
-  // the unfair measure all along. Written into limits.js beside the
-  // derivation, where the next person to meet the limit will look.
-
-  // ── A DESIGN WAITING FOR A RULING IS SOMETHING THAT NEEDS HIM ─────────
-  //
-  // Andy asked "where is the design proposal for the relay testing via the
-  // monitor stream?" AFTER it was written, linked from design/README.md and
-  // pushed. It had a row on this board the whole time — but the row said the
-  // WORK was owed by wsl-claude, and never that three questions inside it were
-  // owed by HIM. So the board answered a question he was not asking, and the
-  // design sat unread.
-  //
-  // These three are the document's own OPEN section, unchanged, one row each
-  // because rule 4 above is that one row is one decision. They are short
-  // enough to answer in a sitting and nothing in the design moves until they
-  // are.
   {
     asked: '2026-09-26',
     settled: '2026-09-26',
@@ -163,7 +36,6 @@ module.exports = [
       + 'the wrong emitter; moved at bf7bf3a, now 7 of 7. Still owed: the partner path. '
       + 'Spec: design/relay/PROVING-IT-CANNOT-READ.md.'
   },
-
 
   {
     asked: '2026-09-26',
@@ -198,16 +70,6 @@ module.exports = [
       + 'a safeguard failing, it is THE FINDING — "thus dispoving that the packets are '
       + 'unreadable.... kind of the point of the exercise."'
   },
-  // ANSWERED AND REMOVED. Andy, 2026-09-26: "a puppet always routes requests
-  // through its owner ... the puppet is uable to sign any request with the owners
-  // signature. and that signature must exist before the puppet routes the request
-  // to loopback" — and, on which half decides it: "the second half counts".
-  //
-  // Verified with him: sendPacket (hub.js:2085) only calls router.post, and the
-  // router signs at peerPost.js:756 with the node identity key. No caller supplies
-  // that signature and none can withhold it — which is exactly why it cannot be
-  // the one the switch checks. The shape is now a requirement in
-  // puppetsPending.js: the owner signs the COMMAND, verified before loopback.
   {
     asked: '2026-09-26',
     settled: '2026-09-26',

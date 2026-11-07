@@ -1,19 +1,15 @@
 'use strict';
 
 // spirit/test/discFull.js
-// A DISC THAT WILL NOT TAKE A WRITE — cycle 9, after the cycle record.
+// A DISC THAT WILL NOT TAKE A WRITE.
 //
 //   Andy, 2026-09-22: "does the harness test disc overflow?"
 //
-// It tested a relay over its CONFIGURED figure (discBound.js) and not a
-// disc that has actually run out, which is a different failure with a
-// worse ending. Measured the same hour: `node:sqlite` throws "attempt to
-// write a readonly database" straight out of `mint`, and relayServer's
-// claim route calls into the relay inside a `.then()` — so the throw was
-// an unhandled rejection, and on this Node that ends the PROCESS.
-//
-// A full disc therefore did not refuse a member. It killed the relay, and
-// every connected member with it.
+// discBound.js tests a relay over its CONFIGURED figure; this one tests a
+// disc that has actually run out. A store write that throws out of `mint`
+// or a claim, unguarded, is an unhandled rejection in relayServer's routes
+// and ends the PROCESS, every connected member with it. relay.js catches a
+// disc failure (relayStore.isDiscFailure) and answers 507 instead.
 //
 // WHAT IS ASSERTED HERE: the writes refuse, with a sentence naming the
 // disc; nothing throws; and the things that do NOT touch the store —
@@ -72,18 +68,12 @@ function sealDisc(R) {
 function run() {
   // ── THE CASE chmod CANNOT STAGE, AND THE ONE THAT MATTERS ────────
   //
-  // wsl-claude, 2026-09-22, having filled a real 1 MB tmpfs in an
-  // unprivileged user namespace: a genuinely full disc says **"database
-  // or disk is full"**, errcode 13 (SQLITE_FULL) — and the first guard,
-  // which matched on the message, missed it. `SQLITE_FULL` and `ENOSPC`
-  // are the NAME of the code, never the text. So the relay still died on
-  // exactly the case Andy asked about.
-  //
-  // A read-only file (below) only ever produces errcode 8, so that half
-  // of this suite proves the half that already worked. This section is
-  // the other half, driven by the codes themselves — which is also what
-  // the guard now reads, so a Node or SQLite upgrade that rewords a
-  // message cannot quietly reopen the hole.
+  // A genuinely full disc says "database or disk is full", errcode 13
+  // (SQLITE_FULL); a read-only file (below) only ever produces errcode 8.
+  // So this section is driven by the codes themselves, which is what
+  // relayStore.isDiscFailure reads first (the code's low byte; the
+  // message only as a fallback), so a Node or SQLite upgrade that rewords
+  // a message cannot quietly reopen the hole.
   test.subHeading('The failures a full disc really produces are recognised by their CODE');
   [
     [13, 'database or disk is full', 'SQLITE_FULL — a genuinely full filesystem'],

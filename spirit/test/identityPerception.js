@@ -30,8 +30,7 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('key collision on two generateIdentity(john)');
   }
 
-  // contactBook.handshake (a roll sync) wrote these until 2026-09-19;
-  // it went with the roll readers. Known by handle is the same row.
+  // Known by handle: contacts.acquire writes the row.
   contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'john' });
   contactBook.acquire(annie, { publicKey: johnB.publicKey, publicLabel: 'john' });
   contactBook.acquire(annie, { publicKey: jim.publicKey, publicLabel: 'jim' });
@@ -102,8 +101,8 @@ test.startTest('Identity vs perception (sticks and stones)');
   if (first.ok) test.check('lab mailbox accepts first signed annie');
   else test.fail('annie claim: ' + JSON.stringify(first));
 
-  // Since cycle 4 a second key needs an invite, so two johns is two keys
-  // AND two tokens. The label is not what is scarce — annie can mint
+  // A second key needs an invite, so two johns is two keys AND two
+  // tokens. The label is not what is scarce — annie can mint
   // 'john' as often as she likes — the token is.
   function inviteFor(label) {
     const minted = box.mint(
@@ -276,15 +275,12 @@ test.subHeading('A key that cannot sign is not an identity');
 
 // WHAT THIS IS FOR, and it is a crash rather than a nicety.
 //
-// loadIdentity checked that `privateKey` was a non-empty string. A torn
-// or truncated identity.json passed that, and threw
-// ERR_OSSL_ASN1_NOT_ENOUGH_DATA at the first sign() — synchronously,
-// inside an http handler, with nothing waiting. The node died, and a
-// person watching saw the shell stop responding rather than an error.
-//
-// Found 2026-09-13 by serverSurface.js's hub sweep. Asserted here as
-// well, at the unit, because the integration check can only say "the
-// process survived" and this can say why.
+// A torn or truncated identity.json whose `privateKey` is a non-empty
+// string would throw ERR_OSSL_ASN1_NOT_ENOUGH_DATA at the first sign() —
+// synchronously, inside an http handler, with nothing waiting — and the
+// node would die. So loadIdentity answers null for a key that cannot sign.
+// Asserted here, at the unit, because an integration check can only say
+// "the process survived" and this can say why.
 {
   const good = auth.generateIdentity('andy');
 

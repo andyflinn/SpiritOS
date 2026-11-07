@@ -14,8 +14,8 @@
 //
 // The claim this file makes is not "these strings are allowed". It is
 // that a lever can be drawn by an app that has never heard of it — which
-// only holds if every lever describes itself the same way, and if the
-// only thing that can move a value also records why it moved.
+// only holds if every lever describes itself the same way (readOut and
+// fromReport) — and that nothing moves a gauge's value after boot.
 
 const test = require('./testSupport.js');
 const rule = require('../run/spirit/fieldRules');

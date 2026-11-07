@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/chatMemory.js
-// goal/G4.8: memory.db, the chatClerver's memory of what it witnessed. RED on today's tree: there is no
-// process/js/chatClerver and no memory.db.
+// goal/G4.8: memory.db, the chatClerver's memory of what it witnessed.
 //
 //   Andy, 2026-10-03: "the every node's database is referred to as that users "memory", it is called memory.db and
 //   holds only truth."; "this item should have clearly titled paragraphs, one for each table. the table of chat
@@ -11,9 +10,8 @@
 //   "received messages stores with senders UTC timestamp and receival timestamp"; "so the References section details
 //   are deferred for now"; and, the design ended, "i meant: build it now." His Go is his go-all on goal/G4.
 //
-// THE CONTRACT (the box of goal/G4.8; the names are wsl-claude's, fixed here so the reds of G4.6 and G4.7 and the
-// build agree). A new appServer, process/js/chatClerver/chatClerver.js with its manifest chatClerver.json; no core
-// module is touched.
+// THE CONTRACT (the box of goal/G4.8). An appServer, spirit/run/process/js/chatClerver/chatClerver.js with its
+// manifest chatClerver.json; no core module is touched.
 //   1. THE SERVER. chatClerver.json: kind server, operated by the node. Started as every server is (argv[2] its
 //      args as JSON, --pipe, --state), it answers the door's api ask, and its state folder holds memory.db.
 //   2. THE TABLE OF CHAT LINES, named lines, columns:
@@ -33,9 +31,8 @@
 //      number each), bornAt (when the first line crossed). NO label anywhere: a peer's name is the contact book's.
 //   4. NOTHING ELSE. memory.db holds those two tables and no other (the references table is deferred, G4.4; nothing
 //      cached or derived is kept); no column in either is named label.
-// Not asserted, the builder's: column types beyond what the checks need, indexes, journal mode, the verbs (G4.2,
-// G4.6, G4.7 carry those).
-// Not proven: this suite has run only against today's tree.
+// Not asserted: column types beyond what the checks need, indexes, journal mode, the verbs (G4.2, G4.6, G4.7 carry
+// those).
 
 const fs = require('fs');
 const os = require('os');

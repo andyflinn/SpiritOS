@@ -1,13 +1,13 @@
 'use strict';
 
-// goal/G2.4: the Team tab shows who is working. Red on today's tree. Depends on goal/G2.3 (the server's state).
-//   Andy: "in the [team] tab. every agents tab has a blinking border while it's working.", "i can then check the
-//   tabs in team", and the motive: "i get frustrated if i think the agent ignores my while idle. while an agent is
-//   working, i should leave it alone."
-// The contract the builder follows (the shapes this red fixes, argued in goal/G2.4 before building):
+// goal/G2.4: the Desk shows who is working. Depends on goal/G2.3 (the server's state).
+//   Andy: "every agents tab has a blinking border while it's working.", and the motive: "i get frustrated if i think
+//   the agent ignores my while idle. while an agent is working, i should leave it alone."
+// There is no Team tab: each agent is a bubble in the Desk's tab row (shell/desk/desk.js, goal/G3.12, goal/G4.23).
+// The contract:
 //   1. The goal row's facts carry working: [names], the agents the server (G2.3) holds as working, beside live.
-//   2. An agent's tab inside Team carries data-working="1" while its name is in that list; All and the idle
-//      agents carry none; the shell's markup declares the blink for [data-working] (a CSS animation).
+//   2. A working agent's bubble carries data-working="1" while its name is in that list; the idle agents carry none;
+//      the shell's markup declares the blink for [data-working] (a CSS animation).
 //   3. The mark follows the publish: a goal row published with the name gone redraws the strip without the
 //      mark, and the List asks nothing to learn it — no pulling.
 
@@ -78,7 +78,7 @@ test.startTest('goal/G2.4: the Team tab shows who is working');
       { key: 'l2', label: JSON.stringify(line('l2', 'wsl-claude', WSL_KEY)) }], more: false },
   });
   await settled();
-  // THE MARK IS ON THE BUBBLES (goal/G3.12): the agent tabs inside Team went; the bubbles sit in the tab row.
+  // THE MARK IS ON THE BUBBLES (goal/G3.12), which sit in the tab row.
   const strip = function () { return list.doc.getElementById('desk-tabs').innerHTML; };
   const tabOf = function (name) { return (strip().match(new RegExp('<[^>]*data-bubble="' + name + '"[^>]*>')) || [''])[0]; };
 

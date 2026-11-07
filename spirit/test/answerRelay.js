@@ -4,11 +4,6 @@
 // What a node knows about the relays it talks to: each relay's own key,
 // fetched from its signed door, pinned on first use (relayKeys.js), and
 // refused when a later answer names a different key.
-//
-// This suite once tested the node answering the relay's device-offer
-// request; that went with the device enrolment, removed by goal/G16.2
-// (Andy: "device WILL be KILLED. that's a decision."). The pinning it
-// rested on stays, and is what is asserted here.
 
 const test = require('./testSupport.js');
 const auth = require('../run/spirit/relayAuth');
@@ -20,8 +15,8 @@ const RELAY_URL = 'http://relay.example';
 
 // ── THE FAKE SIGNS AS ITSELF, OR IT PROVES NOTHING (cycle 10's R9) ───
 //
-// The relay's card (the answer to a card ask on its one door since
-// goal/G22.6; it was `GET /api/relay/key`) is signed, so this fake has to
+// The relay's card (the answer to a card ask on its one door, goal/G22.6)
+// is signed, so this fake has to
 // hold the private half of whatever key it serves. A key with no
 // registered signer is served unsigned on purpose: a box we hold no key for.
 const signers = Object.create(null);
@@ -130,7 +125,7 @@ async function run() {
 
   // Two answerers over ONE home is how a restart is written down — same
   // node, same disk, new process — which is the moment a substitution
-  // used to become invisible.
+  // would go unseen without the pin.
   {
     const home = nodeHome();
     const impostor = remember(auth.generateIdentity('impostor-relay'));

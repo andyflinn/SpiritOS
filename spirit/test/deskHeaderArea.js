@@ -8,20 +8,21 @@
 //   that the header area can be smoothly joined with the shell's title bar at all times. It should never
 //   be moving during vertical scroll operations." and "the header area should not contain rounded
 //   corners. and its container should have no margins and no padding."
-// The box's shape: UI only, CSS and layout in the desk shell. Red on today's tree; wsl wrote it and does
-// not build it.
+// The box's shape: UI only, CSS and layout in the desk shell.
+// THE PAGES HAVE MOVED ON FROM THIS SHAPE: neither desk.js nor deskDetails.js calls createAppHeader() any more
+// (appHeader.js is spirit.element.appHeader.create since goal/G41.19), and deskDetails' header block no longer ends at
+// #dd-upper (the workBench draws its strip, goal/G41.22), so checks 2 to 4 fail on today's pages.
 //
 // WHAT IS ASSERTED, and why at the source:
 //   1  The title bubble is gone: desk's #desk-goal and deskDetails' #dd-head.
 //   2  The header container carries no padding and no margin — neither in the markup nor set by the
-//      header function on the element createAppHeader hands it (both set paddingBottom today).
+//      header function on the element createAppHeader hands it.
 //   3  Nothing inside the header rounds its corners: no inline border-radius, and none of the classes
 //      index.html rounds (.stat-tile 10px, .start-job-form.card 10px).
 //   4  It stays joined to the title bar: both still build the header with createAppHeader(), which is
 //      what sticks it under the bar (goal/G6.1), so a vertical scroll never moves it.
-// LEFT OPEN, with the reason: how he opens the goal's own details once the bubble is gone - today the
-// bubble is the only click that opens it (desk.js, title "Open the goal"). That is a question on the
-// item, not an assertion here.
+// LEFT OPEN, with the reason: how he opens the goal's own details once the bubble is gone. That is a
+// question on the item, not an assertion here.
 
 const fs = require('fs');
 const path = require('path');
@@ -54,7 +55,7 @@ if (!desk || !dd) {
   test.fail(OWED + 'the shells are owed: desk.js ' + !!desk + ', deskDetails.js ' + !!dd);
 } else {
   [['desk', desk, 'desk-goal', 'desk-bars', '<div id="desk-root">'],
-    // Since goal/G30.8 what follows the header is the upper half's stylesheet, then #dd-upper (#dd-box before it).
+    // Looked for: the upper half's stylesheet, then #dd-upper (goal/G30.8), which deskDetails.js no longer draws.
     ['deskDetails', dd, 'dd-head', 'dd-bars', '<style>.dd-icon']].forEach(function (a) {
     const name = a[0]; const src = a[1]; const bubble = a[2]; const bars = a[3]; const after = a[4];
 

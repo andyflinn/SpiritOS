@@ -1,12 +1,11 @@
 'use strict';
 
 // spirit/test/deskBindingNick.js
-// goal/G21.1: the agent's pane in Desk, names and keys, the binding nick, included and cap. Red on today's tree;
-// claude-windows wrote it and builds it (one agent). The item's box, Andy's decisions:
+// goal/G21.1: the agent's pane in Desk, names and keys, the binding nick, included and cap. The item's box, Andy's
+// decisions:
 //   - The pane: row one name and nick (text inputs); row two the toggles included and cap. Written by Andy alone;
 //     every agent may read every pane. The nick is Andy's shorthand for addressing a key.
-//   - The page shows the agent's name everywhere it shows the agent (chat lines, presence bubble, Team list, taker
-//     marks), looked up by the agent's key; the node's label only when no name is set. Keys are never shown.
+//   - The page shows the agent's name everywhere it shows the agent (chat lines, presence bubble, taker marks), looked up by the agent's key; the node's label only when no name is set. Keys are never shown.
 //   - Every chat line carries its writer's key; every decision about who goes by key.
 //   - A line of Andy's starting with a nick followed by any punctuation or a space is addressed to that agent alone:
 //     only it is notified, only it may take it.
@@ -52,7 +51,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 10; i++) await settle(); }
 
-// ANDY'S NODE, AS THE DESK'S STREAM SEES IT (goal/G33.4: `changes` is gone; the desk streams each row). What the desk
+// ANDY'S NODE, AS THE DESK'S STREAM SEES IT (goal/G33.4: the desk streams each row). What the desk
 // publishes for his pages (jobs.update) goes into pages; what it sends an agent's deskClient (peer.post to its
 // streamListener) goes into sent as {to, row}, answered as that deskClient's node would: its family interface, then
 // heard. Who is notified is who the stream reached.
@@ -110,8 +109,8 @@ async function theServer() {
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
   const andysNode = streamNode();
   await new Promise(function (r) { andysNode.server.listen(0, '127.0.0.1', r); });
-  // goal/G29.21: an agent's session creates no goal, so Andy writes the world; since goal/G33.7 (session.set went) it is
-  // seeded before the desk starts, which takes it in at start.
+  // goal/G29.21: an agent's session creates no goal, so Andy writes the world; since goal/G33.7 it is seeded before
+  // the desk starts, which takes it in at start.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Binding' }, items: ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5', 'goal/G100.6'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; }) });
   const kid = spawn(process.execPath, [SERVER, JSON.stringify({ boxHoldMs: HOLD_MS }), '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
@@ -366,8 +365,8 @@ async function thePage() {
   const pageHtml = function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n') + container.innerHTML; };
   if (/Claude Windows/.test(byId['desk-list'] ? byId['desk-list'].innerHTML : pageHtml()) && !/<td>claude-windows<\/td>/.test(pageHtml())) test.check('the List names the taker by name');
   else test.fail(OWED + 'the List: ' + short((/<td>[^<]*claude[^<]*<\/td>/i.exec(pageHtml()) || [''])[0]));
-  // THE GROUP CHAT LINE'S NAME, under Team, STOOD HERE: Team and its group chat goal/G0 went with goal/G43.22 (Andy, the
-  // box, Q5: "G0 goes, from ui and server, kept in database."). An item chat line's name is the dialog's (deskDetails).
+  // There is no Team group chat (goal/G43.22; Andy, the box, Q5: "G0 goes, from ui and server, kept in database.");
+  // an item chat line's name is the dialog's (deskDetails). Next, the agent's tab in the tab row opens its pane.
   const t = node('button');
   t.setAttribute('data-tab', 'agent:claude-windows');
   doc.getElementById('desk-tabs').appendChild(t);

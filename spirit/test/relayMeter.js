@@ -7,39 +7,23 @@
 //   Andy: "we already have packet delivery, that should be the bootstrap
 //   for rate-management, there we get first measurements."
 //
-// ── WHAT WAS FOUND ───────────────────────────────────────────────────
+// ── A FLOW LIMIT BESIDE THE STOCK LIMIT ──────────────────────────────
 //
-// `rateOk` had exactly two call sites — `claim` and device enrolment.
-// `routePost` had none, so nothing counted posts per minute: a member
-// could post as fast as they could open sockets, and the node at the far
-// end was not covering for it — its floor bounds only senders it has NEVER
-// HEARD OF, so between two acquainted peers there was no RATE limit
-// anywhere in the system.
-//
-// NOT THE SAME AS UNBOUNDED, and this suite is what established the
-// difference. `routes.open` already caps a requester's OUTSTANDING posts
-// — `too many in flight`, 429, at DEFAULT_PER_REQUESTER = 16 — and the
-// table caps the box at DEFAULT_MAX = 256. That is the RAM half of
-// CAPACITY.md, built and fair, and it is why a naive flood loop here was
-// stopped at sixteen by something that has nothing to do with rate.
-// (SINCE 2026-10-02 THE MEMBER'S NUMBER IS ONE, not sixteen: 0016's "one in
-// flight per member as requester", router.js DEFAULT_PER_MEMBER. The point
-// stands and is sharper: an unanswered post is the member's whole stock.)
-//
-// So the gap is one half, not the whole: a STOCK limit existed and a FLOW
-// limit did not.
-//
-// It read as covered, which is why it lasted: a comment two hundred lines
-// above `routePost` describes a 30-per-minute send limit in the present
-// tense, and it is about `send`, the ring route R8 deleted.
+// `routePost` counts posts per minute per sender (relay.js rateOk,
+// MEMBER_PER_MIN), and refuses past it with a 429 that names the cap.
+// That is the FLOW limit. The STOCK limit is router.js's: `routes.open`
+// caps a member's OUTSTANDING posts at DEFAULT_PER_MEMBER = 1 (0016, "one
+// in flight per member as requester") and the box at DEFAULT_MAX = 256 —
+// the RAM half of CAPACITY.md. An unanswered post is the member's whole
+// stock, so every post below is answered, and only the rate limit can
+// stop the flood.
 //
 // ── AND THE METER MATTERS MORE THAN THE GATE ─────────────────────────
 //
-// The limit here is deliberately dumb and temporary — CAPACITY.md's
-// governor divides measured headroom and publishes the result, and this
-// holds the door until there is something in the ring to divide. What the
-// ring buys is that the governor gets built against observation instead of
-// against a guess, starting from ordinary member traffic today.
+// The limit here is deliberately dumb — CAPACITY.md's governor divides
+// measured headroom and publishes the result. What the ring buys is that
+// the governor gets built against observation instead of against a guess,
+// starting from ordinary member traffic.
 //
 // The assertion that matters most is the last one: the ring is AGGREGATE.
 // A per-member version would be a record of who talks how much and when —
@@ -115,12 +99,9 @@ if (first.ok && first.status === 202) {
   test.fail('the first post was refused: ' + JSON.stringify(first));
 }
 
-// AND IT IS ANSWERED, which this used to leave undone. Harmless while a
-// member could hold sixteen routes at once; fatal at one (0016, landed
-// 2026-09-21), because the open route to bob refused the very first post
-// of the flood below and the suite then reported the rate limit missing.
-// A conversation that is never answered is not the fixture this file
-// wants — every other post here answers, and so does this one now.
+// AND IT IS ANSWERED: a member holds one route at a time (0016), so an
+// open route to bob would refuse the first post of the flood below and
+// read as the rate limit missing.
 if (first.ok) {
   R.box.routeReply(R.people.bob.publicKey, first.hash, 'ok',
     auth.sign(R.people.bob.privateKey, auth.receiptMessage(first.hash, 'ok')));
@@ -128,18 +109,13 @@ if (first.ok) {
 
 // ── A FLOOD THAT IS NOT ALSO A PILE-UP ───────────────────────────────
 //
-// THE STOCK LIMIT FIRES FIRST IF YOU LET IT, and finding that out is what
-// this suite was worth writing for. `routes.open` already refuses a
+// THE STOCK LIMIT FIRES FIRST IF YOU LET IT: `routes.open` refuses a
 // requester with too many posts OUTSTANDING — `too many in flight`, 429,
-// per requester, at `DEFAULT_PER_REQUESTER` — so a loop that never lets
-// anybody answer is stopped at sixteen by a cap that has nothing to do
-// with rate.
-//
-// That is the RAM half of CAPACITY.md, already built and already fair.
-// What is missing is the FLOW half: nothing counts posts per minute. So
-// the target answers each one, the route closes, and the in-flight count
-// stays at zero — which is what a real conversation looks like and what
-// leaves the rate limit as the only thing that can stop this.
+// at `DEFAULT_PER_REQUESTER` — so a loop that never lets anybody answer is
+// stopped by a cap that has nothing to do with rate. So the target answers
+// each one, the route closes, and the in-flight count stays at zero —
+// which is what a real conversation looks like and what leaves the rate
+// limit as the only thing that can stop this.
 function answered(n) {
   const r = post(R.box, R.people.ann, R.people.bob, { n: n });
   if (!r.ok) return r;
@@ -175,12 +151,12 @@ if (refused && /\d/.test(String(refused.error)) && typeof refused.perMin === 'nu
 
 // ── AND IT IS KEYED ON THE SENDER, NOT ON THE SENDER'S CHOICE ────────
 //
-// The old per-name limit was worthless for exactly this reason: a budget
-// keyed on a string the sender picks resets when they pick another. bob
+// A budget keyed on a string the sender picks would reset when they pick
+// another. bob
 // has spent nothing and must be unaffected by ann's flood.
 const bobsTurn = post(R.box, R.people.bob, R.people.ann, { hello: 1 });
 // ANN ANSWERS IT, which releases bob's route: a member has one request in
-// flight (0016, the member cap is 1 since 2026-10-02), and bob asks the
+// flight (0016, router.js DEFAULT_PER_MEMBER), and bob asks the
 // relay a verb further down. Left unanswered, this post would still be his.
 if (bobsTurn.ok) {
   R.box.routeReply(R.people.ann.publicKey, bobsTurn.hash, 'ok',
@@ -230,7 +206,7 @@ if (report && report.meter && typeof report.meter.peakRoutes === 'number' &&
 
 // ── 3. AGGREGATE, AND THIS IS THE ONE THAT MATTERS ───────────────────
 //
-// The precedent is the route-usage note in PARTNERS.md: "in memory is the
+// The precedent is the route-usage note in design/relay/PARTNERS.md: "in memory is the
 // whole point: it resets on restart, it is never served, and it describes
 // the relay's own work rather than anybody's traffic. A counter that
 // survived a reboot would be a record of who talks to whom, which is
@@ -268,11 +244,8 @@ if (/METER_SLOTS\s*=\s*\d+/.test(src) && /slots\.length > METER_SLOTS/.test(src)
 //   Andy: "the relay-to-relay hop is just normal protocol-compliant
 //   traffic, like all other traffic... measurable, throttleable."
 //
-// THIS IS THE SPECIAL CASE THAT ARRIVED BY ACCIDENT. The gate sat below
-// the `postedToSelf` branch for an hour, so a partner's search and a
-// member's verb both took the early return and were neither counted nor
-// capped — a relay metering packets to its members but not packets to
-// itself, which is measuring the half of its work that is easiest to see.
+// The gate sits above the `postedToSelf` branch, so a verb addressed to
+// the relay is counted and capped like a post to a member.
 //
 // Asserted through the front door rather than by reading the source: a
 // verb addressed to the relay's own key must move both numbers.
@@ -322,12 +295,9 @@ if (annAsks && annAsks.status === 429) {
 
 // ── 5. ONE BUDGET (goal/G22.6) ───────────────────────────────────────
 //
-// Two budgets stood here, the members' and a partner pool with its floor
-// and its measured fraction (Andy: "the budget for posts from partners must
-// be a different POST budget from members"). Partnering as a permission is
-// gone, and "the partner roll and the partner budget are removed" (Andy's
-// decision, goal/G22.6): a stranger is held by the relay's address table,
-// so the posts a member sends are the one budget left.
+// "the partner roll and the partner budget are removed" (Andy's decision,
+// goal/G22.6): a stranger is held by the relay's address table, so the
+// posts a member sends are the one budget.
 
 test.subHeading('One budget, the members\'; the partner pool is gone');
 
@@ -357,7 +327,7 @@ if (fresh && fresh.meter && typeof fresh.meter.posts === 'number' && !('partnerF
 //   Grok: "starting cap is published (and named on 429), not a silent
 //   backstop."
 //
-// To the owner here, which is the party with a channel for it today.
+// To the owner, in the relay-status report.
 if (fresh && fresh.caps && fresh.caps.memberPerMin > 0 && !('partnerPerMin' in fresh.caps)) {
   test.check('the cap travels with the report: member ' + fresh.caps.memberPerMin);
 } else {
@@ -407,23 +377,18 @@ if (floor && floor.slots * floor.sampleS >= 120) {
 //   amount of slots, but measure and truncate before returning results."
 //   Andy: "bucket.serialize should take a byte maximum."
 //
-// SLOTS COUNT THE WRONG THING, and used to get away with it: a search row
-// was a fixed handful of short fields, so 32 of them always fitted on the
-// wire. `vias` ended that -- a peer bound to nineteen partners carries
-// nineteen relay keys, and 32 such rows is ~26 KB against a PAYLOAD_MAX
-// of 16384.
+// SLOTS COUNT ROWS, NOT BYTES, so a full set of slots can still overflow
+// the envelope.
 //
-// AND THE CUT IS NOT THE RELAY'S. It lives with the ordering, because
-// deciding how far down a ranked list to read is a question about the
-// ranking -- and because a row's size is only known after `merge` has
-// finished adding sources to it. The relay supplies the one number it
-// knows: what fits in the envelope it is about to send.
+// The ranker (peerRank) keeps its slots; the relay's composeSearch
+// measures the ranked rows against MATCH_BUDGET, the one number it knows
+// (what fits in the envelope it is about to send), and cuts from the
+// bottom.
 
 test.subHeading('A search answer is cut to what the wire holds');
 
-// THE RANKING IS peerRank's SINCE goal/G29.17, on the probability modules, and the partners whose `vias` overflowed
-// the wire went with goal/G22.6: a row is its own few fields again. What stays is the order of the work: the ranker
-// decides which rows and in what order; the relay alone knows the envelope, and cuts from the bottom of that order.
+// THE RANKING IS peerRank's (goal/G29.17), on the probability modules. The ranker decides which rows and in what
+// order; the relay alone knows the envelope, and cuts from the bottom of that order.
 const peerRank = require('../run/spirit/peerRank.js');
 const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'relay.js'), 'utf8');
 

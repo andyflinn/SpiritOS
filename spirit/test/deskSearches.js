@@ -1,14 +1,16 @@
 'use strict';
 
 // spirit/test/deskSearches.js
-// goal/G29.21: every Desk-related search and list on the probability modules, and a goal's chats searched at once. Red
-// on today's tree; claude-windows writes it and builds it (one agent). The item's box (v2):
-//   - desk: walked() (pending.get, work.open, rule.history; the first and the last since gone, goal/G33.4 and goal/G33.7) and item.chat cut by bytes through the probability bucket;
+// goal/G29.21: every Desk-related search and list on the probability modules, and a goal's chats searched at once.
+// The item's box (v2):
+//   - desk: walked() (work.open) and item.chat cut by bytes through the probability bucket;
 //     rules.search ranks rules by title and text; chat.search on a goal takes scope: goal (its own chat only) or items
 //     (the goal's chat and every one of its items' chats, ranked together); each line found carries the item it was said
 //     in, and the goal dialog draws it as a link to that item; block.targets in goal order through the probability bucket.
 //   - deskClient history.search ranks by verb and outcome; deskAgent's models search by id and quant, loaded first.
 //   - desk, deskClient and deskAgent no longer require the old graded search.
+// deskAgent was removed from the tree in goal/G41.28 (process/js/deskAgent/ is gone), so the deskAgent checks in 0 and
+// 4 read an empty file: 0 passes vacuously for it, 4 fails.
 // NAMED HERE where the box names none: scope '' is the item's own chat, as chat.search always was; a goal-wide line's
 // label carries item, the id of the item (or goal) it was said in; deskDetails asks chat.search with scope 'items' on a
 // goal and draws a found line's item as a link (data-open-item).
@@ -55,7 +57,7 @@ async function main() {
   if (/ddAsk\('chat\.search', \{[^}]*scope:/.test(details) && /data-open-item/.test(details)) test.check('the dialog asks chat.search with a scope and draws a found line\'s item as a link');
   else test.fail(OWED + 'deskDetails neither asks a scope nor links a found line to its item');
 
-  // The world (goal/G33.7: session.set went), seeded before the desk starts.
+  // The world, seeded before the desk starts.
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'A goal' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Two', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   let tree = null;

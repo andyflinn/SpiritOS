@@ -323,11 +323,9 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     await waitEnd(FRESH.key, zero);
     ok(sideOf(rowsTo(FRESH.key, zero)).length === 0 && wholeOf(rowsTo(FRESH.key, zero)).length >= memberIds.length, 'since 0 is the same as none', 'rows: ' + short(rowsTo(FRESH.key, zero).length));
 
-    // GONE (goal/G41.22): the catch-up from a desk change number (a subscribe with since: what changed after it, a line to
-    // another agent, a box written after it) went with the one stream protocol (74ac4c65, goal/G41.12: a push is the
-    // whole goal, then its end); its checks went with it. So did "a subscriber whose delivery failed is kept": since
-    // 3ad44a6b (Andy: "take the 3 seconds out, appServer.js calls peerPost in the most basic way") a delivery left
-    // unanswered drops its subscriber, which subscribes again when it is back.
+    // NOT CHECKED: a catch-up from a desk change number (the one stream protocol of goal/G41.12: a push is the whole
+    // goal, then its end), and a subscriber kept after a failed delivery (Andy: "take the 3 seconds out, appServer.js
+    // calls peerPost in the most basic way": a delivery left unanswered drops its subscriber, which subscribes again).
 
     test.subHeading('the position: every push ends with its end mark, { full: true, end: true }');
     const lastOf = function (rows) { return rows[rows.length - 1]; };

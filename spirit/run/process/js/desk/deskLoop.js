@@ -28,6 +28,10 @@
 //
 // A refusal of the listener's (unblocked, no node) is printed and waited out, then it listens again: the refusal
 // names what is missing, and the loop must not hammer the node while it is fixed.
+//
+// WHAT IT DOES NOT DO TODAY: it arms the listener without --read <key>, so deskClient's next hands the same wake again
+// (deskAgentEar.js, goal/G41.11) and its lines come round once more; and it takes no line (line.take) before its
+// chat.add, which deskClient refuses not-taken on an item the agent does not hold (deskClient.js mayChat, goal/G27.6).
 
 const fs = require('fs');
 const path = require('path');

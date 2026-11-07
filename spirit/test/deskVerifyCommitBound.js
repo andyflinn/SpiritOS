@@ -1,16 +1,15 @@
 'use strict';
 
 // spirit/test/deskVerifyCommitBound.js
-// goal/G18.10: deskVerify: commit-bound runs. Red first on 9a9a30db; claude-windows wrote
-// it and builds it (one agent). Found live on 2026-10-12: deskVerify passed goal/G18.7 "at 24533a26 (dirty, not
-// pulled)" while the item's commit was 227b0ad4, so it checked other code than the item's. Rewritten under goal/G33.3:
-// deskVerify knows no item and no chat line any more (Andy: "deskVerify has no fucking clue about desk, desk goals or
-// desk items"), so the commit travels with the run the desk hands it, and the Verifier tab has no re-verify button.
+// goal/G18.10: deskVerify: commit-bound runs, so a pass never checks other code than the item's commit.
+// deskVerify knows no item and no chat line (goal/G33.3; Andy: "deskVerify has no fucking clue about desk, desk goals or
+// desk items"), so the commit travels with the run the desk hands it.
 //
 // WHAT IS ASSERTED
-//   1. (went with goal/G33.3) THE DESK's verify.again, gone with Andy's yes, "box this and continue".
 //   2. THE RUN IS BOUND TO ITS COMMIT: a run handed a commit the tree lacks measures nothing, its suite 'not run' naming
-//      the commit; a run at a commit the tree holds, and one handed none, run as before.
+//      the commit; a run at a commit the tree holds, and one handed none, run.
+//   3. A changed file elsewhere in the tree never stops the pull.
+//   (1, the desk's verify.again, went with goal/G33.3.)
 // rule/11: through testSupport only; a fake node and its own desk; the pull is a probe, never a real git pull.
 
 const fs = require('fs');
@@ -50,12 +49,12 @@ function server(script, name, args, cwd) {
 }
 
 // ── 2. A RUN IS BOUND TO THE COMMIT IT WAS HANDED ────────────────────────
-// Since goal/G33.3 the desk hands deskVerify the item's claimed commit with the run, and deskVerify knows no item and no
+// The desk hands deskVerify the item's claimed commit with the run, and deskVerify knows no item and no
 // chat line: a run whose commit the tree lacks measures nothing, each suite's outcome 'not run' naming the commit.
 async function verifyHalf() {
   test.subHeading('2. no green without the commit the run was handed in the tree');
   // The probe's one check QUOTES a failure line, as deskVerifyDriven's "its line names the failure" check does: a
-  // success that names a FAILURE must still read green (goal/G33.4, found on Andy's node at 5c11de1e).
+  // success that names a FAILURE must still read green (goal/G33.4).
   fs.writeFileSync(path.join(__dirname, GREEN), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('commit-bound green probe');\ntest.check('green, quoting: red: FAILURE #1 red probe');\ntest.reportSuccessFailureCount();\nprocess.exit(0);\n");
   const repo = path.join(__dirname, '..', '..');
   const head = String(spawnSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).stdout || '').trim();

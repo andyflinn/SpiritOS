@@ -6,7 +6,7 @@
 //   node spirit/test/liveRelay.js                    against spirit-3
 //   node spirit/test/liveRelay.js http://127.0.0.1:65425   against the lab
 //
-// NOT PART OF THE HARNESS, and named in runAll's NOT_A_SUITE for it.
+// NOT PART OF THE HARNESS, and named in notASuite.js for it.
 // Everything else runs in process in milliseconds and can run a thousand
 // times; this opens sockets to another continent and changes state on a
 // box other people use. It is run by hand, on purpose.
@@ -17,8 +17,9 @@
 // make — a held stream through a proxy, a round trip with real latency,
 // a build stamp, a migration that already happened on somebody's disk.
 //
-// The device enrolment sections went with the device enrolment, removed
-// by goal/G16.2.
+// IT DOES NOT RUN TO THE END: the roster sections below read `peers`, which
+// nothing defines since GET /api/relay/who was deleted, so a named run stops
+// with a ReferenceError after the rename section.
 
 const fs = require('fs');
 const path = require('path');
@@ -32,16 +33,10 @@ const SUBJECT = path.join(FAKES, 'lw-lab-bella', 'spirit', 'run');
 
 // THE RELAY TO MEASURE, AND ONLY IF SOMEBODY NAMED ONE.
 //
-// This read argv[2] outright, so when deskVerify spawns a suite as
-// `node <file> --verify-port <port>` it went looking for a relay called
-// "--verify-port" and failed every time: a suite the verifier could never
-// pass, which rejected every item that listed it.
-//
-// A first fix here took any web-address argument and otherwise fell back to
-// spirit-3 — which would have had the verifier quietly reach out to the LIVE
-// relay every time it checked any item carrying this file. claude-windows'
-// shape is the right one and this is it (Andy, 2026-10-11: "yes"): unnamed,
-// the suite skips itself and says so; named, it runs as a person runs it.
+// Only a web-address argument names a relay, so deskVerify's
+// `node <file> --verify-port <port>` names none. Unnamed, the suite skips
+// itself and says so, rather than reach out to the LIVE relay; named, it
+// runs as a person runs it (Andy, 2026-10-11: "yes").
 const RELAY = (function () {
   for (var i = 2; i < process.argv.length; i += 1) {
     var a = String(process.argv[i] || '');
@@ -97,17 +92,12 @@ async function run() {
 
   test.subHeading('The roster survived the rename');
 
-  // ── THE ROSTER IS NOT SOMETHING TO ASK FOR (2026-09-18) ──────────
+  // ── THE ROSTER IS NOT SOMETHING TO ASK FOR ──────────────────────
   //
-  // This listed every peer off `GET /api/relay/who` to show the routing
-  // table had survived a rename. The route is gone — a cheat named in
-  // 0010 and eradicated — and 0012 rules out any door that answers "who
-  // is on this box", to anyone, owner included.
-  //
-  // What survives is the weaker but askable claim: the box is up and is
-  // still the same box, which is what a rename must not change. Whether
-  // the table survived is visible to its OWNER, on the owner's own
-  // stream, and not over a route.
+  // 0012 rules out any door that answers "who is on this box", to anyone,
+  // owner included. The askable claim: the box is up and is still the same
+  // box, which is what a rename must not change. Whether the table
+  // survived is visible to its OWNER, on the owner's own stream.
   const itself = await door.relayKeyOf(RELAY);
   if (itself && itself.relayPublicKey) {
     test.check('the relay answers as itself after the rename: ' +
@@ -116,9 +106,9 @@ async function run() {
     test.fail('no answer from the key door — the relay did not come back'); 
   }
 
-  // mailbox.json became routingTable.json. A relay that could not read
-  // the old name would have come up with nobody on it, and this is the
-  // only place that can prove it read one written by older code.
+  // Meant to show the relay still knows its owner after the rename. It reads
+  // `peers`, the roll GET /api/relay/who served, which nothing defines
+  // now: this line throws a ReferenceError.
   const owner = peers.filter(function (p) { return p.owner; })[0];
   if (owner) {
     test.check('and it still knows its owner (' + (owner.publicLabel || owner.name) + ')');
@@ -144,7 +134,8 @@ async function run() {
     return;
   }
 
-  // A relay this subject has no row on can answer nothing below.
+  // A relay this subject has no row on can answer nothing below. Reads the
+  // same undefined `peers`.
   const onIt = peers.some(function (p) { return p.publicKey === subject.publicKey; });
   if (onIt) {
     test.check(subject.name + ' has a row here, so this relay can speak to them');
@@ -154,9 +145,7 @@ async function run() {
     return;
   }
 
-  // THE DEVICE ENROLMENT SECTIONS STOOD HERE ("An enrolment, end to end",
-  // "A device opens nothing on a relay"), removed by goal/G16.2. What a
-  // real relay still owes is that the identity's own key opens its stream.
+  // A real relay owes that the identity's own key opens its stream.
   async function canOpen(where, id) {
     // The header names the relay it is for (goal/G16.12), so ask that relay
     // for its key first.

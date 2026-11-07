@@ -1,12 +1,11 @@
 'use strict';
 
 // spirit/test/appClientName.js
-// THE NODE'S SIDE IS THE CLIENT — appPair/G1.1, written FIRST, red on the old name.
+// THE NODE'S SIDE IS THE CLIENT — appPair/G1.1: the old name appServers is gone.
 //
 //   Andy, 2026-09-28: "first. we need to rename appServer to appClient. that
-//   was a misnomer" — in the face-to-appServer chain the node is the one
-//   asking. His yes on the rename: "my yes is hereby delivered". The verb
-//   api.toLocalApp keeps its name ("not stuck on any name, keep it").
+//   was a misnomer" — the node is the one asking its server processes. His
+//   yes on the rename: "my yes is hereby delivered".
 
 const fs = require('fs');
 const path = require('path');

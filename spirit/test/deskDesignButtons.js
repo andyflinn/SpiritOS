@@ -6,12 +6,11 @@
 //   it should be placed right after the [Musings] tab header in desks header area" and "get rid of the
 //   yellow bubble that says \"Design mode. Nothing is built until it ends, and it ends only in the Team
 //   tab.\". it is useless."
-// The box's shape: UI only, in the desk shell. Red on today's tree; wsl wrote it and does not build it.
+// The box's shape: UI only, in the desk shell.
 //
-// WHAT IS ASSERTED:
-//   1  On every tab - List, Team, Rules, Musings - the tab row holds a design button that is not hidden.
-//      Today both buttons carry hidden unless deskTab is 'team' (desk.js deskDrawTabs).
-//   2  It sits right after the Musings tab button, before the agent bubbles.
+// WHAT IS ASSERTED (the tabs are List and Rules, below):
+//   1  On every tab the tab row holds a design button that is not hidden.
+//   2  It sits right after the Rules tab button, where the Musings tab stood, before the agent bubbles.
 //   3  Which of the two shows still follows design mode: End while it is on, Start while it is off.
 //   4  The yellow bubble is gone: no #desk-design, and none of its words are drawn anywhere.
 // The arming stays as it is (one click arms, the second fires): asserted nowhere here, because the item
@@ -24,8 +23,8 @@ const kernel = require('../run/spirit/kernel.js');
 
 const OWED = 'OWED by goal/G9.8: ';
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
-// The Musings tab went with goal/G27.3; the design button stands where it stood, right after Rules. The Team tab went
-// with goal/G43.22 (Andy, the box, Q5: "G0 goes, from ui and server, kept in database."): List and Rules remain.
+// The desk's tabs: List and Rules (desk.js deskDrawTabs; no Musings since goal/G27.3, no Team since goal/G43.22). The
+// Verifier tab shows only where a deskVerify answers, and none does here.
 const TABS = ['list', 'rules'];
 
 function settle() { return new Promise(function (r) { setImmediate(r); }); }

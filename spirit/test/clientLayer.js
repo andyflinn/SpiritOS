@@ -28,9 +28,7 @@
 //      A pending table for that would be dead weight on every exchange.
 //
 //   4. `re` IS THE LATER CASE, and the only one a table is for: a peer
-//      sending a NEW packet about something asked earlier. That field has
-//      travelled end to end since the router landed and nothing read it
-//      until this layer.
+//      sending a NEW packet about something asked earlier.
 //
 //   5. THIS IS THE LOOPBACK CLIENT LAYER, not a browser API.
 //
@@ -179,14 +177,11 @@ function aPostAnswersInTheShapeTheProtocolHas() {
   const api = appWithApi(world, 'chess');
 
   return api.peerPost('chess', 'PEERKEY', { move: 'e4' }).then(function (r) {
-    // The envelope is the node's job; this only checks the client asked
-    // for the right thing: which app, which peer, what body.
-    // THE ENVELOPE IS THE CLIENT'S JOB. The comment above said it was the
-    // node's, and that was the layering fault: the node composed an app
-    // envelope, so it had to know what an app was, and `hub.js` needed
-    // `packet.js`. Andy: "nothing in node and relay should know about
-    // apps." The client names the peer and hands over ONE payload; the app
-    // lives inside it, where only the shell reads it.
+    // THE ENVELOPE IS THE CLIENT'S JOB: a node that composed an app
+    // envelope would have to know what an app is. Andy: "nothing in node
+    // and relay should know about apps." The client names the peer and
+    // hands over ONE payload; the app lives inside it, where only the
+    // shell reads it.
     const sent = world.posts.filter(function (p) { return p.body.verb === 'peer.post'; })[0];
     let env = null;
     try { env = JSON.parse((sent && sent.body && sent.body.text) || 'null'); } catch (e) { env = null; }
@@ -269,15 +264,10 @@ function aFailureInventsNoTransaction() {
 function aDeliveredRefusalIsNotADelivery() {
   test.subHeading('Something answered NO is not the same as nothing answered');
 
-  // FOUND LIVE ONCE, on the first real mint through the collapsed path:
-  // a relay answered `unknown request`, the POST had succeeded — status
-  // 200, receipt and all — and the node handed the browser a success
-  // with an error inside it. The code reached past the far end's verdict
-  // to the transport's number behind it.
-  //
-  // hub.askRelay learned that and was then deleted along with the doors
-  // it served, so the lesson lives here now. It has to: this is where the
-  // two failures meet.
+  // A relay can answer `unknown request` to a POST that succeeded —
+  // status 200, receipt and all. Read by the transport's number, that is
+  // a success with an error inside it; the far end's verdict is what
+  // counts. This is where the two failures meet, so it is checked here.
   const world = mountShell(function () {
     return {
       status: 200,
@@ -353,9 +343,7 @@ function laterNewsFindsWhoAsked() {
     }));
   }
 
-  // RULE 4. A peer answering again, later, about the same thing. `re` has
-  // travelled end to end since the router landed; this is the first thing
-  // in the tree to read it.
+  // RULE 4. A peer answering again, later, about the same thing, by `re`.
   arrive('in_1', { move: 'e5' }, H);
   if (regarding.length === 1 && regarding[0].move === 'e5') {
     test.check('a packet carrying `re` reaches whoever asked about that hash');
@@ -404,23 +392,22 @@ function laterNewsFindsWhoAsked() {
 }
 
 // ---------------------------------------------------------------------------
-// WHERE A BROWSER-ONLY FILE LIVES, so it stops being asked one file at a
-// time. Andy, of iconIndex.js the day after packet.js moved: "is the same?
-// should also go into client/?"
+// WHERE A BROWSER-ONLY FILE LIVES. Andy: "is the same? should also go into
+// client/?"
 //
-// The rule underneath both answers: a file in js/ is one a RELAY may end up
+// The rule: a file directly in spirit/run/spirit/ is one a RELAY may end up
 // loading. So if index.html loads it with a <script> tag and no node module
-// requires it, it is the shell's and belongs in js/client/.
+// requires it, it is the shell's and belongs in spirit/run/spirit/client/.
 //
 // Note what the rule does NOT say. A node `module.exports` is not evidence
-// of a node consumer — chatLog.js and iconIndex.js both export so a test can
-// drive them, which is the export earning its keep, not the file being
-// isomorphic. Only a `require` from node code counts, and that is what is
-// measured here.
+// of a node consumer — a page file may export so a test can drive it. Only
+// a `require` from node code (spirit/run/spirit/ or client/) counts, and
+// that is what is measured here.
 //
-// The genuinely dual files stay up in js/ and this proves it of them:
-// limits.js (relay.js, server.js), peerFile.js (hub.js, peerStats.js),
-// fieldRules.js (relay.js), ownerBadge.js (hub.js, presenceNode.js).
+// The genuinely dual files stay up in spirit/run/spirit/ and this proves it
+// of them: limits.js (relay.js, server.js), peerFile.js (hub.js),
+// fieldRules.js (relay.js), ownerBadge.js (hub.js, presenceNode.js),
+// lever.js (relay.js).
 function aBrowserOnlyFileLivesWithTheShell() {
   test.subHeading('A file js/ keeps is a file the node reads');
 
@@ -428,7 +415,7 @@ function aBrowserOnlyFileLivesWithTheShell() {
   const indexHtml = fs.readFileSync(
     path.join(__dirname, '..', 'run', 'spirit', 'shell', 'index.html'), 'utf8');
 
-  // Every .js directly in js/ — client/ is the answer, not the question.
+  // Every .js directly in spirit/run/spirit/ — client/ is the answer, not the question.
   const inJs = fs.readdirSync(jsDir).filter(function (f) {
     return f.endsWith('.js') && fs.statSync(path.join(jsDir, f)).isFile();
   });
@@ -467,10 +454,10 @@ function aBrowserOnlyFileLivesWithTheShell() {
   }
 
   // And the other direction, so the rule cannot be satisfied by emptying
-  // js/ of everything. These are page-loaded AND node-required, which is
-  // the case client/ would be wrong for. lever.js joined on 2026-09-20
-  // (cycle 4.1): the Relay Monitor applies the same canSet the relay
-  // will, from the same file, so the two cannot drift.
+  // spirit/run/spirit/ of everything. These are node-required, which is
+  // the case client/ would be wrong for. lever.js: the relay builds its
+  // gauges with it and the monitor rebuilds them from the same file
+  // (fromReport), so the two cannot drift.
   const dual = ['limits.js', 'peerFile.js', 'fieldRules.js', 'ownerBadge.js', 'lever.js'];
   const misplaced = dual.filter(function (f) {
     return inJs.indexOf(f) === -1 || nodeRequirersOf(f).length === 0;

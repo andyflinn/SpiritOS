@@ -2,26 +2,23 @@
 
 // spirit/test/shellRename.js
 // app/ BECOMES shell/, AND EACH NODE CARRIES ITS OWN FILES ACROSS —
-// slim/G1.1, written FIRST, red on today's code.
+// slim/G1.1.
 //
 //   Andy, 2026-09-29: "shell replaces app, with elements.css, README.md and
 //   tokens.css being siblings of the individual shell-element folders", and
 //   the rename comes first, "so nothing is renamed twice".
 //
-// THE CONTRACT (wsl-claude's tests, claude-windows' build):
-//   T1 no node code names app/ as a folder; shell/ is the write root in its place
-//   T2 listing shell elements skips the plain files at shell/'s top
-//   T3 tokens.css and elements.css are still served, one named file each, to
-//      a granted face, and shell/'s top is never a servable folder
+// THE CONTRACT:
+//   T1 no node code names app/ as a folder; shell/ is writable in its place
+//   (T2 and T3, shell/'s top files neither listed nor served, went with
+//   goal/G13.2: nothing lists shell/ for anything but the page's own
+//   discovery, which skips plain files.)
 //   T4 on first start a node moves its leftover app/ files into shell/,
 //      once, says what it moved, and removes app/
 //   T5 a leftover whose name already exists in shell/ is kept, not
 //      overwritten, and said
 // A git mv carries only tracked files. What a live node keeps in app/ is
-// gitignored (natter's session, contacts' prefs, fixList's fixes, the AI
-// status), so without T4 Andy's node would come up without its binding.
-// (The leftover was natter's relays.json until goal/G16.3 made the relay
-// list node state, spirit/state/relays.json; session.json is natter's own.)
+// gitignored, so without T4 a node would come up without it.
 
 const fs = require('fs');
 const os = require('os');
@@ -69,6 +66,8 @@ function read(file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { 
 // a line declaring an old location by a LEGACY name, which is how the
 // move in T4 (and hub.js's older one) names where it reads from.
 // The page's ?app= address parameter is a name in a URL, not a folder.
+// The files read are git's under spirit/run/{js,process,index.html,app,shell}: of those only process/ and shell/
+// are in the tree now, so spirit/run/spirit/ (the node's code, and its apps in spirit/run/spirit/app/) is not read.
 const ALLOWED = [/manifest\.type \|\| 'app'/, /\(name \|\| 'app'\)/, /row\('app',/, /\b[A-Z_]*LEGACY[A-Z_]*\s*=/, /URLSearchParams\([^)]*\)\.get\('app'\)/];
 function appFolderUses() {
   const files = execSync('git ls-files -- js process index.html app shell', { cwd: RUN, encoding: 'utf8' })
@@ -141,11 +140,7 @@ test.startTest('slim/G1.1: app/ becomes shell/, and each node carries its own fi
   else test.fail(OWED + hits.length + ' uses of app/ as a folder (' + hits.slice(0, 6).join(', ') + (hits.length > 6 ? ', …' : '') +
     '); writable shell/ ' + gate.shell + ', app/ ' + gate.app);
 
-  // T2 AND T3 STOOD HERE, and left with goal/G13.2: the mounted list (nodeApps.mountAll), the
-  // serving list (appClient.readServers) and the face server that served a granted face its
-  // CSS (faceServer.js) are all gone with the branches that started them. shell/'s top files are
-  // still neither an element nor servable, and that is now simply true of the tree: nothing
-  // lists shell/ for anything but the page's own discovery, which skips plain files.
+  // T2 and T3 went with goal/G13.2 (see the contract above).
 
   // ── T4 ──────────────────────────────────────────────────────────────
   test.subHeading('T4: on first start a node moves its leftover app/ files into shell/, once, says what it moved, and removes app/');

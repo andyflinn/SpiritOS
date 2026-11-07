@@ -5,19 +5,21 @@
 //
 //   Andy, on G1.7: "how can i trust the copy mechanist when i cant see it
 //   working", then "copies follow changes only; closes no longer matter",
-//   "we just decided: 1", and "agreed on the short hash".
+//   and "agreed on the short hash".
 //
-// DECIDED in Desk (desk/G1, O2 and O5-O8), not this file's to undo:
-//   - it copies relay-state/process/ and nothing else under relay-state:
-//     never identity.json, never a key. The node's name and public key are
-//     handed over as --node (jobs.startNodeServers); identity.json holds the
-//     private keys, so this process never opens it.
-//   - the copy lands in <spiritHome>/backups/<12 hex of sha256(publicKey)>/,
-//     mirroring the checkout's paths, with node.json naming the node.
-//     spiritHome is spirit/state/config.json's, else <home>/.SpiritOS.
-//   - it runs once at start, then after each change under relay-state/
-//     process/ once quiet for quietMs. Its own state folder is neither
-//     watched nor copied, or it would start itself.
+// WHAT IT DOES:
+//   - it copies the folder above its own state folder (SOURCE below), its
+//     own state folder left out; never a nested relay-state/ or
+//     spirit/state/, never an identity.json. The node's name and public key
+//     are handed over as --node (jobs.js nodeArgOf); this process never
+//     opens identity.json, which holds the private keys.
+//   - the copy lands in <spiritHome>/backups/<12 hex of sha256(publicKey)>/
+//     relay-state/process/, with node.json naming the node. spiritHome is
+//     config.json's (read from the path spiritHome() builds), else
+//     <home>/.SpiritOS.
+//   - it runs once at start, then after each change under SOURCE once quiet
+//     for quietMs. Its own state folder is neither watched nor copied, or
+//     it would start itself.
 //   - ONE copy of each file (O8). A run compares first (size, then hash);
 //     unchanged copies nothing but still says it checked.
 //   - a database goes through SQLite's own backup, never as a plain file,
@@ -25,6 +27,15 @@
 //   - every run prints one line, here, in its Jobs console: what it wrote,
 //     with full paths and sizes (Andy: "any export can report the location
 //     of the exported file", "in jobs if it is a server").
+//
+// DISCREPANCY WITH ANDY's RULES: desk/G1 (O2) decided the backup copies
+// every process's state (once relay-state/process/). Since goal/G43.10 the
+// node hands --state as spirit/state/backup/data/, so SOURCE is
+// spirit/state/backup/ and the backup copies only its own folder, which it
+// leaves out: no other process's state is copied. spiritHome() reads
+// spirit/spirit/state/config.json, a path that does not exist, so a
+// spiritHome set in spirit/state/config.json is never used. The G43.10
+// commit says backup "is ported later, on his ruling".
 
 const fs = require('fs');
 const os = require('os');
@@ -50,7 +61,9 @@ if (!NODE || !NODE.publicKey) {
 const values = parsed(argv[2], {}) || {};
 const QUIET = Number(values.quietMs) > 0 ? Number(values.quietMs) : 5000;
 
-// relay-state is the state folder's grandparent: relay-state/process/backup.
+// SOURCE is the state folder's parent, RELAY_STATE its grandparent; with
+// --state spirit/state/backup/data/ those are spirit/state/backup/ and
+// spirit/state/ (see the DISCREPANCY above).
 const SOURCE = path.dirname(STATE);
 const RELAY_STATE = path.dirname(SOURCE);
 const OWN = path.basename(STATE);
@@ -83,10 +96,9 @@ function sourceFiles() {
       const r = rel ? rel + '/' + e.name : e.name;
       if (!rel && e.name === OWN) return;
       // NEVER A KEY (Andy: "don't include my private key in the backup"). A
-      // face keeps its own node identity in a relay-state/ of its own inside
-      // its state folder (slim/G1.4, wsl-claude's finding): no nested
-      // relay-state/ is walked, and no identity.json is copied wherever it is.
-      // The same for a nested spirit/state/, where those files live since goal/G43.8.
+      // face keeps its own node identity in a relay-state/ or spirit/state/ of
+      // its own inside its state folder (slim/G1.4, goal/G43.8): neither is
+      // walked, and no identity.json is copied wherever it is.
       if (e.isDirectory()) { if (e.name !== 'relay-state' && !(e.name === 'state' && path.basename(dir) === 'spirit')) walk(path.join(dir, e.name), r); }
       else if (e.isFile() && !COMPANION.test(e.name) && e.name !== 'identity.json') out.push(r);
     });

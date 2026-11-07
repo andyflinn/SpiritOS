@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/filesContentsSearch.js
-// goal/G29.11: words searched inside text files. Red on today's tree; claude-windows writes it and builds it (one
-// agent). The item's box (v4), in short:
+// goal/G29.11: words searched inside text files. The item's box, in short:
 //   THE FILTER: one filter with three mutually exclusive choices, words in: names | paths | contents; names the
 //   default; contents alone is find-in-files; the page asks the node only in contents.
 //   THE CONTENTS SCORE: each line scored against the whole expression; a line holding any of the words is a matched
@@ -13,7 +12,9 @@
 //   full for the best row and proportional for the others, gone with no words; a press opens the viewer marked, its
 //   first match in view; the editor's picker in contents opens marked.
 //
-// NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
+// NAMED HERE where the box names none:
+// Parts 2 and 4 read spirit/run/shell/shared/js/listSearch.js, shell/files/files.js, shell/textEditor/textEditor.js
+// and spirit/run/spirit/element/textView.js; none of them is in the tree any more, so the suite throws at part 2.
 //   - createNodeSearches({ jobs, rootDir, mimeTypes }).
 //   - the rank bar is a cell of class list-rank holding one element whose style width is a percentage.
 //   - createTextView takes line: the 1-based line put in view.
@@ -105,7 +106,7 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   else test.fail(OWED + 'without contents fs.search answered ' + short(plain && plain.items));
   try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 
-  // Since goal/G30.4 the fs family is mounted with its verbs bare: search inside loopbackVerbs.mount('fs', ...).
+  // The fs family is mounted with its verbs bare (goal/G30.4): search inside loopbackVerbs.mount('fs', ...).
   const server = code(path.join(RUN, 'spirit', 'server.js'));
   const fsMount = (/loopbackVerbs\.mount\('fs',[\s\S]*?\n {2}\}, \{ wire:/.exec(server) || [''])[0];
   if (/'search':\s*\{\s*request:\s*\{\s*q:\s*''\s*,\s*contents:\s*''\s*\}/.test(fsMount)) test.check('the node declares fs.search {q, contents}');
@@ -135,23 +136,18 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   const widths = ranked.map(function (r) { return barWidth(r.first); });
   if (widths.length === 3 && widths[0] === 100 && widths.every(function (w, i) { return w !== null && (i === 0 || w <= widths[i - 1]); }) && /width:\s*3em/.test(ranked[0].first) && /margin-left:\s*auto|text-align:\s*right/.test(ranked[0].first)) test.check('words typed: the left-most column is a 3em bar, right adjusted, full (100%) for the best row, shorter down the list: ' + widths.join(', '));
   else test.fail(OWED + 'with words the first cells read ' + short(ranked.map(function (r) { return r.first; })));
-  // Andy, 2026-10-18, twice: "i don't see the bars", "score bars STILL NOT SEEN", though the column's tooltips showed. A
-  // bar drawn only as a background colour is dropped by contrast themes; the marks, which he sees, are yellow. So the
-  // bar is drawn as a solid border, in the marks' yellow, 0.8em tall.
-  // Then, at his window width (955 px), every bar measured 0 px: rows that never wrap squeezed the table and the empty
-  // cell gave its width up. The cell holds a fixed box the bar sits in, so it cannot be squeezed. Andy, 2026-10-18,
-  // seeing them: "i'm sure 3em is wide enough, don't want to waste too much horizontal space".
+  // Andy: "score bars STILL NOT SEEN". A bar drawn only as a background colour is dropped by contrast themes, so the
+  // bar is a solid border, 0.8em tall. The cell holds a fixed box the bar sits in, so rows that never wrap cannot
+  // squeeze it to nothing. Andy: "i'm sure 3em is wide enough, don't want to waste too much horizontal space".
   if (/<td[^>]*class="list-rank"[^>]*min-width:\s*3em[^>]*>\s*<div[^>]*style="[^"]*width:\s*3em/.test(ranked[0].first)) test.check('the rank cell holds a fixed 3em box (min-width 3em): no row can squeeze it to nothing');
   else test.fail(OWED + 'the rank cell is ' + short(ranked[0].first));
   const barTag = (/<div[^>]*border-top[^>]*>/.exec(ranked[0].first) || [''])[0];
-  // Andy, 2026-10-18: "does it really have to be THAT loud a color.... something a little more subtle?" The viewer's
-  // soft gold for its matches (rgba(255, 213, 79, 0.45), index.html .text-view-match), still a solid bar.
-  // Then: "i do like to have the same color for the text highlights as the score bar has, try a pastel blue (in the
-  // color scheme?)". One colour, --spirit-match, defined once in index.html, for the bar, the list's marks and the
-  // viewer's marks.
+  // Andy: "i do like to have the same color for the text highlights as the score bar has, try a pastel blue (in the
+  // color scheme?)". One colour, --spirit-match, defined once in spirit/run/spirit/shell/shell.css, for the bar, the
+  // list's marks and the viewer's marks.
   if (/border-top:\s*0\.8em\s+solid\s+var\(--spirit-match/.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid border in the one match colour, var(--spirit-match), 0.8em tall');
   else test.fail(OWED + 'the bar is drawn ' + short(barTag));
-  // The shell's styles are shell.css since goal/G30.9 (they stood inline in index.html).
+  // The shell's styles are spirit/run/spirit/shell/shell.css (goal/G30.9).
   const idx = fs.readFileSync(path.join(RUN, 'spirit', 'shell', 'shell.css'), 'utf8');
   const token = (/--spirit-match:\s*([^;]+);/.exec(idx) || [])[1] || '';
   const rgb = (/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/.exec(token) || []).slice(1).map(Number);

@@ -46,26 +46,19 @@ const GUARD = path.join(process.env.SPIRIT_REAL_HOME || os.homedir(), '.claude',
 
 // ── THE BOX THIS RUNS ON, RESOLVED RATHER THAN ASSUMED ──────────────
 //
-// THIS FILE BROKE MY OWN RULE ON THE DAY I WROTE IT. `PROVING-IT.md`,
-// hours earlier: *a world asserts its own preconditions, and when the
-// absence of a precondition produces the same observation as the defect
-// you are hunting, the precondition is not context — it is the first
-// assertion.* This battery hardcoded one box's vault and one box's guard,
-// so on any other box it read a MISSING GUARD as a SILENT guard and
-// reported six failures about a gate that was not installed. Six red on
-// every box but mine, on a board whose honesty is the stated precondition
-// for the longer unattended stretches Andy asked for.
+// A world asserts its own preconditions: when the absence of a
+// precondition produces the same observation as the defect you are
+// hunting, the precondition is not context — it is the first assertion.
+// A battery that hardcoded one box's vault and guard would read a MISSING
+// GUARD as a SILENT guard on every other box, and report failures about a
+// gate that was not installed.
 //
 // A guard that is not there is not a guard that permitted something.
 // ── AND THE SUBJECT IS RESOLVED TOO, NOT ONLY THE LOCATION ──────────
 //
-// v2 of this file made the VAULT box-aware and left the AGENT hardcoded,
-// so on the Windows box it asserted that claude's guard must be silent
-// about input/wsl-claude/ — and the guard's own refusal said why it was
-// not: "is not in claude's folders." Rules 7 and 8 working correctly read
-// as four failures, and the two `still asks` cases about claude/ read as
-// two more. A suite that names one agent asserts that each guard should
-// behave like the other one.
+// A suite that names one agent asserts that each guard should behave like
+// the other one: a hardcoded agent would have one box's guard be silent
+// about the other agent's folder, which rules 7 and 8 rightly refuse.
 //
 // "MY OWN FOLDER" AND "THE OTHER AGENT'S FOLDER" ARE ROLES, NOT PATHS,
 // and they swap with whoever is running. So every case below is built
@@ -138,8 +131,8 @@ test.check('this box is ' + MINE + ' (' + BOX.source + '), and the other agent i
 
 // THE SHELL TWIN MUST AGREE. box.js states in node the rule that
 // hooks/pre-commit states in shell, because node on Windows sees win32 and
-// never MINGW. Two statements of one rule is the fork this whole day was
-// about, so the drift is asserted rather than hoped for: if the box DECLARES
+// never MINGW. Two statements of one rule can fork, so the drift is
+// asserted rather than hoped for: if the box DECLARES
 // an agent and the platform MEASURES a different one, that is a box whose
 // environment and whose kernel disagree, and no assertion below is safe.
 if (!BOX.agreed) {

@@ -1,26 +1,21 @@
 'use strict';
 
 // spirit/test/relayIntrospection.js
-// goal/G30.3, "Introspection for the relay". Red on today's tree; claude-windows writes it and builds it (one agent).
-// The item's box (v12), in short:
+// goal/G30.3, "Introspection for the relay".
 //   - The only new component on the relay is introSpector (Andy, 2026-10-19: "The only new component relay needs is
 //     introSpector"). No appServer, no appClient, no verb table, no apiDoor in the relay: "THERE IS ABSOLUTELY NO
 //     NEED FOR FUCKING APP SERVER IN FUCKING RELAY".
-//   - A folder of the relay's own holds AGENTS.md and one verb file per relay verb with its description. The relay
-//     calls introSpector.family on it and answers AGENTS, AGENTS.introspect and AGENTS.<verb> as self posts, beside
-//     its existing verbs, which stay dispatched as they are. Everything stays synchronous.
+//   - A folder of the relay's own, spirit/run/spirit/relaySelf/, holds AGENTS.md and one description file per relay
+//     verb. The owner reads it through FS (FS.search, FS.loadJsonValue, FS.loadFile); a member gets none of it
+//     (goal/G30.4: there are no AGENTS verbs). Everything stays synchronous.
 //   - Categories, not grants: the relay holds the one table of which category may call which verbs, owner all of
-//     them, member a short list. It cuts AGENTS.introspect and AGENTS.<verb> to the caller's category. A member asking
-//     an owner verb is refused: with DEBUG on, not-granted with the reason; with DEBUG off, the plain no such peer a
-//     verb nobody declared gets (Andy, 2026-10-20: "give good information in DEBUG mode, otherwise just refuse").
-//     The category question is wholly internal to the relay.
-//   - A stranger has no introspection; it keeps the card and the four public posts.
-//   - Otherwise no behaviour change: the existing relay suites stay green.
-// NAMED HERE where the box names none:
-//   - The folder is spirit/run/spirit/relaySelf/ (js/relay/ is the node's own relay verbs).
+//     them, member a short list. A member asking an owner verb is refused: with DEBUG on, not-granted with the reason;
+//     with DEBUG off, the plain no such peer a verb nobody declared gets (Andy, 2026-10-20: "give good information in
+//     DEBUG mode, otherwise just refuse"). The category question is wholly internal to the relay.
 //   - The member verbs are card, face, removePeer, rename and search; the owner's are those and config, debug,
 //     invite, monitor, relayLabel and revoke.
 //   - The DEBUG refusal is { ok: false, status: 403, code: 'not-granted', error }.
+//   - relay.js calls introSpector.family and requires none of appServer, apiDoor, verbTable, appClient.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -40,7 +35,7 @@ if (!L.ok) { test.fail('the world: ' + L.error); test.reportSuccessFailureCount(
 const owner = L.owner;
 const ann = L.peer('ann');
 const bob = L.peer('bob');
-// world.ask is synchronous: an answer only counts if it came back in the same call, as every relay answer does today.
+// world.ask is synchronous: an answer only counts if it came back in the same call, as every relay answer does.
 const ask = function (who, body) { return (world.ask(L.box, who, body) || {}).answer || {}; };
 const MEMBER = ['card', 'face', 'removePeer', 'rename', 'search'];
 const OWNER_ONLY = ['config', 'debug', 'invite', 'monitor', 'relayLabel', 'revoke'];
@@ -55,7 +50,7 @@ const described = MEMBER.concat(OWNER_ONLY).filter(function (v) {
 if (files.indexOf('AGENTS.md') !== -1 && described.length === MEMBER.length + OWNER_ONLY.length) test.check('spirit/relaySelf/ holds AGENTS.md and a description file for each of the ' + described.length + ' relay verbs');
 else test.fail(OWED + 'spirit/relaySelf/ holds ' + short(files) + ', described ' + short(described));
 
-// THE FOLDER IS READ THROUGH FS (goal/G30.4: the AGENTS verbs are gone). FS is an owner verb on the relay; members get
+// THE FOLDER IS READ THROUGH FS (goal/G30.4: no AGENTS verbs). FS is an owner verb on the relay; members get
 // nothing of it (Andy, 2026-10-20: "don't build shit nobody asked for.").
 test.subHeading('2. the owner reads the folder through FS; a member does not');
 const ownerList = ask(owner, { 'FS.search': { q: '' } });

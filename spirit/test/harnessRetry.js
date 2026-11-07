@@ -3,13 +3,12 @@
 // spirit/test/harnessRetry.js
 // WHEN A CALL TO labMaster MAY BE SENT TWICE, AND WHEN IT MAY NOT.
 //
-// The runner starts one labMaster and every lab suite is a client of it,
-// six suites at a time. It spawns and stops real node processes, so it
-// has moments where it is not accepting connections — and a single
-// refused connect used to fail a whole suite: labLifecycle went red as
-// "start relay: 0 fetch failed", losing checks to a service that was
-// merely busy. Measured at one red in three full runs on Windows, and
-// once in three independently in the WSL checkout (2026-09-21).
+// The runner starts one labMaster and every lab suite is a client of it.
+// It spawns and stops real node processes, so it has moments where it is
+// not accepting connections; without a retry a single refused connect
+// fails a whole suite ("start relay: 0 fetch failed") against a service
+// that was merely busy. labMaster/ensureMaster.js api() retries a refused
+// connect twice, and nothing else.
 //
 // ── WHY THIS SUITE IS ABOUT THE PREDICATE AND NOT THE RACE ───────────
 //

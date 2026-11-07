@@ -1,29 +1,22 @@
 'use strict';
 
 // spirit/test/deskVerbListingSlash.js
-// goal/G24.5. Red on today's code; claude-windows wrote it and builds it (one agent). The item's box is the record:
+// goal/G24.5. The item's box:
 //   "The desk's verb listing keeps every verb that has a description file."
-//   "introSpector.js lists the family with the search query "*", and a single "*" never spans a "/", so a verb whose
-//   description holds a "/" is left out silently; item.get ("goal/G14.7, rule/3") has never been listed, and Levant
-//   never had desk_item_get."
-//   "The fix is in introSpector.js, common code: the query that spans everything, "**", as log.search already uses."
 //   "Test: a verb file whose description holds a "/" is listed by AGENTS.introspect, and item.get is offered to Levant."
-//
-// WHERE, READ AT 1712394c: AGENTS.introspect builds its bucket with `query: '*'` (spirit/run/spirit/introSpector.js, the
-// handler of prefix + 'AGENTS.introspect'), and offers each verb file's description as the label; a label holding a
-// "/" never matches a single "*", so the bucket drops it and says nothing (more stays false).
+// The AGENTS verbs are gone (goal/G30.4): a family folder is listed by its FS.search {q: ''} (spirit/run/spirit/
+// introSpector.js family()), which names its files, a verb file as <verb>.json.
 //
 // WHAT IS ASSERTED
-//   1. a scratch folder: AGENTS.md and three verb files, two of whose descriptions hold a "/": AGENTS.introspect lists
-//      all three, and `more` is false.
-//   2. the real desk folder, as the desk serves it: AGENTS.introspect lists item.get.
-//   3. deskAgent's tools.js, describing the desk through a route answered by that family (as deskAgentVerbFiles.js
-//      does), offers desk_item_get.
-//   4. the census: every folder that has an AGENTS.md (process/js/<server>/, served by appServer's withAgents, and
-//      js/<namespace>/, claimed on the node), every verb file in it is listed by its AGENTS.introspect.
-// SINCE goal/G30.4 the AGENTS verbs are gone: a family folder is listed by its FS.search {q: ''} (file names, a verb
-// file as <verb>.json), the desk's folder is process/js/desk/desk.family, and tools.js reads each verb file through
-// FS.loadJsonValue. Each point above asks the same of the FS listing.
+//   1. a scratch folder: AGENTS.md and three verb files, two of whose descriptions hold a "/": FS.search lists all
+//      three, and `more` is false.
+//   2. the real desk family folder: FS.search lists item.get.json.
+//   3. deskAgent's tools.js, describing the desk through a route answered by that family, offers desk_item_get.
+//   4. the census: in every family folder that has an AGENTS.md (process/js/<server>/<server>.family/, and
+//      spirit/run/spirit/<namespace>/), every verb file is listed by its FS.search.
+// STALE PATHS: the desk's family folder is spirit/run/process/js/desk/family/ (each server's is process/js/<server>/family/),
+// not desk.family, and deskAgent (process/js/deskAgent/, its tools.js) was removed in goal/G41.28; points 2 and 3 fail
+// on those paths and the census in point 4 finds no process/js family.
 // rule/11: through testSupport only; reads files and a scratch folder, starts nothing.
 
 const fs = require('fs');
@@ -33,7 +26,7 @@ const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G24.5: ';
 const RUN = path.join(__dirname, '..', 'run');
-const DESK_DIR = path.join(RUN, 'process', 'js', 'desk', 'desk.family'); // <module>.family since goal/G30.4
+const DESK_DIR = path.join(RUN, 'process', 'js', 'desk', 'desk.family'); // stale: the folder is process/js/desk/family
 const TOOLS = path.join(RUN, 'process', 'js', 'deskAgent', 'tools.js');
 const introSpector = require('../run/spirit/introSpector.js');
 
@@ -115,7 +108,7 @@ async function suite() {
   test.subHeading('4. the census: every verb file of every family is listed');
   const folders = [];
   fs.readdirSync(path.join(RUN, 'process', 'js')).forEach(function (n) {
-    // <module>.family beside <module>.js since goal/G30.4: the family folder holds no code and no manifest.
+    // <module>.family beside <module>.js (stale: the folder is now process/js/<module>/family).
     const dir = path.join(RUN, 'process', 'js', n, n + '.family');
     if (fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'process/js/' + n + '/' + n + '.family', dir: dir, manifest: '', prefix: '' });
   });

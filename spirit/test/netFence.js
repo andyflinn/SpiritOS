@@ -1,17 +1,17 @@
 'use strict';
 
 // spirit/test/netFence.js
-// goal/G29.20: net.fetch refuses this machine; agents may use it. Red on today's tree; claude-windows writes it and
-// builds it (one agent). The item's box (v2):
+// goal/G29.20: net.fetch refuses this machine; agents may use it. The item's box (v2):
 //   - net.fetch refuses a target on this machine: a loopback address (127.0.0.0/8, ::1, localhost) or an unspecified
 //     one (0.0.0.0, ::), which reach this machine when dialled. Refused by name, nothing sent. Checked on the address
 //     the name resolves to, at connect, so a name that resolves to loopback is refused too.
 //   - Link-local and the LAN stay open (a node binds 127.0.0.1 only, so no other box's node can be reached).
-//   - Andy reversed goal/G19.9 and replaced it: "fetch will not be able to reach ports on this machine, and agents may
-//     use it." So js/net/fetch.json and js/net/AGENTS.md describe it, deskAgent lists net among its tool namespaces
-//     again, and netNoAgentTool.js (G19.9's suite) is retired.
-// NAMED HERE where the box names none: js/netFence.js holds the rule, isThisMachine(address) and lookup(hostname,
-// options, callback), a dns.lookup that refuses this machine; a refusal answers 403 with code 'this-machine'.
+//   - Andy: "fetch will not be able to reach ports on this machine, and agents may use it." So spirit/net/fetch.json
+//     and spirit/net/AGENTS.md (under spirit/run/) describe it. The check that deskAgent lists net among its tool
+//     namespaces reads process/js/deskAgent/deskAgent.js, which is gone from the tree, so it fails.
+// NAMED HERE where the box names none: spirit/run/spirit/netFence.js holds the rule, isThisMachine(address) and
+// lookup(hostname, options, callback), a dns.lookup that refuses this machine; a refusal answers 403 with code
+// 'this-machine'.
 // rule/11: through testSupport only; its own node on its own port; never 65432.
 
 const fs = require('fs');

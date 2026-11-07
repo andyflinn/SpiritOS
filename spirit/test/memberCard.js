@@ -4,25 +4,14 @@
 // A MEMBER ENROLLED BEFORE THE FLAG DAY HANDS OVER ITS CARD.
 // Cycle 10's R20.
 //
-// ── THE DEFECT THIS EXISTS FOR, MEASURED BEFORE IT WAS FIXED ─────────
+// ── THE DEFECT THIS EXISTS FOR ───────────────────────────────────────
 //
 // A relay seals its answers to the card on the member's roll row. The
-// claim carries one — and **every member enrolled before cycle 10 has
-// none**, because the column is new. What that produced was not a
-// refusal but something worse:
-//
-//     post accepted: true 202
-//     reply text:    ""
-//     invites on disc: 1
-//
-// The owner mints an invite. The relay mints it, the seat is spent, the
-// row is on disc — and the owner never learns the token. A silent
-// half-success, on the one verb whose entire output is a credential.
-//
-// **A flag day nobody can cross is not a flag day**, so this blocked
-// applying cycle 10 to any live box. It was found by Andy's rule that his
-// own nodes are brought up to the tree after a batch, before a single box
-// was touched.
+// claim carries one — but a member enrolled before cycle 10 has none. For
+// such a member a mint is a silent half-success: the post is accepted
+// (202), the reply text is empty, the invite is on disc and the seat
+// spent — and the owner never learns the token. **A flag day nobody can
+// cross is not a flag day**, so a member may hand over its card.
 //
 // ── WHAT IS ASSERTED, AND WHY THE LAST ONE IS THE POINT ──────────────
 //
@@ -62,7 +51,7 @@ function sinkFor(bag) {
 }
 
 // A relay with an owner and a member, BOTH ENROLLED WITHOUT A CARD —
-// which is exactly the state every live box is in today.
+// the state of a member enrolled before cycle 10.
 function worldBeforeTheFlagDay() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-membercard-'));
   fs.mkdirSync(path.join(home, 'spirit', 'state'), { recursive: true });
@@ -125,16 +114,11 @@ test.subHeading('AND THE ONE PLAIN SENTENCE SAYS NOTHING ABOUT THE RELAY');
 
 {
   // A refusal must still be heard when it cannot be sealed, or an old box
-  // cannot tell a flag day from a broken relay. But what travels in clear
-  // used to be the VERB'S own sentence.
-  //
-  // wsl-claude found it: the branch rebuilt the status and passed the
-  // sentence through, under a comment claiming no verb could leak its
-  // figures. An unsealed asker never reaches a verb — but a SEALED asker
-  // with no card on file does, and refusal sentences in this tree name
-  // the relay's condition: megabytes free and needed, the disc guard, the
-  // obstruction on a full relay. Decision 0006 says that is the owner's
-  // business.
+  // cannot tell a flag day from a broken relay. But the VERB'S own
+  // sentence must not travel in clear: a SEALED asker with no card on file
+  // reaches a verb, and refusal sentences in this tree name the relay's
+  // condition (megabytes free and needed, the disc guard, the obstruction
+  // on a full relay). Decision 0006 says that is the owner's business.
   //
   // bella is enrolled, sealed and cardless, and asks for an invite she
   // has no standing to mint. The VERB refuses her as not the owner.
@@ -152,7 +136,7 @@ test.subHeading('AND THE ONE PLAIN SENTENCE SAYS NOTHING ABOUT THE RELAY');
   }
 
   // The point stated as its own assertion, so it fails loudly rather than
-  // as a string mismatch if somebody restores the pass-through.
+  // as a string mismatch if the sentence ever passes through.
   if (said && !/owner|not your/i.test(String(said.error))) {
     test.check('and it carries no trace of the verb refusal underneath it');
   } else {
@@ -211,9 +195,7 @@ test.subHeading('And only its own, and only forward');
   const newer = nodeCard.cardFrom(rotated);
 
   // AND THE ANSWER COMES BACK SEALED TO THE NEW KEY, which is the whole
-  // consequence of rotating and is easy to get wrong: a first draft of
-  // this suite kept the OLD private half and could not open a word the
-  // relay said afterwards. A node that rotates without holding the new
+  // consequence of rotating: a node that rotates without holding the new
   // private key has made itself unreachable, politely.
   const up = lastAnswer(w, rotated, w.heard.bella, ask(w, w.bella, { card: newer }));
   if (up && up.ok && up.at === 2) {

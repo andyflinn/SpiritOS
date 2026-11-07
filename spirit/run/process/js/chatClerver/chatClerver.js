@@ -43,7 +43,7 @@ if (!STATE) {
 fs.mkdirSync(STATE, { recursive: true });
 
 const db = new DatabaseSync(path.join(STATE, 'memory.db'));
-// The backup copies this file while it is written, as it does desk.db: in WAL a reader never blocks the writer.
+// In WAL a reader never blocks the writer, so a backup can copy this file while it is written.
 db.exec('PRAGMA busy_timeout=5000');
 db.exec('PRAGMA journal_mode=WAL');
 db.exec(
@@ -219,8 +219,10 @@ appServer.serve({
   //     problem").
   //   - The node's block is the one truth and outranks: a blocked key is refused peer-blocked, nothing granted or
   //     posted ("a node-level-block supersedes app level blocks"). A node that cannot say refuses the write too.
-  //   - A held key is released by the owner's first line to it, no are-you-sure (Andy: "release happens when the
-  //     users sends a message to a held contact", "i prefer no are-you-sure.").
+  //   - DISCREPANCY WITH ANDY's RULES: goal/G43.17, Andy: "Didn't i say remove ALL code referencing "admit" and
+  //     "hold". it was a hair-brained scheme, and it HAS TO GO." The handler below still asks person.held and calls
+  //     contact.accept for a held key. contact.get's person carries no held field any more (contacts.js shaped()),
+  //     so that branch never runs: no line releases anybody.
   //   - A line to K is also the grant to K to answer ("writing to a peer should automatically be a grant to accept
   //     an answer"), asked of this node before the line leaves; a grant not kept refuses the write.
   //   - Refused and unsent lines stay in the record and go again, in their order, before the next new one.

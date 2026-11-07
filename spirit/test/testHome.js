@@ -1,16 +1,13 @@
 'use strict';
 
 // spirit/test/testHome.js
-// A SUITE NEVER WRITES INTO THE REAL HOME — found verifying desk/G1.7,
-// written FIRST, red on today's code.
+// A SUITE NEVER WRITES INTO THE REAL HOME — found verifying desk/G1.7.
 //
-//   Since desk/G1.7 every node boots a backup server that writes to
-//   <home>/.SpiritOS/backups/. A full run by wsl-claude left four test nodes
-//   (alfa, bravo, charlie, asbowner) in its real ~/.SpiritOS, and
-//   claude-windows' run left six in Andy's C:\Users\Andre\.SpiritOS. Andy:
-//   "test suites need their own copy of node"; their home is part of it.
+//   A node that runs the backup server writes to <home>/.SpiritOS/backups/,
+//   so test nodes booted with the real home land in the real ~/.SpiritOS.
+//   Andy: "test suites need their own copy of node"; their home is part of it.
 //
-// THE CONTRACT (claude-windows' fix, wsl-claude's test): testSupport.js,
+// THE CONTRACT: testSupport.js,
 // which every suite requires, gives its process a temp HOME and USERPROFILE,
 // so every node a suite boots inherits it; the real one is kept as
 // SPIRIT_REAL_HOME for the suite that needs it. The real home is read here

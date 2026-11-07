@@ -1,14 +1,14 @@
 'use strict';
 
 // spirit/test/deskClientQuiet.js
-// goal/G27.12, reopened 2026-10-17. Red on today's tree; claude-windows wrote it and builds it (one agent).
-//   Andy, 2026-10-17, reopening the item because Levant started chattering again: "No agent should hear when i take
+// goal/G27.12: deskClient keeps the agents quiet.
+//   Andy, 2026-10-17, reopening the item: "No agent should hear when i take
 //   the box", "when an agent's deskClient takes a chat line for him, all other deskClients should be refused a take,
 //   and thus NOT notify their agent.", "it's the deskClient that should manage that, we leave desk alone.", and to
 //   gating box.take and box.write in deskClient as chat is gated: "yes, add that". To silencing his box.release as
 //   well: "Do it."
 //
-// WHAT IS ASSERTED (the box of goal/G27.12, REOPENED)
+// WHAT IS ASSERTED (the box of goal/G27.12)
 //   1. Andy's box.take and box.release reach no agent; his box.write still does.
 //   2. deskClient takes Andy's chat line for its agent before handing it over:
 //      a. a line another agent took first is not handed over;
@@ -144,10 +144,10 @@ async function main() {
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
-  // (goal/G33.7: session.set went).
+  // (goal/G33.7).
   const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5'].map(function (id, i) { return { id: id, title: 'item ' + (i + 1), blocks: ['goal/G100'] }; });
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Quiet' }, items: items });
-  // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient (no `changes` to poll any more).
+  // goal/G33.4: the desk on the pretend node, so its stream reaches deskClient.
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-quiet-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }) }));
   await up('desk');

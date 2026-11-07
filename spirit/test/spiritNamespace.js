@@ -1,8 +1,8 @@
 'use strict';
 
 // spirit/test/spiritNamespace.js
-// goal/G32.2: the face code moves onto the spirit object, and the client interface into the spirit name space. Red on
-// today's tree; claude-windows writes it and builds it (one agent). The box (v2), in short:
+// goal/G32.2: the face code moves onto the spirit object, and the client interface into the spirit name space. The box
+// (v2), in short:
 //   - The shell elements, Files, Contacts, Join, Media Viewer, Apps and Icons reach the node only through the spirit
 //     object (goal/G32.1): no hand-made verb call is left in them.
 //   - The client interface lives in the spirit name space, the data buckets included: window.spirit.data,
@@ -12,6 +12,8 @@
 //   - Their input fields refuse what their rule would refuse as it is typed: no characters past the limit.
 // NAMED HERE: the members' names, spirit.<lowerCamel of what followed spirit>; spirit/element/fieldInput.js gives
 // spirit.element.fieldInput { fits(value, rule), attach(input, rule) }.
+// shell/mediaViewer, shell/apps and shell/icons are no longer in spirit/run, so the walk of 2 finds none of them, and
+// the fieldInput check of 3 reads shell/apps/apps.js and shell/icons/icons.js, which are gone, and fails.
 // rule/11: through testSupport only; nothing reaches a node.
 
 const fs = require('fs');

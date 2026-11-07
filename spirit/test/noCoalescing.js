@@ -1,15 +1,15 @@
 'use strict';
 
-// fileTransfer goal/G1.4: the unwanted publish coalescing leaves appServer. Red on today's code.
+// fileTransfer goal/G1.4: no publish coalescing in appServer.
 //   Andy: "so. again: why on earth would a coalesing apparatus all of a sudden be in the appServer module?",
 //   "through peerPost every item has a unique hash, no? let desk worry about its problems, don't but shit into a
 //   common component without asking.", "so get rid of the unwanted coalescing in appServer, first item on this
 //   goal. all other items depend on it."
-// The 100 ms last-object-wins rule was an agent's addition in desk/G2.3 (020c339a), never his ruling.
-// The contract the builder follows:
+// What is asserted:
 //   1. appServer.publish sends every object it is handed, as it is handed it: no timer, no pending object, no
 //      interval constant. (publishChecks.js proves it live: a burst of 200 arrives as 200, in order.)
-//   2. The size cap stays: an object over PUBLISH_MAX is refused out loud, as now.
+//   2. The size cap stays: an object over PAYLOAD_MAX is refused out loud (publish-too-large). The cap is now in
+//      spirit/run/spirit/events/events.js (app-request-too-large), which this suite does not read, so this check is red.
 //   3. No comment in the tree still says publish keeps only its last object per 100 ms.
 //   desk's one object per write carrying every changed row stays (desk/G3.10: one press changes several rows).
 
@@ -27,7 +27,7 @@ function code(file) {
 test.startTest('fileTransfer goal/G1.4: appServer publishes every object, no coalescing');
 
 test.subHeading('the coalescing machinery is gone from appServer');
-// publish moved into spirit.core.jobs (kernel.js) under goal/G29.15, so both files are read.
+// appServer.js and kernel.js are both read; appServer's publish hands each row to spirit.events.publish.
 const appServer = code(path.join(RUN, 'spirit', 'appServer.js')) + '\n' + code(path.join(RUN, 'spirit', 'kernel.js'));
 const left = ['PUBLISH_EVERY_MS', 'publishPending', 'publishTimer', 'publishLast'].filter(function (name) {
   return appServer.indexOf(name) !== -1;

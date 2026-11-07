@@ -1,22 +1,19 @@
 'use strict';
 
 // spirit/test/counterPort.js
-// THE TEST SERVER'S PORT COMES FROM THE LAUNCH DIALOG — processes/G1.2,
-// written FIRST.
+// THE TEST SERVER'S PORT IS A DECLARED LAUNCH ARGUMENT — processes/G1.2.
 //
 //   Andy, 2026-09-28: "the test server takes as argument a port number in
 //   the process UI launch process that uses the dynamic launch arguments
-//   dialog by providing argument introspection". His go on processes/G1.2,
-//   under his rule: red before the implementation, green after.
+//   dialog by providing argument introspection".
 //
-// The dialog builds its fields from the manifest's `args` (index.html:1446)
-// and gives a number field for type 'number' (index.html:1463), then starts
-// `node <script> <JSON of the values>`. So the manifest declares the port,
-// and a missing or bad port is refused by name instead of crashing on
-// ERR_SOCKET_BAD_PORT (what Andy saw on 2026-09-28).
+// counterServer.json declares its `args` (one, port, type 'number'), and the
+// script is started as `node <script> <JSON of the values>`. A missing or
+// bad port is refused by name instead of crashing on ERR_SOCKET_BAD_PORT.
+// (The old shell's launch dialog in index.html that built fields from `args`
+// is gone; this checks the manifest and the script only.)
 //
-// T2 already holds since processes/G1.1 (its tests start the server that
-// way); it stays as a GUARD, not as proof of this item.
+// T2 is a GUARD: it starts the server the way a launch with values does.
 
 const fs = require('fs');
 const net = require('net');

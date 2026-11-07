@@ -14,6 +14,12 @@
 //
 // Purely predicate/read checks — nothing here writes to disk, so it's
 // safe to run against a live checkout.
+//
+// SEVERAL SPECIMENS BELOW ARE NO LONGER IN THE TREE, so their checks fail on
+// the path, not on the gate: index.html and favicon.svg at the run root (the
+// page is spirit/shell/index.html), spirit/client/chatLog.js and
+// spirit/client/iconIndex.js (gone), process/js/pushOrigin/ (an app at
+// spirit/app/pushOrigin/ since goal/G43.21). "js/" below means spirit/run/spirit/.
 const path = require('path');
 const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
@@ -102,11 +108,9 @@ expectNotWritable('spirit/relayAuth.js', 'spirit/relayAuth.js');
 // ---- genuine browser assets stay open ----
 test.subHeading('Client assets stay servable');
 expectLoads('index.html (desktop homepage)', 'index.html');
-// relay.html (the --relay homepage) went with the relay's public door
-// (Andy's decision, goal/G22.6).
 expectLoads('favicon.svg', 'favicon.svg');
 expectLoads('spirit/client/shell.js (browser boot)', 'spirit/client/shell.js');
-// packet.js moved down here out of js/. If it ever stops serving, no app can
+// packet.js lives in client/. If it ever stops serving, no app can
 // send or read an envelope, and the shell can only say so in the console —
 // so the serving is asserted rather than discovered.
 expectLoads('spirit/client/packet.js (the app envelope)', 'spirit/client/packet.js');
@@ -127,12 +131,9 @@ expectNotWritable('shell/info/info.js (an intrinsic app\'s script is core, goal/
 expectLoads('shell/info/info.json (manifest)', 'shell/info/info.json');
 expectWritable('shell/info/info.json (manifest, goal/G14.8)', 'shell/info/info.json');
 
-// Natter's own data is ordinary scoped app data, written via api.fs. It
-// must stay both readable and writable — locking it in a "protect
-// everything the relay work added" sweep would break Natter. It was
-// relays.json until goal/G16.3 moved the node's relay list into node state
-// (spirit/state/relays.json, refused to every app); captions.json, what
-// this browser calls each relay, is the part that stayed the app's.
+// An app's own data is ordinary scoped app data, written via api.fs, and
+// must stay both readable and writable. The node's relay list is node state
+// (refused to every app); captions.json is the specimen of app data.
 //
 // SERVABLE, NOT LOADED: the gate is what this asserts, and it is a
 // question about the path. The file is gitignored (a fresh clone has
@@ -144,15 +145,11 @@ expectWritable('shell/info/captions.json (app data)', 'shell/info/captions.json'
 // ---- process scripts: readable, never writable ----
 // Job Selector/Job Monitor list them, the Code Viewer shows them; writes are already
 // impossible since process/ isn't a writable root.
-// The specimen was relayLabPing until 2026-09-13, when that script was
-// deleted from run/ for pointing at a lab. The RULE is about process/ as
-// a directory and outlives any one script in it, so the specimen moved
-// rather than the check — a rule whose only witness gets deleted is a
-// rule that silently stops being tested.
-//
-// pushOrigin is the witness since goal/G40.1 removed imageStats, the
-// first choice: a plain process script with no intrinsic mark, so its
-// code is not core.
+// The RULE is about process/ as a directory and outlives any one script in
+// it: when a specimen leaves, the specimen moves, not the check — a rule
+// whose only witness gets deleted is a rule that silently stops being
+// tested. The specimen named here, pushOrigin, left process/js/ for
+// spirit/app/pushOrigin/ (goal/G43.21), so it needs replacing again.
 test.subHeading('Process scripts are read-only, not hidden');
 expectLoads('process/js/pushOrigin/pushOrigin.js', 'process/js/pushOrigin/pushOrigin.js');
 expectWritable('process/js/pushOrigin/pushOrigin.js (only core is protected, goal/G30.21)', 'process/js/pushOrigin/pushOrigin.js');
@@ -208,11 +205,10 @@ test.subHeading('scanFolder listings honour the same gate');
 }
 
 // A folder can be refused by the predicate and still be listed, if the
-// walk only ever asks about files — which is exactly what happened:
-// identity.json, who.json, allow.json and mailbox.json were all correctly
-// invisible while the empty folder holding them appeared in every
-// listing, in the Files tree and in the fs-watcher payload. One verdict,
-// asked by every consumer, including about directories.
+// walk only ever asks about files: the files of relay-state/ invisible while
+// the empty folder holding them appeared in every listing, in the Files tree
+// and in the fs-watcher payload. One verdict, asked by every consumer,
+// including about directories.
 test.subHeading('A refused folder is not listed either');
 {
   const entries = spirit.core.node.util.scanFolder(ROOT_DIR);

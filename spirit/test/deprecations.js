@@ -29,8 +29,9 @@ const REPO = path.join(__dirname, '..', '..');
 const REGISTER = path.join(REPO, 'design', 'DEPRECATIONS.md');
 const MARKER = /DEPRECATED\(D(\d+), expires: ([a-z0-9._-]+)\)/g;
 
-// Where product code lives. Tests are not scanned: a suite that mentions
-// a marker in prose (this one) is not a shim.
+// Where product code lives. spirit/test/ is not scanned: a suite that
+// mentions a marker in prose (this one) is not a shim. The test/ folders
+// beside the modules under spirit/run/ are walked with it.
 const ROOTS = [
   path.join(REPO, 'spirit', 'run'),
   path.join(REPO, 'bash'),

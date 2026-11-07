@@ -1,17 +1,11 @@
 'use strict';
 
-// goal/G9.15: a goal or item box is always visible and ready to edit by user or agents. Red on today's tree;
-// claude-windows wrote it from G9.15's box and does not build it.
-//   Andy, 2026-10-09, under goal/G10: "First Thing: I don't get to edit the box here so i can't lay out a first cut
-//   design"; under goal/G9.16: "a goal or item box is always visible and ready to edit by user or agents."
+// goal/G9.15: a goal or item box is always visible and ready to edit by user or agents.
+//   Andy: "a goal or item box is always visible and ready to edit by user or agents."
 //
-// WHAT IS TRUE TODAY (read in the tree at ffcbbfe2): the details dialog draws a box that has text as a textarea,
-// id dd-box-input (goal/G9.3), but an EMPTY box as the note "No text yet: an agent writes it." with no input at
-// all, so the first text of a goal or item he just made cannot be his.
-//
-// THE SHAPE ASSERTED (G9.15's box): the box is the same textarea whether it has text or not; an empty one is an
-// empty textarea, taken on focus and written on blur as a filled one is. The take and the release stay as G9.3
-// built them.
+// THE SHAPE ASSERTED: the details dialog (deskDetails.js) draws the box as the same textarea, id dd-box-input,
+// whether it has text or not; an empty one is an empty textarea, taken on focus and written on blur as a filled one
+// is (goal/G9.3's take and release).
 
 const fs = require('fs');
 const path = require('path');

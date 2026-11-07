@@ -1,22 +1,17 @@
 'use strict';
 
-// goal/G9.10: an Add blocking item section in the item Details. Red on today's tree; claude-windows wrote it from
-// G9.10's box and does not build it.
-//   Andy, 2026-10-07: "In the item/Goals detail dialog, there will be a new section bubble, immediately following the
+// goal/G9.10: an Add blocking item section in the item Details.
+//   Andy: "In the item/Goals detail dialog, there will be a new section bubble, immediately following the
 //   \"Blocked by/Blocking\" section, and right before the users chat input. the \"Add blocking item\" form is the
 //   following set up items arranged inline as follows: \"Title\" [Title String, subject to label rules] [add-button].
 //   When the user presses the [add-button], The desk will add a blocking item with the entered title and a blank text
 //   box. The blocked-by section will be updated immediately."
 //
-// WHAT IS TRUE TODAY (read in the tree after 53b4de83): item.add {goal, title} (goal/G9.9) adds an item that blocks
-// its goal and nothing else; the dialog has no add form.
-//
-// THE SHAPE ASSERTED, the red writer's reconciling of two boxes: G9.10's box names item.add {id, title}, but G9.9 has
-// since built item.add {goal, title}. So item.add gains one optional argument, `blocks`, the id the new item blocks,
-// an item of that goal or the goal itself, the goal when left out. One verb, nothing renamed. The title obeys the label
-// rules (js/fieldRules.js problem: 64 bytes at most, among others); the box starts empty.
-// The dialog's section: an input dd-add-title and a button dd-add (the red writer's names), after the blocks panel
-// (#dd-panel with 🪠 pressed, goal/G30.8; #dd-links before it) and before
+// THE SHAPE ASSERTED: item.add {goal, title, blocks} (desk.js): `blocks` is the id the new item blocks, an item of
+// that goal or the goal itself, the goal when left out. The title obeys the label rules (spirit/run/spirit/fieldRules.js
+// problem: 64 bytes at most, among others); the box starts empty.
+// The dialog's section (spirit/run/shell/deskDetails/deskDetails.js): an input dd-add-title and a button dd-add in
+// #dd-add-row, after the blocks panel (#dd-panel with 🪠 pressed, goal/G30.8; #dd-links before it) and before
 // the chat input #dd-say; the button sends item.add with the dialog's own item as `blocks`, and the Blocked by part
 // shows the new id without waiting for anything else.
 

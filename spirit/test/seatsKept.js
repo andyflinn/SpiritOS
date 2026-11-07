@@ -19,11 +19,14 @@
 //   5. Natter: the row says the relay refused this node, since when, that the
 //      seat is gone and only a new invite brings it back, and offers Remove —
 //      never on the last relay; relay.remove refuses the last public relay, and
-//      a Remove gives up the seat (relayKeys.unseat).
+//      a Remove gives up the seat (relayKeys.unseat). THE NATTER HALF READS
+//      spirit/run/shell/natterDetails/natterDetails.js, WHICH IS GONE (no Natter
+//      app in the tree), so section 5 trips on ENOENT; the node half
+//      (relay.remove) is after it and does not run either.
 //   6. an accepted rename writes the new label into that relay's seat row.
 //   7. the relay refuses an unknown sender as "your id is not a valid sender
 //      here", code not-a-sender, on the post, the reply and the stream.
-//   8. natterDetails no longer reads c.peers or roll.roster.
+//   8. natterDetails reads no c.peers or roll.roster (the same missing file).
 //   9. the refusal and its time are two columns on node.db's relays row,
 //      keyed by relay key (goal/G19.15's table), added to an older node.db.
 
@@ -365,8 +368,8 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   }
 
   // ── 5 ─────────────────────────────────────────────────────────────
-  // NATTER RETIRED (goal/G30.7): natterDetails asks the remove rule itself (ownerBadge.removalRefusal over the rows
-  // its probe brings) and performs a Remove through relay.remove; nobody hands it canRemove.
+  // natterDetails was to ask the remove rule itself (ownerBadge.removalRefusal over the rows its probe brings) and
+  // perform a Remove through relay.remove (goal/G30.7); the file is gone, so mountDetails throws here.
   test.subHeading('5. natterDetails: the refused row, and Remove');
   {
     const at = '2026-10-12T09:30:00.000Z';

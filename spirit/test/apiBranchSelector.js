@@ -1,20 +1,18 @@
 'use strict';
 
-// apiAuth/G1.9: the api-branch selector. Red on today's code.
+// apiAuth/G1.9: the api-branch selector.
 //   Andy: "api-graph-selector [appServer-dropdown] [verb-dropdown] the verb-dropdown selection chances
 //   automatically depending on the selection in the appServer-dropdown", "the api-branch selector, which
 //   depends on the appServer-selector". Settled in the box: "the verb dropdown will have an option
-//   ( ** all verbs **)": choosing it is the app-level grant, the path is the app alone; and
-//   "DEBUG/DEPENDENCIES are owner only and will never be offered to peerPost clients."
-// The contract the builder follows (G1.8's pattern, its index extended — claude-windows: "G1.9 can add
-//   its verb list to the same index"):
-//   - js/client/apiTreeIndex.js grows verbs(tree, server): the verb names of that server in an 'api'
-//     answer, sorted, DEBUG and DEPENDENCIES never among them; a server the tree does not hold, or one
-//     whose branch is an error, has no verbs.
-//   - shell.js hands apps api.ui.elements.createApiBranchSelector(options), beside the other two: the
-//     appServer selector inside it (G1.8), a verb dropdown filled from spirit.apiTreeIndex.verbs that
-//     refills when the server changes, and an "all verbs" option. Its root carries .value — the PATH,
-//     'app' when all verbs is chosen, 'app.verb' otherwise — and fires a bubbling change.
+//   ( ** all verbs **)": choosing it is the app-level grant, the path is the app alone.
+// What it checks:
+//   - spirit/run/spirit/client/apiTreeIndex.js verbs(tree, server): the verb names of that server in an 'api'
+//     answer, sorted; a server the tree does not hold, or one whose branch is an error, has no verbs. The
+//     code leaves out DEBUG only (API_TREE_OWNER_VERBS); this file still expects DEPENDENCIES left out too.
+//   - shell.js hands apps api.ui.elements.createApiBranchSelector(options) from spirit/element/apiBranchSelector.js.
+//     That file is gone: it was renamed apiFamilySelector.js (goal/G41.14) and folded into
+//     spirit/run/spirit/element/search/api.js (goal/G43.18), and search/test/apiFamily.js asserts the old name is
+//     not there. This half throws ENOENT.
 
 const fs = require('fs');
 const path = require('path');
@@ -47,7 +45,7 @@ if (!index || typeof index.verbs !== 'function') {
 
 test.subHeading('the shell hands apps the element, the appServer selector inside it');
 const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
-// The factories moved to spirit/element/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
+// The old element file at spirit/run/spirit/element/apiBranchSelector.js, which no longer exists (see the header).
 const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'spirit', 'element', 'apiBranchSelector.js'), 'utf8');
 const at = elements.indexOf('function createApiBranchSelector');
 const handed = /elements:\s*\{[^}]*createApiBranchSelector:\s*shellElements\.createApiBranchSelector/.test(shell.replace(/\n/g, ' '));

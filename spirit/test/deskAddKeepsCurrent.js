@@ -1,19 +1,16 @@
 'use strict';
 
-// goal/G9.13: adding an item never changes the current goal. Red on today's tree; claude-windows wrote it from
-// G9.13's box and does not build it.
+// goal/G9.13: adding an item never changes the current goal.
 //   Andy, 2026-10-09, under goal/G9: "An item added to another goal should NOT change a goal." and "cw: Add an item to
 //   this goal to that effect.", after cw added goal/G8.8 through session.set and his current goal moved from G9 to G8.
 //
-// WHAT IS TRUE TODAY (read in the tree at 7cd6d633): the session.set branch of the walk ends `s.current = gid`
-// (process/js/desk/desk.js), so writing a goal's items makes that goal current, whichever goal was current before.
+// WHAT THE DESK DOES (spirit/run/process/js/desk/desk.js, the walk's write of a goal's members): a write into a goal
+// the desk already holds leaves the current goal alone; a goal the desk has never seen, or a desk with no current
+// goal, still becomes current.
 //
 // WHAT IS ASSERTED, and only that: with a current goal standing, an add to ANOTHER goal leaves the current one where
 // it is, and the add itself still lands. Whether the very first goal on an empty desk becomes current is not his
 // ruling and is not asserted here. item.add (goal/G9.9) is held to the same in deskIds.js.
-//
-// FOR THE BUILDER: deskMakeCurrent.js opens with "the goal written last is the current one, as session.set leaves
-// it", the behaviour this item removes; that world line moves with the build.
 
 const fs = require('fs');
 const os = require('os');

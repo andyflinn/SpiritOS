@@ -1,7 +1,8 @@
 'use strict';
 
 // spirit/test/boardPostSuite.js
-// THE BOARD REACHES ANDY'S DESK WHEN IT CHANGED, AND NEVER IN PART.
+// boardPost.decide: A BOARD IS POSTED WHEN IT CHANGED, AND NEVER IN PART.
+// Nothing in the tree calls boardPost now (no SCOREBOARD.json, no agents app), and runAll skips this suite.
 
 const test = require('./testSupport.js');
 const boardPost = require('./boardPost.js');
@@ -10,8 +11,7 @@ const limits = require('../run/spirit/limits.js');
 test.startTest('The lead posts the board when it changed, and refuses one too big to send');
 
 function boardOf(rows) { return JSON.stringify({ rows: rows }, null, 2); }
-// The envelope was the agents app's (makeEnvelope), and the app is gone (goal/G3.2). What decide() measures is
-// the board wrapped once more in JSON, so a plain wrapper stands in for it here.
+// What decide() measures is the board wrapped once more in JSON, so a plain wrapper stands in for an envelope here.
 function envelopeOf(json) { return JSON.stringify({ from: 'lead', kind: 'board', text: json }); }
 
 const small = boardOf([{ kind: 'to-do', id: 'x/a', title: 'a' }]);

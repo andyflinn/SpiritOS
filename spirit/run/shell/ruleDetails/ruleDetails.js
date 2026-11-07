@@ -30,7 +30,7 @@ var rdData = spirit.cacheManager('desk');
 
 function rdEsc(s) { return rdApi.escapeHtml(String(s == null ? '' : s)); }
 
-// The one way to the desk server: its verb by name on the loopback door (desk.<verb>, goal/G30.6).
+// The one way to the desk server: its verb by name on the flat apiDoor (desk.<verb>, goal/G30.6).
 function rdAsk(verb, args) {
   return Promise.resolve(rdApi.verb('desk.' + verb, args)).then(function (r) {
     var body = (r && r.body) || {};
@@ -75,7 +75,7 @@ function rdFrame() {
   }, function () { /* no armingButton, no second press */ });
 }
 // THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #rd-bars moves into the app header, which sticks it
-// under the titlebar, and takes its id. As deskDetails' ddHeader.
+// under the titlebar, and takes its id. As Desk's deskHeader (shell/desk/desk.js).
 function rdHeader() {
   var old = document.getElementById('rd-bars');
   var els = rdApi && rdApi.ui && rdApi.ui.element;

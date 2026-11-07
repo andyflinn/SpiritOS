@@ -3,9 +3,11 @@
 // spirit/test/boardRankSuite.js
 // THE BOARD'S ORDER, ASSERTED ON FIXTURES RATHER THAN READ OFF A PAGE.
 //
-// boardRank.js decides what Andy reads first. A wrong order is a quiet
-// lie — nothing goes red, the page just points him at the wrong thing — so
-// every way it could lie is a case here, and each has a control.
+// boardRank.js orders a board of items. A wrong order is a quiet lie —
+// nothing goes red, the page just points him at the wrong thing — so every
+// way it could lie is a case here, and each has a control. Nothing in the
+// tree calls boardRank.js now (Desk is the board), and runAll.js skips this
+// suite and boardRank.js both.
 
 const test = require('./testSupport.js');
 const board = require('./boardRank.js');
@@ -214,9 +216,6 @@ test.startTest('The board ranks what unblocks most first, and says what it canno
 }
 
 // ── A DEPENDENCY'S ID FOLLOWS ITS TREE ───────────────────────────────
-//
-// The todo rule these ids were also held to was agents.js's (TODO_ID), and
-// the agents app is gone (goal/G3.2), so that half of this case went with it.
 {
   const dep = board.dependencyId([{ from: 'puppets/G7', to: 'puppets/G6' }, { from: 'puppets/G4', to: 'puppets/G7' }]);
   const depSwapped = board.dependencyId([{ from: 'puppets/G4', to: 'puppets/G7' }, { from: 'puppets/G7', to: 'puppets/G6' }]);

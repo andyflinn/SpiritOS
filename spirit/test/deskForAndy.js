@@ -1,6 +1,6 @@
 'use strict';
 
-// goal/G4.20: Desk for Andy. Red on today's tree; wsl-claude wrote it, claude-windows builds it.
+// goal/G4.20: Desk for Andy.
 //   His words are in goal/G4.20's box (v4), split from goal/G4.18. The DECIDED points this suite holds:
 //   1  search: "the search should search the database, and return matches, one extra search filter toggle
 //      [include closed] would do the trick on my side."
@@ -16,34 +16,32 @@
 //      on the row exactly while that list is not empty ("if those two things would match at all times, id know
 //      exactly where i need to navigate to.").
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
+// THE SHAPES ASSERTED (later items changed some, as marked):
 //   1  items.search's request gains includeClosed (false by default in the List): true answers closed items too.
 //      The List draws a toggle #desk-include-closed beside #desk-current-goal; a click asks items.search again
 //      with includeClosed flipped. The List's every items.search carries includeClosed.
-//   2  buttons() of a closed item is ['reopen']. press reopen clears done AND closed; go stays true; the claims go,
-//      so Done is not offered again by accident, and Go is not offered (his Go is kept).
+//   2  buttons() of a closed item is ['reopen']. press reopen clears done AND closed and the claims, so Done is not
+//      offered again by accident; since goal/G40.3 it also puts the item back in design mode without his Go.
 //   3  facts gain claims: the number of agents that claimed done. The dialog's Done reads "Done (n)".
 //   8  facts lose star; the List draws no DESK_UNSEEN; the dialog presses no seen for a star. agentLineN goes with
 //      it. (alert, the bring-back ❗, stays: it is not the star.)
 //   9  A new desk verb box.take {id} (a Desk verb, not a node verb): an agent takes the box before a change it
 //      will write (cap, split, "update the box"). facts gain boxTaken: the taker's name, '' when none. While it
-//      stands another agent's box.take and box.write are refused 'taken'; the taker's box.write clears it. Andy
-//      takes nothing (bad-request), as line.take. The dialog draws the box with data-taken="<taker>" and a red
+//      stands another agent's box.take and box.write are refused 'taken'; the taker's box.write clears it. Since
+//      goal/G9.3 Andy takes the box too (below). The dialog draws the box with data-taken="<taker>" and a red
 //      border while boxTaken is set. Words his lines race on (green, explain, "push it") stay line.take's.
 //   10-11 THE WAITING LIST IS THE CHECKS, two more kinds: G (a grant) and Q (a question), beside C (how he checks
 //      it, his Done verifications) and T. check.set gains two states: granted (a G, Andy alone; an agent is refused
 //      not-owner) and answered (a Q, an agent's). facts gain asks: the number of open G, open Q, and open C
 //      while Done is offered. The List row shows ICON.ERROR exactly while asks > 0 — so an item that offers
-//      Close alone (design mode) shows none. The dialog draws them above #dd-say (#dd-waiting until goal/G30.8,
-//      now the files panel for G and the red Qs' panel for Q, their icons blinking while one is open):
+//      Close alone (design mode) shows none. The dialog draws them above #dd-say, the files panel for G and the
+//      red Qs' panel for Q (goal/G30.8), their icons blinking while one is open:
 //      an open G a red arm-button data-grant="G1" (first click arms, second sends check.set state granted),
 //      a granted G green with data-granted="G1", an open Q red text data-question="Q1" with its number and words;
 //      a click on it appends "Q1: <words>" as a line of its own to #dd-say. An answered Q is not drawn.
 //
 // LEFT OPEN, not asserted: whether a Go offered, or a Done offered with no C written, counts in asks; whether
 //   includeClosed also shows an abandoned goal's items; the commit check enforcing grants (TO SHAPE in the box).
-//   Older suites assert what this replaces (deskRules B3: a closed item offers no buttons; deskList and
-//   deskDialogClose feed star; deskServer's VERBS list): the builder rewrites them to the new shapes.
 
 const fs = require('fs');
 const os = require('os');

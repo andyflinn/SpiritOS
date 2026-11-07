@@ -1,7 +1,7 @@
 # process/js/desk/deskAgentEar.js
 
 The agent's Desk listener (goal/G3.6): a short process the agent runs in the background. It asks its own node's
-deskClient for what waits, prints it and exits; the exit is the agent's wake. Since goal/G41.11 it also makes sure the
+deskClient for what waits, prints it and exits; the exit is the agent's wake. It also makes sure (goal/G41.11) the
 agent has read a wake before it may listen again (Andy, goal/G41: "The desk ear must not successfully start listening if
 there is a wake waiting", and of the read key: "good idea, make the red assert it").
 

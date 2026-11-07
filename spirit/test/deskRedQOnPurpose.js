@@ -1,7 +1,8 @@
 'use strict';
 
 // spirit/test/deskRedQOnPurpose.js
-// goal/G21.2: a red Q is placed on purpose. Red on today's tree; claude-windows wrote it and builds it (one agent).
+// goal/G21.2: a red Q is placed on purpose. Exercises desk.js (check.add, chat.add's clears, press) and the item
+// dialog deskDetails.js (spirit/run/shell/deskDetails/).
 // The item's box, Andy's decisions:
 //   - A red Q is a concise question placed with deliberation, to block an item until it is resolved.
 //   - A question mark in a chat line never makes a red Q; only a deliberate Q check does.
@@ -13,10 +14,11 @@
 //   - A red Q clicked into Andy's chat box arrives followed by two newlines, so the question stands apart from the
 //     answer he writes below it.
 //
-// THE SHAPES THIS SUITE NAMES (the box names none):
+// THE SHAPES ASSERTED (the box names none):
 //   - His clear is a chat line of his, typed "Q:clear" or "Q<n>:clear" (case and blanks ignored), kept in the chat;
 //     each Q it clears goes to state 'cleared' by a check.set record of his, addressed (to) the key that placed it,
-//     so the placer's deskClient hands it on and another agent's does not (since goal/G33.4 by the desk's stream). A cleared Q leaves the panel as an answered one.
+//     so the placer's deskClient hands it on and another agent's does not (by the desk's stream, goal/G33.4). A cleared
+//     Q leaves the panel as an answered one.
 //   - A clear that names nothing open is refused with a why, and no line is kept.
 //   - "One sentence": no sentence end (. ! ?) followed by more text, and no line break; at most 200 bytes, in bytes.
 //   - Existing records: an open Q raised from a chat line before goal/G21.2 stays open after a restart.
@@ -45,9 +47,12 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 10; i++) await settle(); }
 
-// ANDY'S NODE, AS THE DESK'S STREAM SEES IT (goal/G33.4: `changes` is gone; the desk streams each row). What the desk
+// ANDY'S NODE, AS THE DESK'S STREAM SEES IT (goal/G33.4: the desk streams each row). What the desk
 // sends an agent's deskClient (peer.post to its streamListener) goes into sent as {to, row}, answered as that
 // deskClient's node would: its family interface, then heard.
+// STALE: since goal/G41.12 appServer hands a streamListener one bundle, a JSON array of entries (appServer.js,
+// streamListener {json}); this stand-in keeps the parsed array as one row, so recordsFor finds no row with a change
+// and the two "notified" checks of part 5 fail.
 function streamNode() {
   const sent = [];
   const streams = [];
@@ -116,8 +121,8 @@ async function theServer() {
   const why = function (r) { return r && r.extra && r.extra.why ? String(r.extra.why) : ''; };
   const ask = function (id, words, who) { return call('check.add', { id: id, kind: 'Q', words: words, test: '' }, who); };
   const lastN = async function () { const r = await call('item.get', { id: 'goal/G100' }, ANDY); return Number(r.change) || 0; };
-  // WHAT THE DESK'S STREAM HANDED caller's deskClient after change from (goal/G33.4: `changes` is gone), after a moment
-  // for the stream to arrive.
+  // WHAT THE DESK'S STREAM HANDED caller's deskClient after change from (goal/G33.4), after a moment for the stream to
+  // arrive.
   const recordsFor = async function (from, caller) {
     await sleep(1500);
     return andysNode.sent.filter(function (s) { return s.to === caller.key && Number(s.row.change) > from; }).map(function (s) { return s.row; });
@@ -132,8 +137,8 @@ async function theServer() {
   };
   try {
     const items = ['goal/G100.1', 'goal/G100.2', 'goal/G100.3', 'goal/G100.4', 'goal/G100.5', 'goal/G100.6', 'goal/G100.7'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['goal/G100'] }; });
-    // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; both
-    // goals are seeded before the desk starts, and his make-current brings each up in its turn (goal/G100 first).
+    // An agent creates no goal (goal/G29.21), so the owner's world is seeded before the desk starts (goal/G33.7), and
+    // his make-current brings each goal up in its turn (goal/G100 first).
     test.seedDesk(state, [
       { goal: { id: 'goal/G100', title: 'Red Qs' }, items: items },
       { goal: { id: 'goal/G101', title: 'Press' }, items: [{ id: 'goal/G101.1', title: 'Held', blocks: ['goal/G101'] }] },
@@ -241,7 +246,7 @@ async function theServer() {
     const nothing = await call('chat.add', { id: 'goal/G100.6', text: 'Q3:clear' }, ANDY);
     if (nothing.ok === false && why(nothing)) test.check('a clear naming no open Q is refused, with a why: ' + short(why(nothing)));
     else test.fail(OWED + '"Q3:clear" on an item with no Qs answered ' + short(nothing));
-    // Since goal/G21.4 an agent holds one task at a time: wsl-claude lets goal/G100.1 go before it takes goal/G100.6.
+    // An agent holds one task at a time (goal/G21.4): wsl-claude lets goal/G100.1 go before it takes goal/G100.6.
     await call('item.release', { id: 'goal/G100.1' }, WSL);
     await call('item.take', { id: 'goal/G100.6' }, WSL);
     await ask('goal/G100.6', 'Can an agent clear it?', WSL);
@@ -250,7 +255,7 @@ async function theServer() {
     else test.fail(OWED + 'an agent\'s "Q:clear" cleared ' + short(await qsOf('goal/G100.6')));
 
     test.subHeading('6. an open red Q holds a press until it is cleared');
-    // goal/G33.7: the second goal, seeded, made current as its session made it.
+    // The second goal, seeded, made current.
     await call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
     await ask('goal/G101.1', 'Is the shape settled?', WSL);
     const held = await call('press', { id: 'goal/G101', what: 'end-design' }, ANDY);
@@ -263,8 +268,8 @@ async function theServer() {
     await call('item.release', { id: 'goal/G100.6' }, WSL);
     await call('item.take', { id: 'goal/G100.7' }, WSL);
     await call('chat.add', { id: 'goal/G100.7', text: 'wsl: an old question, before goal/G21.2?' }, WSL);
-    // goal/G33.4: no log of writes to plant an old record in; the line's mark and the open Q are rows of the tables,
-    // written here as the migration writes a Q a line raised before goal/G21.2, and read back after a restart.
+    // The line's mark and the open Q are rows of desk.db's chat and checks tables, written here as the migration writes
+    // a Q a line raised before goal/G21.2, and read back after a restart.
     await stop();
     const db = new DatabaseSync(path.join(state, 'desk.db'));
     const lineRow = db.prepare('SELECT data FROM chat WHERE goal = 100 AND item = 7 AND seq = 0').get();

@@ -2,8 +2,8 @@
 
 // spirit/test/contactSelectorPane.js
 // goal/G4.14: the peer pane, and the dropdown that is the same pane, in one shell element, spirit/element/search/contact.js.
-// RED on today's tree: contactSelector.js is the browser's own select, text only, with no search box, no status
-// column, no pane face and no current row.
+// STALE: the fake page loads shell/shared/js/listSearch.js (LIST below), deleted in goal/G41.28; contact.js now
+// builds on spirit/element/search.js and the contact family's cache, so this suite throws before its first check.
 //
 //   Andy, 2026-10-03, his go-all on goal/G4; the rulings stand verbatim in the box of goal/G4.14: "if a peerPane would
 //   allow mark() per item, like a red star or so, i and chatter probably can live with that..."; "the presence is
@@ -15,7 +15,7 @@
 //
 // THE CONTRACT (the box of goal/G4.14; the shapes it left open named here, marked NAMED).
 //   One factory, window.spirit.elements.createContactSelector(options), two faces: options.face 'pane' (NAMED), or the
-//   dropdown, the default, so its users (grants.js, natterDetails.js) change nothing.
+//   dropdown, the default.
 //   1. THE LIST: a search box (an input) over rows fed by a bounded search: options.search(text) -> Promise of
 //      {items: [{key, label}], more} (NAMED), contact.search {q} when none is given. With nothing typed it asks with
 //      '' and draws the rows in the order answered; typing asks again with the text. A cut answer (more) says so.
@@ -37,10 +37,10 @@
 //      (NAMED); false is white too, never red, which is a status in chatter. Dot and status mark stand side by side,
 //      and presence survives a redraw.
 // NOT ASSERTED, the builder's: markup beyond the names above, classes, scrolling, the fold button (chatter's, G4.9 and
-// G4.10). shellElements.js, which reads today's native select, moves with the change.
-// THE PAGE (goal/G29.6): the selector is a wrapper around shellCreateListSearch (shell/shared/js/listSearch.js), so the
-// fake page loads the three probability modules and listSearch.js before contactSelector.js, as index.html does. The
-// list writes its markup as html into the pane, ids listsearch-<n>-filters|text|clear|search|count|list, and finds its
+// G4.10).
+// THE PAGE (goal/G29.6): written for the selector as a wrapper around shellCreateListSearch (the deleted
+// shell/shared/js/listSearch.js), so the fake page loads the three probability modules and listSearch.js before
+// contact.js. The list wrote its markup as html into the pane, ids listsearch-<n>-filters|text|clear|search|count|list, and finds its
 // parts by document.getElementById; rows are <tr data-key> strings in the list part, read here by their cells.
 
 const fs = require('fs');
@@ -171,7 +171,7 @@ function load() {
     ask: function (verb, body) { asked.push({ verb: verb, body: body || {} }); return Promise.resolve({ status: 200, body: { items: [{ key: 'kc', label: 'from contact.search' }], more: false } }); },
     util: { escapeHtml: kernel.core.util.escapeHtml }, const: { ICON: ICON } } };
   test.spiritFor(sp.core.ask, sp);
-  // As index.html loads them (goal/G29.6): the probability modules, the shared list, then the selector.
+  // The probability modules, the shared list (deleted, see STALE above), then the selector.
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
     new Function('window', 'module', fs.readFileSync(path.join(RUN, 'spirit', f), 'utf8'))(win, undefined);
   });

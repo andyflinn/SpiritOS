@@ -1,31 +1,11 @@
 'use strict';
 
-// goal/G8.2: deskVerify knows where it runs, and only the desk node's copy keeps the record. Red on today's tree;
-// wsl-claude wrote it from G8.2's box and does not build it.
-//   Andy, 2026-10-09: "The agent node should have it. but only to assess if it can consider it's coding task done. no
-//   commit for deskVerify on an agents node. IE: deskVerify knows where it runs. and only the desk node has the right
-//   to commit it's measurements (suite results)", "deskVerify belongs to my clone and is a companion to desk, it runs
-//   on your clone only as a personal check (is my work done?)", and "deskVerify on an agent node exists only as block
-//   for the agent claiming 'done', it will never commit."
+// goal/G8.2, as goal/G33.3 and goal/G21.3 left it: every node's deskVerify keeps its own records.
+//   Andy, 2026-10-09: "deskVerify on an agent node exists only as block for the agent claiming 'done', it will never
+//   commit."
 //
-// WHAT IS TRUE TODAY (read at b4a9eaff): deskVerify writes a row for every record it takes, wherever it runs, and it
-// never asks its node anything.
-//
-// HOW THE MODE IS READ, and the one thing this suite pins that the box leaves loose: his words are "the existence of
-// desk itself is the deciding factor", but an agent's node runs a desk server too - mine runs desk AND deskClient
-// (asked of my own node, 2026-10-09: faceProof, appFaceAppServer, backup, desk, deskClient, fileServer, grantFace),
-// because a deskClient's desk is in the node's include list since goal/G3.7. So the desk alone cannot tell the two
-// apart, and the deskClient is what marks an agent: a node running one is an agent node whatever else it runs.
-//   deskClient on the node -> 'agent'; else desk on the node -> 'desk'; neither -> 'none' (out of scope, his word).
-// The node is asked with the verb every app server already has for its own node's port (appServer.js sets
-// spirit.core.node.const.SPIRIT_PORT from spirit/state/environment.json), so nothing is configured and nothing passed.
-//
-// THE SHAPE ASSERTED, names mine for the builder to argue:
-//   mode {} -> {mode, apps}: what it read, and the app names it read it from. (A verb until goal/G19.11; now only
-//   the function inside deskVerify, judged by what `record` keeps.)
-//   record: in 'desk' and 'agent' modes it keeps rows as goal/G8.1 built it; in 'none' mode it answers and stores
-//   nothing.
-// SINCE goal/G33.3 there is no mode: deskVerify asks its node nothing about a desk, and every node keeps its records.
+// SINCE goal/G33.3 there is no mode: deskVerify asks its node nothing about a desk (Andy: "deskVerify has no fucking
+// clue about desk, desk goals or desk items"; no mode() in deskVerify.js), and every node keeps its records.
 // SINCE goal/G21.3: every node's deskVerify keeps its own test records in the same shape; the desk node's records are
 // the authoritative ones, an agent's are private to its own work and never go through git. "No commit" means the
 // agent's deskVerify writes nothing official, not that it keeps no records. Section 3 asserts that.
@@ -60,8 +40,8 @@ function fakeNode(apps) {
         const body = {};
         apps.forEach(function (a) { body[a] = {}; });
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        // A real node answers the verb api (the flat apiDoor, goal/G30.6) with the tree itself, app name -> its verbs (asked of claude-windows'
-        // node, 2026-10-09), not wrapped in {status, body}; the builder made the fake answer the same.
+        // A real node answers the verb api (the flat apiDoor, goal/G30.6) with the tree itself, app name -> its verbs,
+        // not wrapped in {status, body}; the fake answers the same.
         res.end(JSON.stringify(ask && ask.verb === 'api' ? body : {}));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
@@ -111,11 +91,10 @@ async function start(name, apps) {
   const deskNode = await start('deskside', ['desk', 'fileServer', 'backup']);
   // AN AGENT'S CLONE: a deskClient beside a desk, as my own node runs it.
   const agentNode = await start('agentside', ['desk', 'deskClient', 'fileServer']);
-  // A NODE THAT IS NEITHER (his word: out of scope, so it keeps nothing and says so).
+  // A NODE THAT IS NEITHER: it keeps its records too (goal/G33.3, below).
   const bare = await start('bareside', ['fileServer']);
   try {
-    // SECTION 1 ASKED THE mode VERB, which only this suite called; it went in goal/G19.11. The mode is still read from
-    // the node (mode() in deskVerify.js), and what it decides is asserted below: whether a record is kept.
+    // No section 1: the mode verb went in goal/G19.11, and the mode itself with goal/G33.3.
     test.subHeading('2. his clone keeps the record');
     const kept = await deskNode.ask('record', { suite: 'mini.js', title: 'it holds', outcome: 'green' });
     if (kept.body && kept.body.written === true && deskNode.rows().length === 1) test.check('a record on the desk node is written, as goal/G8.1 has it');

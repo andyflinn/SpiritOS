@@ -16,7 +16,7 @@
 //      router.claim, and no http/https request or fetch in this process while they run.
 //   2. A relay with an open stream shows online; one this node owns (it holds the report a relay sends only to its
 //      owner) shows owned with this node's key as its owner; one seated shows claimed; the relay's key is the one
-//      pinned (offboard reads it as roll.relayKey), and what it calls this node is this node's own name (goal/G40.11).
+//      pinned (read as roll.relayKey), and what it calls this node is this node's own name (goal/G40.11).
 //   3. A seated relay with no stream shows offline; a relay never met (no seat, no stream) shows "not joined".
 //   4. relayRequest.js no longer exports assertRelayUrl (or isLoopbackHost); spirit/run/spirit/relayUrl.js does, with
 //      the same rules: https anywhere, http only to loopback, anything else and a bad url refused.

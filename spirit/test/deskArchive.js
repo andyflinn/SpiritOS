@@ -1,29 +1,20 @@
 'use strict';
 
-// goal/G4.24, point 1: an item left out of a session is closed, never deleted. Red on today's tree; wsl-claude wrote
-// it, claude-windows builds it.
-//   Andy, 2026-10-04, under goal/G4.23 and goal/G4.24: "damn, my search still doesn't show old, closed items. i can't
-//   find it either."; "1. sounds dumb that the \"archive\" is not searchable."; "if deleted is just a flag in the
-//   database, we can just ignore it from now on"; "if it's that simple, lets do it quick"; then his Go on goal/G4.24.
-//   In the tree: session.set deletes from the state every member its new session leaves out, "g.members.forEach(
-//   function (id) { if (ids.indexOf(id) === -1) delete s.items[id]; });" (desk.js 360), while desk.db keeps every
-//   record; so goal/G2 holds no items at all, and goal/G2.16 cannot be found with [Include Closed].
+// goal/G4.24, point 1: an item left out of a session is closed, never deleted.
+//   Andy: "1. sounds dumb that the \"archive\" is not searchable."; "if deleted is just a flag in the database, we can
+//   just ignore it from now on".
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
-//   1  A member a new session leaves out is closed (closed true, as his close press leaves it), never deleted: it
-//      keeps its box, checks and chat, and it stays a member of its goal (listed after the session's own items), so
-//      items.search with includeClosed finds it and without it does not.
-//   2  Nothing else moves: the session's own items keep their order and state, as today.
-//   3  The state is rebuilt from the records, so this holds for sessions written before the fix: a desk restarted on
-//      the same desk.db shows the left-out item closed.
+// There is no session.set verb (goal/G33.7: "its callers use goal.add and item.add"). test.deskSession does what a
+// session's leaving out did: the left-out item is deleted, which closes it and leaves it out, nothing erased
+// (desk.js item.delete, goal/G9.7). The world is seeded before the desk starts.
 //
-// goal/G33.7: session.set went ("its callers use goal.add and item.add"). What a session's leaving out did is what
-// test.deskSession does for it now: the left-out item is deleted, which closes it and leaves it out, nothing erased
-// (desk.js item.delete, goal/G9.7). The world is seeded before the desk starts. Points 1 to 3 are asserted as before.
+// WHAT IS ASSERTED:
+//   1  A member a new session leaves out is closed, never deleted: it keeps its box and chat, so items.search with
+//      includeClosed finds it and without it does not.
+//   2  Nothing else moves: the session's own items keep their order and state.
+//   3  The state is rebuilt from the records: a desk restarted on the same desk.db shows the left-out item closed.
 //
-// LEFT OPEN, not asserted: what a later session that names a closed left-out item again does to it (reopen it, or
-// keep it closed until his Reopen); point 2 of the box, the List searching lines, whose shape is still argued (it may
-// reuse items.find).
+// NOT ASSERTED: what a later session that names a closed left-out item again does to it.
 
 const fs = require('fs');
 const os = require('os');
@@ -67,7 +58,7 @@ test.startTest('goal/G4.24: an item left out of a session is closed, never delet
     await start();
     await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY);
     await call('press', { id: 'goal/G100.1', what: 'go' }, ANDY);
-    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+    // An agent writes only where it holds the item or the take of his line (goal/G18.8).
     await call('item.take', { id: 'goal/G100.2' }, CW);
     await call('chat.add', { id: 'goal/G100.2', text: 'a line that must survive' }, CW);
     await call('box.write', { id: 'goal/G100.2', text: 'BOX OF G1.2', version: 0 }, CW);

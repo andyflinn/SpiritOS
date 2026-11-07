@@ -3,30 +3,21 @@
 // Opening the wire is proved with a signature that expires, and the proof
 // never travels in the URL.
 //
-// THIS SUITE WAS `inboxSig.js` AND IS THE SAME LESSON. It was written for
-// `GET /api/relay/inbox`: `inbox\n<label>` never changed, and the hub put
-// it on the query string of a public GET. Caddy writes query strings to
-// its access log, so one line of that log was a standing licence to drain
-// that mailbox — no expiry, no revocation short of changing the key, and
-// nothing in the system that would ever notice it had leaked.
-//
-// R8 deleted that route on 2026-09-15 and both halves of the fix outlived
-// it, because neither belonged to the ring:
+// A signature on a URL is a standing licence: Caddy writes query strings
+// to its access log, so one line of that log would open the wire again,
+// with no revocation short of changing the key. So two rules:
 //
 //   THE BYTES CARRY A MINUTE, so a captured signature dies on its own.
-//   `streamMessage` is `stream\n<key>\n<unix-minute>` for exactly the
-//   reason `inboxMessage` was.
+//   `streamMessage` is `stream\n<key>\n<relayKey>\n<unix-minute>`.
 //
 //   THE PROOF IS A HEADER, so it is not written down in the first place —
 //   and a request that still puts it on the query is refused even with a
 //   good header, because a signature that has been in a URL is already in
-//   a log whatever the relay does next. `relay.streamSignatureFrom` is
-//   `inboxSignatureFrom` renamed, not rewritten.
+//   a log whatever the relay does next (`relay.streamSignatureFrom`).
 //
-// `GET /api/relay/stream` is now the ONLY signed GET on a relay, which
-// makes it the only place this rule can be broken. The stream also wants
-// it more than the inbox did: opening the wire buys a STANDING grant
-// rather than a single read.
+// `GET /api/relay/stream` is the ONLY signed GET on a relay, which makes
+// it the only place this rule can be broken, and opening the wire buys a
+// STANDING grant rather than a single read.
 //
 // The clock is injected. Nothing here sleeps.
 
@@ -45,9 +36,8 @@ const NOW = Date.parse('2026-09-08T10:30:20.000Z');
 const RK = 'RELAYKEY';
 
 // A keys-mode relay with one claimed peer, which is the only mode where
-// anything is proved at all. `andy` is the owner; the builder names it
-// `owner`, and this file has called it andy since before there was a
-// builder.
+// anything is proved at all. `andy` is the owner, which world.build
+// names `owner`.
 function box() {
   const made = world.build(scenario.OWNER_ONLY);
   if (!made.ok) throw new Error(made.error);
@@ -55,8 +45,7 @@ function box() {
   return made;
 }
 
-// The KEY, not the label. That is the one difference from the verb this
-// replaces, and it is deliberate: labels duplicate by design, so a
+// The KEY, not the label, deliberately: labels duplicate by design, so a
 // signature naming one identifies nobody on a relay holding two johns.
 function signFor(id, key, atMs) {
   return auth.sign(id.privateKey, auth.streamMessage(key, RK, atMs));
@@ -86,12 +75,8 @@ test.subHeading('The bytes say when');
   }
 
   // ITS OWN VERB, so no signature made anywhere else can be replayed
-  // into a standing grant on the wire.
-  //
-  // This was written against `status`, the signature an owner made for
-  // every roll — the one most likely to be lying around. R3 deleted
-  // that verb on 2026-09-15, so the check moved to `claim`, which is now
-  // the only other format naming something a caller supplies.
+  // into a standing grant on the wire. Checked against `claim`, the only
+  // other format naming something a caller supplies.
   if (auth.streamMessage('KEY', RK, at) !== auth.claimMessage('KEY') &&
       auth.streamMessage('KEY', RK, at).indexOf('claim') === -1) {
     test.check('and it is not the bytes any other verb signs');
@@ -130,9 +115,8 @@ test.subHeading('A minute either side, and no further');
     test.fail('two minutes out still opened the wire');
   }
 
-  // Bytes with no minute in them at all — the shape the inbox proof had
-  // before it learned to expire. A caller that was never updated does not
-  // quietly keep working.
+  // Bytes with no minute in them at all: a permanent token. A caller
+  // signing that shape does not quietly keep working.
   const old = auth.sign(m.andy.privateKey, 'stream\n' + key);
   if (!auth.streamSignatureOk(key, key, RK, old, NOW)) {
     test.check('and a permanent token opens nothing');
@@ -180,7 +164,7 @@ test.subHeading('The gate refuses before it allocates');
   // entry: a registry keyed by caller-chosen input grows when a stranger
   // reaches it, so a stranger must not reach it (B1).
   const stranger = m.box.streamOpen('nobody-here', 'ANYTHING', function () {});
-  // Since goal/G19.1 the refusal names the sender: "your id is not a valid sender here".
+  // The refusal names the sender (goal/G19.1): "your id is not a valid sender here".
   if (!stranger.ok && stranger.status === 403 && stranger.error === 'your id is not a valid sender here') {
     test.check('an identity this box does not hold is refused, and says so first');
   } else {
@@ -244,9 +228,8 @@ test.subHeading('The route takes it from a header, and only a header');
     test.fail('no sig: ' + JSON.stringify(none));
   }
 
-  // THE NAME IS GONE, not aliased. `inboxSignatureFrom` was the only
-  // export of this rule and keeping it alive under both names is how a
-  // caller stays unfixed.
+  // NO ALIAS: `inboxSignatureFrom`, an old name of this rule, is not
+  // exported, so no caller can stay on it.
   const relayModule = require('../run/spirit/relay.js');
   if (typeof relayModule.inboxSignatureFrom === 'undefined') {
     test.check('and the name it had under the ring is not still exported');
@@ -260,7 +243,7 @@ test.subHeading('Nothing puts it back on the URL');
 {
   const RUN = path.join(__dirname, '..', 'run', 'spirit');
 
-  // presenceNode is the one caller now: the node opening its stream to
+  // presenceNode is the one caller: the node opening its stream to
   // every relay it holds a row on. It must not be building a query
   // signature, and it is the file that would.
   const pn = fs.readFileSync(path.join(RUN, 'presenceNode.js'), 'utf8');
@@ -270,31 +253,9 @@ test.subHeading('Nothing puts it back on the URL');
     test.fail('presenceNode still builds a query signature');
   }
 
-  // And nothing anywhere under run/ builds one for the STREAM. The ring's
-  // hub did it once, and the fix was a header; this is what stops the
-  // next caller repeating it.
-  //
-  // ── THE ONE EXCEPTION IS GONE, AND SO IS THE EXCLUSION ───────────────
-  //
-  // This scan carried a carve-out for `ownerBadge.statusPath`, which put
-  // a signature on the query of `GET /api/relay/status`:
-  //
-  //     q += '&sig=' + encodeURIComponent(
-  //            auth.sign(id.privateKey, auth.statusMessage(name)));
-  //
-  // The same hazard this suite is about, on the other signed GET, and
-  // WORSE than the one it replaced: `statusMessage` is `status\n<name>`
-  // with no minute in it, so unlike every other signature on this wire it
-  // could not expire. Revocation meant changing the key.
-  //
-  // It was found while deleting the ring (R8) and left alone, because
-  // `/api/relay/status` was decision 0010's last open question. R3 closed
-  // that question by deleting the badge that was its only caller
-  // (2026-09-15), so the carve-out went with it.
-  //
-  // THE RULE IS NOW ABSOLUTE: nothing under run/js builds a query
-  // signature, for any route, with no name excused. If this ever needs an
-  // exception again, that is the argument to have — not the line to add.
+  // And nothing in spirit/run/spirit/ (its top-level .js files) builds a
+  // query signature, for any route, with no name excused. If this ever
+  // needs an exception, that is the argument to have — not the line to add.
   const offenders = [];
   const scanned = fs.readdirSync(RUN).filter(function (f) { return /\.js$/.test(f); });
   scanned.forEach(function (name) {
@@ -302,10 +263,7 @@ test.subHeading('Nothing puts it back on the URL');
       // What the ROUTE does with a query sig is refuse it — reading the
       // parameter in order to say no is the rule working, not breaking.
       .replace(/searchParams\.get\('sig'\)/g, '')
-      // Comments, including the tombstones that quote what was deleted.
-      // A scanner that cannot tell a line of code from an epitaph makes
-      // those comments undeletable, which is how history gets erased to
-      // keep a test quiet.
+      // Comments, which may quote what was deleted, are not code.
       .replace(/^\s*\/\/.*$/gm, '');
     if (/[?&]sig=/.test(src)) offenders.push(name);
   });

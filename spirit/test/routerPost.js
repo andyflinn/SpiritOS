@@ -156,10 +156,9 @@ function run() {
   //
   // IT LOOKS AS THOUGH THE NODE ALREADY KNOWS, and that is the trap. A
   // node picks a relay when one of its own names the key; when none does,
-  // hub.handlePost posts through whichever relay it holds and sends the
-  // contact's hints, and THE RELAY decides. Delivered to a member here or
-  // forwarded to a partner — and only the second was announced, so where
-  // a peer lives could be learned only by inferring from a silence.
+  // it posts through whichever relay it holds, and THE RELAY decides. So
+  // the relay announces the route of a delivery to a member here too, or
+  // where a peer lives could be learned only by inferring from a silence.
   const bertRoute = bertSink.last('route');
   if (bertRoute && bertRoute.key === john.publicKey && bertRoute.at === L.box.relayPublicKey()) {
     test.check('the asker is told where the target lives — this relay, by key');
@@ -259,7 +258,7 @@ function run() {
 
   // The relay is a router. What it held during the round trip is gone,
   // and none of it was ever the message.
-  // The relay's whole disc, read as bytes: relay.db since cycle 3.
+  // The relay's whole disc, read as bytes: relay.db.
   const disk = fs.readFileSync(path.join(L.home, 'spirit', 'state', 'relay.db')).toString('latin1');
   if (disk.indexOf('"ping"') === -1 && disk.indexOf('pong') === -1) {
     test.check('no routed body reached the disk');

@@ -1,16 +1,16 @@
 'use strict';
 
 // goal/G5.5: the desk server's rules, so the UI of andy/FACE.md never comes back to the faceless side; and the core
-// paragraph field type. Red on today's tree; wsl-claude wrote it from G5.5's box and does not build it.
-//   Andy, 2026-10-05 (G5.5's box holds every line verbatim): "only changes/upgrades in the faceless parts, so that the
+// paragraph field type, from G5.5's box.
+//   Andy (G5.5's box holds every line verbatim): "only changes/upgrades in the faceless parts, so that the
 //   UI doesn't have to come back to the faceless parts. and is the desk server logic that i mean"; "rules remain
 //   static and apply to all items."; "paragraph field type in fieldRules.js, same characters allowed as label," /
 //   "2048 for now." / "the field belongs to textarea kind of fields, which newlines and formatting preserved...."; "might
 //   be a good idea to have a history of legal standards, it's a form of proof, too."; "why not?" (agents add rules);
 //   "i prefer to negotiate, and create an updated version with one button/verb that belongs to me."; "yes to all of
-//   it" (activate and delete as quick versions, the draft kept on the server); grant G2 on js/fieldRules.js; his Go.
+//   it" (activate and delete as quick versions, the draft kept on the server).
 //
-// THE SHAPES (the box's; the names marked * are wsl-claude's picks, the builder may argue them in Desk first):
+// THE SHAPES (the box's; the names marked * are wsl-claude's picks where the box named none):
 //   A  fieldRules.js: PARAGRAPH_MAX_BYTES* 2048, paragraphProblem(text)* ('' when fine, else why) and
 //      normalizeParagraph(text)*: NFC, line breaks, tabs and spaces kept, CRLF stored as LF, every other control or
 //      invisible character refused as the label refuses it.
@@ -18,9 +18,8 @@
 //      1 rule.add {type, label, text}: rule/N, proposed; an agent may add one. Type and status from their lists, the
 //        label by the label rule, the text a paragraph: anything else refused.
 //      2 rule.draft {key, text}: Andy alone; rule.get shows it; it writes no history.
-//      3 rule.version {key, text, status}: Andy alone; one new version, the older one kept. Since goal/G33.7 rule.history
-//        is gone (the approved verb list: nothing called it); the older versions stay rows of the rules table, read
-//        here from desk.db, read-only.
+//      3 rule.version {key, text, status}: Andy alone; one new version, the older one kept. There is no rule.history
+//        verb (goal/G33.7); the older versions stay rows of the rules table, read here from desk.db, read-only.
 //      4 rules.search {text, types, statuses}: label and text matched, the newest row per rule, answering key, label,
 //        type and status (never the text).
 //      5 a rule's chat: chat.add and item.chat under rule/N.
@@ -84,7 +83,7 @@ async function start() {
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) return true; } catch (e) { /* not yet */ } }
   return false;
 }
-// A rule's older versions, newest first, as the rules table keeps them (goal/G33.7: rule.history went).
+// A rule's older versions, newest first, as the rules table keeps them (no rule.history verb, goal/G33.7).
 function historyOf(key) {
   const m = /^rule\/(\d+)$/.exec(String(key || ''));
   if (!m) return [];
@@ -98,7 +97,7 @@ function historyOf(key) {
 function stop() { return new Promise(function (r) { if (!kid) return r(); kid.once('exit', r); kid.kill(); setTimeout(r, 3000); }); }
 
 (async function () {
-  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  // The world is seeded before the desk starts, which takes it in at start.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Rules' }, items: [{ id: 'goal/G100.1', title: 'Work', blocks: ['goal/G100'] }] });
   if (!await start()) { test.fail('the desk server did not start'); return; }
 

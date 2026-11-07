@@ -1,12 +1,15 @@
 'use strict';
 
 // spirit/test/spiritAtRunRoot.js
-// goal/G40.1: spirit.js moves to spirit/run/, the one spirit object every script installs first. Written first, red on
-// today's code, by wsl-claude, who does not build it. The box (v17), Andy's words among it: "fill the box with everything
-// this encompasses"; "make sure spirit.js has the basic, static support functions, AND the dynamic loading of
-// components, implemented for both face- and node-environments"; "the loaders name should be spirit.require()"; "can the
-// key not simply be a second argument in spirit.require(), by default it's null (owner node) otherwise it's a peer ID?";
-// "kernel can keep its MIME table, that will go when kernel goes."; "we don't show the fucking tail anywhere anymore."
+// goal/G40.1: the one spirit object every script installs first. Andy's words the checks follow: "make sure spirit.js
+// has the basic, static support functions, AND the dynamic loading of components, implemented for both face- and
+// node-environments"; "the loaders name should be spirit.require()"; "can the key not simply be a second argument in
+// spirit.require(), by default it's null (owner node) otherwise it's a peer ID?"; "kernel can keep its MIME table, that
+// will go when kernel goes."; "we don't show the fucking tail anywhere anymore."
+//
+// STALE PATHS: the file now lives at spirit/run/spirit/spirit.js (goal/G43.18), served at /spirit.js. This suite still
+// looks for it at spirit/run/spirit.js (NEW below), and LOADERS/OFF_KERNEL name process/js/desk/removeAgent.js,
+// process/js/deskAgent/deskAgent.js and process/js/desk/desk.family/api.js, none of which is in the tree.
 //
 // WHAT IS ASSERTED
 //   1. The move: spirit/run/spirit.js is there, spirit/run/face/spirit.js is gone, no tracked file in run/ or test/ names
@@ -21,7 +24,7 @@
 //   5. Every script on the box's list installs spirit in its first statement, from the run root, and holds no local
 //      spiritObject; none of the app-server scripts the box names requires kernel.js or takes appServer.spirit.
 //   6. Removed: imageStats/ and wordpressScanner/, and every keyTail in run/ and test/; hub's contact rows carry no tail.
-//   The builder named how node's global spirit finds its own node: SPIRIT_CALLBACK_URL (section 2).
+//   Node's global spirit finds its own node through SPIRIT_CALLBACK_URL (section 2).
 
 const fs = require('fs');
 const os = require('os');
@@ -47,7 +50,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function src(rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return null; } }
 function tracked(dir) { return execSync('git ls-files -- ' + dir, { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean); }
 
-// The scripts the box lists as loading spirit.js, and those of them that leave the kernel (box v17).
+// The scripts that must load spirit.js first, and those of them that must not reach the kernel.
 const LOADERS = ['spirit/appServer.js', 'process/js/chatClerver/chatClerver.js', 'process/js/desk/desk.js', 'process/js/desk/commitCheck.js',
   'process/js/desk/deskAgentEar.js', 'process/js/desk/removeAgent.js', 'process/js/deskAgent/deskAgent.js', 'process/js/deskClient/deskClient.js',
   'spirit/app/publishData/publishData.js', 'process/js/fileServer/fileServer.js', 'process/js/relayLimits/relayLimits.js'];
@@ -139,7 +142,7 @@ test.startTest('goal/G40.1: spirit.js at the run root, the one spirit object eve
     const old = await get(port, '/' + OLD_REL);
     if (at === 200 && old === 404) test.check('the node serves /spirit.js (200), and the old path answers 404');
     else test.fail(OWED + '/spirit.js answered ' + at + ', the old path ' + old);
-    // NAMED BY THE BUILDER (goal/G40.1): node's global spirit binds an interface from this process's own node, the one
+    // goal/G40.1: node's global spirit binds an interface from this process's own node, the one
     // SPIRIT_CALLBACK_URL names (the node that started it, as the kernel's peerPost reads it), never the default port.
     const bind = function (env) {
       const r = spawnSync(process.execPath, ['-e', "require('./spirit.js'); global.spirit.require('spirit/fs/api.js').then(function (f) {" +

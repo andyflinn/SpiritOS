@@ -1,11 +1,10 @@
 'use strict';
 
 // spirit/test/deskCheckNumbers.js
-// goal/G19.5: Desk checks: numbers never repeat; box blur on its own item. Red on today's tree (db4d1a12); claude-windows
-// wrote it and builds it (one agent). The item's box: check numbers are count + 1 and item.files.add deletes and
-// renumbers G checks, so a number comes back and a grant can land on the wrong check; the dialog's box blur uses the
-// live item id, so a write can land on the item opened since. Andy, 2026-10-12, to "Should check numbers never repeat,
-// and the dialog box write only to the item it was opened for?": "yes."
+// goal/G19.5: Desk checks: numbers never repeat; box blur on its own item. A check number that came back could let a
+// grant land on the wrong check, and a box blur that used the live item id could write to the item opened since.
+// Andy, 2026-10-12, to "Should check numbers never repeat, and the dialog box write only to the item it was opened
+// for?": "yes."
 //
 // WHAT IS ASSERTED
 //   1. A core grant G check that is removed (its core path left the list) and raised again gets a new number, never
@@ -61,7 +60,7 @@ async function deskHalf() {
   const client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
-  // (goal/G33.7: session.set went).
+  // (goal/G33.7).
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Numbers' }, items: [{ id: 'goal/G100.1', title: 'Grants', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });

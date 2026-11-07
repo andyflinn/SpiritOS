@@ -1,21 +1,21 @@
 'use strict';
 
 // spirit/test/spiritServers.js
-// goal/G32.3: the servers move onto the spirit object. Red on today's tree; claude-windows writes it and builds it (one
-// agent). The box (v8), in short:
+// goal/G32.3: the servers on the spirit object. What this suite asserts:
 //   - Every server process under process/js reaches the node only through the spirit object, on the node's loopback
 //     door; no hand-made call (askNode, kernel.core.ask with the node's url) is left.
-//   - Every server with verbs ships an api.js in its family folder, process/js/<name>/<name>.family/api.js, delivered
-//     by the node to the caller without the server hearing of it.
+//   - Every server with verbs ships an api.js in its family folder, delivered by the node to the caller without the
+//     server hearing of it.
 //   - An api.js names no namespace of its own: the node maps it. The node families' api.js (goal/G32.1) follow the
 //     same rule: none names its family or registers itself on the spirit object.
-//   - The api verb takes an optional family (approved verb change, Andy 2026-10-22: "verb change approved."):
-//     api {family} answers that family's interface, the text of its api.js, read by the node from js/<family>/ or
-//     <server>.family/; api with no argument is unchanged. The page and the servers get every interface this way.
-// NAMED HERE: an api.js is `module.exports = { verbs: { <verb>: { <arg>: '<rule>[?]' } }, names(call, tools) }`, run
-// by the spirit object as a module; api {family} answers { family, interface }; over the wire the ask is
-// {api: {family}}, and apiDoor answers a member only for a family it holds a grant in. A dotted verb is also on the
-// member in camel case (line.write -> lineWrite), as the box names spirit.chatClerver.lineWrite.
+//   - The api verb takes an optional family (Andy 2026-10-22: "verb change approved."): api {family} answers that
+//     family's interface, the text of its api.js; api with no argument answers the families.
+// NAMED HERE: an api.js is `module.exports = { verbs: { <verb>: { <arg>: '<rule>[?]' } }, names(call, tools) }`;
+// api {family} answers { family, interface }; over the wire the ask is {api: {family}}, and apiDoor answers a member
+// only for a family it holds a grant in. A dotted verb is also on the member in camel case (line.write -> lineWrite).
+// IT READS WHAT THE TREE NO LONGER HAS: a server's family folder is process/js/<name>/family/, not <name>.family/;
+// spirit.js is spirit/run/spirit/spirit.js, not spirit/run/spirit.js, and exports its one instance, no createSpirit
+// (goal/G40.6). Sections 2 and 5 fail on that.
 // rule/11: through testSupport only; nothing reaches a node.
 
 const fs = require('fs');

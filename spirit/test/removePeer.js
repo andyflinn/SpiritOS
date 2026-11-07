@@ -3,15 +3,11 @@
 // spirit/test/removePeer.js
 // A relay can forget somebody.
 //
-// Until this existed a relay could only accumulate. The routing table never
-// shrank, so an invitation was irreversible and the only remedy for any
-// mistake — a wrong guest, a lost key, a name that should never have been
-// given — was an SSH session on the box.
-//
-// Which is Andy's own rule wearing a different costume: "no routine
-// failure should require being physically at home" was built into the
-// device arc for the owner and left standing for the relay's own
-// governance. A thing alone in the jungle that cannot forget cannot
+// Without it a relay could only accumulate: an invitation would be
+// irreversible and the only remedy for any mistake — a wrong guest, a lost
+// key, a name that should never have been given — an SSH session on the
+// box. Andy's rule: "no routine failure should require being physically
+// at home". A thing alone in the jungle that cannot forget cannot
 // correct itself.
 
 const fs = require('fs');
@@ -59,17 +55,12 @@ function run() {
 
   test.subHeading('Removal is a post, and it is still the one that destroys');
 
-  // ── WHAT THESE CHECKS BECAME ────────────────────────────────────────
+  // ── THREE PROPERTIES OF THE POST ────────────────────────────────────
   //
-  // Three stood here about removePeerMessage: that a roll signature
-  // could not be spent as a removal, that a two-minute-old one was dead,
-  // and that it named a KEY because labels duplicate.
-  //
-  // The format is gone (decision 0010) and all three properties came with
-  // the post rather than being re-argued: postMessage binds sender,
-  // recipient and the exact text, carries a minute, and the removal names
-  // a key because the packet field says `key`. What is asked here now is
-  // that they still hold on the new path.
+  // postMessage binds sender, recipient and the exact text, carries a
+  // minute, and the removal names a key because the packet field says
+  // `key` (decision 0010): a signature for another verb cannot be spent as
+  // a removal, an old one is dead, and a label finds nobody.
   const boxKey = L.box.relayPublicKey();
   const wanted = JSON.stringify({
     app: 'relay', v: 1, body: { removePeer: { key: bert.publicKey } },
@@ -77,12 +68,8 @@ function run() {
 
   // A signature made for another verb must not be spendable as "delete
   // this person" — and cannot even be presented as one, because it is not
-  // a post signature at all.
-  //
-  // This named the ROLL signature, on the argument that it was the
-  // owner's most abundant credential. R3 deleted that verb on 2026-09-15
-  // along with the owner badge that spent it, so the check uses `claim`.
-  // The claim is unchanged: bytes are good for one verb.
+  // a post signature at all. The check uses `claim`: bytes are good for
+  // one verb.
   const asStatus = L.box.routePost(L.owner.publicKey, boxKey, wanted,
     auth.sign(L.owner.privateKey, auth.claimMessage('andy')));
   if (asStatus && asStatus.ok === false && asStatus.status === 403) {
@@ -130,7 +117,7 @@ function run() {
     test.fail('peer removed a peer: ' + JSON.stringify(byPeer));
   }
 
-  // The owner's own row. ownerName() reads it, allow.json holds only it,
+  // The owner's own row. ownerName() reads it, owner.json holds only it,
   // and a relay that forgot its owner would hand itself to whoever
   // claimed next. That guard lives with the ACT (forgetPeer) rather than
   // with either gate, so no way in can reach past it.
@@ -162,16 +149,10 @@ function run() {
 
   test.subHeading('What goes with them');
 
-  // MAIL USED TO GO FIRST. A line was sent so there was something to
-  // forget, and `messagesDropped` came back on the removal to prove it
-  // had — the argument being that a forget which leaves the letters
-  // behind is not forgetting.
-  //
-  // R8 answered that argument by deletion (2026-09-15). A relay holds
-  // nothing on anyone's behalf, so removing the row IS removing
-  // everything this box had of them, and there is no count to report.
-  // The check below is what is left, and it is the stronger half: a
-  // removal that does not revoke the invite is a removal in name only.
+  // A relay holds nothing on anyone's behalf (R8), so removing the row IS
+  // removing everything this box had of them, and there is no count to
+  // report. The check below: a removal that does not revoke the invite is
+  // a removal in name only.
 
   // A live invite for the same label. Without revoking it, "un-invite"
   // is a lie: they walk straight back in with the token they hold.
@@ -229,21 +210,8 @@ function run() {
 
   //   Andy: "mailbox.json MUST go. NOW."
   //
-  // Four checks stood here proving the opposite: that a relay whose only
-  // state was the OLD filename opened with its roster, that the next
-  // write landed in routingTable.json, and that the legacy file was left
-  // untouched so a rollback still worked.
-  //
-  // That fallback was a READ and never a migration — it re-read the old
-  // name on every boot, and only the next persist() wrote the new one. So
-  // it could only be deleted once a live relay had actually written
-  // routingTable.json. spirit-3 has: forced on 2026-09-13 with one
-  // self-addressed ring message (77 → 78, which is persist() running),
-  // roll 10 rows before and 10 after.
-  //
-  // What is asserted now is the deletion, because the dangerous direction
-  // is the quiet one: a box with only the old file must open EMPTY rather
-  // than appear to work and lose a roster later.
+  // No fallback to the old file: a box with only mailbox.json must open
+  // EMPTY rather than appear to work and lose a roster later.
   const legacyHome = world.tmpHome();
   fs.mkdirSync(path.join(legacyHome, 'spirit', 'state'), { recursive: true });
   const carried = {
@@ -294,16 +262,11 @@ function run() {
 
   test.subHeading('Both ways in are posts, and neither has a door');
 
-  //   Andy: "api/hub/remove-peer must be the interface"
   //   Andy: "anything that can be done by protocol MUST be done by protocol"
   //
-  // The first sentence built the node-side interface this verb never had.
-  // The second took the route away underneath it.
-  //
-  // /api/relay/remove-peer and removePeerMessage are both gone. The owner
-  // naming anybody and a peer naming themselves are the same post, gated
-  // per verb by who signed it — which is the whole of what the route's
-  // `byOwner || bySelf` used to decide, done once and in one place.
+  // No route: the owner naming anybody and a peer naming themselves are
+  // the same post, gated per verb by who signed it, done once and in one
+  // place.
   const P = world.build(SCENARIO);
   if (!P.ok) { test.fail(P.error); test.reportSuccessFailureCount(); return; }
   const anna = P.peer('bert');
@@ -318,9 +281,7 @@ function run() {
     test.fail('owner post: ' + JSON.stringify(posted));
   }
 
-  // THE HALF THAT COULD NOT MOVE UNTIL THE DESTINATION OPENED. A peer
-  // could not address the relay at all, so leaving had to keep a public
-  // door. It does not any more.
+  // A peer leaves by addressing the relay itself: no public door.
   const walkedOut = askRemove(P.box, leaver, leaver.publicKey);
   if (walkedOut.sent && walkedOut.sent.ok && labels(P.box).indexOf('john') === -1) {
     test.check('and leaving is the same post, proved by the row that is leaving');

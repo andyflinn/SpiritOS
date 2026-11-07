@@ -1,36 +1,39 @@
 'use strict';
 
 // spirit/test/introspectionCleanup.js
-// goal/G30.4, "Clean up introSpector and its usage". Red on today's tree; claude-windows writes it and builds it.
-// The item's box (v13), in short:
+// goal/G30.4, "Clean up introSpector and its usage". The item's box, in short:
 //   - introSpector is family(folder) alone. claim moves into verbTable ("a namespace container is not known by the
 //     namespace"). A module declares its verbs bare and the mounter gives it its family name ("a module shouldn't
 //     know who mounted it").
-//   - One flat table of families, the node's own and its apps' side by side (the jobs api verb, the way apps joined
-//     it then, went with goal/G30.6: a call is the verb by name on the flat apiDoor).
+//   - One flat table of families, the node's own and its apps' side by side (a call is the verb by name on the flat
+//     apiDoor, goal/G30.6).
 //     A loopback client's introspection answers that one table; the appClient branch is no longer separate.
 //   - The grant system sees every family; a grant path is family or family.verb whichever family it names. A peer
 //     call reaches a node family through the same handler as the loopback API, in-process, after the grant check
 //     ("1 handler, grant-system covers all").
-//   - introSpector always supplies one owner verb per family, FS, multiplexed as AGENTS is (FS.<name>) with the
+//   - introSpector always supplies one owner verb per family, FS, multiplexed (FS.<name>) with the
 //     kernel's fs names (loadFile, saveFile, deleteFile, statFile, fileExists, loadJsonValue, saveJsonValue,
 //     getAnnotations, annotateFile) and search {q} over the folder's file names, scoped to the family's folder,
 //     nothing above it.
-//   - A family folder never holds code: an app's is <module>.family beside <module>.js (process/js/desk/desk.family/
-//     beside desk.js), where its AGENTS.md and verb files move; the node's stay js/<family>/.
+//   - A family folder holds no code but its interface api.js: an app's sits beside its script (today
+//     process/js/<module>/family/, found by spirit.familyPath; the box said <module>.family), holding its AGENTS.md
+//     and verb files; the node's are spirit/run/spirit/<family>/.
 //   - Warnings are files: <verb>.warning.txt in the family folder, read by the grants app through that family's FS
-//     before a grant; nothing is opened to agents. This item adds one: js/auth/grant.warning.txt (in js/jobs/ until goal/G30.6).
+//     before a grant; nothing is opened to agents. This item adds one: spirit/run/spirit/auth/grant.warning.txt.
 //   - An app server named like a node family is refused at mount, by name.
 //   - The grants app's picker lists apiDoor's whole table.
 // NAMED HERE where the box names none:
 //   - introSpector exports family and AGENTS_FILE only.
 //   - verbTable's table gains mount(family, dir, declarations, opts) (bare verb names in, family.verb on the table,
-//     the folder's AGENTS family beside them), call(verb, args) (the in-process call puppetMode's shim made, now the
+//     the folder's FS verbs beside them), call(verb, args) (the in-process call puppetMode's shim made, now the
 //     table's, answering { ok, status, body }), tree() ({family: {verb: {request, reply}}} of what it mounted) and
 //     door(appClient) ({ ask(body, caller) }: 'api' answers the node's families and the apps' in one object; a call
 //     to a node family runs through call, any other goes to the apps).
 //   - puppetMode and apiDoor run node verbs through table.call; puppetMode keeps no shim of its own.
 //   - createAppClient({ reserved }) refuses to register an app whose name reserved() lists.
+// STALE PARTS: 7b reads process/js/deskAgent/ (tools.js, deskAgent.js), removed in goal/G41.28; 8 looks for
+// <module>.family folders and a '.family' in appServer.js, where the folder is now process/js/<module>/family/
+// (appServer.js asks spirit.familyPath), and lists deskAgent.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');

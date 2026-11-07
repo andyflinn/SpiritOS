@@ -41,8 +41,8 @@ const B = auth.generateIdentity('b');
 
 // A FIXED INSTANT, because the {at,text} wrapper is part of what gets sealed.
 // seal.js honours this argument only when it is a Date — a number is silently
-// replaced by the current time, which is a defect raised with Andy separately
-// and the reason this passes a Date rather than a timestamp.
+// replaced by the current time, which is why this passes a Date rather than
+// a timestamp.
 const AT = new Date('2026-09-26T00:00:00.000Z');
 
 const utf8 = (s) => Buffer.byteLength(s, 'utf8');

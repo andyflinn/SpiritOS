@@ -3,23 +3,12 @@
 // spirit/test/labPersistence.js
 // A relay is stopped and started, and still knows who it carries.
 //
-// ── THIS WAS labMaster/relayPersist.test.js ──────────────────────────
+// The relay holds its roll and nothing else (relay.db): its whole memory
+// is who has a row on it, so "does it still know after a restart" is the
+// question. labMaster's own lifecycle is labLifecycle.js's.
 //
-// Ten checks, of which five were labMaster's lifecycle (covered now by
-// labLifecycle.js) and two proved persistence WITH MAIL — a message
-// stored before the stop and read back after it. The ring is gone, so
-// that half cannot be asked any more.
-//
-// What survives is the better subject, and STATE.md said so before this
-// was written: the relay holds its roll and nothing else (relay.db since cycle 3). A
-// relay's whole memory is who has a row on it, so "does it still know
-// after a restart" is a sharper question than it was when the answer
-// could also have come from a message queue.
-//
-// THE CLAIM IS SIGNED. It was `{ name: 'andy' }` with no key and no
-// signature, which has been refused since decision 0003 made the first
-// claim the owner — one of the things STATE.md meant by "red before R8
-// touched anything, on things that have nothing to do with the ring".
+// THE CLAIM IS SIGNED, as every claim is since decision 0003 made the
+// first claim the owner.
 
 const fs = require('fs');
 const os = require('os');
@@ -73,10 +62,9 @@ async function waitServing(timeoutMs) {
   }
 }
 
-// relay.db since cycle 3, opened read-only and closed at once so the
-// running relay and labMaster's cleanup never meet a handle of ours.
-// Answers the shape routingTable.json had — `peers` by key — plus the
-// database's table names, which is what "keeps nothing else" means now.
+// relay.db, opened read-only and closed at once so the running relay and
+// labMaster's cleanup never meet a handle of ours. Answers `peers` by key
+// plus the database's table names, which is what "keeps nothing else" means.
 // The owner's key as owner.json has it: the one place ownership lives.
 function ownerKeyOnDisk() {
   try {
@@ -158,17 +146,15 @@ async function run() {
   const onDisk = routingTable();
   const row = onDisk && onDisk.peers && onDisk.peers[andy.publicKey];
   // The row carries no owner mark (2026-09-19: "a row in the roll doesn't
-  // know who the owner is"); allow.json holds the one key that does.
+  // know who the owner is"); owner.json holds the one key that does.
   if (row && row.publicLabel === 'andy' && ownerKeyOnDisk() === andy.publicKey) {
     test.check('and it is written down, under his KEY, before anything is asked to restart');
   } else {
     test.fail('relay.db after the claim: ' + JSON.stringify(onDisk));
   }
 
-  // THE WHOLE DATABASE, and this is the half the old suite could not
-  // assert because the file used to hold mail too. Since goal/G22.6 it is
-  // two tables — the roll and the invites the owner minted (the partner
-  // roll went with partnering) — all the relay's own bookkeeping (decision
+  // THE WHOLE DATABASE: two tables (goal/G22.6) — the roll and the
+  // invites the owner minted — all the relay's own bookkeeping (decision
   // 0006 — it stores nothing on anyone's behalf), so a third table on a
   // fresh relay is a relay that has started keeping something, which must
   // not happen quietly.
@@ -206,17 +192,11 @@ async function run() {
     test.fail('restart: ' + again.status + ' ' + again.text);
   }
 
-  // ── READ THE FILE, NOT A ROUTE (2026-09-18) ──────────────────────
+  // ── READ THE FILE, NOT A ROUTE ───────────────────────────────────
   //
-  // This asked `GET /api/relay/who` and looked for andy's key in the
-  // list. That route is gone — a public, unsigned read of every member
-  // was named a cheat in 0010 and eradicated the next day — and the
-  // question it was standing in for is one this suite can ask directly.
-  //
-  // Better evidence besides: a PERSISTENCE suite should read what
-  // persisted. `routingTable()` above already does, and a row that is on
-  // disk after a restart is the claim being made, where a row that is
-  // served by a route is that plus a route.
+  // A PERSISTENCE suite reads what persisted: `routingTable()` above reads
+  // relay.db, and a row that is on disk after a restart is the claim being
+  // made. (No public read of every member exists to ask: decision 0010.)
   const reread = routingTable();
   const survived = reread && reread.peers && reread.peers[andy.publicKey];
   if (survived && ownerKeyOnDisk() === andy.publicKey) {
@@ -231,16 +211,11 @@ async function run() {
   // file was read; a refused claim proves the relay is ACTING on what it
   // read. Different failures, and only one of them is visible in a list.
   //
-  // 403 "invite required" AND NOT 409, which is worth being exact about
-  // because the old suite expected the 409 and that expectation was
-  // written before the box could ever be shut. A 409 would mean "that
-  // label is taken" — the relay got as far as comparing labels. What
-  // actually happens is that it never gets there: the first claim made
-  // andy the owner, that survived the restart in allow.json, and a box
-  // with an owner takes no strangers at all without an invite.
-  //
-  // So this proves MORE than the check it replaces. It is not the peer
-  // row that came back, it is the ownership.
+  // 403 "invite required" AND NOT 409. A 409 would mean "that label is
+  // taken" — the relay got as far as comparing labels. It never gets
+  // there: andy is the owner, that survived the restart in owner.json,
+  // and a box with an owner takes no strangers at all without an invite.
+  // So it is not only the peer row that came back, it is the ownership.
   const other = auth.generateIdentity('impostor');
   // Sealed too — so the 403 below is the INVITE rule refusing a stranger,
   // which is what this asserts, and not the seal check refusing a shape.

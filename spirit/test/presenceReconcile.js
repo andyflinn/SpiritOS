@@ -1,15 +1,12 @@
 'use strict';
 
-// goal/G2.8: the agents' nodes show green — a fresh stream reconciles the book against the relay once. Red on
-// today's tree.
+// goal/G2.8: the agents' nodes show green — a fresh stream reconciles the book against the relay once.
 //   Found by Andy, 2026-10-02: "also, none of you appear as \"present\"", "and your nodes should be showing green
 //   dots", "in Find someone on the network you do show green".
-//   Live, the same day (jobs.get on each node's relay-presence job): his node opened its stream after the agents'
-//   nodes had connected, and its table never gained their keys — presenceNode.js marks green only from a broadcast
-//   heard since its own stream opened (onChange), and the relay sends no roster on connect (cycle 3). The network
-//   search shows them green because the relay answers it from who is connected now.
-// The contract the builder follows (wsl-claude's shape, read back under goal/G2.8, unopposed; Andy's own rule
-// reused — a list is a search):
+//   presenceNode.js marks green from a broadcast heard since its own stream opened (onChange), and the relay sends
+//   no roster on connect (cycle 3), so a node that opens its stream after its contacts connected never hears them;
+//   the network search shows them green because the relay answers it from who is connected now.
+// The contract (Andy's own rule reused — a list is a search):
 //   1. When a stream to a relay opens (onOpen, every open — a boot and every reconnection), the node asks that
 //      relay once, through the router it already posts from, the relay's own `search` (the packet hub.handleSearch
 //      sends: {v: 1, body: {search: {q}}}, sealed to the relay's pinned key); nothing new on the wire.
@@ -21,8 +18,8 @@
 //   4. A relay that fails the question (a rejected post, a refusal) marks nobody and breaks nothing: the stream
 //      stays, broadcasts still land.
 //   5. Nothing is asked before the stream is open, and nothing twice for one open.
-// Open, named here so the builder does not guess: a capped answer (more: true) that misses a book contact — does the
-// node ask again, per missing key, or accept white until the broadcast? Not asserted; the builder says in its commit.
+// Not asserted: a capped answer (more: true) that misses a book contact. presenceNode.js reconcile does not ask
+// again per missing key; the contact stays white until its broadcast.
 
 const os = require('os');
 const fs = require('fs');

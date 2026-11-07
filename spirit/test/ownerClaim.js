@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/ownerClaim.js
-// AN OWNED RELAY, THE WAY A RELAY NOW GETS ITS OWNER — for suites only.
+// AN OWNED RELAY, THE WAY A RELAY GETS ITS OWNER — for suites only.
 //
 // goal/G16.8: a relay is owned at install time and in no other way. On a
 // real box bash/install-units writes spirit/state/owner.json from the
@@ -24,9 +24,11 @@
 //                                                 box built on that home
 //   installedRelay(identity)                      { home, box }: a fresh relay
 //                                                 installed for that owner,
-//                                                 nobody on its roll yet —
-//                                                 where the owner's own claim
-//                                                 can be watched happening
+//                                                 its roll the owner's seat
+//                                                 alone (labelled owner,
+//                                                 goal/G30.7) — where the
+//                                                 owner's own claim can be
+//                                                 watched happening
 //   installOwner(relayHome, nodeHome, name)       a relay in ANOTHER process:
 //                                                 the owner node's identity is
 //                                                 made and saved in its home,
@@ -34,9 +36,7 @@
 //                                                 relay's owner.json, before
 //                                                 either starts. The node then
 //                                                 claims with no invite.
-//
-// Until goal/G16.8 this file minted an owner invite and the first claim
-// presenting it became the owner; that path is gone from the relay.
+
 
 const auth = require('../run/spirit/relayAuth');
 const nodeCard = require('../run/spirit/nodeCard');
@@ -74,7 +74,7 @@ function installedRelay(identity) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-installed-'));
   // The mailbox's own key, which is not the owner's, made before
   // createRelay reads it (world.js does the same).
-  // Since goal/G22.5 made the way a relay makes it: relayAuth's first load,
+  // Made the way a relay makes it (goal/G22.5): relayAuth's first load,
   // then named 'relay' (plantIdentity.js).
   require('./plantIdentity.js').ensureAt(home, 'relay');
   ownHome(home, identity);

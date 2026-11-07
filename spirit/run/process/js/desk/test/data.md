@@ -4,12 +4,12 @@ What the desk knows of its own rows at the receiving end, in the page and in a s
 translator into spirit.data (`spirit/data.js`, goal/G33.3, goal/G33.4) and its cache rules. Its test runs
 it beside the real spirit.data, as the module runs.
 
-**Where it lives** (goal/G41.24): beside the desk family's `api.js`, so it works in the browser and in an appServer
-that subscribes, which reads it from its own disc.
+**Where it lives** (goal/G41.24): in the desk's own folder, above its `family/api.js`, so it works in the browser and
+in an appServer that subscribes, which reads it from its own disc.
 
 - It is `process/js/desk/data.js`.
 - Required in node, as the subscribing appServer requires it from its own disc, it answers `cache { keep, shed, answer }`:
-  the cache rules the desk family's `api.js` held, which now holds its verbs alone.
+  the cache rules of `family/cacheRules.js`, which it requires in node alone; `family/api.js` holds the verbs alone.
 - deskClient's stream names it as its translator. The page loads it from the node that served it, with `spirit.require`.
 - The cache file it fills stays appServer's: `spirit/state/<client appServerName>/<the sender's key in base64url>.json`,
   one per server followed (appServer.js, goal/G41.28).

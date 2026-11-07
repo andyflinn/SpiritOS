@@ -1,7 +1,6 @@
 'use strict';
 
-// goal/G4.21: the desk shares currentGoal.json through git itself. Red on today's tree; wsl-claude wrote it,
-// claude-windows builds it.
+// goal/G4.21: the desk shares currentGoal.json through git itself.
 //   Andy, 2026-10-04, under goal/G4.19 and goal/G4.21: "should my deskServer, when i cause a status change on an item,
 //   automatically commit & sync currentGoal.json ?"; "a re-open would be subject to the same rule?"; "i generally only
 //   read the repo. i think we should make this automatic? agree?"; "can the automatic handle the complications?"; "do
@@ -11,25 +10,24 @@
 //   is built on top of the remote's master with that one file alone and pushed; his checkout is never written, pulled
 //   or rebased; a refused push is fetched, rebuilt and tried again, a few times.
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
+// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks):
 //   1  spirit/run/process/js/desk/goalShare.js, run as
 //        node goalShare.js --repo <dir> --path <path in the repo> --from <file> [--remote origin] [--branch master]
 //      It fetches <remote>/<branch>, builds one commit on top of it that sets <path> to the bytes of <from> and changes
 //      nothing else, and pushes it to <branch>. It never touches the checkout's files, index, HEAD or branches (a
 //      temporary index, GIT_INDEX_FILE, is the usual way). A refused push is fetched, rebuilt and tried again, at most
 //      5 times; it exits 0 once pushed and prints the pushed hash, 1 when it gives up.
-//   2  desk.js takes two manifest values in place of goalFile: goalRepo (the repo to share into; default the checkout
-//      holding desk.js) and goalPath (the file's path in that repo; default spirit/run/process/js/desk/currentGoal.json).
-//      goalFile goes: the desk never writes into the checkout again. A server spawned with {} (every suite) shares
-//      nothing, as today it writes nothing.
-//   3  On go, go-all, done, reopen and close (session.set went with goal/G33.7) the desk writes the goal document to <its --state
+//   2  desk.js takes two manifest values: goalRepo (the repo to share into; default the checkout holding desk.js) and
+//      goalPath (the file's path in that repo; default spirit/run/process/js/desk/currentGoal.json). The desk never
+//      writes into the checkout. A server spawned with {} (every suite) shares nothing.
+//   3  On go, go-all, done, reopen and close the desk writes the goal document to <its --state
 //      folder>/currentGoal.json and asks its node (SPIRIT_CALLBACK_URL) jobs.create {command: node, args: [<path of
 //      goalShare.js>, '--repo', goalRepo, '--path', goalPath, '--from', <that state file>]}.
 //
 // LEFT OPEN, not asserted: how giving up is said in Desk (the box says it is; whether goalShare or desk.js writes the
 // line, and through what, is not shaped); whether two shares started close together are kept from overlapping; that a
 // job the desk starts can push with his credentials (TO CHECK LIVE in the box: it can only be seen on his node).
-// FOUND WHILE WRITING: a pre-receive hook cannot move a ref (git quarantines it), so "someone pushed in between" is
+// A pre-receive hook cannot move a ref (git quarantines it), so "someone pushed in between" is
 // tested as two halves: another clone pushes before the share (it must fetch, not build on his stale origin/master),
 // and the remote refuses the first push once (it must try again).
 
@@ -168,7 +166,7 @@ async function theDesk(root, repo) {
   });
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
   const callback = 'http://localhost:' + node.address().port + '/api/spirit';
-  // goal/G33.7: session.set went; a desk's world is seeded before it starts (seed), which it takes in at start.
+  // goal/G33.7: a desk's world is seeded before it starts (seed), which it takes in at start.
   const run = async function (values, label, seed) {
     const scratch = fs.mkdtempSync(path.join(root, label + '-'));
     const state = path.join(scratch, 'state');
@@ -205,7 +203,7 @@ async function theDesk(root, repo) {
     const job = shareOf(created[created.length - 1]);
     let held = null; try { held = JSON.parse(fs.readFileSync(job.from, 'utf8')); } catch (e) { held = null; }
     const g11 = held && (held.items || []).filter(function (x) { return x.id === 'goal/G100.1'; })[0];
-    // session.set went with goal/G33.7: the seeded world is no press, and his go asks one.
+    // The seeded world is no press (goal/G33.7), and his go asks one.
     if (onGo === onSession + 1) test.check('his go asked one jobs.create');
     else test.fail(OWED + 'jobs.create asked ' + onSession + ' after the world was seeded and ' + onGo + ' after his go');
     if (path.basename(job.script) === 'goalShare.js' && path.resolve(job.repo) === path.resolve(repo) && job.path === GOAL_PATH && job.from && path.resolve(path.dirname(job.from)) === path.resolve(d.state)) {

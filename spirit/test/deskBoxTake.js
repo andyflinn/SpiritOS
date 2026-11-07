@@ -1,7 +1,6 @@
 'use strict';
 
-// goal/G9.3: the user takes the text box on focus and releases it on blur or close. Red on today's tree;
-// claude-windows wrote it from G9.3's box and does not build it.
+// goal/G9.3: the user takes the text box on focus and releases it on blur or close.
 //   Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the user. When the user activates
 //   that input area, the area is \"taken\" by the user, and not modifiable for agents. When the user clicks outside of
 //   that text box, and deactivates the input, also by leaving the details dialog, the box input is released from the
@@ -9,12 +8,9 @@
 //   Andy, on Q1: "yes. so it shoule be among agents as well, the box is taken, and released after edit. it also helps
 //   agents stay out of each others way." So one take rule for everybody.
 //
-// WHAT IS TRUE TODAY (read in the tree at 7cd6d633): box.take refuses andy by name; a take is freed only by the
-// taker's box.write; his own box.write is never refused; the dialog draws the box as text, with no input.
-//
 // THE SHAPE ASSERTED (G9.3's box): box.take accepts him; box.release {id} frees the caller's own take without a write;
 // while a take stands every other writer, he included, is refused taken. The dialog draws the box as a textarea,
-// id dd-box-input (the red writer's name for it), sends box.take when it gets focus, and on blur either writes the
+// id dd-box-input, sends box.take when it gets focus, and on blur either writes the
 // changed text (box.write, which frees the take) or sends box.release. Opening the dialog takes nothing. The dialog
 // cannot hear the shell's Back (shell.js setDialogResult); leaving the dialog by any click blurs the box first, so
 // blur is the release on close.

@@ -1,23 +1,16 @@
 'use strict';
 
 // goal/G9.5: [Code✓] in the item Details button bar, so he sets an item's code state himself.
-//   Andy, 2026-10-07 (musing "Desk Improvement: User creates goals and items without agents present"): "the item
+//   Andy: "the item
 //   Detail dialog has a check/toggle button, [Code✓], in it's button bar, where the user can set the Code-state of an
 //   item, defining if the item is subject to the coding rules (write reds/code/verify)."
-// Red on today's tree; wsl wrote it from G9.5's box and does not build it.
 //
-// WHAT IS TRUE TODAY (read at 53b4de83): the code mark is set by session.set alone (`if (x.code === true &&
-// !one.subGoal) one.code = true;`), there is no 'code' press in PRESSES, and the dialog draws no toggle for it.
-//
-// THE SHAPE ASSERTED, from the item's box, for the builder to hold:
-//   press {id, what: 'code'}   toggles the mark on a non-goal item, owner-only, and answers a change.
-//   The dialog draws it in the button bar as [Code] / [Code ✓] (id dd-code), from item.get's `code` field, and the
-//   click sends that press. A goal has no code state, so its Details draws none.
-//   A SUB-GOAL NEVER TAKES THE MARK (goal/G6.8, Andy: an item becomes a sub-goal only when he says split, "and it can
-//   no longer be marked as a coding item"), so the press is refused there; that rule is older than this item and is
-//   held to here so the new press cannot walk around it.
-// NOT ASSERTED: whether the mark may change after his Go (nothing in the box says, and his Go already fixed the
-// phases) - a question is on the item instead.
+// THE SHAPE ASSERTED:
+//   press {id, what: 'code'}   toggles the mark on a non-goal item, owner-only (OWNER_PRESSES in desk.js), and
+//   answers a change. A split item is an item (goal/G33.4: no sub-goals), so it takes the mark too.
+//   The dialog (deskDetails.js) draws it in the button bar as [Code] / [Code ✓] (id dd-code), from item.get's `code`
+//   field, and the click sends that press. A goal has no code state, so its Details draws none.
+//   Marked code after his Go, the item starts at red (goal/G8.10).
 
 const fs = require('fs');
 const os = require('os');
@@ -41,7 +34,7 @@ async function settled() { for (let i = 0; i < 6; i++) await sleep(20); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parse(x) { if (typeof x !== 'string') return x; try { return JSON.parse(x); } catch (e) { return x; } }
 function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
-// A refusal counts only once the press exists: today's bad-request refuses every unknown press and proves nothing.
+// A refusal counts only as the press's own: bad-request refuses every unknown press and proves nothing.
 function refusedByPress(r) { return !took(r) && !(r.body && r.body.code === 'bad-request'); }
 
 function fakeElement(id) {
@@ -113,10 +106,10 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 async function item(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
 
 (async function () {
-  // THE WORLD: a goal with a plain item, a code item, and one he has split. goal/G33.4 removed the sub-goal: the split
-  // item stays an item, so the code mark is his to toggle on it too.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
-  // goal is seeded before the desk starts, and the split is an item.add naming the item it blocks.
+  // THE WORLD: a goal with a plain item, a code item, and one he has split. The split item stays an item (goal/G33.4),
+  // so the code mark is his to toggle on it too.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. There is no session.set verb
+  // (goal/G33.7): the goal is seeded before the desk starts, and the split is an item.add naming the item it blocks.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Code toggle' }, items: [
     { id: 'goal/G100.1', title: 'Plain', blocks: ['goal/G100'] },
     { id: 'goal/G100.2', title: 'A code item', blocks: ['goal/G100'], code: true },
@@ -175,7 +168,7 @@ async function item(id) { const r = await call('item.get', { id: id }, ANDY); re
 
   test.subHeading('6. marked code after his Go, the item starts at red (goal/G8.10)');
   // goal/G100.2 lost its mark in section 1, so his Go lands on a plain item and sets no phase. Marking it code afterwards
-  // used to leave it with no phase at all: nothing to take, no Done, and no Close either. Andy, 2026-10-09: "go".
+  // starts its red, so it is never left with no phase: nothing to take, no Done, and no Close either.
   await call('press', { id: 'goal/G100', what: 'end-design' }, ANDY); // a goal starts in design mode, where nothing goes.
   const went = await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
   const before = await item('goal/G100.2');

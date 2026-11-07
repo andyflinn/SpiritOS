@@ -3,13 +3,9 @@
 // spirit/test/monitorWorld.js
 // A RELAY WITH AN OWNER WATCHING IT — the fixture, in one place.
 //
-// EXTRACTED RATHER THAN COPIED. relayMonitor.js had built this and it is
-// what cycle 10's R12 needs too: a claimed relay, two members, and the
-// owner holding a stream. A second copy would have been the FIFTH
-// hand-rolled relay fixture in this directory (peerPost.js,
-// answerRelay.js, queueRestart.js, appFaceGrant.js each grew their own),
-// and the week's whole argument is that a job solved twice in two places
-// is the defect the wire probe exists to find.
+// A claimed relay, two members, and the owner holding a stream, built
+// once here for relayMonitor.js, relayHashDiffers.js, relayCannotRead.js
+// and cardFetch.js, so no suite grows its own copy.
 //
 // NOT A SUITE. It asserts nothing; it builds a world and hands it over.
 
@@ -46,7 +42,7 @@ function world() {
   auth.writeOwner(home, owner.publicKey);
 
   const box = createRelay.createRelay(home);
-  // WITH A CARD (cycle 10, R5): the relay seals its answers to the key
+  // WITH A CARD: the relay seals its answers to the key
   // on it, and the owner is the one member who must always be answerable.
   box.claim('andy', auth.sign(owner.privateKey, auth.claimMessage('andy')), owner.publicKey,
     null, null, null, nodeCard.cardFrom(Object.assign({ name: 'andy' }, owner)));
@@ -79,9 +75,8 @@ function events(bag) {
 
 // ASKED FOR AS A PACKET, because there is no other way to ask.
 //
-// This helper is the whole of decision 0010's first collapse: a verb that
-// had its own route and its own signed format is now a post addressed to
-// the relay, indistinguishable on the wire from a post to a person.
+// An owner verb is a post addressed to the relay (decision 0010),
+// indistinguishable on the wire from a post to a person.
 //
 // Note what it does NOT take: a signature of its own. The post's carries
 // it, over bytes that already bind sender, recipient and this exact text.
@@ -91,8 +86,8 @@ function askMonitor(w, who, on, filter) {
   });
   const relayKey = w.box.relayPublicKey();
   const asker = who || w.owner;
-  // SEALED TO THE RELAY, like every owner verb now (cycle 10, R9), and
-  // signed over the bytes that travel (cycle 10's R11).
+  // SEALED TO THE RELAY, like every owner verb, and signed over the
+  // bytes that travel.
   const sending = sealFor(asker, w.box, packet);
   return w.box.routePost(asker.publicKey, relayKey, sending,
     auth.sign(asker.privateKey,
@@ -123,8 +118,7 @@ function askDebug(w, who, on) {
 
 // AN OWNER VERB'S ANSWER COMES BACK ON THE STREAM, not from routePost —
 // which returns 202 "accepted" and a hash. A suite that reads the return
-// value instead sees `null` and concludes the verb did nothing, which is
-// the wrong answer arrived at honestly; it cost one debugging session.
+// value instead sees `null` and concludes the verb did nothing.
 function replies(w, who, from) {
   const asker = who || w.owner;
   const bag = asker === w.bella ? w.heard.bella : w.heard.andy;

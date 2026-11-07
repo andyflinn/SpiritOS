@@ -12,7 +12,6 @@
 //     handleRelayClaim, handleSseConnection, four job handlers and
 //     handleFsSave along with its target
 //   a repair for that pasted a block back and DUPLICATED five functions —
-//     deviceOffer, post, settleHere, deviceAnswerFrom and forgetPeer —
 //     294 lines of stale copy
 //
 // Neither is a syntax error. `node --check` passes, every suite passes,

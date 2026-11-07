@@ -1,28 +1,22 @@
 'use strict';
 
 // spirit/test/arrivals.js
-// The router's arrival seam — the thing that did not exist.
+// The router's arrival seam (arrivals.js): a packet from a peer reaches a page.
 //
 // ── WHAT THIS SUITE IS GUARDING ──────────────────────────────────────
 //
-// peerPost has had an `onArrival` hook since the router landed. Until
-// 2026-09-13 its only caller in the tree was spirit/test/frontDoor.js,
-// and server.js built createPeerPost without it — so a packet from a
-// peer was admitted, logged, receipted and dropped, and no app could
-// ever see it.
-//
-// That is the shape of failure this suite exists for, and it is worth
-// naming because it is not the obvious one: the hook WORKED. A test of
-// the hook alone passed the whole time the feature did not exist. So the
-// checks below are about the seam being CONNECTED and about the message
-// an app is actually handed, never about the hook being callable.
+// peerPost hands every admitted packet to its `onArrival` hook, and
+// server.js wires that hook to arrivals.note. A test of the hook alone
+// would pass with the hook unwired, so the checks below are about the
+// seam being CONNECTED and about the message an app is actually handed,
+// never about the hook being callable.
 
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 
-// THE LOG LIVES IN node.db SINCE transport/R19.3, and this process keeps it
+// THE LOG LIVES IN node.db (transport/R19.3), and this process keeps it
 // open; Windows will not remove an open file. So a home is closed, then removed.
 function removeHome(home) {
   try { require('../run/spirit/nodeStore.js').open(home).close(); } catch (e) { /* no store: nothing to close */ }
@@ -63,9 +57,8 @@ function itemWith(text) {
   //
   //   Andy: "nothing in node and relay should know about apps."
   //
-  // This asserted `seen[0].packet.app` — the node having decoded the
-  // envelope before handing the row on. It carries the payload verbatim
-  // now and the shell decodes it, because the shell is the only thing
+  // The node carries the payload verbatim and never decodes the
+  // envelope; the shell decodes it, because the shell is the only thing
   // that routes on `app`.
   if (seen.length === 1 && seen[0].packet === undefined && seen[0].text === encoded.text) {
     test.check('a packet noted on the seam reaches a subscriber, payload exactly as signed');
@@ -74,9 +67,8 @@ function itemWith(text) {
   }
 
   // The body is still an object where it is READ. An app asked for
-  // `{move:'e4'}` and that is what deliverPackets hands its handler —
-  // decoded by the shell rather than by the node, which changes who does
-  // it and not what an app receives.
+  // `{move:'e4'}` and that is what the shell's deliverPackets hands its
+  // handler, decoded by the shell rather than by the node.
   const read = packet.decode(seen[0].text);
   if (read.app === 'chess' && read.body && read.body.move === 'e4') {
     test.check('and decoding it where it is routed gives the object the sender encoded');
@@ -84,11 +76,9 @@ function itemWith(text) {
     test.fail('decoded as ' + JSON.stringify(read));
   }
 
-  // THE FIELD THE TWO TRANSPORTS MUST AGREE ON. The ring's messages
-  // carry fromKey and its readers reach for it; the router's item calls
-  // the same thing `from`. If they differ, every reader grows a branch
-  // for which road a line came down — which is the seam this cycle is
-  // removing, not one to add.
+  // BOTH IDENTITY FIELDS. The router's item calls the sender `from`;
+  // arrivals.js adds `fromKey` with the same value, because readers
+  // reach for it.
   if (seen[0] && seen[0].fromKey === 'PEERKEY' && seen[0].from === 'PEERKEY') {
     test.check('and it carries fromKey, so a reader cannot tell which transport it came down');
   } else {
@@ -146,11 +136,8 @@ function itemWith(text) {
   }
 })();
 
-// REPLACED, NOT DELETED. Until R10 was answered this check read "with no
-// page open the packet is dropped, and says so" — and it recorded a known
-// gap rather than a rule. The gap is closed; the check had to change with
-// it or it would go on passing for the wrong reason, since 0 delivered is
-// still 0 delivered whether the packet was thrown away or kept.
+// With no page open nothing is delivered; the packet is not thrown away
+// but waits in the traffic log (checked against a real log below).
 (function nobodyHomeMeansItWaits() {
   const arrivals = arrivalsModule.createArrivals();
   let threw = false;
@@ -164,12 +151,9 @@ function itemWith(text) {
     test.fail('threw=' + threw + ' delivered=' + delivered);
   }
 
-  // THE HALF THAT MATTERS. Holding it is worthless unless the next page
-  // to open is actually given it.
-  // The holding and the replay are the LOG's job now, and are checked
+  // The waiting and the replay are the traffic LOG's job, and are checked
   // against a real one below. In memory, with no log, there is nothing to
-  // hold it in — which is the honest behaviour for a seam nobody gave a
-  // store to.
+  // keep it in — the behaviour of a seam nobody gave a store to.
   const late = [];
   arrivals.subscribe(function (m) { late.push(m); });
   if (late.length === 0) {
@@ -186,8 +170,8 @@ function itemWith(text) {
 
   // A subscriber that threw received nothing, whatever it claims by
   // existing. Counting a broken page as a reader would lose the packet at
-  // exactly the moment something is already wrong — so it is held, and
-  // the next page that opens properly gets it.
+  // exactly the moment something is already wrong — so it stays untaken,
+  // and the next page that opens properly gets it.
   if (delivered === 0) {
     test.check('a page that throws does not count as having received it — so nothing is marked taken');
   } else {
@@ -197,18 +181,14 @@ function itemWith(text) {
 
 // ONE STORE, AND IT IS THE LOG.
 //
-// These drove a private spirit/state/pendingArrivals.json until the fold.
-// Keeping a second copy of "what is still waiting" beside the traffic log
-// was two facts that could drift, and the traffic log could not be used
-// only because it could not be READ back safely — it records arrival, not
-// admission. That was fixed at the source (rows carry `admitted`) rather
-// than worked around here.
+// What is still waiting is read from the traffic log alone: an inbound
+// row carries `admitted`, and arrivals.js replays only rows that are
+// inbound, admitted and not yet taken.
 //
 //   Andy: "tests can read what they need to read, production code MUST
 //   read through the API."
 //
-// So this file reaches the log through its api block, and so does
-// everything else in run/.
+// So this file reaches the log through trafficLog.createTrafficLog.
 function logAt(home) {
   return trafficLog.createTrafficLog({ rootDir: home, relayMode: false });
 }
@@ -259,11 +239,10 @@ function landed(log, hash, text, admitted) {
 })();
 
 (function aWitnessIsNotAReader() {
-  // THE NODE'S OWN LISTENERS (the owner door, peerOwnerPost's reply
-  // matcher, the box reports) see every arrival but are not pages. As
-  // subscribers they took the backlog at startup and marked every later
-  // arrival taken, so nothing was ever left for a page (wsl-claude:
-  // 200 arrivals, 0 untaken), and Desk's own log missed all of it.
+  // THE NODE'S OWN LISTENERS (server.js: puppetDoor, apiDoor, ownerPost,
+  // boxes) see every arrival but are not pages. They are witnesses, not
+  // subscribers: a witness is never handed the backlog and marks nothing
+  // taken, so what arrives is still left for a page.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-witness-'));
   const log = logAt(home);
   landed(log, 'w1', packet.encode('agents', { text: 'while the node was down' }).text);
@@ -291,9 +270,9 @@ function landed(log, hash, text, admitted) {
 })();
 
 (function theBacklogIsNotTheFirstPage() {
-  // Found live by wsl-claude once the witnesses stopped marking everything
-  // taken: the replay read the log's first 200 arrivals, oldest first, so
-  // a node past its 200th arrival could never replay a newer one.
+  // The replay reads every untaken admitted arrival over the whole log,
+  // not the log's first 200, so a node past its 200th arrival still
+  // replays a newer one.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-201-'));
   const log = logAt(home);
   const text = packet.encode('agents', { text: 'old' }).text;
@@ -312,12 +291,9 @@ function landed(log, hash, text, admitted) {
 })();
 
 (function aWitnessIsNotAReader() {
-  // Found live by wsl-claude after the fix above: fixList and appFaceApp,
-  // then booted node apps, reached arrivals through a subscription and
-  // marked each arrival taken 2 ms after it landed, with no page open. The
-  // booted apps are gone (goal/G13.2); the seam they used, witness, stays
-  // for the node's own doors (apiDoor, puppetDoor), and a witness still
-  // takes nothing from the page that opens later.
+  // A live arrival with no page open: the node's own doors (apiDoor,
+  // puppetDoor) watch it as witnesses, and a witness takes nothing from
+  // the page that opens later.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-witness-app-'));
   const log = logAt(home);
   const arrivals = arrivalsModule.createArrivals({ traffic: logAt(home) });
@@ -340,9 +316,8 @@ function landed(log, hash, text, admitted) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-ignored-'));
   const log = logAt(home);
 
-  // THE REASON THE LOG COULD NOT BE USED BEFORE, now checked. A packet
-  // the front door ignored is in the log with its payload and must never
-  // be replayed to an app.
+  // A packet the front door ignored is in the log with its payload
+  // (admitted false) and must never be replayed to an app.
   landed(log, 'admitted', packet.encode('chess', { move: 'e4' }).text, true);
   landed(log, 'ignored', packet.encode('chess', { move: 'e5' }).text, false);
 
@@ -415,27 +390,20 @@ function landed(log, hash, text, admitted) {
 test.subHeading('One shape, both transports');
 // ---------------------------------------------------------------------
 
-// bothRoadsDecorateTheSame STOOD HERE. It compared hub.decorateWithPacket
-// against the arrivals path to prove one shape whichever road a line
-// travelled — the ring and the router.
-//
-// Three things ended it. The ring went with R8, so there is one road.
-// The node stopped decoding altogether, so there is nothing to compare.
-// And hub.decorateWithPacket does not exist: an app envelope is not the
+// There is one road (the router) and the node does not decode packets,
+// so there is nothing to compare here: an app envelope is not the
 // node’s to read (Andy: "nothing in node and relay should know about
-// apps").
-//
-// What replaces it is the absence, asserted in spirit/test/packet.js —
-// no module under run/js requires packet.js at all.
+// apps"). spirit/test/packet.js asserts that no node module requires
+// client/packet.js.
 
 
 // ---------------------------------------------------------------------
 test.subHeading('Connected: peerPost actually notes into it');
 // ---------------------------------------------------------------------
 
-// THE CHECK THAT WOULD HAVE FAILED. Everything above passes against a
-// seam nothing calls. This drives the real peerPost, with the real front
-// door, and asks whether a packet came out the other side.
+// Everything above passes against a seam nothing calls. This drives the
+// real peerPost, with the real front door, and asks whether a packet
+// came out the other side.
 
 (function peerPostFeedsTheSeam() {
   const peerPost = require('../run/spirit/peerPost');
@@ -499,18 +467,18 @@ test.subHeading('Connected: peerPost actually notes into it');
 // The browser half, against the real shell.js.
 // ---------------------------------------------------------------------
 //
-// The node side above proves a packet comes out of the seam. This proves
-// the other three lines — kernel's `packet` listener, the shell's
-// onPacket, and deliverPackets — actually hand it to an app. Without it
-// the wiring is asserted by clicking, which is the thing this cycle's
-// method exists to stop.
+// The node side above proves a packet comes out of the seam. This is
+// meant to prove that the shell's stream handler onPacket and
+// deliverPackets hand it to an app.
+// STALE: the fixture hands shell.js spirit.core.jobs.subscribe, but
+// client/shell.js subscribes through spirit.events.subscribe (goal/G40.6),
+// so shell.js throws at load here and this hop is not checked.
 
 function theLastHop() {
   test.subHeading('The last hop: a registered app handler is called');
 
-  // Only what shell.js touches at load. Deliberately smaller than
-  // natterIntrinsic's fixture: that one exercises desktop rendering, and
-  // this one only needs an app to mount.
+  // Only what shell.js touches at load; this one only needs an app to
+  // mount.
   function fakeElement(tag) {
     var html = '';
     var el = {
@@ -570,8 +538,7 @@ function theLastHop() {
   new Function('spirit', 'document', src)(shellSpirit, doc);
 
   // THE WIRE ITSELF. If shell.js stops passing onPacket to subscribe,
-  // this is the check that goes red — and it is the exact failure the
-  // whole feature had for months on the node side.
+  // this is the check that goes red.
   var wired = subscribers.filter(function (h) { return typeof h.onPacket === 'function'; });
   if (wired.length === 1) {
     test.check('the shell subscribes to `packet` on the node event stream');

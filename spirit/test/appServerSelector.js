@@ -1,16 +1,17 @@
 'use strict';
 
-// apiAuth/G1.8: the appServer selector, a shell element that picks a server on the owner's api tree. Red on today's code.
+// apiAuth/G1.8: the appServer selector, a shell element that picks a server on the owner's api tree.
 //   Andy: "the appServer selector (a subComponent of the api-path selector)", "these all will be shell-elements
 //   invisible to the user on the shell surface.", "one item here for each of these 3 selectors", and on its source:
 //   "the shell's api tree is a straight copy of the node's owner-api-tree ?", then "yes" to the selector reading
 //   the owner's api tree itself this cycle (since goal/G30.6 the verb api on the flat apiDoor). And: "the boot continues. and the failure is logged. and that server will not
 //   be part of the apiTree".
-// The contract the builder follows, in the icon selector's pattern (iconIndex.js beside createIconSelector):
-//   - js/client/apiTreeIndex.js, loaded by both sides (module.exports for node, window.spirit.apiTreeIndex for the
+// The contract:
+//   - spirit/run/spirit/client/apiTreeIndex.js, loaded by both sides (module.exports for node, window.spirit.apiTreeIndex for the
 //     page, index.html loads it): servers(tree) -> the names of the servers in an 'api' answer, sorted; a branch that
 //     is an error ({ok: false, ...}, a server that did not answer) is not a server.
-//   - shell.js hands apps api.ui.elements.createAppServerSelector(options), beside createIconSelector: an element
+//   - spirit/run/spirit/client/shell.js hands apps api.ui.elements.createAppServerSelector(options), defined in
+//     spirit/run/spirit/element/search/api.js: an element
 //     whose root carries .value (the chosen server) and fires a bubbling change; it fills itself from the verb api
 //     (spirit.core.ask('api'), goal/G30.6), and lists servers(tree).
 
@@ -47,7 +48,7 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'shell'
 if (/<script src="\/spirit\/client\/apiTreeIndex\.js"><\/script>/.test(html)) test.check('index.html loads /spirit/client/apiTreeIndex.js');
 else test.fail(OWED + 'index.html does not load /spirit/client/apiTreeIndex.js');
 const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
-// The factories moved to spirit/element/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
+// The element factories live in spirit/run/spirit/element/, one file per element (goal/G2.12, G2.14); the shell hands them out.
 const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'spirit', 'element', 'search', 'api.js'), 'utf8');
 const at = elements.indexOf('function createAppServerSelector');
 const handed = /elements:\s*\{[^}]*createAppServerSelector:\s*shellElements\.createAppServerSelector/.test(shell);

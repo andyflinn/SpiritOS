@@ -1,9 +1,7 @@
 'use strict';
 
 // spirit/test/natterShellFixes.js
-// goal/G30.7, "Fix Shell problems related to face-name and email first". Red on today's tree; claude-windows writes it
-// and builds it (one agent).
-// The item's box (v18), in short:
+// goal/G30.7, "Fix Shell problems related to face-name and email first". The item's box (v18), in short:
 //   - Natter: the relay list is built on the shared list search, with its search field; relay.search answers each row
 //     as JSON, as the other searches do.
 //   - The public label field shows the relay's current label: the node keeps the label from the relay card beside its
@@ -21,9 +19,11 @@
 //   - serveCommon.ensureFirstRun(rootDir, {kind: 'node' | 'relay', now}). The first description reads "this <kind>
 //     described for the first time <date> UTC"; a relay's first label is "relay " and its machine's name (goal/G40.1: no key tail),
 //     written as its identity's name when the name is empty or the installer's 'relay'.
-//   - seenPeers.note(key, {kind}) kept kind on the row; since goal/G40.11 it is the flag relay on the one table
-//     (note(key, {relay: true}), get(key).relay, false when never said), and a relay's own URL is its direct route.
+//   - seenPeers keeps the flag relay on the one table (goal/G40.11: note(key, {relay: true}), get(key).relay, false
+//     when never said), and a relay's own URL is its direct route.
 //   - contact.search rows carry relay in their label JSON; peerPost keeps the card label as labelOf(url).
+// STALE PATHS: spirit/run/shell/natterDetails/ and spirit/run/shell/contacts/contacts.js are not in the tree (Contacts
+// moved to spirit/run/spirit/app/contact/ in goal/G43.14), so the checks that read them fail.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -60,13 +60,12 @@ test.subHeading('3. Natter searches');
 // Natter retired (section 7), so its list with it: relays are searched in the Contacts list of peers seen, which is
 // the shared list search.
 const contactsList = code('spirit/app/contact/contact.js');
-// The list of peers seen was the shell element peerFind (goal/G30.1, box v39); since goal/G30.19 it is Contacts' one
-// list, contactSearch, on the standard list-tool.
+// The list of peers seen is Contacts' one list (goal/G30.19), on the standard list-tool.
 const finder = code('spirit/element/search/contact/listElement.js');
 if (/spirit\.element.search.contact.listElement\.create\(/.test(contactsList) && /spirit\.element\.search\.create\(/.test(finder) && !natterApp())
   test.check('relays are searched in Contacts\' one list, on the standard list-tool');
 else test.fail(OWED + 'relays are not searched through the shared list');
-// Since goal/G40.11 relay.search is gone: contact.search answers relays too, each row's label JSON (contactLabel).
+// contact.search answers relays too (goal/G40.11), each row's label JSON (hub.js contactLabel).
 const contactLabelFn = (/function contactLabel\(p\) \{[\s\S]*?\n\}/.exec(hub) || [''])[0];
 if (/JSON\.stringify\(/.test(contactLabelFn) && /relay: p\.relay === true/.test(contactLabelFn) && !/function relaySearch\(/.test(hub)) test.check('contact.search answers each row\'s label as JSON, a relay\'s with relay, and relay.search is gone');
 else test.fail(OWED + 'the search answers a plain string label, or relay.search is still there');
@@ -147,8 +146,8 @@ try {
 } catch (e) { added = { threw: e.message }; }
 if (added && added.relay === true && added.at === 'RELAYKEY-ADDED' && added.url === 'https://added.example') test.check('a relay added to the list is a relay row the same way');
 else test.fail(OWED + 'an added relay in the shadow: ' + short(added));
-// Since goal/G40.11 every row contact.search answers is a row of the one table (buildPeople), its label carrying the
-// flag relay (contactLabel above); fromMemory and strangerLabel are gone.
+// Every row contact.search answers is a row of the one table (buildPeople, goal/G40.11), its label carrying the
+// flag relay (contactLabel above).
 if (/relay: row\.relay/.test((/function buildPeople[\s\S]*?\n\}/.exec(hub) || [''])[0]) && !/function fromMemory\(|function strangerLabel\(/.test(hub))
   test.check('the search\'s rows carry relay in their label, one shape for every row');
 else test.fail(OWED + 'the search\'s rows carry no relay flag');
@@ -170,15 +169,15 @@ const selector = code('spirit/element/search/contact.js');
 if (/name: 'show'/.test(selector) && /value: 'relay', word: 'relays'/.test(selector) && /value: 'owned'/.test(selector) && !/name: 'owned'|name: 'relay'/.test(selector))
   test.check('the contact selector has one row of mutually exclusive choices: all, my puppets, relays (and blocked, held when present)');
 else test.fail(OWED + 'the contact selector has no relay filter, or still two all buttons');
-// Since goal/G40.11 Contacts' one list asks contact.search alone, relays among its rows (relay.search went), and a
-// relay row's element opens natterDetails.
+// Contacts' one list asks contact.search alone, relays among its rows (goal/G40.11), and a relay row's element opens
+// natterDetails.
 const contactsCode = code('spirit/element/search/contact/listElement.js');
 if (/function search\(args\)[\s\S]{0,600}\.contact\.search\(/.test(contactsCode) && !/\.relay\.search\(/.test(contactsCode) && /relay \? \[[\s\S]{0,300}shell\/natterDetails/.test(contactRow))
   test.check('the contact list lists this node\'s relays (contact.search) and a relay row opens natterDetails');
 else test.fail(OWED + 'the contact list shows no relays, or a relay row opens no natterDetails');
 
 // Andy, 2026-10-20: on noderoutes he got Block and Forget ("It also allows me to block or forget a relay that i have a
-// seat on..... not optimal...."): since goal/G40.11 a relay is one row per ID, the relay's own (no second book row to
+// seat on..... not optimal...."): a relay is one row per ID (goal/G40.11), the relay's own (no second book row to
 // give way), its actions open its details, and it has no Add.
 if (!/relay\.search\(/.test(contactsCode) && /var actions = relay \? \[/.test(contactRow) && /v\.book === false && v\.relay !== true/.test(contactRow))
   test.check('a relay is one row, its own, with no Block or Forget, and a relay has no Add');
@@ -193,7 +192,7 @@ else test.fail(OWED + 'Natter is still there: its app files ' + !natterGone + ',
 const contactsSrc = fs.existsSync(path.join(RUN, 'shell', 'contacts', 'contacts.js')) ? fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8') : '';
 // The panels as the page draws them: each a <details> whose <summary> carries its title; the new one is named
 // contacts-relay-add-summary here.
-// Since goal/G30.19 Find someone on the network is the one list on top (contacts-book), its fold gone.
+// Find someone on the network is the one list on top (contacts-book, goal/G30.19), with no fold.
 const iFind = contactsSrc.indexOf('<div id="contacts-book"');
 const iAdd = contactsSrc.indexOf('<summary id="contacts-relay-add-summary">Add a relay');
 const iWrite = contactsSrc.indexOf('<summary id="contacts-unknown-summary">People who write and are not in this book');

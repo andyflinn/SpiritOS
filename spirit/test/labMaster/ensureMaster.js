@@ -5,16 +5,9 @@
 //
 // ── WHY THIS IS ITS OWN FILE ─────────────────────────────────────────
 //
-// It is the one thing that stood between the suites in this directory
-// and the harness. They each assumed labMaster was ALREADY listening on
-// 65420 — started by hand, by a person, before running anything — so
-// `runAll.js` could not run them and did not try, and they rotted for
-// months without going red anywhere (see STATE.md).
-//
-// labWorld.js solved this for itself back when liveFrontDoor was
-// written, and kept the solution private. That is the whole of the
-// difference between a suite nobody can run unattended and one the
-// harness picks up: twenty lines that nobody had lifted out.
+// The lab suites need a labMaster listening; a suite that assumes one was
+// started by hand cannot be run by `runAll.js`. This is the one place
+// that starts it, so every lab suite runs unattended.
 //
 // ── PROVE THE DEPENDENCY BEFORE ASSERTING ANYTHING ABOUT IT ──────────
 //
@@ -63,13 +56,12 @@ let spawned = null;
 //
 // A fixture is a copy of labMaster's OWN working tree, so a labMaster
 // started from another checkout makes every lab suite test THAT tree —
-// and pass. Found by wsl-claude, whose clone's harness reused Andy's
-// labMaster on WSL. So a running labMaster is asked which checkout it
+// and pass. So a running labMaster is asked which checkout it
 // copies from before it is reused: /api/root, or — for a labMaster from
 // before that route — the home of its work row. Anything else fails
 // loudly, naming both, and says how to run a labMaster of one's own.
 // Case folds only on Windows, where the file system does too. On Linux two
-// folders differing only in case are two checkouts (wsl-claude, 2026-09-22).
+// folders differing only in case are two checkouts.
 function norm(p) {
   const s = path.resolve(String(p || '')).replace(/\\/g, '/');
   return process.platform === 'win32' ? s.toLowerCase() : s;
@@ -145,18 +137,9 @@ function stop() {
 // connect would fail a suite outright over a service that was merely
 // busy.
 //
-// THIS DID NOT FIX THE FLAKE IT WAS WRITTEN FOR, and the comment used to
-// say it did. labLifecycle's `start relay: 0 fetch failed` turned out to
-// be ECONNRESET, not ECONNREFUSED — labMaster blocked on two synchronous
-// `netstat` subprocesses per node, its listen backlog filled, and Windows
-// answers a connection on a full backlog with RST. The cause and its
-// repair are in labMaster.js (portScanText); this retry never fired for
-// it and could not have.
-//
-// It stays because it is still true on its own terms: a refused connect
-// can happen while labMaster is restarting, and it is the one failure
-// that is safe to retry. Kept as what it is, not as what it was hoped to
-// be.
+// A refused connect can happen while labMaster is restarting, and it is
+// the one failure that is safe to retry. (A reset on a full listen
+// backlog is not this; its cause is handled in labMaster.js.)
 //
 // ONLY ECONNREFUSED IS RETRIED, and that restraint is the whole safety of
 // it. These calls are not idempotent — POST /api/nodes creates a node —
@@ -193,9 +176,7 @@ async function api(method, pathname, body) {
       // NAME THE CAUSE. `fetch failed` is node's generic wrapper and says
       // nothing about why — and the retry above turns on exactly that
       // distinction, so a report without it cannot say whether the retry
-      // should have fired. It cost one run already (2026-09-21): the
-      // fix was aimed at ECONNREFUSED on the strength of a message that
-      // never named a code.
+      // should have fired.
       const code = (e && e.cause && e.cause.code) || (e && e.code) || '';
       return {
         status: 0, json: null, code: code,

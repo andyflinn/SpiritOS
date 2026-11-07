@@ -4,10 +4,10 @@
 // Cycle 1, R1 — the relay's first configuration, bounded by the box.
 // design/cycles/2026-09-19-relay-governor-cycle-1.md
 //
-// Cycle 9 (2026-09-22): two limits now, and the bound is what the box can
-// GIVE rather than what it HAS. The 256 MB default is gone — Andy: "the
-// default should be total RAM divided by 2" — so a missing file no longer
-// means a constant, it means a measurement.
+// Cycle 9 (2026-09-22): two limits, and the bound is what the box can
+// GIVE rather than what it HAS. A missing file means a measurement, not a
+// constant — Andy: "the default should be total RAM divided by 2" — capped
+// at 256 MB (relayLimits.js).
 
 const test = require('./testSupport.js');
 const relayConfig = require('../run/spirit/relayConfig');
@@ -72,7 +72,7 @@ function run() {
     test.fail('an over-box ceiling was accepted: ' + JSON.stringify(big));
   }
   // The ceiling is AVAILABILITY: a figure inside the box's total and past
-  // what it can give is the case the old check let through.
+  // what it can give is refused.
   const past = relayConfig.parse('{ "ramLimitMB": 1000, "discLimitMB": 32 }', BOX);
   if (!past.ok && /more than this box can give/.test(past.error)) {
     test.check('1000 MB on a 1024 MB box with 900 available is refused — the old check allowed it');

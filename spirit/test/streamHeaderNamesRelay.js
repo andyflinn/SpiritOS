@@ -2,12 +2,12 @@
 
 // spirit/test/streamHeaderNamesRelay.js
 // goal/G16.12: a member's stream header names the relay it is for, so it cannot be replayed on another (S8 of the
-// review of 2026-10-10). Written first, red on today's code, by wsl-claude; the build is the other agent's.
+// review of 2026-10-10).
 //
-// THE HOLE: the stream signature is 'stream', the member's key and a clock minute (relayAuth.js) — it names no
-// relay and carries no nonce, and a new stream evicts the old one (presence.js). So relay A, which sees the
-// header of every member that connects to it, replays that header on relay B inside the ~3 minute window and
-// takes over the member's stream there: B evicts the member and hands A its events.
+// THE HOLE IT CLOSES: a new stream evicts the old one (presence.js), and the header carries no nonce. Were the
+// relay not named in what the member signs, relay A, which sees the header of every member that connects to it,
+// could replay that header on relay B inside the ~3 minute window and take over the member's stream there.
+// relayAuth.streamMessage is 'stream', the member's key, the relay's key and a clock minute.
 //
 // Andy argued it to this shape, 2026-10-10: "isn't the stream itself already verified though the header?" — it
 // is, and the signature names no relay — then "then the header needs a signature from the relay (key)." So the
@@ -83,10 +83,10 @@ test.subHeading('1. the signed stream message carries the relay\'s own key');
     okA = auth.streamSignatureOk(pub, pub, RELAY_A, forA, AT);
     onB = auth.streamSignatureOk(pub, pub, RELAY_B, forA, AT);
   } catch (e) { okA = false; }
-  // THE POSITIVE FIRST, AND THE NEGATIVE ONLY IF IT HELD. Today the relay key
-  // lands where `sig` goes, so every signature is garbage and "does not verify
-  // for another relay" would pass while proving nothing. A green that cannot
-  // fail is worse than a red.
+  // THE POSITIVE FIRST, AND THE NEGATIVE ONLY IF IT HELD. Were the relay key
+  // to land where `sig` goes, every signature would be garbage and "does not
+  // verify for another relay" would pass while proving nothing. A green that
+  // cannot fail is worse than a red.
   if (okA === true) test.check('a header verifies for the relay it was signed for');
   else test.fail(OWED + 'streamSignatureOk(publicKey, key, relayKey, sig, at) did not verify its own relay');
   if (okA !== true) test.fail(OWED + 'and whether it refuses another relay cannot be known until it verifies its own');

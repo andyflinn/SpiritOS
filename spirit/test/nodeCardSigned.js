@@ -164,10 +164,9 @@ if (nodeCard.asks(JSON.stringify({ app: 'natter', v: 1, body: { card: true } }))
 test.subHeading('THE COUNTER MOVES — on change, and only on change');
 
 {
-  // THE DEFECT, measured 2026-09-23: cardAt was read in cardFields and
-  // written nowhere in the tree. Every card carried at: 1, so a rotation
-  // could never be accepted ("not newer") and a retyped description never
-  // reached a peer. A monotonic field nothing increments is a constant.
+  // THE COUNTER MOVES: describe() advances cardAt on a change. A card
+  // stuck at one number could never be accepted after a rotation ("not
+  // newer"), and a retyped description would never reach a peer.
   const bob = home('bob');
   const first = nodeCard.verify(nodeCard.describe(bob.dir));
 
@@ -225,7 +224,7 @@ test.subHeading('THE COUNTER MOVES — on change, and only on change');
 //
 //   Andy, 2026-10-12: "puppeteering is a node feature, it does belong in the shadow roll's contact list with a
 //   flab that says puppet, or even better, with your damned ownerBadge." "so the relays owner code and the puppets
-//   owner code should be the same." A relay says its owner on /api/relay/key; a node says it on its card, signed.
+//   owner code should be the same." A relay says its owner on its card (ownerKey); a node says it on its card, signed.
 test.subHeading('goal/G19.8: the card carries its owner, inside the signature');
 {
   const OWED = 'OWED by goal/G19.8: ';

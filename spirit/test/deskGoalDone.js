@@ -1,17 +1,15 @@
 'use strict';
 
-// goal/G2.10: the goal offers Done only when every item is done. Red on today's tree. Since goal/G33.6 that holds in the
-// List (the desk offers a goal's Done at any time, for the detail panel); the buttons below are read as the List reads them.
-//   Found by Andy, 2026-10-02 (Team line, verbatim): "right now my desk has a not-done item and the goal still offers
-//   me a done..... the goal should only offer a done button when all items are done."
-//   Checked live: goal/G2 answered buttons ["done"] with two items open. The rule (desk.js buttons()): a row offers
-//   done when it has a claim OR, for a goal, when every member is closed — so a claim-done recorded against the goal
-//   id offers Done on the goal whatever its items are doing.
-// The contract the builder follows (the shape in goal/G2.10's box):
+// goal/G2.10: in the List, the goal offers Done only when every item is done. Since goal/G33.6 the desk offers a goal's
+// Done at any time (desk.js buttons(), for the detail panel) and the List holds it back while the goal's blocked (its
+// items still open) is not empty; the buttons below are read as the List reads them.
+//   Andy: "the goal should only offer a done button when all items are done."
+// What is checked:
 //   1. A goal ignores claims: a claim-done pressed against the goal id offers nothing by itself.
 //   2. A goal offers Done once every member is done or closed, and none is open; close-and-reopen of an item takes
-//      it away again. An item's own rule is unchanged (a claim offers Done).
-//   3. The goal's Done press itself still works once offered (unchanged).
+//      it away again.
+//   3. A new open item takes the goal's Done away again.
+//   4. The goal's Done press itself works once offered.
 
 const fs = require('fs');
 const os = require('os');
@@ -46,8 +44,7 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
     const open = f.goal === '' && (f.blocked || []).length > 0;
     return (f.buttons || []).filter(function (b) { return !(open && (b === 'done' || b === 'close')); });
   };
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
-  // (goal/G33.7: session.set went).
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts.
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Round' }, items: [
     { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }] });
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
@@ -85,12 +82,12 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
     } else test.fail(OWED + 'goal buttons with one closed and one done ' + JSON.stringify(oneClosed) + ', after a reopen ' + JSON.stringify(reopened));
 
     test.subHeading('3. a new open item takes the goal\'s Done away again');
-    // Andy (Team line): "when all items are done and the done button appears on the goal, then a new item is
+    // Andy: "when all items are done and the done button appears on the goal, then a new item is
     // added, not done, the goals done button should disappear." — "tied to the condition that all visible items are done."
     await call('press', { id: 'goal/G100.2', what: 'claim-done' }, CW);
     await call('press', { id: 'goal/G100.2', what: 'done' }, ANDY);
     const beforeNew = await buttonsOf('goal/G100');
-    // goal/G29.21: an agent's session adds no item without his words, so the owner writes it (goal/G33.7: by item.add).
+    // goal/G29.21: an agent's session adds no item without his words, so the owner writes it by item.add.
     const grown = await call('item.add', { goal: 'goal/G100', title: 'C' }, ANDY);
     if (!(grown.body && grown.body.id === 'goal/G100.3')) { test.fail(OWED + 'the third item came as ' + JSON.stringify(grown.body)); return; }
     const withNew = await buttonsOf('goal/G100');

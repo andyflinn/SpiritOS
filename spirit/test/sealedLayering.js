@@ -30,11 +30,11 @@
 //   "No special case, no exemption: the two Claudes' traffic is sealed
 //   because all peer traffic is."
 //
-// The agents seal not because `agents.js` was taught to, but because it
-// posts through the same door as everybody else. The way to assert that
-// is to count the places where sealing can be turned OFF — one, with a
-// reason — rather than to test the agents specifically, which would prove
-// only that the agents are fine today.
+// The agents seal not because they were taught to, but because they post
+// through the same door as everybody else. The way to assert that is to
+// count the places where sealing can be turned OFF — none (below) —
+// rather than to test the agents specifically, which would prove only
+// that the agents are fine today.
 
 const os = require('os');
 const fs = require('fs');
@@ -149,16 +149,15 @@ test.subHeading('A SIGNATURE OVER THE PLAINTEXT is refused — sealed first, sig
   }
 }
 
-// The one bypass cycle 10's R7 allowed was the relay-to-relay partner
-// wrapper (relayServer.js's peerPost to its partners). It went with
-// partnering (Andy's decision, goal/G22.6), so now no place may.
+// No place may turn sealing off: the one bypass cycle 10's R7 allowed,
+// the relay-to-relay partner wrapper, went with partnering (Andy's
+// decision, goal/G22.6).
 test.subHeading("cycle 10's R7, closed by goal/G22.6: no place in the tree turns sealing off");
 
 {
   // Counted, not argued. The agents seal because they post through the
   // same door as everybody else — so what must be asserted is that the
-  // door has ONE documented bypass, not that the agents are currently
-  // fine.
+  // door has no bypass, not that the agents are currently fine.
   //
   // `oneDoor.js` counts implementations for the same reason (cycle 10's
   // R8 amended, same cycle). This is that discipline pointed at an exemption.
@@ -187,7 +186,6 @@ test.subHeading("cycle 10's R7, closed by goal/G22.6: no place in the tree turns
       '. Every one is an exemption somebody granted themselves.');
   }
 
-  // agents.js was read here too, for holding no sealing code of its own; the agents app is gone (goal/G3.2).
 }
 
 try { relayStore.closeAll(); } catch (e) { /* leave it */ }

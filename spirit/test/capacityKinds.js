@@ -7,9 +7,8 @@
 //   measurements from the computes ones: nominal member streamed
 //   concurrently (may depend on system memory user for sockets etc...)"
 //
-// TWO KINDS OF NUMBER WORE ONE NAME, so a busy laptop read as a
-// regression and a real regression read as noise — which is why
-// capacityFresh went red and nobody trusted it.
+// Two kinds of number, kept apart so a busy laptop does not read as a
+// regression and a real regression does not read as noise.
 //
 // ── THE AXIS IS NOT COMPUTED-VERSUS-MEASURED ────────────────────────
 //
@@ -17,37 +16,28 @@
 // building a row and weighing it, so BOTH kinds are measured. What
 // separates them is whether the answer can differ from box to box.
 //
-// ── AND THE PUBLISHED ROWS PROVE THE SPLIT RATHER THAN CLAIM IT ─────
+// Every figure in SAME_ON_ANY_BOX is a property of the schema, so it can
+// be asserted EXACTLY across boxes (capacityFresh.js) and a disagreement
+// is a defect rather than weather.
 //
-// Every figure in SAME_ON_ANY_BOX agrees BYTE FOR BYTE between
-// `ubuntu-24.04-wsl2` and `windows-10.0` — two operating systems, two
-// Node builds, two filesystems, measured three days apart at different
-// commits: 603, 199, 376, 3293, 159, 420, 579, 253. They are properties
-// of the schema, so they can be asserted EXACTLY across boxes and a
-// disagreement is a defect rather than weather.
-//
-// ── AGREEMENT IS THE EVIDENCE, NOT THE TEST ─────────────────────────
-//
-// `cpus` is 32 on both boxes, by coincidence — both happen to have 32.
-// It is box-dependent and sits in the other list. Membership is decided
-// by what a figure IS; the cross-box agreement is what prompted the
-// split and what makes it checkable.
+// Membership is decided by what a figure IS, not by whether two boxes
+// happen to agree: `cpus` can match on two boxes and is still
+// box-dependent.
 //
 // ── WHY THIS IS ITS OWN FILE ────────────────────────────────────────
 //
 // `measureCapacity.js` MEASURES WHEN IT IS REQUIRED — it spawns servers
-// and holds sockets at import. Putting the declaration there means
-// anything that wants to know the KINDS starts a measurement to find
-// out. Found by doing exactly that.
+// and holds sockets at import, so anything that wants to know the KINDS
+// would start a measurement to find out.
 
 // Properties of the schema. Identical on every box, or something is wrong.
 const SAME_ON_ANY_BOX = [
   'perMemberRowBytes',
   'perMemberRowBytesUncarded',
   'cardBytes',
-  // The partner roll is gone (goal/G22.6) and measureCapacity no longer
-  // measures it; kept classified because the drops already published carry
-  // it until each box is measured again.
+  // The partner roll is gone (goal/G22.6) and measureCapacity does not
+  // measure it; kept classified because a published capacity.json
+  // (agents/claude-windows) still carries it until that box is measured again.
   'perPartnerRowBytes',
   'perShadowRowBytes',
   'perRouteRowBytes',
@@ -67,10 +57,7 @@ const MEASURED_ON_THIS_BOX = [
   'perStreamKernelBytes',
   'installBytes',
   'installFiles',
-  // How many times this box has published. Caught by the
-  // every-field-is-classified control on its first run — which is the
-  // control doing exactly what it was added for: a figure nobody had
-  // thought about was neither asserted nor excused.
+  // How many times this box has published.
   'runs',
 ];
 

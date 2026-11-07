@@ -1,11 +1,9 @@
 'use strict';
 
 // spirit/test/logIndexes.js
-// THE LOG'S READERS USE ITS INDEXES — transport/R19.4, written FIRST.
+// THE LOG'S READERS USE ITS INDEXES — transport/R19.4.
 //
-//   Andy, 2026-09-28: "they must be red before wsl pulls the
-//   implementation, and green after he pull the implementation", and go on
-//   transport/R19.4. Decided with the keys ("i agree to the keys as well"):
+//   The keys, Andy, 2026-09-28: "i agree to the keys as well":
 //     (1) hash, skipping blank hashes         — byHash, taken
 //     (2) at, over owner rows only            — ownerEvents
 //     (3) at, over admitted incoming rows     — arrivals
@@ -135,9 +133,8 @@ const gotOwner = recording(function () { return log.ownerEvents({}); });
 const gotArrivals = recording(function () { return log.arrivals({}); });
 const sameOwner = JSON.stringify(gotOwner.out) === wantOwner;
 const sameArrivals = JSON.stringify(gotArrivals.out) === wantArrivals;
-// FROM THE TABLE means an indexed query of its own, not the whole-log read
-// every reader already does today: that one would make this check pass on
-// the old code, where it is worth nothing.
+// FROM THE TABLE means an indexed query of its own, not a whole-log read:
+// a filter over read() would give the same answers without the index.
 function asked(r) { return r.sql.some(function (q) { return /^\s*SELECT/i.test(q) && indexed(q).ok; }); }
 const fromTable = asked(gotOwner) && asked(gotArrivals);
 if (sameOwner && sameArrivals && fromTable) {

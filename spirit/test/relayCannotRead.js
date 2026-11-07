@@ -48,10 +48,10 @@ const seal = require('../run/spirit/seal');
 const auth = require('../run/spirit/relayAuth');
 
 // THE RECIPIENT ANSWERS, which is what releases the sender's route. A member
-// has one request in flight (0016, the member cap is 1 since 2026-10-02), and
-// the owner both posts to bella here and asks the relay its DEBUG verb: with
-// his post left unanswered, as this suite first left it, every ask after it
-// is refused `too many in flight` and never reaches the switch.
+// has one request in flight (0016, the member cap is 1), and the owner both
+// posts to bella here and asks the relay its DEBUG verb: with his post left
+// unanswered, every ask after it would be refused `too many in flight` and
+// never reach the switch.
 function answered(w, who, sent) {
   if (!sent || !sent.hash) return null;
   return w.box.routeReply(who.publicKey, sent.hash, 'ok', auth.sign(who.privateKey, auth.receiptMessage(sent.hash, 'ok')));
@@ -85,29 +85,11 @@ function lastRow(w, from) {
 
   // ── D2: THE CONTROL — WITH IT OFF, NOTHING SHOULD BE HELD ─────────
   //
-  // RED, AND IT IS A REAL DEFECT rather than an unbuilt feature. The
-  // design says plainly what DEBUG is for: "the row says how big the
-  // packet was and what it hashed to; DEBUG would decide whether it also
-  // carries what the relay actually holds." It does not decide that.
-  //
-  // THE GATE IS ON THE WRONG EMITTER. relay.js:4649 reads
-  // `row.held = debugging && ... : ''` — and it is inside `ownerEvent`,
-  // whose callers are claim and revoke notices that carry no payload at
-  // all. The rows that DO carry payloads come from `monitorEvent`, and
-  // at relay.js:4735 it copies every key of `extra` onto the row with no
-  // DEBUG check anywhere in the function.
-  //
-  // So the switch is honest about itself and wrong about the world: the
-  // verb answers `debug:false` while the full sealed bytes of every post
-  // stream to the owner regardless. Not a confidentiality breach — the
-  // rows go only to the owner (presentNow.send(ownerKey, ...)) and the
-  // payload is sealed, which D4 and D5 below prove the owner cannot read
-  // either. But Andy's "DEBUG is Off by default" is true of the flag and
-  // false of the behaviour, and every future assertion of the shape
-  // "with DEBUG off the payload is absent" would be asserting a fiction.
-  //
-  // NOT FIXED HERE. It is a relay.js gate, and CLAUDE.md says to stop and
-  // call a team review rather than patch one.
+  // The design: "the row says how big the packet was and what it hashed
+  // to; DEBUG would decide whether it also carries what the relay actually
+  // holds." So `held` is on every row monitorEvent streams, and it is empty
+  // unless DEBUG is on (relay.js monitorEvent). With it off, "no plaintext
+  // in held" would be a tautology; this control shows it is empty first.
   {
     const at = mw.events(w.heard.andy).length;
     const sent = mw.post(w, w.owner, w.bella, SECRET);

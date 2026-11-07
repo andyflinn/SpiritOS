@@ -1,19 +1,15 @@
 'use strict';
 
 // spirit/test/jobCycle.js
-// goal/G29.15: one progress protocol, the job cycle in spirit.core.jobs. Red on today's tree; claude-windows writes it
-// and builds it (one agent). The item's box:
+// goal/G29.15: one progress protocol, the job cycle. The item's box:
 //   THE JOB CYCLE: a job is start, then progress and app-specific messages, then end. No process runs more than one
 //   job at a time; an appServer may run many over its life, one after another. A transient process IS its job.
-//   THE CALLS, in spirit.core.jobs: start(name), progress(done, total, text), end(result or error), each published.
+//   THE CALLS: start(name), progress(done, total, text), end(result or error), each published.
 //   total 0 means unknown. A start while a job is open is refused by name. A transient process only calls progress.
-//   WHERE IT LIVES: spirit.core.jobs (kernel.js) holds report, log, complete, fail, publish, start, progress, end;
-//   publish moves out of appServer.js, size check with it; appServer.js keeps only what serving needs.
-//   THE SHELL: one shared bar element draws a process's open job (built with the Jobs list, goal/G29.14).
-// Named here before building, as promised in the item's chat: the servers that publish switch to
-// spirit.core.jobs.publish (desk with its plugins' publish, deskVerify, deskAgent, fileServer, chatClerver), and
-// deskVerify wraps each run in start/end, its suites counted with progress (since goal/G33.3 a run is handed to it
-// with run {suites, commit}, one at a time).
+// This suite looks for the calls on kernel.js's spirit.core.jobs. They live on spirit.js's spirit.jobs
+// (spirit/run/spirit/spirit.js: report, log, complete, fail, start, progress, end; tested by spirit/run/test/spirit.js);
+// kernel.js's spirit.core.jobs is the browser's jobs api (start, search, get, cancel). deskVerify reports progress
+// through spirit.jobs.progress. Part 6 reads spirit/run/process/js/deskAgent/deskAgent.js, which is not in the tree.
 // rule/11: through testSupport only.
 
 const fs = require('fs');

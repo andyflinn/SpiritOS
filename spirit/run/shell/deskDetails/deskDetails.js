@@ -10,9 +10,10 @@
 // desk.item.get; after that the dialog paints only from what the server publishes
 // (api.onPublished). It decides nothing: its buttons are the item's
 // `buttons`, and a press goes to the server as a press, the screen waiting
-// for the server's publish. The order, top to bottom (Andy, desk/G2.7): ID,
-// title, status and buttons; the yellow strip; the one box; blocked-by and
-// blocking; chat.
+// for the server's publish. The id, title and status ride in the shell's title
+// bar; under it the button row, then a workBench: the left strip of panels (box,
+// suites, red Qs and checks, blocks, files and grants, rules), the chat in the
+// centre, the right side blank.
 
 var ddApi = null;
 var ddId = '';
@@ -20,7 +21,7 @@ var ddFacts = null;          // the item's facts, as the server last said them
 var ddBox = '';
 var ddVersion = 0;
 var ddChecks = [];
-var ddFiles = [];            // item.files, its own answer since goal/G32.2: core first, as many as fit
+var ddFiles = [];            // item.files, its own answer (goal/G32.2): core first, as many as fit
 var ddFilesMore = false;
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
@@ -36,7 +37,7 @@ var ddNote = '';
 
 function ddEsc(s) { return ddApi.escapeHtml(String(s == null ? '' : s)); }
 
-// The one way to the desk server: its verb by name on the loopback door (desk.<verb>, goal/G30.6).
+// The one way to the desk server: its verb by name on the flat apiDoor (desk.<verb>, goal/G30.6).
 function ddAsk(verb, args) {
   return Promise.resolve(ddApi.verb('desk.' + verb, args)).then(function (r) {
     var body = (r && r.body) || {};
@@ -54,9 +55,8 @@ function ddRefusalText(body) {
 }
 
 // A write of Andy's. Nothing on screen changes until the server publishes.
-// THE DIALOG NUDGES NOBODY (goal/G3.8): the bare 'changed' packet it posted to
-// each agent after a write went with the agents app; the desk server nudges
-// each agent's deskClient itself on his writes (goal/G3.5).
+// THE DIALOG NUDGES NOBODY (goal/G3.8): the desk server nudges each agent's
+// deskClient itself on his writes (goal/G3.5).
 // Answers whether the server took it. It sends no by: the desk takes its writer from the caller (apiAuth/G1.13).
 function ddWrite(verb, args) {
   return ddAsk(verb, args).then(function () { ddNote = ''; return true; }, function (e) {
@@ -117,8 +117,8 @@ function ddSecondPress(b) {
 // wiped". The inputs live in the frame and are never repainted.
 // THE PANEL IS A workBench (goal/G41.22, box v15; Andy: "the item panel drops appHeader", "one row, the button row, at
 // the top, using the whole width, like it is today", "just use workBench", "the left icons strip and panel, are what we
-// have today", "the center panel us the chat", "the right panel, we leave blank, but will carry plugin-desk-apps"). The
-// id, title and status stay in the shell's title bar (ddPaint), as before. The left pane and the chat are written in a
+// have today", "the center panel us the chat", "the right panel, we leave blank"). The
+// id, title and status stay in the shell's title bar (ddPaint). The left pane and the chat are written in a
 // holder first, so the inputs are in the frame from the start; the workBench, once spirit.require brings it, takes them.
 // goal/G41.23: its panels' icons stand alone on the bench's strip, which paints them through the icon element; the panel
 // loads that element too, as it draws with it (Andy: "this element will replace icons painting all shell elements and
@@ -156,18 +156,17 @@ function ddFrame() {
         // the frame, so the search survives every repaint; it shows with the rules panel only.
         '<div class="start-job-form card" id="dd-rule-add-row" style="display:none"><div id="dd-rule-pick" style="flex:1"></div></div>' +
         '<div id="dd-panel" class="fill" style="min-height:0"></div>' +
-    // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "there will be a new section bubble, immediately following the
-    // \"Blocked by/Blocking\" section, and right before the users chat input... \"Title\" [Title String, subject to
-    // label rules] [add-button]. When the user presses the [add-button], The desk will add a blocking item with the
-    // entered title and a blank text box. The blocked-by section will be updated immediately." It lives in the frame,
-    // so what he has typed survives every repaint, as the chat input does.
+    // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "\"Title\" [Title String, subject to label rules]
+    // [add-button]. When the user presses the [add-button], The desk will add a blocking item with the entered title
+    // and a blank text box. The blocked-by section will be updated immediately." At the foot of the left pane, under
+    // every panel; it lives in the frame, so what he has typed survives every repaint, as the chat input does.
     '<div class="start-job-form card" id="dd-add-row"><label class="field-label grow">Title' +
       '<input type="text" id="dd-add-title" data-field="label" placeholder="an item this one waits on"></label>' +
       '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
       '<button type="button" id="dd-add">Add blocking item</button></div>' +
       '</div>' +
       // THE CENTRE IS THE CHAT (goal/G41.22; Andy: "newest lines at the bottom, pinned to the bottom, and older lines above"),
-      // its input at the bottom. No search over it since goal/G43.22 (Andy: "take out the chat-search do, it's not actually usable.").
+      // its input at the bottom. No search over it (goal/G43.22; Andy: "take out the chat-search do, it's not actually usable.").
       '<div id="dd-centre" class="fill" style="min-height:0">' +
         '<div id="dd-chat" style="flex:1 1 auto;min-height:0;overflow:auto"></div>' +
         '<div id="dd-error" class="job-start-error" style="flex:none"></div>' +
@@ -198,7 +197,7 @@ function ddMakeBench(n) {
       // box is there (Andy: "i want to see the panel content THE FIRST TIME i pop in a panel, NOT the second time").
       return { name: p.key, icon: p.icon, title: p.title, mount: function (box) { ddBenchBoxes[p.key] = box; if (ddPanelSel === p.key) ddShowLeft(p.key); } };
     }),
-    // goal/G41.22: blank.
+    // goal/G41.22: the right side is blank.
     right: [],
     changed: function (side, name) {
       if (side !== 'left' || !name) return;
@@ -221,8 +220,8 @@ function ddMakeBench(n) {
 }
 
 // goal/G33.4: an item's own End design, while its goal is out of design.
-// goal/G41.2: Start design too, which the desk offers on any item since goal/G40.12 ("You can turn design on for an item
-// at any time"); a press missing here was dropped from the dialog unseen.
+// goal/G41.2: Start design too, which the desk offers on any item (goal/G40.12: "You can turn design on for an item
+// at any time").
 // goal/G41.22: push Goal, on the current goal and its items as the desk offers it; its press is the verb pushgoal.
 var DD_LABELS = { 'start-design': 'Start design', 'end-design': 'End design', go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen', pushgoal: 'push Goal' };
 
@@ -298,8 +297,7 @@ function ddButtonsHtml() {
   if (f.goal === '' && (f.buttons || []).indexOf('go-all') !== -1) {
     html += '<button type="button" id="dd-go-all" data-arming="Go all: sure?">Go all</button>';
   }
-  // WAIVE (goal/G2.22). Andy: "there is no Waive in the G2.18 dialog" — the server has had the press since
-  // goal/G5.7 and never had a button. Armed like Go all: the first click arms, the second lifts the phase rules on
+  // WAIVE (goal/G2.22). Armed like Go all: the first click arms, the second lifts the phase rules on
   // this item, so one agent can carry it from red to verify.
   if ((f.buttons || []).indexOf('waive') !== -1) {
     html += '<button type="button" id="dd-waive" data-arming="Waive: sure?">Waive</button>';
@@ -338,9 +336,8 @@ function ddButtonsHtml() {
   return html;
 }
 
-// THE YELLOW STRIP IS "HOW YOU CHECK IT", offered only while Done is (Andy:
-// "the yellow box should only be offered when the agents claim 'done'"). Each
-// C check is pressed to tick it; "it inspires diligence".
+// THE C CHECKS ARE "HOW YOU CHECK IT": listed under the red Qs in their panel (ddQsHtml), each pressed to tick it
+// ("it inspires diligence").
 // THE STRIP AND ITS PANELS (goal/G30.8). Andy, 2026-10-20: "when i click on the box icon the box appears in the upper
 // panel", "click on red Q's icon, it's the red Q's in the upper half", "click on the files icon, it'll be the file list and
 // grants", "one for the blocks", and "the icons on the left will blink if grants, or red Q's need my attention, i won't
@@ -421,7 +418,7 @@ function ddPanelHtml() {
 
 // THE ONE BOX. An item with no text yet says so; an agent writes it.
 // NO FOLD ANY MORE (goal/G30.8; Andy, 2026-10-20: "the box no longer needs to be foldable, it is now space-limited and
-// contained"): the textarea fills the upper half's panel and scrolls inside it. The fold (goal/G2.1, G9.17) stood here.
+// contained"): the box fills its panel and scrolls inside it.
 // HIS TAKE OF THE BOX (goal/G9.3): on while he is in the textarea, with the text as it stood when he went in, so a
 // blur that changed nothing releases instead of writing. Focus and blur arrive more than once (the element, the body),
 // so the flag is what keeps one take and one release.
@@ -455,7 +452,7 @@ function ddBoxMount() {
       el.className = 'fill';
       el.style.cssText = 'min-height:0;height:100%;display:flex;flex-direction:column';
       el.innerHTML = '<div style="display:flex;gap:1em;align-items:center;margin-bottom:0.25em"><span class="job-manifest-note" data-box-version></span>' +
-        // No find field over the box since goal/G43.22 (Andy: "the codeMirror search works better for editing purposes.").
+        // No find field over the box (goal/G43.22; Andy: "the codeMirror search works better for editing purposes.").
         '</div><div data-box-editor style="flex:1 1 0;min-height:0;position:relative"></div>';
       return window.spirit.element.codeMirror.create(el.querySelector('[data-box-editor]'), { mode: 'edit', text: ddBox }).then(function (view) {
         // He went into the textarea meanwhile, or left the item: it stays as it is, and the next item asks anew.
@@ -495,20 +492,16 @@ function ddBoxHtml() {
   // When the user clicks outside of that text box, and deactivates the input, also by leaving the details dialog, the
   // box input is released from the take. When a details dialog is opened, the text box is never taken."
   // So the box is a textarea holding the whole text, as tall as its panel; the take happens on focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
-  // THE FULL HEIGHT OF ITS PANE (goal/G41.22; Andy: "the box must use the full vertical space"): the old upper half's
-  // 30% is gone with the half itself.
+  // THE FULL HEIGHT OF ITS PANE (goal/G41.22; Andy: "the box must use the full vertical space").
   if (ddBoxView && ddBoxView.id === ddId) return '<div' + taken + ' id="dd-box-host" class="fill" style="' + cap + 'min-height:0;box-sizing:border-box"></div>';
   return '<div' + taken + ' id="dd-box-host" class="fill" style="' + cap + 'min-height:0;box-sizing:border-box">' +
     '<textarea id="dd-box-input" style="flex:1 1 auto;min-height:0;width:100%;box-sizing:border-box;white-space:pre-wrap;resize:none;overflow-y:auto">' + ddEsc(ddBox) + '</textarea></div>';
 }
 
-// WHAT WAITS ON HIM, UNDER THE BOX (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green
-// and are logged, and questions are red-text that disappears when you feel i answered usefully." An open grant arms
-// on the first click and is granted on the second; a granted one stays, green. An open question shows its number and
-// words ("the questions number and the text (for me)"); a click puts "Q1: <words>" in his input; the agent marks it
-// answered and it goes.
-// ddWaitingHtml STOOD HERE: the open grants and red Qs under the box. They are the files panel's and the red Qs' panel's
-// now (goal/G30.8).
+// WHAT WAITS ON HIM (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green
+// and are logged, and questions are red-text that disappears when you feel i answered usefully." The grants are the
+// files panel's (ddGrantsHtml), the red Qs their own panel's (ddQsHtml, goal/G30.8). An open question shows its number
+// and words ("the questions number and the text (for me)"); a click puts "Q1: <words>" in his input.
 // A question clicked goes into his input as a line of its own, followed by two newlines (goal/G21.2). Andy, in the
 // item's box: "A red Q clicked into Andy's chat box arrives followed by two newlines, so the question stands apart from
 // the answer he writes below it."
@@ -559,7 +552,7 @@ function ddLinksHtml() {
 
 // THE FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "that file list should be visible in desk ui per item, core files
 // market as requiring grants." One line per path with the agent that wrote it; a core path is marked data-core="1"
-// and says it needs his grant. The server decides which is core (js/coreFiles.js), never this page.
+// and says it needs his grant. The server decides which is core (spirit/run/spirit/coreFiles.js), never this page.
 function ddFilesHtml() {
   // ONE ROW A PATH (goal/G43.3; Andy, the box: "file list should not show duplicates"): a list row answered or a row the
   // stream brought, each writer's, is shown once, with all who added it.
@@ -602,7 +595,7 @@ function ddLineHtml(text) {
 }
 // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
 // left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
-// vertically be 1em space." (desk.js' deskGroupChat had the same shape until the group chat went with goal/G43.22.)
+// vertically be 1em space."
 function ddBubble(l) {
   var his = l.by === 'andy';
   var look = his
@@ -714,8 +707,8 @@ function ddValue(id) {
 }
 function ddClear(id) { var el = document.getElementById(id); if (el) el.value = ''; }
 
-// What the server published about this item, painted as it comes.
-// A change number that skips one means a publish went by unseen (desk/G3.10): the dialog asks item.get once.
+// What the server published about this item, painted as it comes. A dropped publish (too large) reads the item again
+// (desk/G3.10); a jump in change numbers does not (below).
 var ddLastChange = 0;
 // Which row a publish is: a side row by its table, item and own key (a check's number, a line's time and writer, a
 // file's holder and path), a List row by its item.
@@ -738,9 +731,8 @@ function ddTake(obj) {
   if (change) ddRowChange[rowKey] = change;
   if (change > ddLastChange) ddLastChange = change;
   // A JUMP IN CHANGE NUMBERS IS NO GAP (goal/G41.2): the desk numbers every record it writes, published or not (a take,
-  // an agent's state, another goal's rows), so the numbers a page hears jump all the time. Reading the open item again
-  // on each jump re-asked the desk four times per row. A real gap in the stream is a reconnect, and the page forgets
-  // what it kept then (desk.js deskForgetKept).
+  // an agent's state, another goal's rows), so the numbers a page hears jump all the time. A real gap in the stream is a
+  // reconnect, and the page forgets what it kept then (desk.js deskForgetKept).
   // ONE ROW AT A TIME (goal/G33.4): a side row of an item, {table, id, row}, or its List row, {item: <facts>}.
   if (obj.table) { if (obj.id === ddId && ddTakeRow(obj)) ddPaint(); return; }
   if (!obj.item || obj.item.id !== ddId) return;
@@ -750,8 +742,7 @@ function ddTake(obj) {
 // A side row of the open item: its box, a chat line, a check, a changed file list. Answers whether anything shown
 // changed.
 function ddTakeRow(obj) {
-  // A CHANGED BOX UNFOLDS (slim/G1.6 D6: "a changed block opens; his fold is his ack"): an agent's write while
-  // his dialog is open must not hide behind his fold; he folds it again when he has read it.
+  // A CHANGED BOX: its text and version, shown at once (the box has no fold).
   if (obj.table === 'box') {
     if (!obj.row) return false;
     ddBox = String(obj.row.text || '');
@@ -1145,8 +1136,7 @@ spirit.shell.activateApp({
     ddFrame();
     ddPaint();
     return ddLoad().then(function () {
-      // Opening it is seeing it: his seen clears a brought-back item's mark (goal/G2.1 note 6). The star it
-      // also cleared is gone (goal/G4.20 point 8).
+      // Opening it is seeing it: his seen clears an item's alert mark (goal/G2.1 note 6).
       if (ddFacts && ddFacts.alert) ddPress('seen');
     });
   },

@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskClaimCommit.js
-// goal/G19.13: Desk: a claim carries its commit; deskVerify waits for it. Red on today's tree (eee4a204); claude-windows
-// wrote it and builds it (one agent).
+// goal/G19.13: Desk: a claim carries its commit.
 //   Andy, 2026-10-12: "these push things, when you report a claim on code, it should be accompanied by the commit id,
 //   that way desk verify won't check something that hasn't arrived yet... ?"; asked whether it shall be claim {id,
 //   commit}, as one verb: "better. that closes the door on half-ass claims."; and "and why are the reds not claimed as
@@ -103,7 +102,7 @@ async function deskHalf() {
     d.start();
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
     const api = await d.api();
-    // The verb file is read through the family's FS since goal/G30.4 (it was AGENTS.claim).
+    // The verb file is read through the family's FS (goal/G30.4).
     const claimFile = await d.call('FS.loadJsonValue', { path: 'claim.json' });
     const described = claimFile.body && claimFile.body.value && typeof claimFile.body.value.description === 'string';
     if (api.claim && described) test.check('the api lists claim, and its verb file tells the agents of it (claim.json, read by FS.loadJsonValue)');

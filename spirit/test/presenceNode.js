@@ -17,32 +17,29 @@ const sseClient = require('../run/spirit/sseClient');
 const presenceNode = require('../run/spirit/presenceNode');
 const relayKeys = require('../run/spirit/relayKeys');
 
-// ── A NODE KNOWS ITS OWN SEATS NOW (2026-09-18) ─────────────────────
+// ── A NODE KNOWS ITS OWN SEATS ──────────────────────────────────────
 //
-// These fixtures used to say "I hold a row here" by having the fake
-// request return a ROLL with this node's key in it — which is how
-// ownerBadge.probe used to find out, by reading every member of every
-// relay and looking for itself.
-//
-// A node records its seats at claim time and reads them off disk now
-// (relayKeys.seat, hub.handleClaim). So a fixture says the same thing by
-// writing the seat, and the fake answers the key door instead — which is
-// all probe asks for: who the box is, and who runs it.
+// A node records its seats at claim time and reads them off disk
+// (relayKeys.seat, hub.handleClaim), never by reading a relay's roll. So
+// a fixture says "I hold a row here" by writing the seat, and the fake
+// answers the key door — which is all probe asks for: who the box is,
+// and who runs it.
 function seatEveryRelay(home, label) {
   relayKeys.listed(home).forEach(function (row) {
     if (row && row.url) relayKeys.seat(home, row.url, label || 'me');
   });
 }
 
-// Since goal/G19.15 the node's relay list is node.db's relays table, keyed by
-// relay key, so a listed relay is a relay with a key: each fake url has its
+// The node's relay list is node.db's, keyed by relay key (goal/G19.15; the
+// seen table since goal/G40.11), so a listed relay is a relay with a key: each fake url has its
 // own, and the key door below answers the same one.
 function keyFor(url) { return 'RELAYKEY-' + String(url || ''); }
 function listRelays(home, rows) {
   rows.forEach(function (r) { relayKeys.list(home, r.url, r.label, keyFor(r.url)); });
 }
 
-// What GET /api/relay/key answers. `ownerKey` is left out on purpose:
+// The relay's key statement, as the card ask answers it (goal/G22.6
+// closed GET /api/relay/key). `ownerKey` is left out on purpose:
 // these checks are about pinning and streams, and none of them is about
 // owning the box.
 function keyDoor(url) {
@@ -56,12 +53,8 @@ function tmpHome() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-presence-node-'));
 }
 
-// THE POST HALF, RECORDING. `createPresence` requires one, and until
-// 2026-09-16 it did not: `opts.router || null` plus `&& router` on the two
-// event lines meant a stream with no post half swallowed every request and
-// reply in silence. Not one of the five createPresence calls in this tree's
-// tests passed a router, so the seam that carries every answer home was
-// asserted nowhere below liveFrontDoor.
+// THE POST HALF, RECORDING. `createPresence` requires one: a stream with
+// no post half would swallow every request and reply in silence.
 //
 // Recording rather than empty, so the tests can say what ARRIVED rather
 // than only that construction succeeded.
@@ -291,10 +284,10 @@ async function run() {
   //
   //   Andy: "the sseClient needs to be clingy."
   //
-  // THE BUG THIS EXISTS FOR. The reset used to sit where an EVENT was
-  // parsed, so a heartbeat did not count — parseChunk(':') answers null
-  // and returns first. A node on a quiet relay climbed to the cap across a
-  // few restarts and stayed there, and every later restart then cost the
+  // THE BUG THIS EXISTS FOR. Were the reset where an EVENT is parsed, a
+  // heartbeat would not count — parseChunk(':') answers null
+  // and returns first. A node on a quiet relay would climb to the cap across
+  // a few restarts and stay there, and every later restart would cost the
   // full wait. The symptom is a node that re-attaches more slowly the
   // longer it has behaved.
   {
@@ -359,8 +352,7 @@ async function run() {
   //
   // Being clingy about reconnecting is no use to a client that does not
   // know it has been disconnected. The relay writes `:` every twenty
-  // seconds for exactly this, and until now the only thing listening for
-  // it was a proxy.
+  // seconds for exactly this, and sseClient listens for it.
   {
     let aborted = false;
     let fire = null;
@@ -436,8 +428,7 @@ async function run() {
   //   Andy: "can a relay that knows its shutting down send a message down
   //   the SSE connections to prepare its counterparts to re-connect?"
   //
-  // `retry:` is SSE's own field for it and was being dropped on the floor
-  // by the parser. Honouring it is what turns a planned restart from a
+  // `retry:` is SSE's own field for it, and the parser honours it. Honouring it is what turns a planned restart from a
   // hundred nodes reconnecting into a booting box, being refused, and
   // backing off further — into a hundred nodes arriving once, late enough
   // to be answered.
@@ -577,26 +568,16 @@ async function run() {
 
   // ── WHO THE RELAY IS, PINNED BEFORE THE STREAM CARRIES ANYTHING ──
   //
-  // THE BUG THIS EXISTS FOR, and it shipped for about an hour on
-  // 2026-09-12 before the live pass caught it by accident.
-  //
-  // hub.frontDoor admits a relay as a PARTY only if this node has
-  // accepted its key (relayKeys.js) — a device enrolment arrives as a
-  // post from the relay in its own name, and a relay is not a contact.
-  // The pin was established lazily, by answerRelay, on the first
-  // enrolment. Which deadlocked: the door refused the offer because
-  // nothing was pinned, so the code that pins never ran, so nothing was
-  // ever pinned. A node could never accept its first enrolment.
-  //
-  // INVISIBLE TO EVERY SUITE INCLUDING THE LIVE ONE, because the bug was
-  // not in a module. liveRelay.js calls answerRelay.answer() directly and
-  // never goes through peerPost.onRequest, so it proved the answerer
-  // works while the door in front of it refused every caller. A suite
-  // that drives each module cannot see the wiring between two.
+  // hub.frontDoor knows a relay as a PARTY only if this node has accepted
+  // its key (relayKeys.acceptedKeys): a post from a relay in its own name
+  // is not a contact's. Were the pin made lazily, by the code behind the
+  // door, the door would refuse the first post for want of a pin, and the
+  // code that pins would never run. A suite that drives each module cannot
+  // see that wiring between two (liveRelay.js calls answerRelay directly).
   //
   // So the check is about the WIRING: opening a stream pins the relay
   // first. It belongs here rather than being earlier-for-safety, because
-  // an offer can only arrive on a stream this node already holds — which
+  // a relay's post can only arrive on a stream this node already holds — which
   // makes pinning at stream-open exactly sufficient rather than merely
   // sooner.
   {
@@ -604,7 +585,7 @@ async function run() {
     auth.saveIdentity(pinHome, auth.generateIdentity('pinner'));
     // A relay to hold a row on, or the probe finds nothing to connect to
     // and openTo never runs.
-    // Since goal/G19.15: node.db's relays table, keyed by relay key.
+    // node.db's relay rows, keyed by relay key (goal/G19.15; the seen table since goal/G40.11).
     listRelays(pinHome, [{ label: 'one', url: 'http://relay-one' }, { label: 'two', url: 'http://relay-two' }]);
     const pinned = [];
     const opened = [];
@@ -633,7 +614,7 @@ async function run() {
     // unpinned relay simply does not get party standing.
     const deafHome = tmpHome();
     auth.saveIdentity(deafHome, auth.generateIdentity('pinner2'));
-    // Since goal/G19.15: node.db's relays table, keyed by relay key.
+    // node.db's relay rows, keyed by relay key (goal/G19.15; the seen table since goal/G40.11).
     listRelays(deafHome, [{ label: 'deaf', url: 'http://relay-deaf' }]);
     const deafOpened = [];
     const D = presenceNode.createPresence({
@@ -690,7 +671,7 @@ async function run() {
   auth.saveIdentity(spyHome, auth.generateIdentity('spy'));
   // A relay to hold a row on, or the probe finds nothing to connect to
   // and openTo never runs.
-  // Since goal/G19.15: node.db's relays table, keyed by relay key.
+  // node.db's relay rows, keyed by relay key (goal/G19.15; the seen table since goal/G40.11).
   listRelays(spyHome, [{ label: 'spy-relay', url: 'http://relay' }]);
   const spy = presenceNode.createPresence({
     rootDir: spyHome,
@@ -719,26 +700,21 @@ async function run() {
   //
   //   Andy: "their internal mechanics shouldn't even be reachable."
   //
-  // presenceNode used to expose _roster, _status, _change and _forget,
-  // captioned "fed by tests standing in for a relay" — and this suite was
-  // the only caller of all four. A hook that exists for one test is a hole
-  // in a module's front door that a caller will eventually use, and it
-  // hides whether the REAL path works: everything below asserted the
-  // merging while never once exercising the lines that route a stream
-  // event into it.
+  // No test hooks on presenceNode (no _roster, _status, _change or
+  // _forget): a hook that exists for one test is a hole in a module's
+  // front door, and it hides whether the REAL path works.
   //
-  // What replaces them is what a relay actually does. `connectImpl` is a
+  // What the suite drives instead is what a relay actually does. `connectImpl` is a
   // published option, so the suite captures the callbacks presenceNode
   // registers and calls them — which is exactly what sseClient does with
-  // bytes off a socket. `onClose` is how a relay stops asserting, so even
-  // _forget had a real path sitting next to it.
+  // bytes off a socket. `onClose` is how a relay stops asserting.
   const home = tmpHome();
   const me = auth.generateIdentity('me');
   auth.saveIdentity(home, me);
   const jobs = fakeJobs();
 
   // Two relays this node holds a row on, so start() opens a stream to each.
-  // Since goal/G19.15: node.db's relays table, keyed by relay key.
+  // node.db's relay rows, keyed by relay key (goal/G19.15; the seen table since goal/G40.11).
   listRelays(home, [{ label: 'a', url: 'http://a' }, { label: 'b', url: 'http://b' }]);
 
   const opened = {};
@@ -760,8 +736,7 @@ async function run() {
   function said(table, key) { return table[key] ? table[key].present : undefined; }
 
   // Seats on both relays, so openTo accepts each and the streams are
-  // opened the way they are in production. This said "a roll naming
-  // this node" until 2026-09-18 — the node reads its own record now.
+  // opened the way they are in production: the node reads its own record.
   seatEveryRelay(home, 'me');
   await P.start(keyDoor);
 
@@ -933,7 +908,7 @@ async function run() {
     // node may LEARN, and the two are separate now.
     const home27 = tmpHome();
     auth.saveIdentity(home27, auth.generateIdentity('learner'));
-    // Since goal/G19.15: node.db's relays table, keyed by relay key.
+    // node.db's relay rows, keyed by relay key (goal/G19.15; the seen table since goal/G40.11).
     listRelays(home27, [{ label: 'r', url: 'http://relay-r' }]);
 
     const noted = [];
@@ -1002,7 +977,7 @@ async function run() {
     const angryStreams = {};
     const angryHome = tmpHome();
     auth.saveIdentity(angryHome, auth.generateIdentity('angry'));
-    // Since goal/G19.15: node.db's relays table, keyed by relay key.
+    // node.db's relay rows, keyed by relay key (goal/G19.15; the seen table since goal/G40.11).
     listRelays(angryHome, [{ label: 'r', url: 'http://relay-angry' }]);
     const A = presenceNode.createPresence({
       rootDir: angryHome,

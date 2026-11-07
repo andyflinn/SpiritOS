@@ -13,19 +13,16 @@ const rollOf = require('./rollOf');
 //
 // ── TWO THINGS, AND THEY ARE ONE THING ───────────────────────────────
 //
-// D1  ONE FIELD. A peer row carried `name` AND `publicLabel`, set to the
-//     same string at claim, and `who()` published both. Two spellings of
-//     one fact on a public route: every reader had to know which to
-//     trust, and none could be told apart.
+// D1  ONE FIELD. A peer row carries `publicLabel` and no `name`: two
+//     spellings of one fact leave every reader to know which to trust.
 //
 // D2  AND THE KEY MAY MOVE IT. A label the owner chose and nobody could
 //     change was not the ID's property; it was the relay's opinion of
 //     somebody, published forever.
 //
-// The first had to land before a stability claim, because it changes the
-// roll shape. The second adds no route and no signed format at all —
-// it rides the post that already exists (decision 0010's collapse), so
-// the protocol register does not move for it.
+// The second adds no route and no signed format at all — it rides the
+// post that already exists (decision 0010's collapse), so the protocol
+// register does not move for it.
 //
 // ── WHAT MUST NOT MOVE ───────────────────────────────────────────────
 //
@@ -72,7 +69,7 @@ test.subHeading('One field, on the row and on the wire');
 
   // ON DISK TOO, or the collapse is cosmetic: a file still carrying both
   // is a file the next reader has to reconcile.
-  // Read off the relay's disc (relay.db since cycle 3), not asked of it.
+  // Read off the relay's disc (relay.db), not asked of it.
   const stored = rollOf(L.box);
   if (stored.every(function (p) { return p.publicLabel && p.name === undefined; })) {
     test.check('and so does the row it was written from');
@@ -80,23 +77,18 @@ test.subHeading('One field, on the row and on the wire');
     test.fail('stored: ' + JSON.stringify(stored));
   }
 
-  // EVERY ROW IS KEYED BY ITS KEY. The map was `publicKey || n`, so a
-  // keyless claim filed a row under a LABEL — which is what made
-  // `findByLabel` need a keyless branch and kept `name` alive.
-  // Since cycle 3 the key IS the members table's primary key, so a row
-  // filed under anything else cannot exist; what is left to check is that
-  // every row has one.
+  // EVERY ROW IS KEYED BY ITS KEY. The key IS the members table's primary
+  // key, so a row filed under a label cannot exist; what is left to check
+  // is that every row has one.
   if (stored.length && stored.every(function (p) { return typeof p.publicKey === 'string' && p.publicKey; })) {
     test.check('and every row is filed under its key, never its label');
   } else {
     test.fail('keys: ' + JSON.stringify(stored.map(function (p) { return p.publicKey; })));
   }
 
-  // WHICH MEANS A CLAIM NEEDS ONE. The only path that ever admitted a
-  // keyless claim was `open` mode with peers already present — reachable
-  // only by deleting allow.json by hand. A row that cannot open a
-  // stream, post, be posted to, or be told apart from another wearing
-  // the same label is worse than no row.
+  // WHICH MEANS A CLAIM NEEDS ONE. A row that cannot open a stream, post,
+  // be posted to, or be told apart from another wearing the same label is
+  // worse than no row.
   const keyless = L.box.claim('ghost', null, null, '10.0.0.9');
   if (!keyless.ok && keyless.status === 400) {
     test.check('a claim with no key is refused, so there is no second kind of row');
@@ -110,9 +102,9 @@ test.subHeading('A row written by older code is read, not reconciled');
 // ---------------------------------------------------------------------
 
 {
-  // A relay upgrading in place has rows carrying the old field. Since
-  // cycle 3 the one-time import (D8, design/DEPRECATIONS.md) is what reads
-  // them, folding `name` into `publicLabel` on the way into relay.db —
+  // A relay upgrading in place has rows carrying the old field. The
+  // one-time import (relayStore.js importLegacy; D8, design/DEPRECATIONS.md)
+  // reads them, folding `name` into `publicLabel` on the way into relay.db —
   // so this writes an old-style routingTable.json into a relay home that
   // has never opened its store, and lets the import find it.
   const oldHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-oldrows-'));
@@ -294,10 +286,9 @@ test.subHeading('The owner’s label lives in two places, and they move together
       ' monitor=' + JSON.stringify(mon.answer) + ' remove=' + JSON.stringify(rm.answer));
   }
 
-  // AND THERE IS ONE AUTHORITY. This asserted "one owner row in the
-  // roll" — a row flag that could disagree with allow.json. Since
-  // 2026-09-19 no row carries one (Andy: "a row in the roll doesn't know
-  // who the owner is"), so the relay's own answer is asserted instead.
+  // AND THERE IS ONE AUTHORITY. No row carries an owner flag (Andy: "a
+  // row in the roll doesn't know who the owner is"), so the relay's own
+  // answer is asserted.
   const named = L.box.ownerPublic();
   const ownRow = rollOf(L.box).filter(function (p) { return p.publicKey === L.owner.publicKey; })[0];
   if (named.ownerKey === L.owner.publicKey && named.ownerLabel === 'chief' &&

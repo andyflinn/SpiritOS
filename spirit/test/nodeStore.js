@@ -14,12 +14,9 @@
 //
 // ── THE ONE CLAIM THE WHOLE REQUIREMENT EXISTS FOR ───────────────────
 //
-// A row survives the process. Everything else here is detail: before this
-// cycle the shadow was an object in memory that lost everything at a
-// restart, which is why its age bound was an hour — "what a cache can
-// afford while it lives in RAM and loses everything at a restart anyway".
-// So the first check closes and reopens, and nothing else in this file
-// matters if that one fails.
+// A row survives the process. Everything else here is detail, so the
+// first check closes and reopens, and nothing else in this file matters
+// if that one fails.
 
 const os = require('os');
 const fs = require('fs');
@@ -84,12 +81,12 @@ test.subHeading('Greedy is a property of the write, not a discipline of the call
   //   the (updated) public labels must be part of it."
   //
   // The callers do not all know the same things: a search knows the
-  // label, an arriving packet knows only the road it came in on. Writing
-  // every field every time meant a label learned from a search was
-  // destroyed the moment that person sent anything.
+  // label, an arriving packet knows only the road it came in on. So a
+  // write never blanks a field it was not given, or a label learned from
+  // a search would be destroyed the moment that person sent anything.
   //
-  // It is done in the statement now rather than by reading first, so it
-  // is one round trip and cannot be forgotten by a new caller.
+  // It is done in the statement rather than by reading first, so it is
+  // one round trip and cannot be forgotten by a new caller.
   s.seen.put(A, { label: 'ann', labelRank: 1, seen: 1000 });
   s.seen.putRoute(A, { via: 'MINE', at: 'RELAY-1', rank: 1, told: 1000 });
   s.seen.put(A, { label: '', seen: 2000 });
@@ -126,8 +123,7 @@ test.subHeading('One eviction, and it is space (0021, superseding R4\'s age half
   //   Andy: "I don't see why the node should throw away memories when the
   //   20 Megabyte cap is not exhausted yet....."
   //
-  // R4 had two evictions, age and space. The age one forgot while there
-  // was room, and is gone: no store function sweeps by age any more.
+  // So no store function sweeps by age; the only eviction is space.
   const s = nodeStore.open(home());
   s.seen.put(A, { label: 'a', seen: 1000 });
   s.seen.put(B, { label: 'b', seen: 5000 });
@@ -150,7 +146,7 @@ test.subHeading('One eviction, and it is space (0021, superseding R4\'s age half
     s.seen.put('K' + String(n).padStart(4, '0'),
       { label: 'person-' + n, seen: 10000 + n });
   }
-  // 72 KB: an empty store is 56 KB since goal/G40.11 (a page for each partial index of the one table), and 400 rows
+  // 72 KB: an empty store is 56 KB (a page for each partial index of the one table, goal/G40.11), and 400 rows
   // pass that.
   const shed = s.seen.sweepToBytes(72 * 1024);
   if (shed > 0 && s.seen.bytes() <= 72 * 1024 && s.seen.size() > 0) {
@@ -172,7 +168,7 @@ test.subHeading('One eviction, and it is space (0021, superseding R4\'s age half
   // row's pages on a free list and the size never comes back down — so a
   // byte cap would evict for ever after one busy week, reading a number
   // that cannot fall.
-  // THE FILE, NOT THE CACHE. `bytes()` now measures the cache's own
+  // THE FILE, NOT THE CACHE. `bytes()` measures the cache's own
   // tables (R16), which fall on any delete whether or not the file gives
   // its pages back — so asserting on it here would pass with the vacuum
   // removed, which is a check that cannot fail. `fileBytes()` is what the
@@ -275,9 +271,9 @@ test.subHeading('Rank first, recency second — a cheap claim cannot displace a 
 {
   const s = nodeStore.open(home());
 
-  // THE THING GREED ALONE COULD NOT DO: refuse a downgrade. Before this,
-  // a second-hand name carried by a partner overwrote a rename from the
-  // relay the person is actually on, simply by arriving later.
+  // THE THING GREED ALONE COULD NOT DO: refuse a downgrade. A second-hand
+  // name carried by a partner must not overwrite a rename from the relay
+  // the person is actually on, simply by arriving later.
   s.seen.put(A, { label: 'hearsay', labelRank: 4, seen: 100 });
   s.seen.put(A, { label: 'the host says', labelRank: 1, seen: 200 });
   s.seen.put(A, { label: 'a partner says', labelRank: 4, seen: 300 });
@@ -367,12 +363,10 @@ test.subHeading('A route is a pair of doors, not an address (R1)');
 test.subHeading('Presence is three states, because "unseen" is not "away"');
 
 {
-  // contacts.js has had three marks all along — "WHITE is NOT a dimmer
-  // red. A contact we share no relay with is not offline, they are
-  // UNSEEN" — and a two-state column could not hold it. Found by a bug:
-  // a "no opinion" sentinel survived a first INSERT and read as true, so
-  // a node that had merely been told where somebody lives reported them
-  // present.
+  // Three marks: present, absent, and null for UNSEEN — a contact we
+  // share no relay with is not offline. A caller with no opinion must not
+  // turn null into true, or a node that had merely been told where
+  // somebody lives would report them present.
   const s = nodeStore.open(home());
   s.seen.put(A, { label: 'x', seen: 1 });
   if (s.seen.get(A).present === null) {
@@ -401,9 +395,8 @@ test.subHeading('Presence is three states, because "unseen" is not "away"');
 test.subHeading('A node.db from this morning still opens (R29 migration)');
 
 {
-  // The schema shipped a few hours before this one, with `at` and `url`
-  // on the peer row: one route, no via, no rank. Any node that has run
-  // since has one, so this is a real migration and not a hypothetical.
+  // An older schema had `at` and `url` on the peer row: one route, no
+  // via, no rank. Opening such a node.db migrates it.
   const oldHome = home();
   fs.mkdirSync(path.join(oldHome, 'spirit', 'state'), { recursive: true });
   const { DatabaseSync } = require('node:sqlite');
@@ -454,25 +447,13 @@ test.subHeading('A node.db from this morning still opens (R29 migration)');
   migrated.close();
 }
 
-// ── cycle 10's R17 IS BUILT, AND ITS DECLARATION IS GONE ────────────
+// ── cycle 10's R17, THE REPLAY TABLE, IS ASSERTED IN replayIndex.js ──
 //
-// It stood here as `test.awaiting('cycle-10/R17', 'nodeStore.replay', ...)`
-// and went RED the moment the surface appeared, which is the handover the
-// board is for. The assertions live in `spirit/test/replayIndex.js`,
-// which keeps the requirement's name inside them so it cannot leave the
-// board by being finished.
-//
-// The guess said 20% and "a sitting — a table, a check before delivery,
-// and a rebuild from the log". All three were needed and the estimate was
-// about right; what it did not foresee is that `seal()` stamps `at` as an
-// ISO STRING while the table stores milliseconds. `Number(iso)` is NaN,
-// which fell to 0, which read as 1970 — so every sealed post would have
-// been refused as older than this node remembers. The conversion now
-// happens at one boundary, in `replay.ms`.
-//
-// A note on what the table holds: the SENDER'S timestamp from inside the
-// seal, never the hour of arrival, because the window and the memory are
-// the same number (C2) and a row may only be swept once a message bearing
-// it would be refused for age anyway.
+// What the table holds: the SENDER'S timestamp from inside the seal,
+// never the hour of arrival, because the window and the memory are the
+// same number (C2) and a row may only be swept once a message bearing it
+// would be refused for age anyway. `seal()` stamps `at` as an ISO string
+// while the table stores milliseconds; the conversion happens at one
+// boundary, in `replay.ms`.
 
 test.reportSuccessFailureCount();

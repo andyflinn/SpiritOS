@@ -61,7 +61,8 @@ fs.mkdirSync(path.join(root, 'spirit', 'state'), { recursive: true });
 });
 // One served app, so a grant has a live path to take: the desk server.
 // The desk server runs: the copied tree's manifest says home (goal/G30.20).
-// His contacts know KEYA as alice; KEYB and KEYC they have never met.
+// His contacts are meant to know KEYA as alice, KEYB and KEYC never met. The node no longer reads contacts.json:
+// contacts live in node.db since goal/G40.11 (contacts.js), so this file names nobody to the node.
 fs.writeFileSync(path.join(root, 'spirit', 'state', 'contacts.json'), JSON.stringify([{ publicKey: KEYA, myLabel: 'alice' }]), 'utf8');
 
 let child = null;

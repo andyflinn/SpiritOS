@@ -43,16 +43,14 @@
 // ── IT ENROLS THE REAL WAY ───────────────────────────────────────────
 //
 // Mint an invite, claim it, consume it. A fixture that writes rows
-// straight into the routing table proves rules against a relay nobody
+// straight into the members table proves rules against a relay nobody
 // could join — and the two things most easily got wrong here are both in
 // the enrolment path: the invite label must be SPOKEN-safe
 // (`[A-Za-z0-9._-]{1,32}`, so no spaces), while the claimed label may be
 // the line itself (at most 64 bytes, spaces and punctuation allowed).
 //
-// And every claim carries its own `clientKey`. CLAIM_PER_MIN is ten
-// against one shared bucket, so a loop that passes null for all of them
-// quietly enrols ten people and reports success — which cost an hour in
-// `boundedByTime` before it was noticed.
+// And every claim carries its own `clientKey`, so no per-client pacing can
+// quietly cap the loop below the count asked for.
 
 const auth = require('../run/spirit/relayAuth');
 
@@ -199,7 +197,7 @@ function populate(box, ownerName, count, onProblem, opts) {
     const claimed = box.claim(label,
       auth.sign(id.privateKey, auth.claimMessage(label)),
       id.publicKey,
-      // Its own bucket, or CLAIM_PER_MIN stops the loop at ten.
+      // Its own client key, so no per-client pacing stops the loop.
       'client-' + i,
       minted.invite.token,
       handle);

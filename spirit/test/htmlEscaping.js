@@ -1,26 +1,20 @@
 'use strict';
 
-// Exercises spirit.core.util.escapeHtml (kernel.js) — the one escaper the
-// shell and every app share, via spirit.shell.escapeHtml and api.escapeHtml.
+// Exercises spirit.core.util.escapeHtml (kernel.js). spirit.js holds its own
+// escapeHtml with the same five replacements (spirit.escapeHtml), which the
+// shell (shell/boot.js) hands to a page as api.escapeHtml; this suite does
+// not load that copy.
 //
-// The bug this covers: the original implementation lived in shell.js and
-// was a DOM round-trip (`div.textContent = str; return div.innerHTML`),
-// which escapes & < > and leaves BOTH quote marks untouched. That is
-// correct for element text and wrong for an attribute value — and roughly
-// thirty call sites across shell.js and index.html interpolate the result
-// straight into one:
+// It escapes both quote marks as well as & < >, because call sites
+// interpolate the result straight into attribute values:
 //
 //   '<div class="file-row" data-name="' + escapeHtml(entry.name) + '">'
 //   '<input ... value="' + escapeHtml(override.name || '') + '">'
 //
-// A filename or a custom app name containing a double quote closed the
-// attribute early and everything after it was parsed as markup. The two
-// reachable inputs were filenames (which arrive from the filesystem, not
-// from the operator) and the app name/icon overrides.
-//
-// Being a DOM round-trip also made it untestable — no DOM in node, so no
-// test could reach it at all. Moving it into the kernel's isomorphic half
-// is what makes this file possible; that is half the fix.
+// A DOM round-trip (`div.textContent = str; return div.innerHTML`) leaves
+// both quotes untouched, so a filename or app name holding a double quote
+// would close the attribute early and the rest would parse as markup. It
+// lives in the kernel's isomorphic half, so it runs, and is tested, in node.
 const spirit = require('../run/spirit/kernel.js');
 const test = require('./testSupport.js');
 

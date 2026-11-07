@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/probabilityBucket.js
-// goal/G18.4: probabilityBucket, the third probabilit* module. Red on today's tree (6a4f7aa9); claude-windows wrote it
-// and builds it. The item's box (v7), Andy, 2026-10-12:
+// goal/G18.4: probabilityBucket, the third probabilit* module. Andy, 2026-10-12:
 //   "... 1. function createProbabilityBucket(capacity) 2. seatFor(probability, item)"; "objecs are
 //   simply dropped into the the probabilityBucket with their probability, and probabilityBucket sorts that into it's
 //   table all by itself."; "The Bucket knows NOTHING about string matching, it will only know how to sort-add objects
@@ -13,8 +12,8 @@
 //   compare-callback, nothing."
 //
 // WHAT IS ASSERTED
-//   1. run/js/probabilityBucket.js exports createProbabilityBucket(capacity), answering seatFor and serialize and
-//      nothing else; it requires nothing of string matching.
+//   1. spirit/run/spirit/probabilityBucket.js exports createProbabilityBucket(capacity), answering seatFor, serialize
+//      and sort and nothing else; it requires nothing of string matching.
 //   2. seatFor seats by probability, highest at the top, an equal one behind those already in; 0 is seated; full, a
 //      lower one is turned away and a higher one pushes the lowest out; it answers whether it got a seat.
 //   3. a probability not a number, or outside 0 to 1, gets no seat; a capacity of 0 seats nothing.
@@ -40,8 +39,8 @@ if (typeof create === 'function') test.check('run/js/probabilityBucket.js export
 else { test.fail(OWED + 'no run/js/probabilityBucket.js exporting createProbabilityBucket'); test.reportSuccessFailureCount(); process.exit(0); }
 const b0 = create(3);
 const keys = Object.keys(b0).sort();
-// sort added under goal/G27.14 (Andy, 2026-10-17: "SORT(probability = compareFunction())"): the probability still
-// comes from the caller's function, so the bucket still knows nothing of string matching.
+// sort is goal/G27.14's (Andy, 2026-10-17: "SORT(probability = compareFunction())"): the probability comes from the
+// caller's function, so the bucket knows nothing of string matching.
 if (JSON.stringify(keys) === JSON.stringify(['seatFor', 'serialize', 'sort'])) test.check('a bucket answers seatFor, serialize and sort, nothing else');
 else test.fail(OWED + 'a bucket answers ' + keys.join(', '));
 const src = fs.readFileSync(MODULE, 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');

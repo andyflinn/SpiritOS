@@ -58,9 +58,8 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
 (async function () {
   // ── G3.4: Go all ──────────────────────────────────────────────────────
   // A goal with three items: A and B unblocked, C blocked by A.
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; the
-  // three goals this suite works through are seeded before the desk starts, and his make-current brings each one up in
-  // its turn, as a new session's goal became current.
+  // goal/G29.21: an agent creates no goal, so the owner writes the world. The three goals this suite works through are
+  // seeded before the desk starts, and his make-current brings each one up in its turn.
   test.seedDesk(state, [
     { goal: { id: 'goal/G100', title: 'Fixing round' }, items: [
       { id: 'goal/G100.1', title: 'A', blocks: ['goal/G100.3'] }, { id: 'goal/G100.2', title: 'B', blocks: ['goal/G100'] }, { id: 'goal/G100.3', title: 'C', blocks: ['goal/G100'] }] },
@@ -130,7 +129,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   else test.fail(G32 + 'an abandoned goal is listed: ' + JSON.stringify(Object.keys(by)));
 
   // ── G3.7: a goal never offers Go! ──────────────────────────────────────
-  // Andy pressed desk/G2's Go! and asked what it meant (claude-windows, records 48-50); desk/G3 offered it again.
+  // Go! is an item's button: a goal offers none, whatever state its items are in.
   test.subHeading('G3.7: a goal never offers Go!, even with every item done');
   const G37 = 'OWED by desk/G3.7: ';
   await press('goal/G102', 'make-current');

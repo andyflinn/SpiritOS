@@ -16,7 +16,8 @@
 //   7 the repo notes: .gitignore holds no pasted console.log line; notASuite.js names only files the runner sees, and
 //     lists itself, so runAll does not take it for a suite; rollNarrow.js guards process/ and bash/ too
 //   8 bash/README.md says what the box runs (/root/SpiritOS, root is spirit); bash/status asks the relay's key
-//     (a card ask by bash/card-ask.js since goal/G22.6; it was GET /api/relay/key)
+//     with a card ask, bash/card-ask.js (goal/G22.6)
+//   9 the other agents' instruction files are gone, RULES.md folded into UI_DESIGN_STYLE.md, agents/ kept
 
 const fs = require('fs');
 const os = require('os');
@@ -138,7 +139,7 @@ async function deadVerbs() {
   const api = await v.up();
   if (!api) { test.fail('the world: deskVerify did not start'); return; }
   const DEAD = ['mode', 'suites', 'loop.once', 'idle', 'chore.once', 'goal.check', 'records.search', 'claim.check'];
-  // full.run went with goal/G33.3 (the Verifier tab's run buttons are gone); run is how a run is handed over now.
+  // run is how a run is handed over (goal/G33.3).
   const KEPT = ['now', 'stop', 'run', 'record'];
   const served = DEAD.filter(function (n) { return Object.prototype.hasOwnProperty.call(api, n); });
   if (!served.length) test.check('deskVerify serves none of ' + DEAD.join(', '));
@@ -153,8 +154,8 @@ async function deadVerbs() {
 
 function staleWords() {
   test.subHeading('6. the stale words');
-  // whoBook became contacts.js / spirit/state/contacts.json on 2026-09-18 (contacts.js header). A line may still name
-  // it as history: it then says so on the same line, with the date of the rename or the word historical.
+  // whoBook was renamed on 2026-09-18. A line may still name it as history: it then says so on the same line, with
+  // the date of the rename or the word historical.
   const BOX = ['DICTIONARY.md', 'AGENT.md', 'CLAUDE.md', 'spirit/run/spirit/relay.js', '.gitignore', 'UI_DESIGN_STYLE.md',
     'spirit/test/labMaster/BONES.md', 'spirit/test/peerPostWiring.js'];
   const bad = [];
@@ -166,6 +167,7 @@ function staleWords() {
   if (!bad.length) test.check('whoBook and who.json appear only as history in the ' + BOX.length + ' files the box lists');
   else test.fail(OWED + 'whoBook / who.json as if current: ' + bad.join(', '));
 
+  // natterDetails.js is no longer in the tree; read() gives '' for it, so it is checked vacuously.
   const NODE = ['spirit/run/shell/natterDetails/natterDetails.js', 'spirit/run/spirit/hub.js', 'spirit/run/spirit/relay.js', 'spirit/run/spirit/relayStatus.js', 'spirit/run/spirit/server.js'];
   const leaning = [];
   NODE.forEach(function (rel) {
@@ -205,14 +207,15 @@ function bashNotes() {
   if (!/SPIRIT_RELAY_USER|unprivileged|service account|spirit` account|spirit account/i.test(readme)) test.check('and names no unprivileged spirit account');
   else test.fail(OWED + 'bash/README.md still describes a spirit service account');
   const status = read('bash/status');
-  // SINCE goal/G22.6 the key is a card ask on the relay's one door: Andy, "bash/status, which checked a relay with
+  // The key is a card ask on the relay's one door (goal/G22.6): Andy, "bash/status, which checked a relay with
   // curl, checks it with a small node script that sends the card ask instead". GET /api/relay/key is closed.
   if (/card-ask\.js/.test(status) && !/\/api\/relay\/(who|key)/.test(status) && /relayPublicKey/.test(status)) test.check('bash/status sends the card ask (bash/card-ask.js) and looks for relayPublicKey');
   else test.fail(OWED + 'bash/status still probes ' + (/\/api\/relay\/who/.test(status) ? '/api/relay/who' : /\/api\/relay\/key/.test(status) ? '/api/relay/key' : 'something else'));
 }
 
 // ANDY'S LATER RULINGS ON THE ITEM: "CLINE.md goes.", and of the other agents' files: "these. kell'em". RULES.md is
-// folded into UI_DESIGN_STYLE.md first. agents/ stays: it is publishData's measurement data (goal/G4.33).
+// folded into UI_DESIGN_STYLE.md first. agents/ stays: it is the measurement data publishData writes
+// (spirit/run/spirit/app/publishData/, goal/G4.33).
 function agentFiles() {
   test.subHeading('9. the other agents\' files are gone, RULES.md lives on in UI_DESIGN_STYLE.md');
   const GONE = ['CLINE.md', 'GROK.md', 'GPT-OSS.md', 'AGENT_ONBOARDING.md', 'RULES.md', '.cursor', '.github/agents'];

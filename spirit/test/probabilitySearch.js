@@ -1,23 +1,22 @@
 'use strict';
 
 // spirit/test/probabilitySearch.js
-// goal/G30.17: spirit/element/search.js, the standard shell list-tool. Red on today's tree; claude-windows writes it
-// and builds it (one agent). The box, in short:
-//   - Taken from shell/shared/js/listSearch.js: rows kept by key in one unbounded probability bucket, a later answer
-//     replacing a row with the same key; ranking as you type (probabilityStringObjectMatch times every filter's test),
-//     best on top; the matched letters marked and the match bar; one call on the wire at a time, no typing pause; filters
-//     declared by the app and drawn by the element.
-//   - Added: a column mapping (which value field goes in which column), which defines the headers, a header being a sort
+// goal/G30.17: spirit/run/spirit/element/search.js, the standard shell list-tool. The box, in short:
+//   - Rows kept by key in one unbounded probability bucket, a later answer replacing a row with the same key; ranking
+//     as you type (probabilityStringObjectMatch times every filter's test), best on top; the matched letters marked and
+//     the match bar; one call on the wire at a time, no typing pause; filters declared by the app and drawn by the
+//     element.
+//   - A column mapping (which value field goes in which column), which defines the headers, a header being a sort
 //     trigger. Column sort is client-side only, on the cached rows, combined with the filters. No count line. No
 //     cut-off: a search never stops where only zero-probability rows are left.
 //   - Configuration: api, server, verb; args(text, filters); columns [{ field, label, width, align, sort }]; element(row)
-//     (the rowElement that draws a row); filters, matched, score, rows(), fold, empty as in listSearch. Returns
+//     (the rowElement that draws a row); filters, matched, score, rows(), fold, empty. Returns
 //     { refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }.
 //   - Behaviour: the server's answers only feed the cache; with text in the field column sort is off and the ranking
 //     orders the list; with the field empty, the cached rows stand in rows() order or the order they came, and a header
 //     press sorts by its column's field, a second reverses, filters still applying. A row's field change redraws that row's
 //     cells only. destroy drops every listener.
-//   - Apps not yet ported keep using listSearch until none does.
+// Point 3's oldStays still asks for shell/shared/js/listSearch.js, which goal/G41.28 deleted, so it is red.
 // NAMED HERE where the box names none:
 //   - window.spirit.element.search = { create(container, options), order(entries, state) }. order is the pure
 //     heart of the list: entries [{ key, row, at, gone }], state { words, values, filters, sort: { field, direction },

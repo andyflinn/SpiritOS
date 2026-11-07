@@ -1,15 +1,12 @@
 'use strict';
 
 // spirit/test/oldSearchGone.js
-// goal/G29.22: the last old searches move to the probability modules, and the old search is deleted. Red on today's
-// tree; claude-windows writes it and builds it (one agent). The item's box (v1):
-//   - jobs.search (the node verb behind the Jobs app) ranks jobs by the probability modules, cut by bytes.
-//   - owner.boxSearch (the box search) ranks by the probability modules, cut by bytes.
-//   - With no user left, the old search is deleted: gradedSearch.js, searchBucket.js and bucket.js, with tests that they
-//     are gone. A bounded single-object answer still needed (searchBucket.boundedGet) moves to a home of its own first.
-// NAMED HERE where the box names none: the home of the bounded single-object answer is limits.js, as
-// limits.boundedGet(answer, maxBytes), the same refusal (413, answer-too-large); "ranks" means every row comes back, the
-// best match first, none filtered out by the words, as the shared list shows them.
+// goal/G29.22: the last old searches use the probability modules, and the old search is deleted. Checks:
+//   - jobs.search (nodeSearches.js jobsSearch, the node verb behind the Jobs app) ranks jobs by the probability modules.
+//   - the box search (boxes.js search) ranks boxes by the probability modules.
+//   - the bounded single-object answer is limits.boundedGet(answer, maxBytes), refusing 413 answer-too-large.
+//   - gradedSearch.js, searchBucket.js and bucket.js are gone from spirit/run/spirit/, and nothing under spirit/run loads them.
+// "ranks" means every row comes back, the best match first, none filtered out by the words.
 // rule/11: through testSupport only; its own scratch folder.
 
 const fs = require('fs');

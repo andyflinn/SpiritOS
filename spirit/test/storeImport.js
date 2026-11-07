@@ -7,7 +7,7 @@
 // asserts (design/DEPRECATIONS.md, decision 0014). At the alpha release the
 // import is risk-assessed and eliminated or kept; so is this.
 //
-// spirit-3 holds routingTable.json and invites.json. On the first open
+// A relay from before cycle 3 holds routingTable.json and invites.json. On the first open
 // relayStore reads them into relay.db in one transaction and renames them
 // *.imported: kept, never deleted, never read again.
 
@@ -64,9 +64,9 @@ if (s.members.get('OLD') && s.members.get('OLD').publicLabel === 'legacy') {
   test.fail('legacy row: ' + JSON.stringify(s.members.get('OLD')));
 }
 
-// A PARTNER FLAG ON A MEMBER ROW became a row on the partner roll until
-// goal/G22.6 removed the roll (Andy's decision: "the partner roll and the
-// partner budget are removed"). The member it rode on still comes across.
+// A PARTNER FLAG ON A MEMBER ROW is not carried: there is no partner roll
+// (goal/G22.6, Andy's decision: "the partner roll and the partner budget
+// are removed"). The member it rode on still comes across.
 if (s.members.get('FRIEND') && s.members.get('FRIEND').publicLabel === 'grok' && s.partners === undefined) {
   test.check('a member row carrying a partner flag comes across as a member, and no partner roll is made');
 } else {

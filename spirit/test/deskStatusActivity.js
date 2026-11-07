@@ -1,6 +1,6 @@
 'use strict';
 
-// goal/G33.11 "More Desk changes": the red, on today's tree. claude-windows writes it.
+// goal/G33.11 "More Desk changes".
 //   The box (v8), in short:
 //   - The box, in goals and in items, cannot be sized by hand: it is sized only by the layout, a scroll bar inside.
 //   - While its agent holds the red or the build of an item, the agent's deskClient watches its checkout and reports
@@ -13,12 +13,16 @@
 //   - deskVerify gets a "chores now" button and one new verb for it, chores.run (Andy, 2026-10-24: "the deskVerifier
 //     get a new verb: chores.run").
 //   - An icon left of the box opens the item's suites list, read only.
-//   - What happens in a special goal (a desk plugin's goal, such as Stacks) reaches the deskClients as news too.
+//   - What happens in a special goal (a desk plugin's goal, such as Stacks) reaches the deskClients as news too. The
+//     desk has no plugins and makes no special goal since goal/G43.22 (Andy: "the apps and plugin system goes."), so
+//     section 7 asserts a replaced shape.
+// Sections 6 and 8 read the family api.js at process/js/desk/desk.family/ and process/js/deskVerify/deskVerify.family/;
+// the folder is process/js/<name>/family/ (goal/G41.12), so those reads find no file.
 // NAMED HERE where the box names none:
 //   - item.status takes tone ('' | 'test' | 'code', optional) beside word; the item's facts carry it as statusTone; a
 //     word that is a path is kept as its file name only. The List paints the status by statusTone.
-//   - The deskClient's watch is fs.watch on its node's checkout; a path under spirit/test/ is tone 'test', any other
-//     'code'.
+//   - The deskClient's watch is chokidar on its node's checkout (goal/G40.3); a path under spirit/test/ is tone 'test',
+//     any other 'code'.
 //   - The verifier failing a verify sets the item's status (word 'verify failed'), not a chat line.
 // Sections 1 to 3 drive a real desk server on seeded records; the rest read the code, where a unit's absence is the
 // fault (the deskClient, deskVerify and the shell need a running node to show it). rule/11: through testSupport
@@ -122,7 +126,7 @@ function ok(r) { return r && r.status === 200; }
   test.subHeading('3. a failed verify sets the status, never a chat line');
   // Two agents of its own: claude-windows and wsl-claude each hold a red above, and one agent holds one task at a time.
   await call('phase.take', { id: 'goal/G100.3', phase: 'red' }, UBI);
-  // Since 3b a red finishes only after its red claim with suites (goal/G33.11). goal/G40.3: the suite is a row added
+  // A red finishes only after its red claim with suites (goal/G33.11, 3b). goal/G40.3: the suite is a row added
   // first, and the claim carries none.
   await call('item.suites.add', { id: 'goal/G100.3', path: 'spirit/test/deskStatusActivity.js' }, UBI);
   await call('claim', { id: 'goal/G100.3', phase: 'red', commit: 'abcdef1' }, UBI);

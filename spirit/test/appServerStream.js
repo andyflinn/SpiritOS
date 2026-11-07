@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/appServerStream.js
-// goal/G33.4 (box v40, v41, v43) and goal/G33.8 (box v8): js/appServer.js gives every server both halves of a stream.
+// goal/G33.4 and goal/G33.8: spirit/run/spirit/appServer.js gives every server both halves of a stream.
 // Andy: "spirit/appServer.js should provide both, a client (streamListener) interface and a server (streamPublisher)
 // interface", "Subscribe and unsubscribe are verbs of the streamPublisher in js/appServer.js, approved and granted.", "No
 // subscriber list is kept beyond the grants: the server always broadcasts each publish by peerPost to its subscribers,

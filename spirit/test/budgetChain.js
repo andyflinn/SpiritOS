@@ -14,15 +14,12 @@
 //   request is informational, and the next station down the chain better
 //   hurry."
 //
-// ── WHAT WAS WRONG ───────────────────────────────────────────────────
+// ── WHY ──────────────────────────────────────────────────────────────
 //
-// The chain was inverted and flat in the middle. A node waited 8 s, the
-// relay's note about that request lived 20 s, and the relay's hop to a
-// partner waited 8 s again — so the INNER hop outlived the OUTER waiter,
-// and at a ceiling of one request per member that orphans a member's only
-// slot for twelve seconds. Every retry in that window is refused by the
-// member's own abandoned route, and the refusal is indistinguishable at
-// the node from somebody else being busy.
+// An INNER hop that outlives the OUTER waiter orphans a member's only
+// slot (one request per member) after the asker has given up. Every retry
+// in that window is refused by the member's own abandoned route, and the
+// refusal is indistinguishable at the node from somebody else being busy.
 //
 // ── WHAT MAKES IT UNEXPRESSIBLE RATHER THAN FIXED ────────────────────
 //
@@ -31,8 +28,10 @@
 // numbers anybody chooses, and however long the chain is. There is no
 // ladder of constants to keep in step and no way to drift.
 //
-// That is the claim this file checks, at three levels: the table, the
-// forward, and the wire.
+// That is the claim this file checks, at two levels: the router's table
+// (router.js open, with grantedMs) and the wire (a relay's /api/relay/post
+// refusing an exhausted budget with tooLittleTime). A relay forwards to no
+// partner (goal/G22.6), so there is no forward hop to check.
 
 const os = require('os');
 const fs = require('fs');
@@ -47,7 +46,7 @@ const plantRun = require('./plantRun');
 const router = require('../run/spirit/router');
 const { createRelay } = require('../run/spirit/relay');
 
-// Below 49152, outside Windows' ephemeral range — see partnerWire.js.
+// Below 49152, outside Windows' ephemeral range.
 const PORT = 48791;
 
 let kids = [];
@@ -142,11 +141,8 @@ test.subHeading('A target this box can reach is simply asked');
   }
 }
 
-// "A PARTNER IS HANDED LESS THAN THIS RELAY HAS" and "A HOP REFUSES BEFORE
-// THE WIRE" STOOD HERE: the budget handed onward to a partner relay, less
-// HOP_MARGIN_MS. A relay carries nothing onward since partnering went (Andy's
-// decision, goal/G22.6), so there is no next hop to hand a budget to; what
-// stays is the table granting the asker min(asked, ceiling), above and below.
+// A relay carries nothing onward (Andy's decision, goal/G22.6), so there is no
+// next hop to hand a budget to; the table grants the asker min(asked, ceiling).
 
 test.subHeading('The asker is told what it was granted, and stops when the relay does');
 
@@ -220,10 +216,8 @@ async function overTheWire() {
   }
 
   // A budget too small to use, sent from the wire. The relay must refuse
-  // it AND the marker must survive relayServer's whitelist — the trap
-  // that has already eaten `busy` and `maxPerTarget` on the way through
-  // this file, which is why it is checked end to end rather than in
-  // memory.
+  // it AND the marker must survive relayServer's whitelist of reply
+  // fields, which is why it is checked end to end rather than in memory.
   // ADDRESSED TO THE RELAY ITSELF, which is a member-legal post that
   // still opens a route — a search. Aimed at an absent peer instead, the
   // post is refused for presence (0006, "deliver or refuse, refuse

@@ -1,14 +1,10 @@
 'use strict';
 
-// goal/G9.17, change 1: a closed item blocks nothing. Red on today's tree; wsl-claude wrote it from G9.17's box and
-// does not build it.
-//   Found by the review of goal/G10 on 2026-10-09: the goal read blocked by Configuration manager (goal/G10.4)
-//   after Andy had closed it. Andy: "fine. add it."
+// goal/G9.17, change 1: a closed item blocks nothing. Andy: "fine. add it."
 //
-// WHAT IS TRUE TODAY (read in the tree at d6e9df7d): blockers() drops a member only when it is done or left out of a
-// session (desk.js:750, `!o.done && !o.leftOut`), so a merely closed item still counts. Both readers inherit it: the
-// facts an item answers with (blocked, desk.js:1002) and the Go rule, which offers Go only on an item nothing blocks
-// (desk.js:810).
+// blockers() in desk.js drops a member that is done, closed or left out of a session (`!o.done && !o.closed &&
+// !o.leftOut`). Both readers use it: the facts an item answers with (blocked) and the Go rule, which offers Go only
+// on an item nothing blocks.
 //
 // WHAT IS ASSERTED: a closed blocker leaves the blockers as a done one does, in the facts and in the Go rule alike;
 // a done blocker is unchanged; and a reopened one blocks again.
@@ -63,7 +59,7 @@ async function press(id, what, who) { return call('press', { id: id, what: what 
   const C = c.body && c.body.id;
   if (!A || !B || !C) { test.fail('the items were not minted: ' + short([a.body, b.body, c.body])); return; }
 
-  // A GOAL IS BORN IN DESIGN MODE, and no item offers Go while it lasts (desk.js:810), so design ends here: this
+  // A GOAL IS BORN IN DESIGN MODE, and no item offers Go while it lasts, so design ends here: this
   // suite is about blockers, not about design mode.
   const ended = await press(gid, 'end-design');
   const gf = await facts(gid);

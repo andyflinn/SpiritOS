@@ -1,23 +1,18 @@
 'use strict';
 
 // spirit/test/logMigration.js
-// THE OLD LOG FILE MOVES INTO THE TABLE — transport/R19.5, written FIRST.
+// THE OLD LOG FILE MOVES INTO THE TABLE — transport/R19.5.
 //
-//   Andy, 2026-09-28: go on transport/R19.5, under his rule "they must be
-//   red before wsl pulls the implementation, and green after".
-//
-// The contract, agreed with claude-windows before the build: rule 1 says
-// nothing above trafficLog.js changes, so there is no new export for the
-// node to call. The first time a log is opened with traffic.jsonl present,
+// The contract: nothing above trafficLog.js changes, so there is no new
+// export for the node to call. The first time a log is opened with traffic.jsonl present,
 // trafficLog imports it into node.db's table in ONE transaction and renames
 // it traffic.jsonl.imported, which is never read again. The copy to Andy's
 // Drive folder ("backup the old file to D:\countinn@google.com\SpiritOS-data-backup
 // as well") is a one-off step on his machine, done by hand with his go, so
 // it is not tested here: T1 holds that the original bytes survive.
 //
-// The fixture is a node as it stands today: a history in traffic.jsonl
-// (written before transport/R19.3) and newer rows already in the table
-// (written since), put there through nodeStore so nothing opens the log
+// The fixture is a node with a history in traffic.jsonl (written before
+// transport/R19.3) and newer rows already in the table, put there through nodeStore so nothing opens the log
 // before the test means it to.
 
 const fs = require('fs');
@@ -152,8 +147,7 @@ if (hadRetired && again === want && tableRows(h.home).length === after.length) {
 test.subHeading('T7: a second import never renames over the first one');
 // If node.db ever fails after the move, the log falls back to a NEW
 // traffic.jsonl; the next opening imports that too. It must not rename it
-// over traffic.jsonl.imported, which holds the original bytes (wsl-claude's
-// review of 25a1896; fixed in 711772d).
+// over traffic.jsonl.imported, which holds the original bytes.
 const firstRetired = fs.existsSync(retired) ? fs.readFileSync(retired) : null;
 const late = { at: '2026-09-28T10:00:00.000Z', dir: 'in', kind: 'owner', event: 'written-while-the-table-was-down', peer: PEER };
 fs.writeFileSync(h.file, JSON.stringify(late) + '\n');

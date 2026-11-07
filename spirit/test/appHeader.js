@@ -1,7 +1,10 @@
 'use strict';
 
-// goal/G6.1: the header-area shell element, a sticky div an app fills, held under the shell's titlebar. Red on today's
-// tree; wsl-claude wrote it from G6.1's box and does not build it.
+// goal/G6.1: the header-area shell element, a sticky div an app fills, held under the shell's titlebar.
+// THIS SUITE ASSERTS G6.1'S FIRST SHAPE, WHICH THE CODE NO LONGER HAS: appHeader.js now adds
+// spirit.element.appHeader.create(container) (goal/G41.19's element shape), not spirit.elements.createAppHeader; its top
+// is 0, not the titlebar's measured height, since the pane scrolls under the titlebar (goal/G41.22); shell.js hands it
+// as ui.elements.appHeader; desk.js and deskDetails.js do not call it. Shapes 1, 2 (top), 3 (shell) and 4 fail on that.
 //   Andy, FACE.md: "shell app apps/dialog apps can have a header area. this header area behaves like the header area in
 //   both desk and deskDetails. we want a shell element that facilitates that."; "it's upper edge sticks to the the lower
 //   edge of the shell's titlebar, when the user scrolls down in the dialog". In goal/G6.1: "the shape only produces the
@@ -12,12 +15,12 @@
 //   1  spirit/run/spirit/element/appHeader/appHeader.js adds createAppHeader to window.spirit.elements, on the shell's globals.
 //   2  createAppHeader() returns an empty div: position sticky, its top the titlebar's measured height, a background, a
 //      z-index above the content; measured again when the window resizes.
-//   3  index.html loads it beside iconSelector.js, before the shell; the shell hands it to apps as api.ui.elements.
+//   3  index.html loads it before the shell; the shell hands it to apps as api.ui.elements.
 //   4  desk and deskDetails move onto it: their own copies of the sticky div's measuring are removed.
-// THE NAMES that are wsl-claude's picks (the box names none): the titlebar is the shell's #app-header, the element desk
-// and deskDetails measure today (desk.js 830, deskDetails.js 92); its height is read as offsetHeight or as
+// THE NAMES that are wsl-claude's picks (the box names none): the titlebar is the shell's #app-header; its height is
+// read as offsetHeight or as
 // getBoundingClientRect().height, either; the div's top is read from its inline style (style.top, setProperty, or
-// cssText; a var(--x) is resolved), so the builder may write it any of those ways.
+// cssText; a var(--x) is resolved), so it may be written any of those ways.
 // LEFT OPEN, with the reason, not asserted here:
 //   - "measured in one place": a source shape, not behaviour; the removal of desk's and deskDetails' copies (4) is.
 //   - ruleDetails using it: goal/G6.4's.
@@ -144,9 +147,9 @@ pending = pending.then(function () {
   test.subHeading('4. desk and deskDetails move onto it, their own copies gone');
   [['desk', read(DESK) || '', 'deskBarTop'], ['deskDetails', read(DETAILS) || '', 'ddBarTop']].forEach(function (a) {
     const name = a[0]; const old = a[2];
-    // COMMENTS DO NOT COUNT (found by claude-windows building it): a comment naming createAppHeader() passed this
-    // before desk called anything. Line and block comments are cut first, so both the call and the leftovers are
-    // looked for in code only (a comment recalling deskBarTop is no leftover).
+    // COMMENTS DO NOT COUNT: a comment naming createAppHeader() must not pass this. Line and block comments are cut
+    // first, so both the call and the leftovers are looked for in code only (a comment recalling deskBarTop is no
+    // leftover).
     const s = a[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/.*$/gm, '$1');
     const uses = /createAppHeader\s*\(/.test(s);
     const left = [old, '--desk-bar-top', "getElementById('app-header')"].filter(function (k) { return s.indexOf(k) !== -1; });

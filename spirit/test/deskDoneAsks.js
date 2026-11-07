@@ -1,22 +1,17 @@
 'use strict';
 
-// goal/G4.26: an offered Done lights his ❌ once every agent involved in the item has claimed it. Red on today's tree;
-// wsl-claude wrote it, claude-windows builds it.
-//   Andy, 2026-10-04: "nothing in the the list tells me where my attentions is supposed to go" (goal/G0); to "Should
-//   an offered Go or Done count as waiting on you (❌)?" — "only if all agents involved in that item consider it
-//   done."; to "Who is involved?" — "took it."; to "An offered Go?" — "i see the go."; then his Go on goal/G4.26.
-//   In the tree: facts.asks (asksOf, desk.js) counts open G and Q checks and open C checks while Done is offered; an
-//   offered Done with no C lights nothing (G4.24 sat at Done (2) with no ❌).
+// goal/G4.26: an offered Done lights his ❌ once every agent involved in the item has claimed it.
+//   Andy, 2026-10-04, to "Should an offered Go or Done count as waiting on you (❌)?" — "only if all agents involved
+//   in that item consider it done."; to "Who is involved?" — "took it."; to "An offered Go?" — "i see the go."
+//   In the tree: facts.asks (asksOf, desk.js) counts open G and Q checks, open C checks while Done is offered, and one
+//   more when Done is offered and every taker has claimed (a code item: once it is verified).
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
+// THE SHAPES:
 //   1  An item's involved agents are those that took it: item.take, line.take (his "<nick>:" take included) and
 //      box.take, by the label they wrote with.
 //   2  While Done is offered and every involved agent has claimed it, asks counts one more (so the List row shows
 //      ICON.ERROR). An item nobody took counts it from its first claim.
 //   3  An offered Go counts nothing (his "i see the go").
-//
-// FOUND IN THE DRY RUN: deskForAndy.js section 3 expects asks 0 once its C check passed while Done is still offered
-//   and claimed; under this rule that row now counts the offered Done. That assertion is the builder's to move.
 
 const fs = require('fs');
 const os = require('os');
@@ -45,7 +40,7 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
   client.register('desk', pipe);
   const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const factsOf = async function (id) { const r = await call('item.get', { id: id }, ANDY); try { return JSON.parse((r.body || {}).item) || {}; } catch (e) { return {}; } };
-  // goal/G33.7: session.set went; the world is seeded before the desk starts, which takes it in at start.
+  // The world is seeded before the desk starts, which takes it in at start (goal/G33.7).
   test.seedDesk(state, { goal: { id: 'goal/G100', title: 'Done' }, items: [
     { id: 'goal/G100.1', title: 'Two takers', blocks: ['goal/G100'] }, { id: 'goal/G100.2', title: 'Nobody took it', blocks: ['goal/G100'] },
     { id: 'goal/G100.3', title: 'Only Go', blocks: ['goal/G100'] }] });
@@ -66,7 +61,7 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
     await call('line.take', { id: 'goal/G100.1' }, WSL);
     await call('chat.add', { id: 'goal/G100.1', text: 'wsl-claude answers' }, WSL);
     await call('press', { id: 'goal/G100.1', what: 'claim-done' }, CW);
-    // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
+    // goal/G33.3: Done is offered as soon as an agent claims done.
     const one = await factsOf('goal/G100.1');
     if (one.buttons && one.buttons.indexOf('done') !== -1 && one.asks === 0) test.check('claimed by claude-windows alone: Done is offered, asks 0 (wsl-claude took it too)');
     else test.fail(OWED + 'after one of two claims: ' + short({ buttons: one.buttons, asks: one.asks }));
@@ -82,7 +77,7 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
     test.subHeading('2. nobody took it: Done counts from its first claim');
     await call('press', { id: 'goal/G100.2', what: 'go' }, ANDY);
     await call('press', { id: 'goal/G100.2', what: 'claim-done' }, CW);
-    // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
+    // goal/G33.3: Done is offered as soon as an agent claims done.
     const lone = await factsOf('goal/G100.2');
     if (lone.asks === 1) test.check('goal/G100.2, claimed once and taken by nobody: asks 1');
     else test.fail(OWED + 'goal/G100.2 after one claim: asks ' + short(lone.asks));

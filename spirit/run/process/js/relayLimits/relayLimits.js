@@ -7,9 +7,9 @@
 //   relay config must be updated via relay api. if it goes wrong i can
 //   also ssh...."
 //
-// The relay half landed in cycle 9: an owner-signed `{ config: … }` posted
-// to the relay's own key, answered on the post. This is the node half —
-// the thing a person or an agent actually runs.
+// The relay half answers an owner-signed `{ config: … }` posted to the
+// relay's own key, on the post. This is the node half — the thing a person
+// or an agent actually runs.
 //
 //   node process/js/relayLimits/relayLimits.js list
 //   node process/js/relayLimits/relayLimits.js read  [spirit|lab|<url>]
@@ -28,10 +28,9 @@
 // posts it through `peer.post`, and reads the answer off the node's own
 // event stream — no new surface anywhere.
 //
-// It is also the third sample: hello-world posts, the agents program
-// coordinates, and this one asks a machine to change itself and reports
-// what it said. Everything it does, a developer's program in any language
-// can do through the same loopback door.
+// It asks a machine to change itself and reports what it said. Everything
+// it does, a developer's program in any language can do through the same
+// loopback door.
 //
 // ── WHAT IT WILL NOT DO ─────────────────────────────────────────────
 //

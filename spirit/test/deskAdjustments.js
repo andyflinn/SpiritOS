@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskAdjustments.js
-// goal/G33.6: Desk adjustments, after goal/G33.3. Red first; claude-windows wrote it and builds it (one agent). Andy's
-// words that set it: "the main list may only show one single button, and it is the button for the next wanted
+// goal/G33.6: Desk adjustments, after goal/G33.3. Andy's words that set it: "the main list may only show one single button, and it is the button for the next wanted
 // user-action, so verify button for any done button, a done button before any close button. the detail shows all
 // available buttons.", "and go before done etc....", "just in the list, a goal offers no done or closed while items
 // are not done or closed, the goal offers those only in the detail panel anytime", "please don't show verifier-busy an
@@ -21,6 +20,8 @@
 //      row of the item handed over (its facts: verifyRunning) shows, from deskVerify's own run publishes, "verifying",
 //      the suite running and a bar; other rows do not; after an idle publish the row shows its status word again. The
 //      dialog shows the same, from the same shared rendering (shell/shared/js/deskRunStatus.js), in #dd-run.
+// STALE: shell/desk/desk.js loads its parts through window.spirit.require (deskNeed) at mount, and the window this
+// suite hands it has none, so the List half throws "no spirit.require on this page" before its first check.
 // rule/11: through testSupport only; its desk has its own folder, its own environment file and a pretend node on a port
 // of its own, never 65432; it stops only the processes it started.
 

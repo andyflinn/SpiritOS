@@ -1,10 +1,10 @@
 // spirit/run/shell/shared/js/deskChat.js
 // AN ITEM'S CHAT, ONE COPY FOR EVERY PAGE THAT SHOWS ONE (goal/G27.2).
 //
-// Lifted from the Desk face's chat mount (shell/desk/desk.js, deskMountChat, goal/G22.3) when the Stacks door dialog
-// needed the same chat: the chat of the door's item (Andy, 2026-10-17, in goal/G27.2's box: the dialog's chat is "the
-// chat of the desk item that added the door ... the inherited component as in deskDetails"). The Desk face mounts it
-// for a plugin's goal, the door dialog for a door's item; each loads it on demand.
+// Made for the Stacks door dialog (Andy, 2026-10-17, in goal/G27.2's box: the dialog's chat is "the chat of the desk
+// item that added the door ... the inherited component as in deskDetails"). No page in the tree loads it now: the
+// Stacks door dialog and the plugin goals that mounted it went with the desk's plugins (goal/G43.22). Only its own
+// test does.
 //
 //   window.spirit.elements.createDeskChat(el, { id, ask, onPublished, escape, lineHtml, time, title, placeholder })
 //     id           the item or goal whose chat it is

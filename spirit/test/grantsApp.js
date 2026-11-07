@@ -1,6 +1,6 @@
 'use strict';
 
-// apiAuth/G1.6: Grants, the owner's intrinsic shell app for managing who may call which api. Red on today's code.
+// apiAuth/G1.6: Grants, the owner's intrinsic shell app for managing who may call which api.
 //   Andy: "before the switch an, intrinsic auth shellApp must be in place so andy may manage has interactive
 //   access", "it will be the apiAuth module that provides the necessary loopback interface for the shell app",
 //   the dropdowns "api-graph-selector [appServer-dropdown] [verb-dropdown]" and "contactSelector", "an app knows
@@ -57,8 +57,9 @@ const parts = {
   'picks a path': /createApiBranchSelector/,
   'grants': /auth\.grant/,
   'revokes': /auth\.revoke/,
-  // AMENDED BY goal/G29.7: the page holds every grant and the line's filters narrow it, so a key's grants are the
-  // table filtered by that peer, read through auth.search (below), not auth.peer.
+  // goal/G29.7: the page holds every grant and the line's filters narrow it, so a key's grants are the table
+  // filtered by that peer, read through auth.search (below), not auth.peer. grants.js today wraps
+  // spirit/element/grantsPanel.js (goal/G41.16), so most of these marks are in the panel, not in grants.js.
   'shows a key\'s grants': /grContact\.value/,
   'finds by label': /auth\.search/,
   'reads a bundle': /DEPENDENCIES/,

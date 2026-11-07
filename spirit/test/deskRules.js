@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/deskRules.js
-// goal/G3.9: the six rules are served to every agent and enforced wherever the system can. RED on today's tree.
+// goal/G3.9: the six rules are served to every agent and enforced wherever the system can.
 //
 //   Andy, 2026-10-02 (goal/G3): the six rules, and "the system needs to enforce those rules wherever it can. my
 //   grants for this project entitle you to make decision with in the scope of the desk project, with the
@@ -14,21 +14,14 @@
 //   issue"; "the actual contract is consumed between 'go' and 'done'"; "the close-with arm is only visible on the
 //   item detail". His Go on this item is his press in Desk (record 4409).
 //
-// IN THE TREE TODAY: process/js/desk/AGENTS.md carries none of the six sentences; nothing on an agent's node
-// blocks the other agent, and deskClient.next asks nothing about it; no process/js/desk/commitCheck.js exists and
-// a commit names what it likes; the desk takes a claim-done on an item he never pressed Go on and marks it gone
-// (desk.js, "a claim consumes the Go", goal/G2.13); an item's facts do not say whether HE pressed Go; Close is
-// offered only once an item is done (desk.js buttons()); the List draws every button a row has but go-all and
-// reopen (shell/desk/desk.js DESK_NOT_IN_ROW); the dialog's Close presses on the first click.
-//
-// THE CONTRACT (the box of goal/G3.9; the shapes below are claude-windows's where the box names none, for
-// wsl-claude to build against). No core module is touched: not kernel.js, server.js, hub.js, jobs.js,
+// THE CONTRACT (the box of goal/G3.9, and the shapes named here where the box names none). No core module is touched: not kernel.js, server.js, hub.js, jobs.js,
 // appServer.js, appClient.js or apiDoor.js.
 //
-//   A. THE RULES ARE SERVED. The six sentences head process/js/desk/desk.family/AGENTS.md verbatim, in his order,
-//      before the file's first "## " section, so the desk server's FS.loadFile (appServer, goal/G30.4; the AGENTS
-//      verb of slim/G1.8 before it) hands them to every agent at the start of a sitting.
-//   B. THE DESK (process/js/desk/desk.js).
+//   A. THE RULES ARE SERVED. The six sentences head the desk's AGENTS.md verbatim, in his order, before the file's
+//      first "## " section, so the desk server's FS.loadFile (appServer, goal/G30.4) hands them to every agent at the
+//      start of a sitting. The file is spirit/run/process/js/desk/family/AGENTS.md; AGENTS_MD below names
+//      process/js/desk/desk.family/AGENTS.md, a path the tree does not have, so A compares the served file with nothing.
+//   B. THE DESK (spirit/run/process/js/desk/desk.js).
 //      1. An item's facts (item.get, items.search) carry go: true once HE pressed go or go-all on it, false before;
 //         an agent's claim-done never sets it.
 //      2. A claim-done on an item without his Go on record is refused (ok: false) and changes nothing: the item
@@ -43,14 +36,14 @@
 //         first click, as desk/G3.8 built it.
 //      2. The List (shell/desk/desk.js): a row that is neither done nor closed draws no Close, whatever its buttons
 //         say; a done row draws its Close as today.
-//   D. RULE 1 AT deskClient (process/js/deskClient/deskClient.js). Each agent's node blocks the other agent's key
+//   D. RULE 1 AT deskClient (spirit/run/process/js/deskClient/deskClient.js). Each agent's node blocks the other agent's key
 //      (contact.block on its own loopback door; contacts.js: a blocked key is not heard). While its agent waits on
 //      next, deskClient asks its own node whether every OTHER AGENT it has seen write at the desk (a record whose
 //      key is not its own, not by andy, not by desk) is blocked there; one that is not has next refused with code
 //      unblocked and the agent's name and key in the answer, until it holds. Andy's own writes never cause it.
 //      The pretend node of this suite answers contact.get {key} -> {person: {publicKey, blocked}} and contact.search
 //      {q} -> {items: [{key, label}]} as hub.js does, from a book the suite controls.
-//   E. RULES 3 AND 4 AT THE COMMIT (process/js/desk/commitCheck.js, new). Run by hand in an agent's OWN clone,
+//   E. RULES 3 AND 4 AT THE COMMIT (spirit/run/process/js/desk/commitCheck.js). Run by hand in an agent's OWN clone,
 //      never in Andy's checkouts (his ruling above): `node commitCheck.js install <port of the agent's node>` in
 //      the clone's root points git at the check. From then on:
 //      1. A commit whose message names no item of the current goal with his Go on record (go: true) and not done
@@ -62,12 +55,10 @@
 //         re-stacked before its push is written under the id it was pushed with, never the id it was made with.
 //         The asks go through the agent's own deskClient (deskClient.<verb> by name), so they are counted.
 //      3. With the agent's node unreachable the commit is refused, not waved through.
-//      The claim-done line listing the item's files is the agents' by hand until this lands (Andy's ruling above);
-//      this suite asserts nothing about it.
-// NOT ASSERTED, the builder's: where install keeps the port and the hook files it writes; how deskClient learns the
+//      The claim-done line listing the item's files is not asserted here.
+// NOT ASSERTED: where install keeps the port and the hook files it writes; how deskClient learns the
 // other agents' keys beyond their writes; the wording of the refusals; the exact text of the commit line beyond the
 // hash and the bullets; the arm's label and colour.
-// NOT PROVEN: this suite has run only against today's tree, where every owed check is red.
 
 const fs = require('fs');
 const os = require('os');
@@ -84,7 +75,7 @@ const OWED = 'OWED by goal/G3.9: ';
 const OWED19 = 'owed by goal/G4.19: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
-const AGENTS_MD = path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'AGENTS.md'); // <module>.family since goal/G30.4
+const AGENTS_MD = path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'AGENTS.md'); // not the tree's place: the desk's AGENTS.md is in family/
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
 const PAGE = path.join(RUN, 'shell', 'desk', 'desk.js');
@@ -279,7 +270,7 @@ const row = function (o) { return Object.assign({ goal: 'goal/G100', status: '',
 const hasClose = function (html, id) { return new RegExp('data-press="close" data-id="' + id.replace(/[/.]/g, '\\$&') + '"').test(html); };
 
 // ── E. git, in a clone of the suite's own ──────────────────────────────────
-// Asynchronous, awaited (wsl-claude's review of the first red): the pretend node lives in this process, and a hook's
+// Asynchronous, awaited: the pretend node lives in this process, and a hook's
 // ask of it can only be answered while this process is free to answer.
 function run(cmd, args, cwd) {
   return new Promise(function (resolve) {
@@ -302,7 +293,7 @@ async function commitWith(cwd, file, text, message) {
   await git(cwd, ['add', file]);
   const r = await git(cwd, ['commit', '-m', message]);
   // A refused commit leaves its file staged (git keeps the index when commit-msg refuses); unstage it, so the next
-  // commit carries its own file alone (wsl-claude's review).
+  // commit carries its own file alone.
   if (r.status !== 0) await git(cwd, ['rm', '-q', '--cached', file]);
   return r;
 }
@@ -315,7 +306,7 @@ async function main() {
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world; seeded before the desk starts
   // (goal/G33.7: session.set went).
   test.seedDesk(deskState, { goal: { id: 'goal/G100', title: 'Rules' }, items: [
-    // goal/G100.1 blocks goal/G100.2, so his go-all on the goal never reaches goal/G100.2 (wsl-claude's review of the first red).
+    // goal/G100.1 blocks goal/G100.2, so his go-all on the goal never reaches goal/G100.2.
     { id: 'goal/G100.1', title: 'Gone by his press', blocks: ['goal/G100.2'] },
     { id: 'goal/G100.2', title: 'Never gone', blocks: ['goal/G100'] },
     { id: 'goal/G100.3', title: 'Gone by go-all', blocks: ['goal/G100'] },
@@ -355,7 +346,7 @@ async function main() {
   f1 = await factsOf('goal/G100.1');
   if (claim.status === 200 && f1 && f1.go === true && f1.buttons.indexOf('done') !== -1) test.check('B2: after his Go the claim-done is taken and Done is offered');
   else test.fail(OWED + 'B2: claim-done after Go answered ' + claim.status + ' ' + JSON.stringify(claim.body).slice(0, 100) + '; facts ' + JSON.stringify(f1));
-  // B3 BEFORE THE GO-ALL (wsl-claude's review of the first red): goal/G100.4 is goable, so his go-all would reach it.
+  // B3 BEFORE THE GO-ALL: goal/G100.4 is goable, so his go-all would reach it.
   let f4 = await factsOf('goal/G100.4');
   const offered = f4 && f4.buttons.indexOf('close') !== -1 && f4.buttons.indexOf('go') !== -1;
   const close = await desk('press', { id: 'goal/G100.4', what: 'close' }, ANDY);

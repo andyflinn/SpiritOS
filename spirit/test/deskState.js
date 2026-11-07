@@ -3,16 +3,18 @@
 // desk/G2.1: the desk server holds all state and decides all content.
 // Andy: "The server determines all the content to be drawn. buttons, the text in the one text box, the status of
 // items, the title of items etc." The one canonical state is desk.db; the browser holds none.
-// The contract the builder follows (names from claude-windows's proposal under desk/G2.1, each write carrying `by`):
+// What is asserted (desk.js, spirit/run/process/js/desk/desk.js; the writer of every write is the caller, never an
+// argument, apiAuth/G1.13):
 //   reads   items.search {text, currentGoalOnly, goalsOnly} -> {items: [{key, label}], more}, each label JSON
-//           {id, title, status, buttons, blocking, blocked, ...}; item.get {id} -> {item, version, change}; item.box, item.checks, item.chat {id} one panel each
-//   writes  goal.add {title}, item.add {goal, title} (session.set went with goal/G33.7); box.write {id, text, version, by}; check.add {id, kind, words, test, by};
-//           check.set {id, check, state, by}; chat.add {id, text, by}; item.rename {id, title, by};
-//           item.status {id, word, by}; item.take {id, by}; press {id, what, by}
+//           {id, title, status, buttons, blocking, blocked, ...}; item.get {id} -> {item, version, change}; item.box,
+//           item.checks, item.chat {id} one panel each
+//   writes  goal.add {title}, item.add {goal, title}; box.write {id, text, version}; check.add {id, kind, words, test};
+//           check.set {id, check, state}; chat.add {id, text}; item.rename {id, title}; item.status {id, word};
+//           item.take {id}; press {id, what}
 //   rules   Go! only after 'end-design' and only for an item nothing open blocks; Done after one agent's
 //           claim-done; Close and Reopen after done; a closed item leaves the list; the first box text wins and an
 //           alteration against an old version is refused; state survives a restart; items from before the redesign
-//           (old `session` lines) are not served; fresh.get is gone.
+//           (old `session` lines) are not served; fresh.get and session.set (goal/G33.7) are not served.
 
 const fs = require('fs');
 const os = require('os');
@@ -48,7 +50,7 @@ db.close();
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });
 client.register('desk', pipe);
-// Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+// Writers are CALLERS (apiAuth/G1.13, spirit/test/deskWriterKey.js): the desk takes the writer from the caller.
 const CW = { key: 'MCowBQYDK2VwAyEAdeskStateTestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskStateTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskStateTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
@@ -83,8 +85,8 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
     { id: 'goal/G101.1', title: 'Alpha', blocks: ['goal/G101.2'] },
     { id: 'goal/G101.2', title: 'Beta', blocks: ['goal/G101'] },
   ] };
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world; since goal/G33.7 (session.set went)
-  // it is seeded before the desk starts, which takes it in at start.
+  // An agent creates no goal (goal/G29.21), so the owner's world is seeded before the desk starts, which takes it in at
+  // start (goal/G33.7).
   test.seedDesk(state, session);
   const api = await start();
   test.subHeading('its verbs');
@@ -120,7 +122,7 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (btns(by['goal/G101.1']) && !btns(by['goal/G101.1']).includes('done') && !btns(by['goal/G101.1']).includes('go')) test.check('after go and before any claim: neither Go! nor Done');
   else test.fail(OWED + 'after go, before a claim, Alpha has ' + JSON.stringify(by['goal/G101.1']));
   await call('press', { id: 'goal/G101.1', what: 'claim-done' }, WSL);
-  // goal/G33.3: Done is offered as soon as an agent claims done; verify.pass is gone.
+  // Done is offered as soon as an agent claims done (goal/G33.3).
   by = await items();
   if (btns(by['goal/G101.1']) && btns(by['goal/G101.1']).includes('done')) test.check('one agent\'s claim-done offers Done');
   else test.fail(OWED + 'after one claim Alpha has ' + JSON.stringify(by['goal/G101.1']));
@@ -171,7 +173,7 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (goals['goal/G101'] && !goals['goal/G101.2']) test.check('goalsOnly answers the goal and no items');
   else test.fail(OWED + 'goalsOnly answered ' + JSON.stringify(Object.keys(goals)));
   const found = await items({ text: 'renamed' });
-  // goal/G18.5: the text ranks, it no longer filters; what matches comes first.
+  // The text ranks, it does not filter (goal/G18.5); what matches comes first.
   if (Object.keys(found)[0] === 'goal/G101.2') test.check('text search ranks what matches first');
   else test.fail(OWED + 'search "renamed" answered ' + JSON.stringify(Object.keys(found)));
 
@@ -203,11 +205,9 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (noStar(starred) && noStar(cleared)) test.check('an agent\'s new line and Andy\'s seen leave no star in the facts');
   else test.fail(OWED + 'star before seen ' + starred.star + ', after ' + cleared.star);
 
-  // desk/G1.4: what he types in Desk reaches his voice file, and the desk server writes it (G2.7 review): his
-  // chat line and his new name, never an agent's line.
+  // NO VOICE FILE (goal/G2.1 note 8): the desk writes no <state>/voice.jsonl; the brain reads his lines through the
+  // desk api, and the vault's own tool keeps his corpus.
   test.subHeading('his chat and his names reach voice.jsonl; an agent\'s line does not');
-  // NO VOICE FILE ANY MORE (goal/G2.1 note 8): his lines and renames were kept in <state>/voice.jsonl until
-  // then; the brain reads them through the desk api now, and the vault's own tool keeps his corpus.
   if (!fs.existsSync(path.join(state, 'voice.jsonl'))) test.check('his chat line and his rename write no voice.jsonl in the state folder');
   else test.fail('OWED by goal/G2.1: the desk server still writes voice.jsonl');
 
@@ -216,21 +216,10 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (odd.status === 400 && odd.body && odd.body.code === 'bad-request') test.check('press what:fly answers bad-request');
   else test.fail(OWED + 'press what:fly answered ' + JSON.stringify(odd));
 
-  // THE ANDY DOOR IS GONE, AND SO ARE THE TWO CHECKS THAT STOOD HERE (goal/G16.4).
-  //
-  // They asserted that apiDoor refused a member's desk write whose arguments said
-  // by 'andy', from when the desk took its writer from those arguments (desk/G2.1).
-  // The desk names the writer from the CALLER now — desk.js writerOf answers 'andy'
-  // only for caller.owner === true, every handler overwrites the arguments' `by` with
-  // it, and an owner press is refused by ownerOnly before anything else. So the door
-  // check guarded nothing and refused a member's honest search of the owner's lines;
-  // Andy, 2026-10-10: "an andy-door sounds bad." and "remove it."
-  //
-  // Retired rather than left failing: the guarantee they were about is asserted
-  // directly, on the desk rather than on a mocked server, by test/apiDoorNoOwnerName.js
-  // ("a chat.add naming by andy reaches the desk, which names the writer from the
-  // caller", and apiDoor.js holding no andy literal). Checked in goal/G16.4's build
-  // phase by wsl-claude, 2026-10-11.
+  // NO ANDY DOOR (goal/G16.4). The desk names the writer from the CALLER (desk.js writerOf answers 'andy' only for
+  // caller.owner === true) and an owner press is refused by ownerOnly first; apiDoor holds no owner name. Andy,
+  // 2026-10-10: "an andy-door sounds bad." and "remove it." That guarantee is asserted by
+  // spirit/test/apiDoorNoOwnerName.js.
 
   test.subHeading('it all survives a restart');
   await stop(kids[kids.length - 1]);

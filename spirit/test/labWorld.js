@@ -5,18 +5,12 @@
 // processes on real ports, built and torn down by the suite that wants
 // them.
 //
-// Everything here is LOCAL, deliberately and for one reason: there is no
-// verb anywhere that removes a peer from a relay. The owner console is
-// `status peers search invites key version`, and relay.js never deletes
-// from `peers` — the routing table only grows. So an invite issued on a live
-// relay creates a resident permanently, visible in /api/relay/who, in
-// Contacts, and in every presence roster. In a lab the whole world is
-// deletable, so nothing has to be lived with.
+// Everything here is LOCAL, deliberately: in a lab the whole world is
+// deletable, so a suite never leaves a resident on a live relay.
 //
 // See GAPS at the bottom. Every place this file reaches past the protocol
 // and edits a file by hand is a thing the system cannot yet do, listed by
-// name — and each one, once built, makes this helper able to test more
-// than it can today. The cheats are the to-do list.
+// name. The cheats are the to-do list.
 
 const fs = require('fs');
 const os = require('os');
@@ -39,9 +33,8 @@ const PREFIX = 'lw-';
 // from where hand-made rows tend to land.
 const RELAY_PORT = require('./labMaster/labPaths').labPort(25);
 const PEER_PORTS = [26, 27, 28].map(require('./labMaster/labPaths').labPort);
-// The owner NODE's port (apiAuth/G1.0). Before the auth world the lab
-// owner was a key with no node; a world whose cases are decided at the
-// owner's gate needs the gate running.
+// The owner NODE's port (apiAuth/G1.0): a world whose cases are decided
+// at the owner's gate needs the gate running.
 const OWNER_PORT = require('./labMaster/labPaths').labPort(29);
 // How long a case waits before its outcome is 'silence'. Long enough for
 // a relay round trip under harness load; a real answer arrives in well
@@ -71,8 +64,7 @@ async function master(method, pathname, body) {
 
 // PROVE THE DEPENDENCY IS THERE BEFORE ASSERTING ANYTHING ABOUT IT. A
 // suite that needs labMaster and does not check for it reports product
-// failures for a control plane that was never running — which is the
-// lesson presenceWire paid for with five false red lines.
+// failures for a control plane that was never running.
 async function masterUp() {
   try {
     const r = await master('GET', '/api/nodes');
@@ -80,13 +72,8 @@ async function masterUp() {
   } catch (e) { return false; }
 }
 
-// ONE OWNER OF STARTING labMaster: ensureMaster.js. This file had its own
-// copy, and its destroy() killed what that copy started — and build()
-// calls destroy() to clear leftovers, so a world built with no labMaster
-// running started one and killed it a moment later. It passed only where
-// a labMaster was already up (always, on the Windows box it was written
-// on); on a fresh Linux box liveFrontDoor failed every time (2026-09-19).
-// In a harness run, runAll starts labMaster before any lane and stops it
+// ONE OWNER OF STARTING labMaster: ensureMaster.js. build() clears
+// leftovers with clear(), which never stops the labMaster. In a harness run, runAll starts labMaster before any lane and stops it
 // after, so no suite owns it; a suite run alone starts and stops its own.
 const lab = require('./labMaster/ensureMaster.js');
 
@@ -98,19 +85,11 @@ function homeOf(id) {
   return path.join(FAKES_ROOT, id, 'spirit', 'run');
 }
 
-// GAP 5, CLOSED. A world has to start empty, and labMaster now delivers
-// one: create and recycle both clear the home before laying the tracked
-// tree down, and delete takes the disk with it.
-//
-// This used to remove relay-state by hand between create and start,
-// because a node created under a name that had been used before booted
-// owned by the previous run's key and could not be claimed by the suite
-// that had just asked for it.
-// `config` — a spirit/state/config.json to give the node before it runs.
-// A relay has a Governor ONLY when it is handed one (relay.js:422), so
-// without this a lab relay reports no levers at all and cycle 4's own
-// verification step — "open the Relay Monitor, set a lever, watch the
-// relay take it" — cannot be carried out on the lab at all.
+// A world has to start empty, and labMaster delivers one: create and
+// recycle both clear the home before laying the tracked tree down, and
+// delete takes the disk with it.
+// `config` — a spirit/state/config.json to give the node before it runs
+// (a relay's ramLimitMB, which sets its stream allowance).
 //
 // Written after the home exists and followed by a restart, because
 // relayServer.js reads the file once at startup and both create and
@@ -128,16 +107,12 @@ async function ensureNode(name, type, port, config, ownerKey) {
   // from FIXTURE_ROOT for itself, so a node built anywhere else would
   // have its identity written into a directory nobody is running.
   //
-  // That is not hypothetical — it is what happened the day lab homes
-  // moved to repo/lab, and it stayed invisible through a full green run
-  // because labMaster is long-running and the suites were still talking
-  // to the process started before the change.
   const made = await master('POST', '/api/nodes',
     { name: id, type: type, port: port, kind: 'fixture' });
 
   if (made.status === 409) {
     // Already in the table from an interrupted run. Recycle is the verb
-    // that means "give me this node, new" — and it does now.
+    // that means "give me this node, new".
     const cycled = await master('POST', '/api/nodes/' + id + '/recycle');
     if (cycled.status !== 200) {
       return { ok: false, error: 'recycle ' + id + ': ' + JSON.stringify(cycled) };
@@ -208,12 +183,8 @@ function createWorld(opts) {
   // THE AUTH WORLD (apiAuth/G1.0): a scenario carrying servers, grants
   // and cases builds an owner NODE too, and runCases() asks its gate.
   const sc = opts.scenario ? require('./scenario').normalize(opts.scenario) : null;
-  // NOT CLAMPED. It was `Math.min(PEER_PORTS.length, ...)`, so a scenario
-  // with five peers built three and reported success — and the world
-  // Andy then looked at was not the scenario he asked for, with nothing
-  // anywhere saying so.
-  //
-  // A lab has as many peers as it has ports. Wanting more than that is a
+  // NOT CLAMPED: a scenario with more peers than ports must not quietly
+  // build fewer and report success. A lab has as many peers as it has ports. Wanting more than that is a
   // refusal with a reason, which build() gives below: the failure that
   // names itself beats the success that lies.
   const wanted = sc ? Math.max(1, sc.peers.length) : Math.max(1, opts.peers || 2);
@@ -272,23 +243,17 @@ function createWorld(opts) {
     // stays (see ensureMaster above).
     await clear();
 
-    // 128 MB is chosen so the Governor HOLDS rather than fights. Heap on
-    // a fresh relay is a fraction of it, which reads as "below LOW" and
-    // creeps the lever gently upward — nothing is shed, and the owner's
-    // own setting is the only thing that moves it sharply.
-    //
-    // A small number here is worse than none: at ramLimitMB 2 the heap is
-    // ~400% of the bound, the lever pins to the floor, and every member
-    // stream is closed on the first tick. That is the Governor working,
-    // and it makes the world useless to look at.
+    // 128 MB: the relay's stream allowance is its configured RAM less its
+    // own memory at rest (relay.js allowanceFor), so a small figure would
+    // leave a lab relay no streams to give.
     // The owner is made first, because the install names him (goal/G16.8).
     owner = opts.owner || auth.generateIdentity('labowner');
     relay = await ensureNode('relay', 'relay', RELAY_PORT, { ramLimitMB: 128 }, owner.publicKey);
     if (!relay.ok) return relay;
     relay.url = 'http://127.0.0.1:' + RELAY_PORT;
     // READY WHEN IT ANSWERS A CARD ASK ON ITS ONE DOOR (goal/G22.6: the
-    // relay's public routes are closed). Since goal/G19.15 a node files a
-    // relay under its key (node.db's relays table), so the lab learns it once.
+    // relay's public routes are closed). A node files a relay under its key
+    // (goal/G19.15), so the lab learns it once.
     const card = await require('./relayDoor').awaitRelayDoor(relay.url);
     if (!card) {
       return { ok: false, error: 'lab relay did not answer on ' + relay.url };
@@ -324,7 +289,7 @@ function createWorld(opts) {
       const minted = await askOn(relay.url, owner, { invite: { label: name, days: 1, token: '' } });
       if (!minted.ok) return { ok: false, error: 'mint ' + name + ': ' + minted.error };
       const token = minted.invite.token;
-      // THE TOKEN AND THE WORD TRAVEL TOGETHER since R1. `inviteLabel`
+      // THE TOKEN AND THE WORD TRAVEL TOGETHER (R1). `inviteLabel`
       // is what the owner wrote on the invite — spoken down a phone,
       // matched at the far end, never stored — and the relay refuses a
       // token that arrives without one rather than falling back:
@@ -354,17 +319,14 @@ function createWorld(opts) {
       // relays" from outside it.
       auth.saveIdentity(node.home, id);
       fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
-      // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
+      // The node's relay list is node.db's one table, keyed by relay key (goal/G19.15, goal/G40.11).
       relayKeys.list(node.home, relay.url, 'lab', relay.key);
-      // AND THE SEAT (2026-09-18). This lab claims by posting STRAIGHT AT
-      // the relay above, which is the relay's half of a bind and not the
-      // node's: the box gets a row and the node is never told.
-      //
-      // That was invisible while a node re-derived its memberships from
-      // each relay's roll on every boot. It records them itself now —
-      // Andy: "persist necessary information at claim time, re-use that
-      // information on boot" — so a claim made AROUND a node leaves it
-      // correctly not knowing, and a world-builder has to write the
+      // AND THE SEAT. This lab claims by posting STRAIGHT AT the relay
+      // above, which is the relay's half of a bind and not the node's: the
+      // box gets a row and the node is never told. A node records its
+      // memberships itself — Andy: "persist necessary information at claim
+      // time, re-use that information on boot" — so a claim made AROUND a
+      // node leaves it not knowing, and a world-builder has to write the
       // node's half as it writes every other file here (GAP 1).
       relayKeys.seat(node.home, relay.url, name);
       // THE AUTH WORLD'S PEERS KNOW THE OWNER (apiAuth/G1.0): the
@@ -379,14 +341,10 @@ function createWorld(opts) {
           nodeCard.cardFrom(Object.assign({ name: ownerName }, owner)), 'invite');
         contactBook.setMyLabel(node.home, owner.publicKey, ownerName);
       }
-      // AND session.json, or the shell believes this node has no name.
-      // firstRun() is decided by exactly one thing — a label in this file
-      // — and an unbound node shows Natter alone and nothing else. So a
-      // fake peer with a key, a claim and a relay still opened to a
-      // one-app screen, because the file that says "I am somebody" was
-      // never written. GAP 1 again: a node cannot be told who it is from
-      // outside itself, so every file that means "bound" has to be
-      // written by hand here.
+      // shell/natter/session.json, written for the Natter app. Natter is
+      // gone (goal/G30.7) and nothing in the tree reads this file now: the
+      // shell takes the node's name from node.card (spirit/client/shell.js),
+      // so this write (and the mkdir of shell/natter above) is dead.
       fs.writeFileSync(
         path.join(node.home, 'shell', 'natter', 'session.json'),
         JSON.stringify({ label: name, boundAt: new Date().toISOString() }, null, 2)
@@ -415,7 +373,7 @@ function createWorld(opts) {
       const contactBook = require('../run/spirit/contacts.js');
       auth.saveIdentity(node.home, owner);
       fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
-      // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
+      // The node's relay list is node.db's one table, keyed by relay key (goal/G19.15, goal/G40.11).
       relayKeys.list(node.home, relay.url, 'lab', relay.key);
       relayKeys.seat(node.home, relay.url, ownerName);
       fs.writeFileSync(
@@ -475,15 +433,13 @@ function createWorld(opts) {
     return { ok: res.ok, status: res.status, body: parsed };
   }
 
-  // ASKING A RELAY ANYTHING, WHICH NOW NEEDS A STREAM. Decision 0010
-  // emptied the register — mint, revoke, remove-peer and set-device are
-  // all posts — and a relay answers a post on the asker's stream rather
-  // than in the response.
+  // ASKING A RELAY ANYTHING NEEDS A STREAM. Decision 0010: mint, revoke,
+  // remove-peer and set-device are all posts, and a relay answers a post
+  // on the asker's stream rather than in the response.
   //
-  // So this holds one for the length of one mint. It is more code than
-  // the old two-line POST and it is the honest amount — a real node does
-  // exactly this, and the lab owner is the one party here that has a key
-  // and no node to hold a stream on its behalf.
+  // So this holds one for the length of one ask, as a real node does: the
+  // lab owner is the one party here that has a key and no node to hold a
+  // stream on its behalf.
   //
   // NOT A GAP, deliberately, and worth saying because the list at the
   // bottom is where cheats go: nothing here reaches past the protocol.
@@ -496,17 +452,10 @@ function createWorld(opts) {
     const relayKey = (keyDoor && keyDoor.relayPublicKey) || '';
     if (!relayKey) return { ok: false, error: 'the lab relay published no key' };
 
-    // THE SIGNATURE IS A HEADER AND NEVER A QUERY STRING. This sent it
-    // as `&sig=` and had been getting a flat 403 for it — a relay
+    // THE SIGNATURE IS A HEADER AND NEVER A QUERY STRING. A relay
     // REFUSES a query-string signature rather than ignoring it
     // (relay.streamSignatureFrom), because a URL ends up in logs,
     // referrers and history and a signature must not.
-    //
-    // So every process-spawning test in this tree failed at "build the
-    // lab" and had done since the stream grew that rule. Nothing in the
-    // harness runs them, so nothing said so; STATE.md in labMaster/ is
-    // where that was written down, and this is the fix it was waiting
-    // for.
     const streamSig = auth.sign(ownerId.privateKey, auth.streamMessage(ownerId.publicKey, relayKey));
     const wire = relayUrl + '/api/relay/stream?key=' + encodeURIComponent(ownerId.publicKey);
 
@@ -597,14 +546,8 @@ function createWorld(opts) {
     return true;
   }
 
-  // GAP 2, CLOSED. This used to edit the relay's routing table by hand and
-  // restart it, because nothing removed a peer — it bypassed every gate,
-  // needed the relay's disk, and was the single reason this helper could
-  // never be pointed at a relay it did not own the filesystem of.
-  //
-  // Now it is one owner-signed POST over the wire, which means these
-  // suites can clean up after themselves anywhere. The route it used is
-  // gone (decision 0010) — both halves of remove-peer are packets.
+  // One owner-signed removePeer post over the wire (decision 0010), so a
+  // suite can clean up after itself on a relay whose disk it does not have.
   async function evictPeer(name) {
     const p = peers.filter(function (x) { return x.name === name; })[0];
     if (!p || !relay) return false;
@@ -612,13 +555,9 @@ function createWorld(opts) {
     return !!(done && done.ok);
   }
 
-  // BY PATTERN, never from what this object happens to remember.
-  //
-  // It was the other way and that was worse than useless: a teardown run
-  // in a fresh process had an empty peer list, deleted nothing, and
-  // reported success — so the next build found stale nodes holding the
-  // ports it wanted and failed with a message about something else
-  // entirely.
+  // BY PATTERN, never from what this object happens to remember: a
+  // teardown run in a fresh process has an empty peer list, and must still
+  // delete the stale nodes holding the ports the next build wants.
   //
   // The `lw-` prefix is what makes this possible, and it is the same
   // reasoning as `lab-` on the live relay: a disposable thing should be
@@ -636,8 +575,7 @@ function createWorld(opts) {
 
   // ── ONE CASE AT THE OWNER'S GATE (apiAuth/G1.0) ────────────────────
   //
-  // The agents' own shape (agents.js deskAsk): the peer's stream is
-  // opened BEFORE the post, so an answer quicker than the post's own
+  // The peer's stream is opened BEFORE the post, so an answer quicker than the post's own
   // reply is not missed; the answer is the 'api' packet whose re is the
   // post's hash. The outcome speaks expect's vocabulary: a refusal by
   // its code, any other reply 'answered', no reply at all 'silence'.
@@ -723,8 +661,7 @@ function createWorld(opts) {
     stopPeer: stopPeer,
     startPeer: startPeer,
     evictPeer: evictPeer,
-    // Asking the lab relay anything, as its owner. The only way to ask a
-    // relay anything since decision 0010 emptied the register.
+    // Asking the lab relay anything, as its owner: a post (decision 0010).
     askOn: askOn,
     // The auth world's half (apiAuth/G1.0): the owner's node, the cases
     // run at its gate, and teardown as the suites name it.
@@ -736,48 +673,16 @@ function createWorld(opts) {
 
 // ---------------------------------------------------------------------
 // GAPS — what this helper does by hand, because the system cannot do it
-// yet. Each is a feature request with a test already waiting for it.
+// yet from outside a node.
 //
-// 1. A NODE CANNOT BE TOLD WHO IT IS OR WHICH RELAYS IT USES, from
-//    outside itself. Since goal/G22.5 its key exists from its first boot,
-//    named by the machine; the name a person picks arrives with a claim
-//    made in the browser, and relays.json is written by Natter. So this helper
-//    writes both files into a fake node's home and restarts it. Cost:
-//    the setup path a real person takes is never exercised by any test,
-//    which is exactly where a first-run bug would live.
-//
-// 2. CLOSED — `remove-peer`, owner-signed or self-signed, by key. It
-//    takes their mail with them and revokes a live invite for their
-//    label, because un-inviting that leaves the token working is a lie.
-//    Expired invites are swept at the same moment, which was the other
-//    half of "the box can only accumulate".
-//
-//    What it unlocked, which is the point of writing gaps down: a suite
-//    can now clean up after itself on a relay whose disk it does not
-//    have. Observation-only on a live relay was never a principle — it
-//    was a consequence of this missing.
-//
-// 5. CLOSED — create and recycle clear the home first, delete takes the
-//    disk with it, and the one rm is guarded three ways: the id must be
-//    a slug, the resolved path must be strictly inside the fakes root,
-//    and it must not be the work home.
-//
-//    Found by building this helper rather than by reading anything: a
-//    second run of the same suite could not claim its own relay, because
-//    "delete" had never deleted.
-//
-// 3. CLOSED — `GET /api/version`, public, answering the commit the
-//    PROCESS loaded rather than whatever is on disk now (a node's; a
-//    relay's closed with its public door, goal/G22.6). labMaster
-//    stamps every copy it makes, so a fake node reports the commit it
-//    was taken from, and a suite can assert "the box under test is
-//    running the code under test" instead of hoping.
-//
-//    The owner console's `version` word carries it too, so the question
-//    can also be asked from Relay Chat without any script at all.
-//
-// 4. THERE IS NO WAY TO MAKE A NODE FORGET A RELAY, or to remove a row
-//    from relays.json, other than the Natter UI. Same shape as 1.
+// 1. A NODE CANNOT BE TOLD WHO IT IS, OR ITS SEAT ON A RELAY, from outside
+//    itself. Its key exists from its first boot (goal/G22.5), named by the
+//    machine; the name a person picks arrives with a claim. This helper
+//    claims straight at the relay, then writes the fake node's identity,
+//    its relay row and its seat into its home (auth.saveIdentity,
+//    relayKeys.list, relayKeys.seat) and restarts it. Cost: the setup path
+//    a real person takes (the node's own relay.claim) is never exercised
+//    here, which is exactly where a first-run bug would live.
 // ---------------------------------------------------------------------
 
 // `claimOn` is exported for the lab suites that build their own claims

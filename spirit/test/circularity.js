@@ -2,7 +2,9 @@
 
 /**
  * Scans an object graph, records every visited object + its dot‑notation path,
- * and tells you whether a circular reference exists.
+ * and tells you whether a circular reference exists. Any object reached a
+ * second time counts, so an object shared by two branches without a cycle
+ * is reported as circular too. Run below on kernel.js's exports.
  *
  * @param {Object} rootObject  the value to start walking from
  * @returns {{

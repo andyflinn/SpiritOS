@@ -29,8 +29,7 @@
 //
 // ── AND IT GUARDS THE EXAMPLES, WHICH ARE THE PITCH ──────────────────
 //
-// 2026-09-24 closed this page's own first admitted gap: `examples/`
-// holds a shell and a Python program, both exercised live against a node
+// `design/protocol/examples/` holds a shell and a Python program, both exercised live against a node
 // and a relay. What a suite can hold them to is their SHAPE — that they
 // exist, that the page sends people to them, and that neither ever
 // acquires a dependency. It cannot hold them to working, which needs a
@@ -56,8 +55,10 @@ test.subHeading('Every verb the door answers is on the page, and nothing else is
 {
   const real = [...server.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(function (m) { return m[1]; });
   // A verb line may carry its authority after ' — ' (THE-DOOR, "Each verb
-  // carries its authority"); what that authority must be is wsl-claude's
-  // enforcement, below.
+  // carries its authority"); what that authority must be is enforced below.
+  // `real` reads verb lines '<family>.<verb>': at four spaces in server.js.
+  // server.js mounts its families with loopbackVerbs.mount, each verb
+  // declared bare, so this finds none there and the list is judged empty.
   const listed = [...page.matchAll(/^- `([a-z]+\.[a-zA-Z]+)`(?: — .+)?$/gm)].map(function (m) { return m[1]; });
 
   const missing = real.filter(function (v) { return listed.indexOf(v) === -1; });
@@ -141,9 +142,8 @@ test.subHeading('The any-language claim has examples, and they are not JavaScrip
 
 {
   // THE PITCH IS THE EXAMPLES. "A developer in any language gets a local
-  // port" was prose on this page until 2026-09-24, and the page said so
-  // in its own gaps section. Two examples closed it — so what is gated
-  // now is that they keep existing and keep being what they claim.
+  // port" is held by two examples, so what is gated is that they keep
+  // existing and keep being what they claim.
   const dir = path.join(ROOT, 'design', 'protocol', 'examples');
   let names = [];
   try { names = fs.readdirSync(dir); } catch (e) { names = []; }
@@ -236,9 +236,8 @@ test.subHeading('THE THING ABOUT AN EXAMPLE THAT ROTS FIRST — a dependency');
 test.subHeading('And the page still admits what it has not got');
 
 {
-  // A contract that lists only what it covers reads as complete. Two gaps
-  // remain named, and one NEW admission replaced the closed one: the
-  // examples above are held to their shape by this suite but are not RUN
+  // A contract that lists only what it covers reads as complete. The page
+  // names its gaps, among them that the examples above are held to their shape by this suite but are not RUN
   // by it, because running them needs a live node and a peer. Gating the
   // promise is not gating the proof, and the page says which it has.
   const admits = /## What this page does not yet have/.test(page) &&

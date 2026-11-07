@@ -1,35 +1,26 @@
 'use strict';
 
-// goal/G2.9, the feeding half: the live presence table learns from every moment a relay speaks. Red on today's
-// tree.
+// goal/G2.9, the feeding half: the live presence table learns from every moment a relay speaks.
 //   Andy, 2026-10-02 (under goal/G2.8, verbatim): "... but presence is implied... by search results", "and every
 //   incoming request?", then, shown that a network search painted the WSL nodes green while the contact list stayed
 //   white: "looks like the search results don't make it into the contact list".
-//   Checked in the tree: a search row (hub.js:2616) and an answered post (hub.js:78) write `present` into the shadow
-//   roll, an arrival notes only its route (server.js:1342, rank ARRIVED) — and the contact list reads none of it: its
-//   dot comes from the relay-presence job alone (contacts.js contactsWatchPresence), fed only by broadcasts heard on
-//   an open stream and, since 21a2ea2d, the reconcile at open. So a Find, a delivered message or an incoming one
-//   teach the dot nothing.
-// The contract the builder follows (the shape in goal/G2.9's box, both agents; Andy's Go 2026-10-02):
-//   1. presenceNode gains `heard(url, key)`: the relay at `url` has just carried `key` — the same mark a
+// The contract (the shape in goal/G2.9's box; Andy's Go 2026-10-02):
+//   1. presenceNode has `heard(url, key)`: the relay at `url` has just carried `key` — the same mark a
 //      `present: true` broadcast on that stream makes, published through the job the Contacts dot reads. A key not in
 //      the book is not drawn, and not noted either (its caller wrote its route). An ID in the book has its proof
-//      persisted by presenceNode since the second half (presenceProof.js), which reversed "heard notes nobody".
+//      persisted by presenceNode.
 //      A relay this node holds no open stream to marks nothing (there is no live word to give) and `heard`
 //      says so (false). The newest word wins: a key the relay had said absent goes green again on `heard`.
-//   2. the network search (hub.handleSearch until goal/G30.19, contact.search's tier two since) hears every row a relay answered, at the relay that was asked — a partner's member too
-//      (claude-windows, G2.8 review: a route through the asked relay exists, so the dot is honest). A row memory
+//   2. the network search (contact.search's tier two, goal/G30.19) hears every row a relay answered, at the relay
+//      that was asked: a route through the asked relay exists, so the dot is honest. A row memory
 //      supplied is not heard: it is what the node already had, not evidence. A relay that fails the question hears
 //      nobody.
 //   3. hub.handlePost hears the peer at the relay the answer came back through, when the answer is ok. A refused
 //      or unanswered post hears nobody here (what it teaches the shadow is learnPresence's, unchanged).
 //   4. An arriving packet hears its sender at the relay it arrived through. That wiring is server.js's noteSeen
-//      closure (server.js:1342, the one place that holds both the arrival and `presence`), which no unit here can
-//      mount, and this file paints no vacuous green for it; it is verified live at review — a line from one agent's
-//      node turns that agent green on the other's Contacts page without a restart. Named here so the builder does
-//      not take silence for permission to skip it.
+//      closure (peerRouter.heard), which no unit here can mount, and this file paints no vacuous green for it.
 // Not asserted, named: a relay answering "peer not reachable" to a post is the relay speaking about its own member,
-// and could mark `false` in the live table as its broadcast would. The builder says in its commit whether it does.
+// and could mark `false` in the live table as its broadcast would.
 
 const os = require('os');
 const fs = require('fs');
@@ -146,7 +137,7 @@ function relayAnswering(byUrl) {
         if (rows === null) return Promise.reject(new Error('no answer within the wait'));
         return Promise.resolve({ text: JSON.stringify({ v: 1, body: { ok: true, matches: rows || [], more: false } }) });
       }
-      // The partners question, for a via row: nobody known, so the row keeps the relay that answered it.
+      // Any other ask (a partners ask, which nothing in the hub sends since goal/G22.6) answers nobody.
       return Promise.resolve({ text: JSON.stringify({ v: 1, body: { partners: [] } }) });
     },
   };
@@ -180,9 +171,8 @@ test.startTest('goal/G2.9: the live presence table learns from every moment a re
     n.P.heard(RELAY, ZOE);
     if (said(n.P.table(), ZOE) === undefined) test.check('zoe, not in the book, is not drawn');
     else test.fail(OWED + 'zoe drawn: ' + JSON.stringify(n.P.table()[ZOE]));
-    // This asserted "heard notes nobody in the shadow". The second half of the item reversed it (Andy: "my OCD
-    // likes the idea of the same-data being persisted that is sent to the browser"): the proof presenceNode draws
-    // is the proof it persists, for an ID in the book; a stranger still gets nothing from here.
+    // Andy: "my OCD likes the idea of the same-data being persisted that is sent to the browser": the proof
+    // presenceNode draws is the proof it persists, for an ID in the book; a stranger gets nothing from here.
     const sinceHeard = n.learned.slice(learnedBefore);
     const johnProof = sinceHeard.filter(function (l) { return l.key === JOHN && l.what && l.what.present === true && typeof l.what.at === 'number'; });
     if (johnProof.length === 1 && sinceHeard.every(function (l) { return l.key !== ZOE; })) test.check('heard persists john\'s proof {present, at} once, and nothing for zoe, who is not in the book');
@@ -243,9 +233,8 @@ test.startTest('goal/G2.9: the live presence table learns from every moment a re
   if (plain.status === 200) test.check('and a presence picture without heard (the older fakes) still posts');
   else test.fail(OWED + 'a post without heard failed: ' + JSON.stringify(plain.body));
 
-  // 4. an arrival hears its sender: server.js's noteSeen(from, relayUrl) also calls presence.heard(relayUrl, from).
-  // Not mounted here (the closure lives in server.js's boot block); no vacuous green for it either. Verified live
-  // at review: a line from one agent's node turns that agent green on the other's Contacts page, no restart.
+  // 4. an arrival hears its sender: server.js's noteSeen(from, relayUrl) also calls peerRouter.heard(relayUrl, from).
+  // Not mounted here (the closure lives in server.js's boot block); no vacuous green for it either.
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
 });

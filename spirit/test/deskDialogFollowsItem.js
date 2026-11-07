@@ -7,23 +7,15 @@
 //   press. "Test: open one item's dialog, then another's; every press and every redraw goes to the item now open, never
 //   the one before."
 //
-// THE CAUSE, READ AT 2580acda. deskDetails.js is right for the plain sequence: open() sets ddId and clears every fact
-// (deskDetails.js:624-641), ddPress reads ddId at the click (:63), ddTake drops a publish for another item (:398). Section
-// 1 holds that, green. What breaks it is the shell, on a stream that comes back:
-//   - the node sends the whole tree again on every page stream, ending in treeComplete (server.js:249-260), so every
-//     reconnect (each restart of his node) runs discoverDynamicApps, which re-declares every app (shell.js:3018-3021);
-//   - declareDynamicApp rebuilds the entry and carries mount, render, loadFile, _activated and _el over, but not
-//     `open` (shell.js:2815-2848), which activateApp set once (shell.js:1866);
-//   - so the next callDialog finds the script activated (no reload, shell.js:1807) and the pane mounted (no mount,
-//     shell.js:1669), and switchTo's `if (typeof app.open === 'function') app.open(params)` (shell.js:1707) skips: the
-//     pane is shown as it was, on the item opened before. Its title, its Code ✓, its box are that item's, ddId is that
-//     item's id, so his presses go there, and a publish for that item redraws it. A refresh reloads the script, and
-//     activateApp sets `open` again: hence "he refreshes before every press".
-// Section 2 is Andy's sequence through that path, and it is red until the dialog follows its item again.
+// THE CAUSE. deskDetails.js is right for the plain sequence: open() sets ddId and clears every fact, ddPress reads ddId
+// at the click, ddTake drops a publish for another item. Section 1 holds that. What broke it was the shell, on a stream
+// that comes back: every reconnect runs discoverDynamicApps, which re-declares every app, and declareDynamicApp did not
+// carry `open` over, so the next callDialog showed the pane as it was, on the item opened before. declareDynamicApp
+// carries `open` over now (shell.js, goal/G24.7). Section 2 is Andy's sequence through that path.
 //
 // Driven the way listeningApp.js drives the real shell.js (small document, fs and jobs stubs, the script "load" fired
 // by hand), with the real deskDetails.js evaluated as the browser would evaluate the script the shell injected. The
-// desk app that opens the dialog is a stand-in doing what desk.js's deskOpenRow does (desk.js:1097-1105): callDialog
+// desk app that opens the dialog is a stand-in doing what desk.js's deskOpenRow does: callDialog
 // shell/deskDetails with { id }, and open the row a result names. The desk server is a stand-in answering desk.<verb>
 // by name (goal/G30.6) as desk.js does: item.get, item.box, item.checks, item.chat, and a press that publishes the item it pressed.
 
@@ -150,7 +142,7 @@ function bootPage(desk) {
   const jobsWire = subscribers.filter(function (h) { return typeof h.onUpdate === 'function'; })[0];
   let deskJob = { id: 'job_desk', kind: 'server', type: 'Desk server', module: 'process/js/desk', status: 'running', data: {}, log: [], app: { change: desk.change } };
 
-  // THE TREE, as the node sends it on every page stream (server.js:249-260): a snapshot whose fs-watcher job carries
+  // THE TREE, as the node sends it on every page stream: a snapshot whose fs-watcher job carries
   // no file list, one command per entry, then treeComplete.
   function stream() {
     jobsWire.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: {} }, deskJob]);
@@ -173,7 +165,7 @@ function bootPage(desk) {
     script.onload();
   }
 
-  // The Desk app, stand-in: it mounts, keeps its api, and opens a row as deskOpenRow does (desk.js:1097-1105).
+  // The Desk app, stand-in: it mounts, keeps its api, and opens a row as deskOpenRow does (desk.js).
   let deskApi = null;
   shellSpirit.shell.launchApp('shell/desk');
   run(scriptFor('shell/desk')[0], function () {

@@ -7,22 +7,12 @@
 //   with nothing asserting their product: "ouch!" — and then: "yes. this
 //   is neccessary in the harness."
 //
-// ── WHY THIS FILE EXISTS, MEASURED IN ONE DAY ────────────────────────
+// ── WHY THIS FILE EXISTS ─────────────────────────────────────────────
 //
-// Every finding of 2026-09-23 had the same shape. Not one was a broken
-// component; every one was two correct things with nothing asserting the
-// relationship between them:
-//
-//   disc bound OK   · admission bound MISSING  -> members nobody could serve
-//   freshness OK    · measurement OK           -> a gate certified 199 for 575
-//   capacity.json OK· README prose OK          -> the front page stale two days
-//   agent protocol OK· agent node config OK    -> a verdict unread for six hours
-//   a report sent OK· a report answered OK     -> a `note` where an `ask` belonged
-//   per-target OK   · seat cap OK              -> the product unproven
-//
-// The gates this repo already has check COMPONENTS: fresh, cited,
-// catalogued, one-door. A component gate cannot see a join, and a join is
-// where every one of those lived.
+// A guarantee can break with no broken component: two correct things
+// with nothing asserting the relationship between them. The other gates
+// check COMPONENTS (fresh, cited, catalogued, one-door); a component gate
+// cannot see a join, and this file asserts the joins.
 //
 // ── WHAT A GUARANTEE IS, HERE ────────────────────────────────────────
 //
@@ -128,17 +118,16 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   }
 
   // EVERY MEMBER STREAMING FIRST. A relay routes to somebody it can
-  // reach, and a member with no open stream answers "peer not reachable"
-  // — which a first draft of this suite read as a route refusal and
-  // reported as a broken product. Presence is a precondition of the
+  // reach, and a member with no open stream answers "peer not reachable",
+  // which is not a route refusal. Presence is a precondition of the
   // guarantee, not part of it.
   function sink() {
     return { write: function () {}, close: function () {} };
   }
   // THE SINKS ARE KEPT, because streamClose(token, SINK) disconnects the
   // exact sink it was given — a close with the wrong one silently does
-  // nothing, which is how the reconnect check below first passed without
-  // ever having disconnected anybody.
+  // nothing, and the reconnect check below would pass without having
+  // disconnected anybody.
   const sinks = joined.map(function () { return sink(); });
   joined.forEach(function (id, i) {
     w.box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, w.box.relayPublicKey())), sinks[i]);
@@ -147,10 +136,10 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   // One inbound route per member, all at once. Nothing answers, so every
   // route stays open.
   // EACH FROM A DIFFERENT ASKER, round the ring: a member has one request
-  // in flight (0016, the member cap is 1 since 2026-10-02), so the owner
-  // asking every member at once, as this first did, opens one route and is
-  // refused the rest. Member i+1 asks member i: every member is a target
-  // at once and no asker holds more than its one.
+  // in flight (0016, the member cap is 1), so one asker asking every member
+  // at once opens one route and is refused the rest. Member i+1 asks
+  // member i: every member is a target at once and no asker holds more
+  // than its one.
   let opened = 0;
   joined.forEach(function (target, i) {
     const asker = joined[(i + 1) % joined.length];
@@ -167,9 +156,8 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   // the member: whenever you come back, there is room. Nobody on the roll
   // is ever turned away from their own relay.
   //
-  // AND IT IS WHY AN ABSENT MEMBER STILL HOLDS A SEAT. That looked like
-  // the cost of the strict cap when this was first argued — a seat nobody
-  // is using. It is the mechanism: the seat is reserved BECAUSE they are
+  // AND IT IS WHY AN ABSENT MEMBER STILL HOLDS A SEAT. Not the cost of
+  // the strict cap but the mechanism: the seat is reserved BECAUSE they are
   // allowed to be offline, and a relay that reissued it would be a relay
   // that cannot honour this sentence. It is also why no queue is needed
   // for this particular promise — the guarantee is about getting ON, not
@@ -178,11 +166,9 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   // Asserted by disconnecting every member and bringing them all back at
   // once, which is the worst case a real relay meets: a network blip, and
   // the whole roll reconnecting together.
-  // THE DISCONNECT IS ASSERTED FIRST. A first draft called
-  // `streamClose(id.publicKey)` with no sink, which disconnects nobody —
-  // so the "reconnect" was really the original streams still open, and
-  // the check passed having tested nothing. Today produced four greens of
-  // that shape; this one is not allowed to be the fifth.
+  // THE DISCONNECT IS ASSERTED FIRST. `streamClose(id.publicKey)` with no
+  // sink disconnects nobody, so the "reconnect" would be the original
+  // streams still open, and the check would pass having tested nothing.
   const closed = joined.map(function (id, i) {
     return w.box.streamClose(id.publicKey, sinks[i]);
   });
@@ -207,9 +193,9 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
       joined.length + ' members refused on reconnect: ' + JSON.stringify(turnedAway[0]));
   }
 
-  // A SECOND ROUTE TO A MEMBER ALREADY BUSY, FROM ANOTHER SENDER. Since
-  // goal/G22.6 a member's slot is counted per sender (Andy's decision,
-  // taking M5 of the review of 2026-10-10), so the owner reaches joined[0]
+  // A SECOND ROUTE TO A MEMBER ALREADY BUSY, FROM ANOTHER SENDER. A
+  // member's slot is counted per sender (goal/G22.6, Andy's decision on
+  // M5 of the review of 2026-10-10), so the owner reaches joined[0]
   // although joined[1] already holds a request to it. What keeps the count
   // a ceiling is the other cap: one request in flight per REQUESTER (0016),
   // so the owner's next one, to anybody, is refused — and open routes stay
@@ -241,7 +227,7 @@ test.subHeading('GUARANTEE: the capacity this repo publishes is the capacity it 
 //
 // Neither half implies the product. A fresh measurement nobody published
 // leaves the page stale; a generated page built from a stale drop is
-// confidently wrong. Both happened on 2026-09-23, hours apart.
+// confidently wrong.
 // ═══════════════════════════════════════════════════════════════════════
 
 {
@@ -272,15 +258,15 @@ test.subHeading('GUARANTEE: no relay can read what one node says to another');
 //
 //   HALF A — sealing puts none of the words on the wire      (seal.js)
 //   HALF B — a sender cannot opt out, and a receiver refuses
-//            an unsealed post                    (cycle 10's R5, peerPost)
+//            an unsealed post                    (peerPost)
 //   PRODUCT — a real post through a real relay leaves nothing readable
 //             anywhere that relay can see: the text it routed, the file it
 //             keeps, the report it sends its owner
 //
-// This is cycle 10's R10 — "prove the relay cannot read it, by trying to
-// read it". seal.js proves the FUNCTION hides the words; that is not the
-// same claim. The claim on the front page is about a relay, so the proof
-// has to be made against one.
+// "Prove the relay cannot read it, by trying to read it" (cycle 10's R10).
+// seal.js proves the FUNCTION hides the words; that is not the same claim.
+// The claim on the front page is about a relay, so the proof has to be
+// made against one.
 // ═══════════════════════════════════════════════════════════════════════
 
 {
@@ -348,29 +334,14 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
 //   PRODUCT — an identity that predates the cycle ends up serving a card
 //             with a REAL cipher key, so somebody can seal to it
 //
-// ── THE MOST EXPENSIVE JOIN FOUND SO FAR, AND IT WAS LIVE ───────────
-//
-// Cycle 10's R2 verifies: "an identity from before this cycle gains a
-// seal key on FIRST START, says so, and keeps its signing key".
-// `sealKeys.js` asserts exactly that — by calling `ensureIdentity`
-// DIRECTLY. It was green every day.
-//
-// Nothing asserted that STARTING A NODE calls it. And nothing did: on a
-// node nothing at boot called `ensureIdentity` then, so a node that
-// already held its seat never grew the second pair. A relay grew one at
-// boot, which is why every relay was fine and every node was not. (Since
-// goal/G22.5 relayAuth.js also ensures the identity on its own first load,
-// so a node has its key, whole, before it listens.)
-//
-// MEASURED 2026-09-24, between the two agents' own machines: both nodes
-// updated to the flag-day tag, both booted clean, and both served a card
-// with `sealKey: ""`. A card with no cipher key is nothing to seal to, so
-// each refused to post to the other — correctly, and FOR EVER. Two nodes
-// obeying the specification into permanent mutual silence, and it would
-// have done the same to every node on the network the moment it updated.
-//
-// Found by wsl-claude. Fixed in one line at boot (79e467d) — which
-// shipped with no assertion at all, which is why this exists.
+// Cycle 10's R2: "an identity from before this cycle gains a seal key on
+// FIRST START, says so, and keeps its signing key". `sealKeys.js` asserts
+// that by calling `ensureIdentity` DIRECTLY; this block asserts that
+// STARTING A NODE reaches it. relayAuth.js ensures the identity on its own
+// first load (goal/G22.5), so a node has its key, whole, before it
+// listens. Without that, an old node serves a card with `sealKey: ""`,
+// nothing can be sealed to it, and every peer refuses to post to it,
+// for ever, while it appears healthy.
 //
 // ── WHAT EACH HALF OF THIS BLOCK PROVES, SAID PLAINLY ──────────────
 //
@@ -411,8 +382,8 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
     test.fail('the fixture is wrong: a stripped identity already had a seal key');
   }
 
-  // THE MIGRATION, as the boot path runs it: since goal/G22.5 that is
-  // relayAuth's own first load in the node's root (plantIdentity.js).
+  // THE MIGRATION, as the boot path runs it: relayAuth's own first load
+  // in the node's root (goal/G22.5; plantIdentity.js).
   require('./plantIdentity.js').ensureAt(home);
   const after = card2.verify(card2.describe(home));
 
@@ -426,10 +397,9 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
   }
 
   // THE JOIN, structurally: does starting a node reach the migration at
-  // all? This is the half that was missing, and the only half that was
-  // ever wrong. Since goal/G22.5 the call is relayAuth.js's own, on its
-  // first load, for the spirit/run it sits in; server.js reaches it by
-  // requiring relayAuth (through hub.js) before it listens.
+  // all? The call is relayAuth.js's own, on its first load, for the
+  // spirit/run it sits in (goal/G22.5); server.js reaches it by requiring
+  // relayAuth (through hub.js) before it listens.
   const authSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'spirit', 'relayAuth.js'), 'utf8');
   const calls = authSrc.split(String.fromCharCode(10)).filter(function (line) {
     return /ensureIdentity\s*\(\s*path\.resolve\(\s*__dirname/.test(line) && !/^\s*\/\//.test(line);

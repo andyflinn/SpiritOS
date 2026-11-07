@@ -5,21 +5,10 @@
 //    Andy, 2026-09-26: "we also need to make sure this oustanding list has
 //    suites waiting."
 //
-//  They had NEITHER a declaration NOR a stated reason. That is the gap this
-//  file closes, and the distinction matters: cycle10Pending.js:165-181 leaves
-//  five of its own open requirements undeclared ON PURPOSE and says why — "all
-//  three are PROOFS Andy ruled must be run red first against today's tree;
-//  declaring them as awaiting would hide the very red he asked to see." An
-//  undeclared requirement with a written reason is a decision. An undeclared
-//  requirement with no reason is an oversight, and these two were the second
-//  kind for two weeks.
-//
-//  ── WHY A PENDING FILE FOR A CYCLE FROM 2026-09-12 ────────────────────
-//
-//  Because both gaps are still true of the tree today, checked rather than
-//  assumed, and one of them Andy ruled on this week — he corrected the reply
-//  heading himself, which is not something he would do to a dead
-//  requirement.
+//  An undeclared requirement with a written reason is a decision (as
+//  cycle10Pending.js's foot list is); one with no reason is an oversight. So
+//  these two are declared. Both gaps are checked against the tree on every
+//  run, not assumed.
 //
 //  THESE ASSERT ABSENCE AND NOTHING ELSE. Each goes red the moment somebody
 //  builds the thing, which is the handover.
@@ -45,7 +34,7 @@ const trafficLog = read('spirit/run/spirit/trafficLog.js');
 
 test.subHeading('the transport cycle R12 — an app can reply, and a reply is the only evidence of being delivered');
 
-// ── THE HEADING SAID "read" UNTIL ANDY CORRECTED IT ───────────────────
+// ── A RECEIPT, NOT A READ MARK ────────────────────────────────────────
 //
 //   Andy, 2026-09-26: "an app can reply, and a reply is the only evidence of
 //   being DELIVERED" — and, of the mechanism: "the general patter is for apps
@@ -58,9 +47,8 @@ test.subHeading('the transport cycle R12 — an app can reply, and a reply is th
 //
 // TWO ABSENCES, MEASURED, and either one alone makes the reply impossible:
 // deliverPackets discards the handler's return value, so an app has no way to
-// say anything back; and the node wires no `answer` into peerPost (server.js;
-// the one it had, answerRelay's device-offer reply, was removed by
-// goal/G16.2), so the reply is empty even if an app produced one.
+// say anything back; and the node wires no `answer` into peerPost
+// (server.js), so the reply is empty even if an app produced one.
 {
   const discards = /listeners\.slice\(\)\.forEach\(function \(fn\) \{ fn\(/.test(shell)
     && !/return\s+(?:fn|handlerResult|reply)/.test(shell);
@@ -93,15 +81,8 @@ test.subHeading('the transport cycle R16 — the log must be able to PROVE what 
 // record left.
 {
   // Absence measured on the LOG'S OWN WRITER: does trafficLog ever put a
-  // signature into a row?
-  //
-  // FIXED 2026-09-27 (wsl-claude, explaining transport/R16 to Andy). This read
-  // `!(... || /sig:\s*(?:sig|signature)/.test(peerPost))` and passed it as
-  // `available`. Two faults. It matched peerPost.js:918, the OUTGOING post
-  // body `{ ..., sig: sig }`, which is sending a signature rather than
-  // storing one; and it was inverted, so the day trafficLog did store one
-  // this would have stayed awaiting for ever instead of saying EXISTS NOW.
-  // It read "awaiting" only because of the wrong match.
+  // signature into a row? (Not peerPost: its outgoing post body carries a
+  // `sig`, which is sending a signature rather than storing one.)
   const storesSig = /\bsig\s*:/.test(trafficLog);
   test.awaiting('transport/R16', 'a signature stored beside what it signs',
     storesSig,

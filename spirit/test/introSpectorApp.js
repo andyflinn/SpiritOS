@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/introSpectorApp.js
-// goal/G30.5, "I want an intrinsic app: introSpector". Red on today's tree; claude-windows writes it and builds it (one agent).
+// goal/G30.5, "I want an intrinsic app: introSpector".
 // The item's box (v14), in short:
 //   - An intrinsic shell app, introSpector, icon ICON.GLASSES: a party dropdown (self by default, peers and relays),
 //     a family dropdown and a verb dropdown; pane 1 an input form for the chosen verb with a call button; pane 2 a
@@ -15,7 +15,7 @@
 //   - The dropdowns are the existing selectors, fed with the chosen party's tree; search results cached in a
 //     probability bucket (shellCreateListSearch's, which every dropdown is built on).
 //   - The flat apiDoor gets its own front: /api/spirit dispatches every verb through it and it answers api itself.
-//     The jobs api verb stayed until the next item (goal/G30.6 removed it). FS on the relay stays owner only.
+//     FS on the relay stays owner only.
 // NAMED HERE where the box names none:
 //   - The front is door(apps).handlerFor(verb), beside door.ask: a node family verb runs its own handler as before;
 //     'api' answers the flat table; 'family.verb' (the family is the part before the first dot) goes to door.ask as

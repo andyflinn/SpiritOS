@@ -7,7 +7,7 @@
 //   The box: "The goal row in the List and the goal's dialog show Close; pressed while any of its items is open, the
 //   face asks "are you sure?" first, naming how many are open; yes sends the press."
 // The server offers Close on every goal and takes the press either way (goal/G5.6); the asking is the face's.
-// The contract the builder follows (claude-windows's picks where the box names no shape):
+// The contract (the shapes where the box names none):
 //   - The question reads "are you sure?" (any case) and carries the number of open items, as a digit.
 //   - The yes is a button whose text starts with "Yes", or, failing one, the same Close pressed again (the arm the
 //     shell's apps already use). Either way no press goes before the yes.

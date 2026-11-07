@@ -3,8 +3,8 @@
 // desk/G3.8: Close in the item dialog closes the dialog.
 //   Andy: "oh, when i click on Close in the Detail dialog, the Dialog should close, since it doesn't exist in the list
 //   anymore either."
-// The contract the builder follows (claude-windows's picks where the box names no shape):
-//   A click on #dd-close sends press {id, what: 'close'} (no by since apiAuth/G1.13: the desk takes the owner from his caller). Once the server has answered it without a
+// WHAT IS ASSERTED:
+//   A click on #dd-close sends press {id, what: 'close'} (no by: the desk takes the owner from his caller, apiAuth/G1.13). Once the server has answered it without a
 //   refusal, the dialog leaves through api.closeDialog(), the same way out as Back. A refused close leaves the dialog
 //   open and says why. The other presses (done, go, reopen) keep the dialog open.
 

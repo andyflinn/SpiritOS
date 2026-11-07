@@ -1,13 +1,13 @@
 'use strict';
 
 // spirit/test/appClient.js
-// THE NODE'S SIDE OF ITS SERVER PROCESSES (js/appClient.js).
+// THE NODE'S SIDE OF ITS SERVER PROCESSES (spirit/run/spirit/appClient.js).
 //
-// Where each pipe is, the named refusals, and one real knock: a one-verb server built on appServer.js (goal/G30.1: the face servers are gone)
+// Where each pipe is, the named refusals, a trickling app cut off at its
+// deadline, and one real knock: a one-verb server built on appServer.js
 // started on a pipe the way the node starts it, asked its tree and its one
-// verb. Since goal/G13.2 there is no face half here: no readServers, no
-// startAll, no toLocalApp; a face is a process/js server like any other, and
-// the whole route, browser to owner and back, is appFaceProcess.js.
+// verb. There is no face half here (goal/G13.2): no readServers, no
+// startAll, no toLocalApp.
 
 const fs = require('fs');
 const os = require('os');
@@ -47,8 +47,7 @@ test.subHeading('The node names each pipe, and two nodes on one box never share 
 // THE NODE HAS NO FACE VOCABULARY. Andy, 2026-09-27: "the core only knows
 // about puppets (nodes owned by nodes, not people). the face-name/app-or-member
 // table must be owned by appFaceApp". And 2026-10-10: "no \"face\" crap belongs
-// into node." The first version read a 'face' field out of every manifest; this
-// keeps it from drifting back.
+// into node." So appClient.js reads no 'face' field out of any manifest.
 test.subHeading('The node knows servers by name and pipe, never a face');
 (function () {
   const src = fs.readFileSync(path.join(RUN, 'spirit', 'appClient.js'), 'utf8')
@@ -97,15 +96,14 @@ function refusalsByName() {
   });
 }
 
-// ONE REAL KNOCK. A one-verb server built on appServer.js (written into the run folder below, since the face
-// servers that used to serve here went with goal/G30.1), started the way the node starts a process, on a pipe,
-// asked its tree and its one verb.
+// ONE REAL KNOCK. A one-verb server built on appServer.js, written into a run folder of its own below, started
+// the way the node starts a process, on a pipe, asked its tree and its one verb.
 function aRealKnock() {
   test.subHeading('A real server on a pipe: its tree, its verb, and its end with the node');
   // ITS OWN RUN FOLDER, NOT THE CHECKOUT'S. The pipe name comes from the
   // root, and on a checkout that is somebody's node that node already serves
-  // on it: the first version of this asked Andy's live server and passed for
-  // the wrong reason.
+  // on it: asking there would reach the live server and pass for the wrong
+  // reason.
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hop-'));
   fs.mkdirSync(path.join(root, 'process', 'js', 'knockServer'), { recursive: true });
   fs.writeFileSync(path.join(root, 'process', 'js', 'knockServer', 'knockServer.js'),
@@ -157,7 +155,7 @@ function aRealKnock() {
   });
 }
 
-// A DEADLINE, NOT AN IDLE TIMER (wsl-claude's finding on 62e2b96): an app
+// A DEADLINE, NOT AN IDLE TIMER (relayRequest.pipeRequest's timeoutMs): an app
 // that sends a byte every 100 ms must still be cut off at the limit, or it
 // outruns the door's wait and breaks the nesting under the face's.
 function aTrickleIsCutOff() {

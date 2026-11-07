@@ -22,7 +22,7 @@
 //
 // ── A TALLY, THE SHAPE oneDoor.js USES ──────────────────────────────
 //
-// 290 were bare, in 84 files, when the rule was made. Fixing them by hand means working
+// Fixing the bare ones by hand means working
 // out, for each, which cycle it meant — slow, and a wrong guess is worse
 // than a bare number. So each file's count may FALL and may never RISE, a
 // file not in the tally must have none, and the old ones are fixed when
@@ -41,12 +41,14 @@ const TAGS = ['gap', 'governor', 'hints', 'disc', 'labels', 'transport', 'defenc
 
 // What is scanned: code, tests and the documents that cite requirements.
 // The cycle files themselves are where the numbers are defined, and are
-// read as their own cycle's context.
+// read as their own cycle's context. 'spirit/run/js' does not exist (the
+// node's code is spirit/run/spirit/), and walk() skips a root it cannot
+// stat, so spirit/run/spirit/ is not scanned though the tally names its files.
 const ROOTS = ['spirit/run/js', 'spirit/run/shell', 'spirit/run/process', 'spirit/test', 'design', 'README'];
 const FILES = ['AGENT.md', 'CLAUDE.md', 'ANDYS_RULES_FOR_AGENTS.md', 'DICTIONARY.md'];
 // `grok`: design/reviews/grok/ holds Grok's replies VERBATIM — an outside
 // voice's words are quoted, never corrected, so its citations are not ours
-// to fix (2026-09-22, the first API review).
+// to fix.
 const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'state', 'visual', 'grok'];
 // THE DESK'S OWN GOAL FILE IS NEVER JUDGED (goal/G16.2). The desk writes it
 // itself from everybody's words and commits it on every change, so nobody can
@@ -54,7 +56,7 @@ const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'state', '
 // mess everything up", and it is "not product".
 const SKIP_FILES = ['spirit/run/process/js/desk/currentGoal.json'];
 
-// ── THE TALLY, AS FOUND ON 2026-09-22 ───────────────────────────────
+// ── THE TALLY ───────────────────────────────────────────────────────
 // file -> bare citations allowed. May only go down.
 const TALLY = {
   'AGENT.md': 1,
@@ -89,7 +91,6 @@ const TALLY = {
   'spirit/run/spirit/spiritErrors.js': 1,
   'spirit/run/spirit/trafficLog.js': 4,
   'spirit/test/arrivals.js': 2,
-  // 'spirit/test/chatPeople.js': 10 — REMOVED 2026-09-25 with relayChat.
   'spirit/test/contacts.js': 1,
   'spirit/test/cycleA.js': 5,
   'spirit/test/hubPost.js': 2,
@@ -170,18 +171,13 @@ function bareIn(file, ambiguous) {
   let n = 0;
   text.split(/\r?\n/).forEach(function (line) {
     if (NAMES_A_CYCLE.test(line)) return;
-    // A NUMBER CARRYING ITS CYCLE AS A PREFIX IS CITED, NOT BARE. `10/R13`
-    // is the handle runAll prints after a title on the scoreboard, which
-    // Andy asked for so he can paste it back — "exactly. that link them for
-    // all of us" (2026-09-27). His words are quoted verbatim and never
-    // edited to pass a gate, so the gate has to know the form. Only the
-    // prefixed number is excused: any other on the same line still counts.
+    // A NUMBER CARRYING ITS CYCLE AS A PREFIX IS CITED, NOT BARE: `10/R13`.
+    // Andy's words are quoted verbatim and never edited to pass a gate, so
+    // the gate has to know the form. Only the prefixed number is excused:
+    // any other on the same line still counts.
     //
-    // THE PREFIX MUST BE A BARE NUMBER, NOT THE TAIL OF ANOTHER CITATION.
-    // The first version excused anything after `<digit>/`, and so read
-    // "(R6/R7)" — R6 and R7 — as cycle 6's R7 and let the second go.
-    // targetBusy.js's count fell by one the moment it landed, and the tally
-    // check refused it; that refusal is what found this.
+    // THE PREFIX MUST BE A BARE NUMBER, NOT THE TAIL OF ANOTHER CITATION:
+    // "(R6/R7)" is R6 and R7, not cycle 6's R7.
     (line.match(/(?<!(?:^|[^A-Za-z0-9])\d{1,3}\/)\bR\d{1,2}\b/g) || []).forEach(function (id) { if (ambiguous.has(id)) n += 1; });
   });
   return n;
@@ -193,12 +189,11 @@ function count() {
   ROOTS.forEach(function (r) { walk(r, walked); });
   FILES.forEach(function (f) { if (fs.existsSync(path.join(REPO, f))) walked.push(f); });
   // TRACKED FILES ONLY. The walk reads the disk, so on a checkout that is
-  // somebody's node it also read their gitignored data: Desk's own chat
-  // log (app/desk/log/log-*.json) went red the moment a conversation typed
-  // "R1 of G19" (2026-09-28). A person's words are not the tree.
-  // NOR DESK'S FOLDER, now that it is tracked (Andy, 2026-09-28: "git
-  // everything in this folder"). It is the conversation, in everyone's own
-  // words, not a document that cites requirements.
+  // somebody's node it would also read their gitignored data. A person's
+  // words are not the tree.
+  // NOR spirit/run/shell/desk/, which the filter skips. It was skipped as
+  // Desk's conversation; it now holds only desk.js, desk.json,
+  // DATA_STRUCTURES.md and test/, so that reason no longer holds.
   const files = trackedOnly(walked).filter(function (f) { return f.indexOf('spirit/run/shell/desk/') !== 0; });
   const found = {};
   files.forEach(function (f) {

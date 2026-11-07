@@ -1,22 +1,15 @@
 'use strict';
 
-// goal/G9.16: answered checks leave the panel, a Q keeps one sentence. Red on today's tree; claude-windows wrote it
-// from G9.16's box and does not build it.
-//   Andy, 2026-10-09, under goal/G10.5, when the retrofit item stopped taking any write: "remove the red-questions and
-//   we look for the next item to argue.", "there are only TWO (2) red questions.", "how do we fix that? in very
-//   simple, enumerated steps."
+// goal/G9.16: answered checks leave the panel, a Q keeps one sentence.
 //
-// WHAT IS TRUE TODAY (read in the tree at ffcbbfe2): after every write the desk walks the state and measures each
-// touched item's facts, box and checks panels as one answer each (largestPanel); a panel over ANSWER_ROOM undoes the
-// write and refuses it line-too-large. Every check ever added stays in the panel, answered and granted ones included,
-// so an item whose answered checks weigh more than one answer takes no check.set and no check.add any more. A chat
-// line ending in a question mark becomes a Q check whose words are the whole line.
+// THE DESK (process/js/desk/desk.js): after every write it measures each touched item's facts, box and checks panels
+// as one answer each (largestPanel); a panel over ANSWER_ROOM undoes the write and refuses it line-too-large.
 //
 // THE SHAPE ASSERTED (G9.16's box): an answered or granted check leaves the panel item.checks answers with and the
 // panel the desk measures (it stays in the record), so an item with many answered checks still takes check.set and
-// check.add; and a Q made from a chat line keeps one sentence, the one that ends in the question mark.
-// SINCE goal/G21.2 no chat line makes a Q, a Q is one sentence of at most 200 bytes, and one is open per agent per
-// item: section 1 fills the record one question at a time, and section 2 asserts the one sentence at check.add.
+// check.add. Since goal/G21.2 no chat line makes a Q, a Q is one sentence of at most 200 bytes, and one is open per
+// agent per item: section 1 fills the record one question at a time, and section 2 asserts the one sentence at
+// check.add.
 
 const fs = require('fs');
 const os = require('os');
@@ -53,16 +46,15 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
 async function checks(id) { const r = await call('item.checks', { id: id }, ANDY); return (r.body && r.body.checks) || []; }
 
-// One Q's words. Since goal/G21.2 a red Q is one sentence of at most 200 bytes, and one open per agent per item, so
-// the panel can no longer be filled with open questions: the record is filled instead, one question placed and
-// answered at a time, until the questions ever asked outweigh one answer.
+// One Q's words. A red Q is one sentence of at most 200 bytes, and one open per agent per item (goal/G21.2), so the
+// record is filled one question placed and answered at a time, until the questions ever asked outweigh one answer.
 const LONG = 'A question that is one sentence and close to the two hundred bytes a red Q may hold, ';
 function words(n) { return 'Q' + n + ': ' + LONG + LONG.slice(0, 80) + ' is it not?'; }
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskChecksPanelTestWSLAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 
 async function suite() {
-  // goal/G29.21: an agent's session creates no goal, so the owner writes the world. goal/G33.7: session.set went; both
-  // goals are seeded before the desk starts, goal/G100 made current, goal/G101 made current where its session stood.
+  // An agent creates no goal (goal/G29.21), so both goals are seeded before the desk starts; the owner makes
+  // goal/G100 current here and goal/G101 current for section 2.
   test.seedDesk(state, [
     { goal: { id: 'goal/G100', title: 'Checks' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] },
     { goal: { id: 'goal/G101', title: 'Lines' }, items: [{ id: 'goal/G101.1', title: 'Two', blocks: ['goal/G101'] }] }]);
@@ -73,7 +65,7 @@ async function suite() {
   else { test.fail('the world: the first check.add answered ' + first.status + ' ' + short(first.body)); return; }
 
   test.subHeading('1. answered checks leave the panel, so the item keeps taking checks');
-  // Since goal/G21.2: place and answer one question at a time until all of them ever asked outweigh one answer.
+  // Place and answer one question at a time until all of them ever asked outweigh one answer.
   const firstQ = (await checks('goal/G100.1'))[0];
   await call('check.set', { id: 'goal/G100.1', check: firstQ.number, state: 'answered' }, CW);
   let added = 1;
@@ -96,7 +88,7 @@ async function suite() {
   const more = await call('check.add', { id: 'goal/G100.1', kind: 'Q', words: words(added + 1), test: '' }, CW);
   if (took(more)) test.check('with every question answered, a new question is taken although all of them together outweigh one answer');
   else test.fail(OWED + 'with ' + added + ' answered questions stored, check.add is refused ' + short(more.body));
-  // Since goal/G21.2 one open red Q per agent per item: the second new one is another agent's.
+  // One open red Q per agent per item (goal/G21.2): the second new one is another agent's.
   const again = await call('check.add', { id: 'goal/G100.1', kind: 'Q', words: words(added + 2), test: '' }, WSL);
   if (took(again)) test.check('and a second new question too');
   else test.fail(OWED + 'the second new question is refused ' + short(again.body));
@@ -117,12 +109,12 @@ async function suite() {
     else test.fail(OWED + 'check.set on the item answered ' + set.status + ' ' + short(set.body));
   }
 
-  // SINCE goal/G21.2 NO CHAT LINE MAKES A Q, and the one sentence is asked of the Q itself: a check.add holding more
+  // NO CHAT LINE MAKES A Q (goal/G21.2), and the one sentence is asked of the Q itself: a check.add holding more
   // than one sentence is refused (deskRedQOnPurpose.js holds the rest).
   test.subHeading('2. since goal/G21.2 a chat line makes no Q, and a Q of more than one sentence is refused');
   await call('press', { id: 'goal/G101', what: 'make-current' }, ANDY);
   const line = 'cw: the first sentence states a fact. The second states another, at some length, so that the whole line is long. Is this the question?';
-  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+  // An agent writes only where it holds the item or the take of his line (goal/G18.8).
   await call('item.take', { id: 'goal/G101.1' }, CW);
   const chat = await call('chat.add', { id: 'goal/G101.1', text: line }, CW);
   if (!took(chat)) { test.fail('the world: chat.add answered ' + chat.status + ' ' + short(chat.body)); return; }

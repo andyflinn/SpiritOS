@@ -13,6 +13,7 @@
 // destroy() unsubscribes it; nothing is painted after.
 //
 // The element keeps no copy of the state: what it shows lives with the app; the element decides only when to paint.
+// No page in the tree loads it now; its tests do (./test/deskElement.js, spirit/test/deskRealtimeFace.js).
 
 (function () {
   function createDeskElement(options) {

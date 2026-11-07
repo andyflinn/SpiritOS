@@ -318,8 +318,9 @@ function runSuite(file, port, onTests, env, args) {
 // WHAT IT IS DOING, PUBLISHED AS IT HAPPENS (goal/G8.12). Andy, 2026-10-09: "the new tab in desk should listen to real
 // events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress
 // bar", and "it should refresh by itself". So every change of the run is one object down the stream
-// (spirit.events.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the
-// newest and replaces it. The page asks nothing, as his no-pulling rule requires.
+// (spirit.events.publish, which the page keeps through deskVerify's data.js and follows with
+// spirit.data.deskVerify.data.watch) - never a log: the tab keeps the newest and replaces it. The page asks nothing, as
+// his no-pulling rule requires.
 //   doing     'run' a run of suites, 'idle' nothing running
 //   index/of  which suite of how many; tests/expected: assertions printed so far, and how many that suite reported
 //             the last time it was measured (0 when it was never seen)
@@ -378,8 +379,8 @@ function stopRun() {
 // ── ONE RUN (goal/G33.3) ─────────────────────────────────────────────────
 //
 // The suites it was handed, one at a time, after the pull; with a commit, only once the checkout holds it. Each suite's
-// outcome is green, red (a FAILURE line, or stopped at the time limit), stopped (by hand) or not run (missing, outside
-// spirit/test, or the commit not held), with the FAILURE lines a red printed; the run's own outcome is green when every
+// outcome is green, red (a FAILURE line, or stopped at the time limit), stopped (by hand) or not run (missing, neither
+// under spirit/test nor a product test, or the commit not held), with the FAILURE lines a red printed; the run's own outcome is green when every
 // suite is, else stopped, red or not run, in that order. All of it goes into the run's row, which `search` answers.
 const FAILURES_KEPT = 20;
 async function runSuites(suites, commit, row) {
@@ -498,7 +499,12 @@ async function keep(suite, title, outcome, failure) {
 //   Since goal/G33.3 it is also how a run's result leaves this server: whoever handed the run reads it here.
 //
 // A list is a search (Andy's rule): newest first, each matching row offered to one probability bucket, the test words
-// grading the title (a title they do not touch is left out), the other filters exact. Past SEARCH_SCANNED matching
+// grading the title and the failure text, the better of the two (a row they touch in neither is left out), the other
+// filters exact. Runs are not graded: every run that passes the filters is offered at probability 0.
+// DISCREPANCY WITH ANDY's RULES: goal/G41.28, Andy: "a probability search of a dataBase table must ALWAYS search the
+// whole bloody ROW, as it is served through a single-row \"get\", using a probabilityStringObjectMatch." (quoted in
+// desk.js), and of the verifier: "These rules apply to ALL clients. including deskVerify" (data.js beside this file).
+// The tests search grades the title and the failure text alone, with probabilityStringMatch, not the whole row. Past SEARCH_SCANNED matching
 // rows, or past one answer's room, `more` says the answer is partial. It reads verify.db; it writes nothing. A filter
 // that does not belong to `over` is ignored, as the verb file says.
 const SEARCH_ROOM = limits.ANSWER_MAX - 512;
@@ -563,9 +569,8 @@ async function search(a) {
     if (since) { where.push('startedAt >= ?'); params.push(since); }
     const sql = 'SELECT rowid, state, outcome, startedAt, endedAt, "commit" AS commitAt, dirty, suites, line FROM runs' +
       (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY rowid DESC';
-    // ONE SUITE'S PART PER RUN (goal/G33.7, box v9: "The desk's interface itself prevents oversized answers"). Found
-    // live: a run of 111 suites held 8,229 characters of them, its row could not come back, and the desk read an older
-    // run. A search naming a suite answers, per run, the run's own facts and that suite's entry alone. One naming none
+    // ONE SUITE'S PART PER RUN (goal/G33.7, box v9: "The desk's interface itself prevents oversized answers"): a run of
+    // many suites would not fit one row. A search naming a suite answers, per run, the run's own facts and that suite's entry alone. One naming none
     // answers each run with as many suites as fit RUN_LABEL_ROOM (a third of an answer, so several runs come), then
     // suitesTotal and suitesMore. Either way an entry whose
     // failure lines alone pass the room keeps the lines that fit and says failuresMore (fitted), so a row always comes.
@@ -775,7 +780,7 @@ appServer.serve({
     },
   },
   // ONE SEARCH, OVER TESTS OR RUNS (goal/G21.3). A read: nothing is written through it. Every key is optional; `over`
-  // is required. The verb file beside this server (search.json) makes it an agent tool.
+  // is required. The verb file in its family folder (family/search.json) makes it an agent tool.
   search: {
     request: { over: '', suite: '', test: '', outcome: '', commit: '', since: '' },
     reply: { items: [{ key: '', label: '' }], more: false, total: 0 },

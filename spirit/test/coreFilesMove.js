@@ -10,8 +10,7 @@
 //   "2. remove the intrinsic mark
 //   in desk-related components"; to Q1 "apps in spirit/run/shell/<appname>/ are intrinsic (core) if the
 //   manifest says so."; to Q2 (index.html, elements.css, tokens.css core?): "yes."; to Q3 (agents' include
-//   lists): "leave it to each node, and correct AGENT_ONBOARDING accordingly." claude-ubuntu wrote this red,
-//   claude-windows builds it.
+//   lists): "leave it to each node, and correct AGENT_ONBOARDING accordingly."
 //
 // SHAPES (the box's; the one Andy named is the file path spirit/run/spirit/coreFiles.js, every other check follows):
 //   A  coreFiles.js lives at spirit/run/spirit/coreFiles.js and exports isCore(file, top). The old path
@@ -26,9 +25,10 @@
 //      does the same (readers follow the file). This is checked by file text alone: the moved require path
 //      is present, the old one is absent.
 //
-// DRY-RUN NOTE: against today's tree every section fails by shape (file still at the old path, isCore does
-// not count spirit/element/ or the three face files, the require path points at process/js/desk/). On a scratch
-// patch each check turns green.
+// C NAMES PLACES THE TREE NO LONGER HAS. index.html, elements.css and tokens.css are in spirit/run/spirit/shell/
+// since goal/G43.18, and coreFiles.js lists them there (FRAME); intrinsic is a coded list in coreFiles.js since
+// goal/G41.1 (INTRINSIC), not an "intrinsic" field in a shell app's manifest. So the three frame cases and the
+// intrinsic-app pick in C fail on today's tree.
 
 const fs = require('fs');
 const path = require('path');
@@ -39,7 +39,7 @@ const RUN = path.join(__dirname, '..', 'run');
 const NEW_PATH = path.join(RUN, 'spirit', 'coreFiles.js');
 const OLD_PATH = path.join(RUN, 'process', 'js', 'desk', 'coreFiles.js');
 const COMMIT_CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
-const DESK_SCOPES_TEST = path.join(__dirname, 'deskCoreGrants.js'); // deskScopes.js until goal/G10.8 removed agent scopes
+const DESK_SCOPES_TEST = path.join(__dirname, 'deskCoreGrants.js'); // the desk's core-grant suite
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 

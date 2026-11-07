@@ -9,8 +9,9 @@
 //   shrinkage."
 //
 // A signed owner grant down the same wire as every other one: no door, no
-// console, no credential on the box. It writes the FILE — the
-// configuration is still read once at boot — and says what will apply.
+// console, no credential on the box. It writes the FILE and says what
+// applies: a raise applies at once, a reduction waits for a restart
+// (goal/G30.15).
 //
 // The three refusals are what this suite is really for: a figure past
 // what the box can give, a disc figure smaller than the roll, and a RAM
@@ -72,7 +73,7 @@ function ask(R, body, who) {
   const from = who || R.owner;
   const relayKey = R.box.relayPublicKey();
   const packet = JSON.stringify({ app: 'relay', v: 1, body: body });
-  // SEALED TO THE RELAY, like every owner verb now (cycle 10, R9), and
+  // SEALED TO THE RELAY, like every owner verb (cycle 10, R9), and
   // signed over the bytes that travel (cycle 10's R11).
   const sending = sealFor(from, R.box, packet);
   const out = R.box.routePost(from.publicKey, relayKey, sending,
@@ -86,7 +87,7 @@ function ask(R, body, who) {
   // The relay answers in the same envelope it is addressed in, so the
   // verb's answer is `body` — as it is for every other owner verb.
   try {
-    // OPENED, because a relay seals its answers now (cycle 10, R5).
+    // OPENED, because a relay seals its answers (cycle 10, R5).
     const packetBack = openReply(from, relayKey, reply.data.text);
     return packetBack && packetBack.body ? packetBack.body : packetBack;
   } catch (e) { return reply.data; }

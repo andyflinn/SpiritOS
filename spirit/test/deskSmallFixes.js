@@ -1,8 +1,7 @@
 'use strict';
 
 // spirit/test/deskSmallFixes.js
-// goal/G10.10: deskAgent and its Remote: smaller fixes, and the desk's. Red on today's code (386f450b); claude-windows
-// wrote it and builds it. The item's box (v4), Andy, 2026-10-12:
+// goal/G10.10: deskAgent and its Remote: smaller fixes, and the desk's. The item's box (v4), Andy, 2026-10-12:
 //   - "on the Remote: we need a button to the left of the model-picker that allows me to refresh the model list, so i
 //     don't have to re-start the Remote or 11111"
 //   - "we don't need this: "select the node where your local agent lives", if deskAgent lives on the same node as the
@@ -20,6 +19,8 @@
 //      The Rename input is marked data-field="label" and refused past the limit the same way.
 //   4. the Remote: a refresh button left of the model picker asks the models again; with deskAgent on the Remote's own
 //      node the target is that node and the where bubble is never shown; without it the bubble shows.
+//      deskAgent (goal/G41.28) and its Remote (shell/deskAgentRemote/, commit c298051d) are gone from the tree, so part 4
+//      reads a file that no longer exists and the suite throws there.
 // NOT ASSERTED: the words of each reason beyond the ones named; layout.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
@@ -40,8 +41,7 @@ const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const DETAILS = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
 const APP = path.join(RUN, 'shell', 'deskAgentRemote', 'deskAgentRemote.js');
 const LONG = 'deskAgentRemote: Smaller Fixes to the UI and to both deskAgent and its Remote';
-// The size and the overrun come from LONG itself (goal/G27.17): the checks named 81 bytes and 17 over, but LONG is 77 bytes,
-// so both checks failed against a correct desk and dialog.
+// The size and the overrun come from LONG itself (goal/G27.17), not from fixed numbers.
 const LONG_BYTES = Buffer.byteLength(LONG, 'utf8');
 const LONG_OVER = LONG_BYTES - 64;
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskSmallFixesTestOwnerAAAAAAAAAAAAAAA=', label: 'andy' };
@@ -77,8 +77,8 @@ async function deskHalf() {
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'desk.sock');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('desk', pipe);
-  // The world, seeded before the desk starts (goal/G33.7: session.set went): goal/G100 for the refusals, and goal/G101,
-  // its own goal for 2b, written by the owner (goal/G29.21: an agent's session creates none).
+  // The world, seeded before the desk starts: goal/G100 for the refusals, and goal/G101, its own goal for 2b, written
+  // by the owner (goal/G29.21: an agent creates none).
   test.seedDesk(state, [{ goal: { id: 'goal/G100', title: 'Fixes' }, items: [{ id: 'goal/G100.1', title: 'One', blocks: ['goal/G100'] }] },
     { goal: { id: 'goal/G101', title: 'Marks' }, items: [{ id: 'goal/G101.1', title: 'Held', blocks: ['goal/G101'] }] }]);
   const kid = spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
