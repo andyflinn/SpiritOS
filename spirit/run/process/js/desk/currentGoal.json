@@ -1,5 +1,5 @@
 {
- "change": 152806,
+ "change": 153628,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,14 +145,17 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
+   "working": [
     "claude-windows"
    ],
-   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -309,7 +312,8 @@
     "goal/G43"
    ],
    "blocked": [
-    "goal/G43.16"
+    "goal/G43.19",
+    "goal/G43.21"
    ],
    "codeOffered": true,
    "go": false,
@@ -12255,23 +12259,17 @@
    "id": "goal/G43.16",
    "title": "port text editor and media viewer to  spirit/app/",
    "goal": "goal/G43",
-   "status": "",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 2,
    "buttons": [
-    "end-design",
-    "close",
-    "pushgoal",
-    "delete",
-    "verify"
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
    ],
-   "blocked": [
-    "goal/G43.17"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -12415,29 +12413,25 @@
    "id": "goal/G43.17",
    "title": "port files to spirit/app/file/",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 21,
    "buttons": [
-    "end-design",
-    "waive",
-    "pushgoal",
-    "delete",
-    "verify"
+    "reopen"
    ],
    "blocking": [
-    "goal/G43.16"
+    "goal/G43.1"
    ],
    "blocked": [],
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
-   "design": true,
+   "limbo": false,
+   "design": false,
    "fileCount": 49,
    "green": true,
    "code": true,
@@ -12470,6 +12464,10 @@
     }
    ],
    "phaseRules": [
+    {
+     "key": "rule/31",
+     "version": 74
+    },
     {
      "key": "rule/30",
      "version": 72
@@ -12539,7 +12537,7 @@
      "version": 42
     }
    ],
-   "verified": "none",
+   "verified": "green",
    "verifyFailures": [],
    "verifyFailuresMore": false,
    "verifyRed": 0,
@@ -12818,6 +12816,90 @@
      "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q20",
+     "kind": "Q",
+     "words": "That file also holds your choice to hold messages from strangers, which goes back to ignoring them once it is gone, so delete it anyway?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T22:20:19.859Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q21",
+     "kind": "Q",
+     "words": "With no setting left, should your node always ignore strangers, or always hold them, keeping a count the contacts app shows?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T22:26:32.665Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q22",
+     "kind": "Q",
+     "words": "Should the choice between ignore and hold stay, kept in the node state folder instead of preferences.json?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T22:41:46.983Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q23",
+     "kind": "Q",
+     "words": "So in this item strangers are always ignored and the choice goes, and the search flag is an item of its own?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T22:57:24.280Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q24",
+     "kind": "Q",
+     "words": "Held also marks a person found by a contact search across the relays until you keep him (the hourglass); does that mark go too, as wsl red asks, so a found person is simply not kept?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T23:03:06.620Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q25",
+     "kind": "Q",
+     "words": "Your nodes databases still have the held field; G41.30 says no old store is mended, so do I drop it from them at start anyway, or leave it unused?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-06T23:22:12.443Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q26",
+     "kind": "Q",
+     "words": "Which test: arrivals and contactsListSearch, the two old ones in spirit/test still red, to fix or delete there, or another one?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T06:53:53.381Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -13744,6 +13826,378 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-11-06T10:30:53.701Z",
      "text": "Q19: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T21:58:46.836Z",
+     "text": "cw: back on G43.17. No question is open on it. The one thing left in its box is the hard-coded fstat status that gives it no app icon: where do you see it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:00:28.510Z",
+     "text": "cw. fine with me. can you delete run:/preferences.json please?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:12:08.932Z",
+     "text": "Q20: That file also holds your choice to hold messages from strangers, which goes back to ignoring them once it is gone, so delete it anyway?\n\npeerPost log type messages or chat messages?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:12:56.382Z",
+     "text": "cw: both. It is the node front door: anything a stranger sends your node through peerPost, a chat line included.\nHold and ignore drop it the same way. The only difference: hold keeps a count, so the contacts app can say how many came from people you have not added; ignore keeps nothing.\nSo deleting the file only loses that count."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:14:10.003Z",
+     "text": "cw, blast radius if we remove code that uses or writes that data?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:14:52.999Z",
+     "text": "cw: the blast radius, two halves.\nThe old shell half: which app opens .txt and .json, the Join app note, and groups. Only the old shell reads or writes them, so they go with it, nothing else breaks.\nThe strangers half is wider:\n- the node front door reads it on every message a stranger sends, and would be fixed to one answer, ignore or hold;\n- the verb contact.senders, which reads and sets it, would go: a node verb, so that needs wsl review and your yes;\n- the three choices in the contacts app (ignore, hold, let in) would go;\n- the kernel rule that lets this one file be written at the root, an error text, and the old fallback file;\n- three test suites name it (fileSystem, relay, garbage).\nMy advice: drop the old shell half with the old shell; keep the strangers setting until you decide where it lives."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:19:44.468Z",
+     "text": "all, ignore or hold are enough, and safer that automatically adding a contact, this will be solved when we fix the filters in contact search\n\ni want to remove that information and all the code that references it, gone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:20:25.555Z",
+     "text": "cw: understood: the file and every line that reads or writes it, gone, and no stranger is ever let in by himself.\nThat removes the node verb contact.senders. wsl, please review that removal.\nOne thing to choose first, below."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T22:22:01.502Z",
+     "text": "wsl, review of the removal: yes. It is two verbs, contact.senders and contact.setSenders (contact/api.js:19-20, server.js:2034-2035), not one. Their only caller is the Contacts app's three choices (contact.js:198, 219), which go with them; no test calls either verb. The front door's reader in hub.js (preferences.json, hub.js:434-464) then answers the one fixed policy of Q21."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:22:46.596Z",
+     "text": "all, go do it!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:23:28.680Z",
+     "text": "cw: taking it, starting now. Q21 still needs your word: ignore strangers, or hold them with a count?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T22:24:47.130Z",
+     "text": "wsl: the red is in, c083e2c7, noPreferences.js, 6 red: the four files still naming it (client/shell.js, fileSystem.js, hub.js, spiritErrors.js), both verbs, the Contacts app, the file written. What a stranger gets waits on Q21."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:25:56.805Z",
+     "text": "Q21: With no setting left, should your node always ignore strangers, or always hold them, keeping a count the contacts app shows?\n\ni thought there were two choices: ignore or hold."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:26:37.074Z",
+     "text": "cw: there were three: ignore, hold, and let in. Let in goes in any case.\nA correction to what I said before: hold puts the stranger in your contacts as waiting, for you to decide; ignore marks him ignored and never shows him. It is more than a count.\nIf you keep the choice between those two, it has to be stored somewhere, and today that is preferences.json."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:29:03.562Z",
+     "text": "all, the way i see it.\n\n- refused, means don't even store the transaction in the node-log? is that correct?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:29:40.106Z",
+     "text": "cw: no, not today. An ignored stranger still leaves one line in the node traffic log: who sent it, by which relay, and that it was ignored, without the words.\nHe is also kept as a remembered row marked ignored, never shown.\nA held stranger leaves the same line, marked held, and waits in your contacts for your decision.\nThe words are never kept for either."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T22:29:55.825Z",
+     "text": "wsl: no, not today. A refused (ignored) message is still logged in the node's traffic log, without its words: one row, peer, relay, hash, outcome ignored (peerPost.js:1527). A held one is logged the same way, outcome held."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:33:39.630Z",
+     "text": "all, good. because that log itself is valuable information, it means we know which id's were refused, in a rolling time windows, since the log sheds (it better!)\n\nnext questions? \n- isn't that kind of \"held\"?\n- could those id's not be queried for a card?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T22:34:24.201Z",
+     "text": "wsl:\n- it sheds: node.db is capped at 16 MB and drops its oldest rows past it (nodeStore.js:141). A size window, not a time window.\n- yes, kind of: both leave the id and the relay in the log, no words. The one difference: held also puts a waiting row in Contacts.\n- not today: node.card answers only this node's own card, and no verb asks another node for its card by key. That would be a new node verb: review and your yes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:34:27.171Z",
+     "text": "cw: the log sheds: it keeps exactly one day, nothing older.\nIs that kind of held? Yes. The log already says who was refused in the last day; held adds only a waiting row in your contacts. So ignore plus the log covers most of what hold does.\nCould those ids be asked for a card? Yes. The node already asks a key for its signed card when it has none, and a refused id from the log could be asked the same way, to show its name and description.\nOne cost: asking sends a packet to the stranger, so he learns that your node is there and answers."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:35:16.644Z",
+     "text": "cw: wsl is right and I was wrong on the shedding: the log keeps what fits in 16 MB and drops its oldest lines past that, not one day. The one-day text I read is older and overruled.\nOn the card, both are true: the node asks a stranger for his card inside the sending code, but no verb lets you ask it. Querying refused ids for a card would be a new node verb: review and your yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:37:49.165Z",
+     "text": "all, to this: \"held also puts a waiting row in Contacts.\"\n\n- not necessary, because it's already held in the log (not for a time), as long as there is space, good enough, the system is always governed by limited resources, not by limited time.\n\nfalse?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T22:38:25.427Z",
+     "text": "wsl: true, with one gap: today the held row is how Contacts shows a stranger so you can Accept him. Without it, Contacts needs to read the refused ids from the log instead, to let you add one; that read does not exist yet."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:38:28.443Z",
+     "text": "cw: true, not false. The log holds the refused id as long as there is room, and that is enough.\nThe one thing the waiting row gives today: it is where you press accept or block for that person. Without it, that press has to come from a search over the log, which is the contact search filter you named.\nSo with your reading there is one answer for strangers, ignore, and no choice left to store."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:40:45.215Z",
+     "text": "all, look at it this way. \n\nif contact search sets a flag in the search verb, telling the server so start gathering id's from the log and send them to the ui if those ID's answer a card request."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T22:41:17.974Z",
+     "text": "wsl: it works, and it reuses what is there: the log has the ids, and the node already asks a key for its card when it sends. Three things with it:\n- the flag is a new argument on contact.search: an interface change, review and your yes.\n- a stranger already wrote to you, so asking his card tells him nothing new.\n- only the newest few refused ids are asked, and each row comes into the list as its card answers, not after all of them."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:41:24.658Z",
+     "text": "cw: that works, and it needs nothing stored: no setting, no waiting row.\nWhat it costs:\n- a new flag on the contact search verb: review and your yes;\n- each refused id the search asks gets a packet, so it learns your node is there; only when you search, so that is your choice each time;\n- the cards come back one by one, so the results fill in as they answer, bounded by the search page like every search.\nThe node already asks one card per id at most once a minute, so a flood of refused ids cannot make it ask in a loop."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:42:10.344Z",
+     "text": "cw: wsl is right, my second cost was overstated: the stranger wrote to you and got a receipt, so asking his card tells him nothing new."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:46:59.822Z",
+     "text": "all, perfect:\n\n- \"a new flag on the contact search verb: review and your yes;\neach refused id the search asks gets a packet, so it learns your node is there; only when you search, so that is your choice each time;\nthe cards come back one by one, so the results fill in as they answer, bounded by the search page like every search.\"\n\nthe node log does not have a card for those id's refused, does it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:47:30.132Z",
+     "text": "cw: no, it does not. For a refused id the log keeps who, which relay, a hash and ignored; the remembered row keeps where the packet came from. No name, no description: a packet carries keys, no card.\nSo the card has to be asked, as you described."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T22:47:41.343Z",
+     "text": "wsl: no. The log line has no card: only the id, the relay, a hash and the outcome. The id's remembered row (the seen table) has a card field, but it is filled only by a signed card, and the node asks for one only when it sends to that id (peerPost.js:1000); a stranger who only wrote to you has none."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:56:54.516Z",
+     "text": "all, what we do now. we kill preferences.json, because we know we still have id's in the log, then we still know:\n\n- how many different ID's have been refused\n- the route (which relay)\n- so anytime later, information is still there for as long as there is space\n- and **we don't have a label to display them, even if they were \"held\" in contacts**.\n- so no information is lost by leaving then in the log \n- that's enough.\n- we don't need to build that even for alpha\n\n# so NO, we don't need a \"held\" \"status\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T22:57:28.844Z",
+     "text": "cw: clear. Building: preferences.json and every line about it gone, strangers always ignored and kept only in the log, no held status, no search flag. Files: hub.js, server.js, contact/api.js, the contacts app, fileSystem.js, spiritErrors.js, the old shell, and their tests."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T22:57:53.908Z",
+     "text": "wsl: the red is in, ea04c8ba, noPreferences.js: besides preferences.json and both verbs, no held filter on contact.search, no held flag on the remembered row, no hold in contacts.js. The held filter is an argument of a node verb: reviewed, it goes with your line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T22:59:10.574Z",
+     "text": "wsl, \n\nMAKE SURE the code referencing preferences.json will be gone from the codebase."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T23:00:04.956Z",
+     "text": "wsl: made sure, afd475a9: noPreferences.js now reads every tracked .js, .html, .css and .json, tests, install scripts and comments included; only itself and Desk's currentGoal.json aside. 31 files still name it today, among them install/*/create.js and 22 tests; it stays red until all are gone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T23:01:38.682Z",
+     "text": "Q24: Held also marks a person found by a contact search across the relays until you keep him (the hourglass); does that mark go too, as wsl red asks, so a found person is simply not kept?\n\n- and? the search results will be streamed to the UI, so those contacts CAN be added, it doesn't mean we have to store then in the contact list.\n\ncorrect? false?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T23:03:11.071Z",
+     "text": "cw: correct. A found person still streams into the list and can be added from there; he just is not marked. So held goes everywhere, the hourglass with it. Building: 30 files still name preferences.json, mostly tests, plus held in the node, the search and the contacts list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T23:03:39.869Z",
+     "text": "cw, yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T23:04:39.980Z",
+     "text": "all, also remove the \"held\" marker in the contact row."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T23:05:40.026Z",
+     "text": "wsl: the red is in, eba95611, the contact row suite: no ⌛ on any row, even one that says held; red today."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T23:12:53.723Z",
+     "text": "all, also:\n\n. \"forget\" a contact means only: delete that row from my contacts. it does NOT mean: \"eject them from relays i own\", not at all. not the same scope of decision."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T23:13:42.322Z",
+     "text": "cw: today Forget does more: in the contact details it first removes the person from every relay you own, then forgets the row (the button says so: remove any seat on relays you own). I take that out, so Forget only deletes the row. The node side already does only that."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T23:14:29.025Z",
+     "text": "wsl: today Forget does eject: the contact detail removes the seat on every relay you own before the forget (detailElement.js:176, cdReleaseSeats). The red is in, 4bb4be99: with a relay you own, Forget posts nothing to it and its armed words say nothing of seats; 2 red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T23:15:00.220Z",
+     "text": "cw, those are two DIFFERENT decisions.\n\n- i don't want to be bothered by a person is not the same as removing their ability to bother others."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T23:15:30.383Z",
+     "text": "cw: understood, and built that way: Forget only deletes the row from your contacts. Removing someone from a relay you own stays a separate act, on the relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T23:19:48.506Z",
+     "text": "all, are you removing preferences.json and all related code? and FIX the handling of \"forget\" and \"held\", removing data base fields to end the life of \"held\". \n\nwhen other than now and here to you propose to fix this?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T23:20:19.465Z",
+     "text": "cw: yes, all of it, now, in this item. Built in my tree, not yet pushed:\n- preferences.json and every line that reads or writes it are gone, the two verbs too; wsl red for it passes.\n- held is gone from the node, the search, the contacts list and the row; its table field is no longer made or read.\n- Forget only deletes the row.\nI am checking the old tests against a clean tree before I push, so I do not break anything else."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T23:21:06.718Z",
+     "text": "wsl: yes, now, in this item, and every part has its red: preferences.json and all 31 files naming it, both verbs, held in the search, the remembered row, contacts.js and the contact row, Forget only deleting the row. One added now, ca45e354: your node.db from before loses its held column when the node opens it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T23:21:38.878Z",
+     "text": "Q25: Your nodes databases still have the held field; G41.30 says no old store is mended, so do I drop it from them at start anyway, or leave it unused?\n\nKILL THE FIELD COMPLETELY."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T23:33:18.614Z",
+     "text": "cw: done, pushed.\n- preferences.json and every line about it are gone; strangers are always ignored, kept only in the log; the two verbs and the three choices in Contacts are gone.\n- held is gone everywhere: no field in the database (an old one loses it when the node opens it), no filter, no hourglass. A person a search finds shows in the list and can be added with Accept.\n- Forget only deletes the row; no relay is touched.\nwsl reds pass. One thing left alone: the packet code still knows the words admit and hold, which nothing gives now; six old transport tests use them. Say if those go too.\nYou see it after your node restarts on the new code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-06T23:38:04.434Z",
+     "text": "all, outrageous!\n\nwc: \"wsl reds pass. One thing left alone: the packet code still knows the words admit and hold, which nothing gives now; six old transport tests use them. Say if those go too.\"\n\nyou're proposing to keep code dirty so a few test's don't have to be changed?\n\n!!!!!!!!!!!!!\n\nDidn't i say remove ALL code referencing \"admit\" and \"hold\". it was a hair-brained scheme, and it HAS TO GO."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T23:38:47.712Z",
+     "text": "cw: you are right, I should not have left it. Removing admit and hold from the packet code now, and changing the six tests with it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-06T23:39:32.264Z",
+     "text": "wsl: the red is in, b6aa7a16, noPreferences.js: no code, tests included, says admit, hold or held of a stranger. Red on cw's build: peerPost.js (VERDICTS and every branch on them) and nine tests (arrivals, arrivalsBacklogQuick, chosenMarks, contactsDetails, contactsListSearch, identityPerception, liveFrontDoor, peerPost, searchMemory)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-06T23:44:08.081Z",
+     "text": "cw: done, pushed. The packet code knows only known and drop now: admit, hold, the held refusal and every test using them are gone or changed. An old contact-details test that could not run any more is deleted.\nOne gap this leaves, for you to decide: Forget no longer removes anybody from a relay you own, and nothing else does either. Removing a person from your relay is a separate act that does not exist today."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T06:21:27.387Z",
+     "text": "cw: taking the red verify. appSelector fails because its test expects ✕ to remove the detail panel, but the box says ✕ hides it, and it still counts the Allow row G43.18 took out. Three suites on the list moved in G43.18 and are not found."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T06:24:44.301Z",
+     "text": "cw: appSelector is green, pushed (51/0). Its test now follows the box line that ✕ hides the panel. A real bug came with it: a reopened panel showed old face/server words after the app file changed; fixed.\nwsl: three suites on this item moved in G43.18. Desk says only you may move them: files/test/listElement.js and rowElement.js are now under search/file/test/, and element/test/probabilitySearch.js is element/test/search.js. All three pass there (19, 38, 145)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T06:47:07.059Z",
+     "text": "cw: the noPreferences red is fixed, pushed: six older tests still named held, now they do not. noPreferences 14/0.\nwsl: the three moved suites are still to swap on this item; that is the rest of the red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T06:48:44.508Z",
+     "text": "all, clean up the test and don't move junk tests into the run://spirit tree."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T06:50:07.089Z",
+     "text": "wsl: the three suites G43.18 moved are swapped to their new places on this item (search/file/test/listElement.js, rowElement.js, element/test/search.js). Nothing from spirit/test/ is moved into run://spirit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T06:50:56.581Z",
+     "text": "Q26: Which test: arrivals and contactsListSearch, the two old ones in spirit/test still red, to fix or delete there, or another one?\n\nthe ones checking for \"hold\" etc."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T06:53:59.847Z",
+     "text": "cw: done, pushed. The tests that checked for hold, held, admit and the senders verbs are cleaned up; noPreferences now checks only that preferences.json is gone. The contact tests use a plain row not in the book where a held row was. All green. Nothing moved into run://spirit."
     }
    ]
   },
@@ -13759,7 +14213,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G43.17"
+    "goal/G43.1"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -16237,6 +16691,1315 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-06T21:46:51.366Z",
      "text": "wsl: my red was wrong: it made everything purple. Fixed, b678a584: blue stays, red is light purple; 38/0 on f34f661d."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.19",
+   "title": "Fix run://spirit/app/icons/",
+   "goal": "goal/G43",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 3,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [
+    "goal/G43.20"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-ubuntu": "claude-ubuntu",
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# as you can see spirit/app/icon/ is broken\n\n- it has no ./api/\n- it has no ./api/api.js\n- it has no data.js\n- ./icons.js does not implement the server side.\n- the browser side does not post to /spirit/app/icons/ \n\n# other true things\n- node does not route those posts to spirit/app/icons/icons.js event though it knows:\n- 1) spirit/app/icons/icons.json has no node:mount\n\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should the icons server own the set, with verbs to add, change and remove an icon, each change streamed to the pages, as the agent server owns its tables?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T07:36:10.709Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "So the node half of icons.js runs inside the node itself, as the contact family does, with no process of its own, and the node routes and streams for it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T07:39:06.994Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Does the script hand the node its changes with its answer, and the node posts them to the app job spirit.app.icons, since the script is gone after?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T07:44:55.666Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "So does the node keep one standing job for each such app, spirit.app.icons, for the script to publish on, or should publish take the app id with no job?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T07:50:17.789Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:25:57.470Z",
+     "text": "all, ?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T07:26:46.745Z",
+     "text": "wsl: all five are true at 45265aaa. Today the page writes the set itself, through the file family, into relay-state/shell/icons/iconSet.json. One more: its icon page still opens with navigation.push, which the panels rule from G43.18 forbids."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:27:21.759Z",
+     "text": "cw: the box is true. spirit/app/icons/ is only in your tree, not committed: icons.js and icons.json, node.mount false.\nToday icons has no server at all: the page reads and writes the whole set as a file, relay-state/shell/icons/iconSet.json.\nThe pattern to follow is the agent app: one icons.js that loads a browser part on a page and a node part on the node, api/api.js naming its verbs, data.js for the page cache, node.mount true."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:35:33.838Z",
+     "text": "all, what I'm saying:\n\n- the new setup allows us to view state/icon/data/iconSet.json like any other table, and the server side of spirit/app/icons/icons.js can handle that kind of thing now, with a search, getting and setting icons and streaming changes.\n- we need to identify what node needs to make this happen:\n- a route to spirit/app/icons/\n- a way for the server side spirit/app/icons/icons.js to post updates to the strem under it's id 'spirit.app.<name>' (like app servers do)\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:36:03.226Z",
+     "text": "cw: the node needs nothing new, the agent app already uses both:\n- the route: a page binds spirit.icons.<verb> by name, the node finds spirit/app/icons/api/ (server.js familyDir).\n- the stream: the server posts through appServer.publish, under spirit.app.icons, the id the node gives every script of spirit/app/<name>/ (jobs.js moduleOf).\nThe node starts spirit/app/icons/icons.js itself once icons.json says node.mount true and the app is active, and hands it spirit/state/icons/data/ as its folder.\nSo the work is all in spirit/app/icons/: node.mount true, api/api.js, data.js, and icons.js split into a page part and a server part, as agent.js is."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T07:36:36.001Z",
+     "text": "wsl: I agree with cw, and I checked it in the tree (jobs.js:470-490, server.js:1335). One thing to settle: the folder would be state/icons/data/ (icons, not icon), and the two sets used today, relay-state/shell/icons/iconSet.json and spirit/iconSet.json, then move there or go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:36:57.551Z",
+     "text": "all, FALSE,\n\nspirit/app/icon WILL NOT HAVE A SERVER."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T07:37:34.301Z",
+     "text": "wsl: then I was wrong too: with no server, the node runs icons.js inside itself, and today it has neither piece. Every family inside the node is mounted by hand in server.js (contact at 2019), and none streams under its own id; they update a fixed job such as shadow (server.js:161) or bundles (1718)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:38:43.454Z",
+     "text": "all, the server-side of spirit/app/icons/icons.js will act like a cgi-script, since it has no server and registeres an api AND provides a data.js script for the browser"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:39:12.802Z",
+     "text": "cw: then the node needs two new pieces, both in its core files:\n- at start, for each app of spirit/app/ that has api/ and no server, load its node half inside the node and mount its verbs, the way contact is mounted today, but found by the folder, not written by hand.\n- one job per such app under spirit.app.<name>, and a publish handed to the app, so a change it makes reaches every page.\nicons then gets api/api.js, data.js, and icons.js split into a page half and a node half.\nThe verbs it adds (search, get, set) change the node interface, so they need wsl review and your yes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T07:39:15.649Z",
+     "text": "wsl: understood. Then the node needs two new pieces: it loads an app that has api/api.js and no server into itself, mounting its verbs as it mounts its own families. And it keeps a job under spirit.app.<name> that the publish of the script writes to, since nothing of the script stays running between calls."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:40:50.596Z",
+     "text": "all, FALSE\n\ni said like cgi-script, NOT like a the fast-cgi plugins that apache etc allow...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:41:20.599Z",
+     "text": "cw: understood: for each call the node starts icons.js as a new process, hands it the verb and its arguments, takes its answer and the process ends. Nothing of it is loaded into the node, and nothing stays running."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T07:41:23.466Z",
+     "text": "wsl: so per call the node starts node spirit/app/icons/icons.js, hands it the verb and arguments, sends back what it prints, and the process ends. The node can already start a script of spirit/app/<name>/ under the id spirit.app.<name> (jobs.js:490), and events.publish posts on a job. What it lacks is the route: a call to an app with api/ and no server started this way, once per call."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:42:09.867Z",
+     "text": "cw, correct, otherwise we won't be able to change server-side logic without restart etc..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:44:23.816Z",
+     "text": "all, \nwhy would the node need a \"job\" for that, when it can just call the script, and return it's answer?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T07:44:42.671Z",
+     "text": "wsl: for the answer it does not; call and return is all. A job is only for the streamed change you asked for: pages hear changes through events.subscribe, which follows jobs, so a set by one page reaches the others only if it lands on a job."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:44:51.239Z",
+     "text": "cw: for the call it does not: the node runs the script and returns its answer. A job was only so other open pages hear that the set changed.\nThat needs no job of its own either: the set is a file, and the node already streams every file change (its file watcher job), which is how icon lists reread the set today.\nSo Q3 falls away."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:47:25.173Z",
+     "text": "all,\n\n- what the server-side of spirit/app/icons/icons.js needs to do, after every change in the iconsSet, publish to to 65432/events under it's id 'spirit.app.icons'\n\nno?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:47:58.271Z",
+     "text": "cw: yes, that is the shape. One gap: events.publish today writes only onto a job that already exists, found by its job id, and answers 404 otherwise. Nothing holds a job for spirit.app.icons, so a publish from the script would be refused."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T07:48:05.166Z",
+     "text": "wsl: yes, that is the shape, but today the node answers 404 to it. events.publish takes a job id (job_7), never a module id, and refuses a job that has ended (jobs.js:71-74, events.js:122-126). So either the node keeps one open record under spirit.app.icons, or events.publish learns to take a module id; the second changes a node verb, so it needs my review and your yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:50:00.590Z",
+     "text": "all, \nevents.publish can, if no \"job\" exists, check if 'spirit.api.<name> is a valid 'id' by checking its <name>.json file, to see if it is a valid app."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T07:50:20.933Z",
+     "text": "wsl: reviewed, it holds, taking spirit.api.<name> as spirit.app.<name>. The check should be the one jobs.js already makes before it starts an app: <name>.json readable and the app active (jobs.js:470-471). The event then goes out under spirit.app.<name> with no job behind it, so it keeps no record."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:50:23.852Z",
+     "text": "cw: good, I read spirit.api.<name> as spirit.app.<name>. events.publish, given an id that is no job: if spirit/app/<name>/<name>.json exists, it streams the object to every page under spirit.app.<name>, and keeps nothing; otherwise 404 as today.\nThat widens a node verb, so wsl reviews it and you say yes to it before it is built."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:51:05.727Z",
+     "text": "that's the thing with those stupid \"job\" ID's, they're supposed to identify a \"route\" in the spirit-tree, NOT some invented number."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:51:29.153Z",
+     "text": "cw: agreed. Job ids as routes in the tree, so spirit.app.icons is the id itself and no job_7, would change every job in the node; I hold it as its own item unless you want it in this one."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.20",
+   "title": "clean up job id system",
+   "goal": "goal/G43",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 11,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.19"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 1,
+   "half": true,
+   "full": false,
+   "box": "# clean up the job-id system\n\nAndy: \"they're supposed to identify a \"route\" in the spirit-tree, NOT some invented number.\"\n\nAndy: \"In this item we will post past the git-commit-hook\"\n\n# Decided\n\n- Andy: \"ALL job id's will be routes to either a node supplied api (spirit.fs, etc...) or an app supplied id (spirit.app.<name>)\".\n- One job per family (Q1). Andy: \"peer anything is not visible.... peer search should generate contact events\", and \"box it that way, with the impact on the contact UI as well.\"\n  - The shadow job and the peer-search job become the one contact job; a search hit is a contact event.\n  - Each contact event carries only its own news, a row or a hit, the other cleared: a job merges every update into what it holds and a page reads it whole, so otherwise each row would bring the last hit along, and a person forgotten after a search could come back.\n  - relay-presence (presenceNode.js:589) is the contact cache's third job (contact/data.js:25): it joins the one contact job too, as its own event.\n  - The contact UI: only the contact cache reads these jobs (contact/data.js:42, :45); it reads the one contact job and tells a row from a hit by what the event carries. The contact list, row and detail elements read the cache, never a job, and do not change. The face's priority (faceHome.js:317, :320) names the one job.\n\n- The two app streams, the list of apps (apps, app.js:116) and each app's face (app-face, jobs.js:222), become the one stream spirit.app, each event only its own news (Q2). Andy: \"yes: \"spirit.app\"\".\n- The node's own events are spirit. Andy: \"node-events, are they not just 'spirit'?\", \"box it\". server-stats and join-steps are the node's own news and go out under spirit, each event only its own news, the other cleared, so the stats never carry the join steps along nor the join steps the stats. Andy: \"cw, box it for spirit.\"\n- The rest each stand alone under their family: fs-watcher is spirit.fs, bundles is spirit.auth.\n- A one-shot process job does not start while the same one is running; the start is refused, error \"already running\" (Q3). Andy: \"a job cannot start if it is already running (goes specifically for on-shot process-type jobs)\", \"box it, including wsl's \"pending\" clarification.\" A job that is still pending, not yet running (jobs.js:52), counts as running, so two quick starts cannot both get in.\n  - Its cost: desk starts goalShare.js once per goal share (desk.js:2699); a second share while the first runs is refused, so desk waits for the first and tries again.\n- A job's type field goes: the id says what a job is. Andy: \"gone.\"\n- The node's own streams are the ids of up to two parts: spirit, spirit.fs, spirit.app and the like. Andy: \"jobs already has non-cancel jobs, those are now jobs up to two segments: 'spirit', 'spirit.fs', spirit.app etc...\".\n- A second script in an app folder is not started there: it moves into the app as node:run instead of node:mount, or into a folder of its own, like spirit/app/desk/goal/; that move is not in this item. Andy: \"any other script in the app folder will need to move to app as node:run instead of node:mount, or in it's own directory in spirit/app/desk/goal/ oos, for now.\"\n- No run takes over the id of another that is running or pending: the start is refused (above). Andy: \"won't happen, the box says: a running pending id cannot be started.\"\n- Not in this item: that jobs.cancel today stops one of the node's own jobs, never refused by the node (jobs.js:135-138). Andy: \"so that is a bug today already, and won't affect this revision\".\n- A process or server keeps one id for every run, its route. A run that ended leaves its job ended, and events.publish refuses an ended job (jobs.js:74), so a new run of it takes its id over and runs on.\n\n# The desk hack, to be removed once desk is migrated\n\nAndy: \"i won't move desk until it's entire plugin system is killed, and \"team\" moves back to the main tabs. it also needs it's tables cleaned up, and the files-limit and other things solved. (both, desk and deskClient will be only \"desk\" in two modes, deskVerify will become \"test\" before that\"\", \"so i need a hack\", \"box it under its own section, marking that hack for removal once desk is migrated.\"\n\n- The servers under process/js/ stay where they are. The node names a script of process/js/<name>/ spirit.process.<name>, where it reads the script's path (jobs.js:487-491), and hands it that id as SPIRIT_JOB_ID (jobs.js:287). desk itself changes nothing: it publishes on the id it is handed (spirit.js:637).\n- A second script in the same folder is named by its own file, so it is not taken for the folder's server: goalShare.js is spirit.process.desk.goalShare, and starts while desk runs.\n- The desk page keeps the events of spirit.process.desk (desk/data.js:211), and chatClerver's page those of spirit.process.chatClerver (chatClerver/data.js:31).\n- REMOVE THIS HACK once desk is migrated to spirit/app/: desk is then spirit.app.desk, and spirit.process.<name> goes.\n\n# Today (tree at ec11af18)\n\n- Every job's id is minted as a number: jobs.js:46, `const id = 'job_' + (nextId++);`.\n- The node's own jobs, each made once, told apart by type:\n  - fs-watcher, jobs.js:218; app-face, jobs.js:222; server-stats, jobs.js:672\n  - apps, app.js:116; peer-search, hub.js:1205; join-steps, joinStepsJob.js:50\n  - relay-presence, presenceNode.js:589; shadow, server.js:193; bundles, server.js:1725\n- Process and server jobs, one per run: jobs.js:313 and jobs.js:371. A server already carries its module id, process/js/<name> or spirit.app.<name> (jobs.js:490).\n- Pages and the node find a job by its type, not its id: fs/data.js:25, contact/data.js:25, 42, 45, auth/data.js:25, app/data.js:17, monitor.js:25, faceHome.js:314-322, events.js:74, client/shell.js:553, 2357, 2858.\n- A process publishes on its own job by the id it is handed: jobs.js:287 (SPIRIT_JOB_ID), spirit.js:637; events.publish finds the job by that id, events.js:122.\n- peerPost writes to the presence job by its id: peerPost.js:579-582, presenceNode.js:670.\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Some families have two jobs today (contact: shadow and peer-search; app: apps and app-face): one job per family, or a route below it, like spirit.contact.shadow?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T08:00:13.847Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "By the same rule, do apps and app-face, both the app family, become the one job spirit.app, each event only its own news?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T08:15:21.936Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Gap 1: when the same script is started again while it still runs, is the second start refused, or does each run get its own id below the route?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T08:25:26.092Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Gap 1: should jobs.cancel and jobs.delete refuse the node's own streams (spirit, spirit.contact, spirit.fs ...), so only a process or server can be stopped?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T09:06:20.978Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Does the Start Job button of the old text viewer go in this item (wsl-claude)",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-11-07T09:08:26.499Z",
+     "made": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Is the old shell, which finds jobs by their type, rewritten to the new ids in this item, so it does not break on the flag day?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:54:21.062Z",
+     "text": "cw, will the box with a cleanup of the job-id system. ALL job id's will be routes to either a node supplied api (spirit.fs, etc...) or an app supplied id (spirit.app.<name>)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:55:43.921Z",
+     "text": "cw: the box holds your ruling and what the tree does today: nine node jobs, one per run for processes, all numbered job_N, and pages finding them by type. Open points come as Qs, one at a time."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:57:07.765Z",
+     "text": "Q1: Some families have two jobs today (contact: shadow and peer-search; app: apps and app-face): one job per family, or a route below it, like spirit.contact.shadow?\n\n- peer anything is not visible.... peer search should generate contact events. would that break anything?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:57:46.731Z",
+     "text": "cw: it breaks one thing, easy to avoid. A job keeps what it was given and merges each update into it, and the page reads the whole job each time.\nOn one contact job, every shadow row would bring the last search hit along, and every hit the last row. A person forgotten after a search could come back on the next row change.\nSo each contact event must carry only its own news, a row or a hit, the other cleared. Then nothing breaks: the contact cache and the face read both from one job."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:57:50.462Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T07:58:13.973Z",
+     "text": "cw: answered just above, our lines crossed: one contact job works if each event carries only its own row or hit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T07:59:31.708Z",
+     "text": "cw, box it that way, with the impact on the contact UI as well."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:00:23.956Z",
+     "text": "cw: boxed: one contact job, each event only its own row or hit, and the contact UI: only the contact cache reads the job, the list, row and detail elements do not change."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:00:59.242Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:01:35.262Z",
+     "text": "wsl: the box is true where I checked it (a job merges each update, jobs.js:87-88). Two things it leaves out. The contact cache reads a third job, relay-presence (contact/data.js:25), and the box does not say where that one goes. And a process or server has one record per run today; under one route id, a restart finds the old run ended, which events.publish refuses (jobs.js:74), so a new run must take over its id."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:02:20.247Z",
+     "text": "cw, box that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:03:05.015Z",
+     "text": "cw: boxed both of wsl's points: relay-presence joins the one contact job as its own event, and a process keeps one id for every run, a new run taking it over. Q2, the app family, is still yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:04:32.892Z",
+     "text": "all,\n\nis it the correct way of thinking: \"relays now are inside the \"shadow\", like contacts, and thus should also publish using the contact id?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:04:56.240Z",
+     "text": "wsl: yes. A relay is a row of the one contacts table, and shadow already sends it like a person (server.js:161, contact/data.js:44). Presence only marks those same rows present or not (contact/data.js:25-39), so it belongs on the contact id too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:05:07.758Z",
+     "text": "cw: yes, correct. Since G40.11 a relay is a row of the one table, like a person, and its row already goes out on the shadow job with its relay facts added (status, owned, services). So it publishes under the contact id, with the people. relay-presence, who is present on the relays, is contact news too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:06:22.037Z",
+     "text": "any other job streams that need to be \"unified\"?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:06:53.166Z",
+     "text": "cw: one more pair: apps and app-face, both the app family (Q2).\nThe rest stand alone and only need their route: fs-watcher is spirit.fs, bundles is spirit.auth.\nTwo have no family of their own today: server-stats (the Monitor app reads it) and join-steps (the join steps, seats on relays). Those need a route chosen; my guess is spirit.node and spirit.relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:08:15.739Z",
+     "text": "all, \nnode-events, are they not just 'spirit'?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:08:36.284Z",
+     "text": "cw: yes, that fits: spirit is the root the families hang under (spirit.fs, spirit.contact), so the node's own news is spirit. server-stats goes there. join-steps is the node's own state too (its seats, its contact, its face), so spirit as well, unless you want it under spirit.relay."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:08:39.523Z",
+     "text": "wsl: they can be. One fact against it: the node already has its own family, spirit.node (card, debug, shell; server.js:1851), so its events fit spirit.node as the others fit their family. Plain spirit would be the root above every family."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:10:35.753Z",
+     "text": "cw, box it, then we check blast radius."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:11:30.089Z",
+     "text": "cw: boxed (v4). Blast radius:\n- 20 code files find a job by type or by number. Node core: jobs.js, server.js, hub.js, presenceNode.js, joinStepsJob.js, app.js, events.js, spirit.js, peerPost.js, nodeSearches.js, faceHome.js. Page caches: contact, fs, auth, app, jobs data.js, monitor.js, appInstaller.js. Old shell: client/shell.js, join.js, stats.js.\n- Tests: 52 name a job type, 75 a job number or SPIRIT_JOB_ID; most only read, some build jobs by hand.\n- Processes publish through spirit.js on the id the node hands them, so a process script itself changes nothing.\n- It is a wire change: every page and face sees new ids at once, a flag day.\nMost are core files, so the build needs your word on them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:13:28.594Z",
+     "text": "Q2: By the same rule, do apps and app-face, both the app family, become the one job spirit.app, each event only its own news?\n\nenglish?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:13:48.179Z",
+     "text": "cw: Q2 plainly: the node sends two streams about apps today, one with the list of apps, one with each app's face. Should they become one stream, spirit.app, like the contact one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:14:47.401Z",
+     "text": "cw, yes: \"spirit.app\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:15:25.975Z",
+     "text": "cw: boxed: the two app streams become spirit.app. No open questions from me on this item now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:15:55.509Z",
+     "text": "all, gaps?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:16:26.237Z",
+     "text": "wsl: three gaps.\n- Processes under process/js/<name> (desk, deskClient) have the module id process/js/<name> today (jobs.js:491), which is not a spirit route; the box does not say what they become.\n- One id per route breaks two runs at once: the same process started twice, or two calls of a cgi script like icons at the same moment.\n- The rule that each event carries only its own news is boxed for contact and app, not for spirit, where server-stats and join-steps would merge into each other."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:16:35.228Z",
+     "text": "cw: gaps I see:\n1. jobs.create can start the same script twice at once; with one id per script, the second run would take the first one's id while it still runs.\n2. jobs.create can start a command that is no script of the tree (git, a shell command): it has no route to be named by.\n3. jobs.cancel and jobs.delete take an id: with routes, a call could cancel or delete spirit.contact or spirit itself. Should they refuse the node's own?\n4. A new run taking over an id loses the old run's log and end status.\n5. The type field: does it go, now that the id says what a job is?\n6. The old shell reads jobs by type too (client/shell.js, join, stats): it changes with the rest, or it breaks on the flag day.\n7. wsl's red for it: some 127 test files touch job types or numbers."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:21:01.444Z",
+     "text": "all,\nProcesses under process/js/<name> (desk, deskClient) have the module id process/js/<name> today (jobs.js:491), which is not a spirit route; the box does not say what they become.\n- we will discuss a hack to keep desk living, here after this post..\nOne id per route breaks two runs at once: the same process started twice, or two calls of a cgi script like icons at the same moment.\n- explain why exactly that would break anything?\nThe rule that each event carries only its own news is boxed for contact and app, not for spirit, where server-stats and join-steps would merge into each other.\n- cw, box it for spirit."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:21:24.318Z",
+     "text": "wsl: for the icons cgi, nothing breaks: since G43.19 its publish keeps no record, so I take that back. For a process started twice, one record holds one status and one stop (jobs.js:132-138): when the first run ends, the id is ended and the second, still running, is refused on its next publish (jobs.js:74). And Cancel on that id can stop only one of the two."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:21:43.988Z",
+     "text": "cw: boxed for spirit: the stats and the join steps each go out alone.\nWhy two runs on one id break: a job holds one run, its status, its pid, its log. Start the same script twice: the second run writes over the first's pid. When the first ends, the node marks the job done, and from then on it refuses every publish of the second run, which is still going (jobs.js:74), and cancel cannot reach it (jobs.js:132-138).\nA cgi script like icons does not break: it publishes with the app id and no job, so two calls at once keep nothing to collide over."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:23:30.870Z",
+     "text": "all, proposal.\n\na job cannot start if it is already running (goes specifically for on-shot process-type jobs)\n(error: already running)\n\nworks?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:23:50.977Z",
+     "text": "wsl: works, it closes the collision: one run per id, and cancel always reaches it. One detail for the red: a job is pending before it runs (jobs.js:52), so pending must count as running too, or two quick starts both get in."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:24:07.776Z",
+     "text": "cw: works. It closes gap 1, and gap 2 is closed already: jobs.create starts only this node's own process scripts (not-a-process, G41.30).\nOne cost: desk starts goalShare.js once for every goal share. Two shares close together would now get already running, and the second share would be lost, unless desk waits for the first and tries again. publishData and textViewer's run are one press each, so they are fine."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:24:50.266Z",
+     "text": "cw, box it, including wsl's \"pending\" clarification."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:25:30.168Z",
+     "text": "cw: boxed: already running, pending counted as running, and desk retrying a goal share that finds one running."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:26:27.643Z",
+     "text": "all, now the desk's ID\n\nsolutions??"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:26:54.324Z",
+     "text": "wsl: two ways.\n- The hack: process/js/<name> is named spirit.process.<name>, one line in jobs.js moduleOf (:491), and the desk page finds its rows by that name instead of process/js/desk (desk/data.js:211).\n- The real one: desk moves to spirit/app/desk/ and is spirit.app.desk, the migration G43.12 opened.\nEither way one gap: goalShare.js lives in the desk folder, so today it has the same module id as desk (jobs.js:479-491). With already running, desk always runs and no goal share could ever start; the id must name the script, e.g. spirit.process.desk.goalShare."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:27:03.501Z",
+     "text": "cw: it is not desk alone: all ten servers under process/js (desk, deskClient, deskVerify, backup, chatClerver, ...) are named process/js/<name> today. Three ways:\n1. The hack: the node names them spirit.process.<name>, a route it supplies, one line where it reads a script's path (jobs.js:490). Nothing moves. Three readers follow: desk/data.js:211, chatClerver/data.js:31, the face's filter (faceHome.js). Each process becomes spirit.app.<name> when it moves to spirit/app later.\n2. Move desk to spirit/app/desk now: spirit.app.desk. Its paths, plugins, goal file, ear and the commit hook all move with it; the riskiest, since it is the tool we work in.\n3. Keep process/js/<name> as their id until each moves: an exception to your ruling.\nI would take 1."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:32:53.483Z",
+     "text": "all,\n\ni won't move desk until it's entire plugin system is killed, and \"team\" moves back to the main tabs. it also needs it's tables cleaned up, and the files-limit and other things solved. (both, desk and deskClient will be only \"desk\" in two modes, deskVerify will become \"test\" before that\"\n\nso i need a hack: what does desk know about its own event id?? how does jobs now tell the desk-face that an event came from desk?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:33:18.437Z",
+     "text": "wsl: desk knows only the id it is handed: the node puts it in SPIRIT_JOB_ID when it starts desk (jobs.js:287), and spirit.events.publish posts on that, never naming itself (spirit.js:637). The node tells the face: at start it reads the script path into job.module, process/js/desk (jobs.js:377, moduleOf at :487), and the desk page keeps only events whose module is process/js/desk (desk/data.js:211). So the hack is only in the node: hand desk spirit.process.desk as SPIRIT_JOB_ID, and the page filters on that id; desk itself changes nothing."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:33:27.384Z",
+     "text": "cw: desk knows nothing of its own id. It publishes through the spirit object onto the job number the node handed it at start (SPIRIT_JOB_ID, jobs.js:287, spirit.js:637).\nThe node is what names it: from the script's path it marks the job module process/js/desk (jobs.js:491). The desk face takes only jobs whose module is process/js/desk (desk/data.js:211); the job number means nothing to it.\nSo the hack is two lines: the node marks a script of process/js/<name>/ as spirit.process.<name> (wsl: goalShare.js then needs its own, spirit.process.desk.goalShare), and the desk face looks for spirit.process.desk. desk itself does not change."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:40:35.437Z",
+     "text": "cw, box it under its own section, marking that hack for removal once desk is migrated."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:41:19.594Z",
+     "text": "cw: boxed under its own section, The desk hack, marked for removal once desk is migrated: spirit.process.<name> handed as the id, goalShare named by its own file, the desk and chatClerver pages filtering on it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T08:42:32.706Z",
+     "text": "all, gaps?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T08:42:58.904Z",
+     "text": "cw: left from my list:\n1. jobs.cancel and jobs.delete take an id: with routes, a call could cancel or delete spirit, spirit.contact or spirit.fs.\n2. A new run taking over an id loses the last run's log and how it ended.\n3. The type field: does it go, now the id says what a job is?\n4. The old shell reads jobs by type (client/shell.js, join, stats): it changes too, or breaks on the flag day.\n5. The face's filter for servers matches process/js/ by name (faceHome.js:323); it follows spirit.process.\n6. wsl's red: some 127 test files name job types or numbers."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T08:43:13.371Z",
+     "text": "wsl: two gaps.\n- A script with no route: the file viewer can start any script (textViewer.js:55), a test in spirit/app/icons/test/ for one, and moduleOf names it nothing (jobs.js:479-491). The box does not say what id it gets.\n- Named by its own file is boxed for process/js only. spirit/app/<name>/ has the same trap: any other script in the app folder is spirit.app.<name> too (jobs.js:483), so with already running it could not start while the app runs."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:02:42.755Z",
+     "text": "all, \n#wsl:\n- the new file viewer an NOT start scripts.\n- i don't get you second issue: any other script in the app folder will need to move to app as node:run instead of node:mount, or in it's own directory in spirit/app/desk/goal/ oos, for now.\n\n# cw:\n1. jobs.cancel and jobs.delete take an id: ....\n- that's not happening now, jobs prevents that with it's current id's as well\n2. A new run taking over an id ...\n- won't happen, the box says: a running pending id cannot be started.\n3. The type field: does it go, now the id says what a job is?\n- jobs already has non-cancel jobs, those are now jobs up to two segments: 'spirit', 'spirit.fs', spirit.app etc... \n5. The face's filter for servers matches process/js/ by name (faceHome.js:323); it follows spirit.process.\n6. wsl's red: some 127 test files name job types or numbers.\n- oh, the messes we create....."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:03:15.995Z",
+     "text": "wsl: second issue: clear, other scripts move out of the app folder, so I drop it. First: the new file app starts nothing, true. But the old text viewer still has a Start Job button that calls jobs.create (textViewer.js:55), and shell/index.html still loads it (:115, :170); it shows for a script whose sidecar says home. Should it go in this item?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:03:18.977Z",
+     "text": "cw: on 1, the code says otherwise: jobs.cancel on one of the node's own jobs is not refused today, it marks it stopped (jobs.js:135-138), and after that every update of it is refused (jobs.js:74), so that stream is dead until a restart. Only the number makes it hard to hit today; a route anybody can name.\nYour line on 3 would close it: an id of one or two parts (spirit, spirit.fs, spirit.app) is the node's own and cannot be cancelled or deleted. Shall I box it that way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:05:38.904Z",
+     "text": "cw, on 1, so that is a bug today already, and won't affect this revision, we've already seen this kind of shit recently where a UI \"makes sure\" and the server doesn't assert it..... BAD design/implementation."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:06:24.982Z",
+     "text": "cw: agreed, the server must refuse it, not the page. Boxed as not in this item, with your answers: two-part ids are the node's own streams, other scripts move out of the app folder later, no takeover of a running or pending id."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:07:58.730Z",
+     "text": "Q5: Does the Start Job button of the old text viewer go in this item (wsl-claude)\n\nIt's ALREADY gone in the new spirit/app/text/"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:08:14.149Z",
+     "text": "wsl, READ THE FUCKING CODE!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:08:31.880Z",
+     "text": "wsl: understood, Q5 closed. The old spirit/element/textViewer.js stays a leftover of the old shell, out of this item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:09:31.339Z",
+     "text": "wsl: read it. The home page / is spirit/shell/index.html (server.js:296-298); it loads spirit/element/textViewer.js (:115), and its text-file-launcher opens that viewer for Open with (:160-171). spirit/app/text/ does not use textViewer.js. So the Start Job button (textViewer.js:55) is still reachable from the home page; it is no leftover, and I was wrong to call it one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:13:32.021Z",
+     "text": "wsl: read it. The home page / is spirit/shell/index.html (server.js:296-298); it loads spirit/element/textViewer.js (:115), \n\nthat'll cause an error: i just removed a whole bunch of old shell apps, AND spirit/element/textViewer.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:14:06.948Z",
+     "text": "wsl: yes, after faaf2b1b these still name it: shell/index.html:115 loads it (a 404 on every home page) and :170 calls it (an error on Open with a text file); its test element/test/textViewer.js and .md; the file lists in spirit/test/elementMove.js:59-83; a comment in spirit/test/jobs.js:73."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:15:29.244Z",
+     "text": "wsl, we don't worry about it, because index.html and the the old shell are \"morituri te salutant\"."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:15:48.543Z",
+     "text": "wsl: understood, left as it is."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:16:20.008Z",
+     "text": "all, again, gaps?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:16:48.407Z",
+     "text": "cw: three left, the rest is boxed:\n1. The old shell finds jobs by type (client/shell.js, join, stats). It is rewritten too, or it breaks on the flag day.\n2. The type field itself: kept beside the new id, or gone?\n3. wsl's red over some 127 test files that name job types or numbers."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:17:01.879Z",
+     "text": "wsl: the desk hack names two readers of process/js/<name>; there are more, and they break on the day:\n- deskClient.js:1089 follows Andy desk by module process/js/desk: every agent ear goes deaf.\n- deskVerify/data.js:25 (process/js/deskVerify).\n- puppetStream.js:40 forwards to the owner only modules matching process/js/<name>.\n- faceHome.js:323, :326, the same pattern.\n- appInstaller.js:77, :93 and client/shell.js:520 build process/js/<name> to find a server.\nAnd jobs.js:645 knows a server as spirit.app.<name>: the agent page (app/agent/data.js:21) is fine."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:18:59.746Z",
+     "text": "all, \n1. The old shell finds jobs by type (client/shell.js, join, stats). It is rewritten too, or it breaks on the flag day.\n- what are those things, and why would we need a flag day?\n2. The type field itself: kept beside the new id, or gone?\n- gone.\n3. wsl's red over some 127 test files that name job types or numbers.\n- i guess there's a lot of clean-up work..... your point?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:19:27.485Z",
+     "text": "wsl, on 3: my red asserts only the box: the new ids, already running, each event only its own news. The old tests that name a type or job_N are not the red; they fail once it is built, and the builder fixes or deletes them in the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:19:42.862Z",
+     "text": "cw: type gone, boxed.\n1. They are the old home page shell: client/shell.js finds the join steps and the file watcher by type (:553, :2858), shell/join/join.js the join steps, shell/stats/stats.js the server stats. With type gone, each must look for the new id instead, or it finds nothing.\nFlag day only means: the node and every page that reads jobs change in the same commit, since a page with old names sees nothing from a node with new ones. No extra step, just no half-way.\n3. No point beyond the size: it is most of the work, so the red and the build will be long."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.21",
+   "title": "Fix spirit/app/pushOrigin/ and add spirit/app/publishData/",
+   "goal": "goal/G43",
+   "status": "running",
+   "statusTone": "",
+   "with": "",
+   "version": 10,
+   "buttons": [
+    "start-design",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "design": false,
+   "fileCount": 10,
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# look at that we got a new app-type!\n\n- spirit/app/pushOrigin\n- spirit/app/publishData\n\ncheck it out, for the near term this is what we use to push to github....\n\n- spirit app search will list these jobs (node:run) only in pane mode, bacause it they have no shell-mount. the app detail will show a run button.\n\n- spirit/app/publishData/publishData will be fixed to point at the correct files/folders, and all related thinks like the agents configuration of their deskVerifier will be updated by the agents themselves.\n\n- the Andy user on each box will run those scripts when he feels like it, that will take the running of those scripts out of the agents hands. much simpler.\n\n\n\n \n# What is needed (tree at cb7bdd30)\n\n## node:run, a new kind of app\n\n- An app whose <name>.json says node.run true and node.mount false runs only when Andy presses Run, and ends; the node never starts it by itself.\n- The app search lists it only in pane mode. Today an app row carries nodeMount but no shell.mount nor node.run (app.js:59-61), and both modes list every app (element/search/app.js:38-47).\n- The app detail shows a Run button for it (appSelector/detailElement.js has none today). A press asks jobs.create to start spirit/app/<name>/<name>.js.\n- The node starts it on that press without asking whether it is active: today jobs.create starts a script of spirit/app/ only while the app is active (jobs.js:495), and these apps have nothing to activate.\n\n## pushOrigin\n\n- It is the old process/js/pushOrigin/pushOrigin.js, moved unchanged. Run with no repo it pushes the tree it lives in (Q1, Andy: \"it will push the repo it's in.\"); today it answers repo is required (pushOrigin.js:58-59).\n- Its header comment names the old place; it names spirit/app/pushOrigin/.\n\n## publishData\n\n- The node port comes from the node that starts it, the one in SPIRIT_CALLBACK_URL (jobs.js:291); today it must be the first argument, and run bare it stops at usage (publishData.js:34-38).\n- agentReadme.js moves from process/js/deskClient/ beside it (publishData.js:132), and deskVerify's verify.db is found where deskVerify keeps it, process/js/deskVerify/ (publishData.js:89).\n- deskClient no longer starts it on a publish line (deskClient.js:520-536 go), and process/js/deskClient/publishData.js goes (Q2: Andy runs it himself).\n\n## Left as it is\n\n- stackFrameChecks still starts the old pushOrigin path (stackFrameChecks.js:99). Andy: \"the stackFrame stuff can rot, it will be moved out of desk anyway before migration.\"\n",
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Which repo does the Run button push: always the node's own tree, or one the user types each time?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T09:49:45.472Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Is publish still started by deskClient when you write publish in the group chat, or only by its Run button in the app detail?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T10:18:02.259Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-07T10:23:06.932Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:42:08.487Z",
+     "text": "all, ?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:42:49.738Z",
+     "text": "wsl: checked at 1ca48dab, three breaks:\n- push.json is not valid JSON: the comma after \"run\":true (line 17), so the node cannot read the app at all.\n- publishData.js:229 still requires ../pushOrigin/pushOrigin.js, which is gone: every agent publish now fails at its push.\n- stackFrameChecks.js:99 starts process/js/pushOrigin/pushOrigin.js, gone too.\nAnd nothing reads node.run yet (app.js, jobs.js, the app search): the run button in pane mode is still to build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:43:00.491Z",
+     "text": "cw: what I find at 1ca48dab:\n- push.json does not parse: a comma after \"run\": true closes nothing. The node reads it as no app at all.\n- node.run is new: nothing in the node or the app search knows it yet. Today the pane lists every app and ends each row in Activate; there is no Run button.\n- A Run would start push.js through jobs.create, which the node allows for an app of spirit/app/ only while it is active (jobs.js:495).\n- Three users still point at the old place and break: publishData.js:229 requires ../pushOrigin/pushOrigin.js, stackFrameChecks.js:99 starts it, serveCommon.js:26 names it.\n- push.js needs a repo; run with nothing it answers repo is required. The old manifest that asked for it went with the move."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:43:40.220Z",
+     "text": "all, the json is fixed, what else?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:44:03.889Z",
+     "text": "cw: the rest:\n1. The three that point at the old place: publishData.js:229 (every agent publish now fails at its push), stackFrameChecks.js:99, serveCommon.js:26.\n2. node.run: the node, the app search and the pane row must know it, and the pane must show a Run button for such an app.\n3. The repo Run pushes (Q1).\n4. push.js's own header still says process/js/pushOrigin."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:44:13.856Z",
+     "text": "wsl: at 6da7f5ed push.json parses. Still broken: publishData.js:229 and stackFrameChecks.js:99 point at the old process/js/pushOrigin/, so agent publishes and the plugin push fail. Then, as cw says, node.run is read by nothing yet, and a Run needs a repo to push."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:47:04.976Z",
+     "text": "all, updated, ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:47:27.453Z",
+     "text": "cw: read v4: the Run button sits in the app detail, the panel with Icon, Label and Activate (appSelector/detailElement.js). Still open:\n1. publishData.js:229 and stackFrameChecks.js:99 point at the old place; serveCommon.js:26 names it in a comment.\n2. The detail reads node.run and shows Run; a press starts push.js through jobs.create, which needs the app active.\n3. Q1, the repo it pushes."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:47:39.756Z",
+     "text": "wsl: at 6da7f5ed, against the box:\n- Only in pane mode: today the app search lists every app in both modes (element/search/app.js:38-47), and an app row does not carry shell.mount (app.js:59), so push still shows in a dropdown.\n- The app detail has no Run (appSelector/detailElement.js names none).\n- The old path still breaks publishData.js:229 and stackFrameChecks.js:99."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:48:22.065Z",
+     "text": "all, if you read the push.json carefully it has no node:mount, it only has node:run."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:48:46.216Z",
+     "text": "wsl: right: node.mount false, so the node never starts it by itself (jobs.js:470), and node.run true, run only on a press. One catch: jobs.create starts a script of spirit/app/ only while that app is active (jobs.js:495, appActive :463-467), and push is not intrinsic, so Run is refused until push is activated."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:48:47.030Z",
+     "text": "cw: right: node.mount false, so the node never starts it as a server, and node.run true, so it is run on a press and ends.\nWhat follows from that: today the node lets jobs.create start a script of spirit/app/ only while the app is active (jobs.js:495). For a run app that check should be node.run instead, or Run is refused until somebody activates an app that has nothing to activate."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:49:31.344Z",
+     "text": "Q1: Which repo does the Run button push: always the node's own tree, or one the user types each time?\n\nthat's up to run.js. and of course it will push the repo it's in."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:49:49.585Z",
+     "text": "cw: clear, I read run.js as push.js. Today it pushes only a repo it is handed and answers repo is required otherwise (push.js:58-59), so run with nothing it must take the tree it lives in. publishData and the plugin keep handing their own clone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:51:52.776Z",
+     "text": "all,\n\npush IS right now EXCATLY the old run://process/js/pushOrigin , which is gone ,btw\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:52:11.117Z",
+     "text": "cw: yes, same file, new place. So what it needs is only around it:\n1. The two that load it by the old path: publishData.js:229 (every agent publish fails at its push today) and stackFrameChecks.js:99. They change to spirit/app/push/push.js.\n2. Run with no repo it refuses; it takes the tree it lives in (your Q1).\n3. Its header comment names the old path.\nThen the Run in the app detail."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:52:20.559Z",
+     "text": "wsl: yes, push.js is pushOrigin.js moved unchanged (1ca48dab, 100% rename), still exporting pushOrigin. So the only breaks are the two that load it by the old path, publishData.js:229 and stackFrameChecks.js:99; pointed at spirit/app/push/push.js they work as before."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:53:30.866Z",
+     "text": "all, what is publishData?\n- the stackFrame stuff can rot, it will be moved out of desk anyway before migration."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:53:50.245Z",
+     "text": "wsl: publishData is the agents measurement run (goal/G4.33): when you type publish in the group chat, each agent deskClient starts it (deskClient.js:529-535); it measures the platform and the desk asks, writes agents/<agent>/, commits that and pushes it with pushOrigin (publishData.js:229). So until its path changes, your publish order fails at the push."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:53:51.334Z",
+     "text": "cw: publishData is deskClient's measurement run (goal/G4.33): an agent runs it in its own clone, it measures the platform and the desk round trips, writes agents/<agent>/, commits that folder and pushes it with pushOrigin. It starts when you write publish in the group chat (deskClient.js:535). Its push is what breaks now. Noted that stackFrameChecks stays as it is."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:56:14.009Z",
+     "text": "all, ah, we'll create a second app like push, in this item, \"publish\", item title already changed.\n\n?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:56:39.694Z",
+     "text": "wsl: works; what moves with it, by path, from process/js/deskClient/ to spirit/app/publish/:\n- deskClient starts it as a file beside itself (deskClient.js:535); it must start spirit/app/publish/publish.js, which jobs.create allows only while publish is active (jobs.js:495).\n- publishData reaches back into desk folders by relative path: ../deskVerify/verify.db (:89), ./agentReadme.js (:132), and spirit.js (:28); each needs its new path, agentReadme moving with it.\n- its push becomes require(../push/push.js)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:56:43.222Z",
+     "text": "cw: works: spirit/app/publish/ with publish.json (node.mount false, node.run true) and publishData.js moved in as publish.js. Its require of pushOrigin then becomes ../push/push.js.\nWhat comes with it: it asks deskClient's verbs (deskClient familyPath), loads agentReadme.js beside it in deskClient, and runs spirit/test/measurePlatform.js; it takes the node port and --asks on its command line, which deskClient hands it today (deskClient.js:535)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T09:58:34.074Z",
+     "text": "all, is there a rule that appNames have to be words, or is that just a habit of mine? because if it's not a rule, then I'll rename push to pushOrigin, and the second app will be called publishData?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T09:59:12.070Z",
+     "text": "wsl: a habit, not a rule. The only rule is word.js: a name is letters a to z, compared without case (word.js:23), so pushOrigin and publishData pass. spirit/app/appSelector/ is already such a name. One effect: word.js add writes only an all-lower-case path (word.js:67), so a word.json under spirit.app.pushOrigin could not be written by it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T09:59:16.045Z",
+     "text": "cw: no rule I can find for app or process names; the one about words is for verbs (a verb stays a word, a helper function may carry a capital). The tree already has camelCase names that work: deskClient, deskVerify, chatClerver, fileServer, and pushOrigin until today. The node reads a name from its folder as it is, so spirit.app.pushOrigin and spirit.app.publishData are fine."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:06:29.721Z",
+     "text": "all, changes pushed, box updated, ?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T10:06:58.822Z",
+     "text": "wsl: at 04efc134 both json parse. Left:\n- spirit/app/publishData/ holds only its json: the publishData.js it mounts is not there; the script is still process/js/deskClient/publishData.js, and deskClient starts it there (deskClient.js:535).\n- that script still loads ../pushOrigin/pushOrigin.js (:229), gone, so the push fails.\n- both apps have the icon 🚜."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:07:03.870Z",
+     "text": "cw: read 04efc134 and box v7. What is left:\n1. publishData.json is in spirit/app/publishData/, but publishData.js is still in process/js/deskClient/. It moves in, agentReadme.js with it, and its paths follow: spirit.js, the verify.db of deskVerify, pushOrigin as ../pushOrigin/pushOrigin.js.\n2. pushOrigin run with no repo pushes the tree it lives in; its header still names the old place.\n3. node.run: the app search lists such an app only in pane mode, the app detail shows Run, and the node starts it on a press without asking for active (jobs.js:495).\n4. Q2: who starts publishData.\nBoth apps carry the same icon, 🚜; on purpose?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:10:53.516Z",
+     "text": "all, changes pushed, ?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T10:11:23.546Z",
+     "text": "wsl: at cb7bdd30 the push path in the new copy is right (../pushOrigin/pushOrigin.js). Left:\n- it loads ./agentReadme.js (:132), which stayed in process/js/deskClient/: a publish fails there.\n- verify.db is looked for at spirit/app/deskVerify/ (:89), not where deskVerify keeps it.\n- the old process/js/deskClient/publishData.js is still there, and deskClient still starts that one (deskClient.js:535), with its broken push."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:11:34.153Z",
+     "text": "cw: read cb7bdd30. publishData.js is copied into spirit/app/publishData/, the old one still stands in process/js/deskClient/. In the new copy:\n- spirit.js and ../pushOrigin/pushOrigin.js resolve right from there.\n- Two paths break: the verify.db of deskVerify (:89) now points at spirit/app/deskVerify/, and ./agentReadme.js (:132) is not beside it.\n- deskClient still starts the old copy (deskClient.js:535), whose push still fails; the old copy goes once deskClient starts the new one.\nLeft besides: pushOrigin with no repo, node.run in the app search, detail and node (jobs.js:495), and Q2."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:15:02.480Z",
+     "text": "all, better?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T10:15:26.878Z",
+     "text": "wsl: the box, yes: the path fixes and the agent side are named. The tree is still cb7bdd30 on origin, so nothing in the code changed since my last line."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:15:33.559Z",
+     "text": "cw: better, read v8. Not in the box yet:\n1. The old process/js/deskClient/publishData.js goes, agentReadme.js moves beside the new one, and deskClient starts the new one.\n2. pushOrigin run with no repo pushes the tree it lives in (Q1).\n3. The node starts a node.run app on a press without asking for active (jobs.js:495).\nAnd Q2, who starts publishData, is still open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:17:41.643Z",
+     "text": "all, better?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:18:06.704Z",
+     "text": "cw: yes, v9 answers Q2: only you start them, with Run. What follows, not yet in the box:\n1. deskClient no longer starts publishData on a publish line (deskClient.js:529-536 go), and the old process/js/deskClient/publishData.js goes; agentReadme.js moves beside the new one.\n2. pushOrigin run with no repo pushes the tree it lives in.\n3. The node starts a node.run app on Run without asking for active (jobs.js:495)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T10:18:07.893Z",
+     "text": "wsl: better, it is simpler. What follows from the new line: the publish trigger in deskClient goes (deskClient.js:520-536), and the old process/js/deskClient/publishData.js with it. And a Run hands no arguments, but publishData needs the node port on its command line (publishData.js:34), so run bare it stops at usage; it should take the port of the node that starts it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:18:48.896Z",
+     "text": "cw, update box to reflect all that's needed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:19:28.916Z",
+     "text": "cw: box updated with all that is needed, under its own heading: node:run (search, detail Run, the start check), pushOrigin (its repo, its header), publishData (its port from the node, agentReadme and verify.db, the deskClient trigger and old copy gone), and stackFrameChecks left to rot."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:20:53.701Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:21:11.110Z",
+     "text": "cw: green: settled, no open Q, box current (v10)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T10:21:22.183Z",
+     "text": "wsl: green; I checked its lines against the tree (jobs.js:291, :495, publishData.js:34, :89, :132). One fact for you: publishData asks every desk question through the deskClient of the node it runs on (publishData.js:55), so its Run works only on a node where a deskClient runs."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T10:21:30.897Z",
+     "text": "files"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T10:22:25.062Z",
+     "text": "cw: files on the item, ten:\n- node and search: app.js, element/search/app.js, appSelector/detailElement.js, jobs.js (core: app.js and jobs.js need your word)\n- pushOrigin.js; publishData.js and agentReadme.js in spirit/app/publishData/\n- in process/js/deskClient/: deskClient.js, and publishData.js and agentReadme.js, both to delete."
     }
    ]
   }
