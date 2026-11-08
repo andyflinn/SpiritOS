@@ -67,3 +67,18 @@ Andy: *"on the list search item.search, these two filters: [Current Goal Only] a
 - At open, [Current Goal Only] alone is on, the first search asks for the current goal, and the current goal and its item show. No push from the stream is needed for that: a search answer asked with `currentGoalOnly` holds the current goal.
 - [Goals Only] pressed turns [Current Goal Only] off, and the other way round. The search and the rows follow.
 - Pressed again, both are off, and every goal's items show.
+
+## Requirements: an item's details open every time
+
+Andy: "after i closed "Fix api branches" the other items won't open for me", "all i see, when opening another item is the
+titlebar of that item".
+
+1. Every item opens in the one details layer, every rule in the one rule layer. A closed layer is hidden, not destroyed
+   (spirit/element/panel.js), and the details find their parts by id. So a second layer of the same kind drew into the
+   first one's hidden parts and showed its title bar alone.
+2. Opening another row fills that layer again with that row, under its title.
+
+## What its test must try to break
+
+- In a real browser on a scratch node, with desk switched on, a goal and two items: the first item opened, closed with its
+  ✕, then the second opened. The second must draw its own details, and there must be one layer, not two.

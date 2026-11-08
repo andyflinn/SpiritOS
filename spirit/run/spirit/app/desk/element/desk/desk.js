@@ -49,14 +49,20 @@ function deskHear(fn) {
   }
   return function () { var i = deskHeard.indexOf(fn); if (i !== -1) deskHeard.splice(i, 1); };
 }
-// A dialog over the page: the element at file, made in a layer keyed by what it shows; its close answers the dialog.
+// A dialog over the page: the element at file, made in a layer of its own kind; its close answers the dialog.
+// ONE LAYER PER KIND, FILLED AGAIN FOR EACH ROW (Andy: "after i closed "Fix api branches" the other items won't open for me",
+// "all i see, when opening another item is the titlebar of that item"): a closed layer is hidden, not destroyed (panel.js,
+// goal/G43.17 Q2/Q3), and the details find their parts by id on the page, so a second layer of the same kind drew into the
+// first one's hidden parts and showed only its title bar. So every item opens in the one 'item' layer, every rule in the
+// one 'rule' layer, and opening another row fills that layer again with it.
+var deskPanes = {};
 function deskDialog(key, label, file, element, params) {
   var S = window.spirit;
   return new Promise(function (resolve) {
     var layer = null;
-    var spec = { icon: '🗂️', label: label, fill: function (pane, closed) {
+    var made = null;
+    function fillWith(pane) {
       return S.require(file).then(function () {
-        if (closed()) return null;
         // The dialog asks through the page's own way to the node; its close and its title are its layer's.
         var via = Object.assign({}, deskVia, {
           closeDialog: function (result) { if (layer && typeof layer.hide === 'function') layer.hide(); resolve(result || {}); },
@@ -64,9 +70,23 @@ function deskDialog(key, label, file, element, params) {
         });
         return S.elements[element].create(pane, Object.assign({}, params, { via: via }));
       });
+    }
+    var spec = { icon: '🗂️', label: label, fill: function (pane, closed) {
+      deskPanes[key] = pane;
+      made = fillWith(pane);
+      return made.then(function (m) { return closed() ? null : m; });
     } };
     var opened = typeof deskOpts.open === 'function' ? deskOpts.open(key, spec) : (deskStack ? deskStack.open(key, spec) : null);
-    Promise.resolve(opened).then(function (l) { layer = l; if (layer && typeof layer.show === 'function') layer.show(); });
+    Promise.resolve(opened).then(function (l) {
+      layer = l;
+      if (!layer) return;
+      // The layer was there already: shown as it was left, so it is filled again with this row, under this row's title.
+      if (!made && deskPanes[key]) {
+        if (typeof layer.set === 'function') layer.set({ icon: '🗂️', label: label });
+        fillWith(deskPanes[key]);
+      }
+      if (typeof layer.show === 'function') layer.show();
+    });
   });
 }
 var deskVia = {
@@ -74,8 +94,8 @@ var deskVia = {
   escapeHtml: function (t) { return window.spirit.escapeHtml(t); },
   onPublished: function (fn) { return deskHear(fn); },
   callDialog: function (target, params) {
-    if (/deskDetails$/.test(target)) return deskDialog('item/' + String(params && params.id), String(params && params.id), 'spirit/app/desk/element/deskDetails/deskDetails.js', 'deskDetails', params);
-    return deskDialog('rule/' + String(params && params.key), String(params && params.key), 'shell/ruleDetails/ruleDetails.js', 'ruleDetails', params);
+    if (/deskDetails$/.test(target)) return deskDialog('item', String(params && params.id), 'spirit/app/desk/element/deskDetails/deskDetails.js', 'deskDetails', params);
+    return deskDialog('rule', String(params && params.key), 'shell/ruleDetails/ruleDetails.js', 'ruleDetails', params);
   },
 };
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the

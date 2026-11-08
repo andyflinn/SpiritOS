@@ -363,6 +363,59 @@ async function twoPress(w, find, armedSays, wantPress, what) {
     }
   }
 
+  // ── ANOTHER ITEM OPENS AFTER ONE WAS CLOSED, IN A REAL BROWSER ────────────────────────────────────────────
+  // Andy: "after i closed "Fix api branches" the other items won't open for me", "all i see, when opening another item is the
+  // titlebar of that item". A scratch node with desk switched on, a goal and two items; the Desk element on its face page:
+  // the first item opened and closed with its ✕, then the second opened, which must draw its own details in the one layer.
+  test.subHeading('another item opens with its details after one was opened and closed');
+  {
+    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const chrome = H.findChrome();
+    if (!chrome) test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name');
+    else {
+      const node = await H.scratchNode();
+      let page = null;
+      try {
+        page = node.up ? await H.chromePage(chrome) : null;
+        if (!page || page.error) test.fail(page ? page.error : 'the scratch node did not come up');
+        else {
+          await page.send('Page.navigate', { url: node.base + '/face.html' });
+          await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.require)').then(Boolean); }, H.WAIT);
+          const call = function (verb, args) {
+            return page.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(" + JSON.stringify({ call: verb, args: args }) + ") }).then(function (r) { return r.text(); })")
+              .then(function (t) { try { return JSON.parse(t); } catch (e) { return {}; } });
+          };
+          await call('app.active', { key: 'desk', active: true });
+          await H.until(function () { return call('desk.items.search', { text: '' }).then(function (r) { return r.ok !== false; }); }, 40000);
+          const g = await call('desk.goal.add', { title: 'Opening goal' });
+          await call('desk.press', { id: g.id, what: 'make-current' });
+          const one = await call('desk.item.add', { goal: g.id, title: 'First opened item', blocks: '' });
+          const two = await call('desk.item.add', { goal: g.id, title: 'Second opened item', blocks: '' });
+          ok(!!g.id && !!one.id && !!two.id, 'the world: a goal and two items on the scratch desk', 'added ' + JSON.stringify([g, one, two]));
+          await page.evaluate("(function () { var d = document.createElement('div'); d.id = 'zzDesk'; d.style.height = '800px'; document.body.appendChild(d); return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {}); return true; }); })()");
+          const open = function (title) { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk *')).filter(function (x) { return x.textContent.indexOf(" + JSON.stringify(title) + ") !== -1 && !x.closest('.app-container'); }); if (!all.length) return false; all[all.length - 1].click(); return true; })()"); };
+          const shown = function () { return page.evaluate("(function () { var all = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')); var b = all.filter(function (x) { return x.style.display !== 'none'; }).pop(); var body = b && b.querySelector('#dd-body'); return JSON.stringify({ layers: all.length, drawn: !!body && body.children.length > 0, text: b ? b.textContent : '' }); })()").then(JSON.parse); };
+          await H.until(function () { return page.evaluate("document.getElementById('zzDesk').textContent.indexOf('Second opened item') !== -1"); }, H.WAIT);
+          ok(await open('First opened item'), 'the world: the first item\'s row is in the List', 'no row for the first item');
+          await H.until(function () { return shown().then(function (s) { return s.drawn; }); }, H.WAIT);
+          const first = await shown();
+          ok(first.drawn && first.text.indexOf(one.id) !== -1, 'the first item opens with its details', 'the first: ' + JSON.stringify(first).slice(0, 200));
+          await page.evaluate("(function () { var b = Array.prototype.slice.call(document.querySelectorAll('#zzDesk .app-container')).filter(function (x) { return x.style.display !== 'none'; }).pop(); b.querySelector('.app-container-close').click(); return true; })()");
+          ok(await open('Second opened item'), 'the world: the second item\'s row is in the List', 'no row for the second item');
+          await H.until(function () { return shown().then(function (s) { return s.drawn && s.text.indexOf(two.id) !== -1; }); }, H.WAIT);
+          const second = await shown();
+          ok(second.drawn && second.text.indexOf(two.id) !== -1, 'after it was closed, the second item opens with its own details, not its title bar alone', 'the second: ' + JSON.stringify(second).slice(0, 200));
+          ok(second.layers === 1, 'every item opens in the one details layer', second.layers + ' layers');
+        }
+      } finally {
+        if (page && page.kid) page.kid.kill();
+        if (node.child) node.child.kill();
+        try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+        try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+      }
+    }
+  }
+
   test.subHeading('goal/G41.11: every list of Desk stands in a box of a stated size (rule/16)');
   // Andy, on G41.11: "the rules list is NOT placed properly in a size-limited container.... is this the same everywhere
   // in desk?" rule/16: every probabilitySearch is mounted in a box that states its size, class fill, inside a pane that
