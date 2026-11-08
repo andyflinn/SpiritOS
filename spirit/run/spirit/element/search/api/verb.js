@@ -49,7 +49,7 @@
         all: 'All Verbs',
         data: own ? window.spirit.data.node.data.verbsBranch : undefined,
         rows: own ? undefined : rows,
-        filters: own ? [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server && offered(row.name) ? 1 : 0; } }] : [],
+        filters: own ? [{ name: 'family', when: function () { return false; }, test: function (row) { return row && row.family === server ? 1 : 0; } }] : [],
         columns: [{ field: 'name' }],
         name: function (row) { return row.name; },
         pick: function (row, key) {
