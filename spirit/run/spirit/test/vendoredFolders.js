@@ -41,7 +41,8 @@ before.forEach(function (f) {
   const there = fs.existsSync(path.join(REPO, to)) && tracked.indexOf(to) !== -1;
   if (!there) { test.fail(to + ' is not there, in git'); return; }
   if (f === OLD + 'chokidar/index.js') { test.check(to + ' is there, in git (its one changed line judged under 2)'); return; }
-  const same = fs.readFileSync(path.join(REPO, to)).equals(execSync('git show ' + BASE + ':' + f, { cwd: REPO, maxBuffer: 1 << 26 }));
+  // Line ends aside: a Windows checkout (autocrlf) holds CRLF on disk where git holds LF.
+  const same = fs.readFileSync(path.join(REPO, to), 'latin1').replace(/\r\n/g, '\n') === execSync('git show ' + BASE + ':' + f, { cwd: REPO, maxBuffer: 1 << 26 }).toString('latin1').replace(/\r\n/g, '\n');
   ok(same, to + ' is there, in git, as it was', to + ' differs from ' + f + ' at ' + BASE);
 });
 ['chokidar', 'readdirp'].forEach(function (n) {
@@ -55,8 +56,8 @@ ok(!stillTracked.length, 'no tracked file is left under spirit/run/node_modules/
 
 test.subHeading('2. chokidar finds readdirp by path, the one line changed in the library');
 const idxNew = path.join(REPO, NEW, 'chokidar', 'index.js');
-const now = fs.existsSync(idxNew) ? fs.readFileSync(idxNew, 'utf8').split('\n') : [];
-const was = execSync('git show ' + BASE + ':' + OLD + 'chokidar/index.js', { cwd: REPO, encoding: 'utf8' }).split('\n');
+const now = fs.existsSync(idxNew) ? fs.readFileSync(idxNew, 'utf8').split(/\r?\n/) : [];
+const was = execSync('git show ' + BASE + ':' + OLD + 'chokidar/index.js', { cwd: REPO, encoding: 'utf8' }).split(/\r?\n/);
 ok(/from\s+['"]readdirp['"]/.test(was[5] || ''), 'the world: index.js:6 at ' + BASE + ' imports readdirp by name', 'index.js:6 at ' + BASE + ' reads ' + short(was[5]));
 ok(/from\s+['"]\.\.\/readdirp\/index\.js['"]/.test(now[5] || ''), 'spirit/jobs/chokidar/index.js:6 imports from "../readdirp/index.js"', 'index.js:6 reads ' + short(now[5] || '(no file)'));
 const differ = now.length ? was.map(function (l, i) { return l === now[i] ? -1 : i + 1; }).filter(function (i) { return i !== -1; }) : ['no file'];
