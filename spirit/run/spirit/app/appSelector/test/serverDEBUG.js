@@ -30,10 +30,10 @@ function scratch() {
     .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
   const run = path.join(root, 'spirit', 'run');
   const dir = path.join(run, 'spirit', 'app', NAME);
-  fs.mkdirSync(path.join(dir, 'api'), { recursive: true });
+  fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, NAME + '.json'), JSON.stringify({ identity: { icon: '🐛', label: LABEL, intrinsic: false }, mount: { [NAME + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }));
   fs.writeFileSync(path.join(dir, NAME + '.js'), "'use strict';\nif (typeof window === 'undefined') {\n  require('../../../spirit.js');\n  require('../../appServer.js').serve({ pid: { request: {}, reply: {}, handler: function () { return { pid: process.pid }; } } }, {});\n}\n");
-  fs.writeFileSync(path.join(dir, 'api', 'api.js'), 'module.exports = { verbs: { pid: {} } };\n');
+  fs.writeFileSync(path.join(dir, 'api.js'), 'module.exports = { verbs: { pid: {} } };\n');
   return { root: root, run: run };
 }
 async function call(base, verb, args) {

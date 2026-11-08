@@ -45,7 +45,7 @@ test.startTest('caches: every family has a data.js, one code in the browser and 
 // The api tree's families are their interfaces: an app's at spirit.familyPath(name), and the node's own,
 // spirit/<name>/api.js (spirit.js, interfaceName). A test folder's api.js is a test, not a family. Every family path is
 // spirit.familyPath's (the appServer test's rule: no file writes one by hand). An app of spirit/app/<name>/ (its
-// interface at ./api/api.js, its manager at ./data.js, goal/G43.12) is found by neither pattern, so the agent app's
+// interface at ./api.js and its manager at ./data.js, beside <name>.js, goal/G43.27) is found by neither pattern, so the agent app's
 // family is not among those counted here.
 test.subHeading('1. every family in the api tree has a data.js in its own folder');
 // An app's family is a process folder whose familyPath is tracked.

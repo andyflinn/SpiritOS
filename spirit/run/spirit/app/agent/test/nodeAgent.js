@@ -31,13 +31,16 @@ test.startTest('agent.js: the agent server');
   if (!fs.existsSync(SERVER)) { test.fail('spirit/app/agent/agent.js is not there'); return; }
   const manifest = readJson(path.join(DIR, 'agent.json')) || {};
   ok(manifest.node && manifest.node.mount === true && !('kind' in manifest) && !('operated' in manifest), 'its manifest says a server the node runs, in the new shape', 'agent.json: ' + short(manifest));
-  // Its family folder is ./api/ (goal/G43.12).
-  const API = path.join(DIR, 'api', 'api.js');
+  // Its family is at its top, beside agent.js, as spirit/<family>/ has it (goal/G43.27), each verb with its <verb>.json.
+  const API = path.join(DIR, 'api.js');
   let family = null;
   try { family = require(API); } catch (e) { family = null; }
   // goal/G43.15, the box: "The agent's own debug verb and its config.json go. Its switch is serverDEBUG, like any server's."
   ok(!!family && !!family.verbs && !('debug' in family.verbs), 'its interface declares no debug verb of its own', path.relative(RUN, API) + ': ' + short(family && family.verbs));
-  ok(!fs.existsSync(path.join(path.dirname(API), 'debug.json')), 'and api/debug.json is gone', 'api/debug.json is still there');
+  ok(!fs.existsSync(path.join(path.dirname(API), 'debug.json')), 'and debug.json is gone', 'debug.json is still there');
+  ok(!fs.existsSync(path.join(DIR, 'api')), 'no ./api/ folder is left (goal/G43.27)', 'spirit/app/agent/api/ is still there');
+  const verbFiles = Object.keys((family && family.verbs) || {}).filter(function (v) { const j = readJson(path.join(DIR, v + '.json')); return j && typeof j.description === 'string' && j.description.length > 0; });
+  ok(!!family && verbFiles.length === Object.keys(family.verbs).length, 'each of its verbs has its <verb>.json with a description: ' + verbFiles.join(', '), 'verb files with a description: ' + verbFiles.join(', ') + ' of ' + short(Object.keys((family && family.verbs) || {})));
 
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-agent-'));
   const state = path.join(scratch, 'state');

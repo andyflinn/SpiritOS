@@ -58,12 +58,9 @@ nothing else drawn; its `destroy()` empties the host. It never falls back to one
   `family.verb`, or the family alone for (ALL). Nothing is granted or read past that table. A path the ID holds already
   is counted done, never said as a refusal; any other refusal is said. No grant is read again: each new one arrives through
   the grants table's watch, and the panel says it arrived (rule/19).
-- **The warnings before a grant** (goal/G30.4; Andy, 2026-10-20: *"the grant screen warns when a grant reaches a verb that
-  carries a warning"*): before granting, it reads the warning of every verb the bundle reaches, `<verb>.warning.txt` in
-  the family's own folder, through that family's `FS.loadFile { path }`; a grant of a whole family reaches every verb of
-  it in the tree, so each one's is read. Any warning found, the owner is asked first (*Before you grant &lt;bundle&gt;:*,
-  each warning as `family.verb: <its words>`, *Grant it anyway?*); declined, nothing is granted and it says *not granted:
-  &lt;bundle&gt;*; agreed, it grants.
+- **No warning before a grant** (goal/G43.27; Andy: *"compare that to giving a linux user root authority, he then can fuck up
+  the whole system, not our problem."*): it reads no `<verb>.warning.txt` and asks the owner nothing; the grant goes out at
+  once. `spirit/auth/grant.warning.txt` is gone.
 
 ### grantsPanel.nodeGrants, the node's own grants table (goal/G43.24)
 

@@ -1,0 +1,3 @@
+{
+  "description": "The agent's provider table, one verb (goal/G41.4): op add, set, delete, get or search, and ask, which fetches the provider's model list and updates the model table ({ models, updated }). A provider's apiKey goes in and never comes out."
+}

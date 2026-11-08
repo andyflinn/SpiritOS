@@ -1,0 +1,3 @@
+{
+  "description": "The agent's model table, one verb (goal/G41.4): op add, set, delete, get or search; a search may name providerId, narrowed to that provider's models."
+}

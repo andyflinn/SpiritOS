@@ -10,7 +10,7 @@ No agents talk to each other through it: each agent sees itself as the only agen
 
 - `spirit/app/agent/nodeAgent.js`, the server. The node starts `agent.js` (`./agent.md`), which loads it.
 - `spirit/app/agent/agent.json`, its manifest, in the new shape: `node.mount` true, no `kind`, no `operated`.
-- `spirit/app/agent/api/api.js`, its interface: one verb per table, provider, model, persona and job; no `debug`
+- `spirit/app/agent/api.js`, its interface, and one `<verb>.json` per verb beside it: one verb per table, provider, model, persona and job; no `debug`
   (goal/G43.15, below).
 
 ## Its state

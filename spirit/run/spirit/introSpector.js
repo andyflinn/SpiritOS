@@ -4,9 +4,9 @@
 // ONE FAMILY FOLDER, READ AND WRITTEN BY ITS OWNER (goal/G10.5, made FS alone by goal/G30.4).
 //
 //   A family folder holds AGENTS.md and one description file per verb (<verb>.json), and whatever its consumers
-//   place there (verb.design.md, README.md, <verb>.warning.txt), and the family's api.js, which spirit.js reads
+//   place there (verb.design.md, README.md), and the family's api.js, which spirit.js reads
 //   (some hold more code beside it: desk's cacheRules.js, a test/ folder). Where it sits: a process server's is
-//   process/js/<name>/family/ (spirit.familyPath), an app of spirit/app/<name>/ has ./api/ (appServer.withAgents),
+//   process/js/<name>/family/ (spirit.familyPath), an app of spirit/app/<name>/ has it at its top (appServer.withAgents, goal/G43.27),
 //   a node family's is spirit/<family>/.
 //
 //   family(folder) answers the folder's FS verbs, FS.<name> with the kernel's fs names and a search, scoped to the

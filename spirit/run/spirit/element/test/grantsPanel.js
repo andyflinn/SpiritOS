@@ -328,33 +328,19 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   press(); await settle();
   ok(/owner-only|owner only/.test(box.innerHTML), 'a grant refused for another reason says so', 'said: ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
 
-  test.subHeading('the warnings before a grant: each verb\'s <verb>.warning.txt, read through its family\'s FS (goal/G30.4)');
-  // Andy, 2026-10-20: "the grant screen warns when a grant reaches a verb that carries a warning".
+  test.subHeading('no warning before a grant (goal/G43.27)');
+  // Andy: "compare that to giving a linux user root authority, he then can fuck up the whole system, not our problem."
   w.warnings['jobs.list'] = 'it lists every job';
   w.confirmAnswer = false;
   at0 = w.calls.length;
   const conf0 = w.confirms.length;
   press(); await settle();
-  const read1 = w.calls.slice(at0).filter(function (c) { return /\.FS\.loadFile$/.test(c.name); });
-  ok(read1.some(function (c) { return c.name === 'jobs.FS.loadFile' && c.args.path === 'list.warning.txt'; }) && read1.some(function (c) { return c.name === 'fs.FS.loadFile' && c.args.path === 'search.warning.txt'; }),
-    'Grant reads the warning of each verb the bundle reaches, <family>.FS.loadFile { path: <verb>.warning.txt }', 'warnings read: ' + short(read1));
-  ok(w.required.indexOf('process/js/jobs/family/api.js') !== -1, 'a server\'s family, not on spirit.ready, is bound through spirit.require(spirit.familyPath(name))', 'required: ' + short(w.required.slice(-4)));
-  const asked = w.confirms.slice(conf0);
-  ok(asked.length === 1 && /^Before you grant Reader:/.test(asked[0]) && asked[0].indexOf('jobs.list: it lists every job') !== -1, 'a verb with a warning: the owner is asked first, the warning in the words of its file', 'asked: ' + short(asked));
-  ok(!w.calls.slice(at0).some(function (c) { return c.name === 'grants.grant'; }) && /not granted: Reader/.test(box.innerHTML), 'asked and declined, nothing is granted and it says so', 'grants: ' + w.calls.slice(at0).filter(function (c) { return c.name === 'grants.grant'; }).length + ', said ' + short(box.innerHTML.replace(/<[^>]*>/g, ' ')));
-  // A grant of a whole family reaches every verb in it, so each one's is read.
-  w.warnings = { 'fs.loadFile': 'it reads any file' };
-  w.confirmAnswer = true;
-  w.bundles[0].value = 8; w.bundles[0].row = { id: 8, label: 'Files' };
-  w.branchesOf[8] = [{ family: 'fs', verb: '' }];
-  at0 = w.calls.length;
-  const conf1 = w.confirms.length;
-  press(); await settle();
-  const read2 = w.calls.slice(at0).filter(function (c) { return c.name === 'fs.FS.loadFile'; }).map(function (c) { return c.args.path; }).sort();
-  ok(JSON.stringify(read2) === '["loadFile.warning.txt","search.warning.txt"]', 'a whole family granted: every verb of it in the tree has its warning read', 'read: ' + short(read2));
-  const asked2 = w.confirms.slice(conf1);
-  ok(asked2.length === 1 && asked2[0].indexOf('fs.loadFile: it reads any file') !== -1 && w.calls.slice(at0).filter(function (c) { return c.name === 'grants.grant' && c.args.path === 'fs'; }).length === 1,
-    'asked and agreed, the family is granted', 'asked ' + short(asked2) + ', grants ' + short(w.calls.slice(at0).filter(function (c) { return c.name === 'grants.grant'; })));
+  const read1 = w.calls.slice(at0).filter(function (c) { return /\.FS\.loadFile$/.test(c.name) && /\.warning\.txt$/.test(String((c.args && c.args.path) || '')); });
+  ok(read1.length === 0, 'Grant reads no <verb>.warning.txt', 'warnings read: ' + short(read1));
+  ok(w.confirms.slice(conf0).length === 0, 'the owner is asked nothing before the grant', 'asked: ' + short(w.confirms.slice(conf0)));
+  ok(w.calls.slice(at0).some(function (c) { return c.name === 'grants.grant'; }), 'the grant goes out at once', 'calls: ' + short(w.calls.slice(at0).map(function (c) { return c.name; })));
+  ok(!/warning\.txt|window\.confirm/.test(fs.readFileSync(path.join(RUN, 'spirit', 'element', 'grantsPanel.js'), 'utf8').replace(/\/\/[^\n]*/g, '')), 'grantsPanel.js holds no warning reading and no confirm', 'grantsPanel.js still reads warnings or confirms');
+  ok(!fs.existsSync(path.join(RUN, 'spirit', 'auth', 'grant.warning.txt')), 'spirit/auth/grant.warning.txt is gone', 'spirit/auth/grant.warning.txt is still there');
   w.warnings = {};
   w.bundles[0].value = 7; w.bundles[0].row = { id: 7, label: 'Reader' };
 

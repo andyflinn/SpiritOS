@@ -96,7 +96,8 @@
     // THE RELAYS THE FORMS OFFER, read when a step is drawn (which is when the job changed): relay.status rows every relay
     // this node lists, its seat, email and face.
     function withRelays(then) {
-      S.outcome(Promise.resolve(S.ready).then(function (s) { return s.relay.status(''); })).then(function (r) {
+      // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
+      Promise.resolve(S.ready).then(function (s) { return s.relay.status(''); }).then(function (r) {
         relays = (r && r.body && Array.isArray(r.body.rows)) ? r.body.rows : [];
       }, function () { relays = []; }).then(function () { if (!gone) then(); });
     }

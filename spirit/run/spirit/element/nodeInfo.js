@@ -12,8 +12,8 @@
 //   - the two things this node answers to anybody who asks (spirit/nodeCard.js), its name and its description: the elements
 //     changeMyLabel and changeMyDescription (goal/G41.6), each holding its field rule, its check as typed and its save. The
 //     card is read with node.card and kept in the node family's cache (goal/G41.28), from which each field draws itself.
-//   - the email form above the face form (joinForm, faceForm; goal/G30.1, G40.10), each over the relays this node holds a
-//     seat on, from relay.status: only a relay where this key holds a row (claimed, or owned) and whose own key is known.
+//   - the email form above the face form (joinForm, faceForm; goal/G30.1, G40.10), from relay.status: the email form always,
+//     over every relay this node lists, the face form only for a seated, starred relay (goal/G43.27).
 //     Andy, 2026-10-19: "for this a little section in the info-app will be enough." and "this UI section in info will have
 //     to address ONE relay specifically." The relays are a probe of every configured mailbox and land when they land; the
 //     fields do not wait for them.
@@ -61,22 +61,22 @@
     function slot(name) { return page.querySelector('[data-info="' + name + '"]'); }
     function say(text) { var s = slot('said'); if (s) s.textContent = text || ''; }
 
-    // Only the relays this node holds a seat on are offered to the two forms: a relay this node merely LISTS has no seat to
-    // apply on.
-    function seats() {
-      return relays.filter(function (row) { return row && (row.claimed || row.owned) && row.roll && row.roll.relayKey; });
-    }
+    // THE EMAIL FORM ALWAYS, THE FACE FORM ONLY FOR A STARRED RELAY (goal/G43.27; Andy: "setting a star on a relay is what
+    // makes the face-form appear in \"info\", the email form must always show in \"info\""): the email form is handed every
+    // relay this node lists, Join where it holds no seat and Change where it does; the face form is handed them too and
+    // offers only a seated, starred one itself (faceForm.offered), hiding its box with none.
     function drawForms() {
       if (gone) return;
       var E = S.element;
-      if (E.joinForm) E.joinForm.mount(slot('email'), { relays: seats(), pick: 'seated' });
-      if (E.faceForm) E.faceForm.mount(slot('face'), { relays: seats(), reload: loadRelays });
+      if (E.joinForm) E.joinForm.mount(slot('email'), { relays: relays });
+      if (E.faceForm) E.faceForm.mount(slot('face'), { relays: relays, reload: loadRelays });
     }
+    // relay.status answers { status, text, body: { rows, ... } } itself (spirit/relay/api.js), so it is read as it comes.
     function loadRelays() {
-      return S.outcome(Promise.resolve(S.ready).then(function (s) { return s.relay.status(''); })).then(function (r) {
+      return Promise.resolve(S.ready).then(function (s) { return s.relay.status(''); }).then(function (r) {
         var said = (r && r.body) || {};
         relays = Array.isArray(said.rows) ? said.rows : [];
-      }).then(function () { return parts.then(drawForms, function () { /* a form missing is not drawn */ }); });
+      }, function () { relays = []; }).then(function () { return parts.then(drawForms, function () { /* a form missing is not drawn */ }); });
     }
 
     // THE ROTATE KEY DIALOG, A LAYER OVER INFO: through the mounter's stack, or nodeInfo's own.

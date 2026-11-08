@@ -329,9 +329,10 @@ function shape(v) {
 //   appServer", "there is a file-size-limit (MAX_PAYLOAD)".
 //
 // SINCE goal/G30.4 THERE IS NO AGENTS VERB: an app's AGENTS.md lives in its
-// family folder (process/js/<name>/family/, or ./api/ for an app of
-// spirit/app/, withAgents below) and is read through the
-// family's FS (FS.loadFile {path: "AGENTS.md"}), an edit being the next read.
+// family folder (process/js/<name>/family/, or the app folder itself for an
+// app of spirit/app/, goal/G43.27, withAgents below) and is read with
+// spirit.fs.loadFile at its path, not through the family's FS (goal/G43.27;
+// Andy: "easily changed, no?"), an edit being the next read.
 // (Andy, 2026-10-20: "cannot the agent simply use FS to retrieve the
 // AGENTS.md file of the verb.json files?")
 // DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:
@@ -772,9 +773,10 @@ function subscribersFromGrants(name) {
 // reaches nothing above it. The manifest stays with the script, so none is in the folder.
 function withAgents(verbs, script) {
   const resolved = path.resolve(String(script || ''));
-  // A SCRIPT OF spirit/app/<name>/ HAS ./api/ (goal/G43.12; Andy: "what is the "family" folder in the old system is now the ./api/folder").
+  // A SCRIPT OF spirit/app/<name>/ HAS ITS FAMILY BESIDE IT, the app folder itself, as spirit/<family>/ has it (goal/G43.27;
+  // Andy: "spirit/app/<name>/ folders are now ALMOST the same shape as spirit/jobs/ ...", "i think the shape needs alignment.").
   const inApp = /^spirit[\/\\]app[\/\\][^\/\\]+$/.test(path.relative(RUN_ROOT, path.dirname(resolved)));
-  const folder = inApp ? 'api' : path.basename(path.dirname(familyPath(path.basename(resolved, '.js'))));
+  const folder = inApp ? '.' : path.basename(path.dirname(familyPath(path.basename(resolved, '.js'))));
   const made = require('./introSpector').family(path.join(path.dirname(resolved), folder), {
     declared: Object.keys(verbs),
   });

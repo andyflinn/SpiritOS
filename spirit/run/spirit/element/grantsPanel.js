@@ -182,22 +182,8 @@
       });
     }
 
-    // THE WARNINGS BEFORE A GRANT (goal/G30.4; Andy, 2026-10-20: "the grant screen warns when a grant reaches a verb that
-    // carries a warning"). A warning is a file in the family's folder, <verb>.warning.txt, read through that family's FS
-    // (FS.loadFile). A grant of a whole family reaches every verb in it, so each one's is read.
-    function warnings(p) {
-      var dot = p.indexOf('.');
-      var family = dot === -1 ? p : p.slice(0, dot);
-      var verbs = dot === -1
-        ? Object.keys((tree && tree[family]) || {}).filter(function (v) { return v.indexOf('AGENTS') !== 0 && v.indexOf('FS.') !== 0; })
-        : [p.slice(dot + 1)];
-      return Promise.all(verbs.map(function (verb) {
-        return ask(family + '.FS.loadFile', { path: verb + '.warning.txt' }).then(function (a) {
-          var w = a && a.body && typeof a.body.text === 'string' ? a.body.text.trim() : '';
-          return w ? family + '.' + verb + ': ' + w : '';
-        }, function () { return ''; });
-      })).then(function (all) { return all.filter(Boolean); });
-    }
+    // NO WARNING BEFORE A GRANT (goal/G43.27; Andy: "compare that to giving a linux user root authority, he then can fuck
+    // up the whole system, not our problem."): the <verb>.warning.txt files and their reading went.
 
     // A BUNDLE'S PATHS, from its branches (goal/G41.14): auth.branch's search on that bundle, each branch family.verb, or
     // the family alone for the empty verb.
@@ -230,9 +216,9 @@
         if (!Object.keys(waiting.want).length) waiting = null;
       });
     }
-    // GRANT: the chosen bundle's branches to the chosen ID, one grant through the grants table per branch, after the
-    // warnings of every path it reaches; a path the ID holds already is counted done; any other refusal is said. Nothing
-    // is read again: each new grant arrives on the stream, one row (rule/19), and is followed above.
+    // GRANT: the chosen bundle's branches to the chosen ID, one grant through the grants table per branch; a path the ID
+    // holds already is counted done; any other refusal is said. Nothing is read again: each new grant arrives on the
+    // stream, one row (rule/19), and is followed above.
     function grantBundle() {
       var id = idSel ? idSel.value : '';
       var bundle = bundleSel ? bundleSel.row : null;
@@ -240,14 +226,9 @@
       var paths = [];
       return bundlePaths(bundle).then(function (got) {
         paths = got;
-        return Promise.all(paths.map(warnings));
-      }, function (e) { say('the bundle could not be read: ' + ((e && e.message) || e), true); return null; }).then(function (lists) {
-        if (!lists) return null;
-        var all = [].concat.apply([], lists);
-        if (all.length && !window.confirm('Before you grant ' + (bundle.label || 'this bundle') + ':\n\n' + all.join('\n\n') + '\n\nGrant it anyway?')) {
-          say('not granted: ' + (bundle.label || 'the bundle'));
-          return null;
-        }
+        return true;
+      }, function (e) { say('the bundle could not be read: ' + ((e && e.message) || e), true); return null; }).then(function (read) {
+        if (!read) return null;
         var done = 0;
         var refused = [];
         var who = (idSel.row && (idSel.row.name || idSel.row[ids.label])) || 'that ID';

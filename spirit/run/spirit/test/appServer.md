@@ -13,8 +13,8 @@ stream"); Desk and deskClient move onto it.
   caller uses it; no other file writes a family path: no `<name>.family`, no `family/api.js`, no join onto `'family'`.
   spirit.js holds the function, since the browser cannot load appServer, and appServer hands out the same one (cw,
   goal/G41.12 Q3); it is the one other file that writes the path.
-- **A script of `spirit/app/<name>/` has `./api/` instead** (goal/G43.12, Andy: *"what is the "family" folder in the old system is
-  now the ./api/folder"*). A client's cache finds such a family's `data.js` beside `<name>.js`. Specified in `./appServerMount.md`.
+- **A script of `spirit/app/<name>/` has its family at its top instead**, `api.js` and one `<verb>.json` per verb beside `<name>.js`, as
+  `spirit/<family>/` has it (goal/G43.27). A client's cache finds such a family's `data.js` beside `<name>.js`. Specified in `./appServerMount.md`.
 - **The family folders are `process/js/<name>/family/`** (backup, chatClerver, desk, deskClient,
   deskVerify, fileServer); no `<name>.family` is left.
 - **deskAgent is killed** (Andy, goal/G41.28: *"all, KILL deskAgent!"*): `process/js/deskAgent/` is gone and no file names

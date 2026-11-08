@@ -12,7 +12,7 @@ is the appServer serializes the cache to disk."*
 
 1. **Every family in the api tree has a data.js**: each family's interface, `process/js/<name>/family/api.js`
    (`spirit.familyPath`) and the node's own `spirit/<name>/api.js`, has `data.js` in its own folder, `process/js/<name>/` or `spirit/<name>/`. Each family
-   is its own check, named by the family. An app of `spirit/app/<name>/` (interface `./api/api.js`, goal/G43.12; the
+   is its own check, named by the family. An app of `spirit/app/<name>/` (interface `./api.js` beside `<name>.js`, goal/G43.27; the
    agent app today) matches neither pattern and is not counted.
 2. **One code**:
    - the data set is one file, `spirit/data.js`: `spirit.js` brings it to a page, appServer requires the

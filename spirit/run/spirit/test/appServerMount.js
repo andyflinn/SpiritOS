@@ -28,16 +28,16 @@ const POSIX = process.platform !== 'win32';
 
 const NAME = 'probe';
 const MODULE = 'spirit.app.' + NAME;
-const NOTE = 'what ./api/ holds';
-const INTERFACE = '// the interface in ./api/';
+const NOTE = 'what the app folder holds';
+const INTERFACE = '// the interface at the top of the app folder';
 // The old folder's name, as the one family path function gives it: the decoy below, and no path of this file's own.
 const OLD_FOLDER = path.basename(path.dirname(familyPath(NAME)));
 
-// THE THROWAWAY APP, written as the box describes one: one file, a split for the page and the node, its folder ./api/, its data.js
+// THE THROWAWAY APP, written as the box describes one: one file, a split for the page and the node, its family at its top (goal/G43.27), its data.js
 // beside it, and a <name>.json without the old kind and operated. Its family/ is a decoy: only process/js has one.
 function plantApp(run, name, mount, intrinsic) {
   const dir = path.join(run, 'spirit', 'app', name);
-  fs.mkdirSync(path.join(dir, 'api'), { recursive: true });
+  fs.mkdirSync(dir, { recursive: true });
   fs.mkdirSync(path.join(dir, OLD_FOLDER), { recursive: true });
   fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify({ identity: Object.assign({ icon: '🧪', label: name }, intrinsic === undefined ? {} : { intrinsic: intrinsic }), mount: { [name + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: mount } }));
   fs.writeFileSync(path.join(dir, name + '.js'), [
@@ -52,8 +52,8 @@ function plantApp(run, name, mount, intrinsic) {
     '}',
   ].join('\n') + '\n');
   fs.writeFileSync(path.join(dir, 'helper.js'), "require('fs').writeFileSync(process.argv[2], 'ran');\n");
-  fs.writeFileSync(path.join(dir, 'api', 'api.js'), INTERFACE + '\nmodule.exports = { verbs: { ping: {} } };\n');
-  fs.writeFileSync(path.join(dir, 'api', 'note.txt'), NOTE);
+  fs.writeFileSync(path.join(dir, 'api.js'), INTERFACE + '\nmodule.exports = { verbs: { ping: {} } };\n');
+  fs.writeFileSync(path.join(dir, 'note.txt'), NOTE);
   fs.writeFileSync(path.join(dir, OLD_FOLDER, 'api.js'), '// the decoy\nmodule.exports = { verbs: { decoy: {} } };\n');
   fs.writeFileSync(path.join(dir, OLD_FOLDER, 'note.txt'), 'the decoy');
   fs.writeFileSync(path.join(dir, 'data.js'), [
@@ -256,15 +256,15 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     if (!first.pid) { test.fail('no server to judge further'); return; }
     ok(alive(Number(first.pid)), 'the world: the pid it gave is a live process', 'the pid it gave is not alive: ' + short(first));
 
-    test.subHeading('the box: "<name> is its family name in the node\'s flat table", "./api/ beside it holds what the family folder holds in the old system"');
+    test.subHeading('the box: "<name> is its family name in the node\'s flat table", its family at the top of the app folder, as spirit/<family>/ has it (goal/G43.27)');
     const tree = (await call(N.base, 'api')).body || {};
     ok(!!tree[NAME] && !!tree[NAME].ping, 'the flat table holds ' + NAME + ' with its verb', 'the flat table: ' + short(Object.keys(tree)) + ', ' + NAME + ': ' + short(tree[NAME]));
     const iface = (await call(N.base, 'api', { family: NAME })).body || {};
-    ok(String(iface.interface || '').indexOf(INTERFACE) !== -1, 'its interface is the api.js in ./api/', 'api {family}: ' + short(iface));
+    ok(String(iface.interface || '').indexOf(INTERFACE) !== -1, 'its interface is the api.js at the top of the app folder', 'api {family}: ' + short(iface));
     const note = (await call(N.base, NAME + '.FS.loadFile', { path: 'note.txt' })).body || {};
-    ok(note.text === NOTE, 'the server\'s own look beside its script finds ./api/, not a family/ folder', 'FS.loadFile note.txt: ' + short(note));
+    ok(note.text === NOTE, 'the server\'s own look beside its script finds the app folder, not a family/ folder', 'FS.loadFile note.txt: ' + short(note));
     const at = (await call(N.base, NAME + '.FS.path', { path: 'api.js' })).body || {};
-    ok(at.path === 'spirit/app/' + NAME + '/api/api.js', 'FS.path names the file in ./api/', 'FS.path api.js: ' + short(at));
+    ok(at.path === 'spirit/app/' + NAME + '/api.js', 'FS.path names the api.js at the top of the app folder', 'FS.path api.js: ' + short(at));
 
     test.subHeading('the box: "Its module id is spirit.app.<name>", "Jobs names it so."');
     const job = await liveJob(N.base, MODULE);

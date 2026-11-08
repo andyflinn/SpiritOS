@@ -9,5 +9,4 @@ family.
 Described to agents: the reads (query, search, peer) and the bundle and
 branch tables (bundle, branch; goal/G41.14). The writes (grant,
 revoke, relabel) have no file here and are closed to agents until a goal opens
-them. `grant.warning.txt` is what the grants panel
-(`spirit/element/grantsPanel.js`) shows before a grant of `auth.grant`.
+them.

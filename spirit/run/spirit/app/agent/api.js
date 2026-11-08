@@ -1,5 +1,6 @@
-// spirit/run/spirit/app/agent/api/: the agent server's family interface. An app of spirit/app/ has it in ./api/
-// (goal/G43.12), where the node's familyDir and appServer's withAgents look first, before spirit.familyPath's process/js folder.
+// spirit/run/spirit/app/agent/api.js: the agent server's family interface. An app of spirit/app/ has it at its top, as a
+// family of spirit/<family>/ does (goal/G43.27), where the node's familyDir and appServer's withAgents look first, before
+// spirit.familyPath's process/js folder.
 // THE agent SERVER'S INTERFACE (goal/G41.1): every verb it serves, each argument with its rule (spirit.js's standard).
 // A verb added to the server is added here, in the same commit. DEBUG is appServer's, not listed here.
 module.exports = {

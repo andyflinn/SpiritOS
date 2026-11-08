@@ -52,6 +52,7 @@ const ROWS = [
   { url: 'https://n.example', label: 'N', claimed: true },
   { url: 'https://b.example', label: 'B', claimed: false, roll: { relayKey: 'RELAYKEY+B==' } },
 ];
+function answered(rows) { return { status: 200, text: '', body: { name: '', rows: rows, ownedUrls: [], claimedUrls: [], mustPick: false, relayStatus: {}, more: false } }; }
 const CARD = { ok: true, name: 'Andy', description: 'a node', key: 'NODEKEY+INFO==' };
 
 function world(o) {
@@ -110,7 +111,8 @@ function world(o) {
   S.relay = { status: function (arg) { w.statuses += 1; w.calls.push({ name: 'relay.status', args: arg });
     if (opt.relaysHeld) return opt.relaysHeld;
     if (opt.relaysRefused) return Promise.reject({ status: 503, body: { ok: false, error: 'no relay answered' } });
-    return Promise.resolve({ rows: (opt.rows || ROWS).slice() }); } };
+    // As the real one answers (spirit/relay/api.js): { status, text, body: { rows, ... } }.
+    return Promise.resolve(answered((opt.rows || ROWS).slice())); } };
   S.ready = Promise.resolve(S);
   S.escapeHtml = function (s) { return String(s).replace(/</g, '&lt;'); };
   S.outcome = function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); };
@@ -205,15 +207,15 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await m3.ready; await settle();
   ok(/node\.card did not answer/.test(silent.slot(h3, 'said').textContent), 'a node that does not answer is said: node.card did not answer', 'said ' + short(silent.slot(h3, 'said').textContent));
 
-  test.subHeading('the two forms, over the relays this node holds a seat on (goal/G30.1, G40.10)');
+  test.subHeading('the two forms: the email form always, the face form only for a starred relay (goal/G43.27)');
   ok(w.statuses === 1 && w.calls.filter(function (c) { return c.name === 'relay.status'; })[0].args === '', 'it asks spirit.relay.status(\'\') once', 'relay.status asked ' + w.statuses + ' times');
   const join = w.forms.filter(function (f) { return f.form === 'join'; }).pop();
   const face = w.forms.filter(function (f) { return f.form === 'face'; }).pop();
   ok(!!join && !!face && join.host === w.slot(host, 'email') && face.host === w.slot(host, 'face'), 'the email form (joinForm) above the face form (faceForm), each in its slot', 'forms: ' + short(w.forms.map(function (f) { return f.form; })));
   if (!join || !face) return;
   const urls = function (f) { return f.o.relays.map(function (r) { return r.url; }).join(','); };
-  ok(urls(join) === 'https://a.example,https://o.example' && urls(face) === urls(join), 'each offered only a relay where this key holds a row (claimed or owned) and whose own key is known', 'join ' + urls(join) + ', face ' + urls(face));
-  ok(join.o.pick === 'seated' && !('escape' in join.o) && !('escape' in face.o), 'the email form picks among the seated; neither form is handed an escape (each escapes with spirit.escapeHtml itself, goal/G43.24)', 'join ' + short({ pick: join.o.pick, escape: 'escape' in join.o }) + ', face escape ' + ('escape' in face.o));
+  ok(urls(join) === ROWS.map(function (r) { return r.url; }).join(',') && urls(face) === urls(join), 'each is handed every relay this node lists, as relay.status answers them in its body (the email form always; the face form picks a seated, starred one itself)', 'join ' + urls(join) + ', face ' + urls(face));
+  ok(!('pick' in join.o) && !('escape' in join.o) && !('escape' in face.o), 'the email form is not narrowed to the seated, so Join shows where no seat is held; neither form is handed an escape (each escapes with spirit.escapeHtml itself, goal/G43.24)', 'join ' + short({ pick: join.o.pick, escape: 'escape' in join.o }) + ', face escape ' + ('escape' in face.o));
   ok(typeof face.o.reload === 'function', 'the face form is handed a reload', 'face: ' + short(Object.keys(face.o)));
   const nForms = w.forms.length;
   await face.o.reload(); await settle();
@@ -226,7 +228,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const m4 = slow.els.nodeInfo.create(h4, {});
   await m4.ready; await settle();
   ok(slow.made.length === 2 && !!(slow.S.data.node && slow.S.data.node.data.card.get()) && slow.forms.length === 0, 'the fields and the card do not wait for the relays', 'fields ' + slow.made.length + ', forms ' + slow.forms.length);
-  letRelays({ rows: ROWS }); await settle();
+  letRelays(answered(ROWS)); await settle();
   ok(slow.forms.length === 2, 'the forms are drawn when the relays land', 'forms ' + slow.forms.length);
   const none = world({ relaysRefused: true });
   const h5 = node('<container>');
@@ -287,7 +289,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const h7 = node('<container>');
   const m7 = late2.els.nodeInfo.create(h7, {});
   await m7.ready; m7.destroy();
-  letRel({ rows: ROWS }); await settle();
+  letRel(answered(ROWS)); await settle();
   ok(late2.forms.length === 0, 'relays that land after destroy draw no form', 'forms drawn: ' + late2.forms.length);
 
   test.subHeading('a part that cannot be loaded is said');
