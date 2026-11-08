@@ -1,5 +1,5 @@
 {
- "change": 155265,
+ "change": 155323,
  "goal": "goal/G43",
  "items": [
   {
@@ -149,7 +149,10 @@
    "excluded": [
     "ollama agent node"
    ],
-   "live": [],
+   "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -20344,13 +20347,12 @@
    "id": "goal/G43.25",
    "title": "getting rid of run://node_modules/",
    "goal": "goal/G43",
-   "status": "",
+   "status": "running",
    "statusTone": "",
    "with": "",
    "version": 4,
    "buttons": [
-    "end-design",
-    "close",
+    "start-design",
     "pushgoal",
     "delete",
     "verify"
@@ -20360,17 +20362,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
-   "design": true,
-   "fileCount": 0,
-   "green": false,
+   "limbo": true,
+   "design": false,
+   "fileCount": 31,
+   "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -20387,6 +20389,10 @@
     {
      "key": "rule/28",
      "version": 68
+    },
+    {
+     "key": "rule/27",
+     "version": 66
     },
     {
      "key": "rule/25",
@@ -20407,6 +20413,10 @@
     {
      "key": "rule/21",
      "version": 54
+    },
+    {
+     "key": "rule/20",
+     "version": 50
     },
     {
      "key": "rule/18",
@@ -20440,7 +20450,20 @@
    "half": false,
    "full": false,
    "box": "# run://node_modules/ an abomination!\n\nAndy: \"can we hide those suckers in spirit/jobs/ for now? without the damn node_modules container?\"\n\n# requirements\n\n1. chokidar and readdirp move whole, each with its package.json and licence, to spirit/jobs/chokidar/ and spirit/jobs/readdirp/. spirit/run/node_modules/ is gone.\n2. chokidar finds readdirp without a node_modules: chokidar/index.js:6, import from \"readdirp\", becomes import from \"../readdirp/index.js\". The one line changed in the library.\n3. the two users require it by path: spirit/jobs.js:240 and process/js/deskClient/deskClient.js:1150. Nothing does require(\"chokidar\") by name any more.\n4. the file watcher works as before: the Files tree and the spirit.fs events still follow changes, and deskClient still watches its clone.\n5. no file names spirit/run/node_modules any more: the .gitignore exception (.gitignore:33-34), the two installers (install/microscopic/create.js, install/chat-windows/create.js) and the fsWatcherCommands test check the new place.\n6. vendor code stays out of our walks through ONE list (wsl's proposal; Andy: \"box that\"): fileSystem.js keeps the vendored folders in one exported list, beside its SCAN_EXCLUDED (fileSystem.js:334): spirit/jobs/chokidar/, spirit/jobs/readdirp/ and spirit/element/codeMirror/. Every walker of the tree reads that list instead of its own (the general test rules, testModule, oneDoor, the node's file scan, word.js, and every test that walks the tree), so vendor code is neither judged by our rules nor listed in Files or served. node_modules and codeMirror leave every walker's own skip list; the next library is one line in that list.\n",
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-11-08T06:30:42.676Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -20573,6 +20596,48 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-11-07T20:22:55.146Z",
      "text": "wsl: green, box v4 holds my point."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-08T06:23:33.683Z",
+     "text": "all, status?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-08T06:24:12.375Z",
+     "text": "cw: the box is at v4 and has no open questions. It is still in design: nothing is built and there is no Go.\ncw: once you press end-design and Go, wsl writes the red and I move chokidar and readdirp and build the vendor list."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-08T06:24:16.111Z",
+     "text": "wsl: still in design, box v4 green, no Q open. When you end design and press Go, I write the red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-08T06:25:31.847Z",
+     "text": "cw, blast radius?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-08T06:26:08.519Z",
+     "text": "cw: the move is 12 tracked files, chokidar and readdirp, with one line changed in chokidar.\ncw: three core files change, so each needs your grant. jobs.js and deskClient.js each change one require and drop their own node_modules skip. fileSystem.js gets the vendor list.\ncw: walkers that switch to that list are the three test sweeps (testModule, generalRules, testReachRules) and caches.js.\ncw: word.js also skips node_modules on its own. It is yours, so I leave it alone unless you say otherwise.\ncw: nothing on the wire changes, and no verb either. If the move breaks the watcher, jobs and Desk file events stop, and the red checks for that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-08T06:26:36.919Z",
+     "text": "cw, files"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-08T06:30:06.002Z",
+     "text": "cw: the item now lists 31 files: the 12 old vendor paths and their 12 new ones under spirit/jobs/, then jobs.js, deskClient.js, fileSystem.js, and the four walkers (testModule, generalRules, testReachRules, caches)."
     }
    ]
   }
