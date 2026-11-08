@@ -43,7 +43,7 @@ const CASES = [
   ['process/js/agent/table/model/test/rowElement.js', '/process/js/agent/table/model/rowElement'],
   ['process/js/agent/table/provider/test/rowElement.js', '/process/js/agent/table/provider/rowElement'],
   ['spirit/test/DEBUG.js', '/spirit/DEBUG'],
-  ['test/spirit.js', '/spirit'],
+  ['spirit/test/spirit.js', '/spirit/spirit'],
 ];
 CASES.forEach(function (c) {
   const recs = sent(c[0], [], true);

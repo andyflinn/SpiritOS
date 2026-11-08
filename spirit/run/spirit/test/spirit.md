@@ -193,6 +193,12 @@ over them.
 stands on `window.spirit` and binds the first time it is called, and a call to one with no interface is refused
 `no-interface`. It answers the instance; `ready` is that promise. The face shell calls it once its link is up, the home page at load.
 
+**No api up front** (goal/G43.27; Andy: *"MAKE SURE spirit.js doesn't load every fucking api upfront!!!!!!!!!!!!!!"*).
+The red loads the home page in a real browser (headless Chrome) on a scratch node and counts every call to the node's
+door (section 9): the page never asks for the whole api (`api` with no family); a family's api is asked only when the
+page calls one of its verbs, and never twice; a family the page has not touched, required later, costs one `api` call
+then and none on the next. A check that finds nothing to judge is red.
+
 ### In node only: `node`, `jobs`, `events.publish`, and no kernel
 
 spirit.js requires no `kernel.js`, and hands out no `spirit.core`: what a server took from the kernel is spirit.js's own.

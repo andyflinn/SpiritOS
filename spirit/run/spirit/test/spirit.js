@@ -1,7 +1,8 @@
 'use strict';
 
-// spirit/run/test/spirit.js
-// THE RED OF spirit/run/spirit/spirit.js (goal/G40.6; moved from the run root, goal/G43.18), and of no other module. It asserts ./spirit.md, section by section: the
+// spirit/run/spirit/test/spirit.js
+// THE RED OF spirit/run/spirit/spirit.js (goal/G40.6; the module moved from the run root, goal/G43.18, and its test with it,
+// goal/G43.27), and of no other module. It asserts ./spirit.md, section by section: the
 // rule, where it runs, the one instance, every member of it, its node, the one loader, and that a module not loading
 // spirit.js first goes red. Everything is asked of the one instance, in node and on a page: there is nothing else.
 //   - In node, the instance itself for what needs no node; and, for what talks to a node, the instance of a scratch
@@ -18,9 +19,8 @@ const http = require('http');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 // The product test system's own reporter (goal/G40.13): nothing of spirit/run/ reaches into the old test system.
-const test = require(path.join(__dirname, 'testReport.js'));
-
-const RUN = path.join(__dirname, '..');
+const RUN = path.join(__dirname, '..', '..');
+const test = require(path.join(RUN, 'test', 'testReport.js'));
 const SOURCE = fs.readFileSync(path.join(RUN, 'spirit', 'spirit.js'), 'utf8');
 const COMPONENT = 'spirit/relayUrl.js';
 const PAGE_COMPONENT = 'spirit/fieldRules.js';   // written for both node and a page, as the face's parts are
@@ -558,7 +558,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
 
   // ── 8. A MODULE THAT DOES NOT LOAD spirit.js FIRST GOES RED ──────────
   test.subHeading('8. a module that does not load spirit.js first goes red');
-  const rule = path.join(__dirname, 'spirit-child-generalRules.js');
+  const rule = path.join(RUN, 'test', 'spirit-child-generalRules.js');
   const onSpirit = spawnSync(process.execPath, [rule, 'spirit/spirit.js'], { cwd: RUN, encoding: 'utf8' });
   if (/✅:2\b/.test(onSpirit.stdout) && !/❌/.test(onSpirit.stdout)) test.check('the general rules pass spirit.js itself');
   else test.fail('the general rules on spirit.js: ' + short(onSpirit.stdout.slice(-200)));
@@ -569,5 +569,58 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
     if (/does not require spirit\.js first/.test(late.stdout) && /❌/.test(late.stdout)) test.check('a module whose first require is not spirit.js goes red');
     else test.fail('a module requiring fs before spirit.js: ' + short(late.stdout.slice(-200)));
   } finally { try { fs.rmSync(fx, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+
+  // ── 9. NO API UP FRONT, ON A REAL PAGE (goal/G43.27) ──────────
+  // Andy: "MAKE SURE spirit.js doesn't load every fucking api upfront!!!!!!!!!!!!!!", and (G41.3) "lazy-load, is a
+  // tree....". A real page (headless Chrome) of a scratch node, the home page loaded as a user opens it, every call to the
+  // node's door counted. Never a live node.
+  test.subHeading('9. no api up front, on a real page');
+  const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+  const ok = function (cond, good, bad) { if (cond) test.check(good); else test.fail(bad); };
+  const lazyNode = await H.scratchNode();
+  const lazyPage = lazyNode.up ? await H.chromePage(H.findChrome()) : null;
+  if (!lazyNode.up || !lazyPage || lazyPage.error) {
+    test.fail('no scratch node or no headless lazyPage: nothing judged (' + short(lazyPage && lazyPage.error) + ')');
+  } else {
+    try {
+      // Every call to the node's door, as the page sends it: { call, args }.
+      const calls = function () {
+        return lazyPage.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/api\/spirit$/.test(m.params.request.url) && m.params.request.postData; })
+          .map(function (m) { try { return JSON.parse(m.params.request.postData); } catch (e) { return null; } }).filter(Boolean);
+      };
+      // The home page as a user opens it, then a while for it to settle.
+      await lazyPage.send('Page.navigate', { url: lazyNode.base + '/face.html' });
+      await H.until(function () { return lazyPage.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
+      await H.sleep(6000);
+      const atLoad = calls();
+      const verbCalls = atLoad.filter(function (c) { return c.call !== 'api'; });
+      ok(verbCalls.length > 0, 'the world: the page called ' + verbCalls.length + ' verbs as it loaded (' + short(Array.from(new Set(verbCalls.map(function (c) { return c.call; })))) + ')', 'the page called no verb: nothing judged');
+      const whole = atLoad.filter(function (c) { return c.call === 'api' && !(c.args && c.args.family); });
+      ok(!whole.length, 'on a real page: the page never asks for the whole api (api with no family)', 'on a real page: the page asked for the whole api ' + whole.length + ' time(s)');
+      const used = new Set(verbCalls.map(function (c) { return String(c.call).split('.')[0]; }));
+      const asked = atLoad.filter(function (c) { return c.call === 'api' && c.args && c.args.family; }).map(function (c) { return String(c.args.family); });
+      const unused = Array.from(new Set(asked)).filter(function (f) { return !used.has(f); });
+      ok(!unused.length, 'on a real page: no family\'s api is asked that the page never calls (' + asked.length + ' asked, all used)', 'on a real page: ' + unused.length + ' families\' api asked and never called: ' + short(unused));
+      const twice = Array.from(new Set(asked)).filter(function (f) { return asked.filter(function (x) { return x === f; }).length > 1; });
+      ok(!twice.length, 'on a real page: no family\'s api is asked twice', 'on a real page: asked more than once: ' + short(twice));
+      // A node family the page has not touched yet, called now through the spirit object: its api is asked once, at
+      // first use, and not again on the second call.
+      const fresh = ['events', 'net', 'peer', 'owner', 'config'].filter(function (f) { return !used.has(f) && asked.indexOf(f) === -1; })[0] || '';
+      ok(!!fresh, 'the world: ' + (fresh || 'no family') + ' is a family the page has not used yet', 'every candidate family was already used: nothing judged');
+      if (fresh) {
+        const before = calls().length;
+        const reach = "Promise.resolve(window.spirit.require('spirit/" + fresh + "/api.js')).then(function () { return !!window.spirit." + fresh + "; }, function (e) { return 'refused ' + (e && e.message); })";
+        const first = await lazyPage.evaluate(reach);
+        const second = await lazyPage.evaluate(reach);
+        await H.sleep(1000);
+        const later = calls().slice(before).filter(function (c) { return c.call === 'api' && c.args && c.args.family === fresh; });
+        ok(first === true && second === true, 'the world: ' + fresh + ' is bound on the page once it is required', fresh + ': ' + short([first, second]));
+        ok(later.length === 1, 'on a real page: using ' + fresh + ' for the first time asks its api once, and using it again asks nothing', 'on a real page: ' + fresh + '\'s api was asked ' + later.length + ' times');
+      }
+    } finally {
+      if (lazyPage.kid) lazyPage.kid.kill();
+    }
+  }
+  if (lazyNode.child) lazyNode.child.kill();
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the suite threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

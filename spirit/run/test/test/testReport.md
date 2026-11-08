@@ -21,8 +21,8 @@ test's child plants its stand-in there.
     `spirit/run/process/js/agent/table/provider/test/rowElement.js` are two names, each with its folder (those folders
     are gone from the tree; the names are made from the path alone, so the cases still hold);
   - `spirit/run/spirit/test/DEBUG.js` is sent as `/spirit/DEBUG`;
-  - `spirit/run/test/spirit.js`, the test of `spirit/run/spirit/spirit.js`, is sent as `/spirit` (the name comes from
-    the test's place, which stayed at the run root when goal/G43.18 moved the module).
+  - `spirit/run/spirit/test/spirit.js`, the test of `spirit/run/spirit/spirit.js`, is sent as `/spirit/spirit` (its
+    test moved beside it, goal/G43.27).
 - **A general test is sent by the file it judges.** A `-child-` or `-sibling-` test runs once per file, the file its
   argument (`TEST_SYSTEM.md`), so the module tested is that file:
   `spirit/run/test/spirit-sibling-generalRules.js shell/agent/agent.js` is sent as `/shell/agent/agent`. The reporter
