@@ -11,9 +11,9 @@
 //   1. a test/ folder belongs to a module: its parent folder holds a .js module, the run root excepted;
 //   2. the run root's test/ holds its general tests (spirit-child-*, spirit-sibling-*, of spirit/spirit.js, one folder
 //      down), its helpers (headLessChrome.js, testModule.js, testReport.js) and TEST_SYSTEM.md, nothing else;
-//   3. a test/ inside a test/ folder holds the tests of the files beside it, <name>.js and <name>.md, nothing else;
-//   4. every other test MATCHES A PRODUCTION FILE: test/<name>.js, or a general test <name>-child-* or <name>-sibling-*,
-//      of a <name>.js beside the folder; a plain test named after no module is garbage (Andy, above);
+//   3. a test/ inside a test/ folder holds the tests of the files beside it, <name>.js or <name>-<what>.js and their .md;
+//   4. every other test MATCHES A PRODUCTION FILE: test/<name>.js, a test by name test/<name>-<what>.js, or a general test
+//      <name>-child-* or <name>-sibling-*, of a <name>.js beside the folder; a plain test named after no module is garbage (Andy, above);
 //   5. a test's .js has its .md beside it, and an .md its .js;
 //   6. any other file (a laid page, a fixture) is named after a module beside the folder: <module>-<what>.<ext>.
 //
@@ -52,6 +52,9 @@ function garbage(rel) {
   const stem = m ? m[1] : '';
   const twin = m ? rel.slice(0, -m[2].length) + (m[2] === 'js' ? 'md' : 'js') : '';
   const general = stem.match(/^(.+?)-(child|sibling)-.+$/);
+  // test/<name>-<what>.js, a test of <name>.js by name (goal/G43.27; Andy: "directly (by name)"), which testModule.js runs
+  // with <name>.js.
+  const named = !general && stem.indexOf('-') > 0 ? stem.slice(0, stem.indexOf('-')) : '';
   // 2. The run root's own test folder.
   if (dir === '') {
     if (RUN_ROOT_KEEPS.indexOf(file) !== -1) return '';
@@ -61,7 +64,7 @@ function garbage(rel) {
   // 3. A test folder inside a test folder: the tests of the files beside it, nothing else.
   if (/(^|\/)test$/.test(dir)) {
     if (!m) return 'not a test: no .js or .md';
-    if (!exists(dir + '/' + stem + '.js')) return 'no ' + dir + '/' + stem + '.js beside this test folder: a test here tests a file of ' + dir + '/, and no other';
+    if (!exists(dir + '/' + stem + '.js') && !(named && exists(dir + '/' + named + '.js'))) return 'no ' + dir + '/' + (named || stem) + '.js beside this test folder: a test here tests a file of ' + dir + '/, and no other';
     return exists(twin) ? '' : (m[2] === 'js' ? 'no ' + path.basename(twin) + ' beside it: the test has no spec' : 'no ' + path.basename(twin) + ' beside it: a spec with no test');
   }
   // 1. A test folder belongs to a module.
@@ -69,7 +72,7 @@ function garbage(rel) {
   if (!modules.length) return 'no module in ' + dir + '/: a test folder belongs to the module beside it';
   // 4. A test matches a production file; 5. a test and its spec, together.
   if (m) {
-    const of = general ? general[1] : stem;
+    const of = general ? general[1] : modules.indexOf(stem) === -1 && named ? named : stem;
     if (modules.indexOf(of) === -1) return 'no ' + (dir ? dir + '/' : '') + of + '.js: ' + (general ? 'a general test of a module that is not beside the folder' : 'a test that matches no production file');
     return exists(twin) ? '' : (m[2] === 'js' ? 'no ' + path.basename(twin) + ' beside it: the test has no spec' : 'no ' + path.basename(twin) + ' beside it: a spec with no test');
   }

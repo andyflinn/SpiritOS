@@ -1,0 +1,391 @@
+'use strict';
+
+// spirit/run/spirit/app/agent/table/provider/test/server.js
+// The tests of spirit/app/agent/table/provider/, its server.js, elementTable.js and elementRow.js, and of no other module
+// (spec: ./server.md; goal/G41.4, goal/G41.18). What the tables share is tested in ../../test/. The server is made on
+// a scratch agent.db as nodeAgent.js makes it, with the model table beside it for ask, and the provider ask reaches is a
+// stand-in on 127.0.0.1; the plugins themselves are tested in ../../../provider/. The page files run in node on a window
+// of their own, the shared elements stubs that keep what they were handed.
+
+const fs = require('fs');
+const http = require('http');
+const os = require('os');
+const path = require('path');
+const vm = require('vm');
+const RUN = path.resolve(__dirname, '../../../../../..');
+require(path.join(RUN, 'spirit', 'spirit.js'));
+const test = require(path.join(RUN, 'test', 'testReport.js'));
+const { DatabaseSync } = require('node:sqlite');
+
+const TABLE = 'provider';
+const DIR = path.join(__dirname, '..');
+// The page's own node, as node.card answers it: a public key in base64, its + and / kept, so the data set names it in
+// base64url (spirit.data.nodeId).
+const HOME_KEY = 'MCowBQYDK2VwAyEA+home/node+key/for+the+page/test0000000=';
+function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
+function call(verb, a) { try { return verb.handler(a); } catch (e) { return { refusal: e.refusal || 'threw', why: (e.extra && e.extra.why) || e.message }; } }
+const tick = function () { return new Promise(function (r) { setImmediate(r); }); };
+const settle = async function () { for (let i = 0; i < 10; i++) await tick(); };
+const SECRET = 'sk-provider-test-0123456789';
+
+test.startTest('provider/: the provider table');
+process.on('unhandledRejection', function (e) { test.fail('it threw where nothing caught it: ' + (e && e.message || e)); });
+
+(async function () {
+  test.subHeading('its files');
+  const files = ['server.js', 'elementTable.js', 'elementRow.js'];
+  ok(files.every(function (f) { return fs.existsSync(path.join(DIR, f)); }), 'it has server.js, elementTable.js and elementRow.js',
+    'missing: ' + short(files.filter(function (f) { return !fs.existsSync(path.join(DIR, f)); })));
+  if (!fs.existsSync(path.join(DIR, 'server.js'))) return;
+
+  test.subHeading('server.js: the table in agent.db');
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-'));
+  const db = new DatabaseSync(path.join(scratch, 'agent.db'));
+  const published = [];
+  const ctx = { db: db, dbFile: path.join(scratch, 'agent.db'), tables: {}, publish: function (x) { published.push(x); } };
+  const t = ctx.tables.provider = require(path.join(DIR, 'server.js'))(ctx);
+  ok(t && t.verb && typeof t.verb.handler === 'function' && typeof t.has === 'function', 'server.js(ctx) answers the table, its verb and has', 'answered: ' + short(t && Object.keys(t)));
+  const cols = db.prepare('PRAGMA table_info("provider")').all().map(function (c) { return c.name; });
+  // Andy, box v22: "with Label and Description, URL, and API_KEY"; goal/G41.18, box v17: "if it fails, the provider row
+  // will be flagged as unusable".
+  // goal/G41.21 (box v17): "The provider table gains a field, model: the id of one row of the model table".
+  ['id', 'privateKey', 'sealPublicKey', 'sealPrivateKey', 'icon', 'label', 'url', 'apiKey', 'unusable', 'model'].forEach(function (c) {
+    ok(cols.indexOf(c) !== -1, 'the provider table has ' + c, 'columns: ' + short(cols));
+  });
+  ok(cols.length === 10, 'and nothing else', 'columns: ' + short(cols));
+
+  test.subHeading('server.js: the API key never leaves the agent process');
+  const added = call(t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: 'https://api.anthropic.com', apiKey: SECRET });
+  const raw = added.id ? db.prepare('SELECT apiKey FROM "provider" WHERE id = ?').get(added.id) : null;
+  ok(raw && raw.apiKey === SECRET, 'the API key is kept on the row', 'row: ' + short(raw && { set: !!raw.apiKey }));
+  const got = call(t.verb, { op: 'get', id: added.id });
+  const seen = JSON.stringify([got, call(t.verb, { op: 'search', text: 'Anthropic' }), published]);
+  ok(got && got.apiKeySet === true && !('apiKey' in got) && seen.indexOf(SECRET) === -1, 'no get, search or published row carries it: only apiKeySet true',
+    'get: ' + short(got));
+  ok(got && got.url === 'https://api.anthropic.com' && got.label === 'Anthropic', 'its url and label are shown', 'get: ' + short(got));
+  ok(call(t.verb, { op: 'add', url: 'not a url' }).refusal === 'bad-request', 'a url that is not one is refused', 'bad url answered');
+
+  test.subHeading('server.js: one provider row per url (goal/G41.18)');
+  // Andy, box v17: "a new provider row will not be added if the URL is the same as an existing URL in the provider table,
+  // nor will a change be allowed if the change would result in duplicate URL's, trailing slashes don't count as
+  // different."
+  const count = function () { return db.prepare('SELECT COUNT(*) AS n FROM "provider"').get().n; };
+  const n0 = count();
+  ok(call(t.verb, { op: 'add', icon: '🏢', label: 'Again', url: 'https://api.anthropic.com' }).refusal === 'bad-request' && count() === n0, 'a new row with a url already in the table is refused, and nothing is added', 'rows ' + count() + ' of ' + n0);
+  ok(call(t.verb, { op: 'add', icon: '🏢', label: 'Slash', url: 'https://api.anthropic.com/' }).refusal === 'bad-request' && count() === n0, 'and so is the same url with a trailing slash', 'rows ' + count() + ' of ' + n0);
+  const n1 = count();
+  const other = call(t.verb, { op: 'add', icon: '🏢', label: 'Other', url: 'https://api.openai.com/v1' });
+  ok(other.id && count() === n1 + 1, 'a row with a url of its own is added', 'answer: ' + short(other));
+  const moved = call(t.verb, { op: 'set', id: other.id, url: 'https://api.anthropic.com/' });
+  ok(moved.refusal === 'bad-request' && call(t.verb, { op: 'get', id: other.id }).url === 'https://api.openai.com/v1', 'a change to another row\'s url is refused, the url kept', 'answer: ' + short(moved));
+  ok(!call(t.verb, { op: 'set', id: other.id, url: 'https://api.openai.com/v1/' }).refusal && !call(t.verb, { op: 'set', id: other.id, label: 'Renamed' }).refusal,
+    'a row may keep its own url, with or without the slash, and change its other fields', 'own url refused');
+  [other.id].forEach(function (id) { if (id) call(t.verb, { op: 'delete', id: id }); });
+
+  test.subHeading('server.js: no invalid provider row (goal/G41.21)');
+  {
+  // Andy: "NO FUKCING INVALID ROWS GET ONTO A TABLE!!!!!!!!!!!!!"; "# mandatory fields (server AND ui) - provider: icon,
+  // label, valid URL".
+  const before = count();
+  const noUrl = call(t.verb, { op: 'add', icon: '🏢', label: 'No url' });
+  const noIcon = call(t.verb, { op: 'add', label: 'No icon', url: 'https://no-icon.example' });
+  const noLabel = call(t.verb, { op: 'add', icon: '🏢', url: 'https://no-label.example' });
+  const blank = call(t.verb, { op: 'add', icon: '🏢', label: '   ', url: 'https://blank.example' });
+  ok([noUrl, noIcon, noLabel, blank].every(function (r) { return r.refusal && !r.id; }) && count() === before,
+    'an add without its url, its icon or its label, or with a label of blanks, is refused, and makes no row', 'answers: ' + short([noUrl, noIcon, noLabel, blank]));
+  ok(/url/i.test(String(noUrl.why)) && /icon/i.test(String(noIcon.why)) && /label/i.test(String(noLabel.why)), 'each refusal names the field missing', 'why: ' + short([noUrl.why, noIcon.why, noLabel.why]));
+  const whole = call(t.verb, { op: 'add', icon: '🏢', label: 'Whole', url: 'https://whole.example' });
+  ok(whole.id && count() === before + 1, 'with its icon, its label and a url, it is added', 'answer: ' + short(whole));
+  const emptied = call(t.verb, { op: 'set', id: whole.id, label: '' });
+  const unurled = call(t.verb, { op: 'set', id: whole.id, url: '' });
+  ok(emptied.refusal && unurled.refusal && call(t.verb, { op: 'get', id: whole.id }).label === 'Whole', 'a change that would empty its label or its url is refused, the row kept', 'answers: ' + short([emptied, unurled]));
+  call(t.verb, { op: 'delete', id: whole.id });
+  }
+
+  test.subHeading('server.js: ask, a provider\'s models into the model table (goal/G41.18)');
+  // Andy, box v17: "the provider table gets a new verb: \"ask\", which does the model-list fetching and model-table
+  // updating"; the plugin by the row's label, "case-insensitive", else the OpenAI plugin, "if it fails, the provider row
+  // will be flagged as unusable"; "Updated means, unavailable models from that provider will be removed, also"; "only if a
+  // provider answers with a list of more than 0 models, will the agent's model table be \"updated\"". The provider is a
+  // stand-in on 127.0.0.1 that answers as Anthropic does to x-api-key and as an OpenAI-compatible server does otherwise.
+  ctx.tables.model = require(path.join(DIR, '..', 'model', 'server.js'))(ctx);
+  const ask = async function (a) { try { return await t.verb.handler(a); } catch (e) { return { refusal: e.refusal || 'threw', why: (e.extra && e.extra.why) || e.message }; } };
+  const stand = { heard: [], anthropic: [], openai: [], fail: false };
+  const server = http.createServer(function (req, res) {
+    stand.heard.push({ url: req.url, headers: req.headers });
+    const u = new URL(req.url, 'http://x');
+    let status = 404; let body = '';
+    if (u.pathname === '/v1/models' && req.headers['x-api-key']) {
+      status = 200; body = { data: stand.anthropic.map(function (m) { return { type: 'model', id: m[0], display_name: m[1] }; }), has_more: false };
+    } else if (u.pathname === '/v1/models') {
+      status = stand.fail ? 500 : 200; body = stand.fail ? { error: 'down' } : { object: 'list', data: stand.openai.map(function (id) { return { id: id, object: 'model' }; }) };
+    }
+    res.writeHead(status, { 'content-type': 'application/json' });
+    res.end(JSON.stringify(body));
+  });
+  await new Promise(function (r) { server.listen(0, '127.0.0.1', r); });
+  const host = 'http://127.0.0.1:' + server.address().port;
+  const modelsOf = function (pid) { return db.prepare('SELECT * FROM "model" WHERE providerId = ? ORDER BY label').all(pid); };
+  const names = function (pid) { return modelsOf(pid).map(function (m) { return m.label; }); };
+  const usable = function (id) { try { return db.prepare('SELECT unusable FROM "provider" WHERE id = ?').get(id).unusable; } catch (e) { return 'no column: ' + e.message; } };
+
+  call(t.verb, { op: 'delete', id: added.id });
+  const anth = call(t.verb, { op: 'add', icon: '🏢', label: 'Anthropic', url: host, apiKey: SECRET });
+  ok((await ask({ op: 'ask', id: require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('').publicKey })).refusal === 'no-such-row', 'ask of a row that is not there is refused no-such-row', 'ask answered');
+  stand.anthropic = [['claude-a', 'Claude A'], ['claude-b', 'Claude B']];
+  published.length = 0;
+  const first = await ask({ op: 'ask', id: anth.id });
+  ok(stand.heard.length >= 1 && stand.heard[0].headers['x-api-key'] === SECRET, 'a row labelled Anthropic asks through the Anthropic plugin, with its key', 'heard: ' + short(stand.heard.map(function (x) { return x.url; })));
+  ok(first && Array.isArray(first.models) && JSON.stringify(first.models) === JSON.stringify([{ modelName: 'claude-a', label: 'Claude A' }, { modelName: 'claude-b', label: 'Claude B' }]) && first.updated === true,
+    'it answers the provider\'s list, { models: [{ modelName, label }], updated: true }', 'answer: ' + short(first));
+  const mA = modelsOf(anth.id);
+  // goal/G41.21: "the label hold the model name as provided by the provider": never its display name (Claude A).
+  ok(JSON.stringify(names(anth.id)) === '["claude-a","claude-b"]' && mA.every(function (m) { return !('modelName' in m); }),
+    'each model not yet in the table is added, for that provider, its label the model name exactly as the provider gives it', 'models: ' + short(mA.map(function (m) { return m.label; })));
+  ok(published.filter(function (p) { return p.agent && p.agent.table === 'model' && p.agent.row; }).length === 2, 'and each new model row is published, so the lists follow', 'published: ' + short(published.map(function (p) { return p.agent && p.agent.table; })));
+
+  stand.heard.length = 0;
+  call(t.verb, { op: 'set', id: anth.id, label: 'ANTHROPIC' });
+  await ask({ op: 'ask', id: anth.id });
+  ok(stand.heard.length >= 1 && stand.heard[0].headers['x-api-key'] === SECRET, 'the plugin is matched to the label in any case: ANTHROPIC is Anthropic', 'heard: ' + short(stand.heard.map(function (x) { return Object.keys(x.headers); })));
+
+  test.subHeading('ask updates: new models added, gone ones removed, his own words kept');
+  // With no claude-b from the first ask, one stands in for it, so what follows still tries the update.
+  const keep = modelsOf(anth.id).filter(function (m) { return m.label === 'claude-b'; })[0] ||
+    ctx.tables.model.verb.handler({ op: 'add', providerId: anth.id, label: 'claude-b' });
+  ctx.tables.model.verb.handler({ op: 'set', id: keep.id, capabilities: ['mine'] });
+  const openaiRow = call(t.verb, { op: 'add', icon: '🏢', label: 'OpenAI', url: host + '/v1', apiKey: 'sk-other' });
+  const otherModel = ctx.tables.model.verb.handler({ op: 'add', providerId: openaiRow.id, label: 'gpt-kept' });
+  stand.anthropic = [['claude-b', 'Claude B'], ['claude-c', 'Claude C']];
+  published.length = 0;
+  await ask({ op: 'ask', id: anth.id });
+  const after = modelsOf(anth.id);
+  const b = after.filter(function (m) { return m.label === 'claude-b'; })[0];
+  ok(JSON.stringify(names(anth.id)) === '["claude-b","claude-c"]', 'a model the provider no longer lists is removed; a new one is added', 'models: ' + short(names(anth.id)));
+  ok(b && b.id === keep.id && b.label === 'claude-b' && b.capabilities === JSON.stringify(['mine']), 'a model it still lists keeps its row, its label the model name, and what else it holds', 'claude-b: ' + short(b && { id: b.id === keep.id, label: b.label, description: b.description }));
+  ok(published.some(function (p) { return p.agent && p.agent.table === 'model' && p.agent.removed === true; }), 'the removed model is published removed', 'published: ' + short(published));
+  ok(names(openaiRow.id).indexOf('gpt-kept') !== -1 && ctx.tables.model.has(otherModel.id), 'another provider\'s models are not touched', 'other provider: ' + short(names(openaiRow.id)));
+
+  test.subHeading('an empty list changes nothing');
+  stand.anthropic = [];
+  const before = JSON.stringify(modelsOf(anth.id));
+  const none = await ask({ op: 'ask', id: anth.id });
+  ok(none && Array.isArray(none.models) && none.models.length === 0 && none.updated === false && JSON.stringify(modelsOf(anth.id)) === before,
+    'a provider answering no models: { models: [], updated: false }, and the model table is as it was', 'answer ' + short(none) + ', models ' + short(names(anth.id)));
+
+  test.subHeading('no plugin for the label: the OpenAI plugin; it failing flags the row unusable');
+  // One url, one row: the OpenAI row of the last part goes, so the Unsloth row may take the stand-in's /v1.
+  call(t.verb, { op: 'delete', id: openaiRow.id });
+  const unsloth = call(t.verb, { op: 'add', icon: '🏢', label: 'Unsloth', url: host + '/v1/' });
+  stand.openai = ['qwen-local', 'llama-local'];
+  stand.heard.length = 0;
+  const local = await ask({ op: 'ask', id: unsloth.id });
+  ok(stand.heard.length === 1 && !stand.heard[0].headers['x-api-key'] && new URL(stand.heard[0].url, 'http://x').pathname === '/v1/models', 'a row no plugin matches (Unsloth) asks as the OpenAI plugin does, GET <url>/models', 'heard: ' + short(stand.heard));
+  ok(local && local.updated === true && JSON.stringify(names(unsloth.id)) === '["llama-local","qwen-local"]', 'and its models are added', 'answer ' + short(local) + ', models ' + short(names(unsloth.id)));
+  stand.fail = true;
+  const keptLocal = JSON.stringify(modelsOf(unsloth.id));
+  stand.heard.length = 0;
+  const failed = await ask({ op: 'ask', id: unsloth.id });
+  ok(failed && failed.refusal !== undefined && stand.heard.length === 1, 'a provider that fails, once asked, is refused', 'answer ' + short(failed) + ', asked ' + stand.heard.length);
+  ok(usable(unsloth.id) === 1 && call(t.verb, { op: 'get', id: unsloth.id }).unusable === true, 'and the provider row is flagged unusable, kept on the row and shown', 'unusable: ' + short(call(t.verb, { op: 'get', id: unsloth.id })));
+  ok(JSON.stringify(modelsOf(unsloth.id)) === keptLocal, 'a failed ask removes nothing', 'models: ' + short(names(unsloth.id)));
+  stand.fail = false;
+  await ask({ op: 'ask', id: unsloth.id });
+  ok(usable(unsloth.id) === 0, 'an ask that is answered again clears the flag', 'unusable: ' + usable(unsloth.id));
+  ok(JSON.stringify([first, local, failed, published]).indexOf(SECRET) === -1, 'no answer of ask, and no row it publishes, carries the API key', 'the key left the process');
+  await new Promise(function (r) { server.close(r); });
+
+  test.subHeading('server.js: a search answers what the list shows (goal/G41.18)');
+  // Andy: "only the ID and the fields shown in a table, that's all it needs"; "that exactly what GET is for, to bring in
+  // the rest for detail panels etc...". The list shows a row by its icon and its label.
+  {
+    const listedId = call(t.verb, { op: 'add', icon: '🧪', label: 'Listed one', url: 'https://listed.example' }).id;
+    let listedRow = null;
+    try { listedRow = (call(t.verb, { op: 'search', text: 'Listed one' }).items || []).map(function (i) { return JSON.parse(i.label); }).filter(function (r) { return r.id === listedId; })[0]; } catch (e) { listedRow = null; }
+    ok(listedRow && listedRow.icon === '🧪' && listedRow.label === 'Listed one' && JSON.stringify(Object.keys(listedRow).sort()) === '["icon","id","label"]',
+      'a search answers the id, the icon and the label of a row, nothing else', 'found: ' + short(listedRow));
+    call(t.verb, { op: 'delete', id: listedId });
+  }
+
+  // A GRANTED PEER CANNOT STEAL THE MODEL KEYS (goal/G41.30, the review, RH4: "a peer granted the agent's remoteUser bundle
+  // can steal the model API keys"; its fix: "make provider add, set, delete and ask owner-only, and clear apiKey whenever
+  // url changes without a new key"; Andy, Q3: "yes."). The peer sets a provider's url to his own server, keeping apiKey,
+  // then asks: the stand-in on 127.0.0.1 is his server.
+  test.subHeading('server.js: a key never follows a changed url (goal/G41.30)');
+  {
+    const KEY = 'sk-theirs-do-not-follow';
+    const keyOf = function (id) { const r = db.prepare('SELECT apiKey FROM "provider" WHERE id = ?').get(id); return r ? r.apiKey : undefined; };
+    const row = call(t.verb, { op: 'add', icon: '🔑', label: 'Anthropic', url: 'https://steal.example', apiKey: KEY }).id;
+    ok(keyOf(row) === KEY, 'a row keeps its key', 'the key was not kept');
+    call(t.verb, { op: 'set', id: row, label: 'Anthropic' });
+    ok(keyOf(row) === KEY, 'a set with no new url keeps the key', 'a set of the label alone lost the key');
+    call(t.verb, { op: 'set', id: row, url: 'https://steal.example' });
+    ok(keyOf(row) === KEY, 'a set of the same url keeps the key', 'a set of the same url lost the key');
+    // The peer's own server.
+    const heard = [];
+    const peers = http.createServer(function (req, res) { heard.push(req.headers); res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"data":[],"has_more":false}'); });
+    await new Promise(function (r) { peers.listen(0, '127.0.0.1', r); });
+    const peerUrl = 'http://127.0.0.1:' + peers.address().port;
+    const moved = call(t.verb, { op: 'set', id: row, url: peerUrl });
+    ok(!moved.refusal, 'the set of a new url is taken', 'the set of a new url was refused: ' + short(moved));
+    ok(!keyOf(row), 'a set of a new url with no new key clears the key', 'the key stayed on the row with the new url');
+    await ask({ op: 'ask', id: row });
+    await new Promise(function (r) { peers.close(r); });
+    ok(heard.length > 0 && JSON.stringify(heard).indexOf(KEY) === -1, 'and an ask then sends the new url no old key', heard.length ? 'THE KEY WENT TO THE NEW URL: ' + short(heard.map(function (h) { return h['x-api-key'] || h.authorization; })) : 'the ask never reached the new url: nothing judged');
+    call(t.verb, { op: 'set', id: row, url: 'https://steal-other.example', apiKey: 'sk-new-one' });
+    ok(keyOf(row) === 'sk-new-one', 'a set of a url and a new key keeps the new key', 'url and new key: the row holds ' + (keyOf(row) ? 'another key' : 'no key'));
+    call(t.verb, { op: 'delete', id: row });
+  }
+
+  test.subHeading('the page: elementTable.js and elementRow.js');
+  const made = { tables: [], rows: [], required: [] };
+  global.window = { spirit: { elements: {
+    agentTable: { create: function (c, o) { made.tables.push({ c: c, o: o }); return { refresh: function () { made.refreshed = true; }, destroy: function () { made.destroyed = true; } }; } },
+    agentRow: { create: function (c, o) { made.rows.push({ c: c, o: o }); return { destroy: function () {} }; } },
+  } } };
+  global.spirit = global.window.spirit;
+  global.window.spirit.require = function (p) { made.required.push(String(p)); return Promise.resolve(true); };
+  // The page's one data set (spirit/data.js), which spirit.js brings with the client: the stream lands there, under
+  // the node that served it (goal/G41.28), the page's own once node.card has answered, kept as spirit.node.key. A family's
+  // cache manager is found by spirit.cacheManager(name), the real one, which in node reads it from its own disk.
+  vm.runInThisContext(fs.readFileSync(path.join(RUN, 'spirit', 'data.js'), 'utf8'), { filename: 'data.js' });
+  global.window.spirit.node = { key: HOME_KEY };
+  global.window.spirit.data.homeNode(HOME_KEY);
+  global.window.spirit.cacheManager = require(path.join(RUN, 'spirit', 'spirit.js')).cacheManager;
+  ['elementTable.js', 'elementRow.js'].forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(DIR, f), 'utf8'), { filename: path.join(DIR, f) }); });
+  const E = global.window.spirit.elements;
+  ok(E.providerTable && typeof E.providerTable.create === 'function' && E.providerRow && typeof E.providerRow.create === 'function',
+    'they register spirit.elements.providerTable and providerRow', 'elements: ' + short(Object.keys(E)));
+  if (!E.providerTable || !E.providerRow) return;
+  const detail = { open: function () {}, look: function (t2) { return { icon: '🏢', name: 'Provider', title: 'Model providers', table: t2 }; } };
+  const box = { innerHTML: '' };
+  const list = E.providerTable.create(box, detail);
+  await settle();
+  ok(made.required.indexOf('spirit/app/agent/table/tableElement.js') !== -1 && made.required.indexOf('spirit/app/agent/table/provider/elementRow.js') !== -1,
+    'elementTable.js requires the shared element and its own row element', 'required: ' + short(made.required));
+  const o = made.tables[0] && made.tables[0].o;
+  ok(made.tables.length === 1 && made.tables[0].c === box && o.table === 'provider' && !('api' in o) && o.detail === detail && !o.add,
+    'it builds on agentTable, in its box, for the provider table, with the detail pane and no api, and the shared Add', 'agentTable: ' + short(o && { table: o.table, add: !!o.add }));
+  list.refresh(); list.destroy();
+  ok(made.refreshed && made.destroyed, 'its refresh and destroy are the shared element\'s', 'refreshed ' + made.refreshed + ', destroyed ' + made.destroyed);
+  const into = { innerHTML: '' };
+  o.row(into, 'KP', true);
+  await settle();
+  const r = made.rows[0] && made.rows[0].o;
+  ok(made.rows.length === 1 && made.rows[0].c === into && r.table === 'provider' && !('api' in r) && r.id === 'KP' && r.added === true,
+    'a row it opens is a providerRow, built on agentRow, in the box it is handed, with its id and added, no api', 'agentRow: ' + short(r && { table: r.table, id: r.id, added: r.added }));
+  // goal/G41.21: "# mandatory fields (server AND ui)": the row hands the shared editor its table's mandatory fields.
+  ok(r && JSON.stringify(r.required) === JSON.stringify(['icon', 'label', 'url']), 'it hands the editor the provider table\'s mandatory fields, [icon, label, url]', 'required: ' + short(r && r.required));
+  ok(r && r.look && r.look.icon === '🏢' && r.look.table === 'provider', 'its title row has the provider table\'s look', 'look: ' + short(r && r.look));
+  // Andy, box v22: "with Label and Description, URL, and API_KEY"; the icon comes first of every editor (tableElement.js).
+  // goal/G41.21: "a Model field at the bottom. It is a pick field ... showing only the models whose provider is this
+  // provider": of names the picked table's field that must hold this row's id (../../tableElement.js).
+  ok(r && JSON.stringify(r.fields.map(function (f) { return [f.field, f.kind, f.pick || '', f.of || '']; })) === JSON.stringify([['label', 'name', '', ''], ['url', 'url', '', ''], ['apiKey', 'secret', '', ''], ['model', 'pick', 'model', 'providerId']]),
+    'its fields are the label, the url, the API key as a secret, and last the model, a pick field of the model table narrowed to this provider\'s models', 'fields: ' + short(r && r.fields));
+  try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* the scratch folder is the system's to clear */ }
+
+  test.subHeading('elementRow.js loads the agent family\'s cache manager, which takes the provider table\'s rows from the stream (goal/G41.16, G41.28)');
+  // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": what the stream
+  // means for this table, spirit/app/agent/table/data.js until G41.16, is the agent family's data.js's
+  // (spirit/app/agent/data.js, goal/G41.28), loaded with the row element; it files the rows under the
+  // node that served them, and is read through spirit.data.agent.data.
+  {
+    const DATA = global.window.spirit.data;
+    const AD = ((global.window.spirit.data || {}).agent || {}).data;
+    ok(!made.required.some(function (p) { return /data\.js$/.test(p); }), 'its page files require no data script', 'required: ' + short(made.required));
+    const BRANCH = DATA.nodeId(HOME_KEY) + '/agent/provider';
+    ok(!!AD && typeof AD.branch === 'function' && AD.branch('provider') === BRANCH, 'the agent family\'s cache manager is loaded: spirit.data.agent.data.branch(\'provider\') is the home node\'s <node>/agent/provider',
+      'agentReads: ' + short(AD ? AD.branch('provider') : AD));
+    // With no manager loaded the check above is red; nothing below would judge anything.
+    if (AD) {
+      const job = function (agent, module) { return { id: 'job-agent', module: module || 'spirit.app.agent', data: {}, app: { agent: agent } }; };
+      const heard = [];
+      const off = DATA.watchPath(BRANCH, function (p) { heard.push(p); });
+      DATA.takeJob(job({ table: 'provider', row: { id: 'KT', label: 'First', extra: 1 } }));
+      ok(AD.row('provider', 'KT') && AD.row('provider', 'KT').label === 'First' && heard.indexOf(BRANCH + '/KT') !== -1, 'a provider row on the stream lands at <node>/agent/provider/<id>, and the branch\'s watcher hears it', 'provider: ' + short(DATA.branchAt(BRANCH)));
+      DATA.takeJob(job({ table: 'provider', row: { id: 'KT', label: 'Renamed' } }));
+      ok(AD.row('provider', 'KT') && AD.row('provider', 'KT').label === 'Renamed' && AD.row('provider', 'KT').extra === 1, 'a changed row is merged: what it names changes, what it does not stays', 'row: ' + short(AD.row('provider', 'KT')));
+      DATA.takeJob(job({ table: 'provider', id: 'KT', removed: true }));
+      ok(!AD.row('provider', 'KT') && !('KT' in DATA.branchAt(BRANCH)), 'a row removed, by its id, is gone', 'row: ' + short(AD.row('provider', 'KT')));
+      const before = JSON.stringify(DATA.branchAt(BRANCH));
+      DATA.takeJob(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
+      DATA.takeJob(job({ table: 'provider', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));
+      DATA.takeJob(job({ table: 'provider', row: { label: 'no id' } }));
+      ok(JSON.stringify(DATA.branchAt(BRANCH)) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'provider: ' + short(DATA.branchAt(BRANCH)));
+      off();
+    }
+  }
+
+  // ── THE MODEL PICKER IN A REAL BROWSER (goal/G41.21; Andy: "the model picker for anthropic simply shows: "Nothing
+  // matches.", no if the search field is empty or not", "make sure that the picker is filled, from the beginning, with the
+  // result of the default search (empty search input)", "wsl, make sure your tests actually checks if this thing works,
+  // get some damn DEBUG.js test to fucking assert that this shit is done right!"). The real provider and model servers on
+  // a scratch agent.db answer; ./server-picker.html draws the provider's detail with the real elements in Chrome, on a
+  // scratch node with its DEBUG on, and opens its Model field.
+  {
+    const ADDRESS = '/DEBUG/spirit/app/agent/table/provider/test/server-picker.html';
+    test.subHeading(ADDRESS.slice('/DEBUG'.length) + ': the provider\'s Model field, opened');
+    const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+    const pdir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-provider-picker-'));
+    // The servers check their arguments through the one spirit object's rules, as in the agent process; the page section
+    // above put a stand-in in its place.
+    global.spirit.check = require(path.join(RUN, 'spirit', 'spirit.js')).check;
+    const pctx = { db: new DatabaseSync(path.join(pdir, 'agent.db')), dbFile: path.join(pdir, 'agent.db'), tables: {}, publish: function () {} };
+    pctx.tables.provider = require(path.join(DIR, 'server.js'))(pctx);
+    pctx.tables.model = require(path.join(DIR, '..', 'model', 'server.js'))(pctx);
+    const P = pctx.tables.provider.verb;
+    const M = pctx.tables.model.verb;
+    const ANTH = call(P, { op: 'add', icon: '🅰', label: 'Anthropic', url: 'https://anthropic.example' }).id;
+    const OTHER = call(P, { op: 'add', icon: '🅾', label: 'Other', url: 'https://other.example' }).id;
+    const mine = ['claude-alpha', 'claude-beta'].map(function (n) { return call(M, { op: 'add', label: n, providerId: ANTH }).id; });
+    const theirs = call(M, { op: 'add', label: 'other-gamma', providerId: OTHER }).id;
+    // What the real tables answer, keyed by the call: the page's stand-in agent server hands these on as they are.
+    const answers = { provider: ANTH };
+    const keep = function (table, verb, args) { answers[table + ' ' + JSON.stringify(args)] = call(verb, args); };
+    // The provider's current model is its first (goal/G41.21, Andy: "provider details: when the panel opens, pickers must
+    // reflect the value or the row field (model)").
+    call(P, { op: 'set', id: ANTH, model: mine[0] });
+    keep('provider', P, { op: 'get', id: ANTH });
+    keep('model', M, { op: 'get', id: mine[0] });
+    [{ op: 'search', text: '' }, { op: 'search', text: '', providerId: ANTH }].forEach(function (a) { keep('model', M, a); });
+    const chrome = H.findChrome();
+    if (!chrome) { test.fail('no Chrome on this machine: SPIRIT_CHROME names none, and none is found by its name'); }
+    else {
+      const node = await H.scratchNode();
+      let page = null;
+      try {
+        if (!node.up || !node.debug) { test.fail('the scratch node did not come up with its DEBUG on'); }
+        else {
+          page = await H.chromePage(chrome);
+          if (page.error) test.fail(page.error);
+          else {
+            await page.send('Page.navigate', { url: node.base + ADDRESS });
+            await H.until(function () { return page.evaluate('typeof window.picker === "function" && !!window.spirit').then(Boolean); }, H.WAIT);
+            const s = await page.evaluate('window.picker(' + JSON.stringify(answers) + ')').catch(function () { return ''; });
+            let m = null;
+            try { m = JSON.parse(s); } catch (e) { m = null; }
+            if (m) test.comment('the page asked: ' + JSON.stringify(m.asked).slice(0, 900) + '; answers held: ' + JSON.stringify(Object.keys(answers)).slice(0, 600));
+            if (!m) test.fail('the page measured nothing: ' + JSON.stringify(s).slice(0, 300));
+            else {
+              ok(m.label && m.shown, 'the provider\'s detail shows its Model field, the provider having models', 'Model field: drawn ' + m.label + ', shown ' + m.shown);
+              ok(/claude-alpha/.test(m.fieldText), 'as the panel opens, the Model field shows the provider\'s current model, claude-alpha', 'the Model field says ' + JSON.stringify(m.fieldText));
+              ok(m.field && m.popupOpen, 'pressed, the Model field opens its dropdown', 'field ' + m.field + ', open ' + m.popupOpen);
+              const keys = m.rows.map(function (r) { return r.key; }).sort();
+              ok(!m.nothing && JSON.stringify(keys) === JSON.stringify(mine.slice().sort()), 'with the search empty, from the start, it lists this provider\'s two models and nothing else',
+                (m.nothing ? 'it says Nothing matches.; ' : '') + 'it lists ' + short(m.rows) + (keys.indexOf(theirs) !== -1 ? ', another provider\'s model among them' : ''));
+              ok(m.rows.length > 0 && m.rows.every(function (r) { return /claude-(alpha|beta)/.test(r.text); }), 'each row says its model', 'rows: ' + short(m.rows));
+            }
+          }
+        }
+      } finally {
+        if (page && page.kid) page.kid.kill();
+        if (node.child) node.child.kill();
+        try { if (page && page.profile) fs.rmSync(page.profile, { recursive: true, force: true }); } catch (e) { /* left */ }
+        try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* left */ }
+        try { fs.rmSync(pdir, { recursive: true, force: true }); } catch (e) { /* left */ }
+      }
+    }
+  }
+}()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
+  function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

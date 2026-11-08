@@ -47,7 +47,7 @@ const whole = function (f) { return { verb: 'goal.whole', item: f }; };
 test.startTest('data.js: the desk\'s translator into spirit.data, and its cache rules');
 
 // The one file holds what the desk knows of its rows at the receiving end: the translator, and the cache rules (keep,
-// shed, answer), which it requires from family/cacheRules.js in node and exports (goal/G41.24, goal/G41.28). That no other file or doc names another way is test/caches.js's, for the whole repo.
+// shed, answer), which it requires from family/cacheRules.js in node and exports (goal/G41.24, goal/G41.28). That no other file or doc names another way is spirit/test/data-caches.js's, for the whole repo.
 test.subHeading('goal/G41.24: where it lives');
 ok(fs.existsSync(FILE), 'spirit/app/desk/data.js is there', 'no ' + FILE);
 const inNode = (function () { try { return require(FILE); } catch (e) { return { threw: String(e && e.message) }; } }());

@@ -18,6 +18,7 @@ The folder's `test/` holds, for each module:
 |---|---|
 | `./test/<name>.md` | the module's purpose and requirements: what its test must exercise, stress and try to break |
 | `./test/<name>.js` | the tests of `./<name>.js`, and of no other module |
+| `./test/<name>-<what>.js` | more tests of `./<name>.js` by name, each with its `.md`; `testModule.js` runs them with `./<name>.js` (goal/G43.27) |
 | `./test/<name>-child-<test>.js` | a general test, judging `./<name>.js` and every module in `./<name>/` and below |
 | `./test/<name>-sibling-<test>.js` | a general test, judging every module in `./` and below |
 
@@ -27,8 +28,8 @@ modules reads as one result per module.
 
 A test that does not judge the one file it is handed is never a general test: a `-sibling-` beside `spirit.js` runs once per
 module, 111 times (goal/G43.2; Andy: *"it looks to me like a lazy-funcking-ass placement of tests"*). A test that covers
-several modules end to end is a test of the module it is most about, in that module's `./test/<name>.js`, and runs
-once. **Every test matches a production file** (goal/G43.27; Andy: *"wsl: every test in run:/ MUST MATCH a production
+several modules end to end is a test of the module it is most about, `./test/<name>.js` or `./test/<name>-<what>.js`,
+and runs once. **Every test matches a production file** (goal/G43.27; Andy: *"wsl: every test in run:/ MUST MATCH a production
 file."*): a test named after no module is garbage, and `test/spirit-sibling-noFuckingGarbage.js` goes red on it.
 
 The run root's general tests (`spirit/run/test/spirit-child-generalRules.js`, `spirit-sibling-generalRules.js`,

@@ -128,7 +128,7 @@ async function scratchFaceRelay(o) {
   let child = spawn(process.execPath, ['-e', code], { cwd: run, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { PORT: String(port) }) });
   const base = 'http://127.0.0.1:' + port;
   const lines = [];
-  // Every mail the relay sent, for a real node joining it and a face logging in (spirit/test/faceStar.js).
+  // Every mail the relay sent, for a real node joining it and a face logging in (spirit/test/faceHome-star.js).
   const mailed = [];
   let ready = null;
   const hear = function (m) { if (m && m.ready) ready = m.ready; else if (m && m.mail) mailed.push(m.mail); else if (m && m.stream) lines.push(m); };

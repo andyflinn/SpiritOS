@@ -50,7 +50,7 @@ on a persona in the left hand \"💬 Select Persona\" pane, the chat pane shows 
   no api, and no Add.
 - A persona picked there loads `spirit/app/agent/chatPane.js` and opens the chat pane (`./chatPane.md`) in a closable tab of the
   workBench's centre, for that persona; another persona picked opens its own tab beside it (goal/G41.31:
-  `spirit/app/agent/test/agentCentreTabs.md`).
+  `spirit/app/agent/test/agent-centreTabs.md`).
 
 ## What its test must try to break
 

@@ -40,6 +40,17 @@ GENERAL.forEach(function (g) {
   ok(hit.length === 1, g + ' judges ' + MODULE + ' on its blast radius', g + ' is not given ' + MODULE + ' to judge; its entries: ' + short(radius.filter(function (e) { return e.test === g; })));
 });
 
+// ITS TESTS BY NAME (goal/G43.27; Andy: "every test must be directly (by name) or indirectly (by general rule) be associated
+// with a production file"): ./test/<name>-<what>.js runs with ./<name>.js, and with every module below it, as its own test does.
+test.subHeading('a module\'s tests by name');
+const byName = radius.filter(function (e) { return e.test === 'spirit/test/apiDoor-familyGate.js' && !e.file; });
+ok(byName.length === 1, MODULE + '\'s blast radius holds spirit/test/apiDoor-familyGate.js, its test by name, once', 'its blast radius: ' + short(radius.map(function (e) { return e.test; })));
+ok(!radius.some(function (e) { return /\/test\/apiDoorX|\/test\/apiDoo-/.test(e.test); }) && !testsFor('spirit/apiAuth.js').some(function (e) { return e.test === 'spirit/test/apiDoor-familyGate.js'; }),
+  'a test by name runs with its own module only: spirit/apiAuth.js does not get apiDoor-familyGate.js', 'apiDoor-familyGate.js runs with spirit/apiAuth.js too');
+const below = testsFor('spirit/element/search/contact/relayPanel.js').map(function (e) { return e.test; });
+ok(below.indexOf('spirit/element/search/contact/test/relayPanel-rowStream.js') !== -1 && below.indexOf('spirit/element/test/search-bubble.js') !== -1,
+  'a module below runs its own tests by name and those of the module above it (search.js: search-bubble.js)', 'relayPanel.js\'s blast radius: ' + short(below));
+
 test.subHeading('the whole list');
 const all = testsFor('');
 ok(all.length > 0, 'the world: the whole list names ' + all.length + ' entries', 'the whole list is empty: nothing judged');

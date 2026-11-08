@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.26 (Andy: "why do the icons in the probabilitySearch row have different width's? do they not use the icon
+// element? I'd like it, if the controls in the search bubble look better aligned."): a pane and a dropdown of the search
+// element with filters, and what the browser makes of their bubble's rows, measured. Opened by
+// ./search-bubble.js at /DEBUG/spirit/element/test/search-bubble-laid.html.
+window.laid = function () {
+  return Promise.resolve().then(function () { return spirit.require('spirit/element/search.js'); }).catch(function () { return null; }).then(function () {
+    var P = (spirit.element || {}).search;
+    var out = { made: !!P && typeof P.create === 'function' };
+    if (!out.made) return JSON.stringify(out);
+    function rect(el) { if (!el) return null; var r = el.getBoundingClientRect(); return { left: Math.round(r.left * 10) / 10, w: Math.round(r.width * 10) / 10 }; }
+    function measure(face) {
+      var box = document.createElement('div');
+      box.style.cssText = 'position:relative;width:500px;height:300px;display:flex;flex-direction:column';
+      document.body.appendChild(box);
+      // A selector its mounter made, for the 🪣 row (goal/G41.26).
+      var sel = document.createElement('button'); sel.type = 'button'; sel.textContent = 'every ID'; sel.setAttribute('data-sel', '1');
+      P.create(box, { face: face, placeholder: 'pick', columns: [{ field: 'name' }], rows: function () { return [{ key: 'a', name: 'a' }]; },
+        selectors: [{ name: 'who', element: sel, test: function () { return 1; } }],
+        filters: [{ name: 'mine', toggle: true, word: 'Mine', test: function () { return 1; } }] });
+      return new Promise(function (r) { setTimeout(r, 300); }).then(function () {
+        if (face === 'dropdown') { var f = box.querySelector('button'); if (f) f.click(); }
+        var all = Array.prototype.slice.call(box.querySelectorAll('*'));
+        // Each row's icon: the innermost element showing 🗜 or 🔎, and the control after it on its row.
+        function iconOf(g) { var hits = all.filter(function (el) { return el.textContent.indexOf(g) !== -1; }); return hits.filter(function (el) { return !hits.some(function (k) { return k !== el && el.contains(k); }); })[0] || null; }
+        var fi = iconOf('🗜'); var si = iconOf('🔎'); var bi = iconOf('🪣');
+        var firstFilter = box.querySelector('button[data-filter]');
+        var input = box.querySelector('input[type="text"]');
+        return {
+          bucketIcon: rect(bi), bucketIconSize: bi ? parseFloat(getComputedStyle(bi).fontSize) : 0, bucketIconClass: bi ? String(bi.className) : '',
+          firstSelector: rect(sel),
+          filterIcon: rect(fi), searchIcon: rect(si),
+          filterIconSize: fi ? parseFloat(getComputedStyle(fi).fontSize) : 0, searchIconSize: si ? parseFloat(getComputedStyle(si).fontSize) : 0,
+          filterIconClass: fi ? String(fi.className) : '', searchIconClass: si ? String(si.className) : '',
+          firstFilter: rect(firstFilter), input: rect(input),
+        };
+      });
+    }
+    return measure('pane').then(function (p) { out.pane = p; return measure('dropdown'); }).then(function (d) { out.dropdown = d; return JSON.stringify(out); });
+  });
+};
+</script>
+</body>
+</html>

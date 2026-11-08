@@ -3,7 +3,7 @@
 The Grants app (apiAuth/G1.6; goal/G41.5, G41.13, G41.14, G41.16, G41.32, G43.24): the owner's screen for who may call
 which api. Intrinsic by its own `grants.json`, so it shows on every face, the loopback face's and a relay face's alike
 (Andy, Q1: *"Of course on both, how else can i give someone access when i travel?"*). Its test is `./grants.js`; its
-manifest, its tile and its opening in a real Chrome are judged in `spirit/app/test/infoGrants.js`.
+manifest, its tile and its opening in a real Chrome are judged in `spirit/app/test/api-infoGrants.js`.
 
 It is a wrapper (Andy: *"no i want those apps to basically be wrappers for spirit/element/ things...."*): its Grants tab is
 the grants panel, which knows no table of its own; this app configures it (*"the callers (Grants and agent shell apps

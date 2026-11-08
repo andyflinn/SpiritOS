@@ -18,10 +18,12 @@ the `test/` folder beside it named after it; handed a file in a test folder, tha
 - **A test folder belongs to a module**: the folder it sits in holds a `.js` module. The run root is the exception.
 - **The run root's `test/`** holds its general tests (`spirit-child-*`, `spirit-sibling-*`, of `spirit/spirit.js`), its
   helpers (`headLessChrome.js`, `testModule.js`, `testReport.js`) and `TEST_SYSTEM.md`. Nothing else.
-- **A `test/` inside a `test/` folder** holds the tests of the files beside it, `<name>.js` and `<name>.md`. Nothing
-  else.
-- **Every other test matches a production file**: `test/<name>.js`, or a general test `<name>-child-*` or
-  `<name>-sibling-*`, of a `<name>.js` beside the folder. A test named after no module is garbage.
+- **A `test/` inside a `test/` folder** holds the tests of the files beside it, `<name>.js` or `<name>-<what>.js` and
+  their `.md`. Nothing else.
+- **Every other test matches a production file** (Andy: *"every test must be directly (by name) or indirectly (by
+  general rule) be associated with a production file"*): `test/<name>.js`, a test by name `test/<name>-<what>.js`
+  (`testModule.js` runs it with `<name>.js`), or a general test `<name>-child-*` or `<name>-sibling-*`, of a `<name>.js`
+  beside the folder. A test named after no module is garbage.
 - **A test and its spec together**: a `.js` has its `.md` beside it, and an `.md` its `.js`.
 - **Any other file** (a laid page, a fixture) is named after a module beside the folder: `<module>-<what>.<ext>`.
 - Each garbage file is its own check, named by its path, with the reason.
@@ -30,8 +32,9 @@ the `test/` folder beside it named after it; handed a file in a test folder, tha
 
 ## What its test must try to break
 
-- A plain test in the run root's `test/` (`test/caches.js`).
-- A test in `test/test/` of a file that is not in `test/` (`test/test/oneDoor.js`).
-- A test named after no module beside its folder (`spirit/app/test/deskMove.js`).
+- A plain test in the run root's `test/` (`test/caches.js`, before goal/G43.27 moved it).
+- A test in `test/test/` of a file that is not in `test/` (`test/test/oneDoor.js`, before goal/G43.27 deleted it).
+- A test named after no module beside its folder (`spirit/app/test/deskMove.js`, before goal/G43.27 renamed it), and a
+  `<what>-<more>.js` whose first word is no module beside the folder.
 - A `.js` without its `.md`, an `.md` without its `.js`.
 - A fixture named after no module (`provider-picker.html`, where there is no `provider.js`).
