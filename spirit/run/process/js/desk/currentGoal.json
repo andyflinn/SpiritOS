@@ -1,5 +1,5 @@
 {
- "change": 155263,
+ "change": 155265,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,7 +145,7 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 6,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -19645,12 +19645,11 @@
    "id": "goal/G43.24",
    "title": "Port info and grand into spirit/app/",
    "goal": "goal/G43",
-   "status": "done",
+   "status": "closed",
    "statusTone": "",
    "with": "",
    "version": 11,
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -19660,7 +19659,7 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": true,
+   "alert": false,
    "claims": 1,
    "boxTaken": "",
    "limbo": false,
