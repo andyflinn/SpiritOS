@@ -22,7 +22,7 @@
         // is listed in pane mode only, and shows Run, not Activate).
         Object.keys(all).forEach(function (k) {
           var r = all[k] || {};
-          V.set(APPS + '/' + k, { key: k, label: String(r.label || ''), icon: String(r.icon || ''), active: r.active === true, shell: r.shell === true, intrinsic: r.intrinsic === true, nodeMount: r.nodeMount === true, run: r.run === true, runOnly: r.runOnly === true });
+          V.set(APPS + '/' + k, { key: k, label: String(r.label || ''), icon: String(r.icon || ''), active: r.active === true, shell: r.shell === true, intrinsic: r.intrinsic === true, nodeMount: r.nodeMount === true, api: r.api === true, run: r.run === true, runOnly: r.runOnly === true });
         });
       },
     });
