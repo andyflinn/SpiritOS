@@ -95,6 +95,8 @@ function world(answer) {
       return w.hold ? w.hold : Promise.resolve({});
     },
     escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); },
+    // The node family through spirit.ready, as the page reaches every family (goal/G43.27, Q1: no api at load).
+    get ready() { return Promise.resolve(win.spirit); },
     outcome: function (c) { return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; }, function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; }); },
     node: {
       rotateCipher: function (args) {

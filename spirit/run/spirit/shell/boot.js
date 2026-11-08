@@ -226,7 +226,7 @@
   // in the banner.
   function loadShell() {
     var at = state.home ? 'home' : 'face';
-    return Promise.resolve(spirit.node && typeof spirit.node.shell === 'function' ? spirit.node.shell({ at: at }) : { name: 'shell' }).then(function (r) {
+    return Promise.resolve(spirit.ready).then(function (s) { return s.node.shell({ at: at }); }).then(function (r) {
       return String((r && r.name) || 'shell');
     }, function () { return 'shell'; }).then(function (name) {
       if (!/^[A-Za-z0-9_-]+$/.test(name)) name = 'shell';
@@ -257,7 +257,7 @@
     } else {
       window.spirit.transport.events = events;
     }
-    // The spirit object gets its families once the node can be reached (goal/G32.1), and the sheets load once they are
+    // The spirit object is started once the node can be reached (goal/G32.1; since goal/G43.27 it asks no api, each family binding when first called), and the sheets load once they are
     // there; then what boot.js draws with, each required by it: the navigation frame, the file tree's row element, and the
     // jobs family's cache manager (goal/G41.28).
     var parts = function () {
@@ -312,7 +312,7 @@
     var code = joinCode;
     joinCode = '';
     // Join's steps come with the link that needs them (goal/G43.27), required here.
-    Promise.all([window.spirit.require('spirit/element/joinSteps.js'), spirit.contact.search({ q: '*', relay: 'yes' })]).then(function (got) {
+    Promise.all([window.spirit.require('spirit/element/joinSteps.js'), Promise.resolve(spirit.ready).then(function (sp) { return sp.contact.search({ q: '*', relay: 'yes' }); })]).then(function (got) {
       var S = window.spirit.element && window.spirit.element.joinSteps;
       var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';

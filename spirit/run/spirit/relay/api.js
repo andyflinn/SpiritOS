@@ -27,8 +27,13 @@ module.exports = {
     function said(e) { return { status: (e && e.status) || 0, text: '', body: (e && e.body) || { ok: false, error: String((e && e.message) || e) } }; }
     function listed() {
       var one = typeof spirit !== 'undefined' ? spirit : (typeof window !== 'undefined' ? window.spirit : null);
-      if (!one || !one.contact || typeof one.contact.search !== 'function') return Promise.reject(new Error('no contact family on the spirit object'));
-      return one.contact.search({ q: '*', relay: 'yes', keep: 'yes' });
+      if (!one) return Promise.reject(new Error('no spirit object'));
+      // On a page through spirit.ready, where any family named stands, bound when first called (goal/G43.27, Q1: no api at
+      // load); in node, the instance itself.
+      return Promise.resolve(one.ready || one).then(function (s) {
+        if (!s || !s.contact || typeof s.contact.search !== 'function') throw new Error('no contact family on the spirit object');
+        return s.contact.search({ q: '*', relay: 'yes', keep: 'yes' });
+      });
     }
     return {
       // Each relay got is kept by the family's own cache manager (goal/G41.28), spirit.data.relay.data.

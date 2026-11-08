@@ -384,14 +384,21 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
   const started = wq.spirit.start();
   const again = wq.spirit.start();
   const ps = await started;
-  // LAZY (goal/G43.27; Andy: "lazy-load, is a tree....", "cw, BUILD it that way."): start binds no family; each the tree
-  // names stands on window.spirit and binds when first called, and a call to one with no interface is refused.
-  const goneSaid = await Promise.resolve(wq.spirit.gone && typeof wq.spirit.gone.anything === 'function' ? wq.spirit.gone.anything({}) : 'no stand-in')
+  // NO API CALL AT LOAD (goal/G43.27, Q1; Andy: "shouldn't it work without making a call, since the elements will trigger the
+  // necessary calls?", "Q1: clear"): start asks no api, whole or of a family. Any family named on what spirit.ready answers
+  // stands there and binds when first called; one with no interface is refused no-interface when called.
+  // The one family start calls is node, for node.card (goal/G41.28, Q10: "yes."): its api is asked as it is called. Never the
+  // whole api, and no other family's.
+  const askedAtStart = wq.fetched.filter(function (f) {
+    const b = f.url === '/api/spirit' ? JSON.parse(f.body) : null;
+    return !!b && b.call === 'api' && !(b.args && b.args.family === 'node');
+  });
+  const goneSaid = await Promise.resolve(ps.gone && typeof ps.gone.anything === 'function' ? ps.gone.anything({}) : 'no stand-in')
     .then(function (v) { return 'answered ' + short(v); }, function (e) { return (e && e.code) || 'refused'; });
-  if (started === again && wq.spirit.ready === started && ps === wq.spirit && wq.spirit.demo && goneSaid === 'no-interface')
-    test.check('spirit.start() binds no family up front: each the node names stands on window.spirit, once; spirit.ready is that start; a call to one with no interface is refused no-interface');
-  else test.fail('spirit.start: ' + short([started === again, wq.spirit.ready === started, !!wq.spirit.demo, goneSaid, Object.keys(wq.spirit)]));
-  const pc = await wq.spirit.demo.hello({ name: 'hal' });
+  if (started === again && wq.spirit.ready === started && !askedAtStart.length && ps.isBrowser === wq.spirit.isBrowser && !!ps.demo && goneSaid === 'no-interface')
+    test.check('spirit.start() asks no api: spirit.ready answers the instance, any family named on it stands there and binds when first called; a call to one with no interface is refused no-interface');
+  else test.fail('spirit.start: ' + short([started === again, wq.spirit.ready === started, askedAtStart.length + ' api asks at start', ps.isBrowser === wq.spirit.isBrowser, !!ps.demo, goneSaid]));
+  const pc = await ps.demo.hello({ name: 'hal' });
   const toDoor = wq.fetched.filter(function (f) { return f.url === '/api/spirit'; });
   if (pc.said === 'hello hal' && toDoor.length && isCall(JSON.parse(toDoor[toDoor.length - 1].body)) && JSON.parse(toDoor[toDoor.length - 1].body).call === 'demo.hello') test.check('on a page with no link: calls go to the page\'s own origin, /api/spirit, as { call, args } (goal/G41.15)');
   else test.fail('on a page: ' + short([pc, toDoor.length]));

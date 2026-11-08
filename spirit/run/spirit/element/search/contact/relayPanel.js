@@ -259,7 +259,7 @@ function ndLoad() {
   ndUnlisted = false;
 // relay.status is gone (puppets/G2): spirit.relay.status (the relay family's api.js)
   // lists the relays by contact.search, gets each by relay.get, and hands back the same shape (goal/G40.11).
-  return spirit.relay.status(ndLabel || '').then(function (r) { return r && r.body; })
+  return Promise.resolve(spirit.ready).then(function (s) { return s.relay.status(ndLabel || ''); }).then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];

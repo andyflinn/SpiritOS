@@ -64,7 +64,7 @@
     function rotate() {
       busy = true;
       draw();
-      S.outcome(S.node.rotateCipher({})).then(function (r) {
+      S.outcome(Promise.resolve(S.ready).then(function (s) { return s.node.rotateCipher({}); })).then(function (r) {
         busy = false;
         result = r && r.status === 200 && r.body ? r.body : { ok: false, error: (r && r.body && (r.body.error || r.body.code)) || 'no answer' };
         draw();

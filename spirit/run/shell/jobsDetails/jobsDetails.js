@@ -167,12 +167,12 @@ spirit.shell.activateApp({
       var id = event.target && event.target.id;
       if (id === 'jd-cancel') {
         // The screen stays: the next event shows the job stop.
-        spirit.jobs.cancel({ id: jdId }).catch(function (err) { console.error('cancel failed', err); });
+        Promise.resolve(spirit.ready).then(function (s) { return s.jobs.cancel({ id: jdId }); }).catch(function (err) { console.error('cancel failed', err); });
         return;
       }
       if (id === 'jd-delete') {
         // THE SCREEN GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the table.
-        spirit.jobs.delete({ id: jdId }).then(function () {
+        Promise.resolve(spirit.ready).then(function (s) { return s.jobs.delete({ id: jdId }); }).then(function () {
           if (jdApi) jdApi.closeDialog({ changed: true, id: jdId });
         }).catch(function (err) { console.error('delete failed', err); });
       }

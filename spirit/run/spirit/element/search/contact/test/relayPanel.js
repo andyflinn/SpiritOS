@@ -164,6 +164,12 @@ function world(rows, relayStatus) {
   };
   const families = new Proxy({}, { get: function (t, fam) {
     if (fam === 'then') return undefined;
+    // relay.status, reached through spirit.ready as the page reaches every family (goal/G43.27, Q1: no api at load).
+    // Its other verbs recorded, as every family's are below.
+    if (fam === 'relay') return new Proxy({}, { get: function (t2, verb) {
+      if (verb === 'status') return function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); };
+      return function (body) { w.calls.push({ name: 'relay.' + String(verb), body: body }); return Promise.resolve({ ok: true }); };
+    } });
     if (fam === 'peer') return { post: function (b) {
       const sent = P.decode(b.text);
       w.posts.push({ app: sent.app, key: b.to, body: sent.body });
@@ -208,7 +214,6 @@ function world(rows, relayStatus) {
         return got;
       });
     },
-    relay: { status: function () { return Promise.resolve({ body: { rows: JSON.parse(JSON.stringify(rows)), relayStatus: relayStatus || {} } }); } },
     // The contact family's cache (goal/G41.28): its manager loads, and the page watches spirit.data.contact.data's rows.
     cacheManager: function (name) { w.managers = (w.managers || []).concat(name); ((win.spirit.data = win.spirit.data || {}).contact = {}).data = { watch: function (h) { (w.watches = w.watches || []).push(h); return function () {}; } }; return Promise.resolve(true); },
     get element() { return this.elements; }, elements: {

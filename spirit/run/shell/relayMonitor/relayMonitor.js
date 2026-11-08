@@ -487,7 +487,7 @@
 
       function load() {
         // spirit.relay.status (the relay family's api.js, puppets/G2).
-        return spirit.relay.status('')
+        return Promise.resolve(spirit.ready).then(function (s) { return s.relay.status(''); })
           .then(function (r) {
             var data = rmAnswerOf(r);
             rows = (data && data.rows) || [];

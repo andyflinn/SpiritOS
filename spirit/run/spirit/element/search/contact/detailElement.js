@@ -79,7 +79,7 @@ function cdStatus(text) {
 var cdClaim = null;   // { owned, ownerLabel } of the relay shown, from relay.status
 function cdRelayClaim() {
   cdClaim = null;
-  return spirit.relay.status('').then(function (r) {
+  return Promise.resolve(spirit.ready).then(function (s) { return s.relay.status(''); }).then(function (r) {
     ((r.body && r.body.rows) || []).forEach(function (row) {
       if (row && (row.key === cdKey || (row.roll && row.roll.relayKey === cdKey))) cdClaim = { owned: !!row.owned, ownerLabel: String(row.ownerLabel || '') };
     });

@@ -813,9 +813,8 @@
   // { ok, status, body, card, from, error }: card is the node's VERIFIED card of the peer (spirit/peerPost.js, answer.card), ok
   // only when it reached and the peer did not refuse. A page hears no answer-post: the node's own peerPost waits on the
   // node's server stream, which a page does not hold, so peer.post's reply is the answer.
-  // spirit.start() asks the node's tree once, when the page can reach its node (the face shell after its link is up;
-  // index.html at load), and stands each family it names on window.spirit, bound when first called (goal/G43.27);
-  // spirit.ready answers when they stand there.
+  // spirit.start() runs once the page can reach its node (the face shell after its link is up; index.html at load). It asks
+  // no api (goal/G43.27, Q1): spirit.ready answers the instance, on which any family named stands, bound when first called.
   self.peerPost = function (peer, app, body, how) {
     var whole = !!(how && how.answer === true);
     // What it needs, it requires itself: packet.js on a page wants the limits before it (spirit/limits.js).
@@ -874,15 +873,28 @@
       },
     });
   }
+  // WHAT spirit.ready ANSWERS: the one instance, seen so that a family is there the moment it is named (goal/G43.27, Q1;
+  // Andy: "shouldn't it work without making a call, since the elements will trigger the necessary calls?", "Q1: clear").
+  // A name the instance does not hold, read off it, stands there as a family waiting for its first call (lazyFamily), so an
+  // app switched on after the page loaded is reached with no reload. The cost wsl named: a misspelt family fails when it is
+  // called, not at load. Everything the instance holds answers as it is; window.spirit itself stays the plain instance.
+  var FAMILY_NAME = /^[a-z][A-Za-z0-9]*$/;
+  var view = typeof Proxy !== 'function' ? self : new Proxy(self, {
+    get: function (target, prop) {
+      if (typeof prop === 'string' && prop !== 'then' && !(prop in target) && FAMILY_NAME.test(prop)) lazyFamily(prop);
+      return target[prop];
+    },
+  });
+  // ON A PAGE, ready IS THERE FROM THE START: an element that runs before start() (one required as face.html loads) waits on
+  // it, and it answers once start() has. In node there is no start, and no ready.
+  var readyNow = null;
+  if (isBrowser()) self.ready = new Promise(function (resolve) { readyNow = resolve; });
   self.start = function () {
     if (started) return started;
-    // THE TREE ONLY, NO FAMILY BOUND UP FRONT (goal/G43.27; Andy: "lazy-load, is a tree....", G41.3, and now "AGAIN, when i
-    // say lazy-load you found a way to fuck it up", "cw, BUILD it that way."): each family the tree names stands on the
-    // object as itself, and binds the first time something calls it (lazyFamily, below), as a file loads the first time it is
-    // required. A page that uses three families asks three interfaces, never sixteen.
-    started = tree().then(function (names) {
-      Object.keys(names || {}).forEach(lazyFamily);
-    }).then(function () {
+    // NO API CALL AT LOAD (goal/G43.27, Q1, above; before it, "lazy-load, is a tree....", G41.3, and "AGAIN, when i say
+    // lazy-load you found a way to fuck it up"): the node's api is never asked whole. A family binds the first time
+    // something calls it (lazyFamily), as a file loads the first time it is required: one api call, for that family only.
+    started = Promise.resolve().then(function () {
       // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each family through its own
       // data.js (goal/G41.28). Asked once the page is parsed, so a page that loads it by tag keeps the one
       // cache it made.
@@ -893,14 +905,14 @@
       // THE PAGE KNOWS ITS NODE (goal/G41.28; Andy, Q10: "Shall spirit.js ask node.card once as a page loads and keep the
       // key as spirit.node.key, so a page files its own node's rows under it?" "yes."): asked once, kept on spirit.node as a
       // process has it, and handed to the data set, which files the page's stream under it from then on.
-      if (!self.node || typeof self.node.card !== 'function') return null;
-      return Promise.resolve(self.node.card()).then(function (c) {
+      return Promise.resolve(view.node.card()).then(function (c) {
         var key = c && typeof c.publicKey === 'string' ? c.publicKey : '';
         if (!key) return;
         self.node.key = key;
         if (self.data && typeof self.data.homeNode === 'function') self.data.homeNode(key);
       }, function () { /* the page files nothing until its node is known */ });
-    }).then(function () { return self; });
+    }).then(function () { return view; });
+    if (readyNow) readyNow(started);
     self.ready = started;
     return started;
   };

@@ -120,7 +120,7 @@
     }
 
     // The steps, read once from the Join app's manifest; the job, from the jobs family's cache, watched.
-    Promise.resolve(S.fs.loadFile(STEPS)).then(function (text) {
+    Promise.resolve(S.ready).then(function (s) { return s.fs.loadFile(STEPS); }).then(function (text) {
       try { steps = (JSON.parse(text) || {}).steps || []; } catch (e) { steps = []; }
     }, function () { steps = []; }).then(function () { return parts; }).then(function () {
       return S.cacheManager('jobs');

@@ -189,9 +189,14 @@ over them.
 
 ### On a page only: `start()`, `ready`
 
-`start()` asks the node's tree once and binds no family up front (goal/G43.27, lazy): each family the tree names
-stands on `window.spirit` and binds the first time it is called, and a call to one with no interface is refused
-`no-interface`. It answers the instance; `ready` is that promise. The face shell calls it once its link is up, the home page at load.
+`start()` asks no api (goal/G43.27, Q1; Andy: *"shouldn't it work without making a call, since the elements will trigger
+the necessary calls?"*, *"Q1: clear"*). The only family it calls is node, for `node.card`, and that family's api is asked
+then. `ready` is that promise. It answers the instance, seen so that any family named on it stands there and binds the
+first time it is called. A call to a family with no interface is refused `no-interface`. `window.spirit` itself stays
+the plain instance. The face shell calls `start()` once its link is up, the home page at load.
+
+**An app switched on after the page loaded works with no reload** (section 9): desk, off at load, is switched on from
+the page. The Desk element, opened on that same page, asks `desk.items.search` itself and draws.
 
 **No api up front** (goal/G43.27; Andy: *"MAKE SURE spirit.js doesn't load every fucking api upfront!!!!!!!!!!!!!!"*).
 The red loads the home page in a real browser (headless Chrome) on a scratch node and counts every call to the node's
