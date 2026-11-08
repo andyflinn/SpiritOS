@@ -27,7 +27,6 @@ It produces a document, not a patch. Andy often opens one with a **sketch in the
 
 - **Check every premise against the tree before answering**, and carry a file and a line for each claim, with the commit it was verified at. "One row in `allow.json`, `ownerName()` is `Object.keys(byName)[0]`" is costable; "the allow list is small" is not.
 - **Do not build.** No patch, no cycle. Feasibility and shape only, until a packet says otherwise.
-- **The durable result lands under `design/`** — `design/<area>/<NAME>.md`, linked from `design/README.md`. Brief, no transcript of the back-and-forth: vision, feasibility, proposed shape, **decided / recommended / open kept apart**, so a third party can act without re-deriving it.
 - **Attribution marks authority, not authorship**: name a decision so a later session does not relitigate it, and nothing else.
 
 ## Andy's vault — `spirit/run/brains/`
