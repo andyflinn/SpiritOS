@@ -382,7 +382,7 @@
     return ['spirit/' + n + '/data.js', familyPath(n).replace(/family\/api\.js$/, 'data.js'), 'spirit/app/' + n + '/data.js'];
   }
   // ON A PAGE, FOUND BY THE FOLDER SHAPE AND LOADED BY A GET (goal/G43.27, requirement 6; Andy: "spirit.js can be fixed,
-  // no? it knows the difference between an app and a system branch?"): an app's data.js is spirit/app/<name>/data.js, a
+  // no? it knows the difference between an app and a system branch?"): an app's data.js is spirit/app/<name>/data.js when the app has a server of its own (node.mount), a
   // node family's spirit/<name>/data.js, and the page tells an app by the node's app list it holds (spirit.data.app, the
   // app family's own manager, spirit/app/data.js). No family folder is asked. The one loader GETs that path, so a manager of
   // any size travels, on loopback and through the face alike. In node, its own disk.
@@ -415,8 +415,11 @@
         var at = managerPaths(n).filter(function (p) { return require('fs').existsSync(require('path').join(RUN_ROOT, p)); })[0];
         managers[n] = at ? requireOne(at) : Promise.reject(refusal('not-found', 'the family ' + n + ' has no ' + MANAGER));
       } else {
+        // Only an app with a server of its own has a family (node.mount, the row's nodeMount): an app that is only a face, as
+        // contact is beside the contact family, leaves the name to the system's spirit/<name>/ (wsl found it at verify).
         managers[n] = (n === 'app' ? Promise.resolve('spirit/app/' + MANAGER) : appRows().then(function (rows) {
-          return rows && Object.prototype.hasOwnProperty.call(rows, n) ? 'spirit/app/' + n + '/' + MANAGER : 'spirit/' + n + '/' + MANAGER;
+          var row = rows && Object.prototype.hasOwnProperty.call(rows, n) ? rows[n] : null;
+          return row && row.nodeMount === true ? 'spirit/app/' + n + '/' + MANAGER : 'spirit/' + n + '/' + MANAGER;
         })).then(function (p) {
           return requireOne('spirit/data.js').then(function () { return requireOne(p); });
         });
