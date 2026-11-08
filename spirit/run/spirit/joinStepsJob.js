@@ -10,7 +10,10 @@
 //   create(rootDir, jobs) -> { job, facts(), refresh(why) }
 //     facts(): seated (a relay row holds a seat), relayUrl (that relay, else the first listed), contact (the owner
 //              keeps anyone but this node and the relays it knows by key), face (the face name on that relay), faceUrl
-//              (https://<face>.<relay host>). No email: the node keeps none since goal/G40.11 (box v24).
+//              (https://<face>.<relay host>), opened (this node's face has been opened: the file the node writes when
+//              its face opens, spirit/state/join/data/faceOpened.json, goal/G43.26). No email: the node keeps none since
+//              goal/G40.11 (box v24).
+//     faceOpened(rootDir): records that the face opened (server.js, onFaceOpen); answers whether it was new.
 //     refresh(why): publishes the job when facts() changed, with why as its log line; answers whether it did.
 // server.js refreshes it after any relay, contact or peer verb, the verbs that can take a seat, add a contact or keep
 // a face.
@@ -18,9 +21,23 @@
 const auth = require('./relayAuth');
 const relayKeys = require('./relayKeys');
 const contactBook = require('./contacts');
+const fs = require('fs');
+const path = require('path');
+
+// JOIN KEEPS ITS STATE WHERE ALL APPS KEEP THEIR STATE (goal/G43.26; Andy: "JOIN KEEPS ITS FUCKING STATE WHERE ALL APPS KEEP
+// THEIR FUCKING STATE. spirit/state/join/data/"). A page cannot write spirit/state/, and the node knows when its face
+// opens, so the node writes it.
+function openedFile(rootDir) { return path.join(rootDir, 'spirit', 'state', 'join', 'data', 'faceOpened.json'); }
+function faceOpened(rootDir) {
+  const file = openedFile(rootDir);
+  if (fs.existsSync(file)) return false;
+  try { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify({ faceOpened: true, at: new Date().toISOString() }) + '\n'); } catch (e) { return false; }
+  return true;
+}
 
 function facts(rootDir) {
-  const out = { seated: false, relayUrl: '', contact: false, face: '', faceUrl: '' };
+  const out = { seated: false, relayUrl: '', contact: false, face: '', faceUrl: '', opened: false };
+  try { out.opened = fs.existsSync(openedFile(rootDir)); } catch (e) { out.opened = false; }
   let seated = [];
   try { seated = relayKeys.seatedUrls(rootDir); } catch (e) { seated = []; }
   out.seated = seated.length > 0;
@@ -60,4 +77,4 @@ function create(rootDir, jobs) {
   return { job: job, facts: function () { return facts(rootDir); }, refresh: refresh };
 }
 
-module.exports = { create: create, facts: facts };
+module.exports = { create: create, facts: facts, faceOpened: faceOpened };

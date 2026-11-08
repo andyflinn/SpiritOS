@@ -14,7 +14,9 @@
 //   - THE SHELL THE NODE NAMES (node.shell, at home or face; spirit/app/<name>/<name>.js), drawn in the page's area. The
 //     RULE: a shell must be able to replace itself. No desktop of its own (Q23, Andy: "yes." to the old shell apps missing
 //     from the green shell for now).
-//   - JOIN SHOWS ITSELF (Q18, Andy: "join. not the shells job."): loaded at home beside the shell, it decides where and when.
+//   - JOIN IS AN APP (goal/G43.26; Andy: "the join icon sits next to all other icons on a shell (SO IT's A FCUKING APP,
+//     LIKE IT ALWAYS WAS)"): spirit/app/join/, a tile beside the others; boot does not load it. Boot keeps only the mailed
+//     join link's code, which it hands to relay.join.
 //   - THE NAVIGATION FRAME, for what still opens as a page (a contact's or a relay's details): its title bar and the api a
 //     page is handed.
 
@@ -283,8 +285,6 @@
       attachNavigation();
       link.loaded = true;
       openStream(false);
-      // Join shows itself, at home (its join.json: runs home); the shell knows nothing of it (Q18).
-      if (home) spirit.require('shell/join/join.js').then(null, function () { /* Join missing is no shell's fault */ });
       joinFromLink();
       return loadShell();
     }, function (e) {
@@ -313,10 +313,10 @@
 
   // THE MAILED JOIN LINK (goal/G40.10): the relay mails /face.html?join=<code>&relay=<its key>&app=join. Read here, before
   // the address is cleared; once the page is up the code goes to relay.join, at the relay this node lists under that key
-  // (joinSteps.linkRelay), and Join, which shows itself, opens on it (spirit.shell.joinOpen, ?app=join).
+  // (joinSteps.linkRelay).
   var joinCode = '';
   var joinRelayKey = '';
-  try { var q = new URLSearchParams(window.location.search); joinCode = q.get('join') || ''; joinRelayKey = q.get('relay') || ''; window.spirit.shell.joinOpen = q.get('app') === 'join'; } catch (e) { joinCode = ''; }
+  try { var q = new URLSearchParams(window.location.search); joinCode = q.get('join') || ''; joinRelayKey = q.get('relay') || ''; } catch (e) { joinCode = ''; }
   function joinFromLink() {
     if (!joinCode) return;
     var code = joinCode;

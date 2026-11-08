@@ -27,7 +27,7 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
 const INTRINSIC = [
   'process/js/fileServer',
   'shell/apps', 'shell/icons',
-  'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/join', 'shell/relayMonitor', 'shell/stats',
+  'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/relayMonitor', 'shell/stats',
 ];
 // An app folder (shell/<name> or process/js/<name>), or a path inside one, is intrinsic.
 // Blind to case, as every gate (goal/G41.30): Shell/Apps is shell/apps on a disc that does not tell them apart.
@@ -73,12 +73,6 @@ function isCore(repoPath, repoRoot) {
   // test/ folder beside a core file, named after it (test/<name>.js, test/<name>.md), is core with it.
   const companion = /^(.*)\/test\/([^/]+)\.(js|md)$/.exec(p);
   if (companion && ['.js', '.css', '.html'].some(function (ext) { return isCore(companion[1] + '/' + companion[2] + ext, repoRoot); })) return true;
-  // LOGIN AND JOIN ARE CORE WHOLE (goal/G41.3). Andy: the two are "mandatory components of shell/boot.js in loopback or
-  // face mode respectively", boot "makes hard-coded assumptions" about them, and no page may change them. Their .json
-  // files are no manifests but code, their UI text (Q9: "if they're code, just keep them, they are obviously NOT
-  // manifests."), so they are asked here, before the manifest rule below.
-  // The login app went (goal/G43.18, box v29: "The login is spirit.login, in spirit.js, no app"); Join stays core whole.
-  if (p.indexOf('spirit/run/shell/join/') === 0) return true;
   // A MANIFEST IS NEVER CORE (goal/G30.21; Andy: "manifests are no longer core"), an intrinsic app's included.
   if (/^spirit\/run\/(shell|process\/js)\/([^/]+)\/\2\.json$/.test(p)) return false;
   // shell/json/ too (goal/G40.8; Andy: "the folder spirit/run/shell/json/ is a core folder as well. this way i can update

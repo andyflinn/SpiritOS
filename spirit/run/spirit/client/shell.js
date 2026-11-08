@@ -2623,7 +2623,7 @@
   // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
   // introSpector (goal/G30.5; Andy, 2026-10-20: "I want an intrinsic app: introSpector").
   // Files moved to spirit/app/file/ (goal/G43.17), Info and Grants to spirit/app/ (goal/G43.24).
-  var INTRINSIC_APP_FOLDERS = ['jobs', 'introSpector', 'join'];
+  var INTRINSIC_APP_FOLDERS = ['jobs', 'introSpector'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {
