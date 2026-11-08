@@ -102,7 +102,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
     const n = lists.length;
     E.search.grant.create({}, { grants: GRANTS });
     await settle();
-    DATA.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K7', path: 'jobs.list', label: 'First' } } });
+    DATA.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K7', path: 'jobs.list', label: 'First' } } });
     await settle();
     const fresh = lists[n];
     const kept = A.grants.row(A.grantKey('K7', 'jobs.list'));

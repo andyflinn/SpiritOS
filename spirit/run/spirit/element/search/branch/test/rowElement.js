@@ -117,17 +117,17 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // auth family's cache manager it loads. Andy: "DOESN'T THAT SHIT BELONG INSIDE THE MOTHERFUCKING element??????", "i ruled a LONG time AGO THAT FUCKING ELEMENTS
   // carry THEIR FUCKING DESCRIPTIONS". The node publishes each changed row of its two bundle tables on one permanent job
   // of type bundles, as the shadow job does each contact row: { table, row }, and { table, row: { id }, gone: true }.
-  DATA.takeJob({ type: 'bundles', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
+  DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' } } });
   ok(JSON.stringify(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id)) === JSON.stringify({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }), 'a branch row published lands in the auth family\'s branches by its id, through the family\'s cache manager the row element loads (goal/G41.28)', 'data: ' + short(A.branches.rows()));
-  DATA.takeJob({ type: 'bundles', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: '' } } });
+  DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: 3, bundle: 7, family: 'desk', verb: '' } } });
   const again = A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id);
   ok(again && again.verb === '', 'a row published again replaces the one kept', 'data: ' + short(again));
-  DATA.takeJob({ type: 'bundles', data: { table: 'branch', row: { id: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id }, gone: true } });
+  DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { id: { id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id }, gone: true } });
   ok(A.branches.row({ id: 3, bundle: 7, family: 'desk', verb: 'chat.add' }.id) === null, 'a row published gone is taken out', 'data: ' + short(A.branches.rows()));
   const before = JSON.stringify(A.branches.rows());
-  DATA.takeJob({ type: 'bundles', data: { table: 'bundle', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
-  DATA.takeJob({ type: 'shadow', data: { row: { id: 98 } } });
-  DATA.takeJob({ type: 'bundles', data: { table: 'branch', row: { label: 'no id' } } });
+  DATA.takeJob({ id: 'spirit.auth', data: { table: 'bundle', row: { id: 99, label: 'x', bundle: 1, family: 'f', verb: '' } } });
+  DATA.takeJob({ id: 'spirit.contact', data: { row: { id: 98 } } });
+  DATA.takeJob({ id: 'spirit.auth', data: { table: 'branch', row: { label: 'no id' } } });
   ok(JSON.stringify(A.branches.rows()) === before, 'the other table\'s rows, another job\'s, and a row with no id write nothing in the branches', 'data: ' + short(A.branches.rows()));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

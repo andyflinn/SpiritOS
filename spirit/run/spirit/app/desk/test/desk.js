@@ -156,9 +156,9 @@ function pretendNode() {
       setImmediate(function () { streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: String(b.to), text: made.text }) + '\n\n'); } catch (e) { /* gone */ } }); });
     });
   });
-  // A grant given or revoked, as the node publishes it: its permanent job 'bundles' (spirit/server.js).
+  // A grant given or revoked, as the node publishes it: news of its permanent job spirit.auth (goal/G43.20, spirit/server.js).
   const grantEvent = function (row, gone) {
-    const job = { id: 'job_bundles', kind: 'permanent', type: 'bundles', status: 'running', data: { table: 'grant', row: row, gone: gone === true } };
+    const job = { id: 'spirit.auth', kind: 'permanent', status: 'running', data: { table: 'grant', row: row, gone: gone === true } };
     streams.forEach(function (st) { try { st.write('event: job-updated\ndata: ' + JSON.stringify(job) + '\n\n'); } catch (e) { /* gone */ } });
   };
   return { server: server, pages: pages, posts: posts, sent: sent, deaf: deaf, jobs: jobs, grants: grants, grantEvent: grantEvent };

@@ -58,7 +58,7 @@ test.startTest('relayPanel-rowStream.js: who paints, listens: a relay\'s row and
     if (!N.up || !R.up) { test.fail('the scratch node or relay did not come up: nothing judged'); return; }
     const me = (await home(N.base, 'node.card')).body.publicKey;
     S = stream(N.base);
-    const rowsOf = function (key) { return S.kept.filter(function (e) { return e.kind === 'job-updated' && e.data && e.data.type === 'shadow' && e.data.data && e.data.data.row && e.data.data.row.publicKey === key; }).map(function (e) { return e.data.data.row; }); };
+    const rowsOf = function (key) { return S.kept.filter(function (e) { return e.kind === 'job-updated' && e.data && e.data.id === 'spirit.contact' && e.data.data && e.data.data.row && e.data.data.row.publicKey === key; }).map(function (e) { return e.data.data.row; }); };
     const last = function (key) { const r = rowsOf(key); return r.length ? r[r.length - 1] : null; };
     const key = R.relayKey;
 

@@ -189,7 +189,7 @@ const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }
   // item. no exceptions."
   if (subscribers.length === dataSubscribed) test.check('loaded and created, the list subscribes to no stream of its own');
   else test.fail('the list subscribed to the stream ' + (subscribers.length - dataSubscribed) + ' times');
-  window.spirit.data.takeJob({ id: 'job_shadow', type: 'shadow', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
+  window.spirit.data.takeJob({ id: 'spirit.contact', data: { row: { publicKey: 'K1', keep: true, blocked: true } } });
   await tick();
   const kept = CD && CD.contact('K1');
   if (kept && kept.blocked === true && o.data === CD.branch) test.check('a row the node\'s shadow job hands is in the branch the list handed its search');
