@@ -13,17 +13,17 @@ FAIL  ../run/process/js/agent/table/provider/test/provider.js  68 ✅   5 ❌   
   ok  ../run/process/js/agent/table/test/rowTable.js  63 ✅                        151ms
   ok  ../run/process/js/agent/table/test/tableElement.js  29 ✅                         97ms
   ok  ../run/process/js/agent/test/agent.js  45 ✅                        510ms
-  ok  ../run/process/js/desk/family/test/api.js  34 ✅                        106ms
-  ok  ../run/process/js/desk/plugins/js/fallout/test/fallout.js   9 ✅                         40ms
-  ok  ../run/process/js/desk/plugins/js/stackFrameChecks/test/stackFrameChecks.js  99 ✅                        926ms
-  ok  ../run/process/js/desk/plugins/js/stackFrameChecks/test/violators.js  22 ✅                         81ms
-  ok  ../run/process/js/desk/plugins/js/vision/test/vision.js  24 ✅                         51ms
-  ok  ../run/process/js/desk/test/commitCheck.js   9 ✅                        617ms
-  ok  ../run/process/js/desk/test/data.js  40 ✅                         78ms
-  ok  ../run/process/js/desk/test/desk.js  91 ✅                      19958ms
-  ok  ../run/process/js/desk/test/deskAgentEar.js  14 ✅                       1416ms
-  ok  ../run/process/js/desk/test/deskLoop.js  20 ✅                        303ms
-  ok  ../run/process/js/desk/test/goalShare.js  25 ✅                       2100ms
+  ok  ../run/spirit/app/desk/test/api.js  34 ✅                        106ms
+  ok  ../run/spirit/app/desk/plugins/js/fallout/test/fallout.js   9 ✅                         40ms
+  ok  ../run/spirit/app/desk/plugins/js/stackFrameChecks/test/stackFrameChecks.js  99 ✅                        926ms
+  ok  ../run/spirit/app/desk/plugins/js/stackFrameChecks/test/violators.js  22 ✅                         81ms
+  ok  ../run/spirit/app/desk/plugins/js/vision/test/vision.js  24 ✅                         51ms
+  ok  ../run/spirit/app/desk/test/commitCheck.js   9 ✅                        617ms
+  ok  ../run/spirit/app/desk/test/data.js  40 ✅                         78ms
+  ok  ../run/spirit/app/desk/test/desk.js  91 ✅                      19958ms
+  ok  ../run/spirit/app/desk/test/deskAgentEar.js  14 ✅                       1416ms
+  ok  ../run/spirit/app/desk/test/deskLoop.js  20 ✅                        303ms
+  ok  ../run/spirit/app/desk/test/goalShare.js  25 ✅                       2100ms
   ok  ../run/process/js/deskClient/family/test/api.js  16 ✅                         88ms
   ok  ../run/process/js/deskClient/test/agentReadme.js  36 ✅                        330ms
   ok  ../run/process/js/deskClient/test/deskClient.js  62 ✅                      10869ms
@@ -34,11 +34,11 @@ FAIL  ../run/process/js/agent/table/provider/test/provider.js  68 ✅   5 ❌   
 FAIL  ../run/shell/agent/test/listBoxes.js   9 ✅   1 ❌                  78ms
   ok  ../run/shell/appMigration/test/appMigration.js   8 ✅                       1808ms
   ok  ../run/shell/apps/test/apps.js  26 ✅                         50ms
-  ok  ../run/shell/desk/plugins/fallout/test/fallout.js  50 ✅                        226ms
-  ok  ../run/shell/desk/plugins/stackFrameChecks/test/stackFrameChecks.js  43 ✅                        128ms
-  ok  ../run/shell/desk/plugins/vision/test/vision.js  35 ✅                        124ms
-  ok  ../run/shell/desk/test/desk.js  35 ✅                       9855ms
-  ok  ../run/shell/deskDetails/test/deskDetails.js  76 ✅                      14735ms
+  ok  ../run/spirit/app/desk/element/desk/plugins/fallout/test/fallout.js  50 ✅                        226ms
+  ok  ../run/spirit/app/desk/element/desk/plugins/stackFrameChecks/test/stackFrameChecks.js  43 ✅                        128ms
+  ok  ../run/spirit/app/desk/element/desk/plugins/vision/test/vision.js  35 ✅                        124ms
+  ok  ../run/spirit/app/desk/element/desk/test/desk.js  35 ✅                       9855ms
+  ok  ../run/spirit/app/desk/element/deskDetails/test/deskDetails.js  76 ✅                      14735ms
   ok  ../run/spirit/app/grants/test/grants.js  50 ✅                      11939ms
   ok  ../run/shell/icons/test/icons.js   6 ✅                       7987ms
   ok  ../run/spirit/app/info/test/info.js  22 ✅                         50ms
@@ -209,17 +209,17 @@ FAIL  ../run/test/spirit-child-generalRules.js spirit/shellMove.js   1 ✅   1 �
 FAIL  ../run/test/spirit-sibling-generalRules.js process/js/agent/table/rowElement.js  10 ✅   1 ❌                2439ms
   ok  ../run/test/spirit-sibling-generalRules.js process/js/agent/table/rowTable.js   1 ✅                         41ms
   ok  ../run/test/spirit-sibling-generalRules.js process/js/agent/table/tableElement.js  10 ✅                       2492ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/commitCheck.js   1 ✅                         39ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/data.js   1 ✅                         36ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/desk.js   1 ✅                         38ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/deskAgentEar.js   1 ✅                         36ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/deskLoop.js   1 ✅                         48ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/family/api.js   1 ✅                         38ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/goalShare.js   1 ✅                         41ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/plugins/js/fallout/fallout.js   1 ✅                         42ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js   1 ✅                         39ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/plugins/js/stackFrameChecks/violators.js   1 ✅                         38ms
-  ok  ../run/test/spirit-sibling-generalRules.js process/js/desk/plugins/js/vision/vision.js   1 ✅                         40ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/commitCheck.js   1 ✅                         39ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/data.js   1 ✅                         36ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/desk.js   1 ✅                         38ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/deskAgentEar.js   1 ✅                         36ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/deskLoop.js   1 ✅                         48ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/api.js   1 ✅                         38ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/goalShare.js   1 ✅                         41ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/plugins/js/fallout/fallout.js   1 ✅                         42ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/plugins/js/stackFrameChecks/stackFrameChecks.js   1 ✅                         39ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/plugins/js/stackFrameChecks/violators.js   1 ✅                         38ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/plugins/js/vision/vision.js   1 ✅                         40ms
   ok  ../run/test/spirit-sibling-generalRules.js process/js/deskClient/agentReadme.js   1 ✅                         42ms
   ok  ../run/test/spirit-sibling-generalRules.js process/js/deskClient/deskClient.js   1 ✅                         41ms
   ok  ../run/test/spirit-sibling-generalRules.js process/js/deskClient/family/api.js   1 ✅                         41ms
@@ -229,11 +229,11 @@ FAIL  ../run/test/spirit-sibling-generalRules.js process/js/agent/table/rowEleme
 FAIL  ../run/test/spirit-sibling-generalRules.js shell/appMigration/appMigration.js  14 ✅   2 ❌                2986ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/apps/apps.js  13 ✅                       3037ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/boot.js   1 ✅                         41ms
-  ok  ../run/test/spirit-sibling-generalRules.js shell/desk/desk.js  18 ✅                      16546ms
-  ok  ../run/test/spirit-sibling-generalRules.js shell/desk/plugins/fallout/fallout.js   1 ✅                         75ms
-  ok  ../run/test/spirit-sibling-generalRules.js shell/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         56ms
-  ok  ../run/test/spirit-sibling-generalRules.js shell/desk/plugins/vision/vision.js   1 ✅                         60ms
-  ok  ../run/test/spirit-sibling-generalRules.js shell/deskDetails/deskDetails.js  11 ✅                      16340ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/element/desk/desk.js  18 ✅                      16546ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/element/desk/plugins/fallout/fallout.js   1 ✅                         75ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/element/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         56ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/element/desk/plugins/vision/vision.js   1 ✅                         60ms
+  ok  ../run/test/spirit-sibling-generalRules.js spirit/app/desk/element/deskDetails/deskDetails.js  11 ✅                      16340ms
   ok  ../run/test/spirit-sibling-generalRules.js spirit/app/grants/grants.js  17 ✅                      17259ms
   ok  ../run/test/spirit-sibling-generalRules.js shell/icons/icons.js  15 ✅                      18305ms
 FAIL  ../run/test/spirit-sibling-generalRules.js spirit/app/info/info.js  12 ✅   1 ❌                3037ms
@@ -323,17 +323,17 @@ FAIL  ../run/test/spirit-sibling-generalRules.js spirit/element/valued.js  12 �
   ok  ../run/test/spirit-sibling-searchRules.js process/js/agent/table/rowElement.js   1 ✅                         73ms
   ok  ../run/test/spirit-sibling-searchRules.js process/js/agent/table/rowTable.js   1 ✅                         48ms
   ok  ../run/test/spirit-sibling-searchRules.js process/js/agent/table/tableElement.js   1 ✅                         49ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/commitCheck.js   1 ✅                         39ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/data.js   1 ✅                         35ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/desk.js   1 ✅                         41ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/deskAgentEar.js   1 ✅                         39ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/deskLoop.js   1 ✅                         39ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/family/api.js   1 ✅                         38ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/goalShare.js   1 ✅                         39ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/plugins/js/fallout/fallout.js   1 ✅                         41ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js   1 ✅                         36ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/plugins/js/stackFrameChecks/violators.js   1 ✅                         32ms
-  ok  ../run/test/spirit-sibling-searchRules.js process/js/desk/plugins/js/vision/vision.js   1 ✅                         37ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/commitCheck.js   1 ✅                         39ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/data.js   1 ✅                         35ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/desk.js   1 ✅                         41ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/deskAgentEar.js   1 ✅                         39ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/deskLoop.js   1 ✅                         39ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/api.js   1 ✅                         38ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/goalShare.js   1 ✅                         39ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/plugins/js/fallout/fallout.js   1 ✅                         41ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/plugins/js/stackFrameChecks/stackFrameChecks.js   1 ✅                         36ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/plugins/js/stackFrameChecks/violators.js   1 ✅                         32ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/plugins/js/vision/vision.js   1 ✅                         37ms
   ok  ../run/test/spirit-sibling-searchRules.js process/js/deskClient/agentReadme.js   1 ✅                         35ms
   ok  ../run/test/spirit-sibling-searchRules.js process/js/deskClient/deskClient.js   1 ✅                         37ms
   ok  ../run/test/spirit-sibling-searchRules.js process/js/deskClient/family/api.js   1 ✅                         34ms
@@ -343,11 +343,11 @@ FAIL  ../run/test/spirit-sibling-generalRules.js spirit/element/valued.js  12 �
   ok  ../run/test/spirit-sibling-searchRules.js shell/appMigration/appMigration.js   1 ✅                         47ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/apps/apps.js   1 ✅                         49ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/boot.js   1 ✅                         40ms
-  ok  ../run/test/spirit-sibling-searchRules.js shell/desk/desk.js   1 ✅                         39ms
-  ok  ../run/test/spirit-sibling-searchRules.js shell/desk/plugins/fallout/fallout.js   1 ✅                         35ms
-  ok  ../run/test/spirit-sibling-searchRules.js shell/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         35ms
-  ok  ../run/test/spirit-sibling-searchRules.js shell/desk/plugins/vision/vision.js   1 ✅                         42ms
-  ok  ../run/test/spirit-sibling-searchRules.js shell/deskDetails/deskDetails.js   1 ✅                         39ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/element/desk/desk.js   1 ✅                         39ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/element/desk/plugins/fallout/fallout.js   1 ✅                         35ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/element/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         35ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/element/desk/plugins/vision/vision.js   1 ✅                         42ms
+  ok  ../run/test/spirit-sibling-searchRules.js spirit/app/desk/element/deskDetails/deskDetails.js   1 ✅                         39ms
   ok  ../run/test/spirit-sibling-searchRules.js spirit/app/grants/grants.js   1 ✅                         35ms
   ok  ../run/test/spirit-sibling-searchRules.js shell/icons/icons.js   1 ✅                         35ms
   ok  ../run/test/spirit-sibling-searchRules.js spirit/app/info/info.js   1 ✅                         35ms
@@ -437,17 +437,17 @@ FAIL  ../run/test/spirit-sibling-generalRules.js spirit/element/valued.js  12 �
   ok  ../run/test/spirit-sibling-testReachRules.js process/js/agent/table/rowElement.js   1 ✅                         56ms
   ok  ../run/test/spirit-sibling-testReachRules.js process/js/agent/table/rowTable.js   1 ✅                         47ms
   ok  ../run/test/spirit-sibling-testReachRules.js process/js/agent/table/tableElement.js   1 ✅                         70ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/commitCheck.js   1 ✅                         51ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/data.js   1 ✅                         57ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/desk.js   1 ✅                        125ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/deskAgentEar.js   1 ✅                         56ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/deskLoop.js   1 ✅                         57ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/family/api.js   1 ✅                         61ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/goalShare.js   1 ✅                         71ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/plugins/js/fallout/fallout.js   1 ✅                         51ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js   1 ✅                         81ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/plugins/js/stackFrameChecks/violators.js   1 ✅                         64ms
-  ok  ../run/test/spirit-sibling-testReachRules.js process/js/desk/plugins/js/vision/vision.js   1 ✅                         60ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/commitCheck.js   1 ✅                         51ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/data.js   1 ✅                         57ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/desk.js   1 ✅                        125ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/deskAgentEar.js   1 ✅                         56ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/deskLoop.js   1 ✅                         57ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/api.js   1 ✅                         61ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/goalShare.js   1 ✅                         71ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/plugins/js/fallout/fallout.js   1 ✅                         51ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/plugins/js/stackFrameChecks/stackFrameChecks.js   1 ✅                         81ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/plugins/js/stackFrameChecks/violators.js   1 ✅                         64ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/plugins/js/vision/vision.js   1 ✅                         60ms
   ok  ../run/test/spirit-sibling-testReachRules.js process/js/deskClient/agentReadme.js   1 ✅                         59ms
   ok  ../run/test/spirit-sibling-testReachRules.js process/js/deskClient/deskClient.js   1 ✅                         75ms
   ok  ../run/test/spirit-sibling-testReachRules.js process/js/deskClient/family/api.js   1 ✅                         45ms
@@ -457,11 +457,11 @@ FAIL  ../run/test/spirit-sibling-generalRules.js spirit/element/valued.js  12 �
   ok  ../run/test/spirit-sibling-testReachRules.js shell/appMigration/appMigration.js   1 ✅                         47ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/apps/apps.js   1 ✅                         48ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/boot.js   1 ✅                         85ms
-  ok  ../run/test/spirit-sibling-testReachRules.js shell/desk/desk.js   1 ✅                         80ms
-  ok  ../run/test/spirit-sibling-testReachRules.js shell/desk/plugins/fallout/fallout.js   1 ✅                         48ms
-  ok  ../run/test/spirit-sibling-testReachRules.js shell/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         67ms
-  ok  ../run/test/spirit-sibling-testReachRules.js shell/desk/plugins/vision/vision.js   1 ✅                         50ms
-  ok  ../run/test/spirit-sibling-testReachRules.js shell/deskDetails/deskDetails.js   1 ✅                         64ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/element/desk/desk.js   1 ✅                         80ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/element/desk/plugins/fallout/fallout.js   1 ✅                         48ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/element/desk/plugins/stackFrameChecks/stackFrameChecks.js   1 ✅                         67ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/element/desk/plugins/vision/vision.js   1 ✅                         50ms
+  ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/desk/element/deskDetails/deskDetails.js   1 ✅                         64ms
   ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/grants/grants.js   1 ✅                         59ms
   ok  ../run/test/spirit-sibling-testReachRules.js shell/icons/icons.js   1 ✅                         52ms
   ok  ../run/test/spirit-sibling-testReachRules.js spirit/app/info/info.js   1 ✅                         70ms

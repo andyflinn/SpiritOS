@@ -3,7 +3,7 @@
 The search rule of a module (goal/G41.28), judged in its code. It runs once per file, the file its argument, as
 `./spirit-child-generalRules.js` does:
 
-    node test/spirit-sibling-searchRules.js process/js/desk/desk.js
+    node test/spirit-sibling-searchRules.js spirit/app/desk/desk.js
 
 **Its name is its reach** (`./TEST_SYSTEM.md`): a `-sibling-` test beside `spirit.js` judges every module in
 `spirit/run/` and below that has its own test, a server and a page alike. Given no file, it judges every module

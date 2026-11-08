@@ -72,7 +72,7 @@ test.startTest('appFamilyShape.js: an app\'s family at its top, as spirit/<famil
   if (node.child) node.child.kill();
 
   test.subHeading('4. no file names spirit/app/agent/api/');
-  const naming = tracked.filter(function (f) { return !SELF.test(f) && f !== 'spirit/run/process/js/desk/currentGoal.json' && f.indexOf('spirit/run/spirit/app/desk/currentGoal.json') !== 0 && /\.(js|md|json|html|txt)$/.test(f); })
+  const naming = tracked.filter(function (f) { return !SELF.test(f) && f.indexOf('spirit/run/spirit/app/desk/currentGoal.json') !== 0 && /\.(js|md|json|html|txt)$/.test(f); })
     .filter(function (f) { return /spirit\/app\/agent\/api\/|app\/agent\/api\b(?!\.js)|'agent', 'api'/.test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
   ok(!naming.length, 'no file names spirit/app/agent/api/', naming.length + ' still do: ' + short(naming));
 

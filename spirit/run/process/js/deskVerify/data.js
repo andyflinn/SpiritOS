@@ -1,6 +1,6 @@
 // spirit/run/process/js/deskVerify/data.js
 // WHAT A CLIENT KNOWS OF THE VERIFIER, IN THE VERIFIER'S OWN FOLDER (goal/G41.28), as the desk's own is
-// (process/js/desk/data.js). Andy: "These rules apply to ALL clients. including deskVerify", and the box:
+// (spirit/app/desk/data.js). Andy: "These rules apply to ALL clients. including deskVerify", and the box:
 // "All client side searches will be fixed, too, and search the whole row, as cached in spirit.data". A page loads it from
 // the node that served it (spirit.require); it runs the translator into that page's spirit.data.
 //

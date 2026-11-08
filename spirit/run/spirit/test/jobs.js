@@ -53,7 +53,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     fs.writeFileSync(outside, script(mark('outside')));
     await refusedCase('a script outside process/js', mark('outside'), { command: process.execPath, args: [outside] });
     plant('zz-climbed.js', mark('climbed'));
-    await refusedCase('a path climbing out of process/js', mark('climbed'), { command: process.execPath, args: ['process/js/desk/../../../zz-climbed.js'] });
+    await refusedCase('a path climbing out of process/js', mark('climbed'), { command: process.execPath, args: ['spirit/app/desk/../../../zz-climbed.js'] });
     plant('process/js/zzNotIncluded/zzNotIncluded.js', mark('notIncluded'));
     fs.writeFileSync(path.join(run, 'process/js/zzNotIncluded/zzNotIncluded.json'), JSON.stringify({ label: 'zz' }));
     await refusedCase('a process this node does not include', mark('notIncluded'), { command: process.execPath, args: ['process/js/zzNotIncluded/zzNotIncluded.js'] });
@@ -70,7 +70,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     const inc = await call({ command: process.execPath, args: ['process/js/zzIncluded/zzIncluded.js'] });
     await sleep(WAIT_MS);
     ok(inc.status === 201 && fs.existsSync(mark('included')), 'an included process/js/<name>/<name>.js starts', 'an included process: answered ' + inc.status + ' ' + short(inc.text) + ', ran ' + fs.existsSync(mark('included')));
-    const helper = plant('process/js/desk/zzHelper.js', mark('helper'));
+    const helper = plant('process/js/zzIncluded/zzHelper.js', mark('helper'));
     // A PAGE SENDS PLAIN node (the app detail's run, spirit/app/appSelector/detailElement.js:68; the file viewer that sent it
     // too, spirit/element/textViewer.js, is deleted): jobs.js reads it as this node's own executable.
     const plainNode = await call({ command: 'node', args: ['process/js/zzIncluded/zzIncluded.js'] });

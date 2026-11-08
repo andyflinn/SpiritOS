@@ -1422,9 +1422,9 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1941ms
     ***   FAILURE #1.1: OWED by goal/G40.2: spirit.js requires require('./spirit/fieldRules.js') require('fs') require('path') require('path') require('./spirit/limits.js') require('./spirit/client/packet.js') ❌
 
 --- runStandsAlone.js
-    ***   FAILURE #1.1: process/js/desk/desk.family/item.suites.add.json — the path spirit/test: "description": "Add one suite to an item, the spirit/test/ .js path a Verify of it runs (goal/G40.3); the red writer's,  ❌
-    ***   FAILURE #1.2: process/js/desk/desk.family/item.suites.remove.json — the path spirit/test: "description": "Take one suite off an item, by its spirit/test/ path (goal/G40.3); the red writer's.", ❌
-    ***   FAILURE #1.3: process/js/desk/desk.js — the path spirit/test: if (suite && (!/^spirit\/test\/[^/]+(\/[^/]+)*\.js$/.test(p))) throw refusedWhy('bad-request', 'a suite is a spirit/test ❌
+    ***   FAILURE #1.1: spirit/app/desk/desk.family/item.suites.add.json — the path spirit/test: "description": "Add one suite to an item, the spirit/test/ .js path a Verify of it runs (goal/G40.3); the red writer's,  ❌
+    ***   FAILURE #1.2: spirit/app/desk/desk.family/item.suites.remove.json — the path spirit/test: "description": "Take one suite off an item, by its spirit/test/ path (goal/G40.3); the red writer's.", ❌
+    ***   FAILURE #1.3: spirit/app/desk/desk.js — the path spirit/test: if (suite && (!/^spirit\/test\/[^/]+(\/[^/]+)*\.js$/.test(p))) throw refusedWhy('bad-request', 'a suite is a spirit/test ❌
     ***   FAILURE #1.4: process/js/deskClient/deskClient.js — the path spirit/test: countedAsk(to, 'item.status', { id: id, word: rel + ' ' + WHAT[event], tone: rel.indexOf('spirit/test/') === 0 ? 'test'  ❌
 
 --- seatsKept.js
@@ -1472,7 +1472,7 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1941ms
     ***   FAILURE #1.2: OWED by goal/G40.1: helpers true, loaders false ❌
     ***   FAILURE #1.3: OWED by goal/G40.1: the kernel's members on spirit: jobs missing false, node.const false, VERSION false, MIME_TYPES false, peerPost true ❌
     ***   FAILURE #1.4: OWED by goal/G40.1: a spirit made on a transport has no require (no spirit) ❌
-    ***   FAILURE #1.5: OWED by goal/G40.1: 1 of 11 do not: ["process/js/desk/removeAgent.js (missing)"] ❌
+    ***   FAILURE #1.5: OWED by goal/G40.1: 1 of 11 do not: ["spirit/app/desk/removeAgent.js (missing)"] ❌
 
 --- spiritErrors.js
     ***   FAILURE #1.1: uncatalogued errors — add each to spiritErrors.js with its meaning:
@@ -1485,7 +1485,7 @@ FAIL  visualScenarios.js           7 ✅   1 ❌                1941ms
     ***   FAILURE #1.4: OWED by goal/G32.1: a 404 reply: undefined ❌
 
 --- spiritServers.js
-    ***   FAILURE #1.1: OWED by goal/G32.3: api.js files naming their family or registering: ["spirit/relay/api.js","process/js/desk/desk.family/api.js"] ❌
+    ***   FAILURE #1.1: OWED by goal/G32.3: api.js files naming their family or registering: ["spirit/relay/api.js","spirit/app/desk/desk.family/api.js"] ❌
     ***   FAILURE #1.2: OWED by goal/G32.3: the object asked [], made ["threw"], wrote {"threw":"S.createSpirit is not a function"} ❌
 
 --- stackFrameTestItems.js

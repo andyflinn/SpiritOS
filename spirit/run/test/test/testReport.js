@@ -54,8 +54,8 @@ const twins = CASES.slice(1, 3).map(function (c) { return suitesOf(sent(c[0], []
 ok(twins[0] && twins[1] && twins[0] !== twins[1], 'two test files of one name, rowElement.js, are two names', 'both rowElement.js tests went by ' + short(twins));
 
 test.subHeading('a general test, by the file it judges');
-const general = suitesOf(sent('test/spirit-sibling-generalRules.js', ['shell/desk/desk.js'], true));
-ok(general.length === 1 && general[0] === '/shell/desk/desk', 'spirit-sibling-generalRules.js judging shell/desk/desk.js is sent as /shell/desk/desk', 'it was sent as ' + short(general));
+const general = suitesOf(sent('test/spirit-sibling-generalRules.js', ['spirit/app/desk/element/desk/desk.js'], true));
+ok(general.length === 1 && general[0] === '/spirit/app/desk/element/desk/desk', 'spirit-sibling-generalRules.js judging spirit/app/desk/element/desk/desk.js is sent as /spirit/app/desk/element/desk/desk', 'it was sent as ' + short(general));
 
 test.subHeading('the rest of a record as before');
 const recs = sent('spirit/element/test/workBench.js', [], true);

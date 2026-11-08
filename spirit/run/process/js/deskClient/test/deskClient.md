@@ -19,7 +19,7 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
   from the cache and the desk is not asked.
 - **The cache, current**: a part the desk moves is answered as moved: after a box row of version 6, `item.box`
   answers version 6; a file the desk adds later is in the kept list.
-- **A kept read** (the commit check's interface, `process/js/desk/test/commitCheck.js`): the `desk` verb takes
+- **A kept read** (the commit check's interface, `spirit/app/desk/test/commitCheck.js`): the `desk` verb takes
   `kept` beside `name` and `json`. With `kept: true` it is answered from the cache only, and the desk is never asked:
   a verb of `KEPT_READS` the cache holds is answered as the desk would (`item.files` as `{ files, filesMore }`,
   `item.checks` as `{ checks }`), and a kept `item.get` carries `current` (the current goal's id) and `self` (its own

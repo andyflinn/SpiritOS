@@ -20,11 +20,11 @@ test.startTest('fileSystem.js: its gates refuse a path in any case');
 // Each closed path, as the gate refuses it today, and the same path in other cases.
 const CLOSED_READ = [
   ['spirit/state/identity.json', 'the node\'s private key'],
-  ['process/js/desk/spirit/state/identity.json', 'an app server\'s private key, at depth'],
-  ['process/js/desk/relay-state/new.json', 'a file under an old relay-state, at depth'],
+  ['spirit/app/desk/spirit/state/identity.json', 'an app server\'s private key, at depth'],
+  ['spirit/app/desk/relay-state/new.json', 'a file under an old relay-state, at depth'],
   ['spirit/server.js', 'a server script'],
   ['spirit/DEBUG/garbageArguments.js', 'the DEBUG folder'],
-  ['shell/desk/desk.js.sidecar.json', 'a sidecar\'s own path'],
+  ['spirit/app/desk/element/desk/desk.js.sidecar.json', 'a sidecar\'s own path'],
 ];
 function cases(p) {
   const up = p.toUpperCase();
@@ -46,7 +46,7 @@ const CLOSED_WRITE = [
   ['spirit/state/new.json', 'anything under relay-state'],
   ['spirit/server.js', 'a core file'],
   ['spirit/element/icon.js', 'a core file under spirit/element'],
-  ['shell/desk/desk.js.sidecar.json', 'a sidecar\'s own path'],
+  ['spirit/app/desk/element/desk/desk.js.sidecar.json', 'a sidecar\'s own path'],
 ];
 CLOSED_WRITE.forEach(function (c) {
   ok(ask('fileWritable', c[0]) === false, 'refused as written: ' + c[0] + ' (' + c[1] + ')', c[0] + ' (' + c[1] + ') is writable as written: the case below judges nothing');

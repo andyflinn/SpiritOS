@@ -260,7 +260,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
       ok(!AD.row('model', 'KT') && !('KT' in DATA.branchAt(BRANCH)), 'a row removed, by its id, is gone', 'row: ' + short(AD.row('model', 'KT')));
       const before = JSON.stringify(DATA.branchAt(BRANCH));
       DATA.takeJob(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
-      DATA.takeJob(job({ table: 'model', row: { id: 'KX', label: 'from the desk' } }, 'process/js/desk'));
+      DATA.takeJob(job({ table: 'model', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));
       DATA.takeJob(job({ table: 'model', row: { label: 'no id' } }));
       ok(JSON.stringify(DATA.branchAt(BRANCH)) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'model: ' + short(DATA.branchAt(BRANCH)));
       off();

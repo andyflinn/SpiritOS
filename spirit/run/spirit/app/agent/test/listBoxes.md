@@ -17,7 +17,7 @@ Andy, on G41.18:
 rule/16: every probabilitySearch is mounted in a box of class `fill`, inside a pane that fills its app. The search
 element's own pane already holds the filters and the search row at their height and gives the list the rest
 (`spirit/element/search.js`). What it needs is that its box, and every box above it, states its size. This suite
-asks that of the app as a whole, the way Desk's does (`shell/desk/test/desk.md`, goal/G41.11).
+asks that of the app as a whole, the way Desk's does (`spirit/app/desk/element/desk/test/desk.md`, goal/G41.11).
 
 ## Requirements
 

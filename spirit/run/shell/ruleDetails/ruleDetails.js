@@ -75,7 +75,7 @@ function rdFrame() {
   }, function () { /* no armingButton, no second press */ });
 }
 // THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #rd-bars moves into the app header, which sticks it
-// under the titlebar, and takes its id. As Desk's deskHeader (shell/desk/desk.js).
+// under the titlebar, and takes its id. As Desk's deskHeader (spirit/app/desk/element/desk/desk.js).
 function rdHeader() {
   var old = document.getElementById('rd-bars');
   var els = rdApi && rdApi.ui && rdApi.ui.element;

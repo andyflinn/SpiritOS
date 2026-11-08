@@ -195,7 +195,7 @@ box is its own check, named by the element's path and the box's id chain."*
     listening. A box that shows nothing at all (a selector hidden until its family is chosen) has nothing to redraw,
     and is not judged. **A closed dropdown draws its list when it opens**: while nothing it watches has redrawn, each
     closed dropdown on the page is opened in turn, what it watches written again, and shut. **A redraw proved in its own test** (Andy, Q24: *"Shall deskDetails' own test be the proof that it
-    redraws from the verifier, since the page sweep opens no item?"* *"yes."*): `shell/deskDetails/deskDetails.js` draws
+    redraws from the verifier, since the page sweep opens no item?"* *"yes."*): `spirit/app/desk/element/deskDetails/deskDetails.js` draws
     the verifier's run only for an item open, which a bare mount never has; its own test is run, and the check is green
     only when its check *"a verifier publish taken into spirit.data redraws the run"* passed;
   - in its code, since a bare mount seldom has a row to change: a module whose code sends a write (an op that changes a

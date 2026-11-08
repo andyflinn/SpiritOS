@@ -133,7 +133,7 @@ Positions, not agents — *how* each one works is in `ANDYS_RULES_FOR_AGENTS.md`
 
 ## Agents and Desk — Andy's control panel
 
-**Agents speak only in Desk.** The desk server (`spirit/run/process/js/desk/`)
+**Agents speak only in Desk.** The desk server (`spirit/run/spirit/app/desk/`)
 holds goals, items, boxes, checks and chat, and Andy steers from it. The
 agent-to-agent wire of 2026-09-22 (`design/agents/AGENTS-POST-TO-EACH-OTHER.md`,
 app packet `agents`, `note` / `ask` / `answer`) is gone with the agents app,
@@ -143,7 +143,7 @@ rules of 2026-10-02 (goal/G3), first among them:
 > 1. Agants will NOT speak to each other behind the users back.
 > 2. the agents APP is no longer permitted in this REPO
 
-They head the desk's rules for agents (`spirit/run/process/js/desk/family/AGENTS.md`),
+They head the desk's rules for agents (`spirit/run/spirit/app/desk/AGENTS.md`),
 which every agent reads at the start of a sitting; `spirit/test/agentsAppGone.js`
 asserts the app's absence, and `deskClient.js` enforces rule 1 at each agent's
 node (goal/G3.9). Authorization to write code comes only through Desk (rule 4):
@@ -248,7 +248,7 @@ AGENTS.md for desk"*. The loop, as the lead runs it:
 1. **No turn ends without a listener armed.** After every post, the agent
    starts a one-shot listener in the background that exits on the next thing
    meant for it: a line or press from Andy in Desk, the other agent's line.
-   The listener is `node spirit/run/process/js/desk/deskAgentEar.js <port>`, the
+   The listener is `node spirit/run/spirit/app/desk/deskAgentEar.js <port>`, the
    port being the agent's own node's (Andy: *"just put that listener script in
    the repo"*; its place and form since goal/G3.6). It asks that node's
    deskClient server (`spirit/run/process/js/deskClient/`), which follows

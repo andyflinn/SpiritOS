@@ -56,7 +56,7 @@ function addressOf(req) {
   }
   // NO SUCH GENERATOR: THE FILE THE ADDRESS NAMES, /DEBUG left off (Andy, box v19: "DEBUG.js will, if the generator implied
   // by the URL does NOT exist, will attempt to serve the exact file implied by the URL, Leaving "DEBUG/" out"), so an
-  // element's own test can open pages of its own: /DEBUG/shell/desk/test/desk-opened.html. Only a file inside
+  // element's own test can open pages of its own: /DEBUG/spirit/app/desk/element/desk/test/desk-opened.html. Only a file inside
   // a test/ folder, so no server script is handed out.
   const own = path.join(RUN, parts.join('/'));
   if (parts.slice(0, -1).indexOf('test') !== -1 && fs.existsSync(own) && fs.statSync(own).isFile()) {

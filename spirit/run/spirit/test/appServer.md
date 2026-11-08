@@ -87,7 +87,7 @@ stream"); Desk and deskClient move onto it.
 - Andy, box, *"the bundles"*. Each file is `process/js/<appServerName>/<appServerName>Bundles.json`, a row
   `{ label, branches }` (`./apiAuth.md`), no owner; a branch with verb `''` reaches the whole family, its FS.* with it.
   - desk: `deskAgent` and `remoteUser`. *"the remoteUser gets all verbs except FS.*"*: every verb of the desk family
-    (`process/js/desk/family/api.js`), no FS.*. *"desk agent gets mostly full access, but no FS.* verbs, no
+    (`spirit/app/desk/api.js`), no FS.*. *"desk agent gets mostly full access, but no FS.* verbs, no
     item.rules.*, no rule.*, and no user-presses"*: every desk verb but those. His presses (*"'Done', 'Close',
     'Reopen' 'Start|End design', 'Verify', 'Delete' and 'Abandon'"*): Delete is `item.delete`, left out; the others are
     values of `press`, which the agents' own presses (claim-done, design-complete, bring-back) go through too and which

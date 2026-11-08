@@ -37,10 +37,9 @@ is the appServer serializes the cache to disk."*
    clientCacheManager, and clients can use that to organize their spirit.data, and the shell can introspect to find and
    download their clientCacheManagers."*):
    - `spirit.js` knows where a family's `data.js` lives, so a page finds it by the family's name alone;
-   - for every family the node's own api tree names (a scratch node, `api`), the shell asks the family where its manager
-     is, `<family>.FS.path({ path: 'api.js' })` (the owner's, on loopback), as `spirit.cacheManager`
-     does; `data.js` is taken from the `api.js` it answers (`process/js/<name>/` or `spirit/<name>/`), and the
-     node serves it as a script that calls `spirit.data.makeFamily`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
+   - for every family the node's own api tree names (a scratch node, `api`), the shell finds its manager by the folder
+     shape, as `spirit.cacheManager` does (goal/G43.27): `spirit/app/<name>/data.js` for an app, `spirit/<name>/data.js`
+     for a node family; no family's FS is asked. The node serves it as a script that calls `spirit.data.makeFamily`. Each family is its own check. The scratch node runs no app server, so its tree names the node's own families and the file server;
      every family the tree holds is asked in 1.
 
 7. **No other way** (Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js

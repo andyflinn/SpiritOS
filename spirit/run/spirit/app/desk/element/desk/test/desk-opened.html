@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+</head>
+<body>
+<div id="app-container"><div id="app-header"><div id="app-title"></div></div><div id="app-content"></div></div>
+<script src="/spirit.js"></script>
+<script>
+// goal/G43.3 (Andy: "on the list search item.search, these two filters: [Current Goal Only] and [Goals only] MUST be mutually
+// exclusive, both can be off, but only one of them can be active at once. so [Current Goal only] is the only filter On by
+// default, and it MUST show the current goal when the page opens."): the Desk page opened in the home page's app area, on a
+// desk that is a stand-in answering the reads, with nothing on the stream. Opened by ./desk.js at
+// /DEBUG/spirit/app/desk/element/desk/test/desk-opened.html. The filter buttons are the search element's own, read as it draws them.
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function rowOf(id, goal, title) { return { key: id, label: JSON.stringify({ id: id, goal: goal, title: title, status: 'running', buttons: [], blocking: goal ? [goal] : [], blocked: [], verified: 'none', asks: 0, alert: false, with: '', names: {} }) }; }
+var CURRENT = [rowOf('goal/G9', '', 'The current goal'), rowOf('goal/G9.1', 'goal/G9', 'An open item')];
+var OTHER = [rowOf('goal/G8', '', 'An older goal'), rowOf('goal/G8.1', 'goal/G8', 'An older item')];
+var searches = [];
+var api = {
+  escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
+  setScreenTitle: function () {}, closeDialog: function () {}, onPublished: function () { return function () {}; }, onFiles: function () {}, armUntilElsewhere: function () {},
+  verb: function (n, a) {
+    var b = { ok: true };
+    if (n === 'desk.items.search') {
+      searches.push(a);
+      b = { more: false, items: a.goalsOnly ? [CURRENT[0], OTHER[0]] : a.currentGoalOnly ? CURRENT : CURRENT.concat(OTHER) };
+    }
+    return Promise.resolve({ status: 200, body: b });
+  },
+};
+function button(name) { return document.querySelector('#desk-list button[data-filter="' + name + '"]'); }
+function on(name) { var b = button(name); return !!b && /font-weight:\s*bold/.test(b.getAttribute('style') || ''); }
+function state() {
+  var list = document.getElementById('desk-list');
+  var text = list ? list.textContent : '';
+  return { current: on('current'), goals: on('goalsOnly'), closed: on('includeClosed'), found: !!button('current') && !!button('goalsOnly'),
+    args: searches.length ? searches[searches.length - 1] : null, currentGoal: text.indexOf('The current goal') !== -1, openItem: text.indexOf('An open item') !== -1,
+    olderGoal: text.indexOf('An older goal') !== -1, olderItem: text.indexOf('An older item') !== -1 };
+}
+window.opened = function () {
+  var def = null;
+  (spirit.shell = spirit.shell || {}).activateApp = function (d) { def = d; };
+  // The page's one data set, as the shell starts it before any app runs.
+  return Promise.resolve(spirit.start()).then(function () { return spirit.require('spirit/app/desk/element/desk/desk.js'); }).then(function () {
+    def.mount(document.getElementById('app-content'), api);
+    if (typeof def.open === 'function') def.open({});
+    return wait(2500);
+  }).then(function () { return JSON.stringify(state()); }, function (e) { return JSON.stringify({ error: String(e && e.stack || e) }); });
+};
+window.press = function (name) {
+  var b = button(name);
+  if (!b) return Promise.resolve(JSON.stringify({ error: 'no button ' + name }));
+  b.click();
+  return wait(800).then(function () { return JSON.stringify(state()); });
+};
+</script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 // its scratch node's servers started writes 'home' into that manifest. Never the tree's own manifests: a scratch node
 // whose folder is the checkout's spirit/run is refused, unless its manifest already says home.
 //
-//   runsHome(root, 'process/js/desk')
+//   runsHome(root, 'spirit/app/desk')
 
 const fs = require('fs');
 const path = require('path');

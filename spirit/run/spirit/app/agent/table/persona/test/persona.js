@@ -177,7 +177,7 @@ test.startTest('persona/: the persona table');
       ok(!AD.row('persona', 'KT') && !('KT' in DATA.branchAt(BRANCH)), 'a row removed, by its id, is gone', 'row: ' + short(AD.row('persona', 'KT')));
       const before = JSON.stringify(DATA.branchAt(BRANCH));
       DATA.takeJob(job({ table: 'job', row: { id: 'KO', label: 'another table' } }));
-      DATA.takeJob(job({ table: 'persona', row: { id: 'KX', label: 'from the desk' } }, 'process/js/desk'));
+      DATA.takeJob(job({ table: 'persona', row: { id: 'KX', label: 'from the desk' } }, 'spirit.app.desk'));
       DATA.takeJob(job({ table: 'persona', row: { label: 'no id' } }));
       ok(JSON.stringify(DATA.branchAt(BRANCH)) === before, 'another table\'s rows, another module\'s, and a row with no id write nothing here', 'persona: ' + short(DATA.branchAt(BRANCH)));
       off();

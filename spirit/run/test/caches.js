@@ -31,7 +31,11 @@ const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 // A family's manager, beside its interface: the app's beside spirit.familyPath(name), the node's own beside its api.js.
 const appFamilies = {};
-function managerOf(name) { return appFamilies[name] ? path.posix.join(path.posix.dirname(path.posix.dirname(familyPath(name))), 'data.js') : 'spirit/' + name + '/data.js'; }
+// An app of spirit/app/<name>/ keeps its family and its manager at its top (goal/G43.27).
+function managerOf(name) {
+  if (fs.existsSync(path.join(RUN, 'spirit', 'app', name, 'api.js'))) return 'spirit/app/' + name + '/data.js';
+  return appFamilies[name] ? path.posix.join(path.posix.dirname(path.posix.dirname(familyPath(name))), 'data.js') : 'spirit/' + name + '/data.js';
+}
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 // A file tracked but not on disk reads as empty, so a deletion not yet committed is judged and never crashes the report.
@@ -195,7 +199,7 @@ ok(!naming.length, 'no file in the repo names a replaced way: running uncached, 
 
 // ── 6. FOUND AND DOWNLOADED BY INTROSPECTION ────────────────────────────────────────────────────────────────────────
 (async function () {
-  test.subHeading('6. the shell finds every family\'s manager from the api tree, and downloads it');
+  test.subHeading('6. the shell finds every family\'s manager by the folder shape, and downloads it (goal/G43.27)');
   ok(/['"]data\.js['"]/.test(spiritJs), 'spirit.js knows where a family\'s data.js lives, so a page finds it by the family\'s name', 'spirit.js names no data.js: a page cannot find a family\'s data.js by itself');
   const node = await H.scratchNode();
   try {
@@ -204,19 +208,13 @@ ok(!naming.length, 'no file in the repo names a replaced way: running uncached, 
     const names = tree && typeof tree === 'object' ? Object.keys(tree).filter(function (k) { return tree[k] && typeof tree[k] === 'object' && tree[k].ok !== false; }) : [];
     test.comment('the node\'s api tree names ' + names.length + ' families: ' + names.join(', '));
     ok(names.length > 0, 'the node\'s api tree names its families', 'the node answered no tree: ' + short(tree));
-    // As the shell finds it (spirit.cacheManager): the family is asked where its manager is, <family>.FS.path, the
-    // owner's verb on loopback, and the path it answers is downloaded; no folder is guessed from the name.
-    const ask = function (call, args) {
-      return fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
-        .then(function (r) { return r.json(); }, function () { return null; });
-    };
+    // As the shell finds it (spirit.cacheManager, goal/G43.27): an app's manager is spirit/app/<name>/data.js, a node
+    // family's spirit/<name>/data.js; no family's FS is asked.
     for (const name of names) {
-      const where = await ask(name + '.FS.path', { path: 'api.js' });
-      const at = where && typeof where.path === 'string' ? where.path.replace(/(family\/)?api\.js$/, 'data.js') : '';
-      if (!at) { test.fail(name + ': ' + name + '.FS.path names no data.js: ' + short(where)); continue; }
+      const at = managerOf(name);
       const got = await fetch(node.base + '/' + at).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); }, function () { return { status: 0, text: '' }; });
-      ok(at === managerOf(name) && got.status === 200 && got.text.indexOf('.makeFamily(') !== -1, name + ': the shell asks ' + name + '.FS.path and downloads its manager, /' + at,
-        name + ': ' + name + '.FS.path answered ' + at + (at === managerOf(name) ? '' : ', not ' + managerOf(name)) + '; /' + at + ' answered ' + got.status);
+      ok(got.status === 200 && got.text.indexOf('.makeFamily(') !== -1, name + ': the shell downloads its manager, /' + at,
+        name + ': /' + at + ' answered ' + got.status);
     }
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }

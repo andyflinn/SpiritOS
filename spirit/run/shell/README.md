@@ -12,7 +12,7 @@ through `spirit.core.fs.createScopedFs('<name>')` (`kernel.js`).
 | folder | what it is |
 |---|---|
 | `chatter/` | the face of this node's chatClerver (`spirit/run/process/js/chatClerver/`) |
-| `desk/`, `deskDetails/` | Andy's desk and one row of it, over the desk server (`spirit/run/process/js/desk/`) |
+| `desk/`, `deskDetails/` | Andy's desk and one row of it, over the desk server (`spirit/run/spirit/app/desk/`) |
 | `falloutHistory/` | the flips of one tested thing (its manifest runs nowhere) |
 | `grants/` | who may call which api |
 | `info/` | the name and the sentence this node says about itself |

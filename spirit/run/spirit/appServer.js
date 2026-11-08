@@ -331,10 +331,9 @@ function shape(v) {
 // SINCE goal/G30.4 THERE IS NO AGENTS VERB: an app's AGENTS.md lives in its
 // family folder (process/js/<name>/family/, or the app folder itself for an
 // app of spirit/app/, goal/G43.27, withAgents below) and is read with
-// spirit.fs.loadFile at its path, not through the family's FS (goal/G43.27;
-// Andy: "easily changed, no?"), an edit being the next read.
-// (Andy, 2026-10-20: "cannot the agent simply use FS to retrieve the
-// AGENTS.md file of the verb.json files?")
+// spirit.fs.loadFile at its path (goal/G43.27; Andy: "easily changed, no?"),
+// an edit being the next read.
+
 // DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:
 // {} reads, {on: true|false} sets; both answer {debug} with the state that resulted. It flips this
 // process's DEBUG, spirit.debug (goal/G40.6). A member never reaches it (apiDoor refuses it by name).

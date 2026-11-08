@@ -17,7 +17,7 @@ const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const FILE = path.join(__dirname, '..', 'appServer.js');
 const SELF_FILE = __filename;
-const TRANSLATOR = path.join(RUN, path.dirname(path.dirname(require(path.join(RUN, 'spirit', 'spirit.js')).familyPath('desk'))), 'data.js');
+const TRANSLATOR = path.join(RUN, 'spirit', 'app', 'desk', 'data.js');
 const CHILD = process.argv[2] === '--child' ? String(process.argv[3] || '') : '';
 const test = CHILD ? null : require(path.join(RUN, 'test', 'testReport.js'));
 
@@ -31,7 +31,7 @@ const PUBLISHER = Buffer.from('KEY-DESK\xfb\xef\xbf\xfe', 'latin1').toString('ba
 const PUBLISHER_HEX = Buffer.from(PUBLISHER, 'base64').toString('hex');
 const SELF = 'KEY-CLIENT';
 // The server families (box v15, Family folders); deskAgent killed on goal/G41.28 (Andy: "all, KILL deskAgent!").
-const FAMILIES = ['backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
+const FAMILIES = ['backup', 'deskClient', 'deskVerify'];
 
 const TMP = CHILD ? String(process.argv[4]) : fs.mkdtempSync(path.join(os.tmpdir(), 'appServer-test-'));
 // A server name of the test's own, so its cache folder (spirit/state/<name>/) is no real server's.
@@ -127,7 +127,7 @@ const cacheFile = function (name) {
 function start(streamOpts, publisherOpts) {
   const A = require(FILE);
   const s = A.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, {
-    stream: Object.assign({ module: 'process/js/desk', translator: TRANSLATOR }, streamOpts || {}),
+    stream: Object.assign({ module: 'spirit.app.desk', translator: TRANSLATOR }, streamOpts || {}),
     publisher: Object.assign({ family: NAME, bootstrap: function () { bootstraps += 1; return bootstrap.slice(); }, waitMs: 5000 }, publisherOpts || {}),
   });
   return { A: A, s: s, D: A.data };
@@ -370,8 +370,8 @@ if (CHILD) {
     test.subHeading('the family path: one function, in appServer (box v15)');
     const A0 = require(FILE);
     ok(typeof A0.familyPath === 'function', 'appServer exports familyPath', 'appServer has no familyPath export: ' + typeof A0.familyPath);
-    const fp = typeof A0.familyPath === 'function' ? A0.familyPath('desk') : null;
-    ok(fp === 'process/js/desk/family/api.js', 'familyPath(name) is process/js/<name>/family/api.js', 'familyPath(\'desk\') is ' + short(fp));
+    const fp = typeof A0.familyPath === 'function' ? A0.familyPath('deskVerify') : null;
+    ok(fp === 'process/js/deskVerify/family/api.js', 'familyPath(name) is process/js/<name>/family/api.js', 'familyPath(\'deskVerify\') is ' + short(fp));
     FAMILIES.forEach(function (n) {
       const moved = fs.existsSync(path.join(RUN, 'process', 'js', n, 'family', 'api.js')) && !fs.existsSync(path.join(RUN, 'process', 'js', n, n + '.family'));
       ok(moved, n + ': its family folder is process/js/' + n + '/family/, no ' + n + '.family is left',
@@ -398,8 +398,8 @@ if (CHILD) {
     // Andy, box: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder
     // itself." No code file names the verb or hands serve() a dependencies list; this file names it to look for it.
     // The goal file the desk writes is his record, his box words in it, not code.
-    const CURRENT_GOAL = path.join(RUN, 'process', 'js', 'desk', 'currentGoal.json');
-    const named = codeFiles(RUN, []).concat(jsonFiles(path.join(RUN, 'process', 'js', 'desk'), [])).filter(function (f) { return f !== SELF_FILE && f !== CURRENT_GOAL; }).filter(function (f) {
+    const CURRENT_GOAL = path.join(RUN, 'spirit', 'app', 'desk', 'currentGoal.json');
+    const named = codeFiles(RUN, []).concat(jsonFiles(path.join(RUN, 'spirit', 'app', 'desk'), [])).filter(function (f) { return f !== SELF_FILE && f !== CURRENT_GOAL; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
       return /DEPENDENCIES/.test(t) || /\bdependencies\s*:/.test(t) || /opts\.dependencies|withDependencies|checkDependencies/.test(t);
     }).map(function (f) { return path.relative(RUN, f); });
@@ -414,8 +414,10 @@ if (CHILD) {
     //   "deskClient: \"deskServer\", only the verbs desk currently uses."
     //   "agent: \"remoteUser\" the full agent family, minus FS.*"
     // A row is { label, branches: [{ family, verb }] } (spirit/test/apiAuth.md); a verb '' is the whole family, FS.* with it.
-    const bundlesOf = function (app) { try { return JSON.parse(fs.readFileSync(path.join(RUN, 'process', 'js', app, app + 'Bundles.json'), 'utf8')); } catch (e) { return null; } };
-    const familyVerbs = function (app) { try { return Object.keys(require(path.join(RUN, 'process', 'js', app, 'family', 'api.js')).verbs || {}).sort(); } catch (e) { return []; } };
+    // The desk is an app of spirit/app/ since goal/G43.27: its folder is spirit/app/desk/, its family at the top.
+    const folderOf = function (app) { return app === 'desk' ? path.join(RUN, 'spirit', 'app', 'desk') : path.join(RUN, 'process', 'js', app); };
+    const bundlesOf = function (app) { try { return JSON.parse(fs.readFileSync(path.join(folderOf(app), app + 'Bundles.json'), 'utf8')); } catch (e) { return null; } };
+    const familyVerbs = function (app) { try { return Object.keys(require(app === 'desk' ? path.join(folderOf(app), 'api.js') : path.join(folderOf(app), 'family', 'api.js')).verbs || {}).sort(); } catch (e) { return []; } };
     // What a row reaches, as verbs of one family: a whole-family branch reaches its FS.* verbs too (introSpector.js).
     const reach = function (row, fam) {
       const out = [];
@@ -430,7 +432,7 @@ if (CHILD) {
     const deskB = bundlesOf('desk');
     const DESK = familyVerbs('desk');
     ok(!!deskB && JSON.stringify(Object.keys(deskB).sort()) === '["deskAgent","remoteUser"]' && rowOk(deskB.deskAgent) && rowOk(deskB.remoteUser),
-      'process/js/desk/deskBundles.json holds deskAgent and remoteUser, each a row with a label, no owner, and its branches', 'deskBundles.json: ' + short(deskB));
+      'spirit/app/desk/deskBundles.json holds deskAgent and remoteUser, each a row with a label, no owner, and its branches', 'deskBundles.json: ' + short(deskB));
     const dRemote = reach(deskB && deskB.remoteUser, 'desk');
     ok(DESK.length > 0 && JSON.stringify(dRemote) === JSON.stringify(DESK), 'desk\'s remoteUser gets every desk verb, and no FS.*', 'reaches ' + short(dRemote));
     const dAgent = reach(deskB && deskB.deskAgent, 'desk');
@@ -453,14 +455,14 @@ if (CHILD) {
       'process/js/deskClient/deskClientBundles.json: deskServer, the one deskClient verb desk uses, its stream\'s streamListener', 'deskClientBundles.json: ' + short(cB));
 
     test.subHeading('what goes (box v15)');
-    const deskJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'desk', 'desk.js'), 'utf8');
+    const deskJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'desk', 'desk.js'), 'utf8');
     const clientJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js'), 'utf8');
     ok(!/function\s+bundled\s*\(/.test(deskJs), 'the desk has no bundled() of its own', 'desk.js still defines bundled()');
     ok(!/cache\.json/.test(clientJs), 'deskClient keeps no cache.json of its own', 'deskClient.js still names cache.json');
 
     // ── one process: a client following its own publisher ──────────────────────────────────────────────────────────
     // goal/G41.24: the desk's translator is its family's data.js; the stream checks below follow it.
-    if (!fs.existsSync(TRANSLATOR)) { test.fail('the desk\'s translator, process/js/desk/data.js, is not there: the stream checks wait on it'); test.reportSuccessFailureCount(); process.exit(0); }
+    if (!fs.existsSync(TRANSLATOR)) { test.fail('the desk\'s translator, spirit/app/desk/data.js, is not there: the stream checks wait on it'); test.reportSuccessFailureCount(); process.exit(0); }
     const { A, s, D } = start({}, { logMax: 5 });
     await tick(100);
     ok(!!D && typeof D.getPath === 'function' && !!s && typeof s.subscribe === 'function', 'it serves, keeps a data set and has its client half (subscribe)', 'data ' + typeof (D && D.getPath) + ', subscribe ' + typeof (s && s.subscribe));

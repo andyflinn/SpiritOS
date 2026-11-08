@@ -381,15 +381,32 @@
     var n = String(name || '');
     return ['spirit/' + n + '/data.js', familyPath(n).replace(/family\/api\.js$/, 'data.js'), 'spirit/app/' + n + '/data.js'];
   }
-  // ON A PAGE, FOUND THROUGH THE FAMILY'S OWN FS AND LOADED BY A GET (goal/G41.28; Andy: "for the owner, the api tree
-  // returns a FS set of verbs for every family", and on FS.path: "my approval is set, unless there's a valid objection"):
-  // spirit.<family>.FS.path names where the family's api.js is, the node's or its server's alike, and data.js is taken from
-  // that, so no folder is guessed and no 404 is ever asked; then the one loader GETs that path, so a manager of any size travels, on loopback
-  // and through the face alike. In node, its own disk.
+  // ON A PAGE, FOUND BY THE FOLDER SHAPE AND LOADED BY A GET (goal/G43.27, requirement 6; Andy: "spirit.js can be fixed,
+  // no? it knows the difference between an app and a system branch?"): an app's data.js is spirit/app/<name>/data.js, a
+  // node family's spirit/<name>/data.js, and the page tells an app by the node's app list it holds (spirit.data.app, the
+  // app family's own manager, spirit/app/data.js). No family folder is asked. The one loader GETs that path, so a manager of
+  // any size travels, on loopback and through the face alike. In node, its own disk.
   // Asked as a file runs, it is part of that file's tree: the file's require answers once it has, and a family with
   // none fails no tree.
   var MANAGER = 'data.js';
   var managers = Object.create(null);
+  // The node's apps as the page holds them, once the app family's manager has its first rows (the node's 'apps' job,
+  // heard on the stream), or after a while without them.
+  var appsHeard = null;
+  function appRows() {
+    if (!appsHeard) {
+      appsHeard = cacheManager('app').then(function () {
+        var A = self.data && self.data.app && self.data.app.data;
+        if (!A) return null;
+        return new Promise(function (done) {
+          if (Object.keys(A.rows() || {}).length) { done(); return; }
+          var off = A.watch(function () { if (typeof off === 'function') off(); done(); });
+          setTimeout(done, 5000);
+        });
+      }).then(function () { var A = self.data && self.data.app && self.data.app.data; return A ? A.rows() : {}; }, function () { appsHeard = null; return {}; });
+    }
+    return appsHeard;
+  }
   function cacheManager(name) {
     var n = String(name || '');
     if (!/^[A-Za-z]\w*$/.test(n)) return Promise.reject(refusal('not-found', 'no family ' + name));
@@ -398,12 +415,9 @@
         var at = managerPaths(n).filter(function (p) { return require('fs').existsSync(require('path').join(RUN_ROOT, p)); })[0];
         managers[n] = at ? requireOne(at) : Promise.reject(refusal('not-found', 'the family ' + n + ' has no ' + MANAGER));
       } else {
-        managers[n] = bindOwn(n).then(function (fam) {
-          if (!fam || !fam.FS || typeof fam.FS.path !== 'function') throw refusal('not-found', 'the family ' + n + ' has no FS');
-          return fam.FS.path({ path: 'api.js' });
-        }).then(function (b) {
-          var p = b && typeof b.path === 'string' ? b.path.replace(/((family|api)\/)?api\.js$/, MANAGER) : '';
-          if (!p) throw refusal('not-found', 'the family ' + n + ' has no ' + MANAGER);
+        managers[n] = (n === 'app' ? Promise.resolve('spirit/app/' + MANAGER) : appRows().then(function (rows) {
+          return rows && Object.prototype.hasOwnProperty.call(rows, n) ? 'spirit/app/' + n + '/' + MANAGER : 'spirit/' + n + '/' + MANAGER;
+        })).then(function (p) {
           return requireOne('spirit/data.js').then(function () { return requireOne(p); });
         });
       }
@@ -413,7 +427,8 @@
     return managers[n];
   }
   function interfaceName(p) {
-    var m = /^process\/js\/([^/]+)\/family\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
+    // An app's family sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27).
+    var m = /^process\/js\/([^/]+)\/family\/api\.js$/.exec(p) || /^spirit\/app\/([^/]+)\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
   }
   // A COMPONENT IS REQUIRED ONCE, AND ITS TREE WITH IT (goal/G41.3). Andy: "spirit.js require() require implementation

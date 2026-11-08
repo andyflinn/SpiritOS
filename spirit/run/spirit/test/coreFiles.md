@@ -34,7 +34,7 @@ files in the test-folder core files as well."
 - A file in a `test/` folder beside a core file, named after it (`test/<name>.js`, `test/<name>.md`), is core:
   `spirit/shell/test/boot.js` and `spirit/shell/test/boot.md` for `spirit/shell/boot.js`, `shell/apps/test/apps.md` for the intrinsic
   `shell/apps/apps.js`.
-- A test named after a file that is not core stays writable: `shell/desk/test/desk.js` for `shell/desk/desk.js`.
+- A test named after a file that is not core stays writable: `spirit/app/desk/element/desk/test/desk.js` for `spirit/app/desk/element/desk/desk.js`.
 
 ## What its test must try to break
 

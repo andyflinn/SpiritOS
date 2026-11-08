@@ -555,11 +555,16 @@ module.exports = function installJobs(port) {
     (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
     return runServer(rootDir, client, name, script, 'process', m.label || name, values);
   }
-  // ONE APP'S SERVER (goal/G43.12): spirit/app/<name>/<name>.js, with no arguments.
+  // ONE APP'S SERVER (goal/G43.12): spirit/app/<name>/<name>.js. ITS ARGUMENTS ARE ITS <name>.json's DEFAULTS, as a process
+  // server's are its manifest's (goal/G43.27, requirement 18: the desk's goalRepo and goalPath carried over); none without.
   function startAppServer(rootDir, client, name) {
     const script = path.join(rootDir, 'spirit', 'app', name, name + '.js');
     if (!fs.existsSync(script)) return null;
-    return runServer(rootDir, client, name, script, 'app', name, {});
+    let own = null;
+    try { own = JSON.parse(fs.readFileSync(path.join(rootDir, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { own = null; }
+    const values = {};
+    ((own && Array.isArray(own.args)) ? own.args : []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
+    return runServer(rootDir, client, name, script, 'app', name, values);
   }
   function runServer(rootDir, client, name, script, kind, type, values) {
     const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform, kind);

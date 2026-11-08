@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/shell.css">
+</head>
+<body>
+<div id="app-container"><div id="app-header"><div id="app-title"></div></div><div id="app-content"></div></div>
+<script src="/spirit.js"></script>
+<script>
+// goal/G41.22 (box v16, and Andy: "all left side panels must fucking use all available vertical space, especially the
+// lists"): the details panel in the home page's app area, opened on an item with 200 chat lines, a long box and long
+// lists, and what the browser makes of it, measured. Opened by ./deskDetails.js at
+// /DEBUG/spirit/app/desk/element/deskDetails/test/deskDetails-opened.html. The desk is a stand-in that answers the reads.
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function rect(el) { if (!el) return null; var b = el.getBoundingClientRect(); return { top: Math.round(b.top), bottom: Math.round(b.bottom) }; }
+var lines = [];
+for (var i = 0; i < 200; i++) lines.push({ by: 'andy', at: new Date(Date.UTC(2026, 9, 30, 10, 0, i)).toISOString(), text: 'line ' + i });
+var facts = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: ['close', 'verify'], verified: 'none', blocked: [],
+  rules: Array.from({ length: 60 }, function (x, i) { return { key: 'rule/' + (i + 1), version: 1 }; }) };
+var checks = Array.from({ length: 60 }, function (x, i) { return { number: 'Q' + (i + 1), kind: 'Q', state: 'open', words: 'a question' }; })
+  .concat([1, 2, 3].map(function (n) { return { number: 'G' + n, kind: 'G', state: 'open', words: 'core grant: a file' }; }));
+var files = Array.from({ length: 150 }, function (x, i) { return { path: 'spirit/run/shell/a' + i + '.js', by: 'claude-windows', core: i < 3 }; });
+var suites = Array.from({ length: 60 }, function (x, i) { return { key: String(i), label: JSON.stringify({ path: 'spirit/run/shell/test/s' + i + '.js' }) }; });
+window.asked = [];
+var api = {
+  escapeHtml: function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
+  setScreenTitle: function () {}, closeDialog: function () {}, onPublished: function () { return function () {}; }, armUntilElsewhere: function () {},
+  verb: function (n, a) {
+    window.asked.push({ name: n, args: a });
+    var b = { ok: true };
+    if (n === 'desk.item.get') b = { item: JSON.stringify(facts), version: 1, change: 1 };
+    if (n === 'desk.item.chat') b = { chat: lines };
+    if (n === 'desk.item.checks') b = { checks: checks };
+    if (n === 'desk.item.box') b = { box: Array(250).join('a box line\n') + 'the needle line\n' + Array(50).join('a box line\n'), version: 37 };
+    if (n === 'desk.item.files') b = { files: files };
+    if (n === 'desk.item.suites.search') b = { items: suites, more: false };
+    return Promise.resolve({ status: 200, body: b });
+  },
+};
+
+// Opened, and what shows at open.
+window.opened = function () {
+  var def = null;
+  (spirit.shell = spirit.shell || {}).activateApp = function (d) { def = d; };
+  var out = {};
+  return spirit.require('spirit/app/desk/element/deskDetails/deskDetails.js').then(function () {
+    def.mount(document.getElementById('app-content'), api);
+    return def.open({ id: facts.id });
+  }).then(function () { return wait(1500); }).then(function () {
+    var log = document.getElementById('dd-chat');
+    var last = log && log.lastElementChild;
+    var page = document.scrollingElement;
+    var area = document.getElementById('app-container');
+    out.window = window.innerHeight;
+    out.say = rect(document.getElementById('dd-say'));
+    out.chat = rect(log);
+    out.chatEnd = log ? { top: Math.round(log.scrollTop), end: log.scrollHeight - log.clientHeight } : null;
+    out.newest = last ? { text: last.textContent, bottom: Math.round(last.getBoundingClientRect().bottom) } : null;
+    out.scrolls = page.scrollHeight > page.clientHeight + 1 || area.scrollHeight > area.clientHeight + 1;
+    var current = document.querySelector('[data-side="left"][data-current]');
+    var panel = document.getElementById('dd-panel');
+    out.leftShown = current ? current.getAttribute('data-tool') : '';
+    out.panelAtOpen = panel ? Math.round(panel.getBoundingClientRect().height) : 0;
+    return JSON.stringify(out);
+  });
+};
+
+// goal/G43.3, the box panel. Andy: "i want the UI to allow me to search the box currently displayed: the exact content of
+// the box on my screen, also a codeMirror box on-screen would help because it show line-numbers?", and "above the box i
+// want to see the the last-stored version number of the box." What shows, what stands above the box, and what his words
+// typed into the search of the panel mark.
+window.boxView = function () {
+  var icon = document.querySelector('[data-tool="box"]');
+  if (!icon) return Promise.resolve(JSON.stringify({ error: 'no icon for box' }));
+  if (!icon.hasAttribute('data-current')) icon.click();
+  return wait(1200).then(function () {
+    var panel = document.getElementById('dd-panel');
+    var cm = panel.querySelector('.CodeMirror');
+    var box = cm || panel.querySelector('textarea');
+    var out = { codeMirror: !!cm, numbers: panel.querySelectorAll('.CodeMirror-linenumber').length };
+    var top = box ? box.getBoundingClientRect().top : 0;
+    var above = '';
+    panel.querySelectorAll('*').forEach(function (el) { if (!box.contains(el) && !el.children.length && el.getBoundingClientRect().bottom <= top + 1) above += ' ' + el.textContent; });
+    out.above = above;
+    var find = Array.prototype.filter.call(panel.querySelectorAll('input'), function (i) { return !box.contains(i) && i.getClientRects().length; })[0];
+    out.find = !!find;
+    return JSON.stringify(out);
+  });
+};
+// The take on that box, as he goes in and out of it: going in takes it, leaving with a change writes it.
+window.boxTake = function () {
+  var el = document.querySelector('#dd-panel .CodeMirror');
+  if (!el) return Promise.resolve(JSON.stringify({ error: 'no CodeMirror in the box panel' }));
+  var cm = el.CodeMirror;
+  window.asked.length = 0;
+  // This page is not the browser's focused tab, so the focus and blur a real press brings are sent to the same input.
+  cm.focus();
+  cm.getInputField().dispatchEvent(new Event('focus'));
+  return wait(300).then(function () {
+    var took = window.asked.filter(function (a) { return a.name === 'desk.box.take'; }).length;
+    cm.setValue('his new text');
+    cm.getInputField().blur();
+    cm.getInputField().dispatchEvent(new Event('blur'));
+    return wait(300).then(function () {
+      var wrote = window.asked.filter(function (a) { return a.name === 'desk.box.write'; })[0];
+      return JSON.stringify({ took: took, wrote: wrote ? wrote.args : null });
+    });
+  });
+};
+
+// goal/G43.3 (Andy: "when i manually add rules to an item, the rule-picker should default to all filters off. Now i always
+// have to turn of all but one search filter to actually find the rule I'm looking for."): the picker's type buttons, as the
+// search element draws them, and what a press of one asks.
+window.rulePick = function () {
+  var icon = document.querySelector('[data-tool="rules"]');
+  if (!icon) return Promise.resolve(JSON.stringify({ error: 'no icon for rules' }));
+  if (!icon.hasAttribute('data-current')) icon.click();
+  var buttons = function () { return Array.prototype.slice.call(document.querySelectorAll('#dd-rule-pick button[data-filter^="type-"]')); };
+  var on = function (b) { return /font-weight:\s*bold/.test(b.getAttribute('style') || ''); };
+  var lastTypes = function () { var r = window.asked.filter(function (a) { return a.name === 'desk.rules.search'; }).pop(); return r && r.args ? r.args.types : null; };
+  return wait(1200).then(function () {
+    var box = document.querySelector('#dd-rule-pick input');
+    if (box) { box.focus(); box.dispatchEvent(new Event('focus')); }
+    return wait(400);
+  }).then(function () {
+    var out = { buttons: buttons().length, on: buttons().filter(on).map(function (b) { return b.getAttribute('data-filter').slice(5); }) };
+    var code = buttons().filter(function (b) { return b.getAttribute('data-filter') === 'type-code'; })[0];
+    if (!code) return JSON.stringify(out);
+    window.asked.length = 0;
+    code.click();
+    return wait(600).then(function () {
+      out.afterOn = buttons().filter(on).map(function (b) { return b.getAttribute('data-filter').slice(5); });
+      out.afterTypes = lastTypes();
+      return JSON.stringify(out);
+    });
+  });
+};
+
+// One left panel shown, and what fills and what scrolls in it, measured: the box that scrolls most inside the pane, and
+// whether the pane itself scrolls. A grant row is measured before and after its list is scrolled to its end.
+window.panel = function (key) {
+  var icon = document.querySelector('[data-tool="' + key + '"]');
+  if (!icon) return Promise.resolve(JSON.stringify({ error: 'no icon for ' + key }));
+  if (!icon.hasAttribute('data-current')) icon.click();
+  return wait(800).then(function () {
+    var panel = document.getElementById('dd-panel');
+    var pane = panel;
+    while (pane && !/pane-left$/.test(pane.id || '')) pane = pane.parentElement;
+    if (!pane) return JSON.stringify({ error: 'the panel is in no left pane' });
+    var best = null;
+    pane.querySelectorAll('*').forEach(function (el) {
+      var over = el.scrollHeight - el.clientHeight;
+      if (over > 1 && /auto|scroll/.test(getComputedStyle(el).overflowY) && el.getClientRects().length && (!best || over > best.over)) best = { el: el, over: over };
+    });
+    var out = { pane: rect(pane), paneScrolls: pane.scrollHeight > pane.clientHeight + 1, scroller: best ? rect(best.el.closest('.CodeMirror') || best.el) : null };
+    var grant = pane.querySelector('[data-grant]');
+    if (!grant || !best) return JSON.stringify(out);
+    out.grantInList = best.el.contains(grant);
+    out.grantBefore = Math.round(grant.getBoundingClientRect().top);
+    best.el.scrollTop = best.el.scrollHeight;
+    return wait(200).then(function () { out.grantAfter = Math.round(grant.getBoundingClientRect().top); return JSON.stringify(out); });
+  });
+};
+</script>
+</body>
+</html>

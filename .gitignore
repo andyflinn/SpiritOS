@@ -57,10 +57,10 @@ spirit/currentIssues.md
 # pulled would import Andy's record into its own desk.db, and every planted
 # test node would boot with it. D5: "any appServer state is none of git's
 # business". Past commits still hold them.
-spirit/run/shell/desk/log/
-spirit/run/shell/desk/voice/
-spirit/run/shell/desk/state.json
-spirit/run/shell/desk/seen.json
+spirit/run/spirit/app/desk/element/desk/log/
+spirit/run/spirit/app/desk/element/desk/voice/
+spirit/run/spirit/app/desk/element/desk/state.json
+spirit/run/spirit/app/desk/element/desk/seen.json
 
 # Personal media that ended up in a folder named test/pix rather than real
 # test fixtures — unreferenced by any code or test (verified), 20MB.

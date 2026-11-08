@@ -19,7 +19,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 const settle = async function () { for (let i = 0; i < 30; i++) await new Promise(function (r) { setImmediate(r); }); };
 
 // ── THE PAGE ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-// The small forgiving page Desk's suite drives (shell/desk/test/desk.js), copied as it is: markup parsed into elements,
+// The small forgiving page Desk's suite drives (spirit/app/desk/element/desk/test/desk.js), copied as it is: markup parsed into elements,
 // with ids, attributes, parents, closest and simple selectors, and a click that reaches every listener above its
 // target. Desk keeps its own while it lives (Andy: "do all but desk").
 const VOID = { input: 1, br: 1, img: 1, hr: 1, meta: 1, link: 1 };

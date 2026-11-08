@@ -57,7 +57,7 @@ let cacheAnswer = [];   // what appServer answers: [{ file, bytes }], a file per
 // keepRow), and, set before a restart, the rows it reads back into the fresh data set at the start, before deskClient
 // runs a line past serve() (appServer restoreCaches): through the translator, no onRow.
 // goal/G41.24: the desk's cache rules and its translator are one file in the desk's family folder, data.js.
-const CCM = path.join(RUN, path.dirname(path.dirname(familyPath('desk'))), 'data.js');
+const CCM = path.join(RUN, 'spirit', 'app', 'desk', 'data.js');
 const DESK_API = (function () { try { return require(CCM); } catch (e) { return { cache: { keep: function (rows, r) { return rows.concat([r]); } } }; } }());
 let cacheRows = [];
 let restoreRows = null;
@@ -69,7 +69,7 @@ const appServerStub = {
       require(path.resolve(String(opts.stream.translator)));
     }
     // Each row under its sender, as appServer's restoreCaches writes it (written(st, row): take(job, st.key); goal/G41.28).
-    if (restoreRows) { restoreRows.forEach(function (r) { curD.takeJob({ module: 'process/js/desk', data: {}, app: r }, DESK); }); restoreRows = null; }
+    if (restoreRows) { restoreRows.forEach(function (r) { curD.takeJob({ module: 'spirit.app.desk', data: {}, app: r }, DESK); }); restoreRows = null; }
     served = { verbs: verbs, opts: opts || {} };
     return { subscribe: function (key, family, since) { subscribes += 1; subscribeArgs.push({ key: key, family: family, since: since }); return Promise.resolve(true); }, follow: function () { return Promise.resolve(true); } };
   },
@@ -81,7 +81,7 @@ const appServerStub = {
 globalThis.spirit = {
   familyPath: familyPath,
   require: function (p) {
-    if (p === familyPath('desk')) return Promise.resolve(deskFamily);
+    if (p === 'spirit/app/desk/api.js') return Promise.resolve(deskFamily);
     if (/spirit\/contact\/api\.js$/.test(p)) return Promise.resolve({ get: function () { return Promise.resolve({ person: { blocked: true } }); } });
     return Promise.resolve({});
   },
@@ -117,7 +117,7 @@ let change = 0;
 function push(row) {
   change += 1;
   const r = Object.assign({ change: change }, row);
-  curD.takeJob({ module: 'process/js/desk', data: {}, app: r }, DESK);
+  curD.takeJob({ module: 'spirit.app.desk', data: {}, app: r }, DESK);
   cacheRows = DESK_API.cache.keep(cacheRows, r);
   return Promise.resolve(served.opts.stream.onRow(r, DESK));
 }
@@ -128,7 +128,7 @@ function pushNoted(row) {
   change += 1;
   const r = Object.assign({ change: change }, row);
   let said = null;
-  curD.noting(function () { curD.takeJob({ module: 'process/js/desk', data: {}, app: r }, DESK); said = served.opts.stream.onRow(r, DESK); });
+  curD.noting(function () { curD.takeJob({ module: 'spirit.app.desk', data: {}, app: r }, DESK); said = served.opts.stream.onRow(r, DESK); });
   return Promise.resolve(said);
 }
 let tick = Date.parse('2030-01-01T00:00:00Z');
@@ -183,12 +183,12 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
       const said = statusesOf(from)[0];
       return said && said.id === HELD ? said.tone : '(' + short(said) + ')';
     };
-    for (const rel of ['spirit/run/shell/desk/test/desk.js', 'spirit/run/spirit/test/relay.js', 'spirit/run/test/testModule.js']) {
+    for (const rel of ['spirit/run/spirit/app/desk/element/desk/test/desk.js', 'spirit/run/spirit/test/relay.js', 'spirit/run/test/testModule.js']) {
       const tone = await toneOf(rel);
       ok(tone === 'test', rel + ': tone test', rel + ': tone ' + short(tone));
     }
-    const prod = await toneOf('spirit/run/shell/desk/desk.js');
-    ok(prod === 'code', 'a production file under spirit/run/: tone code', 'spirit/run/shell/desk/desk.js: tone ' + short(prod));
+    const prod = await toneOf('spirit/run/spirit/app/desk/element/desk/desk.js');
+    ok(prod === 'code', 'a production file under spirit/run/: tone code', 'spirit/run/spirit/app/desk/element/desk/desk.js: tone ' + short(prod));
   }
 
   // Andy: "the agents deskClient should relay the agents deskVerifier status during a run, this will tell desk that the
@@ -257,7 +257,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   ok(asksOf('item.checks').length === checksAsked && checks && Array.isArray(checks.checks) && checks.checks.some(function (c) { return c.number === 'G1'; }),
     'item.checks the same', 'asked ' + (asksOf('item.checks').length - checksAsked) + ' time(s); answer ' + short(checks));
 
-  test.subHeading('a kept read: cache only, never the desk (the commit check\'s interface, process/js/desk/test/commitCheck.js)');
+  test.subHeading('a kept read: cache only, never the desk (the commit check\'s interface, spirit/app/desk/test/commitCheck.js)');
   const kept = function (name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}), kept: true }).then(function (r) { return r; }, function (e) { return { threw: e.refusal || e.message }; }); };
   const deskDecl = verb('desk') && verb('desk').request;
   ok(!!deskDecl && Object.prototype.hasOwnProperty.call(deskDecl, 'kept'), 'the desk verb takes kept beside name and json', 'request: ' + short(deskDecl));
@@ -430,7 +430,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   test.subHeading('the cache is appServer\'s: deskClient switches it on and saves nothing itself');
   ok(served.opts.stream && served.opts.stream.cache === true, 'deskClient follows the desk\'s stream with the cache switch on', 'stream: ' + short(served.opts.stream && { cache: served.opts.stream.cache }));
   // goal/G41.24, Andy: "deskClient can get it form its own disc": its translator is the desk family's data.js.
-  ok(served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM, 'its stream\'s translator is process/js/desk/data.js, from its own disc', 'translator: ' + short(served.opts.stream && served.opts.stream.translator));
+  ok(served.opts.stream && path.resolve(String(served.opts.stream.translator || '')) === CCM, 'its stream\'s translator is spirit/app/desk/data.js, from its own disc', 'translator: ' + short(served.opts.stream && served.opts.stream.translator));
   await push({ verb: 'goal.whole', goal: 9, item: factsOf({ id: 'goal/G9.6', title: 'saved soon' }) });
   await settle();
   await new Promise(function (r) { setTimeout(r, 40); });

@@ -22,7 +22,7 @@ test.startTest('coreFiles.js: which files are core');
 test.subHeading('what was core before goal/G41.29');
 each(['spirit/run/spirit/shell/face.html', 'spirit/run/spirit/shell/boot.js', 'spirit/run/spirit/shell/seal.js', 'spirit/run/spirit/shell/face.css', 'spirit/run/spirit/shell/favicon.svg'], true, 'the face\'s boot');
 each(['spirit/run/shell/join/join.js', 'spirit/run/shell/join/join.json'], true, 'join, whole (the login app went, goal/G43.18)');
-each(['spirit/run/shell/apps/apps.json', 'spirit/run/process/js/fileServer/fileServer.json', 'spirit/run/shell/desk/desk.json'], false, 'a manifest is never core');
+each(['spirit/run/shell/apps/apps.json', 'spirit/run/process/js/fileServer/fileServer.json', 'spirit/run/spirit/app/desk/element/desk/desk.json'], false, 'a manifest is never core');
 each(['spirit/run/spirit/relay.js', 'spirit/run/spirit/test/relayServer.js', 'spirit/run/spirit/element/search/contact.js', 'spirit/run/shell/json/x.json', 'spirit/run/test/testReport.js'], true, 'the core folders');
 // goal/G41.30, the review's H5: what index.html loads on every boot.
 each(['spirit/run/spirit/element/codeMirror/lib/codemirror.js', 'spirit/run/spirit/element/codeMirror/lib/codemirror.css', 'spirit/run/spirit/element/progressBar.js'], true, 'loaded by index.html on every boot');
@@ -33,14 +33,14 @@ each(['spirit/run/spirit/shell/index.html', 'spirit/run/spirit/spirit.js', 'spir
 // goal/G41.30, Andy: "make the nav wrapper \"core\"": it moved out of spirit/element/ in G41.19, and no rule named it there.
 each(['spirit/run/shell/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.js', 'spirit/run/shell/test/navigationWrapper.md'], true, 'the navigation wrapper, and its tests');
 each(['spirit/run/shell/apps/apps.js', 'spirit/run/spirit/app/grants/grants.js', 'spirit/run/process/js/fileServer/fileServer.js'], true, 'an intrinsic app\'s code');
-each(['spirit/run/shell/apps/notes.txt', 'spirit/run/shell/desk/desk.js', 'spirit/run/shell/chatter/chatter.js'], false, 'an intrinsic app\'s data, or an app not intrinsic');
-ok(core.intrinsic('shell/apps') && core.intrinsic('spirit/run/shell/apps/apps.js') && !core.intrinsic('shell/desk'),
-  'intrinsic answers for a folder or a path inside one, with or without spirit/run/', 'intrinsic answered wrongly for shell/apps or shell/desk');
+each(['spirit/run/shell/apps/notes.txt', 'spirit/run/spirit/app/desk/element/desk/desk.js', 'spirit/run/shell/chatter/chatter.js'], false, 'an intrinsic app\'s data, or an app not intrinsic');
+ok(core.intrinsic('shell/apps') && core.intrinsic('spirit/run/shell/apps/apps.js') && !core.intrinsic('spirit/app/desk/element/desk'),
+  'intrinsic answers for a folder or a path inside one, with or without spirit/run/', 'intrinsic answered wrongly for shell/apps or spirit/app/desk/element/desk');
 
 test.subHeading('goal/G41.29: a core file\'s companion test files are core');
 each(['spirit/run/spirit/shell/test/boot.js', 'spirit/run/spirit/shell/test/boot.md', 'spirit/run/spirit/shell/test/seal.js', 'spirit/run/spirit/shell/test/seal.md'], true, 'the boot\'s companions');
 each(['spirit/run/shell/apps/test/apps.js', 'spirit/run/shell/apps/test/apps.md', 'spirit/run/spirit/app/grants/test/grants.md','spirit/run/process/js/fileServer/test/fileServer.md'], true, 'an intrinsic app\'s companions');
-each(['spirit/run/shell/desk/test/desk.js', 'spirit/run/shell/desk/test/desk.md', 'spirit/run/shell/chatter/test/chatter.md'], false, 'a test named after no core file');
+each(['spirit/run/spirit/app/desk/element/desk/test/desk.js', 'spirit/run/spirit/app/desk/element/desk/test/desk.md', 'spirit/run/shell/chatter/test/chatter.md'], false, 'a test named after no core file');
 
 
 // goal/G43.14: INTRINSIC FOR THE NEW APPS, in spirit/app/<name>/<name>.json (Andy: "i think in spirit/app/<name>/<name>.json

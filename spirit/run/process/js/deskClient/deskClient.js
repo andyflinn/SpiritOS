@@ -143,7 +143,8 @@ function begin(verb) {
 // and the kernel's own outcomes (not-posted, no-answer).
 const DESK_HOW = { waitMs: WAIT_MS, patienceMs: PATIENCE_MS };
 function askDesk(to, verb, args) {
-  return spirit.require(spirit.familyPath('desk'), to, DESK_HOW).then(function (desk) {
+  // THE DESK IS AN APP OF spirit/app/ (goal/G43.27): its family is spirit/app/desk/api.js.
+  return spirit.require('spirit/app/desk/api.js', to, DESK_HOW).then(function (desk) {
     return spirit.outcome(Promise.resolve().then(function () {
       if (typeof desk[verb] !== 'function') { const e = new Error('the desk serves no verb ' + verb); e.code = 'no-such-verb'; throw e; }
       return desk[verb](args);
@@ -210,7 +211,7 @@ function heldByMe(row) {
 // node's own copy, the same appServer's query uses.
 // The same file is the stream's translator (below), which appServer requires once the data set is there: it is required
 // here only when first read from, so that require is the one that runs it.
-const DESK_CCM = path.join(__dirname, '..', '..', '..', path.dirname(path.dirname(spirit.familyPath('desk'))), 'data.js');
+const DESK_CCM = path.join(__dirname, '..', '..', '..', 'spirit', 'app', 'desk', 'data.js');
 function fromKept(name, args) {
   const k = kept();
   return k && typeof k.answer === 'function' ? k.answer(name, args, ANSWER_ROOM) : null;
@@ -1062,7 +1063,8 @@ const server = appServer.serve({
   // THE DESK'S STREAM (goal/G33.4, box v40-41): appServer's streamListener takes each row into spirit.data through the
   // desk's translator, then hands it to streamed (above), which picks out what is meant for its agent.
   // cache (goal/G41.12, box v15): appServer's switch, at its default limit, 4 MB of the desk's rows.
-  stream: { module: 'process/js/desk', translator: DESK_CCM, onRow: streamed, cache: true },
+  // The node files an app's jobs under spirit.app.<name> (spirit/jobs.js moduleOf; goal/G43.27): the desk's is spirit.app.desk.
+  stream: { module: 'spirit.app.desk', translator: DESK_CCM, onRow: streamed, cache: true },
   codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },

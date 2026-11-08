@@ -111,7 +111,7 @@ ok(/^HEARD/.test(dcOut) && dcFrom.indexOf('chokidar') !== -1, 'deskClient\'s wat
 
 test.subHeading('5. no file names spirit/run/node_modules any more');
 // The desk's shared currentGoal.json quotes the items' boxes, this one's among them: no file of the product.
-const naming = tracked.filter(function (f) { return !SELF.test(f) && f.indexOf('spirit/run/brains/') !== 0 && f !== 'spirit/run/process/js/desk/currentGoal.json' && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f); })
+const naming = tracked.filter(function (f) { return !SELF.test(f) && f.indexOf('spirit/run/brains/') !== 0 && f !== 'spirit/run/spirit/app/desk/currentGoal.json' && !/\.(png|jpe?g|gif|ico|woff2?|ttf|zip|db)$/i.test(f); })
   .filter(function (f) { return /spirit\/run\/node_modules|!\/spirit\/run\/node_modules/.test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
 ok(!naming.length, 'no tracked file names spirit/run/node_modules', naming.length + ' still do: ' + short(naming));
 const gi = fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8');
