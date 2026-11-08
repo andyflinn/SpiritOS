@@ -407,23 +407,33 @@
   // none fails no tree.
   var MANAGER = 'data.js';
   var managers = Object.create(null);
-  // The node's apps as the page holds them, once the app family's manager has its first rows (the node's 'apps' job,
-  // heard on the stream), or after a while without them.
-  var appsHeard = null;
+  // THE NODE'S APPS, ASKED ONCE AND THEN FOLLOWED (goal/G43.27; Andy: "do it."): asked with app.search (the function
+  // spirit.app.searchApp, spirit/app/api.js; each item's label is its row, spirit/app.js rowOf), so nothing waits for the
+  // stream, which a page opens only once it is up. From then on the app family's cache, fed by the node's streamed apps job,
+  // is followed: a new app with an api.js reaches the finder with no reload. An answer with no app in it is asked again.
+  var appsAsked = null;
   function appRows() {
-    if (!appsHeard) {
-      appsHeard = cacheManager('app').then(function () {
-        var A = self.data && self.data.app && self.data.app.data;
-        if (!A) return null;
-        return new Promise(function (done) {
-          if (Object.keys(A.rows() || {}).length) { done(); return; }
-          var off = A.watch(function () { if (typeof off === 'function') off(); done(); });
-          setTimeout(done, 5000);
+    if (!appsAsked) {
+      appsAsked = Promise.resolve(self.ready).then(function (s) {
+        return s && s.app && typeof s.app.searchApp === 'function' ? s.app.searchApp({ q: '' }) : null;
+      }).then(function (b) {
+        var rows = {};
+        ((b && b.items) || []).forEach(function (i) {
+          var r = null;
+          try { r = JSON.parse(i.label); } catch (e) { r = null; }
+          if (r && r.key) rows[r.key] = r;
         });
-      }).then(null, function () { appsHeard = null; });
+        if (!Object.keys(rows).length) appsAsked = null;
+        return rows;
+      }, function () { appsAsked = null; return {}; });
+      // The streamed list, loaded beside the ask and never waited for.
+      cacheManager('app').then(null, function () { /* the asked rows stand */ });
     }
-    // The rows as they stand when asked, not as they stood when first heard.
-    return appsHeard.then(function () { var A = self.data && self.data.app && self.data.app.data; return A ? A.rows() : {}; });
+    return appsAsked.then(function (asked) {
+      var A = self.data && self.data.app && self.data.app.data;
+      var live = A ? A.rows() : null;
+      return live && Object.keys(live).length ? live : asked;
+    });
   }
   function cacheManager(name) {
     var n = String(name || '');
