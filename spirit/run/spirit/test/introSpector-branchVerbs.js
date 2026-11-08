@@ -41,7 +41,11 @@ test.startTest('introSpector-branchVerbs.js: every api branch serves exactly the
       let declared = [];
       try { declared = Object.keys((require(file) || {}).verbs || {}); } catch (e) { test.fail(b + ': its api.js does not load: ' + e.message); return; }
       const served = Object.keys(tree[b]);
-      const extra = served.filter(function (v) { return declared.indexOf(v) === -1; });
+      // Served beyond an api.js only by decision: appServer's DEBUG on every server (desk/G2.5: "DEBUG auto-verb supplied
+      // by appServer is approved."), and desk's item.rules.add and item.rules.remove, his alone and left out of its api.js on
+      // purpose (goal/G40.12, desk's api.js header).
+      const decided = ['DEBUG'].concat(b === 'desk' ? ['item.rules.add', 'item.rules.remove'] : []);
+      const extra = served.filter(function (v) { return declared.indexOf(v) === -1 && decided.indexOf(v) === -1; });
       const missing = declared.filter(function (v) { return served.indexOf(v) === -1; });
       ok(!extra.length && !missing.length, b + ': serves exactly the ' + declared.length + ' verbs of its api.js', b + ': ' + (extra.length ? extra.length + ' served beyond its api.js (' + short(extra.slice(0, 6)) + ')' : '') + (missing.length ? ' ' + missing.length + ' declared and not served ' + short(missing.slice(0, 6)) : ''));
     });
