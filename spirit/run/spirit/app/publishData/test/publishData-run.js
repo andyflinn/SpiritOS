@@ -98,7 +98,7 @@ function setup() {
     git(c, ['config', 'user.name', 'publishData test']); git(c, ['config', 'user.email', 'publishdata@test.invalid']); git(c, ['config', 'commit.gpgsign', 'false']);
   });
   fs.writeFileSync(path.join(CLONE, 'README.md'), 'scratch\n');
-  fs.writeFileSync(path.join(CLONE, '.gitignore'), 'spirit/run/relay-state/\nspirit/run/spirit/state/\n');
+  fs.writeFileSync(path.join(CLONE, '.gitignore'), 'spirit/run/spirit/state/\n');
   git(CLONE, ['add', 'README.md', '.gitignore']);
   git(CLONE, ['commit', '-q', '-m', 'the first']);
   git(CLONE, ['push', '-q', '-u', 'origin', 'master']);

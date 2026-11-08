@@ -53,7 +53,7 @@ test.startTest('icons.js: the icons app\'s add row, a rowForm');
     // The box: "the Icons app's one fallback path changes to this file", and "Until then the Icons app writes its old file, relay-state/shell/icons/iconSet.json".
     test.subHeading('goal/G43.11: its fallback is spirit/iconSet.json, and it writes its old file');
     const SET = 'spirit/iconSet.json';
-    const OWN = path.join(node.root, 'spirit', 'run', 'relay-state', 'shell', 'icons', 'iconSet.json');
+    const OWN = path.join(node.root, 'spirit', 'run', 'spirit', 'state', 'icons', 'data', 'iconSet.json');
     const setOnDisc = path.join(node.root, 'spirit', 'run', SET);
     const before = fs.readFileSync(setOnDisc, 'utf8');
     const glyphs = Object.keys(JSON.parse(before));

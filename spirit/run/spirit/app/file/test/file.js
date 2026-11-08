@@ -39,7 +39,7 @@ function png(w, h) {
 // Every file under a folder.
 function filesUnder(dir) {
   const out = [];
-  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
+  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
   return out;
 }
 // The code of the tree, its comments out, its tests out: what runs.
@@ -286,18 +286,18 @@ test.startTest('file.js: Files in spirit/app/file/, as Andy sees it (goal/G43.17
     await T('close("notes.txt")');
     await waitFor('rows().length > 0');
 
-    test.subHeading('the box: fstat, "the facts (MIME type, size, changed, created), the annotations. No name line"');
-    // Every file has annotations to show: the node's face part always says intrinsic (spirit/fileSystem.js, getAnnotations).
+    test.subHeading('the box: fstat, "the facts (MIME type, size, changed, created) ... No name line"; no annotations since goal/G43.20');
     await T('press("zzFiles/blob.zzq")');
     const facts = await waitFor('text().indexOf("MIME type") !== -1', 10000);
     ok(facts, 'blob.zzq opens in fstat, its facts shown', 'blob.zzq: ' + short(await T('text()')));
     ok(facts && barIs(await T('bars()'), /blob\.zzq$/), 'under one bar in view, ending in its name', 'bars: ' + short(await T('bars()')));
     ok(facts && (await T('count(".CodeMirror, img, video, audio")')) === 0, 'fstat alone: no text and no media', 'blob.zzq: ' + short(await T('text()')));
     ok(facts && times(await T('text()'), /blob\.zzq/g) === 1, 'no name line: blob.zzq is named once, in the bar', 'blob.zzq: ' + short(await T('text()')));
-    await waitFor('text().indexOf("More Information") !== -1', 10000);
+    await waitFor('text().indexOf("Created") !== -1', 10000);
     const fstatText = String(await T('text()'));
-    const order = ['MIME type', 'Size', 'Changed', 'Created', 'More Information'].map(function (w) { return fstatText.indexOf(w); });
-    ok(order.every(function (n, i) { return n !== -1 && (!i || n > order[i - 1]); }), 'top down: MIME type, size, changed, created, then the annotations', 'order ' + short(order) + ' in ' + short(fstatText));
+    const order = ['MIME type', 'Size', 'Changed', 'Created'].map(function (w) { return fstatText.indexOf(w); });
+    ok(order.every(function (n, i) { return n !== -1 && (!i || n > order[i - 1]); }), 'top down: MIME type, size, changed, created', 'order ' + short(order) + ' in ' + short(fstatText));
+    ok(fstatText.indexOf('More Information') === -1, 'and no annotations (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY.")', 'blob.zzq: ' + short(fstatText));
     ok(facts && !/Open with/i.test(fstatText), 'the box (Q9): no Open with in it', 'blob.zzq: ' + short(fstatText));
     await T('close("blob.zzq")');
 

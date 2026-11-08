@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/chatClerver/chatClerver.js
+// spirit/run/spirit/app/chat/chatClerver.js
 // THE CHAT SERVER — goal/G4. Faceless and p2p: every node that takes part runs one, and each holds its own record of
 // the chats it is a party to. No server in the middle; no core module.
 //

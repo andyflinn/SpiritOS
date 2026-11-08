@@ -19,9 +19,8 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 const { sleep, scratchNode } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
-// The app servers turned on at home on the scratch node, by the face.home sidecar scratchNode writes for each. That turns
-// on a process of process/js only; agent is an app of spirit/app/ now (goal/G43.12), whose server the node starts by
-// active in spirit/state/agent/node.json, which scratchNode does not write.
+// The app servers turned on on the scratch node, by active in spirit/state/<name>/node.json, which scratchNode writes for
+// each (goal/G43.12, G43.20).
 const SERVERS = ['agent', 'desk', 'deskVerify', 'backup', 'chatClerver'];
 // A throw is answered within this, or it hung; the plain call after a batch within PLAIN_MS.
 const ASK_MS = 10000;

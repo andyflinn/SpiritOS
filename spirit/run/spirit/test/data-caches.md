@@ -10,10 +10,10 @@ is the appServer serializes the cache to disk."*
 
 ## Requirements
 
-1. **Every family in the api tree has a data.js**: each family's interface, `process/js/<name>/family/api.js`
-   (`spirit.familyPath`) and the node's own `spirit/<name>/api.js`, has `data.js` in its own folder, `process/js/<name>/` or `spirit/<name>/`. Each family
-   is its own check, named by the family. An app of `spirit/app/<name>/` (interface `./api.js` beside `<name>.js`, goal/G43.27; the
-   agent app today) matches neither pattern and is not counted.
+1. **Every family in the api tree has a data.js**: each family's interface, an app's `spirit/app/<name>/api.js`
+   (goal/G43.27) and the node's own `spirit/<name>/api.js`, both what `spirit.familyPath` gives, has `data.js` in its own
+   folder, `spirit/app/<name>/` or `spirit/<name>/`. Each family is its own check, named by the family. Every server is an
+   app of `spirit/app/` since goal/G43.20.
 2. **One code**:
    - the data set is one file, `spirit/data.js`: `spirit.js` brings it to a page, appServer requires the
      same file;
@@ -45,11 +45,11 @@ is the appServer serializes the cache to disk."*
 7. **No other way** (Andy, the box: *"anything not using the new spiritData.js and it's buddies clientCacheManager.js
    must do so in this item. no exceptions."*, and *"any notion that there is an alternative approach must disappear
    from all documentation and all comments and all code and tests in the entire repo."*):
-   - no client file (under `shell/`, `spirit/element/` or `process/js/`, but `shell/boot.js`, the face's own transport)
+   - no client file (under `shell/`, `spirit/element/` or `spirit/app/`, but `shell/boot.js`, the face's own transport)
      takes the node's stream itself (`events.subscribe`): only `spirit/data.js` takes it, for every client. Those paths
      are the test's; `boot.js` and `seal.js` have been in `spirit/shell/` since goal/G43.18, which the list does not
-     reach, so `spirit/shell/seal.js` is not judged; the apps left in `shell/` are, and none of `spirit/app/`, where
-     the apps moved, is;
+     reach, so `spirit/shell/seal.js` is not judged; the apps left in `shell/` are, and every app of `spirit/app/`,
+     where the apps and the servers moved (goal/G43.20);
    - no file of the repo (`.js`, `.md`, `.html`, `.json`; Andy's vault aside) names a
      replaced way: a page or client that runs `uncached`, the desk's two-level
      branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;

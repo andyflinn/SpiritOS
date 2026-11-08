@@ -146,10 +146,8 @@
   // Andy: "there's one post function and one get. that's it". Nothing else in spirit.js reaches the node: every member
   // packages its arguments and calls one of the two.
   //
-  // THIS VM'S NODE (Andy: "in the browser the node address is implicit from the first page get. for node.js processes,
-  // the host is always 127.0.0.1 and the port is fetched from \relay-state\environment.json"; "anytime a node.js process
-  // requires(spirit) spirit itself fetches the port from environment.json"). The file is spirit/state/environment.json
-  // since goal/G43.8 moved relay-state's own files there (Andy: "we move just the remaining files to spirit/state/").
+  // THIS VM'S NODE (Andy's ruling, goal/G40.6): in the browser the node is the first page's; a node.js process reaches
+  // 127.0.0.1, at the port spirit reads from spirit/state/environment.json as it is required.
   // On a page the page's own origin, or the
   // face's link to its home node when one is set; in node 127.0.0.1 and the PORT read below as this file is required.
   // No port, no node: never a default.
@@ -204,7 +202,7 @@
   var FOLDER = {
     loadFile: { path: 'path' }, saveFile: { path: 'path', content: 'text' }, deleteFile: { path: 'path' }, statFile: { path: 'path' },
     fileExists: { path: 'path' }, path: { path: 'path' }, loadJsonValue: { path: 'path' }, saveJsonValue: { path: 'path', value: 'object' },
-    getAnnotations: { path: 'path' }, annotateFile: { path: 'path', payload: 'object' }, search: { q: 'text?' },
+    search: { q: 'text?' },
   };
 
   // WHY A CALL WAS REFUSED, IN THE ANSWER'S OWN WORDS (goal/G33.1). Andy: on the face every icon add said "not saved:
@@ -387,16 +385,27 @@
   // waiting). Any other path is a component: in node required, answering its module.exports; on a page got and run as a
   // plain script (a stylesheet put on as a style), answering an empty object.
   // THE ONE FAMILY PATH (goal/G41.12, box v15: "One function finds a family path ... and every caller uses it"; Andy,
-  // Q3, on holding it here, since this file runs on a page where appServer.js cannot load: "sure"). A server's family
-  // folder is process/js/<name>/family/; appServer.js hands out this same function. No other file writes the path.
-  function familyPath(name) { return 'process/js/' + String(name || '') + '/family/api.js'; }
+  // Q3, on holding it here, since this file runs on a page where appServer.js cannot load: "sure"). A family's path is its
+  // own api.js (goal/G43.20, the box: "a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js ... nothing
+  // falls back"): a system family's spirit/<name>/api.js, or in node, when that is not there and the app has one, an app's
+  // spirit/app/<name>/api.js. On a page the path only names the family (interfaceName); the node finds its folder.
+  // appServer.js hands out this same function. No other file writes the path.
+  function familyPath(name) {
+    var n = String(name || '');
+    if (isNode()) {
+      var fs = require('fs');
+      var p = require('path');
+      if (!fs.existsSync(p.join(RUN_ROOT, 'spirit', n, 'api.js')) && fs.existsSync(p.join(RUN_ROOT, 'spirit', 'app', n, 'api.js'))) return 'spirit/app/' + n + '/api.js';
+    }
+    return 'spirit/' + n + '/api.js';
+  }
   // A FAMILY'S data.js, FOUND BY ITS NAME (goal/G41.28; Andy: "the shell can introspect to find and download their
-  // clientCacheManagers."): data.js in the family's own folder, a node family's (spirit/<name>/), an app's
-  // (spirit/app/<name>/, asked last, in node) or a server's (process/js/<name>/; Andy: "process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"). cacheManager(name) loads it once through the one loader, the data set first; it stands
-  // at spirit.data.<name>. A family with none answers not-found.
+  // clientCacheManagers."): data.js in the family's own folder, a node family's (spirit/<name>/) or an app's
+  // (spirit/app/<name>/, asked last, in node). cacheManager(name) loads it once through the one loader, the data set first;
+  // it stands at spirit.data.<name>. A family with none answers not-found.
   function managerPaths(name) {
     var n = String(name || '');
-    return ['spirit/' + n + '/data.js', familyPath(n).replace(/family\/api\.js$/, 'data.js'), 'spirit/app/' + n + '/data.js'];
+    return ['spirit/' + n + '/data.js', 'spirit/app/' + n + '/data.js'];
   }
   // ON A PAGE, FOUND BY THE FOLDER SHAPE AND LOADED BY A GET (goal/G43.27, requirement 6; Andy: "spirit.js can be fixed,
   // no? it knows the difference between an app and a system branch?"): an app's data.js is spirit/app/<name>/data.js when the app holds an api.js, a
@@ -461,7 +470,7 @@
   }
   function interfaceName(p) {
     // An app's family sits at the top of its folder, spirit/app/<name>/api.js (goal/G43.27).
-    var m = /^process\/js\/([^/]+)\/family\/api\.js$/.exec(p) || /^spirit\/app\/([^/]+)\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
+    var m = /^spirit\/app\/([^/]+)\/api\.js$/.exec(p) || /^spirit\/([^/]+)\/api\.js$/.exec(p);
     return m ? m[1] : '';
   }
   // A COMPONENT IS REQUIRED ONCE, AND ITS TREE WITH IT (goal/G41.3). Andy: "spirit.js require() require implementation

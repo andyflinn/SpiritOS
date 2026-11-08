@@ -188,32 +188,32 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
   else test.fail('the contact row element still requires ' + required.filter(function (p) { return /data\.js$/.test(p); }).join(', '));
   const row = function (k) { return CD.contact(k); };
   test.subHeading('relay-presence sets present, by key');
-  D.takeJob({ type: 'relay-presence', data: { presence: { KA: { present: true }, KB: { present: false } } } });
+  D.takeJob({ id: 'spirit.contact', data: { presence: { KA: { present: true }, KB: { present: false } } } });
   if (row('KA') && row('KA').present === true && row('KB') && row('KB').present === false) test.check('a present key reads present, an absent one absent');
   else test.fail('presence: ' + JSON.stringify({ a: row('KA'), b: row('KB') }));
   let writes = 0;
   const stop = CD.watch(function (key) { if (key === 'KA') writes += 1; });
-  D.takeJob({ type: 'relay-presence', data: { presence: { KA: { present: true }, KB: { present: false } } } });
+  D.takeJob({ id: 'spirit.contact', data: { presence: { KA: { present: true }, KB: { present: false } } } });
   if (writes === 0) test.check('the same table again writes nothing');
   else test.fail('an unchanged presence wrote ' + writes + ' times');
   stop();
-  D.takeJob({ type: 'relay-presence', data: { presence: { KB: { present: false } } } });
+  D.takeJob({ id: 'spirit.contact', data: { presence: { KB: { present: false } } } });
   if (row('KA') && row('KA').present === undefined && (row('KB') || {}).present === false) test.check('a key the table drops goes back to not known; the others stand');
   else test.fail('a dropped key: ' + JSON.stringify(row('KA')));
-  D.takeJob({ type: 'relay-presence', data: { presence: { KC: 'not a proof', KD: null } } });
+  D.takeJob({ id: 'spirit.contact', data: { presence: { KC: 'not a proof', KD: null } } });
   if (row('KC') === null && row('KD') === null) test.check('an entry that is no proof writes nothing');
   else test.fail('a bad entry wrote: ' + JSON.stringify({ c: row('KC'), d: row('KD') }));
 
   test.subHeading('peer-search seats the row the network found');
-  D.takeJob({ type: 'peer-search', data: { q: 'be', item: { key: 'KE', label: JSON.stringify({ name: 'bert', blocked: true }) } } });
+  D.takeJob({ id: 'spirit.contact', data: { q: 'be', item: { key: 'KE', label: JSON.stringify({ name: 'bert', blocked: true }) } } });
   if (row('KE') && row('KE').name === 'bert' && row('KE').blocked === true) test.check('the item\'s label is merged into its row, by key');
   else test.fail('the network row: ' + JSON.stringify(row('KE')));
   const seated = JSON.stringify(D.branchAt(CD.branch));
-  D.takeJob({ type: 'peer-search', data: { q: 'be' } });
+  D.takeJob({ id: 'spirit.contact', data: { q: 'be' } });
   // The branch read is the one the rows are in (KE just seated there), so an equal answer judges something.
   if ('KE' in D.branchAt(CD.branch) && JSON.stringify(D.branchAt(CD.branch)) === seated) test.check('a peer-search update with no item seats nothing');
   else test.fail('rows after an empty update: ' + Object.keys(D.branchAt(CD.branch)).join(','));
-  D.takeJob({ type: 'peer-search', data: { item: { key: 'KF', label: 'not json' } } });
+  D.takeJob({ id: 'spirit.contact', data: { item: { key: 'KF', label: 'not json' } } });
   if (row('KF') === null) test.check('a label that is not JSON seats nothing');
   else test.fail('a bad label seated ' + JSON.stringify(row('KF')));
 
@@ -227,7 +227,7 @@ function hostsFor(el) { const h = {}; el.fields.forEach(function (f) { h[f] = { 
 
   test.subHeading('other jobs are not contacts\' business');
   const beforeC = JSON.stringify(D.branchAt(CD.branch));
-  D.takeJob({ type: 'fs-watcher', data: { presence: { KZ: { present: true } }, item: { key: 'KZ', label: '{"name":"z"}' } } });
+  D.takeJob({ id: 'spirit.fs', data: { presence: { KZ: { present: true } }, item: { key: 'KZ', label: '{"name":"z"}' } } });
   if ('KE' in D.branchAt(CD.branch) && JSON.stringify(D.branchAt(CD.branch)) === beforeC) test.check('a job of another type changes no contact');
   else test.fail('another job changed contacts');
 

@@ -132,12 +132,13 @@ function createApp(opts) {
   function label(body) { return write(body, { label: String((body && body.label) || '') }); }
   function icon(body) { return write(body, { icon: String((body && body.icon) || '') }); }
   if (o.jobs) {
-    const job = o.jobs.createJob('permanent', 'apps', { apps: table() });
-    publish = function () { o.jobs.updateJob(job.id, { data: { apps: table() } }); };
+    // THE APP LIST IS NEWS OF spirit.app (goal/G43.20, Q2): each event { apps }, nothing else in it.
+    publish = function () { o.jobs.ownNews('spirit.app', 'apps', { apps: table() }); };
+    publish();
     o.jobs.events.on('job-updated', function (j) {
-      const command = j && j.type === 'fs-watcher' && j.data ? j.data.command : null;
+      const command = j && j.id === 'spirit.fs' && j.data ? j.data.command : null;
       if (!command || !command.path || !PLUGIN_PATH.test(String(command.path).replace(/\\/g, '/'))) return;
-      try { o.jobs.updateJob(job.id, { data: { apps: table() } }); } catch (e) { /* the next change publishes again */ }
+      try { publish(); } catch (e) { /* the next change publishes again */ }
     });
   }
 

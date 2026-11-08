@@ -5,7 +5,7 @@
 // relay it holds a row on, merged into one table, published to the shell
 // as a permanent job.
 //
-// A permanent job like fs-watcher and server-stats, and for the
+// A permanent job like spirit.fs and spirit, and for the
 // same reason those are jobs: long-lived node state whose updates the
 // shell already receives. The events family's stream carries it as
 // `job-updated` (the /api/events door is gone; server.js), so
@@ -157,7 +157,7 @@ function createPresence(opts) {
     }
   }
 
-  // ONLY WHEN THE SET ACTUALLY CHANGES. fs-watcher learned this the
+  // ONLY WHEN THE SET ACTUALLY CHANGES. spirit.fs learned this the
   // expensive way — "a rescan that says the same thing is not news" —
   // and presence has the same hazard from the other end: every app
   // subscribed to jobs sees every job-updated, so a quiet relay must not
@@ -168,10 +168,7 @@ function createPresence(opts) {
     const asJson = JSON.stringify(next);
     if (asJson === lastJson && !logMessage) return false;
     lastJson = asJson;
-    jobs.updateJob(job.id, {
-      data: { presence: next },
-      logMessage: logMessage,
-    });
+    jobs.ownNews('spirit.contact', 'presence', { presence: next });
     return true;
   }
 
@@ -585,7 +582,8 @@ function createPresence(opts) {
   function start(probe) {
     identity = auth.loadIdentity(rootDir);
     if (!job && jobs) {
-      job = jobs.createJob('permanent', 'relay-presence', { presence: {} });
+      // PRESENCE IS NEWS OF spirit.contact (goal/G43.20, Q1): each event { presence }, nothing else in it.
+      job = jobs.ownJob('spirit.contact');
     }
     const ask = probe || opts.probeImpl;
     if (!ask) return Promise.resolve([]);

@@ -11,7 +11,7 @@
 // NO DATA BOX. Andy: "get rid of that box. it's the (relatively) static portion of the fs data."
 //
 // A LIVE MONITOR OF WHAT THE JOB PUBLISHES, NEVER ITS STDOUT (goal/G29.14). The item's box: "A real-time monitor of a
-// capturable event stream, never stdout: an agent's file changes through fs-watcher, and what each server publishes.
+// capturable event stream, never stdout: an agent's file changes through spirit.fs, and what each server publishes.
 // It shows what could be logged; nothing is logged or kept." The window holds the last 256 events the shell receives;
 // the node does no more work. The dialog fills the page and the page itself does not scroll: the header, the rolling
 // event log (a third of the height, one JSON line per event), and the Extract/analyze box (a third of the height: the
@@ -78,7 +78,7 @@ function jdButtonsHtml(job) {
 
 function jdTitle(job) {
   if (!job) return 'Job';
-  return (JD_STATUS_ICON[job.status] || '') + ' ' + (job.type || job.kind || job.id);
+  return (JD_STATUS_ICON[job.status] || '') + ' ' + job.id;
 }
 
 function jdRender() {
@@ -98,7 +98,7 @@ function jdRender() {
   head.innerHTML = spirit.shell.factRow([
     ['Status', (JD_STATUS_ICON[job.status] || '') + ' ' + String(job.status || '')],
     ['Id', String(job.id)],
-    ['Kind / Type', String(job.kind || '') + ' / ' + String(job.type || '') + (job.module ? ' (' + job.module + ')' : '')],
+    ['Kind', String(job.kind || '') + (job.module ? ' (' + job.module + ')' : '')],
     ['Updated', job.updatedAt ? new Date(job.updatedAt).toLocaleTimeString() : ''],
   ]) + '<div class="start-job-form card">' + jdButtonsHtml(job) + '</div>';
 

@@ -5,7 +5,7 @@
 //
 //   spirit.app.monitor.createApp(container) -> { destroy() }
 //
-// One valued that fills the app: the node's server-stats job as the stream hands it to the jobs family's cache, each number
+// One valued that fills the app: the stats news of the node's spirit job as the stream hands it to the jobs family's cache, each number
 // and count one row. "Jobs by status replaces old Stats' Active jobs, so no list of finished statuses is copied."
 (function () {
   var S = window.spirit = window.spirit || {};
@@ -22,8 +22,9 @@
     return Math.floor(total / 3600) + 'h ' + Math.floor((total % 3600) / 60) + 'm ' + (total % 60) + 's';
   }
   function reading() {
-    var job = S.data.jobs.data.find(function (j) { return j && j.type === 'server-stats'; });
-    return job && job.data && job.data.memory ? job.data : null;
+    // THE NODE'S STATS, news of spirit (goal/G43.20): { stats }.
+    var job = S.data.jobs.data.job('spirit');
+    return job && job.data && job.data.stats && job.data.stats.memory ? job.data.stats : null;
   }
   function rowsOf(d) {
     var rows = [];
@@ -63,7 +64,7 @@
       if (gone) return;
       list = S.element.search.valued.create(container, { rows: rows, columns: COLUMNS });
       // WHO PAINTS, LISTENS (Andy, G41.32): each new reading repaints. A forgotten set or a job gone may be the reading's.
-      off = S.data.jobs.data.watch(function (id, job) { if (!id || !job || job.type === 'server-stats') list.redraw(); });
+      off = S.data.jobs.data.watch(function (id, job) { if (!id || !job || id === 'spirit') list.redraw(); });
     });
     return {
       destroy: function () {

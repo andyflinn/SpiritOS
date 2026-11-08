@@ -7,10 +7,10 @@
 //
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the files rows and list, the Apps, the Icons, the
 // face's boot) asks spirit.data.fs.data (below), never a branch by name.
-//   files   path -> { kind, size, modified, core }, the node's file tree as its fs-watcher streams it
+//   files   path -> { kind, size, modified, core }, the node's file tree as its spirit.fs streams it
 //   icons   glyph -> { glyph, keywords }, the icon set, a file the family serves, as the icons list last read it
 //           (goal/G41.28, moved here from the icons list element): a set read again replaces it whole
-// The tree comes as updates of one job, the fs-watcher's: a connecting page is handed the tree as create commands, then
+// The tree comes as updates of one job, the spirit.fs job's: a connecting page is handed the tree as create commands, then
 // treeComplete: the branch fills quietly and its watchers hear one word at the end; after that each change is told by
 // path (goal/G30.18, moved here from the files row element). Every event ends in set or del; it asks nothing.
 (function () {
@@ -22,7 +22,7 @@
     var HOME = D.viewAt(null, 'fs');
     D.addTranslator({
       onJob: function (job) {
-        if (!job || job.type !== 'fs-watcher' || !job.data) return;
+        if (!job || job.id !== 'spirit.fs' || !job.data) return;
         var V = D.viewAt(job.fromNode || null, 'fs');
         if (job.data.treeComplete) { V.ready(FILES, true); return; }
         var cmd = job.data.command;

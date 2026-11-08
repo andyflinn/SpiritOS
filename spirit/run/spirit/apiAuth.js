@@ -95,72 +95,9 @@ function createApiAuth(opts) {
     return row && row.myLabel ? String(row.myLabel) : '';
   }
 
-  // EACH APPSERVER'S BUNDLES, WRITTEN AT THE NODE'S BOOT (goal/G41.24; Andy, box: "the apiAuth.js module, when the node
-  // boots, will check for all valid \"process/js/<appServerName>/<appServerName>Bundles.json.\" files, and update the
-  // auth.bundle and auth.branch ... always using/asserting the server <appServerName> as \"owner\""; "when the appServer is
-  // booted, the loopback interface is not be alive/listening yet, It will write the to the tables directly"). Each key of
-  // the file is one bundle, { label, branches: [{ family, verb }] }; relay-state/process/<appServerName>/bundles.json
-  // keeps each key's bundle id and label, so a bundle is never added twice. A kept id whose row is gone, or no longer
-  // the appServer's, is added again under the same key ("if a USER deletes a bundle owned by an Server, apiAuth.js it
-  // will create a new bundle"); a key no longer in the file goes with all its branches ("apiAuth.js will delete that
-  // key from auth.bundle AND all its rows in auth.branch"). A bundle owned by the appServer but kept under no key is
-  // never touched. At the node's boot no appServer runs yet, so its own verbs are not in the live tree: the branches are
-  // written as the file says, unchecked.
-  function bundleFile(app) {
-    let got = null;
-    try { got = JSON.parse(fs.readFileSync(path.join(rootDir, 'process', 'js', app, app + 'Bundles.json'), 'utf8')); } catch (e) { return null; }
-    if (!got || typeof got !== 'object' || Array.isArray(got)) return null;
-    const keys = Object.keys(got);
-    const fine = keys.every(function (k) {
-      const row = got[k];
-      return row && typeof row === 'object' && text(row.label) && Array.isArray(row.branches) && row.branches.every(function (b) {
-        return b && typeof b === 'object' && text(b.family) && (b.verb === undefined || typeof b.verb === 'string');
-      });
-    });
-    return fine ? got : null;
-  }
-  function syncApp(app) {
-    const file = bundleFile(app);
-    if (!file) return;
-    const dir = path.join(rootDir, 'relay-state', 'process', app);
-    const statePath = path.join(dir, 'bundles.json');
-    let kept = {};
-    try { kept = JSON.parse(fs.readFileSync(statePath, 'utf8')) || {}; } catch (e) { kept = {}; }
-    const B = bundles();
-    const R = branches();
-    const next = {};
-    Object.keys(kept).forEach(function (k) {
-      if (Object.prototype.hasOwnProperty.call(file, k)) return;
-      const was = kept[k] && B.get(kept[k].id);
-      if (was && ownerOf(was.owner) === app) B.del(was.id);
-    });
-    Object.keys(file).forEach(function (k) {
-      const row = file[k];
-      const label = String(row.label);
-      const at = kept[k] && B.get(kept[k].id);
-      let id = at && ownerOf(at.owner) === app ? at.id : 0;
-      if (!id) id = B.add(label, app);
-      else if (at.label !== label) B.set(id, label);
-      const want = row.branches.map(function (b) { return { family: String(b.family), verb: String(b.verb || '') }; });
-      const have = R.all().filter(function (r) { return r.bundle === id; });
-      have.forEach(function (r) {
-        if (!want.some(function (w) { return w.family === r.family && w.verb === r.verb; })) R.del(r.id);
-      });
-      want.forEach(function (w) {
-        if (!R.same(id, w.family, w.verb, 0)) R.add(id, w.family, w.verb);
-      });
-      next[k] = { id: id, label: label };
-    });
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(statePath, JSON.stringify(next, null, 2) + '\n');
-  }
-  if (rootDir) {
-    let apps = [];
-    try { apps = fs.readdirSync(path.join(rootDir, 'process', 'js')); } catch (e) { apps = []; }
-    apps.filter(function (app) { return ownerOf(app) === app && app !== 'node'; }).forEach(function (app) {
-      try { syncApp(app); } catch (e) { /* one appServer's file never stops the node's boot */ }
-    });
-  }
+  // NO BUNDLE SYNC (goal/G43.20; Andy: "just delete that file auth bundles, auth is the ONE api that REALLY can do without."):
+  // no app's Bundles.json is read at boot and no record of them is kept. A bundle is a row of node.db, made and changed
+  // through auth.bundle.
 
   return {
     // goal/G41.14: fn(change) for each bundle and branch row added, set or deleted (told, above).
@@ -259,7 +196,7 @@ function createApiAuth(opts) {
     // (default), or the name of an appServer"; "the owner field can never be changed after a bundle is added"; "for
     // bundles without a valid \"owner\" field, the auth.bundle verb will replace the content of the invalid \"owner\" field
     // with \"node\", incoming or outgoing"). Set at the add (always node there since goal/G41.32, below; an appServer's
-    // from its Bundles.json at boot), never changed after; read as node wherever it is not valid.
+    // only in a row made before goal/G43.20), never changed after; read as node wherever it is not valid.
     // NO SET (goal/G41.26; Andy, box: "A bundles label is determined when it's added, and cannot be modified. This will
     // protect family owned bundles from having their label mutilated. the auth.bundle set op will be removed."): a
     // bundle's label and owner are the add's; a set is refused bad-request.
@@ -270,8 +207,7 @@ function createApiAuth(opts) {
       if (op === 'add') {
         if (!text(a.label)) return refuse('bad-request');
         // A USER MAKES NODE-OWNED BUNDLES ALONE (goal/G41.32, the box: "A user can only create, change and delete node-owned
-        // bundles and branches, and sees the others read-only", which overrules goal/G41.25's add naming an app server: a
-        // server's bundle comes from its Bundles.json at boot, written to the tables directly). A LABEL IS UNIQUE PER OWNER
+        // bundles and branches, and sees the others read-only", which overrules goal/G41.25's add naming an app server). A LABEL IS UNIQUE PER OWNER
         // (the box: "Bundle labels should be unique per owner"): only the exact same label is a duplicate.
         if (ownerOf(a.owner) !== 'node') return refuse('not-node-owned');
         if (B.all().some(function (r) { return ownerOf(r.owner) === 'node' && r.label === a.label; })) return refuse('label-taken');

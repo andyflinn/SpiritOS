@@ -1,5 +1,5 @@
 // spirit/run/shell/chatter/chatter.js
-// CHATTER: the face of this node's chatClerver (spirit/run/process/js/chatClerver), goal/G4.9 to G4.11.
+// CHATTER: the face of this node's chatClerver (spirit/run/spirit/app/chat/chatClerver.js), goal/G4.9 to G4.11.
 //
 // The chatClerver is faceless and knows keys only; chatter is everything a person sees. It asks its server by the
 // verb's name on the flat apiDoor (chatClerver.<verb>, args), and hears every kept line through the chatClerver

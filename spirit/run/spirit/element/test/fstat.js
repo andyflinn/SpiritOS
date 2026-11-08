@@ -21,7 +21,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await new Promis
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 function filesUnder(dir) {
   const out = [];
-  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
+  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
   return out;
 }
 // The code of the tree, its comments out, its tests out: what runs.
@@ -122,10 +122,10 @@ test.startTest('fstat.js: a file\'s info (goal/G43.17)');
   const r2 = await V.read('docs/a b.md', function (p) { seen.push(p.length); });
   ok(w.fetched[0] && w.fetched[0][1] === '/docs/a%20b.md' && r2.status === 200 && r2.bytes.length === 3 && short(seen) === short([2, 1]), 'at home the node\'s own GET, streamed: each chunk handed on, the bytes joined', 'fetched ' + short(w.fetched) + ', chunks ' + short(seen));
 
-  test.subHeading('create: the facts and the annotations asked, the old shell asked nothing');
+  test.subHeading('create: the facts asked, no annotations (goal/G43.20), the old shell asked nothing');
   V.create(box(), { path: 'docs/a.md' });
   await settle();
-  ok(w.asked.some(function (a) { return a[0] === 'stat' && a[1] === 'docs/a.md'; }) && w.asked.some(function (a) { return a[0] === 'annotations' && a[1] === 'docs/a.md'; }), 'it asks fs.stat and fs.annotations for the file', 'asked: ' + short(w.asked));
+  ok(w.asked.some(function (a) { return a[0] === 'stat' && a[1] === 'docs/a.md'; }) && !w.asked.some(function (a) { return a[0] === 'annotations'; }), 'it asks fs.stat for the file, and no annotations: they are the node\'s only', 'asked: ' + short(w.asked));
   ok(w.shell.length === 0, 'with an old shell on the page it asks it nothing: no owner app, no Open with', 'asked of the old shell: ' + short(w.shell));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

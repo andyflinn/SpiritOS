@@ -709,7 +709,7 @@ function createHub(rootDir) {
   //   spirit-3 but she cannot find anybody in contacts" — "her relay
   //   shows green."
   //
-  // She had no `relay-presence` job at all: nothing started one for the
+  // She had no `spirit.contact` job at all: nothing started one for the
   // seat this function had just taken, so the node sat there enrolled and
   // unconnected until somebody restarted it. (Since goal/G22.5 a node's
   // identity exists from its first boot, before it listens; what a claim
@@ -1191,7 +1191,8 @@ function createHub(rootDir) {
   // d.router is the live one.
   function networkSearch(q, d) {
     networkOut = true;
-    if (!networkJob) networkJob = d.jobs.createJob('permanent', 'peer-search', {});
+    // A HIT IS NEWS OF spirit.contact (goal/G43.20, Q1: "peer search should generate contact events"): { q, item }.
+    if (!networkJob) networkJob = d.jobs.ownJob('spirit.contact');
     var ranks = require('./seenPeers');
     var onRow = function (row) {
       shadow(rootDir).note(row.publicKey, {
@@ -1202,7 +1203,7 @@ function createHub(rootDir) {
       var found = contactBook.byPublicKey(rootDir, row.publicKey);
       if (!found || found.blocked) return;
       var url = found.relay ? (relayKeys.byKey(rootDir, row.publicKey) || {}).url || '' : '';
-      d.jobs.updateJob(networkJob.id, { data: { q: q, item: { key: row.publicKey, label: contactLabel(Object.assign({}, found, { url: url, present: true })) } } });
+      d.jobs.ownNews('spirit.contact', 'hit', { q: q, item: { key: row.publicKey, label: contactLabel(Object.assign({}, found, { url: url, present: true })) } });
     };
     var walk = typeof d.walk === 'function' ? d.walk : function (words, each) { return walkRelays(d.router, words, each); };
     var going = null;

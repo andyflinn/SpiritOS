@@ -68,7 +68,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // Andy: "get rid of thos FUCKING data.js scripts, DIDN't WE INSIST on the PROPER way to do this shit?": the file tree's
   // translation, spirit/element/search/file/data.js until G41.16, was this element's (G30.18), and is since goal/G41.28 the
   // fs family's cache manager's, which it loads.
-  const cmd = function (c) { return { id: 'job-fs', type: 'fs-watcher', data: { command: c } }; };
+  const cmd = function (c) { return { id: 'spirit.fs', data: { command: c } }; };
   ok(F.ready() !== true, 'before the tree is whole, data.files is not ready', 'ready: ' + short(F.ready()));
   D.takeJob(cmd({ op: 'createDirectory', path: 'docs' }));
   D.takeJob(cmd({ op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' }));
@@ -77,7 +77,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const a = F.file('docs/a.md');
   ok(a && a.kind === 'file' && a.size === 5 && a.modified === '2030-01-01T00:00:00Z' && a.core === false, 'a createFile is a file with its size and its time, core false', 'files/docs/a.md: ' + short(a));
   ok(F.file('docs/core.js') && F.file('docs/core.js').core === true, 'the node\'s word that a file is core is kept', 'files/docs/core.js: ' + short(F.file('docs/core.js')));
-  D.takeJob({ id: 'job-fs', type: 'fs-watcher', data: { treeComplete: true } });
+  D.takeJob({ id: 'spirit.fs', data: { treeComplete: true } });
   ok(F.ready() === true, 'treeComplete: data.files is ready', 'ready: ' + short(F.ready()));
   D.takeJob(cmd({ op: 'changeFile', path: 'docs/a.md', size: 6 }));
   ok(F.file('docs/a.md').size === 6 && F.file('docs/a.md').kind === 'file', 'a change by path sets the file again, its kind kept', 'files/docs/a.md: ' + short(F.file('docs/a.md')));
@@ -132,7 +132,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   await el.act('remove', {});
   ok(asked.some(function (c) { return c.verb === 'fs.delete' && c.args.path === 'web/page<1>.html'; }), 'remove asks fs.delete { path } through the spirit object', 'asked: ' + short(asked));
   const info = await el.expandInfo();
-  ok(info && info.stat && info.annotations && asked.some(function (c) { return c.verb === 'fs.stat'; }) && asked.some(function (c) { return c.verb === 'fs.annotations'; }), 'expandInfo asks fs.stat and fs.annotations', 'info: ' + short(info));
+  ok(info && info.stat && !('annotations' in info) && asked.some(function (c) { return c.verb === 'fs.stat'; }) && !asked.some(function (c) { return c.verb === 'fs.annotations'; }), 'expandInfo asks fs.stat, and no annotations (goal/G43.20: the node\'s only)', 'info: ' + short(info) + ', asked ' + short(asked));
 
   // ── goal/G43.4: THE RESERVED WORDS IN COLOUR, IN A REAL BROWSER ───────────────────────────────────
   // Real rows on a scratch node (./rowElement-words.html), spirit/word.js and the node's own file stream under them.

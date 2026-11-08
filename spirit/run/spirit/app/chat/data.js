@@ -1,4 +1,4 @@
-// spirit/run/process/js/chatClerver/data.js
+// spirit/run/spirit/app/chat/data.js
 // WHAT A CLIENT KNOWS OF THE CHATS, IN THE chatClerver FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it
 // through spirit.cacheManager('chatClerver'); it keeps the chats' lines in that page's spirit.data, under the node that
@@ -28,7 +28,7 @@
     var heard = [];   // published(fn): the readers told of a line the server published, after it is kept
     D.addTranslator({
       onJob: function (job) {
-        var l = job && job.module === 'process/js/chatClerver' && job.app && job.app.line;
+        var l = job && job.module === 'spirit.app.chat' && job.app && job.app.line;
         if (!l || !l.peer) return;
         var V = D.viewAt(job.fromNode || null, 'chatClerver');
         var fresh = !V.get(LINES + '/' + keyOf(l.peer, l.sent, l.seq));

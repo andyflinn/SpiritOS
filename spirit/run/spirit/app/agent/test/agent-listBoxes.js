@@ -172,7 +172,7 @@ function world() {
     // A family's cache (goal/G41.28): the family's own manager, a node family's or its server's, run on this page over
     // the real data set.
     cacheManager: function (name) {
-      const at = ['spirit/' + name + '/data.js', 'process/js/' + name + '/data.js', 'spirit/app/' + name + '/data.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); })[0];
+      const at = ['spirit/' + name + '/data.js', 'spirit/app/' + name + '/data.js'].filter(function (p) { return fs.existsSync(path.join(RUN, p)); })[0];
       if (!at) return Promise.reject(new Error('the family ' + name + ' has no data.js'));
       if (!loaded[at]) { loaded[at] = true; vm.runInContext(fs.readFileSync(path.join(RUN, at), 'utf8'), win, { filename: at }); }
       return Promise.resolve(true);

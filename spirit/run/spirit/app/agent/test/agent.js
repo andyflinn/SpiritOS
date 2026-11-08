@@ -164,7 +164,6 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     test.subHeading('the box: "The tick box showDebug goes, with its use of relay-state/shell/agent/config.json"');
     const page = await c.evaluate('document.getElementById("zzBox").innerText').then(String);
     ok(!/DEBUG state in the title bar/.test(page), 'the tick box is not on the page', 'the page still says it');
-    ok(!fs.existsSync(path.join(s.run, 'relay-state', 'shell', 'agent', 'config.json')), 'and relay-state/shell/agent/config.json is not written', 'that file is there');
 
     test.subHeading('the tile closes');
     const closed = await c.evaluate('(function () { var b = document.querySelector("#zzBox .app-container-close"); if (!b) return false; b.click(); return true; }())');
@@ -195,7 +194,7 @@ test.startTest('agent.js: the Agent in spirit/app/agent/, as Andy sees it (goal/
     ok(await shows(ROWS.provider), 'and the row made before is there', 'the provider tool: ' + short(await shown()));
 
     test.subHeading('the box: "The agent has no sidecar. Nothing in this item reads, writes or tests one"');
-    const sidecars = filesUnder(path.join(s.run, 'relay-state')).concat(filesUnder(path.join(s.run, 'spirit', 'state'))).concat(filesUnder(path.join(s.run, 'spirit', 'app', 'agent')))
+    const sidecars = filesUnder(path.join(s.run, 'spirit', 'state')).concat(filesUnder(path.join(s.run, 'spirit', 'app', 'agent')))
       .filter(function (f) { return /agent[^/\\]*\.sidecar\.json$/.test(f) });
     ok(!sidecars.length, 'after all that, no sidecar of the agent stands anywhere', 'sidecars: ' + short(sidecars));
     const code = filesUnder(path.join(RUN, 'spirit', 'app', 'agent')).filter(function (f) { return /\.js$/.test(f); })

@@ -9,16 +9,15 @@ stream"); Desk and deskClient move onto it.
 
 ### The family path (goal/G41.12)
 
-- **One function, `familyPath(name)`, exported by appServer**, answers `process/js/<name>/family/api.js`. Every
-  caller uses it; no other file writes a family path: no `<name>.family`, no `family/api.js`, no join onto `'family'`.
+- **One function, `familyPath(name)`, exported by appServer**, answers a family's own `api.js`: an app's
+  `spirit/app/<name>/api.js`, the node's own `spirit/<name>/api.js` (goal/G43.20). Every caller uses it; no other file writes a family path: no `<name>.family`, no `family/api.js`, no join onto `'family'`.
   spirit.js holds the function, since the browser cannot load appServer, and appServer hands out the same one (cw,
   goal/G41.12 Q3); it is the one other file that writes the path.
 - **A script of `spirit/app/<name>/` has its family at its top instead**, `api.js` and one `<verb>.json` per verb beside `<name>.js`, as
   `spirit/<family>/` has it (goal/G43.27). A client's cache finds such a family's `data.js` beside `<name>.js`. Specified in `./appServerMount.md`.
-- **The family folders are `process/js/<name>/family/`** (backup, chatClerver, desk, deskClient,
-  deskVerify, fileServer); no `<name>.family` is left.
-- **deskAgent is killed** (Andy, goal/G41.28: *"all, KILL deskAgent!"*): `process/js/deskAgent/` is gone and no file names
-  the server. The desk's bundle named `deskAgent` is his name for a desk agent, and stays.
+- **run://process is gone** (goal/G43.20): every server is an app of `spirit/app/`, its family at the top of its folder
+  (backup, desk, deskClient, deskVerify); no `family/` folder is left.
+- **deskAgent is killed** (Andy, goal/G41.28: *"all, KILL deskAgent!"*): no file names the server.
 
 ### Bundles (goal/G41.12)
 
@@ -52,7 +51,8 @@ stream"); Desk and deskClient move onto it.
   with a limit in bytes (4 MB per sender when not given). Without it no cache file is kept.
 - **Per sender, under the run root** (where spirit.js sits; goal/G41.28, box v19: *"this way an appServer in
   client-mode can derive the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"*):
-  `spirit/state/<client server>/<sender key>.json`, saved as it changes and read back into the data set at start,
+  `spirit/state/<client server>/cache/<sender key>.json` (goal/G43.20: *"cache, which is written by spirit/appServer.js was
+  ALWAYS supposed to go into spirit/state/<name>/cache/"*), saved as it changes and read back into the data set at start,
   before any subscribe. The key is written in base64url (Andy, on G41.28: *"Shall the server key in spirit.data and in the
   cache file name be base64url (- for +, _ for /), since a plain base64 / splits both?"* *"yes"*): no `+`, no `/`,
   and it reads back to the sender's key.
@@ -79,22 +79,16 @@ stream"); Desk and deskClient move onto it.
 - A subscribe follows the publisher's key and asks its family to subscribe this server; the first push lands in the
   data set.
 
-### goal/G41.24: no DEPENDENCIES, and the appServers' Bundles.json
+### goal/G41.24: no DEPENDENCIES
 
 - Andy, box: *"DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder
   itself."* No code file, and no json of the desk folder, names DEPENDENCIES or hands `serve()` a dependencies list.
-- Andy, box, *"the bundles"*. Each file is `process/js/<appServerName>/<appServerName>Bundles.json`, a row
-  `{ label, branches }` (`./apiAuth.md`), no owner; a branch with verb `''` reaches the whole family, its FS.* with it.
-  - desk: `deskAgent` and `remoteUser`. *"the remoteUser gets all verbs except FS.*"*: every verb of the desk family
-    (`spirit/app/desk/api.js`), no FS.*. *"desk agent gets mostly full access, but no FS.* verbs, no
-    item.rules.*, no rule.*, and no user-presses"*: every desk verb but those. His presses (*"'Done', 'Close',
-    'Reopen' 'Start|End design', 'Verify', 'Delete' and 'Abandon'"*): Delete is `item.delete`, left out; the others are
-    values of `press`, which the agents' own presses (claim-done, design-complete, bring-back) go through too and which
-    the desk refuses to an agent for his (`OWNER_PRESSES`, desk.js), so `press` stays. Q5, Andy: *"just do the ones named in the
-    box."*: `rule.*` is the verbs named `rule.`, so `rules.search` stays.
-  - deskVerify: `deskAgent` and `remoteUser`, *"both get only \"search\""*.
-  - deskClient: `deskServer`, *"only the verbs desk currently uses"*: `streamListener`, the one deskClient verb desk
-    reaches, through its stream.
+
+### goal/G43.20: no Bundles.json
+
+- The box: *"spirit/app/desk/deskBundles.json, deskClient/deskClientBundles.json and deskVerify/deskVerifyBundles.json
+  are deleted. Bundles stay what they are, rows in node.db, made and changed through auth.bundle."* No app folder holds a
+  `<name>Bundles.json`.
 
 ## Not asserted yet, and why
 

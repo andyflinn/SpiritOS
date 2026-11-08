@@ -29,7 +29,7 @@ a subject needs), and is since goal/G41.28 the fs family's cache manager's, whic
   - the size through `formatBytes`, none for a folder; the time to the minute.
 - **It repaints from the file tree**: its path changed there, its cells repaint; its path gone, it is marked gone.
 - **Its actions ask and paint nothing**: `open` hands its path to the viewer the page gave (`ctx.open`), or else the text
-  launcher; `remove` asks `fs.delete { path }`; `expandInfo` asks `fs.stat` and `fs.annotations`.
+  launcher; `remove` asks `fs.delete { path }`; `expandInfo` asks `fs.stat`, and no annotations (goal/G43.20; Andy: *"ANNOTATIONS WILL BE NODE ONLY."*).
 
 ## What its test must try to break
 

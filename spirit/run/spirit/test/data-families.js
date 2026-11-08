@@ -14,11 +14,13 @@ const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VEND
 
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
 const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'events', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'];
-const SERVER_FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify', 'fileServer'];
+// fileServer went with run://process (goal/G43.20), so 18 are left.
+const SERVER_FAMILIES = ['agent', 'backup', 'chatClerver', 'desk', 'deskClient', 'deskVerify'];
 const FAMILIES = NODE_FAMILIES.concat(SERVER_FAMILIES);
-// Andy: "process/js/<name>/family/data.js needs to move to process/js/<name>/data.js"
-const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : (fs.existsSync(path.join(RUN, 'spirit', 'app', name)) ? path.join(RUN, 'spirit', 'app', name) : path.join(RUN, 'process', 'js', name)); };
-// A scratch node does not offer these three to a page, so a page cannot load them; all 19 are judged in node as well.
+// A server's family is in its app's folder, spirit/app/<name>/ (goal/G43.20); chatClerver's app is chat.
+const APP_OF = { chatClerver: 'chat' };
+const folderOf = function (name) { return NODE_FAMILIES.indexOf(name) !== -1 ? path.join(RUN, 'spirit', name) : path.join(RUN, 'spirit', 'app', APP_OF[name] || name); };
+// A scratch node does not offer these three to a page, so a page cannot load them; all 18 are judged in node as well.
 const NOT_ON_SCRATCH = ['agent', 'chatClerver', 'deskClient'];
 // The old spirit.<name>Data: chatData was chatClerver's, verifyData deskVerify's.
 const OLD_READER = /(?:\b|\.)(?:agent|app|auth|backup|chat|chatClerver|config|contact|desk|deskClient|deskVerify|events|fileServer|fs|jobs|net|node|owner|peer|relay|verify)Data\b/;
@@ -34,7 +36,7 @@ function code(text) { return String(text).split(/\r?\n/).map(function (l) { retu
 function walk(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
     const at = path.join(dir, e.name);
-    if (VENDORED_FOLDERS.holds(at) || e.name === 'brains' || e.name === 'relay-state' || e.name === 'app-state' || e.name === 'state' || e.name === 'media' || e.name === 'published') return;
+    if (VENDORED_FOLDERS.holds(at) || e.name === 'brains' || e.name === 'app-state' || e.name === 'state' || e.name === 'media' || e.name === 'published') return;
     if (e.isDirectory()) walk(at, out); else out.push(at);
   });
   return out;
@@ -66,7 +68,7 @@ test.startTest('spirit.data: every family at spirit.data.<name>, through spirit/
   });
   test.subHeading('the box: "with the SAME pattern": one helper of spirit.data, called with the family\'s own name');
   const helpers = Object.keys(pattern).map(function (n) { return pattern[n]; }).filter(function (h, i, all) { return all.indexOf(h) === i; });
-  ok(Object.keys(pattern).length === FAMILIES.length, 'all 19 call a helper with their own name', 'these do not: ' + FAMILIES.filter(function (n) { return !pattern[n]; }).join(', '));
+  ok(Object.keys(pattern).length === FAMILIES.length, 'all ' + FAMILIES.length + ' call a helper with their own name', 'these do not: ' + FAMILIES.filter(function (n) { return !pattern[n]; }).join(', '));
   ok(helpers.length === 1, 'and it is the one helper: ' + helpers.join(), 'not one helper: ' + short(helpers));
 
   test.subHeading('the box: "instead of spirit.<name>Data": nothing in the tree\'s code says the old names');

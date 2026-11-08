@@ -18,7 +18,7 @@ Andy, goal/G43.27: "cw, it's supposed to be in run:/spirit/state/deskVerify/data
 
 ## What its test must try to break
 
-- A verify.db made beside the script, in the old `process/js/deskVerify/`, or in the working folder.
+- A verify.db made beside the script, or in the working folder.
 - A `db` argument that is ignored, or a state folder written to as well.
 - A start with neither that guesses a place.
 - A manifest default that points `db` somewhere.

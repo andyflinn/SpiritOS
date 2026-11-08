@@ -191,7 +191,7 @@ ok(files.length === 3 && !files.some(function (f) { return f.by === 'cw' && f.pa
 
 test.subHeading('only the desk\'s jobs are read');
 const wm = world();
-wm.job(whole(it('goal/G9.1', 'goal/G9')), 'process/js/files');
+wm.job(whole(it('goal/G9.1', 'goal/G9')), 'spirit.app.files');
 wm.D.takeJob({ id: 'z', module: 'spirit.app.desk', data: {}, app: 'not an object' }, SENDER);
 ok(!wm.item('goal/G9.1') && !wm.current(), 'a job of another module, or an app that is no object, keeps nothing', short(wm.ids()));
 wm.X.published(whole(it('goal/G9.1', 'goal/G9')));

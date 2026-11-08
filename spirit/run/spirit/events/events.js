@@ -67,11 +67,16 @@ function createEvents(o) {
     const write = function (kind, data) { res.write('event: ' + kind + '\ndata: ' + JSON.stringify(data) + '\n\n'); };
 
     write('snapshot', { jobs: o.jobs.listJobs() });
+    // THE NODE'S OWN JOBS, EACH KIND OF NEWS ONCE (goal/G43.20): a job of one family carries one kind of news per event, so
+    // right after the snapshot the newest news of every kind comes as its own job-updated, as a page that was there heard it.
+    o.jobs.listJobs().filter(function (j) { return j.kind === 'permanent' && j.id !== 'spirit.fs'; }).forEach(function (j) {
+      (typeof o.jobs.newsOf === 'function' ? o.jobs.newsOf(j) : [j]).forEach(function (one) { write('job-updated', one); });
+    });
     // THE TREE ARRIVES AS COMMANDS (goal/G4.25; Andy: "the beginning can be a stream of changes that build the tree
-    // (MAX_PAYLOAD)", "forget about batching"). The snapshot's fs-watcher job carries no file list; right after it, one
-    // fs-watcher job-updated per entry, a createDirectory before what is inside it, then one carrying data.treeComplete,
+    // (MAX_PAYLOAD)", "forget about batching"). The snapshot's spirit.fs job carries no file list; right after it, one
+    // spirit.fs job-updated per entry, a createDirectory before what is inside it, then one carrying data.treeComplete,
     // so the shell knows the tree is whole before it discovers apps from it.
-    const fsJob = o.jobs.listJobs().filter(function (j) { return j.type === 'fs-watcher'; })[0];
+    const fsJob = o.jobs.getJob ? o.jobs.getJob('spirit.fs') : null;
     if (fsJob) {
       o.jobs.fsTreeCommands().forEach(function (command) { write('job-updated', Object.assign({}, fsJob, { data: { command: command } })); });
       write('job-updated', Object.assign({}, fsJob, { data: { treeComplete: true } }));

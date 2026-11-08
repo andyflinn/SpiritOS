@@ -180,11 +180,12 @@ test.startTest('boot.js: the face\'s boot, and every face app loading alone');
     ok(!/iconIndex|chatLog|\bICON\b/.test(boot), 'boot names neither, and no icon table', 'boot still names iconIndex, chatLog or ICON');
   }
   const keyed = [];
-  ['shell', 'process/js'].forEach(function (dir) {
+  ['shell', 'spirit/app'].forEach(function (dir) {
     let names = []; try { names = fs.readdirSync(path.join(RUN, dir)); } catch (e) { names = []; }
     names.forEach(function (n) {
       let m = null; try { m = JSON.parse(fs.readFileSync(path.join(RUN, dir, n, n + '.json'), 'utf8')); } catch (e) { m = null; }
-      if (m && typeof m.icon === 'string' && /^[A-Z_]+$/.test(m.icon)) keyed.push(dir + '/' + n + ':' + m.icon);
+      const icon = m && (typeof m.icon === 'string' ? m.icon : (m.identity && m.identity.icon));
+      if (typeof icon === 'string' && /^[A-Z_]+$/.test(icon)) keyed.push(dir + '/' + n + ':' + icon);
     });
   });
   ok(!keyed.length, 'every app manifest names its icon as the glyph itself', keyed.length + ' manifests name a key: ' + short(keyed));

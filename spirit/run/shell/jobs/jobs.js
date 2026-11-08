@@ -37,7 +37,7 @@ var jobsRowIndex = null;
 var jobsParts = Promise.all(['spirit/element/search.js', 'spirit/element/rowElement.js', 'spirit/element/icon.js', 'spirit/element/progressBar.js']
   .map(function (p) { return spirit.require(p); }).concat([spirit.cacheManager('jobs')]));
 
-function jobsName(job) { return String(job.module || job.type || job.kind || job.id); }
+function jobsName(job) { return String(job.module || job.id); }
 
 // The job that changed last, from the jobs branch: the one green dot (goal/G29.14; Andy: "make a left-most icon column,
 // where a one green dot hops between rows, always showing the most recent update").

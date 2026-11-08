@@ -7,7 +7,7 @@
 //   spirit.elements.joinList.create(container, {}) -> { destroy() }
 //
 // The steps are the Join app's manifest's (spirit/app/join/join.json, steps), each with its name, icon and the fact that
-// ends it. Where the user stands is the node's join-steps job (spirit/joinStepsJob.js), heard in the jobs family's cache
+// ends it. Where the user stands is the join news on the node's spirit job (spirit/joinStepsJob.js), heard in the jobs family's cache
 // and worked out with joinSteps.js: nothing is asked for it, and the list draws again only when the job changes. Done steps
 // are ticked; every open step up to the open one is expanded with its form, so the optional Find someone never stands in
 // the way of the step after it. The forms are the shell elements: joinForm and the contact list. Handed something new
@@ -107,7 +107,7 @@
       // Step 1 (box v41): the one join control, its words where the node stands: Join with no seat, Add on a seat taken
       // without a verified email (by invite), Change once verified. THE EMAIL FORM, THE SAME EVERYWHERE (goal/G40.10).
       if (step.until === 'email' && E.joinForm) { withRelays(function () { E.joinForm.mount(box, { relays: relays }); }); return; }
-      // FIND SOMEONE: the same one list Contacts draws (goal/G30.19). The node republishes join-steps once the contact is in.
+      // FIND SOMEONE: the same one list Contacts draws (goal/G30.19). The node republishes its join news once the contact is in.
       var list = E.search && E.search.contact && E.search.contact.listElement;
       if (step.until === 'contact' && list) {
         box.innerHTML = '<div class="join-find-list"></div><div class="job-manifest-note join-find-said"></div>';
@@ -128,8 +128,9 @@
       if (gone) return;
       var J = ((S.data || {}).jobs || {}).data;
       if (!J) return;
-      var take = function (j) { if (j && j.type === 'join-steps') { job = j.data || {}; show(); } };
-      take(J.find(function (j) { return !!j && j.type === 'join-steps'; }));
+      // THE JOIN STEPS, news of spirit (goal/G43.20): { join }.
+      var take = function (j) { if (j && j.id === 'spirit' && j.data && j.data.join) { job = j.data.join; show(); } };
+      take(J.job('spirit'));
       var off = J.watch(function (id, j) { take(j); });
       if (typeof off === 'function') offs.push(off);
     }, function () { if (!gone) host.textContent = 'Join could not be loaded.'; });

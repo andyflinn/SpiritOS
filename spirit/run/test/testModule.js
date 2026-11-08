@@ -24,7 +24,7 @@ const path = require('path');
 const RUN = path.join(__dirname, '..');
 // Never walked: node state, git, and the vendored folders, the libraries we carry but did not write (fileSystem.js's
 // one list, goal/G43.25).
-const SKIP = ['relay-state', 'state', 'app-state', '.git'];
+const SKIP = ['state', 'app-state', '.git'];
 const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 function posix(p) { return String(p).split(path.sep).join('/'); }

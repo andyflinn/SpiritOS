@@ -7,8 +7,8 @@
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the contacts rows and list, the contact
 // selector) asks spirit.data.contact.data (below), never a branch by name.
 //   contacts   key -> the contact row: what a contact search answered (seated by the lists that are a view of it),
-//              present from the relay-presence job, a row the network found from the peer-search job, name from a rename
-// What the stream means for contacts (goal/G41.16; moved here from the contacts row element): the relay-presence job
+//              present from the spirit.contact job, a row the network found from the peer-search job, name from a rename
+// What the stream means for contacts (goal/G41.16; moved here from the contacts row element): the spirit.contact job
 // sets each key's present (a key the table drops goes back to not known), the peer-search job seats each row the network
 // found, a contact rename sets its name, the shadow job sets each row of the one table as it changed. Every event ends in
 // set, merge, del or seat; it asks nothing.
@@ -22,7 +22,9 @@
       onJob: function (job) {
         if (!job || !job.data) return;
         var V = D.viewAt(job.fromNode || null, 'contact');
-        if (job.type === 'relay-presence') {
+        // THE ONE CONTACT JOB, spirit.contact (goal/G43.20, Q1): presence, a search hit or a row, each event only its own.
+        if (job.id !== 'spirit.contact') return;
+        if (job.data.presence) {
           var n = V.node();
           var spoke = told[n] = told[n] || Object.create(null);
           var table = job.data.presence || {};
@@ -39,10 +41,10 @@
           });
           return;
         }
-        if (job.type === 'peer-search' && job.data.item) V.seat(CONTACTS, [job.data.item]);
+        if (job.data.item) V.seat(CONTACTS, [job.data.item]);
         // THE ONE TABLE (goal/G40.11): the node's shadow job hands each row of the contacts table as it changed, people
         // and relays, by its public key; a row gone is let go (moved here from the clients that heard it themselves).
-        if (job.type === 'shadow' && job.data.row && job.data.row.publicKey) {
+        if (job.data.row && job.data.row.publicKey) {
           var r = job.data.row;
           if (r.gone === true) V.del(CONTACTS + '/' + r.publicKey);
           else V.merge(CONTACTS + '/' + r.publicKey, r);

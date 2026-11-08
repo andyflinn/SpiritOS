@@ -1,29 +1,26 @@
 # spirit/jobs.js
 
-The node's jobs. This test holds goal/G41.30, the review's RH1: *"jobs.create still spawns any program"*; its fix: *"in
-startJob, refuse unless command is process.execPath and args[0] resolves to an included
-process/js/<name>/<name>.js."* Raw calls to a scratch node's door. Each thing asked to run would write a marker of its
-own, so whether it ran is read from the disk.
+The node's jobs. This test holds goal/G41.30, the review's RH1: *"jobs.create still spawns any program"*, as goal/G43.20
+rules it: *"jobs.create starts only an app's own script, spirit/app/<name>/<name>.js, of an app whose <name>.json says node
+run true; anything else is refused (another command, another script, an app without node run)."* Raw calls to a scratch
+node's door. Each thing asked to run would write a marker of its own, so whether it ran is read from the disk.
 
 ## Requirements
 
 - **Another program is refused, and never runs**, a 4xx with a `code`: `/bin/sh` with a command line, `sh` from the path,
   this node's own executable given `-e` code.
-- **This node's executable on a script that is not its process is refused, and never runs**: a script outside process/js
-  and `spirit/app/<name>/`, a path climbing out of process/js, a process this node does not include. The module also
-  refuses a script of an app that is not active (goal/G43.12, Andy: *"it widens until all processes are migrated, then it
-  tightens back to the new side..."*); this test does not ask it: the new side's start and stop are specified in
-  `./appServerMount.md`.
-- **What this node may start still starts**: an included `process/js/<name>/<name>.js` (one that is no intrinsic is
-  included by its sidecar, `relay-state/process/<name>/<name>.js.sidecar.json` saying `face.home` true), and a helper in an
-  included process's folder, started by this node's executable and its whole path.
-- **Plain `node` with an included process starts**: the word `node` is read as this node's own executable
-  (`spirit/jobs.js:512`); a page sends it so (the app detail's run, `spirit/app/appSelector/detailElement.js:68`).
+- **This node's executable on a script that is not an app's own is refused, and never runs**: a script outside
+  `spirit/app/`, a path climbing out of it, an app whose json does not say `node.run` true, and a second script in a
+  node run app's folder (the box: *"A second script in an app folder is therefore never started."*).
+- **An app's own script, its json saying `node.run` true, starts**, by this node's executable and its path; its job is its
+  route, `spirit.app.<name>` (the refusal of a second start while one runs is `./jobs-routes.md`'s).
+- **Plain `node` with such a script starts**: the word `node` is read as this node's own executable; a page sends it so
+  (the app detail's Run, `spirit/app/appSelector/detailElement.js:68`).
 
 ## What its test must try to break
 
 - A shell, or code on the node's own executable, run through jobs.create.
-- A fix so narrow that the desk's own helper no longer starts.
+- A fix so narrow that an app's own node run script no longer starts.
 
 ## goal/G41.33: a process's console goes to null
 

@@ -329,8 +329,8 @@ function shape(v) {
 //   appServer", "there is a file-size-limit (MAX_PAYLOAD)".
 //
 // SINCE goal/G30.4 THERE IS NO AGENTS VERB: an app's AGENTS.md lives in its
-// family folder (process/js/<name>/family/, or the app folder itself for an
-// app of spirit/app/, goal/G43.27, withAgents below) and is read with
+// family folder, the app folder itself (spirit/app/<name>/, goal/G43.27,
+// withAgents below), and is read with
 // spirit.fs.loadFile at its path (goal/G43.27; Andy: "easily changed, no?"),
 // an edit being the next read.
 
@@ -391,7 +391,7 @@ const RUN_ROOT = path.resolve(__dirname, '..');
 //   rather than the application server itself, ... allowing appServers to be true clients to any other appServer".
 //
 // A server that follows a stream hands serve() opts.stream = { module, translator, onRow, cache }: the module the
-// sender publishes as (process/js/<name>), the stream's translator (its data.js), a handler for each row if it wants
+// sender publishes as (spirit.app.<name>), the stream's translator (its data.js), a handler for each row if it wants
 // one, and the cache switch. serve() then adds the verb streamListener {json} -> {heard: true}: one bundle. Each row
 // goes straight into the server's spirit.data (spirit/data.js) through the translator, exactly as a face app
 // keeps it in the page, and then to onRow(row, from). The data set is appServer.data; the server keeps no mirror of its
@@ -424,18 +424,18 @@ function dataSet() {
 // paths are what the row wrote into the data set (spirit/data.js recording), so a row that goes takes them with it.
 const senders = new Map();
 let following = null;            // { module, onRow, limit, cache: bool, name } once serve() has a stream
-// THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28; Andy, the box: "this way an appServer in client-mode can derive the
-// name of it's ./relay-state/<appServerName>/<server-public-key-in-base64url>.json"): the key as spirit.data names the node.
-// The folder is spirit/state/<appServerName>/ now (cacheDir), the name the key's, as he ruled.
-function cacheDir() { return path.join(RUN_ROOT, 'spirit', 'state', following.name); }
+// THE CACHE FILE BY THE SENDER'S KEY (goal/G41.28): its name the key as spirit.data names the node, <node id>.json.
+// ITS FOLDER IS spirit/state/<name>/cache/ (goal/G43.20; Andy: "cache, which is written by spirit/appServer.js was ALWAYS
+// supposed to go into spirit/state/<name>/cache/", "NO FUCKING RESCUE CODE"): read and written there and nowhere else; a
+// file left at an older place is not read, and is rebuilt from the stream.
+function cacheDir() { return path.join(RUN_ROOT, 'spirit', 'state', following.name, 'cache'); }
 function cacheFile(key) { return path.join(cacheDir(), dataSet().nodeId(key) + '.json'); }
 // The sender's cache rules on this node, or null: none there, no cache. They are its family folder's
 // data.js, beside its api.js (goal/G41.24; Andy: "deskClient can get it form its own disc").
 function familyApi(family) {
   if (!family || !/^[A-Za-z]\w*$/.test(String(family))) return null;
-  // In the new namespace it sits beside <name>.js, as it does in process/js (goal/G43.12).
-  const own = path.join(RUN_ROOT, 'spirit', 'app', String(family), 'data.js');
-  const file = fs.existsSync(own) ? own : path.join(RUN_ROOT, path.dirname(path.dirname(spirit.familyPath(String(family)))), 'data.js');
+  // Beside the family's api.js (spirit.familyPath): an app's in spirit/app/<name>/, a system family's in spirit/<name>/.
+  const file = path.join(RUN_ROOT, path.dirname(spirit.familyPath(String(family))), 'data.js');
   if (!fs.existsSync(file)) return null;
   try { return require(file); } catch (e) { return null; }
 }
@@ -767,16 +767,11 @@ function subscribersFromGrants(name) {
 // THE FAMILY FOLDER'S VERBS (introSpector.js): since goal/G30.4 its FS verbs alone, on every server, AGENTS.md or
 // not. A verb file naming a verb this server never declared is said at boot. A server that declares a name itself
 // keeps its own.
-// THE FAMILY FOLDER BESIDE THE SCRIPT, AS THE ONE FAMILY PATH FUNCTION NAMES IT (goal/G41.12, box v15: "Every server's
-// family folder is named family: process/js/<name>/family/"): a family folder never holds code, and introSpector's FS
-// reaches nothing above it. The manifest stays with the script, so none is in the folder.
+// THE FAMILY FOLDER IS THE APP FOLDER (goal/G43.27; Andy: "spirit/app/<name>/ folders are now ALMOST the same shape as
+// spirit/jobs/ ...", "i think the shape needs alignment."): a server is spirit/app/<name>/<name>.js, its family beside it.
 function withAgents(verbs, script) {
   const resolved = path.resolve(String(script || ''));
-  // A SCRIPT OF spirit/app/<name>/ HAS ITS FAMILY BESIDE IT, the app folder itself, as spirit/<family>/ has it (goal/G43.27;
-  // Andy: "spirit/app/<name>/ folders are now ALMOST the same shape as spirit/jobs/ ...", "i think the shape needs alignment.").
-  const inApp = /^spirit[\/\\]app[\/\\][^\/\\]+$/.test(path.relative(RUN_ROOT, path.dirname(resolved)));
-  const folder = inApp ? '.' : path.basename(path.dirname(familyPath(path.basename(resolved, '.js'))));
-  const made = require('./introSpector').family(path.join(path.dirname(resolved), folder), {
+  const made = require('./introSpector').family(path.dirname(resolved), {
     declared: Object.keys(verbs),
   });
   made.stale.forEach(function (file) {

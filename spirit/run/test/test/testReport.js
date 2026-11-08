@@ -40,8 +40,8 @@ test.startTest('test/testReport.js: a test is sent by the module it tests, /<pat
 test.subHeading('a test of a module');
 const CASES = [
   ['spirit/element/test/workBench.js', '/spirit/element/workBench'],
-  ['process/js/agent/table/model/test/rowElement.js', '/process/js/agent/table/model/rowElement'],
-  ['process/js/agent/table/provider/test/rowElement.js', '/process/js/agent/table/provider/rowElement'],
+  ['spirit/app/agent/table/model/test/rowElement.js', '/spirit/app/agent/table/model/rowElement'],
+  ['spirit/app/agent/table/provider/test/rowElement.js', '/spirit/app/agent/table/provider/rowElement'],
   ['spirit/test/DEBUG.js', '/spirit/DEBUG'],
   ['spirit/test/spirit.js', '/spirit/spirit'],
 ];

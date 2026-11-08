@@ -37,7 +37,7 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
   field with \"node\", incoming or outgoing"*, and *"changes to the auth.bundle verb for the addition of the \"owner\"
   field are approved by andy and need no review."*
   - An add with no owner is owned by `node`. An add naming an app server is refused `not-node-owned` (goal/G41.32,
-    below): a server's bundle comes from its `Bundles.json` at boot alone.
+    below): no verb makes a server's bundle; the test makes one in `node.db` directly.
   - A set never changes the owner.
   - Incoming: an add whose owner is not valid (empty, not a text, not a name) is owned by `node`, and the table keeps
     `node` for it.
@@ -73,34 +73,15 @@ a clearly defined subset of an API, with no ID (user, process or agent,....) tie
 Who may call the two verbs is the gate's: the owner, and whoever the owner grants them (Andy: *"can only be the node
 owner, until the node owner grants access to those tables to someone else"*). That is `spirit/test/apiGate.js`.
 
-### Each appServer's bundles, at the node's boot (goal/G41.24)
+### No bundle sync (goal/G43.20)
 
-Andy, box: *"each appServer has a file process/js/<appServerName>/<appServerName>Bundles.json"*; *"this json file at it's
-root has one key for each bundle ... and the objects held those keys, contain the value for one bundle \"row\", without
-\"owner\" name, and all required branch rows"*; *"the apiAuth.js module, when the node boots, will check for all valid
-... files, and update the auth.bundle and auth.branch, adding new verbs, when needed, and deleting verbs, if they are no
-longer in the ... file, always using/asserting the server <appServerName> as \"owner\""*; *"when apiAuth.js adds a
-bundle for the first time, it stores its key in the appServers state file
-relay-state/process/<appServerName>/bundles.json, with its key, and and the same \"label\""*; *"if a USER deletes a
-bundle owned by an Server, apiAuth.js it will create a new bundle it owns under the exact same key that was used
-before"*; *"if a key is deleted from an ... file, apiAuth.js will delete that key from auth.bundle AND all its rows in
-auth.branch."*
+The box: *"the bundle sync goes altogether (Andy: \"just delete that file auth bundles, auth is the ONE api that REALLY can
+do without.\"): apiAuth reads no <name>Bundles.json and keeps no bundles.json record any more"*. Bundles stay rows in
+`node.db`, made and changed through `auth.bundle`.
 
-- The boot is `createApiAuth({ rootDir })`, as the node makes it; each folder of `process/js/` is an appServer.
-- A row of `<appServerName>Bundles.json` is `{ label, branches: [{ family, verb }] }` (the shape is the red writer's,
-  open to Andy's change): the bundle's label, and its branch rows as `auth.branch` keeps them, a verb `''` all of the
-  family.
-- At boot, each key is a bundle owned by `<appServerName>`, whatever owner a row names, with exactly its branches. The
-  appServer's own verbs are written though no appServer is served yet at the node's boot.
-- The state file `relay-state/process/<appServerName>/bundles.json` keeps each key as `{ id, label }`: the bundle's id
-  and the same label.
-- Booted again: a kept key is its bundle, so nothing is added twice; a verb added to the key is added, one taken out is
-  deleted, the bundle the same.
-- A key taken out of the file: its bundle and all its branch rows are deleted, and the key leaves the state file.
-- A bundle of the appServer's gone from the table is made again at the next boot, its new id kept under the same key.
-  (A user cannot delete it since goal/G41.32; the test deletes it from `node.db` directly.)
-- A bundle the user added (node-owned since goal/G41.32) is under no key and left as it is.
-- A folder with no Bundles.json, or one that is not valid JSON, gets nothing; the others are written all the same.
+- A boot (`createApiAuth({ rootDir })`, as the node makes it) on a tree whose app folder holds a `<name>Bundles.json`
+  makes no bundle of it.
+- And writes no `bundles.json` record anywhere.
 
 ### A family's FS group is the owner's (goal/G41.28)
 
@@ -131,7 +112,7 @@ Andy: *"i still want the api.<family>.FS.* group "ungrantable" and OWNER ONLY"*.
 
 The box: *"Bundle labels should be unique per owner."*; *"A user can only create, change and delete node-owned bundles and
 branches, and sees the others read-only"*; *"no "old-data-rescue-missions""*. This overrules goal/G41.25's add naming an app
-server: a server's bundle comes from its `Bundles.json` at boot, written to the tables directly.
+server: no verb makes a server's bundle, so the test makes one in `node.db` directly.
 
 - The same label again, by the same owner, is refused and no row is made. The same label under another owner is another
   bundle. Only the exact same label is a duplicate. A label is free again once its bundle is deleted.

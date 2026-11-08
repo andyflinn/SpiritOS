@@ -134,7 +134,7 @@ function world() {
   const FILES = { 'spirit/element/search/bundle.js': ['search'], 'spirit/element/search/contact.js': ['search'],
     'spirit/element/search/api.js': ['search'], 'spirit/element/search/grant.js': ['search'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'] };
   const page = {};
-  const familyPath = function (name) { return 'process/js/' + String(name || '') + '/family/api.js'; };
+  const familyPath = function (name) { return 'spirit/app/' + String(name || '') + '/api.js'; };
   const win = {
     // The page knows its node: spirit.data files nothing before it does (goal/G41.28, Q10).
     spirit: { element: page, node: { key: 'KEY+GRANTS/PANEL==' },
@@ -286,11 +286,11 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   const D = w.win.spirit.data;
   const asked0 = w.treeAsked;
   w.tree = Object.assign({}, TREE, { gone: { verb: {} } });
-  D.takeJob({ id: 'job_78', kind: 'server', type: 'gone', status: 'running', module: 'process/js/gone', data: {} });
+  D.takeJob({ id: 'spirit.app.gone', kind: 'server', status: 'running', module: 'spirit.app.gone', data: {} });
   await settle();
   ok(w.treeAsked > asked0 && gl.opts.serves('gone.verb') === true, 'a server job changed: the tree is read again, and the grant it now serves is no longer deprecated', 'serves gone.verb ' + gl.opts.serves('gone.verb'));
   w.tree = TREE;
-  D.takeJob({ id: 'job_78', kind: 'server', type: 'gone', status: 'exited', module: 'process/js/gone', data: {} });
+  D.takeJob({ id: 'spirit.app.gone', kind: 'server', status: 'exited', module: 'spirit.app.gone', data: {} });
   await settle();
   const dep = (gl.opts.filters || []).filter(function (f) { return f && f.name === 'deprecated'; })[0];
   ok(!!dep && dep.toggle === true && (typeof dep.when !== 'function' || dep.when([]) !== false) && dep.test(DAY, undefined) === 0 && dep.test(NIGHT, undefined) === 1,
@@ -405,12 +405,12 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   // WHO ASKS FOR A CHANGE LISTENS FOR IT (goal/G41.27, G41.28): a grant the node's auth job hands comes back through watch.
   const heard = [];
   const off = g.watch(function (k, row) { heard.push({ k: k, row: row }); });
-  D.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
-  D.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
+  D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list', label: 'Zed' } } });
+  D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K9', path: 'jobs.list' }, gone: true } });
   ok(heard.length === 2 && heard[0].k === 'K9\njobs.list' && heard[0].row && heard[0].row.label === 'Zed' && heard[1].k === 'K9\njobs.list' && !heard[1].row,
     'watch(fn): a grant kept in spirit.data.auth is heard as <key>\\n<path> with its row, and once revoked with none', 'heard: ' + short(heard));
   if (typeof off === 'function') off();
-  D.takeJob({ id: 'job-bundles', type: 'bundles', data: { table: 'grant', row: { key: 'K8', path: 'jobs.list', label: 'Yan' } } });
+  D.takeJob({ id: 'spirit.auth', data: { table: 'grant', row: { key: 'K8', path: 'jobs.list', label: 'Yan' } } });
   ok(typeof off === 'function' && heard.length === 2, 'its release ends the watch', 'heard after release: ' + short(heard.slice(2)));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

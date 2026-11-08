@@ -7,7 +7,7 @@
 //
 // WHAT IT DOES
 //   - THE STREAM. At home the node's own (spirit.events); on a face /face/stream, sealed to this page's key when it can
-//     seal: the jobs as the loopback page gets them, presence peer by peer, rebuilt into the relay-presence job the apps
+//     seal: the jobs as the loopback page gets them, presence peer by peer, rebuilt into the presence news of the spirit.contact job the apps
 //     read. Another device holding it is said, with Connect here; a face replaced by another device is told it was taken.
 //     The home node offline: the small red not connected mark shows.
 //   - THE PAGE'S PARTS, the home node's own, in its own version (FACE_PARTS), the sheets among them.
@@ -111,7 +111,7 @@
       presence[ev.data.key] = { present: ev.data.present === true, at: ev.data.at };
       var table = {};
       Object.keys(presence).forEach(function (k) { table[k] = presence[k]; });
-      update({ id: 'face-presence', type: 'relay-presence', data: { presence: table } });
+      update({ id: 'spirit.contact', data: { presence: table } });
     } else if (ev.event === 'job-deleted' && ev.data) {
       // A job gone (goal/G41.33): to the kernel's subscribers, as the loopback stream hands it.
       delete linkJobs[ev.data];

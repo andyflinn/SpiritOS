@@ -1,4 +1,4 @@
-// Icons (goal/G30.21): this app's own icon set, relay-state/shell/icons/iconSet.json (below), each key a glyph (the icon itself,
+// Icons (goal/G30.21): this app's own icon set, spirit/state/icons/data/iconSet.json (below), each key a glyph (the icon itself,
 // never a key into a table) and its value the keywords it is found by. A mountable wrapper over the icons list
 // (spirit/element/search/icon/listElement.js) as a pane. A press opens the icon: its keywords edited, or the icon removed; a glyph
 // added at the top. Every change writes the whole set at once (fs.save), and every icons list on the page reads it
@@ -9,11 +9,11 @@
 // registers no spirit.elements.icons.
 
 var iconsList = null;
-// WHERE THE SET LIVES (goal/G40.8; Andy: "all shell-app state data should go into spirit/run/relay-state/shell/<appname>/
-// analogous to the process user-data. this way my icon editing doesn't constantly push into github"): the owner's own
-// set in relay-state/shell/icons/, out of git; until he has one, an Add starts from the system set spirit/iconSet.json, which
-// only he updates by hand (goal/G43.11). What the list shows is the system set: "then we worry about the icon app later."
-var ICON_SET = 'relay-state/shell/icons/iconSet.json';
+// WHERE THE SET LIVES (goal/G43.20; Andy: "the icons app will initialize from run://spirit/iconSet.js"): the app's data
+// is in spirit/state/icons/data/, out of git, and an Add starts from the system set spirit/iconSet.json, which only he
+// updates by hand (goal/G43.11), until the app has a set of its own there. A page may not write spirit/state/, so the
+// save is refused until the app has a server that writes its own data. What the list shows is the system set.
+var ICON_SET = 'spirit/state/icons/data/iconSet.json';
 var SYSTEM_SET = 'spirit/iconSet.json';
 
 function iconsEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }

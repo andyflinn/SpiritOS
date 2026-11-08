@@ -31,5 +31,5 @@ Andy: *"file should be the same as files is. i don't want to loose all the nice 
 - A contents match opens text with the words marked; its ✕ shows the list as it was left, its words kept.
 - Text and media are separate from fstat: the file's name only in the bar, no facts. Text's Save sits in a bubble of the kind rowForm uses, `.shell-bubble`, and in a pane 120px wide nothing of that row goes past its edge.
 - A real picture, 2400 by 1600, in panes 300×200, 1200×300 and 300×900: inside the pane both ways, the bar still in view, not cropped (`object-fit` not `cover`).
-- fstat, for `blob.zzq`: no text, no media, its name only in the bar; top down MIME type, size, changed, created, then the annotations; no Open with (Q9).
+- fstat, for `blob.zzq`: no text, no media, its name only in the bar; top down MIME type, size, changed, created, and no annotations (goal/G43.20); no Open with (Q9).
 - Nothing throws on the page.

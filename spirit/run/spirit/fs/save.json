@@ -1,3 +1,3 @@
 {
-  "description": "Write a file by path under the run folder, the whole content as given; the path's folders are made. No folder is special: any file may be written but a core file, a file at the run folder's top, anything under relay-state or spirit/state at any depth, and a sidecar's own path, each refused 403 (a shell app's own folder under relay-state/shell is open); a path the file system will not take is refused 400."
+  "description": "Write a file by path under the run folder, the whole content as given; the path's folders are made. No folder is special: any file may be written but a core file, a file at the run folder's top, anything under spirit/state at any depth, and a sidecar's own path, each refused 403; a path the file system will not take is refused 400."
 }

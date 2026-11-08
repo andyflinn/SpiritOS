@@ -17,9 +17,9 @@ test's child plants its stand-in there.
 - A record's `suite` is the module the test tests, as `/<path>/<module>`: the folders between `spirit/run/` and the
   module, and the module's name without extension. The reporter makes it from the test's own path, so no test changes:
   - `spirit/run/spirit/element/test/workBench.js` is sent as `/spirit/element/workBench`;
-  - `spirit/run/process/js/agent/table/model/test/rowElement.js` and
-    `spirit/run/process/js/agent/table/provider/test/rowElement.js` are two names, each with its folder (those folders
-    are gone from the tree; the names are made from the path alone, so the cases still hold);
+  - `spirit/run/spirit/app/agent/table/model/test/rowElement.js` and
+    `spirit/run/spirit/app/agent/table/provider/test/rowElement.js` are two names, each with its folder (the names are
+    made from the path alone);
   - `spirit/run/spirit/test/DEBUG.js` is sent as `/spirit/DEBUG`;
   - `spirit/run/spirit/test/spirit.js`, the test of `spirit/run/spirit/spirit.js`, is sent as `/spirit/spirit` (its
     test moved beside it, goal/G43.27).

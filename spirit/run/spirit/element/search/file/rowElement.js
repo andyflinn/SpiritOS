@@ -1,15 +1,15 @@
 // spirit/run/spirit/element/search/file/rowElement.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
 // it reads the node's file tree as the fs family's cache manager keeps it (spirit.data.fs.data, goal/G41.28), which the
-// fs-watcher's stream keeps, so a change to a file repaints that file's cells and nothing else. rowElement.js does the
+// spirit.fs's stream keeps, so a change to a file repaints that file's cells and nothing else. rowElement.js does the
 // shared work; this file says what a file is.
 //
 // THE DISPATCH OF FILES: one watch on the file tree for every file row on the page, and an index by path. A row registers
 // on create and leaves on destroy.
 //
 // Actions: open (the viewer the page hands in, ctx.open, or the text launcher) and remove (fs.delete). An action asks
-// and paints nothing: the fs-watcher's own event repaints, or marks the row gone. expandInfo asks fs.stat and
-// fs.annotations, once.
+// and paints nothing: the spirit.fs job's own event repaints, or marks the row gone. expandInfo asks fs.stat, once;
+// no annotations, which are the node's only (goal/G43.20).
 (function () {
   var E = (window.spirit = window.spirit || {}).element = window.spirit.element || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree...."): its tree, through spirit.require.
@@ -121,7 +121,7 @@
         // ONE CELL: the indent, the icon, then where it lives and what it is (goal/G30.16). The depth rides along (one per
         // slash) for a tree view to indent; the folders dimmed, the name at full strength (a list of bare names read as if
         // every file sat at the top). A tree view hides the folders, the indent saying them.
-        // A CORE FILE'S NAME IN YELLOW (goal/G30.21), the node's word on the fs-watcher's command.
+        // A CORE FILE'S NAME IN YELLOW (goal/G30.21), the node's word on the spirit.fs job's command.
         { name: 'name', from: ['path', 'kind', 'gone', 'core', 'words', 'open'], paint: function (v) {
           // BY ITS KIND (goal/G43.17; the box: "text 📜, video 📹, image 🌇, audio 🔊; a folder 📁 shut and 📂 open; any other file, of
           // unknown kind, ❔"). A folder's open or shut is the list's to say, as it draws the tree.
@@ -145,8 +145,8 @@
       ],
       expand: function (el) {
         return spirit.ready.then(function (s) {
-          return Promise.all([s.fs.stat({ path: el.row.path }), s.fs.annotations({ path: el.row.path })]);
-        }).then(function (a) { return { stat: a[0], annotations: a[1] }; });
+          return s.fs.stat({ path: el.row.path });
+        }).then(function (stat) { return { stat: stat }; });
       },
     });
     // Its colours, once the word system has answered, and again whenever a word.json changes.

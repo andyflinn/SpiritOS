@@ -20,25 +20,24 @@ Andy: *"JUST loading functional server and associating the <name> as "familiy" n
 - its family is at its top, `api.js` beside `<name>.js`, as `spirit/<family>/` has it (goal/G43.27). The interface, `FS.loadFile` and `FS.path` all read the app folder. A `family/` folder beside it is ignored.
 - `<name>.json` has no `kind` or `operated`. The node operates the server.
 - Its module id is `spirit.app.<name>`.
-- Its door is a socket in `spirit/state/<name>/`, on POSIX. None is in `relay-state/process/` or in `data/`.
+- Its door is a socket in `spirit/state/<name>/`, on POSIX. None is in its `data/`.
 - The node hands it `spirit/state/<name>/data` as `--state`.
 
 ### Pages and processes
 
-- A page binds the family by its name, and its verb answers. An old server's family, bound the same way, is the control.
-- `data.js` beside `<name>.js` is found on a page, in a process, and for a client's cache: what a client kept of a sender in the new family comes back at its start.
+- A page binds the family by its name, and its verb answers.
+- `data.js` beside `<name>.js` is found on a page, in a process, and for a client's cache: what a client kept of a sender in the new family comes back at its start, as it does for a node family (contact).
 - The one `<name>.js` also runs on a page.
 
-### The start rule
+### The start rule (goal/G43.20: "jobs.create starts only an app's own script, spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true")
 
-- A script of an inactive app is refused and does not run, its server script included.
-- A helper of an active app runs.
+- A script of an app is refused and does not run, its server script included when its json says node mount and not node run.
+- A helper of an active app is refused too: *"A second script in an app folder is therefore never started."*
 - Refused and not run: a script of the shell, a file at the top of `spirit/app`, the same path in another tree, and a way out of an app's folder by dots.
 
 ### What stays
 
-- `process/js` servers run under their old module ids, doors and state folders. Their interface stays in `family/`, and a sidecar still stops them.
-- A process without its home switch is refused `process-not-included`. A script outside the two places is refused `not-a-process`.
+- A script outside `spirit/app/` is refused `not-a-process`.
 - A member without a grant is refused and no server is asked. A member granted `<name>.ping` reaches it.
 
 ### Intrinsic (goal/G43.14)

@@ -5,7 +5,7 @@
 // RC1: "any relay a node is connected to can run every owner verb on that node by sending a face event". The verbs G41.30
 // took off the face went with the half face (goal/G43.18, box v29: "a face it answers is a full face"), so a relay with no
 // face of this node's, or no star, gets nothing at all. createFaceHome runs on stand-ins that keep what reached them: the door
-// (o.call), the file route, the save and the annotate. An answer is read from the stand-in upload, sealed or not.
+// (o.call), the file route and the save. An answer is read from the stand-in upload, sealed or not.
 
 const fs = require('fs');
 const path = require('path');
@@ -27,12 +27,11 @@ const OTHER = 'https://a-relay-with-no-face-of-mine.example';
 // THE OPTIONS THE FIX NEEDS: faceSet(url), true when this node set a face on that relay, and faceOwned(url), the star
 // (server.js gives both from the relay's row; see the spec).
 function world(faceSet, faceOwned) {
-  const w = { calls: [], files: [], saved: [], annotated: [], uploads: {} };
+  const w = { calls: [], files: [], saved: [], uploads: {} };
   const o = {
     call: function (v, a) { w.calls.push(v); return Promise.resolve({ status: 200, body: { ok: true } }); },
     serveFile: function (rel, res) { w.files.push(rel); res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('file'); },
     saveFrom: function (work, rel) { w.saved.push(rel); return { ok: true }; },
-    annotateFace: function (rel) { w.annotated.push(rel); return { ok: true }; },
     identity: function () { return ME; },
     relayKey: function () { return 'RELAYKEY'; },
     upload: function (url, p, headers) {
@@ -129,7 +128,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   const allFamilies = function () {
     const dirs = function (d) { return fs.readdirSync(path.join(RUN, d), { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); };
     return dirs('spirit').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); })
-      .concat(dirs('process/js').filter(function (n) { return fs.existsSync(path.join(RUN, require(path.join(RUN, 'spirit', 'spirit.js')).familyPath(n))); }));
+      .concat(dirs('spirit/app').filter(function (n) { return fs.existsSync(path.join(RUN, 'spirit', 'app', n, 'api.js')) && !fs.existsSync(path.join(RUN, 'spirit', n, 'api.js')); }));
   };
   const verbsOf = function (file) { return Object.keys(require(path.join(RUN, file)).verbs); };
 
@@ -179,7 +178,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     const s = { subs: [], jobs: [], ups: {}, busy: false, drains: [] };
     const o = {
       call: function () { return Promise.resolve({ status: 200, body: { ok: true } }); },
-      serveFile: function () {}, saveFrom: function () { return { ok: true }; }, annotateFace: function () { return { ok: true }; },
+      serveFile: function () {}, saveFrom: function () { return { ok: true }; },
       identity: function () { return ME; },
       relayKey: function () { return 'RELAYKEY'; },
       upload: function (url, p) {
@@ -207,15 +206,15 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   }
   const starAt = function (url) { return url === STARRED; };
   const jobEvents = [
-    ['a bundle', 'job-updated', { id: 'job_b', kind: 'permanent', type: 'bundles', status: 'running', log: [], data: { table: 'bundle', row: { id: 1, label: 'zz' }, gone: false } }],
-    ['a branch', 'job-updated', { id: 'job_b', kind: 'permanent', type: 'bundles', status: 'running', log: [], data: { table: 'branch', row: { id: 2, bundle: 1 }, gone: false } }],
-    ['a grant', 'job-updated', { id: 'job_b', kind: 'permanent', type: 'bundles', status: 'running', log: [], data: { table: 'grant', row: { id: 3 }, gone: true } }],
-    ['a job deleted', 'job-deleted', 'job_77'],
-    ['a running job of a process', 'job-updated', { id: 'job_p', kind: 'process', type: 'zzProgram', status: 'running', module: 'process/js/zz', log: [{ timestamp: 1, message: 'job created' }], data: { command: 'node', progress: 0 } }],
-    ['a running job of no module', 'job-updated', { id: 'job_q', kind: 'process', type: 'zzOther', status: 'running', log: [], data: {} }],
-    ['a job of a type nobody has listed', 'job-updated', { id: 'job_z', kind: 'zzKind', type: 'zzNeverSeen', status: 'running', log: [], data: {} }],
-    ['a server\'s job as a whole', 'job-updated', { id: 'job_s', kind: 'server', type: 'zzServer', status: 'running', module: 'process/js/zz', log: [{ timestamp: 1, message: 'job created' }], data: { pid: 1 } }],
-    ['the join steps', 'job-updated', { id: 'job_j', kind: 'permanent', type: 'join-steps', status: 'running', log: [], data: { steps: ['zz'] } }],
+    ['a bundle', 'job-updated', { id: 'spirit.auth', kind: 'permanent', status: 'running', log: [], data: { table: 'bundle', row: { id: 1, label: 'zz' }, gone: false } }],
+    ['a branch', 'job-updated', { id: 'spirit.auth', kind: 'permanent', status: 'running', log: [], data: { table: 'branch', row: { id: 2, bundle: 1 }, gone: false } }],
+    ['a grant', 'job-updated', { id: 'spirit.auth', kind: 'permanent', status: 'running', log: [], data: { table: 'grant', row: { id: 3 }, gone: true } }],
+    ['a job deleted', 'job-deleted', 'spirit.app.zz'],
+    ['a running job of a process', 'job-updated', { id: 'spirit.app.zz', kind: 'process', status: 'running', module: 'spirit.app.zz', log: [{ timestamp: 1, message: 'job created' }], data: { command: 'node', progress: 0 } }],
+    ['a running job of no module', 'job-updated', { id: 'spirit.app.zzOther', kind: 'process', status: 'running', log: [], data: {} }],
+    ['a job of an id nobody has listed', 'job-updated', { id: 'spirit.zzNeverSeen', kind: 'zzKind', status: 'running', log: [], data: {} }],
+    ['a server\'s job as a whole', 'job-updated', { id: 'spirit.app.zzServer', kind: 'server', status: 'running', module: 'spirit.app.zzServer', log: [{ timestamp: 1, message: 'job created' }], data: { pid: 1 } }],
+    ['the join steps', 'job-updated', { id: 'spirit', kind: 'permanent', status: 'running', log: [], data: { join: { steps: ['zz'] } } }],
     ['a relay event of the monitor, a post', 'relay-event', { kind: 'post', relay: STARRED, from: 'zz' }],
     ['a relay event of the monitor, a reply', 'relay-event', { kind: 'reply', relay: STARRED, from: 'zz' }],
     ['a relay event of the monitor, a refusal', 'relay-event', { kind: 'refused', relay: STARRED, from: 'zz' }],
@@ -239,8 +238,8 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   });
 
   test.subHeading('box v29: a face with no star gets nothing, not even the file tree');
-  const today = [['the file tree', 'job-updated', { id: 'job_f', kind: 'permanent', type: 'fs-watcher', status: 'running', data: { command: { op: 'zz' } } }],
-    ['a row of the one table', 'job-updated', { id: 'job_h', kind: 'permanent', type: 'shadow', status: 'running', data: { row: 1 } }],
+  const today = [['the file tree', 'job-updated', { id: 'spirit.fs', kind: 'permanent', status: 'running', data: { command: { op: 'zz' } } }],
+    ['a row of the one table', 'job-updated', { id: 'spirit.contact', kind: 'permanent', status: 'running', data: { row: 1 } }],
     ['a contact renamed', 'contact.rename', { key: 'K', name: 'zz' }]];
   today.forEach(function (c) {
     sx.emit(c[1], c[2]);
@@ -312,8 +311,6 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
     const inSpirit = fs.existsSync(path.join(RUN, 'spirit', fam, 'api.js'));
     for (const v of verbsOf(inSpirit ? 'spirit/' + fam + '/api.js' : require(path.join(RUN, 'spirit', 'spirit.js')).familyPath(fam))) {
       if (fam + '.' + v === 'contact.own') continue;
-      // fs.annotate from a face writes the face's own part of a sidecar, in faceHome, and never goes to the door (goal/G30.21).
-      if (fam + '.' + v === 'fs.annotate') continue;
       const c = { call: fam + '.' + v, args: {} };
       for (const form of [['unsealed', c], ['sealed', sealed(c)]]) {
         const a = await send(free, MINE, form[1]);

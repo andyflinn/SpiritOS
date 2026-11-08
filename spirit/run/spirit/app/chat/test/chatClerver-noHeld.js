@@ -41,7 +41,7 @@ test.startTest('chatClerver-noHeld.js: chatClerver has no held path');
 
 (async function () {
   test.subHeading('chatClerver has no held path: no person.held, no contact.accept for a held key');
-  // chatClerver is an app of spirit/app/chat/ since goal/G43.27 (it was process/js/chatClerver/).
+  // chatClerver is an app of spirit/app/chat/ since goal/G43.27.
   const cc = path.join(RUN, 'spirit', 'app', 'chat', 'chatClerver.js');
   if (world(cc, /'line\.write'/)) {
     const h = hits(cc, /\bheld\b/);

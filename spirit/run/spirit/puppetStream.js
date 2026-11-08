@@ -17,7 +17,7 @@
 // switched on: every server's objects, always.
 //
 // WHAT IS NOT POSTED: the same object again (a job-updated for a log line carries the same app), a job with no app,
-// anything not under process/js, anything from a node that is not a puppet. Over PAYLOAD_MAX never reaches the job
+// anything that is no app's (spirit.app.<name>), anything from a node that is not a puppet. Over PAYLOAD_MAX never reaches the job
 // record (jobs.js refuses it), so never this.
 //
 // ONLY WHILE THE MASTER IS REACHABLE: the same route check the owner door's sending end makes (hub.chooseRoute over
@@ -38,7 +38,7 @@ function createPuppetStream(opts) {
 
   function module(job) {
     const m = String((job && job.module) || '');
-    return /^process\/js\/[^/]+$/.test(m) ? m : '';
+    return /^spirit\.app\.[^.]+$/.test(m) ? m : '';
   }
 
   function drop() { waiting = Object.create(null); order = []; }
@@ -70,7 +70,7 @@ function createPuppetStream(opts) {
     });
   }
 
-  // One job-updated, as the node emits it. Only a changed app object of a process/js module counts.
+  // One job-updated, as the node emits it. Only a changed app object of an app's job counts.
   function onJob(job) {
     const m = module(job);
     if (!m || !job.app || typeof job.app !== 'object' || Array.isArray(job.app)) return;

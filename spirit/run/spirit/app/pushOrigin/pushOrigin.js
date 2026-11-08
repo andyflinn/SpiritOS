@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/app/pushOrigin/pushOrigin.js (it was process/js/pushOrigin/pushOrigin.js until goal/G43.21)
+// spirit/run/spirit/app/pushOrigin/pushOrigin.js (an app of its own since goal/G43.21)
 // goal/G5.1: ONE PLACE THAT SENDS COMMITS ALREADY MADE TO GITHUB, EVEN WHEN THE CLONE IS BEHIND ORIGIN.
 //
 //   Andy, 2026-10-05, under goal/G5.1: "I run into the problem that you ran into while pushing measurements. happens

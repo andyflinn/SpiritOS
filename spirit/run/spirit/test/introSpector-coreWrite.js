@@ -17,15 +17,16 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 
 test.startTest('introSpector-coreWrite.js: a family\'s FS.saveFile and FS.deleteFile are refused on a core file (goal/G43.23, item 1)');
 
-// The core files asked: a node family's api.js, and an intrinsic server's family api.js. Each family's FS is rooted at its folder.
+// The core files asked: a node family's api.js, and an app's own <name>.json, core whatever it says (goal/G43.14). Each
+// family's FS is rooted at its folder. The desk app is turned on for it, as its owner does (goal/G43.20: every server is an app).
 const CORE = [
   { family: 'contact', path: 'api.js', run: 'spirit/contact/api.js' },
   { family: 'app', path: 'api.js', run: 'spirit/app/api.js' },
-  { family: 'fileServer', path: 'api.js', run: 'process/js/fileServer/family/api.js' },
+  { family: 'desk', path: 'desk.json', run: 'spirit/app/desk/desk.json' },
 ];
 
 (async function () {
-  const N = await scratchNode();
+  const N = await scratchNode({ servers: ['desk'] });
   const post = function (call, args) {
     return fetch(N.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args }) })
       .then(function (r) { return r.text().then(function (t) { let body = null; try { body = JSON.parse(t); } catch (e) { /* judged as text */ } return { status: r.status, body: body, text: t }; }); },
@@ -59,13 +60,13 @@ const CORE = [
 
     test.subHeading('a file that is not core still saves: Andy (G30.21) "any non-core file is fair game"');
     const name = 'familyCoreWrite-probe-' + process.pid + '.txt';
-    const rel = 'process/js/fileServer/family/' + name;
+    const rel = 'spirit/app/desk/' + name;
     ok(gate.fileWritable(rel) === true, 'the world: fileWritable lets ' + rel + ' be written', rel + ' is not writable by fileWritable: nothing judged');
-    const saved = await post('fileServer.FS.saveFile', { path: name, content: 'probe' });
+    const saved = await post('desk.FS.saveFile', { path: name, content: 'probe' });
     const there = fs.existsSync(path.join(run, rel)) && fs.readFileSync(path.join(run, rel), 'utf8') === 'probe';
-    ok(saved.body && saved.body.saved === true && there, 'fileServer.FS.saveFile saves ' + rel, 'the writable probe did not save: ' + saved.status + ' ' + short(saved.text));
-    const deleted = await post('fileServer.FS.deleteFile', { path: name });
-    ok(deleted.body && deleted.body.deleted === true && !fs.existsSync(path.join(run, rel)), 'fileServer.FS.deleteFile deletes it again', 'the writable probe did not delete: ' + deleted.status + ' ' + short(deleted.text));
+    ok(saved.body && saved.body.saved === true && there, 'desk.FS.saveFile saves ' + rel, 'the writable probe did not save: ' + saved.status + ' ' + short(saved.text));
+    const deleted = await post('desk.FS.deleteFile', { path: name });
+    ok(deleted.body && deleted.body.deleted === true && !fs.existsSync(path.join(run, rel)), 'desk.FS.deleteFile deletes it again', 'the writable probe did not delete: ' + deleted.status + ' ' + short(deleted.text));
   } finally {
     try { if (N.child) N.child.kill(); } catch (e) { /* gone */ }
     await sleep(300);

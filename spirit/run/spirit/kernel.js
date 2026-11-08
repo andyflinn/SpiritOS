@@ -190,8 +190,7 @@ if (isNode()) {
   spirit.core.util.debug = require('./spirit.js').debug;
   spirit.core.node.util.fsPath = fileSystem.fsPath;
   spirit.core.node.util.scanFolder = fileSystem.scanFolder;
-  ['loadFile', 'statFile', 'fileWritable', 'fileServable', 'saveFile', 'loadJsonValue', 'saveJsonValue', 'deleteFile',
-    'annotateFace', 'getAnnotations'].forEach(function (n) { spirit.core.fs[n] = fileSystem[n]; });
+  ['loadFile', 'statFile', 'fileWritable', 'fileServable', 'saveFile', 'loadJsonValue', 'saveJsonValue', 'deleteFile'].forEach(function (n) { spirit.core.fs[n] = fileSystem[n]; });
 
   function hashFileContents(fullPath) {
     return crypto.createHash('sha256').update(fs.readFileSync(fullPath)).digest('hex');
@@ -314,24 +313,6 @@ if (isNode()) {
     xmlhttp.send(JSON.stringify({ call: "fs.stat", args: { path: filePath } }));
     if (xmlhttp.status == 200) {
       try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = null; }
-    }
-    return result;
-  };
-
-  // Sync, same as loadFile/statFile — "More Information" data any tool has
-  // recorded about this file via annotateFace (spirit/fileSystem.js on the node; the face part, the one part since goal/G41.1), via
-  // the fs.annotations verb (no direct filesystem access from the
-  // browser). Always resolves to an object — {} both when nothing's been
-  // recorded and when the request itself fails — so callers never need a
-  // null-check before reading .face.
-  spirit.core.fs.getAnnotations = function(filePath) {
-    let result = {};
-    let xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("POST", "/api/spirit", false);
-    xmlhttp.setRequestHeader("Content-Type", "application/json");
-    xmlhttp.send(JSON.stringify({ call: "fs.annotations", args: { path: filePath } }));
-    if (xmlhttp.status == 200) {
-      try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = {}; }
     }
     return result;
   };

@@ -79,8 +79,8 @@ const fake = {
       });
     }
     // A server family under a key (the publisher's, as the client subscribes; the client's, as the publisher delivers),
-    // by the old name or the new: routing only, this test writes no family path of its own.
-    if (key && /(?:^|\/)([^/]+)\/(?:family|\1\.family)\/api\.js$/.test(q)) {
+    // at the path spirit.familyPath gives: routing only, this test writes no family path of its own.
+    if (key && /^spirit\/(?:app\/)?[^/]+\/api\.js$/.test(q)) {
       return Promise.resolve({
         subscribe: function (a) { asked.push({ verb: 'subscribe', key: key, args: a }); return post('subscribe', a, SELF).then(function (r) { return r.body; }); },
         streamListener: function (a) { return deliver(a.json); },
@@ -101,7 +101,7 @@ Module._load = function (request, parent) {
   return realLoad.apply(this, arguments);
 };
 globalThis.spirit = fake;
-if (process.platform === 'win32') PIPE = require(path.join(RUN, 'spirit', 'appClient.js')).pipePathFor(TMP, NAME, 'win32', 'process');
+if (process.platform === 'win32') PIPE = require(path.join(RUN, 'spirit', 'appClient.js')).pipePathFor(TMP, NAME, 'win32');
 const childArgv = process.argv.slice();
 process.argv = [process.argv[0], path.join(TMP, NAME + '.js'), '--pipe', PIPE];
 
@@ -111,14 +111,15 @@ const GOAL = { id: 'goal/G9', goal: '', title: 'the goal', version: 1 };
 const item = function (n, extra) { return Object.assign({ id: 'goal/G9.' + n, goal: 'goal/G9', title: 'item ' + n, version: 1 }, extra || {}); };
 const row = function (f) { return { verb: 'goal.whole', goal: 9, item: f }; };
 // The client's cache file for the publisher (goal/G41.28, box v19; Andy: "this way an appServer in client-mode can derive
-// the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"): in spirit/state/<client server>/,
+// the name of it's ./relay-state/<appServerName>/<server-public-key-in-base64>.json"): in spirit/state/<client server>/cache/
+// (goal/G43.20: "cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"),
 // named by the sender's key in base64url (Andy, Q9 of Desk: "Shall the server key in spirit.data and in the cache file
 // name be base64url (- for +, _ for /), since a plain base64 / splits both?" "yes"): no + and no /, and it reads back
 // to the sender's key.
 const SENDER = Buffer.from(PUBLISHER, 'base64');
 const namesSender = function (n) { return /^[A-Za-z0-9_-]+=*$/.test(n) && Buffer.from(n, 'base64url').equals(SENDER); };
 const cacheFile = function (name) {
-  const dir = path.join(RUN, 'spirit', 'state', name);
+  const dir = path.join(RUN, 'spirit', 'state', name, 'cache');
   let found = '';
   try { found = fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f) && namesSender(f.slice(0, -5)); })[0] || ''; } catch (e) { found = ''; }
   return found ? path.join(dir, found) : path.join(dir, SENDER.toString('base64url') + '.json');
@@ -235,7 +236,7 @@ function runChild(mode, name, fam) {
   const line = String(r.stdout || '').split('\n').filter(function (l) { return l.indexOf('RESULT ') === 0; })[0];
   try { return JSON.parse(line.slice(7)); } catch (e) { return { failed: short(r.stderr || r.stdout || r.error) }; }
 }
-function clearCache(name) { [path.join(RUN, 'relay-state', 'process', name), path.join(RUN, 'spirit', 'state', name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
+function clearCache(name) { [path.join(RUN, 'spirit', 'state', name)].forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* none */ } }); }
 
 // ── the tree: one family path, a folder per server (box v15, Family folders) ─────────────────────────────────────────────
 function jsonFiles(dir, out) {
@@ -255,7 +256,7 @@ function codeFiles(dir, out) {
   names.forEach(function (d) {
     const p = path.join(dir, d.name);
     if (d.isDirectory()) {
-      if (VENDORED_FOLDERS.holds(p) || d.name === '.git' || p === path.join(RUN, 'brains') || p === path.join(RUN, 'relay-state') || p === path.join(RUN, 'spirit', 'state')) return;
+      if (VENDORED_FOLDERS.holds(p) || d.name === '.git' || p === path.join(RUN, 'brains') || p === path.join(RUN, 'spirit', 'state')) return;
       codeFiles(p, out);
     } else if (/\.(js|html)$/.test(d.name)) out.push(p);
   });
@@ -371,19 +372,19 @@ if (CHILD) {
     const A0 = require(FILE);
     ok(typeof A0.familyPath === 'function', 'appServer exports familyPath', 'appServer has no familyPath export: ' + typeof A0.familyPath);
     const fp = typeof A0.familyPath === 'function' ? A0.familyPath('deskVerify') : null;
-    ok(fp === 'process/js/deskVerify/family/api.js', 'familyPath(name) is process/js/<name>/family/api.js', 'familyPath(\'deskVerify\') is ' + short(fp));
+    ok(fp === 'spirit/app/deskVerify/api.js', 'familyPath(name) of an app is spirit/app/<name>/api.js (goal/G43.20)', 'familyPath(\'deskVerify\') is ' + short(fp));
     // Apps of spirit/app/ since goal/G43.27 (Andy: "cw, you bring deskClient and deskVerify into spirit/app/ under their old
-    // names, do the backup as well"): the family's interface at the top of the app folder, no family/ and no process/js/ left.
+    // names, do the backup as well"): the family's interface at the top of the app folder, no family/ left; and run://process
+    // is gone (goal/G43.20).
     FAMILIES.forEach(function (n) {
       const app = path.join(RUN, 'spirit', 'app', n);
-      const moved = fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family')) && !fs.existsSync(path.join(RUN, 'process', 'js', n));
-      ok(moved, n + ': its interface is spirit/app/' + n + '/api.js, no family/ and no process/js/' + n + '/ is left',
-        n + ': api.js ' + fs.existsSync(path.join(app, 'api.js')) + ', family/ ' + fs.existsSync(path.join(app, 'family')) + ', process/js/' + n + '/ ' + fs.existsSync(path.join(RUN, 'process', 'js', n)));
+      const moved = fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family'));
+      ok(moved, n + ': its interface is spirit/app/' + n + '/api.js, no family/ is left',
+        n + ': api.js ' + fs.existsSync(path.join(app, 'api.js')) + ', family/ ' + fs.existsSync(path.join(app, 'family')));
     });
-    // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it; the desk's
-    // bundle named deskAgent (deskBundles.json, deskVerifyBundles.json) is his name for a desk agent, and stays.
-    ok(!fs.existsSync(path.join(RUN, 'process', 'js', 'deskAgent')), 'deskAgent is killed: process/js/deskAgent/ is gone', 'process/js/deskAgent/ is still there');
-    const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /process\/js\/deskAgent\/|['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });
+    ok(!fs.existsSync(path.join(RUN, 'process')), 'run://process is gone (goal/G43.20)', 'spirit/run/process/ is still there');
+    // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it.
+    const namers = codeFiles(RUN, []).filter(function (f) { return f !== FILE && f !== SELF_FILE && /['"]deskAgent\/|deskAgent\.js\b/.test(fs.readFileSync(f, 'utf8')); }).map(function (f) { return path.relative(RUN, f); });
     ok(namers.length === 0, 'and no file names the deskAgent server', namers.length + ' files still name it: ' + namers.join(', '));
     // No file but appServer writes a family path: no <name>.family, no family/api.js, no join onto 'family'. This file
     // routes by the pattern and is left out; so are appServer.js and spirit.js: the browser cannot load appServer, so
@@ -406,56 +407,11 @@ if (CHILD) {
     }).map(function (f) { return path.relative(RUN, f); });
     ok(named.length === 0, 'no code file, and nothing in the desk folder, names DEPENDENCIES or hands serve() a dependencies list', named.length + ' still do: ' + named.join(', '));
 
-    test.subHeading('goal/G41.24: the appServers\' Bundles.json');
-    // Andy, box: "desk, deskClient, agent, deskVerify will receive their
-    // \"process/js/<appServerName>/<appServerName>Bundles.json.\" files", and "the bundles":
-    //   "desk: \"deskAgent\", \"remoteUser\", desk agent gets mostly full access, but no FS.* verbs, no item.rules.*, no
-    //    rule.*, and no user-presses. the remoteUser gets all verbs except FS.*"
-    //   "deskVerify: \"deskAgent\", \"remoteUser\". (both get only \"search\")"
-    //   "deskClient: \"deskServer\", only the verbs desk currently uses."
-    //   "agent: \"remoteUser\" the full agent family, minus FS.*"
-    // A row is { label, branches: [{ family, verb }] } (spirit/test/apiAuth.md); a verb '' is the whole family, FS.* with it.
-    // The desk is an app of spirit/app/ since goal/G43.27: its folder is spirit/app/desk/, its family at the top.
-    // deskClient and deskVerify are apps too since goal/G43.27, their interfaces at the top of their folders.
-    const inApp = function (app) { return app === 'desk' || FAMILIES.indexOf(app) !== -1; };
-    const folderOf = function (app) { return inApp(app) ? path.join(RUN, 'spirit', 'app', app) : path.join(RUN, 'process', 'js', app); };
-    const bundlesOf = function (app) { try { return JSON.parse(fs.readFileSync(path.join(folderOf(app), app + 'Bundles.json'), 'utf8')); } catch (e) { return null; } };
-    const familyVerbs = function (app) { try { return Object.keys(require(inApp(app) ? path.join(folderOf(app), 'api.js') : path.join(folderOf(app), 'family', 'api.js')).verbs || {}).sort(); } catch (e) { return []; } };
-    // What a row reaches, as verbs of one family: a whole-family branch reaches its FS.* verbs too (introSpector.js).
-    const reach = function (row, fam) {
-      const out = [];
-      ((row && Array.isArray(row.branches)) ? row.branches : []).forEach(function (b) {
-        if (!b || b.family !== fam) { out.push((b && b.family) + '.' + (b && b.verb)); return; }
-        if (!b.verb) out.push.apply(out, familyVerbs(fam).concat(['FS.*']));
-        else out.push(b.verb);
-      });
-      return out.filter(function (v, i, a) { return a.indexOf(v) === i; }).sort();
-    };
-    const rowOk = function (row) { return !!row && typeof row.label === 'string' && row.label.trim() !== '' && !('owner' in row) && Array.isArray(row.branches); };
-    const deskB = bundlesOf('desk');
-    const DESK = familyVerbs('desk');
-    ok(!!deskB && JSON.stringify(Object.keys(deskB).sort()) === '["deskAgent","remoteUser"]' && rowOk(deskB.deskAgent) && rowOk(deskB.remoteUser),
-      'spirit/app/desk/deskBundles.json holds deskAgent and remoteUser, each a row with a label, no owner, and its branches', 'deskBundles.json: ' + short(deskB));
-    const dRemote = reach(deskB && deskB.remoteUser, 'desk');
-    ok(DESK.length > 0 && JSON.stringify(dRemote) === JSON.stringify(DESK), 'desk\'s remoteUser gets every desk verb, and no FS.*', 'reaches ' + short(dRemote));
-    const dAgent = reach(deskB && deskB.deskAgent, 'desk');
-    // His presses (box: "desk user presses are: 'Done', 'Close', 'Reopen' 'Start|End design', 'Verify', 'Delete' and
-    // 'Abandon'"): Delete is the verb item.delete; the others are values of press, the verb the agents' own presses
-    // (claim-done, design-complete, bring-back) go through too, and refused to an agent by the desk itself
-    // (OWNER_PRESSES). A branch is a whole verb, so press stays in and item.delete goes.
-    const NOT_AGENT = function (v) { return /^FS\./.test(v) || v === 'FS.*' || /^item\.rules\./.test(v) || /^rule\./.test(v) || v === 'item.delete'; };
-    // Q5, Andy: "just do the ones named in the box.": rule.* is rule.add, rule.draft, rule.get and rule.version;
-    // rules.search is not among them, so it stays.
-    const ASKED = [];
-    const wantAgent = DESK.filter(function (v) { return !NOT_AGENT(v) && ASKED.indexOf(v) === -1; });
-    ok(DESK.length > 0 && dAgent.length > 0 && !dAgent.some(NOT_AGENT) && wantAgent.every(function (v) { return dAgent.indexOf(v) !== -1; }) && dAgent.every(function (v) { return DESK.indexOf(v) !== -1; }),
-      'desk\'s deskAgent gets the desk verbs but FS.*, item.rules.*, rule.* and his Delete (item.delete); press stays, its presses of his refused by the desk', 'reaches ' + short(dAgent) + '; missing ' + short(wantAgent.filter(function (v) { return dAgent.indexOf(v) === -1; })) + '; refused in it ' + short(dAgent.filter(NOT_AGENT)));
-    const vB = bundlesOf('deskVerify');
-    ok(!!vB && JSON.stringify(Object.keys(vB).sort()) === '["deskAgent","remoteUser"]' && ['deskAgent', 'remoteUser'].every(function (k) { return rowOk(vB[k]) && JSON.stringify(reach(vB[k], 'deskVerify')) === '["search"]'; }),
-      'spirit/app/deskVerify/deskVerifyBundles.json: deskAgent and remoteUser, both only search', 'deskVerifyBundles.json: ' + short(vB));
-    const cB = bundlesOf('deskClient');
-    ok(!!cB && JSON.stringify(Object.keys(cB)) === '["deskServer"]' && rowOk(cB.deskServer) && JSON.stringify(reach(cB.deskServer, 'deskClient')) === '["streamListener"]',
-      'spirit/app/deskClient/deskClientBundles.json: deskServer, the one deskClient verb desk uses, its stream\'s streamListener', 'deskClientBundles.json: ' + short(cB));
+    test.subHeading('goal/G43.20: no <name>Bundles.json is left');
+    // The box: "spirit/app/desk/deskBundles.json, deskClient/deskClientBundles.json and deskVerify/deskVerifyBundles.json are
+    // deleted. Bundles stay what they are, rows in node.db, made and changed through auth.bundle."
+    const bundleFiles = jsonFiles(path.join(RUN, 'spirit', 'app'), []).filter(function (f) { return /Bundles\.json$/.test(f); }).map(function (f) { return path.relative(RUN, f); });
+    ok(bundleFiles.length === 0, 'no app folder holds a <name>Bundles.json', 'still there: ' + bundleFiles.join(', '));
 
     test.subHeading('what goes (box v15)');
     const deskJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'desk', 'nodeDesk.js'), 'utf8');

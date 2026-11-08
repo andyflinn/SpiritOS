@@ -65,41 +65,9 @@ function statFile(filePath) {
 // ONLY CORE FILES ARE WRITE-PROTECTED (goal/G30.21). Andy: "only "core" files are write-protected, manifests are no
 // longer core", "any non-core file is fair game", and "the notion that we dictate to a user how to organize his file
 // is dumb": no folder like media/ or published/ is special. What the gate still refuses: a core file (spirit/coreFiles.js,
-// the commit check's own rule), relay-state/ at any depth, a sidecar's own path, and the node's root-level files,
-// every one of them: no root-level file is writable (goal/G43.17, the last one it named gone).
-
-// A PROCESS'S OWN STATE FOLDER (desk/G2.4). Andy: "an easier fix would be in
-// the exclusion rules for fileServable() and fileWritable() to give processes
-// their writable space". The name is read from where the running script
-// lives, process/js/<name>/<name>.js, never from the environment (Andy, on an
-// env key: "that scared me"). The node, a test or any other script gets none.
-const OWN_STATE_DIR = (function () {
-  const main = require.main && require.main.filename;
-  if (!main) return null;
-  const rel = path.relative(ROOT_DIR, main).replace(/\\/g, '/');
-  const m = /^process\/js\/([^/]+)\/\1\.js$/.exec(rel);
-  return m ? 'relay-state/process/' + m[1] : null;
-})();
-function isOwnState(canonical) {
-  const own = OWN_STATE_DIR && OWN_STATE_DIR.toLowerCase();
-  return !!own && (canonical === own || canonical.startsWith(own + '/'));
-}
-// A SHELL APP'S OWN STATE FOLDER (goal/G40.8; Andy: "all shell-app state data should go into
-// spirit/run/relay-state/shell/<appname>/ analogous to the process user-data"): a file inside relay-state/shell/<app>/,
-// out of git, read and written by the owner's pages. Path-only like every rule here: nothing server-side can tell which
-// app is asking. Nothing else under relay-state opens: the path is canonical already, and a second relay-state below it
-// (an app's own relay-state) stays shut.
-// The folders on the way to it are listed too (relay-state, relay-state/shell, relay-state/shell/<app>), only so the
-// node's file tree and its watcher reach the state inside; each file in them is still judged by itself, so the
-// identity key, the contacts and a process's state stay hidden.
-function isShellFolder(canonical) {
-  const parts = canonical.split('/');
-  return parts[0] === 'relay-state' && (parts.length === 1 || (parts[1] === 'shell' && parts.length <= 3));
-}
-function isShellState(canonical) {
-  const parts = canonical.split('/');
-  return parts.length >= 4 && parts[0] === 'relay-state' && parts[1] === 'shell' && !!parts[2] && parts.lastIndexOf('relay-state') === 0;
-}
+// the commit check's own rule), a node's state at any depth, a sidecar's own path, and the node's root-level files,
+// every one of them: no root-level file is writable (goal/G43.17, the last one it named gone). A server's own state is
+// its spirit/state/<name>/data/, handed to it as --state; no page writes there (goal/G43.20).
 
 // A CORE FILE, by the one rule the commit check reads (spirit/coreFiles.js): spirit/run/spirit/, spirit/run/spirit/element/, the
 // shell's frame and an intrinsic app's folder, never a manifest. The repo root is two folders above the run folder.
@@ -164,7 +132,7 @@ function canonicalPath(filePath) {
 // space"): Windows reaches the same file by those spellings, so a segment holding one is no path of the tree, on every
 // disc. No file of the tree is named so.
 const ALIAS_SEGMENT = /~\d|:|[. ]$/;
-// A node's own state, at any depth (goal/G43.8): a nested node keeps its key in its own spirit/state/, as it did in relay-state/.
+// A node's own state, at any depth (goal/G43.8): a nested node keeps its key in its own spirit/state/.
 const NODE_STATE = /(^|\/)spirit\/state(\/|$)/;
 function gatePath(filePath) {
   const canonical = canonicalPath(filePath);
@@ -176,11 +144,9 @@ function gatePath(filePath) {
 function fileWritable(filePath) {
   const canonical = gatePath(filePath);
   if (canonical === null) return false;
-  if (isOwnState(canonical)) return true;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFace touches a sidecar's own path
   if (NODE_STATE.test(canonical)) return false; // the node's alone
-  if (isShellState(canonical)) return true;
-  if (canonical.split('/').indexOf('relay-state') !== -1) return false;
+  if (canonical.split('/').indexOf('relay-state') !== -1) return false; // an old tree's keys, wherever one is left
   if (canonical.indexOf('/') === -1) return false;
   if (isVendored(canonical)) return false; // Andy's Q1 (goal/G43.25): "servable but not writeable."
   return !isCoreFile(canonical);
@@ -200,12 +166,10 @@ function fileServable(filePath) {
   if (UNSERVABLE_FILES.indexOf(canonical) !== -1) return false;
   if (UNSERVABLE_FOLDERS.some(function (f) { return canonical.indexOf(f) === 0; })) return false;
   if (canonical.endsWith(SIDECAR_SUFFIX)) return false;
-  // AT ANY DEPTH, not only the node's own: relay-state/ and spirit/state/
-  // (NODE_STATE) are refused wherever they sit, because a top-level-only
-  // check once served a nested identity's private key (faceServer's,
-  // gone with goal/G13.2) to any shell app and to the static route
-  // (wsl-claude found it, 2026-09-27; Andy's "go." on the fix).
-  if (isOwnState(canonical) || isShellState(canonical) || isShellFolder(canonical)) return true;
+  // AT ANY DEPTH, not only the node's own: a node's spirit/state/ (NODE_STATE), and an old tree's relay-state/ with its
+  // keys, are refused wherever they sit, because a top-level-only check once served a nested identity's private key
+  // (faceServer's, gone with goal/G13.2) to any shell app and to the static route (wsl-claude found it, 2026-09-27; Andy's
+  // "go." on the fix).
   if (canonical.split('/').indexOf('relay-state') !== -1 || NODE_STATE.test(canonical)) return false;
   return true;
 }
@@ -265,19 +229,13 @@ function deleteFile(filePath) {
   }
 }
 
-// Per-file annotation interface: one sidecar JSON file per annotated file. ITS ONE WRITTEN PART IS THE FACE PART
-// (goal/G41.1, box v15; Andy: "the loopback door MUST NOT be compatible with the old shell."): every caller's fs.annotate
-// writes it, the face link's and the door's alike. Nothing server-side can verify which app is really asking.
+// Per-file annotation interface: one sidecar JSON file per annotated file, its one written part the face part (goal/G41.1).
+// THE NODE'S ONLY (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY."): no verb reads or writes one for a caller.
 // A NODE'S SIDECARS ARE ITS STATE (box v16 and v17; Andy: "because of desk we MUST run different configurations", "why
 // would we track app sidecars?"): the sidecar lives at the mirror of its file's path in the node's state, out of git,
-// this node's alone: shell/<app>/<app>.js -> relay-state/shell/<app>/<app>.js.sidecar.json, process/js/<name>/<file> ->
-// relay-state/process/<name>/<file>.sidecar.json (the server's own state folder), anything else -> spirit/state/<path>.
-// None beside the code counts.
+// this node's alone: spirit/state/<path>.sidecar.json. None beside the code counts.
 function sidecarPathFor(filePath) {
   const p = canonicalPath(filePath) || String(filePath || '');
-  const proc = /^process\/js\/([^/]+)\/(.+)$/.exec(p);
-  if (proc) return 'relay-state/process/' + proc[1] + '/' + proc[2] + SIDECAR_SUFFIX;
-  if (p.indexOf('shell/') === 0) return 'relay-state/' + p + SIDECAR_SUFFIX;
   return 'spirit/state/' + p + SIDECAR_SUFFIX;
 }
 
@@ -363,7 +321,7 @@ function scanFolder(dirPath, result = []) {
         if (isVendored(path.relative(ROOT_DIR, path.resolve(entry.parentPath, entry.name)))) continue;
 
         // A directory is asked the same question a file is.
-        // fileServable already refuses `relay-state` and
+        // fileServable already refuses the node's state and
         // everything under it, but only files were ever asked —
         // so the identity key, the contactBook, the allow list and
         // the mailbox were all correctly hidden while the empty
@@ -390,7 +348,7 @@ function scanFolder(dirPath, result = []) {
         // plain join) is kept deliberately: entry.parentPath
         // inherits whichever style the initial call used, so a
         // relative dirPath still resolves correctly even though
-        // every caller today (jobs.js's fs-watcher,
+        // every caller today (jobs.js's spirit.fs,
         // servableAssets.js) passes an absolute one.
         const fullPath = path.resolve(entry.parentPath, entry.name);
         const relativePath = path.relative(ROOT_DIR, fullPath).replace(/\\/g, '/');

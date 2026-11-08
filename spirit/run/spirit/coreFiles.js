@@ -20,20 +20,19 @@ const path = require('path');
 
 const DEFAULT_ROOT = path.resolve(__dirname, '..', '..', '..');
 // INTRINSIC IS A CODED LIST (goal/G41.1, box v17; Andy: "the user doesn't decide intrinsic, our development team does. so
-// i would agree on a \"coded\" intrinsic list."): the shell/ and process/js/ app folders whose code is core, which every
+// i would agree on a \"coded\" intrinsic list."): the shell/ app folders whose code is core, which every
 // node runs and shows. Changed here only, under his grant; no sidecar or manifest says it for those (an app of spirit/app/
 // says it in its own <name>.json, appIntrinsic below). shell/apps, shell/icons and shell/stats name folders no longer in
 // the tree (icons is spirit/app/icons/ since 64e2d054). Every reader asks it: the commit check below, the node starting
 // servers (spirit/jobs.js), and every face part the node hands out (spirit/fileSystem.js).
 const INTRINSIC = [
-  'process/js/fileServer',
   'shell/apps', 'shell/icons',
   'shell/introSpector', 'shell/jobs', 'shell/jobsDetails', 'shell/relayMonitor', 'shell/stats',
 ];
-// An app folder (shell/<name> or process/js/<name>), or a path inside one, is intrinsic.
+// An app folder of shell/ (shell/<name>), or a path inside one, is intrinsic.
 // Blind to case, as every gate (goal/G41.30): Shell/Apps is shell/apps on a disc that does not tell them apart.
 function intrinsic(folder) {
-  const m = /^(shell\/[^/]+|process\/js\/[^/]+)(\/|$)/.exec(String(folder || '').replace(/\\/g, '/').replace(/^spirit\/run\//, '').toLowerCase());
+  const m = /^(shell\/[^/]+)(\/|$)/.exec(String(folder || '').replace(/\\/g, '/').replace(/^spirit\/run\//, '').toLowerCase());
   return !!m && INTRINSIC_LOWER.indexOf(m[1]) !== -1;
 }
 const INTRINSIC_LOWER = INTRINSIC.map(function (f) { return f.toLowerCase(); });
@@ -75,7 +74,7 @@ function isCore(repoPath, repoRoot) {
   const companion = /^(.*)\/test\/([^/]+)\.(js|md)$/.exec(p);
   if (companion && ['.js', '.css', '.html'].some(function (ext) { return isCore(companion[1] + '/' + companion[2] + ext, repoRoot); })) return true;
   // A MANIFEST IS NEVER CORE (goal/G30.21; Andy: "manifests are no longer core"), an intrinsic app's included.
-  if (/^spirit\/run\/(shell|process\/js)\/([^/]+)\/\2\.json$/.test(p)) return false;
+  if (/^spirit\/run\/shell\/([^/]+)\/\1\.json$/.test(p)) return false;
   // shell/json/ too (goal/G40.8; Andy: "the folder spirit/run/shell/json/ is a core folder as well. this way i can update
   // that system file manually once in a while, when i actually want it to go into github").
   // A FILE OF AN APP IN spirit/app/<name>/ (goal/G43.14): its <name>.json is always core, whatever it says, so turning intrinsic
@@ -92,9 +91,9 @@ function isCore(repoPath, repoRoot) {
   if (p.indexOf('spirit/run/test/') === 0) return true;
   if (FRAME_LOWER.indexOf(p) !== -1) return true;
   // AN INTRINSIC APP'S CORE IS ITS CODE ONLY (goal/G30.21; Andy: "core for an intrinsic app is its code only (.js, .css,
-  // .html), so its data files stay writable"), a server's the same.
-  const app = /^spirit\/run\/(shell|process\/js)\/([^/]+)\//.exec(p);
-  return !!(app && /\.(js|css|html)$/.test(p) && isIntrinsic(repoRoot || DEFAULT_ROOT, app[1], app[2]));
+  // .html), so its data files stay writable").
+  const app = /^spirit\/run\/shell\/([^/]+)\//.exec(p);
+  return !!(app && /\.(js|css|html)$/.test(p) && isIntrinsic(repoRoot || DEFAULT_ROOT, 'shell', app[1]));
 }
 
 module.exports = { isCore: isCore, INTRINSIC: INTRINSIC, intrinsic: intrinsic, appIntrinsic: appIntrinsic };

@@ -79,9 +79,10 @@ function world(answer) {
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
       w.managers = (w.managers || []).concat(name);
-      // An app's manager sits in its own folder, spirit/app/<name>/ (goal/G43.27), a server's in process/js/<name>/.
+      // An app's manager sits in its own folder, spirit/app/<name>/ (goal/G43.27), a server's too (goal/G43.20); a node
+      // family's in spirit/<name>/.
       const app = path.join(RUN, 'spirit', 'app', String(name), 'data.js');
-      vm.runInContext(fs.readFileSync(fs.existsSync(app) ? app : path.join(RUN, 'process', 'js', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
+      vm.runInContext(fs.readFileSync(fs.existsSync(app) ? app : path.join(RUN, 'spirit', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
       return Promise.resolve(true);
     } };
   vm.createContext(win);

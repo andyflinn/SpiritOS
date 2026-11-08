@@ -173,7 +173,7 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
   (function walk(dir) {
     fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
       const p = path.join(dir, e.name);
-      if (VENDORED_FOLDERS.holds(p) || e.name === 'relay-state' || e.name === 'state' || e.name === 'test' || e.name.charAt(0) === '.') return;
+      if (VENDORED_FOLDERS.holds(p) || e.name === 'state' || e.name === 'test' || e.name.charAt(0) === '.') return;
       if (e.isDirectory()) return walk(p);
       if (!/\.(js|html)$/.test(e.name)) return;
       const text = fs.readFileSync(p, 'utf8');

@@ -27,5 +27,10 @@ test.startTest('spirit/fs/api.js: a refusal is not "nothing there" (goal/G41.30)
 
   const text = await names(function () { return Promise.resolve({ text: 'hello' }); }).loadFile('media/a.txt');
   ok(text === 'hello', 'a file that is there answers its text', 'loadFile: ' + String(text));
+
+  // GOAL/G43.20 (Andy: "ANNOTATIONS WILL BE NODE ONLY."): no caller reads or writes an annotation.
+  test.subHeading('goal/G43.20: annotations are the node\'s only');
+  ok(!('annotations' in api.verbs) && !('annotate' in api.verbs), 'the family has no fs.annotations and no fs.annotate', 'verbs: ' + JSON.stringify(Object.keys(api.verbs)));
+  ok(!('getAnnotations' in names(function () { return Promise.resolve({}); })), 'and no getAnnotations among its kernel names', 'names: ' + JSON.stringify(Object.keys(names(function () { return Promise.resolve({}); }))));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(0); });

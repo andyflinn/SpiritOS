@@ -20,7 +20,7 @@ const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VEND
 // THE DESK RUNS FROM A COPY OF THE RUN TREE (never this checkout's own): spirit.js finds its node by the run tree's
 // spirit/state/environment.json, so a desk started from this tree would publish to the real node beside it. The copy's
 // environment.json names the pretend node below, and nothing reaches a real one.
-const SKIP = ['relay-state', 'app-state', 'media', 'published', 'brains', 'test'];
+const SKIP = ['app-state', 'media', 'published', 'brains', 'test'];
 function runCopy(dir, port) {
   fs.cpSync(RUN, dir, { recursive: true, filter: function (src) {
     const rel = path.relative(RUN, src).split(path.sep);

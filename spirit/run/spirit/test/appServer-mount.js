@@ -4,8 +4,8 @@
 // The tests of the node starting a server from spirit/app/<name>/ (spec: ./appServer-mount.md; goal/G43.12). Andy: "JUST loading
 // functional server and associating the <name> as "familiy" name, in the new namespace". A real node on a scratch copy of the
 // tracked files gets throwaway apps planted in that copy (probe, quiet, always), nothing kept in the repo (Andy, Q10: "then write
-// the test"); the tree's own server app (agent, node.mount true) is not what it judges. The old
-// process/js servers are asked on the same node. Neither Andy's node nor an agent's is touched.
+// the test"); the tree's own server app (agent, node.mount true) is not what it judges. Every server is an app
+// since goal/G43.20, run://process gone. Neither Andy's node nor an agent's is touched.
 
 const fs = require('fs');
 const os = require('os');
@@ -30,11 +30,11 @@ const NAME = 'probe';
 const MODULE = 'spirit.app.' + NAME;
 const NOTE = 'what the app folder holds';
 const INTERFACE = '// the interface at the top of the app folder';
-// The old folder's name, as the one family path function gives it: the decoy below, and no path of this file's own.
-const OLD_FOLDER = path.basename(path.dirname(familyPath(NAME)));
+// The old family folder's name: the decoy below.
+const OLD_FOLDER = 'family';
 
 // THE THROWAWAY APP, written as the box describes one: one file, a split for the page and the node, its family at its top (goal/G43.27), its data.js
-// beside it, and a <name>.json without the old kind and operated. Its family/ is a decoy: only process/js has one.
+// beside it, and a <name>.json without the old kind and operated. Its family/ is a decoy: no family has one any more.
 function plantApp(run, name, mount, intrinsic) {
   const dir = path.join(run, 'spirit', 'app', name);
   fs.mkdirSync(dir, { recursive: true });
@@ -43,7 +43,7 @@ function plantApp(run, name, mount, intrinsic) {
   fs.writeFileSync(path.join(dir, name + '.js'), [
     "'use strict';",
     "if (typeof window !== 'undefined') { window.__appOnPage = '" + name + "'; } else {",
-    "  require('../../../spirit.js');",
+    "  require('../../spirit.js');",
     "  const fs = require('fs'), path = require('path');",
     "  const STATE = process.argv[process.argv.indexOf('--state') + 1];",
     "  fs.mkdirSync(STATE, { recursive: true });",
@@ -82,14 +82,10 @@ function scratch() {
     "D.addTranslator({ onJob: function (job) { if (job && job.app) require('fs').writeFileSync(process.env.ROW_SEEN, JSON.stringify(job.app)); } });",
   ].join('\n') + '\n');
   fs.writeFileSync(path.join(follow, 'follower.js'), [
-    "require('../../../spirit.js');",
+    "require('../../spirit.js');",
     "const path = require('path');",
     "require('../../appServer.js').serve({}, { stream: { translator: path.join(__dirname, 'followerRows.js'), cache: true, module: 'a.test' } });",
   ].join('\n') + '\n');
-  // The old way of a server that runs at home: its sidecar (Andy: "process/js servers start and run as they do now" is the box's).
-  const old = path.join(run, 'relay-state', 'process', 'chatClerver');
-  fs.mkdirSync(old, { recursive: true });
-  fs.writeFileSync(path.join(old, 'chatClerver.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
   return { root: root, run: run };
 }
 async function call(base, verb, args) {
@@ -150,22 +146,23 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
 
     test.subHeading('goal/G43.14, the box: "intrinsic true: the app is always active. It runs at boot with no Activate, and app.active does not switch it off."');
     ok(await until(function () { return pingOf(N.base, 'always').then(answers); }, 30000), 'an intrinsic server runs from the boot, with nothing pressed', 'always.ping: ' + short((await pingOf(N.base, 'always')).text));
-    ok(!readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json')), 'and nothing was written to its node.json', 'its node.json: ' + short(readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json'))));
+    // Its DEBUG state is the one thing written there, by the server itself (goal/G43.15); no active switch is.
+    ok(!('active' in (readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json')) || {})), 'and no active was written to its node.json', 'its node.json: ' + short(readJson(path.join(s.run, 'spirit', 'state', 'always', 'node.json'))));
     const alwaysPid = Number(((await pingOf(N.base, 'always')).body || {}).pid);
     await call(N.base, 'app.active', { key: 'always', active: false });
     await sleep(3000);
     ok(answers(await pingOf(N.base, 'always')) && alive(alwaysPid), 'app.active false does not stop it', 'after app.active false: ' + short((await pingOf(N.base, 'always')).text));
 
-    test.subHeading('the box: "only scripts in this node\'s own process/js or spirit/app/<name>/ may start, and nothing else", "A spirit/app script starts only if it is active"');
+    test.subHeading('goal/G43.20, the box: "jobs.create starts only an app\'s own script, spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true; anything else is refused"');
     const ranHelper = path.join(s.root, 'helper-ran.txt');
     const startIt = function (script, arg) { return call(N.base, 'jobs.create', { command: 'node', args: [script].concat(arg ? [arg] : []), type: 'the red' }); };
     const refused = function (r) { return r.status >= 400 && !!r.body && r.body.ok === false; };
     const inactive = await startIt('spirit/app/' + NAME + '/helper.js', ranHelper);
     await sleep(1500);
-    ok(refused(inactive) && !fs.existsSync(ranHelper), 'a helper of an app nobody activated is refused, and does not run', 'jobs.create on an inactive app: ' + short(inactive.text) + ', ran: ' + fs.existsSync(ranHelper));
+    ok(refused(inactive) && !fs.existsSync(ranHelper), 'a helper of an app is refused, and does not run', 'jobs.create on an inactive app: ' + short(inactive.text) + ', ran: ' + fs.existsSync(ranHelper));
     const inactiveMain = await startIt('spirit/app/' + NAME + '/' + NAME + '.js');
     await sleep(1500);
-    ok(refused(inactiveMain) && !fs.existsSync(started), 'its server script is refused too, and does not run', 'jobs.create on an inactive server: ' + short(inactiveMain.text) + ', ran: ' + fs.existsSync(started));
+    ok(refused(inactiveMain) && !fs.existsSync(started), 'its server script, its json saying node mount, not node run, is refused too, and does not run', 'jobs.create on an inactive server: ' + short(inactiveMain.text) + ', ran: ' + fs.existsSync(started));
     // Outside the two places: a script of the shell, a file at the top of spirit/app, the same path in another tree, and a way out by dots.
     const ranElsewhere = path.join(s.root, 'elsewhere-ran.txt');
     const elsewhere = path.join(s.root, 'other', 'spirit', 'app', NAME, NAME + '.js');
@@ -192,26 +189,8 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     ok(!(await liveJob(N.base, 'spirit.app.quiet')), 'active with node.mount false: no server job', 'a server job for an app with node.mount false');
     ok(!answers(await pingOf(N.base, 'quiet')), 'and its verb is not answered', 'an app with node.mount false answered its verb');
 
-    test.subHeading('the box: "process/js servers start and run as they do now."');
-    const fileServer = await liveJob(N.base, 'process/js/fileServer');
-    ok(!!fileServer, 'the intrinsic fileServer runs, under its old module id', 'no job for process/js/fileServer');
-    const oldOne = await liveJob(N.base, 'process/js/chatClerver');
-    ok(!!oldOne, 'a server with home true in its sidecar runs, under its old module id', 'no job for process/js/chatClerver: ' + short((await jobsOf(N.base)).filter(function (j) { return j.kind === 'server'; }).map(function (j) { return j.module; })));
-    const chats = await call(N.base, 'chatClerver.chats.search', {});
-    ok(chats.status === 200 && !!chats.body && chats.body.ok !== false, 'its verb answers', 'chatClerver.chats.search: ' + short(chats.text));
-    const oldFace = (await call(N.base, 'api', { family: 'chatClerver' })).body || {};
-    ok(String(oldFace.interface || '').indexOf('chat.read') !== -1, 'its interface is still the api.js in its family folder', 'api {family: chatClerver}: ' + short(oldFace));
-    const oldAt = (await call(N.base, 'chatClerver.FS.path', { path: 'api.js' })).body || {};
-    ok(oldAt.path === familyPath('chatClerver'), 'FS.path still names what the family path function names', 'FS.path: ' + short(oldAt));
-    if (POSIX) ok(fs.existsSync(path.join(s.run, 'relay-state', 'process', 'chatClerver', 'door.sock')), 'its door stays in relay-state/process', 'no door in relay-state/process/chatClerver');
-    ok(fs.existsSync(path.join(s.run, 'spirit', 'state', 'chatClerver', 'data', 'memory.db')), 'its state stays in its data/', 'no memory.db in spirit/state/chatClerver/data');
-    const notHome = await call(N.base, 'jobs.create', { command: 'node', args: ['process/js/counterServer/counterServer.js'], type: 'the red' });
-    ok(notHome.status >= 400 && !!notHome.body && notHome.body.code === 'process-not-included', 'a process without its home switch is refused as ever', 'jobs.create on counterServer: ' + short(notHome.text));
     const otherPlace = await call(N.base, 'jobs.create', { command: 'node', args: ['shell/planted.js'], type: 'the red' });
-    ok(otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process', 'a script outside the two places is refused by name', 'jobs.create on shell/planted.js: ' + short(otherPlace.text));
-    const sidecarOff = await call(N.base, 'fs.annotate', { path: 'process/js/chatClerver/chatClerver.js', payload: { home: false } });
-    ok(sidecarOff.status >= 200 && sidecarOff.status < 300, 'the world: its home switch is turned off', 'fs.annotate: ' + sidecarOff.status + ' ' + short(sidecarOff.text));
-    ok(await until(function () { return liveJob(N.base, 'process/js/chatClerver').then(function (j) { return !j; }); }, 15000), 'its sidecar still stops it while the node runs', 'its sidecar did not stop it');
+    ok(otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process', 'a script outside spirit/app is refused by name', 'jobs.create on shell/planted.js: ' + short(otherPlace.text));
 
     test.subHeading('the box: "No gate changes for a caller: once a server is registered, the door and the grants go by its name."');
     const reached = [];
@@ -226,14 +205,14 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     // What a client kept of a sender comes back only when that sender's family has a data.js here.
     const SENDER = 'MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=';
     const kept = async function (family) {
-      const folder = path.join(s.run, 'spirit', 'state', 'follower');
+      const folder = path.join(s.run, 'spirit', 'state', 'follower', 'cache');
       fs.rmSync(folder, { recursive: true, force: true });
       fs.mkdirSync(folder, { recursive: true });
       const id = spawnSync(process.execPath, ['-e', "process.stdout.write(require('./spirit/data.js').nodeId(" + JSON.stringify(SENDER) + "))"], { cwd: s.run, encoding: 'utf8' }).stdout;
       fs.writeFileSync(path.join(folder, id + '.json'), JSON.stringify({ key: SENDER, family: family, run: 'r', n: 1, rows: [{ kept: family }] }));
       const seen = path.join(s.root, 'row-seen.json');
       fs.rmSync(seen, { force: true });
-      const pipe = require(path.join(s.run, 'spirit', 'appClient.js')).pipePathFor(s.root, 'follower', process.platform, 'process');
+      const pipe = require(path.join(s.run, 'spirit', 'appClient.js')).pipePathFor(s.root, 'follower', process.platform);
       if (POSIX) fs.mkdirSync(path.dirname(pipe), { recursive: true });
       const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, 'follower.js'), '--pipe', pipe], { cwd: s.run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen }) });
       live.push(kid);
@@ -241,8 +220,8 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
       await stop(kid);
       return readJson(seen);
     };
-    const keptOld = await kept('chatClerver');
-    ok(!!keptOld && keptOld.kept === 'chatClerver', 'the world: a client gets back what it kept of an old family', 'kept of chatClerver: ' + short(keptOld));
+    const keptOld = await kept('contact');
+    ok(!!keptOld && keptOld.kept === 'contact', 'the world: a client gets back what it kept of a node family', 'kept of contact: ' + short(keptOld));
     const keptNone = await kept('noSuchFamily');
     ok(!keptNone, 'the world: and nothing of a family with no data.js here', 'kept of noSuchFamily: ' + short(keptNone));
     const keptNew = await kept(NAME);
@@ -270,7 +249,7 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     const job = await liveJob(N.base, MODULE);
     ok(!!job, 'its server job has the module id ' + MODULE, 'no live server job with that id: ' + short((await jobsOf(N.base)).filter(function (j) { return j.kind === 'server'; }).map(function (j) { return j.module; })));
 
-    test.subHeading('the box: "node.mount true means a server the node runs, with no arguments. The old kind and operated stay with process/js"');
+    test.subHeading('the box: "node.mount true means a server the node runs, with no arguments"');
     const own = readJson(path.join(s.run, 'spirit', 'app', NAME, NAME + '.json')) || {};
     ok(own.node && own.node.mount === true && !('kind' in own) && !('operated' in own), 'the world: its <name>.json has neither, and it runs', 'the fixture\'s json: ' + short(own));
     ok(!!job && job.data && job.data.operated === 'node', 'the node operates it', 'its job: ' + short(job && job.data));
@@ -280,7 +259,6 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
       // Where the door lies is the requirement here, so its path is read and never connected to: a call goes through the node.
       const door = path.join(state(), 'door.sock');
       ok(fs.existsSync(door) && fs.statSync(door).isSocket(), 'its door is a socket in spirit/state/' + NAME + '/', 'no socket at spirit/state/' + NAME + '/door.sock');
-      ok(!fs.existsSync(path.join(s.run, 'relay-state', 'process', NAME, 'door.sock')), 'and none in relay-state/process', 'a door in relay-state/process/' + NAME);
       ok(!fs.existsSync(path.join(state(), 'data', 'door.sock')), 'and none in its data/', 'a door in its data/');
     }
     ok(path.resolve(String(first.state)) === path.join(state(), 'data'), 'the node hands it spirit/state/' + NAME + '/data as --state', '--state: ' + short(first.state));
@@ -295,9 +273,10 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     const j2 = nodeJson() || {};
     ok(j2.active === true && !('running' in j2), 'and active stays true through that', 'node.json after the kill: ' + short(j2));
 
-    test.subHeading('the box: a script of an active app may start');
+    test.subHeading('goal/G43.20, the box: "A second script in an app folder is therefore never started."');
     const activeHelper = await startIt('spirit/app/' + NAME + '/helper.js', ranHelper);
-    ok(activeHelper.status === 201 && !!(await until(function () { return Promise.resolve(fs.existsSync(ranHelper)); }, 10000)), 'a helper of an active app runs', 'jobs.create on an active app: ' + short(activeHelper.text) + ', ran: ' + fs.existsSync(ranHelper));
+    await sleep(1500);
+    ok(refused(activeHelper) && !fs.existsSync(ranHelper), 'a helper of an active app is refused, and does not run', 'jobs.create on a helper of an active app: ' + short(activeHelper.text) + ', ran: ' + fs.existsSync(ranHelper));
 
     test.subHeading('a page and a process bind it by its name (the box: "A page changes nothing. It binds a family by its name, and the node finds the folder."; "data.js sits beside <name>.js ... and the lookups follow it")');
     const where = findChrome();
@@ -309,8 +288,6 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
         await chrome.send('Page.navigate', { url: N.base + '/' });
         ok(await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000), 'the world: the page has its spirit', 'the page has no spirit');
         const onPage = function (expr) { return chrome.evaluate('Promise.resolve().then(function () { return ' + expr + '; }).then(function (v) { return JSON.stringify({ v: v }); }, function (e) { return JSON.stringify({ e: String(e && (e.code || e.message) || e) }); })').then(parsed); };
-        const control = await onPage("spirit.ready.then(function () { return spirit.require(spirit.familyPath('fileServer')); }).then(function (f) { return typeof f.FS; })");
-        ok(!!control && control.v === 'object', 'the world: a page binds an old server\'s family', 'a page binding fileServer: ' + short(control));
         const pinged = await onPage("spirit.ready.then(function () { return spirit.require(spirit.familyPath('" + NAME + "')); }).then(function (f) { return f.ping({}); })");
         ok(!!pinged && !!pinged.v && Number(pinged.v.pid) > 0, 'a page binds the new family by its name, and its verb answers', 'a page binding ' + NAME + ': ' + short(pinged));
         const managed = await onPage("spirit.cacheManager('" + NAME + "').then(function () { return window.__appData; })");
@@ -320,10 +297,10 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
       }
     }
     const inNode = function (family) {
-      const r = spawnSync(process.execPath, ['-e', "require('./spirit.js'); spirit.cacheManager(" + JSON.stringify(family) + ").then(function () { console.log('found ' + (global.__appData || '')); process.exit(0); }, function (e) { console.log('not found ' + (e && (e.code || e.message))); process.exit(0); });"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
+      const r = spawnSync(process.execPath, ['-e', "require('./spirit/spirit.js'); spirit.cacheManager(" + JSON.stringify(family) + ").then(function () { console.log('found ' + (global.__appData || '')); process.exit(0); }, function (e) { console.log('not found ' + (e && (e.code || e.message))); process.exit(0); });"], { cwd: s.run, encoding: 'utf8', timeout: 30000 });
       return String(r.stdout || '').trim();
     };
-    ok(/^found/.test(inNode('deskClient')), 'the world: a process finds an old family\'s data.js', 'a process, deskClient: ' + short(inNode('deskClient')));
+    ok(/^found/.test(inNode('deskClient')), 'the world: a process finds a tree app\'s data.js', 'a process, deskClient: ' + short(inNode('deskClient')));
     ok(inNode(NAME) === 'found ' + NAME, 'a process finds the new family\'s data.js', 'a process, ' + NAME + ': ' + short(inNode(NAME)));
 
     test.subHeading('the box: "turning "active" will NOT take the row out of the list"; and off stops it');

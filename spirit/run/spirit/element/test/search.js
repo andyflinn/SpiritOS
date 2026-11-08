@@ -338,8 +338,8 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   const bound = [];
   const S = window.spirit;
   S.ready = Promise.resolve({ srv: fam('srv'), desk: fam('desk') });
-  S.familyPath = function (n) { return 'process/js/' + n + '/family/api.js'; };
-  S.require = function (p) { bound.push(p); return Promise.resolve(fam(/process\/js\/([^/]+)\//.exec(p)[1])); };
+  S.familyPath = function (n) { return 'spirit/app/' + n + '/api.js'; };
+  S.require = function (p) { bound.push(p); return Promise.resolve(fam(/^spirit\/app\/([^/]+)\//.exec(p)[1])); };
   S.outcome = function (c) {
     return Promise.resolve(c).then(function (body) { return { status: 200, body: body }; },
       function (e) { return { status: (e && e.status) || 0, body: (e && e.body) || null }; });
@@ -361,7 +361,7 @@ ok(M('anything', '').length === 0 && M('anything', '   ').length === 0 && M(null
   const Lo = PS.create(co, { server: 'other', verb: 'find', rows: function () { return []; }, columns: [{ field: 'name' }] });
   co.type('x');
   await tick(); await tick(); await tick();
-  ok(bound.indexOf('process/js/other/family/api.js') !== -1 && asked[asked.length - 1].name === 'other.find',
+  ok(bound.indexOf('spirit/app/other/api.js') !== -1 && asked[asked.length - 1].name === 'other.find',
     'a family not on spirit.ready is bound through spirit.require(spirit.familyPath(name))', 'bound: ' + short(bound) + ', asked ' + short(asked[asked.length - 1]));
   Lo.destroy();
   const cd = container();

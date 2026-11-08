@@ -21,7 +21,6 @@ A server's DEBUG, as a rowFormToggle (goal/G43.15). Its test is `./serverDEBUG.j
 
 - Switched, the node writes `debug` into `spirit/state/<name>/node.json`.
 - A killed server comes back with the DEBUG it had, and so after a restart of the node.
-- An old process/js server's DEBUG writes no `node.json` (Q3: *"only the new ones."*).
 
 ### In the appSelector's detail
 

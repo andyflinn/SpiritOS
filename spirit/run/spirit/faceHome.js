@@ -5,13 +5,13 @@
 //   - The home node answers face requests through the same door a puppeteer uses on it: the local shell's whole
 //     interface. (Since goal/G43.18 a face is whole or none: only the star, contact.own, is refused; below.)
 //   - It streams to the face what it streams to its loopback shell.
-//   - faceStream has its own serializing queue, in priority order: 1. face requests, 2. the fs-watcher stream, 3. the
+//   - faceStream has its own serializing queue, in priority order: 1. face requests, 2. the spirit.fs job stream, 3. the
 //     presence stream, 4. the app servers' streams, 5. stats, dropped whenever the queue is busy. (The node-monitor
 //     this box held back is sent since goal/G41.33, which overruled it: every job and relay event, at 4.) Route
 //     updates go only to the home node, never to the face.
 //   - One event a line. An answer to a face request goes out on its own, at once. All other events are bundled:
 //     whatever is waiting goes out together in the next write, each still its own whole line. Nothing is merged, the
-//     fs-watcher's events are never dropped, and a face that falls behind catches up in one write.
+//     spirit.fs's events are never dropped, and a face that falls behind catches up in one write.
 //   - Presence peer by peer: one event for each peer whose presence changed, not the whole table each time.
 //
 // HOW IT RIDES THE RELAY (goal/G30.14, relay.js faceCall .. faceFeed): the relay puts the face's request on this
@@ -293,14 +293,6 @@ function createFaceHome(opts) {
     if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     const verb = r.call;
     const args = r.args;
-    // THE FACE'S OWN PART OF A SIDECAR (goal/G30.21). The node knows this request came from the face, so its fs.annotate
-    // writes the face part and never reaches the door, whose fs.annotate writes the client part.
-    if (verb === 'fs.annotate' && typeof o.annotateFace === 'function') {
-      const out = (args.payload && typeof args.payload === 'object') ? o.annotateFace(String(args.path || ''), args.payload) : { ok: false, reason: 'bad-payload' };
-      if (out && out.ok) json(res, 200, { ok: true });
-      else json(res, out && out.reason === 'file-not-found' ? 404 : 400, { ok: false, code: (out && out.reason) || 'refused', error: 'the face part was not written: ' + ((out && out.reason) || 'refused') });
-      return;
-    }
     Promise.resolve(o.call(verb, args)).then(function (a) {
       const status = (a && a.status) || 500;
       if (a && a.body !== undefined && a.body !== null) json(res, status, a.body);
@@ -309,23 +301,17 @@ function createFaceHome(opts) {
   }
 
   // What the loopback shell gets, sorted into the box's priorities; anything else answers 0, and its callers send it at
-  // the app servers' priority (goal/G41.33: every job reaches a face). An app server is a process/js module publishing
-  // an app object (puppetStream's test of the same thing).
+  // the app servers' priority (goal/G41.33: every job reaches a face). The node's own jobs by their route (goal/G43.20).
   function priorityOf(job) {
     if (!job) return 0;
-    if (job.type === 'fs-watcher') return FACE_PRIORITY.fs;
-    if (job.type === 'server-stats') return FACE_PRIORITY.stats;
-    // The network search's rows (goal/G30.19), each one update, beside presence: Contacts on the face fills as at home.
-    if (job.type === 'peer-search') return FACE_PRIORITY.presence;
-    // The one table's rows as they change (goal/G40.11; goal/G40.10, Andy: "onBoards face https://master.noderoutes.net/
-    // did not update its relay dropdowns"): the shadow job, so the forms, Info and Contacts on the face redraw as at home.
-    if (job.type === 'shadow') return FACE_PRIORITY.presence;
-    // AN APP'S FACE PART AS IT CHANGES (goal/G41.1, box v15), so every app installer and the face's boot follow it.
-    if (job.type === 'app-face') return FACE_PRIORITY.app;
-    if (/^process\/js\/[^/]+$/.test(String(job.module || '')) && job.app && typeof job.app === 'object') return FACE_PRIORITY.app;
-    // EVERY APPSERVER'S STATUS (goal/G41.1, box v14: "the node streams each appServer's status to the face shell"), so
-    // the face shows an app only while its server runs (goal/G27.16): a server job of a process/js module, slim.
-    if (job.kind === 'server' && /^process\/js\/[^/]+$/.test(String(job.module || ''))) return FACE_PRIORITY.app;
+    if (job.id === 'spirit.fs') return FACE_PRIORITY.fs;
+    if (job.id === 'spirit' && job.data && job.data.stats) return FACE_PRIORITY.stats;
+    // THE CONTACT JOB (goal/G40.11, goal/G30.19; Andy: "onBoards face https://master.noderoutes.net/ did not update its relay
+    // dropdowns"): its rows and its search hits, so the forms, Info and Contacts on the face redraw as at home.
+    if (job.id === 'spirit.contact') return FACE_PRIORITY.presence;
+    // EVERY APP SERVER'S STATUS AND WHAT IT PUBLISHES (goal/G41.1, box v14: "the node streams each appServer's status to
+    // the face shell"), so the face shows an app only while its server runs (goal/G27.16).
+    if (/^spirit\.app\.[^.]+$/.test(String(job.id || '')) && (job.kind === 'server' || (job.app && typeof job.app === 'object'))) return FACE_PRIORITY.app;
     return 0;
   }
   // EVERY OPEN FACE ON A STARRED RELAY (goal/G43.18, box v29: "The home node answers a face only from a starred relay"): a
@@ -353,7 +339,7 @@ function createFaceHome(opts) {
   }
 
   function onJob(job) {
-    if (job && job.type === 'relay-presence') {
+    if (job && job.id === 'spirit.contact' && job.data && job.data.presence) {
       presenceChanged(job.data && job.data.presence).forEach(function (p) { toFaces(FACE_PRIORITY.presence, { event: 'presence', data: p }); });
       return;
     }
@@ -397,14 +383,15 @@ function createFaceHome(opts) {
     // star comes (toFaces); a star taken off takes the face itself away.
     if (!faceIsOwned(url)) { say('face: ' + url + ' opened its stream, and that relay has no star: it carries nothing'); return; }
     const all =(jobs && typeof jobs.listJobs === 'function') ? jobs.listJobs() : [];
-    const fsJob = all.filter(function (j) { return j.type === 'fs-watcher'; })[0];
+    const fsJob = all.filter(function (j) { return j.id === 'spirit.fs'; })[0];
     if (fsJob && typeof jobs.fsTreeCommands === 'function') {
       jobs.fsTreeCommands().forEach(function (command) {
         face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { command: command } }) });
       });
       face.queue.push(FACE_PRIORITY.fs, { event: 'job-updated', data: Object.assign({}, fsJob, { data: { treeComplete: true } }) });
     }
-    const table = (all.filter(function (j) { return j.type === 'relay-presence'; })[0] || {}).data;
+    const contact = all.filter(function (j) { return j.id === 'spirit.contact'; })[0];
+    const table = contact && typeof jobs.newsOf === 'function' ? jobs.newsOf(contact).map(function (one) { return one.data; }).filter(function (d) { return d && d.presence; })[0] : null;
     const now = (table && table.presence) || {};
     presence = Object.assign(Object.create(null), now);
     Object.keys(now).forEach(function (key) {
@@ -412,9 +399,13 @@ function createFaceHome(opts) {
     });
     // A FACE THAT OPENS GETS THE JOBS A LOOPBACK PAGE GETS ON CONNECT (goal/G41.33, the box's line 1; events.js, the
     // snapshot), the tree and presence as above.
-    all.forEach(function (j) { if (j.type !== 'fs-watcher' && j.type !== 'relay-presence') face.queue.push(priorityOf(j) || FACE_PRIORITY.app, { event: 'job-updated', data: j }); });
-    // NO SNAPSHOT OF THE SHADOW JOB: it holds the one row that changed last, not the table; a face opened reads its
-    // relays and contacts as it draws, and hears every change after (goal/G40.11).
+    // Each kind of the node's own news once, as its own event (goal/G43.20), the contact job's presence above and not its
+    // rows: a contact row is the one row that changed last, not the table; a face opened reads its relays and contacts as it
+    // draws, and hears every change after (goal/G40.11).
+    all.forEach(function (j) {
+      if (j.id === 'spirit.fs' || j.id === 'spirit.contact') return;
+      (j.kind === 'permanent' && typeof jobs.newsOf === 'function' ? jobs.newsOf(j) : [j]).forEach(function (one) { face.queue.push(priorityOf(one) || FACE_PRIORITY.app, { event: 'job-updated', data: one }); });
+    });
   }
 
   function close(url) {

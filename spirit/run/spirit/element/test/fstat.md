@@ -12,4 +12,5 @@ Andy's box: *"It replaces fileViewer, which is renamed and trimmed into it, then
   - `mimeOf` reads the extension, case ignored; none is `application/octet-stream`.
   - `kindOf`: image, audio, video, code (text, javascript, json), or null.
   - `read` goes through the sealed link on a face, a leading slash dropped, each piece handed on; at home the node's own GET, streamed.
-- `create(host, { path })` asks `fs.stat` and `fs.annotations` for the file.
+- `create(host, { path })` asks `fs.stat` for the file, and no annotations (goal/G43.20; Andy: *"ANNOTATIONS WILL BE NODE
+  ONLY."*).

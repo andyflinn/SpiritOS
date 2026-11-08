@@ -6,7 +6,8 @@
 //
 //   fstat.create(host, { path }) -> { path, slot(name) }
 //     Top down: the hidden pane (slot 'body', shown once a viewer asks for it), the facts (MIME type at once, then size,
-//     changed and created when fs.stat answers), the annotations ("More Information", fs.annotations' face part).
+//     changed and created when fs.stat answers). No annotations: they are the node's only (goal/G43.20; Andy:
+//     "ANNOTATIONS WILL BE NODE ONLY.").
 //     It asks nothing of the old shell (Q9: "the new stuff MUST NOT require old stuff.").
 //   fstat.read(path, onPiece) -> Promise<{ status, type, bytes }>
 //     A file of the home node. On a face it comes through the sealed link, window.spirit.transport.file, each piece
@@ -21,7 +22,7 @@
     var f = sp().escapeHtml;
     return f ? f(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  // Through the spirit object (goal/G32.2): fs.stat and fs.annotations, null where the node refuses.
+  // Through the spirit object (goal/G32.2): fs.stat, null where the node refuses.
   function ask(verb, args) {
     var name = String(verb).replace(/^fs\./, '');
     return (window.spirit && window.spirit.ready ? window.spirit.ready : Promise.reject(new Error('no spirit object')))
@@ -97,42 +98,19 @@
     });
   }
 
-  // Annotation keys are tools' camelCase; arrays fold behind a details; a number past 1e11 is a date in ms.
-  function prettify(key) { return key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, function (c) { return c.toUpperCase(); }); }
-  function infoRow(label, value) { return '<div class="file-info-row"><span class="file-info-label">' + label + ':</span><span class="file-info-value">' + value + '</span></div>'; }
-  function valueHtml(v) {
-    if (v === null || v === undefined) return '<em>none</em>';
-    if (Array.isArray(v)) return '<details class="annotation-raw"><summary>' + v.length + ' value' + (v.length === 1 ? '' : 's') + '</summary><pre class="code-view">' + esc(JSON.stringify(v, null, 2)) + '</pre></details>';
-    if (typeof v === 'object') return '<div class="stat-tile nested">' + Object.keys(v).map(function (k) { return infoRow(esc(prettify(k)), valueHtml(v[k])); }).join('') + '</div>';
-    if (typeof v === 'number' && v > 1e11) return esc(new Date(v).toLocaleString());
-    return esc(String(v));
-  }
-  function annotationManager(host, path) {
-    host.innerHTML = '';
-    return ask('fs.annotations', { path: path }).then(function (a) {
-      // The face part, the one part (goal/G41.1, box v15): the old shell's client part is gone.
-      var client = a && a.face;
-      if (!client || !Object.keys(client).length) return;
-      host.innerHTML = '<h3>More Information</h3>' + Object.keys(client).map(function (k) {
-        return '<div class="stat-tile wide"><h4>' + esc(prettify(k)) + '</h4>' + valueHtml(client[k]) + '</div>';
-      }).join('');
-    });
-  }
-
   function create(host, opts) {
     var o = opts || {};
     var path = String(o.path || '');
     // SPACE GRANTED TOP-DOWN (rule/16, goal/G41.7): the frame is a fill column and its pane a fill box, so what fills it takes
-    // what the facts and the notes leave it and scrolls inside itself.
+    // what the facts leave it and scrolls inside itself.
     host.innerHTML = '<div class="stack fill">' +
-      '<div data-part="body" class="fill"></div><div data-part="facts"></div><div data-part="notes"></div></div>';
+      '<div data-part="body" class="fill"></div><div data-part="facts"></div></div>';
     function part(name) { return host.querySelector('[data-part="' + name + '"]'); }
     // THE PANE STAYS INVISIBLE UNTIL FILLED (the box): a viewer that asks for it shows it.
     var body = part('body');
     if (body) body.hidden = true;
     function slot(name) { var s = part(name); if (s && name === 'body') s.hidden = false; return s; }
     factsView(part('facts'), path);
-    annotationManager(part('notes'), path);
     return { path: path, slot: slot };
   }
 

@@ -6,7 +6,7 @@ grant on the item. It needs nothing of the desk's.
 ## Its parts
 
 - `INTRINSIC`: the coded list of app and server folders whose code is core.
-- `intrinsic(folder)`: true for an app folder (`shell/<name>`, `process/js/<name>`) on that list, or a path inside one,
+- `intrinsic(folder)`: true for an app folder (`shell/<name>`) on that list, or a path inside one,
   with or without the leading `spirit/run/`.
 - `isCore(repoPath, repoRoot)`: true when the repo-relative, `/`-separated path is core.
 
@@ -16,7 +16,7 @@ grant on the item. It needs nothing of the desk's.
 
 - The face's boot: `spirit/shell/face.html`, `spirit/shell/boot.js`, `spirit/shell/seal.js`, `spirit/shell/face.css`, `spirit/shell/favicon.svg`.
 - Join, whole: every file under `shell/join/`, its `.json` included. The login app went (goal/G43.18, box v29: the login is spirit.login).
-- Never a manifest: `shell/<name>/<name>.json` and `process/js/<name>/<name>.json`, an intrinsic app's included.
+- Never a manifest: `shell/<name>/<name>.json`, an intrinsic app's included.
 - Everything under `spirit/run/spirit/`, `spirit/run/spirit/element/`, `spirit/run/shell/json/` and `spirit/run/test/`.
 - CodeMirror in `spirit/run/spirit/element/codeMirror/`, which `spirit/shell/index.html` loads on every boot (goal/G41.30,
   the review's H5; Andy: *"shell/node_modules/codemirror/ MUST BE \"core\""*).

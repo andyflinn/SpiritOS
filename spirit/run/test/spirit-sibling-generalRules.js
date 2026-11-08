@@ -52,12 +52,9 @@ const NAMED = ADDRESS.slice('/DEBUG'.length);
 // an app (from the path pattern), why the fuck would would it need manifests for standard patterns?",
 // "the test knows fucking well, which are elements scripts in ./shell/js/"): an app is shell/<app>/<app>.js, an element any script
 // under spirit/element/. Anything else in its reach is neither, and is not mounted.
-// THE AGENT TABLES' PAGES ARE ELEMENTS TOO (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element
-// (process/js/agent/table/tableElement.js), its row editor (rowElement.js, goal/G41.28) and each table's list and
-// editor (<table>/elementTable.js, elementRow.js).
-// Their servers beside them are not pages, and are not mounted. The agent tables now live in spirit/app/agent/table/
-// (goal/G43.12), which the process/js/agent/table/ pattern below no longer matches; there they are neither, and are not
-// mounted. spirit/app/agent/agent.js is an element by the new-folder rule.
+// THE AGENT TABLES' PAGES (goal/G41.27; Andy, Q5: "it covers them, too"): the tables' shared element, its row editor
+// (goal/G41.28) and each table's list and editor live in spirit/app/agent/table/ since goal/G43.12, which no pattern below
+// matches; there they are neither, and are not mounted. spirit/app/agent/agent.js is an element by the new-folder rule.
 function kindOf(file) {
   const f = String(file || '');
   if (/^spirit\/element\/.+\.js$/.test(f)) return 'element';
@@ -65,16 +62,13 @@ function kindOf(file) {
   if (/^spirit\/app\/appSelector(\/[^/]+)?\.js$/.test(f)) return 'element';
   // AN APP IN THE NEW FOLDER IS AN ELEMENT TOO (goal/G43.2; Andy, box: "both of these apps are face-app skeletons (elements)").
   if (/^spirit\/app\/([^/]+)\/\1\.js$/.test(f)) return 'element';
-  if (/^process\/js\/agent\/table\/(tableElement|rowElement|[^/]+\/element(Table|Row))\.js$/.test(f)) return 'element';
   const m = /^shell\/([^/]+)\/([^/]+)\.js$/.exec(f);
   return m && m[1] === m[2] ? 'app' : '';
 }
 const WAIT = 20000;
 // THE SERVERS ITS PAGES STAND ON, TURNED ON (goal/G41.28): the agent tables' pages draw the agent family's cache, which
 // is there only while the agent server runs. Its owner turns it on; so does the scratch node, so its pages are judged
-// as they are used, not refused. scratchNode writes a process/js/<name>/ server's face.home sidecar for it; agent is an
-// app of spirit/app/ now, run by active in spirit/state/agent/node.json (spirit/jobs.js), so that sidecar no longer
-// starts it.
+// as they are used, not refused: scratchNode turns it on by active in spirit/state/agent/node.json (spirit/jobs.js).
 const SERVERS = { servers: ['agent'] };
 // A REDRAW PROVED IN THE PAGE'S OWN TEST (Andy, Q24, "yes."): a page whose watch draws only for an item open, which a
 // bare mount never has; its own test's check, by its words, stands for it here.

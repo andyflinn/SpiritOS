@@ -3,7 +3,8 @@
 // spirit/run/spirit/joinStepsJob.js
 // WHERE THE JOIN STEPS STAND, AS A STREAM (goal/G30.1, box v40). Andy, 2026-10-20: "does the fucking new element even
 // carry its own listener, that keeps the screen untouched until a streamed event actually affects it?", then "FIX IT
-// RIGHT". So the node keeps one permanent job, join-steps, the way presenceNode keeps relay-presence: the facts the
+// RIGHT". So the node publishes its join news on its own job, spirit, as data.join (goal/G43.20), the way presenceNode
+// publishes presence on spirit.contact: the facts the
 // Join app's steps end on, read from this node's own records, published only when they change. The shell's tile and
 // the Join app hear it and draw only then; nothing asks the node for the steps on a shell message.
 //
@@ -47,14 +48,15 @@ function facts(rootDir) {
 }
 
 function create(rootDir, jobs) {
-  const job = jobs.createJob('permanent', 'join-steps', facts(rootDir));
-  let last = JSON.stringify(job.data);
+  // THE JOIN STEPS ARE NEWS OF spirit (goal/G43.20): { join }, nothing else in it.
+  const job = jobs.ownNews('spirit', 'join', { join: facts(rootDir) });
+  let last = JSON.stringify(job.data.join);
   function refresh(why) {
     const next = facts(rootDir);
     const asJson = JSON.stringify(next);
     if (asJson === last) return false;
     last = asJson;
-    jobs.updateJob(job.id, { data: next, logMessage: String(why || 'changed') });
+    jobs.ownNews('spirit', 'join', { join: next });
     return true;
   }
   return { job: job, facts: function () { return facts(rootDir); }, refresh: refresh };

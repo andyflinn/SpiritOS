@@ -276,6 +276,12 @@ define('not-a-process', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['only this node\'s own processes start'],
 });
+// A START OF A JOB WHOSE ID IS RUNNING OR PENDING (goal/G43.20, Q3: "a job cannot start if it is already running"): one id,
+// one job; a pending one counts as running.
+define('already-running', {
+  status: 409, presence: NONE, retry: 'after', fault: 'caller',
+  texts: ['already running'],
+});
 define('line-too-large', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['line too large to come back in one answer'],

@@ -27,7 +27,6 @@ function formatDuration(ms) {
 // statistics and the job functions are this module's; the node server gets the functions back from this call.
 module.exports = function installJobs(port) {
   const scanFolder = fileSystem.scanFolder;
-  const serverStats = {};
 
   const jobsMap = new Map();
   const events = new EventEmitter();
@@ -38,17 +37,24 @@ module.exports = function installJobs(port) {
   // reads like a leak and isn't one. There is no fixed upper bound worth
   // guessing at, so remove the ceiling rather than raise it.
   events.setMaxListeners(0);
-  let nextId = 1;
 
-  // `module`: the module this job is an instance of (slim/G1.5), its path,
-  // 'process/js/<name>'. Absent on the node's own jobs, which are no module's.
-  function createJob(kind, type, initialData, module) {
-    const id = 'job_' + (nextId++);
+  // A JOB'S ID IS ITS ROUTE IN THE SPIRIT TREE (goal/G43.20; Andy: "they're supposed to identify a "route" in the
+  // spirit-tree, NOT some invented number.", "ALL job id's will be routes to either a node supplied api (spirit.fs, etc...)
+  // or an app supplied id (spirit.app.<name>)"): spirit, spirit.fs, spirit.app.desk. No type: the id says what it is.
+  // ONE JOB PER ID (Q3: "a job cannot start if it is already running"): a start of an id that is running or pending is
+  // refused, already-running; one that ended is replaced, so a new run takes its id over and runs on. `module` is the app
+  // a server or run is an instance of, its route too.
+  function createJob(kind, id, initialData, module) {
+    const old = jobsMap.get(id);
+    if (old && !TERMINAL_STATUSES.has(old.status)) {
+      const e = new Error(id + ' is already running');
+      e.refusal = 'already-running';
+      throw e;
+    }
     const now = Date.now();
     const job = {
       id: id,
       kind: kind,
-      type: type,
       status: kind === 'permanent' ? 'running' : 'pending',
       createdAt: now,
       updatedAt: now,
@@ -59,6 +65,34 @@ module.exports = function installJobs(port) {
     jobsMap.set(id, job);
     events.emit('job-updated', job);
     return job;
+  }
+  // THE NODE'S OWN JOBS, ONE PER FAMILY (goal/G43.20, Q1, Q2): spirit (its stats and join steps), spirit.fs, spirit.app (the
+  // app list), spirit.contact (contacts, peer search hits, presence), spirit.auth. Whoever publishes on one asks
+  // for it by its id; the first ask makes it.
+  function ownJob(id) {
+    const job = jobsMap.get(id);
+    if (job && job.kind === 'permanent' && !TERMINAL_STATUSES.has(job.status)) return job;
+    return createJob('permanent', id, {});
+  }
+  // EACH EVENT CARRIES ONLY ITS OWN NEWS (the box): what one kind of news says replaces the job's data whole, so no event
+  // brings another kind along. The newest news of each kind is kept beside the job (news), never on it, so a page that
+  // connects is handed each kind once as its own event (newsOf, events.js and faceHome.js), as one that was there heard it.
+  const newsKept = new Map();      // id -> { kind: data }
+  function ownNews(id, kind, data) {
+    const job = ownJob(id);
+    const kept = newsKept.get(id) || {};
+    kept[kind] = data;
+    newsKept.set(id, kept);
+    job.data = data;
+    job.updatedAt = Date.now();
+    events.emit('job-updated', job);
+    return job;
+  }
+  // A job as many times as it has kinds of news, each a copy carrying that one news: what a page that connects is handed.
+  function newsOf(job) {
+    const kept = job ? newsKept.get(job.id) : null;
+    if (!kept) return job ? [job] : [];
+    return Object.keys(kept).map(function (kind) { return Object.assign({}, job, { data: kept[kind] }); });
   }
 
   function appendLog(job, message) {
@@ -169,7 +203,7 @@ module.exports = function installJobs(port) {
   // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
   // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
   // commands from fsTreeCommands (events/events.js, faceHome.js). The tree is seeded from scanFolder, so it skips what that skips
-  // (fileSystem.js's vendored folders, .git, anything fileServable refuses, relay-state among them); chokidar is asked to ignore the same,
+  // (fileSystem.js's vendored folders, .git, anything fileServable refuses, the node's state among them); chokidar is asked to ignore the same,
   // and reports at startup what the seed already holds, which sends nothing.
   const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
   const RUN_ROOT = path.join(__dirname, '..');
@@ -215,26 +249,15 @@ module.exports = function installJobs(port) {
     const tree = new Map();
     scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); tree.set(m.relativePath, statOf(m.fullPath, m.kind)); });
     fsTree = tree;
-    const job = createJob('permanent', 'fs-watcher', {});
-    // AN APP'S FACE PART, STREAMED (goal/G41.1, box v15: "the node streams an app's face part whenever its sidecar
-    // changes, and every app installer button listens to it"): one job, its data the app's script and its face part as
-    // the sidecar now holds it ({} once the sidecar is gone).
-    const faces = createJob('permanent', 'app-face', {});
-    const publishFace = function (rel, full, op) {
-      let side = null;
-      if (op !== 'deleteFile') { try { side = JSON.parse(fs.readFileSync(full, 'utf8')); } catch (e) { side = null; } }
-      const script = scriptOfSidecar(rel);
-      const face = Object.assign({}, (side && side.face && typeof side.face === 'object') ? side.face : {}, { intrinsic: require('./coreFiles').intrinsic(script) });
-      updateJob(faces.id, { data: { path: script, face: face } });
-    };
+    // THE NODE'S FILES ARE spirit.fs (goal/G43.20).
+    const job = ownJob('spirit.fs');
+    // No face part is streamed: the old shell's face parts are gone (goal/G43.20; Andy: "drop the old shells face parts
+    // altogether."), so spirit.app carries the app list alone.
     const relOf = function (full) { return path.relative(rootDir, full).split(path.sep).join('/'); };
     const ignored = function (full) {
       const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
       if (!rel || rel.indexOf('..') === 0) return false;
       if (rel.split('/').some(function (part) { return part === '.git'; }) || fileSystem.VENDORED_FOLDERS.holds(rel)) return true;
-      // A NODE'S OWN SIDECARS ARE HEARD (goal/G41.1): the folders of the node's state down to them, and the sidecars,
-      // never served and kept out of the tree.
-      if (APP_SIDECAR.test(rel) || STATE_DIR.test(rel)) return false;
       return !fileSystem.fileServable(rel);
     };
     const watcher = require('./jobs/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
@@ -242,8 +265,6 @@ module.exports = function installJobs(port) {
       const op = FS_OPS[event];
       const rel = full ? relOf(full) : '';
       if (!op || !rel || rel.indexOf('..') === 0) return;
-      if (APP_SIDECAR.test(rel)) { publishFace(rel, full, op); if (SIDECAR.test(rel)) followHome(rootDir, rel); return; }
-      if (STATE_DIR.test(rel) && !fileSystem.fileServable(rel)) return;
       if (op === 'createFile' || op === 'createDirectory') {
         const kind = op === 'createDirectory' ? 'folder' : 'file';
         if (tree.has(rel) && tree.get(rel).kind === kind) return; // already held: the startup report, or a repeat
@@ -269,7 +290,6 @@ module.exports = function installJobs(port) {
 
     job._stop = function() {
       watcher.close();
-      cancelJob(faces.id);
       if (fsTree === tree) fsTree = null;
     };
 
@@ -312,12 +332,15 @@ module.exports = function installJobs(port) {
 
   function startProcessJob(command, args, options) {
     options = options || {};
-    const job = createJob('process', options.type || command, {
+    // Its id is its app's route, spirit.app.<name> (goal/G43.20): a second start while it runs is refused here.
+    const p = appOf((args || [])[0], options.cwd);
+    const route = 'spirit.app.' + (p ? p.name : '');
+    const job = createJob('process', route, {
       command: command,
       args: args || [],
       progress: 0,
       exitCode: null,
-    }, moduleOf((args || [])[0], options.cwd));
+    }, route);
 
     const child = launch(job, command, args, options.cwd);
 
@@ -368,15 +391,16 @@ module.exports = function installJobs(port) {
     // a restart method", so it does not come back by itself.
     const operated = options.operated === 'user' ? 'user' : 'node';
     const restart = operated === 'node';
-    // Its module is read off its script's path. (options.module, which only
-    // appClient.startAll ever passed, left with it: goal/G19.10.)
-    const job = createJob('server', options.type || command, {
+    // Its id is its app's route, spirit.app.<name>, read off its script's path (goal/G43.20).
+    const p = appOf((args || [])[0], options.cwd);
+    const route = 'spirit.app.' + (p ? p.name : '');
+    const job = createJob('server', route, {
       command: command,
       args: args || [],
       operated: operated,
       restarts: 0,
       exitCode: null,
-    }, moduleOf((args || [])[0], options.cwd));
+    }, route);
     let child = null;
     let stopped = false;
     let wait = RESTART_MIN_MS;
@@ -427,49 +451,22 @@ module.exports = function installJobs(port) {
     return job;
   }
 
-  // ── WHAT jobs.create STARTS (processes/G1.3) ──────────────────────────
+  // ── WHAT jobs.create STARTS (goal/G43.20) ─────────────────────────────
   //
-  //   Andy's yes on the verb: "YES it's the only existing user door to
-  //   server launch, so we use it." The request is the same as ever
-  //   (command, args, type); the script's own manifest decides. 'kind':
-  //   'server' with 'operated': 'user' starts a user-operated server job;
-  //   anything else is the one-shot process it always was.
-  function manifestOf(script, cwd) {
-    if (typeof script !== 'string' || !/\.js$/.test(script)) return null;
-    const file = path.resolve(cwd || process.cwd(), script).replace(/\.js$/, '.json');
-    try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; }
-  }
-  // ── A SERVER RUNS AT HOME BY ITS OWN SIDECAR (goal/G41.1, box v13) ──────
-  //
-  // Andy: "that clash comes from unauthorized decisions from agents to move the FUCKING manifest shit to a central
-  // list", and the box: "a server's home switch is home: true in its own sidecar, beside its .js
-  // (process/js/<name>/<name>.js.sidecar.json), the only place" (since box v16 that sidecar sits in the node's state,
-  // below). A script under <root>/process/js/<name>/ belongs to the
-  // process <name>, and runs only if the face part of its sidecar says home: true (or its manifest says intrinsic): a
-  // process that does not never runs, so Jobs never shows it. Refused by name, process-not-included, before anything is
-  // spawned. No central list says it: spirit/state/node.json's servers section, and the manifest's runs, are gone.
-  function runsHome(root, name) {
-    try {
-      JSON.parse(fs.readFileSync(path.join(root, 'process', 'js', name, name + '.json'), 'utf8'));
-    } catch (e) { return false; }
-    // AN INTRINSIC SERVER ALWAYS RUNS, by the coded list (goal/G41.1, box v17); any other by the node's own sidecar, in
-    // its state folder (box v16): relay-state/process/<name>/<name>.js.sidecar.json.
-    if (require('./coreFiles').intrinsic('process/js/' + name)) return true;
-    let side = null;
-    try { side = JSON.parse(fs.readFileSync(path.join(root, 'relay-state', 'process', name, name + '.js.sidecar.json'), 'utf8')); } catch (e) { side = null; }
-    return !!(side && side.face && side.face.home === true);
-  }
-  // AN APP OF THE NEW NAMESPACE (goal/G43.12). Andy: "active is exactly that: "running"", and "that's how the node knows, at
-  // re-boot time, which servers it must autostart." active in spirit/state/<name>/node.json is the one switch, for its server
-  // and for every script of its folder. node.mount in spirit/app/<name>/<name>.json says it has a server at all; the old kind
-  // and operated stay with process/js.
+  // Andy: "cw, box that only jobs in the app folder with node:run:true can be started with jobs.create". Its command is
+  // this node's executable (the word node, all a page can say, is read as it), its script an app's own
+  // spirit/app/<name>/<name>.js of this node's tree, and that app's <name>.json says node run true. Anything else is refused
+  // before anything runs: another command or another script, not-a-process; an app without node run, process-not-included.
+  // Its job's id is the app's route, spirit.app.<name>, so a second start while one runs or waits is refused (createJob).
+  // AN APP OF spirit/app/ (goal/G43.12). Andy: "active is exactly that: "running"", and "that's how the node knows, at
+  // re-boot time, which servers it must autostart." active in spirit/state/<name>/node.json is the one switch for its server;
+  // node.mount in spirit/app/<name>/<name>.json says it has a server at all.
   function appActive(root, name) {
     // An intrinsic app is always active (goal/G43.14): its <name>.json says so, and node.json is not asked.
     if (require('./coreFiles').appIntrinsic(path.resolve(root, '..', '..'), name) === true) return true;
     try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).active === true; } catch (e) { return false; }
   }
-  // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21; Andy, the box: "the Andy user on each box will run those scripts when he feels
-  // like it"): node.run in its <name>.json. It has nothing to activate, so a start of it is not refused for being inactive.
+  // AN APP THAT IS RUN, NOT MOUNTED (goal/G43.21): node.run in its <name>.json.
   function appRuns(root, name) {
     try { const own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); return !!(own && own.node && own.node.run === true); } catch (e) { return false; }
   }
@@ -478,85 +475,38 @@ module.exports = function installJobs(port) {
     try { own = JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { return false; }
     return !!(own && own.node && own.node.mount === true) && appActive(root, name);
   }
-  // A script under <root>/process/js/<name>/ or <root>/spirit/app/<name>/, read as {root, name}, the second with app: true; null
-  // for anything else. The one reading of a script's path, for where it runs and for the module a job is an instance of
-  // (slim/G1.5). THE SECOND PLACE IS FOR THE MIGRATION (goal/G43.12, Q3; Andy: "it widens until all processes are migrated, then
-  // it tightens back to the new side...").
-  function processOf(script, cwd) {
+  // An app's own script, <root>/spirit/app/<name>/<name>.js, read as {root, name}; null for anything else, a helper beside
+  // it included. The one reading of a script's path, for whether it may run and for the route its job is.
+  function appOf(script, cwd) {
     if (typeof script !== 'string' || !/\.js$/.test(script)) return null;
     const abs = path.resolve(cwd || process.cwd(), script);
-    const m = /^(.*)[\/\\]process[\/\\]js[\/\\]([^\/\\]+)[\/\\][^\/\\]+\.js$/.exec(abs);
-    if (m) return { root: m[1], name: m[2] };
-    const a = /^(.*)[\/\\]spirit[\/\\]app[\/\\]([^\/\\]+)[\/\\][^\/\\]+\.js$/.exec(abs);
-    return a ? { root: a[1], name: a[2], app: true } : null;
+    const a = /^(.*)[\/\\]spirit[\/\\]app[\/\\]([^\/\\]+)[\/\\]([^\/\\]+)\.js$/.exec(abs);
+    return a && a[2] === a[3] ? { root: a[1], name: a[2] } : null;
   }
-  // THE NODE OWNS EVERY MODULE ID, BY PATH (slim/G1.5). Andy: "what we see in
-  // jobs monitor are ID-instances". The id is the module's path.
-  function moduleOf(script, cwd) {
-    const p = processOf(script, cwd);
-    // Andy: "the id of modules in the new framework is: "spirit.app.<name>" (goal/G43.12).
-    if (p && p.app) return 'spirit.app.' + p.name;
-    return p ? 'process/js/' + p.name : '';
-  }
-  function refuseUnlisted(script, cwd) {
-    const p = processOf(script, cwd);
-    if (!p || (p.app ? (appActive(p.root, p.name) || appRuns(p.root, p.name)) : runsHome(p.root, p.name))) return;
-    const e = new Error('process not included on this node: ' + p.name);
-    e.refusal = 'process-not-included';
-    e.process = p.name;
-    throw e;
-  }
-  // ONLY THIS NODE'S OWN PROCESSES START (goal/G41.30, the review's RH1: "refuse unless command is process.execPath and
-  // args[0] resolves to an included process/js/<name>/<name>.js"; Andy, Q3: "yes."). This node's executable on a script in a
-  // process folder of this node's own tree: <name>.js or a helper beside it, as the desk and deskClient start theirs. The
-  // word node, all a page can say (the file viewer's Start Job), is that executable, and never whatever the path finds.
-  function refuseOther(command, script, cwd) {
-    const p = processOf(script, cwd);
-    const own = (command === process.execPath || command === 'node') && !!p && path.relative(path.resolve(__dirname, '..'), p.root) === '';
-    if (own) return;
-    const e = new Error('only this node\'s own processes start');
-    e.refusal = 'not-a-process';
-    throw e;
+  function refused(code, text, name) {
+    const e = new Error(text);
+    e.refusal = code;
+    if (name) e.process = name;
+    return e;
   }
   function startJob(command, args, options) {
     options = options || {};
-    refuseOther(command, (args || [])[0], options.cwd);
-    refuseUnlisted((args || [])[0], options.cwd);
-    command = process.execPath;
-    const m = manifestOf((args || [])[0], options.cwd);
-    if (m && m.kind === 'server' && m.operated === 'user') {
-      return startServerJob(command, args, { type: options.type, cwd: options.cwd, operated: 'user' });
-    }
-    return startProcessJob(command, args, options);
+    const p = appOf((args || [])[0], options.cwd);
+    const own = (command === process.execPath || command === 'node') && !!p && path.relative(path.resolve(__dirname, '..'), p.root) === '';
+    if (!own) throw refused('not-a-process', 'only an app\'s own script of this node starts');
+    if (!appRuns(p.root, p.name)) throw refused('process-not-included', 'process not included on this node: ' + p.name, p.name);
+    return startProcessJob(process.execPath, args, options);
   }
 
-  // ── THE BOOT'S SCAN OF process/js (processes/G1.3) ────────────────────
+  // ── THE APPS' SERVERS (goal/G43.12) ───────────────────────────────────
   //
-  // Every process whose manifest says 'kind': 'server', 'operated': 'node'
-  // is started with the node, its arguments the manifest's defaults, and
-  // kept running. User-operated ones are left for the user: a node restart
-  // does not bring them back (Andy: "NO").
-  // THE NODE NAMES ITS PIPE (desk/G1.6, appPair D15): each node-operated
-  // server process starts with --pipe <the name the node chose>, and is
-  // registered with `client` (appClient) so 'api' and calls reach it: a
-  // process/js server (desk/G1 D11), and since goal/G43.12 an app of
-  // spirit/app/ too, its door kind 'app'.
-  // ONE SERVER STARTED, ITS JOB KEPT BY NAME (goal/G41.1): at boot for every server that runs at home, and again whenever
-  // its sidecar is written to say so (followHome, below). The node it runs on is the one startNodeServers was handed.
+  // Every app whose <name>.json says node mount true and which is switched on is started with the node, and kept
+  // running. THE NODE NAMES ITS PIPE (desk/G1.6, appPair D15): each server starts with --pipe <the name the node chose>, and
+  // is registered with `client` (appClient) so 'api' and calls reach it. ITS JOB KEPT BY NAME: at boot, and again whenever
+  // its active is written (followApp, below). The node it runs on is the one startNodeServers was handed.
   const nodeServers = new Map();   // name -> its server job
   let serverHost = null;            // { rootDir, client }, from startNodeServers
-  function startNodeServer(rootDir, client, name) {
-    const base = path.join(rootDir, 'process', 'js');
-    const script = path.join(base, name, name + '.js');
-    const m = manifestOf(script);
-    if (!m || m.kind !== 'server' || m.operated !== 'node' || !fs.existsSync(script)) return null;
-    // ITS ARGUMENTS ARE ITS MANIFEST'S DEFAULTS: no central list overrides them (goal/G41.1, box v13).
-    const values = {};
-    (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
-    return runServer(rootDir, client, name, script, 'process', m.label || name, values);
-  }
-  // ONE APP'S SERVER (goal/G43.12): spirit/app/<name>/<name>.js. ITS ARGUMENTS ARE ITS <name>.json's DEFAULTS, as a process
-  // server's are its manifest's (goal/G43.27, requirement 18: the desk's goalRepo and goalPath carried over); none without.
+  // ONE APP'S SERVER: spirit/app/<name>/<name>.js. ITS ARGUMENTS ARE ITS <name>.json's DEFAULTS; none without.
   function startAppServer(rootDir, client, name) {
     const script = path.join(rootDir, 'spirit', 'app', name, name + '.js');
     if (!fs.existsSync(script)) return null;
@@ -564,22 +514,18 @@ module.exports = function installJobs(port) {
     try { own = JSON.parse(fs.readFileSync(path.join(rootDir, 'spirit', 'app', name, name + '.json'), 'utf8')); } catch (e) { own = null; }
     const values = {};
     ((own && Array.isArray(own.args)) ? own.args : []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
-    return runServer(rootDir, client, name, script, 'app', name, values);
-  }
-  function runServer(rootDir, client, name, script, kind, type, values) {
-    const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform, kind);
-    // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/<name>/data/ (goal/G43.10),
-    // handed over as --state, so a process never works out its own folder.
+    const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform);
+    // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): spirit/state/<name>/data/ (goal/G43.10), handed over as --state, so a
+    // process never works out its own folder. Its folder, spirit/state/<name>/, holds node.json, cache/, data/ and on Linux
+    // door.sock (goal/G43.20).
     const state = path.join(rootDir, 'spirit', 'state', name, 'data');
     try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the server says why */ }
-    if (process.platform !== 'win32') {
-      try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
-    }
     const args = [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir));
     // AN APP'S DEBUG, KEPT BY THE NODE (goal/G43.15, Q2, Q3: "only the new ones."): handed over at every start, a restart after a
     // crash included, since the job starts again from this same list.
-    if (kind === 'app') { args.push('--debug', String(appDebug(rootDir, name))); appArgs.set(name, args); }
-    const job = startServerJob('node', args, { type: type, operated: 'node' });
+    args.push('--debug', String(appDebug(rootDir, name)));
+    appArgs.set(name, args);
+    const job = startServerJob('node', args, { operated: 'node' });
     nodeServers.set(name, job);
     if (client && typeof client.register === 'function') client.register(name, pipe);
     return job;
@@ -613,44 +559,16 @@ module.exports = function installJobs(port) {
     })];
   }
   function startNodeServers(rootDir, client) {
-    const base = path.join(rootDir, 'process', 'js');
-    let names = [];
-    try { names = fs.readdirSync(base); } catch (e) { return []; }
     serverHost = { rootDir: rootDir, client: client };
-    // ONLY WHAT RUNS AT HOME: its sidecar says so (goal/G41.1).
     let apps = [];
     try { apps = fs.readdirSync(path.join(rootDir, 'spirit', 'app')); } catch (e) { apps = []; }
-    return names.filter(function (name) { return runsHome(rootDir, name); })
-      .map(function (name) { return startNodeServer(rootDir, client, name); })
-      .concat(apps.filter(function (name) { return appServes(rootDir, name); }).map(function (name) { return startAppServer(rootDir, client, name); }))
+    return apps.filter(function (name) { return appServes(rootDir, name); })
+      .map(function (name) { return startAppServer(rootDir, client, name); })
       .filter(Boolean);
   }
-  // A SIDECAR WRITTEN STARTS OR STOPS ITS SERVER (goal/G41.1, box v13: "the node starts or stops the server when that
-  // sidecar changes"): heard by the fs watcher, on the node startNodeServers was handed.
-  // A NODE'S OWN SIDECARS, in its state (goal/G41.1, box v16): a server's, a shell app's or either's, and the folders down
-  // to them; the app's script is the mirror's path back.
-  const SIDECAR = /^relay-state\/process\/([^/]+)\/\1\.js\.sidecar\.json$/;
-  const APP_SIDECAR = /^relay-state\/(shell|process)\/([^/]+)\/\2\.js\.sidecar\.json$/;
-  const STATE_DIR = /^relay-state(\/(shell|process)(\/[^/]+)?)?$/;
-  function scriptOfSidecar(rel) {
-    const m = APP_SIDECAR.exec(rel);
-    return m ? (m[1] === 'shell' ? 'shell/' : 'process/js/') + m[2] + '/' + m[2] + '.js' : '';
-  }
-  function followHome(rootDir, rel) {
-    const m = SIDECAR.exec(rel);
-    if (!m || !serverHost || path.resolve(serverHost.rootDir) !== path.resolve(rootDir)) return;
-    const name = m[1];
-    const job = nodeServers.get(name);
-    const now = job && getJob(job.id);
-    const live = !!now && !TERMINAL_STATUSES.has(now.status);
-    const want = runsHome(rootDir, name);
-    if (want && !live) startNodeServer(rootDir, serverHost.client, name);
-    else if (!want && live) { cancelJob(job.id); nodeServers.delete(name); }
-  }
-  // active WRITTEN STARTS OR STOPS ITS SERVER (goal/G43.12, Q4: "exactly.", "that's why sidecars will go out-of style."): told
-  // by the app family as it writes node.json. Its name stays in the table, as a stopped process/js server's does.
-  // DEBUG KEPT FOR AN APP OF spirit/app/ (goal/G43.15): what its server reports on its job is written into its node.json, and
-  // handed back at its next start. The server never writes the node's file; an old process/js server keeps nothing (Q3).
+  // active WRITTEN STARTS OR STOPS ITS SERVER (goal/G43.12, Q4: "exactly."): told by the app family as it writes node.json.
+  // DEBUG KEPT FOR AN APP (goal/G43.15): what its server reports on its job is written into its node.json, and handed back at
+  // its next start. The server never writes the node's file.
   const appArgs = new Map();     // name -> the argument list its server job starts from
   function appDebug(root, name) {
     try { return JSON.parse(fs.readFileSync(path.join(root, 'spirit', 'state', name, 'node.json'), 'utf8')).debug === true; } catch (e) { return false; }
@@ -683,8 +601,8 @@ module.exports = function installJobs(port) {
     const intervalMs = options.intervalMs || DEFAULT_STATS_INTERVAL_MS;
     const requestCounters = options.requestCounters || { total: 0, byMethod: {}, byStatusClass: {} };
 
-    const job = createJob('permanent', 'server-stats', serverStats);
-    // job.data === serverStats from here on (createJob assigns the reference as-is)
+    // THE NODE'S STATS ARE ITS OWN NEWS, ON spirit (goal/G43.20): each tick one event, { stats }, nothing else in it.
+    const job = ownJob('spirit');
 
     const histogram = monitorEventLoopDelay({ resolution: 10 });
     histogram.enable();
@@ -720,8 +638,8 @@ module.exports = function installJobs(port) {
         });
       }
 
-      updateJob(job.id, {
-        data: {
+      ownNews('spirit', 'stats', {
+        stats: {
           timestamp: now,
           memory: process.memoryUsage(),
           eventLoop: {
@@ -754,6 +672,9 @@ module.exports = function installJobs(port) {
   return {
     events: events,
     createJob: createJob,
+    ownJob: ownJob,
+    ownNews: ownNews,
+    newsOf: newsOf,
     updateJob: updateJob,
     getJob: getJob,
     listJobs: listJobs,

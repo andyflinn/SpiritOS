@@ -69,7 +69,7 @@
     var opened = Object.create(null);   // the folders open in the tree, by path
     var scores = Object.create(null);   // path -> the node's contents score, from the last contents search
     // path -> the line of the first match, from the same search. BOTH KEPT HERE, BY PATH: a row is the tree's, and the node's
-    // next word on that file (fs-watcher's set, spirit/fs/data.js) writes it anew without what the search said, so a list that
+    // next word on that file (spirit.fs's set, spirit/fs/data.js) writes it anew without what the search said, so a list that
     // read the score or the line off the row lost both while the tree was still arriving (goal/G43.17).
     var lines = Object.create(null);
     var made = Object.create(null);     // path -> its row element, so a folder's press can say it is open (goal/G43.17: 📂)

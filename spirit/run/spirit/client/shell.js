@@ -131,7 +131,7 @@
   // nothing else ever revisits them, since a deleted dynamic app simply
   // never gets (re)declared again, it isn't actively un-declared. Called
   // once, from onSnapshot below, after discoverDynamicApps has fully
-  // populated `apps` from the fresh fs-watcher scan — not any earlier,
+  // populated `apps` from the fresh spirit.fs scan — not any earlier,
   // since a real still-existing dynamic app that just hasn't been
   // discovered YET would otherwise look identical to a deleted one and
   // have its overrides wrongly stripped. Deletion reaching the shell
@@ -432,7 +432,7 @@
   // itself); failed, completed, or no such job is not.
   function serverUp(app) {
     if (!app || !app.server) return true;
-    var module = 'process/js/' + app.server;
+    var module = 'spirit.app.' + app.server;
     var up = false;
     jobsById.forEach(function (job) {
       if (job && job.kind === 'server' && job.module === module && (job.status === 'running' || job.status === 'pending')) up = true;
@@ -456,7 +456,7 @@
   }
   // WHERE THE JOIN APP'S STEPS STAND (goal/G30.1, box v39 and v40). An app whose manifest lists steps has its tile on
   // the desktop beside the Spirit group while a step is open, named and marked by that step; past the last one the tile
-  // is gone. The facts are the node's join-steps job, heard on the jobs stream below (takeStepsJob) and never asked:
+  // is gone. The facts are the node's join news on the spirit job, heard on the jobs stream below (takeStepsJob) and never asked:
   // the node publishes it the moment a seat, a contact or a face changes. joinSteps (spirit/element/joinSteps.js) decides
   // the open step from it and the app's own override faceOpened. null until heard.
   // DECIDED ONCE, HERE (goal/G30.1, box v42; Andy: "Why, when the shell already figured out that the join-app must
@@ -465,9 +465,9 @@
   // the job changes and when the app's own override changes; the app subscribes to nothing and decides nothing.
   var stepFacts = null;
   function takeStepsJob(job) {
-    if (!job || job.type !== 'join-steps') return;
+    if (!job || job.id !== 'spirit' || !job.data || !job.data.join) return;
     var was = JSON.stringify(stepFacts);
-    stepFacts = job.data || {};
+    stepFacts = job.data.join;
     if (was === JSON.stringify(stepFacts)) return;
     if (typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
     Object.keys(apps).forEach(function (id) { if (apps[id].steps) handSteps(apps[id]); });
@@ -1206,7 +1206,7 @@
       // folder) can express.
       // Not a wider capability than the page already had — it is the
       // same request the shell itself makes, and the server still
-      // refuses anything fileServable() refuses (relay-state, the node
+      // refuses anything fileServable() refuses (spirit/state, the node
       // modules, sidecars). Read only: writing outside an app's own
       // folder stays where it is.
       readProject: function (projectPath) {
@@ -1437,7 +1437,7 @@
       // to be repainted at that moment.
       //
       // Told rather than noticed: writing session.json does happen to
-      // move the fs-watcher's file list, and the snapshot that follows
+      // move the spirit.fs job's file list, and the snapshot that follows
       // would repaint the desktop — but only because the file is NEW,
       // and only while that watcher is alive. A claim is not the place
       // to depend on either.
@@ -1822,7 +1822,7 @@
     return true;
   }
 
-  // A job of module process/js/<name> belongs to the app shell/<name> (desk/G2.3).
+  // A job of module spirit.app.<name> belongs to the app shell/<name> (desk/G2.3; the module is the job's route since goal/G43.20).
   var publishedHandlers = Object.create(null);
   // A job keeps its last object; a later update for another reason is not news.
   var publishedLast = Object.create(null);
@@ -1940,13 +1940,13 @@
     var m = /^shell\/([^/]+)$/.exec(name);
     if (m) {
       jobsById.forEach(function (job) {
-        if (job && job.module === 'process/js/' + m[1] && job.app && typeof job.app === 'object') {
+        if (job && job.module === 'spirit.app.' + m[1] && job.app && typeof job.app === 'object') {
           try { handler(job.app, { from: '', module: String(job.module) }); } catch (e) { /* the app's own fault */ }
         }
       });
       Object.keys(streamedLast).forEach(function (key) {
         var s = streamedLast[key];
-        if (s && s.module === 'process/js/' + m[1] && ((ownSenders && ownSenders[s.from]) || namesSender(handler, s.from))) {
+        if (s && s.module === 'spirit.app.' + m[1] && ((ownSenders && ownSenders[s.from]) || namesSender(handler, s.from))) {
           try { handler(s.app, { from: s.from, module: s.module }); } catch (e) { /* the app's own fault */ }
         }
       });
@@ -2187,7 +2187,7 @@
   var jobSubscribers = [];
   // THE SHELL'S ONE FILE TREE (goal/G4.25). Andy: "so this just needs to bridge the gap, the shell maintains one
   // complete tree, and all apps/file-pickers feed from that?"; his grant G3 on this file. The node sends no file list
-  // any more: after each snapshot the fs-watcher sends the tree as create commands and then treeComplete, and every
+  // any more: after each snapshot the spirit.fs job sends the tree as create commands and then treeComplete, and every
   // change after that as one command. This keeps the tree (path -> {kind, size, modified}) and hands it out as the
   // entries the apps already read ({name, relativePath, kind, fullPath, parentPath}, the paths relative), with the
   // stat each command carried (goal/G29.8: size and modified), rebuilt only when a command changed something. null
@@ -2268,14 +2268,6 @@
     };
   }
 
-  function findJobByType(type) {
-    var found = null;
-    jobsById.forEach(function (job) {
-      if (job.type === type) found = job;
-    });
-    return found;
-  }
-
   // Delegates to the kernel's own implementation (spirit.core.util.escapeHtml)
   // rather than re-deriving one from the DOM — see kernel.js for why it
   // moved and what the DOM version got wrong about attribute values.
@@ -2309,7 +2301,7 @@
     // stand-in for a capability nobody had published, and it had drifted
     // stricter than both server gates.
     //
-    // The server is the only jail. A path in the fs-watcher list has
+    // The server is the only jail. A path in the spirit.fs job list has
     // already passed fileServable, so it is readable by construction; a
     // save is answered by fileWritable when it is attempted. The page has
     // no module boundary — an app can call spirit.core.fs itself — so a
@@ -2527,7 +2519,7 @@
   // The id is derived from scriptPath's own folder (for example "shell/jobs"), not
   // read from manifest.id — an app's manifest can no longer claim to be
   // whatever id it likes; its identity is the one fact the shell already
-  // observed directly via the fs-watcher. manifest.id, if a manifest still
+  // observed directly via the spirit.fs job. manifest.id, if a manifest still
   // has one, is simply ignored.
   // `intrinsic` is the manifest saying this app is part of how the node
   // works, not something the operator installed. An
@@ -2542,7 +2534,7 @@
     var existing = apps[id];
     // Declaring twice is normal now: an intrinsic app is declared at boot
     // from its manifest (declareIntrinsicApps, below) and again when the
-    // fs-watcher snapshot arrives, and every snapshot after a dropped SSE
+    // spirit.fs snapshot arrives, and every snapshot after a dropped SSE
     // connection re-declares everything. Only the manifest-derived facts
     // are refreshed — an app that has already loaded its script keeps the
     // mount/render it supplied and the DOM it was mounted into, or a
@@ -2567,7 +2559,7 @@
       // THE STEPS IT WALKS A USER THROUGH (goal/G30.1, box v39): its tile is on the desktop, not in a group, while a
       // step is open; see renderDesktop and takeStepsJob.
       steps: Array.isArray(manifest.steps) ? manifest.steps : null,
-      // THE SERVER IT NEEDS (goal/G27.16): the folder name of a server under process/js, read off the app's own
+      // THE SERVER IT NEEDS (goal/G27.16): the name of an app of spirit/app/ that is a server, read off the app's own
       // manifest; '' for an app that needs none. See serverUp.
       server: typeof manifest.server === 'string' ? manifest.server : '',
       // 'app' | 'launcher' | 'dialog'. What it decides is what may be
@@ -2606,7 +2598,7 @@
 
   // The intrinsic apps this node cannot afford to be missing, read at
   // boot straight from their manifests rather than waiting for the
-  // fs-watcher job to report them over SSE.
+  // spirit.fs job to report them over SSE.
   //
   // Discovery is otherwise snapshot-driven, which is fine for installed
   // apps — an app nobody can see for a second is a nuisance. It is not
@@ -2669,7 +2661,6 @@
     activateApp: activateApp,
     renderOpenWith: renderOpenWith,
     renderAppOfFile: renderAppOfFile,
-    findJobByType: findJobByType,
     mimeTypeForName: mimeTypeForName,
     classifyMimeType: classifyMimeType,
     iconForFile: iconForFile,
@@ -2765,7 +2756,7 @@
       fileTreeReady = false;
       fileListCache = null;
       fileTreeVersion += 1;
-      if (!jobs.some(function (j) { return j.type === 'fs-watcher'; })) {
+      if (!jobs.some(function (j) { return j.id === 'spirit.fs'; })) {
         mountListeners();
         pruneStalePreferences();
       }
@@ -2774,7 +2765,7 @@
       renderDesktopIfServersChanged();
     },
     onUpdate: function (job) {
-      if (job && job.type === 'fs-watcher' && job.data) {
+      if (job && job.id === 'spirit.fs' && job.data) {
         if (job.data.command) applyFileCommand(job.data.command);
         if (job.data.treeComplete) {
           fileTreeReady = true;

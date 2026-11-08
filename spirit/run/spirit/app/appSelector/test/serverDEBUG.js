@@ -32,7 +32,7 @@ function scratch() {
   const dir = path.join(run, 'spirit', 'app', NAME);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, NAME + '.json'), JSON.stringify({ identity: { icon: '🐛', label: LABEL, intrinsic: false }, mount: { [NAME + '.js']: true }, shell: { true: false, mount: false, tile: false }, node: { mount: true } }));
-  fs.writeFileSync(path.join(dir, NAME + '.js'), "'use strict';\nif (typeof window === 'undefined') {\n  require('../../../spirit.js');\n  require('../../appServer.js').serve({ pid: { request: {}, reply: {}, handler: function () { return { pid: process.pid }; } } }, {});\n}\n");
+  fs.writeFileSync(path.join(dir, NAME + '.js'), "'use strict';\nif (typeof window === 'undefined') {\n  require('../../spirit.js');\n  require('../../appServer.js').serve({ pid: { request: {}, reply: {}, handler: function () { return { pid: process.pid }; } } }, {});\n}\n");
   fs.writeFileSync(path.join(dir, 'api.js'), 'module.exports = { verbs: { pid: {} } };\n');
   return { root: root, run: run };
 }
@@ -102,13 +102,6 @@ test.startTest('serverDEBUG.js: a server\'s DEBUG, switched and streamed (goal/G
     ok((((await call(N.base, NAME + '.DEBUG', {})).body) || {}).debug === true, 'and after the node restarts too', 'after the node restarted: ' + short((await call(N.base, NAME + '.DEBUG', {})).text));
     await call(N.base, NAME + '.DEBUG', { on: false });
     ok(await until(function () { return Promise.resolve(nodeJson().debug === false); }, 8000), 'switched off, node.json says debug false', 'node.json: ' + short(nodeJson()));
-
-    test.subHeading('Q3: "only the new ones": an old process/js server\'s DEBUG gets no node.json');
-    const fsDebug = await call(N.base, 'fileServer.DEBUG', { on: true });
-    ok(fsDebug.status === 200 && fsDebug.body && fsDebug.body.debug === true, 'the world: fileServer\'s DEBUG switches', 'fileServer.DEBUG: ' + short(fsDebug.text));
-    await sleep(2000);
-    ok(!fs.existsSync(path.join(s.run, 'spirit', 'state', 'fileServer', 'node.json')), 'and nothing is written to spirit/state/fileServer/node.json', 'spirit/state/fileServer/node.json: ' + short(readJson(path.join(s.run, 'spirit', 'state', 'fileServer', 'node.json'))));
-    await call(N.base, 'fileServer.DEBUG', { on: false });
 
     const where = findChrome();
     if (!where) { test.fail('no Chrome here: nothing judged'); return; }

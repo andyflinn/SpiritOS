@@ -1035,9 +1035,9 @@ const server = appServer.serve({
       return { items: r.items, more: !!r.more };
     },
   },
-  // THE CACHE DUMP (goal/G41.11). Andy: "a cache-dump to to a fixed file  name in relay-state/process/deskClient/
-  // <fixedFileName>.json". Owner-only like every verb here: the cache as it stands, saved now, to appServer's cache file
-  // of the desk (goal/G41.12), spirit/state/deskClient/<the desk's node id>.json (goal/G43.8), the one the cache is read
+  // THE CACHE DUMP (goal/G41.11): a fixed file name for it. Owner-only like every verb here: the cache as it stands, saved
+  // now, to appServer's cache file of the desk (goal/G41.12), spirit/state/deskClient/cache/<the desk's node id>.json
+  // (goal/G43.20: "cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"), the one the cache is read
   // back from, and nowhere else; it takes no path, so a caller cannot name one.
   'cache.dump': {
     request: {}, reply: { file: '', bytes: 0 },
@@ -1050,7 +1050,7 @@ const server = appServer.serve({
       return { file: saved[0].file, bytes: saved[0].bytes };
     },
   },
-// What a peer needs granted here: the desk's node, streamListener alone (deskClientBundles.json, goal/G41.24).
+// What a peer needs granted here: the desk's node, streamListener alone (goal/G41.24).
 //
 // ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
 // register the node and the relay load. appServer puts "deskClient: " in
@@ -1124,7 +1124,7 @@ function ignored(root, rel) {
 }
 // THE NODE'S OWN WATCHER COMPONENT (goal/G40.3). Andy: "you hand-rolled shit again!", "use that chokidar component then
 // on the whole repo.", and "you may as well add to the filename in the status (changed, deleted, added)". chokidar, as
-// the node's fs-watcher job uses it (spirit/jobs.js), on the whole checkout; the status word is the path and what happened
+// the node's spirit.fs job uses it (spirit/jobs.js), on the whole checkout; the status word is the path and what happened
 // to it, which the desk keeps as the file's name and that word.
 const WHAT = { add: 'added', change: 'changed', unlink: 'deleted' };
 // ONLY FILES OF THE PRODUCT TREE (goal/G41.2; Andy: "updates only for files in the product tree."): each status is a

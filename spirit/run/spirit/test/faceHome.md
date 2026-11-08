@@ -55,5 +55,4 @@ stars."* Here `o.events` is a stand-in, and a relay event comes as `server.js` s
   snapshot). The envelope is the builder's: only that each job is on the stream is judged.
 - **The queue does not change**: its levels are as they were, one write at a time, and nothing new is lost while it waits.
 - **No restrictions on a star**: every verb of every family reaches the door, sealed and not, `relay.face` on the relay it
-  is called through and a `peer.post` carrying a face name to it among them, both still refused with no star. `fs.annotate`
-  is left out, it writes the face's part in `faceHome` and never goes to the door. `contact.own` stays refused, on and off.
+  is called through and a `peer.post` carrying a face name to it among them, both still refused with no star. `contact.own` stays refused, on and off.

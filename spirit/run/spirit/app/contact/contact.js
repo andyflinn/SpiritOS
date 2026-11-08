@@ -33,7 +33,7 @@ function contactsStatus(text) {
 // contactsHandleCell, contactsNameCell) is gone; a row and its details are spirit/element/search/contact/'s.
 // CONTACTS' OWN PRESENCE TABLE AND ITS PAINTING STOOD HERE (contactsPresence, contactsPresenceMark,
 // contactsPaintPresence and their helpers). A row's dot is its contactElement's now (goal/G30.18, G30.19): it listens to
-// the relay-presence job itself, green, red or white with the same meaning.
+// the spirit.contact job itself, green, red or white with the same meaning.
 
 // The list asked again with what is typed: after an add, or a decision on a contact's own screen.
 function contactsRefresh() {

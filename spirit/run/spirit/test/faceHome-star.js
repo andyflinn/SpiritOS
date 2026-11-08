@@ -105,18 +105,16 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
     ok(!!me, 'the node says its key', 'node.card: ' + short(card.text));
     if (!me) return;
 
-    // A process this node includes: it leaves a mark only when started with the word a face call gives it.
+    // An app this node runs (its json says node run true, goal/G43.20): it leaves a mark only when started with the word a
+    // face call gives it. Not intrinsic, so a file of its folder may be saved.
     const mark = path.join(marks, 'ran');
-    const script = path.join(run, 'process/js/zzStar/zzStar.js');
+    const script = path.join(run, 'spirit/app/zzStar/zzStar.js');
     fs.mkdirSync(path.dirname(script), { recursive: true });
     fs.writeFileSync(script, 'if (process.argv[2] === "fromTheFace") require("fs").writeFileSync(' + JSON.stringify(mark) + ', "ran");\n');
-    fs.writeFileSync(path.join(run, 'process/js/zzStar/zzStar.json'), JSON.stringify({ label: 'zz' }));
-    const state = path.join(run, 'relay-state/process/zzStar');
-    fs.mkdirSync(state, { recursive: true });
-    fs.writeFileSync(path.join(state, 'zzStar.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
-    const SAVED = 'process/js/zzStar/saved.txt';
+    fs.writeFileSync(path.join(run, 'spirit/app/zzStar/zzStar.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
+    const SAVED = 'spirit/app/zzStar/saved.txt';
     const savedAt = path.join(run, SAVED);
-    const JOB = { call: 'jobs.create', args: { command: process.execPath, args: ['process/js/zzStar/zzStar.js', 'fromTheFace'] } };
+    const JOB = { call: 'jobs.create', args: { command: process.execPath, args: ['spirit/app/zzStar/zzStar.js', 'fromTheFace'] } };
     const SAVE = { call: 'fs.save', args: { path: SAVED, content: 'from the face' } };
     const nobody = 'MCowBQYDK2VwAyEA' + 'zzStarNobodyzzStarNobodyzzStarNobodyzzStarNob'.slice(0, 43) + '=';
     const OWNER = { call: 'owner.command', args: { to: nobody, command: 'zzNothing' } };
@@ -206,18 +204,15 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
       const heardEvent = function (kind, id) { return got.some(function (l) { const v = parsed(l); return !!v && v.event === kind && (kind === 'job-deleted' ? v.data === id : !!v.data && v.data.id === id); }); };
       await sleep(3000);
       // Box v29: no star, the node answers the face nothing, so no file tree, no presence, no job.
-      ok(!hears('fs-watcher') && !hears('presence'), 'no star: the stream carries nothing of the node, not even its file tree', 'no star: the stream said ' + short(got.slice(0, 3)));
+      ok(!hears('spirit.fs') && !hears('presence'), 'no star: the stream carries nothing of the node, not even its file tree', 'no star: the stream said ' + short(got.slice(0, 3)));
 
       // One failed job, to delete: a process that ends with an exit code of its own stays until it is deleted.
-      const script2 = path.join(run, 'process/js/zzStream/zzStream.js');
+      const script2 = path.join(run, 'spirit/app/zzStream/zzStream.js');
       fs.mkdirSync(path.dirname(script2), { recursive: true });
       fs.writeFileSync(script2, 'setTimeout(function () { process.exit(4); }, 300);\n');
-      fs.writeFileSync(path.join(run, 'process/js/zzStream/zzStream.json'), JSON.stringify({ label: 'zz' }));
-      const st2 = path.join(run, 'relay-state/process/zzStream');
-      fs.mkdirSync(st2, { recursive: true });
-      fs.writeFileSync(path.join(st2, 'zzStream.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
+      fs.writeFileSync(path.join(run, 'spirit/app/zzStream/zzStream.json'), JSON.stringify({ identity: { label: 'zz', intrinsic: false }, node: { run: true } }));
       const runOne = async function () {
-        const c = await home(N.base, 'jobs.create', { command: process.execPath, args: ['process/js/zzStream/zzStream.js'] });
+        const c = await home(N.base, 'jobs.create', { command: process.execPath, args: ['spirit/app/zzStream/zzStream.js'] });
         const id = c.body && c.body.id;
         if (!id) return { why: 'jobs.create at home: ' + c.status + ' ' + short(c.text) };
         await until(function () { return home(N.base, 'jobs.get', { key: id }).then(function (a) { const j = a.body && a.body.job; return !!j && j.status === 'failed'; }); }, 8000);
@@ -253,8 +248,8 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
       const someone = require(path.join(RUN, 'spirit', 'relayAuth.js')).generateIdentity('zz').publicKey;
       const blocked = await home(N.base, 'contact.block', { publicKey: someone });
       ok(blocked.status < 300, 'starred: a first contact appears at home', 'nothing judged: contact.block answered ' + blocked.status + ' ' + short(blocked.text));
-      await until(function () { return hears('join-steps'); }, 5000);
-      ok(hears('join-steps'), 'starred: the join steps reach the face', 'starred: the join-steps job never reached the face');
+      await until(function () { return hears('"join":'); }, 5000);
+      ok(hears('"join":'), 'starred: the join steps reach the face, the join news of the spirit job', 'starred: the join news never reached the face');
 
       test.subHeading('a starred face has no restrictions, except changing stars');
       const sface = function (req) { return page(S, 'stream', '/face/call', req, LS.sid); };
@@ -273,9 +268,11 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
       // The star off with the stream open: the face goes, so the next event stays home.
       const sOff = await home(N.base, 'contact.own', { key: S.relayKey, own: false });
       ok(sOff.status === 200, 'the star off, at home', 'contact.own false at home: ' + sOff.status + ' ' + short(sOff.text));
+      // A job's id is its route, the same for every run (goal/G43.20): only what the stream says from here on is judged.
+      const sinceOff = got.length;
       const j2b = await runOne();
       await sleep(WAIT_MS);
-      ok(!!j2b.id && !hears(j2b.id), 'the star off: the next job stays home', 'the star came off and job ' + j2b.id + ' still reached the face');
+      ok(!!j2b.id && !got.slice(sinceOff).some(function (l) { return l.indexOf(j2b.id) !== -1; }), 'the star off: the next job stays home', 'the star came off and job ' + j2b.id + ' still reached the face');
       ok(await until(function () { return faceName(S.base).then(function (n) { return n === ''; }); }, 8000), 'and the node holds no face on that relay any more', 'the star came off and the node still holds ' + short(await faceName(S.base)));
 
       try { q.destroy(); } catch (e) { /* gone */ }

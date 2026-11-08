@@ -471,7 +471,7 @@ function ensureFirstRun(rootDir, opts) {
 // THIS NODE'S PORT, FOR EVERY node.js PROCESS ON IT (goal/G40.6). Andy: "only a node.js servers listening on a loopback
 // port writes that port to environment.json", "it really belongs in serverCommon", and "anytime a node.js process
 // requires(spirit) spirit itself fetches the port from environment.json". Written before the node starts any server
-// process, so each finds it; the folder first, since a fresh tree has no spirit/state/ (relay-state until goal/G43.8).
+// process, so each finds it; the folder first, since a fresh tree has no spirit/state/.
 function writeEnvironment(rootDir, port) {
   const fs = require('fs');
   const file = path.join(rootDir, 'spirit', 'state', 'environment.json');

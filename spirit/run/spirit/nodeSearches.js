@@ -25,7 +25,7 @@
 //
 // The walk is the file watcher's list, and scanFolder builds that from
 // fileServable alone: a refused folder is not even entered. So no words
-// can name relay-state/ or anything else a read would refuse, because
+// can name the node's state or anything else a read would refuse, because
 // nothing outside the servable set is ever offered. Symbolic links are
 // neither file nor folder to scanFolder and are never followed. The limit
 // that remains (wsl-claude): fileServable is lexical and never realpaths,
@@ -51,7 +51,8 @@ function createNodeSearches(opts) {
   var rootDir = o.rootDir;
   var mimeTypes = o.mimeTypes || {};
 
-  function jobLabel(j) { return String(j.type || j.id) + ' (' + String(j.status || '') + ')'; }
+  // A job's id is its route (goal/G43.20), and says what it is.
+  function jobLabel(j) { return String(j.id) + ' (' + String(j.status || '') + ')'; }
 
   // goal/G29.22: every job, ranked by the words over the whole job (probabilityStringObjectMatch, goal/G41.28), the
   // listing's order among equals, cut by bytes; no words (or '*', the kernel's empty ask) is every job in that order.
@@ -81,7 +82,7 @@ function createNodeSearches(opts) {
     // added, so the job still says how much it is watching.
     var out = {};
     Object.keys(job).forEach(function (k) { if (k.charAt(0) !== '_') out[k] = job[k]; });
-    if (out.type === 'fs-watcher') out.data = Object.assign({}, out.data, { fileCount: jobs.fsTreeEntries().length });
+    if (out.id === 'spirit.fs') out.data = Object.assign({}, out.data, { fileCount: jobs.fsTreeEntries().length });
     return limits.boundedGet({ ok: true, status: 200, key: key, job: out });
   }
 

@@ -95,7 +95,7 @@ process.on('unhandledRejection', function (e) { test.fail('it threw where nothin
   test.subHeading('names from the mirror; fs.search only by contents');
   const none = await o.search(o.args('a', { in: 'names' }), 'search');
   ok(asked.length === 0 && none.body && none.body.items.length === 0, 'a search of names asks the node nothing: the mirror answers it', 'asked: ' + short(asked));
-  D.takeJob({ id: 'job-fs', type: 'fs-watcher', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
+  D.takeJob({ id: 'spirit.fs', data: { command: { op: 'createFile', path: 'docs/a.md', size: 5, modified: '2030-01-01T00:00:00Z' } } });
   const found = await o.search(o.args('hello', { in: 'contents' }), 'search');
   const items = (found.body && found.body.items) || [];
   let first = null; try { first = JSON.parse(items[0].label); } catch (e) { first = null; }

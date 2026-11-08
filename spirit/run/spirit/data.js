@@ -251,7 +251,14 @@
   // later is handed them all at once, so its branch is whole. A process's translator comes with its server, before any
   // row, so nothing is kept there.
   var translators = [];
-  var seenJobs = new Map();             // job id -> the job as it now stands (a page only)
+  var seenJobs = new Map();             // job id (and kind of news) -> the job as it now stands (a page only)
+  // ONE OF THE NODE'S OWN JOBS CARRIES ONE KIND OF NEWS PER EVENT (goal/G43.20, box: "each event only its own news"): spirit.app
+  // its app list or a face part, spirit its stats or its join steps. So such a job is kept once per kind, told by the
+  // fields its data carries, and a translator registered later is handed every kind, not only the newest event.
+  function seenKey(job) {
+    var d = job.kind === 'permanent' && job.data && typeof job.data === 'object' ? Object.keys(job.data).sort().join(',') : '';
+    return d ? job.id + '\n' + d : String(job.id);
+  }
   var seenRenames = new Map();          // key -> the last rename (a page only)
   function one(t, name, arg) { if (typeof t[name] === 'function') { try { t[name](arg, api); } catch (e) { /* one type's fault */ } } }
   // A PAGE FILES NOTHING UNTIL IT KNOWS ITS NODE (goal/G41.28, Q10): its stream may hand jobs before node.card has
@@ -281,7 +288,7 @@
   // Every job is handed over, data or none: each translator reads what it needs (the jobs family keeps them whole).
   function onJob(job, from) {
     if (!job || typeof job !== 'object') return;
-    if (onPage && job.id) seenJobs.set(job.id, job);
+    if (onPage && job.id) seenJobs.set(seenKey(job), job);
     if (handing()) each('onJob', stamped(job, from));
   }
   function onRename(d, from) {
@@ -293,7 +300,7 @@
   // itself (the jobs family's cache manager) lets it go.
   function onGone(id, from) {
     if (id == null) return;
-    if (onPage) seenJobs.delete(String(id));
+    if (onPage) Array.from(seenJobs.keys()).forEach(function (k) { if (k === String(id) || k.indexOf(String(id) + '\n') === 0) seenJobs.delete(k); });
     if (handing()) each('onDelete', stamped({ id: String(id) }, from));
   }
   // A SNAPSHOT IS A CONNECT (spirit.events hands one on every open of the stream, the first and each reconnect): what

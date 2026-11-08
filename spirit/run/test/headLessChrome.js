@@ -34,9 +34,8 @@ function findChrome() {
 }
 
 // A scratch copy of the tracked files of spirit/run, its node started on a free port. o.servers names app servers turned
-// on at home before it starts, as their owner turns one on: the face part of its sidecar, face.home (goal/G41.1). That
-// switch is a process/js/<name>/ server's; an app of spirit/app/<name>/ runs by active in spirit/state/<name>/node.json
-// (goal/G43.12, spirit/jobs.js), which o.servers does not write.
+// on before it starts, as their owner turns one on: an app of spirit/app/<name>/ runs by active in
+// spirit/state/<name>/node.json (goal/G43.12, spirit/jobs.js), every server being one since goal/G43.20.
 async function scratchNode(o) {
   // One node for a whole run of every file (below): the run that started this one hands its address on.
   if (process.env.SPIRIT_MOUNT_BASE) return { base: process.env.SPIRIT_MOUNT_BASE, child: null, root: '', up: true, debug: true, shared: true };
@@ -46,9 +45,9 @@ async function scratchNode(o) {
   files.forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
   const run = path.join(root, 'spirit', 'run');
   ((o && o.servers) || []).forEach(function (name) {
-    const dir = path.join(run, 'relay-state', 'process', name);
+    const dir = path.join(run, 'spirit', 'state', name);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, name + '.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
+    fs.writeFileSync(path.join(dir, 'node.json'), JSON.stringify({ active: true }));
   });
   const port = await freePort();
   const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });

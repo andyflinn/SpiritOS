@@ -49,7 +49,7 @@ test.startTest('spirit-cacheManager.js: a page finds a family\'s data.js by the 
     await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
     loaded = await page.evaluate("Promise.resolve(window.spirit.ready).then(function (s) { return s.tree(); }).then(function (t) { return Promise.all(Object.keys(t || {}).map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function (e) { return [n, String((e && e.message) || e)]; }); })); })");
   }
-  const withData = function (n) { return ['spirit/' + n + '/data.js', 'spirit/app/' + n + '/data.js', 'process/js/' + n + '/data.js'].some(function (p) { return fs.existsSync(path.join(RUN, p)); }); };
+  const withData = function (n) { return ['spirit/' + n + '/data.js', 'spirit/app/' + n + '/data.js'].some(function (p) { return fs.existsSync(path.join(RUN, p)); }); };
   const judged = (loaded || []).filter(function (r) { return withData(r[0]); });
   ok(judged.length >= 5 && judged.some(function (r) { return r[0] === 'contact'; }), 'the world: a page asks the cache of ' + judged.length + ' families with a data.js, contact among them', 'a page asked ' + short(loaded) + ': nothing judged');
   judged.forEach(function (r) { ok(r[1] === 'ok', 'on a page, spirit.cacheManager("' + r[0] + '") loads its data.js', 'on a page, spirit.cacheManager("' + r[0] + '"): ' + r[1]); });

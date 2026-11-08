@@ -48,6 +48,10 @@ function scratchCopy() {
   execSync('git ls-files -- spirit/run', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean)
     .filter(function (f) { return fs.existsSync(path.join(REPO, f)); })
     .forEach(function (f) { const d = path.join(root, f); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(path.join(REPO, f), d); });
+  // deskVerify turned on, as its owner does: the server whose garbage is asked (GARBAGE, below).
+  const state = path.join(root, 'spirit', 'run', 'spirit', 'state', 'deskVerify');
+  fs.mkdirSync(state, { recursive: true });
+  fs.writeFileSync(path.join(state, 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: path.join(root, 'spirit', 'run') };
 }
 async function startNode(run) {
@@ -77,7 +81,9 @@ function outsideAddress() {
 // MUTHERCUCKING PATH"): each section is named by the address it asks, /DEBUG left off, or the file it reads.
 function named(p) { return p.indexOf('/DEBUG/') === 0 ? p.slice('/DEBUG'.length) : p; }
 const PAGE = '/DEBUG/spirit/element/workBench/headLessBrowser.html';
-const GARBAGE = '/DEBUG/process/js/fileServer/fileServer/garbageArguments.json';
+// A server whose api the node serves: deskVerify, an app of spirit/app/, turned on in the scratch copy (goal/G43.20: every
+// server is an app, and none runs until its owner turns it on).
+const GARBAGE = '/DEBUG/spirit/app/deskVerify/deskVerify/garbageArguments.json';
 
 // What a page must be: the most minimal page for one module.
 function judgePage(r, module, where) {
@@ -114,7 +120,7 @@ function fitsShape(proto, v) {
 }
 async function garbageRules(gen, PAYLOAD_MAX) {
   async function entries(proto) {
-    const made = await gen.make({ ext: 'json', module: 'process/js/probe', server: { kind: 'node', api: function () { return { probe: { verb: { request: proto, reply: {} } } }; } } });
+    const made = await gen.make({ ext: 'json', module: 'spirit/app/probe/probe', server: { kind: 'node', api: function () { return { probe: { verb: { request: proto, reply: {} } } }; } } });
     const list = made && typeof made.body === 'string' ? JSON.parse(made.body) : [];
     return list.filter(function (e) { return e && e.call === 'probe.verb' && !e.also; }).map(function (e) { return e.args; });
   }
@@ -226,10 +232,10 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
     const list = json(g);
     ok(g.status === 200 && /json/.test(g.type) && Array.isArray(list) && list.length > 0, 'the garbage is answered, 200, a JSON list of ' + (Array.isArray(list) ? list.length : 0), 'it answered ' + g.status + ' ' + g.type + ' ' + short(g.text));
     const tree = json(await call(N, 'api')) || {};
-    const verbs = Object.keys(tree.fileServer || {});
-    ok(verbs.length > 0, 'the node\'s api lists the file server\'s ' + verbs.length + ' verbs', 'the scratch node\'s api has no fileServer: ' + short(Object.keys(tree)));
+    const verbs = Object.keys(tree.deskVerify || {});
+    ok(verbs.length > 0, 'the node\'s api lists the deskVerify server\'s ' + verbs.length + ' verbs', 'the scratch node\'s api has no deskVerify: ' + short(Object.keys(tree)));
     if (Array.isArray(list) && list.length) {
-      const named = function (v) { return list.some(function (e) { return e && typeof e === 'object' && e.call === 'fileServer.' + v; }); };
+      const named = function (v) { return list.some(function (e) { return e && typeof e === 'object' && e.call === 'deskVerify.' + v; }); };
       const unasked = verbs.filter(function (v) { return !named(v); });
       ok(verbs.length && !unasked.length, 'every verb of its api has garbage of its own', 'verbs with no garbage: ' + short(unasked));
       // A LONE BAD STRING IS A REAL CALL (goal/G41.30; Andy: "fill this gap, in this item"; cw: "loadFile of the path
@@ -246,7 +252,7 @@ test.startTest('/spirit/DEBUG.js: the DEBUG test routes, for node and relay alik
         if (proto === null) return v === null;
         return typeof v === typeof proto;
       };
-      const kept = function (entry) { const verb = String(entry.call || '').replace(/^fileServer\./, ''); const d = tree.fileServer && tree.fileServer[verb]; return !!d && sameShape(d.request, entry.args); };
+      const kept = function (entry) { const verb = String(entry.call || '').replace(/^deskVerify\./, ''); const d = tree.deskVerify && tree.deskVerify[verb]; return !!d && sameShape(d.request, entry.args); };
       const wrong = []; const lone = [];
       let keptCount = 0;
       for (const entry of list) {

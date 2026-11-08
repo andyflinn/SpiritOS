@@ -1,7 +1,7 @@
 // spirit/run/spirit/element/joinSteps.js
 // THE JOIN APP'S STEPS, DECIDED IN ONE PLACE (goal/G30.1, box v39 and v40). The Join app walks a new user from joining
 // to his face link; its manifest lists the steps in order, each with its name, icon and the fact that ends it
-// (`until`). The facts come from the node's join-steps job (spirit/joinStepsJob.js), which the shell's tile and the Join
+// (`until`). The facts come from the join news on the node's spirit job (spirit/joinStepsJob.js), which the shell's tile and the Join
 // app hear on the jobs stream; nothing here asks the node anything.
 //
 //   fromJob(data, opened)  -> { seated, relayUrl, contact, face, faceUrl, opened }: the job's facts, with whether the

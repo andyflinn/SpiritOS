@@ -2,8 +2,8 @@
 
 // spirit/run/spirit/test/jobs.js
 // The tests of spirit/jobs.js, and of no other module (spec: ./jobs.md). This file holds goal/G41.30, the review's RH1:
-// "jobs.create still spawns any program"; its fix: "in startJob, refuse unless command is process.execPath and args[0]
-// resolves to an included process/js/<name>/<name>.js"; Andy, Q3: "yes.". Raw calls over http to a scratch node's door,
+// "jobs.create still spawns any program". Since goal/G43.20 (box: "jobs.create starts only an app's own script,
+// spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true; anything else is refused"). Raw calls over http to a scratch node's door,
 // no spirit object; neither Andy's node nor an agent's is touched. Each thing asked to run would write a marker of its
 // own, so "it ran" is read from the disk, not from the answer.
 
@@ -51,33 +51,28 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     test.subHeading('this node\'s executable, on a script that is not its process, is refused');
     const outside = path.join(marks, 'outside.js');
     fs.writeFileSync(outside, script(mark('outside')));
-    await refusedCase('a script outside process/js', mark('outside'), { command: process.execPath, args: [outside] });
+    await refusedCase('a script outside spirit/app', mark('outside'), { command: process.execPath, args: [outside] });
     plant('zz-climbed.js', mark('climbed'));
-    await refusedCase('a path climbing out of process/js', mark('climbed'), { command: process.execPath, args: ['spirit/app/desk/../../../zz-climbed.js'] });
-    plant('process/js/zzNotIncluded/zzNotIncluded.js', mark('notIncluded'));
-    fs.writeFileSync(path.join(run, 'process/js/zzNotIncluded/zzNotIncluded.json'), JSON.stringify({ label: 'zz' }));
-    await refusedCase('a process this node does not include', mark('notIncluded'), { command: process.execPath, args: ['process/js/zzNotIncluded/zzNotIncluded.js'] });
+    await refusedCase('a path climbing out of spirit/app', mark('climbed'), { command: process.execPath, args: ['spirit/app/desk/../../../zz-climbed.js'] });
+    plant('spirit/app/zzNotRun/zzNotRun.js', mark('notRun'));
+    fs.writeFileSync(path.join(run, 'spirit/app/zzNotRun/zzNotRun.json'), JSON.stringify({ identity: { label: 'zz' } }));
+    await refusedCase('an app whose json does not say node run true', mark('notRun'), { command: process.execPath, args: ['spirit/app/zzNotRun/zzNotRun.js'] });
 
     test.subHeading('what this node may start still starts');
-    // A fix that closes these closes the node: the review's own wording names <name>/<name>.js; a helper of an included
-    // process starts the same way, by this node's executable and its whole path. deskClient
-    // starts no helper any more; the check's text below still names its old line.
-    plant('process/js/zzIncluded/zzIncluded.js', mark('included'));
-    fs.writeFileSync(path.join(run, 'process/js/zzIncluded/zzIncluded.json'), JSON.stringify({ label: 'zz' }));
-    const state = path.join(run, 'relay-state', 'process', 'zzIncluded');
-    fs.mkdirSync(state, { recursive: true });
-    fs.writeFileSync(path.join(state, 'zzIncluded.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
-    const inc = await call({ command: process.execPath, args: ['process/js/zzIncluded/zzIncluded.js'] });
+    // An app's own script, of an app whose json says node run true: its job is its route, spirit.app.<name>.
+    plant('spirit/app/zzRun/zzRun.js', mark('run'));
+    fs.writeFileSync(path.join(run, 'spirit/app/zzRun/zzRun.json'), JSON.stringify({ identity: { label: 'zz' }, node: { run: true } }));
+    const inc = await call({ command: process.execPath, args: ['spirit/app/zzRun/zzRun.js'] });
     await sleep(WAIT_MS);
-    ok(inc.status === 201 && fs.existsSync(mark('included')), 'an included process/js/<name>/<name>.js starts', 'an included process: answered ' + inc.status + ' ' + short(inc.text) + ', ran ' + fs.existsSync(mark('included')));
-    const helper = plant('process/js/zzIncluded/zzHelper.js', mark('helper'));
-    // A PAGE SENDS PLAIN node (the app detail's run, spirit/app/appSelector/detailElement.js:68; the file viewer that sent it
-    // too, spirit/element/textViewer.js, is deleted): jobs.js reads it as this node's own executable.
-    const plainNode = await call({ command: 'node', args: ['process/js/zzIncluded/zzIncluded.js'] });
-    ok(plainNode.status >= 200 && plainNode.status < 300, 'plain node with an included process starts, as Start Job sends it', 'node with an included process answered ' + plainNode.status + ' ' + String(plainNode.text || '').slice(0, 160));
-    const help = await call({ command: process.execPath, args: [helper] });
+    ok(inc.status === 201 && fs.existsSync(mark('run')), "an app's own spirit/app/<name>/<name>.js, its json saying node run true, starts", 'a node run app: answered ' + inc.status + ' ' + short(inc.text) + ', ran ' + fs.existsSync(mark('run')));
+    // A PAGE SENDS PLAIN node (the app detail's run, spirit/app/appSelector/detailElement.js:68): jobs.js reads it as this
+    // node's own executable. The run before has ended, so the id is free again.
+    const plainNode = await call({ command: 'node', args: ['spirit/app/zzRun/zzRun.js'] });
+    ok(plainNode.status >= 200 && plainNode.status < 300, 'plain node with a node run app starts, as Run sends it', 'node with a node run app answered ' + plainNode.status + ' ' + String(plainNode.text || '').slice(0, 160));
     await sleep(WAIT_MS);
-    ok(help.status === 201 && fs.existsSync(mark('helper')), 'a helper in an included process\'s folder starts, as desk.js:2589 and deskClient.js:535 start theirs', 'a helper of an included process: answered ' + help.status + ' ' + short(help.text) + ', ran ' + fs.existsSync(mark('helper')));
+    // A SECOND SCRIPT IN AN APP FOLDER IS NEVER STARTED (goal/G43.20, the box).
+    const helper = plant('spirit/app/zzRun/zzHelper.js', mark('helper'));
+    await refusedCase("a second script in a node run app's folder", mark('helper'), { command: process.execPath, args: [helper] });
 
     // GOAL/G41.33. THE BOX: "Console output goes to null by default, at the source, for every process. Only DEBUG turns it
     // on. A crash is no exception: the exit code is enough to tell us to fix it, and we debug it by hand." Andy: "an
@@ -92,13 +87,10 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     };
     const setDebug = async function (on) { const a = await door('node.debug', { debug: { on: on } }); return !!(a.body && a.body.debug === on); };
     const noisy = function (name, tail) {
-      const f = path.join(run, 'process/js', name, name + '.js');
+      const f = path.join(run, 'spirit', 'app', name, name + '.js');
       fs.mkdirSync(path.dirname(f), { recursive: true });
       fs.writeFileSync(f, tail);
-      fs.writeFileSync(path.join(run, 'process/js', name, name + '.json'), JSON.stringify({ label: 'zz' }));
-      const st = path.join(run, 'relay-state', 'process', name);
-      fs.mkdirSync(st, { recursive: true });
-      fs.writeFileSync(path.join(st, name + '.js.sidecar.json'), JSON.stringify({ face: { home: true } }));
+      fs.writeFileSync(path.join(run, 'spirit', 'app', name, name + '.json'), JSON.stringify({ identity: { label: 'zz' }, node: { run: true } }));
     };
     const finished = async function (id) {
       let job = null;
@@ -107,7 +99,7 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     };
     const logText = function (job) { return JSON.stringify((job && job.log) || []); };
     const start = async function (name) {
-      const a = await door('jobs.create', { command: process.execPath, args: ['process/js/' + name + '/' + name + '.js'] });
+      const a = await door('jobs.create', { command: process.execPath, args: ['spirit/app/' + name + '/' + name + '.js'] });
       return a.status === 201 && a.body && a.body.id ? a.body.id : '';
     };
     // A process job that completes deletes itself (jobs.js:120), so each here ends with an exit code of its own and stays to be read.

@@ -34,7 +34,7 @@ const appFamilies = {};
 // An app of spirit/app/<name>/ keeps its family and its manager at its top (goal/G43.27).
 function managerOf(name) {
   if (fs.existsSync(path.join(RUN, 'spirit', 'app', name, 'api.js'))) return 'spirit/app/' + name + '/data.js';
-  return appFamilies[name] ? path.posix.join(path.posix.dirname(path.posix.dirname(familyPath(name))), 'data.js') : 'spirit/' + name + '/data.js';
+  return 'spirit/' + name + '/data.js';
 }
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -46,21 +46,19 @@ const tracked = require('child_process').execFileSync('git', ['ls-files'], { cwd
 test.startTest('caches: every family has a data.js, one code in the browser and in node');
 
 // ── 1. EVERY FAMILY ─────────────────────────────────────────────────────────────────────────────────────────────────
-// The api tree's families are their interfaces: an app's at spirit.familyPath(name), and the node's own,
-// spirit/<name>/api.js (spirit.js, interfaceName). A test folder's api.js is a test, not a family. Every family path is
-// spirit.familyPath's (the appServer test's rule: no file writes one by hand). An app of spirit/app/<name>/ (its
-// interface at ./api.js and its manager at ./data.js, beside <name>.js, goal/G43.27) is found by neither pattern, so the agent app's
-// family is not among those counted here.
+// The api tree's families are their interfaces: an app's at spirit/app/<name>/api.js (goal/G43.27), and the node's own,
+// spirit/<name>/api.js (spirit.js, interfaceName); each is what spirit.familyPath gives. A test folder's api.js is a
+// test, not a family. Every server is an app of spirit/app/ since goal/G43.20.
 test.subHeading('1. every family in the api tree has a data.js in its own folder');
-// An app's family is a process folder whose familyPath is tracked.
-tracked.forEach(function (f) { const m = /^process\/js\/([^/]+)\//.exec(f); if (m && tracked.indexOf(familyPath(m[1])) !== -1) appFamilies[m[1]] = true; });
+// An app's family is an app folder whose familyPath is tracked.
+tracked.forEach(function (f) { const m = /^spirit\/app\/([^/]+)\/api\.js$/.exec(f); if (m && tracked.indexOf(familyPath(m[1])) !== -1) appFamilies[m[1]] = true; });
 const families = Object.keys(appFamilies).sort().map(function (n) { return familyPath(n); })
   .concat(tracked.filter(function (f) { return /^spirit\/[^/]+\/api\.js$/.test(f); }));
 test.comment(families.length + ' families: ' + families.map(function (f) { return f.split('/').slice(-3, -1).join('/'); }).join(', '));
 ok(families.length > 0, 'the api tree has ' + families.length + ' families', 'no family found in the tree');
 families.forEach(function (api) {
-  const manager = api.replace(/(family\/)?api\.js$/, 'data.js');
-  const name = /^process\/js\/([^/]+)\//.exec(api) ? /^process\/js\/([^/]+)\//.exec(api)[1] : /^spirit\/([^/]+)\//.exec(api)[1];
+  const manager = api.replace(/api\.js$/, 'data.js');
+  const name = /^spirit\/(?:app\/)?([^/]+)\/api\.js$/.exec(api)[1];
   ok(tracked.indexOf(manager) !== -1, name + ': ' + manager + ' is there', name + ': no ' + manager + ' for ' + api);
 });
 
@@ -73,7 +71,7 @@ const appServer = code(path.join(RUN, 'spirit', 'appServer.js'));
 ok(/['"]spirit\/data\.js['"]/.test(spiritJs) && /require\(\s*['"]\.\/data\.js['"]\s*\)/.test(appServer),
   'the data set is one file: spirit.js brings spirit/data.js to a page, and appServer requires the same file', 'spirit.js or appServer.js loads a data set from somewhere else than spirit/data.js');
 ok(tracked.indexOf('spirit/data.js') !== -1, 'the data set is spirit/data.js', 'spirit/data.js is not tracked');
-ok(/path\.dirname\(\s*path\.dirname\(\s*spirit\.familyPath\([^;]{0,60}?\)\s*\)\s*\)\s*,\s*['"]data\.js['"]/.test(appServer),
+ok(/path\.dirname\(\s*spirit\.familyPath\([^;]{0,60}?\)\s*\)\s*,\s*['"]data\.js['"]/.test(appServer),
   'appServer takes a family\'s cache from the family\'s own data.js', 'appServer finds a family\'s cache somewhere else than the family\'s folder');
 const managers = tracked.filter(function (f) { return /\/data\.js$/.test(f) && f !== 'spirit/data.js' && !/\/test\//.test(f); });
 // What each manager names: its branches, the strings it gives its names to (var ITEMS = 'desk').
@@ -182,9 +180,9 @@ test.subHeading('7. nothing keeps node rows but spirit.data, and no file names a
 // takes it, for every client. boot.js is the face's own transport, before spirit (Andy: "boot.js MUST be an exception").
 // The node's own side (spirit/, kernel, events) serves the stream and is no client. The client list below names shell/
 // and shell/boot.js; goal/G43.18 moved boot.js and seal.js to spirit/shell/, which the list does not reach, so boot.js
-// stays out by its new place and spirit/shell/seal.js is not read; the apps left in shell/ still are. Nor does it reach
-// spirit/app/, where the apps moved to (goal/G43.12, G43.17): none of those is judged here.
-const clients = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && /^(shell|spirit\/element|process\/js)\//.test(f) && f !== 'shell/boot.js'; });
+// stays out by its new place and spirit/shell/seal.js is not read; the apps left in shell/ still are, and every app of
+// spirit/app/, where the apps and the servers moved to (goal/G43.12, G43.17, G43.20).
+const clients = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\//.test(f) && /^(shell|spirit\/element|spirit\/app)\//.test(f) && f !== 'shell/boot.js'; });
 const takers = clients.filter(function (f) { return /\bevents\.subscribe\(|\bev\.subscribe\(/.test(code(path.join(RUN, f))); });
 ok(!takers.length, 'no client takes the node\'s stream itself: spirit/data.js takes it for all', 'clients taking the stream themselves, their rows outside spirit.data: ' + short(takers));
 // "any notion that there is an alternative approach must disappear from all documentation and all comments in the

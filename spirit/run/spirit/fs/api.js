@@ -8,10 +8,8 @@ module.exports = {
     search: { q: 'text?', contents: 'flag?' },
     stat: { path: 'path' },
     load: { path: 'path' },
-    annotations: { path: 'path' },
     save: { path: 'path', content: 'text' },
     delete: { path: 'path' },
-    annotate: { path: 'path', payload: 'object' },
   },
   // THE KERNEL'S NAMES, async (Andy listed them): what the old shell's apps call, so an app ports by adding await.
   // loadFile and statFile answer null where the node refuses, as the kernel's did; a malformed call still refuses.
@@ -28,7 +26,6 @@ module.exports = {
         });
       },
       statFile: function (path) { return orNull(call('stat', { path: path })); },
-      getAnnotations: function (path) { return call('annotations', { path: path }); },
       saveFile: function (path, content) { return call('save', { path: path, content: content }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
       deleteFile: function (path) { return call('delete', { path: path }).then(function () { return { ok: true }; }, function (e) { if (e && e.status) return { ok: false, reason: e.message || e.code }; throw e; }); },
       // A data: url of the file, read as the page reads a file (on the face, in its sealed pieces); null if refused.

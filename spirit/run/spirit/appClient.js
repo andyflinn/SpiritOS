@@ -23,9 +23,8 @@
 // WHAT LEFT WITH goal/G13.2 (Andy, 2026-10-10, "no \"face\" crap belongs
 // into node."): readServers, the "serves" flag, startAll spawning
 // spirit/server.js --app for a face, and toLocalApp, the hop a booted app took
-// to a server by name. A server is started by startNodeServers (a
-// process/js server, or since goal/G43.12 an app of spirit/app/), reached
-// by its pipe, and the node knows nothing of faces.
+// to a server by name. A server is started by startNodeServers (an app of
+// spirit/app/), reached by its pipe, and the node knows nothing of faces.
 //
 // Every refusal is by name (spiritErrors.js), so whoever asked reads which
 // link failed, never a hang:
@@ -66,23 +65,15 @@ const STATUS = {
 // permissions). A Windows pipe name is global to the machine, and one box
 // can run two nodes (Andy's and an agent's), so the name carries this
 // checkout: a short hash of its root, or both nodes' desk would collide.
-// kind 'process' (desk/G1.6): a server process in process/js. Its socket
-// sits in its own state folder, relay-state/process/<name>/ (desk/G1 D5:
-// a process's state is part of the node's), and its Windows pipe carries
-// 'process-', so it never equals the legacy app/ pipe of the same name.
-function pipePathFor(rootDir, appName, platform, kind) {
-  const proc = kind === 'process';
-  // kind 'app' (goal/G43.12): a server of spirit/app/. Andy: "their new door.sock will live in run://spirit/state/<name>/,
-  // owned by the node."
-  const app = kind === 'app';
+// EVERY SERVER IS AN APP OF spirit/app/ (goal/G43.12, goal/G43.20). Andy: "their new door.sock will live in
+// run://spirit/state/<name>/, owned by the node.", and "put those in spirit/state/<name>/ since they belong to the node."
+// kind is no longer told apart: every server's socket is spirit/state/<name>/door.sock, its Windows pipe 'app-<name>'.
+function pipePathFor(rootDir, appName, platform) {
   if ((platform || process.platform) === 'win32') {
     const tag = crypto.createHash('sha256').update(path.resolve(String(rootDir))).digest('hex').slice(0, 12);
-    return '\\\\.\\pipe\\spirit-' + tag + '-' + (proc ? 'process-' : app ? 'app-' : '') + appName;
+    return '\\\\.\\pipe\\spirit-' + tag + '-app-' + appName;
   }
-  if (app) return path.join(rootDir, 'spirit', 'state', appName, 'door.sock');
-  return proc
-    ? path.join(rootDir, 'relay-state', 'process', appName, 'door.sock')
-    : path.join(rootDir, 'app-state', appName, 'door.sock');
+  return path.join(rootDir, 'spirit', 'state', appName, 'door.sock');
 }
 
 // opts: { rootDir, log, request }

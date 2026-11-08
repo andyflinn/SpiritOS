@@ -5,7 +5,7 @@
 // THE BRANCH IS THIS FILE'S, AND ONLY THIS FILE NAMES IT: every reader (the app row and list) asks spirit.data.app.data
 // (below), never a branch by name.
 //   apps   key -> { key, label, icon, active, shell, intrinsic, nodeMount }, what app.search answered (seated by the list that is a view of it), and the
-//          whole table the node's permanent job 'apps' holds (spirit/app.js): a key it no longer names is gone.
+//          whole table the apps news of the node's own job spirit.app holds (spirit/app.js): a key it no longer names is gone.
 // Every event ends in set or del; it asks nothing.
 (function () {
   var APPS = 'apps';
@@ -14,7 +14,8 @@
     var HOME = D.viewAt(null, 'app');
     D.addTranslator({
       onJob: function (job) {
-        var all = job && job.type === 'apps' && job.data ? job.data.apps : null;
+        // THE APP LIST, news of spirit.app (goal/G43.20): { apps }.
+        var all = job && job.id === 'spirit.app' && job.data ? job.data.apps : null;
         if (!all || typeof all !== 'object') return;
         var V = D.viewAt(job.fromNode || null, 'app');
         Object.keys(V.branch(APPS)).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(all, k)) V.del(APPS + '/' + k); });

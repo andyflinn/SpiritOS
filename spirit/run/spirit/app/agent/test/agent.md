@@ -23,7 +23,7 @@ The Agent in `spirit/app/agent/`, as Andy sees it (goal/G43.13). Its test is `./
 
 ### What goes
 
-- The tick box `showDebug` is off the page, and `relay-state/shell/agent/config.json` is not written.
+- The tick box `showDebug` is off the page.
 - No sidecar of the agent stands anywhere, and no code or test of the agent names one.
 - No code of the agent names `process/js/agent` or `shell/agent`.
 

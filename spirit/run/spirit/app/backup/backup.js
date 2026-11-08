@@ -12,7 +12,7 @@
 //     hands --state as spirit/state/backup/data/, goal/G43.10), every
 //     process's state and the node's node.db with it (desk/G1, O2;
 //     goal/G43.23, the box's item 5). Its own folder, spirit/state/backup/,
-//     is left out; so are a nested relay-state/ or spirit/state/ and every
+//     is left out; so are a nested spirit/state/ and every
 //     identity.json. The node's name and public key are handed over as
 //     --node (jobs.js nodeArgOf); this process never opens identity.json,
 //     which holds the private keys.
@@ -87,10 +87,10 @@ function sourceFiles() {
       const r = rel ? rel + '/' + e.name : e.name;
       if (!rel && e.name === OWN) return;
       // NEVER A KEY (Andy: "don't include my private key in the backup"). A
-      // face keeps its own node identity in a relay-state/ or spirit/state/ of
-      // its own inside its state folder (slim/G1.4, goal/G43.8): neither is
-      // walked, and no identity.json is copied wherever it is.
-      if (e.isDirectory()) { if (e.name !== 'relay-state' && !(e.name === 'state' && path.basename(dir) === 'spirit')) walk(path.join(dir, e.name), r); }
+      // face keeps its own node identity in a spirit/state/ of its own inside
+      // its state folder (slim/G1.4, goal/G43.8): it is not walked, and no
+      // identity.json is copied wherever it is.
+      if (e.isDirectory()) { if (!(e.name === 'state' && path.basename(dir) === 'spirit')) walk(path.join(dir, e.name), r); }
       else if (e.isFile() && !COMPANION.test(e.name) && e.name !== 'identity.json') out.push(r);
     });
   })(SOURCE, '');

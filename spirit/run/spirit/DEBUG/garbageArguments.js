@@ -4,8 +4,8 @@
 // for any version of a relay as well".
 //
 // Made from what the server says about itself: its api tree, { <family>: { <verb>: { request, reply } } }, the request a
-// prototype of the arguments (each key's value of its type). The family is the module's name: /DEBUG/process/js/
-// fileServer/fileServer/garbageArguments.json is the file server's. Each entry is a body for that server's door as it
+// prototype of the arguments (each key's value of its type). The family is the module's name: /DEBUG/spirit/app/
+// desk/desk/garbageArguments.json is the desk server's. Each entry is a body for that server's door as it
 // is: on a node { call: '<family>.<verb>', args }, on a relay its ask, { body: { <verb>: args } }.
 //
 // THE SHAPE BROKEN, BUT FOR THE BAD STRINGS. Every entry breaks the shape itself (at least one argument of a wrong kind,

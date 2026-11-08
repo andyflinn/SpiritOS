@@ -10,8 +10,6 @@
 // `node spirit/server.js --relay`. Changing that is a deploy decision (Andy's),
 // not part of the split. (The Procfile and install-public-relay.js did too,
 // until both went in cycle 3.)
-// relay-state's own files first (goal/G43.8): spirit.js reads environment.json as it loads.
-require('./shellMove').moveRelayState(require('path').join(__dirname, '..'));
 // The spirit object first, as the global spirit (goal/G40.1): the relay loads it too, so it comes before the branch.
 require('./spirit.js');
 if (process.argv.slice(2).includes('--relay')) {
@@ -22,9 +20,8 @@ if (process.argv.slice(2).includes('--relay')) {
 // A THIRD MODE STOOD HERE, `--app` (cycle 2): one process serving one page app, dispatched to
 // faceServer.js. Gone with goal/G13.2 (Andy, 2026-10-10: "no \"face\" crap belongs into node.",
 // "wh the fucdk does the node need a second fucking branch for opening a fucking process?").
-// Every server process is started by jobs.startNodeServers: a process/js script that runs at home
-// (intrinsic, or by its sidecar; goal/G41.1), or a spirit/app one whose node.mount is true and that is active
-// (intrinsic, or active in spirit/state/<name>/node.json; goal/G43.12).
+// Every server process is started by jobs.startNodeServers: an app of spirit/app/ whose node.mount is true and that is
+// active (intrinsic, or active in spirit/state/<name>/node.json; goal/G43.12).
 
 const http = require('http');
 // For the proxy's outbound calls (handleGenericProxy) — with no 300-second
@@ -86,7 +83,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 
 // The node spawns jobs from process/ and serves the shell from shell/, so
 // it alone demands them (goal/G16.9: the relay's check asks for neither).
-common.verifyStartupCwd('spirit/server.js', ['shell', 'spirit', 'process']);
+common.verifyStartupCwd('spirit/server.js', ['shell', 'spirit']);
 
 const ROOT_DIR = fileSystem.ROOT_DIR;
 
@@ -141,7 +138,7 @@ const arrivals = require('./arrivals').createArrivals({
 // unconditionally by the static route below, checked before fileServable —
 // this is what lets spirit/kernel.js sit in fileSystem.js's UNSERVABLE_FILES
 // (blocking the *generic* read/list capability: loadFile, scanFolder, the
-// Files app, the fs-watcher) while still working as the page's own boot
+// Files app, the spirit.fs job) while still working as the page's own boot
 // script. relay.html stood beside index.html here until the brochure was
 // killed with the relay's public door (goal/G22.6).
 const BOOT_ASSETS = ['index.html', 'spirit/kernel.js', 'spirit/client/shell.js', 'favicon.svg'];
@@ -182,13 +179,14 @@ function relayChanged(url) {
     const row = known ? require('./nodeStore').open(ROOT_DIR).seen.get(known.key) : null;
     const facts = row ? relayFactsOf(row) : null;
     if (!facts || relayFactsSaid[row.publicKey] === JSON.stringify(facts)) return;
-    jobs.updateJob(shadowJob.id, { data: { row: shadowRow(row) } });
+    jobs.ownNews('spirit.contact', 'row', { row: shadowRow(row) });
   } catch (e) { /* the next change publishes again */ }
 }
 try {
-  shadowJob = jobs.createJob('permanent', 'shadow', {});
+  // A CONTACT ROW IS NEWS OF spirit.contact (goal/G43.20, Q1): { row }, nothing else in it.
+  shadowJob = jobs.ownJob('spirit.contact');
   require('./nodeStore').open(ROOT_DIR).seen.onChange(function (row) {
-    try { jobs.updateJob(shadowJob.id, { data: { row: shadowRow(row) } }); } catch (e) { /* the next change publishes again */ }
+    try { jobs.ownNews('spirit.contact', 'row', { row: shadowRow(row) }); } catch (e) { /* the next change publishes again */ }
   });
 } catch (e) { shadowJob = null; }
 
@@ -327,7 +325,7 @@ function handleCreateJob(req, res) {
     try { job = jobs.startJob(body.command, body.args || [], { type: body.type }); }
     catch (e) {
       // A process this node does not include is refused by name (slim/G1.3).
-      if (e && (e.refusal === 'process-not-included' || e.refusal === 'not-a-process')) {
+      if (e && (e.refusal === 'process-not-included' || e.refusal === 'not-a-process' || e.refusal === 'already-running')) {
         const known = require('./spiritErrors').byCode(e.refusal);
         res.writeHead(known.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: false, code: e.refusal, error: known.text, process: e.process }));
@@ -409,12 +407,6 @@ function handleFsStat(req, res) {
   }).catch((e) => bodyRefused(req, res, e));
 }
 
-function handleFsAnnotations(req, res) {
-  return readJsonBody(req).then((body) => {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(fileSystem.getAnnotations(String((body && body.path) || ''))));
-  }).catch((e) => bodyRefused(req, res, e));
-}
 
 function writeFsResult(res, result) {
   if (result.ok) {
@@ -499,13 +491,6 @@ function handleFsDelete(req, res) {
   }).catch((e) => bodyRefused(req, res, e));
 }
 
-// Writes the target file's sidecar face part, as the face link does (goal/G41.1, box v15: "the node's door writes a
-// sidecar's face part for every caller"; Andy: "the loopback door MUST NOT be compatible with the old shell.").
-function handleFsAnnotate(req, res) {
-  readJsonBody(req).then((body) => {
-    writeFsResult(res, fileSystem.annotateFace(body.path, body.payload));
-  }).catch((e) => bodyRefused(req, res, e));
-}
 
 // NO SECRETS AND NO ALLOW LIST HERE (goal/G29.20). envSecrets.js (the env-variable key fill) and proxyList.js (the
 // owner's list and its gate, spirit/state/proxy.json) are gone with the proxy verbs. Andy, 2026-10-18: "remove all the
@@ -810,13 +795,6 @@ const server = http.createServer((req, res) => {
   // the thing the whole fold is for: one place that knows what this node
   // can be asked.
 
-  // `GET /api/fs/stat` and `GET /api/fs/annotations` STOOD HERE, each
-  // taking its path from a QUERY STRING. They are `fs.stat` and
-  // `fs.annotations` under the one door, and the path is a field — which
-  // is the last of the three ways this node used to carry a parameter
-  // (path segment, query string, body) collapsing into the one that a
-  // type system can see.
-
   if (req.method === 'GET') {
     serveGet(pathname, res);
     return;
@@ -967,7 +945,7 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ ok: false, code: 'handler-failed', error: 'the handler failed' }));
         };
         // A relay, contact or peer verb may have taken a seat, added a contact or kept a face: once its answer has gone
-        // out, the join-steps job is refreshed, and published only if that changed it (goal/G30.1, box v40).
+        // out, the join news on the spirit job is refreshed, and published only if that changed it (goal/G30.1, box v40).
         if (joinStepsJob && /^(relay|contact|peer)\./.test(String(verb))) {
           res.on('finish', function () {
             try { joinStepsJob.refresh(String(verb)); } catch (e) { /* the next verb refreshes it */ }
@@ -1169,7 +1147,7 @@ catch (e) {
   // standing on a relay. The connection's existence IS the presence,
   // so there is nothing to announce and nothing to expire.
   //
-  // Published as a permanent job, beside fs-watcher and server-stats, so
+  // Published on the node's own job spirit.contact (goal/G43.20), so
   // the shell receives it on the channel it already has. Personal mode
   // only: a relay serves this wire, it does not hold one.
   // ONE router per node, shared. An outbound request and the answer that
@@ -1301,7 +1279,7 @@ catch (e) {
   // ── THE SERVER PROCESSES ON THIS BOX ──────────────────────────────
   //
   // ONE WAY TO START A PROCESS (goal/G13.2, Andy 2026-10-10): jobs.startNodeServers starts every
-  // process/js server that runs at home, and every active spirit/app server (goal/G43.12), with the pipe the node names, and appClient knows each by that pipe
+  // active spirit/app server (goal/G43.12), with the pipe the node names, and appClient knows each by that pipe
   // (register) and knocks on it for the api door. Nothing is loaded into this
   // process, nothing is started by any other branch, and the node opens no door for visitors:
   // a server that wants a port opens its own, and the node is not told.
@@ -1335,9 +1313,6 @@ catch (e) {
       return require('fs').existsSync(path.join(app, 'api.js')) ? app : path.join(ROOT_DIR, path.dirname(spirit.familyPath(name)));
     },
   });
-  // EACH APPSERVER'S BUNDLES ARE WRITTEN BY apiAuth AS IT IS MADE, below (goal/G41.24; Andy, box: "the apiAuth.js module,
-  // when the node boots, will check for all valid ... Bundles.json files"). Everything from here to there runs in this one
-  // pass, so the tables hold them before any appServer started here can ask the node anything.
   jobs.startNodeServers(ROOT_DIR, appClient);
 
   // ── THE OWNER DOOR (puppets/G7, slice 1) ───────────────────────────
@@ -1370,8 +1345,6 @@ catch (e) {
     faceHome = require('./faceHome').createFaceHome({
       call: function (verb, args) { return nodeDoor.call(verb, args); },
       serveFile: function (rel, res) { serveGet('/' + rel, res); },
-      // The face's fs.annotate writes the face part of a sidecar (goal/G30.21).
-      annotateFace: function (rel, payload) { return fileSystem.annotateFace(rel, payload); },
       // A face's save in parts lands here (goal/G33.10): the work file copied to the target through the save gate.
       saveFrom: function (work, rel) {
         if (!fileSystem.fileWritable(rel)) return { ok: false, reason: 'forbidden' };
@@ -1714,13 +1687,14 @@ catch (e) {
   // SHIT NOW"): each grant row given or revoked, { table: 'grant', row }, gone when revoked; the job carries the auth
   // tables' rows, the table names which.
   try {
-    const bundlesJob = jobs.createJob('permanent', 'bundles', {});
+    // THE AUTH TABLES' ROWS ARE NEWS OF spirit.auth (goal/G43.20): { table, row, gone }.
+    jobs.ownJob('spirit.auth');
     apiAuth.onChange(function (change) {
       // EVERY FIELD, EVERY TIME: a job's update merges into what the job holds (jobs.updateJob), so a field left out
       // keeps its last value. Found on cw's face: after one revoke, gone stayed true, and every later grant was taken out.
       const c = change || {};
       const data = { table: String(c.table || ''), row: c.row || {}, gone: c.gone === true };
-      try { jobs.updateJob(bundlesJob.id, { data: data }); } catch (e) { /* the next change publishes again */ }
+      try { jobs.ownNews('spirit.auth', 'row', data); } catch (e) { /* the next change publishes again */ }
     });
   } catch (e) { /* no job, no stream: the lists still search */ }
   function authVerb(work) {
@@ -1811,12 +1785,10 @@ catch (e) {
     'stat': { request: { path: '' }, reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: handleFsStat },
     // The file's text (goal/G14.8), the same read as the static route.
     'load': { request: { path: '' }, reply: { path: '', text: '' }, handler: handleFsLoad },
-    // The sidecar as it is, every bucket; {} when there is none.
-    'annotations': { request: { path: '' }, reply: {}, handler: handleFsAnnotations },
-    // The three writes answer 204, no body.
+    // No annotations and no annotate: ANNOTATIONS ARE THE NODE'S ONLY (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY."), so no caller reads or writes a sidecar.
+    // The two writes answer 204, no body.
     'save': { request: { path: '', content: '' }, reply: {}, handler: handleFsSave },
     'delete': { request: { path: '' }, reply: {}, handler: handleFsDelete },
-    'annotate': { request: { path: '', payload: {} }, reply: {}, handler: handleFsAnnotate },
     // LOCAL: this node's own disk.
   }, { wire: false, by: 'server.js' });
 

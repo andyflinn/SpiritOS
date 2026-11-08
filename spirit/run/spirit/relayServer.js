@@ -5,7 +5,7 @@
 // step of separating them is two startup modules. Until then one
 // spirit/server.js booted either, and a --relay process loaded the node's half
 // and left it sitting in memory — hub, the traffic log, the jobs module
-// with an fs-watcher scanning the whole root for a Files app a relay never
+// with a spirit.fs job scanning the whole root for a Files app a relay never
 // serves. A relay's RAM is the most expensive thing it has (standing rule,
 // same document), so it no longer loads any of that.
 //
@@ -20,8 +20,6 @@
 'use strict';
 
 // The spirit object first, as the global spirit (goal/G40.1).
-// relay-state's own files first (goal/G43.8): a relay may be started here directly.
-require('./shellMove').moveRelayState(require('path').join(__dirname, '..'));
 require('./spirit.js');
 const http = require('http');
 const fs = require('fs');

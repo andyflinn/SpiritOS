@@ -9,7 +9,7 @@
 //   bundles    id -> { id, label, owner }, a row of node.db's bundle table
 //   branches   id -> { id, bundle, family, verb }, a row of its branch table
 //   grants     key + newline + path -> the grant row, a row of its grant table
-// The rows come on the node's permanent job 'bundles' (spirit/server.js), each changed row of the three tables with its
+// The rows come on the node's own job spirit.auth (spirit/server.js, goal/G43.20), each changed row of the three tables with its
 // table's name, gone when it is removed (goal/G41.14; moved here from the three row elements). Every event ends in set
 // or del; it asks nothing.
 (function () {
@@ -22,7 +22,8 @@
     var HOME = D.viewAt(null, 'auth');
     D.addTranslator({
       onJob: function (job) {
-        var d = job && job.type === 'bundles' ? job.data : null;
+        // THE AUTH TABLES' ROWS, news of spirit.auth (goal/G43.20): { table, row, gone }.
+        var d = job && job.id === 'spirit.auth' ? job.data : null;
         if (!d || !d.row) return;
         var V = D.viewAt(job.fromNode || null, 'auth');
         var r = d.row;

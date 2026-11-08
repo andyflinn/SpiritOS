@@ -5,9 +5,9 @@
 //
 //   A family folder holds AGENTS.md and one description file per verb (<verb>.json), and whatever its consumers
 //   place there (verb.design.md, README.md), and the family's api.js, which spirit.js reads
-//   (some hold more code beside it: desk's cacheRules.js, a test/ folder). Where it sits: a process server's is
-//   process/js/<name>/family/ (spirit.familyPath), an app of spirit/app/<name>/ has it at its top (appServer.withAgents, goal/G43.27),
-//   a node family's is spirit/<family>/.
+//   (some hold more code beside it: desk's cacheRules.js, a test/ folder). Where it sits: an app of
+//   spirit/app/<name>/ has it at its top (appServer.withAgents, goal/G43.27), a node family's is spirit/<family>/
+//   (spirit.familyPath).
 //
 //   family(folder) answers the folder's FS verbs, FS.<name> with the kernel's fs names and a search, scoped to the
 //   folder. The AGENTS verbs that stood here (AGENTS, AGENTS.introspect, AGENTS.<verb>) are gone: an agent reads
@@ -21,7 +21,7 @@
 require('./spirit.js');
 const fs = require('fs');
 const path = require('path');
-// The node's file system, for the annotations of a folder under spirit/run (goal/G40.6).
+// The node's file system: its write gate for a path under spirit/run (goal/G40.6).
 const fileSystem = require('./fileSystem');
 // The probability modules (goal/G29.19): FS.search ranks with them.
 const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
@@ -98,11 +98,6 @@ function fsVerbs(dir, prefix) {
     if (full.indexOf(root + path.sep) !== 0) throw refusal('bad-request', { why: 'nothing above the family folder' });
     return full;
   }
-  function underRun(full) {
-    const rel = path.relative(fileSystem.ROOT_DIR, full);
-    if (!rel || rel.indexOf('..') === 0 || path.isAbsolute(rel)) throw refusal('bad-request', { why: 'annotations live under spirit/run' });
-    return { rel: rel.split(path.sep).join('/') };
-  }
   function read(full) { try { return fs.readFileSync(full, 'utf8'); } catch (e) { return null; } }
   // The kernel's write gate, for a path under spirit/run: a core file, a node state file or a sidecar is refused.
   function writable(full) {
@@ -149,8 +144,6 @@ function fsVerbs(dir, prefix) {
     try { return { value: text == null ? null : JSON.parse(text) }; } catch (e) { return { value: null }; }
   } };
   v[prefix + 'FS.saveJsonValue'] = { request: { path: '', value: {} }, reply: { saved: true }, handler: function (a) { return write(inside(a.path), JSON.stringify(a.value, null, 2)); } };
-  v[prefix + 'FS.getAnnotations'] = { request: { path: '' }, reply: {}, handler: function (a) { const u = underRun(inside(a.path)); return fileSystem.getAnnotations(u.rel); } };
-  v[prefix + 'FS.annotateFile'] = { request: { path: '', payload: {} }, reply: { saved: true }, handler: function (a) { const u = underRun(inside(a.path)); const r = fileSystem.annotateFace(u.rel, a.payload); return { saved: !!(r && r.ok) }; } };
   // NO LIST, A SEARCH (Andy's rule: "no lists, only searches"): the folder's file names ranked against the words,
   // every file in name order with none, cut in bytes to one answer with `more`.
   v[prefix + 'FS.search'] = { request: { q: '' }, reply: { items: [{ key: '', label: '' }], more: false }, handler: function (a) {

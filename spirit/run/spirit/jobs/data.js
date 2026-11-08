@@ -8,8 +8,8 @@
 //   jobs     id -> the job as the stream last handed it
 //   events   id -> { lines: [{ at, json }] }, the job's last EVENT_WINDOW events, oldest falling off the top (moved here
 //            from the job details dialog, goal/G29.14): an event is what a job publishes, its app object when it differs
-//            from the one heard before; for fs-watcher the tree command each change carries (goal/G4.25), and for the
-//            node's other jobs (server-stats, relay-presence) their data, each time it changes. Nothing is asked of the node.
+//            from the one heard before; for spirit.fs the tree command each change carries (goal/G4.25), and for the
+//            node's other jobs (spirit, spirit.contact) their data, each time it changes. Nothing is asked of the node.
 // Every job the node's stream hands over is kept as it came, and one the stream deletes goes; a connect hands the whole
 // set again (spirit.data forgets on a snapshot). It asks nothing.
 (function () {
@@ -17,7 +17,7 @@
   var EVENTS = 'events';
   var EVENT_WINDOW = 256;
   function eventOf(job) {
-    var obj = job.type === 'fs-watcher' ? (job.data && job.data.command) : job.kind === 'permanent' ? job.data : job.app;
+    var obj = job.id === 'spirit.fs' ? (job.data && job.data.command) : job.kind === 'permanent' ? job.data : job.app;
     if (!obj || typeof obj !== 'object') return '';
     try { return JSON.stringify(obj); } catch (e) { return ''; }
   }
@@ -31,6 +31,10 @@
         var id = String(job.id);
         var row = Object.assign({}, job);
         delete row.fromNode;
+        // THE NODE'S OWN JOBS CARRY ONE KIND OF NEWS PER EVENT (goal/G43.20): spirit its stats or its join steps, spirit.app its
+        // app list, and so on. The cache keeps the newest of each kind on the one row, so a reader finds them all there.
+        var had = V.get(JOBS + '/' + id);
+        if (job.kind === 'permanent' && had && had.data && typeof had.data === 'object') row.data = Object.assign({}, had.data, job.data || {});
         // Its event first, so a reader of both that the job's write wakes sees the event already kept.
         var json = eventOf(job);
         var kept = V.get(EVENTS + '/' + id);

@@ -576,10 +576,8 @@ function createPeerPost(opts) {
       var jobId = presence.jobId ? presence.jobId() : null;
       if (heldJobs && jobId) {
         try {
-          heldJobs.updateJob(jobId, {
-            data: { refused: Object.assign({}, refusedShown) },
-            logMessage: u + ' refused this node: ' + (kept.why || 'not a valid sender there'),
-          });
+          // Its own news on the contact job (goal/G43.20): { refused }, nothing else in it.
+          heldJobs.ownNews(jobId, 'refused', { refused: Object.assign({}, refusedShown) });
         } catch (e) { /* the row is written; the screen reads it on its next look */ }
       }
     }
@@ -2007,7 +2005,7 @@ function createPeerPost(opts) {
   var streamHandles = Object.create(null);
   // Closed by a refusal, so a later start may have to open it again.
   var closedByRefusal = Object.create(null);
-  // The node's jobs, for the relay-presence job the shell already hears.
+  // The node's jobs, for the spirit.contact job the shell already hears.
   var heldJobs = null;
   // What the shell has been told: relay url -> { code, why, at }.
   var refusedShown = Object.create(null);
