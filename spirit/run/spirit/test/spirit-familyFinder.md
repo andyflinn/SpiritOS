@@ -13,3 +13,11 @@ The tree is read as it is. The finding is judged on a real page (headless Chrome
 - **1. The fewest path elements win.** A planted `spirit/app/relay/` with its own api.js and data.js loses to `spirit/relay/`, whose data.js is the one loaded.
 - **An app's family is found where its api.js is.** The agent app's api.js is in `spirit/app/agent/` alone, so `spirit/app/agent/data.js` is loaded.
 - **No data.js is asked that is not there (no 404).**
+
+## goal/G43.20: a family's path in a process
+
+The box: *"a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js, a job is named by its route, and nothing
+falls back to process/js/<name>"*. In a process, `spirit.familyPath` gives a system family's own `spirit/<name>/api.js`
+(fs), an app's `spirit/app/<name>/api.js` (desk, agent), and no path it gives names `process/js`, a name of no family's
+included.
+

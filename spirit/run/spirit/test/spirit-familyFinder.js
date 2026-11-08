@@ -93,6 +93,17 @@ test.startTest('spirit-familyFinder.js: a family found by its name: the fewest p
   if (page && page.kid) page.kid.kill();
   if (node.child) node.child.kill();
 
+  // goal/G43.20, its box: "a family is found as spirit/<name>/api.js or spirit/app/<name>/api.js, a job is named by its
+  // route, and nothing falls back to process/js/<name>". In a process: the path spirit.familyPath gives is the family's own
+  // api.js, a system family's in spirit/<name>/, an app's in spirit/app/<name>/, and none names process/js.
+  test.subHeading('goal/G43.20: in a process, a family\'s path is its own api.js, and nothing falls back to process/js');
+  const paths = JSON.parse(require('child_process').spawnSync(process.execPath, ['-e',
+    "require('./spirit/spirit.js'); console.log(JSON.stringify({ fs: spirit.familyPath('fs'), desk: spirit.familyPath('desk'), agent: spirit.familyPath('agent'), none: spirit.familyPath('zzNoSuchFamily') }));"],
+    { cwd: RUN, encoding: 'utf8' }).stdout || '{}');
+  ok(paths.fs === 'spirit/fs/api.js', 'a system family\'s path is spirit/<name>/api.js: fs is spirit/fs/api.js', 'fs: ' + short(paths.fs));
+  ok(paths.desk === 'spirit/app/desk/api.js' && paths.agent === 'spirit/app/agent/api.js', 'an app\'s path is spirit/app/<name>/api.js: desk and agent', 'desk: ' + short(paths.desk) + ', agent: ' + short(paths.agent));
+  ok(Object.keys(paths).length === 4 && !/process\/js/.test(JSON.stringify(paths)), 'no path names process/js, a name of no family\'s included', 'paths: ' + short(paths));
+
   test.reportSuccessFailureCount();
   process.exit(0);
 })();
