@@ -27,7 +27,9 @@ modules reads as one result per module.
 
 A test that does not judge the one file it is handed is never a general test: a `-sibling-` beside `spirit.js` runs once per
 module, 111 times (goal/G43.2; Andy: *"it looks to me like a lazy-funcking-ass placement of tests"*). A test that covers
-several modules end to end is a plain test in the `test/` folder of the module it is most about, and runs once.
+several modules end to end is a test of the module it is most about, in that module's `./test/<name>.js`, and runs
+once. **Every test matches a production file** (goal/G43.27; Andy: *"wsl: every test in run:/ MUST MATCH a production
+file."*): a test named after no module is garbage, and `test/spirit-sibling-noFuckingGarbage.js` goes red on it.
 
 The run root's general tests (`spirit/run/test/spirit-child-generalRules.js`, `spirit-sibling-generalRules.js`,
 `spirit-sibling-searchRules.js`, `spirit-sibling-testReachRules.js`) are named after `spirit.js`, which goal/G43.18 moved
