@@ -22,7 +22,8 @@ const SELF = /spirit\/app\/test\/deskMove\.(js|md)$/;
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
-function read(rel) { const f = path.join(REPO, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : ''; }
+// Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
+function read(rel) { const f = path.join(REPO, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
 
 test.startTest('deskMove.js: desk in spirit/app/desk/, its family at its top, an app that is not intrinsic (goal/G43.27)');
 

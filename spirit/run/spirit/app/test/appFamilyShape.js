@@ -20,7 +20,8 @@ const SELF = /spirit\/app\/test\/appFamilyShape\.(js|md)$/;
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 400); }
 function code(text) { return String(text).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1'); }
-function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : ''; }
+// Line ends aside: a Windows checkout (autocrlf) holds CRLF where git holds LF.
+function read(rel) { const f = path.join(RUN, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n') : ''; }
 
 test.startTest('appFamilyShape.js: an app\'s family at its top, as spirit/<family>/ has it; the family FS no longer asked (goal/G43.27)');
 
@@ -61,7 +62,7 @@ test.startTest('appFamilyShape.js: an app\'s family at its top, as spirit/<famil
   ok(on.status === 200, 'the world: the agent app is switched on', 'app.active agent answered ' + short(on));
   let fam = { status: 0 };
   await H.until(function () { return ask('api', { family: 'agent' }).then(function (a) { fam = a; return a.status === 200; }); }, 30000);
-  const iface = fam.body && typeof fam.body.interface === 'string' ? fam.body.interface : '';
+  const iface = fam.body && typeof fam.body.interface === 'string' ? fam.body.interface.replace(/\r\n/g, '\n') : '';
   ok(fam.status === 200 && iface.length > 0, 'the world: the node serves the agent\'s interface', 'api {family: agent} answered ' + short(fam));
   ok(iface && iface === read('spirit/app/agent/api.js'), 'the interface the node serves is spirit/app/agent/api.js', 'the interface served is not spirit/app/agent/api.js (' + (read('spirit/app/agent/api.js') ? 'it differs' : 'there is no such file') + ')');
   // Its server answers once it has started.
