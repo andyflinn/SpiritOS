@@ -12,7 +12,72 @@
 // spirit.data.desk.data, and the page draws from there. It keeps nothing in its own folder. A row is keyed by its full
 // id (goal/G<n> or goal/G<n>.<m>) and opens the item's dialog (spirit/app/desk/element/deskDetails).
 
-var deskApi = null;
+// WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9; goal/G43.27, requirement 23): the page is an element of the new
+// shell, spirit.elements.deskPage, mounted by the Desk app (spirit/app/desk/deskBrowser.js). It is handed no api: deskVia is
+// built here from the one spirit object, a family's verb asked through it, its escape, the desk server's publishes heard on
+// the stream through the data set's translator (the desk family's cache manager keeps them first), and a dialog opened as a
+// layer over the page through panel.js (the mounter's open, or the page's own stack).
+var deskOpts = {};
+var deskStack = null;
+function deskVerbCall(name, args) {
+  var S = window.spirit;
+  return S.outcome(Promise.resolve(S.ready).then(function (s) {
+    var n = String(name || '');
+    var dot = n.indexOf('.');
+    var fam = s && s[n.slice(0, dot)];
+    var rest = n.slice(dot + 1);
+    var fn = fam && fam[rest];
+    if (typeof fn !== 'function') fn = rest.split('.').reduce(function (at, k) { return at ? at[k] : undefined; }, fam);
+    if (typeof fn !== 'function') throw new Error('no verb ' + n);
+    return fn(args || {});
+  }));
+}
+var deskHeard = [];
+var deskHearing = null;
+function deskHear(fn) {
+  var S = window.spirit;
+  deskHeard.push(fn);
+  if (!deskHearing) {
+    deskHearing = Promise.resolve(S.cacheManager('desk')).then(function () {
+      S.data.addTranslator({
+        onJob: function (job) {
+          if (!(job && job.module === 'spirit.app.desk' && job.app && typeof job.app === 'object')) return;
+          deskHeard.slice().forEach(function (h) { try { h(job.app); } catch (e) { /* one listener's fault */ } });
+        },
+      });
+    }, function () { deskHearing = null; });
+  }
+  return function () { var i = deskHeard.indexOf(fn); if (i !== -1) deskHeard.splice(i, 1); };
+}
+// A dialog over the page: the element at file, made in a layer keyed by what it shows; its close answers the dialog.
+function deskDialog(key, label, file, element, params) {
+  var S = window.spirit;
+  return new Promise(function (resolve) {
+    var layer = null;
+    var spec = { icon: '🗂️', label: label, fill: function (pane, closed) {
+      return S.require(file).then(function () {
+        if (closed()) return null;
+        // The dialog asks through the page's own way to the node; its close and its title are its layer's.
+        var via = Object.assign({}, deskVia, {
+          closeDialog: function (result) { if (layer && typeof layer.hide === 'function') layer.hide(); resolve(result || {}); },
+          setScreenTitle: function (text) { if (layer && typeof layer.set === 'function') layer.set({ icon: '🗂️', label: String(text || label) }); },
+        });
+        return S.elements[element].create(pane, Object.assign({}, params, { via: via }));
+      });
+    } };
+    var opened = typeof deskOpts.open === 'function' ? deskOpts.open(key, spec) : (deskStack ? deskStack.open(key, spec) : null);
+    Promise.resolve(opened).then(function (l) { layer = l; if (layer && typeof layer.show === 'function') layer.show(); });
+  });
+}
+var deskVia = {
+  verb: deskVerbCall,
+  escapeHtml: function (t) { return window.spirit.escapeHtml(t); },
+  onPublished: function (fn) { return deskHear(fn); },
+  callDialog: function (target, params) {
+    if (/deskDetails$/.test(target)) return deskDialog('item/' + String(params && params.id), String(params && params.id), 'spirit/app/desk/element/deskDetails/deskDetails.js', 'deskDetails', params);
+    return deskDialog('rule/' + String(params && params.key), String(params && params.key), 'shell/ruleDetails/ruleDetails.js', 'ruleDetails', params);
+  },
+};
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the
 // content to be drawn." "no pulling". ITS ROWS ARE spirit.data's (goal/G41.28; Andy: "the FUCKING desk cache is NOT to
 // be found in spirit.data.data.desk... something keeps throwing out that shit", and "doesn't the fucking ...
@@ -71,7 +136,7 @@ function deskLinks(ids) {
 }
 
 function deskAsk(verb, args) {
-  return Promise.resolve(deskApi.verb('desk.' + verb, args || {})).then(function (r) {
+  return Promise.resolve(deskVia.verb('desk.' + verb, args || {})).then(function (r) {
     var body = r && r.body;
     if (!r || r.status !== 200 || !body || body.ok === false) throw new Error(deskRefusalText(body) || 'the desk server did not answer');
     return body;
@@ -89,7 +154,7 @@ function deskWriteError(what) {
   return function (e) { deskError = 'Desk could not ' + what + ': ' + ((e && e.message) || e); deskDraw(); };
 }
 
-function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
+function deskEsc(s) { return deskVia.escapeHtml(String(s == null ? '' : s)); }
 
 // ── WHAT NEEDS ANDY'S EYE ─────────────────────────────────────────────
 //
@@ -353,8 +418,8 @@ function deskRowKeyOf(obj) {
 }
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
-  // What is kept of the current goal takes every publish first (goal/G33.3).
-  if (typeof window !== 'undefined' && window.spirit && ((window.spirit.data || {}).desk || {}).data) window.spirit.data.desk.data.published(obj);
+  // What is kept of the current goal took this publish first: the desk family's own cache manager hears the stream
+  // (spirit/app/desk/data.js, goal/G33.3), so the page does not feed it again.
   // A RULE CHANGED (goal/G6.5): the desk server publishes {rule: key}; the Rules tab, if shown, asks again.
   // goal/G27.9 (S1): the rule's row travels with it, so the list takes it without asking again; the rule list's own
   // element repaints it. A search typed in the Rules box still asks, since the server ranks by text.
@@ -419,7 +484,7 @@ function deskNeed(p) {
 // special handling"): the row's type, the sword, a rule's status. Written as a placeholder holding its glyph, so the
 // markup is never empty; once spirit/element/icon.js is on the page each one in the container is made the icon element
 // (deskPaintIcons, watching the container). A glyph among words stays text.
-// Its own escape: the sword is made as the file loads, before deskApi is there.
+// Its own escape: the sword is made as the file loads, before deskVia is there.
 function deskGlyph(glyph, title) {
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
   return '<span data-icon="' + esc(glyph) + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(glyph) + '</span>';
@@ -673,8 +738,8 @@ function deskMountList() {
       data: K.branch,
       // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api): desk.<verb>, and the desk's
       // publishes, which ask again.
-      search: function (args, verb) { return deskApi.verb('desk.' + verb, args); },
-      published: function (fn) { return typeof deskApi.onPublished === 'function' ? deskApi.onPublished(fn, 'desk') : function () {}; },
+      search: function (args, verb) { return deskVia.verb('desk.' + verb, args); },
+      published: function (fn) { return typeof deskVia.onPublished === 'function' ? deskVia.onPublished(fn, 'desk') : function () {}; },
       server: 'desk', verb: 'items.search',
       args: function (text, values) {
         var want = deskListFilter(values);
@@ -802,8 +867,8 @@ function deskRulesSearch() {
       data: K.rulesBranch,
       // ITS OWN DATA SOURCE, over this page's api (goal/G43.24: the search is handed no api): desk.<verb>, and the desk's
       // publishes, which ask again.
-      search: function (args, verb) { return deskApi.verb('desk.' + verb, args); },
-      published: function (fn) { return typeof deskApi.onPublished === 'function' ? deskApi.onPublished(fn, 'desk') : function () {}; },
+      search: function (args, verb) { return deskVia.verb('desk.' + verb, args); },
+      published: function (fn) { return typeof deskVia.onPublished === 'function' ? deskVia.onPublished(fn, 'desk') : function () {}; },
       server: 'desk', verb: 'rules.search',
       args: function (text, values) {
         var v = values || {};
@@ -865,13 +930,13 @@ function deskRuleAdd() {
     deskRulesSearch();
   }, function (e) { deskRulesNote = 'Not added: ' + e.message; deskDrawRules(); });
 }
-function deskOpenRule(key) { deskApi.callDialog('shell/ruleDetails', { key: key }).then(function () { deskRulesSearch(); }, function () {}); }
+function deskOpenRule(key) { deskVia.callDialog('shell/ruleDetails', { key: key }).then(function () { deskRulesSearch(); }, function () {}); }
 
 // ONE ROW'S DIALOG, from the List.
 function deskOpenRow(id) {
   // THE DIALOG ASKS THE DESK SERVER ITSELF (desk/G2.7): Desk hands it the id.
   // It presses seen and writes its own chat, and nudges nobody (goal/G3.8).
-  deskApi.callDialog('spirit/app/desk/element/deskDetails', { id: id })
+  deskVia.callDialog('spirit/app/desk/element/deskDetails', { id: id })
     .then(function (result) {
       // A line in its Blocked by / Blocking lists was clicked: go there.
       if (result && result.open) deskOpenRow(result.open);
@@ -912,7 +977,7 @@ function deskAskBackup() {
   return deskNeed(DESK_BACKUP_DATA).then(function () {
     var B = ((window.spirit.data || {}).backup || {}).data;
     if (!deskBackupWatched) deskBackupWatched = B.watch(deskBackupPaint);
-    return Promise.resolve(deskApi.verb('backup.status.get', {})).then(function (r) {
+    return Promise.resolve(deskVia.verb('backup.status.get', {})).then(function (r) {
       B.keep(r && r.status === 200 ? r.body : null);
     }, function () { B.keep(null); });
   });
@@ -941,7 +1006,7 @@ var deskVerifier = null;
 // THE ANSWER TO A PRESS IN THE TAB (goal/G18.10), said in the tab, a refusal included.
 var deskVerifyNote = '';
 function deskVerifyAsk(verb, args) {
-  return Promise.resolve(deskApi.verb('deskVerify.' + verb, args || {})).then(function (r) {
+  return Promise.resolve(deskVia.verb('deskVerify.' + verb, args || {})).then(function (r) {
     // A refusal says why where deskVerify gave one (Chores now, goal/G33.11).
     if (!r || r.status !== 200 || !r.body || r.body.ok === false) throw new Error((r && r.body && r.body.extra && r.body.extra.why) || 'deskVerify did not answer');
     return r.body;
@@ -1196,10 +1261,13 @@ function deskVerifyEvent(obj) {
 
 // THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #desk-bars moves into the app header, which sticks it
 // under the titlebar, and takes its id.
-function deskHeader(api) {
+function deskHeader() {
+  // What it draws with, it loads itself (rule/26).
+  window.spirit.require('spirit/element/appHeader/appHeader.js').then(deskHeaderMove, function () { /* the bars stay plain */ });
+}
+function deskHeaderMove() {
   var old = document.getElementById('desk-bars');
-  var els = api && api.ui && api.ui.elements;
-  if (!old || !els || !window.spirit.element.appHeader) return;
+  if (!old || !old.parentNode || !(window.spirit.element || {}).appHeader) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
   var head = window.spirit.element.appHeader.create(old.parentNode);
   old.parentNode.insertBefore(head, old);
@@ -1208,9 +1276,10 @@ function deskHeader(api) {
   old.parentNode.removeChild(old);
 }
 
-spirit.shell.activateApp({
-  mount: function (container, api) {
-    deskApi = api;
+window.spirit.elements = window.spirit.elements || {};
+window.spirit.elements.deskPage = { create: function (container, opts) {
+    deskOpts = opts || {};
+    {
     // ── THE TABS ───────────────────────────────────────────────────
     //
     //   Andy: "tabs would be a more standard approach, methinks".
@@ -1274,7 +1343,7 @@ spirit.shell.activateApp({
           '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
         '</div>' +
       '</div>';
-    deskHeader(api);
+    deskHeader();
     // goal/G41.23: every icon that stands alone in the page, through the icon element (deskGlyph).
     deskWatchIcons(container);
     function show(tab) {
@@ -1373,13 +1442,13 @@ spirit.shell.activateApp({
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
     // what the desk server publishes. A shell whose api carries no onPublished (the face's) mounts it all the same,
     // without the live repaint (goal/G41.19: it mounts cleanly, "no throw even unconfigured").
-    if (typeof deskApi.onPublished === 'function') deskApi.onPublished(deskOnPublished);
+    if (typeof deskVia.onPublished === 'function') deskVia.onPublished(deskOnPublished);
     deskLoadData();
     deskLoadRunStatus();
     // BACK AFTER A GAP (Andy: "this should work without a hickup"): what was
     // published or said while the stream was down was never heard, so the
     // List and the backup line are asked for again.
-    if (typeof deskApi.onReconnect === 'function') deskApi.onReconnect(function () { deskForgetKept(); deskSearchItems(); deskLoad(); });
+    if (typeof deskVia.onReconnect === 'function') deskVia.onReconnect(function () { deskForgetKept(); deskSearchItems(); deskLoad(); });
     deskDraw();
     deskSearchItems();
     deskLoad();
@@ -1394,5 +1463,8 @@ spirit.shell.activateApp({
       if (V.state()) deskVerifyEvent(V.state());
     });
     deskAskVerifier();
-  },
-});
+    }
+    // Its own stack when its mounter hands none (panel.js), so a dialog opens over the page either way.
+    if (typeof deskOpts.open !== 'function') window.spirit.require('spirit/element/panel.js').then(function () { if (!deskStack && container.firstElementChild && (window.spirit.elements || {}).panel) deskStack = window.spirit.elements.panel.create(container, container.firstElementChild); });
+    return { destroy: function () { deskHeard = []; container.innerHTML = ''; } };
+} };

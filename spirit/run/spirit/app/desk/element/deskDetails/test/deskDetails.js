@@ -238,7 +238,7 @@ function ddWorld(facts, checks, o) {
     },
     get element() { return this.elements; }, elements: nestSearch({ armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
       'search': { create: function () { return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }),
-    shell: { activateApp: function (d) { win.def = d; } } };
+  };
   vm.createContext(win);
   // THE PAGE'S ONE DATA SET, ITS NODE KNOWN (goal/G41.28, Q10), as spirit.start leaves it before any app runs, and the
   // run status the shared element draws, not a stand-in: what the verifier publishes reaches the page through spirit.data.
@@ -254,8 +254,8 @@ function ddWorld(facts, checks, o) {
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, closed: closed, api: api, win: win, benches: benches, titles: titles };
   w.open = async function () {
-    win.def.mount(document.body.appendChild(document.createElement('div')), api);
-    await win.def.open({ id: facts.id });
+    // THE ELEMENT (goal/G43.27, requirement 23): made in a layer over the Desk page, handed the page's way to the node.
+    win.spirit.elements.deskDetails.create(document.body.appendChild(document.createElement('div')), { id: facts.id, via: api });
     await settle();
   };
   w.writes = function () { return asked.filter(function (a) { return /^desk\.(press|item\.delete|check\.set)$/.test(a.name); }); };

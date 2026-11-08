@@ -1009,7 +1009,9 @@ function ddLoad() {
   });
 }
 
-spirit.shell.activateApp({
+// AN ELEMENT OF THE DESK APP (goal/G43.27, requirement 23): spirit.elements.deskDetails, made in a layer over the Desk page,
+// which hands it the page's own way to the node (opts.via: verb, escapeHtml, onPublished, closeDialog, setScreenTitle).
+var ddApp = {
   mount: function (container, api) {
     ddApi = api;
     container.innerHTML = '<div id="dd-body" class="fill" style="min-height:0"></div>';
@@ -1143,4 +1145,10 @@ spirit.shell.activateApp({
       if (ddFacts && ddFacts.alert) ddPress('seen');
     });
   },
-});
+};
+window.spirit.elements = window.spirit.elements || {};
+window.spirit.elements.deskDetails = { create: function (container, opts) {
+  ddApp.mount(container, opts.via);
+  ddApp.open(opts);
+  return { destroy: function () { container.innerHTML = ''; } };
+} };

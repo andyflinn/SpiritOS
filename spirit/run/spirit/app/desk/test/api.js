@@ -48,7 +48,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
   ok(names.indexOf('DEBUG') === -1, 'DEBUG is appServer\'s, not listed', 'listed: ' + short(names.filter(function (v) { return v === 'DEBUG'; })));
 
   test.subHeading('every verb it lists is one the server serves');
-  const source = ['spirit/app/desk/desk.js', 'spirit/appServer.js']
+  const source = ['spirit/app/desk/nodeDesk.js', 'spirit/appServer.js']
     .map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
   // A handler is a key of the verb table ('box.write': {, block: {), or appServer's all.<verb> = {.

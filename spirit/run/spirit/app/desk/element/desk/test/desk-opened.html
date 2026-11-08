@@ -40,12 +40,14 @@ function state() {
     olderGoal: text.indexOf('An older goal') !== -1, olderItem: text.indexOf('An older item') !== -1 };
 }
 window.opened = function () {
-  var def = null;
-  (spirit.shell = spirit.shell || {}).activateApp = function (d) { def = d; };
   // The page's one data set, as the shell starts it before any app runs.
-  return Promise.resolve(spirit.start()).then(function () { return spirit.require('spirit/app/desk/element/desk/desk.js'); }).then(function () {
-    def.mount(document.getElementById('app-content'), api);
-    if (typeof def.open === 'function') def.open({});
+  return Promise.resolve(spirit.start()).then(function () {
+    // The node's desk is the stand-in: the page asks spirit.desk.<verb> itself (goal/G43.27, requirement 23), and each
+    // verb answers its body, as a family's does.
+    spirit.desk = new Proxy({}, { get: function (t, verb) { return function (args) { return api.verb('desk.' + String(verb), args).then(function (r) { return r.body; }); }; } });
+    return spirit.require('spirit/app/desk/element/desk/desk.js');
+  }).then(function () {
+    spirit.elements.deskPage.create(document.getElementById('app-content'), {});
     return wait(2500);
   }).then(function () { return JSON.stringify(state()); }, function (e) { return JSON.stringify({ error: String(e && e.stack || e) }); });
 };

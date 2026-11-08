@@ -35,7 +35,7 @@ test.startTest('noPlugins.js: the desk keeps goals, items and rules; apps, plugi
   }
 
   test.subHeading('Andy: "removal of plugin support.", and "G0 goes, from ui and server"');
-  const desk = code(path.join(DESK, 'desk.js'));
+  const desk = code(path.join(DESK, 'nodeDesk.js'));
   ok(!!desk && !/plugins|PLUGIN/.test(desk), 'desk.js mounts no plugin and asks none for a refusal', 'desk.js still names plugins');
   ok(!!desk && !/goal\/G0['"]/.test(desk), 'desk.js knows no team chat goal, goal/G0', 'desk.js still names goal/G0');
   const page = code(path.join(DESK, 'element', 'desk', 'desk.js'));

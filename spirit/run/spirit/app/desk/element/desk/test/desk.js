@@ -198,7 +198,14 @@ function deskWorld(goal, items) {
     },
     get element() { return this.elements; }, elements: nestSearch({ armingButton: armingStub(document, made),
       'search': { create: function (host, o) { listOpts = o; return { refresh: function () {}, destroy: function () {}, redraw: function () {}, value: '' }; } } }),
-    shell: { activateApp: function (d) { win.def = d; } } };
+    // THE PAGE GETS WHAT IT NEEDS ITSELF (goal/G43.27, requirement 23): no api is handed to it. A family's verb is asked
+    // through spirit.ready (every desk.<verb> reaches the recorder), its answer through outcome, and the desk's publishes
+    // through its family's cache manager, the real spirit/app/desk/data.js.
+    ready: Promise.resolve(new Proxy({}, { get: function (t, fam) {
+      return new Proxy({}, { get: function (t2, rest) { return function (args) { return api.verb(String(fam) + '.' + String(rest), args); }; } });
+    } })),
+    outcome: function (p) { return p; },
+    cacheManager: function (name) { return win.spirit.require('spirit/app/' + name + '/data.js'); } };
   vm.createContext(win);
   // The page's one data set, which spirit.js brings with the client before any app runs.
   win.spirit.require('spirit/data.js');
@@ -211,7 +218,7 @@ function deskWorld(goal, items) {
   vm.runInContext(raw, win, { filename: FILE });
   const w = { document: document, made: made, asked: asked, required: required, api: api, win: win };
   w.mount = async function () {
-    win.def.mount(document.body.appendChild(document.createElement('div')), api);
+    win.spirit.elements.deskPage.create(document.body.appendChild(document.createElement('div')), {});
     await settle();
     // THE GOAL PUSHED, AS THE STREAM PUSHES IT (goal/G41.28): the current goal is the cache's, the one its last
     // goal.whole named; the page reads it from there, never from a search answer.

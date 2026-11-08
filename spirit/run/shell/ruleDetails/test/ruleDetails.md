@@ -6,8 +6,9 @@ shell element armingButton (`spirit/element/armingButton.js`); the dialog keeps 
 
 ## Requirements
 
-- It mounts through `spirit.shell.activateApp({ mount(container, api), open({ key }) })`; `open` reads the rule
-  (`desk.rule.get`) and its chat (`desk.item.chat`).
+- It is the element `spirit.elements.ruleDetails.create(container, { key, via })` (goal/G43.27, requirement 23), made
+  in a layer over the Desk page, which hands it its own way to the node (`via`: `verb`, `escapeHtml`, `setScreenTitle`,
+  `closeDialog`); it reads the rule (`desk.rule.get`) and its chat (`desk.item.chat`).
 - **It loads `spirit/element/armingButton.js` itself**, through `spirit.require` (goal/G41.3).
 - **Activate and Delete are arming buttons** (`armingButton.attach` or `create`), handed the app's api: `Activate`,
   armed `Activate: sure?`; `Delete`, armed `Delete: sure?`.

@@ -41,12 +41,10 @@ var api = {
 
 // Opened, and what shows at open.
 window.opened = function () {
-  var def = null;
-  (spirit.shell = spirit.shell || {}).activateApp = function (d) { def = d; };
   var out = {};
+  // The element (goal/G43.27, requirement 23), as the Desk page makes it in a layer: handed the page's way to the node.
   return spirit.require('spirit/app/desk/element/deskDetails/deskDetails.js').then(function () {
-    def.mount(document.getElementById('app-content'), api);
-    return def.open({ id: facts.id });
+    spirit.elements.deskDetails.create(document.getElementById('app-content'), { id: facts.id, via: api });
   }).then(function () { return wait(1500); }).then(function () {
     var log = document.getElementById('dd-chat');
     var last = log && log.lastElementChild;

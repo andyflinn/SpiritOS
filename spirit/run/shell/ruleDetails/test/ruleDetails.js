@@ -76,11 +76,12 @@ function world(answer) {
   win.window = win;
   win.spirit = { get element() { return this.elements; }, elements: { armingButton: stub },
     require: function (p) { w.required.push(String(p).replace(/^\/+/, '')); return Promise.resolve({}); },
-    shell: { activateApp: function (d) { w.def = d; } },
     // A family's cache (goal/G41.28): the family's own manager, run on this window over the real data set.
     cacheManager: function (name) {
       w.managers = (w.managers || []).concat(name);
-      vm.runInContext(fs.readFileSync(path.join(RUN, 'process', 'js', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
+      // An app's manager sits in its own folder, spirit/app/<name>/ (goal/G43.27), a server's in process/js/<name>/.
+      const app = path.join(RUN, 'spirit', 'app', String(name), 'data.js');
+      vm.runInContext(fs.readFileSync(fs.existsSync(app) ? app : path.join(RUN, 'process', 'js', String(name), 'data.js'), 'utf8'), win, { filename: name + '/data.js' });
       return Promise.resolve(true);
     } };
   vm.createContext(win);
@@ -90,6 +91,8 @@ function world(answer) {
   win.spirit.data.homeNode(win.spirit.node.key);
   vm.runInContext(SRC, win, { filename: FILE });
   w.win = win;
+  // THE ELEMENT (goal/G43.27, requirement 23): made in a layer over the Desk page, handed the page's way to the node.
+  w.make = function (container, opts) { return win.spirit.elements.ruleDetails.create(container, opts); };
   w.api = api;
   return w;
 }
@@ -126,10 +129,10 @@ function answer(name) {
   nothingHandRolled('rdArmed');
 
   const w = world(answer);
-  ok(w.def && typeof w.def.mount === 'function' && typeof w.def.open === 'function', 'it mounts through spirit.shell.activateApp, with mount and open', 'activateApp got ' + short(w.def && Object.keys(w.def)));
-  if (!w.def) return;
-  await w.def.mount(node('container'), w.api);
-  await w.def.open({ key: 'rule/7' });
+  const E = (w.win.spirit.elements || {}).ruleDetails;
+  ok(!!E && typeof E.create === 'function', 'it is the element spirit.elements.ruleDetails, with create(container, { key, via })', 'spirit.elements.ruleDetails is ' + short(E && Object.keys(E)));
+  if (!E) return;
+  await w.make(node('container'), { key: 'rule/7', via: w.api });
   await settle();
   loadsArming(w);
 
@@ -161,8 +164,7 @@ function answer(name) {
   test.subHeading('the rule and its chat are the desk family\'s cache, and it draws from its watches (goal/G41.28)');
   // A dialog of its own, opened anew: no version pending from the runs above.
   const v = world(answer);
-  await v.def.mount(node('container'), v.api);
-  await v.def.open({ key: 'rule/7' });
+  await v.make(node('container'), { key: 'rule/7', via: v.api });
   await settle();
   const K = ((v.win.spirit.data || {}).desk || {}).data;
   ok((v.managers || []).indexOf('desk') !== -1 && !!K, 'it loads the desk family\'s cache manager (((spirit.data || {}).desk || {}).data)', 'managers: ' + short(v.managers));

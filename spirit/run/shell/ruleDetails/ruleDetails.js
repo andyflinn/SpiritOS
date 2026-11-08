@@ -78,8 +78,8 @@ function rdFrame() {
 // under the titlebar, and takes its id. As Desk's deskHeader (spirit/app/desk/element/desk/desk.js).
 function rdHeader() {
   var old = document.getElementById('rd-bars');
-  var els = rdApi && rdApi.ui && rdApi.ui.element;
-  if (!old || !old.parentNode || !els || !els.appHeader) return;
+  var els = window.spirit.element || {};
+  if (!old || !old.parentNode || !els.appHeader) return;
   // Made in the old block's parent, then put in its place (the element shape, goal/G41.19).
   var head = els.appHeader.create(old.parentNode);
   old.parentNode.insertBefore(head, old);
@@ -236,7 +236,9 @@ function rdSay() {
   });
 }
 
-spirit.shell.activateApp({
+// AN ELEMENT OF THE DESK APP (goal/G43.27, requirement 23): spirit.elements.ruleDetails, made in a layer over the Desk page,
+// which hands it the page's own way to the node (opts.via: verb, escapeHtml, setScreenTitle).
+var rdApp = {
   mount: function (container, api) {
     rdApi = api;
     container.innerHTML = '<div id="rd-body" class="stack"></div>';
@@ -264,4 +266,13 @@ spirit.shell.activateApp({
     rdPaint();
     return rdLoad();
   },
-});
+};
+window.spirit.elements = window.spirit.elements || {};
+window.spirit.elements.ruleDetails = { create: function (container, opts) {
+  rdApp.mount(container, opts.via);
+  // What it draws with, it loads itself (rule/26).
+  return window.spirit.require('spirit/element/appHeader/appHeader.js').catch(function () {}).then(function () {
+    rdApp.open(opts);
+    return { destroy: function () { container.innerHTML = ''; } };
+  });
+} };
