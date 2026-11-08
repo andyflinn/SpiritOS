@@ -23,7 +23,7 @@ module.exports = {
     'chat.add': { id: 'id', text: 'text' },
     // Each filter left '' filters nothing; scope is '', goal or items.
     'chat.search': { id: 'id', text: 'text', by: 'text', since: 'text', before: 'text', scope: 'text' },
-    // kind is C, T, G or Q; words and test may be '' (commitCheck sends test '').
+    // kind is C, T, G or Q; words and test may be ''.
     'check.add': { id: 'id', kind: 'id', words: 'text', test: 'text' },
     // check is a check's number, or 'all' for his Grant-All.
     'check.set': { id: 'id', check: 'id', state: 'id' },

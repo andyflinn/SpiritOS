@@ -10,7 +10,8 @@
 //   Andy, 2026-10-04: "the scope still has a grant-lock on core files.", and asked which: "basicall run/js and
 //   intrinsics". So a file is core when it lies under spirit/run/spirit/, is the shell's frame, or
 //   is a code file (.js, .css, .html) of an app or server on the coded INTRINSIC list (goal/G41.1, below). A
-//   commit touching one needs his grant on the item, inside an agent's scope or not (commitCheck.js).
+//   commit touching one needs his grant on the item, inside an agent's scope or not. No git hook checks it any more
+//   (goal/G43.27; Andy: "all, just get rid of the fucking git hooks.").
 //
 // isCore(repoPath, repoRoot): repoPath is relative to the repo, '/'-separated; repoRoot is where the manifests are read
 // (the clone the commit is made in), by default the checkout holding this file.

@@ -47,11 +47,13 @@ test.startTest('deskMove.js: desk in spirit/app/desk/, its family at its top, an
   ok(fs.existsSync(deskDir) && !fs.existsSync(path.join(deskDir, 'family')), 'spirit/app/desk/ has no family/ folder', fs.existsSync(deskDir) ? 'spirit/app/desk/family/ is there' : 'no spirit/app/desk/ to judge');
 
   test.subHeading('12. the tools and the product tests move with it');
-  ['deskAgentEar.js', 'commitCheck.js', 'deskLoop.js', 'goalShare.js', 'currentGoal.json', 'deskBundles.json', 'rules.md', 'deskLoopManual.md'].forEach(function (n) {
+  ['deskAgentEar.js', 'deskLoop.js', 'goalShare.js', 'currentGoal.json', 'deskBundles.json', 'rules.md', 'deskLoopManual.md'].forEach(function (n) {
     ok(has(NEW + n), 'spirit/app/desk/' + n + ' is there, in git', 'spirit/app/desk/' + n + ' is not');
   });
   const tests = before.filter(function (f) { return f.indexOf(OLD + 'test/') === 0; });
-  const lostTests = tests.map(function (f) { return f.slice(OLD.length); }).filter(function (n) { return !has(NEW + n); });
+  // commitCheck and commitHooks went with the git hooks (Andy, goal/G43.27: "all, just get rid of the fucking git hooks.").
+  const GONE = /^test\/(commitCheck|commitHooks)\.(js|md)$/;
+  const lostTests = tests.map(function (f) { return f.slice(OLD.length); }).filter(function (n) { return !GONE.test(n) && !has(NEW + n); });
   ok(tests.length > 10 && !lostTests.length, 'its ' + tests.length + ' product tests sit in spirit/app/desk/test/', lostTests.length + ' of its ' + tests.length + ' tests are not there: ' + short(lostTests));
 
   test.subHeading('18, 19. desk.json in the spirit/app form, not intrinsic');
@@ -100,9 +102,8 @@ test.startTest('deskMove.js: desk in spirit/app/desk/, its family at its top, an
   test.subHeading('16, 17. no file names process/js/desk any more');
   const naming = tracked.filter(function (f) { return !SELF.test(f) && !/(^|\/)currentGoal\.json$/.test(f) && !/\.(png|jpe?g|gif|ico|db)$/.test(f) && f.indexOf('spirit/run/brains/') !== 0; })
     .filter(function (f) { return /process\/js\/desk\b(?!Client|Verify)|'js', 'desk'/.test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
-  ok(!naming.length, 'no tracked file names process/js/desk (the hooks commitCheck writes, the listener\'s path, the Desk page\'s own)', naming.length + ' still do: ' + short(naming));
-  const hook = code(read(NEW + 'commitCheck.js'));
-  ok(hook.length > 0 && /__filename/.test(hook), 'the hooks commitCheck writes run it from where it is (its own path)', hook.length ? 'commitCheck.js does not write its own path' : 'no spirit/app/desk/commitCheck.js');
+  ok(!naming.length, 'no tracked file names process/js/desk (the listener\'s path, the Desk page\'s own)', naming.length + ' still do: ' + short(naming));
+  ok(!has(NEW + 'commitCheck.js'), 'no commitCheck.js: the git hooks are gone', 'spirit/app/desk/commitCheck.js is still there');
 
   // 22 (box v10; Andy: "just throw desk elements into spirit/app/desk/element/"): shell/desk and shell/deskDetails, as they are.
   test.subHeading('22. the desk faces in spirit/app/desk/element/');

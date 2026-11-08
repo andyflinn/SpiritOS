@@ -257,7 +257,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   ok(asksOf('item.checks').length === checksAsked && checks && Array.isArray(checks.checks) && checks.checks.some(function (c) { return c.number === 'G1'; }),
     'item.checks the same', 'asked ' + (asksOf('item.checks').length - checksAsked) + ' time(s); answer ' + short(checks));
 
-  test.subHeading('a kept read: cache only, never the desk (the commit check\'s interface, spirit/app/desk/test/commitCheck.js)');
+  test.subHeading('a kept read: cache only, never the desk');
   const kept = function (name, args) { return call('desk', { name: name, json: JSON.stringify(args || {}), kept: true }).then(function (r) { return r; }, function (e) { return { threw: e.refusal || e.message }; }); };
   const deskDecl = verb('desk') && verb('desk').request;
   ok(!!deskDecl && Object.prototype.hasOwnProperty.call(deskDecl, 'kept'), 'the desk verb takes kept beside name and json', 'request: ' + short(deskDecl));

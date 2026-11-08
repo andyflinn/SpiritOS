@@ -2929,7 +2929,7 @@ appServer.serve({
     },
   },
   // THE FILES TOUCHED, ITS OWN ANSWER (goal/G32.2), as item.chat is: { path, by, core } (goal/G8.8; core read from
-  // spirit/coreFiles.js, the one list commitCheck locks), core files first, then by path; as many as fit one answer, and
+  // spirit/coreFiles.js, the one list of core files), core files first, then by path; as many as fit one answer, and
   // filesMore says there were more. Nothing pages. under, when given, keeps the paths that start with it (deskVerify asks
   // spirit/test/ for an item's suites, which a long list of core files would push past the room).
   'item.files': {

@@ -127,7 +127,7 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 
 Positions, not agents — *how* each one works is in `ANDYS_RULES_FOR_AGENTS.md`; what one agent may do is in its own file.
 
-- **In studio** (today Claude): its own clone — review → verdict → patch → harness — committing from there under Andy's name (goal/G3.9, Andy: "- the agents commit from their own clone under andy s name"; `commitCheck.js` holds each commit to the item's Go and the core-file grant). **Never spirit-3.**
+- **In studio** (today Claude): its own clone — review → verdict → patch → harness — committing from there under Andy's name (goal/G3.9, Andy: "- the agents commit from their own clone under andy s name"; no git hook checks a commit any more, goal/G43.27, Andy: "all, just get rid of the fucking git hooks."). **Never spirit-3.**
 - **In review**: cycle notes and failing tests, in batches at checkpoints. Grok held this position; its review program went with goal/G29.20. **No whole-file replace of `relay.js`, `server.js`, `hub.js`, `relayAuth.js`.**
 - **Andy:** decides, checks the UI, and is the only one who touches spirit-3.
 
@@ -147,7 +147,8 @@ They head the desk's rules for agents (`spirit/run/spirit/app/desk/AGENTS.md`),
 which every agent reads at the start of a sitting; `spirit/test/agentsAppGone.js`
 asserts the app's absence, and `deskClient.js` enforces rule 1 at each agent's
 node (goal/G3.9). Authorization to write code comes only through Desk (rule 4):
-a Go on an item of the current goal, checked at every commit (`commitCheck.js`).
+a Go on an item of the current goal. No git hook checks it at the commit (goal/G43.27, Andy: "all, just get rid of
+the fucking git hooks.").
 
 **Within a Go, an agent builds without a second "may I".** **What still comes
 to him:** the decisions only he can make, as a red Q on the item (Desk's rule
@@ -275,8 +276,9 @@ your listeners to follow the project."* Agreed by both agents over the wire,
    half an hour behind `master`.
 2. **A push that touches `spirit/run/spirit/`** (the core tree, moved there
    by goal/G40.2) is a reason for the other agent to update at once rather
-   than at its next re-arm. It learns of it in Desk: the commit check writes
-   each pushed commit, with its files, under its item (`commitCheck.js`). The
+   than at its next re-arm. It learns of it in Desk, from the pushing agent's "is in, <hash>" line
+   under the item (the commit check that wrote it there went with the git
+   hooks, goal/G43.27). The
    note over the agents wire that this rule first named went with that wire
    (goal/G3).
 3. **Reports carry each node's commit,** so a stale node shows itself in

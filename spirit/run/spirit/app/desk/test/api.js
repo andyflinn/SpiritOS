@@ -67,7 +67,7 @@ test.startTest('the desk family api.js: the desk server\'s interface');
   const filters = { id: 'goal/G1', text: '', by: '', since: '', before: '', scope: '' };
   ok(passes('chat.search', filters), 'chat.search: each filter \'\' filters nothing', short(call('chat.search', filters)));
   ok(refusedAs('chat.search', { id: 'goal/G1', text: '' }) === 'bad-request', 'but every filter is sent', 'chat.search without by: ' + refusedAs('chat.search', { id: 'goal/G1', text: '' }));
-  ok(passes('check.add', { id: 'goal/G1.1', kind: 'C', words: '', test: '' }), 'check.add takes words and test \'\' (commitCheck sends test \'\')', short(call('check.add', { id: 'goal/G1.1', kind: 'C', words: '', test: '' })));
+  ok(passes('check.add', { id: 'goal/G1.1', kind: 'C', words: '', test: '' }), 'check.add takes words and test \'\'', short(call('check.add', { id: 'goal/G1.1', kind: 'C', words: '', test: '' })));
   ok(passes('claim', { id: 'goal/G1.1', phase: 'build', commit: '' }), 'claim takes commit \'\' (a plain item\'s build claim)', short(call('claim', { id: 'goal/G1.1', phase: 'build', commit: '' })));
   ok(passes('press', { id: '', what: 'start-design' }) && refusedAs('press', { id: 'goal/G1', what: '' }) === 'bad-request', 'press takes id \'\' (start-design with nothing open), never an empty what', 'press id \'\' ' + short(call('press', { id: '', what: 'start-design' })));
   ok(passes('profile.get', { agent: '' }), 'profile.get takes agent \'\' (the caller)', short(call('profile.get', { agent: '' })));

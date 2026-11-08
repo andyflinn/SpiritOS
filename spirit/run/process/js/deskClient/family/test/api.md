@@ -2,7 +2,7 @@
 
 The deskClient server's interface (goal/G32.3): every verb deskClient serves, each argument with its rule, written to
 spirit.js's standard (`'?'` optional). The spirit object checks every call against it before the call leaves
-(`spirit.check`); deskAgentEar, commitCheck and the publishData app reach deskClient only through it.
+(`spirit.check`); deskAgentEar and the publishData app reach deskClient only through it.
 
 ## Requirements
 
