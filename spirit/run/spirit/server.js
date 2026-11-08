@@ -1517,11 +1517,7 @@ catch (e) {
     },
     // This node's face (goal/G30.13): the relay's face, face-open and face-close events, answered by faceHome.
     onFace: function (url, data) { if (faceHome) faceHome.request(url, data); },
-    onFaceOpen: function (url, data) {
-      if (faceHome) faceHome.open(url, data && data.key);
-      // The face opened: Join's last step, the node's fact (goal/G43.26, requirement 6).
-      try { if (require('./joinStepsJob').faceOpened(ROOT_DIR) && joinStepsJob) joinStepsJob.refresh('face opened'); } catch (e) { /* the next open records it */ }
-    },
+    onFaceOpen: function (url, data) { if (faceHome) faceHome.open(url, data && data.key); },
     onFaceClose: function (url) { if (faceHome) faceHome.close(url); },
     // AND THE MEMBERSHIP HALF, WHICH IS KEPT (R2).
     //

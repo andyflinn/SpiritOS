@@ -1,7 +1,8 @@
 // spirit/run/spirit/element/joinList.js
 // THE JOIN STEPS, AN ELEMENT (goal/G43.26; Andy: "JOIN IS A FUCKING APP and DOES NOT FUCKING DRAG HALF OF THE OLD SHIT INTO
-// THE NEW!"). The Join app (spirit/app/join/join.js) is its wrapper. It walks a new user from joining a relay to opening
-// his face, as one to-do list (goal/G30.1, box v39).
+// THE NEW!"). The Join app (spirit/app/join/join.js) is its wrapper. It walks a new user through joining a relay and
+// finding someone, as one to-do list (goal/G30.1, box v39). No face steps (goal/G43.26; Andy: "now remove these two steps
+// from \"join\" - Configure your node's remote control - Open your face"): a face is named in Info.
 //
 //   spirit.elements.joinList.create(container, {}) -> { destroy() }
 //
@@ -9,17 +10,15 @@
 // ends it. Where the user stands is the node's join-steps job (spirit/joinStepsJob.js), heard in the jobs family's cache
 // and worked out with joinSteps.js: nothing is asked for it, and the list draws again only when the job changes. Done steps
 // are ticked; every open step up to the open one is expanded with its form, so the optional Find someone never stands in
-// the way of the step after it. The forms are the shell elements: joinForm, the contact list, faceForm. Handed something
-// new while a field in the list has focus, it waits until the focus leaves, so nothing he is typing is wiped.
-//
-// FACE OPENED IS THE NODE'S FACT (goal/G43.26, requirement 6): the node records it when its face opens (server.js, onFaceOpen,
-// into spirit/state/join/data/) and the job carries it as opened. This element writes no state of its own.
+// the way of the step after it. The forms are the shell elements: joinForm and the contact list. Handed something new
+// while a field in the list has focus, it waits until the focus leaves, so nothing he is typing is wiped. It writes no
+// state of its own.
 // WHAT IT NEEDS, IT GETS ITSELF (goal/G43.24, requirement 9): the spirit object's families, no api handed.
 (function () {
   var S = window.spirit = window.spirit || {};
   var STEPS = 'spirit/app/join/join.json';
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-  var parts = Promise.all(['spirit/element/joinSteps.js', 'spirit/element/joinForm.js', 'spirit/element/faceForm.js',
+  var parts = Promise.all(['spirit/element/joinSteps.js', 'spirit/element/joinForm.js',
     'spirit/element/search/contact/listElement.js', 'spirit/element/icon.js'].map(function (p) { return S.require(p); }));
   // ICONS ARE GLYPHS (goal/G41.1): a step names its own in join.json, and the marks are written here; no icon table.
   var DONE = '☑️';
@@ -58,7 +57,7 @@
     function where() {
       var J = S.element && S.element.joinSteps;
       if (!J || !job || !steps) return null;
-      var facts = J.fromJob(job, job.opened === true);
+      var facts = J.fromJob(job, false);
       var open = J.current(steps, facts);
       return { facts: facts, open: open ? open.until : null, done: steps.map(function (st) { return J.done(st, facts); }) };
     }
@@ -116,17 +115,6 @@
           empty: 'Nobody matches: the network is searched as you type.',
         }));
         return;
-      }
-      // THE FACE FORM, THE SAME EVERYWHERE (goal/G40.10). The node republishes join-steps once a face is accepted.
-      if (step.until === 'face' && E.faceForm) {
-        withRelays(function () { E.faceForm.mount(box, { relays: relays, reload: function () { return Promise.resolve(); }, none: 'Take the star off to name a face.' }); });
-        return;
-      }
-      if (step.until === 'opened') {
-        var url = facts.faceUrl;
-        box.innerHTML = url
-          ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url) + '</a>'
-          : '<div class="job-manifest-note">No face name yet.</div>';
       }
     }
 
