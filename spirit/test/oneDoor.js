@@ -21,7 +21,7 @@
 // ── SO THERE IS ONE TALLY AND NOTHING SITS OUTSIDE IT ───────────────
 //
 // Every .js under spirit/run/spirit (kernel.js exempt), spirit/run/shell
-// and platform/ is counted; process/ and node_modules are skipped, and
+// and platform/ is counted; process/ and the vendored folders are skipped, and
 // spirit/test is not walked (Andy's ruling, below). A file's number may
 // FALL freely and may never RISE. A file not in the
 // tally must have zero. There is no category that means "unlimited",
@@ -40,6 +40,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const SPIRIT = path.join(__dirname, '..');
 
@@ -149,12 +150,12 @@ const TALLY = {
 // Not code this project ships or runs in a node: spawned scripts talking
 // to third parties, and dependencies. And every test/ folder: a module's
 // own suite sits beside it, and tests are not counted (Andy's ruling below).
-const SKIP = ['process', 'node_modules', 'test'];
+const SKIP = ['process', 'test'];
 
 function walk(dir, prefix, out) {
   fs.readdirSync(dir).forEach(function (name) {
-    if (SKIP.indexOf(name) !== -1) return;
     const full = path.join(dir, name);
+    if (SKIP.indexOf(name) !== -1 || VENDORED_FOLDERS.holds(full)) return;
     const st = fs.statSync(full);
     if (st.isDirectory()) { walk(full, prefix + name + '/', out); return; }
     if (name.endsWith('.js')) out.push({ rel: prefix + name, full: full });

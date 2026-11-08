@@ -13,6 +13,7 @@ const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../../..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -22,7 +23,7 @@ function readJson(f) { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } ca
 // Every file under a folder.
 function filesUnder(dir) {
   const out = [];
-  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
+  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
   return out;
 }
 // The code of the tree, its comments out, its tests out: what runs.

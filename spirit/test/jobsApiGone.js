@@ -14,7 +14,7 @@
 // NAMED HERE where the box names none:
 //   - The door's in-process call is door(apps).call(verb, args) -> {ok, status, body}: a node family verb through the
 //     table's call, 'api' the flat table, family.verb through ask; server.js hands puppetDoor nodeDoor.call.
-//   - "Every mention": no .js or .json file under spirit/run (node_modules aside) or spirit/test names jobs.api, this
+//   - "Every mention": no .js or .json file under spirit/run (its vendored folders aside) or spirit/test names jobs.api, this
 //     suite aside.
 // rule/11: through testSupport only; its own scratch folders.
 
@@ -22,6 +22,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const OWED = 'OWED by goal/G30.6: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -32,8 +33,8 @@ function walk(dir, out) {
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   entries.forEach(function (e) {
     // Not code: the desk's shared record of the current goal (its box text) and the vault.
-    if (e.name === 'node_modules' || e.name === '.git' || e.name === 'relay-state' || e.name === 'state' || e.name === 'brains' || e.name === 'currentGoal.json') return;
     const p = path.join(dir, e.name);
+    if (VENDORED_FOLDERS.holds(p) || e.name === '.git' || e.name === 'relay-state' || e.name === 'state' || e.name === 'brains' || e.name === 'currentGoal.json') return;
     if (e.isDirectory()) walk(p, out);
     else if (/\.(js|json)$/.test(e.name)) out.push(p);
   });

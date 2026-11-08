@@ -10,6 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 test.startTest('appPair/G1.1: the node side is renamed appClient.js');
 
@@ -30,7 +31,7 @@ test.subHeading('T2: no ' + OLD + ' identifier is left in spirit/run or spirit/t
 // currentGoal.json skip that file").
 // AND HIS VAULT (goal/G19.12, found by deskVerify on his node): run/brains/ is his own notes, in his own words, and
 // exists only on his node; like the desk's log it may name anything.
-const SKIP = /[\\/](node_modules|relay-state|app-state|brains)[\\/]|[\\/]app[\\/]desk[\\/](log|voice)[\\/]|[\\/]process[\\/]js[\\/]desk[\\/]currentGoal\.json[\\/]$/;
+const SKIP = /[\\/](relay-state|app-state|brains)[\\/]|[\\/]app[\\/]desk[\\/](log|voice)[\\/]|[\\/]process[\\/]js[\\/]desk[\\/]currentGoal\.json[\\/]$/;
 const hits = [];
 // THE CODE, NOT THE QUOTES (goal/G19.12): his own words quoted in a comment keep the name he used ("give appServers
 // their namespace"), and a quote stays as he said it. So in a .js file only the lines that are not comments are read.
@@ -41,7 +42,7 @@ function codeOf(file, text) {
 (function walk(dir) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
     const p = path.join(dir, e.name);
-    if (SKIP.test(p + path.sep)) return;
+    if (SKIP.test(p + path.sep) || VENDORED_FOLDERS.holds(p)) return;
     if (e.isDirectory()) return walk(p);
     if (!/\.(js|json|html|md)$/.test(e.name)) return;
     if (new RegExp('\\b' + OLD + '\\b').test(codeOf(p, fs.readFileSync(p, 'utf8')))) hits.push(path.relative(SPIRIT, p));

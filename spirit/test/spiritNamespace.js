@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const OWED = 'OWED by goal/G32.2: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -29,7 +30,7 @@ function walk(dir, out) {
   try { es = fs.readdirSync(path.join(RUN, dir), { withFileTypes: true }); } catch (e) { return out; }
   es.forEach(function (e) {
     const rel = dir ? dir + '/' + e.name : e.name;
-    if (e.isDirectory()) { if (e.name !== 'node_modules' && e.name !== 'relay-state' && e.name !== 'state' && e.name !== '.git') walk(rel, out); }
+    if (e.isDirectory()) { if (!VENDORED_FOLDERS.holds(rel) && e.name !== 'relay-state' && e.name !== 'state' && e.name !== '.git') walk(rel, out); }
     else if (/\.(js|html)$/.test(e.name)) out.push(rel);
   });
   return out;

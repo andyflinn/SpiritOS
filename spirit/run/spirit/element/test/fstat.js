@@ -12,6 +12,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const FILE = path.join(__dirname, '..', 'fstat.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -20,7 +21,7 @@ const settle = async function () { for (let i = 0; i < 20; i++) await new Promis
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 function filesUnder(dir) {
   const out = [];
-  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
+  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
   return out;
 }
 // The code of the tree, its comments out, its tests out: what runs.

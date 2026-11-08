@@ -24,12 +24,13 @@ const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..');
 const REPO = path.join(RUN, '..', '..');
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const ARGS = process.argv.slice(2).filter(function (a, i, all) { return a !== '--verify-port' && all[i - 1] !== '--verify-port'; });
 const arg = String(ARGS[0] || '');
 
 // A production file: tracked, .js, not inside a test folder, not the run root's tests, no vendor code.
 function production(rel) {
-  return /\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !/(^|\/)node_modules\//.test(rel) && !/codeMirror|codemirror/.test(rel);
+  return /\.js$/.test(rel) && !/(^|\/)test\//.test(rel) && !VENDORED_FOLDERS.holds(rel);
 }
 // THE ONE EXCEPTION (the box: "with the exception of DEBUG.js"): its test routes serve a test folder's pages.
 function excepted(rel) { return rel === 'spirit/DEBUG.js' || rel.indexOf('spirit/DEBUG/') === 0; }

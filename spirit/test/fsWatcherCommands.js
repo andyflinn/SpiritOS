@@ -9,9 +9,9 @@
 //   is".
 //
 // THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks):
-//   1  THE LOCAL COPY: chokidar and readdirp committed under spirit/run/node_modules/ (each with its package.json and
-//      its licence file), so require('chokidar') resolves from spirit/run/spirit as for any package; .gitignore holds
-//      the exception that lets that one folder in. No npm step anywhere.
+//   1  THE LOCAL COPY: chokidar and readdirp committed under spirit/run/spirit/jobs/chokidar/ and spirit/jobs/readdirp/
+//      (each with its package.json and its licence file; goal/G43.25, Andy: "can we hide those suckers in spirit/jobs/
+//      for now?"), and jobs.js requires chokidar by that path. No npm step anywhere.
 //   2  THE COMMANDS: every fs-watcher job-updated carries data.command {op, path, at}: op one of createDirectory,
 //      createFile, changeFile, deleteFile, deleteDirectory; path relative to the watched root, '/'-separated; at an ISO
 //      time. One command per message (no batching). data.files is gone from the job.
@@ -77,24 +77,26 @@ test.startTest('goal/G4.25: the file watcher streams tree commands, on a local c
   // ── 1. the local copy ──
   test.subHeading('1. chokidar and readdirp are a local copy, committed, with their licences');
   ['chokidar', 'readdirp'].forEach(function (name) {
-    const dir = path.join(RUN, 'node_modules', name);
+    const dir = path.join(RUN, 'spirit', 'jobs', name);
     const pkg = path.join(dir, 'package.json');
     const licence = fs.existsSync(dir) && fs.readdirSync(dir).some(function (f) { return /^licen[cs]e/i.test(f); });
     const tracked = spawnSync('git', ['ls-files', '--', path.relative(REPO, pkg).split(path.sep).join('/')], { cwd: REPO, encoding: 'utf8' }).stdout.trim();
-    if (fs.existsSync(pkg) && licence && tracked) test.check(name + ': spirit/run/node_modules/' + name + ', its package.json and licence, in git');
+    if (fs.existsSync(pkg) && licence && tracked) test.check(name + ': spirit/run/spirit/jobs/' + name + ', its package.json and licence, in git');
     else test.fail(OWED + name + ': package.json ' + fs.existsSync(pkg) + ', licence ' + licence + ', tracked by git ' + !!tracked);
   });
-  let resolved = '';
-  try { resolved = require.resolve('chokidar', { paths: [path.join(RUN, 'spirit')] }); } catch (e) { resolved = ''; }
-  if (resolved && resolved.indexOf(path.join(RUN, 'node_modules')) === 0) test.check('require(\'chokidar\') from spirit/run/js resolves to that copy');
-  else test.fail(OWED + 'require(\'chokidar\') from spirit/run/js resolves to ' + short(resolved));
+  const copy = path.join(RUN, 'spirit', 'jobs', 'chokidar', 'index.js');
+  const asked = (code(path.join(RUN, 'spirit', 'jobs.js')).match(/require\(\s*['"]([^'"]*chokidar[^'"]*)['"]\s*\)/) || [])[1] || '';
+  const resolved = asked.charAt(0) === '.' ? path.resolve(RUN, 'spirit', asked) : '';
+  if (resolved === copy) test.check('jobs.js requires chokidar by its path, spirit/jobs/chokidar/index.js');
+  else test.fail(OWED + 'jobs.js requires chokidar as ' + short(asked) + ', not by the path of spirit/jobs/chokidar/index.js');
 
   // ── 2. the watcher ──
   test.subHeading('2. Andy\'s mirror: a tree built only from the commands matches the disk');
   const jobsJs = path.join(RUN, 'spirit', 'jobs.js');
   const jc = code(jobsJs);
-  if (/require\(\s*['"]chokidar['"]\s*\)/.test(jc) && !/\bfs\.watch\s*\(/.test(jc)) test.check('jobs.js requires chokidar and calls no fs.watch');
-  else test.fail(OWED + 'jobs.js: requires chokidar ' + /require\(\s*['"]chokidar['"]\s*\)/.test(jc) + ', still calls fs.watch ' + /\bfs\.watch\s*\(/.test(jc));
+  const chokidarAsked = /require\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/;
+  if (chokidarAsked.test(jc) && !/\bfs\.watch\s*\(/.test(jc)) test.check('jobs.js requires chokidar and calls no fs.watch');
+  else test.fail(OWED + 'jobs.js: requires chokidar ' + chokidarAsked.test(jc) + ', still calls fs.watch ' + /\bfs\.watch\s*\(/.test(jc));
   // Inside spirit/run, as fsWatcherQuiet.js says: scanFolder refuses anything outside ROOT_DIR.
   const home = path.join(RUN, 'fswatch-commands-test');
   fs.rmSync(home, { recursive: true, force: true });

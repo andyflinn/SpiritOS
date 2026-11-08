@@ -34,6 +34,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const RUN_JS = path.join(__dirname, '..', 'run', 'spirit');
 
@@ -99,7 +100,7 @@ const RETIRED = [
 function filesIn(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
     if (e.isDirectory()) {
-      if (e.name === 'node_modules') return;
+      if (VENDORED_FOLDERS.holds(path.join(dir, e.name))) return;
       filesIn(path.join(dir, e.name), out);
       return;
     }

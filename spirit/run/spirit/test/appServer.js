@@ -249,12 +249,13 @@ function jsonFiles(dir, out) {
   return out;
 }
 function codeFiles(dir, out) {
+  const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
   let names = [];
   try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   names.forEach(function (d) {
     const p = path.join(dir, d.name);
     if (d.isDirectory()) {
-      if (d.name === 'node_modules' || d.name === '.git' || p === path.join(RUN, 'brains') || p === path.join(RUN, 'relay-state') || p === path.join(RUN, 'spirit', 'state')) return;
+      if (VENDORED_FOLDERS.holds(p) || d.name === '.git' || p === path.join(RUN, 'brains') || p === path.join(RUN, 'relay-state') || p === path.join(RUN, 'spirit', 'state')) return;
       codeFiles(p, out);
     } else if (/\.(js|html)$/.test(d.name)) out.push(p);
   });

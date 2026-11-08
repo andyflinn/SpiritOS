@@ -182,6 +182,7 @@ function fileWritable(filePath) {
   if (isShellState(canonical)) return true;
   if (canonical.split('/').indexOf('relay-state') !== -1) return false;
   if (canonical.indexOf('/') === -1) return false;
+  if (isVendored(canonical)) return false; // Andy's Q1 (goal/G43.25): "servable but not writeable."
   return !isCoreFile(canonical);
 }
 
@@ -326,12 +327,28 @@ function getAnnotations(filePath) {
   return Object.assign({}, sidecar, { face: face });
 }
 
-// Directories no tool should ever need to see: dependency trees and VCS
-// internals. Skipped entirely (not recursed into, not added to result) —
-// every consumer of scanFolder (the fs-watcher, the Files/Processes apps)
-// otherwise ends up scanning/listing thousands of irrelevant files the
-// moment any process script gets its own node_modules.
-const SCAN_EXCLUDED_DIR_NAMES = new Set(['node_modules', '.git']);
+// Directories no tool should ever need to see: VCS internals. Skipped
+// entirely (not recursed into, not added to result).
+const SCAN_EXCLUDED_DIR_NAMES = new Set(['.git']);
+
+// THE VENDORED FOLDERS, ONE LIST (goal/G43.25, box requirement 6; Andy:
+// "can we hide those suckers in spirit/jobs/ for now? without the damn
+// node_modules container?"): libraries we carry but did not write, each a
+// folder relative to spirit/run. Every walker of the tree reads this list
+// instead of a skip of its own, so vendor code is neither judged by our
+// rules nor listed in Files; the next library is one line here. Andy's Q1:
+// "servable but not writeable." A page still loads it (CodeMirror), and
+// fileWritable refuses every file inside.
+const VENDORED_FOLDERS = ['spirit/jobs/chokidar', 'spirit/jobs/readdirp', 'spirit/element/codeMirror'];
+// VENDORED_FOLDERS.holds(p), the one question every walker asks of the
+// list: is p, absolute or relative to the checkout or to spirit/run, with
+// either slash, a vendored folder or inside one?
+function isVendored(p) {
+  const slashed = '/' + String(p || '').replace(/\\/g, '/') + '/';
+  return VENDORED_FOLDERS.some(function (v) { return slashed.indexOf('/' + v + '/') !== -1; });
+}
+VENDORED_FOLDERS.holds = isVendored;
+Object.freeze(VENDORED_FOLDERS);
 
 function scanFolder(dirPath, result = []) {
   try {
@@ -343,6 +360,7 @@ function scanFolder(dirPath, result = []) {
 
       if (entry.isDirectory()) {
         if (SCAN_EXCLUDED_DIR_NAMES.has(entry.name)) continue;
+        if (isVendored(path.relative(ROOT_DIR, path.resolve(entry.parentPath, entry.name)))) continue;
 
         // A directory is asked the same question a file is.
         // fileServable already refuses `relay-state` and
@@ -388,6 +406,7 @@ function scanFolder(dirPath, result = []) {
 
 module.exports = {
   ROOT_DIR: ROOT_DIR,
+  VENDORED_FOLDERS: VENDORED_FOLDERS,
   fsPath: fsPath,
   fileWritable: fileWritable,
   fileServable: fileServable,

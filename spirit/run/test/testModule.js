@@ -21,9 +21,10 @@ const fs = require('fs');
 const path = require('path');
 
 const RUN = path.join(__dirname, '..');
-// Never walked: installed packages, node state, git, and the CodeMirror library in its folder spirit/element/codeMirror/
-// (goal/G43.5), vendor code like an installed package.
-const SKIP = ['node_modules', 'relay-state', 'state', 'app-state', '.git', 'codeMirror'];
+// Never walked: node state, git, and the vendored folders, the libraries we carry but did not write (fileSystem.js's
+// one list, goal/G43.25).
+const SKIP = ['relay-state', 'state', 'app-state', '.git'];
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 function posix(p) { return String(p).split(path.sep).join('/'); }
 
@@ -35,8 +36,8 @@ function walk(root) {
     let names = [];
     try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
     for (const d of names) {
-      if (SKIP.indexOf(d.name) !== -1) continue;
       const full = path.join(dir, d.name);
+      if (SKIP.indexOf(d.name) !== -1 || VENDORED_FOLDERS.holds(full)) continue;
       if (d.isDirectory()) { into(full); continue; }
       if (!d.isFile() || !/\.js$/.test(d.name)) continue;
       const rel = posix(path.relative(root, full));

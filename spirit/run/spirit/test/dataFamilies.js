@@ -10,6 +10,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // Andy on Q2: "yes, of course all 19". Q1: each under the family's own name.
 const NODE_FAMILIES = ['app', 'auth', 'config', 'contact', 'events', 'fs', 'jobs', 'net', 'node', 'owner', 'peer', 'relay'];
@@ -32,8 +33,8 @@ function code(text) { return String(text).split(/\r?\n/).map(function (l) { retu
 
 function walk(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-    if (e.name === 'node_modules' || e.name === 'brains' || e.name === 'relay-state' || e.name === 'app-state' || e.name === 'state' || e.name === 'media' || e.name === 'published') return;
     const at = path.join(dir, e.name);
+    if (VENDORED_FOLDERS.holds(at) || e.name === 'brains' || e.name === 'relay-state' || e.name === 'app-state' || e.name === 'state' || e.name === 'media' || e.name === 'published') return;
     if (e.isDirectory()) walk(at, out); else out.push(at);
   });
   return out;

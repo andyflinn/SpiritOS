@@ -28,6 +28,7 @@ const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..');
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 // A family's manager, beside its interface: the app's beside spirit.familyPath(name), the node's own beside its api.js.
 const appFamilies = {};
 function managerOf(name) { return appFamilies[name] ? path.posix.join(path.posix.dirname(path.posix.dirname(familyPath(name))), 'data.js') : 'spirit/' + name + '/data.js'; }
@@ -78,7 +79,7 @@ managers.forEach(function (m) {
   while ((x = re.exec(src))) owned[x[1]] = m;
 });
 test.comment('branches named by their managers: ' + Object.keys(owned).map(function (b) { return b + ' (' + owned[b] + ')'; }).join(', '));
-const readers = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\/|node_modules|\/vendor\/|element\/codeMirror\//.test(f) && managers.indexOf(f) === -1; });
+const readers = tracked.filter(function (f) { return /\.js$/.test(f) && !/\/test\/|\/vendor\//.test(f) && !VENDORED_FOLDERS.holds(f) && managers.indexOf(f) === -1; });
 Object.keys(owned).forEach(function (b) {
   // A path into the branch handed to a spirit.data reader or writer: D.get('desk/' + id), data.watch("deskItem/...").
   const pathOf = new RegExp('\\b(?:D|data)\\.(?:get|set|merge|del|watch|rows|branch|seat)\\(\\s*[\'"]' + b + '(?:/|[\'"])');

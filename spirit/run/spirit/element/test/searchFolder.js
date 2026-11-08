@@ -11,6 +11,7 @@ const path = require('path');
 const RUN = path.resolve(__dirname, '../../..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const E = path.join(RUN, 'spirit', 'element');
 const SEARCH = path.join(E, 'search');
 
@@ -20,7 +21,7 @@ function there(rel) { return fs.existsSync(path.join(RUN, rel)); }
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, ''); } catch (e) { return ''; } }
 function filesUnder(dir) {
   const out = [];
-  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
+  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(dir));
   return out;
 }
 

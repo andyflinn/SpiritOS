@@ -17,6 +17,7 @@ const http = require('http');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -27,12 +28,12 @@ function scratchTree(port) {
   const run = path.join(root, 'run');
   fs.mkdirSync(path.join(run, 'test'), { recursive: true });
   fs.copyFileSync(path.join(RUN, 'test', 'testReport.js'), path.join(run, 'test', 'testReport.js'));
-  const SKIP = ['state', 'node_modules', 'test', 'codeMirror'];
+  const SKIP = ['state', 'test'];
   (function copy(from, to) {
     fs.mkdirSync(to, { recursive: true });
     fs.readdirSync(from, { withFileTypes: true }).forEach(function (d) {
-      if (SKIP.indexOf(d.name) !== -1) return;
       const f = path.join(from, d.name);
+      if (SKIP.indexOf(d.name) !== -1 || VENDORED_FOLDERS.holds(f)) return;
       if (d.isDirectory()) copy(f, path.join(to, d.name));
       else if (d.isFile() && /\.(js|json)$/.test(d.name)) fs.copyFileSync(f, path.join(to, d.name));
     });

@@ -27,6 +27,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const RUN = path.join(__dirname, '..', 'run');
 
@@ -62,9 +63,9 @@ function walk(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (entry) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      // node_modules is nobody's code here; relay-state/ is a node's state,
+      // a vendored folder (fileSystem.js) is nobody's code here; relay-state/ is a node's state,
       // not code; brains/ is Andy's own repo (.gitignore says why).
-      if (entry.name === 'node_modules' || entry.name === 'relay-state' || entry.name === 'state' || entry.name === 'brains') return;
+      if (VENDORED_FOLDERS.holds(full) || entry.name === 'relay-state' || entry.name === 'state' || entry.name === 'brains') return;
       walk(full, out);
       return;
     }

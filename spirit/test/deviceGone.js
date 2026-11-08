@@ -14,12 +14,13 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const OWED = 'OWED by goal/G28.2: ';
 const RUN = path.join(__dirname, '..', 'run');
 const SPIRIT = path.join(__dirname, '..');
 const SELF = path.resolve(__filename);
-const SKIP_DIRS = new Set(['node_modules', '.git', 'brains', 'media', 'published']);
+const SKIP_DIRS = new Set(['.git', 'brains', 'media', 'published']);
 const TEXT = /\.(js|json|md|html|css|txt|sh|ps1|cmd)$/i;
 
 function walk(dir, out) {
@@ -27,7 +28,7 @@ function walk(dir, out) {
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   entries.forEach(function (e) {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) { if (!SKIP_DIRS.has(e.name)) walk(p, out); }
+    if (e.isDirectory()) { if (!SKIP_DIRS.has(e.name) && !VENDORED_FOLDERS.holds(p)) walk(p, out); }
     else if (TEXT.test(e.name) && path.resolve(p) !== SELF) out.push(p);
   });
   return out;

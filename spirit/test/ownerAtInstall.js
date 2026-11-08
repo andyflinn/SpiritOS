@@ -36,6 +36,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 const auth = require('../run/spirit/relayAuth.js');
 const invites = require('../run/spirit/invites.js');
 const nodeCard = require('../run/spirit/nodeCard.js');
@@ -51,12 +52,12 @@ function read(p) { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return
 function there(p) { try { fs.statSync(p); return true; } catch (e) { return false; } }
 
 // Every .js under spirit/run, so a name can be looked for in the RUNNING code and nowhere else. The relay's own
-// state and node_modules are not code we wrote.
+// state and the vendored folders (fileSystem.js) are not code we wrote.
 function runFiles(rel, into) {
   const abs = path.join(RUN, rel);
   fs.readdirSync(abs).forEach(function (name) {
-    if (name === 'node_modules' || name === 'relay-state' || name === 'state') return;
     const sub = path.join(abs, name);
+    if (VENDORED_FOLDERS.holds(sub) || name === 'relay-state' || name === 'state') return;
     let st; try { st = fs.statSync(sub); } catch (e) { return; }
     if (st.isDirectory()) runFiles(path.join(rel, name), into);
     else if (/\.js$/.test(name)) into.push({ rel: path.join('spirit/run', rel, name), text: read(sub) });

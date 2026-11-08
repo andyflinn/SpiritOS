@@ -28,6 +28,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const REPO = path.join(__dirname, '..', '..');
 const SELF = 'spirit/test/noKeylessNode.js';
@@ -76,7 +77,7 @@ function files() {
     // goal's chat and boxes, so it quotes these phrases while the goal discusses removing them. It is data, not
     // documentation or code; named here alone, so nothing else is excused.
     if (f === 'spirit/run/process/js/desk/currentGoal.json') return false;
-    if (f.indexOf('/node_modules/') !== -1) return false;
+    if (VENDORED_FOLDERS.holds(f)) return false;
     if (!/\.(js|json|md)$/i.test(f)) return false;
     return fs.existsSync(path.join(REPO, f));
   });
@@ -142,7 +143,7 @@ function codeFiles() {
   }).filter(function (f) {
     if (f.indexOf('spirit/run/brains/') === 0) return false;
     if (f === 'spirit/run/process/js/desk/currentGoal.json') return false;
-    if (f.indexOf('/node_modules/') !== -1) return false;
+    if (VENDORED_FOLDERS.holds(f)) return false;
     if (/\.(db|png|jpg|jpeg|gif|ico|webp|woff2?|ttf|gguf|bin|zip|gz)$/i.test(f)) return false;
     return fs.existsSync(path.join(REPO, f));
   });

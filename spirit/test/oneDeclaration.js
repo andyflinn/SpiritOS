@@ -38,6 +38,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const RUN = path.join(__dirname, '..', 'run');
 
@@ -52,7 +53,7 @@ function jsFilesUnder(dir, out) {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) {
       // Somebody else's code, and not ours to be tidy about.
-      if (e.name === 'node_modules') return;
+      if (VENDORED_FOLDERS.holds(full)) return;
       jsFilesUnder(full, out);
     } else if (e.name.endsWith('.js')) {
       out.push(full);

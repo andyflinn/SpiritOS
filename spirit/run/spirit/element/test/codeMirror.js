@@ -11,6 +11,7 @@ const path = require('path');
 const vm = require('vm');
 const RUN = path.resolve(__dirname, '../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const FILE = path.join(__dirname, '..', 'codeMirror.js');
 const CM = 'spirit/element/codeMirror/';
 
@@ -171,8 +172,8 @@ test.startTest('codeMirror.js: the CodeMirror shell element, read and edit');
   const users = [];
   (function walk(dir) {
     fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-      if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === 'test' || e.name.charAt(0) === '.') return;
       const p = path.join(dir, e.name);
+      if (VENDORED_FOLDERS.holds(p) || e.name === 'relay-state' || e.name === 'state' || e.name === 'test' || e.name.charAt(0) === '.') return;
       if (e.isDirectory()) return walk(p);
       if (!/\.(js|html)$/.test(e.name)) return;
       const text = fs.readFileSync(p, 'utf8');

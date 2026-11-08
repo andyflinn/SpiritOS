@@ -16,14 +16,15 @@ const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const appClient = require(path.join(RUN, 'spirit', 'appClient.js'));
 const packet = require(path.join(RUN, 'spirit', 'client', 'packet.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 // THE DESK RUNS FROM A COPY OF THE RUN TREE (never this checkout's own): spirit.js finds its node by the run tree's
 // spirit/state/environment.json, so a desk started from this tree would publish to the real node beside it. The copy's
 // environment.json names the pretend node below, and nothing reaches a real one.
-const SKIP = ['relay-state', 'node_modules', 'app-state', 'media', 'published', 'brains', 'test'];
+const SKIP = ['relay-state', 'app-state', 'media', 'published', 'brains', 'test'];
 function runCopy(dir, port) {
   fs.cpSync(RUN, dir, { recursive: true, filter: function (src) {
     const rel = path.relative(RUN, src).split(path.sep);
-    return !(rel.length === 1 && SKIP.indexOf(rel[0]) !== -1) && !/\.log$/.test(src) && rel.indexOf('node_modules') === -1 && rel.indexOf('state') === -1;
+    return !(rel.length === 1 && SKIP.indexOf(rel[0]) !== -1) && !/\.log$/.test(src) && !VENDORED_FOLDERS.holds(path.relative(RUN, src)) && rel.indexOf('state') === -1;
   } });
   fs.mkdirSync(path.join(dir, 'spirit', 'state'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'spirit', 'state', 'environment.json'), JSON.stringify({ PORT: port }));

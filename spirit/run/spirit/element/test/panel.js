@@ -13,6 +13,7 @@ const { spawn, execSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../../..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 const { freePort, until, sleep, chromePage, findChrome } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
@@ -23,7 +24,7 @@ function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?
 // The code of the tree, its comments out, its tests out: what runs.
 function codeNaming(re) {
   const out = [];
-  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents' || e.name === 'test') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(RUN));
+  (function walk(d) { (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }) : []).forEach(function (e) { if (VENDORED_FOLDERS.holds(path.join(d, e.name)) || e.name === 'relay-state' || e.name === 'state' || e.name === 'agents' || e.name === 'test') return; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else out.push(p); }); }(RUN));
   return out.filter(function (f) { return /\.(js|html)$/.test(f) && re.test(code(f).replace(/<!--[\s\S]*?-->/g, '')); }).map(function (f) { return path.relative(RUN, f); });
 }
 

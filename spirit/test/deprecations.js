@@ -24,6 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const REPO = path.join(__dirname, '..', '..');
 const REGISTER = path.join(REPO, 'design', 'DEPRECATIONS.md');
@@ -44,8 +45,8 @@ function walk(dir, out) {
   let entries = [];
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   entries.forEach(function (e) {
-    if (e.name === 'node_modules' || e.name.startsWith('.')) return;
     const full = path.join(dir, e.name);
+    if (VENDORED_FOLDERS.holds(full) || e.name.startsWith('.')) return;
     if (e.isDirectory()) walk(full, out);
     else if (/\.(js|html|sh)$/.test(e.name) || !/\./.test(e.name)) out.push(full);
   });

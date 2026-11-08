@@ -15,6 +15,7 @@ const RUN = path.resolve(__dirname, '../..');
 const REPO = path.resolve(RUN, '../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 600); }
@@ -100,7 +101,7 @@ function judged(file, line) {
 // Not the product: what the desk writes, what is published, and this suite's own lists.
 function out(file) {
   return /^(agents|design)\//.test(file) || /currentGoal\.json$/.test(file) || /process\/js\/desk\/rules\.md$/.test(file) ||
-    /spirit\/test\/elementMove\.(js|md)$/.test(file) || /(^|\/)node_modules\//.test(file) || /(^|\/)brains\//.test(file) ||
+    /spirit\/test\/elementMove\.(js|md)$/.test(file) || VENDORED_FOLDERS.holds(file) || /(^|\/)brains\//.test(file) ||
     !/\.(js|json|html|md|css|txt)$/.test(file) || file.indexOf('spirit/') !== 0;
 }
 const OLD_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
@@ -127,7 +128,7 @@ test.startTest('elementMove.js: shell/js into spirit/element, its elements on sp
     return fs.existsSync(path.join(REPO, f)) && /element\/codeMirror\//.test(fs.readFileSync(path.join(REPO, f), 'utf8').split('\n').map(function (l) { const cut = l.search(/(^|[^:'"])\/\//); return cut === -1 ? l : l.slice(0, cut + 1); }).join('\n'));
   });
   ok(!asking.length, 'no product file but the element names the library\'s folder', 'these name it: ' + short(asking));
-  ok(!IN_RUN.some(function (f) { return f.indexOf('shell/node_modules/') === 0; }) && !fs.existsSync(path.join(RUN, 'shell', 'node_modules')), 'shell/node_modules is gone', 'shell/node_modules still stands');
+  ok(!IN_RUN.some(function (f) { return f.indexOf('shell/node_modules/') === 0; }) && !fs.existsSync(path.join(RUN, 'shell/node_modules')), 'shell/node_modules is gone', 'shell/node_modules still stands');
 
   test.subHeading('the references: "both file-location AND the home in spirit.element (singular)", tests and documents too');
   const oldPath = []; const oldHome = [];
@@ -199,7 +200,7 @@ test.startTest('elementMove.js: shell/js into spirit/element, its elements on sp
     try { cm = JSON.parse(await page.evaluate('(function () { var d = document.body.appendChild(document.createElement("div")); return window.spirit.element.codeMirror.create(d, { mode: "edit", text: "one needle", words: "needle" }).then(function () { return JSON.stringify({ drawn: !!d.querySelector(".CodeMirror"), marks: d.querySelectorAll(".text-view-match").length, cssLoaded: getComputedStyle(d.querySelector(".CodeMirror")).position === "relative", search: !!(window.CodeMirror.commands && window.CodeMirror.commands.find) }); }); })()')); } catch (e) { cm = { threw: String(e) }; }
     const fromHere = await page.evaluate('performance.getEntriesByType("resource").map(function (r) { return r.name; }).filter(function (u) { return /codemirror/i.test(u); }).join(" ")').catch(function () { return ''; });
     ok(cm.drawn === true && cm.marks === 1 && cm.cssLoaded === true && cm.search === true, 'the element draws from there, its sheet, its marks and its search keys with it', 'codeMirror: ' + short(cm));
-    ok(/spirit\/element\/codeMirror\/lib\/codemirror\.js/.test(fromHere) && !/node_modules/.test(fromHere), 'and the page asked the new place only', 'the page asked: ' + short(fromHere));
+    ok(/spirit\/element\/codeMirror\/lib\/codemirror\.js/.test(fromHere) && !/shell\/node_modules/.test(fromHere), 'and the page asked the new place only', 'the page asked: ' + short(fromHere));
     test.subHeading('what stays: "shell/shared/ will not be moved or touched. thos elements do NOT belong in spirit.element."');
     for (const s of STAYS) {
       let v = {};

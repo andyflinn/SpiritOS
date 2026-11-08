@@ -163,13 +163,13 @@ module.exports = function installJobs(port) {
   //   Andy, 2026-10-02: "the current design is horrid. for lazy load the stream can send createDirectory run /
   //   createDirectory media / createFile index.html etc... just send \"commands up the stream to modify the tree.\"",
   //   "so that s our replacement then. quick and free and maintained by others....", "forget about batching"; and
-  //   2026-10-04, "local copy it is" (chokidar under spirit/run/node_modules). His grant G1 on this file.
+  //   2026-10-04, "local copy it is" (chokidar, now under spirit/jobs/chokidar/, goal/G43.25). His grant G1 on this file.
   //
   // The watcher keeps the tree (path -> {kind, size, modified}) and sends what changed, one command per job-updated:
   // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
   // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
   // commands from fsTreeCommands (events/events.js, faceHome.js). The tree is seeded from scanFolder, so it skips what that skips
-  // (node_modules, .git, anything fileServable refuses, relay-state among them); chokidar is asked to ignore the same,
+  // (fileSystem.js's vendored folders, .git, anything fileServable refuses, relay-state among them); chokidar is asked to ignore the same,
   // and reports at startup what the seed already holds, which sends nothing.
   const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
   const RUN_ROOT = path.join(__dirname, '..');
@@ -231,13 +231,13 @@ module.exports = function installJobs(port) {
     const ignored = function (full) {
       const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
       if (!rel || rel.indexOf('..') === 0) return false;
-      if (rel.split('/').some(function (part) { return part === 'node_modules' || part === '.git'; })) return true;
+      if (rel.split('/').some(function (part) { return part === '.git'; }) || fileSystem.VENDORED_FOLDERS.holds(rel)) return true;
       // A NODE'S OWN SIDECARS ARE HEARD (goal/G41.1): the folders of the node's state down to them, and the sidecars,
       // never served and kept out of the tree.
       if (APP_SIDECAR.test(rel) || STATE_DIR.test(rel)) return false;
       return !fileSystem.fileServable(rel);
     };
-    const watcher = require('chokidar').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
+    const watcher = require('./jobs/chokidar/index.js').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
     watcher.on('all', function (event, full) {
       const op = FS_OPS[event];
       const rel = full ? relOf(full) : '';

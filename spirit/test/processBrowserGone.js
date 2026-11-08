@@ -12,16 +12,17 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const OWED = 'OWED by goal/G29.13: ';
 const RUN = path.join(__dirname, '..', 'run');
 
 test.startTest('goal/G29.13: the Job Selector (shell/process-browser) is gone, completely');
 
-// Every file the node serves or runs, outside relay-state and node_modules: none may name the app.
+// Every file the node serves or runs, outside relay-state and the vendored folders: none may name the app.
 function walk(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-    if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === '.git') return;
+    if (VENDORED_FOLDERS.holds(path.join(dir, e.name)) || e.name === 'relay-state' || e.name === 'state' || e.name === '.git') return;
     // Desk's own record of the goal (currentGoal.json) quotes this item; it is the record, not the code.
     if (e.name === 'currentGoal.json') return;
     const full = path.join(dir, e.name);

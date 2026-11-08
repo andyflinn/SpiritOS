@@ -13,6 +13,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const OWED = 'OWED by goal/G29.22: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -70,7 +71,7 @@ const users = [];
   try { es = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
   es.forEach(function (e) {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) { if (e.name !== 'node_modules' && e.name !== 'relay-state' && e.name !== 'state' && e.name !== 'brains') walk(p); return; }
+    if (e.isDirectory()) { if (!VENDORED_FOLDERS.holds(p) && e.name !== 'relay-state' && e.name !== 'state' && e.name !== 'brains') walk(p); return; }
     if (!/\.(js|html)$/.test(e.name)) return;
     const code = fs.readFileSync(p, 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
     if (/require\([^)]*(searchBucket|gradedSearch|\/bucket(\.js)?['"])|src=["'][^"']*(searchBucket|gradedSearch|\/bucket)\.js/.test(code)) users.push(path.relative(RUN, p));

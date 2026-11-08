@@ -28,6 +28,7 @@ const net = require('net');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 const appClient = require('../run/spirit/appClient.js');
 const packet = require('../run/spirit/client/packet.js');
 const arrivals = require('../run/spirit/arrivals.js');
@@ -123,7 +124,7 @@ function freePort() {
   (function walk(d) {
     fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) {
       const p = path.join(d, e.name);
-      if (e.isDirectory()) { if (['brains', 'relay-state', 'state', 'node_modules', 'app-state'].indexOf(e.name) === -1 && p !== DIR) walk(p); return; }
+      if (e.isDirectory()) { if (['brains', 'relay-state', 'state', 'app-state'].indexOf(e.name) === -1 && !VENDORED_FOLDERS.holds(p) && p !== DIR) walk(p); return; }
       if (!/\.js$/.test(e.name)) return;
       const code = fs.readFileSync(p, 'utf8').split('\n').filter(function (l) { return !/^\s*(\/\/|\*)/.test(l); }).join('\n');
       if (/desk\.db/.test(code)) namers.push(path.relative(RUN, p));

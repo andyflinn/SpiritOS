@@ -39,6 +39,7 @@ const fs = require('fs');
 const path = require('path');
 
 const REPO = path.join(__dirname, '..', '..', '..');
+const VENDORED_FOLDERS = require('../../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 // The box says where its own askbox is: the environment, then the box
 // file, then this file's last resort.
@@ -54,14 +55,14 @@ const ASKBOX = String(process.env.SPIRIT_ASKBOX || '').trim() ||
   fromBoxFile('askbox') ||
   (fromBoxFile('outbox') || '').replace(/outbox\.txt$/, 'askbox.txt');
 
-const SKIP = new Set(['.git', 'node_modules', 'relay-state', 'state', 'app-state', 'lab', 'media']);
+const SKIP = new Set(['.git', 'relay-state', 'state', 'app-state', 'lab', 'media']);
 
 function walk(dir, out) {
   let entries = [];
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   for (const e of entries) {
-    if (SKIP.has(e.name)) continue;
     const p = path.join(dir, e.name);
+    if (SKIP.has(e.name) || VENDORED_FOLDERS.holds(p)) continue;
     if (e.isDirectory()) walk(p, out);
     else out.push(p);
   }

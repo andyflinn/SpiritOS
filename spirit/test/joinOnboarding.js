@@ -26,6 +26,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 const world = require('./world');
 const auth = require('../run/spirit/relayAuth');
 
@@ -204,7 +205,7 @@ async function main() {
   (function walk(dir) {
     fs.readdirSync(dir, { withFileTypes: true }).forEach(function (d) {
       const p = path.join(dir, d.name);
-      if (d.isDirectory()) { if (d.name !== 'node_modules' && p !== path.join(JS, 'sendMail')) walk(p); return; }
+      if (d.isDirectory()) { if (!VENDORED_FOLDERS.holds(p) && p !== path.join(JS, 'sendMail')) walk(p); return; }
       if (/\.js$/.test(d.name) && /mailgun/i.test(fs.readFileSync(p, 'utf8'))) named.push(path.relative(RUN, p));
     });
   }(JS));

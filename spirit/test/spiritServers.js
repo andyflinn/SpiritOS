@@ -15,6 +15,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const OWED = 'OWED by goal/G32.3: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -27,8 +28,8 @@ function jsFiles(dir) {
     let names = [];
     try { names = fs.readdirSync(d, { withFileTypes: true }); } catch (e) { return; }
     names.forEach(function (n) {
-      if (n.name === 'node_modules') return;
       const full = path.join(d, n.name);
+      if (VENDORED_FOLDERS.holds(full)) return;
       if (n.isDirectory()) walk(full); else if (/\.js$/.test(n.name)) out.push(full);
     });
   }(dir));

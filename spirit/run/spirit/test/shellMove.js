@@ -14,6 +14,7 @@ const RUN = path.resolve(__dirname, '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { freePort, until, sleep } = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -67,8 +68,8 @@ function keysOnDisc(run) {
   const out = [];
   (function walk(d) {
     fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) {
-      if (e.name === 'node_modules') return;
       const p = path.join(d, e.name);
+      if (VENDORED_FOLDERS.holds(p)) return;
       if (e.isDirectory()) return walk(p);
       if (!/^identity/.test(e.name)) return;
       const j = readJson(p);
@@ -87,7 +88,7 @@ test.startTest('shellMove.js: relay-state\'s own files move to spirit/state/, an
     test.subHeading('the box: "Every place that builds one of these paths follows, tests too"');
     const left = [];
     const tracked = execSync('git ls-files -- spirit/run bash', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean);
-    tracked.filter(function (f) { return /\.(js|html|sh|service|bash)$|^bash\/[^.]*$/.test(f) && !/spirit\/shellMove\.js$|spirit\/test\/shellMove\.js$/.test(f) && fs.existsSync(path.join(REPO, f)) && !/node_modules/.test(f); }).forEach(function (f) {
+    tracked.filter(function (f) { return /\.(js|html|sh|service|bash)$|^bash\/[^.]*$/.test(f) && !/spirit\/shellMove\.js$|spirit\/test\/shellMove\.js$/.test(f) && fs.existsSync(path.join(REPO, f)) && !VENDORED_FOLDERS.holds(f); }).forEach(function (f) {
       const text = fs.readFileSync(path.join(REPO, f), 'utf8').split(/\r?\n/).filter(function (l) { return !/^\s*(\/\/|\*|#)/.test(l); }).join('\n');
       if (THE_TOP.test(text)) left.push(f);
     });

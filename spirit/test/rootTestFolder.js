@@ -29,6 +29,7 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const OWED = 'OWED by goal/G40.6: ';
 const REPO = path.join(__dirname, '..', '..');
@@ -38,15 +39,15 @@ const FILES = ['spirit.md', 'spirit.js', 'TEST_SYSTEM.md', 'testModule.js', 'spi
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }
 function read(p) { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return ''; } }
 function rel(p) { return path.relative(RUN, p).split(path.sep).join('/'); }
-// Every .js in a test/ folder under a root, by walking it (node_modules and node state left out).
+// Every .js in a test/ folder under a root, by walking it (the vendored folders and node state left out).
 function testFilesUnder(root) {
   const out = [];
   (function walk(dir) {
     let names = [];
     try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
     for (const d of names) {
-      if (d.name === 'node_modules' || d.name === 'relay-state' || d.name === 'state' || d.name === 'app-state' || d.name === '.git') continue;
       const full = path.join(dir, d.name);
+      if (VENDORED_FOLDERS.holds(full) || d.name === 'relay-state' || d.name === 'state' || d.name === 'app-state' || d.name === '.git') continue;
       if (d.isDirectory()) walk(full);
       else if (d.isFile() && /\.js$/.test(d.name) && path.basename(dir) === 'test') out.push(full);
     }

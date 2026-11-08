@@ -20,6 +20,7 @@ const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 const { relayRequest } = require('../run/spirit/relayRequest.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
@@ -118,8 +119,8 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   const lmCode = [];
   (function walk(dir) {
     fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-      if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'state' || e.name === 'media' || e.name === 'currentGoal.json') return;
       const full = path.join(dir, e.name);
+      if (VENDORED_FOLDERS.holds(full) || e.name === 'relay-state' || e.name === 'state' || e.name === 'media' || e.name === 'currentGoal.json') return;
       if (e.isDirectory()) walk(full);
       else if (/\.(js|json|html)$/.test(e.name) && /lm ?studio/i.test(fs.readFileSync(full, 'utf8').replace(/goal\/G29\.20/g, ''))) lmCode.push(path.relative(RUN, full).split(path.sep).join('/'));
     });

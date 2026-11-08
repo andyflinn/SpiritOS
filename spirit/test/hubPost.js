@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 const hubMod = require('../run/spirit/hub');
 const hub = hubMod.createHub(process.cwd());
 const os = require('os');
@@ -324,8 +325,8 @@ function noAppNamesTheRing() {
 
   function scan(dir, depth) {
     fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-      if (e.name === 'node_modules') return;
       const full = path.join(dir, e.name);
+      if (VENDORED_FOLDERS.holds(full)) return;
       if (e.isDirectory()) { if (depth > 0) scan(full, depth - 1); return; }
       if (!/\.(js|html)$/.test(e.name)) return;
       const rel = path.relative(RUN, full).split(path.sep).join('/');

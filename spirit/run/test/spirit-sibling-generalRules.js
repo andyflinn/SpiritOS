@@ -33,6 +33,7 @@ const test = require(path.join(__dirname, 'testReport.js'));
 
 const RUN = path.join(__dirname, '..');
 const REPO = path.join(RUN, '..', '..');
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 // Its arguments: the file it judges, if any; the verifier's --verify-port <n> is the reporter's, and passed on.
 const ARGS = process.argv.slice(2);
 const VERIFY = ARGS.indexOf('--verify-port') !== -1 ? ARGS.slice(ARGS.indexOf('--verify-port'), ARGS.indexOf('--verify-port') + 2) : [];
@@ -301,7 +302,7 @@ const TEXT_ONLY = {
 function painters() {
   const tracked = require('child_process').execFileSync('git', ['ls-files', 'shell'], { cwd: RUN, encoding: 'utf8' }).split('\n');
   return tracked.filter(function (f) {
-    if (!/\.js$/.test(f) || /\/test\/|node_modules|codeMirror/.test(f) || f === 'spirit/element/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
+    if (!/\.js$/.test(f) || /\/test\//.test(f) || VENDORED_FOLDERS.holds(f) || f ==='spirit/element/icon.js' || !fs.existsSync(path.join(RUN, f))) return false;
     if (FROM_DATA.indexOf(f) !== -1) return true;
     if (TEXT_ONLY[f]) return false;
     const code = fs.readFileSync(path.join(RUN, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:\\'"])\/\/.*$/gm, '$1');

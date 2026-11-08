@@ -32,6 +32,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const REPO = path.join(__dirname, '..', '..');
 const CYCLES = path.join(REPO, 'design', 'cycles');
@@ -49,7 +50,7 @@ const FILES = ['AGENT.md', 'CLAUDE.md', 'ANDYS_RULES_FOR_AGENTS.md', 'DICTIONARY
 // `grok`: design/reviews/grok/ holds Grok's replies VERBATIM — an outside
 // voice's words are quoted, never corrected, so its citations are not ours
 // to fix.
-const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'state', 'visual', 'grok'];
+const SKIP_DIRS = ['cycles', 'brains', 'relay-state', 'state', 'visual', 'grok'];
 // THE DESK'S OWN GOAL FILE IS NEVER JUDGED (goal/G16.2). The desk writes it
 // itself from everybody's words and commits it on every change, so nobody can
 // cite in it by hand. Andy: "the test never considers that file. it's commits
@@ -149,8 +150,8 @@ function walk(rel, into) {
   try { st = fs.statSync(abs); } catch (e) { return; }
   if (st.isFile()) { into.push(rel); return; }
   fs.readdirSync(abs).forEach(function (name) {
-    if (SKIP_DIRS.indexOf(name) !== -1) return;
     const child = rel + '/' + name;
+    if (SKIP_DIRS.indexOf(name) !== -1 || VENDORED_FOLDERS.holds(child)) return;
     if (SKIP_FILES.indexOf(child) !== -1) return;
     const cst = fs.statSync(path.join(REPO, child));
     if (cst.isDirectory()) walk(child, into);

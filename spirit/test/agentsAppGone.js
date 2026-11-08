@@ -16,12 +16,13 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const OWED = 'OWED by goal/G3.2: ';
 const SPIRIT = path.join(__dirname, '..');
 const APP = path.join(SPIRIT, 'run', 'process', 'js', 'agents');
-// Not walked: installed packages, Andy's vault, and the node's own state.
-const SKIP = ['node_modules', 'brains', 'relay-state', 'state', 'app-state', '.git'];
+// Not walked: the vendored folders (fileSystem.js), Andy's vault, and the node's own state.
+const SKIP = ['brains', 'relay-state', 'state', 'app-state', '.git'];
 const NAMES = [
   /process[\\/]+js[\\/]+agents\b/,
   /agents[\\/]+agents\.js/,
@@ -34,7 +35,7 @@ function walk(dir, out) {
   let entries = [];
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
   entries.forEach(function (e) {
-    if (e.isDirectory()) { if (SKIP.indexOf(e.name) === -1) walk(path.join(dir, e.name), out); }
+    if (e.isDirectory()) { if (SKIP.indexOf(e.name) === -1 && !VENDORED_FOLDERS.holds(path.join(dir, e.name))) walk(path.join(dir, e.name), out); }
     else if (/\.js$/.test(e.name)) out.push(path.join(dir, e.name));
   });
   return out;

@@ -39,6 +39,7 @@
     require('./spirit.js');
     var fs = require('fs');
     var path = require('path');
+    var VENDORED_FOLDERS = require('./fileSystem.js').VENDORED_FOLDERS;
     var readOr = function (file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { return null; } };
     var check = function (at, word) {
       var w = wordOf(word);
@@ -53,8 +54,8 @@
       var names = [];
       try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return false; }
       return names.some(function (e) {
-        if (!e.isDirectory() || e.name === 'node_modules') return false;
         var below = path.join(dir, e.name);
+        if (!e.isDirectory() || VENDORED_FOLDERS.holds(below)) return false;
         return holds(readOr(path.join(below, 'word.json')), w) || heldBelow(below, w);
       });
     };

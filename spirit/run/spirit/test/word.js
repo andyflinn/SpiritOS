@@ -14,6 +14,7 @@ const { spawnSync } = require('child_process');
 const RUN = path.resolve(__dirname, '../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const H = require(path.join(RUN, 'test', 'headLessChrome.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 // The box: "word.js will have hardcoded intitialized set of keys", "(this may change)". When it does, so does this line.
 // DISCREPANCY WITH ANDY's RULES: it has changed and this line has not: word.js hard-codes spirit, api, app, contact, data, element, job, node, state,
@@ -51,10 +52,10 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-word-'));
   const run = path.join(scratch, 'run');
   try {
-    const SKIP = ['relay-state', 'node_modules', 'app-state', 'media', 'published', 'brains', 'test'];
+    const SKIP = ['relay-state', 'app-state', 'media', 'published', 'brains', 'test'];
     fs.cpSync(RUN, run, { recursive: true, filter: function (src) {
       const rel = path.relative(RUN, src).split(path.sep);
-      return !(rel.length === 1 && SKIP.indexOf(rel[0]) !== -1) && rel.indexOf('node_modules') === -1 && rel.indexOf('state') === -1;
+      return !(rel.length === 1 && SKIP.indexOf(rel[0]) !== -1) && !VENDORED_FOLDERS.holds(path.relative(RUN, src)) && rel.indexOf('state') === -1;
     } });
     const plant = function (dir, words) {
       const at = path.join(run, 'spirit', dir);
@@ -169,7 +170,7 @@ test.startTest('word.js: the reserved words, and the tree held against them (goa
     const walk = function (dir, rel, out) {
       fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
         // A test folder holds a module's tests, named after it; state is the node's.
-        if (e.name === 'node_modules' || e.name === 'test' || (rel === '' && e.name === 'state')) return;
+        if (VENDORED_FOLDERS.holds(path.join(dir, e.name)) || e.name === 'test' || (rel === '' && e.name === 'state')) return;
         const r = rel ? rel + '/' + e.name : e.name;
         out.push({ rel: r, dir: e.isDirectory(), name: e.name });
         if (e.isDirectory()) walk(path.join(dir, e.name), r, out);

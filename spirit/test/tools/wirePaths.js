@@ -56,6 +56,7 @@ const path = require('path');
 
 const REPO = path.resolve(__dirname, '..', '..', '..');
 const SELF = path.resolve(__filename);
+const VENDORED_FOLDERS = require('../../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 // ── THE BOTTOMS AN INTERFACE MAY FUNNEL INTO ────────────────────────
 //
@@ -275,7 +276,7 @@ function gateMatches(frame, gate) {
 
 // ── WHERE EACH FUNCTION IS WRITTEN: A SCANNER, NOT A PARSER (goal/G22.3) ──
 //
-// No JavaScript parser is in the tree (no acorn, no node_modules beyond chokidar and readdirp), and Node's own acorn is
+// No JavaScript parser is in the tree (no acorn, no library beyond the vendored chokidar and readdirp), and Node's own acorn is
 // internal. So a small scanner: tokens, skipping comments, strings, template literals (their ${} expressions scanned as
 // code) and regex literals (a "/" where an operand may start), with every bracket matched. Over the tokens it finds
 // every function and where it starts and ends, by offset:
@@ -482,7 +483,7 @@ function ours(file) {
   const f = String(file).replace(/\\/g, '/');
   if (f.indexOf('node:') === 0) return '';
   if (f.indexOf('internal/') === 0) return '';
-  if (f.indexOf('node_modules') !== -1) return '';
+  if (VENDORED_FOLDERS.holds(f)) return '';
   const abs = path.resolve(f);
   if (abs === SELF) return '';
   if (abs.toLowerCase().indexOf(REPO.toLowerCase()) === 0) {

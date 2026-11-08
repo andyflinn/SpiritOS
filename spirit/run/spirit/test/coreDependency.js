@@ -5,8 +5,8 @@
 // depend on, are core-files, too."). A core file is grant-locked (spirit/coreFiles.js); a file it loads that is not
 // could be rewritten by any page, and the core file would run what was written. So every file a core file loads must be
 // core too, or this test is red naming both. Read from the code itself, comments left out: a page's script and style
-// tags, a script's require of a file beside it, and spirit.require of a literal path. A test folder and a module's own
-// node_modules require (a package, or node's own) are not files of the run, and are not asked.
+// tags, a script's require of a file beside it, and spirit.require of a literal path. A test folder, a vendored folder
+// (fileSystem.js's list) and a require by package name (node's own) are not files of the run, and are not asked.
 
 const fs = require('fs');
 const path = require('path');
@@ -14,6 +14,7 @@ const RUN = path.resolve(__dirname, '..','..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const REPO = path.join(RUN, '..', '..');
 const core = require(path.join(RUN, 'spirit', 'coreFiles.js'));
+const VENDORED_FOLDERS = require(path.join(RUN, 'spirit', 'fileSystem.js')).VENDORED_FOLDERS;
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 const tracked = require('child_process').execFileSync('git', ['ls-files', 'spirit/run'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
@@ -51,7 +52,7 @@ function loads(rel) {
 test.startTest('coreDependency.js: what a core file loads is core (goal/G41.30)');
 
 const coreFiles = tracked.map(function (f) { return f.replace(/^spirit\/run\//, ''); })
-  .filter(function (f) { return !/(^|\/)test\//.test(f) && !/node_modules\//.test(f) && /\.(js|html)$/.test(f) && exists(f) && isCore(f); });
+  .filter(function (f) { return !/(^|\/)test\//.test(f) && !VENDORED_FOLDERS.holds(f) && /\.(js|html)$/.test(f) && exists(f) && isCore(f); });
 ok(coreFiles.length > 50, 'it reads ' + coreFiles.length + ' core files', 'only ' + coreFiles.length + ' core files were found: the scan judges nothing');
 
 const loose = [];

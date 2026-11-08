@@ -38,18 +38,19 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 
 test.startTest('run/ stands alone — the product does not need the harness');
 
-// node_modules is somebody else's code, vendored under a process script.
+// A vendored folder (fileSystem.js's list) is somebody else's code.
 // It is not ours to hold to this rule and scanning it would only find
 // other people's test fixtures.
 // AND WHAT A RUNNING NODE KEEPS (goal/G19.12, found by deskVerify on his node): relay-state/ is the node's runtime
 // state, ignored by git and never shipped (the desk's currentGoal.json there quotes people's words), and brains/ is
 // his own vault. Neither is the product reaching for the harness.
-const SKIP_DIRS = ['node_modules', 'relay-state', 'state', 'brains'];
+const SKIP_DIRS = ['relay-state', 'state', 'brains'];
 // A RECORD OF CONVERSATION IS NOT CODE. What Andy and the agents said
 // talks about spirit/test, and is not the product reaching for the harness.
 // The desk keeps its record in relay-state/process/desk/desk.db (skipped
@@ -73,7 +74,7 @@ function walk(dir, out) {
   catch (e) { return out; }
   entries.forEach(function (entry) {
     if (entry.isDirectory()) {
-      if (SKIP_DIRS.indexOf(entry.name) !== -1) return;
+      if (SKIP_DIRS.indexOf(entry.name) !== -1 || VENDORED_FOLDERS.holds(path.join(dir, entry.name))) return;
       walk(path.join(dir, entry.name), out);
       return;
     }

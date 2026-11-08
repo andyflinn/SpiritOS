@@ -48,6 +48,7 @@ const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../spirit/appServer.js');
 const limits = require('../../../spirit/limits.js');
+const VENDORED_FOLDERS = require('../../../spirit/fileSystem.js').VENDORED_FOLDERS;
 const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
 const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
@@ -1145,9 +1146,9 @@ function watchCheckout(root) {
   try {
     const skip = function (full) {
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
-      return rel.split('/').some(function (part) { return part === '.git' || part === 'node_modules'; });
+      return rel.split('/').some(function (part) { return part === '.git'; }) || VENDORED_FOLDERS.holds(rel);
     };
-    require('chokidar').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
+    require('../../../spirit/jobs/chokidar/index.js').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
       if (!WHAT[event] || !full) return;
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
       if (!statusWorthy(rel)) return;

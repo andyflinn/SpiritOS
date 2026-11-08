@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events';
 import { stat as statcb, Stats } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import * as sp from 'node:path';
-import { readdirp, ReaddirpStream } from 'readdirp';
+import { readdirp, ReaddirpStream } from '../readdirp/index.js';
 import { EMPTY_FN, EVENTS as EV, isIBMi, isWindows, NodeFsHandler, STR_CLOSE, STR_END, } from './handler.js';
 const SLASH = '/';
 const SLASH_SLASH = '//';

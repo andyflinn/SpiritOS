@@ -27,6 +27,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { execSync, spawn } = require('child_process');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 const plantRun = require('./plantRun.js');
 const auth = require('../run/spirit/relayAuth.js');
 // IS IT LISTENING? A LIVENESS PROBE, NOT A PAGE FETCH (goal/G16.6).
@@ -71,7 +72,7 @@ function read(file) { try { return fs.readFileSync(file, 'utf8'); } catch (e) { 
 const ALLOWED = [/manifest\.type \|\| 'app'/, /\(name \|\| 'app'\)/, /row\('app',/, /\b[A-Z_]*LEGACY[A-Z_]*\s*=/, /URLSearchParams\([^)]*\)\.get\('app'\)/];
 function appFolderUses() {
   const files = execSync('git ls-files -- js process index.html app shell', { cwd: RUN, encoding: 'utf8' })
-    .split('\n').filter(function (f) { return /\.(js|html)$/.test(f) && f.indexOf('node_modules') === -1 && fs.existsSync(path.join(RUN, f)); });
+    .split('\n').filter(function (f) { return /\.(js|html)$/.test(f) && !VENDORED_FOLDERS.holds(f) && fs.existsSync(path.join(RUN, f)); });
   const hits = [];
   files.forEach(function (f) {
     fs.readFileSync(path.join(RUN, f), 'utf8').split(/\r?\n/).forEach(function (line, i) {

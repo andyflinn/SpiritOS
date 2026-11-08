@@ -28,6 +28,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
+const VENDORED_FOLDERS = require('../run/spirit/fileSystem.js').VENDORED_FOLDERS;
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.16: ';
@@ -51,7 +52,7 @@ function walk(dir, out) {
   names.forEach(function (d) {
     const p = path.join(dir, d.name);
     if (d.isDirectory()) {
-      if (d.name === 'node_modules' || d.name === 'relay-state' || d.name === 'state' || d.name === 'brains' || d.name.charAt(0) === '.') return;
+      if (VENDORED_FOLDERS.holds(p) || d.name === 'relay-state' || d.name === 'state' || d.name === 'brains' || d.name.charAt(0) === '.') return;
       walk(p, out);
     } else if (/\.(js|html|json)$/.test(d.name)) out.push(p);
   });
