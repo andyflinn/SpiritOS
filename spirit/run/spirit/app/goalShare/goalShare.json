@@ -1,0 +1,10 @@
+{
+  "identity": {
+    "icon": "🎯",
+    "label": "Goal Share",
+    "intrinsic": false
+  },
+  "node": {
+    "run": true
+  }
+}

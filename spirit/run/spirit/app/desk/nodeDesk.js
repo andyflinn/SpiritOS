@@ -43,11 +43,11 @@ try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
 // the commit-level agains which the file was generated. the file re-generation is triggered by 'Go' and 'Done
 // events' and the data includes items not visible to the user.", "it's the truth scoped by commit level."
 // THE DESK SHARES IT ITSELF (goal/G4.21), and never writes into the checkout (Andy: "i generally only read
-// the repo. i think we should make this automatic? agree?", "do it", "yes, that's the shape."). goalRepo is the repo to
-// share into (default: the checkout holding this file), goalPath the file's path in it; with neither (a server spawned
-// with {}, as every suite spawns one) nothing is shared, so no test pushes anywhere.
+// the repo. i think we should make this automatic? agree?", "do it", "yes, that's the shape."). goalRepo is the checkout
+// this server pulls on a claim (default: the checkout holding this file); goalRepo or goalPath set switches sharing on,
+// and with neither (a server spawned with {}, as every suite spawns one) nothing is shared, so no test pushes anywhere
+// (goal/G43.28, box line 9). Where the files go is goalShare's own (spirit/app/goalShare/goalShare.js).
 const GOAL_SHARED = !!(values.goalRepo || values.goalPath);
-const GOAL_PATH = String(values.goalPath || 'spirit/run/spirit/app/desk/currentGoal.json');
 const GOAL_REPO = values.goalRepo ? path.resolve(String(values.goalRepo)) : (function () {
   for (let d = __dirname; ; d = path.dirname(d)) {
     if (fs.existsSync(path.join(d, '.git'))) return d;
@@ -476,9 +476,8 @@ const addRuleChat = db.prepare('INSERT INTO rule_chat (rule, seq, at, by, creato
 
 // EVERY RULE CHANGE IS PUSHED, BOTH WAYS (goal/G5.8). Andy: "then lets have deskServer push active rules upon every
 // rule-change.", and to a repo file, an ear line, or both: "both". The active rules, grouped by type, are written to
-// rules.md in this server's state and shared into the repo as currentGoal.json is.
+// rules.md in this server's state and shared into the repo with currentGoal.json, in one commit (goal/G43.28).
 const RULES_STATE_FILE = path.join(STATE, 'rules.md');
-const RULES_PATH = 'spirit/run/spirit/app/desk/rules.md';
 function rulesChanged(key, what) {
   const active = newestRules.all().filter(function (r) { return r.status === 'active'; });
   const text = ['# Desk rules, active (written by the desk server on every rule change, goal/G5.8)', ''].concat(
@@ -487,7 +486,7 @@ function rulesChanged(key, what) {
       return mine.length ? ['## ' + type, ''].concat(mine.map(function (r) { return '### ' + r.key + ' (version ' + r.n + '): ' + r.label + '\n\n' + r.text + '\n'; })).join('\n') : '';
     }).filter(Boolean)).join('\n') + '\n';
   try { fs.writeFileSync(RULES_STATE_FILE, text); } catch (e) { console.error('desk: the rules file was not written: ' + ((e && e.message) || e)); }
-  if (GOAL_SHARED && GOAL_REPO) shareFile(RULES_PATH, RULES_STATE_FILE, 'rules.md, shared by the desk (goal/G5.8)');
+  if (GOAL_SHARED && GOAL_REPO) shareFile();
 }
 
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
@@ -2529,9 +2528,8 @@ function writeRuleChat(s, body, a) {
 // the desk's change number at this moment, the current goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts
 // as item.get gives them, its box and version, its checks and its chat lines {by, at, text}.
 // Written at the end of the write, after the publish, into this server's
-// own state folder, never the checkout; then goalShare.js commits it on the remote's master and pushes it, as a job
-// the node runs (goal/G4.21: an automation beside its owner, started through its own node's jobs.create, so Jobs
-// shows it under spirit/app/desk). A failure to write or to ask is said on stderr and fails no press.
+// own state folder, never the checkout; then goalShare commits it, with rules.md, on the remote's master and pushes it, as
+// a job the node runs (goal/G4.21; an app of its own since goal/G43.28, so Jobs shows it as spirit.app.goalShare). A failure to write or to ask is said on stderr and fails no press.
 const GOAL_STATE_FILE = path.join(STATE, 'currentGoal.json');
 function writeGoalFile(s, verb, a, change) {
   if (!GOAL_SHARED || !GOAL_REPO || !s.current || !s.goals[s.current]) return;
@@ -2553,7 +2551,7 @@ function writeGoalFile(s, verb, a, change) {
   // commit carries its own time, and change names the desk's moment.
   const doc = { change: change, goal: s.current, items: items };
   try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
-  shareFile(GOAL_PATH, GOAL_STATE_FILE, 'currentGoal.json, shared by the desk (goal/G4.21)');
+  shareFile();
 }
 // The node runs goalShare.js as a job, asked through the one spirit object of this process (goal/G40.6) on its own
 // node, with the verb the shell's Start Job uses.
@@ -2600,12 +2598,15 @@ function pullOwnRepo(id) {
     return tries(PULL_TRIES).then(function () {}, function (e) { say('not pulled: ' + e.message); });
   }, function (e) { say('not pulled: ' + e.message); });
 }
-function shareFile(repoPath, fromFile, message) {
+// THE SHARE IS goalShare's, AN APP OF ITS OWN (goal/G43.28; Andy: "move goalShare into spirit/app/goalShare/ like
+// pushOrigin", "the goalShare file just will just push both, current goal and rules. AT THE SAME FUCKING TIME", "it has no
+// argument"): started with nothing handed, it shares both of this server's files from its state in one commit. Its job is
+// spirit.app.goalShare, never this server's own.
+function shareFile() {
   Promise.resolve().then(function () {
     // As {status, body}. A transient job (goal/G29.16): it leaves Jobs once it exited cleanly; a failed share stays.
     return spirit.outcome(spirit.require('spirit/jobs/api.js').then(function (jobs) {
-      return jobs.create({ command: process.execPath,
-        args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', repoPath, '--from', fromFile, '--message', message] });
+      return jobs.create({ command: process.execPath, args: [path.join(__dirname, '..', 'goalShare', 'goalShare.js')] });
     }));
   }).then(function (r) {
     if (!r || r.status >= 300) console.error('desk: the node refused the goal share: ' + (r ? r.status + ' ' + JSON.stringify(r.body) : 'no answer'));

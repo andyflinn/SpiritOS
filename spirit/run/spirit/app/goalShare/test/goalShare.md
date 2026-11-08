@@ -24,7 +24,7 @@ its own, another clone that pushes in between). The job's id is asked of a scrat
 6. With both files in desk's state, one commit sets `spirit/run/spirit/app/desk/currentGoal.json` and
    `spirit/run/spirit/app/desk/rules.md` to their bytes and changes nothing else, pushed once.
 7. `spirit/app/test/api-deskMove.js` and `.md` are deleted.
-8. No tracked file names `spirit/app/desk/goalShare.js`; `spirit/test/jobs.js` and `jobs.md` name `nodeDesk.js` and
+8. No tracked file names desk's old goalShare.js by its path; `spirit/test/jobs.js` and `jobs.md` name `nodeDesk.js` and
    `spirit/app/goalShare/goalShare.js`, not `desk.js:2608`.
 9. It commits into the checkout that holds it, found by its own place, and ignores the old arguments when handed
    them; desk starts no share with neither `goalRepo` nor `goalPath` set (`nodeDesk.js:49`).
