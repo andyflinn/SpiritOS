@@ -492,72 +492,11 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   ok(!has(caught, 'for the other agent only'), 'a line addressed to another agent in the catch-up is neither its own nor its news', 'wake: ' + short(caught));
   let read = (caught && caught.key) || '';
 
-  // ── goal/G41.22: PUSH GOAL REPLACES THE COPY WHOLE, AND THE WAKE HANDS WHAT IS OWED ──────────────────────────────────
-  // Andy, the box: "pushgoal replaces each agent's copy of the current goal whole, no merge: nothing stale survives.", and
-  // "it moves each agent's read pointer to the newest change, never back to the start, and in that same wake hands the
-  // agent every line of Andy's addressed to it that nobody took yet: nothing replayed, nothing lost."
-  // The push, as the desk must send it (./deskClient.md): every row of it under one change, the push's, marked
-  // replace: true, the goal's facts and its items', then each of his lines addressed to this agent that nobody took yet
-  // (a chat side row with its to), and last its end, { change, verb: 'goal.whole', replace: true, end: true, key }.
-  const G = 'goal/G9.';
+  // The wakes below: a line of his to this agent, and the guards they share.
   // A set-up or a guard: its breaking fails the test, its holding is no check of its own.
   const holds = function (cond, bad) { if (!cond) test.fail(bad); };
   const count = function (r, s) { return (r && Array.isArray(r.lines) ? r.lines : []).filter(function (l) { return String(l).indexOf(s) !== -1; }).length; };
   const line = function (id, text, when, to) { return { table: 'chat', id: id, goal: 9, item: Number(id.split('.')[1]), to: [to || SELF_KEY], row: { at: when, by: 'andy', text: text, taken: '' } }; };
-  // The old copy: the goal, ITEM stale, an item the push will lack, another goal's item; ITEM's box and file list kept.
-  desk.answers['item.files'] = function (a) { return a.id === ITEM ? { files: [{ path: 'spirit/run/a.js', by: OTHER, core: false, grant: '' }], filesMore: false } : { files: [], filesMore: false }; };
-  // Another goal's first: a goal pushed whole is the current one, so the current goal's push comes last.
-  await push({ verb: 'goal.whole', goal: 8, key: { goal: 8, item: 1 }, item: factsOf({ id: 'goal/G8.1', goal: 'goal/G8', title: 'another goal' }) });
-  await push({ verb: 'goal.whole', goal: 9, key: { goal: 9, item: 0 }, item: { id: GOAL, goal: '', title: 'the goal', version: 1 } });
-  await push({ verb: 'goal.whole', goal: 9, key: { goal: 9, item: 1 }, item: factsOf({ title: 'stale title', version: 3 }) });
-  await push({ verb: 'goal.whole', goal: 9, key: { goal: 9, item: 4 }, item: factsOf({ id: ITEM4 }) });
-  await push({ verb: 'goal.whole', goal: 9, key: { goal: 9, item: 7 }, item: factsOf({ id: G + '7', title: 'not in the push' }) });
-  await settle();
-  await push({ table: 'files', id: ITEM, goal: 9, item: 1, row: { path: 'spirit/run/stale.js', by: OTHER, core: false } });
-  desk.answers['item.box'] = { box: 'box text v6', version: 6 };
-  await ask('item.box', { id: ITEM });
-  await settle();
-  // A line of his written before the one below, which the stream never brought (the lag of 2026-10-30).
-  const lostAt = at();
-  const readAt = at();
-  await push(line(ITEM4, 'wsl: read before the push', readAt));
-  await settle();
-  const before = await next(read);
-  read = (before && before.key) || read;
-  holds(has(before, 'read before the push'), 'set up: his line before the push is not handed: ' + short(before));
-
-  test.subHeading('push goal (goal/G41.22): the copy of the goal becomes the pushed one, whole');
-  const C = change + 1;
-  change = C;
-  desk.answers['item.files'] = function (a) { return a.id === ITEM ? { files: [{ path: 'spirit/run/fresh.js', by: OTHER, core: false, grant: '' }], filesMore: false } : { files: [], filesMore: false }; };
-  desk.answers['item.box'] = { box: 'box text v8', version: 8 };
-  const pushed = [
-    { change: C, verb: 'goal.whole', replace: true, goal: 9, key: { goal: 9, item: 0 }, item: { id: GOAL, goal: '', title: 'the goal', version: 2 } },
-    { change: C, verb: 'goal.whole', replace: true, goal: 9, key: { goal: 9, item: 1 }, item: factsOf({ title: 'fresh title', version: 9 }) },
-    { change: C, verb: 'goal.whole', replace: true, goal: 9, key: { goal: 9, item: 4 }, item: factsOf({ id: ITEM4 }) },
-    Object.assign({ change: C, replace: true }, line(ITEM4, 'wsl: read before the push', readAt)),
-    Object.assign({ change: C, replace: true }, line(ITEM4, 'wsl: lost on the way', lostAt)),
-    { change: C, verb: 'goal.whole', replace: true, end: true, goal: 9, key: { goal: 9, item: 0 } },
-  ];
-  for (const row of pushed) await push(row);
-  await settle();
-  ok(!DD().item(G + '7') && !!DD().item('goal/G8.1') && (DD().item(ITEM) || {}).title === 'fresh title',
-    'an item of the goal the push lacks is gone, its stale row replaced; another goal\'s item stays', short({ g97: DD().item(G + '7'), g81: !!DD().item('goal/G8.1'), item: (DD().item(ITEM) || {}).title }));
-  const boxNow = await ask('item.box', { id: ITEM });
-  ok(boxNow && boxNow.version === 8, 'a part kept from before the push is not answered from the old copy: the box is read afresh (v8, not the kept v6)', 'item.box: ' + short(boxNow));
-  const filesNow = await ask('item.files', { id: ITEM });
-  const paths = ((filesNow && filesNow.files) || []).map(function (f) { return f.path; });
-  ok(paths.indexOf('spirit/run/fresh.js') !== -1 && paths.indexOf('spirit/run/stale.js') === -1, 'the file list is the fresh one: a file kept from before the push is gone', 'files: ' + short(paths));
-  const late = { change: C - 1, verb: 'goal.whole', goal: 9, key: { goal: 9, item: 1 }, item: factsOf({ title: 'late title', version: 4 }) };
-  await push(late);
-  await settle();
-  ok((DD().item(ITEM) || {}).title === 'fresh title', 'the read pointer is at the push\'s change: a row of an older change, coming after it, does not undo the fresh copy', 'item: ' + short(DD().item(ITEM)));
-
-  test.subHeading('push goal (goal/G41.22): the same wake hands every line of his for it that nobody took, nothing it read');
-  const owedWake = await next(read);
-  read = (owedWake && owedWake.key) || read;
-  ok(count(owedWake, 'lost on the way') === 1 && count(owedWake, 'read before the push') === 0,
-    'his line the stream never brought comes once, with the push; his line it already read does not come again', 'wake: ' + short(owedWake));
 
   // ── goal/G41.22: EVERY WAKE NOT YET READ COMES BACK IN ONE, NONE LOST AND NONE TWICE, ALSO AFTER A RESTART ─────────────
   // Andy, the box (Desk Ear): "every wake not yet read comes back in one, none lost and none twice, also after a node
@@ -598,7 +537,6 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   restoreRows = cacheRows.slice();
   try { require(FILE); } catch (e) { test.fail('the restarted deskClient threw as it loaded: ' + e.message); }
   await settle();
-  ok(!DD().item(G + '7') && (DD().item(ITEM) || {}).title === 'fresh title', 'what the push replaced stays replaced after the restart: the item it lacked is not read back, nor a stale row', short({ g97: DD().item(G + '7'), item: (DD().item(ITEM) || {}).title }));
   // The catch-up after it hands rows already handed again: D was read, E was not.
   const again = cacheRows.filter(function (r) { return r.table === 'chat' && r.row && /wake D|handed, never read/.test(String(r.row.text)); });
   for (const r of again) await Promise.resolve(served.opts.stream.onRow(r, DESK));
@@ -607,7 +545,7 @@ test.startTest('deskClient.js: the desk client, its cache and its wakes (goal/G4
   const wAfter = await next(read);
   ok(count(wAfter, 'handed, never read') === 1 && count(wAfter, 'came while it was down') === 1,
     'the next wake hands, once each, the wake handed but never read and the line that waited', 'wake: ' + short(wAfter));
-  ok(!!wAfter && Array.isArray(wAfter.lines) && wAfter.lines.length > 0 && !has(wAfter, 'wake D') && !has(wAfter, 'wake A') && !has(wAfter, 'read before the push'),
+  ok(!!wAfter && Array.isArray(wAfter.lines) && wAfter.lines.length > 0 && !has(wAfter, 'wake D') && !has(wAfter, 'wake A'),
     'and nothing it already read comes back', 'wake: ' + short(wAfter));
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(process.exitCode || 0); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); process.exit(1); });

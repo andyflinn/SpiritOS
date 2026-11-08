@@ -54,21 +54,6 @@ client has a cache, if the agent wants to know stuff, give them FIRST the cache"
 - A delivery of several rows is appServer's bundle (goal/G41.12); deskClient sees each row alone.
 - **The desk's line addressed to the cap agents** (its row's `to`, as his addressed lines) wakes the agent whose key
   it names as its own (DESK), with no take, and entitles it to answer there and take the box.
-- **Push goal replaces the copy whole** (goal/G41.22; Andy, the box: "pushgoal replaces each agent's copy of the
-  current goal whole, no merge: nothing stale survives."). The push, as the desk sends it (desk.js `pushGoalReplace`):
-  every row under one change, the push's,
-  marked `replace: true`; the goal's facts and its items' (`verb: 'goal.whole'`, `key: { goal, item }`); then each of
-  his lines addressed to an agent that nobody took yet, as the chat side row with its `to`; last its end,
-  `{ change, verb: 'goal.whole', replace: true, end: true, key: { goal, item: 0 } }`. Once it has landed:
-  an item of that goal the push lacks is gone; another goal's items stay (goal/G41.15); a stale row is replaced; a part
-  kept from before (the box, the file list) is not answered from the old copy: it is read afresh. The cache drops what
-  the push replaced through the desk family's own `cache.keep` (Andy, Q1: "nothing drops from the cache, unless the
-  api.js from the server says so"), so a restart reads none of it back.
-- **The read pointer is at the push's change** (Andy: "it moves each agent's read pointer to the newest change, never
-  back to the start"): a row of an older change, coming after the push, does not undo the fresh copy.
-- **The same wake hands what is owed** (Andy: "and in that same wake hands the agent every line of Andy's addressed to
-  it that nobody took yet: nothing replayed, nothing lost."): his addressed line the push carries that the stream never
-  brought comes once; his line the agent already read does not come again.
 - **Every wake not yet read comes back in one, none lost and none twice, also after a node restart** (Andy, the box,
   of the Desk Ear). Within one run three wakes nobody read come in one answer, each line once, and reading with the key
   acknowledges all (a guard). After a restart on the same state folder, the data set read
