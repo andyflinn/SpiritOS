@@ -43,17 +43,19 @@ try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
 // the commit-level agains which the file was generated. the file re-generation is triggered by 'Go' and 'Done
 // events' and the data includes items not visible to the user.", "it's the truth scoped by commit level."
 // THE DESK SHARES IT ITSELF (goal/G4.21), and never writes into the checkout (Andy: "i generally only read
-// the repo. i think we should make this automatic? agree?", "do it", "yes, that's the shape."). goalRepo is the checkout
-// this server pulls on a claim (default: the checkout holding this file); goalRepo or goalPath set switches sharing on,
-// and with neither (a server spawned with {}, as every suite spawns one) nothing is shared, so no test pushes anywhere
-// (goal/G43.28, box line 9). Where the files go is goalShare's own (spirit/app/goalShare/goalShare.js).
-const GOAL_SHARED = !!(values.goalRepo || values.goalPath);
-const GOAL_REPO = values.goalRepo ? path.resolve(String(values.goalRepo)) : (function () {
+// the repo. i think we should make this automatic? agree?", "do it", "yes, that's the shape.").
+// NO SWITCH (goal/G43.28, box line 9; Andy: "desk fucking well knows which repo it sits in AND if fucking well knows the
+// path of the goal-share file."): it shares, and pulls on a claim, whenever it sits in a git checkout, the first folder
+// up from this file with a .git. A desk run from a folder that is no checkout (a suite's scratch copy) shares and pulls
+// nothing, so no test pushes anywhere; a suite that wants a desk in a scratch git world runs it from inside that world.
+// Where the files go is goalShare's own (spirit/app/goalShare/goalShare.js).
+const GOAL_REPO = (function () {
   for (let d = __dirname; ; d = path.dirname(d)) {
     if (fs.existsSync(path.join(d, '.git'))) return d;
     if (path.dirname(d) === d) return '';
   }
 }());
+const GOAL_SHARED = !!GOAL_REPO;
 // THE ONE MINUTE OF A BOX HOLD (goal/G21.1). Andy, in the item's box: "the hold ends when the write lands or after one
 // minute." The manifest value boxHoldMs is the clock a suite injects (deskBindingNick.js); left out, one minute.
 const BOX_HOLD_MS = Number(values.boxHoldMs) > 0 ? Number(values.boxHoldMs) : 60000;

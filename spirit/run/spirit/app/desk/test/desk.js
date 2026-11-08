@@ -404,15 +404,19 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     // ── AUTO PULL (goal/G41.22, box v22; Andy: "when the desk gets a claim red/build done. it pulls it's repo
     // automatically"; agreed: "it never pulls a checkout with edits of its own, or while a test run is going on in it:
     // then it pulls nothing and says so under the item.") ──────────────────────────────────────────────────────────────
-    // Each case is a desk of its own, on a scratch git world of its own: its checkout is the manifest value goalRepo,
-    // the repo the desk already names as its own (default: the checkout holding desk.js). The pretend node runs the
+    // Each case is a desk of its own, on a scratch git world of its own: it runs from inside that world's checkout, which
+    // it finds by itself as the checkout it sits in (startDesk, its world). The pretend node runs the
     // jobs it is asked to, as a node does, so a pull made as a job (goalShare's way) runs as one made in the desk does.
     try { kid.kill(); } catch (e) { /* gone */ }
     const PULL = { id: 'goal/G300', title: 'Pull test' };
     const PULL_ITEMS = ['goal/G300.1', 'goal/G300.2', 'goal/G300.3'];
     const pullSession = { goal: PULL, items: PULL_ITEMS.map(function (id) { return { id: id, title: 'Pull ' + id, blocks: [PULL.id] }; }) };
-    const startDesk = async function (name, records, values, sessions) {
+    // A DESK IN A SCRATCH GIT WORLD RUNS FROM INSIDE IT (goal/G43.28, box line 9; Andy: "desk fucking well knows which repo
+    // it sits in"): world given, the run tree is copied into its checkout, so the desk finds that checkout by walking up to
+    // its .git, as it finds Andy's; it is handed no repo. Without a world it runs from the scratch copy, no checkout.
+    const startDesk = async function (name, records, values, sessions, world) {
       const root = path.join(scratch, name);
+      const server = world ? runCopy(path.join(world.checkout, 'spirit', 'run'), node.server.address().port) : SERVER;
       const st = path.join(root, 'state');
       seed(st, sessions || [pullSession]);
       records.forEach(function (r) { seedRecord(st, r.verb, r.by, r.body); });
@@ -420,7 +424,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
       if (process.platform !== 'win32') fs.mkdirSync(path.dirname(p), { recursive: true });
       const c = appClient.createAppClient({ rootDir: root });
       c.register('desk', p);
-      pullKids.push(spawn(process.execPath, [SERVER, JSON.stringify(values), '--pipe', p, '--state', st], {
+      pullKids.push(spawn(process.execPath, [server, JSON.stringify(values), '--pipe', p, '--state', st], {
         stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { SPIRIT_JOB_ID: name + '-job' }) }));
       let on = false;
       for (let i = 0; i < 60 && !on; i++) { await sleep(150); try { const r = await c.ask('api'); on = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
@@ -488,7 +492,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     // deskClient is a row of an item with an open phase, nobody holding it (deskClient.js, streamed). ─────────────────
     test.subHeading('goal/G43.3: a red claim, and a code-done, wake every agent for the next phase');
     const worldW = gitWorld(path.join(scratch, 'git-w'));
-    const askW = await startDesk('desk-wake', [], { goalRepo: worldW.checkout });
+    const askW = await startDesk('desk-wake', [], {}, undefined, worldW);
     ok(!!askW, 'the world: a desk of its own starts', 'the desk did not start: the wake is not judged');
     if (askW) {
       await profiles(askW);
@@ -528,7 +532,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     }
     test.subHeading('goal/G43.3: alone, the agent that wrote the red takes the build itself');
     const worldL = gitWorld(path.join(scratch, 'git-l'));
-    const askL = await startDesk('desk-alone', [], { goalRepo: worldL.checkout });
+    const askL = await startDesk('desk-alone', [], {}, undefined, worldL);
     ok(!!askL, 'the world: a desk of its own starts', 'the desk did not start: alone is not judged');
     if (askL) {
       await profiles(askL);
@@ -667,7 +671,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
 
     test.subHeading('auto pull: a red claim or a build claim taken, the desk pulls its own checkout');
     const worldA = gitWorld(path.join(scratch, 'git-a'));
-    const askA = await startDesk('desk-a', [], { goalRepo: worldA.checkout });
+    const askA = await startDesk('desk-a', [], {}, undefined, worldA);
     ok(!!askA && !!worldA.head(), 'the world: a desk of its own starts on a scratch checkout of a scratch origin', 'desk ' + !!askA + ', checkout at ' + short(worldA.head()));
     if (askA) {
       await profiles(askA);
@@ -707,7 +711,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     // ended (no verify.state ended since) is verifyRunning. Written into its records before it starts, as the migrate
     // replays them; a test run the desk cannot know of is no case of this test.
     const worldR = gitWorld(path.join(scratch, 'git-r'));
-    const askR = await startDesk('desk-r', [{ verb: 'verify.answer', by: 'desk', body: { id: 'goal/G300.3', taken: true, by: 'desk', key: '' } }], { goalRepo: worldR.checkout });
+    const askR = await startDesk('desk-r', [{ verb: 'verify.answer', by: 'desk', body: { id: 'goal/G300.3', taken: true, by: 'desk', key: '' } }], {}, undefined, worldR);
     ok(!!askR, 'the world: a desk of its own starts, a run deskVerify took on goal/G300.3 still going', 'desk ' + !!askR);
     if (askR) {
       await profiles(askR);
