@@ -136,7 +136,7 @@ test.startTest('faceHome.js: a relay runs nothing on this node it was not given 
   // node, NO face is offered (faceForm hides itself) for a relay without star."): the half face of G41.30 and G41.33 is gone.
   test.subHeading('box v29: a relay with my face and no star gets nothing at all');
   const plain = world(onlyMine, function () { return false; });
-  const asks = [['node.card', CARD], ['node.card, sealed', sealed(CARD)], ['fs.FS.path', { call: 'fs.FS.path', args: { path: 'x' } }],
+  const asks = [['node.card', CARD], ['node.card, sealed', sealed(CARD)], ['fs.stat', { call: 'fs.stat', args: { path: 'x' } }],
     ['owner.command', { call: 'owner.command', args: { key: 'x' } }], ['jobs.create with a shell', SHELL], ['the same, in pieces', pieced(SHELL)],
     ['a file', { get: 'index.html' }], ['the keys', { keys: 1 }], ['a save in parts', { upload: { id: 'abcdefgh', n: 0, of: 1, size: 1, path: 'x.txt', bytes: 'eA==' } }]];
   for (const c of asks) {

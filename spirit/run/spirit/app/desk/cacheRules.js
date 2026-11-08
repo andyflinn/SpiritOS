@@ -1,6 +1,6 @@
 // spirit/run/spirit/app/desk/cacheRules.js
 // THE DESK FAMILY'S CACHE RULES, FOR NODE ALONE (goal/G41.28): what a subscribing appServer keeps of the desk's rows, and
-// the reads deskClient answers from them. A page loads data.js through the family's own FS (spirit.<family>.FS.loadFile),
+// the reads deskClient answers from them. A page loads data.js as a file of the family's folder,
 // and Andy, on G41.28: "the file has to fit into MAX_PAYLOAD." The rules are node's only, so they live here: data.js
 // requires them in node and exports them as its cache, which appServer's stream listener runs (keep, shed). The branch
 // names are data.js's alone: it hands them in (rules({ items, parts, state })).

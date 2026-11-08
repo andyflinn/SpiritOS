@@ -83,14 +83,14 @@ do without.\"): apiAuth reads no <name>Bundles.json and keeps no bundles.json re
   makes no bundle of it.
 - And writes no `bundles.json` record anywhere.
 
-### A family's FS group is the owner's (goal/G41.28)
+### No branch carries an FS set (goal/G43.20)
 
-Andy: *"i still want the api.<family>.FS.* group "ungrantable" and OWNER ONLY"*.
+Andy: *"those owner only FS verbs are no longer needed, because not the api ID spirit.fs or spirit.api.desk ARE the path
+to all those files, that's why they are now completely redundant."*
 
-- `auth.branch` add of a family's `FS.*` verb is refused `owner-only`; a set onto one is refused the same, the branch
-  kept as it was.
-- `auth.grant` of a path `<family>.FS.<verb>` is refused `owner-only`.
-- The family's other verbs make branches as before.
+- The node's tree holds no `FS.` verb, so `auth.branch` add of one is refused as any verb no branch serves; a set onto
+  one is refused the same, the branch kept as it was.
+- The family's own verbs make branches as before.
 
 ## What its test must try to break
 

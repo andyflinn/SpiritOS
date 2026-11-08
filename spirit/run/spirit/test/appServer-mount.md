@@ -17,7 +17,7 @@ Andy: *"JUST loading functional server and associating the <name> as "familiy" n
 ### What it is in the node
 
 - `<name>` is its family in the flat table, and its verb answers through the node.
-- its family is at its top, `api.js` beside `<name>.js`, as `spirit/<family>/` has it (goal/G43.27). The interface, `FS.loadFile` and `FS.path` all read the app folder. A `family/` folder beside it is ignored.
+- its family is at its top, `api.js` beside `<name>.js`, as `spirit/<family>/` has it (goal/G43.27). The interface reads the app folder, and so does `fs.load` of a path in it; the branch carries no FS set (goal/G43.20). A `family/` folder beside it is ignored.
 - `<name>.json` has no `kind` or `operated`. The node operates the server.
 - Its module id is `spirit.app.<name>`.
 - Its door is a socket in `spirit/state/<name>/`, on POSIX. None is in its `data/`.

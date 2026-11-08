@@ -198,12 +198,6 @@
     return m.exports;
   }
 
-  // The verbs introSpector gives every family for its own folder, the same everywhere.
-  var FOLDER = {
-    loadFile: { path: 'path' }, saveFile: { path: 'path', content: 'text' }, deleteFile: { path: 'path' }, statFile: { path: 'path' },
-    fileExists: { path: 'path' }, path: { path: 'path' }, loadJsonValue: { path: 'path' }, saveJsonValue: { path: 'path', value: 'object' },
-    search: { q: 'text?' },
-  };
 
   // WHY A CALL WAS REFUSED, IN THE ANSWER'S OWN WORDS (goal/G33.1). Andy: on the face every icon add said "not saved:
   // refused". The relay refuses with {ok: false, error} and no code, and a timeout answers plain text; the words are kept
@@ -260,21 +254,8 @@
       var camel = verb.replace(/\.([a-zA-Z0-9])/g, function (m, c) { return c.toUpperCase(); });
       if (camel !== verb && !(camel in out)) out[camel] = out[verb];
     });
-    // EVERY FAMILY'S OWN FOLDER (introSpector.js): the same FS verbs on each, spirit.<family>.FS.loadFile({path}) ...
-    out.FS = {};
-    Object.keys(FOLDER).forEach(function (v) {
-      out.FS[v] = function (args) {
-        var name = fam + '.FS.' + v;
-        var bad = check(name, FOLDER[v], args);
-        if (bad) return Promise.reject(bad);
-        return Promise.resolve(ask(name, args || {})).then(function (r) {
-          if (r && r.status >= 200 && r.status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
-          var b = (r && r.body) || {};
-          throw refusal(String(b.code || 'refused'), saidWhy(r, r && r.status), { status: r && r.status, body: b });
-        });
-      };
-    });
-    // EVERY SERVER'S DEBUG (desk/G2.5, appServer's own verb), bound as FS is (goal/G43.15): {} reads it, {on} sets it, and it
+    // NO FS SET (goal/G43.20): a family's files are spirit.fs's, by the path its id names.
+    // EVERY SERVER'S DEBUG (desk/G2.5, appServer's own verb), bound by hand (goal/G43.15): {} reads it, {on} sets it, and it
     // answers {debug}. A family's api.js does not list it, so serverDEBUG would find no such function without this.
     if (!out.DEBUG) out.DEBUG = function (args) {
       var a = args || {};
@@ -851,7 +832,7 @@
   // A FAMILY THAT BINDS WHEN FIRST CALLED (goal/G43.27). spirit.<family> stands as an object at once: what it already holds
   // (spirit.events' stream, spirit.jobs in node) answers as it is, and any other name is a call waiting for the family: called,
   // it binds the family once (bindOwn: one api call), then calls the bound function of that name, a dotted path included
-  // (spirit.<family>.FS.loadFile). Once bound, the bound functions are on the object itself. Nothing is then-able, so a
+  // (spirit.<family>.a.b). Once bound, the bound functions are on the object itself. Nothing is then-able, so a
   // family handed to Promise.resolve stays a family.
   function lazyCall(fam, path) {
     var fn = function () {

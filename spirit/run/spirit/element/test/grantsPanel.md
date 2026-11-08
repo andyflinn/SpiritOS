@@ -20,8 +20,7 @@ boody well know how to configure the damn grantsPanel element"*.
 **What it needs, it gets itself** (goal/G43.24; Andy: *"every fucking element gets the interfaces it needs"*): it asks its
 verbs through the spirit object, `family.verb` called on that family as `spirit.ready` holds it, or, for a server's
 family not there, as `spirit.require(spirit.familyPath(name))` binds it; its answer read through `spirit.outcome`, and its
-markup escaped with `spirit.escapeHtml`. No `api.verb`, no `api.escapeHtml`, and no api handed on: its rows' arming buttons hear a click elsewhere themselves. A family's own folder verbs are its `FS`
-verbs, `spirit.<family>.FS.loadFile`, as spirit.js binds them.
+markup escaped with `spirit.escapeHtml`. No `api.verb`, no `api.escapeHtml`, and no api handed on: its rows' arming buttons hear a click elsewhere themselves. No family carries an FS set (goal/G43.20).
 
 Made without its ID table or its grants table, it throws nothing and says so (goal/G41.19, box v23: *"throws nothing
 even when unconfigured (it says it is not configured)"*): one note, `not configured: ` and the table it lacks, and
@@ -100,6 +99,5 @@ its own folder (`./busyButton.md`); here a stand-in keeps what it is handed.
 - A deprecated mark that does not follow a server starting or ending, or its filter on at first, or hidden from the search.
 - A grant made past the grants table it was handed, or of anything but the bundle's branches.
 - A Grant button that is no busyButton, or one whose request answers before the grants do.
-- A verb asked through an api instead of the spirit object; a family's FS verb asked by a name the bound family does not
-  carry, so a warning is never read and a grant goes through unwarned.
+- A verb asked through an api instead of the spirit object.
 - nodeGrants asking anything but the node's auth verbs, losing a refusal, or a watch that goes on after its release.

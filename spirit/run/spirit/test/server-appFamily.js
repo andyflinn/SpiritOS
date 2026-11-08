@@ -36,10 +36,9 @@ test.startTest('server-appFamily.js: the node finds an app\'s family at the app\
   const iface = fam.body && typeof fam.body.interface === 'string' ? fam.body.interface.replace(/\r\n/g, '\n') : '';
   ok(fam.status === 200 && iface.length > 0, 'the world: the node serves the agent\'s interface', 'api {family: agent} answered ' + short(fam));
   ok(iface && iface === read('spirit/app/agent/api.js'), 'the interface the node serves is spirit/app/agent/api.js', 'the interface served is not spirit/app/agent/api.js (' + (read('spirit/app/agent/api.js') ? 'it differs' : 'there is no such file') + ')');
-  // Its server answers once it has started.
-  let where = { status: 0 };
-  await H.until(function () { return ask('agent.FS.path', { path: 'api.js' }).then(function (a) { where = a; return a.status !== 503; }); }, 30000);
-  ok(where.status === 200 && where.body && where.body.path === 'spirit/app/agent/api.js', 'the agent family\'s folder is the app folder: FS.path names spirit/app/agent/api.js', 'agent.FS.path answered ' + short(where));
+  // Its folder is the app folder, and no FS set rides on its branch (goal/G43.20): its files are spirit.fs's, by that path.
+  const tree = await ask('api', {});
+  ok(tree.status === 200 && tree.body && tree.body.agent && !Object.keys(tree.body.agent).some(function (v) { return /^FS\./.test(v); }), 'the agent branch carries no FS set', 'api: ' + short(tree.body && tree.body.agent));
   if (node.child) node.child.kill();
 
   test.reportSuccessFailureCount();

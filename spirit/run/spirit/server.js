@@ -212,8 +212,8 @@ let nodeDoor = null;
 // This node's face (goal/G30.13), built on nodeDoor once it exists; presence hands it the relay's face events.
 let faceHome = null;
 // THE DECLARATION FORM (goal/G10.5), MOUNTED (goal/G30.4): each module's verbs are {request, reply, handler},
-// declared bare (stat, not fs.stat); loopbackVerbs.mount gives them their family name and adds the system family
-// (<family>.FS.<name>) introSpector makes of the family's folder. A module does not know the name it is mounted under
+// declared bare (stat, not fs.stat); loopbackVerbs.mount gives them their family name, and nothing beside them
+// (goal/G43.20: no FS set). A module does not know the name it is mounted under
 // (Andy, 2026-10-20).
 // `pinnedRelayKey` STOOD HERE, DELETED 2026-09-17 — assigned at boot and
 // read by nothing.

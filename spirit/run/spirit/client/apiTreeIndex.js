@@ -37,10 +37,6 @@ function apiTreeVerbs(tree, server) {
     return API_TREE_OWNER_VERBS.indexOf(verb) === -1;
   }).sort();
 }
-// WHETHER A VERB MAY BE GRANTED (goal/G41.28; Andy: "i still want the api.<family>.FS.* group \"ungrantable\" and OWNER
-// ONLY", and "so the introSpector gets the FS group, BUT the auth.branch won't see those verbs"): every family's FS group
-// is the owner's, listed for him (the introSpector) and never offered where a grant or a bundle's branch is made.
-function apiTreeGrantable(verb) { return String(verb || '').indexOf('FS.') !== 0; }
 
 // WHETHER THE TREE SERVES A PATH TODAY (apiAuth/G1.6): how the Grants
 // app tells a live grant from a deprecated one. 'app' is served when
@@ -61,7 +57,6 @@ var apiTreeIndexApi = {
   servers: apiTreeServers,
   verbs: apiTreeVerbs,
   serves: apiTreeServes,
-  grantable: apiTreeGrantable,
 };
 
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {

@@ -40,7 +40,7 @@
     var dot = n.indexOf('.');
     var fam = n.slice(0, dot);
     return S.outcome(Promise.resolve(S.ready).then(function (s) { return s[fam] || S.require(S.familyPath(fam)); }).then(function (f) {
-      // A dotted verb is a path into the family, as spirit.js builds it: FS.loadFile is f.FS.loadFile.
+      // A dotted verb is a path into the family, as spirit.js builds it: a.b is f.a.b.
       var at = n.slice(dot + 1).split('.');
       var owner = f;
       for (var i = 0; i < at.length - 1; i++) owner = owner ? owner[at[i]] : null;

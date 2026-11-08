@@ -9,4 +9,4 @@ Andy: "spirit/app/<name>/ folders are now ALMOST the same shape as spirit/jobs/ 
 
 - **2. The node finds the family there** (server.js familyDir looks for `spirit/app/<name>/api.js`; appServer.js withAgents takes the app folder itself as the family folder).
   - The interface the node serves for `agent` is `spirit/app/agent/api.js`.
-  - `agent.FS.path` names `spirit/app/agent/api.js`, so the family folder is the app folder.
+  - the agent branch carries no FS set (goal/G43.20): its files are spirit.fs's, by the path its id names.

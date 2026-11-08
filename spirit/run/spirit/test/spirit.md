@@ -66,14 +66,8 @@ Every member function checks its arguments and then calls one of the two.
 - **A refusal from the node** rejects with its code, its own words (its error, else the first line of a plain-text
   answer) and its status.
 - A dotted verb is also there in camel case (`line.write` as `lineWrite`). Each family has the names its own
-  `api.js` adds, and the folder verbs `spirit.<family>.FS.<verb>`, for its own folder:
-
-| FS verb | args |
-|---|---|
-| `loadFile`, `deleteFile`, `statFile`, `fileExists`, `loadJsonValue` | `{ path }` |
-| `saveFile` | `{ path, content }`, content a text |
-| `saveJsonValue` | `{ path, value }`, value an object |
-| `search` | `{ q }`, q a text, optional |
+  `api.js` adds, and no FS set (goal/G43.20; Andy: *"those owner only FS verbs are no longer needed, because not the
+  api ID spirit.fs or spirit.api.desk ARE the path to all those files"*): a family's files are `spirit.fs`'s, by path.
 
 A caller that holds a verb's name in a variable writes `spirit[family][verb](args)`. There is no `spirit.call`.
 

@@ -214,7 +214,10 @@
   var homeNode = '';
   function home(key) {
     if (key !== undefined && String(key)) { var was = homeNode; homeNode = nodeId(key); if (onPage && !was) replay(); return homeNode; }
-    if (!homeNode && root.spirit && root.spirit.node && root.spirit.node.key) homeNode = nodeId(root.spirit.node.key);
+    // A KEY IS A STRING (goal/G43.20, found by data-families): spirit.node is the node family, bound when first called
+    // (spirit.js lazyCall), so before node.card has answered spirit.node.key is a function waiting for the family, and a
+    // page filed every row under that function's text.
+    if (!homeNode && root.spirit && root.spirit.node && typeof root.spirit.node.key === 'string' && root.spirit.node.key) homeNode = nodeId(root.spirit.node.key);
     return homeNode;
   }
   // A FAMILY'S VIEW (goal/G41.28): what its data.js or its row element addresses, its branches under its own

@@ -77,16 +77,15 @@ function config(w) {
 }
 
 // A family as spirit.js binds it (spirit/spirit.js, bind): each verb a function of its args, answering the body on a 2xx or
-// throwing { status, body }; the family's own folder verbs under FS.
-function family(w, name, verbs, folder) {
-  const f = { FS: {} };
+// throwing { status, body }. No FS set rides on a family (goal/G43.20).
+function family(w, name, verbs) {
+  const f = {};
   const call = function (verb, fn) { return function (args) {
     w.calls.push({ name: name + '.' + verb, args: args });
     const a = fn(args || {});
     return Promise.resolve(a).then(function (r) { if (r && r.status >= 200 && r.status < 300) return r.body; throw { status: r && r.status, body: r && r.body }; });
   }; };
   Object.keys(verbs).forEach(function (v) { f[v] = call(v, verbs[v]); });
-  Object.keys(folder || {}).forEach(function (v) { f.FS[v] = call('FS.' + v, folder[v]); });
   return f;
 }
 
@@ -113,12 +112,6 @@ function world() {
     } },
     'search.grant': { create: function (host, opts) { const l = { host: host, opts: opts || {}, redrawn: 0, list: { redraw: function () { l.redrawn += 1; } } }; w.grantLists.push(l); return l; } },
   });
-  // A warning file in a family's folder, <verb>.warning.txt, as w.warnings holds it ('family.verb' -> text).
-  const warning = function (fam) { return function (args) {
-    const verb = String(args.path || '').replace(/\.warning\.txt$/, '');
-    const t = w.warnings[fam + '.' + verb];
-    return t ? { status: 200, body: { text: t } } : { status: 404, body: { ok: false, code: 'not-found' } };
-  }; };
   // The auth family, the node's own (spirit.ready holds it): its bundles' branches, the one dictionary both kinds of grant
   // are made from; and its grant verbs, the node's grants table, nodeGrants' (below).
   const auth = family(w, 'auth', {
@@ -127,10 +120,10 @@ function world() {
     search: function () { return { status: 200, body: { ok: true, items: [{ key: 'K1\nfs.search', label: JSON.stringify({ name: 'Bob', key: 'K1', path: 'fs.search' }) }, { key: 'K2\njobs.list', label: 'not json' }], more: true } }; },
     grant: function (args) { return args.path === 'fs.search' ? { status: 409, body: { ok: false, code: 'already-granted', error: 'already granted' } } : { status: 200, body: { ok: true } }; },
     revoke: function () { return { status: 200, body: { ok: true } }; },
-  }, { loadFile: warning('auth') });
+  });
   // The node's own families on spirit.ready; a server's family (jobs here) bound through spirit.require(familyPath).
-  const families = { fs: family(w, 'fs', { search: function () { return { status: 200, body: {} }; } }, { loadFile: warning('fs') }) };
-  const servers = { jobs: family(w, 'jobs', { list: function () { return { status: 200, body: {} }; } }, { loadFile: warning('jobs') }) };
+  const families = { fs: family(w, 'fs', { search: function () { return { status: 200, body: {} }; } }) };
+  const servers = { jobs: family(w, 'jobs', { list: function () { return { status: 200, body: {} }; } }) };
   const FILES = { 'spirit/element/search/bundle.js': ['search'], 'spirit/element/search/contact.js': ['search'],
     'spirit/element/search/api.js': ['search'], 'spirit/element/search/grant.js': ['search'], 'spirit/element/busyButton.js': ['busyButton'], 'spirit/element/rowForm.js': ['rowForm'] };
   const page = {};

@@ -37,14 +37,9 @@
     // (options.own false: introSpector's peer or relay) is listed from that tree: introSpector is the one exception, deferred
     // (Andy, the box: "the only exception is introspector, deferred for network-scope design reasons.").
     var own = options.own !== false;
-    // FOR A GRANT OR A BRANCH, ONLY WHAT MAY BE GRANTED (goal/G41.28; Andy: "so the introSpector gets the FS group, BUT the
-    // auth.branch won't see those verbs"): options.grantable leaves every family's FS group out; the owner's own lists
-    // (the introSpector) show it.
-    var grantable = options.grantable === true;
-    function offered(name) { return !grantable || window.spirit.apiTreeIndex.grantable(name); }
     function rows() {
       var verbs = server && tree ? window.spirit.apiTreeIndex.verbs(tree, server) : [];
-      return verbs.filter(offered).map(function (v) { return { key: v, name: v }; });
+      return verbs.map(function (v) { return { key: v, name: v }; });
     }
     // A PROBABILITYSEARCH DROPDOWN (the old shell's list search is forbidden on the face, goal/G40.8).
     parts.then(function () {

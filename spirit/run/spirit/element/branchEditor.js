@@ -36,8 +36,7 @@
     // [All Verbs ▾] [Add]"): ➕, the family selector in its span, its verb half with it, Add its button.
     var form = E.rowForm.create(box, { icon: '➕', button: 'Add' });
     form.root.className += ' branch-editor-add';
-    // A branch is a grant's part: only what may be granted is offered (goal/G41.28, the FS group never).
-    var family = E.search.api.create(form.span, { all: 'choose a family…', grantable: true });
+    var family = E.search.api.create(form.span, { all: 'choose a family…' });
     var add = form.button;
     var said = document.createElement('div');
     said.className = 'job-manifest-note';

@@ -764,24 +764,18 @@ function subscribersFromGrants(name) {
   }, function () { return 0; });
 }
 
-// THE FAMILY FOLDER'S VERBS (introSpector.js): since goal/G30.4 its FS verbs alone, on every server, AGENTS.md or
-// not. A verb file naming a verb this server never declared is said at boot. A server that declares a name itself
-// keeps its own.
+// THE FAMILY FOLDER (introSpector.js): a verb file naming a verb this server never declared is said at boot. Its verbs
+// are the server's own: NO FS SET ON A BRANCH (goal/G43.20; Andy: "those owner only FS verbs are no longer needed, because not the api ID
+// spirit.fs or spirit.api.desk ARE the path to all those files"): a branch's files are reached through spirit.fs, by the path
+// its id names.
 // THE FAMILY FOLDER IS THE APP FOLDER (goal/G43.27; Andy: "spirit/app/<name>/ folders are now ALMOST the same shape as
 // spirit/jobs/ ...", "i think the shape needs alignment."): a server is spirit/app/<name>/<name>.js, its family beside it.
 function withAgents(verbs, script) {
   const resolved = path.resolve(String(script || ''));
-  const made = require('./introSpector').family(path.dirname(resolved), {
-    declared: Object.keys(verbs),
-  });
-  made.stale.forEach(function (file) {
+  require('./introSpector').stale(path.dirname(resolved), Object.keys(verbs)).forEach(function (file) {
     console.error('appServer: ' + file + ' names a verb this server does not declare');
   });
-  const all = Object.assign({}, verbs);
-  Object.keys(made.verbs).forEach(function (name) {
-    if (!Object.prototype.hasOwnProperty.call(all, name)) all[name] = made.verbs[name];
-  });
-  return all;
+  return Object.assign({}, verbs);
 }
 
 // THE WHOLE OF AN APP SERVER'S START: verbs in, the node's pipe from argv.

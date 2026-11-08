@@ -30,9 +30,8 @@
 // DEBUG is the owner's on every server (Andy, desk/G2.5: "DEBUG verb is never
 // allowed through peerPost()"), granted or not.
 const OWNER_VERBS = ['DEBUG'];
-// EVERY FAMILY'S FS VERBS ARE THE OWNER'S (goal/G41.28; Andy: "we also need to make the FS. verb group \"owner-only\""):
-// FS.loadFile, FS.saveFile and the rest of a family folder's verbs, on every family, granted or not, as DEBUG.
-function ownerVerb(verb) { return OWNER_VERBS.indexOf(String(verb)) !== -1 || String(verb).indexOf('FS.') === 0; }
+// No family carries an FS set any more (goal/G43.20), so DEBUG is the one owner verb a server has.
+function ownerVerb(verb) { return OWNER_VERBS.indexOf(String(verb)) !== -1; }
 // THE STAR IS THE OWNER'S (goal/G41.30, wsl's review: "A peer can never be granted it"), granted or not: a relay's star
 // opens this node's face.
 const OWNER_PATHS = ['contact.own'];
@@ -50,7 +49,7 @@ function refusal(code, error) {
 // A member's api is the tree stripped to its grants (Andy: "apiAuth will
 // strip the app.DEBUG verb the result of returned api trees, including all
 // branches of the tree that don't have a match for the calling ID"): a
-// granted app keeps its verbs but the owner's (DEBUG, every FS. verb,
+// granted app keeps its verbs but the owner's (DEBUG,
 // contact.own); a granted verb keeps that verb alone. Exact strings, no prefix, no case folding.
 function stripTree(tree, paths) {
   const kept = {};
@@ -119,8 +118,7 @@ function answer(servers, ask, caller) {
   // A call runs only when its app or its exact app.verb is granted; a
   // granted app's missing verb is the server's to answer, never the gate's.
   // THE AGENTS SPECIAL CASE STOOD HERE (goal/G29.19): AGENTS and AGENTS.introspect opened by any grant in the app and
-  // introspect's answer cut to the granted verbs. The AGENTS verbs are gone (goal/G30.4); a family's folder is read
-  // through its FS verbs, each granted like any other verb.
+  // introspect's answer cut to the granted verbs. The AGENTS verbs are gone (goal/G30.4).
   const apps = (ask && typeof ask === 'object' && !Array.isArray(ask)) ? Object.keys(ask) : [];
   const grantedVerb = function (app, verb) { return paths.indexOf(app) !== -1 || paths.indexOf(app + '.' + verb) !== -1; };
   let named = 0;

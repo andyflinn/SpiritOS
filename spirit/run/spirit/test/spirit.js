@@ -48,7 +48,6 @@ function answer(b) {
   if (c === 'demo.hello' && a.name === 'slow') return [504, 'the app server did not answer'];
   if (c === 'demo.hello') return [200, { ok: true, said: 'hello ' + a.name }];
   if (c === 'demo.line.write') return [200, { ok: true, wrote: a.text }];
-  if (c === 'demo.FS.loadFile') return [200, { text: 'x' }];
   return [400, { ok: false, code: 'no-such-verb', error: 'no verb ' + c }];
 }
 // It also serves the node's events family: events.subscribe is a stream, as the real node's (a snapshot and then a job
@@ -122,7 +121,8 @@ async function code(p) { try { await p; return 'answered'; } catch (e) { return 
     out.bound = fams[0] === fams[1] && fams[0] === s.demo && typeof s.demo.hello === 'function';
     out.hi = (await s.demo.hi('dave')).said;
     out.dotted = typeof s.demo.lineWrite === 'function' && s.demo.lineWrite === s.demo['line.write'] && (await s.demo.lineWrite({ text: 't' })).wrote;
-    out.fs = (await s.demo.FS.loadFile({ path: 'x.txt' })).text;
+    // No FS set on a family (goal/G43.20): its files are spirit.fs's, by the path its id names.
+    out.fs = !('FS' in s.demo);
     out.noArg = await code(s.demo.hello({ nme: 'x' }));
     out.noVerb = typeof s.demo.nothing === 'undefined';
     out.noFamily = await code(s.require(s.familyPath('gone')));
@@ -326,7 +326,7 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       if (o.two && o.two[0] === 'hello bert' && o.two[1] === 'hello carl' && o.bound && node.asked.filter(function (b) { return b.call === 'api' && b.args && b.args.family === 'demo'; }).length === 1)
         test.check('spirit.require of the demo interface binds it on the one instance as spirit.demo, from 127.0.0.1:<its port>, asked once by two callers at once');
       else test.fail('binding demo: ' + short([o.two, o.bound, node.asked.filter(function (b) { return b.call === 'api'; }).length]));
-      if (o.hi === 'hello dave' && o.dotted === 't' && o.fs === 'x') test.check('a bound family has its own names, a dotted verb in camel case too (line.write as lineWrite), and the folder verbs (FS.loadFile)');
+      if (o.hi === 'hello dave' && o.dotted === 't' && o.fs === true) test.check('a bound family has its own names, a dotted verb in camel case too (line.write as lineWrite), and no FS set (goal/G43.20)');
       else test.fail('the bound family: ' + short([o.hi, o.dotted, o.fs]));
       const askedBefore = node.asked.length;
       if (o.noArg === 'no-such-argument' && o.noVerb === true && o.noFamily === 'no-interface') test.check('an argument the verb does not name is refused before it leaves; a verb the family lacks is not on it; a family with no interface refuses no-interface');

@@ -128,43 +128,6 @@ function createVerbTable() {
     return true;
   }
 
-  // ── THE UPPERCASE SET IS THE SYSTEM'S (goal/G10.5) ──────────────────
-  //
-  //   Andy, 2026-10-09: "so the introSpector could still insist on
-  //   lower-case verbs to be registered, and then STILL add the uppercase
-  //   set"; "that is a decision. make it so."
-  //
-  // claim() above refuses an uppercase verb from a module (VERB_RE), and
-  // that is now the rule's reason: an uppercase verb is always the system's,
-  // told apart by the name alone. This is the one way such a verb reaches
-  // the table, and only the system family of a namespace already claimed:
-  // since goal/G30.4 the owner's ns.FS.<name>, which introSpector supplies
-  // for every family folder (the AGENTS family that stood here is gone).
-  // mount below calls it; a module has no business to.
-  var FAMILY_RE = /^[a-z][a-z0-9]*\.FS\.[a-zA-Z]+$/;
-  function reserve(namespace, group) {
-    var ns = String(namespace || '');
-    if (!owner[ns]) {
-      throw new Error('verbTable: ' + ns + ' is not claimed, so it carries no family');
-    }
-    if (!group || typeof group !== 'object') {
-      throw new Error('verbTable: ' + ns + ' reserved nothing');
-    }
-    Object.keys(group).forEach(function (verb) {
-      if (!FAMILY_RE.test(verb) || verb.slice(0, ns.length + 1) !== ns + '.') {
-        throw new Error('verbTable: ' + verb + ' is not of the system families of ' + ns);
-      }
-      if (typeof group[verb] !== 'function') {
-        throw new Error('verbTable: ' + verb + ' is not a function');
-      }
-      if (answer[verb]) {
-        throw new Error('verbTable: ' + verb + ' already answered');
-      }
-      answer[verb] = group[verb];
-    });
-    return true;
-  }
-
   // Null for anything unclaimed, so the door reports "no such verb"
   // rather than this deciding what a refusal looks like. A table says
   // who answers; it does not speak HTTP.
@@ -202,16 +165,17 @@ function createVerbTable() {
   //   container is not known by the namespace."
   //
   // mount(family, dir, declarations, opts): a module hands its verbs BARE, {stat: {request, reply, handler}}, and its
-  // folder; the table gives them the family name (family.stat), puts the folder's FS verbs beside them through
-  // introSpector.family, and keeps their shapes for tree(). The handlers are the (req, res) functions the loopback door
-  // calls, unchanged.
+  // folder; the table gives them the family name (family.stat) and keeps their shapes for tree(); introSpector.family says
+  // a verb file of the folder that names no verb. The handlers are the (req, res) functions the loopback door calls,
+  // unchanged. NO FS SET ON A BRANCH (goal/G43.20; Andy: "those owner only FS verbs are no longer needed, because not the api ID
+  // spirit.fs or spirit.api.desk ARE the path to all those files"): a branch's files are reached through spirit.fs, by the path
+  // its id names.
   var shapes = Object.create(null);  // family -> {verb: {request, reply}}
   var folders = Object.create(null); // family -> the folder it was mounted with, where its api.js is (goal/G32.3)
   function mount(family, dir, declarations, opts) {
     var ns = String(family || '');
     if (!declarations || typeof declarations !== 'object') throw new Error('verbTable: ' + ns + ' declared nothing');
     var group = {};
-    var prefixed = {};
     var shape = {};
     Object.keys(declarations).forEach(function (v) {
       var d = declarations[v];
@@ -219,20 +183,12 @@ function createVerbTable() {
         throw new Error('verbTable: verb "' + v + '" of ' + ns + ' needs request (an object), reply and handler');
       }
       group[ns + '.' + v] = d.handler;
-      prefixed[ns + '.' + v] = d;
       shape[v] = { request: d.request, reply: d.reply };
     });
     claim(ns, (opts && opts.by) || ns, group, opts);
-    var made = require('./introSpector').family(String(dir || ''), { declared: Object.keys(declarations), prefix: ns + '.', declarations: prefixed });
-    made.stale.forEach(function (file) {
+    require('./introSpector').stale(String(dir || ''), Object.keys(declarations)).forEach(function (file) {
       console.error('verbTable: ' + file + ' in the folder of ' + ns + ' names a verb it does not declare');
     });
-    var reserved = {};
-    Object.keys(made.verbs).forEach(function (name) {
-      reserved[name] = asDoorHandler(name, made.verbs[name]);
-      shape[name.slice(ns.length + 1)] = { request: made.verbs[name].request, reply: made.verbs[name].reply };
-    });
-    if (Object.keys(reserved).length) reserve(ns, reserved);
     shapes[ns] = shape;
     if (dir) folders[ns] = String(dir);
     return true;
@@ -252,8 +208,8 @@ function createVerbTable() {
   //   everything again."
   //
   // A verb a node family's spirit/<family>/api.js declares is checked here, before its handler, by the spirit object's own
-  // check against that declaration: one check, written once. A verb no api.js declares (the FS group, whose handler
-  // checks its own) goes on. Both of this door's fronts come through here: the loopback door and the in-process call.
+  // check against that declaration: one check, written once. A verb no api.js declares goes on, its handler
+  // checking its own. Both of this door's fronts come through here: the loopback door and the in-process call.
   var declared = Object.create(null); // family -> its api.js verbs, or null
   function argumentsRefused(verb, args) {
     var name = String(verb || '');
@@ -439,7 +395,6 @@ function createVerbTable() {
 
   return {
     claim: claim,
-    reserve: reserve,
     mount: mount,
     call: call,
     tree: tree,
@@ -457,31 +412,6 @@ function createVerbTable() {
 // Moved here from introSpector with mount (goal/G30.4).
 function readBody(rq) {
   return require('./serveCommon').readJsonBody(rq);
-}
-
-// A system family verb (FS) as the loopback door calls one: the body in, the verb's own fields alone to the handler, its
-// answer out as JSON; a refusal the catalogue knows by its code and status.
-function asDoorHandler(name, decl) {
-  return function (rq, rs) {
-    function send(status, body) {
-      rs.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-      rs.end(JSON.stringify(body));
-    }
-    return readBody(rq).then(function (body) {
-      var args = body && typeof body === 'object' && !Array.isArray(body) ? body : {};
-      return Promise.resolve().then(function () { return decl.handler(args); });
-    }).then(function (reply) {
-      send(200, reply);
-    }, function (e) {
-      var errors = require('./spiritErrors');
-      var known = e && typeof e.refusal === 'string' ? errors.byCode(e.refusal) : null;
-      if (known) return send(known.status, Object.assign({ ok: false, code: e.refusal, error: known.text, verb: name }, e.extra && typeof e.extra === 'object' ? { extra: e.extra } : {}));
-      // A body refused for its size says too big (goal/G33.10), never handler-failed or bad JSON.
-      if (e && e.statusCode === 413) return send(413, { ok: false, code: 'too-big', error: 'too big: more than ' + require('./limits').BODY_MAX + ' bytes', verb: name });
-      if (e instanceof SyntaxError) return send(400, { ok: false, code: 'bad-request', error: 'Invalid JSON body', verb: name });
-      send(500, { ok: false, code: 'handler-failed', error: 'the handler failed', verb: name });
-    });
-  };
 }
 
 module.exports = { createVerbTable: createVerbTable };

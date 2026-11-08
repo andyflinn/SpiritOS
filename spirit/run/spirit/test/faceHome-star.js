@@ -136,7 +136,7 @@ test.startTest('faceHome-star.js: the star on a real node, a real relay and a re
     test.subHeading('box v29: no star, no face: "The home node answers a face only from a starred relay"');
     ok(!(await starOf(R.relayKey)), 'the relay has no star', 'the relay has a star nobody pressed');
     // Not even the plainest read: there is no half face left to answer.
-    for (const q of [{ call: 'node.card', args: {} }, { call: 'fs.FS.path', args: { path: 'data.js' } }, { call: 'contact.search', args: { q: '' } }, JOB, SAVE, OWNER]) {
+    for (const q of [{ call: 'node.card', args: {} }, { call: 'fs.stat', args: { path: 'spirit/fs/data.js' } }, { call: 'contact.search', args: { q: '' } }, JOB, SAVE, OWNER]) {
       const a = await face(q);
       ok(refused(a), q.call + ' from the face is refused', q.call + ' from the face on a relay with no star: ' + a.status + ' ' + short(a.text));
     }

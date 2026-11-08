@@ -10,7 +10,7 @@ goal/G43.18, box v29, *A face is whole, or there is none* (Andy: *"we remove ALL
 
 ## Requirements
 
-- **No star, no face.** `node.card`, `fs.FS.path`, `contact.search`, `jobs.create`, `fs.save` and `owner.command` from
+- **No star, no face.** `node.card`, `fs.stat`, `contact.search`, `jobs.create`, `fs.save` and `owner.command` from
   the face are all refused; no job ran, no file was written.
 - **The star on, pressed at home: everything is back** (Andy: *"your face on a relay you own gets everything back"*).
   `contact.own` true at the loopback door; `owner.command` reaches the door; `fs.save` writes the file; `jobs.create` of

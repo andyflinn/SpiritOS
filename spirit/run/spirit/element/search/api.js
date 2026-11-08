@@ -188,8 +188,7 @@
     var made = parts.then(function () {
       var E = window.spirit.element;
       families = E.search.api.server.create(root, { placeholder: options.familyPlaceholder, all: options.all, tree: options.tree });
-      // options.grantable: for a grant or a branch, the FS group left out (goal/G41.28), as the verb half says.
-      verbs = E.search.api.verb.create(root, { own: typeof options.tree !== 'function', grantable: options.grantable === true });
+      verbs = E.search.api.verb.create(root, { own: typeof options.tree !== 'function' });
       families.addEventListener('change', function (event) {
         quiet(event);
         if (families.value === root.family) return;

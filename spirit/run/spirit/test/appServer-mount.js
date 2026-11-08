@@ -240,10 +240,11 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     ok(!!tree[NAME] && !!tree[NAME].ping, 'the flat table holds ' + NAME + ' with its verb', 'the flat table: ' + short(Object.keys(tree)) + ', ' + NAME + ': ' + short(tree[NAME]));
     const iface = (await call(N.base, 'api', { family: NAME })).body || {};
     ok(String(iface.interface || '').indexOf(INTERFACE) !== -1, 'its interface is the api.js at the top of the app folder', 'api {family}: ' + short(iface));
-    const note = (await call(N.base, NAME + '.FS.loadFile', { path: 'note.txt' })).body || {};
-    ok(note.text === NOTE, 'the server\'s own look beside its script finds the app folder, not a family/ folder', 'FS.loadFile note.txt: ' + short(note));
-    const at = (await call(N.base, NAME + '.FS.path', { path: 'api.js' })).body || {};
-    ok(at.path === 'spirit/app/' + NAME + '/api.js', 'FS.path names the api.js at the top of the app folder', 'FS.path api.js: ' + short(at));
+    // No FS set (goal/G43.20; Andy: "those owner only FS verbs are no longer needed, because not the api ID ... ARE the path to
+    // all those files"): the app folder's files are spirit.fs's, by the path its id names.
+    ok(!Object.keys(tree[NAME] || {}).some(function (v) { return /^FS\./.test(v); }), 'its branch carries no FS set', 'its branch: ' + short(tree[NAME]));
+    const note = (await call(N.base, 'fs.load', { path: 'spirit/app/' + NAME + '/note.txt' })).body || {};
+    ok(note.text === NOTE, 'its folder is spirit/app/' + NAME + '/, read through spirit.fs by that path', 'fs.load note.txt: ' + short(note));
 
     test.subHeading('the box: "Its module id is spirit.app.<name>", "Jobs names it so."');
     const job = await liveJob(N.base, MODULE);

@@ -5,15 +5,13 @@ only where a requirement here names it; the rest of the door is specified by its
 
 ## Requirements
 
-### A family's FS group is the owner's (goal/G41.28)
+### No FS set (goal/G43.20)
 
-Andy: *"i still want the api.<family>.FS.* group "ungrantable" and OWNER ONLY"*.
+Andy: *"those owner only FS verbs are no longer needed, because not the api ID spirit.fs or spirit.api.desk ARE the path
+to all those files, that's why they are now completely redundant."*
 
-- A member's ask of any `<family>.FS.*` verb is refused `owner-only`, with the family granted whole or the verb
-  itself granted, and no server is asked.
-- The same member's other verbs of that family reach its server.
-- A member's `api` tree leaves out every family's `FS.*` verbs.
-- The owner's `FS.*` asks reach the server.
+- `apiDoor.js` names no `FS.` verb: DEBUG is a server's one owner verb.
+- A member granted a family reaches its verbs, and is served its tree.
 
 - **The star is the owner's alone** (goal/G41.30; Andy: *"so this button will put the star on relays and puppets. AND
   take it away."*): a member granted `contact` or `contact.own` asking `contact.own` is refused `owner-only` with no server
