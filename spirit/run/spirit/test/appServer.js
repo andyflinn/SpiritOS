@@ -400,9 +400,7 @@ if (CHILD) {
     test.subHeading('goal/G41.24: DEPENDENCIES is gone');
     // Andy, box: "DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder
     // itself." No code file names the verb or hands serve() a dependencies list; this file names it to look for it.
-    // The goal file the desk writes is his record, his box words in it, not code.
-    const CURRENT_GOAL = path.join(RUN, 'spirit', 'app', 'desk', 'currentGoal.json');
-    const named = codeFiles(RUN, []).concat(jsonFiles(path.join(RUN, 'spirit', 'app', 'desk'), [])).filter(function (f) { return f !== SELF_FILE && f !== CURRENT_GOAL; }).filter(function (f) {
+    const named = codeFiles(RUN, []).concat(jsonFiles(path.join(RUN, 'spirit', 'app', 'desk'), [])).filter(function (f) { return f !== SELF_FILE; }).filter(function (f) {
       const t = fs.readFileSync(f, 'utf8');
       return /DEPENDENCIES/.test(t) || /\bdependencies\s*:/.test(t) || /opts\.dependencies|withDependencies|checkDependencies/.test(t);
     }).map(function (f) { return path.relative(RUN, f); });

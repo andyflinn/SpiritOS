@@ -94,8 +94,8 @@ test.startTest('listElement.js: the icons list reads one file (goal/G43.11)');
   // A glyph the set does not have, for the Icons app's own file below.
   let PLANTED = ''; for (let c = 0x1F980; c < 0x1FB00 && !PLANTED; c++) { const g = String.fromCodePoint(c); if (!glyphs.includes(g)) PLANTED = g; }
   ok(!!PLANTED, 'the world: a glyph the set does not have', 'the set has every glyph tried');
-  // The desk's generated current goal quotes the box, and the two tests that check for the old file name it.
-  const QUOTES = ['spirit/run/spirit/app/desk/currentGoal.json', 'spirit/run/spirit/element/search/icon/test/listElement.js', 'spirit/run/shell/icons/test/icons.js'];
+  // The two tests that check for the old file name it.
+  const QUOTES = ['spirit/run/spirit/element/search/icon/test/listElement.js', 'spirit/run/shell/icons/test/icons.js'];
   const namers = execSync('git ls-files -- spirit', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(function (f) { return /\.(js|html|json)$/.test(f) && QUOTES.indexOf(f) === -1; })
     .filter(function (f) { try { return fs.readFileSync(path.join(REPO, f), 'utf8').indexOf(OLD) !== -1; } catch (e) { return false; } });
   ok(namers.length === 0, 'no file names the old file', 'these still name ' + OLD + ': ' + short(namers));

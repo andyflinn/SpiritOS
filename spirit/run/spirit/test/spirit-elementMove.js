@@ -98,7 +98,7 @@ function judged(file, line) {
 }
 // Not the product: what the desk writes, what is published, and this suite's own lists.
 function out(file) {
-  return /^(agents|design)\//.test(file) || /currentGoal\.json$/.test(file) || /process\/js\/desk\/rules\.md$/.test(file) ||
+  return /^(agents|design)\//.test(file) ||
     /spirit\/test\/spirit-elementMove\.(js|md)$|spirit\/element\/test\/codeMirror-library\.(js|md)$|shell\/shared\/js\/test\/deskRunStatus-home\.(js|md)$/.test(file) || VENDORED_FOLDERS.holds(file) || /(^|\/)brains\//.test(file) ||
     !/\.(js|json|html|md|css|txt)$/.test(file) || file.indexOf('spirit/') !== 0;
 }

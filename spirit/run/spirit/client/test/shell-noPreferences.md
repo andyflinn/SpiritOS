@@ -9,5 +9,5 @@ Andy: *"i want to remove that information and all the code that references it, g
 
 ## Requirements
 
-- No `preferences.json` is tracked, and no tracked code file (`.js`, `.html`, `.css`, `.json`), tests, install scripts and comments included, names `preferences.json` or the policy it held (`UNKNOWN_PREFS`, `unknownPolicy`). Andy: *"MAKE SURE the code referencing preferences.json will be gone from the codebase."* Only the suites that must name it (`*noPreferences.js` and `.md`) and Desk's own data, `currentGoal.json`, are aside.
+- No `preferences.json` is tracked, and no tracked code file (`.js`, `.html`, `.css`, `.json`), tests, install scripts and comments included, names `preferences.json` or the policy it held (`UNKNOWN_PREFS`, `unknownPolicy`). Andy: *"MAKE SURE the code referencing preferences.json will be gone from the codebase."* Only the suites that must name it (`*noPreferences.js` and `.md`) are aside.
 - `spirit/client/shell.js` holds no preferences migration: no `migrateAppIds`, `APP_ID_RENAMES` or `withShellIds`. The file is first shown read, its code still holding `renderDesktop`, so a missing file or a stripper that ate the code is red, never a vacuous green.

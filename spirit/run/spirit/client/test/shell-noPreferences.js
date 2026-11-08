@@ -31,9 +31,9 @@ test.subHeading('Andy: "i want to remove that information and all the code that 
 const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(function (f) { return /(^|\/)preferences\.json$/.test(f); });
 ok(!tracked.length, 'no preferences.json is tracked', 'still tracked: ' + short(tracked));
 // Andy: "MAKE SURE the code referencing preferences.json will be gone from the codebase.": every tracked code file, tests,
-// install scripts and comments included; only the suites that must name it, and Desk's own data (currentGoal.json) aside.
+// install scripts and comments included; only the suites that must name it aside.
 const naming = execSync('git ls-files -- "*.js" "*.html" "*.css" "*.json"', { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean)
-  .filter(function (f) { return !/noPreferences\.(js|md)$/.test(f) && !/currentGoal\.json$/.test(f) && fs.existsSync(path.join(REPO, f)); })
+  .filter(function (f) { return !/noPreferences\.(js|md)$/.test(f) && fs.existsSync(path.join(REPO, f)); })
   .filter(function (f) { return /preferences\.json|UNKNOWN_PREFS|unknownPolicy/.test(fs.readFileSync(path.join(REPO, f), 'utf8')); });
 ok(!naming.length, 'no tracked code, tests and comments included, names preferences.json or the policy it held', naming.length + ' still do: ' + short(naming));
 

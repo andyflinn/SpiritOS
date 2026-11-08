@@ -83,7 +83,6 @@ stream"); Desk and deskClient move onto it.
 
 - Andy, box: *"DEPENDENCIES will be killed, eradicated, from all code where it appears, and from the desk folder
   itself."* No code file, and no json of the desk folder, names DEPENDENCIES or hands `serve()` a dependencies list.
-  The goal file the desk writes, `currentGoal.json`, holds his box words and is not code.
 - Andy, box, *"the bundles"*. Each file is `process/js/<appServerName>/<appServerName>Bundles.json`, a row
   `{ label, branches }` (`./apiAuth.md`), no owner; a branch with verb `''` reaches the whole family, its FS.* with it.
   - desk: `deskAgent` and `remoteUser`. *"the remoteUser gets all verbs except FS.*"*: every verb of the desk family

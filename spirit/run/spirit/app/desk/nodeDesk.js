@@ -38,24 +38,16 @@ const STATE = at !== -1 ? argv[at + 1] : '';
 // THE MANIFEST'S VALUES, as the node hands them (jobs.js: one JSON object, name -> value, as the first argument).
 let values = {};
 try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
-// THE CURRENT GOAL IN THE REPO (goal/G3.14). Andy, 2026-10-03: "The desk server will produce a file
-// \"spirit/run/spirit/app/desk/currentGoal.json\" it will contain the complete data set of the current goal, including
-// the commit-level agains which the file was generated. the file re-generation is triggered by 'Go' and 'Done
-// events' and the data includes items not visible to the user.", "it's the truth scoped by commit level."
-// THE DESK SHARES IT ITSELF (goal/G4.21), and never writes into the checkout (Andy: "i generally only read
-// the repo. i think we should make this automatic? agree?", "do it", "yes, that's the shape.").
-// NO SWITCH (goal/G43.28, box line 9; Andy: "desk fucking well knows which repo it sits in AND if fucking well knows the
-// path of the goal-share file."): it shares, and pulls on a claim, whenever it sits in a git checkout, the first folder
-// up from this file with a .git. A desk run from a folder that is no checkout (a suite's scratch copy) shares and pulls
-// nothing, so no test pushes anywhere; a suite that wants a desk in a scratch git world runs it from inside that world.
-// Where the files go is goalShare's own (spirit/app/goalShare/goalShare.js).
+// THE CHECKOUT THIS DESK SITS IN (goal/G43.28, box line 5): the first folder up from this file with a .git, the one a
+// claim pulls (pullOwnRepo, goal/G41.22). A desk run from a folder that is no checkout (a suite's scratch copy) pulls
+// nothing. The goal and the rules are not shared into git any more: Andy, goal/G43.28, removed that share altogether,
+// from desk and from the repo, and every agent gets them down the stream.
 const GOAL_REPO = (function () {
   for (let d = __dirname; ; d = path.dirname(d)) {
     if (fs.existsSync(path.join(d, '.git'))) return d;
     if (path.dirname(d) === d) return '';
   }
 }());
-const GOAL_SHARED = !!GOAL_REPO;
 // THE ONE MINUTE OF A BOX HOLD (goal/G21.1). Andy, in the item's box: "the hold ends when the write lands or after one
 // minute." The manifest value boxHoldMs is the clock a suite injects (deskBindingNick.js); left out, one minute.
 const BOX_HOLD_MS = Number(values.boxHoldMs) > 0 ? Number(values.boxHoldMs) : 60000;
@@ -475,21 +467,6 @@ const putDraft = { run: function (key, at, text) { return putDraftRow.run(ruleNu
 const ruleChatOf = db.prepare('SELECT at, by, creator, text FROM rule_chat WHERE rule = ? ORDER BY seq');
 const ruleChatNext = db.prepare('SELECT COALESCE(MAX(seq), -1) + 1 AS seq FROM rule_chat WHERE rule = ?');
 const addRuleChat = db.prepare('INSERT INTO rule_chat (rule, seq, at, by, creator, text, born) VALUES (?, ?, ?, ?, ?, ?, ?)');
-
-// EVERY RULE CHANGE IS PUSHED, BOTH WAYS (goal/G5.8). Andy: "then lets have deskServer push active rules upon every
-// rule-change.", and to a repo file, an ear line, or both: "both". The active rules, grouped by type, are written to
-// rules.md in this server's state and shared into the repo with currentGoal.json, in one commit (goal/G43.28).
-const RULES_STATE_FILE = path.join(STATE, 'rules.md');
-function rulesChanged(key, what) {
-  const active = newestRules.all().filter(function (r) { return r.status === 'active'; });
-  const text = ['# Desk rules, active (written by the desk server on every rule change, goal/G5.8)', ''].concat(
-    RULE_TYPES.map(function (type) {
-      const mine = active.filter(function (r) { return r.type === type; });
-      return mine.length ? ['## ' + type, ''].concat(mine.map(function (r) { return '### ' + r.key + ' (version ' + r.n + '): ' + r.label + '\n\n' + r.text + '\n'; })).join('\n') : '';
-    }).filter(Boolean)).join('\n') + '\n';
-  try { fs.writeFileSync(RULES_STATE_FILE, text); } catch (e) { console.error('desk: the rules file was not written: ' + ((e && e.message) || e)); }
-  if (GOAL_SHARED && GOAL_REPO) shareFile();
-}
 
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
 const LIVE_MS = 10 * 60 * 1000;
@@ -1662,7 +1639,7 @@ function apply(s, r, b, item, goalOf) {
     case 'line.take': {
       const l = takeableLine(it, String(r.key || ''));
       if (l) { l.taken = r.by; l.takenKey = String(r.key || ''); it.takers[r.by] = true; return; }
-      // A TAKE OF A LINE ITS NICK BOUND TO IT (goal/G41.22): the agent has it now, so pushgoal hands it no more.
+      // A TAKE OF A LINE ITS NICK BOUND TO IT (goal/G41.22): the agent has it now.
       openTakes(it).forEach(function (o) { if (tookLine(o, { by: r.by, key: String(r.key || '') })) o.took = true; });
       return;
     }
@@ -1839,9 +1816,6 @@ function buttons(s, it) {
   // closed goal returns above with Reopen alone, which is the order his words give: "re-open and ... make current goal".
   // A special goal is never the current goal (goal/G27.2, D6).
   if (it.goal && g && !g.abandoned && !g.special && s.current !== it.id) out.push('make-current');
-  // PUSH GOAL (goal/G41.22; Andy: "the current goal and all its items, get a new button in the detail panel: "push
-  // Goal""): offered on the current goal and each of its items; its press is the verb pushgoal, his alone.
-  if (s.current && (it.id === s.current || it.goalId === s.current)) out.push('pushgoal');
   // DELETE, IN DESIGN MODE OR OUT OF IT (goal/G24.9; it was design mode only under goal/G9.7). Andy, 2026-10-14: "i have
   // no delete option for this item". So any item that is not a goal offers it whatever the goal's design mode, with two
   // exceptions: none while an agent holds a phase on it (red, build or verify), and none on an item claimed done and
@@ -2379,33 +2353,6 @@ function pushGoalWhole(gid) {
   [gid].concat(g.members).filter(function (id) { return !!s.items[id]; })
     .forEach(function (id) { publishOne(rowPublish(s, id, 'goal.whole', s.change)); });
 }
-// PUSH GOAL (goal/G41.22, box v22; Andy: "the current goal and all its items, get a new button in the detail panel:
-// "push Goal", the ver on the desk is: "pushgoal""; agreed: "pushgoal replaces each agent's copy of the current goal
-// whole, no merge: nothing stale survives", "it moves each agent's read pointer to the newest change, never back to the
-// start, and in that same wake hands the agent every line of Andy's addressed to it that nobody took yet"). Every row
-// of it is under the one change it is pushed at and marked replace: the goal's facts and each item's, then each of his
-// lines to agents that nobody took yet (its row naming them, so each goes to its own), last its end. A deskClient drops
-// what it kept of the goal that the push does not carry (the desk family's data.js, its cache.keep).
-function pushGoalReplace() {
-  const s = S;
-  const gid = s.current;
-  const g = gid ? s.goals[gid] : null;
-  if (!g) return 0;
-  const k = numbersOf(gid);
-  const ids = [gid].concat(g.members).filter(function (id) { return !!s.items[id]; });
-  const mark = function (o) { o.replace = true; o.goal = k[0]; return o; };
-  ids.forEach(function (id) { publishOne(mark(rowPublish(s, id, 'goal.whole', s.change))); });
-  ids.forEach(function (id) {
-    s.items[id].chat.forEach(function (l, i) {
-      // Nobody took it: not answered, and not taken by an agent (a nick binds its take at the write; took marks the agent's).
-      if (l.by !== 'andy' || l.answered || l.took || !Array.isArray(l.to) || !l.to.length) return;
-      if (l.taken && !l.bound) return;
-      publishOne(mark(sidePublish(s, id, { table: 'chat', x: { out: function () { return shownLine(s, l); }, to: l.to } }, s.change)));
-    });
-  });
-  publishOne({ change: s.change, verb: 'goal.whole', replace: true, end: true, goal: k[0], item: null, key: { goal: k[0], item: 0 } });
-  return s.change;
-}
 // THE ROWS A WRITE MAY CHANGE: its goal's (the written item's, or the session's goal), and, for a write about an agent,
 // every item where somebody holds something (signoff and his exclusion let go of what that agent held).
 function goalIds(s, gid) { const g = s.goals[gid]; return g ? [gid].concat(g.members) : []; }
@@ -2503,7 +2450,6 @@ function write(verb, a, check) {
     });
   });
   side.forEach(function (o) { publishOne(byWriter(o)); });
-  writeGoalFile(s, verb, a, s.change);
   // A GOAL BECOMING CURRENT IS PUSHED WHOLE (goal/G33.4).
   if (s.current && s.current !== currentBefore) pushGoalWhole(s.current);
   shed();
@@ -2524,48 +2470,15 @@ function writeRuleChat(s, body, a) {
   return s;
 }
 
-// THE FILE (goal/G3.14): written whole on his status changes, go, go-all, done, reopen and close (goal/G4.21: "a
-// re-open would be subject to the same rule?"), and on session.set (items appear and leave by it; his open point,
-// taken as yes); a line, a box, a claim or any other press leave it as it was. One object:
-// the desk's change number at this moment, the current goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts
-// as item.get gives them, its box and version, its checks and its chat lines {by, at, text}.
-// Written at the end of the write, after the publish, into this server's
-// own state folder, never the checkout; then goalShare commits it, with rules.md, on the remote's master and pushes it, as
-// a job the node runs (goal/G4.21; an app of its own since goal/G43.28, so Jobs shows it as spirit.app.goalShare). A failure to write or to ask is said on stderr and fails no press.
-const GOAL_STATE_FILE = path.join(STATE, 'currentGoal.json');
-function writeGoalFile(s, verb, a, change) {
-  if (!GOAL_SHARED || !GOAL_REPO || !s.current || !s.goals[s.current]) return;
-  // goal/G2.19 adds make-current: the file names the current goal in `goal` and carries that goal's items alone, so a
-  // switch that did not rewrite it would leave every reader, the agents and the brain, on the goal he just left.
-  const his = verb === 'press' && ['go', 'go-all', 'done', 'reopen', 'close', 'make-current'].indexOf(a.what) !== -1;
-  if (!his && verb !== 'session.set') return;
-  // ONLY THE CURRENT GOAL'S PRESSES (goal/G27.2, D6): a press on another goal or its items leaves
-  // the file alone, so it pushes no new currentGoal.json. A make-current is the switch itself.
-  const pressed = his ? s.items[String(a.id)] : null;
-  if (pressed && a.what !== 'make-current' && pressed.id !== s.current && pressed.goalId !== s.current) return;
-  const g = s.goals[s.current];
-  const items = [s.current].concat(g.members).map(function (id) { return s.items[id]; }).filter(Boolean).map(function (it) {
-    return Object.assign(facts(s, it), { box: it.box, version: it.version, checks: it.checks,
-      chat: it.chat.map(function (l) { return { by: l.by, key: String(l.key || ''), at: l.at, text: l.text }; }) });
-  });
-  // NO writtenAt (goal/G19.6; the box: "goalShare's shared file without writtenAt, so an unchanged goal is not
-  // committed again"): a clock in the file would make every share new bytes, so goalShare's "same" would never hold. The
-  // commit carries its own time, and change names the desk's moment.
-  const doc = { change: change, goal: s.current, items: items };
-  try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
-  shareFile();
-}
-// The node runs goalShare.js as a job, asked through the one spirit object of this process (goal/G40.6) on its own
-// node, with the verb the shell's Start Job uses.
 // A CLAIM PULLS THE DESK'S OWN CHECKOUT (goal/G41.22, box v22; Andy: "when the desk gets a claim red/build done. it pulls
 // it's repo automatically"; agreed: "it never pulls a checkout with edits of its own, or while a test run is going on in
-// it: then it pulls nothing and says so under the item."). The checkout is GOAL_REPO, the one the goal file is shared
-// into; a desk sharing nothing (every suite's, spawned with {}) pulls nothing. The run it can know of is deskVerify's
+// it: then it pulls nothing and says so under the item."). The checkout is GOAL_REPO, the one this desk sits in;
+// a desk in no checkout (every suite's scratch copy) pulls nothing. The run it can know of is deskVerify's
 // (an item's verifyRunning). Answers once the pull, or the word that it did not, is done; it never throws.
 const PULL_WAIT_MS = 30000;
 const PULL_TRIES = 5;
 function pullOwnRepo(id) {
-  if (!GOAL_SHARED || !GOAL_REPO) return Promise.resolve();
+  if (!GOAL_REPO) return Promise.resolve();
   const say = function (text) { try { write('chat.add', { id: id, text: text, by: 'desk', key: '' }); } catch (e) { /* the item went */ } };
   const git = function (args) {
     return new Promise(function (resolve, reject) {
@@ -2582,8 +2495,8 @@ function pullOwnRepo(id) {
     if (edits.length) { say('not pulled: the desk\'s checkout has edits of its own (' + edits.slice(0, 3).map(function (l) { return l.slice(3); }).join(', ') + (edits.length > 3 ? ', …' : '') + ')'); return; }
     // Its own branch from origin by name, fetched and then moved on only: a pull left to choose answered "Cannot
     // fast-forward to multiple branches".
-    // The goal file's share runs git in the same checkout (goalShare.js, a job of its own), so two fetches can meet: a
-    // locked ref is tried again, a second apart, before the desk says it did not pull.
+    // Another git in the same checkout can hold its lock: a locked ref is tried again, a second apart, before the desk
+    // says it did not pull.
     const once = function () {
       return git(['rev-parse', '--abbrev-ref', 'HEAD']).then(function (branch) {
         const b = branch.trim();
@@ -2600,21 +2513,6 @@ function pullOwnRepo(id) {
     return tries(PULL_TRIES).then(function () {}, function (e) { say('not pulled: ' + e.message); });
   }, function (e) { say('not pulled: ' + e.message); });
 }
-// THE SHARE IS goalShare's, AN APP OF ITS OWN (goal/G43.28; Andy: "move goalShare into spirit/app/goalShare/ like
-// pushOrigin", "the goalShare file just will just push both, current goal and rules. AT THE SAME FUCKING TIME", "it has no
-// argument"): started with nothing handed, it shares both of this server's files from its state in one commit. Its job is
-// spirit.app.goalShare, never this server's own.
-function shareFile() {
-  Promise.resolve().then(function () {
-    // As {status, body}. A transient job (goal/G29.16): it leaves Jobs once it exited cleanly; a failed share stays.
-    return spirit.outcome(spirit.require('spirit/jobs/api.js').then(function (jobs) {
-      return jobs.create({ command: process.execPath, args: [path.join(__dirname, '..', 'goalShare', 'goalShare.js')] });
-    }));
-  }).then(function (r) {
-    if (!r || r.status >= 300) console.error('desk: the node refused the goal share: ' + (r ? r.status + ' ' + JSON.stringify(r.body) : 'no answer'));
-  }).catch(function (e) { console.error('desk: the goal share was not asked: ' + ((e && e.message) || e)); });
-}
-
 // HIS VOICE IS NOT WRITTEN HERE (goal/G2.1 note 8): no voice file of what he typed; the brain reads his Desk lines
 // through this server's api. No app writes into the vault.
 
@@ -3378,9 +3276,6 @@ appServer.serve({
   },
   // "rename (you)": Andy's alone.
   'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); return { change: write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
-  // goal/G41.22: his push of the current goal whole (pushGoalReplace). Andy: "pushgoal is the decided verb. no review."
-  // It writes nothing: a publish of what the desk holds.
-  pushgoal: { request: {}, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); return { change: pushGoalReplace() }; } },
   // HIS DELETE (goal/G9.7, widened by goal/G24.9): his alone, never a goal, never while a phase is held or a claim is
   // open, in design mode or out of it. It is offered in the item's buttons, so the refusal and the button cannot drift
   // apart.
@@ -3528,7 +3423,6 @@ appServer.serve({
       const key = 'rule/' + (Number(ruleCount.get().c) + 1);
       addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text), a.autoAttach === true);
       appServer.publish({ rule: key, row: ruleRow(key) });
-      rulesChanged(key, 'added, proposed');
       return { key: key };
     },
   },
@@ -3572,7 +3466,6 @@ appServer.serve({
       addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text),
         typeof a.autoAttach === 'boolean' ? a.autoAttach : r.autoAttach === true);
       appServer.publish({ rule: r.key, row: ruleRow(r.key) });
-      rulesChanged(r.key, 'versioned, ' + a.status);
       return { key: r.key };
     },
   },
@@ -3766,8 +3659,7 @@ appServer.serve({
       if (!it) throw refused('no-such-item');
       mayWrite(st, w);
       // AN OPEN TAKE STANDS (goal/G21.1, goal/G21.6): a line its nick bound to it, or one it took and has not answered
-      // yet; its next post answers that take. A bound line taken for the first time is written (goal/G41.22: "every line
-      // of Andy's addressed to it that nobody took yet" is what pushgoal hands again, so the desk must know it was taken).
+      // yet; its next post answers that take. A bound line taken for the first time is written .
       if (holdsTake(it, w)) {
         if (!openTakes(it).some(function (l) { return tookLine(l, w) && !l.took; })) return { change: st.change };
         return { change: write('line.take', { id: a.id, by: w.by, key: w.key }).change };

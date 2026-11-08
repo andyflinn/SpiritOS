@@ -59,8 +59,8 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
     await refusedCase('a process this node does not include', mark('notIncluded'), { command: process.execPath, args: ['process/js/zzNotIncluded/zzNotIncluded.js'] });
 
     test.subHeading('what this node may start still starts');
-    // A fix that closes these closes the node: the review's own wording names <name>/<name>.js; the desk starts goalShare
-    // the same way (spirit/app/goalShare/goalShare.js, from nodeDesk.js shareFile), by this node's executable and its whole path. deskClient
+    // A fix that closes these closes the node: the review's own wording names <name>/<name>.js; a helper of an included
+    // process starts the same way, by this node's executable and its whole path. deskClient
     // starts no helper any more; the check's text below still names its old line.
     plant('process/js/zzIncluded/zzIncluded.js', mark('included'));
     fs.writeFileSync(path.join(run, 'process/js/zzIncluded/zzIncluded.json'), JSON.stringify({ label: 'zz' }));

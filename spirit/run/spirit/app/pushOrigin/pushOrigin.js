@@ -8,7 +8,7 @@
 //   want one unified shared approach, that ensures my commits go through."; "agreed. so it' just about sharing code
 //   among desk components.". It lives in spirit/app/pushOrigin/ since goal/G43.21, and starts by its Run (below).
 //
-// Loaded as shared code by publishData and (eventually) goalShare: `const { pushOrigin } = require('.../pushOrigin.js')`.
+// Loaded as shared code by publishData: `const { pushOrigin } = require('.../pushOrigin.js')`.
 // Also runnable by itself: `node pushOrigin.js '{"repo":"/path/to/clone"}'` pushes that clone; Run in the app detail
 // starts it with no argument (below).
 //

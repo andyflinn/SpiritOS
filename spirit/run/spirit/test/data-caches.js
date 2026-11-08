@@ -189,12 +189,12 @@ const takers = clients.filter(function (f) { return /\bevents\.subscribe\(|\bev\
 ok(!takers.length, 'no client takes the node\'s stream itself: spirit/data.js takes it for all', 'clients taking the stream themselves, their rows outside spirit.data: ' + short(takers));
 // "any notion that there is an alternative approach must disappear from all documentation and all comments in the
 // entire repo." The ways replaced, by name: the data set's old places, the desk's old translator file, the two-level
-// branches the desk kept before the tree was by node, and a page or client that runs "uncached", without them. The desk's record (currentGoal.json) and Andy's vault are no
-// documentation of the repo's code; this file and its spec name them to find them.
+// branches the desk kept before the tree was by node, and a page or client that runs "uncached", without them. Andy's vault is no documentation of the
+// repo's code; this file and its spec name them to find them.
 const REPO = path.join(RUN, '..', '..');
 const OLD = [/\buncached\b/i, /['"]deskItems?\//, /['"]deskState\//, /\bD\.data\.(files|contacts|desk)\b/];
 const every = require('child_process').execFileSync('git', ['ls-files'], { cwd: REPO, encoding: 'utf8' }).split('\n').filter(function (f) {
-  return f && /\.(js|md|html|json)$/.test(f) && !/currentGoal\.json$|^spirit\/run\/brains\//.test(f) && f !== 'spirit/run/spirit/test/data-caches.js' && f !== 'spirit/run/spirit/test/data-caches.md';
+  return f && /\.(js|md|html|json)$/.test(f) && !/^spirit\/run\/brains\//.test(f) && f !== 'spirit/run/spirit/test/data-caches.js' && f !== 'spirit/run/spirit/test/data-caches.md';
 });
 const naming = every.filter(function (f) { let t = ''; try { t = fs.readFileSync(path.join(REPO, f), 'utf8'); } catch (e) { return false; } return OLD.some(function (re) { return re.test(t); }); });
 ok(!naming.length, 'no file in the repo names a replaced way: running uncached, the two-level desk branches',

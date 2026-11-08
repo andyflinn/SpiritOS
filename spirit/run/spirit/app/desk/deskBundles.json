@@ -164,10 +164,6 @@
       },
       {
         "family": "desk",
-        "verb": "pushgoal"
-      },
-      {
-        "family": "desk",
         "verb": "rules.search"
       },
       {
@@ -366,10 +362,6 @@
       {
         "family": "desk",
         "verb": "profile.set"
-      },
-      {
-        "family": "desk",
-        "verb": "pushgoal"
       },
       {
         "family": "desk",

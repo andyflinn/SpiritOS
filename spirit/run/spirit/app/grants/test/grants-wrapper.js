@@ -31,9 +31,7 @@ const APP_DIR = path.join(RUN, 'spirit', 'app', NAME);
 const MINE = ['spirit/run/spirit/app/info/test/info-wrapper.js', 'spirit/run/spirit/app/info/test/info-wrapper.md',
   'spirit/run/spirit/app/grants/test/grants-wrapper.js', 'spirit/run/spirit/app/grants/test/grants-wrapper.md',
   'spirit/run/spirit/test/coreFiles-infoGrants.js', 'spirit/run/spirit/test/coreFiles-infoGrants.md',
-  'spirit/run/spirit/element/test/nodeInfo-rotate.js', 'spirit/run/spirit/element/test/nodeInfo-rotate.md',
-  // The desk's share of the current goal: our chat, which quotes the old paths while we talk of them.
-  'spirit/run/spirit/app/desk/currentGoal.json'];
+  'spirit/run/spirit/element/test/nodeInfo-rotate.js', 'spirit/run/spirit/element/test/nodeInfo-rotate.md'];
 
 // The tree's files under spirit/run, the tracked ones and the new ones not ignored, as they are on the disk.
 function treeFiles() {

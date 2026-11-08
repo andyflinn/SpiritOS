@@ -450,11 +450,7 @@ function meantForAgent(row) {
   const inView = (!!cur && row.goal === Number(cur[1])) || (Array.isArray(row.to) && row.to.indexOf(SELF_KEY) !== -1) ||
     heldByMe(keptItem(String(row.id || '')));
   if (!inView) return null;
-  // HIS LINE A PUSH GOAL HANDS AGAIN (goal/G41.22; Andy: "in that same wake hands the agent every line of Andy's
-  // addressed to it that nobody took yet: nothing replayed, nothing lost"): the desk sends only lines nobody took, so its
-  // time is no reason to drop it; a line this agent has seen already stays dropped below (seenLines).
-  const handedAgain = row.replace === true && row.table === 'chat';
-  if ((row.table === 'chat' || row.table === 'box') && !handedAgain && isOld(row.row.at)) return null;
+  if ((row.table === 'chat' || row.table === 'box') && isOld(row.row.at)) return null;
   // HIS BOX WRITE ON THE ITEM IT HOLDS reaches it, as it did (goal/G27.12: "His box.write still reaches the agents").
   if (row.table === 'box') {
     const f = keptItem(String(row.id || ''));

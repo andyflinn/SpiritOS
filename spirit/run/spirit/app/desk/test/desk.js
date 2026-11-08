@@ -74,7 +74,7 @@ function gitWorld(dir) {
   fs.writeFileSync(path.join(other, 'a.txt'), 'one\n');
   git(other, ['add', 'a.txt']); git(other, ['commit', '-q', '-m', 'first']); git(other, ['push', '-q', 'origin', 'HEAD:master']);
   git(dir, ['clone', '-q', origin, checkout]);
-  // Its own identity, for whatever commits in it (goalShare's commit-tree, a rebase).
+  // Its own identity, for whatever commits in it (a rebase).
   git(checkout, ['config', 'user.name', 'desk test']); git(checkout, ['config', 'user.email', 'desk@test.invalid']);
   let made = 0;
   return {
@@ -406,7 +406,7 @@ test.startTest('desk.js: the desk server (goal/G41.11)');
     // then it pulls nothing and says so under the item.") ──────────────────────────────────────────────────────────────
     // Each case is a desk of its own, on a scratch git world of its own: it runs from inside that world's checkout, which
     // it finds by itself as the checkout it sits in (startDesk, its world). The pretend node runs the
-    // jobs it is asked to, as a node does, so a pull made as a job (goalShare's way) runs as one made in the desk does.
+    // jobs it is asked to, as a node does, so a pull made as a job runs as one made in the desk does.
     try { kid.kill(); } catch (e) { /* gone */ }
     const PULL = { id: 'goal/G300', title: 'Pull test' };
     const PULL_ITEMS = ['goal/G300.1', 'goal/G300.2', 'goal/G300.3'];

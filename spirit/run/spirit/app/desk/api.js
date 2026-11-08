@@ -70,7 +70,6 @@ module.exports = {
     // id is '' for start-design with nothing open, which starts a new goal.
     press: { id: 'text', what: 'id' },
     // goal/G41.22: Andy's alone; the current goal, so no argument.
-    pushgoal: {},
     // agent '' is the caller.
     'profile.get': { agent: 'text' },
     // His alone. A name or nick left '' is no name or no nick; a name otherwise passes the label rule.

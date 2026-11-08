@@ -9,7 +9,7 @@ Asked of a real Chrome on a scratch node's page and on a real face through a rea
 ## Requirements
 
 - `spirit/iconSet.json` is in git, each glyph with its keywords.
-- `shell/json/iconSet.json` is gone, from the tree and from git, and no `.js`, `.html` or `.json` file names it, but for the two tests that check for it and the desk's generated `currentGoal.json`.
+- `shell/json/iconSet.json` is gone, from the tree and from git, and no `.js`, `.html` or `.json` file names it, but for the two tests that check for it.
 - The list and the row element do not name the Icons app's file, comments included.
 - The list reads `spirit/iconSet.json` through `spirit.fs.loadFile`, and nothing else: no "own, else system". It finds the file's last icon, and not the Icons app's own.
 - Nothing watches the file.

@@ -50,7 +50,7 @@ is the appServer serializes the cache to disk."*
      are the test's; `boot.js` and `seal.js` have been in `spirit/shell/` since goal/G43.18, which the list does not
      reach, so `spirit/shell/seal.js` is not judged; the apps left in `shell/` are, and none of `spirit/app/`, where
      the apps moved, is;
-   - no file of the repo (`.js`, `.md`, `.html`, `.json`; the desk's `currentGoal.json` and Andy's vault aside) names a
+   - no file of the repo (`.js`, `.md`, `.html`, `.json`; Andy's vault aside) names a
      replaced way: a page or client that runs `uncached`, the desk's two-level
      branches (`deskItem/`, `deskItems/`, `deskState/`), `D.data.<branch>`. The list names the ways replaced so far;
      any other notion is read for by hand.
