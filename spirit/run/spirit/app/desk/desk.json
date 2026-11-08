@@ -15,9 +15,4 @@
   "node": {
     "mount": true
   },
-  "description": "Owns Desk's record, desk.db, in the node's state (spirit/state/desk/data/). Started by the node while the app is active; reached by its verbs on the loopback door (the flat apiDoor) and by an api packet from a known member (desk/G1.3).",
-  "args": [
-    { "name": "goalRepo", "default": "", "description": "The repo the current goal is shared into (goal/G4.21): goalShare.js commits it there on the remote's master and pushes it, on his go, go-all, done, reopen, close and on session.set. Empty: the checkout holding desk.js. The desk never writes into the checkout itself." },
-    { "name": "goalPath", "default": "spirit/run/spirit/app/desk/currentGoal.json", "description": "The goal file's path in that repo. With neither goalRepo nor goalPath (a server spawned with {}, as every test suite spawns one) nothing is shared. A desk holding no goal (an agent's node) shares nothing either." }
-  ]
 }
