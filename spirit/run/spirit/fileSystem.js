@@ -149,7 +149,10 @@ function fileWritable(filePath) {
   if (canonical.split('/').indexOf('relay-state') !== -1) return false; // an old tree's keys, wherever one is left
   if (canonical.indexOf('/') === -1) return false;
   if (isVendored(canonical)) return false; // Andy's Q1 (goal/G43.25): "servable but not writeable."
-  return !isCoreFile(canonical);
+  // THE CORE CHECK GETS THE PATH IN ITS OWN CASE (goal/G43.20, wsl's verify: a starred face's fs.save answered 403 on Linux):
+  // coreFiles.isCore folds case for its lists itself, but reads an app's own <name>.json by the folder's name, so the
+  // lower-cased spirit/app/zzstar/ found no zzstar.json on a disc that tells case apart, and every app read as core.
+  return !isCoreFile(canonicalPath(filePath));
 }
 
 // Same idea as fileWritable, for "can this path ever be read or listed
