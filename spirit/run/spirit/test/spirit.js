@@ -617,6 +617,34 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
         ok(first === true && second === true, 'the world: ' + fresh + ' is bound on the page once it is required', fresh + ': ' + short([first, second]));
         ok(later.length === 1, 'on a real page: using ' + fresh + ' for the first time asks its api once, and using it again asks nothing', 'on a real page: ' + fresh + '\'s api was asked ' + later.length + ' times');
       }
+
+      // AN APP SWITCHED ON AFTER THE PAGE LOADED WORKS, NO RELOAD (Andy, Q1: "shouldn't it work without making a call, since
+      // the elements will trigger the necessary calls?", and "wsl, make sure your reds assert that as well!"). desk, off when
+      // the page loaded, is switched on from the page; once its server answers, the Desk element is opened on that same page:
+      // it asks desk itself and draws its list, never "the desk server did not answer".
+      const on = await lazyPage.evaluate("window.spirit.ready.then(function (s) { return Promise.resolve(s.require(s.familyPath('app'))).then(function () { return s.app.activeApp({ key: 'desk', active: true }); }); }).then(function (r) { return !!(r && r.ok); }, function (e) { return 'refused ' + (e && e.message); })");
+      ok(on === true, 'the world: desk, off at load, is switched on from the page (app.active)', 'app.active desk: ' + short(on));
+      let up = '';
+      if (on === true) {
+        await H.until(async function () {
+          up = await lazyPage.evaluate("fetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ call: 'desk.items.search', args: { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false } }) }).then(function (r) { return String(r.status); })");
+          return up === '200';
+        }, 40000);
+      }
+      ok(up === '200', 'the world: the desk server answers the page once switched on', 'desk.items.search answered ' + short(up) + ': nothing judged');
+      if (up === '200') {
+        const mark = lazyPage.heard.length;
+        const drawn = await lazyPage.evaluate("(function () { var d = document.createElement('div'); document.body.appendChild(d);" +
+          " return Promise.resolve(window.spirit.require('spirit/app/desk/desk.js')).then(function () { window.spirit.elements.desk.create(d, {});" +
+          " return new Promise(function (r) { setTimeout(function () { r(JSON.stringify({ text: d.innerText, nodes: d.querySelectorAll('*').length })); }, 8000); }); }," +
+          " function (e) { return JSON.stringify({ refused: String(e && e.message) }); }); })()");
+        let got = {};
+        try { got = JSON.parse(drawn); } catch (e) { got = { refused: String(drawn) }; }
+        const asked = lazyPage.heard.slice(mark).filter(function (m) { return m.method === 'Network.requestWillBeSent' && /\/api\/spirit$/.test(m.params.request.url) && /"call":"desk\.items\.search"/.test(m.params.request.postData || ''); });
+        ok(!got.refused && got.nodes > 0, 'on a real page: the Desk element opens on the page that loaded before desk was on', 'the Desk element did not open: ' + short(got));
+        ok(asked.length > 0, 'on a real page: the Desk element asks desk itself (desk.items.search), no reload', 'the Desk element sent no desk.items.search: its family is not reachable on this page');
+        ok(!got.refused && !/did not answer/.test(String(got.text)), 'on a real page: the Desk list draws, never "the desk server did not answer"', 'the Desk page says: ' + short(String(got.text || '').slice(0, 200)));
+      }
     } finally {
       if (lazyPage.kid) lazyPage.kid.kill();
     }

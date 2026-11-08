@@ -199,6 +199,11 @@ door (section 9): the page never asks for the whole api (`api` with no family); 
 page calls one of its verbs, and never twice; a family the page has not touched, required later, costs one `api` call
 then and none on the next. A check that finds nothing to judge is red.
 
+**An app switched on after the page loaded works, no reload** (goal/G43.27, Q1; Andy: *"shouldn't it work without
+making a call, since the elements will trigger the necessary calls?"*, and *"wsl, make sure your reds assert that as
+well!"*). On that same page, desk, off at load, is switched on (`app.active`); once its server answers, the Desk element
+is opened: it asks `desk.items.search` itself and draws its list, never *"the desk server did not answer"*.
+
 ### In node only: `node`, `jobs`, `events.publish`, and no kernel
 
 spirit.js requires no `kernel.js`, and hands out no `spirit.core`: what a server took from the kernel is spirit.js's own.
