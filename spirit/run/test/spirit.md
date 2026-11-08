@@ -189,8 +189,9 @@ over them.
 
 ### On a page only: `start()`, `ready`
 
-`start()` binds every family the node names on `window.spirit`, once, and answers the instance; `ready` is that
-promise. The face shell calls it once its link is up, the home page at load.
+`start()` asks the node's tree once and binds no family up front (goal/G43.27, lazy): each family the tree names
+stands on `window.spirit` and binds the first time it is called, and a call to one with no interface is refused
+`no-interface`. It answers the instance; `ready` is that promise. The face shell calls it once its link is up, the home page at load.
 
 ### In node only: `node`, `jobs`, `events.publish`, and no kernel
 

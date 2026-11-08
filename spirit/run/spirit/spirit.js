@@ -813,8 +813,9 @@
   // { ok, status, body, card, from, error }: card is the node's VERIFIED card of the peer (spirit/peerPost.js, answer.card), ok
   // only when it reached and the peer did not refuse. A page hears no answer-post: the node's own peerPost waits on the
   // node's server stream, which a page does not hold, so peer.post's reply is the answer.
-  // spirit.start() binds every family the node names on window.spirit, once, when the page can reach its node (the face
-  // shell after its link is up; index.html at load); spirit.ready answers when they are there.
+  // spirit.start() asks the node's tree once, when the page can reach its node (the face shell after its link is up;
+  // index.html at load), and stands each family it names on window.spirit, bound when first called (goal/G43.27);
+  // spirit.ready answers when they stand there.
   self.peerPost = function (peer, app, body, how) {
     var whole = !!(how && how.answer === true);
     // What it needs, it requires itself: packet.js on a page wants the limits before it (spirit/limits.js).
@@ -839,10 +840,48 @@
     });
   };
   var started = null;
+  // A FAMILY THAT BINDS WHEN FIRST CALLED (goal/G43.27). spirit.<family> stands as an object at once: what it already holds
+  // (spirit.events' stream, spirit.jobs in node) answers as it is, and any other name is a call waiting for the family: called,
+  // it binds the family once (bindOwn: one api call), then calls the bound function of that name, a dotted path included
+  // (spirit.<family>.FS.loadFile). Once bound, the bound functions are on the object itself. Nothing is then-able, so a
+  // family handed to Promise.resolve stays a family.
+  function lazyCall(fam, path) {
+    var fn = function () {
+      var args = arguments;
+      return bindOwn(fam).then(function (m) {
+        var at = m;
+        var owner = m;
+        for (var i = 0; i < path.length; i++) { owner = at; at = at ? at[path[i]] : undefined; }
+        if (typeof at !== 'function') throw refusal('no-such-verb', 'the ' + fam + ' family has no ' + path.join('.'));
+        return at.apply(owner, args);
+      });
+    };
+    if (typeof Proxy !== 'function') return fn;
+    return new Proxy(fn, {
+      get: function (target, prop) {
+        if (typeof prop !== 'string' || prop === 'then' || prop in target) return target[prop];
+        return lazyCall(fam, path.concat(prop));
+      },
+    });
+  }
+  function lazyFamily(fam) {
+    if (bound[fam] || typeof Proxy !== 'function') return;
+    var held = self[fam] && typeof self[fam] === 'object' && !Array.isArray(self[fam]) ? self[fam] : {};
+    self[fam] = new Proxy(held, {
+      get: function (target, prop) {
+        if (typeof prop !== 'string' || prop === 'then' || prop in target || bound[fam]) return target[prop];
+        return lazyCall(fam, [prop]);
+      },
+    });
+  }
   self.start = function () {
     if (started) return started;
+    // THE TREE ONLY, NO FAMILY BOUND UP FRONT (goal/G43.27; Andy: "lazy-load, is a tree....", G41.3, and now "AGAIN, when i
+    // say lazy-load you found a way to fuck it up", "cw, BUILD it that way."): each family the tree names stands on the
+    // object as itself, and binds the first time something calls it (lazyFamily, below), as a file loads the first time it is
+    // required. A page that uses three families asks three interfaces, never sixteen.
     started = tree().then(function (names) {
-      return Promise.all(Object.keys(names || {}).map(function (fam) { return bindOwn(fam).then(null, function () { /* a family without an interface is not on the object */ }); }));
+      Object.keys(names || {}).forEach(lazyFamily);
     }).then(function () {
       // THE CACHE COMES WITH THE CLIENT (goal/G41.3, Q2): every streamed dataset is kept, each family through its own
       // data.js (goal/G41.28). Asked once the page is parsed, so a page that loads it by tag keeps the one
