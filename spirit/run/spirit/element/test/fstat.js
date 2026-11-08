@@ -127,5 +127,16 @@ test.startTest('fstat.js: a file\'s info (goal/G43.17)');
   await settle();
   ok(w.asked.some(function (a) { return a[0] === 'stat' && a[1] === 'docs/a.md'; }) && !w.asked.some(function (a) { return a[0] === 'annotations'; }), 'it asks fs.stat for the file, and no annotations: they are the node\'s only', 'asked: ' + short(w.asked));
   ok(w.shell.length === 0, 'with an old shell on the page it asks it nothing: no owner app, no Open with', 'asked of the old shell: ' + short(w.shell));
+
+  // THE ATTACKER (rule/27): annotations on offer, a face part full of them, and still nothing of them asked or drawn
+  // (goal/G43.20; Andy: "ANNOTATIONS WILL BE NODE ONLY."; the More Information box goes).
+  test.subHeading('the attacker: annotations on offer, a face part full of them: none asked, no More Information drawn');
+  const wa = world({ annotations: { face: { secret: 'shown?', nested: { deeper: 1 } }, client: { old: true } } });
+  const host = box();
+  wa.E.create(host, { path: 'docs/b.md' });
+  await settle();
+  const deep = function (b) { return (b.innerHTML || '') + (b.kids || []).map(deep).join(''); };
+  ok(!wa.asked.some(function (a) { return a[0] === 'annotations'; }), 'with annotations on offer, it still asks none', 'asked: ' + short(wa.asked));
+  ok(!/More Information|secret|shown\?/.test(deep(host)), 'and draws no More Information box, nor any of their words', 'drawn: ' + short(deep(host).slice(0, 300)));
 }()).then(function () { test.reportSuccessFailureCount(); },
   function (e) { test.fail('the test threw ' + (e && e.stack || e)); test.reportSuccessFailureCount(); });

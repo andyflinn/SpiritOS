@@ -38,7 +38,7 @@ test.startTest('jobs-stateLayout.js: spirit/state/<name>/ holds node.json, cache
   fs.rmSync(path.join(run, 'process'), { recursive: true, force: true });
   fs.rmSync(path.join(run, 'relay-state'), { recursive: true, force: true });
   const port = await H.freePort();
-  const child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+  let child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
   const base = 'http://127.0.0.1:' + port;
   const ask = function (call, args) {
     return fetch(base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) })
@@ -88,6 +88,58 @@ test.startTest('jobs-stateLayout.js: spirit/state/<name>/ holds node.json, cache
     test.subHeading('no relay-state, no process: nothing of the node lives anywhere else');
     ok(!fs.existsSync(path.join(run, 'relay-state')), 'no spirit/run/relay-state/ is made', 'the node made spirit/run/relay-state/: ' + short(fs.existsSync(path.join(run, 'relay-state')) ? fs.readdirSync(path.join(run, 'relay-state')) : []));
     ok(!fs.existsSync(path.join(run, 'process')), 'no spirit/run/process/ is made', 'the node made spirit/run/process/');
+
+    // THE ATTACKER (rule/27: "tests MUST be "the enemy, the attacker" an try everything conceivable to break the code"): the
+    // layout must hold through what a node lives through, and no name may make a folder of the node's state elsewhere.
+    const layoutHolds = function (when) {
+      const bad = [];
+      fs.readdirSync(state).filter(function (n) { return fs.statSync(path.join(state, n)).isDirectory(); }).forEach(function (n) {
+        fs.readdirSync(path.join(state, n)).filter(function (e) { return MAY.indexOf(e) === -1; }).forEach(function (e) { bad.push(n + '/' + e); });
+      });
+      if (fs.existsSync(path.join(run, 'relay-state'))) bad.push('run:/relay-state');
+      if (fs.existsSync(path.join(run, 'process'))) bad.push('run:/process');
+      ok(!bad.length, when + ': the layout holds, nothing out of place', when + ': out of place: ' + short(bad));
+    };
+    test.subHeading('the attacker: an app switched off and on again');
+    await ask('app.active', { key: 'backup', active: false });
+    await H.sleep(2000);
+    await ask('app.active', { key: 'backup', active: true });
+    await H.until(function () { return ask('api', { family: 'backup' }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
+    layoutHolds('backup switched off and on');
+
+    test.subHeading('the attacker: the node killed and started again on the same tree');
+    try { child.kill('SIGKILL'); } catch (e) { /* gone */ }
+    await H.sleep(1500);
+    child = spawn(process.execPath, ['spirit/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
+    const back = await H.until(function () { return ask('api', {}).then(function (r) { return r.status === 200; }); }, 60000);
+    ok(!!back, 'the node comes back after a kill', 'the node did not come back');
+    const again = [];
+    for (const name of SERVERS) {
+      const a = await H.until(function () { return ask('api', { family: name }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
+      if (a) again.push(name);
+    }
+    ok(again.length === SERVERS.length, 'and every app server switched on starts again', 'answering after the restart: ' + short(again));
+    layoutHolds('after a kill and a restart');
+
+    test.subHeading('the attacker: names that would put the node\'s state elsewhere');
+    const evil = ['..', '../..', 'relay-state', 'process', '../relay-state', 'desk/../../x', '.', '', 'con', 'desk/', 'a b', '__proto__'];
+    const took = [];
+    for (const k of evil) {
+      const r = await ask('app.active', { key: k, active: true });
+      if (r.status >= 200 && r.status < 300 && r.body && r.body.ok !== false) took.push(k);
+    }
+    ok(!took.length, 'app.active refuses every name of no app (' + evil.length + ' tried)', 'taken: ' + short(took));
+    await H.sleep(2000);
+    const outside = fs.readdirSync(run).filter(function (n) { return ['relay-state', 'process', 'x'].indexOf(n) !== -1; });
+    ok(!outside.length, 'and no folder appeared at the run root', 'made: ' + short(outside));
+    layoutHolds('after the bad names');
+
+    test.subHeading('the attacker: an app\'s folder taken away while it runs');
+    fs.rmSync(path.join(run, 'spirit', 'app', 'backup'), { recursive: true, force: true });
+    await H.sleep(4000);
+    const alive = await ask('api', {});
+    ok(alive.status === 200, 'the node still answers with backup\'s folder gone under it', 'api answered ' + alive.status);
+    layoutHolds('backup\'s app folder gone');
   } catch (e) {
     test.fail('the suite threw ' + (e && e.stack || e));
   } finally {

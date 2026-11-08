@@ -95,6 +95,64 @@ test.startTest('jobs-routes.js: every job id is a route in the spirit tree, one 
     const again = taken[0] ? (taken[0].body && (taken[0].body.id || taken[0].body.key)) : '';
     const g = await ask('jobs.get', { key: 'spirit.app.zzRun' });
     ok(again === 'spirit.app.zzRun' && ((g.body && g.body.job) || {}).status === 'running', 'after its run ended, a new run is the same id, spirit.app.zzRun, running again', 'id ' + short(again) + ', job ' + short(g.body));
+
+    // THE ATTACKER (rule/27: "tests MUST be "the enemy, the attacker" an try everything conceivable to break the code").
+    test.subHeading('the attacker: ten starts at once, and a start right after a cancel');
+    await H.sleep(4500);
+    const ten = await Promise.all(Array.from({ length: 10 }, function () { return ask('jobs.create', { command: process.execPath, args: [runApp] }); }));
+    const tenIn = ten.filter(function (r) { return r.status >= 200 && r.status < 300; });
+    ok(tenIn.length === 1, 'ten starts at the same moment: exactly one gets in', tenIn.length + ' got in: ' + short(ten.map(function (r) { return r.status; })));
+    const cancelled = await ask('jobs.cancel', { id: 'spirit.app.zzRun' });
+    await H.sleep(800);
+    const afterCancel = await ask('jobs.create', { command: process.execPath, args: [runApp] });
+    ok(cancelled.status >= 200 && cancelled.status < 300 && afterCancel.status >= 200 && afterCancel.status < 300 && (afterCancel.body || {}).id === 'spirit.app.zzRun',
+      'cancelled, its next start takes the same id over', 'cancel ' + short(cancelled) + ', start ' + short(afterCancel));
+    await ask('jobs.cancel', { id: 'spirit.app.zzRun' });
+
+    test.subHeading('the attacker: a run app\'s route reached by a crooked path, a link, a second script, a json that only looks right');
+    const app = function (n) { return path.join(run, 'spirit', 'app', n); };
+    // A second script in the run app's own folder (the box: "A second script in an app folder is therefore never started").
+    fs.writeFileSync(path.join(app('zzRun'), 'other.js'), 'setTimeout(function () {}, 100);\n');
+    // "run": "true", a string, not true.
+    plant(run, 'zzString', 4000, false);
+    fs.writeFileSync(path.join(app('zzString'), 'zzString.json'), JSON.stringify({ identity: { icon: '🧪', label: 'zzString', intrinsic: false }, node: { mount: false, run: 'true' } }));
+    // A run app's script with no json beside it.
+    fs.mkdirSync(app('zzBare'), { recursive: true });
+    fs.writeFileSync(path.join(app('zzBare'), 'zzBare.js'), 'setTimeout(function () {}, 100);\n');
+    // A link outside every app folder pointing at the run app's script, and the mount app reached through the run app's folder.
+    const link = path.join(run, 'scratchScripts', 'zzLink.js');
+    try { fs.symlinkSync(runApp, link); } catch (e) { /* no links here: the case is judged as not made */ }
+    const crooked = [
+      ['the mount app through the run app\'s folder (../)', [path.join(app('zzRun'), '..', 'zzMount', 'zzMount.js')]],
+      ['a second script in the run app\'s folder', [path.join(app('zzRun'), 'other.js')]],
+      ['an app whose json says run "true", a string', [path.join(app('zzString'), 'zzString.js')]],
+      ['an app script with no json', [path.join(app('zzBare'), 'zzBare.js')]],
+      ['a link elsewhere to the run app\'s script', [link]],
+      ['the run app\'s script with a trailing slash', [runApp + '/']],
+      ['no script at all', []],
+    ];
+    const gotIn = [];
+    for (const c of crooked) {
+      const r = await ask('jobs.create', { command: process.execPath, args: c[1] });
+      if (!(r.status >= 400)) gotIn.push(c[0] + ': ' + r.status + ' ' + short((r.body || {}).id));
+      if (r.body && r.body.id) await ask('jobs.cancel', { id: String(r.body.id) });
+    }
+    ok(!gotIn.length, 'all ' + crooked.length + ' are refused', gotIn.length + ' got in: ' + short(gotIn));
+    const shell = await ask('jobs.create', { command: '/bin/sh', args: [runApp] });
+    ok(shell.status >= 400, 'the run app\'s script under another command (/bin/sh) is refused', 'jobs.create answered ' + short(shell));
+
+    test.subHeading('the attacker: ids that are no route, asked of jobs.get and jobs.cancel');
+    const bad = ['..', '../spirit', '__proto__', 'constructor', 'spirit.app.', 'spirit..fs', 'spirit.fs/../..', '', 'job_1', 'spirit.app.zzRun.extra'];
+    const crashed = [];
+    for (const id of bad) {
+      const a = await ask('jobs.get', { key: id });
+      const b = await ask('jobs.cancel', { id: id });
+      if (a.status === 0 || b.status === 0 || a.status >= 500 || b.status >= 500) crashed.push(id + ' ' + a.status + '/' + b.status);
+      else if (a.status < 300 && a.body && a.body.job) crashed.push(id + ' found a job');
+    }
+    ok(!crashed.length, 'each is answered as no job, nothing found, nothing crashed (' + bad.length + ' ids)', short(crashed));
+    const still = await ask('api', {});
+    ok(still.status === 200, 'and the node still answers after all of it', 'api answered ' + still.status);
   } catch (e) {
     test.fail('the suite threw ' + (e && e.stack || e));
   } finally {

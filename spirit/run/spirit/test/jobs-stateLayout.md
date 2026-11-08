@@ -23,3 +23,13 @@ deskVerify, backup and agent switched on. Never a live node.
 
 - A server handed `spirit/state/<name>` itself as its state (its db then lands beside `node.json`): red, tried.
 - A stray file in an app's state folder; a socket elsewhere; a `relay-state/` or `process/` made again.
+
+## The attacker (rule/27)
+
+After each, the layout holds (every app's folder only `node.json`, `cache/`, `data/`, `door.sock`; no `run:/relay-state`,
+no `run:/process`):
+- an app switched off and on again;
+- the node killed (SIGKILL) and started again on the same tree, every app server starting again;
+- `app.active` with names of no app (`..`, `../..`, `relay-state`, `process`, `../relay-state`, `desk/../../x`, `.`,
+  empty, `con`, `desk/`, `a b`, `__proto__`): every one refused, and no folder appears at the run root;
+- an app's folder taken away while it runs: the node still answers.

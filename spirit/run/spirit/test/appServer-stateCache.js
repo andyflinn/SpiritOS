@@ -82,6 +82,38 @@ test.startTest('appServer-stateCache.js: appServer reads and writes its cache in
     const atTop = await startWith(state);
     ok(!atTop.seen, 'a file at spirit/state/follower/<id>.json is not read back: a cache left behind is rebuilt from the stream', 'came back: ' + short(atTop.seen));
     ok(fs.existsSync(path.join(state, id + '.json')), 'and it is left where it was, not moved', 'the old file was moved or removed');
+
+    // THE ATTACKER (rule/27: "tests MUST be "the enemy, the attacker" an try everything conceivable to break the code").
+    // startWith plants a good file; each case below then spoils cache/ before the follower starts again.
+    const spoiled = async function (spoil) {
+      fs.rmSync(state, { recursive: true, force: true });
+      fs.mkdirSync(cache, { recursive: true });
+      spoil();
+      const seen = path.join(root, 'seen-x' + kids.length + '.json');
+      const saved = path.join(root, 'saved-x' + kids.length + '.json');
+      const pipe = require(path.join(run, 'spirit', 'appClient.js')).pipePathFor(root, NAME, process.platform, 'app');
+      if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
+      const kid = spawn(process.execPath, [path.join('spirit', 'app', NAME, NAME + '.js'), '--pipe', pipe], { cwd: run, stdio: 'ignore', env: Object.assign({}, process.env, { ROW_SEEN: seen, SAVED: saved }) });
+      kids.push(kid);
+      const up = await until(function () { return Promise.resolve(fs.existsSync(saved)); }, 8000);
+      await sleep(200);
+      try { kid.kill(); } catch (e) { /* gone */ }
+      return { up: !!up, seen: readJson(seen), saved: readJson(saved) };
+    };
+    const OTHER = 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=';
+    test.subHeading('the attacker: a file named for one sender, holding another\'s key');
+    const swapped = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: OTHER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'swapped' }] })); });
+    ok(swapped.up && !swapped.seen, 'it is not read: a file is read only under its own sender\'s name', 'came back: ' + short(swapped.seen));
+    test.subHeading('the attacker: only a half-written .tmp, as a kill leaves it');
+    const half = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json.tmp'), JSON.stringify({ key: SENDER, family: FAMILY, run: 'r', n: 1, rows: [{ kept: 'half' }] })); });
+    ok(half.up && !half.seen, 'a .tmp is never read back', 'came back: ' + short(half.seen));
+    test.subHeading('the attacker: a cache file that is no JSON, and one that is JSON of the wrong shape');
+    const broken = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), '{"key": "' + SENDER + '", "rows": [ {"kept": '); });
+    ok(broken.up && !broken.seen && Array.isArray(broken.saved), 'a broken file: the server still starts, reads nothing back, and saves', 'up ' + broken.up + ', seen ' + short(broken.seen) + ', saved ' + short(broken.saved));
+    const shape = await spoiled(function () { fs.writeFileSync(path.join(cache, id + '.json'), JSON.stringify({ key: SENDER, family: FAMILY, run: 7, n: -3, rows: 'not a list' })); });
+    ok(shape.up && !shape.seen && Array.isArray(shape.saved), 'rows that are no list: nothing read back, and the server saves on', 'up ' + shape.up + ', seen ' + short(shape.seen));
+    const strays = fs.existsSync(state) ? fs.readdirSync(state).filter(function (f) { return ['cache', 'data', 'node.json', 'door.sock'].indexOf(f) === -1; }) : [];
+    ok(!strays.length, 'and after all of it spirit/state/follower/ holds nothing beside cache/ (and its socket)', 'also there: ' + short(strays));
   } catch (e) {
     test.fail('the suite threw ' + (e && e.stack || e));
   } finally {

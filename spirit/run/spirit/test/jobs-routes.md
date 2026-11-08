@@ -28,3 +28,13 @@ app; `zzMount`, an app without node run) and a script in no app folder. Never a 
   build's to name; a check written before them would guess an API. Asserted once the build names them.
 - **The Icons app initializes from spirit/iconSet.json.** Its own test, `spirit/app/icons/test/icons.js`, still reads
   `shell/icons/icons.js` with its run root one level short, and goal/G43.19 rewrites that app; the check belongs there.
+
+## The attacker (rule/27)
+
+- Ten starts of one run app at the same moment: exactly one gets in. Cancelled, its next start takes the same id over.
+- Refused, each: the mount app reached through the run app's folder (`../`); a second script in the run app's folder;
+  an app whose json says `"run": "true"`, a string; an app script with no json; a link elsewhere to the run app's
+  script; the run app's script with a trailing slash; no script at all; the run app's script under `/bin/sh`.
+- Ids that are no route (`..`, `../spirit`, `__proto__`, `constructor`, `spirit.app.`, `spirit..fs`, `spirit.fs/../..`,
+  empty, `job_1`, `spirit.app.zzRun.extra`), asked of `jobs.get` and `jobs.cancel`: no job found, nothing crashes, the
+  node still answers.

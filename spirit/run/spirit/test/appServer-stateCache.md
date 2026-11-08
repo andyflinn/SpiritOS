@@ -17,3 +17,11 @@ its cache on, following a sender whose family has a data.js here (desk). What it
 
 - The cache read or written in `spirit/state/<name>/` itself (today: red, 3 of 6).
 - A rescue that reads or moves the old file.
+
+## The attacker (rule/27)
+
+Each case spoils `cache/` before the follower starts, and it must still start and save:
+- a file named for one sender holding another's key: not read;
+- only a half-written `<id>.json.tmp`, as a kill leaves it: not read;
+- a file that is no JSON, and one of the wrong shape (`rows` no list, `run` a number, `n` negative): nothing read back.
+- After all of it `spirit/state/follower/` holds nothing beside `cache/`, `data/`, `node.json` and its socket.
