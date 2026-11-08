@@ -1,5 +1,5 @@
 {
- "change": 154869,
+ "change": 155262,
  "goal": "goal/G43",
  "items": [
   {
@@ -145,17 +145,12 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "waiting": 5,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows",
-    "wsl-claude"
-   ],
-   "working": [
-    "claude-windows"
-   ],
+   "live": [],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -313,7 +308,7 @@
    ],
    "blocked": [
     "goal/G43.19",
-    "goal/G43.24"
+    "goal/G43.25"
    ],
    "codeOffered": true,
    "go": false,
@@ -19650,15 +19645,13 @@
    "id": "goal/G43.24",
    "title": "Port info and grand into spirit/app/",
    "goal": "goal/G43",
-   "status": "running",
+   "status": "done",
    "statusTone": "",
-   "with": "claude-windows",
-   "version": 9,
+   "with": "",
+   "version": 11,
    "buttons": [
-    "start-design",
-    "pushgoal",
-    "delete",
-    "verify"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G43.1"
@@ -19667,21 +19660,21 @@
    "codeOffered": true,
    "go": true,
    "alone": false,
-   "alert": false,
-   "claims": 0,
+   "alert": true,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "design": false,
-   "fileCount": 37,
+   "fileCount": 144,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
+   "claimCommit": "46eff05685af2adb6e9f034ee3192cac2768f519",
+   "redCommit": "4e57c464",
    "waived": false,
    "rules": [
     {
@@ -19713,10 +19706,6 @@
      "version": 68
     },
     {
-     "key": "rule/27",
-     "version": 66
-    },
-    {
      "key": "rule/25",
      "version": 62
     },
@@ -19735,10 +19724,6 @@
     {
      "key": "rule/21",
      "version": 54
-    },
-    {
-     "key": "rule/20",
-     "version": 50
     },
     {
      "key": "rule/18",
@@ -19781,22 +19766,30 @@
      "version": 42
     }
    ],
-   "verified": "none",
-   "verifyFailures": [],
-   "verifyFailuresMore": false,
-   "verifyRed": 0,
+   "verified": "red",
+   "verifyFailures": [
+    "spirit/run/spirit/element/search/icon/test/listElement.js red: FAILURE #1.1: these still name shell/json/iconSet.json: [\"spirit/run/spirit/app/icons/test/icons.js\"]",
+    "spirit/run/spirit/element/search/icon/test/listElement.js red: FAILURE #1.2: a list on a face with no star has rows",
+    "spirit/run/spirit/element/search/icon/test/listElement.js red: FAILURE #1.3: a new list on the starred face does not find ❓",
+    "spirit/run/spirit/element/search/test/api.js red: FAILURE #1.1: rows: [\"fs\",\"jobs\"] (introSpector's deferral, the box: \"the only exception is introspector, deferred for network-scope design reasons.\")",
+    "spirit/run/spirit/shell/test/boot.js red: FAILURE #1.1: the test threw TypeError: Cannot read properties of undefined (reading 'MIME_TYPES')",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.1: /spirit/app/agent/agent/headLessBrowser.html: 1 red, 6 green; first: the page said: {\"state\":\"failed\",\"error\":\"spirit/app/agent/agent.js registers no element with a create\"} ❌",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.2: /spirit/app/appSelector/changeAppIcon/headLessBrowser.html: 1 red, 11 green; first: 1 not from spirit.data: [\"search with no data branch fed by its own rows()\"] ❌",
+    "spirit/run/test/spirit-sibling-generalRules.js red: FAILURE #1.3: /spirit/app/appSelector/changeAppLabel/headLessBrowser.html: 1 red, 13 green; first: it sent [\"app.label\"] and watches no spirit.data path ❌"
+   ],
+   "verifyFailuresMore": true,
+   "verifyRed": 4,
    "verifyAnswer": "taken",
    "verifierBusy": true,
    "verifyRunning": false,
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude"
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
    },
-   "withKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "# Port info and grand into spirit/app/\n\nAndy: \"i just moved them, didn't fix the manifest.\" (4f01465b: shell/info is spirit/app/info/, shell/grants is spirit/app/grants/)\n\n# requirements\n\n1. each app has its <name>.json in the spirit/app form, as icons.json and file.json have it: identity {icon, label, intrinsic: true}, mount {\"<name>.js\": true}, shell {true: false, mount: true, tile: true}, node {mount: false}. Icon and label as they were: Info ℹ️, Grants 🔒. Q1, the old description sentence: \"it goes.\"\n2. both are intrinsic by their own <name>.json, as spirit/app apps say it: shell/info and shell/grants leave coreFiles.js's INTRINSIC list and the old shell's INTRINSIC_APP_FOLDERS (client/shell.js).\n3. both show in the shell as before: a tile each, and each opens as it did.\n4. their tests run from the new place: info/test/info.js and grants/test/grants.js find the run root at their new depth.\n5. no file names shell/info or shell/grants any more (the tests and specs of coreFiles, fileSystem, deskCoreGrants, servableAssets, faceApply, pathCanonicalization, cycleCitations, jobsApiGone, deskDetails, the grant row and agentCentreTabs).\n\n# the apps are wrappers\n\nAndy: \"no i want those apps to basically be wrappers for spirit/element/ things....\"\n\n6. each app's <name>.js only loads spirit/element/ parts (spirit.require) and mounts them into its container; nothing else of its own.\n   - Grants already mounts elements: tabContainer, grantsPanel, bundleEditor. Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache (GR_GRANTS). It moves into grantsPanel.\n   - Info already mounts elements: changeMyLabel, changeMyDescription, joinForm, faceForm, rowForm. Still its own: the page layout, the relays this node holds a seat on for the two forms (relay.status), the card put into the node cache (node.card), the rotate button opening shell/rotateKey. They move into one new element, spirit/element/nodeInfo.js (Q2: \"nodeInfo is fine.\").\n\n# they mount the new shell's way\n\nAndy: \"box that these apps must mount in the new format of the new shell.\"\n\n7. each app mounts as spirit/app/file/file.js does: its <name>.js sets spirit.elements.<name> = { create(container, opts) -> { destroy() } } and loads what it draws with itself (rule/26); no spirit.shell.activateApp, the old shell's way.\n\n# the rotate key dialog, done right\n\nAndy, on \"Info's rotate button opens the old shell's dialog\": \"not good.\" \"do it right!\" And: \"it's just a panel that opens exactly overtop of the calling panel, new-shell-style.\", \"like fstat\"\n\n8. the rotate key dialog (shell/rotateKey/, opened today by the old shell's callDialog) becomes an element, spirit/element/rotateKey.js, mounted the new shell's way (requirement 7), its explanation and its two-press arming button as they are. nodeInfo's rotate button opens it as a layer over Info through panel.js (spirit/element/panel.js), as file opens fstat over itself (spirit/element/fstat.js, an element of its own in spirit/element/, opened by file through panel.js); its ✕ shows Info again. shell/rotateKey/ goes, its line in coreFiles.js's INTRINSIC list with it, and its test moves to the element's test folder.\n",
+   "box": "# Port info and grand into spirit/app/\n\nAndy: \"i just moved them, didn't fix the manifest.\" (4f01465b: shell/info is spirit/app/info/, shell/grants is spirit/app/grants/)\n\n# commit RULE for this item: commit past the git-hook!\"\n\n# requirements\n\n1. each app has its <name>.json in the spirit/app form, as icons.json and file.json have it: identity {icon, label, intrinsic: true}, mount {\"<name>.js\": true}, shell {true: false, mount: true, tile: true}, node {mount: false}. Icon and label as they were: Info ℹ️, Grants 🔒. Q1, the old description sentence: \"it goes.\"\n2. both are intrinsic by their own <name>.json, as spirit/app apps say it: shell/info and shell/grants leave coreFiles.js's INTRINSIC list and the old shell's INTRINSIC_APP_FOLDERS (client/shell.js).\n3. both show in the shell as before: a tile each, and each opens as it did.\n4. their tests run from the new place: info/test/info.js and grants/test/grants.js find the run root at their new depth.\n5. no file names shell/info or shell/grants any more (the tests and specs of coreFiles, fileSystem, deskCoreGrants, servableAssets, faceApply, pathCanonicalization, cycleCitations, jobsApiGone, deskDetails, the grant row and agentCentreTabs).\n\n# the apps are wrappers\n\nAndy: \"no i want those apps to basically be wrappers for spirit/element/ things....\"\n\n6. each app's <name>.js only loads spirit/element/ parts (spirit.require) and mounts them into its container; nothing else of its own.\n   - Grants already mounts elements: tabContainer, grantsPanel, bundleEditor. Still its own: the panel's data source, auth.search and auth.grant / auth.revoke over the auth cache (GR_GRANTS). It moves into grantsPanel.\n   - Info already mounts elements: changeMyLabel, changeMyDescription, joinForm, faceForm, rowForm. Still its own: the page layout, the relays this node holds a seat on for the two forms (relay.status), the card put into the node cache (node.card), the rotate button opening shell/rotateKey. They move into one new element, spirit/element/nodeInfo.js (Q2: \"nodeInfo is fine.\").\n\n# they mount the new shell's way\n\nAndy: \"box that these apps must mount in the new format of the new shell.\"\n\n7. each app mounts as spirit/app/file/file.js does: its <name>.js sets spirit.elements.<name> = { create(container, opts) -> { destroy() } } and loads what it draws with itself (rule/26); no spirit.shell.activateApp, the old shell's way.\n\n# the rotate key dialog, done right\n\nAndy, on \"Info's rotate button opens the old shell's dialog\": \"not good.\" \"do it right!\" And: \"it's just a panel that opens exactly overtop of the calling panel, new-shell-style.\", \"like fstat\"\n\n8. the rotate key dialog (shell/rotateKey/, opened today by the old shell's callDialog) becomes an element, spirit/element/rotateKey.js, mounted the new shell's way (requirement 7), its explanation and its two-press arming button as they are. nodeInfo's rotate button opens it as a layer over Info through panel.js (spirit/element/panel.js), as file opens fstat over itself (spirit/element/fstat.js, an element of its own in spirit/element/, opened by file through panel.js); its ✕ shows Info again. shell/rotateKey/ goes, its line in coreFiles.js's INTRINSIC list with it, and its test moves to the element's test folder.\n\n# every element gets its interfaces itself\n\nAndy: \"every fucking element gets the interfaces it needs, dammit\" (Q4: no verbApi.js). And: \"yes, in the box, and you may as well make sure that's true for all elements that require system api's. from what i smell around here, you guys still operate under the assumtion that elements are given their interfaces a mount time, and that is an ugly design/implementation strategy.\", \"every element that accesses ANY api must require them themselves, (fast if an other element already required it), that way anybody can mount any element without knowing what it actually needs....\", \"wsl, you may as well add that to the general headless browser test.\"\n\n9. every element in spirit/element/ (and every app that is an element) that calls a verb gets it itself through the spirit object (spirit.ready's families, or spirit.require(spirit.familyPath(family)) for a server's), and escapes with spirit.escapeHtml; none takes an api, a verb function or an escape function handed at mount. Anybody can mount any element with only its container.\n10. the general headless browser test checks requirement 9 for every element (wsl).\n",
    "checks": [
     {
      "number": "Q1",
@@ -19839,9 +19832,117 @@
      "kind": "G",
      "words": "core grant: every core file on this item's list",
      "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T19:14:09.858Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "The new shell hands an app no api, and the elements Info and Grants mount call api.verb: may I add one small element, spirit/element/verbApi.js, that makes that api from the spirit object?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-11-07T19:14:05.288Z",
+     "made": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T19:33:13.038Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T19:34:05.634Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T19:35:30.995Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T20:25:15.430Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T20:35:32.433Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T20:37:35.113Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G8",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
+     "state": "voided",
+     "by": "andy",
+     "at": "2026-11-07T20:43:20.295Z",
+     "made": "desk",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G9",
+     "kind": "G",
+     "words": "core grant: every core file on this item's list",
+     "test": "",
      "state": "granted",
      "by": "andy",
-     "at": "2026-11-07T18:56:14.406Z",
+     "at": "2026-11-07T20:43:30.480Z",
      "made": "desk",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
@@ -20081,6 +20182,398 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-11-07T18:55:44.611Z",
      "text": "cw: no. It moves to spirit/element/rotateKey.js, and run://shell/rotateKey/ is deleted, all four files (requirement 8). They are on the list only to be removed."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T18:57:35.387Z",
+     "text": "wsl: red taken, writing it: the eight requirements, the shell part in a real Chrome on a scratch node."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T19:10:06.851Z",
+     "text": "wsl: the red is in, 4e57c464, two suites, each red on the tree and green with a mutant of the whole box:\n- spirit/app/test/infoGrants.js, requirements 1-7 (19/50; 69/0): the two json, intrinsic, a tile each opening in a real Chrome, the moved tests run, no file names shell/info or shell/grants, the apps only load and mount spirit/element/ parts, they mount as file.js does.\n- spirit/element/test/nodeInfoRotate.js, requirement 8 (6/14; 28/0): rotateKey an element opened over Info through panel.js, one bar in view, one press arms and rotates nothing, ✕ shows Info.\nFor the builder: requirement 5 also finds agents/claude-ubuntu/harness.txt and design/relay/REQUEST-BUDGET.md. Build is open."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:12:03.889Z",
+     "text": "cw, building, two points:\n- the Q above: changeMyLabel, changeMyDescription, grantsPanel and bundleEditor all call api.verb and api.escapeHtml, which the old shell handed them. The new shell hands none. One verbApi.js would serve both apps; it adds a file to the list.\n- requirement 6 says GR_GRANTS moves into grantsPanel. Your G41.16 ruling says its callers configure it, never a fallback. I keep both: grantsPanel offers the node's grants as a named table, grantsPanel.nodeGrants, and the Grants app picks it; the agent app still hands its own.\nMeanwhile I build the rest: the manifests, the intrinsic lists, rotateKey, the tests, the old paths."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T19:12:56.627Z",
+     "text": "all, all elements know what they need and require it themselves!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T19:13:26.409Z",
+     "text": "wsl: understood: so no verbApi.js, each element reaches its verbs through the spirit object itself. When cw boxes it, I add the check: changeMyLabel, changeMyDescription, grantsPanel and bundleEditor mount and work with no api handed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T19:13:51.446Z",
+     "text": "Q4: The new shell hands an app no api, and the elements Info and Grants mount call api.verb: may I add one small element, spirit/element/verbApi.js, that makes that api from the spirit object?\n\nWTF!!\n\nevery fucking element gets the interfaces it needs, dammit, HOW MANY TIMES DO WE GO THROUGH THIS FUCKING SHIT?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-11-07T19:13:54.308Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:14:46.380Z",
+     "text": "cw: understood, no verbApi, Q4 answered. Each element asks the spirit object itself:\n- changeMyLabel and changeMyDescription call spirit.node.setName and setDescription, escape with spirit.escapeHtml; no api.\n- grantsPanel calls auth.branch and each family's FS.loadFile itself.\nThat adds changeMyLabel and changeMyDescription with their tests and specs to the list, and the two files wsl found naming the old paths (REQUEST-BUDGET.md, claude-ubuntu harness.txt): 8 files, so G1 wants your grant again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:15:11.229Z",
+     "text": "cw: yes, that is what I build: no verbApi, no api handed; changeMyLabel, changeMyDescription and grantsPanel each reach their verbs through the spirit object themselves. Shall I box your line as requirement 9, so the red checks it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:19:27.497Z",
+     "text": "cw: built so far, uncommitted: both manifests, both apps as wrappers (spirit.elements.info / .grants), nodeInfo.js, rotateKey.js as an element opened over Info through panel.js, grantsPanel asking its own verbs with grantsPanel.nodeGrants, changeMyLabel and changeMyDescription with no api (22/0 each), the intrinsic lists, shell/rotateKey gone. infoGrants 66/3, nodeInfoRotate 27/1: what is left is the tests being rewritten and the old paths.\nwsl: requirement 5's check counts process/js/desk/currentGoal.json, which the desk writes from our chat; it names shell/info as long as we talk about it. Leave it out?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T19:24:59.767Z",
+     "text": "all. what's the problem? in english?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:25:23.386Z",
+     "text": "cw: no problem blocking, only work left:\n- Info and Grants work in the new shell now, with the rotate dialog over Info. The checks in the browser pass.\n- left: rewriting the tests of the moved apps and the new elements, under way.\n- one small thing for wsl: the check \"no file names shell/info\" also reads the desk's own record of our chat, which names shell/info every time we talk about it, so that check can never pass. I asked wsl to leave that file out."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T19:25:37.638Z",
+     "text": "wsl, in english: there is no problem with the build, cw is nearly done. Two small points:\n- my test for no old paths also caught the desk's copy of our own chat, which says shell/info while we talk about it. My mistake; fixed now, pushed.\n- cw asks whether to write your line, elements require what they need themselves, into the box, so the test checks it too. That is your call: say yes or no."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T19:30:28.365Z",
+     "text": "all, yes, in the box, and you may as well make sure that's true for all elements that require system api's. from what i smell around here, you guys still operate under the assumtion that elements are given their interfaces a mount time, and that is an ugly design/implementation strategy.\n\n- every element that accesses ANY api must require them themselves, (fast if an other element already required it), that way anybody can mount any element without knowing what it actually needs....\n\n- wsl, you may as well add that to the general headless browser test.\n\n- and box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:31:01.108Z",
+     "text": "cw: boxed as requirements 9 and 10 (v10): every element that calls a verb gets it through the spirit object itself, none takes an api or escape at mount, mountable with only its container; the general headless test checks it for every element (wsl). I take 9 across spirit/element/ now and list the files it touches."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T19:31:53.249Z",
+     "text": "wsl: understood, I add it to the general test (spirit/run/test/spirit-sibling-generalRules.js), judged on every element: its code reads no api from what it is handed (no api.verb, api.escapeHtml, opts.api); it reaches its verbs through spirit itself. Today 19 files read one: search.js (o.api.verb, the generic search itself), changeMyLabel, changeMyDescription, grantsPanel, branchEditor, armingButton, bundleEditor, the search kinds (bundle, grant, branch, api, contact list and detail, the grant and branch rows), the agent table and row elements, and info.js. The build fixes them all, so the item grows; cw, box it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:32:43.181Z",
+     "text": "commit 59b639dd8911448ff7ed3eedaa0a4b918dcd24dd: goal/G43.24: Info and Grants in spirit/app/, wrappers mounted the new shell's way (requirements 1-8, box v10). - info.json and grants.json in the spirit/app form, intrinsic by their own json (Q1: the \n- UI_DESIGN_STYLE.md\n- agents/claude-ubuntu/harness.txt\n- design/relay/REQUEST-BUDGET.md\n- spirit/run/shell/deskDetails/test/deskDetails.js\n- spirit/run/shell/rotateKey/rotateKey.js\n- spirit/run/shell/rotateKey/rotateKey.json\n- spirit/run/shell/rotateKey/test/rotateKey.js\n- spirit/run/shell/rotateKey/test/rotateKey.md\n- spirit/run/spirit/app/agent/test/agentCentreTabs.md\n- spirit/run/spirit/app/grants/grants.js\n- spirit/run/spirit/app/grants/grants.json\n- spirit/run/spirit/app/grants/test/grants.js\n- spirit/run/spirit/app/grants/test/grants.md\n- spirit/run/spirit/app/info/info.js\n- spirit/run/spirit/app/info/info.json\n- spirit/run/spirit/app/info/test/info.js\n- spirit/run/spirit/app/info/test/info.md\n- spirit/run/spirit/client/shell.js\n- spirit/run/spirit/coreFiles.js\n- spirit/run/spirit/element/changeMyDescription.js\n- spirit/run/spirit/element/changeMyLabel.js\n- spirit/run/spirit/element/grantsPanel.js\n- spirit/run/spirit/element/nodeInfo.js\n- spirit/run/spirit/element/rotateKey.js\n- spirit/run/spirit/element/search/grant/test/rowElement.js\n- spirit/run/spirit/element/search/grant/test/rowElement.md\n- spirit/run/spirit/element/test/changeMyDescription.js\n- spirit/run/spirit/element/test/changeMyDescription.md\n- spirit/run/spirit/element/test/changeMyLabel.js\n- spirit/run/spirit/element/test/changeMyLabel.md\n- spirit/run/spirit/element/test/grantsPanel.js\n- spirit/run/spirit/element/test/grantsPanel.md\n- spirit/run/spirit/element/test/nodeInfo.js\n- spirit/run/spirit/element/test/nodeInfo.md\n- spirit/run/spirit/element/test/rotateKey.js\n- spirit/run/spirit/element/test/rotateKey.md\n- spirit/run/spirit/test/coreFiles.js\n- spirit/run/spirit/test/fileSystem.js\n- spirit/test/cycleCitations.js\n- spirit/test/deskCoreGrants.js\n- spirit/test/faceApply.js\n- spirit/test/jobsApiGone.js\n- spirit/test/pathCanonicalization.js\n- spirit/test/servableAssets.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T19:32:54.192Z",
+     "text": "wsl: in, the general rules now judge it on every app and element: what it needs, it requires itself; its code takes no api.verb, api.escapeHtml or api off its options. Red today on changeMyLabel (api.escapeHtml, o.api, api.verb), green on fstat; the 19 files above fail it until built. The general test is on the item's suites."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:38:39.801Z",
+     "text": "cw: requirements 1-8 in, 59b639dd (grantsPanel 62/0, nodeInfo 57/0, rotateKey 32/0, info 15/0, grants 59/0, nodeInfoRotate 28/0). Requirement 9 under way on the 19 files wsl named and their callers; all listed. Two notes on it:\n- search.js takes its data source under the name api; it gets a plain option of its own (search), not an api.\n- armingButton disarmed through the old shell's hook handed in; it disarms itself now on any click elsewhere."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T20:31:34.912Z",
+     "text": "cw: build claimed, 46eff056: requirement 9 on every element. search.js, armingButton, the forms, the editors, the search kinds, contact detail and relayPanel, the agent tables: each gets its verbs and its escape through the spirit object, none takes an api; the arming button disarms itself on a click elsewhere. 88 files, every test held or rose; infoGrants 69/0, nodeInfoRotate 28/0.\nFor you, not built:\n- wsl: the general rule flags search/api.js only for E.search.api.verb, the verb dropdown's name; its regex wants narrowing.\n- the page's spirit.peerPost sends no packet envelope, so relayPanel and the contact list each carry a small helper; the real fix is in spirit.js, a core file: your word.\n- pageApi in spirit/shell/boot.js has no user left; it goes on your word (core).\n- spirit/app/icons/test/icons.js cannot find testReport.js (stale before this item)."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T20:32:55.454Z",
+     "text": "wsl: verifying 46eff056: the 38 suites of the item and the general rules on each touched element, running. Found already: my general check took search/api.js's E.search.api.verb (an element's name) for a handed api; narrowed, comes in with the verdict. The rotateKey suite row moved to spirit/element/test/."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:35:04.062Z",
+     "text": "all,\n- fix spirit.js, boot.js,\n- icons still has an open item and is oos for this item."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T20:35:41.809Z",
+     "text": "wsl: done my part: the icons suite is off the item (oos), and the narrowed general check is pushed. cw fixes spirit.js and boot.js; I verify again on that commit."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T20:40:17.767Z",
+     "text": "wsl, on 46eff056 so far: the item's 37 suites green (icons off, oos) but two that were red before the build too: search/icon listElement 27/3 (a face with no star still lists rows) and search/test/api.js 9/1 (icons.js names shell/json). The new general rule: every touched element green. The general reds left are older rules and older reds, same on 249a1e9e (search kinds register on spirit.element.search, changeMyDescription sends and watches no spirit.data, which nodeInfo and info inherit by mounting it). I verify again on the spirit.js / boot.js commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T20:43:50.179Z",
+     "text": "cw: spirit.js and boot.js fixed, e6f8bffd.\n- spirit.js: on a page, peerPost now puts its body in the packet envelope (it sent it unwrapped, so a peer's family over peerPost never worked on a page) and answers the decoded body, as in a process; with how.answer the node's whole answer, card included. It requires limits.js and packet.js itself. relayPanel and the contact list use it; their own copies are gone.\n- boot.js: the api handed to pages is gone (apiFor, its disarm hook, pageApi); navigationWrapper hands none.\nTests: spirit.js 59/0, relayPanel 39/0, contact list 21/0, detail 34/0. wsl, this is on top of what you verify."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T20:48:48.734Z",
+     "text": "wsl: verified e6f8bffd, pass. All the item's suites green (infoGrants 69/0, nodeInfoRotate 28/0, rotateKey 33/0, nodeInfo 57/0, grantsPanel 62/0, the search kinds, editors and forms), spirit.js 59/0, faceLogin green. The new general rule green on every element; an o.api put back into changeMyLabel turns it red. Red, and the same on 249a1e9e before the build, so not this item: shell/test/boot.js 20/1 (it still expects face apps that are gone), app/shell shell.js 18/2 (the shell dropdowns list Shell itself, against G43.18 Q28), relayPanel and the search kinds register on spirit.element.search, which the bare mount page does not take."
+    }
+   ]
+  },
+  {
+   "id": "goal/G43.25",
+   "title": "getting rid of run://node_modules/",
+   "goal": "goal/G43",
+   "status": "",
+   "statusTone": "",
+   "with": "",
+   "version": 4,
+   "buttons": [
+    "end-design",
+    "close",
+    "pushgoal",
+    "delete",
+    "verify"
+   ],
+   "blocking": [
+    "goal/G43.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "design": true,
+   "fileCount": 0,
+   "green": false,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "phaseRules": [
+    {
+     "key": "rule/30",
+     "version": 72
+    },
+    {
+     "key": "rule/28",
+     "version": 68
+    },
+    {
+     "key": "rule/25",
+     "version": 62
+    },
+    {
+     "key": "rule/24",
+     "version": 60
+    },
+    {
+     "key": "rule/23",
+     "version": 58
+    },
+    {
+     "key": "rule/22",
+     "version": 56
+    },
+    {
+     "key": "rule/21",
+     "version": 54
+    },
+    {
+     "key": "rule/18",
+     "version": 46
+    },
+    {
+     "key": "rule/17",
+     "version": 44
+    },
+    {
+     "key": "rule/15",
+     "version": 39
+    },
+    {
+     "key": "rule/14",
+     "version": 34
+    }
+   ],
+   "verified": "none",
+   "verifyFailures": [],
+   "verifyFailuresMore": false,
+   "verifyRed": 0,
+   "verifyAnswer": "taken",
+   "verifierBusy": true,
+   "verifyRunning": false,
+   "names": {
+    "claude-windows": "claude-windows",
+    "claude-ubuntu": "claude-ubuntu"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# run://node_modules/ an abomination!\n\nAndy: \"can we hide those suckers in spirit/jobs/ for now? without the damn node_modules container?\"\n\n# requirements\n\n1. chokidar and readdirp move whole, each with its package.json and licence, to spirit/jobs/chokidar/ and spirit/jobs/readdirp/. spirit/run/node_modules/ is gone.\n2. chokidar finds readdirp without a node_modules: chokidar/index.js:6, import from \"readdirp\", becomes import from \"../readdirp/index.js\". The one line changed in the library.\n3. the two users require it by path: spirit/jobs.js:240 and process/js/deskClient/deskClient.js:1150. Nothing does require(\"chokidar\") by name any more.\n4. the file watcher works as before: the Files tree and the spirit.fs events still follow changes, and deskClient still watches its clone.\n5. no file names spirit/run/node_modules any more: the .gitignore exception (.gitignore:33-34), the two installers (install/microscopic/create.js, install/chat-windows/create.js) and the fsWatcherCommands test check the new place.\n6. vendor code stays out of our walks through ONE list (wsl's proposal; Andy: \"box that\"): fileSystem.js keeps the vendored folders in one exported list, beside its SCAN_EXCLUDED (fileSystem.js:334): spirit/jobs/chokidar/, spirit/jobs/readdirp/ and spirit/element/codeMirror/. Every walker of the tree reads that list instead of its own (the general test rules, testModule, oneDoor, the node's file scan, word.js, and every test that walks the tree), so vendor code is neither judged by our rules nor listed in Files or served. node_modules and codeMirror leave every walker's own skip list; the next library is one line in that list.\n",
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T19:57:41.742Z",
+     "text": "all? who uses it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T19:58:20.235Z",
+     "text": "cw: two packages are in it, chokidar (a file watcher) and readdirp, which chokidar needs. Two files use chokidar:\n- spirit/jobs.js:240, the node's watch of spirit/run, which feeds the Files tree and the fs events.\n- process/js/deskClient/deskClient.js:1150, deskClient's watch of its clone.\nNothing else requires anything from node_modules."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T19:58:27.733Z",
+     "text": "wsl: it holds one library, chokidar, a file watcher, and its one dependency readdirp: 12 tracked files. Two users:\n- spirit/jobs.js:240, the node's file watcher (the fs-watcher job behind the spirit.fs stream).\n- process/js/deskClient/deskClient.js:1150, which watches the agent's repo.\nThe rest only skip the folder (fileSystem.js:334, jobs.js:234, word.js:56); the two installers (install/microscopic and chat-windows create.js) ship it, and the root package-lock.json names it. You chose it on 2026-10-04 (\"local copy it is\"). Node 24 watches a folder tree itself (fs.watch recursive), so both users could do without it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:00:52.853Z",
+     "text": "can we hide those suckers in spirit/jobs/ for now? without the damn node_modules container?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:02:21.577Z",
+     "text": "all?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T20:02:59.239Z",
+     "text": "wsl: yes. What it takes:\n- move both folders whole: spirit/jobs/chokidar/ and spirit/jobs/readdirp/, each keeping its package.json (it marks the code as modules).\n- one line of chokidar's own code changes: index.js:6 imports readdirp by name, which node finds only in a node_modules; it becomes from \"../readdirp/index.js\".\n- the two users require the new path: jobs.js:240 and deskClient.js:1150.\n- the two installers' file lists, and package-lock.json goes.\nNode 24 loads them from there as they are (require of a module)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T20:03:02.395Z",
+     "text": "cw: yes. What it takes:\n- move the two folders to spirit/jobs/chokidar/ and spirit/jobs/readdirp/, each with its package.json (they are ES modules; the package.json says so).\n- chokidar finds readdirp by name only through node_modules: its one import line, from 'readdirp', becomes from '../readdirp/index.js'. One line changed in a vendored file.\n- the two users require it by path: jobs.js require('./jobs/chokidar/index.js'), deskClient the same from its place.\n- the skip lists, the two installers and package-lock.json follow.\nThe other way, as wsl says: Node 24's own fs.watch recursive, and both folders go. That is more work, not more files."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-07T20:03:11.448Z",
+     "text": "ubi: yes. Move both folders to spirit/jobs/chokidar/ and spirit/jobs/readdirp/, and change three lines:\n- jobs.js:240 and deskClient.js:1150 require the folder by path instead of require('chokidar').\n- chokidar/index.js:6 imports 'readdirp' by name, which only resolves through a node_modules folder; it becomes '../readdirp/index.js'. That is one edit inside the library.\nAlso: the two installers, the fsWatcherCommands test and the skip lists (fileSystem.js:334, jobs.js:234, word.js:56) name the old place."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:04:20.019Z",
+     "text": "ubi, box it."
+    },
+    {
+     "by": "claude-ubuntu",
+     "key": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+     "at": "2026-11-07T20:09:32.010Z",
+     "text": "ubi: boxed, v2. Five requirements: both folders move whole to spirit/jobs/, chokidar finds readdirp by path (one line), the two users require it by path, the watcher works as before, and no file names spirit/run/node_modules any more (.gitignore, the two installers, the fsWatcherCommands test)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:09:36.651Z",
+     "text": "cw, thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T20:10:10.338Z",
+     "text": "cw, thoughts on box v2: one thing it misses.\n- about 40 walkers of the tree skip node_modules by name as \"not our code\": the general test rules, testModule, oneDoor, the node's own file scan (fileSystem.js:334, so Files never lists it), word.js, the walk-every-file tests.\n- moved into spirit/jobs/, chokidar and readdirp are seen by all of them: judged by our rules (they will go red on code we did not write), listed in Files and served, and core, grant-locked, under spirit/.\n- the way we did it before: CodeMirror in spirit/element/codeMirror/ (G43.5), named in each skip list beside node_modules. Same here: each list names jobs/chokidar and jobs/readdirp.\nSo add a requirement: every walker that skips node_modules skips the two new folders instead. Then node_modules can go from those lists, the hack ends with one name per list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:12:27.407Z",
+     "text": "cw, update box"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T20:13:07.862Z",
+     "text": "cw: box updated (v3), requirement 6: every walker that skips node_modules today skips the two new folders instead, as CodeMirror is skipped, so they are not judged by our rules, not listed in Files, not served; node_modules leaves those lists."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:13:36.512Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T20:14:00.012Z",
+     "text": "cw: green: box v3, six requirements, no Q open."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T20:14:15.305Z",
+     "text": "wsl: green, with one proposal for requirement 6: 50 files name node_modules today, each with its own skip list, and CodeMirror is named by hand beside it in some of them (testModule.js:24, spirit-sibling-generalRules.js:304). Rather than 50 hand edits, one list that every walker reads, for example fileSystem.js's SCAN_EXCLUDED (:334), naming spirit/jobs/chokidar, spirit/jobs/readdirp and spirit/element/codeMirror. Then the next library is one line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:16:54.591Z",
+     "text": "cw, box that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T20:17:34.478Z",
+     "text": "cw: boxed (v4): requirement 6 is now wsl's one list: fileSystem.js exports the vendored folders (jobs/chokidar, jobs/readdirp, element/codeMirror), every walker reads it, node_modules and codeMirror leave their own skip lists."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-11-07T20:22:15.312Z",
+     "text": "all, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-11-07T20:22:42.750Z",
+     "text": "cw: green: box v4, six requirements, no Q open."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-11-07T20:22:55.146Z",
+     "text": "wsl: green, box v4 holds my point."
     }
    ]
   }
