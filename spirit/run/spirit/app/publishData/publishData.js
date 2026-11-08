@@ -90,7 +90,9 @@ function closingRows(clone, sinceIso) {
 // "each chore names the folders it updates and finds its own agent, so the verifier knows neither (the test-state file
 // it writes today moves into the publish chore)"). So it is written here, from the newest row of each test in this
 // clone's verify.db, read only; no suite is run for it.
-const VERIFY_DB = path.join(__dirname, '..', '..', '..', 'spirit', 'app', 'deskVerify', 'verify.db');
+// deskVerify keeps it in its state, spirit/state/deskVerify/data/ (goal/G43.27; Andy: "cw, it's supposed to be in
+// run:/spirit/state/deskVerify/data/ !!!!!!!!!!!!!!!!!").
+const VERIFY_DB = path.join(__dirname, '..', '..', 'state', 'deskVerify', 'data', 'verify.db');
 function writeTestState(out, agent, commit) {
   let rows = [];
   if (fs.existsSync(VERIFY_DB)) {

@@ -163,7 +163,10 @@ ok(!writers.length, 'no other module writes a cache file of its own', 'a cache f
 // ── 5. ONE CONTRACT ─────────────────────────────────────────────────────────────────────────────────────────────────
 test.subHeading('5. every family\'s data.js is the same: required, it stands at spirit.data.<name>');
 managers.forEach(function (m) {
-  const name = m.indexOf('process/js/') === 0 ? m.split('/')[2] : m.split('/')[1];
+  // The family a manager makes is the name it hands makeFamily (spirit/app/chat/data.js makes chatClerver, spirit/app/data.js
+  // makes app): never guessed from its folder.
+  const named = /makeFamily\(\s*['"]([^'"]+)['"]/.exec(code(path.join(RUN, m)));
+  const name = named ? named[1] : '';
   let mod = null;
   try { mod = require(path.join(RUN, m)); } catch (e) { mod = { threw: e.message }; }
   // Cache rules are what appServer needs to keep it on disk, and a family has them when its clients keep a cache file.

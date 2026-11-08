@@ -20,7 +20,7 @@
     {
       "name": "db",
       "default": "",
-      "description": "The database file. Empty: verify.db beside this server, which git ignores. Every suite hands a temp path, so a test never touches the measurements of a real run."
+      "description": "The database file. Empty: verify.db in its state, spirit/state/deskVerify/data/, which git ignores (goal/G43.27). Every suite hands a temp path, so a test never touches the measurements of a real run."
     },
     {
       "name": "suiteMs",

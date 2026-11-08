@@ -13,7 +13,8 @@
 //   - An outcome is red or green: "so we forget unhappy and worry just about red/green".
 //   - "the called suite sends one test-record at the time, no fucking bundling or other complicated stuff, we don't
 //     worry about the bit of extra time it takes." So `record` takes ONE record. Do not add a batch verb.
-//   - verify.db lives in this folder and git ignores it (goal/G8.1's box), so a clone carries the code and not the
+//   - verify.db lives in its state, spirit/state/deskVerify/data/, which git ignores (goal/G43.27; Andy: "cw, it's
+//     supposed to be in run:/spirit/state/deskVerify/data/ !!!!!!!!!!!!!!!!!"), so a clone carries the code and not the
 //     measurements; the `db` argument names another file, which every suite uses so no test touches the real one.
 //   - The commit, the dirty tree and the time are stamped HERE, never sent: deskVerify launched the run, so it knows
 //     them, and a suite cannot claim a commit it was not measured at.
@@ -47,9 +48,14 @@ const STATE = at !== -1 ? argv[at + 1] : '';
 // THE MANIFEST'S VALUES, as the node hands them (jobs.js: one JSON object, name -> value, as the first argument).
 let values = {};
 try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
-// verify.db beside this file unless `db` names another: a suite hands it a temp path, so the measurements of a real
-// run are never touched by a test.
-const DB_PATH = values.db ? path.resolve(String(values.db)) : path.join(__dirname, 'verify.db');
+// verify.db IN ITS STATE (goal/G43.27; Andy: "cw, it's supposed to be in run:/spirit/state/deskVerify/data/
+// !!!!!!!!!!!!!!!!!"): the folder the node hands it as --state, unless `db` names another: a suite hands it a temp path,
+// so the measurements of a real run are never touched by a test. With neither, it has nowhere to keep them, and stops.
+const DB_PATH = values.db ? path.resolve(String(values.db)) : (STATE ? path.join(STATE, 'verify.db') : '');
+if (!DB_PATH) {
+  console.error('deskVerify: no --state and no db; the node that starts this names its state folder');
+  process.exit(2);
+}
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new DatabaseSync(DB_PATH);

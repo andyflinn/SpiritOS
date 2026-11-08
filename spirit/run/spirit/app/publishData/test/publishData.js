@@ -45,8 +45,8 @@ test.startTest('publishData.js: an app of its own, run by Andy with Run (goal/G4
   const line = (/const\s+VERIFY_DB\s*=\s*([^;]+);/.exec(code(FILE)) || [])[1];
   let at = '';
   try { at = line ? new Function('path', '__dirname', 'return ' + line)(path, HERE) : ''; } catch (e) { at = 'threw ' + e.message; }
-  const want = path.join(RUN, 'spirit', 'app', 'deskVerify', 'verify.db');
-  ok(path.resolve(String(at)) === want, 'it reads deskVerify\'s verify.db where deskVerify keeps it, spirit/app/deskVerify/', 'it reads ' + short(at) + ', want ' + want);
+  const want = path.join(RUN, 'spirit', 'state', 'deskVerify', 'data', 'verify.db');
+  ok(path.resolve(String(at)) === want, 'it reads deskVerify\'s verify.db where deskVerify keeps it, its state spirit/state/deskVerify/data/', 'it reads ' + short(at) + ', want ' + want);
   let readme = null;
   try { readme = require(path.join(HERE, 'agentReadme.js')); } catch (e) { readme = null; }
   ok(!!readme && typeof readme.write === 'function', 'agentReadme.js stands beside it and loads', 'no agentReadme.js beside it in spirit/app/publishData/');

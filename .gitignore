@@ -219,23 +219,6 @@ app-state/
 # then none of them is anyone else's business, nor a test fixture's.
 spirit/run/app/
 
-# ── THE VERIFIER'S MEASUREMENTS (goal/G8.1) ──────────────────────────
-#
-# verify.db is what deskVerify measured in THIS clone: a row per test for
-# its first sighting and every red/green flip, with the commit and the
-# dirty tree it was measured on. Andy, 2026-10-06: "verify.db lives in
-# deskVerify's process folder and is .gitignored".
-#
-# Tracked, every clone would carry another box's history and a pull would
-# fight over it; and the history is only true of the machine that made it
-# (his box reported 21 reds and wsl's 25 on one commit, 2026-10-09).
-# Anchored: this is the one server's own folder, not a pattern to catch
-# every stray database.
-# The pattern covers SQLite's companions too (-wal, -shm): the database is opened in WAL mode, and a suite that
-# spawns every process server with no arguments (harnessAppSuites) opens the default file, so they appear in a clone
-# that only ran the harness.
-spirit/run/spirit/app/deskVerify/verify.db*
-
 #
 spirit/run/process/js/deskAgent/connection.json
 spirit/run/relay-state/process/deskAgent/connection.json
