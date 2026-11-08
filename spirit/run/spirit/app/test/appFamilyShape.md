@@ -16,7 +16,7 @@ The tree is read as it is, with comments stripped. The node's answers come from 
   - The interface the node serves for `agent` is `spirit/app/agent/api.js`.
   - `agent.FS.path` names `spirit/app/agent/api.js`, so the family folder is the app folder.
 - **4. No file names `spirit/app/agent/api/`.**
-- **6. A page finds `data.js` by the folder shape.** spirit.js's cacheManager asks no `FS.path`, and spirit.js asks `FS.path` nowhere.
+- **6. A page finds `data.js` by the folder shape.** spirit.js's cacheManager asks no `FS.path`, and spirit.js asks `FS.path` nowhere. On a real page of a scratch node, every family the node names whose data.js is in the tree is loaded by `spirit.cacheManager`, contact among them (an app and a system family share that name).
 - **7. No warning on a grant.**
   - `spirit/auth/grant.warning.txt` is gone, and no `<verb>.warning.txt` is left.
   - grantsPanel reads none.

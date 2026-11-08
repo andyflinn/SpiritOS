@@ -69,6 +69,21 @@ test.startTest('appFamilyShape.js: an app\'s family at its top, as spirit/<famil
   let where = { status: 0 };
   await H.until(function () { return ask('agent.FS.path', { path: 'api.js' }).then(function (a) { where = a; return a.status !== 503; }); }, 30000);
   ok(where.status === 200 && where.body && where.body.path === 'spirit/app/agent/api.js', 'the agent family\'s folder is the app folder: FS.path names spirit/app/agent/api.js', 'agent.FS.path answered ' + short(where));
+  // ON A REAL PAGE (requirement 6): every family the node names whose data.js is in the tree is loaded by
+  // spirit.cacheManager, an app's and a system family's alike, also where an app has a system family's name (contact).
+  const chrome = H.findChrome();
+  const page = chrome && node.up ? await H.chromePage(chrome) : null;
+  let loaded = null;
+  if (page && !page.error) {
+    await page.send('Page.navigate', { url: node.base + '/' });
+    await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)'); }, 30000);
+    loaded = await page.evaluate("Promise.resolve(window.spirit.ready).then(function (s) { return s.tree(); }).then(function (t) { return Promise.all(Object.keys(t || {}).map(function (n) { return window.spirit.cacheManager(n).then(function () { return [n, 'ok']; }, function (e) { return [n, String((e && e.message) || e)]; }); })); })");
+  }
+  const withData = function (n) { return ['spirit/' + n + '/data.js', 'spirit/app/' + n + '/data.js', 'process/js/' + n + '/data.js'].some(function (p) { return fs.existsSync(path.join(RUN, p)); }); };
+  const judged = (loaded || []).filter(function (r) { return withData(r[0]); });
+  ok(judged.length >= 5 && judged.some(function (r) { return r[0] === 'contact'; }), 'the world: a page asks the cache of ' + judged.length + ' families with a data.js, contact among them', 'a page asked ' + short(loaded) + ': nothing judged');
+  judged.forEach(function (r) { ok(r[1] === 'ok', 'on a page, spirit.cacheManager("' + r[0] + '") loads its data.js', 'on a page, spirit.cacheManager("' + r[0] + '"): ' + r[1]); });
+  if (page && page.kid) page.kid.kill();
   if (node.child) node.child.kill();
 
   test.subHeading('4. no file names spirit/app/agent/api/');
