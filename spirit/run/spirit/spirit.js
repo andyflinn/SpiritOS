@@ -223,13 +223,30 @@
   // The name is the one the node gives the family (its api answer), never one the family's api.js claims.
   function member(ask, getFile, fam, def) {
     var out = {};
+    // ONE SEARCH ON THE WIRE AT A TIME (goal/G43.27; Andy: "a search over the wire should always be \"serialized\" having two
+    // of those in flight at the some time is ridiculous.", "put that throttle on spirit.js"): per family and the node or peer
+    // it asks (this member), a search verb (search, or a name ending in .search) waits until the one before it has its
+    // answer; the same search asked again while it is on the wire gets that one answer. Every caller is served the same way,
+    // the search element's lists, the finder, a family's own names, with no code of its own.
+    var searchTail = Promise.resolve();
+    var searchOut = Object.create(null);
+    function isSearch(verb) { return verb === 'search' || /\.search$/.test(verb); }
+    function serialized(verb, args, send) {
+      var key = verb + '\n' + JSON.stringify(args || {});
+      if (searchOut[key]) return searchOut[key];
+      var turn = searchTail.then(send, send);
+      var mine = searchOut[key] = turn.then(function (v) { delete searchOut[key]; return v; }, function (e) { delete searchOut[key]; throw e; });
+      searchTail = turn.then(function () {}, function () {});
+      return mine;
+    }
     function call(verb, args) {
       var spec = def.verbs[verb];
       var name = fam + '.' + verb;
       if (!spec) return Promise.reject(refusal('no-such-verb', 'the ' + fam + ' family has no verb ' + verb));
       var bad = check(name, spec, args);
       if (bad) return Promise.reject(bad);
-      return Promise.resolve(ask(name, args || {})).then(function (r) {
+      var send = function () { return ask(name, args || {}); };
+      return Promise.resolve(isSearch(verb) ? serialized(verb, args, send) : send()).then(function (r) {
         var status = r && r.status;
         if (status >= 200 && status < 300) return r.body !== undefined && r.body !== null ? r.body : {};
         var b = (r && r.body) || {};
