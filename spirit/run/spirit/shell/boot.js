@@ -187,26 +187,15 @@
     s.textContent = text + '\n//# sourceURL=' + path;
     document.body.appendChild(s);
   }
-  // WHAT THE PAGE LOADS FROM HOME (goal/G40.7; Andy: "execute a hard-Coded download/fetch of all those scripts rather
-  // than stealing them from index.html ... but do not download kernel.js"): spirit's libraries, the sheets, the navigation
-  // and Join's steps. Every other element is loaded by what draws with it, through spirit.require. THE SHEETS COME FROM
-  // HOME TOO (goal/G43.18, box v29: "boot.js, shell.css, face.css and every other part of the shell come from the home node
-  // over that link"), the face's green last, over the shell's.
+  // WHAT THE PAGE LOADS FROM HOME UP FRONT: THE SHEETS ALONE (goal/G43.18, box v29: "boot.js, shell.css, face.css and every
+  // other part of the shell come from the home node over that link"), the face's green last, over the shell's. NO SCRIPT
+  // (goal/G43.27; Andy: "spirit.js still seems to be loading all sorts of shit that it doesn't need yet.", "wsl, I SAID,
+  // make sure that spirit.js does NOT load all that shit!!!!!!!!!"): every script comes when what draws with it requires
+  // it, through spirit.require, once (goal/G43.24: "every element that accesses ANY api must require them themselves").
+  // The list of goal/G40.7 that fetched spirit's libraries, Join's steps and the navigation here is gone.
   var FACE_PARTS = [
-    'spirit/ownerBadge.js',
-    'spirit/fieldRules.js',
-    'spirit/probabilityStringMatch.js',
-    'spirit/probabilityStringObjectMatch.js',
-    'spirit/probabilityBucket.js',
-    'spirit/lever.js',
-    'spirit/peerFile.js',
-    'spirit/limits.js',
-    'spirit/client/packet.js',
-    'spirit/client/apiTreeIndex.js',
     'shell.css',
     'shell/face.css',
-    'spirit/element/joinSteps.js',
-    'shell/navigationWrapper.js',
   ];
   // Asked all at once, run in their order: a part missing is said by the app that needs it.
   function loadParts() {
@@ -268,10 +257,11 @@
     } else {
       window.spirit.transport.events = events;
     }
-    // The spirit object gets its families once the node can be reached (goal/G32.1), and the parts load once they are
-    // there (goal/G40.7); then the file tree's row element, and the jobs family's cache manager (goal/G41.28).
+    // The spirit object gets its families once the node can be reached (goal/G32.1), and the sheets load once they are
+    // there; then what boot.js draws with, each required by it: the navigation frame, the file tree's row element, and the
+    // jobs family's cache manager (goal/G41.28).
     var parts = function () {
-      return loadParts().then(function () { return Promise.all([window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.cacheManager('jobs')]); })
+      return loadParts().then(function () { return Promise.all([window.spirit.require('shell/navigationWrapper.js'), window.spirit.require('spirit/element/search/file/rowElement.js'), window.spirit.cacheManager('jobs')]); })
         .then(null, function () { /* a part missing is said by what needs it */ });
     };
     return Promise.resolve(window.spirit.start()).then(parts, parts).then(function () {
@@ -321,8 +311,10 @@
     if (!joinCode) return;
     var code = joinCode;
     joinCode = '';
-    var S = window.spirit.element && window.spirit.element.joinSteps;
-    Promise.resolve(spirit.contact.search({ q: '*', relay: 'yes' })).then(function (s) {
+    // Join's steps come with the link that needs them (goal/G43.27), required here.
+    Promise.all([window.spirit.require('spirit/element/joinSteps.js'), spirit.contact.search({ q: '*', relay: 'yes' })]).then(function (got) {
+      var S = window.spirit.element && window.spirit.element.joinSteps;
+      var s = got[1];
       var url = S ? S.linkRelay(joinRelayKey, (s && s.items) || []) : '';
       if (!url) throw new Error('this node lists no relay that sent this link');
       return ask('relay.join', { url: url, email: '', code: code });

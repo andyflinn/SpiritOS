@@ -11,7 +11,7 @@
 (function (root) {
   var E = (root.spirit = root.spirit || {}).element = root.spirit.element || {};
   // WHAT IT USES, IT LOADS ITSELF (goal/G41.3): fieldInput, through spirit.require.
-  var parts = root.spirit.require ? root.spirit.require('spirit/element/fieldInput.js') : Promise.resolve();
+  var parts = root.spirit.require ? Promise.all([root.spirit.require('spirit/element/fieldInput.js'), root.spirit.require('spirit/fieldRules.js')]) : Promise.resolve();
   // ITS FORM IS A ROWFORM (goal/G41.27), asked as this file runs, so whoever requires this element is answered once the
   // rowForm is in and create can draw it at once.
   if (root.spirit.require) root.spirit.require('spirit/element/rowForm.js');

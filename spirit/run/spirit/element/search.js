@@ -56,7 +56,7 @@
   // the list is answered once they are in. And fieldInput, which holds the search words to their rule.
   if (window.spirit && typeof window.spirit.require === 'function') {
     ['spirit/probabilityStringMatch.js', 'spirit/probabilityStringObjectMatch.js', 'spirit/probabilityBucket.js', 'spirit/element/icon.js',
-      'spirit/element/fieldInput.js'].forEach(function (p) { window.spirit.require(p); });
+      'spirit/element/fieldInput.js', 'spirit/limits.js'].forEach(function (p) { window.spirit.require(p); });
   }
   function P() { return window.spirit.probability || {}; }
   // A VERB OF A FAMILY, THROUGH THE SPIRIT OBJECT (goal/G43.24, as grantsPanel asks): family.verb called on that family as

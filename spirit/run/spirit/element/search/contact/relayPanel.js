@@ -34,7 +34,7 @@
 // What it draws with, it loads itself (rule/26): the join and face forms (goal/G41.3; Andy: "bug: "A face name" doesn't show the
 // faceForm."), the armingButton its are-you-sure buttons are (goal/G41.9), and the icon element its fold marks are
 // (goal/G41.23), each panel drawn again once they are there.
-var iconReady = Promise.all(['spirit/element/icon.js', 'spirit/element/joinForm.js', 'spirit/element/faceForm.js', 'spirit/element/armingButton.js'].map(function (p) {
+var iconReady = Promise.all(['spirit/element/icon.js', 'spirit/element/joinForm.js', 'spirit/element/faceForm.js', 'spirit/element/armingButton.js', 'spirit/ownerBadge.js'].map(function (p) {
   return window.spirit && window.spirit.require ? window.spirit.require(p) : null;
 }));
 

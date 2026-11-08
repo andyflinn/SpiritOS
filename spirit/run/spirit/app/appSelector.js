@@ -84,8 +84,13 @@
         });
       }, look);
     }
+    // AN APP'S DETAIL COMES WHEN ONE OPENS (goal/G43.27; Andy: "make sure that spirit.js does NOT load all that shit!!!!!!!!!"):
+    // detailElement.js and what it draws with are required then, once, and not as the list loads.
+    function detailReady() { return window.spirit.require('spirit/app/appSelector/detailElement.js'); }
     function panel(row) {
-      open('detail', row, function (pane) { return window.spirit.elements.appDetail.create(pane, { row: row, panel: true }); });
+      open('detail', row, function (pane, closed) {
+        return detailReady().then(function () { return closed() ? null : window.spirit.elements.appDetail.create(pane, { row: row, panel: true }); });
+      });
     }
     function clearDetail() { if (detail) detail.destroy(); detail = null; }
     function pick(row) {
@@ -95,7 +100,13 @@
       clearDetail();
       if (row && face === 'tiles') { launch(row); return; }
       if (row && face === 'pane') { panel(row); return; }
-      detail = row ? window.spirit.elements.appDetail.create(detailBox, { row: row }) : null;
+      if (!row) return;
+      var asked = root.row;
+      detailReady().then(function () {
+        if (gone || root.row !== asked) return;
+        clearDetail();
+        detail = window.spirit.elements.appDetail.create(detailBox, { row: row });
+      });
     }
     function onFace(now) {
       face = now;
@@ -103,7 +114,7 @@
       if (stack) stack.close();
     }
     // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
-    Promise.all([window.spirit.require('spirit/element/search/app.js'), window.spirit.require('spirit/app/appSelector/detailElement.js'), window.spirit.require('spirit/element/panel.js')]).then(function () {
+    Promise.all([window.spirit.require('spirit/element/search/app.js'), window.spirit.require('spirit/element/panel.js')]).then(function () {
       if (gone) return;
       // A list's box is a flex box, so the panel covers it by its display.
       stack = window.spirit.elements.panel.create(root, listBox);

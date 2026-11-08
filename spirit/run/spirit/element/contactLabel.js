@@ -29,6 +29,8 @@
 // contact.rename").
 
 (function () {
+  // WHAT IT USES, IT LOADS ITSELF (goal/G43.27): fieldRules, the rule mode 2 checks a name with, through spirit.require.
+  if (window.spirit && window.spirit.require) window.spirit.require('spirit/fieldRules.js');
   // ONE NAME PER KEY FOR THE PAGE (Andy, goal/G4.10: "the pane and dropdown seem to still initialize with keys. this
   // makes the keys flashing briefly every time an update occurs"). A list redrawn makes new labels; a name already
   // known draws at once, and one key is asked of the node once, however many labels wait for it.

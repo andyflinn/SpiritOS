@@ -29,7 +29,7 @@
   // And the jobs family's cache manager, the servers' jobs it follows (goal/G41.28), and the auth family's, which nodeGrants
   // (below) reads.
   var parts = Promise.all(['spirit/element/search/contact.js', 'spirit/element/search/bundle.js', 'spirit/element/search/api.js',
-    'spirit/element/search/grant.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
+    'spirit/element/search/grant.js', 'spirit/element/busyButton.js', 'spirit/element/rowForm.js', 'spirit/client/apiTreeIndex.js'].map(function (p) { return window.spirit.require ? window.spirit.require(p) : null; })
     .concat([window.spirit.cacheManager ? window.spirit.cacheManager('jobs') : null, window.spirit.cacheManager ? window.spirit.cacheManager('auth') : null]));
 
   // A VERB OF THE NODE, THROUGH THE SPIRIT OBJECT (goal/G43.24): family.verb called on that family as spirit.ready holds it,

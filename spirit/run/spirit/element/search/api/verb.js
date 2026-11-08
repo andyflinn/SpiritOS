@@ -19,6 +19,7 @@
   // Asked outside it, this file's load does not wait for api.js; what it draws waits on parts, which still does.
   var parts = Promise.all([window.spirit.require ? window.spirit.require('spirit/element/search.js') : null,
     Promise.resolve().then(function () { return window.spirit.require ? window.spirit.require('spirit/element/search/api.js') : null; }),
+    window.spirit.require ? window.spirit.require('spirit/client/apiTreeIndex.js') : null,
     window.spirit.cacheManager('node')]);
 
   function createApiVerbSelector(options) {

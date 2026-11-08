@@ -15,6 +15,7 @@
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (goal/G41.3; Andy: "lazy-load, is a tree....").
   // The node family's cache manager comes with it, as part of its tree: the keeper of the api tree (goal/G41.28).
   var parts = Promise.all([window.spirit.require ? window.spirit.require('spirit/element/search.js') : null,
+    window.spirit.require ? window.spirit.require('spirit/client/apiTreeIndex.js') : null,
     window.spirit.cacheManager('node')]);
 
   // THE NODE'S API TREE IN spirit.data (goal/G41.28; Andy, Q7: "Shall the app-server selector keep the node's api tree in an
