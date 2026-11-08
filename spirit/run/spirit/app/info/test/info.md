@@ -5,7 +5,7 @@ description; the two relay forms; and the key rotation. Since goal/G43.24 it is 
 own `info.json`, and a wrapper (Andy: *"no i want those apps to basically be wrappers for spirit/element/ things...."*):
 all of Info is the element nodeInfo (`spirit/element/nodeInfo.js`, its contract `spirit/element/test/nodeInfo.md`).
 Its test is `./info.js`; its manifest, its tile and its opening in a real Chrome are judged in
-`spirit/app/test/api-infoGrants.js`.
+`spirit/app/info/test/info-wrapper.js`.
 
 ## Requirements
 

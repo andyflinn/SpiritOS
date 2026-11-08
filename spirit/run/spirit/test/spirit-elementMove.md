@@ -1,4 +1,4 @@
-# elementMove.js
+# spirit-elementMove.js
 
 The move of the elements out of `shell/js` (goal/G43.5). Its test is `./spirit-elementMove.js`. Its lists are what `shell/js` held when the item began.
 
@@ -9,12 +9,9 @@ Andy, box: *"We are ONLY moving the contents of "run://shell/js/" to "run://spir
 - `shell/js` is gone, and every file it held stands at `spirit/element/` under its own name and folder, its tests and documents with it. *"all elements will keep their name during this move."*
 - No code, test or document under `spirit/` names `shell/js`, or reaches a moved element through `spirit.elements`, directly or through a local name for that object. *"both file-location AND the home in spirit.element (singular)"*, *"uncluding tests"*, *"including the contents of shell/ that remains"*, *"including, new code in spirit/app"*.
 - The other way round too: no code reaches through `spirit.element` for an element `spirit/element/` does not define. Andy, live: *"contact detail don't load in contacts"*, because `contactDetails` asked `spirit.element` for `navigation`, which stayed on `spirit.elements`.
-- *"ALL move the fucking library inside run::/spirit/element/codeMirror/"*. CodeMirror's 15 files, licence included, stand there and `shell/node_modules` is gone. On a real page the element draws from there with its sheet and search, and asks no other place.
-- *"all, only access to codeMirror library is through the element!"* The page starts with no `window.CodeMirror`, and no product file but `spirit/element/codeMirror.js` names the library's folder. The element brings the library, its sheets and its search add-ons itself.
 - Andy's own words are never rewritten: a double-quoted part of a comment or a document is left out of that scan. What the desk writes (`currentGoal.json`, `rules.md`), `agents/` and `design/` are left out too.
 - On a real page `spirit.element` exists at start, every moved module loads from its new place, and all the moved elements stand on `spirit.element` and none on `spirit.elements`.
-- *"shell/shared/ will not be moved or touched. thos elements do NOT belong in spirit.element."* The desk's shared elements stay on `spirit.elements`, and `shell/shared/js` keeps its one file since goal/G43.23,
-  `deskRunStatus.js`.
+- The library is `spirit/element/codeMirror.js`'s own folder: `spirit/element/test/codeMirror-library.md`. What stays in `shell/shared/` is `shell/shared/js/test/deskRunStatus-home.md`.
 
 ## What else proves it
 

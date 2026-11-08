@@ -84,8 +84,6 @@ const MODULES = [
   'progressBar.js', 'relayPanel.js', 'rowElement.js', 'rowForm.js', 'tabContainer.js', 'textViewer.js',
   'workBench.js',
 ];
-// What does not move, and stays on spirit.elements: "those elements do NOT belong in spirit.element."
-const STAYS = [['shell/shared/js/deskRunStatus.js', 'deskRunStatus']];
 
 const tracked = execSync('git ls-files', { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean);
 const IN_RUN = tracked.filter(function (f) { return f.indexOf('spirit/run/') === 0; }).map(function (f) { return f.slice('spirit/run/'.length); });
@@ -101,7 +99,7 @@ function judged(file, line) {
 // Not the product: what the desk writes, what is published, and this suite's own lists.
 function out(file) {
   return /^(agents|design)\//.test(file) || /currentGoal\.json$/.test(file) || /process\/js\/desk\/rules\.md$/.test(file) ||
-    /spirit\/test\/elementMove\.(js|md)$/.test(file) || VENDORED_FOLDERS.holds(file) || /(^|\/)brains\//.test(file) ||
+    /spirit\/test\/spirit-elementMove\.(js|md)$|spirit\/element\/test\/codeMirror-library\.(js|md)$|shell\/shared\/js\/test\/deskRunStatus-home\.(js|md)$/.test(file) || VENDORED_FOLDERS.holds(file) || /(^|\/)brains\//.test(file) ||
     !/\.(js|json|html|md|css|txt)$/.test(file) || file.indexOf('spirit/') !== 0;
 }
 const OLD_PATH = /\bshell\/js\b|\bshell\/node_modules\b|['"]shell['"]\s*,\s*['"]js['"]/;
@@ -119,16 +117,7 @@ test.startTest('spirit-elementMove.js: shell/js into spirit/element, its element
   const missing = MOVED_FILES.filter(function (f) { return IN_RUN.indexOf('spirit/element/' + f) === -1; });
   ok(!missing.length, 'all ' + MOVED_FILES.length + ' files stand at spirit/element/, each under its own name and folder', missing.length + ' of ' + MOVED_FILES.length + ' are not at spirit/element/, the first: ' + short(missing.slice(0, 5)));
 
-  // Andy, live: "ALL move the fucking library inside run::/spirit/element/codeMirror/"
-  test.subHeading('the library: CodeMirror inside spirit/element/codeMirror/');
-  const lib = IN_RUN.filter(function (f) { return f.indexOf('spirit/element/codeMirror/') === 0; });
-  ok(lib.indexOf('spirit/element/codeMirror/lib/codemirror.js') !== -1 && lib.indexOf('spirit/element/codeMirror/LICENSE') !== -1 && lib.length === 15, 'its 15 files, licence included, stand in spirit/element/codeMirror/', 'spirit/element/codeMirror/ holds ' + lib.length + ' files');
-  // Andy: "only access to codeMirror library is through the element!"
-  const asking = tracked.filter(function (f) { return /\.(js|html|css)$/.test(f) && f.indexOf('spirit/run/') === 0 && !/\/test\//.test(f) && f !== 'spirit/run/spirit/element/codeMirror.js' && f.indexOf('spirit/run/spirit/element/codeMirror/') !== 0 && !/^spirit\/run\/test\//.test(f); }).filter(function (f) {
-    return fs.existsSync(path.join(REPO, f)) && /element\/codeMirror\//.test(fs.readFileSync(path.join(REPO, f), 'utf8').split('\n').map(function (l) { const cut = l.search(/(^|[^:'"])\/\//); return cut === -1 ? l : l.slice(0, cut + 1); }).join('\n'));
-  });
-  ok(!asking.length, 'no product file but the element names the library\'s folder', 'these name it: ' + short(asking));
-  ok(!IN_RUN.some(function (f) { return f.indexOf('shell/node_modules/') === 0; }) && !fs.existsSync(path.join(RUN, 'shell/node_modules')), 'shell/node_modules is gone', 'shell/node_modules still stands');
+  // The library, CodeMirror inside spirit/element/codeMirror/, is that element's own folder: spirit/element/test/codeMirror-library.js.
 
   test.subHeading('the references: "both file-location AND the home in spirit.element (singular)", tests and documents too');
   const oldPath = []; const oldHome = [];
@@ -184,8 +173,7 @@ test.startTest('spirit-elementMove.js: shell/js into spirit/element, its element
     await H.until(function () { return page.evaluate('!!(window.spirit && window.spirit.ready)').then(Boolean); }, H.WAIT);
     await H.sleep(2500);
     let at = {};
-    try { at = JSON.parse(await page.evaluate('JSON.stringify({ element: typeof window.spirit.element, library: typeof window.CodeMirror })')); } catch (e) { at = {}; }
-    ok(at.library === 'undefined', 'the page starts with no CodeMirror on it: "only access to codeMirror library is through the element!"', 'at start window.CodeMirror is ' + short(at.library));
+    try { at = JSON.parse(await page.evaluate('JSON.stringify({ element: typeof window.spirit.element })')); } catch (e) { at = {}; }
     ok(at.element === 'object', 'the page has spirit.element when it starts', 'spirit.element is ' + short(at.element));
     const load = 'var fails = []; ' + JSON.stringify(MODULES.map(function (m) { return 'spirit/element/' + m; })) +
       '.reduce(function (p, f) { return p.then(function () { return Promise.resolve(window.spirit.require(f)).then(null, function (e) { fails.push(f + ": " + e); }); }); }, Promise.resolve())' +
@@ -196,19 +184,8 @@ test.startTest('spirit-elementMove.js: shell/js into spirit/element, its element
     ok(Array.isArray(r.fails) && !r.fails.length, 'every moved module loads from its new place', 'loading: ' + short(r.threw || r.fails));
     ok(Array.isArray(r.absent) && !r.absent.length, 'all ' + MOVED_NAMES.length + ' elements stand on spirit.element under their names', 'not on spirit.element: ' + short(r.threw || r.absent));
     ok(Array.isArray(r.onOld) && !r.onOld.length, 'and none of them on spirit.elements', 'still on spirit.elements: ' + short(r.onOld));
-    let cm = {};
-    try { cm = JSON.parse(await page.evaluate('(function () { var d = document.body.appendChild(document.createElement("div")); return window.spirit.element.codeMirror.create(d, { mode: "edit", text: "one needle", words: "needle" }).then(function () { return JSON.stringify({ drawn: !!d.querySelector(".CodeMirror"), marks: d.querySelectorAll(".text-view-match").length, cssLoaded: getComputedStyle(d.querySelector(".CodeMirror")).position === "relative", search: !!(window.CodeMirror.commands && window.CodeMirror.commands.find) }); }); })()')); } catch (e) { cm = { threw: String(e) }; }
-    const fromHere = await page.evaluate('performance.getEntriesByType("resource").map(function (r) { return r.name; }).filter(function (u) { return /codemirror/i.test(u); }).join(" ")').catch(function () { return ''; });
-    ok(cm.drawn === true && cm.marks === 1 && cm.cssLoaded === true && cm.search === true, 'the element draws from there, its sheet, its marks and its search keys with it', 'codeMirror: ' + short(cm));
-    ok(/spirit\/element\/codeMirror\/lib\/codemirror\.js/.test(fromHere) && !/shell\/node_modules/.test(fromHere), 'and the page asked the new place only', 'the page asked: ' + short(fromHere));
-    test.subHeading('what stays: "shell/shared/ will not be moved or touched. thos elements do NOT belong in spirit.element."');
-    for (const s of STAYS) {
-      let v = {};
-      try { v = JSON.parse(await page.evaluate('Promise.resolve(window.spirit.require(' + JSON.stringify(s[0]) + ')).then(function () { return JSON.stringify({ old: !!(window.spirit.elements || {})[' + JSON.stringify(s[1]) + '], now: !!(window.spirit.element || {})[' + JSON.stringify(s[1]) + '] }); })')); } catch (e) { v = { threw: String(e) }; }
-      ok(v.old === true && v.now === false, s[0] + ': ' + s[1] + ' stays on spirit.elements', s[0] + ': ' + short(v));
-    }
-    const shared = IN_RUN.filter(function (f) { return /^shell\/shared\/js\/[^/]+\.js$/.test(f); });
-    ok(shared.length === 1, 'shell/shared/js keeps its one file', 'shell/shared/js holds ' + short(shared));
+    // The element drawing from spirit/element/codeMirror/ is spirit/element/test/codeMirror-library.js; deskRunStatus staying on
+    // spirit.elements is shell/shared/js/test/deskRunStatus-home.js.
   } finally {
     if (page && page.kid) page.kid.kill();
     if (node.child) node.child.kill();

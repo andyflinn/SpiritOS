@@ -23,7 +23,6 @@ through `spirit.core.fs.createScopedFs('<name>')` (`kernel.js`).
 | `rotateKey/` | replacing this node's key |
 | `ruleDetails/` | one rule of the desk |
 | `shared/` | modules apps share: `ask.js`, and `shared/js/` the desk's elements (`deskChat`, `deskElement`, `deskRunStatus`) |
-| `test/` | `faceStarApps.js` |
 
 `navigationWrapper.js` is the shell's one stack of pages
 (`spirit.elements.navigation`); the face's boot loads it from home with

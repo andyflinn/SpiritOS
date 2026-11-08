@@ -5,7 +5,7 @@
 // G43.24 the app is a wrapper mounted the new shell's way: all of Info is nodeInfo (spirit/element/nodeInfo.js, tested in
 // spirit/element/test/nodeInfo.js). The browser file runs in node on a BARE window (rule/26): nodeInfo is put on the page
 // only once the app requires it, a stand-in that keeps what the app handed it. Its manifest, its tile and its opening in a
-// real Chrome are judged in spirit/app/test/api-infoGrants.js.
+// real Chrome are judged in spirit/app/info/test/info-wrapper.js.
 
 const fs = require('fs');
 const path = require('path');
