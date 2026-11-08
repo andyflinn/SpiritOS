@@ -27,7 +27,9 @@ its own, another clone that pushes in between). The job's id is asked of a scrat
 8. No tracked file names desk's old goalShare.js by its path; `spirit/test/jobs.js` and `jobs.md` name `nodeDesk.js` and
    `spirit/app/goalShare/goalShare.js`, not `desk.js:2608`.
 9. It commits into the checkout that holds it, found by its own place, and ignores the old arguments when handed
-   them; desk starts no share with neither `goalRepo` nor `goalPath` set (`nodeDesk.js:49`).
+   them. Desk needs no switch (box v9; Andy: *"desk fucking well knows which repo it sits in AND if fucking well knows
+   the path of the goal-share file."*): `desk.json` parses and carries no `goalRepo` or `goalPath`, `nodeDesk.js` reads
+   neither, and desk shares whenever it sits in a git checkout, found by walking up to `.git`, and not otherwise.
 10. With neither file in desk's state it says `nothing to share`, exits 0, and makes no commit; with only one, that
     one alone is shared.
 11. Desk's state folder is as it was after a share: nothing written, changed or added.

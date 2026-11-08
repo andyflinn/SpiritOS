@@ -140,8 +140,17 @@ test.startTest('goalShare.js: goalShare is an app of its own, and shares the cur
   const r9 = share(['--repo', elsewhere, '--path', 'x.json', '--from', path.join(STATE, 'currentGoal.json')]);
   ok(r9.status === 0 && git(ORIGIN, ['show', tipOf(ORIGIN) + ':' + GOAL]).out === '{"goal":"goal/G43","items":[28,29]}', 'handed the old arguments, it ignores them and shares into its own checkout', 'exit ' + r9.status + ', err ' + short(r9.err));
   const deskCode = code(read(path.join(RUN, 'spirit', 'app', 'desk', 'nodeDesk.js')));
-  ok(/GOAL_SHARED\s*=\s*!!\s*\(\s*values\.goalRepo\s*\|\|\s*values\.goalPath\s*\)/.test(deskCode) && /if\s*\(\s*!GOAL_SHARED/.test(deskCode),
-    'desk starts no share with neither goalRepo nor goalPath set (nodeDesk.js:49)', 'desk\'s switch is not goalRepo or goalPath');
+  // Box v9, line 9 (Andy: "desk fucking well knows which repo it sits in AND if fucking well knows the path of the
+  // goal-share file."): no switch. desk.json carries no goalRepo or goalPath, desk reads neither, and it shares whenever
+  // it sits in a git checkout, found by walking up to the folder with .git; from no checkout it shares and pulls nothing.
+  let deskJson = null;
+  try { deskJson = JSON.parse(read(path.join(RUN, 'spirit', 'app', 'desk', 'desk.json'))); } catch (e) { deskJson = null; }
+  const deskArgs = deskJson && Array.isArray(deskJson.args) ? deskJson.args.map(function (x) { return x && x.name; }) : [];
+  ok(!!deskJson, 'desk.json is JSON, so the node can read desk\'s manifest', 'desk.json does not parse');
+  ok(!!deskJson && deskArgs.indexOf('goalRepo') === -1 && deskArgs.indexOf('goalPath') === -1, 'desk.json carries no goalRepo or goalPath', 'desk.json args: ' + short(deskArgs));
+  ok(!/values\.goalRepo|values\.goalPath/.test(deskCode), 'desk reads no goalRepo or goalPath: no switch', 'nodeDesk.js still reads values.goalRepo or values.goalPath');
+  ok(/existsSync\(\s*path\.join\(\s*\w+\s*,\s*'\.git'\s*\)\s*\)/.test(deskCode) && /if\s*\(\s*!GOAL_SHARED/.test(deskCode) && /GOAL_SHARED\s*=[^;\n]*\bGOAL_REPO\b/.test(deskCode),
+    'desk shares whenever it sits in a git checkout, found by walking up to .git, and not otherwise', 'nodeDesk.js does not decide sharing by the checkout it sits in');
 
   test.subHeading('3. his checkout is never written, pulled or rebased');
   ok(git(WORK, ['rev-parse', 'HEAD']).out === headBefore, 'his HEAD stays where it was', 'HEAD now ' + git(WORK, ['rev-parse', 'HEAD']).out);
