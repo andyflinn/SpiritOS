@@ -139,9 +139,11 @@ VENDORED.forEach(function (v) {
   const there = fs.existsSync(path.join(RUN, v));
   ok(there && !inside.length, 'the file scan lists nothing of ' + v, there ? 'the file scan lists ' + inside.length + ' entries of ' + v + ', e.g. ' + short(inside.slice(0, 3)) : v + ' is not there to judge');
 });
-// Not served. CodeMirror is left out until Andy answers his Q: the page loads it from spirit/element/codeMirror/.
-['spirit/jobs/chokidar/index.js', 'spirit/jobs/readdirp/index.js'].forEach(function (f) {
-  ok(fs.existsSync(path.join(RUN, f)) && !fsm.fileServable(f), f + ' is not served', f + (fs.existsSync(path.join(RUN, f)) ? ' is served' : ' is not there to judge'));
+// Served, never written. Andy, Q1 (the page loads CodeMirror from spirit/element/codeMirror/): "servable but not writeable."
+['spirit/jobs/chokidar/index.js', 'spirit/jobs/readdirp/index.js', 'spirit/element/codeMirror/lib/codemirror.js'].forEach(function (f) {
+  const there = fs.existsSync(path.join(RUN, f));
+  ok(there && fsm.fileServable(f) && !fsm.fileWritable(f), f + ' is servable but not writable',
+    there ? f + ': servable ' + fsm.fileServable(f) + ', writable ' + fsm.fileWritable(f) : f + ' is not there to judge');
 });
 // The walkers: every tracked script that skipped node_modules at BASE, and the ones that skipped codeMirror beside it.
 const atBase = git('ls-tree -r --name-only ' + BASE).split('\n').filter(function (f) { return /\.js$/.test(f) && f.indexOf(OLD) !== 0; });

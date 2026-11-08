@@ -18,9 +18,5 @@ The tree is read as it is. The watcher runs in child processes on scratch folder
 - **One list, in fileSystem.js.**
   - fileSystem.js exports one list of exactly spirit/jobs/chokidar, spirit/jobs/readdirp and spirit/element/codeMirror.
   - The node's file scan lists nothing inside them.
-  - chokidar and readdirp are not served.
+  - Vendor code is "servable but not writeable" (Andy, Q1): a file of each of the three folders is servable, and fileWritable refuses it.
   - Every walker that skipped node_modules at 2fb29140 now reads that list and has no skip of its own: 48 walkers, word.js and oneDoor.js among them. The five that skipped codeMirror beside node_modules drop that too.
-
-## Open
-
-- Q1 asks Andy whether CodeMirror stays served. The page loads it from spirit/element/codeMirror/, so "not served" is judged only for chokidar and readdirp until he answers.
