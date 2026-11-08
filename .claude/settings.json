@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Read(//d/lab/claude-windows/spirit/run/process/js/deskVerify/**)"
+      "Read(//d/lab/claude-windows/spirit/run/spirit/app/deskVerify/**)"
     ]
   }
 }

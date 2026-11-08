@@ -1,0 +1,25 @@
+{
+  "identity": {
+    "icon": "📨",
+    "label": "Desk client",
+    "intrinsic": false
+  },
+  "mount": {
+    "deskClient.js": true
+  },
+  "shell": {
+    "true": false,
+    "mount": false,
+    "tile": false
+  },
+  "node": {
+    "mount": true
+  },
+  "description": "An agent's own way to Andy's desk (goal/G3.3, G3.4, G33.4). Passes one ask to the desk server on the node the owner named (setDesk) and counts it; follows the desk's stream (streamListener), keeping what it brings in its spirit.data, and while its agent waits (next) hands over what is meant for that agent. Its record, deskClient.db, holds the newest historyMax asks and is in the node's state (spirit/state/deskClient/data/). Started by the node while the app is active; reached by its verbs on the loopback door (the flat apiDoor).",
+  "args": [
+    {
+      "name": "historyMax",
+      "default": 1000
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "identity": {
+    "icon": "🔵",
+    "label": "Starter",
+    "intrinsic": false
+  },
+  "mount": {
+    "starter.js": true
+  },
+  "shell": {
+    "true": false,
+    "mount": true,
+    "tile": true
+  },
+  "node": {
+    "mount": false
+  },
+  "description": "The smallest app a node serves, in the shape of spirit/app/: one element that shows the node it runs on. Copy this folder to begin."
+}

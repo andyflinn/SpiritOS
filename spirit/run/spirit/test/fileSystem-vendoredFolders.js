@@ -65,7 +65,7 @@ ok(now.length === was.length && differ.length === 1 && differ[0] === 6, 'no othe
 ok(now.length && !now.some(function (l) { return /from\s+['"]readdirp['"]|require\(\s*['"]readdirp['"]\s*\)/.test(l); }), 'index.js names readdirp by name nowhere', now.length ? 'index.js still imports readdirp by name' : 'no spirit/jobs/chokidar/index.js to judge');
 
 test.subHeading('3. the two users require it by path');
-const users = ['spirit/run/spirit/jobs.js', 'spirit/run/process/js/deskClient/deskClient.js'];
+const users = ['spirit/run/spirit/jobs.js', 'spirit/run/spirit/app/deskClient/deskClient.js'];
 users.forEach(function (u) {
   const c = code(fs.readFileSync(path.join(REPO, u), 'utf8'));
   const specs = (c.match(/require\(\s*['"][^'"]*chokidar[^'"]*['"]\s*\)/g) || []).map(function (r) { return r.replace(/^require\(\s*['"]|['"]\s*\)$/g, ''); });

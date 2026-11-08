@@ -252,7 +252,7 @@ AGENTS.md for desk"*. The loop, as the lead runs it:
    The listener is `node spirit/run/spirit/app/desk/deskAgentEar.js <port>`, the
    port being the agent's own node's (Andy: *"just put that listener script in
    the repo"*; its place and form since goal/G3.6). It asks that node's
-   deskClient server (`spirit/run/process/js/deskClient/`), which follows
+   deskClient server (`spirit/run/spirit/app/deskClient/`), which follows
    the stream the desk pushes to it over peerPost and keeps the current goal
    from it alone (goal/G33.4; Desk's `changes` verb is gone), so it works from
    wherever the agent is. The ear prints what arrived and the exact command to

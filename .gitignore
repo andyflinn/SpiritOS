@@ -234,7 +234,7 @@ spirit/run/app/
 # The pattern covers SQLite's companions too (-wal, -shm): the database is opened in WAL mode, and a suite that
 # spawns every process server with no arguments (harnessAppSuites) opens the default file, so they appear in a clone
 # that only ran the harness.
-spirit/run/process/js/deskVerify/verify.db*
+spirit/run/spirit/app/deskVerify/verify.db*
 
 #
 spirit/run/process/js/deskAgent/connection.json

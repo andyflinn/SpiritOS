@@ -42,7 +42,7 @@ test.startTest('desk-noPlugins.js: the desk keeps goals, items and rules; apps, 
   ok(!!page && !/goal\/G0['"]/.test(page) && !/data-tab="apps"/.test(page) && !/plugin/i.test(page), 'the desk page draws no Apps tab, no plugin tab and no team chat', 'spirit/app/desk/element/desk/desk.js still names Apps, a plugin or goal/G0');
   const cache = code(path.join(DESK, 'data.js'));
   ok(!!cache && !/goal\/G0['"]/.test(cache), 'the desk page cache treats no goal/G0 apart', 'spirit/app/desk/data.js still names goal/G0');
-  const client = code(path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js'));
+  const client = code(path.join(RUN, 'spirit', 'app', 'deskClient', 'deskClient.js'));
   ok(!!client && !/goal\/G0['"]/.test(client), 'deskClient wakes nobody on a team chat line', 'deskClient.js still names goal/G0');
 
   // A desk server of the tree, on a scratch state folder: what its api serves, and what a fresh one holds.
@@ -77,7 +77,7 @@ test.startTest('desk-noPlugins.js: the desk keeps goals, items and rules; apps, 
   }
 
   test.subHeading('Andy: "the verifier stuff can stay for now", the Stacks verdicts not');
-  const verifyApi = code(path.join(RUN, 'process', 'js', 'deskVerify', 'family', 'api.js'));
+  const verifyApi = code(path.join(RUN, 'spirit', 'app', 'deskVerify', 'api.js'));
   ok(!!verifyApi && !/door\.record/.test(verifyApi), 'deskVerify records no Stacks door verdict', 'deskVerify\'s api still has door.record');
 
   test.subHeading('Andy: "take out your search of the items text", "take out the chat-search do"');

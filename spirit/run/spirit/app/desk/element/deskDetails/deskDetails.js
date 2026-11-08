@@ -1105,7 +1105,7 @@ var ddApp = {
     if (typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
     // deskVerify's own run objects, for the run of this item (goal/G33.6).
     // The verifier's run, through spirit.data (goal/G41.28): its own cache manager keeps what it publishes.
-    ddNeed('/process/js/deskVerify/data.js').then(function () {
+    ddNeed('/spirit/app/deskVerify/data.js').then(function () {
       var V = window.spirit && ((window.spirit.data || {}).deskVerify || {}).data;
       if (!V) return;
       V.watch(ddHearVerifier);

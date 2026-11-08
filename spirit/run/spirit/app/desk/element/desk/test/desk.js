@@ -184,7 +184,7 @@ function deskWorld(goal, items) {
     console: { log: function () {}, error: function () {}, warn: function () {} }, localStorage: { getItem: function () { return null; }, setItem: function () {} },
     location: { hash: '' }, addEventListener: function () {} };
   win.window = win;
-  const REAL = ['spirit/data.js', 'spirit/app/desk/data.js', 'process/js/backup/data.js'];
+  const REAL = ['spirit/data.js', 'spirit/app/desk/data.js', 'spirit/app/backup/data.js'];
   const ran = {};
   let listOpts = null;
   win.spirit = { escapeHtml: api.escapeHtml,

@@ -54,7 +54,7 @@ function scratchTree(port) {
 function fakeVerifier() {
   const records = [];
   const asked = [];
-  const iface = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskVerify', 'family', 'api.js'), 'utf8');
+  const iface = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'deskVerify', 'api.js'), 'utf8');
   const server = http.createServer(function (req, res) {
     let body = '';
     req.on('data', function (c) { body += c; });

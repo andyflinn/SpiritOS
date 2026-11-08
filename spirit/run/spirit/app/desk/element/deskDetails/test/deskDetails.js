@@ -201,7 +201,7 @@ function panelIcon(w, key) { return w.document.querySelector('[data-panel="' + k
 // The dialog is driven: mounted on a small page of its own, opened on an item, and each two-press button clicked twice.
 // armingButton is a working stand-in that writes down every button it is handed; the node's desk is a recorder.
 const vm = require('vm');
-const VERIFY_CCM = 'process/js/deskVerify/data.js';
+const VERIFY_CCM = 'spirit/app/deskVerify/data.js';
 
 function ddWorld(facts, checks, o) {
   const document = makeDom();
@@ -564,7 +564,7 @@ const byId = function (w, id) { return function () { return w.document.getElemen
   // dialog loads that manager itself and draws the run from spirit.data.deskVerify.data, through the shared run status.
   test.subHeading('goal/G41.28: the verifier\'s run reaches the dialog through spirit.data');
   const RUNNING = { id: 'goal/G9.1', title: 'An item', goal: 'goal/G9', status: 'open', buttons: [], verified: 'none', verifyRunning: true, blocked: [] };
-  const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'process/js/deskVerify' }, o2); };
+  const runJob = function (o2) { return Object.assign({ id: 'job_verify', type: 'publish', module: 'spirit.app.deskVerify' }, o2); };
   const RUN1 = { doing: 'run', suite: 'spirit/run/spirit/app/info/test/info.js', index: 2, of: 4, tests: 0, expected: 0, line: '', since: '' };
   const runShown = function (g) { const el = g.document.getElementById('dd-run'); return el ? el.textContent : ''; };
   let v = ddWorld(RUNNING, [], { real: true }); await v.open();

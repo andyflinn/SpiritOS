@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/run/process/js/deskClient/test/deskClient.js
-// The tests of process/js/deskClient/deskClient.js, and of no other module (spec: ./deskClient.md; goal/G41.11). The
+// spirit/run/spirit/app/deskClient/test/deskClient.js
+// The tests of spirit/app/deskClient/deskClient.js, and of no other module (spec: ./deskClient.md; goal/G41.11). The
 // server runs in this process on a state folder of its own: the spirit object, appServer and the file watcher are
 // stubs, the data set and the desk's translator are the real ones, and the desk is a fake that keeps every ask and
 // answers what the test tells it to. The desk's stream is fed by hand, as appServer's streamListener feeds it.
@@ -15,7 +15,7 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'deskClient.js');
 // The family paths, as the one function names them (goal/G41.12).
 const familyPath = require(path.join(RUN, 'spirit', 'spirit.js')).familyPath;
-const API = path.join(RUN, familyPath('deskClient'));
+const API = path.join(__dirname, '..', 'api.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -95,14 +95,15 @@ let watchAll = null;
 const eventSubscribers = [];
 globalThis.spirit.events = { subscribe: function (h) { eventSubscribers.push(h); return function () {}; }, publish: function () { return Promise.resolve({}); } };
 const verifierSays = function (run) {
-  const job = { id: 'verify-job', module: 'process/js/deskVerify', data: {}, app: run };
+  const job = { id: 'verify-job', module: 'spirit.app.deskVerify', data: {}, app: run };
   eventSubscribers.forEach(function (h) { if (h && typeof h.onUpdate === 'function') h.onUpdate(job); });
 };
 const realLoad = Module._load;
 Module._load = function (request, parent, isMain) {
   if (/(^|\/)spirit\.js$/.test(request) && parent && parent.filename === FILE) return globalThis.spirit;
-  if (/spirit\/appServer\.js$/.test(request)) return appServerStub;
-  if (request === 'chokidar') return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
+  if (/(^|\/)appServer\.js$/.test(request)) return appServerStub;
+  // The node's own chokidar component (spirit/jobs/chokidar/), as deskClient.js requires it.
+  if (request === 'chokidar' || /(^|\/)chokidar\/index\.js$/.test(request)) return { watch: function () { const w = { on: function (ev, fn) { if (ev === 'all') watchAll = fn; return w; } }; return w; } };
   return realLoad.apply(this, arguments);
 };
 // resubscribeMs 1 is read by nothing: deskClient.js has no such value. It subscribes again after QUIET_MS (10 s) of

@@ -26,7 +26,7 @@ there is a wake waiting", and of the read key: "good idea, make the red assert i
 - One ask of the desk or of deskClient prints the answer as it came.
 - **Every wake not yet read comes back in one** (goal/G41.22; Andy, the box: "every wake not yet read comes back in
   one, none lost and none twice, also after a node restart."). Keeping, gathering and dropping the wakes is deskClient's
-  `next`, so its test holds that requirement (`process/js/deskClient/test/deskClient.js`, its restart included); the
+  `next`, so its test holds that requirement (`spirit/app/deskClient/test/deskClient.js`, its restart included); the
   ear's half is what its checks above already hold: it prints the whole answer it is handed and passes the key unchanged.
 
 ## What its test must try to break

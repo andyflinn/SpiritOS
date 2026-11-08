@@ -372,10 +372,13 @@ if (CHILD) {
     ok(typeof A0.familyPath === 'function', 'appServer exports familyPath', 'appServer has no familyPath export: ' + typeof A0.familyPath);
     const fp = typeof A0.familyPath === 'function' ? A0.familyPath('deskVerify') : null;
     ok(fp === 'process/js/deskVerify/family/api.js', 'familyPath(name) is process/js/<name>/family/api.js', 'familyPath(\'deskVerify\') is ' + short(fp));
+    // Apps of spirit/app/ since goal/G43.27 (Andy: "cw, you bring deskClient and deskVerify into spirit/app/ under their old
+    // names, do the backup as well"): the family's interface at the top of the app folder, no family/ and no process/js/ left.
     FAMILIES.forEach(function (n) {
-      const moved = fs.existsSync(path.join(RUN, 'process', 'js', n, 'family', 'api.js')) && !fs.existsSync(path.join(RUN, 'process', 'js', n, n + '.family'));
-      ok(moved, n + ': its family folder is process/js/' + n + '/family/, no ' + n + '.family is left',
-        n + ': family/api.js ' + fs.existsSync(path.join(RUN, 'process', 'js', n, 'family', 'api.js')) + ', ' + n + '.family still there: ' + fs.existsSync(path.join(RUN, 'process', 'js', n, n + '.family')));
+      const app = path.join(RUN, 'spirit', 'app', n);
+      const moved = fs.existsSync(path.join(app, 'api.js')) && !fs.existsSync(path.join(app, 'family')) && !fs.existsSync(path.join(RUN, 'process', 'js', n));
+      ok(moved, n + ': its interface is spirit/app/' + n + '/api.js, no family/ and no process/js/' + n + '/ is left',
+        n + ': api.js ' + fs.existsSync(path.join(app, 'api.js')) + ', family/ ' + fs.existsSync(path.join(app, 'family')) + ', process/js/' + n + '/ ' + fs.existsSync(path.join(RUN, 'process', 'js', n)));
     });
     // Andy, goal/G41.28: "all, KILL deskAgent!". The server goes, its folder and every file that names it; the desk's
     // bundle named deskAgent (deskBundles.json, deskVerifyBundles.json) is his name for a desk agent, and stays.
@@ -415,9 +418,11 @@ if (CHILD) {
     //   "agent: \"remoteUser\" the full agent family, minus FS.*"
     // A row is { label, branches: [{ family, verb }] } (spirit/test/apiAuth.md); a verb '' is the whole family, FS.* with it.
     // The desk is an app of spirit/app/ since goal/G43.27: its folder is spirit/app/desk/, its family at the top.
-    const folderOf = function (app) { return app === 'desk' ? path.join(RUN, 'spirit', 'app', 'desk') : path.join(RUN, 'process', 'js', app); };
+    // deskClient and deskVerify are apps too since goal/G43.27, their interfaces at the top of their folders.
+    const inApp = function (app) { return app === 'desk' || FAMILIES.indexOf(app) !== -1; };
+    const folderOf = function (app) { return inApp(app) ? path.join(RUN, 'spirit', 'app', app) : path.join(RUN, 'process', 'js', app); };
     const bundlesOf = function (app) { try { return JSON.parse(fs.readFileSync(path.join(folderOf(app), app + 'Bundles.json'), 'utf8')); } catch (e) { return null; } };
-    const familyVerbs = function (app) { try { return Object.keys(require(app === 'desk' ? path.join(folderOf(app), 'api.js') : path.join(folderOf(app), 'family', 'api.js')).verbs || {}).sort(); } catch (e) { return []; } };
+    const familyVerbs = function (app) { try { return Object.keys(require(inApp(app) ? path.join(folderOf(app), 'api.js') : path.join(folderOf(app), 'family', 'api.js')).verbs || {}).sort(); } catch (e) { return []; } };
     // What a row reaches, as verbs of one family: a whole-family branch reaches its FS.* verbs too (introSpector.js).
     const reach = function (row, fam) {
       const out = [];
@@ -449,14 +454,14 @@ if (CHILD) {
       'desk\'s deskAgent gets the desk verbs but FS.*, item.rules.*, rule.* and his Delete (item.delete); press stays, its presses of his refused by the desk', 'reaches ' + short(dAgent) + '; missing ' + short(wantAgent.filter(function (v) { return dAgent.indexOf(v) === -1; })) + '; refused in it ' + short(dAgent.filter(NOT_AGENT)));
     const vB = bundlesOf('deskVerify');
     ok(!!vB && JSON.stringify(Object.keys(vB).sort()) === '["deskAgent","remoteUser"]' && ['deskAgent', 'remoteUser'].every(function (k) { return rowOk(vB[k]) && JSON.stringify(reach(vB[k], 'deskVerify')) === '["search"]'; }),
-      'process/js/deskVerify/deskVerifyBundles.json: deskAgent and remoteUser, both only search', 'deskVerifyBundles.json: ' + short(vB));
+      'spirit/app/deskVerify/deskVerifyBundles.json: deskAgent and remoteUser, both only search', 'deskVerifyBundles.json: ' + short(vB));
     const cB = bundlesOf('deskClient');
     ok(!!cB && JSON.stringify(Object.keys(cB)) === '["deskServer"]' && rowOk(cB.deskServer) && JSON.stringify(reach(cB.deskServer, 'deskClient')) === '["streamListener"]',
-      'process/js/deskClient/deskClientBundles.json: deskServer, the one deskClient verb desk uses, its stream\'s streamListener', 'deskClientBundles.json: ' + short(cB));
+      'spirit/app/deskClient/deskClientBundles.json: deskServer, the one deskClient verb desk uses, its stream\'s streamListener', 'deskClientBundles.json: ' + short(cB));
 
     test.subHeading('what goes (box v15)');
     const deskJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'desk', 'nodeDesk.js'), 'utf8');
-    const clientJs = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js'), 'utf8');
+    const clientJs = fs.readFileSync(path.join(RUN, 'spirit', 'app', 'deskClient', 'deskClient.js'), 'utf8');
     ok(!/function\s+bundled\s*\(/.test(deskJs), 'the desk has no bundled() of its own', 'desk.js still defines bundled()');
     ok(!/cache\.json/.test(clientJs), 'deskClient keeps no cache.json of its own', 'deskClient.js still names cache.json');
 

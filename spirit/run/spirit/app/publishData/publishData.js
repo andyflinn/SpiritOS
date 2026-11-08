@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/spirit/app/publishData/publishData.js (it was process/js/deskClient/publishData.js until goal/G43.21)
+// spirit/run/spirit/app/publishData/publishData.js (it was spirit/app/deskClient/publishData.js until goal/G43.21)
 // ONE MEASUREMENT RUN PER AGENT, ITS DATA IN agents/<agent>/ — goal/G4.33.
 //
 //   Andy, 2026-10-04: "so one single script for all of you puts the data into the repo"; to N: "that's a fine number"
@@ -90,7 +90,7 @@ function closingRows(clone, sinceIso) {
 // "each chore names the folders it updates and finds its own agent, so the verifier knows neither (the test-state file
 // it writes today moves into the publish chore)"). So it is written here, from the newest row of each test in this
 // clone's verify.db, read only; no suite is run for it.
-const VERIFY_DB = path.join(__dirname, '..', '..', '..', 'process', 'js', 'deskVerify', 'verify.db');
+const VERIFY_DB = path.join(__dirname, '..', '..', '..', 'spirit', 'app', 'deskVerify', 'verify.db');
 function writeTestState(out, agent, commit) {
   let rows = [];
   if (fs.existsSync(VERIFY_DB)) {

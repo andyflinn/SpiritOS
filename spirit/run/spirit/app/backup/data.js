@@ -1,4 +1,4 @@
-// spirit/run/process/js/backup/data.js
+// spirit/run/spirit/app/backup/data.js
 // WHAT A CLIENT KNOWS OF THE BACKUP, IN THE backup FAMILY'S OWN FOLDER (goal/G41.28). Andy: "anything not using the
 // new spiritData.js and it's buddies clientCacheManager.js must do so in this item. no exceptions." A page loads it
 // through spirit.require; it keeps the backup server's status in that page's spirit.data, under the node that served it.
@@ -10,7 +10,7 @@
 (function () {
   var STATUS = 'backupStatus';
   var NOW = 'now';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../data.js');
   D.makeFamily('backup', function () {
     var HOME = D.viewAt(null, 'backup');
     // THE READS AND THE ONE WRITE:

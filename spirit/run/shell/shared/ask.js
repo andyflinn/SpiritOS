@@ -8,8 +8,8 @@
 // `POST /api/spirit` (server.js), and answers what came back. One file and
 // not a copy per app, so the path is named once.
 //
-// Its one importer in the tree is spirit/run/process/js/starter/starter.html
-// (`import { ask } from './ask.js'`). No server in the tree names ask.js, so
+// Its one importer was spirit/run/process/js/starter/starter.html, gone with goal/G43.27; nothing imports it now
+// (it was `import { ask } from './ask.js'`). No server in the tree names ask.js, so
 // nothing serves it at that address today.
 //
 // THE DOOR IS A NAMED CONSTANT and not a literal at the call. One place

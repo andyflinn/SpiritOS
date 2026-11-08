@@ -73,7 +73,7 @@ test.startTest('api-deskMove.js: desk in spirit/app/desk/, its family at its top
   ok(has(NEW + 'desk.js') && fsm.fileWritable('spirit/app/desk/desk.js') === true, 'not core: spirit/app/desk/desk.js is written without a grant', has(NEW + 'desk.js') ? 'spirit/app/desk/desk.js is core (fileWritable false)' : 'no spirit/app/desk/desk.js to judge');
 
   test.subHeading('14. deskClient finds desk by its new place');
-  const dc = code(read('spirit/run/process/js/deskClient/deskClient.js'));
+  const dc = code(read('spirit/run/spirit/app/deskClient/deskClient.js'));
   ok(dc.length > 1000, 'the world: deskClient.js is read', 'no deskClient.js: nothing judged');
   ok(!/familyPath\(\s*['"]desk['"]\s*\)/.test(dc) && /spirit\/app\/desk\/api\.js/.test(dc), 'deskClient requires spirit/app/desk/api.js, not familyPath("desk")', 'deskClient: familyPath("desk") ' + /familyPath\(\s*['"]desk['"]\s*\)/.test(dc) + ', names spirit/app/desk/api.js ' + /spirit\/app\/desk\/api\.js/.test(dc));
   const streamAt = (dc.match(/stream:\s*\{\s*module:\s*['"]([^'"]+)['"]/) || [])[1] || '';

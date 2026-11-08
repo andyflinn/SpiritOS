@@ -1,4 +1,4 @@
-# process/js/deskClient/deskClient.js
+# spirit/app/deskClient/deskClient.js
 
 The desk client (goal/G3.3 and on; this spec: goal/G41.11): a server on an agent's own node. It follows Andy's desk's
 stream into its cache (spirit.data, through the desk's translator), passes the agent's asks to the desk, and wakes the

@@ -1,8 +1,21 @@
 {
-  "label": "Verifier's dataset",
-  "description": "A runner that knows nothing of the desk (goal/G33.3): handed a run (run {suites, commit}), it answers taken or busy, runs the suites one at a time and keeps each suite's outcome; it reports to no one. Keeps verify.db: a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1), beside a red its failure text, capped (goal/G21.3), and a row per run with each suite's outcome, the commit and the dirty mark. Both are read with search (goal/G21.3), which is how the desk reads a run's outcome. Keeps the current run's output, cleared at each new run, for the Verifier tab's console (console). On its idle hour, an hour with no run handed to it, it runs the chores its manifest names. Started by the node; reached by its verbs on the loopback door (the flat apiDoor).",
-  "kind": "server",
-  "operated": "node",
+  "identity": {
+    "icon": "🧪",
+    "label": "Verifier's dataset",
+    "intrinsic": false
+  },
+  "mount": {
+    "deskVerify.js": true
+  },
+  "shell": {
+    "true": false,
+    "mount": false,
+    "tile": false
+  },
+  "node": {
+    "mount": true
+  },
+  "description": "A runner that knows nothing of the desk (goal/G33.3): handed a run (run {suites, commit}), it answers taken or busy, runs the suites one at a time and keeps each suite's outcome; it reports to no one. Keeps verify.db: a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1), beside a red its failure text, capped (goal/G21.3), and a row per run with each suite's outcome, the commit and the dirty mark. Both are read with search (goal/G21.3), which is how the desk reads a run's outcome. Keeps the current run's output, cleared at each new run, for the Verifier tab's console (console). On its idle hour, an hour with no run handed to it, it runs the chores its manifest names. Started by the node while the app is active; reached by its verbs on the loopback door (the flat apiDoor).",
   "args": [
     {
       "name": "db",
@@ -37,7 +50,7 @@
     {
       "name": "chores",
       "default": "",
-      "description": "The idle chores (goal/G33.3): commands, one per line or separated by ';', each run in the checkout with the node's port appended, one after the other, once per quiet stretch. Each chore names the folders it updates and finds its own agent; the verifier knows neither. Empty: no chores. An agent's node names its publish here, for instance node spirit/run/process/js/deskClient/publishData.js."
+      "description": "The idle chores (goal/G33.3): commands, one per line or separated by ';', each run in the checkout with the node's port appended, one after the other, once per quiet stretch. Each chore names the folders it updates and finds its own agent; the verifier knows neither. Empty: no chores. An agent's node names its publish here, for instance node spirit/run/spirit/app/publishData/publishData.js."
     }
   ]
 }

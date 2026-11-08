@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/backup/test/backup-copies.js
+// spirit/run/spirit/app/backup/test/backup-copies.js
 // THE BACKUP SERVER COPIES THE NODE'S STATE (goal/G43.23, item 5; spec: ./backup-copies.md). The box: "backup copies
 // nothing: it copies only its own state folder and reads a config path that does not exist". The real backup.js of this
 // tree, started as the node starts it (jobs.js runServer: --state spirit/state/backup/data, --node {name, publicKey}), on
@@ -13,7 +13,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const RUN = path.resolve(__dirname, '..', '..', '..', '..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
-const SCRIPT = path.join(RUN, 'process', 'js', 'backup', 'backup.js');
+const SCRIPT = path.join(RUN, 'spirit', 'app', 'backup', 'backup.js');
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

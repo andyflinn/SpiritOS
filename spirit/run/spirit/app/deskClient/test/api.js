@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/deskClient/: the test of the deskClient server's family interface (test/api.js in its family folder)
+// spirit/run/spirit/app/deskClient/: the test of the deskClient server's family interface (test/api.js in its family folder)
 // The tests of the deskClient server's family interface, spirit.familyPath('deskClient'), and of no other module (spec: ./api.md; goal/G41.11).
 // The interface is required as the node reads it, and every verb is checked by spirit.js's own check (spirit.check, its
 // rules list spirit.rules), the one the spirit object runs before a call leaves. The server's source is read as text
@@ -8,7 +8,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const RUN = path.resolve(__dirname, '../../../../..');
+const RUN = path.resolve(__dirname, '../../../..');
 const test = require(path.join(RUN, 'test', 'testReport.js'));
 const FILE = path.join(__dirname, '..', 'api.js');
 require(path.join(RUN, 'spirit', 'spirit.js'));
@@ -46,11 +46,11 @@ test.startTest('the deskClient family api.js: the deskClient server\'s interface
   ok(badRule.length === 0, 'every rule is one of spirit.js\'s standard, \'?\' optional', 'unknown rules: ' + short(badRule));
 
   test.subHeading('every verb it lists is one the server serves');
-  const source = ['process/js/deskClient/deskClient.js', 'spirit/appServer.js'].map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
+  const source = ['spirit/app/deskClient/deskClient.js', 'spirit/appServer.js'].map(function (f) { return fs.readFileSync(path.join(RUN, f), 'utf8'); }).join('\n');
   const esc = function (s) { return s.replace(/[.$]/g, '\\$&'); };
   const unserved = names.filter(function (v) { return !new RegExp('[\'"]' + esc(v) + '[\'"]\\s*:|^\\s*' + esc(v) + '\\s*:|\\ball\\.' + esc(v) + '\\s*=', 'm').test(source); });
   ok(unserved.length === 0, 'each is a handler of deskClient.js, or appServer\'s streamListener (deskClient follows the desk\'s stream)', 'no handler for: ' + short(unserved));
-  ok(/\bstream\s*:\s*\{/.test(fs.readFileSync(path.join(RUN, 'process/js/deskClient/deskClient.js'), 'utf8')), 'deskClient serves with a stream, so appServer adds its streamListener', 'deskClient.js names no stream for appServer.serve');
+  ok(/\bstream\s*:\s*\{/.test(fs.readFileSync(path.join(RUN, 'spirit/app/deskClient/deskClient.js'), 'utf8')), 'deskClient serves with a stream, so appServer adds its streamListener', 'deskClient.js names no stream for appServer.serve');
 
   test.subHeading('each verb\'s arguments, as the handlers take them');
   ok(passes('next', {}) && passes('next', { read: 'w-1' }) && refusedAs('next', { read: 1 }) === 'bad-request', 'next: read optional, the key of the wake the agent last read, a text', 'next {read: 1} ' + refusedAs('next', { read: 1 }));

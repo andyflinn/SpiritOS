@@ -1,7 +1,7 @@
 // A crude, periodic, ENCRYPTED backup of the files at the top of a node's
 // state folder (--from, by default spirit/run/spirit/state): its keys
 // (identity.json), node.db, relay.db and config.json. A process's own state
-// in the folders below is the backup server's (process/js/backup/backup.js).
+// in the folders below is the backup server's (spirit/app/backup/backup.js).
 //
 // transport/R19.1. Andy: "it's required to pull this off safely and keep my
 // node safer" — the node log moves into node.db, and losing node.db is

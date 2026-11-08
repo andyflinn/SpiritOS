@@ -1,4 +1,4 @@
-// spirit/run/process/js/deskVerify/data.js
+// spirit/run/spirit/app/deskVerify/data.js
 // WHAT A CLIENT KNOWS OF THE VERIFIER, IN THE VERIFIER'S OWN FOLDER (goal/G41.28), as the desk's own is
 // (spirit/app/desk/data.js). Andy: "These rules apply to ALL clients. including deskVerify", and the box:
 // "All client side searches will be fixed, too, and search the whole row, as cached in spirit.data". A page loads it from
@@ -10,17 +10,17 @@
 //               expected, line, since, stopAsked, idleMs, chores, hasChores, consoleRun, consoleTo, consoleEnded)
 //   verifyFlips suite + newline + title + newline + at -> one flip of a test, as the search over its history answers it
 //               (falloutHistory's rows)
-// The rows come as jobs of module process/js/deskVerify: the verifier's publishes. Every event ends in set; it asks nothing.
+// The rows come as jobs of module spirit.app.deskVerify: the verifier's publishes. Every event ends in set; it asks nothing.
 (function () {
   var STATE = 'verify';
   var FLIPS = 'verifyFlips';
-  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../../spirit/data.js');
+  var D = typeof window !== 'undefined' ? window.spirit.data : require('../../data.js');
   D.makeFamily('deskVerify', function () {
     // The deskVerify family's view of the home node; a publish is filed under the node that sent it (goal/G41.28).
     var HOME = D.viewAt(null, 'deskVerify');
     D.addTranslator({
       onJob: function (job) {
-        var o = job && job.module === 'process/js/deskVerify' ? job.app : null;
+        var o = job && job.module === 'spirit.app.deskVerify' ? job.app : null;
         if (o && typeof o === 'object' && typeof o.doing === 'string') D.viewAt(job.fromNode || null, 'deskVerify').set(STATE + '/now', o);
       },
     });

@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/deskVerify/deskVerify.js
+// spirit/run/spirit/app/deskVerify/deskVerify.js
 // THE VERIFIER'S DATASET — goal/G8.1.
 //
 //   Andy, 2026-10-06, opening goal/G8: "imagine this: an auto-agent, it is a server process, completely mechanical,
@@ -31,15 +31,15 @@
 // verifier itself (goal/G33.3), to see its work green there before it claims.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit/spirit.js');
+require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../../spirit/appServer.js');
-const limits = require('../../../spirit/limits.js');
-const probabilityStringMatch = require('../../../spirit/probabilityStringMatch.js').probabilityStringMatch;
-const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
+const appServer = require('../../appServer.js');
+const limits = require('../../limits.js');
+const probabilityStringMatch = require('../../probabilityStringMatch.js').probabilityStringMatch;
+const createProbabilityBucket = require('../../probabilityBucket.js').createProbabilityBucket;
 
 const argv = process.argv;
 const at = argv.indexOf('--state');

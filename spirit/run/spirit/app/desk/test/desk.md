@@ -71,7 +71,7 @@ folders").
   goal whole, no merge: nothing stale survives." desk.js `pushGoalReplace` marks every row of the push `replace: true`
   with its `goal`, under one change, and ends it with a `replace`/`end` row; the desk family's `data.js` and
   `family/cacheRules.js` drop what the push did not carry. That nothing stale survives is seen in the deskClient
-  (process/js/deskClient/test/deskClient.js): an item gone from the goal, a stale box, gone from its cache after the push.
+  (spirit/app/deskClient/test/deskClient.js): an item gone from the goal, a stale box, gone from its cache after the push.
 - **Its deskClient pointer.** The wire half is checked here; the deskClient's own read pointer (its place in
   `deskClient.db`) moving to the newest change is the deskClient's test's.
 - **The "push Goal" button** on the current goal and its items in the detail panel is the desk page's, not the server's.

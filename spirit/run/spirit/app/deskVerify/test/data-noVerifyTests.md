@@ -7,5 +7,5 @@ The box: *"plugin leftovers (G43.22): deskChat.js and deskElement.js in shell/sh
 ## Requirements
 
 - The deskVerify family's reads offer no tests branch (no `testsBranch`).
-- `process/js/deskVerify/data.js`'s code names no `verifyTests` branch.
+- `spirit/app/deskVerify/data.js`'s code names no `verifyTests` branch.
 - The world: the family loads with its `state` and `flips` reads, and its code still names `verifyFlips`.

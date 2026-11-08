@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/deskClient/deskClient.js
+// spirit/run/spirit/app/deskClient/deskClient.js
 // THE DESK CLIENT — goal/G3.3, G3.4, G3.5. A server on an agent's own node: it passes one ask to Andy's desk and counts
 // it, and while its agent waits it reads what changed at the desk and holds what is meant for that agent.
 //
@@ -42,15 +42,15 @@
 // cut to fit one answer by the probability bucket, and says so with more.
 
 // The spirit object first, as the global spirit (goal/G40.1).
-require('../../../spirit/spirit.js');
+require('../../spirit.js');
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-const appServer = require('../../../spirit/appServer.js');
-const limits = require('../../../spirit/limits.js');
-const VENDORED_FOLDERS = require('../../../spirit/fileSystem.js').VENDORED_FOLDERS;
-const createProbabilityBucket = require('../../../spirit/probabilityBucket.js').createProbabilityBucket;
-const probabilityStringObjectMatch = require('../../../spirit/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const appServer = require('../../appServer.js');
+const limits = require('../../limits.js');
+const VENDORED_FOLDERS = require('../../fileSystem.js').VENDORED_FOLDERS;
+const createProbabilityBucket = require('../../probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
@@ -211,7 +211,7 @@ function heldByMe(row) {
 // node's own copy, the same appServer's query uses.
 // The same file is the stream's translator (below), which appServer requires once the data set is there: it is required
 // here only when first read from, so that require is the one that runs it.
-const DESK_CCM = path.join(__dirname, '..', '..', '..', 'spirit', 'app', 'desk', 'data.js');
+const DESK_CCM = path.join(__dirname, '..', 'desk', 'data.js');
 function fromKept(name, args) {
   const k = kept();
   return k && typeof k.answer === 'function' ? k.answer(name, args, ANSWER_ROOM) : null;
@@ -1150,7 +1150,7 @@ function watchCheckout(root) {
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
       return rel.split('/').some(function (part) { return part === '.git'; }) || VENDORED_FOLDERS.holds(rel);
     };
-    require('../../../spirit/jobs/chokidar/index.js').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
+    require('../../jobs/chokidar/index.js').watch(root, { ignored: skip, ignoreInitial: true, persistent: true }).on('all', function (event, full) {
       if (!WHAT[event] || !full) return;
       const rel = path.relative(root, String(full)).split(path.sep).join('/');
       if (!statusWorthy(rel)) return;

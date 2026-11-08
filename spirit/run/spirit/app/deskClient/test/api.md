@@ -1,4 +1,4 @@
-# process/js/deskClient/family/api.js
+# spirit/app/deskClient/api.js
 
 The deskClient server's interface (goal/G32.3): every verb deskClient serves, each argument with its rule, written to
 spirit.js's standard (`'?'` optional). The spirit object checks every call against it before the call leaves

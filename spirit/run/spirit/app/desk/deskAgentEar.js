@@ -12,7 +12,7 @@
 // own finishes. So the agent runs the wait in the background; it prints what arrived and exits, the exit wakes the
 // agent, the agent answers in Desk and starts it again.
 //
-// EVERYTHING ELSE IS deskClient's (process/js/deskClient), the server on the agent's own node: it reads Desk, keeps
+// EVERYTHING ELSE IS deskClient's (spirit/app/deskClient), the server on the agent's own node: it reads Desk, keeps
 // the place, selects what is the agent's, says listening and working, and counts every ask. This file only asks
 // that server, through the spirit object, on the node of this checkout. It opens no stream and reads no file of its
 // own; spirit.js reads the node's port from spirit/state/environment.json.

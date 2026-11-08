@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/deskVerify/test/data-noVerifyTests.js
+// spirit/run/spirit/app/deskVerify/test/data-noVerifyTests.js
 // deskVerify's data.js KEEPS NO verifyTests BRANCH (goal/G43.23, item 10, after goal/G43.22; spec: ./data-noVerifyTests.md).
 // The box: "plugin leftovers (G43.22): ... deskVerify's data.js keeps a verifyTests branch." Its only reader, the fallout
 // plugin, went with G43.22. The family is loaded as a page's spirit.data would hold it, and its code read with comments

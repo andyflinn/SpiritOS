@@ -19,7 +19,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function code(f) { try { return fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); } catch (e) { return ''; } }
 const HERE = path.join(RUN, 'spirit', 'app', 'publishData');
 const FILE = path.join(HERE, 'publishData.js');
-const OLD = path.join(RUN, 'process', 'js', 'deskClient');
+const OLD = path.join(RUN, 'spirit', 'app', 'deskClient');
 function freePort() { return new Promise(function (resolve) { const s = net.createServer(); s.listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); }); }); }
 
 test.startTest('publishData.js: an app of its own, run by Andy with Run (goal/G43.21)');
@@ -45,15 +45,15 @@ test.startTest('publishData.js: an app of its own, run by Andy with Run (goal/G4
   const line = (/const\s+VERIFY_DB\s*=\s*([^;]+);/.exec(code(FILE)) || [])[1];
   let at = '';
   try { at = line ? new Function('path', '__dirname', 'return ' + line)(path, HERE) : ''; } catch (e) { at = 'threw ' + e.message; }
-  const want = path.join(RUN, 'process', 'js', 'deskVerify', 'verify.db');
-  ok(path.resolve(String(at)) === want, 'it reads deskVerify\'s verify.db where deskVerify keeps it, process/js/deskVerify/', 'it reads ' + short(at) + ', want ' + want);
+  const want = path.join(RUN, 'spirit', 'app', 'deskVerify', 'verify.db');
+  ok(path.resolve(String(at)) === want, 'it reads deskVerify\'s verify.db where deskVerify keeps it, spirit/app/deskVerify/', 'it reads ' + short(at) + ', want ' + want);
   let readme = null;
   try { readme = require(path.join(HERE, 'agentReadme.js')); } catch (e) { readme = null; }
   ok(!!readme && typeof readme.write === 'function', 'agentReadme.js stands beside it and loads', 'no agentReadme.js beside it in spirit/app/publishData/');
 
   test.subHeading('Andy runs it; no agent starts it');
-  ok(!fs.existsSync(path.join(OLD, 'publishData.js')), 'the old process/js/deskClient/publishData.js is gone', 'process/js/deskClient/publishData.js is still there');
-  ok(!fs.existsSync(path.join(OLD, 'agentReadme.js')), 'the old process/js/deskClient/agentReadme.js is gone', 'process/js/deskClient/agentReadme.js is still there');
+  ok(!fs.existsSync(path.join(OLD, 'publishData.js')), 'the old spirit/app/deskClient/publishData.js is gone', 'spirit/app/deskClient/publishData.js is still there');
+  ok(!fs.existsSync(path.join(OLD, 'agentReadme.js')), 'the old spirit/app/deskClient/agentReadme.js is gone', 'spirit/app/deskClient/agentReadme.js is still there');
   const client = code(path.join(OLD, 'deskClient.js'));
   ok(!!client && !/publishData/.test(client), 'deskClient starts no publishData', 'deskClient.js still names publishData');
 }()).then(function () { test.reportSuccessFailureCount(); process.exit(0); },

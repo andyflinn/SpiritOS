@@ -1,9 +1,25 @@
 {
-  "label": "Backup",
+  "identity": {
+    "icon": "💾",
+    "label": "Backup",
+    "intrinsic": false
+  },
+  "mount": {
+    "backup.js": true
+  },
+  "shell": {
+    "true": false,
+    "mount": false,
+    "tile": false
+  },
+  "node": {
+    "mount": true
+  },
   "description": "Copies the node's state, spirit/state/ (every process's state and node.db), out of the node into <spiritHome>/backups/<node>/spirit/state/, once at start and after each change there. Never the node's keys. One copy of each file; every run says what it wrote in this console (desk/G1.7).",
-  "kind": "server",
-  "operated": "node",
   "args": [
-    { "name": "quietMs", "default": 5000 }
+    {
+      "name": "quietMs",
+      "default": 5000
+    }
   ]
 }
