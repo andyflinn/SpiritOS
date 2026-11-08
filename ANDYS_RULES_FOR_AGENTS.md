@@ -29,8 +29,8 @@ agreeable; reading them as a contract produces agents he can use.
 **THE AGENTS APP IS THE OTHER HALF OF THIS API, AND THE TWO IMPROVE
 TOGETHER.** Andy, 2026-09-24: *"i notice that the agent app improves,
 together with the rules."* These files are the calling convention;
-`spirit/run/process/js/agents/` is the wire, with typed kinds — note,
-ask, answer, report, halt, resume, blocked.
+Desk is the wire now (the agents app that stood in `process/js/agents/`
+is gone, and run://process with it, goal/G43.20).
 
 **The rule inside the observation: A RULE THE APP CANNOT EXPRESS STAYS A
 HABIT.** Each of these began as a rule that nothing could check:
@@ -225,7 +225,7 @@ failed, however correct it reads.
     hours — then the wrong process was stopped, then the wrong clone was
     restarted, and the agent identity turned out to live in a different
     clone from the one that had been updated. **On a machine with more
-    than one clone, `relay-state/identity.json` decides which node is
+    than one clone, `spirit/state/identity.json` decides which node is
     which — never the directory name.**
 
     **"Properly" is the load-bearing word, and it means verified.** A

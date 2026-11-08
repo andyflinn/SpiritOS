@@ -1,7 +1,7 @@
 # Desk: rules for agents
 
 Andy's file. Every agent reads it at the start of a sitting, through the
-desk family's FS (`FS.loadFile {path: "AGENTS.md"}`; there is no AGENTS
+node's fs, by its path (`fs.load {path: "spirit/app/desk/AGENTS.md"}`; there is no AGENTS
 verb), and follows it over anything it remembers. His to edit.
 
 The six rules, Andy's words of 2026-10-02 (goal/G3), above every section

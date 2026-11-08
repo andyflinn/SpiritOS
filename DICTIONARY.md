@@ -52,9 +52,9 @@ Format: **term** — aliases — meaning.
 
 **Hub** — hub.js — Personal-node code that signs and forwards claim, post and invite to a relay over HTTPS (or loopback HTTP for a lab relay). It forwarded `send` and `inbox` until R8 (2026-09-15).
 
-**Contacts book** — contacts.js, perception book — `relay-state/contacts.json` on a **personal** node (whoBook / `who.json` until 2026-09-18). publicKey, publicLabel, myLabel, relays[], acquiredVia. Never uploaded.
+**Contacts book** — contacts.js, perception book — the shadow table in `node.db` on a **personal** node (`contacts.json` until goal/G40.11) (whoBook / `who.json` until 2026-09-18). publicKey, publicLabel, myLabel, relays[], acquiredVia. Never uploaded.
 
-**fileServer** — process/js/fileServer — The node's intrinsic server for files (fileTransfer goal/G1): at most 32, one folder each, named by the file's **id**, `verb-` and its sha256 in base64url. push, pull, fetch, status and delete are the owner's alone; a peer granted a file's id may ask its verb for **info** and **chunks**, nothing else.
+**fileServer** — gone with run://process (goal/G43.20) — The node's intrinsic server for files (fileTransfer goal/G1): at most 32, one folder each, named by the file's **id**, `verb-` and its sha256 in base64url. push, pull, fetch, status and delete are the owner's alone; a peer granted a file's id may ask its verb for **info** and **chunks**, nothing else.
 
 **chunk-request** — Andy's word, *"use chunk-request, makes more sense. my vocabulary."* — One ask from a receiving fileServer for one piece of a file, by start and length; the piece lands as `<start>-<length>.blob`. Not "stretch".
 
@@ -112,7 +112,7 @@ Format: **term** — aliases — meaning.
 
 **Redeem** — consume on claim — Successful claim burns the token before the peer is written.
 
-**Cutover** — Kamatera cutover — Deliberate change of live `relay-state/` (usually names → keys + pending-owner). Never implied by a lab-green harness.
+**Cutover** — Kamatera cutover — Deliberate change of live `spirit/state/` (usually names → keys + pending-owner). Never implied by a lab-green harness.
 
 ## Process words
 
@@ -228,7 +228,7 @@ app, and the acceptance test of the app layer.** Named for its job rather
 than as a greeting — Andy: *"it indicated a forward direction for the
 early adopter"*, and wsl-claude: *"it says COPY ME in the name"*. Not
 `hello`: *"hello world"* is a convention for a language’s first program,
-and `process/js/hello/` already holds the installer’s acceptance test.
+and a `hello/` folder already held the installer’s acceptance test.
 **A throwaway consumer rots; the official sample cannot**, because the
 artefact that proves the layer is the artefact every stranger copies.
 
