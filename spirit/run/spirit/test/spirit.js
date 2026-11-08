@@ -601,6 +601,27 @@ test.startTest('spirit/run/spirit.js: the one spirit object, in node and on a pa
       const asked = atLoad.filter(function (c) { return c.call === 'api' && c.args && c.args.family; }).map(function (c) { return String(c.args.family); });
       const unused = Array.from(new Set(asked)).filter(function (f) { return !used.has(f); });
       ok(!unused.length, 'on a real page: no family\'s api is asked that the page never calls (' + asked.length + ' asked, all used)', 'on a real page: ' + unused.length + ' families\' api asked and never called: ' + short(unused));
+
+      // NO FILE IT DOES NOT NEED YET (Andy: "all, spirit.js still seems to be loading all sorts of shit that it doesn't need
+      // yet.", and "wsl, why didn't you make sure of this?"). Every file the page fetched as it loaded, with what asked for it.
+      const gets = lazyPage.heard.filter(function (m) { return m.method === 'Network.requestWillBeSent' && m.params.request.method === 'GET'; }).map(function (m) {
+        const frames = (m.params.initiator && m.params.initiator.stack && m.params.initiator.stack.callFrames) || [];
+        return { file: m.params.request.url.replace(lazyNode.base, '').replace(/^\//, '').replace(/[?#].*$/, ''), by: frames.length ? frames[0].url.replace(lazyNode.base, '').replace(/^\//, '') : '' };
+      });
+      const scripts = gets.filter(function (g) { return /\.js$/.test(g.file); });
+      ok(scripts.length > 2, 'the world: the page fetched ' + scripts.length + ' scripts as it loaded', 'the page fetched ' + scripts.length + ' scripts: nothing judged');
+      const counted = {};
+      gets.forEach(function (g) { counted[g.file] = (counted[g.file] || 0) + 1; });
+      const again = Object.keys(counted).filter(function (f) { return counted[f] > 1; });
+      ok(!again.length, 'on a real page: no file is fetched twice as the page loads', 'on a real page: fetched more than once: ' + short(again));
+      // A script comes when something requires it: spirit.require (spirit.js) loads it, never a list fetched up front.
+      // face.html asks for spirit.js, spirit.js for the shell's boot.js; every other script is spirit.require's.
+      const listed = scripts.filter(function (g) { return g.file !== 'spirit.js' && g.file !== 'shell/boot.js' && g.by !== 'spirit.js'; });
+      ok(!listed.length, 'on a real page: every script is loaded by spirit.require when something requires it, none from a list up front',
+        'on a real page: ' + listed.length + ' scripts loaded up front, not required: ' + short(listed.map(function (g) { return g.file + ' (by ' + g.by + ')'; })));
+      // A dialog's parts come when it opens: the home page opens no app's detail, so none of its files is fetched.
+      const detail = gets.filter(function (g) { return /^spirit\/app\/appSelector\/detailElement\.js$|^spirit\/element\/appInstaller\.js$|^spirit\/app\/appSelector\/(serverDEBUG|changeAppIcon|changeAppLabel|rowFormSetShell)\.js$/.test(g.file); });
+      ok(!detail.length, 'on a real page: no detail is open, and none of an app detail\'s files is fetched', 'on a real page: an app detail\'s files fetched with no detail open: ' + short(detail.map(function (g) { return g.file; })));
       const twice = Array.from(new Set(asked)).filter(function (f) { return asked.filter(function (x) { return x === f; }).length > 1; });
       ok(!twice.length, 'on a real page: no family\'s api is asked twice', 'on a real page: asked more than once: ' + short(twice));
       // A node family the page has not touched yet, called now through the spirit object: its api is asked once, at

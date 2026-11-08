@@ -199,6 +199,13 @@ door (section 9): the page never asks for the whole api (`api` with no family); 
 page calls one of its verbs, and never twice; a family the page has not touched, required later, costs one `api` call
 then and none on the next. A check that finds nothing to judge is red.
 
+**No file it does not need yet** (goal/G43.27; Andy: *"all, spirit.js still seems to be loading all sorts of shit that it
+doesn't need yet."*, *"wsl, I SAID, make sure that spirit.js does NOT load all that shit!!!!!!!!!"*). Every file the page
+fetches as it loads, with what asked for it: no file is fetched twice; every script but `spirit.js` and the shell's
+`boot.js` is loaded by `spirit.require` when something requires it, none from a list fetched up front; and the home
+page opens no app's detail, so none of the detail's files (`appSelector/detailElement.js`, `appInstaller.js`,
+`serverDEBUG.js`, `changeAppIcon.js`, `changeAppLabel.js`, `rowFormSetShell.js`) is fetched.
+
 **An app switched on after the page loaded works, no reload** (goal/G43.27, Q1; Andy: *"shouldn't it work without
 making a call, since the elements will trigger the necessary calls?"*, and *"wsl, make sure your reds assert that as
 well!"*). On that same page, desk, off at load, is switched on (`app.active`); once its server answers, the Desk element
