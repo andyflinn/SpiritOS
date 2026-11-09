@@ -102,6 +102,17 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     const SYSTEM = path.join(run, 'spirit', 'iconSet.json');
     const system = json(SYSTEM) || {};
     const systemText = read(SYSTEM);
+    // GLYPHS THE SYSTEM SET DOES NOT HOLD (cw found it: the set starts as the system set, so a glyph of it is a duplicate,
+    // refused by Andy's rule, and nothing would be written). Compared without the invisible variation selectors.
+    const bare = function (g) { return String(g || '').replace(/[\uFE0E\uFE0F]/g, ''); };
+    const known = Object.keys(system).map(bare);
+    // Single pictures, one code point each, taken in order from the pictograph blocks.
+    const CANDIDATES = [];
+    for (let cp = 0x1F300; cp <= 0x1FAFF && CANDIDATES.length < 2000; cp++) { const g = String.fromCodePoint(cp); if (/\p{Extended_Pictographic}/u.test(g)) CANDIDATES.push(g); }
+    const fresh = CANDIDATES.filter(function (g) { return known.indexOf(bare(g)) === -1; });
+    ok(fresh.length >= 7, 'the world: seven glyphs the system set does not hold: ' + fresh.slice(0, 7).join(' '), 'only ' + fresh.length + ' candidate glyphs are not in spirit/iconSet.json: nothing to add');
+    if (fresh.length < 7) return;
+    const [G1, G2, ...REST] = fresh;
     const ask = async function (call, args) {
       const r = await fetch(node.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: call, args: args || {} }) });
       const t = await r.text(); let b = null; try { b = JSON.parse(t); } catch (e) { b = null; }
@@ -159,9 +170,9 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     ok(!fs.existsSync(SET), 'and nothing is written', 'an empty Add wrote ' + short(read(SET)));
 
     test.subHeading('the box: "only ./nodeIcons.js writes the table", initialized from spirit/iconSet.json, "the page asks icons through its api branch"');
-    await add(chrome, '🦩', 'flamingo, bird');
-    const wrote = await until(function () { return Promise.resolve(((json(SET) || {})['🦩'] || []).join(',') === 'flamingo,bird'); }, 10000);
-    ok(wrote, 'an Add writes 🦩 with its keywords into spirit/state/icons/data/iconSet.json', 'after the Add the set holds ' + short(read(SET)));
+    await add(chrome, G1, 'flamingo, bird');
+    const wrote = await until(function () { return Promise.resolve(((json(SET) || {})[G1] || []).join(',') === 'flamingo,bird'); }, 10000);
+    ok(wrote, 'an Add writes ' + G1 + ' with its keywords into spirit/state/icons/data/iconSet.json', 'after the Add the set holds ' + short(read(SET)));
     const set1 = json(SET) || {};
     const lost = Object.keys(system).filter(function (g) { return !(g in set1); });
     ok(wrote && !lost.length, 'the set began as the system set: every one of its ' + Object.keys(system).length + ' icons is in it', lost.length + ' system icons are not: ' + short(lost));
@@ -169,7 +180,7 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     const posts = JSON.parse(await chrome.evaluate('JSON.stringify(window.__posts || [])'));
     ok(posts.some(function (p) { return /"call"\s*:\s*"icons\./.test(p); }), 'the page asked icons.<verb>, its own branch', 'the page asked no icons verb: ' + short(posts));
     ok(!posts.some(function (p) { return /"call"\s*:\s*"fs\.(save|saveFile|delete|deleteFile)/.test(p); }), 'and wrote no file through the fs family', 'the page wrote through fs: ' + short(posts.filter(function (p) { return /"fs\./.test(p); })));
-    ok(await until(function () { return layerText(chrome).then(function (t) { return t.indexOf('🦩') !== -1; }); }, 8000), 'the list shows 🦩, no reload', 'the list never showed 🦩');
+    ok(await until(function () { return layerText(chrome).then(function (t) { return t.indexOf(G1) !== -1; }); }, 8000), 'the list shows ' + G1 + ', no reload', 'the list never showed ' + G1);
     ok(await until(function () { return Promise.resolve(none()); }, 3000), 'and its run ended: no icons.js runs', 'icons.js still runs after the Add: ' + short(iconsProcesses(node.root)));
 
     test.subHeading('the box, 10: "a run publishes before it ends and data.js on every open page follows that one job"');
@@ -179,10 +190,10 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
       await other.send('Page.navigate', { url: node.base + '/face.html' });
       await until(function () { return other.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
       const o2 = await open(other);
-      const listed = o2 === 'opened' && await until(function () { return layerText(other).then(function (t) { return t.indexOf('🦩') !== -1; }); }, 10000);
-      ok(listed, 'the world: a second page shows the set, 🦩 in it', 'the second page: ' + o2 + ' ' + short(await layerText(other)));
-      await add(chrome, '🦒', 'giraffe');
-      ok(await until(function () { return layerText(other).then(function (t) { return t.indexOf('🦒') !== -1; }); }, 10000), 'the other page shows 🦒, added on the first, with no reload and no search of its own', 'the other page never showed 🦒: ' + short(await layerText(other)));
+      const listed = o2 === 'opened' && await until(function () { return layerText(other).then(function (t) { return t.indexOf(G1) !== -1; }); }, 10000);
+      ok(listed, 'the world: a second page shows the set, ' + G1 + ' in it', 'the second page: ' + o2 + ' ' + short(await layerText(other)));
+      await add(chrome, G2, 'giraffe');
+      ok(await until(function () { return layerText(other).then(function (t) { return t.indexOf(G2) !== -1; }); }, 10000), 'the other page shows ' + G2 + ', added on the first, with no reload and no search of its own', 'the other page never showed ' + G2 + ': ' + short(await layerText(other)));
     }
     const job2 = await ask('jobs.get', { key: 'spirit.app.icons' });
     const j2 = (job2.body && job2.body.job) || null;
@@ -190,11 +201,11 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
 
     test.subHeading('the attacker: a duplicate, five Adds at once, a page writing the table itself');
     const before = read(SET);
-    await add(chrome, '🦩', 'pink');
+    await add(chrome, G1, 'pink');
     await sleep(2000);
-    ok(read(SET) === before, 'an icon already in the set is not added again, and the set is not written (Andy: "that shouldn\'t work")', 'a second 🦩 changed the set: ' + short(((json(SET) || {})['🦩'])));
+    ok(read(SET) === before, 'an icon already in the set is not added again, and the set is not written (Andy: "that shouldn\'t work")', 'a second ' + G1 + ' changed the set: ' + short(((json(SET) || {})[G1])));
     // The box, 9: "one run per app at a time: calls to the same one-shot app wait their turn, so two saves never write iconSet.json at once."
-    const five = ['🐙', '🐌', '🦀', '🐝', '🦋'];
+    const five = REST.slice(0, 5);
     let most = 0;
     const watching = (async function () { const end = Date.now() + 12000; while (Date.now() < end) { most = Math.max(most, iconsProcesses(node.root).length); await sleep(15); } }());
     await chrome.evaluate('(function () { var g = ' + field('glyph') + ', k = ' + field('keywords') + ', b = ' + ADD + '; ' + JSON.stringify(five) + '.forEach(function (x, i) { g.value = x; g.dispatchEvent(new Event("input", { bubbles: true })); k.value = "five" + i; k.dispatchEvent(new Event("input", { bubbles: true })); b.click(); }); return true; }())');
@@ -202,12 +213,12 @@ test.startTest('icons: the Icons app, a face and an api, run by the node per req
     await watching;
     const s5 = json(SET);
     ok(allFive, 'five Adds at once: all five are in the set, none lost to another\'s write', 'after five Adds at once the set holds ' + short(five.filter(function (x) { return s5 && x in s5; })));
-    ok(!!s5 && '🦩' in s5 && '🦒' in s5, 'and what was there stays, the file whole JSON', 'after five at once the set is ' + short(read(SET)));
+    ok(!!s5 && G1 in s5 && G2 in s5, 'and what was there stays, the file whole JSON', 'after five at once the set is ' + short(read(SET)));
     ok(most >= 1, 'the world: a run of icons.js was seen while they were answered', 'no run of icons.js was ever seen, so "one at a time" judged nothing');
     ok(most <= 1, 'never two runs of icons.js at once (the box, 9)', most + ' runs of icons.js at once');
     const forged = await chrome.evaluate('window.spirit.ready.then(function (s) { return s.fs.saveFile("spirit/state/icons/data/iconSet.json", "{}"); }).then(function (r) { return JSON.stringify(r); }, function (e) { return "refused: " + String(e && e.message || e); })');
     await sleep(800);
-    ok('🦩' in (json(SET) || {}), 'a page writing spirit/state/icons/data/iconSet.json itself is refused, and the set stands', 'the page\'s own write answered ' + short(forged) + ' and the set is ' + short(read(SET)));
+    ok(G1 in (json(SET) || {}), 'a page writing spirit/state/icons/data/iconSet.json itself is refused, and the set stands', 'the page\'s own write answered ' + short(forged) + ' and the set is ' + short(read(SET)));
 
     test.subHeading('the box, 4: "Switched off, its row goes, and a call to it answers app-not-served"');
     const off = await ask('app.active', { key: 'icons', active: false });
