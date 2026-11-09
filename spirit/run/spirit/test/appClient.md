@@ -23,3 +23,12 @@ appClient and appServer let that one answer past `ANSWER_MAX`; every other answe
 ## What its test must try to break
 
 - A cut answer, or a refusal, for the owner on loopback.
+
+## Two kinds of row: permanent and one-shot (goal/G43.19, box v16)
+
+Andy: *"there will simply be two kinds, permanent or one-shot processes."*, and *"the node must execute spirit/app/<name>/<name>.js with the request, instead of routing it to a server, like a cgi-script, and that process lives only as long as the request."* Icons, the first one-shot app, switched on in the same scratch; its verbs are its own `api.js`'s.
+
+- The world: the process list finds the permanent server's script running, once, so it can judge a run.
+- Icons switched on and idle: nothing runs `icons.js`.
+- The api tree holds icons, asked of its one-shot row (the box, 8), the permanent row beside it; the run that answered has ended.
+- The box, 9: six trees asked at once each hold icons; a run was seen; never two runs of `icons.js` at once; none is left running.

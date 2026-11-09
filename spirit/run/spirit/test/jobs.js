@@ -1,7 +1,8 @@
 'use strict';
 
 // spirit/run/spirit/test/jobs.js
-// The tests of spirit/jobs.js, and of no other module (spec: ./jobs.md). This file holds goal/G41.30, the review's RH1:
+// The tests of spirit/jobs.js, and of no other module (spec: ./jobs.md). Since goal/G43.19 it holds the one-shot apps the node
+// registers (the box, 2 and 4). This file holds goal/G41.30, the review's RH1:
 // "jobs.create still spawns any program". Since goal/G43.20 (box: "jobs.create starts only an app's own script,
 // spirit/app/<name>/<name>.js, of an app whose <name>.json says node run true; anything else is refused"). Raw calls over http to a scratch node's door,
 // no spirit object; neither Andy's node nor an agent's is touched. Each thing asked to run would write a marker of its
@@ -22,7 +23,8 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
 
 (async function () {
   const marks = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-jobs-marks-'));
-  const node = await scratchNode({ servers: ['desk'] });
+  // Icons, the first one-shot app (goal/G43.19), switched on at boot beside desk.
+  const node = await scratchNode({ servers: ['desk', 'icons'] });
   try {
     if (!node.up) { test.fail('the scratch node did not come up: nothing judged'); return; }
     const run = path.join(node.root, 'spirit', 'run');
@@ -145,6 +147,59 @@ test.startTest('jobs.js: jobs.create starts this node\'s processes, and no other
       const said4 = logText(await finished(id4));
       ['zzOutLine', 'zzErrLine'].forEach(function (w) { ok(said4.indexOf(w) !== -1, 'with DEBUG on, in the log: ' + w, 'with DEBUG on, ' + w + ' is not in the job\'s log: ' + short(said4)); });
     }
+
+    // ── ONE-SHOT APPS, REGISTERED BY THE NODE (goal/G43.19, box v16) ──
+    // The box, 2: "a one-shot app is an app with api.js and data.js at its top, node mount false or missing, and switched
+    // on. icons is the first."; 4: "the node registers each one-shot app where it reads the manifests and starts the
+    // permanent ones ... Switched off, its row goes, and a call to it answers app-not-served". Each thing that would run
+    // writes a marker, so "it ran" is read from the disc.
+    test.subHeading('the box, 4: a one-shot app switched on at boot is registered with the permanent ones');
+    let iconVerbs = [];
+    try { iconVerbs = Object.keys(require(path.join(run, 'spirit', 'app', 'icons', 'api.js')).verbs || {}); } catch (e) { iconVerbs = []; }
+    ok(iconVerbs.length >= 1, 'the world: icons\'s api.js names its verbs: ' + iconVerbs.join(', '), 'icons has no api.js with verbs: no one-shot app to judge');
+    const branches = async function () { const t = await door('api', {}); return t.status === 200 && t.body ? Object.keys(t.body) : []; };
+    ok((await branches()).indexOf('icons') !== -1, 'icons, on in its node.json at boot, is in the api tree with no app.active asked', 'the tree at boot: ' + short(await branches()));
+    ok((await branches()).indexOf('desk') !== -1, 'and desk, a permanent server, beside it', 'the tree lost desk: ' + short(await branches()));
+
+    test.subHeading('the box, 4: "Switched off, its row goes, and a call to it answers app-not-served"; on again, it is back');
+    ok((await door('app.active', { key: 'icons', active: false })).status === 200, 'the world: icons switched off', 'app.active icons false was refused');
+    await sleep(WAIT_MS);
+    const offCall = iconVerbs.length ? await door('icons.' + iconVerbs[0], {}) : { text: '' };
+    ok(/app-not-served/.test(offCall.text), 'icons.' + (iconVerbs[0] || '<verb>') + ' answers app-not-served', 'switched off, it answered ' + offCall.status + ' ' + short(offCall.text));
+    ok((await branches()).indexOf('icons') === -1, 'and the tree holds no icons', 'switched off, the tree holds icons');
+    ok((await door('app.active', { key: 'icons', active: true })).status === 200, 'the world: icons switched on again', 'app.active icons true was refused');
+    ok(await until(function () { return branches().then(function (b) { return b.indexOf('icons') !== -1; }); }, 10000), 'switched on again, icons is back in the tree, no restart of the node', 'switched on again, the tree holds no icons');
+
+    test.subHeading('the box, 2: "node mount false or missing": an icons.json with no node part is still one-shot');
+    const iconsJson = path.join(run, 'spirit', 'app', 'icons', 'icons.json');
+    const kept = fs.readFileSync(iconsJson, 'utf8');
+    const noNode = JSON.parse(kept); delete noNode.node;
+    fs.writeFileSync(iconsJson, JSON.stringify(noNode, null, 2));
+    await door('app.active', { key: 'icons', active: false });
+    await sleep(WAIT_MS);
+    await door('app.active', { key: 'icons', active: true });
+    ok(await until(function () { return branches().then(function (b) { return b.indexOf('icons') !== -1; }); }, 10000), 'with node mount missing, icons is served', 'with node mount missing, the tree holds no icons: ' + short(await branches()));
+    fs.writeFileSync(iconsJson, kept);
+
+    test.subHeading('the attacker: what is not a one-shot app is never run as one');
+    const notOneShot = async function (name, files, why) {
+      const dir = path.join(run, 'spirit', 'app', name);
+      fs.mkdirSync(dir, { recursive: true });
+      plant('spirit/app/' + name + '/' + name + '.js', mark(name));
+      fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify({ identity: { label: name, intrinsic: false }, shell: { true: false, mount: true, tile: true }, node: files.nodeMount === undefined ? { mount: false } : { mount: files.nodeMount } }));
+      if (files.api) fs.writeFileSync(path.join(dir, 'api.js'), 'module.exports = { verbs: { zz: {} } };\n');
+      if (files.data) fs.writeFileSync(path.join(dir, 'data.js'), '');
+      if (files.on !== false) await door('app.active', { key: name, active: true });
+      await sleep(WAIT_MS);
+      const c = await door(name + '.zz', {});
+      await door('api', {});
+      await sleep(WAIT_MS);
+      ok(!/^2/.test(String(c.status)) && (await branches()).indexOf(name) === -1, why + ': it is not served', why + ': ' + name + '.zz answered ' + c.status + ' ' + short(c.text));
+      ok(!fs.existsSync(mark(name)), why + ': and its script never ran', why + ': ITS SCRIPT RAN, its marker is on the disc');
+    };
+    await notOneShot('zzNoData', { api: true, data: false }, 'an app with api.js and no data.js');
+    await notOneShot('zzNoApi', { api: false, data: true }, 'an app with data.js and no api.js');
+    await notOneShot('zzOff', { api: true, data: true, on: false }, 'an app with both, never switched on');
   } finally {
     try { if (node.child) node.child.kill(); } catch (e) { /* gone */ }
     try { if (node.root) fs.rmSync(node.root, { recursive: true, force: true }); } catch (e) { /* scratch */ }

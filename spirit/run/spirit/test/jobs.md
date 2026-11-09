@@ -33,3 +33,12 @@ it on. A crash is no exception: the exit code is enough to tell us to fix it, an
 - **A crash still says its exit code on the job.**
 - **A process that floods its console does not hang**: it ends by its own exit code.
 - **DEBUG on: the lines are in the log.**
+
+## One-shot apps, registered by the node (goal/G43.19, box v16)
+
+The box, 2: *"a one-shot app is an app with api.js and data.js at its top, node mount false or missing, and switched on. icons is the first."*; 4: *"the node registers each one-shot app where it reads the manifests and starts the permanent ones ... Switched off, its row goes, and a call to it answers app-not-served"*.
+
+- Icons, on in its `node.json` at boot, is in the api tree with no `app.active` asked, desk beside it.
+- Switched off, `icons.<verb>` answers `app-not-served` and the tree holds no icons; on again, it is back with no restart.
+- With no node part in `icons.json`, icons is still served.
+- The attacker: an app with `api.js` and no `data.js`, one with `data.js` and no `api.js`, and one with both never switched on are not served, and their script never runs (a marker on the disc).

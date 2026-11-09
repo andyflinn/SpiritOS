@@ -19,6 +19,30 @@ const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
+// THE RUNS OF ONE APP'S SCRIPT ON THIS SCRATCH NODE: every process whose command line runs spirit/app/<name>/<name>.js of
+// the scratch tree (by its path or, run by a relative one, by its working folder).
+function runsOf(root, name) {
+  const want = new RegExp('spirit[\\\\/]app[\\\\/]' + name + '[\\\\/]' + name + '\\.js');
+  const out = [];
+  if (process.platform === 'win32') {
+    let text = '';
+    try { text = execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process | ForEach-Object { [string]$_.ProcessId + \' \' + $_.CommandLine }"', { encoding: 'utf8', maxBuffer: 1 << 24 }); } catch (e) { text = ''; }
+    text.split(/\r?\n/).forEach(function (l) { if (want.test(l) && l.toLowerCase().indexOf(root.toLowerCase()) !== -1) out.push(l.split(' ')[0]); });
+    return out;
+  }
+  let pids = [];
+  try { pids = fs.readdirSync('/proc').filter(function (p) { return /^\d+$/.test(p); }); } catch (e) { pids = []; }
+  pids.forEach(function (p) {
+    let cmd = '';
+    let cwd = '';
+    try { cmd = fs.readFileSync('/proc/' + p + '/cmdline', 'utf8').split('\0').join(' '); } catch (e) { return; }
+    if (!want.test(cmd)) return;
+    try { cwd = fs.readlinkSync('/proc/' + p + '/cwd'); } catch (e) { cwd = ''; }
+    if (cmd.indexOf(root) !== -1 || cwd.indexOf(root) === 0) out.push(p);
+  });
+  return out;
+}
+
 const NAME = 'zzbig';
 const SIZE = limits.ANSWER_MAX + 4000;
 
@@ -37,6 +61,9 @@ function scratch() {
   const state = path.join(run, 'spirit', 'state', NAME);
   fs.mkdirSync(state, { recursive: true });
   fs.writeFileSync(path.join(state, 'node.json'), JSON.stringify({ active: true }));
+  // Icons, the first one-shot app (goal/G43.19), switched on too.
+  fs.mkdirSync(path.join(run, 'spirit', 'state', 'icons'), { recursive: true });
+  fs.writeFileSync(path.join(run, 'spirit', 'state', 'icons', 'node.json'), JSON.stringify({ active: true }));
   return { root: root, run: run };
 }
 
@@ -62,6 +89,35 @@ test.startTest('appClient.js: the node asks its app servers');
     const back = got.body && got.body.text;
     ok(got.status === 200 && typeof back === 'string' && back.length === SIZE, 'the owner\'s ' + NAME + '.big of ' + SIZE + ' bytes, past ANSWER_MAX (' + limits.ANSWER_MAX + '), on loopback, comes back whole',
       'the owner\'s answer of ' + SIZE + ' bytes came back ' + got.status + ': ' + (typeof back === 'string' ? back.length + ' bytes' : short(got.text)));
+
+    // ── TWO KINDS OF ROW: PERMANENT AND ONE-SHOT (goal/G43.19, box v16) ──
+    // Andy: "there will simply be two kinds, permanent or one-shot processes.", "the node must execute
+    // spirit/app/<name>/<name>.js with the request, instead of routing it to a server, like a cgi-script, and that process
+    // lives only as long as the request." Icons is the first one-shot app; its verbs are its own api.js's.
+    test.subHeading('the box, 3: a one-shot row, the script spirit/app/<name>/<name>.js started per call; 8: the api tree asks it too');
+    let verbs = [];
+    try { verbs = Object.keys(require(path.join(s.run, 'spirit', 'app', 'icons', 'api.js')).verbs || {}); } catch (e) { verbs = []; }
+    ok(verbs.length >= 1, 'the world: icons\'s api.js names its verbs: ' + verbs.join(', '), 'icons has no api.js with verbs: no one-shot row to judge');
+    await H.sleep(1500);
+    ok(runsOf(s.root, NAME).length === 1, 'the world: the process list finds the permanent ' + NAME + '.js running, once', 'the process list finds ' + short(runsOf(s.root, NAME)) + ' of ' + NAME + '.js, so it cannot judge a run');
+    ok(runsOf(s.root, 'icons').length === 0, 'icons is switched on and nothing runs icons.js: no permanent process', 'icons.js runs while nothing asks it: ' + short(runsOf(s.root, 'icons')));
+    const tree = await post('api', {});
+    ok(tree.status === 200 && !!(tree.body && tree.body.icons), 'the api tree holds icons, its branch asked of its one-shot row', 'the tree: ' + tree.status + ' ' + short(tree.body && Object.keys(tree.body)));
+    ok(!!(tree.body && tree.body[NAME]), 'and the permanent row, ' + NAME + ', beside it, as today', 'the tree lost ' + NAME + ': ' + short(tree.body && Object.keys(tree.body)));
+    ok(await H.until(function () { return Promise.resolve(runsOf(s.root, 'icons').length === 0); }, 3000), 'the run that answered the tree has ended', 'icons.js still runs after the tree was answered: ' + short(runsOf(s.root, 'icons')));
+
+    test.subHeading('the box, 9: "one run per app at a time: calls to the same one-shot app wait their turn"');
+    let most = 0;
+    let seen = 0;
+    let watching = true;
+    const watch = (async function () { while (watching) { const n = runsOf(s.root, 'icons').length; most = Math.max(most, n); if (n) seen += 1; await H.sleep(10); } }());
+    const many = await Promise.all([0, 1, 2, 3, 4, 5].map(function () { return post('api', {}); }));
+    watching = false;
+    await watch;
+    ok(many.every(function (r) { return r.status === 200 && !!(r.body && r.body.icons); }), 'six trees asked at once: each holds the icons branch', 'answers: ' + short(many.map(function (r) { return r.status + (r.body && r.body.icons ? '+icons' : '-icons'); })));
+    ok(seen >= 1, 'the world: a run of icons.js was seen while they were answered', 'no run of icons.js was ever seen, so "one at a time" judged nothing');
+    ok(most <= 1, 'never two runs of icons.js at once', most + ' runs of icons.js at once');
+    ok(await H.until(function () { return Promise.resolve(runsOf(s.root, 'icons').length === 0); }, 3000), 'and none is left running', 'icons.js runs after all were answered: ' + short(runsOf(s.root, 'icons')));
   } finally {
     try { child.kill(); } catch (e) { /* gone */ }
     await H.sleep(500);
