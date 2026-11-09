@@ -14,7 +14,9 @@
   var S = window.spirit = window.spirit || {};
   // WHAT IT DRAWS WITH, IT LOADS ITSELF (rule/26).
   var parts = Promise.all(['spirit/element/search.js', 'spirit/element/search/icon/rowElement.js', 'spirit/element/rowForm.js',
-    'spirit/element/fieldInput.js', 'spirit/element/icon.js'].map(function (p) { return S.require(p); }).concat([S.cacheManager('icons')]));
+    // Its own cache manager by its own path, beside it: asked by name, a page whose app list has not yet reached icons (or
+    // holds it switched off) looks for spirit/icons/data.js, which is no file (wsl's verify, the general rules' page).
+    'spirit/element/fieldInput.js', 'spirit/element/icon.js', 'spirit/app/icons/data.js'].map(function (p) { return S.require(p); }));
 
   function esc(s) { return S.escapeHtml ? S.escapeHtml(s) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function words(text) { return String(text || '').split(',').map(function (w) { return w.trim(); }).filter(Boolean); }

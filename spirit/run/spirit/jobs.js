@@ -595,7 +595,7 @@ module.exports = function installJobs(port) {
       const args = [script, '{}', '--pipe', pipe, '--state', state].concat(nodeArgOf(rootDir), ['--debug', String(appDebug(rootDir, name))]);
       return launch(job, process.execPath, args, rootDir);
     };
-    if (!client.registerOneShot(name, pipe, start)) { cancelJob(job.id); return null; }
+    if (!client.registerOneShot(name, pipe, start, path.join(rootDir, 'spirit', 'app', name, 'api.js'))) { cancelJob(job.id); return null; }
     oneShots.set(name, job);
     return job;
   }
@@ -609,7 +609,7 @@ module.exports = function installJobs(port) {
   function rememberOneShot(rootDir, client, name) {
     if (!client || typeof client.registerOneShot !== 'function') return;
     const pipe = require('./appClient').pipePathFor(rootDir, name, process.platform);
-    if (client.registerOneShot(name, pipe, function () { return null; })) client.serve(name, false);
+    if (client.registerOneShot(name, pipe, function () { return null; }, path.join(rootDir, 'spirit', 'app', name, 'api.js'))) client.serve(name, false);
   }
 
   function startNodeServers(rootDir, client) {

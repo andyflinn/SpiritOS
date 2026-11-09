@@ -154,7 +154,27 @@ function createAppClient(opts) {
     row.queue = turn.then(function () {}, function () {});
     return turn;
   }
+  // THE CALL IS CHECKED AGAINST api.js BEFORE A RUN STARTS (the box, 7: "api.js is the branch's interface, the verbs and
+  // arguments the node checks a call against"; wsl's verify: a call that broke it still started a run): the verb the app's
+  // own api.js names, its arguments by spirit.js's one check, as the node checks its own families' calls (verbTable.js).
+  // DEBUG is every server's own (appServer.js), in no api.js; 'api' asks the branch itself.
+  function refusedByInterface(row, request_) {
+    if (request_ === 'api' || !row.api) return null;
+    const verb = isPlain(request_) ? Object.keys(request_)[0] : '';
+    if (verb === 'DEBUG') return null;
+    let verbs = null;
+    try { verbs = require(row.api).verbs || null; } catch (e) { verbs = null; }
+    if (!verbs || !Object.prototype.hasOwnProperty.call(verbs, verb)) return error('no-such-verb', { app: row.app, verb: verb });
+    const bad = require('./spirit.js').check(row.app + '.' + verb, verbs[verb], request_[verb]);
+    if (!bad) return null;
+    const code = bad.refusal && errors.byCode(bad.refusal) ? bad.refusal : 'bad-request';
+    const out = error(code, { app: row.app, verb: verb });
+    if (bad.message) out.body.error = String(bad.message);
+    return out;
+  }
   function runOnce(row, request_, caller) {
+    const refused = refusedByInterface(row, request_);
+    if (refused) return Promise.resolve(refused);
     let child = null;
     try { child = row.start(row.pipe); } catch (e) { return Promise.resolve(error('app-not-running', { app: row.app })); }
     if (!child) return Promise.resolve(error('app-not-running', { app: row.app }));
@@ -235,13 +255,14 @@ function createAppClient(opts) {
       return true;
     },
     // A ONE-SHOT APP (goal/G43.19, box v16, 3 and 4): its row is its pipe and start(pipe), which jobs.js hands over and
-    // which starts spirit/app/<name>/<name>.js once, answering the child process. The same name rule as register.
-    registerOneShot: function (name, pipe, start) {
+    // which starts spirit/app/<name>/<name>.js once, answering the child process, and api, its api.js, which a call is checked
+    // against first. The same name rule as register.
+    registerOneShot: function (name, pipe, start, api) {
       const n = String(name || '');
       if (!APP_RE.test(n) || !pipe || typeof start !== 'function') return false;
       const taken = typeof o.reserved === 'function' ? (o.reserved() || []) : [];
       if (taken.indexOf(n) !== -1) { log('one-shot app: ' + n + ' refused, the name is a node family'); return false; }
-      table[n] = { app: n, pipe: String(pipe), job: null, oneShot: true, start: start, queue: Promise.resolve() };
+      table[n] = { app: n, pipe: String(pipe), job: null, oneShot: true, start: start, api: api ? String(api) : '', queue: Promise.resolve() };
       log('one-shot app: ' + n);
       return true;
     },
