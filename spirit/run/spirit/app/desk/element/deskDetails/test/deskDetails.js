@@ -233,7 +233,7 @@ function ddWorld(facts, checks, o) {
       required.push(q);
       if (q === 'spirit/element/workBench.js') win.spirit.element.workBench = workBenchStub(document, benches);
       // The verifier's cache manager and the shared run status, the real ones, where the page's data set is (below).
-      if (o && o.real && (q === VERIFY_CCM || q === 'shell/shared/js/deskRunStatus.js')) vm.runInContext(fs.readFileSync(path.join(RUN, q), 'utf8'), win, { filename: q });
+      if (o && o.real && (q === VERIFY_CCM || q === 'spirit/app/desk/element/deskRunStatus/deskRunStatus.js')) vm.runInContext(fs.readFileSync(path.join(RUN, q), 'utf8'), win, { filename: q });
       return Promise.resolve({});
     },
     get element() { return this.elements; }, elements: nestSearch({ armingButton: armingStub(document, made), deskRunStatus: function () { return ''; },
