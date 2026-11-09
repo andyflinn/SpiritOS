@@ -20,6 +20,52 @@ const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms
 async function until(fn, ms) { const end = Date.now() + ms; while (Date.now() < end) { try { if (await fn()) return true; } catch (e) { /* not yet */ } await sleep(250); } return false; }
 function freePort() { return new Promise(function (resolve) { const s = net.createServer(); s.listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); }); }); }
 
+// THE RUNS OF ONE APP'S SCRIPT ON A SCRATCH NODE (goal/G43.19): the processes whose command line runs
+// spirit/app/<name>/<name>.js of the scratch tree at root (by its path or, run by a relative one, by its working folder).
+// appRuns(root, name) -> [pid], once. watchRuns(root, name) -> { stop() -> Promise<{ most, seen }> }: sampled until
+// stopped, most the largest number at once, seen how many samples found one. On Linux from /proc every 10 ms; on Windows
+// one PowerShell kept running and asked every 10 ms, since a PowerShell started per sample sees about one a second and
+// misses a short run (cw found it).
+function runPattern(name) { return new RegExp('spirit[\\\\/]app[\\\\/]' + name + '[\\\\/]' + name + '\\.js'); }
+function appRuns(root, name) {
+  const want = runPattern(name);
+  const out = [];
+  if (process.platform === 'win32') {
+    let text = '';
+    try { text = execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name=\'node.exe\'\\" | ForEach-Object { [string]$_.ProcessId + \' \' + $_.CommandLine }"', { encoding: 'utf8', maxBuffer: 1 << 24 }); } catch (e) { text = ''; }
+    text.split(/\r?\n/).forEach(function (l) { if (want.test(l) && l.toLowerCase().indexOf(String(root).toLowerCase()) !== -1) out.push(l.split(' ')[0]); });
+    return out;
+  }
+  let pids = [];
+  try { pids = fs.readdirSync('/proc').filter(function (p) { return /^\d+$/.test(p); }); } catch (e) { pids = []; }
+  pids.forEach(function (p) {
+    let cmd = '';
+    let cwd = '';
+    try { cmd = fs.readFileSync('/proc/' + p + '/cmdline', 'utf8').split('\0').join(' '); } catch (e) { return; }
+    if (!want.test(cmd)) return;
+    try { cwd = fs.readlinkSync('/proc/' + p + '/cwd'); } catch (e) { cwd = ''; }
+    if (cmd.indexOf(root) !== -1 || cwd.indexOf(root) === 0) out.push(p);
+  });
+  return out;
+}
+function watchRuns(root, name) {
+  let most = 0;
+  let seen = 0;
+  const take = function (n) { most = Math.max(most, n); if (n) seen += 1; };
+  if (process.platform === 'win32') {
+    const want = runPattern(name).source.replace(/'/g, "''");
+    const at = String(root).toLowerCase().replace(/'/g, "''");
+    const loop = "while ($true) { $n = @(Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | Where-Object { $_.CommandLine -match '" + want + "' -and $_.CommandLine.ToLower().Contains('" + at + "') }).Count; [Console]::Out.WriteLine('N ' + $n); [Console]::Out.Flush(); Start-Sleep -Milliseconds 10 }";
+    const kid = spawn('powershell', ['-NoProfile', '-Command', loop], { stdio: ['ignore', 'pipe', 'ignore'] });
+    let rest = '';
+    kid.stdout.on('data', function (d) { rest += String(d); const lines = rest.split(/\r?\n/); rest = lines.pop(); lines.forEach(function (l) { const m = /^N (\d+)/.exec(l); if (m) take(Number(m[1])); }); });
+    return { stop: function () { try { kid.kill(); } catch (e) { /* gone */ } return Promise.resolve({ most: most, seen: seen }); } };
+  }
+  let on = true;
+  const done = (async function () { while (on) { take(appRuns(root, name).length); await sleep(10); } }());
+  return { stop: function () { on = false; return done.then(function () { return { most: most, seen: seen }; }); } };
+}
+
 // Chrome where this machine keeps it: on Linux by its name, on Windows in its usual folders.
 function findChrome() {
   const env = process.env.SPIRIT_CHROME;
@@ -181,4 +227,4 @@ async function chromePage(chrome) {
   return { kid: kid, profile: profile, send: send, evaluate: evaluate, heard: heard, sock: sock };
 }
 
-module.exports = { sleep: sleep, until: until, freePort: freePort, findChrome: findChrome, scratchNode: scratchNode, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };
+module.exports = { sleep: sleep, until: until, freePort: freePort, appRuns: appRuns, watchRuns: watchRuns, findChrome: findChrome, scratchNode: scratchNode, scratchRelay: scratchRelay, scratchFaceRelay: scratchFaceRelay, chromePage: chromePage, WAIT: WAIT };

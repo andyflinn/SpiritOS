@@ -19,29 +19,8 @@ const limits = require(path.join(RUN, 'spirit', 'limits.js'));
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 
-// THE RUNS OF ONE APP'S SCRIPT ON THIS SCRATCH NODE: every process whose command line runs spirit/app/<name>/<name>.js of
-// the scratch tree (by its path or, run by a relative one, by its working folder).
-function runsOf(root, name) {
-  const want = new RegExp('spirit[\\\\/]app[\\\\/]' + name + '[\\\\/]' + name + '\\.js');
-  const out = [];
-  if (process.platform === 'win32') {
-    let text = '';
-    try { text = execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process | ForEach-Object { [string]$_.ProcessId + \' \' + $_.CommandLine }"', { encoding: 'utf8', maxBuffer: 1 << 24 }); } catch (e) { text = ''; }
-    text.split(/\r?\n/).forEach(function (l) { if (want.test(l) && l.toLowerCase().indexOf(root.toLowerCase()) !== -1) out.push(l.split(' ')[0]); });
-    return out;
-  }
-  let pids = [];
-  try { pids = fs.readdirSync('/proc').filter(function (p) { return /^\d+$/.test(p); }); } catch (e) { pids = []; }
-  pids.forEach(function (p) {
-    let cmd = '';
-    let cwd = '';
-    try { cmd = fs.readFileSync('/proc/' + p + '/cmdline', 'utf8').split('\0').join(' '); } catch (e) { return; }
-    if (!want.test(cmd)) return;
-    try { cwd = fs.readlinkSync('/proc/' + p + '/cwd'); } catch (e) { cwd = ''; }
-    if (cmd.indexOf(root) !== -1 || cwd.indexOf(root) === 0) out.push(p);
-  });
-  return out;
-}
+// The runs of an app's script on the scratch node: test/headLessChrome.js's, the one watch the tests share.
+const runsOf = H.appRuns;
 
 const NAME = 'zzbig';
 const SIZE = limits.ANSWER_MAX + 4000;
@@ -107,13 +86,10 @@ test.startTest('appClient.js: the node asks its app servers');
     ok(await H.until(function () { return Promise.resolve(runsOf(s.root, 'icons').length === 0); }, 3000), 'the run that answered the tree has ended', 'icons.js still runs after the tree was answered: ' + short(runsOf(s.root, 'icons')));
 
     test.subHeading('the box, 9: "one run per app at a time: calls to the same one-shot app wait their turn"');
-    let most = 0;
-    let seen = 0;
-    let watching = true;
-    const watch = (async function () { while (watching) { const n = runsOf(s.root, 'icons').length; most = Math.max(most, n); if (n) seen += 1; await H.sleep(10); } }());
+    const watch = H.watchRuns(s.root, 'icons');
     const many = await Promise.all([0, 1, 2, 3, 4, 5].map(function () { return post('api', {}); }));
-    watching = false;
-    await watch;
+    await H.sleep(300);
+    const { most, seen } = await watch.stop();
     ok(many.every(function (r) { return r.status === 200 && !!(r.body && r.body.icons); }), 'six trees asked at once: each holds the icons branch', 'answers: ' + short(many.map(function (r) { return r.status + (r.body && r.body.icons ? '+icons' : '-icons'); })));
     ok(seen >= 1, 'the world: a run of icons.js was seen while they were answered', 'no run of icons.js was ever seen, so "one at a time" judged nothing');
     ok(most <= 1, 'never two runs of icons.js at once', most + ' runs of icons.js at once');

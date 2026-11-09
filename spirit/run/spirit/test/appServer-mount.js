@@ -72,6 +72,9 @@ function scratch() {
   const run = path.join(root, 'spirit', 'run');
   plantApp(run, NAME, true);
   plantApp(run, 'quiet', false);
+  // NEITHER KIND (goal/G43.19, box v16, 2: "a one-shot app is an app with api.js and data.js at its top, node mount false or
+  // missing, and switched on"): with no data.js, quiet is no one-shot app either, so node.mount false still starts nothing.
+  fs.rmSync(path.join(run, 'spirit', 'app', 'quiet', 'data.js'), { force: true });
   // goal/G43.14: a server app the development team made intrinsic.
   plantApp(run, 'always', true, true);
   // A follower of a sender's stream, with its cache on: what it kept comes back at its start only if the sender's family has a
@@ -186,8 +189,8 @@ test.startTest('appServerMount: the node starts a server from spirit/app/<name>/
     const quietOn = await call(N.base, 'app.active', { key: 'quiet', active: true });
     ok(quietOn.status === 200, 'the world: an app with node.mount false is activated', 'app.active on quiet: ' + short(quietOn.text));
     await sleep(3000);
-    ok(!(await liveJob(N.base, 'spirit.app.quiet')), 'active with node.mount false: no server job', 'a server job for an app with node.mount false');
-    ok(!answers(await pingOf(N.base, 'quiet')), 'and its verb is not answered', 'an app with node.mount false answered its verb');
+    ok(!(await liveJob(N.base, 'spirit.app.quiet')), 'active with node.mount false and no data.js: no server job', 'a server job for an app with node.mount false and no data.js');
+    ok(!answers(await pingOf(N.base, 'quiet')), 'and its verb is not answered', 'an app with node.mount false and no data.js answered its verb');
 
     const otherPlace = await call(N.base, 'jobs.create', { command: 'node', args: ['shell/planted.js'], type: 'the red' });
     ok(otherPlace.status >= 400 && !!otherPlace.body && otherPlace.body.code === 'not-a-process', 'a script outside spirit/app is refused by name', 'jobs.create on shell/planted.js: ' + short(otherPlace.text));
