@@ -11,8 +11,20 @@ const test = require(path.join(RUN, 'test', 'testReport.js'));
 const { scratchNode, chromePage, findChrome, until } = require(path.join(RUN, 'test', 'headLessChrome.js'));
 
 function ok(cond, good, bad) { if (cond) test.check(good); else test.fail(bad); }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 const FILE = path.join(RUN, 'spirit', 'app', 'appSelector.js');
+// The planted apps: one that mounts, the one tile there must be, and every way of not saying shell.mount true.
+const PLANT = {
+  zzmounted: { label: 'Zz Mounted', shell: { true: false, mount: true, tile: true }, tile: true },
+  zzmountfalse: { label: 'Zz Mount False', shell: { true: false, mount: false, tile: true } },
+  zznoshell: { label: 'Zz No Shell' },
+  zznomount: { label: 'Zz No Mount', shell: { true: false, tile: true } },
+  zzstringmount: { label: 'Zz String Mount', shell: { true: false, mount: 'true', tile: true } },
+  zzonemount: { label: 'Zz One Mount', shell: { true: false, mount: 1, tile: true } },
+  zzshellnull: { label: 'Zz Shell Null', shell: null },
+  zzrunonly: { label: 'Zz Run Only', shell: { true: false, mount: false, tile: true }, run: true }
+};
 
 test.startTest('appSelector.js: the app selector (goal/G43.2)');
 
@@ -234,6 +246,134 @@ test.startTest('appSelector.js: the app selector (goal/G43.2)');
     const closed = await until(function () { return chrome.evaluate('!' + panel + ' && !!' + tileOf(monitorLabel)); }, 5000);
     ok(closed, 'its close icon brings the tiles back', 'after close: ' + short(await inFaces()));
     await chrome.evaluate('(function () { var c = document.getElementById("faces"); if (window.fs.destroy) window.fs.destroy(); if (c) c.remove(); return true; }())');
+    }
+    // ── NO TILE WITHOUT shell.mount, AND A FACE FOR EVERY ONE THAT SAYS IT (goal/G43.20) ──
+    // Andy: "all, MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!", and "where is your test that scans the app
+    // folders and makes sure that app search complies with the spec, and doesn't show tiles for ANY app with shell:mound:false?".
+    // Every app is made active first, so "only activated apps" cannot be what keeps a tile away.
+    {
+      const APPS = path.join(node.root, 'spirit', 'run', 'spirit', 'app');
+      const monitor = fs.readFileSync(path.join(APPS, 'monitor', 'monitor.js'), 'utf8');
+      Object.keys(PLANT).forEach(function (k) {
+        const p = PLANT[k];
+        const dir = path.join(APPS, k);
+        fs.mkdirSync(dir, { recursive: true });
+        const j = { identity: { icon: '🧪', label: p.label, intrinsic: false }, mount: {}, node: { mount: false } };
+        j.mount[k + '.js'] = true;
+        if ('shell' in p) j.shell = p.shell;
+        if (p.run) j.node.run = true;
+        fs.writeFileSync(path.join(dir, k + '.json'), JSON.stringify(j, null, 2));
+        fs.writeFileSync(path.join(dir, k + '.js'), monitor.replace('(S.app = S.app || {}).monitor = ', '(S.app = S.app || {})[' + JSON.stringify(k) + '] = '));
+      });
+      // The tree's own apps that do not say shell.mount true: none of them may show a tile either.
+      const tree = fs.readdirSync(APPS).filter(function (n) { return !PLANT[n] && fs.existsSync(path.join(APPS, n, n + '.json')); }).map(function (n) {
+        let j = {};
+        try { j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); } catch (e) { j = {}; }
+        return { key: n, label: String((j.identity && j.identity.label) || n), mount: !!(j.shell && j.shell.mount === true), run: !!(j.node && j.node.run === true) };
+      });
+      const treeOff = tree.filter(function (a) { return !a.mount && a.key !== 'shell'; });
+      ok(treeOff.length >= 1, 'the world: the tree\'s apps without shell.mount true: ' + treeOff.map(function (a) { return a.key; }).join(', '), 'every app of the tree says shell.mount true: nothing of the tree to judge');
+
+      await chrome.send('Page.navigate', { url: node.base + '/face.html' });
+      await until(function () { return chrome.evaluate('!!(window.spirit && window.spirit.ready)'); }, 20000);
+      const loaded = await chrome.evaluate('window.spirit.ready.then(function () { return spirit.require("spirit/app/appSelector.js"); }).then(function () { return "loaded"; }, function (e) { return String(e && e.message || e); })');
+      ok(loaded === 'loaded', 'the world: appSelector loads', 'appSelector did not load: ' + short(loaded));
+      if (loaded !== 'loaded') return;
+
+      // EVERY APP ACTIVE, planted and the tree's: what keeps a tile away below can only be shell.mount.
+      const keys = Object.keys(PLANT).concat(treeOff.map(function (a) { return a.key; }));
+      const rows = function () { return chrome.evaluate('(function () { var r = (spirit.data.app && spirit.data.app.data) ? spirit.data.app.data.rows() : {}; var out = {}; ' + JSON.stringify(keys) + '.forEach(function (k) { out[k] = r[k] ? { active: r[k].active === true } : null; }); return JSON.stringify(out); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return {}; } }); };
+      await chrome.evaluate('(function () { var a = spirit.app && spirit.app.activeApp; if (!a) return false; ' + JSON.stringify(keys) + '.forEach(function (k) { try { a({ key: k, active: true }); } catch (e) { /* the row below says */ } }); return true; }())');
+      await until(function () { return rows().then(function (r) { return keys.every(function (k) { return r[k] && r[k].active; }); }); }, 10000);
+      // A row the node would not make active through the verb is made active on its disc, as a user's earlier press left it.
+      let r = await rows();
+      const notYet = keys.filter(function (k) { return !(r[k] && r[k].active); });
+      notYet.forEach(function (k) { const d = path.join(node.root, 'spirit', 'run', 'spirit', 'state', k); fs.mkdirSync(d, { recursive: true }); fs.writeFileSync(path.join(d, 'node.json'), JSON.stringify({ active: true })); });
+      if (notYet.length) { await until(function () { return rows().then(function (x) { return notYet.every(function (k) { return x[k] && x[k].active; }); }); }, 10000); r = await rows(); }
+      // AN APP THAT SAYS node.run IS RUN, NEVER ACTIVE (goal/G43.21): it is a row, held inactive whatever its node.json says, so
+      // two things keep its tile away; for every other app only shell.mount can.
+      const runs = Object.keys(PLANT).filter(function (k) { return PLANT[k].run; }).concat(treeOff.filter(function (a) { return a.run; }).map(function (a) { return a.key; }));
+      keys.forEach(function (k) {
+        if (runs.indexOf(k) !== -1) ok(!!r[k], 'the world: ' + k + ' is a row, run only, never active', k + ' is no row at all: ' + short(r[k]));
+        else ok(!!(r[k] && r[k].active), 'the world: ' + k + ' is a row, active', k + ' is no active row, so its missing tile would judge nothing: ' + short(r[k]));
+      });
+
+      const mount = function (opts) { return chrome.evaluate('(function () { var old = document.getElementById("faces"); if (old) { if (window.fsel) window.fsel.destroy(); old.remove(); } var c = document.createElement("div"); c.id = "faces"; c.style.cssText = "position:fixed;left:0;top:0;width:1200px;height:800px;display:flex;flex-direction:column;background:#111"; document.body.appendChild(c); window.fsel = spirit.elements.appSelector.create(c, ' + JSON.stringify(opts) + '); if (window.fsel.parentNode !== c) c.appendChild(window.fsel); return true; }())'); };
+      // The labels drawn as tiles: every visible leaf under the tiles whose text is a label of the test's.
+      const LABELS = Object.keys(PLANT).map(function (k) { return PLANT[k].label; }).concat(treeOff.map(function (a) { return a.label; }));
+      const drawn = function () { return chrome.evaluate('(function () { var c = document.getElementById("faces"); if (!c) return "[]"; var want = ' + JSON.stringify(LABELS) + '; var out = []; var all = c.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var e = all[i]; if (!e.getClientRects().length) continue; var t = String(e.innerText || e.textContent || "").trim(); if (!e.children.length && want.indexOf(t) !== -1 && out.indexOf(t) === -1) out.push(t); } return JSON.stringify(out.sort()); }())').then(function (s) { try { return JSON.parse(s); } catch (e) { return []; } }); };
+      const judge = async function (how) {
+        const seen = await until(function () { return drawn().then(function (d) { return d.indexOf(PLANT.zzmounted.label) !== -1; }); }, 8000);
+        ok(seen, how + ': the app that says shell.mount true shows its tile', how + ': not even the mounted app shows a tile, so nothing is judged: ' + short(await drawn()));
+        await sleep(800);
+        const d = await drawn();
+        Object.keys(PLANT).filter(function (k) { return !PLANT[k].tile; }).forEach(function (k) {
+          ok(d.indexOf(PLANT[k].label) === -1, how + ': ' + k + ' (' + short('shell' in PLANT[k] ? PLANT[k].shell : 'no shell part') + ') shows no tile', how + ': ' + k + ' shows a tile, its json ' + short('shell' in PLANT[k] ? PLANT[k].shell : 'no shell part'));
+        });
+        treeOff.forEach(function (a) { ok(d.indexOf(a.label) === -1, how + ': the tree\'s ' + a.key + ' shows no tile', how + ': the tree\'s ' + a.key + ' shows a tile without shell.mount true'); });
+      };
+
+      test.subHeading('Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!": tiles from the start');
+      await mount({ face: 'tiles' });
+      await judge('tiles');
+
+      test.subHeading('the same, tiles reached by the toggle from the pane');
+      await mount({ face: 'pane', toggle: true });
+      await until(function () { return chrome.evaluate('String(document.getElementById("faces").innerText).indexOf(' + JSON.stringify(PLANT.zzmounted.label) + ') !== -1'); }, 8000);
+      const flipped = await chrome.evaluate('(function () { var bs = document.getElementById("faces").querySelectorAll("button"); for (var i = 0; i < bs.length; i++) if (String(bs[i].textContent).indexOf("\u25A6") !== -1) { bs[i].click(); return true; } return false; }())');
+      ok(flipped === true, 'the world: the pane has a toggle to press', 'no toggle found on the pane: the toggled tiles are not judged');
+      if (flipped === true) await judge('toggled tiles');
+
+      test.subHeading('the shell\'s own tiles, as the shell mounts them');
+      await mount({ face: 'tiles', toggle: true, hide: ['shell'] });
+      await judge('the shell\'s tiles');
+
+      test.subHeading('never: an app that loses shell.mount on its disc loses its tile, no reload');
+      await mount({ face: 'tiles' });
+      await until(function () { return drawn().then(function (d) { return d.indexOf(PLANT.zzmounted.label) !== -1; }); }, 8000);
+      const file = path.join(APPS, 'zzmounted', 'zzmounted.json');
+      const j = JSON.parse(fs.readFileSync(file, 'utf8'));
+      j.shell.mount = false;
+      fs.writeFileSync(file, JSON.stringify(j, null, 2));
+      const left = await until(function () { return drawn().then(function (d) { return d.indexOf(PLANT.zzmounted.label) === -1; }); }, 8000);
+      ok(left, 'its tile leaves the moment its json says shell.mount false', 'its tile stayed after its json said shell.mount false: ' + short(await drawn()) + '; its row: ' + short(await chrome.evaluate('JSON.stringify(spirit.data.app.data.rows().zzmounted)')));
+      delete j.shell;
+      fs.writeFileSync(file, JSON.stringify(j, null, 2));
+      await sleep(1500);
+      ok((await drawn()).indexOf(PLANT.zzmounted.label) === -1, 'and with its shell part gone it does not come back', 'with its shell part gone its tile came back');
+      j.shell = { true: false, mount: true, tile: true };
+      fs.writeFileSync(file, JSON.stringify(j, null, 2));
+      const back = await until(function () { return drawn().then(function (d) { return d.indexOf(PLANT.zzmounted.label) !== -1; }); }, 8000);
+      ok(back, 'and saying shell.mount true again brings it back', 'shell.mount true again did not bring its tile back, so the leaving judged nothing: ' + short(await drawn()));
+
+      // AN APP THAT CLAIMS A FACE SUPPLIES ONE (Andy: "where is the test that verifies that an app who claims to have a face,
+      // also actually supplies a fucking face?"): every app of the tree whose json says shell.mount true, its tile pressed, draws
+      // something in the layer it opens. The shell is left out: it hides itself from the tiles (goal/G43.18).
+      test.subHeading('Andy: "an app who claims to have a face, also actually supplies a fucking face"');
+      const treeOn = tree.filter(function (a) { return a.mount && a.key !== 'shell'; });
+      ok(treeOn.length >= 1, 'the world: the tree\'s apps that say shell.mount true: ' + treeOn.map(function (a) { return a.key; }).join(', '), 'no app of the tree says shell.mount true: nothing to judge');
+      treeOn.forEach(function (a) {
+        const f = path.join(APPS, a.key, a.key + '.js');
+        ok(fs.existsSync(f), a.key + ': its face script spirit/app/' + a.key + '/' + a.key + '.js is there', a.key + ' says shell.mount true and has no spirit/app/' + a.key + '/' + a.key + '.js');
+      });
+      await chrome.evaluate('(function () { ' + JSON.stringify(treeOn.map(function (a) { return a.key; })) + '.forEach(function (k) { try { spirit.app.activeApp({ key: k, active: true }); } catch (e) { /* the tile says */ } }); return true; }())');
+      const onKeys = JSON.stringify(treeOn.map(function (a) { return a.key; }));
+      const allOn = await until(function () { return chrome.evaluate('(function () { var r = spirit.data.app.data.rows(); return ' + onKeys + '.every(function (k) { return !!r[k] && r[k].active === true; }); }())'); }, 10000);
+      ok(allOn, 'the world: every app that says shell.mount true is active', 'not all are active: ' + short(await chrome.evaluate('(function () { var r = spirit.data.app.data.rows(); return JSON.stringify(' + onKeys + '.filter(function (k) { return !(r[k] && r[k].active === true); })); }())')));
+      await mount({ face: 'tiles' });
+      const shown = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-container"), function (c) { return c.offsetParent !== null; })[0]';
+      for (const a of treeOn) {
+        const tile = 'Array.prototype.filter.call(document.querySelectorAll("#faces .app-icon"), function (t) { return t.offsetParent !== null && String(t.textContent).indexOf(' + JSON.stringify(a.label) + ') !== -1; })[0]';
+        const there = await until(function () { return chrome.evaluate('!!' + tile); }, 8000);
+        if (!there) { test.fail(a.key + ' says shell.mount true and shows no tile to press: ' + short(await drawn())); continue; }
+        await chrome.evaluate('(function () { window.pageErrors = []; window.addEventListener("error", function (e) { window.pageErrors.push(String(e.message)); }); window.addEventListener("unhandledrejection", function (e) { window.pageErrors.push(String(e.reason && e.reason.message || e.reason)); }); var t = ' + tile + '; t.click(); return true; }())');
+        // A face is drawn: the opened layer's pane holds a visible element of some size, beyond the bare pane itself.
+        const drew = await until(function () { return chrome.evaluate('(function () { var c = ' + shown + '; if (!c) return false; var p = c.querySelector(".app-container-pane"); if (!p) return false; var all = p.querySelectorAll("*"); for (var i = 0; i < all.length; i++) { var r = all[i].getBoundingClientRect(); if (r.width > 4 && r.height > 4 && (String(all[i].innerText || "").trim() || /^(CANVAS|SVG|IMG|VIDEO|INPUT|TEXTAREA|BUTTON|IFRAME)$/i.test(all[i].tagName))) return true; } return false; }())'); }, 10000);
+        const errs = await chrome.evaluate('JSON.stringify(window.pageErrors || [])');
+        ok(drew, a.key + ': its tile opens a face that draws', a.key + ' says shell.mount true and its tile drew no face; page errors: ' + short(errs) + '; the layer: ' + short(await chrome.evaluate('(function () { var c = ' + shown + '; return c ? c.innerHTML : "no layer shown"; }())')));
+        await chrome.evaluate('(function () { var c = ' + shown + '; var x = c && c.querySelector(".app-container-close"); if (x) x.click(); return !!x; }())');
+        await until(function () { return chrome.evaluate('!' + shown); }, 5000);
+      }
     }
   } finally {
     try { if (chrome.sock) chrome.sock.close(); } catch (e) { /* gone */ }

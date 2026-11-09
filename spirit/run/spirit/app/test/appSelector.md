@@ -36,3 +36,13 @@
 ## The app it switches (goal/G43.15)
 
 Monitor is intrinsic since Andy's 7f6ebbbe, so always on. The suite plants an app of its own on the scratch node, Hearing, a copy of Monitor as it was before, and switches that. It counts only the forms that show, since a self-hiding row is drawn hidden.
+
+## No tile without shell.mount, and a face for every app that says it (goal/G43.20)
+
+Andy: *"all, MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"*, *"where is your test that scans the app folders ... and doesn't show tiles for ANY app with shell:mound:false?"*, and *"where is the test that verifies that an app who claims to have a face, also actually supplies a fucking face?"*
+
+- Planted apps, each made active first: one saying `shell.mount: true` (its tile must show, or nothing is judged), and every way of not saying it: `false`, absent, `"true"`, `1`, a `null` shell, no shell part, and a `node.run` app. None shows a tile.
+- Every app folder of the tree whose json does not say `shell.mount: true` shows no tile. An app that says `node.run` is never active (goal/G43.21), so it is judged as a row.
+- Judged on the tiles from the start, the tiles reached by the toggle, and the shell's own tiles (`hide: ['shell']`).
+- An app whose json drops `shell.mount` on disk loses its tile with no reload; with its shell part gone it does not come back; saying it again brings it back.
+- Every app of the tree that says `shell.mount: true` but the shell has its `<name>.js`, and its tile pressed opens a layer that draws something; a failure names the page errors and the layer.

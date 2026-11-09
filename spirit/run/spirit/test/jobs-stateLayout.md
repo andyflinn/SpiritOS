@@ -6,8 +6,10 @@ fucking cheat with the fucking tests!!!!!!!!!!!!!!!!!!!!"*, *"put those in spiri
 node."*, *"cache, which is written by spirit/appServer.js was ALWAYS supposed to go into spirit/state/<name>/cache/"*,
 *"app data, which is written by the app, was ALWAYS supposed to go into spirit/state/<name>/data/"*.
 
-A real node on a scratch copy of the tracked files with no `run:/process` and no `relay-state` in it; desk, deskClient,
-deskVerify, backup and agent switched on. Never a live node.
+A real node on a scratch copy of the tracked files with no `run:/process` and no `relay-state` in it; every app whose
+`<name>.json` says `node.mount` true switched on, read from the app folders (Andy: *"where is the test that verifies that
+an app who claims to be mountable, ACTUALLY can be mounted?"*), each judged on its own: it starts and answers its api.
+Never a live node.
 
 ## Requirements
 

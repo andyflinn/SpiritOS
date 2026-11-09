@@ -23,8 +23,13 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 // What an app's folder of the node's state may hold (the box, "spirit/state/<name>/ holds node.json, cache/, data/, and on
 // Linux door.sock"; Andy: "so far, so good.").
 const MAY = ['node.json', 'cache', 'data'].concat(process.platform === 'win32' ? [] : ['door.sock']);
-// The tree's app servers, each switched on: node mount true in their json.
-const SERVERS = ['desk', 'deskClient', 'deskVerify', 'backup', 'agent'];
+// The tree's app servers, each switched on: every app folder whose <name>.json says node.mount true, read from the folders
+// (Andy: "where is the test that verifies that an app who claims to be mountable, ACTUALLY can be mounted?"), so a new one
+// is judged the day it lands.
+const APPS = path.join(REPO, 'spirit', 'run', 'spirit', 'app');
+const SERVERS = fs.readdirSync(APPS).filter(function (n) {
+  try { const j = JSON.parse(fs.readFileSync(path.join(APPS, n, n + '.json'), 'utf8')); return !!(j.node && j.node.mount === true); } catch (e) { return false; }
+});
 
 test.startTest('jobs-stateLayout.js: spirit/state/<name>/ holds node.json, cache/, data/ and door.sock, and nothing else; no relay-state, no process (goal/G43.20)');
 
@@ -51,12 +56,11 @@ test.startTest('jobs-stateLayout.js: spirit/state/<name>/ holds node.json, cache
 
     test.subHeading('the node starts its apps with no process/ folder');
     for (const name of SERVERS) await ask('app.active', { key: name, active: true });
-    const answering = [];
+    ok(SERVERS.length >= 1, 'the world: the apps that say node.mount true: ' + SERVERS.join(', '), 'no app folder says node.mount true: nothing to judge');
     for (const name of SERVERS) {
       const a = await H.until(function () { return ask('api', { family: name }).then(function (r) { return r.status === 200 && !!r.body && typeof r.body.interface === 'string'; }); }, 30000);
-      if (a) answering.push(name);
+      ok(!!a, name + ' says node.mount true, starts, and answers its api', name + ' says node.mount true and never answered its api: ' + short(await ask('api', { family: name })));
     }
-    ok(answering.length === SERVERS.length, 'every app server switched on starts and answers: ' + SERVERS.join(', '), 'answering: ' + short(answering) + ' of ' + short(SERVERS));
     await H.sleep(3000);
 
     test.subHeading('spirit/state/<name>/ holds node.json, cache/, data/ and on Linux door.sock, nothing else');
