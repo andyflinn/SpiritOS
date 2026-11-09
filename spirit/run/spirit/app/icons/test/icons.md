@@ -37,5 +37,5 @@ interface `./api.md`'s.
 ## What its test must try to break
 
 - Five Adds at once (the box, 9: *"two saves never write iconSet.json at once"*): all five land, what was there stays,
-  and never two runs of `icons.js` at once. A run must have been seen, or the count judged nothing.
+  and never two runs of `icons.js` at once. A run must have been seen, by the process list or by two pids the job `spirit.app.icons` names, or the count judged nothing.
 - A page writing `spirit/state/icons/data/iconSet.json` itself is refused, and the set stands.

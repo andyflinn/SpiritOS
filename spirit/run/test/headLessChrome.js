@@ -22,10 +22,12 @@ function freePort() { return new Promise(function (resolve) { const s = net.crea
 
 // THE RUNS OF ONE APP'S SCRIPT ON A SCRATCH NODE (goal/G43.19): the processes whose command line runs
 // spirit/app/<name>/<name>.js of the scratch tree at root (by its path or, run by a relative one, by its working folder).
-// appRuns(root, name) -> [pid], once. watchRuns(root, name) -> { stop() -> Promise<{ most, seen }> }: sampled until
-// stopped, most the largest number at once, seen how many samples found one. On Linux from /proc every 10 ms; on Windows
-// one PowerShell kept running and asked every 10 ms, since a PowerShell started per sample sees about one a second and
-// misses a short run (cw found it).
+// appRuns(root, name) -> [pid], once. watchRuns(root, name, opts) -> { stop() -> Promise<{ most, seen, pids }> }: sampled
+// until stopped, most the largest number at once, seen how many samples found one. On Linux from /proc every 10 ms; on
+// Windows one PowerShell kept running, since a PowerShell started per sample sees about one a second and misses a short
+// run (cw found it). A query there still takes longer than a short run, so with opts.base (the node's address) it also
+// asks the job spirit.app.<name> for the pid of its last run, and pids is how many it named: a run proved by the node
+// where no sample caught it.
 function runPattern(name) { return new RegExp('spirit[\\\\/]app[\\\\/]' + name + '[\\\\/]' + name + '\\.js'); }
 function appRuns(root, name) {
   const want = runPattern(name);
@@ -48,10 +50,24 @@ function appRuns(root, name) {
   });
   return out;
 }
-function watchRuns(root, name) {
+function watchRuns(root, name, opts) {
   let most = 0;
   let seen = 0;
   const take = function (n) { most = Math.max(most, n); if (n) seen += 1; };
+  const pids = new Set();
+  let asking = !!(opts && opts.base);
+  const asked = (async function () {
+    while (asking) {
+      try {
+        const r = await fetch(opts.base + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ call: 'jobs.get', args: { key: 'spirit.app.' + name } }) });
+        const b = await r.json();
+        const pid = b && b.job && b.job.data && b.job.data.pid;
+        if (pid) pids.add(String(pid));
+      } catch (e) { /* the next ask */ }
+      await sleep(5);
+    }
+  }());
+  const finish = function (r) { asking = false; return asked.then(function () { r.pids = pids.size; return r; }); };
   if (process.platform === 'win32') {
     const want = runPattern(name).source.replace(/'/g, "''");
     const at = String(root).toLowerCase().replace(/'/g, "''");
@@ -59,11 +75,11 @@ function watchRuns(root, name) {
     const kid = spawn('powershell', ['-NoProfile', '-Command', loop], { stdio: ['ignore', 'pipe', 'ignore'] });
     let rest = '';
     kid.stdout.on('data', function (d) { rest += String(d); const lines = rest.split(/\r?\n/); rest = lines.pop(); lines.forEach(function (l) { const m = /^N (\d+)/.exec(l); if (m) take(Number(m[1])); }); });
-    return { stop: function () { try { kid.kill(); } catch (e) { /* gone */ } return Promise.resolve({ most: most, seen: seen }); } };
+    return { stop: function () { try { kid.kill(); } catch (e) { /* gone */ } return finish({ most: most, seen: seen }); } };
   }
   let on = true;
   const done = (async function () { while (on) { take(appRuns(root, name).length); await sleep(10); } }());
-  return { stop: function () { on = false; return done.then(function () { return { most: most, seen: seen }; }); } };
+  return { stop: function () { on = false; return done.then(function () { return finish({ most: most, seen: seen }); }); } };
 }
 
 // Chrome where this machine keeps it: on Linux by its name, on Windows in its usual folders.

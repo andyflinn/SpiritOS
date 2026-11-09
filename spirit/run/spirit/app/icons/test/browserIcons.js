@@ -85,6 +85,21 @@ test.startTest('browserIcons.js: the Icons face, asking its own branch and writi
     ok(opened, 'its dialog opens, its keywords in it, with Remove', 'no dialog of ' + fresh[0] + ': ' + short(await text(chrome)));
     ok(read(SET) === t1, 'and the set is not written', 'a duplicate changed the set');
 
+    // OVER THE APP, AS CONTACT'S DETAIL (Andy: "the icon detail panel is supposed to open overtop of the icon app..... like
+    // contact detail etc."): a panel layer (spirit/element/panel.js) covering the whole face, the icon's glyph on it, the
+    // add row and the list out of sight under it; its close brings the list back. Judged by what is on top where the add
+    // row stands.
+    test.subHeading('Andy: "the icon detail panel is supposed to open overtop of the icon app..... like contact detail"');
+    const OVER = '(function () { var box = document.getElementById("box"); var b = box.getBoundingClientRect(); var l = Array.prototype.filter.call(box.querySelectorAll(".app-container"), function (c) { return c.offsetParent !== null; }).pop(); if (!l) return "no panel layer"; var r = l.getBoundingClientRect(); if (r.width < b.width - 4 || r.height < b.height - 4) return "a layer of " + Math.round(r.width) + "x" + Math.round(r.height) + " in a box of " + Math.round(b.width) + "x" + Math.round(b.height); if (String(l.textContent).indexOf(' + JSON.stringify(fresh[0]) + ') === -1) return "the layer does not show " + ' + JSON.stringify(fresh[0]) + '; var g = ' + field('glyph') + '; if (g) { var gr = g.getBoundingClientRect(); var top = document.elementFromPoint(gr.left + 2, gr.top + 2); if (top && !l.contains(top)) return "the add row is still in sight"; } return "over"; }())';
+    const wasOver = await until(function () { return chrome.evaluate(OVER).then(function (v) { return v === 'over'; }); }, 5000);
+    ok(wasOver, 'the duplicate\'s dialog is a panel over the whole face, ' + fresh[0] + ' on it, the add row under it', 'the dialog: ' + short(await chrome.evaluate(OVER)));
+    await chrome.evaluate('(function () { var c = Array.prototype.filter.call(document.querySelectorAll("#box .app-container-close"), function (x) { return x.offsetParent !== null; }).pop(); if (c) c.click(); return !!c; }())');
+    const back = await until(function () { return chrome.evaluate('(function () { var g = ' + field('glyph') + '; if (!g) return false; var gr = g.getBoundingClientRect(); var top = document.elementFromPoint(gr.left + 2, gr.top + 2); return top === g || g.contains(top); }())'); }, 5000);
+    ok(wasOver && back, 'its close brings the face back, the add row on top', wasOver ? 'after its close the add row is not on top: ' + short(await chrome.evaluate(OVER)) : 'no panel was open, so its close judged nothing');
+    // Pressing the icon's row in the list opens it the same way.
+    await chrome.evaluate('(function () { var rows = Array.prototype.filter.call(document.querySelectorAll("#box tr, #box .list-row"), function (r) { return r.getClientRects().length && String(r.textContent).indexOf(' + JSON.stringify(fresh[0]) + ') !== -1; }); var hit = rows[0]; if (!hit) return false; var leaf = Array.prototype.filter.call(hit.querySelectorAll("*"), function (e) { return !e.children.length && e.getClientRects().length; })[0] || hit; leaf.click(); return true; }())');
+    ok(await until(function () { return chrome.evaluate(OVER).then(function (v) { return v === 'over'; }); }, 5000), 'a press on its row opens it over the face too', 'a press on its row: ' + short(await chrome.evaluate(OVER)));
+
     test.subHeading('an icon opened: its keywords saved as they change, and Remove');
     await chrome.evaluate('(function () { var k = Array.prototype.filter.call(document.querySelectorAll("#box input"), function (i) { return i.getClientRects().length && !/icon|keyword/i.test(String(i.placeholder || "")); })[0]; k.value = "changed, again"; k.dispatchEvent(new Event("change", { bubbles: true })); return true; }())');
     ok(await until(function () { return Promise.resolve(JSON.stringify((json(SET) || {})[fresh[0]]) === '["changed","again"]'); }, 8000), 'a change of its keywords writes them', 'after the change the set holds ' + short((json(SET) || {})[fresh[0]]));

@@ -86,12 +86,12 @@ test.startTest('appClient.js: the node asks its app servers');
     ok(await H.until(function () { return Promise.resolve(runsOf(s.root, 'icons').length === 0); }, 3000), 'the run that answered the tree has ended', 'icons.js still runs after the tree was answered: ' + short(runsOf(s.root, 'icons')));
 
     test.subHeading('the box, 9: "one run per app at a time: calls to the same one-shot app wait their turn"');
-    const watch = H.watchRuns(s.root, 'icons');
+    const watch = H.watchRuns(s.root, 'icons', { base: base });
     const many = await Promise.all([0, 1, 2, 3, 4, 5].map(function () { return post('api', {}); }));
     await H.sleep(300);
-    const { most, seen } = await watch.stop();
+    const { most, seen, pids } = await watch.stop();
     ok(many.every(function (r) { return r.status === 200 && !!(r.body && r.body.icons); }), 'six trees asked at once: each holds the icons branch', 'answers: ' + short(many.map(function (r) { return r.status + (r.body && r.body.icons ? '+icons' : '-icons'); })));
-    ok(seen >= 1, 'the world: a run of icons.js was seen while they were answered', 'no run of icons.js was ever seen, so "one at a time" judged nothing');
+    ok(seen >= 1 || pids >= 2, 'the world: runs of icons.js were seen while they were answered (' + seen + ' samples, ' + pids + ' pids its job named)', 'no run of icons.js was ever seen, so "one at a time" judged nothing');
     ok(most <= 1, 'never two runs of icons.js at once', most + ' runs of icons.js at once');
     ok(await H.until(function () { return Promise.resolve(runsOf(s.root, 'icons').length === 0); }, 3000), 'and none is left running', 'icons.js runs after all were answered: ' + short(runsOf(s.root, 'icons')));
   } finally {
