@@ -53,6 +53,12 @@
         .concat([{ name: 'runs', when: function () { return false; }, test: function (row) {
           var held = row && window.spirit.data.app.data.rows()[row.key];
           return face === 'pane' || !(held && held.run === true) ? 1 : 0;
+        } }])
+        // NO TILE WITHOUT shell.mount (goal/G43.20; Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"): as tiles, only the apps
+        // whose <name>.json says shell.mount true; the pane and the dropdown list every app.
+        .concat([{ name: 'tiles', when: function () { return false; }, test: function (row) {
+          var held = row && window.spirit.data.app.data.rows()[row.key];
+          return face !== 'tiles' || !!(held && held.shellMount === true) ? 1 : 0;
         } }]),
       // Andy, box: "the appSelector will only show icon and label in the list."
       // Andy, box: "with the (de)activate buttons at the end of each row", which a dropdown has no room for.

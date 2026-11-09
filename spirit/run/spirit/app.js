@@ -69,6 +69,9 @@ function createApp(opts) {
       // ONLY RUN, NOTHING TO ACTIVATE (goal/G43.21; Andy: "an app that only has node:run and no node:mount or shell:mount cannot be
       // "activated"", "and the node should know it, too."): its rows and the node both read it here.
       runOnly: runOnly(own),
+      // A FACE ON THE SHELL (goal/G43.20; Andy: "MAKE SURE aN APP WITHOUT shell:mount NEVER SHOWS A FUCKING TILE!"): its <name>.json's shell.mount, the one thing
+      // that gives it a tile.
+      shellMount: !!(own && own.shell && own.shell.mount === true),
       // A FAMILY OF ITS OWN (goal/G43.27; Andy: "an app must have an api.js"): spirit/app/<name>/api.js is there, so a page
       // finds its data.js beside it; an app without one leaves the name to the system's spirit/<name>/.
       api: fs.existsSync(path.join(folder, name, 'api.js')) };
